@@ -73,22 +73,33 @@ test('opens the PDF, shows the page count and reports the nested outline', async
   ]);
 });
 
-test('a text drag reports the exact text and its line box', async ({ page }) => {
+test('a text drag reports its text and line box, and the copy command copies the text', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);
   await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
   await expect(page.getByRole('toolbar', { name: 'PDF text selection actions' })).toBeVisible();
   await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'text', text: 'Synthetic page 1' });
-  const selection = await lastSelection(page) as { pages: { page: number; rects: number[][] }[] };
-  expect(selection.pages).toHaveLength(1);
-  const [left, top, right, bottom] = selection.pages[0]!.rects[0]!;
-  expect(selection.pages[0]!.page).toBe(1);
+  const { pages } = await lastSelection(page) as { pages: { page: number; rects: number[][] }[] };
+  expect(pages.map(({ page }) => page)).toEqual([1]);
+  // The glyphs span x 72 to about 206, and y about 83 to 104.
+  const [left, top, right, bottom] = pages[0]!.rects[0]!;
   expect(left).toBeGreaterThan(70);
   expect(left).toBeLessThan(75);
   expect(right).toBeGreaterThan(200);
   expect(right).toBeLessThan(210);
   expect(top).toBeGreaterThan(80);
   expect(bottom).toBeLessThan(108);
+
+  // EmbedPDF draws the selection itself, so the viewer answers the copy command.
+  const copied = await page.evaluate(() => {
+    let text = '';
+    const read = (event: ClipboardEvent) => { text = event.clipboardData?.getData('text/plain') ?? ''; };
+    document.addEventListener('copy', read);
+    document.execCommand('copy');
+    document.removeEventListener('copy', read);
+    return text;
+  });
+  expect(copied).toBe('Synthetic page 1');
 });
 
 test('Copy for Agent right after a text drag reports the selection before the copy', async ({ page }) => {
@@ -182,20 +193,4 @@ test('zoom buttons and the zoom field change the zoom', async ({ page }) => {
   await expect(zoom).toHaveValue('50');
   const width = (await page.locator('.page[data-page-index="0"]').boundingBox())!.width;
   expect(Math.round(width)).toBe(150);
-});
-
-test('the copy command copies the selected text', async ({ page }) => {
-  await open(page);
-  const at = await pagePoint(page, 1);
-  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
-  await expect.poll(() => lastSelection(page)).toMatchObject({ text: 'Synthetic page 1' });
-  const copied = await page.evaluate(() => {
-    let text = '';
-    const read = (event: ClipboardEvent) => { text = event.clipboardData?.getData('text/plain') ?? ''; };
-    document.addEventListener('copy', read);
-    document.execCommand('copy');
-    document.removeEventListener('copy', read);
-    return text;
-  });
-  expect(copied).toBe('Synthetic page 1');
 });

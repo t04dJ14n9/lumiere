@@ -1,13 +1,12 @@
 /**
  * Helpers for driving the real VS Code window: the command palette, Quick
- * Open, the PDF viewer inside its webview, and the system clipboard.
+ * Open, and the PDF viewer inside its webview.
  */
-import { execFileSync } from 'node:child_process';
 import { chromium, expect, test as base, type Browser, type Frame, type Page } from '@playwright/test';
 import { readState } from './state';
 
 export { expect };
-export const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 /** Fixture pages are 300 points wide (test/fixtures/make-fixtures.mjs). */
 export const PAGE_WIDTH = 300;
 
@@ -156,15 +155,4 @@ export async function selectText(page: Page, viewer: Frame, from: Point, to: Poi
     return viewer.evaluate(([x, y]) => getComputedStyle(document.elementFromPoint(x, y) as Element).cursor, from.frame);
   }).toBe('text');
   await drag(page, from, to);
-}
-
-/** The operating system clipboard. */
-export function readClipboard(): string {
-  if (process.platform !== 'darwin') throw new Error('Clipboard checks are implemented for macOS');
-  return execFileSync('pbpaste', { encoding: 'utf8' });
-}
-
-export function writeClipboard(text: string): void {
-  if (process.platform !== 'darwin') throw new Error('Clipboard checks are implemented for macOS');
-  execFileSync('pbcopy', { input: text });
 }

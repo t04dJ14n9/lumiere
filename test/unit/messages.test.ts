@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseViewerMessage } from '../../src/shared/messages';
 
-test('selections from the viewer are validated', () => {
+test('selections from the viewer are validated, trimmed and sorted', () => {
   assert.deepEqual(parseViewerMessage({
     type: 'selection',
-    selection: { kind: 'region', page: 2, rect: [10, 20, 30, 40] },
-  }), { type: 'selection', selection: { kind: 'region', page: 2, rect: [10, 20, 30, 40] } });
+    selection: { kind: 'text', text: '  two pages  ', pages: [{ page: 5, rects: [[0, 0, 1, 1]] }, { page: 4, rects: [[0, 0, 1, 1]] }] },
+  }), {
+    type: 'selection',
+    selection: { kind: 'text', text: 'two pages', pages: [{ page: 4, rects: [[0, 0, 1, 1]] }, { page: 5, rects: [[0, 0, 1, 1]] }] },
+  });
   for (const selection of [
     { kind: 'region', page: 0, rect: [10, 20, 30, 40] },
     { kind: 'region', page: 2, rect: [30, 20, 10, 40] },
@@ -17,17 +20,6 @@ test('selections from the viewer are validated', () => {
   ]) {
     assert.deepEqual(parseViewerMessage({ type: 'selection', selection }), { type: 'selection', selection: null });
   }
-});
-
-test('text selections are trimmed and their pages sorted', () => {
-  const message = parseViewerMessage({
-    type: 'selection',
-    selection: { kind: 'text', text: '  two pages  ', pages: [{ page: 5, rects: [[0, 0, 1, 1]] }, { page: 4, rects: [[0, 0, 1, 1]] }] },
-  });
-  assert.deepEqual(message, {
-    type: 'selection',
-    selection: { kind: 'text', text: 'two pages', pages: [{ page: 4, rects: [[0, 0, 1, 1]] }, { page: 5, rects: [[0, 0, 1, 1]] }] },
-  });
 });
 
 test('outlines are cleaned: titles collapsed, bad pages dropped, nesting kept', () => {

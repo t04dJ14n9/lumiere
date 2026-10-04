@@ -21,7 +21,7 @@ Run before committing, in this order:
 ```sh
 pnpm check
 pnpm test:browser
-pnpm test:vscode   # macOS; opens a VS Code window
+pnpm test:vscode   # opens a VS Code window
 ```
 
 Do not publish to the Marketplace or push without the owner's approval.
