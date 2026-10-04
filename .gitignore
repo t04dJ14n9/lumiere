@@ -7,3 +7,4 @@ playwright-report/
 test/fixtures/generated/
 *.vsix
 .DS_Store
+src/**/*.d.ts
