@@ -13,6 +13,8 @@ export const paths = {
   userData: path.join(root, 'user-data'),
   extensions: path.join(root, 'extensions'),
   workspace: path.join(root, 'workspace'),
+  /** HOME for the test VS Code, so it never touches the user's ~/.vscode. */
+  home: path.join(root, 'home'),
   download: path.join(repository, '.vscode-test'),
   fixtures: path.join(repository, 'test', 'fixtures', 'generated'),
 };

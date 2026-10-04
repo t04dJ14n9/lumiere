@@ -18,6 +18,7 @@ export default async function globalSetup(): Promise<void> {
   const { executable, cli } = await resolveVsCode();
   rmSync(paths.root, { recursive: true, force: true });
   mkdirSync(path.join(paths.userData, 'User'), { recursive: true });
+  mkdirSync(paths.home, { recursive: true });
   mkdirSync(paths.extensions, { recursive: true });
   writeFileSync(path.join(paths.userData, 'User', 'settings.json'), JSON.stringify({
     'window.newWindowDimensions': 'maximized',
@@ -56,9 +57,13 @@ export default async function globalSetup(): Promise<void> {
   writeState({ pid: vscode.pid!, webSocket: await devToolsWebSocket(port) });
 }
 
-/** The environment without variables that would make Electron act as Node. */
+/**
+ * The environment for the test VS Code: its own home folder, because VS Code
+ * reads and rewrites `~/.vscode/argv.json` whatever profile it is given, and
+ * no variable that would make Electron act as Node.
+ */
 function cleanEnvironment(): NodeJS.ProcessEnv {
-  const environment = { ...process.env };
+  const environment: NodeJS.ProcessEnv = { ...process.env, HOME: paths.home };
   delete environment.ELECTRON_RUN_AS_NODE;
   return environment;
 }
