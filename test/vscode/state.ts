@@ -1,0 +1,34 @@
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+
+const repository = path.resolve(__dirname, '..', '..');
+// Keep the profile path short: VS Code puts sockets in it, and macOS limits
+// socket paths to about 100 characters.
+const root = path.join('/tmp', `vscode-embedpdf-e2e-${createHash('sha256').update(repository).digest('hex').slice(0, 8)}`);
+
+export const paths = {
+  repository,
+  root,
+  userData: path.join(root, 'user-data'),
+  extensions: path.join(root, 'extensions'),
+  workspace: path.join(root, 'workspace'),
+  download: path.join(repository, '.vscode-test'),
+  fixtures: path.join(repository, 'test', 'fixtures', 'generated'),
+};
+
+interface State {
+  /** VS Code's main process; it leads its own process group. */
+  pid: number;
+  webSocket: string;
+}
+
+const stateFile = path.join(root, 'state.json');
+
+export function writeState(state: State): void {
+  writeFileSync(stateFile, JSON.stringify(state));
+}
+
+export function readState(): State {
+  return JSON.parse(readFileSync(stateFile, 'utf8')) as State;
+}

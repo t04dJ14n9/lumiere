@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/dist/webview/viewer.css">
+  <title>PDF viewer test harness</title>
+</head>
+<body>
+  <div id="root" data-pdfium-wasm="/dist/webview/pdfium.wasm"></div>
+  <script>
+    // Stand in for VS Code: record what the viewer sends and answer `ready`
+    // with the PDF named in ?pdf= (and, with ?goto=, a location right away).
+    const parameters = new URLSearchParams(location.search);
+    window.__messages = [];
+    window.hostSend = message => window.postMessage(message, '*');
+    window.acquireVsCodeApi = () => ({
+      postMessage(message) {
+        window.__messages.push(message);
+        if (message.type !== 'ready') return;
+        fetch('/fixtures/' + (parameters.get('pdf') ?? 'outline.pdf'))
+          .then(response => response.arrayBuffer())
+          .then(data => {
+            window.hostSend({ type: 'load', data });
+            const goto = parameters.get('goto');
+            if (goto) window.hostSend({ type: 'goTo', location: JSON.parse(goto) });
+          });
+      },
+    });
+  </script>
+  <script src="/dist/webview/viewer.js"></script>
+</body>
+</html>

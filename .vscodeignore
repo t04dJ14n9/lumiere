@@ -1,0 +1,9 @@
+**
+!dist/extension.js
+!dist/webview/**
+!package.json
+!README.md
+!LICENSE
+!CHANGELOG.md
+dist/**/*.map
+!THIRD_PARTY_NOTICES.md

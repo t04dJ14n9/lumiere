@@ -1,0 +1,99 @@
+/* The toolbar above the pages and the search bar. */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c);
+  background: var(--vscode-sideBar-background, #252526);
+}
+
+.toolbar button,
+.search-bar button {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--vscode-foreground, #ccc);
+  background: transparent;
+  cursor: pointer;
+}
+
+.toolbar button:hover:not(:disabled),
+.search-bar button:hover {
+  background: var(--vscode-toolbar-hoverBackground, #5a5d5e50);
+}
+
+.toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toolbar .separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 6px;
+  background: var(--vscode-panel-border, #3c3c3c);
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+.number-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vscode-descriptionForeground, #999);
+}
+
+.number-field input {
+  box-sizing: border-box;
+  width: 44px;
+  height: 24px;
+  padding: 0 4px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground, #ccc);
+  background: var(--vscode-input-background, #3c3c3c);
+  text-align: right;
+}
+
+.number-field input:focus {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+}
+
+.search-bar {
+  position: absolute;
+  z-index: 10;
+  top: 8px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--vscode-widget-border, #454545);
+  border-radius: 4px;
+  color: var(--vscode-editorWidget-foreground, #ccc);
+  background: var(--vscode-editorWidget-background, #252526);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, #0008);
+}
+
+.search-bar input {
+  width: 220px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  color: var(--vscode-input-foreground, #ccc);
+  background: var(--vscode-input-background, #3c3c3c);
+}
+
+.search-count {
+  min-width: 72px;
+  padding: 0 6px;
+  color: var(--vscode-descriptionForeground, #999);
+  font-size: 12px;
+  text-align: center;
+}
