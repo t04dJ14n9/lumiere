@@ -1280,3 +1280,27 @@ remaining eslint.legacy.mjs entries. Finish all remaining plugin READMEs,
 kernel generation/Context-proxy comments and manual regression inventory, then
 remove the backlog and run ordered completion checks. Remaining Phase 4 plugins
 and Phases 5–8 are unchanged from the Tables record; no phase is complete here.
+
+### Readability pass progress — Native workbench adapter, 2026-10-08
+
+Delivered: workbench assembly now composes document, command, configuration and
+file adapters. `NativeDocuments` owns stable native/wrapper identity and live
+getters. Panel creation, transport, active-tab checks and state subscriptions
+are named functions; all remain in the native adapter module rather than spreading
+VS Code imports through feature plugins. No behavioral or policy change.
+
+Backlog since preceding unit → now: max-lines-per-function 46 → 45; complexity
+21 → 21; max-params 9 → 9; no-nested-ternary 14 → 14; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 61 → 60. No exceptions added.
+Checks in order: `pnpm check` 232/232; `pnpm test:browser` 14/14;
+`pnpm test:vscode` 1/1, freshly packaged in `/tmp/markdown-workbench-e2e-7235d867`.
+Logs: `docs/checks/readability-workbench-{check,browser,native}.txt`.
+No smoke suite expansion. Ledger unchanged: 87/15/2/333/11, total 448.
+Deviations: none. No new pure algorithm or bug fix; unit count unchanged.
+
+Known issues / exact remaining work: editor and footnotes registrations;
+markdown/search/evaluate and metadata/footnote-extract; all other remaining
+eslint.legacy.mjs entries. Complete other plugin READMEs, kernel why-comments
+and manual regression inventory, then remove the backlog and run completion
+checks. Remaining Phase 4 plugins and Phases 5–8 remain undelivered as recorded
+above. Native smoke success does not imply owner acceptance or Phase 8 completion.

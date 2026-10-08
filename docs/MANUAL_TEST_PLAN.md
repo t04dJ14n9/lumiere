@@ -493,3 +493,8 @@ smoke scenarios. Use only the disposable fixture vault described above.
   pending, then close or disable the plugin; late results must not reopen the
   popup or retain render passes. Move focus into an image inspector and back.
   Restore focus to the editor after keyboard dismissal. Not run by the agent.
+
+- **Native workbench adapter:** rerun **document and editor (Phase 3)** and
+  **commands and resources (Phase 3)**, especially CRLF edits, save/undo,
+  independent panels, active-group routing, resource URLs and config changes.
+  The native smoke passed in an isolated profile; full owner acceptance is unrun.

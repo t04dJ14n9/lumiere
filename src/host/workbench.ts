@@ -5,14 +5,40 @@ import { randomUUID, createHash } from "node:crypto";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
 const viewType = "markdownWorkbench.editor";
+
 export function createWorkbench(
   extensionUri: vscode.Uri,
   storage?: vscode.Memento,
 ): Workbench {
-  const wrappers = new WeakMap<vscode.TextDocument, HostDocument>();
-  const originals = new WeakMap<HostDocument, vscode.TextDocument>();
-  function wrap(document: vscode.TextDocument): HostDocument {
-    let wrapped = wrappers.get(document);
+  const documents = new NativeDocuments();
+  return {
+    storage,
+    navigation: createNavigation(),
+    fingerprint(text) {
+      return createHash("sha256").update(text).digest("hex");
+    },
+    ...documentOperations(documents),
+    ...commandOperations(),
+    ...configurationOperations(),
+    ...fileOperations(),
+    registerEditor: (open) => registerEditor(extensionUri, documents, open),
+  };
+}
+
+/** Stable adapter identity with live getters; the native document remains authoritative. */
+class NativeDocuments {
+  private readonly wrappers = new WeakMap<vscode.TextDocument, HostDocument>();
+  private readonly originals = new WeakMap<HostDocument, vscode.TextDocument>();
+  native(document: HostDocument): vscode.TextDocument {
+    const native = this.originals.get(document);
+    if (!native) {
+      throw new Error("Unknown document");
+    }
+    return native;
+  }
+
+  wrap(document: vscode.TextDocument): HostDocument {
+    let wrapped = this.wrappers.get(document);
     if (!wrapped) {
       wrapped = {
         id: document.uri.toString(),
@@ -32,27 +58,26 @@ export function createWorkbench(
         getText: () => document.getText(),
         save: async () => document.save(),
       };
-      wrappers.set(document, wrapped);
-      originals.set(wrapped, document);
+      this.wrappers.set(document, wrapped);
+      this.originals.set(wrapped, document);
     }
     return wrapped;
   }
+}
+function documentOperations(
+  documents: NativeDocuments,
+): Pick<
+  Workbench,
+  "openDocument" | "apply" | "onChange" | "onSave" | "onWillSave"
+> {
   return {
-    storage,
-    navigation: createNavigation(),
     async openDocument(uri) {
-      return wrap(
+      return documents.wrap(
         await vscode.workspace.openTextDocument(vscode.Uri.parse(uri)),
       );
     },
-    fingerprint(text) {
-      return createHash("sha256").update(text).digest("hex");
-    },
     async apply(document, edits) {
-      const native = originals.get(document);
-      if (!native) {
-        throw new Error("Unknown document");
-      }
+      const native = documents.native(document);
       const coordinates = new SourceCoordinates(native.getText());
       const edit = new vscode.WorkspaceEdit();
       for (const change of edits) {
@@ -69,22 +94,29 @@ export function createWorkbench(
     },
     onChange(listener) {
       const stop = vscode.workspace.onDidChangeTextDocument((event) =>
-        listener(wrap(event.document)),
+        listener(documents.wrap(event.document)),
       );
       return () => stop.dispose();
     },
     onSave(listener) {
       const stop = vscode.workspace.onDidSaveTextDocument((document) =>
-        listener(wrap(document)),
+        listener(documents.wrap(document)),
       );
       return () => stop.dispose();
     },
     onWillSave(listener) {
       const stop = vscode.workspace.onWillSaveTextDocument((event) => {
-        event.waitUntil(listener(wrap(event.document)));
+        event.waitUntil(listener(documents.wrap(event.document)));
       });
       return () => stop.dispose();
     },
+  };
+}
+function commandOperations(): Pick<
+  Workbench,
+  "command" | "execute" | "clipboard" | "error"
+> {
+  return {
     command(id, run) {
       const stop = vscode.commands.registerCommand(id, run);
       return () => stop.dispose();
@@ -102,6 +134,13 @@ export function createWorkbench(
     error(message) {
       void vscode.window.showErrorMessage(message);
     },
+  };
+}
+function configurationOperations(): Pick<
+  Workbench,
+  "onConfiguration" | "config"
+> {
+  return {
     onConfiguration(listener) {
       const subscription = vscode.workspace.onDidChangeConfiguration(listener);
       return () => subscription.dispose();
@@ -147,6 +186,10 @@ export function createWorkbench(
         mode: config.get("editor.defaultMode", "livePreview"),
       };
     },
+  };
+}
+function fileOperations(): Pick<Workbench, "root" | "files" | "read" | "stat"> {
+  return {
     root(document) {
       return (
         vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(document.uri))
@@ -183,90 +226,112 @@ export function createWorkbench(
         symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink),
       };
     },
-    registerEditor(open) {
-      const registration = vscode.window.registerCustomEditorProvider(
-        viewType,
-        {
-          resolveCustomTextEditor(document, panel) {
-            const id = randomUUID();
-            const root =
-              vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
-              vscode.Uri.joinPath(document.uri, "..");
-            panel.webview.options = {
-              enableScripts: true,
-              localResourceRoots: [
-                vscode.Uri.joinPath(extensionUri, "dist"),
-                root,
-              ],
-            };
-            const shell: PanelShell = {
-              id,
-              document: wrap(document),
-              cspSource: panel.webview.cspSource,
-              trusted: vscode.workspace.isTrusted,
-              transport: {
-                send(message) {
-                  void panel.webview.postMessage(message);
-                },
-                listen(receive) {
-                  const stop = panel.webview.onDidReceiveMessage(receive);
-                  return () => stop.dispose();
-                },
-              },
-              active() {
-                const group = vscode.window.tabGroups.activeTabGroup;
-                const input = group.activeTab?.input;
-                return (
-                  group.viewColumn === panel.viewColumn &&
-                  input instanceof vscode.TabInputCustom &&
-                  input.viewType === viewType &&
-                  input.uri.toString() === document.uri.toString()
-                );
-              },
-              reveal() {
-                panel.reveal();
-              },
-              dispose() {
-                panel.dispose();
-              },
-              setHTML(html) {
-                panel.webview.html = html;
-              },
-              resource(uri) {
-                return panel.webview
-                  .asWebviewUri(vscode.Uri.parse(uri))
-                  .toString();
-              },
-              asset(relative) {
-                return panel.webview
-                  .asWebviewUri(
-                    vscode.Uri.joinPath(extensionUri, "dist", relative),
-                  )
-                  .toString();
-              },
-              onDispose(listener) {
-                const stop = panel.onDidDispose(listener);
-                return () => stop.dispose();
-              },
-              onState(listener) {
-                const a = panel.onDidChangeViewState(listener);
-                const b =
-                  vscode.window.tabGroups.onDidChangeTabGroups(listener);
-                return () => {
-                  a.dispose();
-                  b.dispose();
-                };
-              },
-            };
-            open(shell);
-          },
-        },
-        {
-          webviewOptions: { retainContextWhenHidden: true },
-          supportsMultipleEditorsPerDocument: true,
-        },
-      );
-      return () => registration.dispose();
+  };
+}
+function panelTransport(panel: vscode.WebviewPanel): PanelShell["transport"] {
+  return {
+    send(message) {
+      void panel.webview.postMessage(message);
+    },
+    listen(receive) {
+      const stop = panel.webview.onDidReceiveMessage(receive);
+      return () => stop.dispose();
     },
   };
+}
+function isActivePanel(
+  document: vscode.TextDocument,
+  panel: vscode.WebviewPanel,
+): boolean {
+  const group = vscode.window.tabGroups.activeTabGroup;
+  const input = group.activeTab?.input;
+  return (
+    group.viewColumn === panel.viewColumn &&
+    input instanceof vscode.TabInputCustom &&
+    input.viewType === viewType &&
+    input.uri.toString() === document.uri.toString()
+  );
+}
+function panelState(
+  panel: vscode.WebviewPanel,
+  listener: () => void,
+): ReturnType<PanelShell["onState"]> {
+  const panelSubscription = panel.onDidChangeViewState(listener);
+  const groupSubscription =
+    vscode.window.tabGroups.onDidChangeTabGroups(listener);
+  return () => {
+    panelSubscription.dispose();
+    groupSubscription.dispose();
+  };
+}
+function createPanelShell(
+  document: vscode.TextDocument,
+  panel: vscode.WebviewPanel,
+  extensionUri: vscode.Uri,
+  documents: NativeDocuments,
+): PanelShell {
+  const id = randomUUID();
+  const root =
+    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
+    vscode.Uri.joinPath(document.uri, "..");
+  panel.webview.options = {
+    enableScripts: true,
+    localResourceRoots: [vscode.Uri.joinPath(extensionUri, "dist"), root],
+  };
+
+  return {
+    id,
+    document: documents.wrap(document),
+    cspSource: panel.webview.cspSource,
+    trusted: vscode.workspace.isTrusted,
+    transport: panelTransport(panel),
+    active: () => isActivePanel(document, panel),
+    reveal() {
+      panel.reveal();
+    },
+    dispose() {
+      panel.dispose();
+    },
+    setHTML(html) {
+      panel.webview.html = html;
+    },
+    resource(uri) {
+      return panel.webview.asWebviewUri(vscode.Uri.parse(uri)).toString();
+    },
+    asset(relative) {
+      return panel.webview
+        .asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", relative))
+        .toString();
+    },
+    onDispose(listener) {
+      const stop = panel.onDidDispose(listener);
+      return () => stop.dispose();
+    },
+    onState: (listener) => panelState(panel, listener),
+  };
+}
+function registerEditor(
+  extensionUri: vscode.Uri,
+  documents: NativeDocuments,
+  open: (panel: PanelShell) => void,
+) {
+  const registration = vscode.window.registerCustomEditorProvider(
+    viewType,
+    {
+      resolveCustomTextEditor(document, panel) {
+        const shell = createPanelShell(
+          document,
+          panel,
+          extensionUri,
+          documents,
+        );
+        open(shell);
+      },
+    },
+    {
+      webviewOptions: { retainContextWhenHidden: true },
+      supportsMultipleEditorsPerDocument: true,
+    },
+  );
+  return () => registration.dispose();
 }

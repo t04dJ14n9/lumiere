@@ -5,7 +5,6 @@
 export default {
   "max-lines-per-function": [
     "src/host/navigation.ts",
-    "src/host/workbench.ts",
     "src/markdown/html/callouts.ts",
     "src/markdown/html/math.ts",
     "src/markdown/metadata/footnote-extract.ts",
