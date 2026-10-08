@@ -9,7 +9,6 @@ export default {
     "src/markdown/properties/merge.ts",
     "src/markdown/search/canvas.ts",
     "src/markdown/search/query.ts",
-    "src/plugins/callouts/webview.ts",
     "src/plugins/codeBlocks/code-source.ts",
     "src/plugins/codeBlocks/webview.ts",
     "src/plugins/embeds/image-dialog.ts",

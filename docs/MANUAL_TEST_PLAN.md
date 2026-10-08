@@ -597,3 +597,9 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
 4. Rename the `Projects` folder: links to every file inside are updated. Set
    `markdownWorkbench.linkUpdates.mode` to `never` and rename again: nothing is asked.
 5. Compare each scenario with Obsidian in a disposable vault and record differences.
+
+- **Callouts:** rerun all **Callouts** and disclosure composition scenarios.
+  Click titles and nested links, toggle using keyboard disclosure controls,
+  restore two panels with different disclosures, and rename/reopen. Disable
+  Callouts with rendered disclosures mounted; old listeners must disappear and
+  re-enable must restore per-panel memory. Not run by the agent.

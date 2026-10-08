@@ -1677,3 +1677,18 @@ Known issues:
   project, so they are run but not type-checked; Phase 5 tests live under
   `test/unit` for that reason.
 - Manual acceptance (docs/MANUAL_TEST_PLAN.md, Phase 5 section) not run.
+
+### Readability pass progress — Callouts, 2026-10-08
+
+Delivered: named theme, block renderer, disclosure post-processing and insertion
+registrations. Disclosure DOM handlers receive only the details element, lifetime
+signal and remember callback; saved per-panel memory and registration order remain
+unchanged. README and manual regression inventory follow the required template.
+Backlog: 31 → 30 distinct files; long-function 26 → 25; other counts unchanged.
+No new exemptions, inline disables, pure algorithm or intentional behavior fix.
+Checks: `pnpm check` 253/253; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-callouts-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
+Known issues: remaining 30 backlog files, README/manual inventory and readability
+completion checks; remaining Phase 4 plugins, Claude's Phase 5 handoff gate and
+Phases 6–8 as listed above.
