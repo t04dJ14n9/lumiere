@@ -655,3 +655,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   Include nested emphasis, Markdown links, headings, quotes and task/list markers.
   Restore a Source-mode panel and toggle features in different orders; identical
   settings must give identical renderer priority. Not run by the agent.
+
+- **Embeds — image inspector:** rerun image open/close, fit/actual size, zoom
+  buttons/keys, Ctrl/Mod-wheel focal point, pan, resize and remembered scale.
+  Close while loading or panning; observers/listeners must stop and focus return
+  to the trigger when appropriate. Not run by the agent.

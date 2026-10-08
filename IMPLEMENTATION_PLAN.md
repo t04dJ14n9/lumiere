@@ -1972,3 +1972,18 @@ remaining backlog files. Finish remaining README/manual inventory and ordered
 readability completion checks, then Phase 4 inlineTitle/tags/suggest/search/
 pasteHtml/copyForAgent/markers. Claude's Phase 5 completion gate and Phases 6–8
 remain as specified above.
+
+### Readability pass progress — Image inspection, 2026-10-08
+
+Delivered: ImageControls owns zoom state, toolbar, keyboard/wheel, pan and resize
+registrations; ImageInspector owns dialog lifetime, saved scale and focus return.
+Controls take named options rather than seven parameters. Added saved-scale
+validation/legacy actual-size unit; manual zoom/pan/loading regressions added.
+Backlog: 5 → 3 distinct files; long-function 5 → 3; parameters 1 → 0;
+nested-ternary 1 → 0; complexity unchanged at 1. No new exceptions or behavior fixes.
+Checks: `pnpm check` 351/351; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-images-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: Embeds post-process/webm/webview, remaining README/manual inventory
+and readability completion checks. Then remaining Phase 4 plugins, Claude's
+Phase 5 completion gate and Phases 6–8 as specified above.

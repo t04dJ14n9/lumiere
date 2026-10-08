@@ -4,8 +4,6 @@
 // one: new and ported code complies from the start.
 export default {
   "max-lines-per-function": [
-    "src/plugins/embeds/image-dialog.ts",
-    "src/plugins/embeds/image.ts",
     "src/plugins/embeds/post-process.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/embeds/webview.ts",
