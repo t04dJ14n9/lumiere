@@ -17,11 +17,7 @@ export function mathEdit(state: EditorState, block: boolean): TransactionSpec {
       userEvent: "input.math",
     };
   }
-  const before = block
-    ? from && state.sliceDoc(from - 1, from) !== "\n"
-      ? "\n$$\n"
-      : "$$\n"
-    : "$";
+  const before = openingDelimiter(state, block);
   const after = block ? "\n$$\n" : "$";
   return {
     changes: { from, to, insert: before + selected + after },
@@ -31,4 +27,12 @@ export function mathEdit(state: EditorState, block: boolean): TransactionSpec {
     },
     userEvent: "input.math",
   };
+}
+
+function openingDelimiter(state: EditorState, block: boolean): string {
+  if (!block) {
+    return "$";
+  }
+  const { from } = state.selection.main;
+  return from && state.sliceDoc(from - 1, from) !== "\n" ? "\n$$\n" : "$$\n";
 }

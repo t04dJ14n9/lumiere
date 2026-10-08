@@ -1,8 +1,32 @@
 # Math
 
-MathJax loads lazily for rendered inline and display TeX. Graphics are sanitized
-before insertion. Reveal-on-caret uses the shared Live Preview rule. Commands
-wrap selected text in inline or block delimiters and remain host-undoable.
+Renders inline and display TeX formulas with MathJax, like Obsidian's math in
+Live Preview. Moving the caret into a formula reveals its source.
 
-Injects editor, commands, livePreview and render. Async callbacks and rendered
-content are cancelled/restored when a pass or the plugin stops. No default keys.
+## How it works
+
+The plugin registers inline/block renderers and a render post-processor. MathJax
+loads on demand; its SVG is sanitized before insertion. Each render pass owns its
+pending result and restoration callback, and plugin disposal clears all remaining
+renders. Editing commands wrap or unwrap the selection through CodeMirror.
+
+## Files
+
+- `manifest.ts`: feature metadata and the two command contributions.
+- `webview.ts`: renderer, post-processor, cleanup and command registrations.
+- `commands.ts`: pure selection edits and delimiter placement.
+- `mathjax.ts`: lazy TeX-to-SVG conversion with supported TeX packages.
+- `math.test.ts`: selection and delimiter unit tests.
+
+## Services, events and settings
+
+Injects `editor`, `commands`, `livePreview` and `render`; provides no services.
+Listens to `render/postProcess`; emits no events. Enabled by
+`markdownWorkbench.plugins.math.enabled` (default true). Commands are Toggle
+Inline Math and Insert Math Block; neither has a default keybinding.
+
+## Limits and differences from Obsidian
+
+Uses the configured MathJax TeX packages without user macros. Errors retain the
+placeholder and show a render error. Save and undo belong to VS Code. Exact
+visual parity with Obsidian awaits the owner's manual comparison.

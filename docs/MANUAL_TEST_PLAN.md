@@ -525,3 +525,8 @@ smoke scenarios. Use only the disposable fixture vault described above.
   groups together, pausing/caret movement creates a new group, IME remains intact,
   and table/Vim edits retain explicit groups. Save with an invalid property draft
   must fail before transport; correcting it must allow save. Not run by the agent.
+
+- **Math:** rerun all **Math** scenarios: inline/display reveal, both palette
+  commands, selection/undo and formulas inside other rendered blocks. Disable
+  Math or close the panel while MathJax loads; late output must not replace
+  disposed content. Re-enable and verify rendering resumes. Not run by the agent.

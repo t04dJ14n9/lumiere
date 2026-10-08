@@ -1599,3 +1599,19 @@ Deviations: none. Existing Properties manual regressions cover these operations.
 Known issues: remaining 34 backlog files and README/manual inventory before
 readability completion; Phase 4's seven remaining plugins; Claude's Phase 5
 handoff gate; Phases 6–8 as specified above. Owner acceptance remains unrun.
+
+### Readability pass progress — Math, 2026-10-08
+
+Delivered: apply lists cleanup, renderer, typesetting and command registrations;
+node typesetting receives only its node, pass, cleanup set and logger. Preserved
+registration/disposal ordering and late-result cancellation. Named delimiter
+placement and added a unit for line-start/mid-line/empty-document insertion.
+README follows the template; manual regression inventory includes pending loads.
+Backlog: 34 → 32 distinct files; long-function 28 → 27; nested-ternary 10 → 9;
+other counts unchanged. No new exceptions, inline disables or behavior fixes.
+Checks in order: `pnpm check` 253/253; `pnpm test:browser` 14/14. Native not
+rerun: no native wiring change. Logs: `docs/checks/readability-math-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
+Known issues: remaining 32 backlog files, remaining README/manual inventory and
+ordered readability completion checks; Phase 4 inlineTitle/tags/suggest/search/
+pasteHtml/copyForAgent/markers; Claude's Phase 5 handoff gate; Phases 6–8 as planned.
