@@ -52,13 +52,7 @@ export function mergeProperties(
   try {
     const header = headerParts(source);
     const current = frontmatter(source)?.values;
-    if (
-      !header ||
-      !current ||
-      !propertyObject(incoming) ||
-      !clipboardValue(incoming) ||
-      Object.keys(incoming).some((key) => !validPropertyName(key))
-    ) {
+    if (!header || !current || !validIncoming(incoming)) {
       return undefined;
     }
     const document = parseDocument(header.body, { uniqueKeys: true });
@@ -68,10 +62,8 @@ export function mergeProperties(
     ) {
       return undefined;
     }
-    const items = isMap(document.contents) ? document.contents.items : [];
-    const changes: PropertyChange[] = [];
     const expected = new Map<string, unknown>();
-    let added = "";
+    const edits = new MergeEdits(source, header, document);
     for (const [key, incomingValue] of Object.entries(incoming)) {
       const value = mergeValue(
         Object.hasOwn(current, key) ? current[key] : undefined,
@@ -84,51 +76,94 @@ export function mergeProperties(
       ) {
         continue;
       }
-      if (isMap(document.contents) && document.contents.flow) {
-        document.set(key, value);
-        continue;
-      }
-      const pair = items.find(
-        (pair) => isScalar(pair.key) && pair.key.value === key,
-      );
-      if (pair) {
-        const change = setPropertyChange(source, header, pair.value, value);
-        if (!change) {
-          return undefined;
-        }
-        changes.push(change);
-      } else {
-        added += `${yamlValue(key)}: ${yamlValue(value)}${header.eol}`;
+      if (!edits.set(key, value)) {
+        return undefined;
       }
     }
+    const changes = edits.finish();
+    return verifiesMergedValues(source, changes, expected)
+      ? changes
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+class MergeEdits {
+  private readonly changes: PropertyChange[] = [];
+  private added = "";
+  constructor(
+    private readonly source: string,
+    private readonly header: NonNullable<ReturnType<typeof headerParts>>,
+    private readonly document: ReturnType<typeof parseDocument>,
+  ) {}
+
+  set(key: string, value: unknown): boolean {
+    const { document, source, header } = this;
     if (isMap(document.contents) && document.contents.flow) {
-      changes.push({
+      document.set(key, value);
+      return true;
+    }
+    const items = isMap(document.contents) ? document.contents.items : [];
+    const pair = items.find(
+      (pair) => isScalar(pair.key) && pair.key.value === key,
+    );
+    if (!pair) {
+      this.added += `${yamlValue(key)}: ${yamlValue(value)}${header.eol}`;
+      return true;
+    }
+    const change = setPropertyChange(source, header, pair.value, value);
+    if (!change) {
+      return false;
+    }
+    this.changes.push(change);
+    return true;
+  }
+
+  finish(): PropertyChange[] {
+    const { document, header } = this;
+    if (isMap(document.contents) && document.contents.flow) {
+      this.changes.push({
         from: header.offset,
         to: header.offset + header.body.length,
         insert: document.toString({ lineWidth: 0 }).replace(/\n/g, header.eol),
       });
-    } else if (added) {
+    } else if (this.added) {
       const at = header.offset + header.body.length;
-      changes.push({ from: at, to: at, insert: added });
+      this.changes.push({ from: at, to: at, insert: this.added });
     }
-    let candidate = source;
-    for (const change of [...changes].sort((a, b) => b.from - a.from)) {
-      candidate =
-        candidate.slice(0, change.from) +
-        change.insert +
-        candidate.slice(change.to);
-    }
-    const result = frontmatter(candidate)?.values;
-    if (
-      !result ||
-      [...expected].some(
-        ([key, value]) => JSON.stringify(result[key]) !== JSON.stringify(value),
-      )
-    ) {
-      return undefined;
-    }
-    return changes;
-  } catch {
-    return undefined;
+    return this.changes;
   }
+}
+
+function verifiesMergedValues(
+  source: string,
+  changes: PropertyChange[],
+  expected: Map<string, unknown>,
+): boolean {
+  let candidate = source;
+  for (const change of [...changes].sort((a, b) => b.from - a.from)) {
+    candidate =
+      candidate.slice(0, change.from) +
+      change.insert +
+      candidate.slice(change.to);
+  }
+  const result = frontmatter(candidate)?.values;
+  if (
+    !result ||
+    [...expected].some(
+      ([key, value]) => JSON.stringify(result[key]) !== JSON.stringify(value),
+    )
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function validIncoming(incoming: unknown): incoming is Record<string, unknown> {
+  return (
+    propertyObject(incoming) &&
+    clipboardValue(incoming) &&
+    Object.keys(incoming).every(validPropertyName)
+  );
 }

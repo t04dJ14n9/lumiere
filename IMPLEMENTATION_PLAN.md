@@ -1867,3 +1867,19 @@ Deviations: none. Search feature delivery remains Phase 4, not this rewrite.
 Known issues: remaining 14 backlog files and README/manual inventory, ordered
 readability completion checks, remaining Phase 4 plugins, Claude's incomplete
 Phase 5 handoff and Phases 6–8 as specified above. Owner acceptance unrun.
+
+### Readability pass progress — YAML merge, 2026-10-08
+
+Delivered: merge request validation, value combination, YAML edit accumulation
+and final-value verification are separate operations. MergeEdits owns only the
+source/header/parsed document and accumulated edits. Added a regression for
+existing null-versus-falsy replacement behavior and appended values; original
+structured clipboard/cycle/alias assertions remain unchanged.
+Backlog: 14 → 13 distinct files; long-function 14 → 13; complexity 6 → 5;
+other counts unchanged. No new exceptions or intentional behavior fixes.
+Checks: `pnpm check` 343/343; log `docs/checks/readability-property-merge-check.txt`.
+Smoke suites not rerun: pure YAML rewrite. Ledger: 87/16/2/333/10.
+Deviations: none. Existing Properties clipboard manual scenarios cover consumers.
+Known issues: remaining 13 backlog files and README/manual inventory before
+readability completion checks, remaining Phase 4 plugins, Claude's incomplete
+Phase 5 handoff and Phases 6–8 as specified above. Owner acceptance unrun.

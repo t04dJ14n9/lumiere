@@ -247,3 +247,26 @@ test("key edits reject missing and duplicate keys without partial removal", () =
   assert.equal(edit(source, { type: "rename", key: "a", name: "a" }), source);
   assert.equal(edit(source, { type: "remove", keys: [] }), source);
 });
+
+test("structured merge retains truthy values on null and replaces falsy values", () => {
+  const source =
+    "---\ntruth: value\nflag: false\ncount: 0\nempty: ''\n---\nBody";
+  const result = edit(source, {
+    type: "merge",
+    values: {
+      truth: null,
+      flag: null,
+      count: null,
+      empty: null,
+      added: ["one"],
+    },
+  });
+  assert.deepEqual(frontmatter(result)?.values, {
+    truth: "value",
+    flag: null,
+    count: null,
+    empty: null,
+    added: ["one"],
+  });
+  assert.ok(result.endsWith("---\nBody"));
+});

@@ -5,7 +5,6 @@
 export default {
   "max-lines-per-function": [
     "src/host/navigation.ts",
-    "src/markdown/properties/merge.ts",
     "src/markdown/search/canvas.ts",
     "src/plugins/embeds/image-dialog.ts",
     "src/plugins/embeds/image.ts",
@@ -21,7 +20,6 @@ export default {
   ],
   complexity: [
     "src/host/navigation.ts",
-    "src/markdown/properties/merge.ts",
     "src/markdown/search/canvas.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/links/host.ts",
