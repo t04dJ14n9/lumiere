@@ -35,4 +35,4 @@ true. Command: Copy for Agent; shortcut: Mod+Alt+C.
 An untitled document cannot supply a disk reference until saved and reopened as
 a file; Copy Text Only works without a disk path. Only Markdown Workbench panel
 selections are supported. Saved line references do not export attachments,
-snapshots or chat messages. Manual interaction acceptance remains owner-run.
+snapshots or chat messages.

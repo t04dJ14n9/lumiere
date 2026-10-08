@@ -2422,3 +2422,33 @@ or smoke expansion. No owner data is used by the measurement script.
 Known issues: run Phase 4 completion checks/record, then Phases 6–8. Cold suggestion
 construction and Phase 5 indexing's 19–23 ms host block remain performance limits;
 owner manual acceptance has not run.
+
+### Phase 4 (completed) — Editor feature plugins, 2026-10-08
+
+Delivered: completed the readability gate and the remaining Phase 4 plugins:
+inlineTitle (rename/focus/per-panel transfers), tags (render/search), suggest
+(link/alias/unresolved/heading/block/tag sources), search (cancellable worker,
+query blocks and indexed predicates), pasteHtml (including focused table cells),
+copyForAgent (validated selection/reference/dirty choices) and markers (owned
+badges/actions and source/wire mapping). Earlier Phase 4 feature records remain
+part of this delivery. Every feature is catalog-composed; core markers has a
+composition/disposal test. Manifests, READMEs, unit coverage, ledger disposition
+and manual scenarios are present. Source repositories and owner profiles remain
+untouched. Claude's Phase 5 completion record is on main, so Phase 6 may begin.
+
+Checks in order: `pnpm check` **413/413** (format, lint, all TypeScript
+projects, contributions); `pnpm test:browser` **14/14**; `pnpm test:vscode`
+**1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase4-complete-{check,browser,native}.txt`.
+Ledger: **91/22/2/333/0**, total 448; retained smoke rows are ported/rewritten, in
+accordance with the owner's testing instruction. No suites were expanded.
+Deviations from DESIGN.md: recorded per unit above. Native tag quick pick; typed
+suggestion trigger event avoids dependency restarts; explicit existing block IDs
+only; generic Turndown rules plus domain conversion; bounded marker history;
+untitled notes require save/reopen for disk references. No new lint exceptions.
+Known issues: Phase 6 commands/settings/parity inventory, Phase 7 public API and
+Phase 8 packaging/handover remain. Cold suggestion construction reaches 29 ms;
+Phase 5 indexing reported 19–23 ms host blocks (full performance acceptance is
+Phase 9). Manual acceptance is not claimed. Owner should first test table
+projection/undo, two-panel title rename, rich cell paste, dirty Copy for Agent,
+then marker/provider lifecycle and query cancellation with the API sample.
