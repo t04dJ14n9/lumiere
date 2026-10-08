@@ -1900,3 +1900,22 @@ owner acceptance unrun.
 Known issues: remaining 12 backlog files and README/manual inventory, ordered
 readability completion checks, remaining Phase 4 plugins, Claude's incomplete
 Phase 5 handoff and Phases 6–8 as specified above.
+
+### Readability pass progress — Links, 2026-10-08
+
+Delivered: named initial-navigation, opener, wikilink renderer, click-handler and
+command registrations. Host routing separates authorization/claims, external
+scheme policy and internal resolution. Existing click-selection and initial-reply
+lifetimes are preserved. README/manual inventory updated; no Phase 5 styling work.
+Backlog: 12 → 10 distinct files; long-function 12 → 10; complexity 5 → 4;
+other counts unchanged. No new exemptions, pure algorithms or behavior fixes.
+Checks in order: `pnpm check` 344/344; `pnpm test:browser` 14/14;
+`pnpm test:vscode` 1/1, freshly packaged in its isolated /tmp profile.
+Logs: `docs/checks/readability-links-{check,browser,native}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: host/navigation, markdown/search/canvas, embeds image-dialog/image/
+post-process/webm/webview, livePreview inline/rendered-position/webview remain in
+the backlog. Finish remaining README/manual inventory and readability completion
+checks, then Phase 4 inlineTitle/tags/suggest/search/pasteHtml/copyForAgent/markers.
+Claude owns remaining Phase 5 consumers/styling; its completion record must precede
+Phase 6. Phases 6–8 remain as specified above.

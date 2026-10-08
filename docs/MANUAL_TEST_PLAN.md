@@ -638,3 +638,9 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   disabled entries, Arrow/Home/End, Escape/Tab, outside click, blur and command
   errors. Verify focus restoration and right/bottom viewport placement; dispose
   the owning widget while a menu is open. Not run by the agent.
+
+- **Links:** rerun rendered/source/modifier/side clicks, selection gestures,
+  local fragments, initial navigation, embedded-note identities and all three
+  commands. Change link settings without reopening; disable/re-enable during
+  initial RPC. Confirm external-scheme prompts and unsafe-scheme rejection.
+  Not run by the agent.
