@@ -2226,3 +2226,70 @@ Claude owns Phase 5, and its completion record on main still gates Phase 6.
 Phases 6–8 remain. Manual query/embedded-link/refresh acceptance is unrun; owner
 should test nested-folder result links, live unsaved edits, query errors and
 source exposure while a query is loading first.
+### Phase 5 (completed) — Vault index and host features (Claude), 2026-10-08
+
+**Completed against the plan's automated acceptance criteria.** Part 1 (vault
+index, Backlinks, Outgoing Links, Note Outline, Quick Switcher, Word Count,
+Link Updates, `scripts/measure-vault.ts`) is recorded above. Owner hands-on
+acceptance is not claimed.
+Delivered in part 2:
+- Unresolved-link styling in `links`: the panel host answers the webview's
+  first request with the note's `unresolvedLinks`, then sends the set again
+  after each re-resolution that changed it (`VaultIndex.onDidResolve`). Rendered
+  wikilinks in the set get `is-unresolved` (dimmed, dotted underline).
+- Tags view: the window half of `tags` (`src/plugins/tags/view.ts`), built with
+  the ported tag tree from indexed metadata; case variants merge, counts are
+  notes, excluded files are left out as in tag search. A click picks a note
+  with the tag through the search the panel host uses (`pickTaggedNote`).
+  Follows `plugins.tags.enabled` with the editor half; new settings
+  `tags.viewSort` (name|frequency) and `tags.viewNested`.
+- Consumers on the index: `resources` resolves through `vault.resolveLink`;
+  `tags` search and `suggest` (Codex, Phase 4) read `VaultIndex` metadata,
+  aliases and unresolved links; `search` (Codex, Phase 4) lists notes with
+  `vault.files()` and reads text with `vaults.text()`.
+  `test/unit/vault/no-scans.test.ts` fails if any source other than
+  `src/host/vault-system.ts` lists folders. The stub was deleted in part 1.
+- `test/unit/editor/bootstrap.test.ts` boots the real host wiring with an
+  in-memory vault and fails if any window or panel plugin does not start. It
+  fails on 852bf53, where part 1 left the panel `vault` service (and so
+  `links`, `resources` and `properties`) pending until Codex's fix c7d29a1.
+- Fuzzy scoring (`src/shared/fuzzy.ts`) is about 20 times faster with the same
+  results: one `Intl.Segmenter`, no segmentation for printable-ASCII text, and
+  the last query's tokens reused.
+Checks in order, after rebasing on Codex's search (d022d8b): `pnpm check`
+**390/390** (format, lint, all TypeScript
+projects, contributions); `pnpm test:browser` **14/14**; `pnpm test:vscode`
+**1/1**, freshly built, isolated /tmp profile. Logs:
+`docs/checks/phase5-complete-{check,browser,native}.txt`.
+Measurements, 10,000 generated notes on Apple Silicon. Indexing (part 1): cold
+5.1–5.7 s with the longest host block 19–23 ms; warm start about 1.0 s with a
+17 ms block. Per keystroke on the extension host, before → after the scorer
+change: Quick Switcher 292 → 24 ms; `[[` link suggest with a query
+389 → 28 ms, empty 46 → 41 ms; heading suggest across notes 194 → 61 ms;
+block suggest 234 → 92 ms; tag suggest 8 → 6 ms.
+Ledger: **91/22/2/333/0**, total 448, after Codex's search port. The ported
+tag-tree test now also covers the Tags view.
+Deviations from DESIGN.md:
+- The links host follows `VaultIndex.onDidResolve`, not the `vault/resolved`
+  event: panel kernels do not receive window events (DESIGN §13 links entry
+  updated).
+- The Tags view counts notes (the ported tag tree's tested behaviour), not tag
+  occurrences.
+- The tags webview half now has `reconfigure() { return true }`: the new
+  settings only shape the window view, and the catalog test requires features
+  to accept configuration changes in place.
+Known issues:
+- Suggest rebuilds its candidates across all notes on each keystroke; heading
+  and block suggestions across notes take 61–92 ms on 10,000 notes. Codex, as
+  `suggest` owner: cache candidates per index change (`onDidChange`), compute
+  `linkText` only for the shown 50, and run `pnpm exec tsx` on a generated
+  vault like `scripts/measure-vault.ts` to confirm under 16 ms.
+- The indexing host block is still slightly above the 16 ms budget on 10,000
+  notes (part 1).
+- When the catalog configuration test in `test/unit/features/lifecycle.test.ts`
+  failed (once, while adding the tags settings), the file ran for about five
+  minutes before failing instead of failing at once. Cause not investigated.
+- Plugin-local `*.test.ts` files are not type-checked (part 1).
+- Manual acceptance not run: Phase 5 section of docs/MANUAL_TEST_PLAN.md,
+  including the new unresolved-link and Tags view scenarios.
+Phase 5 is complete: after Phase 4, Codex may start Phase 6.
