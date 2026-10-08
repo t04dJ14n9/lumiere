@@ -7,5 +7,8 @@ Manual acceptance is in docs/MANUAL_TEST_PLAN.md; Obsidian parity is not observe
 
 Provides `fold` and owns Fold All, Unfold All and Toggle Fold commands.
 `heading` and `indent` default to true. Heading ranges use shared metadata;
-indentation uses the document tab width. Disposal unfolds before removing the
-gutter and commands. The editor retains the state field for view persistence.
+indentation uses the document tab width. The plugin owns the fold state field and its `folded` view-state contribution.
+Disposal captures the ranges before removing the field, gutter and commands.
+Late enable restores valid ranges; config updates replace only the fold-service
+compartment and preserve existing ranges. Metadata uses the immutable Text key
+so gutter queries share the cached parse.

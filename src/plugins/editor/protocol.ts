@@ -1,3 +1,4 @@
+import { config as editorConfig } from "./manifest";
 import { featureSettings } from "../../shared/features";
 import { Schema, defineProtocol } from "../../kernel";
 export const offset = new Schema<number>(
@@ -23,6 +24,7 @@ const foldRange = new Schema<{ from: number; to: number }>(
   { type: "object" },
 );
 export const viewState = Schema.object({
+  contributions: Schema.record(Schema.unknown()).default({}),
   source: Schema.string().default(""),
   scrollLeft: Schema.number().min(0).default(0),
   scrollAnchor: Schema.object({
@@ -47,6 +49,7 @@ export const protocol = defineProtocol("editor", {
         trusted: Schema.boolean().default(false),
         source: Schema.string(),
         features: featureSettings,
+        editor: editorConfig.default(editorConfig.parse({})),
         preset: Schema.union(["minimal", "obsidian"]),
         mode: Schema.union(["source", "livePreview"]),
       }),
@@ -70,6 +73,7 @@ export const protocol = defineProtocol("editor", {
   },
   notifications: {
     configure: featureSettings,
+    configureEditor: editorConfig,
     selectionChanged: Schema.object({ hasSelection: Schema.boolean() }),
   },
 });

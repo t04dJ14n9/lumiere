@@ -1,3 +1,4 @@
+import type { Text } from "@codemirror/state";
 import { metadata } from "./index";
 export interface NoteHeading {
   from: number;
@@ -5,7 +6,7 @@ export interface NoteHeading {
   level: number;
   title: string;
 }
-export function noteHeadings(source: string): NoteHeading[] {
+export function noteHeadings(source: string | Text): NoteHeading[] {
   return metadata(source).headings.map((h) => ({
     from: h.from,
     to: h.to,
@@ -13,6 +14,6 @@ export function noteHeadings(source: string): NoteHeading[] {
     title: h.heading,
   }));
 }
-export function headings(source: string) {
+export function headings(source: string | Text) {
   return metadata(source).headings;
 }

@@ -27,7 +27,7 @@ export async function bootstrap(
   root.provide("rpc", rpc);
   root.plugin(documentWebview, init);
   root.plugin(dialectWebview);
-  root.plugin(editorWebview, {
+  const editor = root.plugin(editorWebview, {
     ...init,
     parent,
     ...presentation,
@@ -39,6 +39,14 @@ export async function bootstrap(
     root.plugin(renderWebview, { trusted: init.trusted });
     root.plugin(livePreviewWebview, { mode: init.mode });
   }
+  let editorUpdates = Promise.resolve();
+  root.effect(() =>
+    rpc.on(protocol, "configureEditor", (settings) => {
+      editorUpdates = editorUpdates
+        .then(() => editor.update({ ...editor.config, editor: settings }))
+        .catch((error) => root.logger.error("Editor settings failed", error));
+    }),
+  );
   const configure = featureController(root);
   root.effect(() =>
     rpc.on(protocol, "configure", (settings) => {

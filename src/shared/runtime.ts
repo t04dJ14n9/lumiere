@@ -61,6 +61,7 @@ export interface Workbench {
   onConfiguration?(listener: () => void): Disposer;
   config(document: HostDocument): {
     features?: Infer<typeof featureSettings>;
+    editor?: { useTabs: boolean; tabSize: number };
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
   };

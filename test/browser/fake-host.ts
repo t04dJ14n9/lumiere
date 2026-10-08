@@ -154,6 +154,7 @@ export class BrowserHost {
         text: this.session.text,
         version: this.session.version,
         features: {},
+        editor: { useTabs: true, tabSize: 4 },
         trusted: false,
         clientID: id,
         source: this.document.uri,

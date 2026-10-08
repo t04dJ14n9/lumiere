@@ -1,3 +1,4 @@
+import type { ViewStateContributions } from "./contributions";
 import type { Infer } from "../../kernel";
 import type { viewState } from "./protocol";
 import type { DocumentSession } from "../document/api";
@@ -25,11 +26,15 @@ export interface EditorService {
     write(text: string): Promise<void>;
   };
   mode: "source" | "livePreview";
-  readonly folds: Map<string, boolean>;
+  readonly source: string;
+  readonly viewState: ViewStateContributions;
   readonly view: EditorView;
   extend(
     extension: Extension,
-    options?: { slot?: "override" | "suggest" | "keymap" | "base"; owner?: string },
+    options?: {
+      slot?: "override" | "suggest" | "keymap" | "base";
+      owner?: string;
+    },
   ): Disposer;
   focus(): void;
 }

@@ -1,6 +1,5 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { StateEffect } from "@codemirror/state";
-import { foldEffect, foldedRanges, unfoldEffect } from "@codemirror/language";
 import type { Infer } from "../../kernel";
 import type { viewState } from "./protocol";
 type EditorViewState = Infer<typeof viewState>;
@@ -70,7 +69,10 @@ export function createViewState() {
     ViewPlugin.define((view) => ({
       update(update) {
         const saved = pendingScroll.get(view);
-        if (!saved?.applied || !(update.geometryChanged || update.heightChanged)) {
+        if (
+          !saved?.applied ||
+          !(update.geometryChanged || update.heightChanged)
+        ) {
           return;
         }
         if (Date.now() > saved.settleUntil) {
@@ -89,17 +91,17 @@ export function createViewState() {
   ];
 
   /** Measure only when transferring a pane, never on its ordinary typing path. */
-  function captureViewState(view: EditorView, state: EditorViewState): EditorViewState {
+  function captureViewState(
+    view: EditorView,
+    state: EditorViewState,
+  ): EditorViewState {
     const viewport = view.scrollDOM.getBoundingClientRect();
-    const block = view.lineBlockAtHeight((viewport.top - view.documentTop) / view.scaleY);
-    const folded: { from: number; to: number }[] = [];
-    foldedRanges(view.state).between(0, view.state.doc.length, (from, to) => {
-      folded.push({ from, to });
-    });
+    const block = view.lineBlockAtHeight(
+      (viewport.top - view.documentTop) / view.scaleY,
+    );
     return {
       ...state,
       scrollLeft: view.scrollDOM.scrollLeft,
-      folded,
       scrollAnchor: {
         from: block.from,
         offset: block.top + (view.documentTop - viewport.top) / view.scaleY,
@@ -111,14 +113,6 @@ export function createViewState() {
   function restoreViewState(view: EditorView, saved: EditorViewState): void {
     const length = view.state.doc.length;
     const effects: StateEffect<unknown>[] = [];
-    foldedRanges(view.state).between(0, length, (from, to) => {
-      effects.push(unfoldEffect.of({ from, to }));
-    });
-    effects.push(
-      ...(saved.folded
-        ? saved.folded.filter((range) => range.to <= length).map((range) => foldEffect.of(range))
-        : []),
-    );
     if (saved.scrollAnchor) {
       const from = Math.min(saved.scrollAnchor.from, length);
       pendingScroll.set(view, {

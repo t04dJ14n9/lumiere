@@ -1,5 +1,6 @@
 import { StateEffect } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
+import { DisclosureState } from "./view-state";
 import type { Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
@@ -12,6 +13,8 @@ export const calloutsWebview: Plugin = {
   name: "callouts",
   inject: { required: ["editor", "commands", "render", "livePreview"] },
   apply(ctx) {
+    const folds = new DisclosureState(ctx.editor.source);
+    ctx.effect(() => ctx.editor.viewState.contribute("folds", folds));
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
       for (const cleanup of cleanups) cleanup();
@@ -42,8 +45,10 @@ export const calloutsWebview: Plugin = {
     );
     ctx.on("render/postProcess", (pass) => {
       const events = new AbortController();
+      const bindings: { dispose(): void }[] = [];
       const cleanup = () => {
         events.abort();
+        for (const binding of bindings) binding.dispose();
         cleanups.delete(cleanup);
       };
       cleanups.add(cleanup);
@@ -52,10 +57,10 @@ export const calloutsWebview: Plugin = {
         .querySelectorAll<HTMLDetailsElement>("details.callout")
         .forEach((details, index) => {
           const key = `${pass.ancestry.join("/")}|${pass.renderKey}|${index}`;
-          const stored = ctx.editor.folds.get(key);
-          if (stored !== undefined) details.open = stored;
+          const binding = folds.bind(key, details, pass.measure);
+          bindings.push(binding);
           const remember = () => {
-            ctx.editor.folds.set(key, details.open);
+            binding.remember();
             ctx.editor.view.dispatch({ effects: disclosureChanged.of(null) });
             pass.measure();
           };

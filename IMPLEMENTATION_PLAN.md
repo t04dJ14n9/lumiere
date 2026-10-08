@@ -953,3 +953,27 @@ commit. Log: `docs/checks/composition-registry.txt`. Ledger unchanged.
 Known issues: editor settings, feature-owned view state, folding reconfigure/cache,
 controller update, remaining composition audit and config-change tests still
 come first; remaining Phase 4 plugins and Phases 5–8 are unchanged above.
+
+Composition state unit, 2026-10-08: reviewed and retained the interrupted working
+changes. Editor owns validated `editor.useTabs`/`editor.tabSize`, propagated by
+host RPC and applied through `fiber.update`/`reconfigure` without replacing the
+view. The feature controller updates existing fibers. Generic schema-validated
+view-state contributions retain unknown/inactive keys and restore late arrivals.
+Folding now owns its field, commands, ranges and persistence; its private
+configuration compartment preserves folds. Heading queries use the immutable
+Text metadata cache instead of allocating a string-keyed parse for each query.
+Callouts own disclosure memory, remap renamed/nested source identities and update
+live disclosures on restore. Moved the existing view-transfer tests without
+removing their assertions and added state, settings and cache regressions.
+Violations fixed: editor-wide indentation was implicit rather than configured;
+core owned feature state; settings recreated feature fibers; core-setting RPC
+bypassed fiber update; folding reparsed metadata and lost state on reconfiguration;
+callout restore did not update live disclosures.
+Checks: `pnpm check` (211/211; lint, typecheck and generated contributions passed).
+Log: `docs/checks/composition-state.txt`. Smoke suites deferred to the final
+composition commit. Ledger unchanged: 87/15/2/333/11, total 448.
+Deviation: legacy top-level `folded`/`folds` wire fields remain validated read-only
+compatibility inputs; new captures store data in generic contributions.
+Known issues: finish catalog-wide behavioral composition checks, audit every
+plugin and document manual scenarios; then the previously listed remaining
+Phase 4 plugins and Phases 5–8. Manual acceptance remains unrun.

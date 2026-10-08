@@ -3,6 +3,7 @@ import type { Documents } from "../document/api";
 import type { EditorPanel } from "./api";
 import type { PanelShell, Workbench } from "../../shared/runtime";
 import { Endpoint } from "../../shared/rpc/endpoint";
+import { config as editorConfig } from "./manifest";
 import { protocol } from "./protocol";
 import { webviewHTML } from "./webview-html";
 export function createPanel(
@@ -59,6 +60,7 @@ export function createPanel(
         source: shell.document.uri,
         ...config,
         features: config.features ?? {},
+        editor: editorConfig.parse(config.editor ?? {}),
       };
     }),
   );
@@ -75,6 +77,11 @@ export function createPanel(
     owned.effect(() =>
       workbench.onConfiguration!(() => {
         const config = workbench.config(shell.document);
+        rpc.notify(
+          protocol,
+          "configureEditor",
+          editorConfig.parse(config.editor ?? {}),
+        );
         rpc.notify(
           protocol,
           "configure",

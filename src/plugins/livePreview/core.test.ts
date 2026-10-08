@@ -74,7 +74,8 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   root.provide("editor", {
     view,
     mode: "livePreview",
-    folds: new Map(),
+    source: "note.md",
+    viewState: { contribute: () => () => {} },
     focus() {},
     clipboard: {
       async read() {

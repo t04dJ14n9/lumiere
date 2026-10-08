@@ -1,13 +1,17 @@
+import { foldedViewState } from "../../../src/plugins/folding/view-state";
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { EditorView } from "@codemirror/view";
 import { EditorState } from "@codemirror/state";
 import { foldState, foldEffect, foldedRanges } from "@codemirror/language";
-import { fakeDocument } from "../../../test/support/vscode-fake";
-import type { EditorPanel } from "./api";
-import { captureView, restoreView } from "./view-transfer";
-import { createViewState } from "./view-state";
-import { viewState } from "./protocol";
+import { fakeDocument } from "../../support/vscode-fake";
+import type { EditorPanel } from "../../../src/plugins/editor/api";
+import {
+  captureView,
+  restoreView,
+} from "../../../src/plugins/editor/view-transfer";
+import { createViewState } from "../../../src/plugins/editor/view-state";
+import { viewState } from "../../../src/plugins/editor/protocol";
 
 const saved = viewState.parse({
   source: "old.md",
@@ -44,7 +48,10 @@ test("view capture flushes before reading version and rejects concurrent changes
     ...panel,
     rpc: {
       async call() {
-        document.version++;
+        Object.defineProperty(document, "version", {
+          value: document.version + 1,
+          configurable: true,
+        });
         return saved;
       },
     },
@@ -106,7 +113,7 @@ test("restore clamps selection, replaces folds, and restores raw scroll without 
       state = state.update(spec).state;
     },
   } as unknown as EditorView;
-  createViewState().restoreViewState(view, {
+  const restore = {
     ...saved,
     anchor: 100,
     head: 90,
@@ -114,7 +121,9 @@ test("restore clamps selection, replaces folds, and restores raw scroll without 
       { from: 4, to: 7 },
       { from: 9, to: 100 },
     ],
-  });
+  };
+  foldedViewState.restore(view, restore.folded);
+  createViewState().restoreViewState(view, restore);
   assert.equal(state.selection.main.head, state.doc.length);
   const folds: number[][] = [];
   foldedRanges(state).between(0, state.doc.length, (from, to) => {

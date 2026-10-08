@@ -1,13 +1,15 @@
+import { settingsExtensions } from "./settings";
+import { config as editorConfig } from "./manifest";
 import { bindCaller } from "../../kernel";
 import type { CallerBound } from "../../kernel";
 import { ExtensionRegistry } from "./extensions";
-import { foldState, foldedRanges } from "@codemirror/language";
+import { ViewContributions } from "./contributions";
 import { createMenu } from "../../webview/ui/menu";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
 import { getSyncedVersion } from "@codemirror/collab";
-import type { Plugin } from "../../kernel";
+import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
 import type {} from "../dialect/api";
 import type { EditorService } from "./api";
@@ -15,8 +17,13 @@ import { protocol, viewState } from "./protocol";
 import type { Infer } from "../../kernel";
 import { createClipboard } from "./clipboard";
 import { createViewState } from "./view-state";
+const configurations = new WeakMap<
+  Context,
+  (value: Infer<typeof editorConfig>) => void
+>();
 export const editorWebview: Plugin<{
   source: string;
+  editor?: Infer<typeof editorConfig>;
   saved?: unknown;
   persist?: (state: Infer<typeof viewState>) => void;
   text: string;
@@ -25,10 +32,16 @@ export const editorWebview: Plugin<{
 }> = {
   name: "editor",
   inject: { required: ["document", "markdown", "rpc"] },
+  reconfigure(ctx, config) {
+    const settings = configurations.get(ctx);
+    if (!settings) return false;
+    settings(editorConfig.parse(config.editor ?? {}));
+    return true;
+  },
   apply(ctx, config) {
-    const presentation = createViewState(),
-      folds = new Map<string, boolean>();
+    const presentation = createViewState();
     const pluginExtensions = new Compartment();
+    const settings = new Compartment();
     let mode = config.mode;
     const view = new EditorView({
       parent: config.parent,
@@ -36,8 +49,10 @@ export const editorWebview: Plugin<{
         doc: config.text,
         extensions: [
           pluginExtensions.of([]),
+          settings.of(
+            settingsExtensions(editorConfig.parse(config.editor ?? {})),
+          ),
           presentation.restoreScrollPosition,
-          foldState,
           ctx.document.extension,
           ctx.markdown.language(),
           drawSelection(),
@@ -55,7 +70,16 @@ export const editorWebview: Plugin<{
       }),
     });
     ctx.effect(() => () => view.destroy());
+    configurations.set(ctx, (value) => {
+      view.dispatch({
+        effects: settings.reconfigure(settingsExtensions(value)),
+      });
+    });
+    ctx.effect(() => () => {
+      configurations.delete(ctx);
+    });
     ctx.effect(() => ctx.document.attach(view));
+    const contributions = new ViewContributions(view);
     const registry = new ExtensionRegistry(ctx.runtime.rank, (extensions) => {
       view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
     });
@@ -63,15 +87,24 @@ export const editorWebview: Plugin<{
       [bindCaller](caller) {
         return new Proxy(editor, {
           get(target, key, receiver) {
-            if (key === "extend") return (extension: Parameters<EditorService["extend"]>[0], options?: Parameters<EditorService["extend"]>[1]) =>
-              registry.register(options?.owner ?? caller.fiber!.definition.name, extension, options?.slot);
+            if (key === "extend")
+              return (
+                extension: Parameters<EditorService["extend"]>[0],
+                options?: Parameters<EditorService["extend"]>[1],
+              ) =>
+                registry.register(
+                  options?.owner ?? caller.fiber!.definition.name,
+                  extension,
+                  options?.slot,
+                );
             return Reflect.get(target, key, receiver);
           },
         });
       },
       view,
       clipboard: createClipboard(ctx.rpc),
-      folds,
+      source: config.source,
+      viewState: contributions,
       get mode() {
         return mode;
       },
@@ -82,7 +115,11 @@ export const editorWebview: Plugin<{
         view.focus();
       },
       extend(extension, options) {
-        return registry.register(options?.owner ?? "editor", extension, options?.slot);
+        return registry.register(
+          options?.owner ?? "editor",
+          extension,
+          options?.slot,
+        );
       },
     };
     ctx.provide("editor", editor);
@@ -121,31 +158,25 @@ export const editorWebview: Plugin<{
       }),
     );
     const capture = () => {
-      const folded: { from: number; to: number }[] = [];
-      foldedRanges(view.state).between(0, view.state.doc.length, (from, to) => {
-        folded.push({ from, to });
-      });
       return {
         source: config.source,
         anchor: view.state.selection.main.anchor,
         head: view.state.selection.main.head,
         scrollTop: view.scrollDOM.scrollTop,
         scrollLeft: view.scrollDOM.scrollLeft,
-        folded,
-        folds: Object.fromEntries(folds),
+        folded: [],
+        folds: {},
+        contributions: contributions.capture(),
         mode,
       };
     };
     const restore = (state: Infer<typeof viewState>) => {
       mode = state.mode;
-      folds.clear();
-      for (const [key, open] of Object.entries(state.folds))
-        folds.set(
-          state.source && key.startsWith(state.source + "|")
-            ? config.source + key.slice(state.source.length)
-            : key,
-          open,
-        );
+      // Legacy top-level keys remain readable by their owning contributors.
+      contributions.restore(state.contributions, state.source, {
+        folded: state.folded,
+        folds: state.folds,
+      });
       presentation.restoreViewState(view, state);
       ctx.emit("editor/modeRestored", state.mode);
     };

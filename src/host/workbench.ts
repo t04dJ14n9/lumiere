@@ -108,6 +108,10 @@ export function createWorkbench(
         vscode.Uri.parse(document.uri),
       );
       return {
+        editor: {
+          useTabs: config.get("editor.useTabs", true),
+          tabSize: config.get("editor.tabSize", 4),
+        },
         features: Object.fromEntries(
           features.map((manifest) => {
             const properties =

@@ -29,9 +29,13 @@ export function featureController(root: Context) {
           const config = manifest.config?.parse(setting?.config ?? {}) ?? {};
           const signature = JSON.stringify(config);
           const previous = active.get(manifest.id);
-          if (previous && (!enabled || previous.signature !== signature)) {
+          if (previous && !enabled) {
             await previous.fiber.dispose();
             active.delete(manifest.id);
+          }
+          if (enabled && previous && previous.signature !== signature) {
+            await previous.fiber.update(config);
+            previous.signature = signature;
           }
           if (enabled && !active.has(manifest.id)) {
             const plugin = plugins[

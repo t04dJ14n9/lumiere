@@ -6,8 +6,11 @@ import {
   foldAll,
   unfoldAll,
   toggleFold,
-  indentUnit,
+  foldState,
 } from "@codemirror/language";
+import { Compartment } from "@codemirror/state";
+import { foldedViewState } from "./view-state";
+import type { Context } from "../../kernel";
 import type { EditorState } from "@codemirror/state";
 import type { Infer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
@@ -22,7 +25,7 @@ export function foldRange(
   options: Infer<typeof config>,
 ) {
   if (options.heading) {
-    const heading = headings(state.doc.toString()).find(
+    const heading = headings(state.doc).find(
       (item) => item.from >= start && item.from <= end,
     );
     if (heading && heading.end > heading.to)
@@ -49,11 +52,27 @@ export function foldRange(
   }
   return to > end ? { from: end, to } : null;
 }
+const configurations = new WeakMap<Context, Compartment>();
+const foldingConfig = (options: Infer<typeof config>) =>
+  foldService.of((state, start, end) => foldRange(state, start, end, options));
 export const foldingWebview: Plugin<Infer<typeof config>> = {
   name: "folding",
   config,
   inject: { required: ["editor", "commands"] },
+  reconfigure(ctx, options) {
+    const compartment = configurations.get(ctx);
+    if (!compartment) return false;
+    ctx.editor.view.dispatch({
+      effects: compartment.reconfigure(foldingConfig(options)),
+    });
+    return true;
+  },
   apply(ctx, options) {
+    const compartment = new Compartment();
+    configurations.set(ctx, compartment);
+    ctx.effect(() => () => {
+      configurations.delete(ctx);
+    });
     ctx.provide("fold", {
       foldAll: () => foldAll(ctx.editor.view),
       unfoldAll: () => unfoldAll(ctx.editor.view),
@@ -63,15 +82,13 @@ export const foldingWebview: Plugin<Infer<typeof config>> = {
       ctx.editor.extend([
         codeFolding(),
         foldGutter(),
-        indentUnit.of("\t"),
-        foldService.of((state, start, end) =>
-          foldRange(state, start, end, options),
-        ),
+        foldState,
+        compartment.of(foldingConfig(options)),
       ]),
     );
-    ctx.effect(() => () => {
-      unfoldAll(ctx.editor.view);
-    });
+    ctx.effect(() =>
+      ctx.editor.viewState.contribute("folded", foldedViewState),
+    );
     for (const [id, command] of [
       ["fold-all", foldAll],
       ["unfold-all", unfoldAll],

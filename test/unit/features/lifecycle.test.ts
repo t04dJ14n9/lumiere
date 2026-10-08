@@ -1,3 +1,6 @@
+import { headings } from "../../../src/markdown/metadata/headings";
+import { foldState, foldedRanges } from "@codemirror/language";
+import { ViewContributions } from "../../../src/plugins/editor/contributions";
 import { ExtensionRegistry } from "../../../src/plugins/editor/extensions";
 import type { LivePreview } from "../../../src/plugins/livePreview/api";
 import type { CallerBound } from "../../../src/kernel";
@@ -20,7 +23,10 @@ import { indentation } from "../../../src/plugins/indentGuides/webview";
 function fixture() {
   const root = Context.create({ rank: pluginRank });
   const compartment = new Compartment();
-  let state = EditorState.create({ doc: "# Heading\n\nbody", extensions: compartment.of([]) });
+  let state = EditorState.create({
+    doc: "# Heading\n\nbody",
+    extensions: compartment.of([]),
+  });
   const view = {
     get state() {
       return state;
@@ -67,10 +73,15 @@ function fixture() {
   const preview: LivePreview & CallerBound<LivePreview> = {
     mode: "source",
     setMode() {},
-    block() { throw new Error("unbound renderer"); },
-    inline() { throw new Error("unbound renderer"); },
+    block() {
+      throw new Error("unbound renderer");
+    },
+    inline() {
+      throw new Error("unbound renderer");
+    },
     [bindCaller](caller) {
-      const register = () => registry.register(caller.fiber!.definition.name, []);
+      const register = () =>
+        registry.register(caller.fiber!.definition.name, []);
       return { ...preview, block: register, inline: register };
     },
   };
@@ -106,14 +117,23 @@ function fixture() {
   const registry = new ExtensionRegistry(pluginRank, (extensions) => {
     view.dispatch({ effects: compartment.reconfigure(extensions) });
   });
+  const contributions = new ViewContributions(view);
   const editor: EditorService & CallerBound<EditorService> = {
     [bindCaller](caller) {
-      return { ...editor, extend: (extension, options) =>
-        registry.register(options?.owner ?? caller.fiber!.definition.name, extension, options?.slot) };
+      return {
+        ...editor,
+        extend: (extension, options) =>
+          registry.register(
+            options?.owner ?? caller.fiber!.definition.name,
+            extension,
+            options?.slot,
+          ),
+      };
     },
     view,
     mode: "source",
-    folds: new Map(),
+    source: "note.md",
+    viewState: contributions,
     focus() {},
     clipboard: {
       async read() {
@@ -122,7 +142,11 @@ function fixture() {
       async write() {},
     },
     extend(extension, options) {
-      return registry.register(options?.owner ?? "editor", extension, options?.slot);
+      return registry.register(
+        options?.owner ?? "editor",
+        extension,
+        options?.slot,
+      );
     },
   };
   root.provide("editor", editor);
@@ -142,6 +166,7 @@ function fixture() {
     root,
     view,
     registry,
+    contributions,
     handlers,
     configure: featureController(root),
     get extensions() {
@@ -258,10 +283,15 @@ test("pair settings separate Markdown from brackets and indentation uses tab sto
 });
 
 function settingsFor(enabled: Set<string>) {
-  return Object.fromEntries(features.map((manifest) => [manifest.id, {
-    enabled: enabled.has(manifest.id),
-    config: (manifest.config?.parse({}) ?? {}) as Record<string, unknown>,
-  }]));
+  return Object.fromEntries(
+    features.map((manifest) => [
+      manifest.id,
+      {
+        enabled: enabled.has(manifest.id),
+        config: (manifest.config?.parse({}) ?? {}) as Record<string, unknown>,
+      },
+    ]),
+  );
 }
 function owners(f: ReturnType<typeof fixture>) {
   return f.registry.ordered().map(({ owner, slot }) => ({ owner, slot }));
@@ -278,7 +308,10 @@ test("catalog composition has the same ordered owners after every toggle as a fr
   for (const manifest of features) {
     enabled.delete(manifest.id);
     await f.configure(settingsFor(enabled));
-    assert.equal(owners(f).some(({ owner }) => owner === manifest.id), false);
+    assert.equal(
+      owners(f).some(({ owner }) => owner === manifest.id),
+      false,
+    );
     enabled.add(manifest.id);
     await f.configure(settingsFor(enabled));
     assert.deepEqual(owners(f), expected, manifest.id);
@@ -303,4 +336,63 @@ test("seeded catalog toggle sequence ends with fresh-start owner order", async (
   assert.deepEqual(owners(f), owners(fresh));
   await f.root.dispose();
   await fresh.root.dispose();
+});
+
+test("folding owns ranges, restores late and preserves folds across configuration update", async () => {
+  const f = fixture();
+  f.contributions.restore(
+    { folded: [{ from: 9, to: 15 }], future: { x: 1 } },
+    "note.md",
+  );
+  assert.equal(f.view.state.field(foldState, false), undefined);
+  await f.configure({ folding: { enabled: true, config: {} } });
+  assert.equal(f.view.state.field(foldState).size, 1);
+  const fiber = [...f.root.runtime.fibers].find(
+    (item) => item.definition.name === "folding",
+  )!;
+  const originalContext = fiber.context;
+  const originalState = f.view.state.field(foldState);
+  await f.configure({ folding: { enabled: true, config: { heading: false } } });
+  assert.equal(fiber.context, originalContext);
+  assert.equal(f.view.state.field(foldState), originalState);
+  await f.configure({});
+  assert.equal(f.view.state.field(foldState, false), undefined);
+  assert.equal(foldedRanges(f.view.state).size, 0);
+  assert.deepEqual(f.contributions.capture().future, { x: 1 });
+  await f.configure({ folding: { enabled: true, config: {} } });
+  assert.equal(foldedRanges(f.view.state).size, 1);
+  await f.root.dispose();
+});
+
+test("catalog configuration changes preserve fresh-start ordered owners", async () => {
+  const enabled = new Set(features.map((item) => item.id));
+  const f = fixture();
+  await f.configure(settingsFor(enabled));
+  for (const manifest of features) {
+    const settings = settingsFor(enabled);
+    const config = settings[manifest.id]!.config;
+    for (const [key, value] of Object.entries(config)) {
+      if (typeof value === "boolean") config[key] = !value;
+      if (key === "display") config[key] = "hidden";
+    }
+    await f.configure(settings);
+    const fresh = fixture();
+    await fresh.configure(settings);
+    assert.deepEqual(owners(f), owners(fresh), manifest.id);
+    await fresh.root.dispose();
+  }
+  await f.root.dispose();
+});
+
+test("heading folding queries share metadata by Text identity and invalidate after edits", () => {
+  const state = EditorState.create({ doc: "# Head\nbody\n# End" });
+  const first = headings(state.doc);
+  for (let i = 0; i < 10; i++)
+    foldRange(state, 0, 6, { heading: true, indent: true });
+  assert.equal(headings(state.doc), first);
+  const next = state.update({
+    changes: { from: 0, to: 6, insert: "plain" },
+  }).state;
+  assert.notEqual(headings(next.doc), first);
+  assert.equal(foldRange(next, 0, 5, { heading: true, indent: false }), null);
 });
