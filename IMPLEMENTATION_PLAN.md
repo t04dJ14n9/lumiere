@@ -1583,3 +1583,19 @@ Known issues: the remaining 35 backlog files, README/manual inventory and ordere
 readability completion checks; then Phase 4 inlineTitle, tags, suggest, search,
 pasteHtml, copyForAgent and markers. Claude owns Phase 5; its completion record
 must be on main before Phase 6. Phases 6–8 remain as specified in the plan.
+
+### Readability pass progress — Structural YAML edits, 2026-10-08
+
+Delivered: structural editing now validates the request, finds or creates the
+header, delegates add/rename/remove/set to a YAML map editor, then verifies the
+candidate. Each map operation owns its source changes; untouched YAML remains
+byte-preserved. Added a unit for absent/duplicate keys, atomic removal rejection
+and no-op rename/removal. Existing tests and assertions are unchanged.
+Backlog: 35 → 34 distinct files; long-function 29 → 28; complexity 13 → 12;
+other counts unchanged. No new exceptions or intentional behavior change.
+Checks: `pnpm check` 252/252; log `docs/checks/readability-property-edits-check.txt`.
+Smoke suites not rerun: pure YAML logic only. Ledger unchanged: 87/15/2/333/11.
+Deviations: none. Existing Properties manual regressions cover these operations.
+Known issues: remaining 34 backlog files and README/manual inventory before
+readability completion; Phase 4's seven remaining plugins; Claude's Phase 5
+handoff gate; Phases 6–8 as specified above. Owner acceptance remains unrun.

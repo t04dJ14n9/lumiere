@@ -66,55 +66,26 @@ export function setPropertyChange(
   return { from, to, insert };
 }
 
+type KeyEdit = Exclude<PropertyEdit, { type: "order" | "merge" }>;
+type Header = NonNullable<ReturnType<typeof headerParts>>;
+
 /** Structural edits touch selected keys/values, preserving unrelated YAML bytes. */
 export function propertyChanges(
   source: string,
   edit: PropertyEdit,
 ): PropertyChange[] | undefined {
   if (edit.type === "order") {
-    const header = headerParts(source);
-    const ordered =
-      header && orderPropertyBody(header.body, edit.keys, header.eol);
-    return header && ordered !== undefined
-      ? [
-          {
-            from: header.offset,
-            to: header.offset + header.body.length,
-            insert: ordered,
-          },
-        ]
-      : undefined;
+    return reorderProperties(source, edit.keys);
   }
   if (edit.type === "merge") {
     return mergeProperties(source, edit.values);
   }
-  if (edit.type !== "remove" && !validPropertyName(edit.key)) {
-    return undefined;
-  }
-  if (edit.type === "rename" && !validPropertyName(edit.name)) {
-    return undefined;
-  }
-  if (
-    (edit.type === "set" && !propertyValue(edit.value)) ||
-    (edit.type === "add" &&
-      edit.value !== undefined &&
-      !propertyValue(edit.value))
-  ) {
+  if (!validKeyEdit(edit)) {
     return undefined;
   }
   const header = headerParts(source);
   if (!header) {
-    if (edit.type !== "add" || /^---(?:\r?\n|$)/.test(source)) {
-      return undefined;
-    }
-    const eol = source.includes("\r\n") ? "\r\n" : "\n";
-    return [
-      {
-        from: 0,
-        to: 0,
-        insert: `---${eol}${yamlValue(edit.key)}: ${yamlValue(edit.value ?? null)}${eol}---${eol}${eol}`,
-      },
-    ];
+    return createHeader(source, edit);
   }
   const document = parseDocument(header.body, { uniqueKeys: true });
   if (
@@ -123,93 +94,193 @@ export function propertyChanges(
   ) {
     return undefined;
   }
-  const items = isMap(document.contents) ? document.contents.items : [];
-  const pair =
-    edit.type === "remove"
-      ? undefined
-      : items.find((pair) => isScalar(pair.key) && pair.key.value === edit.key);
-  const changes: PropertyChange[] = [];
-  if (edit.type === "add") {
-    if (document.has(edit.key)) {
-      return undefined;
+  const changes = new PropertyMapEdits(header, document).changes(source, edit);
+  return changes && verifyChanges(source, edit, changes);
+}
+
+function reorderProperties(
+  source: string,
+  keys: readonly string[],
+): PropertyChange[] | undefined {
+  const header = headerParts(source);
+  const ordered = header && orderPropertyBody(header.body, keys, header.eol);
+  return header && ordered !== undefined
+    ? [
+        {
+          from: header.offset,
+          to: header.offset + header.body.length,
+          insert: ordered,
+        },
+      ]
+    : undefined;
+}
+
+function validKeyEdit(edit: KeyEdit): boolean {
+  if (edit.type !== "remove" && !validPropertyName(edit.key)) {
+    return false;
+  }
+  if (edit.type === "rename" && !validPropertyName(edit.name)) {
+    return false;
+  }
+  if (edit.type === "set") {
+    return propertyValue(edit.value);
+  }
+  return (
+    edit.type !== "add" || edit.value === undefined || propertyValue(edit.value)
+  );
+}
+
+function createHeader(
+  source: string,
+  edit: KeyEdit,
+): PropertyChange[] | undefined {
+  if (edit.type !== "add" || /^---(?:\r?\n|$)/.test(source)) {
+    return undefined;
+  }
+  const eol = source.includes("\r\n") ? "\r\n" : "\n";
+  return [
+    {
+      from: 0,
+      to: 0,
+      insert: `---${eol}${yamlValue(edit.key)}: ${yamlValue(edit.value ?? null)}${eol}---${eol}${eol}`,
+    },
+  ];
+}
+
+class PropertyMapEdits {
+  constructor(
+    private readonly header: Header,
+    private readonly document: ReturnType<typeof parseDocument>,
+  ) {}
+
+  private get items() {
+    return isMap(this.document.contents) ? this.document.contents.items : [];
+  }
+
+  changes(source: string, edit: KeyEdit): PropertyChange[] | undefined {
+    switch (edit.type) {
+      case "add":
+        return this.add(edit);
+      case "rename":
+        return this.rename(edit);
+      case "remove":
+        return this.remove(edit.keys);
+      case "set": {
+        const pair = this.items.find(
+          (pair) => isScalar(pair.key) && pair.key.value === edit.key,
+        );
+        const change = setPropertyChange(
+          source,
+          this.header,
+          pair?.value,
+          edit.value,
+        );
+        return change ? [change] : undefined;
+      }
     }
-    if (isMap(document.contents) && document.contents.flow) {
-      document.set(edit.key, edit.value ?? null);
-      changes.push({
+  }
+
+  private wholeMap(): PropertyChange[] {
+    const { header, document } = this;
+    return [
+      {
         from: header.offset,
         to: header.offset + header.body.length,
         insert: document.toString({ lineWidth: 0 }).replace(/\n/g, header.eol),
-      });
-    } else {
-      const end = header.offset + header.body.length;
-      changes.push({
+      },
+    ];
+  }
+
+  private add(
+    edit: Extract<KeyEdit, { type: "add" }>,
+  ): PropertyChange[] | undefined {
+    if (this.document.has(edit.key)) {
+      return undefined;
+    }
+    if (isMap(this.document.contents) && this.document.contents.flow) {
+      this.document.set(edit.key, edit.value ?? null);
+      return this.wholeMap();
+    }
+    const end = this.header.offset + this.header.body.length;
+    return [
+      {
         from: end,
         to: end,
-        insert: `${yamlValue(edit.key)}: ${yamlValue(edit.value ?? null)}${header.eol}`,
-      });
-    }
-  } else if (edit.type === "rename") {
+        insert: `${yamlValue(edit.key)}: ${yamlValue(edit.value ?? null)}${this.header.eol}`,
+      },
+    ];
+  }
+
+  private rename(
+    edit: Extract<KeyEdit, { type: "rename" }>,
+  ): PropertyChange[] | undefined {
+    const pair = this.items.find(
+      (pair) => isScalar(pair.key) && pair.key.value === edit.key,
+    );
     if (
       !pair ||
       !isScalar(pair.key) ||
       !pair.key.range ||
-      (edit.key !== edit.name && document.has(edit.name))
+      (edit.key !== edit.name && this.document.has(edit.name))
     ) {
       return undefined;
     }
-    changes.push({
-      from: header.offset + pair.key.range[0],
-      to: header.offset + pair.key.range[1],
-      insert: yamlValue(edit.name),
-    });
-  } else if (edit.type === "remove") {
-    if (
-      edit.keys.some((key) => !validPropertyName(key) || !document.has(key))
-    ) {
-      return undefined;
-    }
-    if (isMap(document.contents) && document.contents.flow) {
-      edit.keys.forEach((key) => document.delete(key));
-      changes.push({
-        from: header.offset,
-        to: header.offset + header.body.length,
-        insert: document.toString({ lineWidth: 0 }).replace(/\n/g, header.eol),
-      });
-    } else {
-      for (const item of items) {
-        if (
-          !isScalar(item.key) ||
-          typeof item.key.value !== "string" ||
-          !edit.keys.includes(item.key.value) ||
-          !item.key.range
-        ) {
-          continue;
-        }
-        const start = header.body.lastIndexOf("\n", item.key.range[0] - 1) + 1;
-        let end =
-          isNode(item.value) && item.value.range
-            ? item.value.range[2]
-            : item.key.range[2];
-        if (header.body[end] === "\r") {
-          end++;
-        }
-        if (header.body[end] === "\n") {
-          end++;
-        }
-        changes.push({
-          from: header.offset + start,
-          to: header.offset + end,
-          insert: "",
-        });
-      }
-    }
-  } else {
-    const change = setPropertyChange(source, header, pair?.value, edit.value);
-    if (!change) {
-      return undefined;
-    }
-    changes.push(change);
+    return [
+      {
+        from: this.header.offset + pair.key.range[0],
+        to: this.header.offset + pair.key.range[1],
+        insert: yamlValue(edit.name),
+      },
+    ];
   }
+
+  private remove(keys: readonly string[]): PropertyChange[] | undefined {
+    if (
+      keys.some((key) => !validPropertyName(key) || !this.document.has(key))
+    ) {
+      return undefined;
+    }
+    if (isMap(this.document.contents) && this.document.contents.flow) {
+      keys.forEach((key) => this.document.delete(key));
+      return this.wholeMap();
+    }
+    return this.items.flatMap((item) => {
+      if (
+        !isScalar(item.key) ||
+        typeof item.key.value !== "string" ||
+        !keys.includes(item.key.value) ||
+        !item.key.range
+      ) {
+        return [];
+      }
+      const start =
+        this.header.body.lastIndexOf("\n", item.key.range[0] - 1) + 1;
+      let end =
+        isNode(item.value) && item.value.range
+          ? item.value.range[2]
+          : item.key.range[2];
+      if (this.header.body[end] === "\r") {
+        end++;
+      }
+      if (this.header.body[end] === "\n") {
+        end++;
+      }
+      return [
+        {
+          from: this.header.offset + start,
+          to: this.header.offset + end,
+          insert: "",
+        },
+      ];
+    });
+  }
+}
+
+function verifyChanges(
+  source: string,
+  edit: KeyEdit,
+  changes: PropertyChange[],
+): PropertyChange[] | undefined {
   try {
     let candidate = source;
     for (const change of [...changes].sort((a, b) => b.from - a.from)) {

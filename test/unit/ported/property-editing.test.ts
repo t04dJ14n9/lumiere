@@ -233,3 +233,17 @@ test("structured paste treats inherited-looking names as ordinary own properties
   assert.equal(value?.constructor, "value");
   assert.equal(({} as Record<string, unknown>).marker, undefined);
 });
+
+test("key edits reject missing and duplicate keys without partial removal", () => {
+  const source = "---\na: 1\nb: 2\n---\nBody";
+  for (const operation of [
+    { type: "add", key: "a", value: 3 },
+    { type: "rename", key: "missing", name: "c" },
+    { type: "set", key: "missing", value: 3 },
+    { type: "remove", keys: ["a", "missing"] },
+  ] satisfies PropertyEdit[]) {
+    assert.equal(propertyChanges(source, operation), undefined);
+  }
+  assert.equal(edit(source, { type: "rename", key: "a", name: "a" }), source);
+  assert.equal(edit(source, { type: "remove", keys: [] }), source);
+});
