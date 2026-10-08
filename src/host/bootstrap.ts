@@ -39,6 +39,10 @@ export async function bootstrap(
   }
   root.plugin(documentHost);
   root.plugin(vaultsHost);
+  // The editor host injects these services. Publish them first: a service
+  // arriving after it started would restart it, unregistering the editor
+  // provider and closing any editor VS Code was already opening.
+  await root.settled();
   root.plugin(editorHost, {
     features,
     configure(context, panel) {

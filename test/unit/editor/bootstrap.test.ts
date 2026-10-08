@@ -81,3 +81,35 @@ test("the real host wiring starts every window and panel plugin", async () => {
     Context.create = create;
   }
 });
+
+// VS Code resolves an editor as soon as the provider is registered, while
+// activation is still running. If the editor host then restarted (for example
+// because a service it injects arrived late), it would unregister the provider
+// and close that editor: "The editor could not be opened".
+test("the editor provider registers once, so an editor opened during activation stays open", async () => {
+  let registrations = 0;
+  let unregistrations = 0;
+  let disposed = false;
+  const workbench = fakeWorkbench({
+    config: () => ({ preset: "obsidian", mode: "source" }),
+    registerEditor: (open) => {
+      registrations++;
+      const opened = shell("memory:///vault/A.md");
+      opened.dispose = () => {
+        disposed = true;
+      };
+      open(opened);
+      return () => {
+        unregistrations++;
+      };
+    },
+  });
+  workbench.views = fakeViews().views;
+  const fs = new MemoryFileSystem({ "A.md": "" });
+  const root = await bootstrap(workbench, memorySystem(fs).value);
+  await wait();
+  assert.equal(registrations, 1);
+  assert.equal(unregistrations, 0);
+  assert.equal(disposed, false);
+  await root.dispose();
+});
