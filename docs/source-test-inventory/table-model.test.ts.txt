@@ -1,0 +1,17 @@
+✔ table ranges select exact source cells and preserve escaped pipes and alignments (0.847667ms)
+✔ rectangular clipboard and paste grow the table without destroying untouched cells (0.31525ms)
+✔ structural inserts preserve the header and column alignment (0.190625ms)
+✔ omitted trailing cells gain delimiters without rewriting existing rows (0.141667ms)
+✔ short table separators retain HTML line breaks and empty trailing cells (0.074959ms)
+✔ pasted text splits into rows and tab-separated cells (0.089542ms)
+✔ range texts keep source escapes that copying removes (0.068292ms)
+✔ formatting markers toggle and leave empty cells empty (0.049958ms)
+✔ an offset inside a cell's padding finds that cell (0.10575ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 110.252875

@@ -1,0 +1,12 @@
+✔ row operations can exchange or replace the header without losing cell content (1.185583ms)
+✔ column moves and duplication keep alignment with the source values (0.203083ms)
+✔ alignment and sorting preserve the header and unrelated cell contents (5.342583ms)
+✔ clearing inline formatting retains comment contents, links and escaped literals (2.168208ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 201.812042

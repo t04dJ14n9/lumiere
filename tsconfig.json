@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2022"
+    ],
+    "types": [],
+    "paths": {
+      "vscode": [
+        "./test/fixtures/layers/forbidden.ts"
+      ],
+      "node:*": [
+        "./test/fixtures/layers/forbidden.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/kernel/**/*.ts",
+    "src/shared/**/*.ts",
+    "src/markdown/**/*.ts"
+  ]
+}

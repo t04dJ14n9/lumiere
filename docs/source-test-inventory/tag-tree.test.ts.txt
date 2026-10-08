@@ -1,0 +1,10 @@
+✔ tag hierarchy merges case variants and counts each note once in parent totals (6.346167ms)
+✔ flat tags retain full paths while frequency sorting orders each level (0.179458ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 111.718958

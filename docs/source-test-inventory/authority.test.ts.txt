@@ -1,0 +1,20 @@
+✔ delayed acknowledgements preserve edits typed after a submitted batch (2.07025ms)
+✔ two split views converge when both edit before receiving the other change (0.535959ms)
+✔ external changes are rebased against unconfirmed typing (0.283375ms)
+✔ retried batches are acknowledged once (0.093041ms)
+✔ actual host changes override a mismatched expected edit (0.086166ms)
+✔ multi-transaction batch remains individually confirmable (0.504417ms)
+✔ invalid revisions and malformed edit lengths do not mutate the authority (0.1595ms)
+✔ random concurrent insertions, removals and replacements converge (14.073291ms)
+✔ LF transport normalizes CRLF without counting CR as a source character (0.167667ms)
+✔ protocol rejects unknown actions and invalid message shapes (0.187125ms)
+✔ rendering without a DOM sanitizer escapes HTML and rejects script links (4.402208ms)
+✔ title responses and selection restores validate optional error and focus fields (0.105708ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 408.404167

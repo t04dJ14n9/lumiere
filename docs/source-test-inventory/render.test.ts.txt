@@ -1,0 +1,17 @@
+✔ hybrid syntax keeps code opaque while parsing highlights, comments and formulas (2.139ms)
+✔ properties parse scalar and list types without accepting duplicate keys (3.555666ms)
+✔ nested and folded callouts preserve inline formatting and independent containers (3.740083ms)
+✔ diagram and formula payloads are encoded before becoming HTML attributes (0.193333ms)
+✔ aliases and image dimensions handle escaped table pipes (0.269041ms)
+✔ heading fragments include descendants and stop before a sibling, ignoring fenced headings (1.402292ms)
+✔ block fragments support a paragraph and a separately identified list (0.57625ms)
+✔ rendered note embeds hide block identifiers while fenced code remains literal (0.225667ms)
+✔ named footnotes and collapsed reference links retain their separate syntax (0.6235ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 190.128209

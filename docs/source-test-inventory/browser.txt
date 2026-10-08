@@ -1,0 +1,295 @@
+Listing tests:
+  browser.spec.ts:43:5 › footnote references reveal definition source at its exact position
+  browser.spec.ts:64:5 › inline footnotes preview formatting and expose editable source with Vim enabled
+  browser.spec.ts:104:5 › multiline inline footnotes render and expose their original lines for Vim editing
+  browser.spec.ts:140:5 › multiline footnote previews omit callout markers while retaining surrounding content
+  browser.spec.ts:158:5 › footnote backlinks follow moved references while retaining source labels
+  browser.spec.ts:180:5 › tables and callouts share document footnotes and navigate after source moves
+  browser.spec.ts:216:5 › footnote definition continuations keep reference source mappings
+  browser.spec.ts:235:5 › embedded footnotes navigate locally without opening a host link
+  browser.spec.ts:266:5 › section embeds resolve external footnotes without making appended tasks editable
+  browser.spec.ts:317:5 › one hybrid surface renders blocks and reveals active syntax without altering source
+  browser.spec.ts:345:5 › rapid typing survives delayed acknowledgement and an external edit
+  browser.spec.ts:365:5 › save waits for a queued burst of Unicode input
+  browser.spec.ts:377:5 › formatting, undo and redo use source transactions
+  browser.spec.ts:388:5 › clicking a task checkbox changes exactly its source marker
+  browser.spec.ts:398:5 › search and list continuation use CodeMirror editing commands
+  browser.spec.ts:413:5 › hybrid HTML is sanitized and rendered callout links go to the host
+  browser.spec.ts:428:5 › caret restoration does not write to the document or restore an obsolete mode
+  browser.spec.ts:444:5 › properties, nested folding callouts, highlighted code and MathJax render in the editor
+  browser.spec.ts:476:5 › recursive and nested properties remain viewable without disrupting the editor
+  browser.spec.ts:513:5 › tags in source, properties and rendered blocks dispatch search without edits
+  browser.spec.ts:534:5 › query blocks show results, refresh errors and cancel when source is exposed
+  browser.spec.ts:591:5 › a rendered code block can expose source for editing and render again
+  browser.spec.ts:604:5 › Mermaid loads and renders inside the hybrid document
+  browser.spec.ts:617:5 › image dimensions and note section embeds resolve and refresh in place
+  browser.spec.ts:660:5 › embedded images open a keyboard-accessible inspector without changing Markdown or Vim state
+  browser.spec.ts:718:5 › an image inspector stays open above its originating link preview
+  browser.spec.ts:759:5 › rendered tasks update only the marker after their block moves, with undo
+  browser.spec.ts:779:5 › embedded tasks identify their original line through frontmatter and heading slices
+  browser.spec.ts:831:5 › copying a rendered code block preserves its exact code
+  browser.spec.ts:841:5 › callout expansion survives widget recreation and restored view state
+  browser.spec.ts:865:5 › audio and video embeds load native controls and stop when their widget is removed
+  browser.spec.ts:908:5 › outline folds rendered sections, reveals nested destinations and restores folds
+  browser.spec.ts:942:5 › outline updates after external edits and navigates setext headings
+  browser.spec.ts:966:5 › outline search retains matching ancestors and tree collapse does not fold the document
+  browser.spec.ts:1009:5 › modifier-hover previews the requested note section without navigation or edits
+  browser.spec.ts:1051:5 › keyboard preview resolves angle-bracket destinations with spaces
+  browser.spec.ts:1083:5 › section link previews include definitions outside the selected heading
+  browser.spec.ts:1111:5 › leaving a link cancels a pending modifier-hover preview
+  browser.spec.ts:1125:5 › rendered links open on a plain click; revealed link source needs Cmd/Ctrl-click
+  browser.spec.ts:1150:5 › changing the current document invalidates its open preview
+  browser.spec.ts:1175:5 › Vim modal edits, host undo/redo and write preserve the source
+  browser.spec.ts:1222:5 › Vim counts, named registers and dot repeat operate on source text
+  browser.spec.ts:1249:5 › Vim recorded macros replay edits through host transport
+  browser.spec.ts:1272:5 › the Properties in document setting preserves YAML and applies when a note opens
+  browser.spec.ts:1293:5 › Vim source navigation exposes hidden frontmatter before editing
+  browser.spec.ts:1312:5 › property checkbox edits only its scalar and participates in host undo
+  browser.spec.ts:1325:5 › text and number properties commit precise changes and Escape cancels
+  browser.spec.ts:1358:5 › long notes retain all content while rendering a bounded viewport
+  browser.spec.ts:1372:7 › long footnote labels remain separated from text and backlinks in a narrow ltr view
+  browser.spec.ts:1372:7 › long footnote labels remain separated from text and backlinks in a narrow rtl view
+  browser.spec.ts:1432:5 › Markdown syntax auto-pairs like Obsidian and Backspace removes an empty pair
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40960
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40961
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40962
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40963
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40964
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40965
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40966
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40967
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40968
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40969
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40970
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40971
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40972
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40973
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40974
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40975
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40976
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40977
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40978
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40979
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40980
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40981
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40982
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40983
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40984
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40985
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40986
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40987
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40988
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40989
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40990
+  command-fuzz.spec.ts:111:7 › Vim normal command fuzz seed 40991
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45056
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45057
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45058
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45059
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45060
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45061
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45062
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45063
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45064
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45065
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45066
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45067
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45068
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45069
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45070
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45071
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45072
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45073
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45074
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45075
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45076
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45077
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45078
+  command-fuzz.spec.ts:140:7 › Selection and text input fuzz seed 45079
+  command-fuzz.spec.ts:728:5 › Vim named marks and double backtick retain their jump behavior
+  command-fuzz.spec.ts:745:5 › typing an opening bracket wraps the selected source
+  file-title.spec.ts:37:7 › long titles wrap completely and follow viewport width in ltr
+  file-title.spec.ts:37:7 › long titles wrap completely and follow viewport width in rtl
+  file-title.spec.ts:73:7 › Enter submits a title once and returns focus to the editor
+  file-title.spec.ts:73:7 › Tab submits a title once and returns focus to the editor
+  file-title.spec.ts:95:5 › Escape and an empty title restore the confirmed name without renaming
+  file-title.spec.ts:109:5 › a rejected rename keeps its draft focused and permits another attempt
+  file-title.spec.ts:131:5 › a failed rename restores the confirmed title on blur without a duplicate request
+  file-title.spec.ts:152:5 › overlong titles stay editable and can be corrected without losing the draft
+  file-title.spec.ts:173:5 › a delayed success does not steal focus back from the body
+  file-title.spec.ts:186:5 › restoring an inactive pane selection does not interrupt title editing
+  file-title.spec.ts:204:5 › activating a pane enters an unfocused body and preserves a focused title
+  file-title.spec.ts:225:5 › composition and external body edits preserve an unfinished title
+  file-title.spec.ts:255:5 › ArrowDown leaves the last wrapped title row and can target properties
+  file-title.spec.ts:284:7 › title and property keyboard navigation follows the reference with Vim off
+  file-title.spec.ts:284:7 › title and property keyboard navigation follows the reference with Vim on
+  file-title.spec.ts:341:5 › the Properties heading supports collapse, expansion and space scrolling
+  integration.spec.ts:23:5 › selection export captures the acknowledged revision after delayed Unicode typing
+  integration.spec.ts:57:5 › Query annotations navigate and move with edits without changing source text
+  integration.spec.ts:106:5 › Query badges stay accessible when their source is inside a rendered table
+  integration.spec.ts:147:5 › an exact source anchor reveals and selects text inside a rendered table
+  integration.spec.ts:180:5 › source anchors unfold their containing heading before selecting the exact text
+  integration.spec.ts:209:5 › rich clipboard content preserves headings, formatting, tasks and table syntax
+  integration.spec.ts:239:5 › pasting into code uses literal clipboard text
+  integration.spec.ts:270:5 › clicking highlighted code exposes source at the clicked code position
+  integration.spec.ts:285:5 › property tag chips edit the same source and preserve keyboard focus
+  integration.spec.ts:317:7 › the caret at a block's final character remains an editing position: "```"
+  integration.spec.ts:317:7 › the caret at a block's final character remains an editing position: "oe\n```\t() "
+  integration.spec.ts:317:7 › the caret at a block's final character remains an editing position: "```js\nconst x = 1;\n```"
+  integration.spec.ts:317:7 › the caret at a block's final character remains an editing position: "$$\nx^2\n$$"
+  integration.spec.ts:338:5 › plain typing remains one undo group across acknowledged transport batches
+  integration.spec.ts:364:5 › moving the plain caret creates a new undo group without losing the earlier typing
+  integration.spec.ts:391:5 › editable code retains Prism tokens while typing and after returning to rendered code
+  integration.spec.ts:420:5 › selection colors switch when focus leaves the source editor
+  integration.spec.ts:448:7 › formatting b toggles the word at an empty caret without moving it within the word
+  integration.spec.ts:448:7 › formatting i toggles the word at an empty caret without moving it within the word
+  integration.spec.ts:474:5 › moving YAML back to document start restores the property sheet and exact body
+  integration.spec.ts:494:5 › distant footnote definitions retain numbering and navigation after an earlier reference is inserted
+  keystroke-fuzz.spec.ts:102:7 › LLM Wiki Markdown deterministic keystroke fuzzing › Vim inserts after a rendered wikilink without entering its closing brackets
+  keystroke-fuzz.spec.ts:131:9 › LLM Wiki Markdown deterministic keystroke fuzzing › plain editor keystroke sequences match the generated final markdown text model (batch 1/4)
+  keystroke-fuzz.spec.ts:131:9 › LLM Wiki Markdown deterministic keystroke fuzzing › plain editor keystroke sequences match the generated final markdown text model (batch 2/4)
+  keystroke-fuzz.spec.ts:131:9 › LLM Wiki Markdown deterministic keystroke fuzzing › plain editor keystroke sequences match the generated final markdown text model (batch 3/4)
+  keystroke-fuzz.spec.ts:131:9 › LLM Wiki Markdown deterministic keystroke fuzzing › plain editor keystroke sequences match the generated final markdown text model (batch 4/4)
+  keystroke-fuzz.spec.ts:160:9 › LLM Wiki Markdown deterministic keystroke fuzzing › Vim insert-mode keystroke sequences match the generated final markdown text model (batch 1/2)
+  keystroke-fuzz.spec.ts:160:9 › LLM Wiki Markdown deterministic keystroke fuzzing › Vim insert-mode keystroke sequences match the generated final markdown text model (batch 2/2)
+  keystroke-fuzz.spec.ts:180:7 › LLM Wiki Markdown deterministic keystroke fuzzing › Vim normal-mode raw input and mark keys preserve the document
+  property-editing.spec.ts:34:5 › a note without frontmatter can add and fill a property
+  property-editing.spec.ts:58:5 › rename and remove preserve surrounding YAML and participate in document undo
+  property-editing.spec.ts:92:5 › type preferences change the control without rewriting the stored value
+  property-editing.spec.ts:125:5 › date, date-time, checkbox and list controls write their YAML values
+  property-editing.spec.ts:165:5 › Vim property navigation focuses keys, values and the note body
+  property-editing.spec.ts:195:5 › saving from a property input commits the value before the save action
+  property-editing.spec.ts:208:5 › canceling an incompatible type update retains the original value and control
+  property-editing.spec.ts:230:5 › a workbench flush commits the focused property before acknowledging
+  property-editing.spec.ts:254:5 › invalid numeric input does not silently overwrite a property during save
+  property-editing.spec.ts:273:5 › type conversion rejects a value changed while its dialog was open
+  property-editing.spec.ts:295:5 › a type update applies only to the value the user accepted
+  property-editing.spec.ts:321:7 › pending tags commit on blur without requiring Enter
+  property-editing.spec.ts:321:7 › pending tags commit on shortcut without requiring Enter
+  property-editing.spec.ts:321:7 › pending tags commit on workbench without requiring Enter
+  property-editing.spec.ts:359:5 › removing a tag retains a pending new value and Escape discards unfinished input
+  property-editing.spec.ts:376:5 › Vim normal mode leaves typing in property inputs to the input
+  property-editing.spec.ts:398:5 › an unrelated header edit preserves the active input, caret and draft
+  property-editing.spec.ts:437:7 › an active property draft reconciles a same-field external edit on Enter
+  property-editing.spec.ts:437:7 › an active property draft reconciles a same-field external edit on Escape
+  property-editing.spec.ts:437:7 › an active property draft reconciles a same-field external edit on blur
+  property-editing.spec.ts:470:5 › an untouched active field does not overwrite a newer external value on blur
+  property-editing.spec.ts:492:5 › pending tag entry appends to the latest external list
+  property-editing.spec.ts:519:7 › pending property rename survives an unrelated external edit
+  property-editing.spec.ts:519:7 › pending property create survives an unrelated external edit
+  property-editing.spec.ts:554:5 › committing on blur keeps the next field's click target connected
+  property-editing.spec.ts:578:5 › a name draft keeps its input while the external value updates
+  property-editing.spec.ts:609:5 › reordering fields keeps a composing list input connected
+  property-editing.spec.ts:642:5 › an externally removed property is not recreated by a pending draft or save
+  property-editing.spec.ts:667:5 › property collapse survives header edits and uses a stable persisted key
+  property-editing.spec.ts:683:5 › undo of a committed draft restores the external value and keeps unrelated edits
+  property-editing.spec.ts:705:5 › removing a chip rebases its item after an external list insertion
+  property-interactions.spec.ts:47:5 › Shift arrows grow and shrink property selection; Escape leaves source unchanged
+  property-interactions.spec.ts:64:5 › Alt-click toggles individual properties; Shift-click selects and deselects ranges
+  property-interactions.spec.ts:86:5 › select all and copy export YAML plus structured properties
+  property-interactions.spec.ts:104:5 › cut removes selected properties as one edit and undo restores their exact bytes
+  property-interactions.spec.ts:122:5 › Delete and context menus operate on the selected properties
+  property-interactions.spec.ts:179:5 › native input selection clears row selection and keeps its clipboard event
+  property-interactions.spec.ts:196:5 › property selection follows keys through external changes and copies current values
+  property-interactions.spec.ts:214:7 › an existing chip commits by Enter and preserves unrelated YAML
+  property-interactions.spec.ts:214:7 › an existing chip commits by blur and preserves unrelated YAML
+  property-interactions.spec.ts:214:7 › an existing chip commits by save and preserves unrelated YAML
+  property-interactions.spec.ts:246:5 › double click edits a chip; Escape and an empty blur preserve its value
+  property-interactions.spec.ts:269:5 › chip keyboard navigation, copy and backspace leave a usable focus target
+  property-interactions.spec.ts:292:5 › chip menus edit, copy and remove the targeted item
+  property-interactions.spec.ts:315:5 › an active chip draft rebases through an external insertion and undo retains that insertion
+  property-interactions.spec.ts:343:5 › duplicate and externally removed chip edits do not replace another item
+  property-interactions.spec.ts:403:5 › structured property paste merges values and lists as one undoable source edit
+  property-interactions.spec.ts:435:5 › cut properties can be pasted back and their typed values survive
+  property-interactions.spec.ts:449:5 › plain-text input paste stays native and malformed structured data does not reach note text
+  property-interactions.spec.ts:469:5 › undo and redo work while the committed chip retains focus
+  property-interactions.spec.ts:493:5 › editing a tag validates its name and normalizes a leading hash
+  property-interactions.spec.ts:521:5 › a workbench flush commits a chip draft before its acknowledgement
+  property-interactions.spec.ts:543:5 › composition keeps the chip input connected through an external property reorder
+  property-interactions.spec.ts:581:5 › a chip menu closes when its list is replaced externally
+  property-interactions.spec.ts:597:5 › clicking the next chip while an edit blurs keeps the intended focus target
+  property-interactions.spec.ts:617:7 › double clicking a chip commits a pending addition and opens that chip at 1100px
+  property-interactions.spec.ts:617:7 › double clicking a chip commits a pending addition and opens that chip at 360px
+  property-interactions.spec.ts:636:5 › copy and sync recovery notices do not move properties in a narrow editor
+  property-interactions.spec.ts:678:5 › property clipboard follows the focused row when the host targets the source selection
+  property-interactions.spec.ts:706:5 › plain clipboard paste on a property row leaves the previous source selection unchanged
+  property-order.spec.ts:44:5 › property heading sorting is natural, reversible and initially view-only
+  property-order.spec.ts:56:5 › editing after sorting commits the value and displayed order together
+  property-order.spec.ts:80:7 › rename after a view sort retains the other displayed keys
+  property-order.spec.ts:80:7 › add after a view sort retains the other displayed keys
+  property-order.spec.ts:80:7 › remove after a view sort retains the other displayed keys
+  property-order.spec.ts:114:5 › a view sort survives type refresh but an external header update restores source order
+  property-order.spec.ts:138:5 › dragging a property previews order and commits one undoable move on drop
+  property-order.spec.ts:162:5 › a short property keeps its drop position after taller rows move around it
+  property-order.spec.ts:183:7 › Escape cancels a property reorder without a source move
+  property-order.spec.ts:183:7 › blur cancels a property reorder without a source move
+  property-order.spec.ts:183:7 › external edit cancels a property reorder without a source move
+  property-order.spec.ts:209:5 › a composing property draft stays connected while another row moves
+  property-order.spec.ts:242:5 › the heading menu works by keyboard and removes all properties as one edit
+  property-order.spec.ts:261:5 › dragging upward uses the current displayed order after a view sort
+  property-order.spec.ts:273:5 › dropping in the same displayed position persists a preceding view sort
+  property-order.spec.ts:286:5 › canceling a drag restores its preceding view sort without persisting it
+  property-order.spec.ts:299:7 › pointercancel cancels the captured property drag
+  property-order.spec.ts:299:7 › lost capture cancels the captured property drag
+  property-order.spec.ts:339:5 › a stationary property grip scrolls the header and drops at the visible location
+  property-order.spec.ts:373:5 › a drop that would place an alias before its anchor retains the original YAML
+  property-order.spec.ts:387:5 › a type refresh that replaces the dragged row cancels its preview
+  source-links.spec.mts:8:1 › modified clicks keep a wrapped source link and its selection stable until navigation
+  source-links.spec.mts:35:3 › rendered source links preserve the exported vscode URL without allowing unrelated schemes
+  source-links.spec.mts:35:3 › rendered source links preserve the exported cursor URL without allowing unrelated schemes
+  suggest.spec.ts:27:5 › typing [[ suggests notes and Enter inserts a closed link
+  suggest.spec.ts:39:5 › a heading suggestion follows [[Note#
+  suggest.spec.ts:48:5 › tags are suggested after # but headings and code are left alone
+  suggest.spec.ts:63:5 › Escape closes the list without leaving the link
+  table-drag.spec.ts:83:5 › a stationary row grip scrolls to offscreen rows and commits one reorder
+  table-drag.spec.ts:120:5 › a stationary column grip scrolls to offscreen columns with alignment intact
+  table-drag.spec.ts:160:7 › Escape stops edge scrolling without reordering
+  table-drag.spec.ts:160:7 › blur stops edge scrolling without reordering
+  table-drag.spec.ts:160:7 › external edit stops edge scrolling without reordering
+  table-drag.spec.ts:205:5 › rectangular selection scrolls past the viewport and copies all selected rows
+  table-drag.spec.ts:245:5 › a held row can scroll down and back up before its single drop
+  table-drag.spec.ts:285:5 › a stationary grip follows a wheel scroll before the drop
+  table-drag.spec.ts:324:7 › RTL table scrolls toward its physical left edge and keeps logical alignment
+  table-drag.spec.ts:324:7 › RTL viewport scrolls toward its physical left edge and keeps logical alignment
+  table-drag.spec.ts:379:7 › Escape ends a scrolling rectangular selection
+  table-drag.spec.ts:379:7 › blur ends a scrolling rectangular selection
+  table-drag.spec.ts:379:7 › external edit ends a scrolling rectangular selection
+  table-drag.spec.ts:379:7 › pointercancel ends a scrolling rectangular selection
+  table-drag.spec.ts:379:7 › lost capture ends a scrolling rectangular selection
+  table.spec.ts:31:5 › clicks place the caret at rendered text, including hidden formatting and escapes
+  table.spec.ts:66:5 › clicks after HTML entities and Unicode preserve original cell source
+  table.spec.ts:81:5 › editing an omitted trailing cell preserves its column and typed whitespace
+  table.spec.ts:103:5 › cell edits persist immediately; Tab and Enter follow the reference grid
+  table.spec.ts:132:5 › entering a table renders the previously active heading without source markers
+  table.spec.ts:149:5 › cell typing preserves spaces and caret through delayed acknowledgements
+  table.spec.ts:181:5 › escaped pipes and Unicode keep source capture at the cell selection
+  table.spec.ts:216:5 › drag selects a rectangle; clear and undo preserve other columns
+  table.spec.ts:244:5 › source capture uses the active table cell rather than the previous body caret
+  table.spec.ts:270:5 › Vim cell editing and native history share the outer source document
+  table.spec.ts:317:5 › Vim insert mode survives Tab navigation between cells
+  table.spec.ts:345:5 › arrow keys navigate between cells while Vim is enabled
+  table.spec.ts:366:5 › Vim motions cross cell boundaries while operator motions stay in the cell
+  table.spec.ts:407:5 › grid paste extends rows and columns, and selected cells copy as TSV
+  table.spec.ts:452:5 › an external row insertion keeps typing in the same logical cell
+  table.spec.ts:486:5 › table context menus move the header, duplicate columns and undo one structural operation
+  table.spec.ts:525:5 › alignment and clipboard commands work through the table menu
+  table.spec.ts:557:5 › keyboard context menus close without changing text and keep focus in the cell
+  table.spec.ts:578:5 › arrow keys leave a cell only at its boundary and do not create rows
+  table.spec.ts:611:5 › Shift+Arrow extends and shrinks a rectangle, restoring the original caret
+  table.spec.ts:636:5 › ordinary arrows collapse a rectangle to its start or end cell
+  table.spec.ts:665:7 › a delayed menu paste does not overwrite a changed cell
+  table.spec.ts:665:7 › a delayed menu paste does not overwrite a changed caret
+  table.spec.ts:665:7 › a delayed menu paste does not overwrite a changed source
+  table.spec.ts:720:5 › row grips select and reorder whole rows as one undoable edit
+  table.spec.ts:754:5 › column grips move alignment and every cell together
+  table.spec.ts:779:5 › dragging a body row above the header promotes it to the header
+  table.spec.ts:801:7 › Escape cancels an unfinished row drag
+  table.spec.ts:801:7 › external edit cancels an unfinished row drag
+  table.spec.ts:826:5 › row grips expose their structural menu to keyboard users
+  table.spec.ts:848:7 › arrow navigation creates space before a table at the document boundary
+  table.spec.ts:848:7 › arrow navigation creates space after a table at the document boundary
+  view-state.spec.ts:40:5 › restoring a pane retains backward selection without changing source or history
+  view-state.spec.ts:65:7 › restoring a reading position inside paragraphs survives a taller title
+  view-state.spec.ts:65:7 › restoring a reading position inside one wrapped line survives a taller title
+  view-state.spec.ts:176:5 › rename transfers heading folds, callout expansion and the outline panel
+Total: 293 tests in 13 files

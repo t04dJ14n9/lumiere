@@ -1,0 +1,10 @@
+✔ logical groups replay native undo steps in both directions (0.754833ms)
+✔ unexpected native state stops grouped replay rather than undoing unrelated edits (0.084584ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 109.236542

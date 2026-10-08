@@ -1,0 +1,16 @@
+✔ footnotes number references in reading order and retain exact source positions (3.43375ms)
+✔ code, escaped references and frontmatter do not become footnotes (0.384625ms)
+✔ inline footnotes share numbering and preserve nested brackets and code (0.302458ms)
+✔ escaped, code and unclosed inline notes remain literal (0.17575ms)
+✔ references inside definition bodies map through removed indentation (0.336667ms)
+✔ section fragments include only needed definitions and terminate cyclic dependencies (1.143709ms)
+✔ multiline inline notes omit surrounding quote and list markers from their body (0.333834ms)
+✔ comment markers inside inline code do not hide later footnotes (0.191459ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 187.177375

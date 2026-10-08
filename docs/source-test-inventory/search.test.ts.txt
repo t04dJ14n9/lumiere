@@ -1,0 +1,17 @@
+✔ search gives implicit AND precedence over OR and supports grouped negation (0.917625ms)
+✔ search parses quoted paths, escaped phrases, regexes and nested scopes (0.184583ms)
+✔ search property filters preserve existence, alternatives and numeric comparisons (0.1085ms)
+✔ malformed or unsupported searches fail rather than silently becoming literal text (0.245625ms)
+✔ document search evaluates Boolean expressions, paths and scoped case sensitivity (0.525833ms)
+✔ line, block and section scopes keep all terms inside the requested region (2.356ms)
+✔ task search excludes code and distinguishes custom completion markers (1.181042ms)
+✔ property filters distinguish null and empty values and compare numeric properties (5.197083ms)
+✔ tag search uses parsed tags and Canvas search uses card contents (1.577292ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 150.35075

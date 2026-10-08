@@ -1,0 +1,20 @@
+✔ empty headers and new properties preserve the note body and line endings (4.88575ms)
+✔ rename and removal preserve unrelated comments, multiline values and formatting (1.120167ms)
+✔ property edits retain flow mappings and reject removal of a referenced anchor (2.521042ms)
+✔ explicit value editing changes scalar types and retains unrelated inline comments (0.654875ms)
+✔ adding properties distinguishes an unfinished header from ordinary Markdown (0.131708ms)
+✔ new properties reject non-finite scalar and list values (0.061833ms)
+✔ property type preferences serialize concurrent writes and stay within their vault (0.242ms)
+✔ nested vaults get separate property scopes within one opened workspace (0.109458ms)
+✔ structured property paste merges nested values and unions lists without touching other YAML (2.086625ms)
+✔ structured property paste handles flow maps, empty values and null merge rules (1.406125ms)
+✔ an invalid property in a paste rejects the whole batch (0.256125ms)
+✔ structured paste treats inherited-looking names as ordinary own properties (0.689459ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 139.241958

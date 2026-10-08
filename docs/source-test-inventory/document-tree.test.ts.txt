@@ -1,0 +1,11 @@
+✔ complete syntax is shared by outline and footnote indexes and retained for selections (12.76275ms)
+✔ incremental syntax reparses fences, frontmatter and math boundaries beyond the edit (35.794125ms)
+✔ incremental syntax and indexes match fresh parses through deterministic structural edits (682.975709ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 912.318208

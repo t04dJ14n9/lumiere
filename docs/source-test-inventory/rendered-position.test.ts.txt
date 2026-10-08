@@ -1,0 +1,10 @@
+✔ inline projections retain source offsets through nested formatting and escapes (4.2785ms)
+✔ inline projections preserve entities, links and literal code source (4.8465ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 261.355292
