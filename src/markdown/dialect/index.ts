@@ -14,11 +14,13 @@ import { footnotes } from "./footnotes";
 import { wiki } from "./wiki";
 import { highlight } from "./highlight";
 import { comments } from "./comments";
+import { tasks } from "./tasks";
 const data = defineLanguageFacet({
   commentTokens: { block: { open: "%%", close: "%%" } },
 });
 export const markdownParser = parser.configure([
   GFM,
+  tasks,
   frontmatter,
   math,
   tags,
