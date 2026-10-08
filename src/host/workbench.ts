@@ -14,6 +14,9 @@ export function createWorkbench(
   const documents = new NativeDocuments();
   return {
     storage,
+    workerPath: (name) =>
+      vscode.Uri.joinPath(extensionUri, "dist", "workers", `${name}.cjs`)
+        .fsPath,
     renameFile,
     navigation: createNavigation(),
     fingerprint(text) {

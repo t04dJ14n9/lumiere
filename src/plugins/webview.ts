@@ -27,3 +27,4 @@ export { tablesWebview } from "./tables/webview";
 export { inlineTitleWebview } from "./inlineTitle/webview";
 export { tagsWebview } from "./tags/webview";
 export { suggestWebview } from "./suggest/webview";
+export { searchWebview } from "./search/webview";

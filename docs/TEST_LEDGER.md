@@ -59,8 +59,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/property-order.test.ts` | invalid key permutations cannot remove or duplicate a property | ported | `test/unit/ported/property-order.test.ts` |
 | `unit/property-order.test.ts` | alias dependencies remain valid and forward-alias reorders are rejected | ported | `test/unit/ported/property-order.test.ts` |
 | `unit/property-order.test.ts` | empty values, empty headers and punctuation in keys keep their source meaning | ported | `test/unit/ported/property-order.test.ts` |
-| `unit/query-client.test.ts` | query refresh cancels the old request and ignores late replies | todo | Awaiting scheduled port |
-| `unit/query-client.test.ts` | search protocol rejects invalid request and result shapes | todo | Awaiting scheduled port |
+| `unit/query-client.test.ts` | query refresh cancels the old request and ignores late replies | rewritten | `test/unit/search/client.test.ts`; validated RPC replaces ad-hoc messages |
+| `unit/query-client.test.ts` | search protocol rejects invalid request and result shapes | rewritten | `test/unit/search/client.test.ts`; validated RPC replaces ad-hoc messages |
 | `unit/render.test.ts` | hybrid syntax keeps code opaque while parsing highlights, comments and formulas | ported | `test/unit/ported/render.test.ts` |
 | `unit/render.test.ts` | properties parse scalar and list types without accepting duplicate keys | ported | `test/unit/ported/render.test.ts` |
 | `unit/render.test.ts` | nested and folded callouts preserve inline formatting and independent containers | ported | `test/unit/ported/render.test.ts` |
@@ -72,10 +72,10 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/render.test.ts` | named footnotes and collapsed reference links retain their separate syntax | ported | `test/unit/ported/render.test.ts` |
 | `unit/rendered-position.test.ts` | inline projections retain source offsets through nested formatting and escapes | ported | test/unit/ported/rendered-position.test.ts |
 | `unit/rendered-position.test.ts` | inline projections preserve entities, links and literal code source | ported | test/unit/ported/rendered-position.test.ts |
-| `unit/search-worker.test.ts` | search worker evaluates multiple documents and survives a document parse error | todo | Awaiting scheduled port |
-| `unit/search-worker.test.ts` | invalid search queries reject worker readiness | todo | Awaiting scheduled port |
-| `unit/search-worker.test.ts` | search cancellation rejects pending work and prevents later submissions | todo | Awaiting scheduled port |
-| `unit/search-worker.test.ts` | a pathological regex times out in its worker and a fresh worker remains usable | todo | Awaiting scheduled port |
+| `unit/search-worker.test.ts` | search worker evaluates multiple documents and survives a document parse error | ported | `test/unit/search/worker.test.ts`; cancellation uses typed RPC token |
+| `unit/search-worker.test.ts` | invalid search queries reject worker readiness | ported | `test/unit/search/worker.test.ts`; cancellation uses typed RPC token |
+| `unit/search-worker.test.ts` | search cancellation rejects pending work and prevents later submissions | ported | `test/unit/search/worker.test.ts`; cancellation uses typed RPC token |
+| `unit/search-worker.test.ts` | a pathological regex times out in its worker and a fresh worker remains usable | ported | `test/unit/search/worker.test.ts`; cancellation uses typed RPC token |
 | `unit/search.test.ts` | search gives implicit AND precedence over OR and supports grouped negation | ported | `test/unit/ported/search.test.ts` |
 | `unit/search.test.ts` | search parses quoted paths, escaped phrases, regexes and nested scopes | ported | `test/unit/ported/search.test.ts` |
 | `unit/search.test.ts` | search property filters preserve existence, alternatives and numeric comparisons | ported | `test/unit/ported/search.test.ts` |

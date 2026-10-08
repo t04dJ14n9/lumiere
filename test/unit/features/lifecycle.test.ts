@@ -179,6 +179,10 @@ function composition(f: ReturnType<typeof fixture>) {
     "",
     "![[Note]]",
     "",
+    "```query",
+    "tag:project",
+    "```",
+    "",
     "$$",
     "x",
     "$$",
@@ -233,6 +237,7 @@ test("catalog composition has the same ordered owners after every toggle as a fr
   await f.configure(settingsFor(enabled));
   const expected = composition(fresh);
   assert.ok(expected.owners.some(({ owner }) => owner === "tables"));
+  assert.ok(expected.matches.includes("FencedCode:query:reveal"));
   for (const manifest of features) {
     enabled.delete(manifest.id);
     await f.configure(settingsFor(enabled));

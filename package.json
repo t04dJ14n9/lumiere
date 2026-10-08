@@ -829,6 +829,12 @@
           "scope": "resource",
           "description": "Find a note by name, alias or path, or create it, like Obsidian's quick switcher."
         },
+        "markdownWorkbench.plugins.search.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Render query blocks as live vault search results."
+        },
         "markdownWorkbench.plugins.smartLists.enabled": {
           "type": "boolean",
           "default": true,

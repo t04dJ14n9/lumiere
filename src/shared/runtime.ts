@@ -199,3 +199,7 @@ export interface Workbench {
 export interface Workbench {
   renameFile?(document: HostDocument, target: string): Promise<void>;
 }
+
+export interface Workbench {
+  workerPath?(name: "search"): string;
+}

@@ -745,3 +745,19 @@ Tags separately and verify only that source disappears, then re-enable in revers
 order. Check completion keys against table and Vim overrides. All verify bindings
 remain unbound. These replace the retired suggestion browser/native cases;
 automated coverage is unit/composition only plus the unchanged smoke suites.
+
+## Search query blocks
+
+In a disposable vault, render fenced `query` blocks using `tag:`, `path:`, Boolean,
+property, task, line/block/section and regex predicates. Include Markdown, Canvas,
+an attachment selected by a file query, an excluded note and a malformed Canvas.
+Expected: live unsaved text is searched, exclusions hold, result links open the
+right note from nested folders/embedded notes, and unreadable files are counted.
+Edit a target file and confirm automatic refresh; use Refresh, then introduce an
+invalid query and correct it. Expose source while searching and toggle Search off
+and on: subscriptions/results must disappear without late updates or duplicate
+buttons. Source mode shows the fence. Test a costly regex in the disposable
+fixture: its query must report a timeout while the editor remains responsive;
+a subsequent normal query must work. Check this alongside Links disabled/enabled
+and two panels. This replaces retired query-block/browser interaction coverage;
+worker failure/cancellation and late replies are covered by unit tests.

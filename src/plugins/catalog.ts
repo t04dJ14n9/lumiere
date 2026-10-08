@@ -1,3 +1,4 @@
+import search from "./search/manifest";
 import suggest from "./suggest/manifest";
 import inlineTitle from "./inlineTitle/manifest";
 import tags from "./tags/manifest";
@@ -39,6 +40,7 @@ export const features: readonly Manifest[] = [
   callouts,
   diagrams,
   math,
+  search,
   codeBlocks,
   links,
   tags,

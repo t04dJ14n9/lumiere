@@ -2198,3 +2198,31 @@ markers remain. Claude's Phase 5 completion record must be on main before Phase 
 Phases 6–8 remain as planned. Owner should test popup focus/IME, closing-bracket
 reuse, alias/block navigation and toggles with table/Vim keys first. Manual
 acceptance has not run.
+
+### Phase 4 progress — Search query blocks, 2026-10-08
+
+Delivered: query-specific block/fence renderers, accessible status/results and
+refresh, cancellable subscriptions and index-triggered refresh. The host lists
+VaultIndex files, excludes configured files and reads live unsaved text through
+Vaults; no per-query workspace scan. Each query gets an isolated worker with
+validated startup/submission/reply schemas, startup/evaluation deadlines and
+termination on cancel or disable. Per-document errors are counted without losing
+other results; fatal query/worker errors surface in the block. Source identity is
+checked against the host-owned index and result paths are encoded relative links.
+
+Ported four worker units and rewrote two client/protocol units; added indexed
+eligibility/live-read and host disable/re-enable tests. Generic lifecycle and
+composition tests include search and query-versus-code renderer precedence.
+README/manual scenarios and all six remaining ledger rows updated.
+Checks: `pnpm check` **385/385**, formatting/lint/types/contributions; browser smoke
+**14/14**; native smoke **1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase4-search-{check,browser,native}.txt`. Smoke suites unchanged.
+Ledger: **91 ported / 22 rewritten / 2 changed / 333 retired / 0 todo**, total 448.
+Deviations: namespaced RPC cancellation replaces source ad-hoc search IDs; the
+native adapter supplies only the packaged worker path. No lint exceptions or
+new test dependency. Pathological regex testing is a bounded unit, not a fuzzer.
+Known issues: Phase 4 pasteHtml (including cells), copyForAgent and markers remain;
+Claude owns Phase 5, and its completion record on main still gates Phase 6.
+Phases 6–8 remain. Manual query/embedded-link/refresh acceptance is unrun; owner
+should test nested-folder result links, live unsaved edits, query errors and
+source exposure while a query is loading first.
