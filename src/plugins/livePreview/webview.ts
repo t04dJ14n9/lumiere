@@ -102,6 +102,12 @@ function registerFallbackBlocks(ctx: Context): void {
           kind,
           editing: "reveal",
           match: (node) => node.name === kind,
+          // An indented code block's node starts after its indentation, which
+          // is what makes it code; render (and replace) whole lines.
+          range: (node, state) => ({
+            from: state.doc.lineAt(node.from).from,
+            to: node.to,
+          }),
           widget: (block) => new MarkdownBlock(block, ctx.render),
         }),
         { slot: "base" },

@@ -61,8 +61,9 @@ test("vertical navigation skips rendered blocks and Escape leaves final source",
   assert.equal(escapeBlock(sourceState("```\ncode\n```", 4)), undefined);
 });
 
-test("kernel disposal and Source mode remove the engine; registry effects add and remove", async () => {
-  let state = EditorState.create({ doc: "before\n\n---\n\nafter" });
+/** The Live Preview plugin in a kernel over a bare `EditorState`. */
+function livePreviewKernel(doc: string) {
+  let state = EditorState.create({ doc });
   const view = {
     get state() {
       return state;
@@ -107,10 +108,16 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
     },
   });
   const fiber = root.plugin(livePreviewWebview, { mode: "livePreview" });
+  return { root, fiber, state: () => state };
+}
+
+test("kernel disposal and Source mode remove the engine; registry effects add and remove", async () => {
+  const kernel = livePreviewKernel("before\n\n---\n\nafter");
+  const { root, fiber } = kernel;
   await root.settled();
   assert.equal(fiber.state, "active");
   const preview = root.runtime.value("livePreview") as LivePreview;
-  assert.equal(state.field(blockIndex).length, 1);
+  assert.equal(kernel.state().field(blockIndex).length, 1);
   const remove = preview.block({
     kind: "paragraph",
     editing: "reveal",
@@ -119,17 +126,27 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
       throw new Error("No DOM");
     },
   });
-  assert.equal(state.field(blockIndex).length, 3);
+  assert.equal(kernel.state().field(blockIndex).length, 3);
   remove();
-  assert.equal(state.field(blockIndex).length, 1);
+  assert.equal(kernel.state().field(blockIndex).length, 1);
   preview.setMode("source");
-  assert.equal(state.field(blockIndex, false), undefined);
+  assert.equal(kernel.state().field(blockIndex, false), undefined);
   preview.setMode("livePreview");
-  assert.equal(state.field(blockIndex).length, 1);
+  assert.equal(kernel.state().field(blockIndex).length, 1);
   await fiber.dispose();
-  assert.equal(state.field(blockIndex, false), undefined);
-  assert.equal(state.facet(blockRenderers).length, 0);
+  assert.equal(kernel.state().field(blockIndex, false), undefined);
+  assert.equal(kernel.state().facet(blockRenderers).length, 0);
   await root.dispose();
+});
+
+test("an indented code block renders from the start of its line", async () => {
+  const kernel = livePreviewKernel("Text\n\n    indented code\n");
+  await kernel.root.settled();
+  const [block] = kernel.state().field(blockIndex);
+  assert.equal(block?.kind, "CodeBlock");
+  assert.equal(block?.from, 6);
+  assert.equal(block?.source, "    indented code");
+  await kernel.root.dispose();
 });
 
 test("explicit renderer ranges cover multiline definitions without overlapping later nodes", () => {
