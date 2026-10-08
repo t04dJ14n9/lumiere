@@ -6,6 +6,7 @@ import type {
   ListedFile,
   VaultFileSystem,
   VaultSettings,
+  VaultSystem,
 } from "../../../src/plugins/vault/api";
 
 /** An in-memory vault with the file events and counters tests need. */
@@ -142,3 +143,66 @@ export function indexerOptions(
 
 export const wait = (ms = 10) =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+/** A VaultSystem over one in-memory workspace at memory:///vault. */
+export function memorySystem(fs: MemoryFileSystem, markers: string[] = []) {
+  const changed = new Set<(uri: string, text: string) => void>();
+  const closed = new Set<(uri: string) => void>();
+  const value: VaultSystem = {
+    list: (root, limit, shallow) =>
+      fs.list(root, limit).then(({ files, partial }) => ({
+        partial,
+        files: files
+          .map((file) => ({ ...file, path: within(root, file.uri) }))
+          .filter(
+            (file): file is typeof file & { path: string } =>
+              file.path !== undefined && (!shallow || !file.path.includes("/")),
+          ),
+      })),
+    read: (uri) => fs.read(uri),
+    watch: (root, listener) => fs.watch(root, listener),
+    workspaceFolder: (uri) =>
+      uri.startsWith("memory:///vault/") ? "memory:///vault" : undefined,
+    workspaceFolders: () => ["memory:///vault"],
+    exists: async (uri) => markers.includes(uri),
+    store: () => undefined,
+    settings: () => ({
+      folderNote: "",
+      linkFormat: "shortest",
+      excludedFiles: [],
+      rootMarkers: [".obsidian"],
+    }),
+    onSettingsChanged: () => () => {},
+    onDocumentChanged: (listener) => {
+      changed.add(listener);
+      return () => {
+        changed.delete(listener);
+      };
+    },
+    onDocumentClosed: (listener) => {
+      closed.add(listener);
+      return () => {
+        closed.delete(listener);
+      };
+    },
+    createParser: () => ({
+      parse: async (text) => metadata(text),
+      dispose() {},
+    }),
+    hash: (text) => text,
+    warn() {},
+  };
+  return {
+    value,
+    type: (uri: string, text: string) =>
+      changed.forEach((listener) => listener(uri, text)),
+    close: (uri: string) => closed.forEach((listener) => listener(uri)),
+  };
+}
+
+function within(root: string, uri: string): string | undefined {
+  const prefix = root + "/";
+  return uri.startsWith(prefix)
+    ? decodeURIComponent(uri.slice(prefix.length))
+    : undefined;
+}
