@@ -18,22 +18,30 @@ interface PendingScroll {
   settleUntil: number;
 }
 export function createViewState() {
-  const pendingScroll = new WeakMap<EditorView, PendingScroll>();
-  const SETTLE_MS = 1500;
+  return new ViewState();
+}
+const SETTLE_MS = 1500;
+class ViewState {
+  private readonly pendingScroll = new WeakMap<EditorView, PendingScroll>();
+  readonly restoreScrollPosition;
 
-  function anchorOffset(view: EditorView, from: number): number {
+  constructor() {
+    this.restoreScrollPosition = this.scrollExtensions();
+  }
+
+  private anchorOffset(view: EditorView, from: number): number {
     const block = view.lineBlockAt(from);
     const top = view.scrollDOM.getBoundingClientRect().top;
     return block.top + (view.documentTop - top) / view.scaleY;
   }
 
   /** Re-pin the restored line after CodeMirror's next measurement. */
-  function correctPinnedScroll(view: EditorView, saved: PendingScroll): void {
+  private correctPinnedScroll(view: EditorView, saved: PendingScroll): void {
     view.requestMeasure({
-      key: pendingScroll,
+      key: this.pendingScroll,
       read: (current) =>
-        pendingScroll.get(current) === saved
-          ? anchorOffset(current, saved.from) - saved.offset
+        this.pendingScroll.get(current) === saved
+          ? this.anchorOffset(current, saved.from) - saved.offset
           : undefined,
       write: (difference, current) => {
         if (difference !== undefined && Math.abs(difference) > 0.5) {
@@ -43,58 +51,57 @@ export function createViewState() {
     });
   }
 
-  const cancelScrollRestore = (_event: Event, view: EditorView): void => {
-    pendingScroll.delete(view);
-  };
+  private scrollExtensions() {
+    const cancelScrollRestore = (_event: Event, view: EditorView): void => {
+      this.pendingScroll.delete(view);
+    };
 
-  const restoreScrollPosition = [
-    EditorView.scrollHandler.of((view, range) => {
-      const saved = pendingScroll.get(view);
-      if (!saved) {
-        return false;
-      }
-      if (saved.applied || range.head !== saved.from) {
-        pendingScroll.delete(view);
-        return false;
-      }
-      saved.applied = true;
-      saved.settleUntil = Date.now() + SETTLE_MS;
-      // Runs in CodeMirror's measured scrolling phase, including when one wrapped
-      // line is taller than the viewport. Ordinary navigation margins are clamped.
-      view.scrollDOM.scrollTop += anchorOffset(view, saved.from) - saved.offset;
-      view.scrollDOM.scrollLeft = saved.left;
-      correctPinnedScroll(view, saved);
-      return true;
-    }),
-    ViewPlugin.define((view) => ({
-      update(update) {
-        const saved = pendingScroll.get(view);
-        if (
-          !saved?.applied ||
-          !(update.geometryChanged || update.heightChanged)
-        ) {
-          return;
+    return [
+      EditorView.scrollHandler.of((view, range) => {
+        const saved = this.pendingScroll.get(view);
+        if (!saved) {
+          return false;
         }
-        if (Date.now() > saved.settleUntil) {
-          pendingScroll.delete(view);
-        } else {
-          correctPinnedScroll(view, saved);
+        if (saved.applied || range.head !== saved.from) {
+          this.pendingScroll.delete(view);
+          return false;
         }
-      },
-    })),
-    EditorView.domEventHandlers({
-      wheel: cancelScrollRestore,
-      pointerdown: cancelScrollRestore,
-      keydown: cancelScrollRestore,
-      touchstart: cancelScrollRestore,
-    }),
-  ];
-
+        saved.applied = true;
+        saved.settleUntil = Date.now() + SETTLE_MS;
+        // Runs in CodeMirror's measured scrolling phase, including when one wrapped
+        // line is taller than the viewport. Ordinary navigation margins are clamped.
+        view.scrollDOM.scrollTop +=
+          this.anchorOffset(view, saved.from) - saved.offset;
+        view.scrollDOM.scrollLeft = saved.left;
+        this.correctPinnedScroll(view, saved);
+        return true;
+      }),
+      ViewPlugin.define((view) => ({
+        update: (update) => {
+          const saved = this.pendingScroll.get(view);
+          if (
+            !saved?.applied ||
+            !(update.geometryChanged || update.heightChanged)
+          ) {
+            return;
+          }
+          if (Date.now() > saved.settleUntil) {
+            this.pendingScroll.delete(view);
+          } else {
+            this.correctPinnedScroll(view, saved);
+          }
+        },
+      })),
+      EditorView.domEventHandlers({
+        wheel: cancelScrollRestore,
+        pointerdown: cancelScrollRestore,
+        keydown: cancelScrollRestore,
+        touchstart: cancelScrollRestore,
+      }),
+    ];
+  }
   /** Measure only when transferring a pane, never on its ordinary typing path. */
-  function captureViewState(
-    view: EditorView,
-    state: EditorViewState,
-  ): EditorViewState {
+  captureViewState(view: EditorView, state: EditorViewState): EditorViewState {
     const viewport = view.scrollDOM.getBoundingClientRect();
     const block = view.lineBlockAtHeight(
       (viewport.top - view.documentTop) / view.scaleY,
@@ -110,12 +117,12 @@ export function createViewState() {
   }
 
   /** Restore presentation without the unfolding and centering of source navigation. */
-  function restoreViewState(view: EditorView, saved: EditorViewState): void {
+  restoreViewState(view: EditorView, saved: EditorViewState): void {
     const length = view.state.doc.length;
     const effects: StateEffect<unknown>[] = [];
     if (saved.scrollAnchor) {
       const from = Math.min(saved.scrollAnchor.from, length);
-      pendingScroll.set(view, {
+      this.pendingScroll.set(view, {
         from,
         offset: saved.scrollAnchor.offset,
         left: saved.scrollLeft ?? 0,
@@ -136,6 +143,4 @@ export function createViewState() {
       view.scrollDOM.scrollLeft = saved.scrollLeft ?? 0;
     }
   }
-
-  return { restoreScrollPosition, captureViewState, restoreViewState };
 }

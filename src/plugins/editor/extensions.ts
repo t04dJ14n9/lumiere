@@ -30,7 +30,7 @@ export class ExtensionRegistry {
       (a, b) =>
         slots[a.slot] - slots[b.slot] ||
         this.rank(a.owner) - this.rank(b.owner) ||
-        (a.owner < b.owner ? -1 : a.owner > b.owner ? 1 : 0) ||
+        compareOwners(a.owner, b.owner) ||
         a.order - b.order,
     );
   }
@@ -53,4 +53,11 @@ export class ExtensionRegistry {
       }
     };
   }
+}
+
+function compareOwners(left: string, right: string): number {
+  if (left < right) {
+    return -1;
+  }
+  return left > right ? 1 : 0;
 }

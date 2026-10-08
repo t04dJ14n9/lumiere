@@ -38,3 +38,23 @@ test("extension slots, rank and per-owner order survive removal and re-registrat
   await stop();
   assert.equal(state.field(retained), identity);
 });
+
+test("equal-ranked extension owners sort by ID independent of registration history", async () => {
+  const registry = new ExtensionRegistry(
+    () => 0,
+    () => {},
+  );
+  const stop = registry.register("z", []);
+  registry.register("a", []);
+  registry.register("a", []);
+  assert.deepEqual(
+    registry.ordered().map((entry) => entry.owner),
+    ["a", "a", "z"],
+  );
+  await stop();
+  registry.register("z", []);
+  assert.deepEqual(
+    registry.ordered().map((entry) => entry.owner),
+    ["a", "a", "z"],
+  );
+});

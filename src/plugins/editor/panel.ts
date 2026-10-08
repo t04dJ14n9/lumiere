@@ -6,23 +6,23 @@ import { Endpoint } from "../../shared/rpc/endpoint";
 import { config as editorConfig } from "./manifest";
 import { protocol } from "./protocol";
 import { webviewHTML } from "./webview-html";
+interface PanelOptions {
+  onClose(): void;
+  onState(): void;
+  configure(context: Context, shell: PanelShell): void;
+  rank?: (owner: string) => number;
+}
+
 export function createPanel(
   shell: PanelShell,
   documents: Documents,
   workbench: Workbench,
-  onClose: () => void,
-  onState: () => void,
-  configure: (context: Context, shell: PanelShell) => void,
-  rank: (owner: string) => number = () => 0,
+  options: PanelOptions,
 ): EditorPanel {
+  const { onClose, onState, configure, rank = () => 0 } = options;
   const owned = Context.create({ rank });
   const session = documents.session(shell.document);
-  const rpc = new Endpoint(shell.transport, {
-    after(ms, callback) {
-      const timer = setTimeout(callback, ms);
-      return () => clearTimeout(timer);
-    },
-  });
+  const rpc = createPanelEndpoint(shell.transport);
   owned.provide("workbench", workbench);
   owned.provide("rpc", rpc);
   configure(owned, shell);
@@ -64,19 +64,38 @@ export function createPanel(
       };
     }),
   );
+  registerClipboard(owned, rpc, workbench.clipboard);
+  registerConfiguration(owned, rpc, shell.document, workbench);
+  shell.setHTML(webviewHTML(shell));
+  return panel;
+}
+
+function registerClipboard(
+  owned: Context,
+  rpc: Endpoint,
+  clipboard: Workbench["clipboard"],
+): void {
   owned.effect(() =>
-    rpc.handle(protocol, "clipboardRead", () => workbench.clipboard.read()),
+    rpc.handle(protocol, "clipboardRead", () => clipboard.read()),
   );
   owned.effect(() =>
     rpc.handle(protocol, "clipboardWrite", async ({ text }) => {
-      await workbench.clipboard.write(text);
+      await clipboard.write(text);
       return true;
     }),
   );
+}
+
+function registerConfiguration(
+  owned: Context,
+  rpc: Endpoint,
+  document: PanelShell["document"],
+  workbench: Workbench,
+): void {
   if (workbench.onConfiguration) {
     owned.effect(() =>
       workbench.onConfiguration!(() => {
-        const config = workbench.config(shell.document);
+        const config = workbench.config(document);
         rpc.notify(
           protocol,
           "configureEditor",
@@ -90,6 +109,13 @@ export function createPanel(
       }),
     );
   }
-  shell.setHTML(webviewHTML(shell));
-  return panel;
+}
+
+function createPanelEndpoint(transport: PanelShell["transport"]): Endpoint {
+  return new Endpoint(transport, {
+    after(ms, callback) {
+      const timer = setTimeout(callback, ms);
+      return () => clearTimeout(timer);
+    },
+  });
 }

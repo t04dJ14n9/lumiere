@@ -498,3 +498,11 @@ smoke scenarios. Use only the disposable fixture vault described above.
   **commands and resources (Phase 3)**, especially CRLF edits, save/undo,
   independent panels, active-group routing, resource URLs and config changes.
   The native smoke passed in an isolated profile; full owner acceptance is unrun.
+
+- **Editor:** rerun **document and editor (Phase 3)** and all **Composition fixes**
+  scenarios: two panels with distinct selections and scroll, version-checked view
+  transfers, restore/reload with delayed image/math layout, settings updates,
+  feature toggles and active-tab routing. Scroll/type during restore to cancel
+  pinning. Keep folds/callout disclosures while changing indentation; verify
+  projected table selections and clipboard. Native smoke passed; owner checks
+  have not been run.

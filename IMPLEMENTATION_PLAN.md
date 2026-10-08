@@ -287,6 +287,17 @@ found, and the unit test count before and after.
 
 ## Phase 5 — Vault index and host features
 
+**Owned by Claude, in parallel (added 8 October 2026).** Claude implements
+this phase on the branch `claude/phase5-vault` in the worktree
+`~/Code/vscode-markdown-workbench-phase5` and merges it into `main` when its
+record "Phase 5 (completed)" is written. Codex does not work on Phase 5 and
+does not edit that worktree or branch. Build Phase 4's `suggest`, `tags` and
+`search` against the `VaultIndex` interface in `src/plugins/vault/api.ts`;
+the stub keeps working until the real index replaces it behind the same
+interface. Do not change that interface: if you need more from the vault,
+record what under "Known issues". When Phase 4 is complete and Phase 5 is not
+yet on `main`, end the run with your summary instead of starting Phase 6.
+
 - `vault` (DESIGN §12): file map, unique-basename lookup, worker parsing,
   persistence, link maps with incremental re-resolution, open-document
   overlay, ignore rules, `vault/changed` and `vault/resolved`.
@@ -1304,3 +1315,30 @@ eslint.legacy.mjs entries. Complete other plugin READMEs, kernel why-comments
 and manual regression inventory, then remove the backlog and run completion
 checks. Remaining Phase 4 plugins and Phases 5–8 remain undelivered as recorded
 above. Native smoke success does not imply owner acceptance or Phase 8 completion.
+
+### Readability pass progress — Editor, 2026-10-08
+
+Delivered: host registration separates active contexts and the editor facade;
+panel setup takes named lifecycle options and has dedicated channel registrations.
+Webview apply lists view/settings/service/selection/persistence/reveal setup.
+`service.ts` owns caller-bound registration; `persistence.ts` owns capture/restore
+and persistence subscriptions. Scroll anchoring has an instance owner with named
+capture/restore/measurement methods. Rewrote the README and manual regression
+inventory. Extension owner tie-breaking is named and unit-covered.
+
+Backlog since preceding unit → now: max-lines-per-function 45 → 41; complexity
+21 → 21; max-params 9 → 8; no-nested-ternary 14 → 13; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 60 → 55. All Editor entries removed;
+no new exemptions or inline disables. Unit count 232 → 233.
+Checks, in order: `pnpm check` 233/233; `pnpm test:browser` 14/14;
+`pnpm test:vscode` 1/1, fresh VSIX in the isolated /tmp profile.
+Logs: `docs/checks/readability-editor-{check,browser,native}.txt`.
+Ledger unchanged: 87/15/2/333/11, total 448. No smoke additions.
+Deviations: none. No intentional behavior changes or newly discovered source bug.
+
+Known issues / exact remaining work: footnotes registrations; markdown/search/
+evaluate and metadata/footnote-extract; every other remaining eslint.legacy.mjs
+entry. Rewrite remaining plugin READMEs and add kernel why-comments; finish manual
+regression inventory, remove the empty backlog/config block, and run readability
+completion checks. Then remaining Phase 4 plugins and Phases 5–8 as recorded
+above. Full owner acceptance remains unrun; no phase completion is claimed.

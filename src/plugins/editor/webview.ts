@@ -1,7 +1,5 @@
 import { settingsExtensions } from "./settings";
 import { config as editorConfig } from "./manifest";
-import { bindCaller } from "../../kernel";
-import type { CallerBound } from "../../kernel";
 import { ExtensionRegistry } from "./extensions";
 import { ViewContributions } from "./contributions";
 import { createMenu } from "../../webview/ui/menu";
@@ -12,16 +10,16 @@ import { getSyncedVersion } from "@codemirror/collab";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
 import type {} from "../dialect/api";
-import type { EditorService } from "./api";
-import { protocol, viewState } from "./protocol";
+import { protocol, type viewState } from "./protocol";
 import type { Infer } from "../../kernel";
-import { createClipboard } from "./clipboard";
+import { createEditorService } from "./service";
+import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
 >();
-export const editorWebview: Plugin<{
+interface EditorConfig {
   source: string;
   editor?: Infer<typeof editorConfig>;
   saved?: unknown;
@@ -29,7 +27,8 @@ export const editorWebview: Plugin<{
   text: string;
   parent: HTMLElement;
   mode: "source" | "livePreview";
-}> = {
+}
+export const editorWebview: Plugin<EditorConfig> = {
   name: "editor",
   inject: { required: ["document", "markdown", "rpc"] },
   reconfigure(ctx, config) {
@@ -44,202 +43,152 @@ export const editorWebview: Plugin<{
     const presentation = createViewState();
     const pluginExtensions = new Compartment();
     const settings = new Compartment();
-    let mode = config.mode;
-    const view = new EditorView({
-      parent: config.parent,
-      state: EditorState.create({
-        doc: config.text,
-        extensions: [
-          pluginExtensions.of([]),
-          settings.of(
-            settingsExtensions(editorConfig.parse(config.editor ?? {})),
-          ),
-          presentation.restoreScrollPosition,
-          ctx.document.extension,
-          ctx.markdown.language(),
-          drawSelection(),
-          EditorView.lineWrapping,
-          EditorView.contentAttributes.of({ "aria-label": "Markdown content" }),
-          Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
-          Prec.low(keymap.of(defaultKeymap)),
-          EditorView.updateListener.of((update) => {
-            if (update.selectionSet || update.focusChanged) {
-              ctx.rpc.notify(protocol, "selectionChanged", {
-                hasSelection: !update.state.selection.main.empty,
-              });
-            }
-          }),
-        ],
-      }),
+    const view = createEditorView(ctx, config, presentation, {
+      settings,
+      pluginExtensions,
     });
     ctx.effect(() => () => view.destroy());
-    configurations.set(ctx, (value) => {
-      view.dispatch({
-        effects: settings.reconfigure(settingsExtensions(value)),
-      });
-    });
-    ctx.effect(() => () => {
-      configurations.delete(ctx);
-    });
+    registerSettings(ctx, view, settings);
     ctx.effect(() => ctx.document.attach(view));
     const contributions = new ViewContributions(view);
     const registry = new ExtensionRegistry(ctx.runtime.rank, (extensions) => {
       view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
     });
-    const editor: EditorService & CallerBound<EditorService> = {
-      [bindCaller](caller) {
-        return new Proxy(editor, {
-          get(target, key, receiver) {
-            if (key === "extend") {
-              return (
-                extension: Parameters<EditorService["extend"]>[0],
-                options?: Parameters<EditorService["extend"]>[1],
-              ) =>
-                registry.register(
-                  options?.owner ?? caller.fiber!.definition.name,
-                  extension,
-                  options?.slot,
-                );
-            }
-            return Reflect.get(target, key, receiver);
-          },
-        });
-      },
+    const editor = createEditorService({
       view,
-      clipboard: createClipboard(ctx.rpc),
+      registry,
+      contributions,
       source: config.source,
-      viewState: contributions,
-      get mode() {
-        return mode;
-      },
-      set mode(value) {
-        mode = value;
-      },
-      focus() {
-        view.focus();
-      },
-      extend(extension, options) {
-        return registry.register(
-          options?.owner ?? "editor",
-          extension,
-          options?.slot,
-        );
-      },
-    };
+      mode: config.mode,
+      rpc: ctx.rpc,
+    });
     ctx.provide("editor", editor);
-    const openMenu = createMenu();
-    ctx.provide("menu", {
-      open(owner, items, point, label) {
-        return openMenu(
-          owner,
-          items,
-          point,
-          (message) => ctx.logger.error(message),
-          label,
-        );
-      },
-    });
-    const status = document.createElement("div");
-    status.className = "sync-status";
-    status.setAttribute("role", "status");
-    config.parent.append(status);
-    ctx.effect(() => () => status.remove());
-    ctx.on("document/syncStatus", (message) => {
-      status.textContent = message;
-    });
+    provideMenu(ctx);
+    registerSyncStatus(ctx, config.parent);
 
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "captureSelection", async () => {
-        await ctx.document.flush();
-        const { from, to } =
-          ctx.bail("editor/projectSelection") ?? view.state.selection.main;
-        return {
-          from,
-          to,
-          version: getSyncedVersion(view.state),
-          text: view.state.sliceDoc(from, to),
-        };
-      }),
+    registerSelectionCapture(ctx, view);
+    registerViewPersistence(
+      ctx,
+      editor,
+      { presentation, contributions },
+      config,
     );
-    const capture = () => {
-      return {
-        source: config.source,
-        anchor: view.state.selection.main.anchor,
-        head: view.state.selection.main.head,
-        scrollTop: view.scrollDOM.scrollTop,
-        scrollLeft: view.scrollDOM.scrollLeft,
-        folded: [],
-        folds: {},
-        contributions: contributions.capture(),
-        mode,
-      };
-    };
-    const restore = (state: Infer<typeof viewState>) => {
-      mode = state.mode;
-      // Legacy top-level keys remain readable by their owning contributors.
-      contributions.restore(state.contributions, state.source, {
-        folded: state.folded,
-        folds: state.folds,
-      });
-      presentation.restoreViewState(view, state);
-      ctx.emit("editor/modeRestored", state.mode);
-    };
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "captureView", async () => {
-        await ctx.document.flush();
-        return presentation.captureViewState(view, capture());
-      }),
-    );
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "restoreView", (state) => {
-        restore(state);
-        return true;
-      }),
-    );
-    ctx.effect(() =>
-      editor.extend(
-        EditorView.updateListener.of((update) => {
-          if (
-            update.selectionSet ||
-            update.docChanged ||
-            update.transactions.some((tr) => tr.effects.length > 0)
-          ) {
-            config.persist?.(capture());
-          }
-        }),
-      ),
-    );
-    ctx.effect(() => {
-      const save = () => config.persist?.(capture());
-      view.scrollDOM.addEventListener("scroll", save);
-      return () => view.scrollDOM.removeEventListener("scroll", save);
-    });
-    if (config.saved) {
-      try {
-        const saved = viewState.parse(config.saved);
-        if (saved.source === config.source) {
-          restore(saved);
-        }
-      } catch (error) {
-        ctx.logger.warn("Ignored invalid saved view state", error);
-      }
-    }
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "reveal", ({ from, to, focus }) => {
-        ctx.emit("editor/clearProjection");
-        if (from > to || to > view.state.doc.length) {
-          throw new Error("Invalid selection");
-        }
-        view.dispatch({
-          selection: { anchor: from, head: to },
-          scrollIntoView: true,
-        });
-        if (focus) {
-          view.focus();
-        }
-        return true;
-      }),
-    );
+    registerReveal(ctx, view);
     view.focus();
   },
 };
+
+function createEditorView(
+  ctx: Context,
+  config: EditorConfig,
+  presentation: ReturnType<typeof createViewState>,
+  compartments: {
+    settings: Compartment;
+    pluginExtensions: Compartment;
+  },
+): EditorView {
+  const { settings, pluginExtensions } = compartments;
+  return new EditorView({
+    parent: config.parent,
+    state: EditorState.create({
+      doc: config.text,
+      extensions: [
+        pluginExtensions.of([]),
+        settings.of(
+          settingsExtensions(editorConfig.parse(config.editor ?? {})),
+        ),
+        presentation.restoreScrollPosition,
+        ctx.document.extension,
+        ctx.markdown.language(),
+        drawSelection(),
+        EditorView.lineWrapping,
+        EditorView.contentAttributes.of({ "aria-label": "Markdown content" }),
+        Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
+        Prec.low(keymap.of(defaultKeymap)),
+        EditorView.updateListener.of((update) => {
+          if (update.selectionSet || update.focusChanged) {
+            ctx.rpc.notify(protocol, "selectionChanged", {
+              hasSelection: !update.state.selection.main.empty,
+            });
+          }
+        }),
+      ],
+    }),
+  });
+}
+
+function registerSettings(
+  ctx: Context,
+  view: EditorView,
+  settings: Compartment,
+): void {
+  configurations.set(ctx, (value) => {
+    view.dispatch({
+      effects: settings.reconfigure(settingsExtensions(value)),
+    });
+  });
+  ctx.effect(() => () => {
+    configurations.delete(ctx);
+  });
+}
+
+function provideMenu(ctx: Context): void {
+  const openMenu = createMenu();
+  ctx.provide("menu", {
+    open(owner, items, point, label) {
+      return openMenu(
+        owner,
+        items,
+        point,
+        (message) => ctx.logger.error(message),
+        label,
+      );
+    },
+  });
+}
+
+function registerSyncStatus(ctx: Context, parent: HTMLElement): void {
+  const status = document.createElement("div");
+  status.className = "sync-status";
+  status.setAttribute("role", "status");
+  parent.append(status);
+  ctx.effect(() => () => status.remove());
+  ctx.on("document/syncStatus", (message) => {
+    status.textContent = message;
+  });
+}
+
+function registerSelectionCapture(ctx: Context, view: EditorView): void {
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "captureSelection", async () => {
+      await ctx.document.flush();
+      const { from, to } =
+        ctx.bail("editor/projectSelection") ?? view.state.selection.main;
+      return {
+        from,
+        to,
+        version: getSyncedVersion(view.state),
+        text: view.state.sliceDoc(from, to),
+      };
+    }),
+  );
+}
+
+function registerReveal(ctx: Context, view: EditorView): void {
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "reveal", ({ from, to, focus }) => {
+      ctx.emit("editor/clearProjection");
+      if (from > to || to > view.state.doc.length) {
+        throw new Error("Invalid selection");
+      }
+      view.dispatch({
+        selection: { anchor: from, head: to },
+        scrollIntoView: true,
+      });
+      if (focus) {
+        view.focus();
+      }
+      return true;
+    }),
+  );
+}

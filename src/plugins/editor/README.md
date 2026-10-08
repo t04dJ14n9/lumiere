@@ -1,26 +1,53 @@
 # Editor
 
-Core `editor` plugin. Its registrations belong to the plugin context and are
-removed on disposal. See DESIGN.md for its service and lifecycle contract.
+Hosts the Markdown editing surface and keeps each panel's selection, scroll and
+presentation independent, like separate Obsidian editor panes.
 
-Core Phase 3 is implemented; owner visual acceptance is pending.
+## How it works
 
-The editor service exposes host-mediated clipboard read/write for feature
-menus. Native CodeMirror clipboard events retain source text; structured
-properties and HTML conversion belong to their feature plugins. View transfer
-flushes first, rejects a moving document version, and retains the old source
-identity to remap disclosure keys after rename. Unit tests cover independent
-panel captures, backward selections, fold replacement and scroll restoration.
+The host creates one panel context and RPC endpoint for each native editor panel,
+attached to a shared TextDocument session. The webview creates CodeMirror and
+provides caller-bound extension registration, clipboard and menu services.
+Extensions sort by slot, catalog rank, owner ID and owner-local order in one
+compartment. Persistence captures source identity and feature-owned contributions;
+transfers flush first and reject a moving document version. Settings update a
+separate compartment so user state survives reconfiguration.
 
-Extensions use one reconfigured compartment and the pure `ExtensionRegistry`.
-Registrations sort by slot, catalog rank, owner ID and per-owner registration
-order. `editor` binds `extend` to its consumer; an explicit owner supports
-service forwarding such as Live Preview's caller-bound block/inline methods.
-The registry removes registrations rather than leaving empty compartments.
+## Files
 
-Core owns `editor.useTabs` (true) and `editor.tabSize` (4, integer 1–16).
-Configuration updates go through the existing editor fiber and reconfigure only
-its settings compartment, preserving the document, selection and feature state.
-View-state contributions validate their own payloads, restore on late registration,
-and retain inactive/unknown keys. The old top-level `folded`/`folds` protocol
-fields are read-only compatibility inputs; folding and callouts own their data.
+- `manifest.ts`: core identity and indentation configuration schema.
+- `api.ts`: editor, panel, menu, view-state and event contracts.
+- `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
+- `host.ts`: panel registry, editor service and active-context registrations.
+- `panel.ts`: per-panel context, session connection and RPC lifetimes.
+- `webview-html.ts`: CSP, scripts and native webview HTML.
+- `webview.ts`: view creation and named service/settings/RPC registrations.
+- `service.ts`: shared editor facade with caller-bound extension ownership.
+- `extensions.ts`: deterministic ordered extension registry.
+- `settings.ts`: CodeMirror indentation extensions.
+- `clipboard.ts`: validated clipboard RPC client.
+- `contributions.ts`: feature-owned view-state validation and restoration.
+- `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.
+- `view-state.ts`: geometric scroll anchoring and presentation restoration.
+- `view-transfer.ts`: flushed, version-checked native view transfers.
+- `extensions.test.ts`: ordering, owner tie-breaks and retained state units.
+- `settings.test.ts`: indentation settings and compartment preservation units.
+- `contributions.test.ts`: contribution capture, late restoration and validation.
+- `clipboard.test.ts`: clipboard RPC lifecycle units.
+
+## Services, events and settings
+
+Host injects `workbench` and `documents`, provides `editors`, and emits/listens to
+`editor/opened`, `editor/closed` and `editor/activeChanged`. Webview injects
+`document`, `markdown` and `rpc`, provides `editor` and `menu`, listens to
+`document/syncStatus`, calls `editor/projectSelection`, and emits
+`editor/clearProjection` and `editor/modeRestored`. Selection changes notify the
+host through the editor channel. Core settings are `editor.useTabs` (true) and
+`editor.tabSize` (4, integer 1–16), under `markdownWorkbench`.
+
+## Limits and differences from Obsidian
+
+VS Code owns text, saving and undo. The core editor cannot be disabled. Feature
+state belongs to its contributing plugin; inactive/unknown contribution keys
+are retained. Legacy top-level `folded`/`folds` fields remain readable compatibility
+inputs. Structured clipboard and HTML conversion are owned by their features.
