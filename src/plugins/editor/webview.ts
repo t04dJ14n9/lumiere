@@ -136,13 +136,13 @@ function provideMenu(ctx: Context): void {
   const openMenu = createMenu();
   ctx.provide("menu", {
     open(owner, items, point, label) {
-      return openMenu(
+      return openMenu({
         owner,
         items,
         point,
-        (message) => ctx.logger.error(message),
+        error: (message) => ctx.logger.error(message),
         label,
-      );
+      });
     },
   });
 }

@@ -16,7 +16,6 @@ export default {
     "src/plugins/livePreview/inline.ts",
     "src/plugins/livePreview/rendered-position.ts",
     "src/plugins/livePreview/webview.ts",
-    "src/webview/ui/menu.ts",
   ],
   complexity: [
     "src/host/navigation.ts",
@@ -25,11 +24,7 @@ export default {
     "src/plugins/links/host.ts",
     "src/plugins/livePreview/inline.ts",
   ],
-  "max-params": [
-    "src/host/navigation.ts",
-    "src/plugins/embeds/image.ts",
-    "src/webview/ui/menu.ts",
-  ],
+  "max-params": ["src/host/navigation.ts", "src/plugins/embeds/image.ts"],
   "no-nested-ternary": [
     "src/markdown/search/canvas.ts",
     "src/plugins/embeds/image.ts",

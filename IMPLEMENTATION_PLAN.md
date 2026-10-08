@@ -1883,3 +1883,20 @@ Deviations: none. Existing Properties clipboard manual scenarios cover consumers
 Known issues: remaining 13 backlog files and README/manual inventory before
 readability completion checks, remaining Phase 4 plugins, Claude's incomplete
 Phase 5 handoff and Phases 6–8 as specified above. Owner acceptance unrun.
+
+### Readability pass progress — Editor menus, 2026-10-08
+
+Delivered: MenuSession owns panel stacks, focus, submenu and dismissal lifetimes;
+button construction, command invocation and viewport placement are named units.
+The internal opener takes an options object; the injected Menu API is unchanged.
+Added a pure key-navigation unit including wraparound and empty menus. Test lives
+under test/unit because webview production tsconfig intentionally excludes Node.
+Backlog: 13 → 12 distinct files; long-function 13 → 12; parameters 3 → 2;
+other counts unchanged. No new lint exceptions or intentional behavior fixes.
+Checks: `pnpm check` 344/344; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-menu-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Manual regression inventory updated;
+owner acceptance unrun.
+Known issues: remaining 12 backlog files and README/manual inventory, ordered
+readability completion checks, remaining Phase 4 plugins, Claude's incomplete
+Phase 5 handoff and Phases 6–8 as specified above.

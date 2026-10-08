@@ -633,3 +633,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
 - **Resources:** rerun contained resources, nested embeds, previews and unsaved
   embedded-note edits. Confirm relative nested links and mtime URLs, refusal of
   unknown source identities, realpath escapes and virtual symlinks. Not run here.
+
+- **Editor menus:** rerun table and property menus, including nested submenus,
+  disabled entries, Arrow/Home/End, Escape/Tab, outside click, blur and command
+  errors. Verify focus restoration and right/bottom viewport placement; dispose
+  the owning widget while a menu is open. Not run by the agent.
