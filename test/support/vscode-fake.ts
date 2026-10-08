@@ -12,8 +12,6 @@ export function fakeWorkbench(overrides: Partial<Workbench> = {}): Workbench {
     error() {},
     registerEditor: () => () => {},
     config: () => ({ preset: "minimal", mode: "source" }),
-    root: () => "file:///fixture",
-    files: async () => [],
     read: async () => new Uint8Array(),
     stat: async () => ({ mtime: 0, symbolicLink: false }),
     ...overrides,

@@ -56,7 +56,6 @@ export class BrowserHost {
     };
     const workbench: Workbench = {
       fingerprint: (text) => text,
-      files: async () => [],
       read: async () => new Uint8Array(),
       stat: async () => ({ mtime: 0, symbolicLink: false }),
       async apply(_document, edits) {
@@ -104,7 +103,6 @@ export class BrowserHost {
       },
       registerEditor: (_open: (panel: PanelShell) => void) => () => {},
       config: () => ({ preset: "obsidian", mode: "livePreview" }),
-      root: () => "file:///fixture",
     };
     this.session = new Session(this.document, workbench);
   }

@@ -65,17 +65,8 @@ export interface Workbench {
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
   };
-  root(document: HostDocument): string;
-}
-export interface FileInfo {
-  uri: string;
-  path: string;
-  mtime: number;
-  size: number;
-  symbolicLink: boolean;
 }
 export interface Workbench {
-  files(root: string): Promise<readonly FileInfo[]>;
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
 }

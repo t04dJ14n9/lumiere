@@ -188,34 +188,8 @@ function configurationOperations(): Pick<
     },
   };
 }
-function fileOperations(): Pick<Workbench, "root" | "files" | "read" | "stat"> {
+function fileOperations(): Pick<Workbench, "read" | "stat"> {
   return {
-    root(document) {
-      return (
-        vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(document.uri))
-          ?.uri ?? vscode.Uri.joinPath(vscode.Uri.parse(document.uri), "..")
-      ).toString();
-    },
-    async files(root) {
-      const base = vscode.Uri.parse(root);
-      const uris = await vscode.workspace.findFiles(
-        new vscode.RelativePattern(base, "**/*"),
-        "**/{.git,node_modules}/**",
-        25000,
-      );
-      return Promise.all(
-        uris.map(async (uri) => {
-          const info = await vscode.workspace.fs.stat(uri);
-          return {
-            uri: uri.toString(),
-            path: uri.path.slice(base.path.replace(/\/$/, "").length + 1),
-            mtime: info.mtime,
-            size: info.size,
-            symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink),
-          };
-        }),
-      );
-    },
     async read(uri) {
       return vscode.workspace.fs.readFile(vscode.Uri.parse(uri));
     },

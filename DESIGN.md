@@ -541,8 +541,8 @@ interface.
 | `editor/selectionChanged` | host | emit | `(panel, hasSelection)` | |
 | `document/changed` | host | emit | `(session, change)` | after the `TextDocument` changes |
 | `document/willSave` | host | serial | `(session)` | flush webviews; plugins finish pending edits |
-| `vault/changed` | host | emit | `(change: VaultChange)` | create/modify/delete/rename, after indexing |
-| `vault/resolved` | host | emit | `()` | link maps settled (Obsidian `resolved`) |
+| `vault/changed` | host | emit | `(root, change: VaultChange)` | create/modify/delete/rename, after indexing; `root` names the vault |
+| `vault/resolved` | host | emit | `(root)` | link maps settled (Obsidian `resolved`) |
 | `links/open` | host | bail | `(request: LinkRequest) => Promise<true> \| undefined` | first handler wins; then the default (§16) |
 | `files/willRename` | host | serial | `(rename, edit: WorkspaceEdit)` | `linkUpdates` adds link rewrites |
 | `render/fence` | webview | bail | `(fence, pass) => RenderedFence \| undefined` | `math`, `diagrams`, `search`, `codeBlocks` claim languages |
@@ -906,9 +906,14 @@ interface VaultIndex {
   when the queue drains.
 - Open documents count with their unsaved text: `document/changed` re-indexes
   a note from its `TextDocument`, debounced to 300 ms.
-- Ignored: `.git`, `node_modules`, `.obsidian`, hidden folders and
-  `markdownWorkbench.vault.excludedFiles` (Obsidian's "Excluded files").
-  Limit 50,000 files per vault; beyond that the index reports itself partial.
+- Ignored: hidden folders (`.git`, `.obsidian`, `.trash`) and
+  `node_modules`. `markdownWorkbench.vault.excludedFiles` is Obsidian's
+  **Excluded files** and behaves as it does there: excluded files are still
+  indexed and links to them resolve, but they are flagged `excluded`, and the
+  quick switcher, suggestions, search and unlinked mentions leave them out. A
+  filter without wildcards is a path prefix, as in Obsidian; globs are also
+  accepted. Limit 50,000 files per vault; beyond that the index reports
+  itself partial.
 
 ### 12.3 Link resolution
 

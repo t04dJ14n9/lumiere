@@ -853,6 +853,26 @@
           "default": "visible",
           "scope": "resource"
         },
+        "markdownWorkbench.vault.rootMarkers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            ".obsidian"
+          ],
+          "description": "A folder containing one of these entries is a vault root; without one, the workspace folder is the vault.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.vault.excludedFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
+          "scope": "resource"
+        },
         "markdownWorkbench.files.newNoteFolder": {
           "type": "string",
           "default": "",

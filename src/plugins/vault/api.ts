@@ -38,8 +38,85 @@ export interface VaultIndex {
   onDidChange(listener: (change: VaultChange) => void): Disposer;
   onDidResolve(listener: () => void): Disposer;
 }
+/** A file as the host lists it, relative to the vault root. */
+export interface ListedFile {
+  uri: string;
+  path: string;
+  mtime: number;
+  size: number;
+}
+export type FileEvent =
+  | { type: "create" | "change"; file: ListedFile }
+  | { type: "delete"; path: string }
+  | { type: "rename"; oldPath: string; file: ListedFile };
+/** What the indexer needs from the file system, so tests can use memory. */
+export interface VaultFileSystem {
+  /** Files under the root outside ignored folders, up to `limit`; only the root's own files when `shallow`. */
+  list(
+    root: string,
+    limit: number,
+    shallow?: boolean,
+  ): Promise<{ files: ListedFile[]; partial: boolean }>;
+  read(uri: string): Promise<Uint8Array>;
+  /** File events under the root; created and changed files carry fresh stats. */
+  watch(root: string, listener: (event: FileEvent) => void): Disposer;
+}
+/** Where one vault's snapshot is kept between sessions. */
+export interface SnapshotStore {
+  read(): Promise<string | undefined>;
+  write(text: string): Promise<void>;
+}
+/** Parses note text, in the indexing worker in the extension. */
+export type NoteParser = (text: string) => Promise<NoteMetadata>;
+export interface VaultSettings {
+  folderNote: string;
+  linkFormat: "shortest" | "relative" | "absolute";
+  excludedFiles: readonly string[];
+  rootMarkers: readonly string[];
+}
+/**
+ * The VS Code side of the vault plugin, provided by the bootstrap so that
+ * the plugin itself stays testable without VS Code.
+ */
+export interface VaultSystem extends VaultFileSystem {
+  /** The workspace folder containing this URI, if any. */
+  workspaceFolder(uri: string): string | undefined;
+  exists(uri: string): Promise<boolean>;
+  /** Persistent storage for a vault's snapshot; absent without a workspace. */
+  store(root: string): SnapshotStore | undefined;
+  settings(root: string): VaultSettings;
+  onSettingsChanged(listener: () => void): Disposer;
+  /** A text document's unsaved text changed, or the document closed. */
+  onDocumentChanged(listener: (uri: string, text: string) => void): Disposer;
+  onDocumentClosed(listener: (uri: string) => void): Disposer;
+  createParser(): { parse: NoteParser; dispose(): void };
+  hash(text: string): string;
+  warn(message: string): void;
+}
+/** One vault: its index and the operations that need the whole vault. */
+export interface Vault {
+  readonly index: VaultIndex;
+  /** Resolves when indexing has caught up with the file system. */
+  settled(): Promise<void>;
+  /** The vault path of a URI inside this vault, or `undefined`. */
+  pathOf(uri: string): string | undefined;
+}
+export interface Vaults {
+  /** The vault that contains a note, indexed on first use (DESIGN §12.1). */
+  forDocument(uri: string): Promise<Vault>;
+  all(): readonly Vault[];
+}
 declare module "../../kernel/types" {
   interface Services {
     vault: VaultIndex;
+    vaults: Vaults;
+    vaultSystem: VaultSystem;
+  }
+  interface Events {
+    /** @mode emit */ "vault/changed": (
+      root: string,
+      change: VaultChange,
+    ) => void;
+    /** @mode emit */ "vault/resolved": (root: string) => void;
   }
 }
