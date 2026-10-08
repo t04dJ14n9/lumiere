@@ -25,7 +25,6 @@ export default {
     "src/plugins/livePreview/webview.ts",
     "src/plugins/render/webview.ts",
     "src/plugins/resources/host.ts",
-    "src/plugins/tasks/webview.ts",
     "src/plugins/vim/webview.ts",
     "src/shared/rpc/endpoint.ts",
     "src/webview/ui/menu.ts",

@@ -1692,3 +1692,19 @@ Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
 Known issues: remaining 30 backlog files, README/manual inventory and readability
 completion checks; remaining Phase 4 plugins, Claude's Phase 5 handoff gate and
 Phases 6–8 as listed above.
+
+### Readability pass progress — Tasks, 2026-10-08
+
+Delivered: inline renderer and checklist commands have named registrations;
+rendered control binding lives in post-process.ts with explicit local versus
+embedded edit routing. It receives only render, editing, RPC and logging
+capabilities. Expected-line checks and disabled-preview/disposal behavior remain.
+README rewritten; manual regression inventory includes stale lines and toggles.
+Backlog: 30 → 29 distinct files; long-function 25 → 24; other counts unchanged.
+No new exceptions, inline disables, pure algorithm or intentional behavior fixes.
+Checks: `pnpm check` 253/253; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-tasks-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none. Owner acceptance unrun.
+Known issues: remaining 29 backlog files and README/manual inventory, followed by
+readability completion checks; Phase 4's remaining seven plugins, Claude's Phase 5
+handoff gate and Phases 6–8 as specified above.

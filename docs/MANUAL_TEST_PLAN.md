@@ -603,3 +603,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   restore two panels with different disclosures, and rename/reopen. Disable
   Callouts with rendered disclosures mounted; old listeners must disappear and
   re-enable must restore per-panel memory. Not run by the agent.
+
+- **Tasks:** rerun inline, rendered and embedded checkboxes plus both checklist
+  commands. In a second panel change the expected task line before toggling;
+  a stale edit must be rejected. Check read-only footnote previews and truncated
+  embeds; disable/re-enable Tasks while controls are mounted. Not run here.
