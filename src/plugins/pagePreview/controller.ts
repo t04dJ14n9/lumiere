@@ -1,7 +1,8 @@
 import type { RenderPass, RenderService } from "../render/api";
 import type { Resources } from "../resources/api";
-import { noteFragment } from "../../markdown/metadata/fragments";
-import { attr, escape } from "../../markdown/html/helpers";
+import { renderPreview } from "./content";
+import { createPreviewPopup, mountPreviewPopup } from "./popup";
+
 export interface PreviewContext {
   resources: Resources;
   render: RenderService;
@@ -15,254 +16,258 @@ export function linkPreviews(
   context: () => PreviewContext,
   restoreFocus?: () => void,
 ): { dispose(): void; refresh(): void; close(): void } {
-  const abort = new AbortController();
-  const options = { signal: abort.signal };
-  let hovered: HTMLElement | null = null;
-  let shown: HTMLElement | null = null;
-  let popup: HTMLElement | undefined;
-  let body: HTMLElement | undefined;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let generation = 0;
-  let renderedPass: RenderPass | undefined;
-  let reload: (() => void) | undefined;
-  const close = (): void => {
-    const focused = popup?.contains(document.activeElement);
-    clearTimeout(timer);
-    generation++;
-    shown = null;
-    reload = undefined;
-    if (body) {
-      void renderedPass?.dispose();
-      renderedPass = undefined;
+  return new LinkPreviews(root, context, restoreFocus);
+}
+
+/** Hover/focus lifetime and asynchronous ownership for one editor's preview. */
+class LinkPreviews {
+  private readonly abort = new AbortController();
+  private hovered: HTMLElement | null = null;
+  private shown: HTMLElement | null = null;
+  private popup?: HTMLElement;
+  private body?: HTMLElement;
+  private timer?: ReturnType<typeof setTimeout>;
+  private generation = 0;
+  private renderedPass?: RenderPass;
+  private reload?: () => void;
+
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly context: () => PreviewContext,
+    private readonly restoreFocus?: () => void,
+  ) {
+    this.registerHover();
+    this.registerKeyboard();
+    this.registerFocus();
+  }
+
+  close(): void {
+    const focused = this.popup?.contains(document.activeElement);
+    clearTimeout(this.timer);
+    // A closed or replaced popup cannot acquire a late resource/render result.
+    this.generation++;
+    this.shown = null;
+    this.reload = undefined;
+    if (this.body) {
+      void this.renderedPass?.dispose();
+      this.renderedPass = undefined;
     }
-    popup?.remove();
-    popup = body = undefined;
+    this.popup?.remove();
+    this.popup = this.body = undefined;
     if (focused && document.hasFocus()) {
-      restoreFocus?.();
+      this.restoreFocus?.();
     }
-  };
-  const show = async (link: HTMLElement, keyboard = false): Promise<void> => {
+  }
+
+  private async show(link: HTMLElement, keyboard = false): Promise<void> {
     const href = link.dataset.href ?? link.getAttribute("href");
     if (!href || !canPreview(href)) {
       return;
     }
-    if (shown === link) {
+    if (this.shown === link) {
       if (keyboard) {
-        popup?.querySelector<HTMLButtonElement>("button")?.focus();
+        this.popup?.querySelector<HTMLButtonElement>("button")?.focus();
       }
       return;
     }
-    close();
-    shown = link;
-    const base = context();
+    this.close();
+    this.shown = link;
+    const base = this.context();
     const source =
       link.closest<HTMLElement>("[data-note-source]")?.dataset.noteSource;
-    popup = document.createElement("aside");
-    popup.className = "link-preview";
-    popup.setAttribute("role", "dialog");
-    popup.setAttribute("aria-label", "Link preview");
-    let label = href;
-    try {
-      label = decodeURI(href);
-    } catch {
-      /* Preserve invalid escapes for the resolver error. */
+    const elements = createPreviewPopup({
+      href,
+      open: () => {
+        base.open(
+          href,
+          source,
+          link.dataset.wiki === "true" ||
+            link.classList.contains("internal-link"),
+        );
+        this.close();
+      },
+      close: () => this.close(),
+    });
+    this.popup = elements.popup;
+    this.body = elements.body;
+    // Focus handlers must see the popup before opening it moves focus.
+    mountPreviewPopup(this.root, link, elements, keyboard);
+    this.reload = () => {
+      void this.load(base, href, source);
+    };
+    await this.load(base, href, source);
+  }
+
+  private async load(
+    base: PreviewContext,
+    href: string,
+    source?: string,
+  ): Promise<void> {
+    const request = ++this.generation;
+    if (this.body) {
+      void this.renderedPass?.dispose();
+      this.renderedPass = undefined;
+      this.body.textContent = "Loading…";
     }
-    const open = document.createElement("button");
-    open.type = "button";
-    open.textContent = `Open ${label}`;
-    open.onclick = () => {
-      base.open(
+    try {
+      const resource = await base.resources.load(href, source);
+      if (!this.body || request !== this.generation) {
+        return;
+      }
+      if (!resource) {
+        throw new Error("Preview unavailable.");
+      }
+      const next = await renderPreview({
+        body: this.body,
+        resource,
         href,
         source,
-        link.dataset.wiki === "true" ||
-          link.classList.contains("internal-link"),
-      );
-      close();
-    };
-    const dismiss = document.createElement("button");
-    dismiss.type = "button";
-    dismiss.textContent = "Close";
-    dismiss.setAttribute("aria-label", "Close link preview");
-    dismiss.onclick = close;
-    body = document.createElement("div");
-    body.textContent = "Loading…";
-    popup.append(open, dismiss, body);
-    root.append(popup);
-    if (keyboard) {
-      open.focus();
-    }
-    const bounds = link.getBoundingClientRect();
-    popup.style.left = `${Math.max(8, Math.min(bounds.left, innerWidth - popup.offsetWidth - 8))}px`;
-    popup.style.top = `${Math.max(8, Math.min(bounds.bottom + 6, innerHeight - 350))}px`;
-    const load = async (): Promise<void> => {
-      const request = ++generation;
-      if (body) {
-        void renderedPass?.dispose();
-        renderedPass = undefined;
-        body.textContent = "Loading…";
+        render: base.render,
+      });
+      if (request !== this.generation) {
+        await next?.dispose();
+      } else {
+        this.renderedPass = next;
       }
-      try {
-        const resource = await base.resources.load(href, source);
-        if (!body || request !== generation) {
+    } catch (error) {
+      if (this.body && request === this.generation) {
+        this.body.textContent = String(error);
+      }
+    }
+  }
+
+  private registerHover(): void {
+    const options = { signal: this.abort.signal };
+    this.root.addEventListener(
+      "mousemove",
+      (event) => {
+        const target =
+          event.target instanceof Element
+            ? event.target.closest<HTMLElement>("a[href], [data-href]")
+            : null;
+        if (target !== this.hovered) {
+          clearTimeout(this.timer);
+          this.hovered = target;
+        }
+        if (
+          target &&
+          (event.metaKey || event.ctrlKey) &&
+          this.shown !== target
+        ) {
+          this.scheduleShow(target);
+        }
+      },
+      options,
+    );
+    document.addEventListener(
+      "mouseover",
+      (event) => this.mouseOver(event),
+      options,
+    );
+  }
+
+  private mouseOver(event: MouseEvent): void {
+    if (document.querySelector(".image-inspector[open]")) {
+      clearTimeout(this.timer);
+      return;
+    }
+    const target = event.target as Node;
+    if (this.popup?.contains(target) || this.hovered?.contains(target)) {
+      clearTimeout(this.timer);
+      return;
+    }
+    clearTimeout(this.timer);
+    this.hovered = null;
+    if (this.popup) {
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.close(), 200);
+    }
+  }
+
+  private registerKeyboard(): void {
+    document.addEventListener("keydown", (event) => this.keyDown(event), {
+      signal: this.abort.signal,
+      capture: true,
+    });
+    document.addEventListener(
+      "keyup",
+      (event) => {
+        if ((event.key === "Control" || event.key === "Meta") && !this.popup) {
+          clearTimeout(this.timer);
+        }
+      },
+      { signal: this.abort.signal },
+    );
+  }
+
+  private keyDown(event: KeyboardEvent): void {
+    if (insideImageInspector(event.target)) {
+      return;
+    }
+    if (event.key === "Escape" && this.popup) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+    }
+    if (event.altKey && event.key === "Enter") {
+      this.showSelectedLink(event);
+    }
+    if ((event.key === "Control" || event.key === "Meta") && this.hovered) {
+      this.scheduleShow(this.hovered);
+    }
+  }
+
+  private showSelectedLink(event: KeyboardEvent): void {
+    if (
+      document.activeElement instanceof HTMLInputElement ||
+      document.activeElement instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+    const node = window.getSelection()?.anchorNode;
+    const target = (
+      node instanceof Element ? node : node?.parentElement
+    )?.closest<HTMLElement>("a[href], [data-href]");
+    if (target && this.root.contains(target)) {
+      event.preventDefault();
+      event.stopPropagation();
+      void this.show(target, true);
+    }
+  }
+
+  private scheduleShow(link: HTMLElement): void {
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => {
+      void this.show(link);
+    }, 300);
+  }
+
+  private registerFocus(): void {
+    const options = { signal: this.abort.signal };
+    window.addEventListener("blur", () => this.close(), options);
+    document.addEventListener(
+      "focusin",
+      (event) => {
+        if (insideImageInspector(event.target)) {
           return;
         }
-        if (!resource) {
-          throw new Error("Preview unavailable.");
+        if (this.popup && !this.popup.contains(event.target as Node)) {
+          this.close();
         }
-        let next: RenderPass | undefined;
-        if (resource.kind === "note" && resource.text !== undefined) {
-          const fragment = href.split("#").slice(1).join("#");
-          const selection = noteFragment(resource.text, fragment);
-          if (!selection) {
-            throw new Error("Section not found.");
-          }
-          next = await base.render.into(body, selection.text, {
-            documentUri: resource.source,
-            documentText: resource.text,
-            sourceLine:
-              resource.text.slice(0, selection.from).split("\n").length - 1,
-            taskLineCount: 0,
-            ancestry: [resource.source + "#" + fragment],
-          });
-        } else if (["image", "pdf", "audio", "video"].includes(resource.kind)) {
-          next = await base.render.into(
-            body,
-            `<span${attr("data-resource", href)}>${escape(href)}</span>`,
-            { documentUri: source, taskLineCount: 0 },
-          );
-        } else {
-          body.textContent = `${resource.kind.toUpperCase()} attachment — use Open to view it.`;
-        }
-        if (request !== generation) {
-          await next?.dispose();
-        } else {
-          renderedPass = next;
-        }
-      } catch (error) {
-        if (body && request === generation) {
-          body.textContent = String(error);
-        }
-      }
-    };
-    reload = () => {
-      void load();
-    };
-    await load();
-  };
-  root.addEventListener(
-    "mousemove",
-    (event) => {
-      const target =
-        event.target instanceof Element
-          ? event.target.closest<HTMLElement>("a[href], [data-href]")
-          : null;
-      if (target !== hovered) {
-        clearTimeout(timer);
-        hovered = target;
-      }
-      if (target && (event.metaKey || event.ctrlKey) && shown !== target) {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          void show(target);
-        }, 300);
-      }
-    },
-    options,
-  );
-  document.addEventListener(
-    "mouseover",
-    (event) => {
-      if (document.querySelector(".image-inspector[open]")) {
-        clearTimeout(timer);
-        return;
-      }
-      const target = event.target as Node;
-      if (popup?.contains(target) || hovered?.contains(target)) {
-        clearTimeout(timer);
-        return;
-      }
-      clearTimeout(timer);
-      hovered = null;
-      if (popup) {
-        clearTimeout(timer);
-        timer = setTimeout(close, 200);
-      }
-    },
-    options,
-  );
-  document.addEventListener(
-    "keydown",
-    (event) => {
-      if (
-        event.target instanceof Element &&
-        event.target.closest(".image-inspector")
-      ) {
-        return;
-      }
-      if (event.key === "Escape" && popup) {
-        event.preventDefault();
-        event.stopPropagation();
-        close();
-      }
-      if (
-        event.altKey &&
-        event.key === "Enter" &&
-        !(
-          document.activeElement instanceof HTMLInputElement ||
-          document.activeElement instanceof HTMLTextAreaElement
-        )
-      ) {
-        const node = window.getSelection()?.anchorNode;
-        const target = (
-          node instanceof Element ? node : node?.parentElement
-        )?.closest<HTMLElement>("a[href], [data-href]");
-        if (target && root.contains(target)) {
-          event.preventDefault();
-          event.stopPropagation();
-          void show(target, true);
-        }
-      }
-      if ((event.key === "Control" || event.key === "Meta") && hovered) {
-        const link = hovered;
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          void show(link);
-        }, 300);
-      }
-    },
-    { ...options, capture: true },
-  );
-  document.addEventListener(
-    "keyup",
-    (event) => {
-      if ((event.key === "Control" || event.key === "Meta") && !popup) {
-        clearTimeout(timer);
-      }
-    },
-    options,
-  );
-  window.addEventListener("blur", close, options);
-  document.addEventListener(
-    "focusin",
-    (event) => {
-      if (
-        event.target instanceof Element &&
-        event.target.closest(".image-inspector")
-      ) {
-        return;
-      }
-      if (popup && !popup.contains(event.target as Node)) {
-        close();
-      }
-    },
-    options,
-  );
-  return {
-    dispose: () => {
-      abort.abort();
-      close();
-    },
-    refresh: () => reload?.(),
-    close,
-  };
+      },
+      options,
+    );
+  }
+
+  dispose(): void {
+    this.abort.abort();
+    this.close();
+  }
+  refresh(): void {
+    this.reload?.();
+  }
+}
+
+function insideImageInspector(target: EventTarget | null): boolean {
+  return target instanceof Element && !!target.closest(".image-inspector");
 }

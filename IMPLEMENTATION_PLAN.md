@@ -1255,3 +1255,28 @@ regression inventory and finish ordered readability checks/record. Then finish
 Phase 4 inlineTitle/tags/suggest/search/pasteHtml/copyForAgent/markers and Phases
 5–8 exactly as specified above. Only the Tables and Properties portions of the
 readability backlog are complete; this is not overall readability completion.
+
+### Readability pass progress — Page Preview, 2026-10-08
+
+Delivered: page-preview controller now separates hover, keyboard and focus
+registrations from popup loading; DOM/placement lives in `popup.ts` and note/
+attachment rendering in `content.ts`. Generation ownership and read-only task
+contexts are retained. Popup state is installed before keyboard focus moves,
+preserving focus-event ordering. Plugin apply lists theme/controller registrations.
+README rewritten; owner regression scenarios added. No intentional behavior change.
+
+Backlog since preceding unit → now: max-lines-per-function 47 → 46; complexity
+22 → 21; max-params 9 → 9; no-nested-ternary 14 → 14; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 62 → 61. No inline disables or new
+exemptions. Added note-context and label units: 230 → 232.
+Checks: `pnpm check` 232/232 and `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-preview-{check,browser}.txt`.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo.
+Deviations: none. No newly discovered behavior bug; manual checks remain unrun.
+
+Known issues / exact remaining work: host/workbench, editor and footnotes
+registrations; markdown/search/evaluate and metadata/footnote-extract; all other
+remaining eslint.legacy.mjs entries. Finish all remaining plugin READMEs,
+kernel generation/Context-proxy comments and manual regression inventory, then
+remove the backlog and run ordered completion checks. Remaining Phase 4 plugins
+and Phases 5–8 are unchanged from the Tables record; no phase is complete here.

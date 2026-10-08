@@ -486,3 +486,10 @@ smoke scenarios. Use only the disposable fixture vault described above.
   Test recursive YAML aliases, tags, nested values and forced-type warnings.
   Repeat the composition tests for Properties config changes and off/on; existing
   folds, table state and unrelated extension order must survive. Not run here.
+
+- **Page Preview:** rerun all **Page Preview** scenarios, including modifier
+  delay, keyboard opening/focus, Escape, source/embedded link targets, attachment
+  previews and read-only tasks. Hover a second link while the first request is
+  pending, then close or disable the plugin; late results must not reopen the
+  popup or retain render passes. Move focus into an image inspector and back.
+  Restore focus to the editor after keyboard dismissal. Not run by the agent.
