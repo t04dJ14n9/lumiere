@@ -711,3 +711,13 @@ loads the production entry over its existing fixture server so split ESM chunks
 resolve. Test count and assertions are unchanged. No source suite was added.
 Known issues: Phase 4 step 4 still needs math, diagrams, callouts, footnotes and
 tasks; steps 5–10 and Phases 5–8 remain. Owner manual acceptance is not run.
+
+### Phase 4 progress — Math, 2026-10-07
+
+Delivered: lazy MathJax inline/display rendering, graphics sanitization,
+reveal-on-caret widgets, inline/block math commands and owned render cleanup.
+Checks: `pnpm check` (169 unit tests passed), `pnpm test:browser` (14/14).
+Native not rerun: no native wiring change. Logs: `docs/checks/phase4-math-*`.
+Ledger: 84/14/2/334/14. Manual math scenarios added, not run.
+Deviations: none. Known issues: diagrams, callouts, footnotes and tasks remain in
+step 4, then Phase 4 steps 5–10 and Phases 5–8. No phase-completion claim.

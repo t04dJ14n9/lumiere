@@ -220,3 +220,16 @@ Setup: add fenced JavaScript, Python, an unknown language and indented code to
 3. Scroll a long fence in and out of view. Unknown languages stay readable.
 4. Disable Code Blocks: enhanced renderers, copy buttons and source highlighting
    are removed; the core readable fence remains. Re-enable and repeat.
+
+## Math
+
+Setup: in `Core.md`, add `$x^2$`, a multiline `$$` formula with an AMS fraction,
+invalid TeX and a paragraph after the formula.
+
+1. Move the caret in and out: source reveals only at the selected formula;
+   elsewhere sanitized MathJax SVG appears. Source mode shows the delimiters.
+2. Select Unicode text, run Toggle Inline Math twice, and verify an exact source
+   round trip. Insert Math Block, edit it, save and undo through native history.
+3. Disable/re-enable Math during a slow first render. Disabled formulas stay
+   readable source; a late async render must not restore an obsolete widget.
+4. Check invalid TeX remains readable and does not prevent editing other content.

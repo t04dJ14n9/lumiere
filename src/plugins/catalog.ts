@@ -1,3 +1,4 @@
+import math from "./math/manifest";
 import codeBlocks from "./codeBlocks/manifest";
 import links from "./links/manifest";
 import formatting from "./formatting/manifest";
@@ -10,6 +11,7 @@ import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
 import vim from "./vim/manifest";
 export const features: readonly Manifest[] = [
+  math,
   codeBlocks,
   links,
   formatting,

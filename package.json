@@ -198,6 +198,16 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.toggleInlineMath",
+        "title": "Toggle Inline Math",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.insertMathBlock",
+        "title": "Insert Math Block",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "title": "Consume Vim Host Shortcut",
         "category": "Markdown Workbench"
@@ -442,6 +452,14 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.livePreview"
         },
         {
+          "command": "markdownWorkbench.toggleInlineMath",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.math"
+        },
+        {
+          "command": "markdownWorkbench.insertMathBlock",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.math"
+        },
+        {
           "command": "markdownWorkbench.consumeVimHostShortcut",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
         }
@@ -498,6 +516,12 @@
           "default": true,
           "scope": "resource",
           "description": "Follow Markdown links and wikilinks."
+        },
+        "markdownWorkbench.plugins.math.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Render TeX formulas with MathJax."
         },
         "markdownWorkbench.plugins.smartLists.enabled": {
           "type": "boolean",
