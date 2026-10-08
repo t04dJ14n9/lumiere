@@ -35,6 +35,16 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     required: ["editor", "commands", "livePreview", "rpc", "document", "menu"],
   },
   apply(ctx, settings) {
+    ctx.on("editor/focusProperties", () => {
+      const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
+        ".hybrid-properties [data-properties-heading]",
+      );
+      if (!heading?.getClientRects().length) {
+        return undefined;
+      }
+      heading.focus();
+      return true;
+    });
     const lifetime = new AbortController();
     ctx.effect(() => () => lifetime.abort());
     const heading = propertyHeadingFocus(() => {

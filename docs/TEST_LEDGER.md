@@ -17,7 +17,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/authority.test.ts` | LF transport normalizes CRLF without counting CR as a source character | ported | `test/unit/ported/authority.test.ts` |
 | `unit/authority.test.ts` | protocol rejects unknown actions and invalid message shapes | rewritten | test/unit/ported/protocol.test.ts; namespaced schemas in both directions |
 | `unit/authority.test.ts` | rendering without a DOM sanitizer escapes HTML and rejects script links | ported | `test/unit/ported/authority.test.ts` |
-| `unit/authority.test.ts` | title responses and selection restores validate optional error and focus fields | todo | Awaiting scheduled port |
+| `unit/authority.test.ts` | title responses and selection restores validate optional error and focus fields | rewritten | `test/unit/inline-title/title.test.ts`; validated plugin RPC and per-panel transfer schemas |
 | `unit/document-tree.test.ts` | complete syntax is shared by outline and footnote indexes and retained for selections | rewritten | test/unit/ported/document-tree.test.ts; explicit Live Preview and metadata field composition |
 | `unit/document-tree.test.ts` | incremental syntax reparses fences, frontmatter and math boundaries beyond the edit | rewritten | test/unit/ported/document-tree.test.ts; explicit Live Preview and metadata field composition |
 | `unit/document-tree.test.ts` | incremental syntax and indexes match fresh parses through deterministic structural edits | rewritten | test/unit/ported/document-tree.test.ts; explicit Live Preview and metadata field composition |
@@ -108,8 +108,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/task.test.ts` | task markers preserve quote prefixes, ordered lists and custom status | ported | `test/unit/ported/task.test.ts` |
 | `unit/undo-groups.test.ts` | logical groups replay native undo steps in both directions | ported | test/unit/ported/undo-groups.test.ts |
 | `unit/undo-groups.test.ts` | unexpected native state stops grouped replay rather than undoing unrelated edits | ported | test/unit/ported/undo-groups.test.ts |
-| `unit/view-state.test.ts` | pane transfers accept backward selections, fractional scroll offsets and independent focus intent | todo | Awaiting scheduled port |
-| `unit/view-state.test.ts` | pane transfers reject malformed positions, folding state and focus targets | todo | Awaiting scheduled port |
+| `unit/view-state.test.ts` | pane transfers accept backward selections, fractional scroll offsets and independent focus intent | rewritten | `test/unit/inline-title/title.test.ts`; validated plugin RPC and per-panel transfer schemas |
+| `unit/view-state.test.ts` | pane transfers reject malformed positions, folding state and focus targets | rewritten | `test/unit/inline-title/title.test.ts`; validated plugin RPC and per-panel transfer schemas |
 | `unit/webm.test.ts` | WebM metadata identifies video and audio tracks without guessing the extension | ported | `src/plugins/embeds/webm.test.ts` |
 | `unit/webm.test.ts` | streaming preserves unknown-size cluster boundaries and orders complete blocks | ported | `src/plugins/embeds/webm.test.ts` |
 | `browser/browser.spec.ts` | footnote references reveal definition source at its exact position | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |

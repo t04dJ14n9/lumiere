@@ -79,6 +79,7 @@ export const protocol = defineProtocol("editor", {
     },
   },
   notifications: {
+    initialized: Schema.object({}),
     configure: featureSettings,
     configureEditor: editorConfig,
     selectionChanged: Schema.object({ hasSelection: Schema.boolean() }),

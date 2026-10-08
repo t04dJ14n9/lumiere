@@ -18,6 +18,7 @@ export interface TextEdit {
   insert: string;
 }
 export interface PanelPort {
+  readonly column?: number;
   readonly id: string;
   readonly document: HostDocument;
   readonly rpc: Endpoint;
@@ -43,6 +44,7 @@ declare module "../kernel/types" {
   }
 }
 export interface PanelShell {
+  readonly column?: number;
   readonly id: string;
   readonly document: HostDocument;
   readonly transport: Transport;
@@ -192,4 +194,8 @@ export interface HostViews {
 }
 export interface Workbench {
   views?: HostViews;
+}
+
+export interface Workbench {
+  renameFile?(document: HostDocument, target: string): Promise<void>;
 }

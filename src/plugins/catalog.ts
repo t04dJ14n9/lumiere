@@ -1,3 +1,4 @@
+import inlineTitle from "./inlineTitle/manifest";
 import tables from "./tables/manifest";
 import properties from "./properties/manifest";
 import pagePreview from "./pagePreview/manifest";
@@ -28,6 +29,7 @@ export const features: readonly Manifest[] = [
   // Table navigation claims override keys before Vim.
   tables,
   properties,
+  inlineTitle,
   pagePreview,
   embeds,
   tasks,

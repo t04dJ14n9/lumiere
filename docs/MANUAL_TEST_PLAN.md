@@ -677,3 +677,31 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   toggles, list Enter/Backspace and spellcheck host behavior. Dialect consumers
   use the same syntax in notes, embeds and metadata. These are documentation
   clarifications, not new feature behavior; owner acceptance remains unrun.
+
+## Inline title (Phase 4)
+
+Use a disposable copy of `test/fixtures/vault/Core.md` (never an owner vault).
+
+- Enable/disable Inline title. It appears above Markdown in Live Preview and
+  Source mode without becoming document text; off/on leaves folds and scroll
+  intact. Repeat with the catalog composition toggle scenarios.
+- Rename using Enter, Tab and blur; whitespace trims, empty/Escape restores the
+  confirmed name. Type using IME and move focus during composition: commit only
+  after composition ends. A pending rename makes the title read-only/busy.
+- Try an existing filename, a separator, colon, newline and >255 characters.
+  Rename must fail without replacing another file. A focused invalid title shows
+  an error; leaving it restores the confirmed title. Untitled/non-file notes refuse.
+- Down on the title's last visual line focuses Properties; Alt+Down focuses body.
+  Shift+Tab/Up from Properties focuses/selects the title, including after scroll.
+  With Properties hidden/off or in Source mode, navigation falls back to body.
+- Open the same note in two editor groups. Give them different selections,
+  scroll, mode, folds and callout disclosures. Rename with one active: each group
+  reopens the new file and restores its own state; only the intended group focuses.
+  Repeat a long/backward selection and a Properties focus destination.
+- Edit from the other group while rename capture is pending: reject a stale
+  capture. Rename through Explorer and reopen: the title reflects the current
+  filename. Verify configured incoming-link updates through the separate Link
+  Updates plugin. Save/undo remain native operations.
+
+These scenarios are documented, not run by the agent. The existing native smoke
+only proves boot, typing, save and undo; it does not substitute for rename testing.

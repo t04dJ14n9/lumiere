@@ -1,5 +1,6 @@
 declare module "../../kernel/types" {
   interface Events {
+    /** @mode bail */ "editor/focusProperties": () => true | undefined;
     /** @mode bail */ "editor/focusTitle": () => true | undefined;
   }
 }

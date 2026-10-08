@@ -28,6 +28,9 @@ export function createPanel(
   configure(owned, shell);
   const panel: EditorPanel = {
     id: shell.id,
+    get column() {
+      return shell.column;
+    },
     document: shell.document,
     session,
     rpc,

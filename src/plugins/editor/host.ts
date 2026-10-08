@@ -34,6 +34,9 @@ export const editorHost: Plugin<EditorHostConfig> = {
         panel.rpc.on(protocol, "selectionChanged", ({ hasSelection }) =>
           ctx.emit("editor/selectionChanged", panel, hasSelection),
         );
+        panel.rpc.on(protocol, "initialized", () =>
+          ctx.emit("editor/ready", panel),
+        );
         ctx.emit("editor/opened", panel);
       }),
     );

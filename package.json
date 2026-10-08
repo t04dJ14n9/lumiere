@@ -769,6 +769,12 @@
           "scope": "resource",
           "description": "Indentation guides in the Markdown editor."
         },
+        "markdownWorkbench.plugins.inlineTitle.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Show and rename the note title above its Markdown content."
+        },
         "markdownWorkbench.plugins.lineNumbers.enabled": {
           "type": "boolean",
           "default": false,

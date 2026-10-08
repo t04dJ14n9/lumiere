@@ -63,5 +63,6 @@ export async function bootstrap(
   if (failed) {
     throw failed.error;
   }
+  rpc.notify(protocol, "initialized", {});
   return root;
 }

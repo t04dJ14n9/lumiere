@@ -2101,3 +2101,36 @@ Known issues / next work:
 - Phases 6–8: command/settings/parity, public API and packaging/handover as planned.
 - Owner should first rerun table drag/scroll/cell projection and Properties drafts/
   IME, then two-panel undo/state, plugin toggles and embed/media cleanup.
+
+### Phase 4 progress — Inline title, 2026-10-08
+
+Delivered: default-on title widget in both presentation modes, controlled drafts,
+IME/blur/Enter/Tab/Escape behavior, Properties/body focus via typed events and
+validated rename/focus RPC. Native rename rechecks same-folder/local-file targets
+and uses one WorkspaceEdit. The host flushes/captures all sibling panels, rejects
+stale or cancelled requests, retains transfers by original panel ID and reopens
+groups active-last. Initialized webviews restore independent selection, scroll,
+mode and plugin contributions; handlers follow resource enablement and disposal.
+Added composition coverage through the catalog and eight title/schema/rename/host
+units; ported three remaining source protocol/transfer ledger cases.
+
+Checks in order: `pnpm check` **361/361**, formatting/lint/types/contributions;
+`pnpm test:browser` **14/14**; `pnpm test:vscode` **1/1**, freshly packaged isolated
+/tmp profile. Logs: `docs/checks/phase4-inline-title-{check,browser,native}.txt`.
+Smoke suites unchanged. Ledger: **87/19/2/333/7**, total 448.
+README and manual scenarios added, including two-pane rename and IME; not run.
+
+Deviations: the root host half owns resource-enabled handlers so transfers survive
+panel recreation. A validated editor `initialized` notification emits typed
+`editor/ready`; this avoids sending restores before feature registration. Property
+focus is a bail event rather than cross-plugin DOM access. Source initialization's
+focus intent is represented by explicit plugin focus/transfer schemas. No lint
+exceptions, source-repository edits, publication or owner-profile installation.
+
+Known issues: remaining Phase 4 tags, suggest, search, pasteHtml (including table
+cells), copyForAgent and markers; each needs composition/lifecycle/unit/manual
+coverage. Claude's Phase 5 is still incomplete and owns consumer integration,
+Tags view and unresolved styling; do not start Phase 6 until its completion
+record is on main. Phases 6–8 remain as planned. Native smoke proves boot/edit/
+save/undo, not hands-on rename correctness; owner should test split-pane title
+rename and Properties focus first for this plugin.

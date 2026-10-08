@@ -1,3 +1,4 @@
+import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { features } from "../plugins/catalog";
 import * as vscode from "vscode";
@@ -13,6 +14,7 @@ export function createWorkbench(
   const documents = new NativeDocuments();
   return {
     storage,
+    renameFile,
     navigation: createNavigation(),
     fingerprint(text) {
       return createHash("sha256").update(text).digest("hex");
@@ -255,6 +257,9 @@ function createPanelShell(
 
   return {
     id,
+    get column() {
+      return panel.viewColumn;
+    },
     document: documents.wrap(document),
     cspSource: panel.webview.cspSource,
     trusted: vscode.workspace.isTrusted,

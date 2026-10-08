@@ -68,6 +68,7 @@ declare module "../../kernel/types" {
     /** @mode emit */ "editor/modeRestored": (
       mode: "source" | "livePreview",
     ) => void;
+    /** @mode emit */ "editor/ready": (panel: PanelPort) => void;
     /** @mode emit */ "editor/opened": (panel: PanelPort) => void;
     /** @mode emit */ "editor/closed": (panel: PanelPort) => void;
     /** @mode emit */ "editor/activeChanged": (
