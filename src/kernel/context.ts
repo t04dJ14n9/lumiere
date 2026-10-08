@@ -49,16 +49,27 @@ export class Context {
     this.logger = taggedLogger(runtime.logger, fiber?.definition.name ?? "root");
     return new Proxy(this, {
       get: (target, key, receiver) => {
-        if (Reflect.has(target, key) || typeof key !== "string") return Reflect.get(target, key, receiver);
+        // Promise resolution probes this property on returned contexts.
+        if (key === "then") return undefined;
+        if (Reflect.has(target, key) || typeof key !== "string")
+          return Reflect.get(target, key, receiver);
         target.assertLive();
         const name = key as keyof Services;
-        if (!fiber?.definition.inject?.required?.includes(name) && !fiber?.definition.inject?.optional?.includes(name))
-          throw new KernelError("UndeclaredService", `${fiber?.definition.name ?? "root"} did not inject ${key}`);
+        if (
+          !fiber?.definition.inject?.required?.includes(name) &&
+          !fiber?.definition.inject?.optional?.includes(name)
+        )
+          throw new KernelError(
+            "UndeclaredService",
+            `${fiber?.definition.name ?? "root"} did not inject ${key}`,
+          );
         return runtime.value(name);
       },
     });
   }
-  static create(options: { logger?: Logger; replaceable?: readonly (keyof Services)[] } = {}): Context {
+  static create(
+    options: { logger?: Logger; replaceable?: readonly (keyof Services)[] } = {},
+  ): Context {
     return new Context(new Runtime(options.logger ?? silentLogger, new Set(options.replaceable)));
   }
   assertLive(): void {
@@ -75,7 +86,8 @@ export class Context {
   }
   provide<K extends keyof Services>(name: K, value: Services[K]): void {
     this.assertLive();
-    if (value === undefined) throw new KernelError("DuplicateService", "Services cannot be undefined");
+    if (value === undefined)
+      throw new KernelError("DuplicateService", "Services cannot be undefined");
     if (this.offered.has(name)) throw new KernelError("DuplicateService", String(name));
     this.offered.set(name, value);
     if (!this.fiber || this.published) this.publish();
@@ -108,7 +120,11 @@ export class Context {
     this.effects.push(dispose);
     return dispose;
   }
-  on<K extends keyof Events>(name: K, listener: EventFunction<K>, options?: { prepend?: boolean }): Disposer {
+  on<K extends keyof Events>(
+    name: K,
+    listener: EventFunction<K>,
+    options?: { prepend?: boolean },
+  ): Disposer {
     return this.effect(() => this.runtime.events.on(name, listener, this.logger, options?.prepend));
   }
   emit<K extends keyof Events>(name: K, ...args: Parameters<EventFunction<K>>): void {

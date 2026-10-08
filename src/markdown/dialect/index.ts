@@ -1,4 +1,9 @@
-import { Language, LanguageSupport, defineLanguageFacet, languageDataProp } from "@codemirror/language";
+import {
+  Language,
+  LanguageSupport,
+  defineLanguageFacet,
+  languageDataProp,
+} from "@codemirror/language";
 import type { Text } from "@codemirror/state";
 import type { Tree, TreeFragment } from "@lezer/common";
 import { parser, GFM } from "@lezer/markdown";
@@ -22,7 +27,9 @@ export const markdownParser = parser.configure([
   { props: [languageDataProp.add({ Document: data })] },
 ]);
 const language = new Language(data, markdownParser, [], "markdown");
-export function markdownLanguageSupport(): LanguageSupport { return new LanguageSupport(language); }
+export function markdownLanguageSupport(): LanguageSupport {
+  return new LanguageSupport(language);
+}
 const trees = new WeakMap<Text, Tree>();
 export function parseMarkdown(doc: Text, fragments: readonly TreeFragment[] = []): Tree {
   let tree = trees.get(doc);

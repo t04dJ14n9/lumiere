@@ -1,7 +1,7 @@
 import { ChangeSet, Text } from "@codemirror/state";
 export interface WireUpdate {
   clientID: string;
-  changes: unknown;
+  changes: unknown[];
 }
 export function textDocument(text: string): Text {
   return Text.of(text.split(/\r\n?|\n/));

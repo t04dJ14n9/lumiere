@@ -1,1 +1,71 @@
-/* Base editor styles arrive with the editor plugin in Phase 3. */
+body {
+  margin: 0;
+  background: var(--vscode-editor-background, #fff);
+  color: var(--vscode-editor-foreground, #222);
+  font-family: var(--vscode-font-family, system-ui);
+}
+#app {
+  height: 100vh;
+}
+.cm-editor {
+  height: 100%;
+}
+.cm-scroller {
+  overflow: auto;
+  font-family: inherit;
+  line-height: 1.6;
+}
+.cm-content {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 24px 32px 100px;
+  width: 100%;
+}
+.cm-focused {
+  outline: none !important;
+}
+.md-strong {
+  font-weight: 700;
+}
+.md-emphasis {
+  font-style: italic;
+}
+.md-strike {
+  text-decoration: line-through;
+}
+.md-inline-code {
+  font-family: var(--vscode-editor-font-family, monospace);
+  background: var(--vscode-textCodeBlock-background, #eee);
+  border-radius: 3px;
+}
+.md-heading {
+  font-weight: 650;
+  margin-top: 0.8em;
+}
+.md-h1 {
+  font-size: 2em;
+}
+.md-h2 {
+  font-size: 1.6em;
+}
+.md-h3 {
+  font-size: 1.3em;
+}
+.md-quote {
+  border-left: 3px solid var(--vscode-textBlockQuote-border, #aaa);
+  padding-left: 1em;
+}
+.md-link {
+  color: var(--vscode-textLink-foreground, #246ac7);
+  text-decoration: underline;
+}
+.md-highlight {
+  background: #ffdf6680;
+}
+.md-comment {
+  opacity: 0.5;
+}
+.render-error {
+  border: 1px solid var(--vscode-errorForeground, red);
+  white-space: pre-wrap;
+}

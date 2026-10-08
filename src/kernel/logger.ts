@@ -8,7 +8,8 @@ export function taggedLogger(logger: Logger, tag: string): Logger {
   return Object.fromEntries(
     ["debug", "warn", "error"].map((level) => [
       level,
-      (message: string, details?: unknown) => logger[level as keyof Logger](`[${tag}] ${message}`, details),
+      (message: string, details?: unknown) =>
+        logger[level as keyof Logger](`[${tag}] ${message}`, details),
     ]),
   ) as unknown as Logger;
 }

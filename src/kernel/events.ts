@@ -3,7 +3,12 @@ import type { Logger } from "./logger";
 type Listener = { run: (...args: never[]) => unknown; logger: Logger };
 export class EventBus {
   private readonly listeners = new Map<keyof Events, Listener[]>();
-  on<K extends keyof Events>(name: K, run: EventFunction<K>, logger: Logger, prepend = false): Disposer {
+  on<K extends keyof Events>(
+    name: K,
+    run: EventFunction<K>,
+    logger: Logger,
+    prepend = false,
+  ): Disposer {
     const entry = { run: run as Listener["run"], logger };
     const list = this.listeners.get(name) ?? [];
     if (prepend) list.unshift(entry);
@@ -43,7 +48,8 @@ export class EventBus {
     for (const l of [...(this.listeners.get(name) ?? [])]) {
       const value = this.invoke(l, args);
       if (value !== undefined) {
-        if (value instanceof Promise) void value.catch((error) => l.logger.error("Event listener failed", error));
+        if (value instanceof Promise)
+          void value.catch((error) => l.logger.error("Event listener failed", error));
         return value;
       }
     }

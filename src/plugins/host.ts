@@ -1,2 +1,7 @@
-// Phase 0 build entry; implementation follows in its scheduled phase.
-export {};
+export { documentHost } from "./document/host";
+export { editorHost } from "./editor/host";
+export { dialectHost } from "./dialect/host";
+export { commandsHost } from "./commands/host";
+export { livePreviewHost } from "./livePreview/host";
+export { vaultHost } from "./vault/host";
+export { resourcesHost } from "./resources/host";

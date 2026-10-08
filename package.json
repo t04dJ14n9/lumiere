@@ -15,7 +15,124 @@
     "Other"
   ],
   "activationEvents": [],
-  "contributes": {},
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "markdownWorkbench.editor",
+        "displayName": "Markdown Workbench",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          },
+          {
+            "filenamePattern": "*.markdown"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "commands": [
+      {
+        "command": "markdownWorkbench.save",
+        "title": "Save",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.undo",
+        "title": "Undo",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.redo",
+        "title": "Redo",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.close",
+        "title": "Close",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.saveClose",
+        "title": "Save and Close",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.openAsText",
+        "title": "Open as Text",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleSourceMode",
+        "title": "Toggle Live Preview/Source Mode",
+        "category": "Markdown Workbench"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "markdownWorkbench.save",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.undo",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.redo",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.close",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.saveClose",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.openAsText",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.toggleSourceMode",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.livePreview"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "markdownWorkbench.openAsText",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Markdown Workbench",
+      "properties": {
+        "markdownWorkbench.preset": {
+          "type": "string",
+          "enum": [
+            "obsidian",
+            "minimal"
+          ],
+          "default": "obsidian",
+          "scope": "resource",
+          "description": "Editor plugin preset."
+        },
+        "markdownWorkbench.editor.defaultMode": {
+          "type": "string",
+          "enum": [
+            "livePreview",
+            "source"
+          ],
+          "default": "livePreview",
+          "scope": "resource",
+          "description": "Initial editing mode."
+        }
+      }
+    }
+  },
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
@@ -30,10 +147,10 @@
     "lint": "eslint . --max-warnings=0",
     "test": "node scripts/test.mjs",
     "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
-    "test:vscode": "playwright test -c test/vscode/playwright.config.ts",
+    "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
     "contributions": "tsx scripts/generate-contributions.ts",
-    "package": "pnpm build && vsce package --no-dependencies",
+    "package": "pnpm build && vsce package --no-dependencies --no-rewrite-relative-links",
     "ledger": "node scripts/test-ledger.mjs"
   },
   "dependencies": {

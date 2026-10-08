@@ -5,7 +5,10 @@ import ts from "typescript";
 test("kernel stays under 800 production lines", () => {
   const lines = readdirSync("src/kernel")
     .filter((p) => p.endsWith(".ts"))
-    .reduce((sum, p) => sum + readFileSync(`src/kernel/${p}`, "utf8").trimEnd().split("\n").length, 0);
+    .reduce(
+      (sum, p) => sum + readFileSync(`src/kernel/${p}`, "utf8").trimEnd().split("\n").length,
+      0,
+    );
   assert.ok(lines < 800, `${lines} kernel lines`);
 });
 test("typed event call sites use the declared dispatch mode", () => {
@@ -26,7 +29,8 @@ test("typed event call sites use the declared dispatch mode", () => {
     visit(tree, (node) => {
       if (ts.isPropertySignature(node) && node.name) {
         const mode = ts.getJSDocTags(node).find((t) => t.tagName.text === "mode")?.comment;
-        if (typeof mode === "string") modes.set(node.name.getText(tree).replaceAll(/['"]/g, ""), mode);
+        if (typeof mode === "string")
+          modes.set(node.name.getText(tree).replaceAll(/['"]/g, ""), mode);
       }
     });
   for (const tree of trees)
@@ -34,7 +38,11 @@ test("typed event call sites use the declared dispatch mode", () => {
       if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
         const mode = node.expression.name.text,
           name = node.arguments[0];
-        if (["emit", "serial", "parallel", "bail", "waterfall"].includes(mode) && name && ts.isStringLiteral(name)) {
+        if (
+          ["emit", "serial", "parallel", "bail", "waterfall"].includes(mode) &&
+          name &&
+          ts.isStringLiteral(name)
+        ) {
           assert.equal(mode, modes.get(name.text), `${tree.fileName}: ${name.text}`);
         }
       }

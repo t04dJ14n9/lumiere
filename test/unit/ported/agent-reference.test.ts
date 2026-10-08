@@ -22,4 +22,3 @@ test("rejects URI schemes and all Windows drive-prefixed Markdown paths", () => 
     );
   }
 });
-

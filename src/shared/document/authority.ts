@@ -24,7 +24,7 @@ export class Authority {
     this.validateVersion(version);
     return this.history.slice(version).map((update) => ({
       clientID: update.clientID,
-      changes: update.changes.toJSON() as unknown,
+      changes: update.changes.toJSON() as unknown[],
     }));
   }
 

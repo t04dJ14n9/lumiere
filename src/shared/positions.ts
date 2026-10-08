@@ -1,8 +1,5 @@
 /** Index of the first sorted source position at or after the requested offset. */
-export function lowerBound(
-  positions: readonly number[],
-  offset: number,
-): number {
+export function lowerBound(positions: readonly number[], offset: number): number {
   let from = 0;
   let to = positions.length;
   while (from < to) {

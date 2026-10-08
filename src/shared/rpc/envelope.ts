@@ -9,7 +9,13 @@ const id = Schema.number().min(1).max(Number.MAX_SAFE_INTEGER);
 const channel = Schema.string().min(1).max(128),
   method = Schema.string().min(1).max(128);
 const schemas = {
-  request: Schema.object({ kind: Schema.union(["request"]), id, channel, method, params: Schema.unknown() }),
+  request: Schema.object({
+    kind: Schema.union(["request"]),
+    id,
+    channel,
+    method,
+    params: Schema.unknown(),
+  }),
   response: Schema.object({ kind: Schema.union(["response"]), id, result: Schema.unknown() }),
   error: Schema.object({
     kind: Schema.union(["error"]),
@@ -17,7 +23,12 @@ const schemas = {
     code: Schema.string().max(128),
     message: Schema.string().max(4096),
   }),
-  notify: Schema.object({ kind: Schema.union(["notify"]), channel, method, params: Schema.unknown() }),
+  notify: Schema.object({
+    kind: Schema.union(["notify"]),
+    channel,
+    method,
+    params: Schema.unknown(),
+  }),
   cancel: Schema.object({ kind: Schema.union(["cancel"]), id }),
 };
 export function parseEnvelope(value: unknown): Envelope {

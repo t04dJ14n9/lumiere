@@ -1,6 +1,8 @@
 export type Infer<S> = S extends Schema<infer T> ? T : never;
 type Shape = Record<string, Schema<unknown>>;
-type ObjectValue<S extends Shape> = { [K in keyof S as undefined extends Infer<S[K]> ? never : K]: Infer<S[K]> } & {
+type ObjectValue<S extends Shape> = {
+  [K in keyof S as undefined extends Infer<S[K]> ? never : K]: Infer<S[K]>;
+} & {
   [K in keyof S as undefined extends Infer<S[K]> ? K : never]?: Infer<S[K]>;
 };
 export class ValidationError extends Error {
@@ -31,7 +33,10 @@ export class Schema<T> {
   }
   default(value: T): Schema<T> {
     this.parse(value);
-    return new Schema((v, p) => this.read(v === undefined ? value : v, p), { ...this.json, default: value });
+    return new Schema((v, p) => this.read(v === undefined ? value : v, p), {
+      ...this.json,
+      default: value,
+    });
   }
   description(value: string): Schema<T> {
     return new Schema(this.read, { ...this.json, description: value });
@@ -75,7 +80,10 @@ export class Schema<T> {
     return new Schema(
       (v, p) => {
         const parsed = this.read(v, p);
-        if (typeof parsed !== "string" || !new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, "")).test(parsed))
+        if (
+          typeof parsed !== "string" ||
+          !new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, "")).test(parsed)
+        )
           throw new ValidationError(p, "pattern mismatch");
         return parsed;
       },
@@ -94,7 +102,8 @@ export class Schema<T> {
   static number(): Schema<number> {
     return new Schema(
       (v, p) => {
-        if (typeof v !== "number" || !Number.isFinite(v)) throw new ValidationError(p, "expected finite number");
+        if (typeof v !== "number" || !Number.isFinite(v))
+          throw new ValidationError(p, "expected finite number");
         return v;
       },
       { type: "number" },
@@ -112,7 +121,9 @@ export class Schema<T> {
   static unknown(): Schema<unknown> {
     return new Schema((v) => v, {});
   }
-  static union<const T extends readonly (string | number | boolean | null)[]>(values: T): Schema<T[number]> {
+  static union<const T extends readonly (string | number | boolean | null)[]>(
+    values: T,
+  ): Schema<T[number]> {
     return new Schema(
       (v, p) => {
         if (!values.includes(v as T[number])) throw new ValidationError(p, "expected enum member");
@@ -133,19 +144,26 @@ export class Schema<T> {
   static object<S extends Shape>(shape: S): Schema<ObjectValue<S>> {
     return new Schema(
       (v, p) => {
-        if (!v || typeof v !== "object" || Array.isArray(v)) throw new ValidationError(p, "expected object");
+        if (!v || typeof v !== "object" || Array.isArray(v))
+          throw new ValidationError(p, "expected object");
         const input = v as Record<string, unknown>;
         for (const key of Object.keys(input))
-          if (!Object.hasOwn(shape, key)) throw new ValidationError(`${p}.${key}`, "unexpected property");
+          if (!Object.hasOwn(shape, key))
+            throw new ValidationError(`${p}.${key}`, "unexpected property");
         return Object.fromEntries(
           Object.entries(shape)
-            .map(([key, schema]) => [key, schema.at(Object.hasOwn(input, key) ? input[key] : undefined, `${p}.${key}`)])
+            .map(([key, schema]) => [
+              key,
+              schema.at(Object.hasOwn(input, key) ? input[key] : undefined, `${p}.${key}`),
+            ])
             .filter(([, value]) => value !== undefined),
         ) as ObjectValue<S>;
       },
       {
         type: "object",
-        properties: Object.fromEntries(Object.entries(shape).map(([k, s]) => [k, s.toJSONSchema()])),
+        properties: Object.fromEntries(
+          Object.entries(shape).map(([k, s]) => [k, s.toJSONSchema()]),
+        ),
         required: Object.entries(shape)
           .filter(([, s]) => {
             try {
@@ -163,7 +181,8 @@ export class Schema<T> {
   static record<T>(item: Schema<T>): Schema<Record<string, T>> {
     return new Schema(
       (v, p) => {
-        if (!v || typeof v !== "object" || Array.isArray(v)) throw new ValidationError(p, "expected record");
+        if (!v || typeof v !== "object" || Array.isArray(v))
+          throw new ValidationError(p, "expected record");
         return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, item.at(x, `${p}.${k}`)]));
       },
       { type: "object", additionalProperties: item.toJSONSchema() },

@@ -15,12 +15,12 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/authority.test.ts` | invalid revisions and malformed edit lengths do not mutate the authority | ported | `test/unit/ported/authority.test.ts` |
 | `unit/authority.test.ts` | random concurrent insertions, removals and replacements converge | ported | `test/unit/ported/authority.test.ts` |
 | `unit/authority.test.ts` | LF transport normalizes CRLF without counting CR as a source character | ported | `test/unit/ported/authority.test.ts` |
-| `unit/authority.test.ts` | protocol rejects unknown actions and invalid message shapes | todo | Awaiting scheduled port |
+| `unit/authority.test.ts` | protocol rejects unknown actions and invalid message shapes | rewritten | test/unit/ported/protocol.test.ts; namespaced schemas in both directions |
 | `unit/authority.test.ts` | rendering without a DOM sanitizer escapes HTML and rejects script links | ported | `test/unit/ported/authority.test.ts` |
 | `unit/authority.test.ts` | title responses and selection restores validate optional error and focus fields | todo | Awaiting scheduled port |
-| `unit/document-tree.test.ts` | complete syntax is shared by outline and footnote indexes and retained for selections | todo | Awaiting scheduled port |
-| `unit/document-tree.test.ts` | incremental syntax reparses fences, frontmatter and math boundaries beyond the edit | todo | Awaiting scheduled port |
-| `unit/document-tree.test.ts` | incremental syntax and indexes match fresh parses through deterministic structural edits | todo | Awaiting scheduled port |
+| `unit/document-tree.test.ts` | complete syntax is shared by outline and footnote indexes and retained for selections | rewritten | test/unit/ported/document-tree.test.ts; explicit Live Preview and metadata field composition |
+| `unit/document-tree.test.ts` | incremental syntax reparses fences, frontmatter and math boundaries beyond the edit | rewritten | test/unit/ported/document-tree.test.ts; explicit Live Preview and metadata field composition |
+| `unit/document-tree.test.ts` | incremental syntax and indexes match fresh parses through deterministic structural edits | rewritten | test/unit/ported/document-tree.test.ts; explicit Live Preview and metadata field composition |
 | `unit/footnotes.test.ts` | footnotes number references in reading order and retain exact source positions | ported | `test/unit/ported/footnotes.test.ts` |
 | `unit/footnotes.test.ts` | code, escaped references and frontmatter do not become footnotes | ported | `test/unit/ported/footnotes.test.ts` |
 | `unit/footnotes.test.ts` | inline footnotes share numbering and preserve nested brackets and code | ported | `test/unit/ported/footnotes.test.ts` |
@@ -29,7 +29,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/footnotes.test.ts` | section fragments include only needed definitions and terminate cyclic dependencies | ported | `test/unit/ported/footnotes.test.ts` |
 | `unit/footnotes.test.ts` | multiline inline notes omit surrounding quote and list markers from their body | ported | `test/unit/ported/footnotes.test.ts` |
 | `unit/footnotes.test.ts` | comment markers inside inline code do not hide later footnotes | ported | `test/unit/ported/footnotes.test.ts` |
-| `unit/host-event.test.ts` | webview accepts its real wrapper after VS Code masks window.parent | todo | Awaiting scheduled port |
+| `unit/host-event.test.ts` | webview accepts its real wrapper after VS Code masks window.parent | ported | test/unit/ported/host-event.test.ts; window-based transport moved out of shared per DESIGN §24.1 |
 | `unit/match.test.ts` | link suggestions rank name prefixes above name and path matches | changed | `test/unit/ported/match.test.ts`; DESIGN §13 fuzzy scoring, study §8 |
 | `unit/match.test.ts` | every query word must match, in any field, case-insensitively | ported | `test/unit/ported/match.test.ts`; DESIGN §13 fuzzy scoring, study §8 |
 | `unit/outline.test.ts` | outline recognizes real headings and excludes properties, code and math | rewritten | `test/unit/ported/outline.test.ts`; unified metadata/factory API (same behaviour) |
@@ -70,8 +70,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/render.test.ts` | block fragments support a paragraph and a separately identified list | ported | `test/unit/ported/render.test.ts` |
 | `unit/render.test.ts` | rendered note embeds hide block identifiers while fenced code remains literal | ported | `test/unit/ported/render.test.ts` |
 | `unit/render.test.ts` | named footnotes and collapsed reference links retain their separate syntax | ported | `test/unit/ported/render.test.ts` |
-| `unit/rendered-position.test.ts` | inline projections retain source offsets through nested formatting and escapes | todo | Awaiting scheduled port |
-| `unit/rendered-position.test.ts` | inline projections preserve entities, links and literal code source | todo | Awaiting scheduled port |
+| `unit/rendered-position.test.ts` | inline projections retain source offsets through nested formatting and escapes | ported | test/unit/ported/rendered-position.test.ts |
+| `unit/rendered-position.test.ts` | inline projections preserve entities, links and literal code source | ported | test/unit/ported/rendered-position.test.ts |
 | `unit/search-worker.test.ts` | search worker evaluates multiple documents and survives a document parse error | todo | Awaiting scheduled port |
 | `unit/search-worker.test.ts` | invalid search queries reject worker readiness | todo | Awaiting scheduled port |
 | `unit/search-worker.test.ts` | search cancellation rejects pending work and prevents later submissions | todo | Awaiting scheduled port |
@@ -106,8 +106,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/tags.test.ts` | rendered tag controls preserve hierarchy and leave code literal | rewritten | `test/unit/ported/tags.test.ts`; unified metadata/factory API (same behaviour) |
 | `unit/tags.test.ts` | tags in footnote definitions remain searchable | rewritten | `test/unit/ported/tags.test.ts`; unified metadata/factory API (same behaviour) |
 | `unit/task.test.ts` | task markers preserve quote prefixes, ordered lists and custom status | ported | `test/unit/ported/task.test.ts` |
-| `unit/undo-groups.test.ts` | logical groups replay native undo steps in both directions | todo | Awaiting scheduled port |
-| `unit/undo-groups.test.ts` | unexpected native state stops grouped replay rather than undoing unrelated edits | todo | Awaiting scheduled port |
+| `unit/undo-groups.test.ts` | logical groups replay native undo steps in both directions | ported | test/unit/ported/undo-groups.test.ts |
+| `unit/undo-groups.test.ts` | unexpected native state stops grouped replay rather than undoing unrelated edits | ported | test/unit/ported/undo-groups.test.ts |
 | `unit/view-state.test.ts` | pane transfers accept backward selections, fractional scroll offsets and independent focus intent | todo | Awaiting scheduled port |
 | `unit/view-state.test.ts` | pane transfers reject malformed positions, folding state and focus targets | todo | Awaiting scheduled port |
 | `unit/webm.test.ts` | WebM metadata identifies video and audio tracks without guessing the extension | todo | Awaiting scheduled port |
@@ -122,8 +122,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/browser.spec.ts` | embedded footnotes navigate locally without opening a host link | todo | Awaiting scheduled port |
 | `browser/browser.spec.ts` | section embeds resolve external footnotes without making appended tasks editable | todo | Awaiting scheduled port |
 | `browser/browser.spec.ts` | one hybrid surface renders blocks and reveals active syntax without altering source | todo | Awaiting scheduled port |
-| `browser/browser.spec.ts` | rapid typing survives delayed acknowledgement and an external edit | todo | Awaiting scheduled port |
-| `browser/browser.spec.ts` | save waits for a queued burst of Unicode input | todo | Awaiting scheduled port |
+| `browser/browser.spec.ts` | rapid typing survives delayed acknowledgement and an external edit | rewritten | test/browser/sync.spec.ts |
+| `browser/browser.spec.ts` | save waits for a queued burst of Unicode input | rewritten | test/browser/sync.spec.ts |
 | `browser/browser.spec.ts` | formatting, undo and redo use source transactions | todo | Awaiting scheduled port |
 | `browser/browser.spec.ts` | clicking a task checkbox changes exactly its source marker | todo | Awaiting scheduled port |
 | `browser/browser.spec.ts` | search and list continuation use CodeMirror editing commands | todo | Awaiting scheduled port |
@@ -237,7 +237,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/file-title.spec.ts` | title and property keyboard navigation follows the reference with Vim off | todo | Awaiting scheduled port |
 | `browser/file-title.spec.ts` | title and property keyboard navigation follows the reference with Vim on | todo | Awaiting scheduled port |
 | `browser/file-title.spec.ts` | the Properties heading supports collapse, expansion and space scrolling | todo | Awaiting scheduled port |
-| `browser/integration.spec.ts` | selection export captures the acknowledged revision after delayed Unicode typing | todo | Awaiting scheduled port |
+| `browser/integration.spec.ts` | selection export captures the acknowledged revision after delayed Unicode typing | rewritten | test/browser/core.spec.ts |
 | `browser/integration.spec.ts` | Query annotations navigate and move with edits without changing source text | todo | Awaiting scheduled port |
 | `browser/integration.spec.ts` | Query badges stay accessible when their source is inside a rendered table | todo | Awaiting scheduled port |
 | `browser/integration.spec.ts` | an exact source anchor reveals and selects text inside a rendered table | todo | Awaiting scheduled port |
@@ -250,8 +250,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/integration.spec.ts` | the caret at a block's final character remains an editing position: "oe\n```\t() " | todo | Awaiting scheduled port |
 | `browser/integration.spec.ts` | the caret at a block's final character remains an editing position: "```js\nconst x = 1;\n```" | todo | Awaiting scheduled port |
 | `browser/integration.spec.ts` | the caret at a block's final character remains an editing position: "$$\nx^2\n$$" | todo | Awaiting scheduled port |
-| `browser/integration.spec.ts` | plain typing remains one undo group across acknowledged transport batches | todo | Awaiting scheduled port |
-| `browser/integration.spec.ts` | moving the plain caret creates a new undo group without losing the earlier typing | todo | Awaiting scheduled port |
+| `browser/integration.spec.ts` | plain typing remains one undo group across acknowledged transport batches | ported | test/browser/undo.spec.ts |
+| `browser/integration.spec.ts` | moving the plain caret creates a new undo group without losing the earlier typing | ported | test/browser/undo.spec.ts |
 | `browser/integration.spec.ts` | editable code retains Prism tokens while typing and after returning to rendered code | todo | Awaiting scheduled port |
 | `browser/integration.spec.ts` | selection colors switch when focus leaves the source editor | todo | Awaiting scheduled port |
 | `browser/integration.spec.ts` | formatting b toggles the word at an empty caret without moving it within the word | todo | Awaiting scheduled port |
@@ -401,7 +401,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/table.spec.ts` | row grips expose their structural menu to keyboard users | todo | Awaiting scheduled port |
 | `browser/table.spec.ts` | arrow navigation creates space before a table at the document boundary | todo | Awaiting scheduled port |
 | `browser/table.spec.ts` | arrow navigation creates space after a table at the document boundary | todo | Awaiting scheduled port |
-| `browser/view-state.spec.ts` | restoring a pane retains backward selection without changing source or history | todo | Awaiting scheduled port |
+| `browser/view-state.spec.ts` | restoring a pane retains backward selection without changing source or history | rewritten | test/browser/view-state.spec.ts |
 | `browser/view-state.spec.ts` | restoring a reading position inside paragraphs survives a taller title | todo | Awaiting scheduled port |
 | `browser/view-state.spec.ts` | restoring a reading position inside one wrapped line survives a taller title | todo | Awaiting scheduled port |
 | `browser/view-state.spec.ts` | rename transfers heading folds, callout expansion and the outline panel | todo | Awaiting scheduled port |
@@ -456,3 +456,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `adapter/agentClipboard.test.mjs` | rejects URI schemes and all Windows drive-prefixed Markdown paths | ported | `test/unit/ported/agent-reference.test.ts` (Markdown-only source adapter test) |
 
 Phase 2 additionally inventories two Markdown adapter tests from `vscode-extension/test/agentClipboard.test.mjs`. PDF-only tests are outside this extraction.
+
+Phase 3 is incomplete. The two source fuzz suites remain `todo`; their 18,112
+edit operations and 128 Vim sequences have not been run in this repository.
+The installed VS Code smoke is new coverage and does not count as porting the
+47 source native scenarios. Core checks passing does not complete this ledger.

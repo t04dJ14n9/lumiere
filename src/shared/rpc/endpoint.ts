@@ -120,7 +120,12 @@ export class Endpoint {
     method: M,
     params: Infer<P["notifications"][M]>,
   ): void {
-    this.send({ kind: "notify", channel: protocol.id, method, params: protocol.notifications[method]!.parse(params) });
+    this.send({
+      kind: "notify",
+      channel: protocol.id,
+      method,
+      params: protocol.notifications[method]!.parse(params),
+    });
   }
   call<P extends Protocol, M extends keyof P["requests"] & string>(
     protocol: P,
@@ -208,7 +213,10 @@ export class Endpoint {
     if (envelope.kind === "notify") {
       for (const handler of [...(this.notifications.get(key) ?? [])]) {
         try {
-          await handler.run(handler.protocol.notifications[envelope.method]!.parse(envelope.params), new CancelToken());
+          await handler.run(
+            handler.protocol.notifications[envelope.method]!.parse(envelope.params),
+            new CancelToken(),
+          );
         } catch (error) {
           this.logger.warn("Dropped notification or failed listener", error);
         }
@@ -247,7 +255,11 @@ export class Endpoint {
       this.send({ kind: "response", id: envelope.id, result: parsed });
     } catch (error) {
       if (!token.cancelled)
-        this.sendError(envelope.id, error instanceof RpcError ? error.code : "HandlerFailed", String(error));
+        this.sendError(
+          envelope.id,
+          error instanceof RpcError ? error.code : "HandlerFailed",
+          String(error),
+        );
     } finally {
       this.incoming.delete(envelope.id);
     }

@@ -1,18 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022"
-    ],
-    "types": [
-      "node",
-      "vscode"
-    ]
+    "lib": ["ES2022"],
+    "types": ["node", "vscode"]
   },
-  "include": [
-    "**/host.ts",
-    "**/manifest.ts",
-    "**/protocol.ts",
-    "**/api.ts"
-  ]
+  "include": ["**/host.ts", "**/manifest.ts", "**/protocol.ts", "**/api.ts"]
 }

@@ -24,8 +24,13 @@ export class Fiber<C = unknown> {
     if (this.state === "disposed" || this.state === "failed" || this.stopping) return;
     const required = this.definition.inject?.required ?? [];
     this.waitingFor = required.filter((name) => this.runtime.value(name) === undefined);
-    const values = [...required, ...(this.definition.inject?.optional ?? [])].map((name) => this.runtime.value(name));
-    if (this.context && (this.waitingFor.length || values.some((v, i) => v !== this.dependencies[i]))) {
+    const values = [...required, ...(this.definition.inject?.optional ?? [])].map((name) =>
+      this.runtime.value(name),
+    );
+    if (
+      this.context &&
+      (this.waitingFor.length || values.some((v, i) => v !== this.dependencies[i]))
+    ) {
       this.runtime.track(this.stop().then(() => this.reconcile()));
       return;
     }
@@ -78,7 +83,11 @@ export class Fiber<C = unknown> {
     if (this.state === "disposed") throw new KernelError("Disposed", this.definition.name);
     const parsed = this.definition.config ? this.definition.config.parse(config) : config;
     try {
-      if (this.state === "active" && this.context && this.definition.reconfigure?.(this.context, parsed)) {
+      if (
+        this.state === "active" &&
+        this.context &&
+        this.definition.reconfigure?.(this.context, parsed)
+      ) {
         this.config = parsed;
         return;
       }

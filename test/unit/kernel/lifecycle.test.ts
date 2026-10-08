@@ -320,3 +320,11 @@ test("service withdrawal during loading invalidates the old activation and gates
   await root.dispose();
   assert.equal(cleanups, 2);
 });
+test("contexts can cross async boundaries without being mistaken for thenables", async () => {
+  const root = Context.create();
+  assert.equal(await Promise.resolve(root), root);
+  const fiber = root.plugin({ name: "plain", apply() {} });
+  await root.settled();
+  assert.equal(await Promise.resolve(fiber.context), fiber.context);
+  await root.dispose();
+});

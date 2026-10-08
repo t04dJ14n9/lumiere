@@ -26,3 +26,8 @@ test("CJK characters are separate tokens and repeated query tokens cannot reuse 
   assert.ok(fuzzyMatch("机器", "器械与机械") !== undefined);
   assert.equal(fuzzyMatch("a a", "a"), undefined);
 });
+test("mixed CJK tokens and compatibility normalization preserve original UTF-16 highlight ranges", () => {
+  assert.deepEqual(queryTokens("Learning机器"), ["learning", "机", "器"]);
+  assert.deepEqual(fuzzyMatch("ffi", "ﬃ")?.matches, [[0, 1]]);
+  assert.deepEqual(fuzzyMatch("å", "A\u030a")?.matches, [[0, 2]]);
+});

@@ -1,4 +1,9 @@
-export type KernelErrorCode = "UndeclaredService" | "DuplicateService" | "PluginFailed" | "PluginDisabled" | "Disposed";
+export type KernelErrorCode =
+  | "UndeclaredService"
+  | "DuplicateService"
+  | "PluginFailed"
+  | "PluginDisabled"
+  | "Disposed";
 export class KernelError extends Error {
   constructor(
     readonly code: KernelErrorCode,

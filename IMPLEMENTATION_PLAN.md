@@ -482,3 +482,64 @@ scheduled with their owners. Ledger regeneration now preserves existing statuses
 and supplementary adapter rows.
 Known issues: live-reference fuzzy tie/range parity is not observed; no native
 editor yet. Attachment and platform-specific agent references remain host work.
+
+### Phase 3 — Core plugins and a working editor, 2026-10-07
+
+**Incomplete — acceptance criteria not met; phases 4–9 have not started.**
+
+Delivered: host and webview bootstraps and core manifests; one native-authority
+session per document; validated RPC per panel; input/undo groups, strict final
+save flushing and serialized document actions; a working CodeMirror editor;
+owned compartments and precedence slots; basic inline Live Preview and a block
+renderer registry; Source mode; sanitized rendering service; menu service;
+per-view selection, mode and anchored-scroll capture/restore/persistence;
+identity-based view-transfer helpers; contained resources and a temporary
+resolver behind `VaultIndex`. The webview transport rejects embedded-site
+messages. The native harness packages and installs only into its generated
+`/tmp/markdown-workbench-e2e-*` profile, extensions directory and home.
+
+Checks: `pnpm check` (137 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1 new installed-extension smoke on VS Code 1.140.0).
+The native smoke types, saves and undoes through the actual TextDocument.
+These are the implemented test subset, not the full source suites. Final logs:
+[unit/lint/types](docs/checks/phase3-check.txt),
+[browser](docs/checks/phase3-browser.txt),
+[native](docs/checks/phase3-native.txt).
+
+Ledger: 85/12/2/0/349 (ported/rewritten/changed/retired/todo), total 448.
+No source scenarios were retired or silently dropped.
+
+Deviations from DESIGN.md: temporary vault snapshots are scoped to panel
+contexts; Phase 5 must replace these with shared per-vault indexes. Internal
+platform-neutral contracts carry URI strings; the workbench converts them to
+VS Code Uri objects. The native harness is introduced earlier than Phase 8 to
+validate native work immediately. Pure metadata fields are composed explicitly
+with the Live Preview document-tree field in the rewritten source tests. A
+strict document flush follows the error-isolating `document/willSave` hook so
+listener isolation cannot accidentally permit a stale save. The kernel Proxy
+reserves `then` for Promise assimilation. Fuzzy matching now preserves original
+UTF-16 ranges across Unicode normalization and tokenizes CJK after Latin text.
+
+Known issues / acceptance gate:
+- `keystroke-fuzz.spec.ts` and `command-fuzz.spec.ts` are not ported. No claim is
+  made for the required 18,112 edits or 128 Vim sequences. Their editing and
+  command adapters still need migration to the service model.
+- The remaining core portions of `integration.spec.ts`, `view-state.spec.ts`
+  and `browser.spec.ts` are not fully migrated. Renderer/clipboard interaction,
+  structural block motion and complete view-transfer regressions are missing.
+- The generic rendering pipeline is present, but all source block-rendering
+  integration is not complete. Feature plugins cannot yet be treated as a
+  verified drop-in migration over this engine.
+- Resource resolution is a temporary snapshot, not a live vault index; file
+  refresh, metadata, root-marker discovery and the worker are Phase 5 work.
+- The source's native suite, public API, complete plugin configuration/toggling,
+  Obsidian observations, packaging notices and performance budgets remain in
+  their later phases. No `verify` binding has been added.
+
+Stopping reason: the remaining core migration and regression adapters were not
+completed in this run, so Phase 3 cannot be accepted. The passing focused tests
+and native smoke do not substitute for its missing acceptance coverage. Later
+feature phases depend on the unfinished engine integration; they were not
+started. Next: finish Phase 3's source interaction ports and fuzz harnesses,
+retain their original operation counts, run the ordered checks, then proceed
+to Phase 4. This record is not a claim of an external/environmental blocker.
