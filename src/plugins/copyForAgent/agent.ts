@@ -1,0 +1,119 @@
+import type { Agent, AgentReference } from "./api";
+import type {
+  Editors,
+  Selections,
+  SourceSelection,
+  EditorPanel,
+} from "../editor/api";
+import type { Workbench } from "../../shared/runtime";
+import { RpcError, type Cancellation } from "../../shared/rpc/lifecycle";
+import { referencePath, formatReference } from "./reference";
+export class AgentReferences implements Agent {
+  private live = true;
+  dispose(): void {
+    this.live = false;
+  }
+  constructor(
+    private readonly options: {
+      editors: Editors;
+      selections: Selections;
+      workbench: Workbench;
+      beforeSave(panel: EditorPanel): Promise<void>;
+    },
+  ) {}
+  reference(selection: SourceSelection): AgentReference {
+    const panel = this.options.selections.validate(selection);
+    this.assertEnabled(panel);
+    if (panel.document.isDirty || panel.document.isUntitled) {
+      throw new RpcError(
+        "DocumentDirty",
+        "Save the note before creating an agent reference",
+      );
+    }
+    const uri = panel.document.uri;
+    const path = referencePath(
+      uri,
+      this.options.workbench.workspaceFolders?.() ?? [],
+    );
+    return Object.freeze({
+      text: formatReference(path, selection.startLine, selection.endLine),
+      uri,
+      startLine: selection.startLine,
+      endLine: selection.endLine,
+    });
+  }
+  async copy(
+    id: string,
+    options: { interactive?: boolean; token?: Cancellation } = {},
+  ): Promise<boolean> {
+    const panel = this.options.editors.all().find((item) => item.id === id);
+    if (!panel) {
+      throw new RpcError("EditorNotFound", "Editor not found");
+    }
+    this.assertEnabled(panel);
+    let selection = await this.options.selections.capture(id, options.token);
+    if (!selection) {
+      return false;
+    }
+    this.assertActive(panel, options.token);
+    if (panel.document.isDirty || panel.document.isUntitled) {
+      if (!options.interactive) {
+        throw new RpcError(
+          "DocumentDirty",
+          "Save the note before copying for agent",
+        );
+      }
+      const choice = await this.options.workbench.views?.ask(
+        "This note has unsaved changes. Save it so the reference matches the file?",
+        ["Save and Copy", "Copy Text Only", "Cancel"],
+      );
+      this.assertActive(panel, options.token);
+      if (choice === "Copy Text Only") {
+        return this.copyText(selection);
+      }
+      if (choice !== "Save and Copy") {
+        return false;
+      }
+      await this.save(panel);
+      selection = await this.options.selections.capture(id, options.token);
+      if (!selection) {
+        return false;
+      }
+    }
+    this.assertActive(panel, options.token);
+    await this.options.workbench.clipboard.write(
+      this.reference(selection).text,
+    );
+    return true;
+  }
+  private async copyText(selection: SourceSelection): Promise<boolean> {
+    this.options.selections.validate(selection);
+    await this.options.workbench.clipboard.write(selection.text);
+    return true;
+  }
+  private async save(panel: EditorPanel): Promise<void> {
+    await panel.session.withAction(async () => {
+      await this.options.beforeSave(panel);
+      await panel.session.flush();
+      if (!(await panel.session.save())) {
+        throw new RpcError("SourceChanged", "The note was not saved");
+      }
+    });
+  }
+  private assertEnabled(panel: EditorPanel): void {
+    const config = this.options.workbench.config(panel.document);
+    if (
+      !this.live ||
+      config.preset !== "obsidian" ||
+      config.features?.copyForAgent?.enabled === false
+    ) {
+      throw new RpcError("PluginDisabled", "Copy for Agent is disabled");
+    }
+  }
+  private assertActive(panel: EditorPanel, token?: Cancellation): void {
+    this.assertEnabled(panel);
+    if (token?.cancelled || !this.options.editors.all().includes(panel)) {
+      throw new RpcError("Cancelled", "Copy cancelled");
+    }
+  }
+}

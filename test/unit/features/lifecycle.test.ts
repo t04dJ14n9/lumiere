@@ -71,6 +71,13 @@ for (const manifest of features) {
       assert.equal(f.handlers.has(command.editorCommand!), true);
     }
     const activeHooks = await renderHooks(f.root);
+    const activeMenu = await f.root.waterfall("editor/selectionMenu", []);
+    if (manifest.id === "copyForAgent") {
+      assert.deepEqual(
+        activeMenu.map((item) => item.label),
+        ["Copy for Agent"],
+      );
+    }
     if (
       ["codeBlocks", "math", "callouts", "tasks", "embeds", "tags"].includes(
         manifest.id,
@@ -90,6 +97,7 @@ for (const manifest of features) {
       prepared: false,
       fence: undefined,
     });
+    assert.deepEqual(await f.root.waterfall("editor/selectionMenu", []), []);
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
     await f.configure({ [manifest.id]: { enabled: true, config } });

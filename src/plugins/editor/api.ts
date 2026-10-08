@@ -1,3 +1,4 @@
+import type { Cancellation } from "../../shared/rpc/lifecycle";
 import type { ViewStateContributions } from "./contributions";
 import type { Infer } from "../../kernel";
 import type { viewState } from "./protocol";
@@ -60,6 +61,9 @@ declare module "../../kernel/types" {
     editors: Editors;
   }
   interface Events {
+    /** @mode waterfall */ "editor/selectionMenu": (
+      items: readonly MenuItem[],
+    ) => readonly MenuItem[] | Promise<readonly MenuItem[]>;
     /** @mode emit */ "editor/clearProjection": () => void;
     /** @mode bail */ "editor/activeView": () => EditorView | undefined;
     /** @mode bail */ "editor/projectSelection": () =>
@@ -78,5 +82,31 @@ declare module "../../kernel/types" {
       panel: PanelPort,
       hasSelection: boolean,
     ) => void;
+  }
+}
+
+export interface SourceSelection {
+  readonly id: string;
+  readonly editorId: string;
+  readonly documentId: string;
+  readonly version: number;
+  readonly isDirty: boolean;
+  readonly sourceSha256?: string;
+  readonly from: number;
+  readonly to: number;
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly text: string;
+}
+export interface Selections {
+  capture(
+    editorId: string,
+    token?: Cancellation,
+  ): Promise<SourceSelection | undefined>;
+  validate(selection: SourceSelection): EditorPanel;
+}
+declare module "../../kernel/types" {
+  interface Services {
+    selections: Selections;
   }
 }

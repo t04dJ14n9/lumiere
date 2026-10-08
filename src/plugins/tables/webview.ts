@@ -70,9 +70,16 @@ function createEnvironment(ctx: Context): TableEnvironment {
     wrap: (marker, target) => ctx.formatting?.wrap(marker, target) ?? false,
     clearFormatting: (source) => ctx.formatting?.clear(source) ?? source,
     openMenu: (owner, items, point) => {
-      const stop = ctx.menu.open(owner, items, point, "Table actions");
+      let live = true;
+      let stop: (() => void | Promise<void>) | undefined;
+      void ctx.waterfall("editor/selectionMenu", items).then((items) => {
+        if (live) {
+          stop = ctx.menu.open(owner, items, point, "Table actions");
+        }
+      });
       return () => {
-        void stop();
+        live = false;
+        void stop?.();
       };
     },
     copy: (text) => {

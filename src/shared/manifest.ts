@@ -8,6 +8,12 @@ export interface Manifest {
   readonly defaultEnabled: boolean;
   readonly surfaces: readonly ("host" | "webview")[];
   readonly contributes?: {
+    menus?: readonly {
+      command: string;
+      location: "editor/title" | "webview/context";
+      when?: string;
+      group?: string;
+    }[];
     keybindings?: readonly {
       id: string;
       key: string;

@@ -14,6 +14,10 @@ export function createWorkbench(
   const documents = new NativeDocuments();
   return {
     storage,
+    workspaceFolders: () =>
+      (vscode.workspace.workspaceFolders ?? []).map((folder) =>
+        folder.uri.toString(),
+      ),
     workerPath: (name) =>
       vscode.Uri.joinPath(extensionUri, "dist", "workers", `${name}.cjs`)
         .fsPath,

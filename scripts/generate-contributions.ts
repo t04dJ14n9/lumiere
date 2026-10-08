@@ -67,7 +67,9 @@ export async function contributions() {
     ...(views.length > 0 ? { views: { explorer: views } } : {}),
     menus: {
       commandPalette: menus,
+      "webview/context": manifestMenus(manifests, "webview/context"),
       "editor/title": [
+        ...manifestMenus(manifests, "editor/title"),
         {
           command: "markdownWorkbench.openAsText",
           when: "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands",
@@ -166,4 +168,19 @@ if (process.argv[1]?.endsWith("generate-contributions.ts")) {
     console.error(error);
     process.exitCode = 1;
   });
+}
+
+function manifestMenus(
+  manifests: readonly Manifest[],
+  location: "editor/title" | "webview/context",
+) {
+  return manifests.flatMap((manifest) =>
+    (manifest.contributes?.menus ?? [])
+      .filter((menu) => menu.location === location)
+      .map((menu) => ({
+        command: `markdownWorkbench.${menu.command}`,
+        when: [whenEnabled(manifest), menu.when].filter(Boolean).join(" && "),
+        ...(menu.group ? { group: menu.group } : {}),
+      })),
+  );
 }

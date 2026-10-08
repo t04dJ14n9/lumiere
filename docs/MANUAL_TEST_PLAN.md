@@ -791,3 +791,23 @@ Toggle Auto convert HTML off/on and repeat without duplicate insertion. During a
 delayed transform, move the caret, type, close the cell or disable the plugin;
 no stale result should overwrite current text. Menu paste remains plain text.
 Sanitization must remove active containers; no pasted HTML should execute.
+
+## Copy for Agent
+
+Select one or more source lines and invoke Copy for Agent from the palette,
+selection context menu, title action and Mod+Alt+C. Expect `@path#start-end`
+(single-line `#N`), with a workspace-relative path in one local root, or a full
+URI for multiple roots, remote files or files outside the workspace. An endpoint
+at column zero must exclude that final line. Repeat with CRLF and Unicode, two
+panels of one note, a table cell selection and a rectangular range; references
+must identify the correct source lines and panel. The title action only shows
+while the active panel has a selection.
+
+For dirty text, test Save and Copy, Copy Text Only and Cancel separately. Text
+Only must not save; Cancel must not change the clipboard; Save and Copy must
+recapture after saving. The public service refuses dirty references. Race an
+external edit, a pane close and plugin disable with capture/prompt: stale or
+cancelled operations must not copy a fabricated reference. Disable/re-enable the
+plugin and verify commands, title/menu action and RPC go away/return once.
+Save/reopen untitled notes before copying disk references; text-only copy works
+without a disk path. Nothing is submitted to an agent/chat.

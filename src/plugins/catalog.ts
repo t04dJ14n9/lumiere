@@ -1,3 +1,4 @@
+import copyForAgent from "./copyForAgent/manifest";
 import pasteHtml from "./pasteHtml/manifest";
 import search from "./search/manifest";
 import suggest from "./suggest/manifest";
@@ -48,6 +49,7 @@ export const features: readonly Manifest[] = [
   suggest,
   formatting,
   pasteHtml,
+  copyForAgent,
   // Match VS Code: line numbers to the left of fold markers.
   lineNumbers,
   folding,

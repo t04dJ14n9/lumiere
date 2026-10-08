@@ -2319,3 +2319,33 @@ Known issues: Phase 4 copyForAgent and markers remain. Claude's dated
 Phases 6–8. Suggestion candidate caching/measurement remains in our ownership as
 reported by Claude. Owner should test rich paste into an active cell, undo,
 Shift+Mod+V and plugin toggles first; manual acceptance is unrun.
+
+### Phase 4 progress — Copy for Agent, 2026-10-08
+
+Delivered: command/palette, selection-only title action, editor/table selection
+menus and Mod+Alt+C (including focused cells/grid). Root host service owns
+resource-enabled validated handlers. Core `selections` captures flushed,
+version-checked, host-held frozen snapshots, rejects invented text/foreign objects,
+and maps wire positions to original CRLF offsets. Copy uses the LLM Wiki wording,
+workspace-relative paths in one local root and full URIs otherwise. Dirty notes
+offer Save and Copy / Copy Text Only / Cancel; saving recaptures selection, while
+noninteractive service calls reject dirty documents. No chat handoff is performed.
+
+Five focused units cover CRLF/column-zero lines, forged/stale snapshots, path
+policy, dirty choices and handler disposal/re-enable. Catalog lifecycle includes
+command/menu ownership. Manifest-driven menu generation and active-panel selection
+context support the title action. README/manual/ledger updated.
+Checks in order: `pnpm check` **402/402**; browser smoke **14/14**; native smoke
+**1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase4-copy-agent-{check,browser,native}.txt`. Smoke suites unchanged.
+Ledger **91/22/2/333/0**, total 448. No lint exceptions.
+Deviations: reusable host selection snapshots belong to core `editor`, ahead of
+the API facade; `editor/selectionMenu` is an awaited shared menu waterfall.
+Snapshots use original source offsets/native document versions; the internal
+capture wire still uses normalized offsets/collaboration versions. Untitled
+notes must be saved/reopened before a disk reference is available; text-only copy
+is supported. Native plain-text editor selections are outside this plugin's scope.
+Known issues: Phase 4 markers remains. Phase 5 is completed on main; then continue
+Phases 6–8, including suggestion caching/measurement from its record. Manual
+acceptance remains unrun; owner should test table selection references, dirty
+choices, CRLF and switching two panels before command completion first.

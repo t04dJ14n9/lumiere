@@ -203,3 +203,7 @@ export interface Workbench {
 export interface Workbench {
   workerPath?(name: "search"): string;
 }
+
+export interface Workbench {
+  workspaceFolders?(): readonly string[];
+}

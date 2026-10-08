@@ -70,6 +70,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.copyForAgent",
+        "title": "Copy for Agent",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.insertEmbed",
         "title": "Insert Embed",
         "category": "Markdown Workbench"
@@ -332,6 +337,12 @@
     ],
     "keybindings": [
       {
+        "command": "markdownWorkbench.copyForAgent",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
+      },
+      {
         "command": "markdownWorkbench.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
@@ -493,6 +504,10 @@
         {
           "command": "markdownWorkbench.openAsText",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.copyForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
         },
         {
           "command": "markdownWorkbench.insertEmbed",
@@ -703,7 +718,13 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
         }
       ],
+      "webview/context": [],
       "editor/title": [
+        {
+          "command": "markdownWorkbench.copyForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && markdownWorkbench.hasSelection",
+          "group": "navigation"
+        },
         {
           "command": "markdownWorkbench.openAsText",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands",
@@ -737,6 +758,12 @@
           "default": true,
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
+        },
+        "markdownWorkbench.plugins.copyForAgent.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Copy a saved source line reference or selected text for an agent."
         },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",

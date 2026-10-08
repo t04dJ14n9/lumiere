@@ -7,13 +7,17 @@ presentation independent, like separate Obsidian editor panes.
 
 The host creates one panel context and RPC endpoint for each native editor panel,
 attached to a shared TextDocument session. The webview creates CodeMirror and
-provides caller-bound extension registration, clipboard and menu services.
+provides caller-bound extension registration, clipboard and menu services. The
+host also provides `selections` for capture and validation; `editor/selectionMenu`
+is an awaited menu-contribution waterfall.
 Extensions sort by slot, catalog rank, owner ID and owner-local order in one
 compartment. Persistence captures source identity and feature-owned contributions;
 transfers flush first and reject a moving document version. Settings update a
 separate compartment so user state survives reconfiguration.
 
 ## Files
+
+- `selection.ts`: host-held frozen selection snapshots, source coordinates and stale validation.
 
 - `manifest.ts`: core identity and indentation configuration schema.
 - `api.ts`: editor, panel, menu, view-state and event contracts.

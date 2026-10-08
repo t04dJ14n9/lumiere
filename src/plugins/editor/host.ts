@@ -1,3 +1,4 @@
+import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
 import type { PanelShell } from "../../shared/runtime";
@@ -18,7 +19,12 @@ export const editorHost: Plugin<EditorHostConfig> = {
     const panels = new Map<string, EditorPanel>();
     const active = () => [...panels.values()].find((panel) => panel.active());
     registerActiveContexts(ctx, config.features ?? [], active);
+    registerSelectionContext(ctx, active);
     provideEditors(ctx, panels, active);
+    ctx.provide(
+      "selections",
+      new SelectionSnapshots((id) => panels.get(id), ctx.workbench),
+    );
     ctx.effect(() =>
       ctx.workbench.registerEditor((shell) => {
         const panel = createPanel(shell, ctx.documents, ctx.workbench, {
@@ -115,4 +121,35 @@ function provideEditors(
       await restoreView(panel, snapshot);
     },
   });
+}
+
+function registerSelectionContext(
+  ctx: Context,
+  active: () => EditorPanel | undefined,
+): void {
+  const selections = new Map<string, boolean>();
+  const refresh = () => {
+    void ctx.workbench.execute(
+      "setContext",
+      "markdownWorkbench.hasSelection",
+      selections.get(active()?.id ?? "") ?? false,
+    );
+  };
+  ctx.on("editor/selectionChanged", (panel, hasSelection) => {
+    selections.set(panel.id, hasSelection);
+    refresh();
+  });
+  ctx.on("editor/closed", (panel) => {
+    selections.delete(panel.id);
+    refresh();
+  });
+  ctx.on("editor/activeChanged", refresh);
+  ctx.effect(() => () => {
+    void ctx.workbench.execute(
+      "setContext",
+      "markdownWorkbench.hasSelection",
+      false,
+    );
+  });
+  refresh();
 }
