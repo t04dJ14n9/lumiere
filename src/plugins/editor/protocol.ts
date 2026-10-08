@@ -1,3 +1,4 @@
+import { featureSettings } from "../../shared/features";
 import { Schema, defineProtocol } from "../../kernel";
 export const offset = new Schema<number>(
   (value) => {
@@ -13,11 +14,22 @@ export const selection = Schema.object({
   version: offset,
   text: Schema.string(),
 });
+const foldRange = new Schema<{ from: number; to: number }>(
+  (value) => {
+    const range = Schema.object({ from: offset, to: offset }).parse(value);
+    if (range.from >= range.to) throw new Error("Invalid fold range");
+    return range;
+  },
+  { type: "object" },
+);
 export const viewState = Schema.object({
   source: Schema.string().default(""),
   scrollLeft: Schema.number().min(0).default(0),
-  scrollAnchor: Schema.object({ from: offset, offset: Schema.number() }).optional(),
-  folded: Schema.array(Schema.object({ from: offset, to: offset })).default([]),
+  scrollAnchor: Schema.object({
+    from: offset,
+    offset: Schema.number(),
+  }).optional(),
+  folded: Schema.array(foldRange).default([]),
   folds: Schema.record(Schema.boolean()).default({}),
   anchor: offset,
   head: offset,
@@ -33,6 +45,7 @@ export const protocol = defineProtocol("editor", {
         version: offset,
         clientID: Schema.string(),
         source: Schema.string(),
+        features: featureSettings,
         preset: Schema.union(["minimal", "obsidian"]),
         mode: Schema.union(["source", "livePreview"]),
       }),
@@ -41,7 +54,11 @@ export const protocol = defineProtocol("editor", {
     captureView: { params: Schema.object({}), result: viewState },
     restoreView: { params: viewState, result: Schema.boolean() },
     reveal: {
-      params: Schema.object({ from: offset, to: offset, focus: Schema.boolean().default(true) }),
+      params: Schema.object({
+        from: offset,
+        to: offset,
+        focus: Schema.boolean().default(true),
+      }),
       result: Schema.boolean(),
     },
     clipboardRead: { params: Schema.object({}), result: Schema.string() },
@@ -50,5 +67,8 @@ export const protocol = defineProtocol("editor", {
       result: Schema.boolean(),
     },
   },
-  notifications: { selectionChanged: Schema.object({ hasSelection: Schema.boolean() }) },
+  notifications: {
+    configure: featureSettings,
+    selectionChanged: Schema.object({ hasSelection: Schema.boolean() }),
+  },
 });

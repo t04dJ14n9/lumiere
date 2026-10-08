@@ -124,3 +124,22 @@ test("restore clamps selection, replaces folds, and restores raw scroll without 
   assert.equal(view.scrollDOM.scrollTop, 25);
   assert.equal(view.scrollDOM.scrollLeft, 3);
 });
+
+test("view-state rejects malformed fold ranges and accepts fractional scroll anchors", () => {
+  assert.equal(
+    viewState.parse({ ...saved, scrollAnchor: { from: 0, offset: -9.5 } })
+      .scrollAnchor?.offset,
+    -9.5,
+  );
+  for (const patch of [
+    { head: -1 },
+    { anchor: 1.5 },
+    { scrollTop: NaN },
+    { scrollTop: -1 },
+    { scrollAnchor: { from: 0, offset: Infinity } },
+    { folded: [{ from: 5, to: 2 }] },
+    { folded: [{ from: 2, to: 2 }] },
+    { folds: { key: "false" } },
+  ])
+    assert.throws(() => viewState.parse({ ...saved, ...patch }));
+});

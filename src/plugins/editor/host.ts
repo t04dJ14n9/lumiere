@@ -1,16 +1,34 @@
+import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
 import type { PanelShell } from "../../shared/runtime";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
 import type { EditorPanel } from "./api";
 import { createPanel } from "./panel";
-export const editorHost: Plugin<{ configure: (context: Context, panel: PanelShell) => void }> = {
+export const editorHost: Plugin<{
+  features?: readonly Manifest[];
+  configure: (context: Context, panel: PanelShell) => void;
+}> = {
   name: "editor",
   inject: { required: ["workbench", "documents"] },
   apply(ctx, config) {
     const panels = new Map<string, EditorPanel>();
     const active = () => [...panels.values()].find((panel) => panel.active());
     const contexts = () => {
+      const panel = active();
+      const settings = panel ? ctx.workbench.config(panel.document) : undefined;
+      for (const manifest of config.features ?? []) {
+        void ctx.workbench.execute(
+          "setContext",
+          `markdownWorkbench.plugin.${manifest.id}`,
+          Boolean(
+            panel &&
+              settings?.preset === "obsidian" &&
+              (settings.features?.[manifest.id]?.enabled ??
+                manifest.defaultEnabled),
+          ),
+        );
+      }
       for (const id of ["editor", "commands", "livePreview"])
         void ctx.workbench.execute(
           "setContext",
@@ -18,6 +36,8 @@ export const editorHost: Plugin<{ configure: (context: Context, panel: PanelShel
           Boolean(active()),
         );
     };
+    if (ctx.workbench.onConfiguration)
+      ctx.effect(() => ctx.workbench.onConfiguration!(contexts));
     ctx.on("editor/activeChanged", contexts);
     ctx.on("editor/opened", contexts);
     ctx.on("editor/closed", contexts);

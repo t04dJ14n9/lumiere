@@ -63,9 +63,233 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.foldAll",
+        "title": "Fold All",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.unfoldAll",
+        "title": "Unfold All",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleFold",
+        "title": "Toggle Fold",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleBold",
+        "title": "Toggle Bold",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleItalics",
+        "title": "Toggle Italics",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleStrikethrough",
+        "title": "Toggle Strikethrough",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleHighlight",
+        "title": "Toggle Highlight",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleCode",
+        "title": "Toggle Inline Code",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleComment",
+        "title": "Toggle Comment",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.insertLink",
+        "title": "Insert Link",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.insertHorizontalRule",
+        "title": "Insert Horizontal Rule",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleBulletList",
+        "title": "Toggle Bullet List",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleNumberedList",
+        "title": "Toggle Numbered List",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleBlockquote",
+        "title": "Toggle Blockquote",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.swapLineUp",
+        "title": "Swap Line Up",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.swapLineDown",
+        "title": "Swap Line Down",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading0",
+        "title": "Set Heading 0",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading1",
+        "title": "Set Heading 1",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading2",
+        "title": "Set Heading 2",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading3",
+        "title": "Set Heading 3",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading4",
+        "title": "Set Heading 4",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading5",
+        "title": "Set Heading 5",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setHeading6",
+        "title": "Set Heading 6",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleSourceMode",
         "title": "Toggle Live Preview/Source Mode",
         "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "title": "Consume Vim Host Shortcut",
+        "category": "Markdown Workbench"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markdownWorkbench.toggleBold",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+      },
+      {
+        "command": "markdownWorkbench.toggleItalics",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+      },
+      {
+        "command": "markdownWorkbench.insertLink",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+o",
+        "mac": "cmd+o",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+shift+x",
+        "mac": "cmd+shift+x",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+1",
+        "mac": "cmd+alt+1",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+2",
+        "mac": "cmd+alt+2",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+3",
+        "mac": "cmd+alt+3",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+4",
+        "mac": "cmd+alt+4",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+5",
+        "mac": "cmd+alt+5",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+alt+6",
+        "mac": "cmd+alt+6",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+      },
+      {
+        "command": "markdownWorkbench.consumeVimHostShortcut",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       }
     ],
     "menus": {
@@ -95,8 +319,104 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
+          "command": "markdownWorkbench.foldAll",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.folding"
+        },
+        {
+          "command": "markdownWorkbench.unfoldAll",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.folding"
+        },
+        {
+          "command": "markdownWorkbench.toggleFold",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.folding"
+        },
+        {
+          "command": "markdownWorkbench.toggleBold",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleItalics",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleStrikethrough",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleHighlight",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleCode",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleComment",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.insertLink",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.insertHorizontalRule",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleBulletList",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleNumberedList",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleBlockquote",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.swapLineUp",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.swapLineDown",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading0",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading1",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading2",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading3",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading4",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading5",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.setHeading6",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
           "command": "markdownWorkbench.toggleSourceMode",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.livePreview"
+        },
+        {
+          "command": "markdownWorkbench.consumeVimHostShortcut",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
         }
       ],
       "editor/title": [
@@ -110,6 +430,74 @@
     "configuration": {
       "title": "Markdown Workbench",
       "properties": {
+        "markdownWorkbench.plugins.autoPair.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Auto pair in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.folding.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Folding in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.formatting.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Markdown editing commands."
+        },
+        "markdownWorkbench.plugins.indentGuides.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Indentation guides in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.lineNumbers.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Line numbers in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.smartLists.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Smart lists in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.spellcheck.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Spellcheck in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.vim.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Vim in the Markdown editor."
+        },
+        "markdownWorkbench.autoPair.brackets": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.autoPair.markdown": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.folding.heading": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.folding.indent": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
         "markdownWorkbench.preset": {
           "type": "string",
           "enum": [

@@ -87,3 +87,100 @@ comment (including Mod+/), and cycle list/checklist. No `verify` key is bound.
 The old fuzzers are retired: manually exercise repeated typing/deleting,
 selection replacement, commands and Vim sequences; no fuzz operation count is
 claimed by this plan.
+
+## Phase 4 subset: settings and editor features
+
+These features are implemented; the remainder of Phase 4 is still incomplete.
+Use a disposable workspace and its workspace settings, never the owner's
+profile. For each enabled feature below, turn
+`markdownWorkbench.plugins.<id>.enabled` off and on while `Core.md` stays open.
+Expected in every case: its behavior and commands disappear and return without
+losing document text, selection or undo. Repeat in two panels and a multi-root
+workspace with different folder settings. The default `obsidian` preset loads
+enabled features; `minimal` loads none. Switching the preset itself currently
+requires reopening the editor; do not use live preset switching as acceptance
+of runtime feature enablement.
+
+### folding
+
+Setup: the Folding section in `Core.md`. Steps: use the gutter, then Fold All,
+Unfold All and Toggle Fold from the command palette; set `folding.heading` and
+`folding.indent` independently to false and back to true. Reload with a section
+folded; disable and re-enable folding. Expected: heading folds stop at the next
+same-level heading, indent folds include deeper children, the two settings act
+independently, reload restores saved folds, and disabling unfolds and removes
+its gutter/commands. Per-panel fold positions remain independent.
+
+### lineNumbers
+
+Setup: `Core.md`, fresh settings (default off). Steps: enable lineNumbers,
+insert/delete multiple lines, open a second panel, then disable it. Expected:
+source line numbers update in the enabled panels; gutter disappears when off.
+
+### indentGuides
+
+Setup: nested list in `Core.md`; default on. Steps: add mixed spaces/tabs before
+children and scroll them out of view and back. Toggle indentGuides. Expected:
+guides follow tab stops and leading indentation, never cover non-indented text,
+and disappear when disabled. Validate appearance with the owner's theme.
+
+### spellcheck
+
+Setup: misspelled prose in `Core.md`, default on. Steps: inspect spelling
+suggestions, disable spellcheck and repeat, then enable it. Expected: the
+contenteditable spellcheck attribute follows the setting; actual underlines
+and dictionaries depend on the VS Code/Electron host and OS language.
+
+### autoPair
+
+Setup: a blank line in `Core.md`. Steps: type brackets/quotes and Markdown
+markers, wrap a selection, and Backspace an empty pair. Change
+`autoPair.brackets` and `autoPair.markdown` independently; disable the plugin.
+Expected: enabled families insert/remove pairs, disabled families type literal
+characters; the other family retains its configuration. Undo remains native.
+
+### smartLists
+
+Setup: a list in `Core.md`. Steps: Enter at an item end, Enter on an empty item,
+Backspace at an item start, and repeat with an ordered list. Disable smartLists
+and repeat. Expected: enabled list continuation/exit follows Markdown editing;
+disabled mode uses plain editor behavior without automatic list markers.
+
+### vim
+
+Setup: `Core.md`; Vim defaults off. Steps: enable Vim in Settings; exercise
+normal/insert/visual modes, `i`, Escape, motions, selection replacement, IME in
+insert mode, `:w`, `:q`, `:wq`, `:x`, `:u`, and `:red`. Reopen after close;
+disable/re-enable Vim. Expected: text changes synchronize, ex commands use
+native save/undo, normal-mode IME cannot insert stray text, and disabling
+removes modal behavior. Repeat Ctrl/Cmd+O, B, I, K, Shift+X, Shift+T, Shift+H,
+and Alt+0 through Alt+6: Vim-only host shortcut consumption must disappear
+when disabled. No workspaceState toggle is used. Cell-editor Vim mode transfer
+is not implemented until the tables plugin lands.
+
+### formatting
+
+Setup: Formatting section in `Core.md`. Steps: select `alpha`, use Toggle Bold,
+Italics, Strikethrough, Highlight, Inline Code and Comment twice; repeat with a
+caret in a word. Use Insert Link and edit its selected URL; Insert Horizontal
+Rule; Set Heading 0 through 6; Toggle Bullet List, Numbered List and Blockquote;
+Swap Line Up/Down. Repeat multiline selections ending at column zero and
+backward selections. Expected: toggles preserve text, headings replace only
+the heading prefix, column-zero endpoints exclude the following line, swapping
+moves the selected lines, and all edits undo through the TextDocument.
+
+Test Mod+B, Mod+I and Mod+K. Strikethrough/highlight/code/comment keys remain
+unbound pending the owner's Obsidian Hotkeys observation. Disable formatting:
+its commands/keys disappear; enabling restores them. Copy/cut formatted source
+to a text editor and verify the Markdown characters, not rendered HTML.
+
+## Remaining Phase 4 dependency gate
+
+Do not treat this subset as the full feature release. Links, codeBlocks, math,
+diagrams, callouts, footnotes, tasks, embeds, pagePreview, structured properties,
+tables, inlineTitle, tags, suggestions, query blocks, pasteHtml, copyForAgent
+and markers still need their runtime plugins and acceptance scenarios. In
+particular, a properties sheet or interactive table must not be accepted merely
+because its pure parser/HTML renderer passes unit tests. The source's table cell
+edit projection, property draft reconciliation, menus, clipboard, Vim transfer
+and rename focus rules need migration to the service/lifecycle model together.

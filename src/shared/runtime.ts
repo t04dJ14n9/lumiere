@@ -1,3 +1,5 @@
+import type { Infer } from "../kernel";
+import type { featureSettings } from "./features";
 import type { Disposer } from "../kernel";
 import type { Endpoint, Transport } from "./rpc/endpoint";
 export interface HostDocument {
@@ -56,7 +58,9 @@ export interface PanelShell {
 }
 export interface Workbench {
   registerEditor(open: (panel: PanelShell) => void): Disposer;
+  onConfiguration?(listener: () => void): Disposer;
   config(document: HostDocument): {
+    features?: Infer<typeof featureSettings>;
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
   };

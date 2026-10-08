@@ -1,0 +1,12 @@
+import { defineManifest } from "../../shared/manifest";
+import { Schema } from "../../kernel";
+export const config = Schema.object({});
+export default defineManifest({
+  id: "indentGuides",
+  title: "Indentation guides",
+  description: "Indentation guides in the Markdown editor.",
+  kind: "feature",
+  defaultEnabled: true,
+  surfaces: ["webview"],
+  config,
+} as const);

@@ -1,4 +1,6 @@
+import type { Schema } from "../kernel";
 export interface Manifest {
+  readonly config?: Schema<unknown>;
   readonly id: string;
   readonly title: string;
   readonly description: string;
@@ -6,6 +8,7 @@ export interface Manifest {
   readonly defaultEnabled: boolean;
   readonly surfaces: readonly ("host" | "webview")[];
   readonly contributes?: {
+    keybindings?: readonly { id: string; key: string; mac?: string }[];
     commands?: readonly {
       id: string;
       title: string;

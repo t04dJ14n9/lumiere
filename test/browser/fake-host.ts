@@ -146,6 +146,7 @@ export class BrowserHost {
       return {
         text: this.session.text,
         version: this.session.version,
+        features: {},
         clientID: id,
         source: this.document.uri,
         preset,

@@ -1,3 +1,4 @@
+import { features } from "../plugins/catalog";
 import * as vscode from "vscode";
 import { randomUUID, createHash } from "node:crypto";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
@@ -59,7 +60,9 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
       return () => stop.dispose();
     },
     onSave(listener) {
-      const stop = vscode.workspace.onDidSaveTextDocument((document) => listener(wrap(document)));
+      const stop = vscode.workspace.onDidSaveTextDocument((document) =>
+        listener(wrap(document)),
+      );
       return () => stop.dispose();
     },
     onWillSave(listener) {
@@ -84,20 +87,51 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
     error(message) {
       void vscode.window.showErrorMessage(message);
     },
+    onConfiguration(listener) {
+      const subscription = vscode.workspace.onDidChangeConfiguration(listener);
+      return () => subscription.dispose();
+    },
     config(document) {
       const config = vscode.workspace.getConfiguration(
         "markdownWorkbench",
         vscode.Uri.parse(document.uri),
       );
       return {
+        features: Object.fromEntries(
+          features.map((manifest) => {
+            const properties =
+              (manifest.config?.toJSONSchema().properties as Record<
+                string,
+                unknown
+              >) ?? {};
+            return [
+              manifest.id,
+              {
+                enabled: config.get(
+                  `plugins.${manifest.id}.enabled`,
+                  manifest.defaultEnabled,
+                ),
+                config:
+                  (manifest.config?.parse(
+                    Object.fromEntries(
+                      Object.keys(properties).map((key) => [
+                        key,
+                        config.get(`${manifest.id}.${key}`),
+                      ]),
+                    ),
+                  ) as Record<string, unknown>) ?? {},
+              },
+            ];
+          }),
+        ),
         preset: config.get("preset", "obsidian"),
         mode: config.get("editor.defaultMode", "livePreview"),
       };
     },
     root(document) {
       return (
-        vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(document.uri))?.uri ??
-        vscode.Uri.joinPath(vscode.Uri.parse(document.uri), "..")
+        vscode.workspace.getWorkspaceFolder(vscode.Uri.parse(document.uri))
+          ?.uri ?? vscode.Uri.joinPath(vscode.Uri.parse(document.uri), "..")
       ).toString();
     },
     async files(root) {
@@ -125,7 +159,10 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
     },
     async stat(uri) {
       const info = await vscode.workspace.fs.stat(vscode.Uri.parse(uri));
-      return { mtime: info.mtime, symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink) };
+      return {
+        mtime: info.mtime,
+        symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink),
+      };
     },
     registerEditor(open) {
       const registration = vscode.window.registerCustomEditorProvider(
@@ -138,7 +175,10 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
                 vscode.Uri.joinPath(document.uri, "..");
             panel.webview.options = {
               enableScripts: true,
-              localResourceRoots: [vscode.Uri.joinPath(extensionUri, "dist"), root],
+              localResourceRoots: [
+                vscode.Uri.joinPath(extensionUri, "dist"),
+                root,
+              ],
             };
             const shell: PanelShell = {
               id,
@@ -174,11 +214,15 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
                 panel.webview.html = html;
               },
               resource(uri) {
-                return panel.webview.asWebviewUri(vscode.Uri.parse(uri)).toString();
+                return panel.webview
+                  .asWebviewUri(vscode.Uri.parse(uri))
+                  .toString();
               },
               asset(relative) {
                 return panel.webview
-                  .asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", relative))
+                  .asWebviewUri(
+                    vscode.Uri.joinPath(extensionUri, "dist", relative),
+                  )
                   .toString();
               },
               onDispose(listener) {

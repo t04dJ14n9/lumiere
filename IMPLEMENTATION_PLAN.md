@@ -611,3 +611,68 @@ Phase 5, as recorded previously.
 Known issues: owner manual acceptance is not run. Advanced block widgets,
 rename orchestration, properties clipboard and folding controls require their
 Phase 4 plugins; core transfer primitives and generic rendering are ready.
+
+### Phase 4 — Feature plugins (incomplete), 2026-10-07
+
+**Incomplete — acceptance criteria not met; Phases 5–8 have not started.**
+
+Delivered: folding (heading/indent config, commands, fold service), lineNumbers,
+indentGuides, spellcheck, autoPair (independent brackets/Markdown options),
+smartLists, setting-backed Vim and formatting commands. Each has a manifest and
+README. Added generated resource-scoped feature/config settings and keybindings,
+serialized webview feature reconciliation, host configuration notifications,
+active-panel context keys, and owned host command registration/removal. Feature
+off/on tests exercise each implemented plugin's compartments and commands.
+Added pure editing, folding, indentation, pair configuration, settings queue and
+host routing tests, including switching between two panels. Ported the source's
+remaining clear-inline-formatting unit test unchanged. Fixed malformed fold
+range validation, persistent folded ranges and spellcheck precedence.
+
+Checks (in order): `pnpm check` (161 unit tests passed),
+`pnpm test:browser` (14/14), `pnpm test:vscode` (1/1, freshly packaged VSIX,
+VS Code 1.140.0, isolated /tmp profile, extensions and home).
+Logs: docs/checks/phase4-incomplete-{check,browser,native}.txt.
+The browser fake-host handshake was updated for feature settings; no smoke
+scenario was added or weakened. Source repositories were read only.
+Ledger: 84/8/2/340/14 (ported/rewritten/changed/retired/todo), total 448.
+The 14 remaining rows are unit cases, not browser/native/fuzzer scenarios.
+Manual test plan now includes each delivered feature's setup, steps, expected
+result, settings, commands and off/on behavior. Those manual scenarios are not run.
+
+Deviations from DESIGN.md:
+- The current preset is selected at editor creation; changing the preset needs
+  reopening the editor. Individual feature enablement/config changes are live.
+- The codemirror-vim library exposes no public removal API for ex definitions.
+  Their callbacks become inert when the fiber stops and are replaced on the
+  next enable. Its undo/redo/save hooks are restored on disposal. This limit is
+  documented in the Vim README; no workspaceState setting is used.
+- The editor retains the fold state field so persisted ranges can restore
+  before feature loading. The folding plugin owns controls and clears folds
+  when disposed.
+
+Known issues and missing acceptance work:
+- Phase 4 steps 3–10 remain undelivered: links; codeBlocks/math/diagrams/
+  callouts/footnotes/tasks; embeds/pagePreview; structured properties; interactive
+  tables; inlineTitle; tags/suggest/search; pasteHtml/copyForAgent/markers.
+  Core fences still use the generic Phase 3 renderer, not a feature code editor.
+- Source table/controller.ts still needs its required split and service-based
+  cell-edit projection. Source property sheets still depend on ContentContext
+  callbacks for drafts, clipboard and types. These are runtime behaviors, not
+  satisfied by the already-ported pure table/property tests. The adapters and
+  rich-widget lifecycle work were not completed in this porting pass; copying
+  the modules as-is would violate plugin boundaries and document authority.
+- Vim cell mode transfer depends on that table work. Source focus-intent and
+  title response unit assertions await inlineTitle/properties protocols. Search
+  worker/cancellation and WebM unit cases also remain outstanding.
+- The live vault index is still the Phase 3 snapshot stub. Plugin management UI,
+  complete command/setting parity, public API and release documentation remain
+  in later phases. No live Obsidian parity observation is claimed.
+
+Stopping reason: the Phase 4 acceptance gate is not met by this tested subset.
+The missing feature adapters are implementation work, not an external tool or
+permission blocker. Later phases depend on them (in particular index-backed
+links/suggestions/search, complete contributions, markers and public API), so
+this run stops here rather than beginning those dependent phases or claiming
+Phase 4 complete. Next implementation step: links (Phase 4 step 3), followed by
+the remaining ordered feature ports and their unit/manual coverage. Phase 9
+was not started. No push, publication or owner-profile installation occurred.

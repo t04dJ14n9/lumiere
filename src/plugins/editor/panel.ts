@@ -56,16 +56,31 @@ export function createPanel(
         clientID: shell.id,
         source: shell.document.uri,
         ...config,
+        features: config.features ?? {},
       };
     }),
   );
-  owned.effect(() => rpc.handle(protocol, "clipboardRead", () => workbench.clipboard.read()));
+  owned.effect(() =>
+    rpc.handle(protocol, "clipboardRead", () => workbench.clipboard.read()),
+  );
   owned.effect(() =>
     rpc.handle(protocol, "clipboardWrite", async ({ text }) => {
       await workbench.clipboard.write(text);
       return true;
     }),
   );
+  if (workbench.onConfiguration) {
+    owned.effect(() =>
+      workbench.onConfiguration!(() => {
+        const config = workbench.config(shell.document);
+        rpc.notify(
+          protocol,
+          "configure",
+          config.preset === "minimal" ? {} : (config.features ?? {}),
+        );
+      }),
+    );
+  }
   shell.setHTML(webviewHTML(shell));
   return panel;
 }

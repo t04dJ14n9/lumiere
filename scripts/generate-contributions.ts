@@ -4,12 +4,14 @@ import path from "node:path";
 import type { Manifest } from "../src/shared/manifest";
 export async function contributions() {
   const manifests: Manifest[] = [];
-  for (const directory of readdirSync("src/plugins", { withFileTypes: true }).filter((entry) =>
-    entry.isDirectory(),
-  )) {
+  for (const directory of readdirSync("src/plugins", {
+    withFileTypes: true,
+  }).filter((entry) => entry.isDirectory())) {
     const file = path.resolve("src/plugins", directory.name, "manifest.ts");
     if (!existsSync(file)) continue;
-    const module = (await import(pathToFileURL(file).href)) as { default: Manifest };
+    const module = (await import(pathToFileURL(file).href)) as {
+      default: Manifest;
+    };
     manifests.push(module.default);
   }
   const commands = manifests.flatMap((manifest) =>
@@ -30,11 +32,27 @@ export async function contributions() {
       {
         viewType: "markdownWorkbench.editor",
         displayName: "Markdown Workbench",
-        selector: [{ filenamePattern: "*.md" }, { filenamePattern: "*.markdown" }],
+        selector: [
+          { filenamePattern: "*.md" },
+          { filenamePattern: "*.markdown" },
+        ],
         priority: "option",
       },
     ],
     commands,
+    keybindings: manifests.flatMap((manifest) =>
+      [
+        ...(manifest.contributes?.commands ?? []).filter(
+          (command) => command.key,
+        ),
+        ...(manifest.contributes?.keybindings ?? []),
+      ].map((command) => ({
+        command: `markdownWorkbench.${command.id}`,
+        key: command.key,
+        ...(command.mac ? { mac: command.mac } : {}),
+        when: `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`,
+      })),
+    ),
     menus: {
       commandPalette: menus,
       "editor/title": [
@@ -48,6 +66,32 @@ export async function contributions() {
     configuration: {
       title: "Markdown Workbench",
       properties: {
+        ...Object.fromEntries(
+          manifests
+            .filter((manifest) => manifest.kind === "feature")
+            .map((manifest) => [
+              `markdownWorkbench.plugins.${manifest.id}.enabled`,
+              {
+                type: "boolean",
+                default: manifest.defaultEnabled,
+                scope: "resource",
+                description: manifest.description,
+              },
+            ]),
+        ),
+        ...Object.fromEntries(
+          manifests.flatMap((manifest) =>
+            Object.entries(
+              (manifest.config?.toJSONSchema().properties as Record<
+                string,
+                Record<string, unknown>
+              >) ?? {},
+            ).map(([key, value]) => [
+              `markdownWorkbench.${manifest.id}.${key}`,
+              { ...value, scope: "resource" },
+            ]),
+          ),
+        ),
         "markdownWorkbench.preset": {
           type: "string",
           enum: ["obsidian", "minimal"],

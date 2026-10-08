@@ -99,7 +99,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/table-operations.test.ts` | row operations can exchange or replace the header without losing cell content | ported | `test/unit/ported/table-operations.test.ts` |
 | `unit/table-operations.test.ts` | column moves and duplication keep alignment with the source values | ported | `test/unit/ported/table-operations.test.ts` |
 | `unit/table-operations.test.ts` | alignment and sorting preserve the header and unrelated cell contents | ported | `test/unit/ported/table-operations.test.ts` |
-| `unit/table-operations.test.ts` | clearing inline formatting retains comment contents, links and escaped literals | todo | Awaiting scheduled port |
+| `unit/table-operations.test.ts` | clearing inline formatting retains comment contents, links and escaped literals | ported | `src/plugins/formatting/formatting.test.ts` |
 | `unit/tag-tree.test.ts` | tag hierarchy merges case variants and counts each note once in parent totals | ported | `test/unit/ported/tag-tree.test.ts` |
 | `unit/tag-tree.test.ts` | flat tags retain full paths while frequency sorting orders each level | ported | `test/unit/ported/tag-tree.test.ts` |
 | `unit/tags.test.ts` | tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags | todo | `test/unit/ported/tags.test.ts`; pure assertions pass; original tag RPC assertions await Phase 4 schema |
@@ -457,7 +457,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 
 Phase 2 additionally inventories two Markdown adapter tests from `vscode-extension/test/agentClipboard.test.mjs`. PDF-only tests are outside this extraction.
 
-Phase 3 is incomplete. The two source fuzz suites remain `todo`; their 18,112
-edit operations and 128 Vim sequences have not been run in this repository.
-The installed VS Code smoke is new coverage and does not count as porting the
-47 source native scenarios. Core checks passing does not complete this ledger.
+Phase 3 is completed under the revised testing policy. The source fuzzers and
+all browser/native rows are retired; their former operation counts are not
+claimed. The existing 14 browser and 1 native smoke checks remain, without
+expansion. Phase 4 is incomplete; remaining `todo` rows are unit cases for
+undelivered features or protocols, not retired browser scenarios.

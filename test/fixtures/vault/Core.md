@@ -17,3 +17,19 @@ second line
 - second item
 
 Last paragraph for testing selection and scroll recovery.
+
+## Folding section
+
+This section has children.
+
+### Child heading
+
+- parent
+  - child
+    - grandchild
+
+## Formatting section
+
+alpha
+beta
+gamma

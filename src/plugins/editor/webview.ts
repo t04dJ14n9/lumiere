@@ -1,3 +1,4 @@
+import { foldState, foldedRanges } from "@codemirror/language";
 import { createMenu } from "../../webview/ui/menu";
 import { Compartment, EditorState, StateEffect, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
@@ -31,14 +32,13 @@ export const editorWebview: Plugin<{
         doc: config.text,
         extensions: [
           presentation.restoreScrollPosition,
+          foldState,
           ctx.document.extension,
           ctx.markdown.language(),
           drawSelection(),
           EditorView.lineWrapping,
-          EditorView.contentAttributes.of({
-            "aria-label": "Markdown content",
-            spellcheck: "true",
-          }),
+          EditorView.contentAttributes.of({ "aria-label": "Markdown content" }),
+          Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
           Prec.low(keymap.of(defaultKeymap)),
           EditorView.updateListener.of((update) => {
             if (update.selectionSet || update.focusChanged)
@@ -115,16 +115,22 @@ export const editorWebview: Plugin<{
         };
       }),
     );
-    const capture = () => ({
-      source: config.source,
-      anchor: view.state.selection.main.anchor,
-      head: view.state.selection.main.head,
-      scrollTop: view.scrollDOM.scrollTop,
-      scrollLeft: view.scrollDOM.scrollLeft,
-      folded: [],
-      folds: Object.fromEntries(folds),
-      mode,
-    });
+    const capture = () => {
+      const folded: { from: number; to: number }[] = [];
+      foldedRanges(view.state).between(0, view.state.doc.length, (from, to) => {
+        folded.push({ from, to });
+      });
+      return {
+        source: config.source,
+        anchor: view.state.selection.main.anchor,
+        head: view.state.selection.main.head,
+        scrollTop: view.scrollDOM.scrollTop,
+        scrollLeft: view.scrollDOM.scrollLeft,
+        folded,
+        folds: Object.fromEntries(folds),
+        mode,
+      };
+    };
     const restore = (state: Infer<typeof viewState>) => {
       mode = state.mode;
       folds.clear();
@@ -156,7 +162,7 @@ export const editorWebview: Plugin<{
           if (
             update.selectionSet ||
             update.docChanged ||
-            update.transactions.some((tr) => tr.reconfigured)
+            update.transactions.some((tr) => tr.effects.length > 0)
           )
             config.persist?.(capture());
         }),
