@@ -62,10 +62,10 @@ export interface VaultFileSystem {
   /** File events under the root; created and changed files carry fresh stats. */
   watch(root: string, listener: (event: FileEvent) => void): Disposer;
 }
-/** Where one vault's snapshot is kept between sessions. */
+/** Where one vault's snapshot files are kept between sessions. */
 export interface SnapshotStore {
-  read(): Promise<string | undefined>;
-  write(text: string): Promise<void>;
+  read(name: string): Promise<string | undefined>;
+  write(name: string, text: string): Promise<void>;
 }
 /** Parses note text, in the indexing worker in the extension. */
 export type NoteParser = (text: string) => Promise<NoteMetadata>;

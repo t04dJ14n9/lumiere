@@ -4,8 +4,7 @@ import { exclusionMatcher, isIgnoredPath } from "./exclusion";
 import type { FileEntry } from "./file-table";
 import { MemoryVaultIndex } from "./memory-index";
 import { ParseQueue } from "./parse-queue";
-import { readSnapshot, writeSnapshot } from "./snapshot";
-import type { VaultSnapshot } from "./snapshot";
+import { Snapshot } from "./snapshot";
 import type {
   FileEvent,
   ListedFile,
@@ -21,6 +20,8 @@ export const FILE_LIMIT = 50_000;
 const SAVE_DELAY_MS = 2_000;
 /** Typing in an open note re-indexes it after this pause. */
 const OVERLAY_DELAY_MS = 300;
+/** Long start-up work runs in slices of about this long, between other events. */
+const SLICE_MS = 8;
 
 export interface IndexerOptions {
   root: string;
@@ -46,7 +47,7 @@ export class VaultIndexer {
   /** Resolves once the file list is known, from the snapshot or a listing. */
   readonly ready: Promise<void>;
   private readonly queue: ParseQueue;
-  private snapshot: VaultSnapshot;
+  private readonly snapshot = new Snapshot();
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private stopWatching?: Disposer;
   private disposed = false;
@@ -62,7 +63,6 @@ export class VaultIndexer {
       folderNote,
       linkFormat,
     });
-    this.snapshot = readSnapshot(undefined);
     this.queue = this.createQueue();
     this.ready = this.start();
   }
@@ -126,11 +126,12 @@ export class VaultIndexer {
   }
 
   private async start(): Promise<void> {
-    const stored = readSnapshot(await this.options.store?.read());
-    Object.assign(this.snapshot, stored);
+    if (this.options.store) {
+      await this.snapshot.load(this.options.store);
+    }
     const hasCachedFiles = Object.keys(this.snapshot.files).length > 0;
     if (hasCachedFiles) {
-      this.loadCached();
+      await this.loadCached();
       this.reconciled = this.reconcile().catch((error) =>
         this.options.onError?.("Could not list the vault", error),
       );
@@ -140,21 +141,25 @@ export class VaultIndexer {
     await this.reconciled;
   }
 
-  /** Warm start: the previous session's files and metadata, before any listing. */
-  private loadCached(): void {
-    this.index.replaceFiles(
-      Object.entries(this.snapshot.files).map(([path, file]) =>
+  /**
+   * Warm start: the previous session's files and metadata, before any
+   * listing. Metadata is added in short slices so the host stays responsive.
+   */
+  private async loadCached(): Promise<void> {
+    const cached = Object.entries(this.snapshot.files);
+    await inSlices(cached, ([path, file]) =>
+      this.index.addFiles([
         this.entry({ uri: file.uri, path, mtime: file.mtime, size: file.size }),
-      ),
+      ]),
     );
-    for (const [path, file] of Object.entries(this.snapshot.files)) {
+    await inSlices(cached, ([path, file]) => {
       const metadata = file.hash
         ? this.snapshot.metadata[file.hash]
         : undefined;
       if (metadata) {
         this.index.setMetadata(path, metadata);
       }
-    }
+    });
   }
 
   /** Compare the file system with the index; parse only what changed. */
@@ -170,13 +175,15 @@ export class VaultIndexer {
       this.onFileEvent(event),
     );
     const files = listing.files.filter((file) => !isIgnoredPath(file.path));
-    this.index.replaceFiles(files.map((file) => this.entry(file)));
-    this.forgetMissing(new Set(files.map((file) => file.path)));
-    for (const file of files) {
+    const present = new Set(files.map((file) => file.path));
+    this.index.removeFilesExcept(present);
+    this.forgetMissing(present);
+    await inSlices(files, (file) => {
+      this.index.addFiles([this.entry(file)]);
       if (this.needsParse(file)) {
         this.queue.enqueue(file.path);
       }
-    }
+    });
     if (this.queue.isIdle) {
       this.drained();
     }
@@ -191,7 +198,7 @@ export class VaultIndexer {
     const isSame = cached?.mtime === file.mtime && cached.size === file.size;
     if (!isMarkdownPath(file.path)) {
       if (!isSame) {
-        this.snapshot.files[file.path] = { ...file };
+        this.snapshot.setFile(file.path, { ...file });
         this.scheduleSave();
       }
       return false;
@@ -209,7 +216,7 @@ export class VaultIndexer {
   private forgetMissing(present: Set<string>): void {
     for (const path of Object.keys(this.snapshot.files)) {
       if (!present.has(path)) {
-        delete this.snapshot.files[path];
+        this.snapshot.deleteFile(path);
         this.scheduleSave();
       }
     }
@@ -246,7 +253,7 @@ export class VaultIndexer {
           .filter((other) => other.startsWith(prefix));
     for (const deleted of paths) {
       this.index.deleteFile(deleted);
-      delete this.snapshot.files[deleted];
+      this.snapshot.deleteFile(deleted);
     }
     this.scheduleSave();
   }
@@ -254,9 +261,9 @@ export class VaultIndexer {
   /** A renamed file keeps its parsed metadata; only its record moves. */
   private moveCached(oldPath: string, file: ListedFile): void {
     const cached = this.snapshot.files[oldPath];
-    delete this.snapshot.files[oldPath];
+    this.snapshot.deleteFile(oldPath);
     if (cached) {
-      this.snapshot.files[file.path] = { ...cached, uri: file.uri };
+      this.snapshot.setFile(file.path, { ...cached, uri: file.uri });
     }
     this.scheduleSave();
   }
@@ -288,8 +295,11 @@ export class VaultIndexer {
 
   private async save(): Promise<void> {
     this.cancel("save");
+    if (!this.options.store || !this.snapshot.isDirty) {
+      return;
+    }
     try {
-      await this.options.store?.write(writeSnapshot(this.snapshot));
+      await this.snapshot.save(this.options.store);
     } catch (error) {
       this.options.onError?.("Could not save the vault index", error);
     }
@@ -309,5 +319,20 @@ export class VaultIndexer {
   private cancel(key: string): void {
     clearTimeout(this.timers.get(key));
     this.timers.delete(key);
+  }
+}
+
+/** Run `step` over items, yielding to other events every few milliseconds. */
+async function inSlices<T>(
+  items: readonly T[],
+  step: (item: T) => void,
+): Promise<void> {
+  let sliceStart = Date.now();
+  for (const item of items) {
+    step(item);
+    if (Date.now() - sliceStart > SLICE_MS) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      sliceStart = Date.now();
+    }
   }
 }

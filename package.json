@@ -14,7 +14,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
   "contributes": {
     "customEditors": [
       {
@@ -225,6 +227,11 @@
       {
         "command": "markdownWorkbench.addProperty",
         "title": "Add File Property",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.quickSwitcher",
+        "title": "Quick Switcher",
         "category": "Markdown Workbench"
       },
       {
@@ -611,6 +618,10 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
         },
         {
+          "command": "markdownWorkbench.quickSwitcher",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.quickSwitcher.enabled"
+        },
+        {
           "command": "markdownWorkbench.insertTable",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
         },
@@ -764,6 +775,12 @@
           "scope": "resource",
           "description": "Line numbers in the Markdown editor."
         },
+        "markdownWorkbench.plugins.linkUpdates.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Update links in other notes when a note or attachment is renamed or moved in VS Code."
+        },
         "markdownWorkbench.plugins.links.enabled": {
           "type": "boolean",
           "default": true,
@@ -800,6 +817,12 @@
           "scope": "resource",
           "description": "Edit YAML properties as typed fields, lists and ordered rows."
         },
+        "markdownWorkbench.plugins.quickSwitcher.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Find a note by name, alias or path, or create it, like Obsidian's quick switcher."
+        },
         "markdownWorkbench.plugins.smartLists.enabled": {
           "type": "boolean",
           "default": true,
@@ -829,6 +852,12 @@
           "default": false,
           "scope": "resource",
           "description": "Vim in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.wordCount.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Word and character count of the active note, or of the selection, in the status bar."
         },
         "markdownWorkbench.autoPair.brackets": {
           "type": "boolean",
@@ -860,6 +889,16 @@
         "markdownWorkbench.folding.indent": {
           "type": "boolean",
           "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.linkUpdates.mode": {
+          "enum": [
+            "prompt",
+            "always",
+            "never"
+          ],
+          "default": "prompt",
+          "description": "Obsidian's Automatically update internal links: `prompt` asks before rewriting links in other notes when a file is renamed or moved.",
           "scope": "resource"
         },
         "markdownWorkbench.links.newLinkFormat": {
@@ -959,7 +998,8 @@
     "format:check": "prettier --check .",
     "contributions": "tsx scripts/generate-contributions.ts",
     "package": "pnpm build && vsce package --no-dependencies --no-rewrite-relative-links",
-    "ledger": "node scripts/test-ledger.mjs"
+    "ledger": "node scripts/test-ledger.mjs",
+    "measure:vault": "pnpm build && tsx scripts/measure-vault.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.2",

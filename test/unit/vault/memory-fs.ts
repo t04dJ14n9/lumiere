@@ -100,14 +100,14 @@ export class MemoryFileSystem implements VaultFileSystem {
 }
 
 export class MemoryStore {
-  text?: string;
+  readonly files = new Map<string, string>();
   writes = 0;
-  async read() {
-    return this.text;
+  async read(name: string) {
+    return this.files.get(name);
   }
-  async write(text: string) {
+  async write(name: string, text: string) {
     this.writes++;
-    this.text = text;
+    this.files.set(name, text);
   }
 }
 

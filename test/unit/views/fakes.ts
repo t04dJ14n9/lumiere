@@ -66,6 +66,9 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
   const commands = new Map<string, (...args: unknown[]) => unknown>();
   const activeListeners = new Set<() => void>();
   let active: string | undefined;
+  const prompts: string[] = [];
+  let answer: string | undefined;
+  let renameListener: Parameters<HostViews["onWillRename"]>[0] | undefined;
   const views: HostViews = {
     tree(id, source) {
       const record = {
@@ -93,7 +96,10 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
       };
     },
     pick: async () => undefined,
-    ask: async () => undefined,
+    ask: async (message) => {
+      prompts.push(message);
+      return answer;
+    },
     command(id, run) {
       commands.set(id, run);
       return () => {
@@ -112,7 +118,12 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
     documentText: () => undefined,
     setting: (key, fallback) =>
       key in settings ? (settings[key] as never) : fallback,
-    onWillRename: () => () => {},
+    onWillRename: (listener) => {
+      renameListener = listener;
+      return () => {
+        renameListener = undefined;
+      };
+    },
   };
   return {
     views,
@@ -120,6 +131,13 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
     statuses,
     commands,
     settings,
+    prompts,
+    answerWith(value: string | undefined) {
+      answer = value;
+    },
+    rename(renames: { oldUri: string; newUri: string }[]) {
+      return renameListener ? renameListener(renames) : Promise.resolve([]);
+    },
     setActive(uri: string | undefined) {
       active = uri;
       activeListeners.forEach((listener) => listener());

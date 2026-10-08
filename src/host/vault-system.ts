@@ -268,7 +268,7 @@ async function renamed(
   }
 }
 
-/** One JSON file per vault in the workspace's extension storage. */
+/** A folder of JSON files per vault in the workspace's extension storage. */
 function snapshotStore(
   storage: vscode.Uri | undefined,
   root: string,
@@ -276,12 +276,12 @@ function snapshotStore(
   if (!storage) {
     return undefined;
   }
-  const name = createHash("sha256").update(root).digest("hex").slice(0, 16);
-  const folder = vscode.Uri.joinPath(storage, "vault-index");
-  const file = vscode.Uri.joinPath(folder, `${name}.json`);
+  const id = createHash("sha256").update(root).digest("hex").slice(0, 16);
+  const folder = vscode.Uri.joinPath(storage, "vault-index", id);
   return {
-    async read() {
+    async read(name) {
       try {
+        const file = vscode.Uri.joinPath(folder, `${name}.json`);
         return new TextDecoder().decode(
           await vscode.workspace.fs.readFile(file),
         );
@@ -289,8 +289,9 @@ function snapshotStore(
         return undefined;
       }
     },
-    async write(text) {
-      // Write beside the file, then rename, so a crash never leaves half a snapshot.
+    async write(name, text) {
+      // Write beside the file, then rename, so a crash never leaves half a file.
+      const file = vscode.Uri.joinPath(folder, `${name}.json`);
       const temporary = vscode.Uri.joinPath(folder, `${name}.json.tmp`);
       await vscode.workspace.fs.createDirectory(folder);
       await vscode.workspace.fs.writeFile(

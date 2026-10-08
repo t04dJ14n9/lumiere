@@ -100,18 +100,40 @@ export class MemoryVaultIndex implements VaultIndex {
 
   // Writing (the vault host plugin)
 
-  /** Replace the whole file list, as at start-up. Metadata for kept files stays. */
+  /**
+   * Replace the whole file list. Metadata for kept files stays; only notes
+   * whose links mention an added or removed file are resolved again.
+   */
   replaceFiles(entries: readonly FileEntry[]): void {
-    const kept = new Set(entries.map((entry) => entry.path));
-    for (const file of [...this.table.all()]) {
-      if (!kept.has(file.path)) {
-        this.forgetFile(file.path);
+    this.removeFilesExcept(new Set(entries.map((entry) => entry.path)));
+    this.addFiles(entries);
+  }
+
+  /** Add or update files without events, as at start-up. */
+  addFiles(entries: readonly FileEntry[]): void {
+    const added: string[] = [];
+    for (const entry of entries) {
+      const current = this.table.get(entry.path);
+      if (!current) {
+        added.push(entry.path);
+      }
+      if (!current || !isSameEntry(current, entry)) {
+        this.table.set(vaultFile(entry));
       }
     }
-    for (const entry of entries) {
-      this.table.set(vaultFile(entry));
+    this.links.resolveSources(this.affectedBy(...added));
+  }
+
+  /** Forget every file not in `keep`, without events. */
+  removeFilesExcept(keep: ReadonlySet<string>): void {
+    const removed: string[] = [];
+    for (const path of this.table.paths()) {
+      if (!keep.has(path)) {
+        this.forgetFile(path);
+        removed.push(path);
+      }
     }
-    this.links.resolveSources([...this.links.sources()]);
+    this.links.resolveSources(this.affectedBy(...removed));
   }
 
   /** A file was created, or its size or time changed. */
@@ -209,6 +231,15 @@ export class MemoryVaultIndex implements VaultIndex {
       listener(change);
     }
   }
+}
+
+function isSameEntry(file: VaultFile, entry: FileEntry): boolean {
+  return (
+    file.uri === entry.uri &&
+    file.mtime === entry.mtime &&
+    file.size === entry.size &&
+    Boolean(file.excluded) === Boolean(entry.excluded)
+  );
 }
 
 function countTags(notes: Iterable<NoteMetadata>): Map<string, number> {

@@ -5,11 +5,8 @@ import {
   isIgnoredPath,
 } from "../../../src/plugins/vault/exclusion";
 import { findVaultRoot, foldersUpTo } from "../../../src/plugins/vault/roots";
-import {
-  emptySnapshot,
-  readSnapshot,
-  writeSnapshot,
-} from "../../../src/plugins/vault/snapshot";
+import { Snapshot } from "../../../src/plugins/vault/snapshot";
+import { MemoryStore } from "./memory-fs";
 
 test("the vault root is the nearest folder with a marker, else the workspace folder", async () => {
   const folders = foldersUpTo(
@@ -67,42 +64,94 @@ test("hidden folders and node_modules are never indexed", () => {
   assert.equal(isIgnoredPath("notes/Note.md"), false);
 });
 
-test("snapshots round-trip, drop orphaned metadata and ignore other versions", () => {
-  const snapshot = emptySnapshot();
-  snapshot.files["A.md"] = {
+test("snapshots round-trip in shards, rewrite only what changed and drop orphans", async () => {
+  const store = new MemoryStore();
+  const snapshot = new Snapshot();
+  snapshot.setFile("A.md", {
     uri: "file:///A.md",
     mtime: 1,
     size: 2,
-    hash: "h1",
-  };
-  snapshot.metadata.h1 = { links: [] } as never;
-  snapshot.metadata.orphan = { links: [] } as never;
-  const restored = readSnapshot(writeSnapshot(snapshot));
-  assert.deepEqual(Object.keys(restored.metadata), ["h1"]);
+    hash: "a1",
+  });
+  snapshot.setMetadata("a1", { links: [] } as never);
+  snapshot.setMetadata("b2", { links: [] } as never);
+  await snapshot.save(store);
+  assert.deepEqual([...store.files.keys()].sort(), [
+    "files",
+    "metadata-33",
+    "metadata-50",
+  ]);
+  const restored = new Snapshot();
+  await restored.load(store);
+  assert.deepEqual(Object.keys(restored.metadata), ["a1"], "orphan b2 dropped");
   assert.deepEqual(restored.files["A.md"], snapshot.files["A.md"]);
-  assert.deepEqual(
-    readSnapshot(JSON.stringify({ version: 0, files: {}, metadata: {} })),
-    emptySnapshot(),
+
+  const writes = store.writes;
+  restored.setMetadata("c3", { links: [] } as never);
+  await restored.save(store);
+  assert.equal(store.writes, writes + 1, "only one shard is written");
+  assert.equal(restored.isDirty, false);
+});
+
+test("snapshots from another version or unreadable files start empty", async () => {
+  const store = new MemoryStore();
+  store.files.set(
+    "files",
+    JSON.stringify({ version: 0, files: { "A.md": {} } }),
   );
-  assert.deepEqual(readSnapshot("not json"), emptySnapshot());
+  const old = new Snapshot();
+  await old.load(store);
+  assert.deepEqual(Object.keys(old.files), []);
+  store.files.set("files", "not json");
+  await old.load(store);
+  assert.deepEqual(Object.keys(old.files), []);
 });
 
 test("snapshots keep Maps in metadata, such as footnote references", async () => {
   const { metadata } = await import("../../../src/markdown/metadata");
   const note = metadata("Text[^1]\n\n[^1]: Note");
   assert.equal(note.footnotes.references.size, 1);
-  const snapshot = emptySnapshot();
-  snapshot.files["A.md"] = {
+  const store = new MemoryStore();
+  const snapshot = new Snapshot();
+  snapshot.setFile("A.md", {
     uri: "file:///A.md",
     mtime: 1,
     size: 1,
-    hash: "h",
-  };
-  snapshot.metadata.h = note;
-  const restored = readSnapshot(writeSnapshot(snapshot)).metadata.h!;
-  assert.ok(restored.footnotes.references instanceof Map);
+    hash: "0h",
+  });
+  snapshot.setMetadata("0h", note);
+  await snapshot.save(store);
+  const restored = new Snapshot();
+  await restored.load(store);
+  const references = restored.metadata["0h"]!.footnotes.references;
+  assert.ok(references instanceof Map);
   assert.deepEqual(
-    [...restored.footnotes.references.keys()],
+    [...references.keys()],
     [...note.footnotes.references.keys()],
   );
+});
+
+test("packing positions round-trips real metadata exactly", async () => {
+  const { metadata } = await import("../../../src/markdown/metadata");
+  const { pack, unpack } = await import("../../../src/plugins/vault/snapshot");
+  const note = metadata(
+    '---\ntags: [a]\nup: "[[Home]]"\n---\n# Title\n\nText [[Link#Part|x]] #tag ^block\n\n- [ ] task[^1]\n\n[^1]: note',
+  );
+  const restored = unpack(JSON.parse(JSON.stringify(pack(note))));
+  assert.deepEqual(restored, note);
+  assert.ok(
+    JSON.stringify(pack(note)).length < JSON.stringify(note).length * 0.7,
+  );
+});
+
+test("unpacking never lets a stored key set a prototype", async () => {
+  const { unpack } = await import("../../../src/plugins/vault/snapshot");
+  const stored = JSON.parse(
+    '{"frontmatter":{"__proto__":{"polluted":true}},"blocks":{"__proto__":{"id":"x"}}}',
+  );
+  const restored = unpack(stored) as Record<string, Record<string, unknown>>;
+  assert.equal(Object.getPrototypeOf(restored.frontmatter), Object.prototype);
+  assert.equal(Object.getPrototypeOf(restored.blocks), null);
+  assert.equal(({} as Record<string, unknown>).polluted, undefined);
+  assert.deepEqual(Object.keys(restored.frontmatter!), ["__proto__"]);
 });

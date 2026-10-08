@@ -21,6 +21,9 @@ import vim from "./vim/manifest";
 import backlinks from "./backlinks/manifest";
 import outgoingLinks from "./outgoingLinks/manifest";
 import outline from "./outline/manifest";
+import quickSwitcher from "./quickSwitcher/manifest";
+import wordCount from "./wordCount/manifest";
+import linkUpdates from "./linkUpdates/manifest";
 export const features: readonly Manifest[] = [
   // Table navigation claims override keys before Vim.
   tables,
@@ -54,6 +57,9 @@ export const workbenchFeatures: readonly Manifest[] = [
   backlinks,
   outgoingLinks,
   outline,
+  quickSwitcher,
+  wordCount,
+  linkUpdates,
 ];
 
 // Core rank is independent of activation order and shared by both runtimes.

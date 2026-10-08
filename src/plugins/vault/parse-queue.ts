@@ -1,11 +1,11 @@
 import { isMarkdownPath } from "../../shared/vault-path";
 import type { MemoryVaultIndex } from "./memory-index";
-import type { VaultSnapshot } from "./snapshot";
+import type { Snapshot } from "./snapshot";
 import type { NoteParser, VaultFileSystem } from "./api";
 
 export interface ParseQueueOptions {
   index: MemoryVaultIndex;
-  snapshot: VaultSnapshot;
+  snapshot: Snapshot;
   fs: Pick<VaultFileSystem, "read">;
   parse: NoteParser;
   hash: (text: string) => string;
@@ -102,12 +102,12 @@ export class ParseQueue {
         return;
       }
       if (overlay === undefined) {
-        this.options.snapshot.files[path] = {
+        this.options.snapshot.setFile(path, {
           uri: file.uri,
           mtime: file.mtime,
           size: file.size,
           hash,
-        };
+        });
         this.options.onSnapshotChanged();
       }
       index.setMetadata(path, metadata);
@@ -128,7 +128,7 @@ export class ParseQueue {
       return known;
     }
     const metadata = await this.options.parse(text);
-    snapshot.metadata[hash] = metadata;
+    snapshot.setMetadata(hash, metadata);
     return metadata;
   }
 }

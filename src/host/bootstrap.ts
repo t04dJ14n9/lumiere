@@ -16,6 +16,9 @@ import {
   backlinksHost,
   outgoingLinksHost,
   outlineHost,
+  quickSwitcherHost,
+  wordCountHost,
+  linkUpdatesHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
 export async function bootstrap(
@@ -42,7 +45,14 @@ export async function bootstrap(
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
   root.plugin(livePreviewHost);
-  const windowPlugins = [backlinksHost, outgoingLinksHost, outlineHost];
+  const windowPlugins = [
+    backlinksHost,
+    outgoingLinksHost,
+    outlineHost,
+    quickSwitcherHost,
+    wordCountHost,
+    linkUpdatesHost,
+  ];
   startWorkbenchFeatures(
     root,
     workbench,

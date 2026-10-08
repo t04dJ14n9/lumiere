@@ -11,3 +11,6 @@ export { propertiesHost } from "./properties/host";
 export { backlinksHost } from "./backlinks/host";
 export { outgoingLinksHost } from "./outgoingLinks/host";
 export { outlineHost } from "./outline/host";
+export { quickSwitcherHost } from "./quickSwitcher/host";
+export { wordCountHost } from "./wordCount/host";
+export { linkUpdatesHost } from "./linkUpdates/host";

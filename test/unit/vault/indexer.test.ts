@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { VaultIndexer } from "../../../src/plugins/vault/indexer";
-import { readSnapshot } from "../../../src/plugins/vault/snapshot";
+import { Snapshot } from "../../../src/plugins/vault/snapshot";
 import {
   MemoryFileSystem,
   MemoryStore,
@@ -30,7 +30,8 @@ test("cold start lists, parses each note once, resolves links and saves a snapsh
   assert.deepEqual(counts(indexer.index.tags()), { tag: 1 });
   assert.ok(resolved >= 1);
   await wait();
-  const snapshot = readSnapshot(store.text);
+  const snapshot = new Snapshot();
+  await snapshot.load(store);
   assert.deepEqual(Object.keys(snapshot.files).sort(), [
     "A.md",
     "B.md",

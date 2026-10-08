@@ -40,6 +40,11 @@ export class FileTable {
     return this.sorted;
   }
 
+  /** Every path, unsorted; cheaper than `all()` when order does not matter. */
+  paths(): string[] {
+    return [...this.byPath.keys()];
+  }
+
   get(path: string): VaultFile | undefined {
     return this.byPath.get(path);
   }
