@@ -1,0 +1,222 @@
+import type { Disposer } from "../../kernel";
+import type { NoteMetadata } from "../../markdown/metadata";
+import { lookupKey, nameOf, folderOf } from "../../shared/vault-path";
+import type { Backlink, VaultChange, VaultFile, VaultIndex } from "./api";
+import { FileTable, vaultFile } from "./file-table";
+import type { FileEntry } from "./file-table";
+import { LinkMaps, outgoingLinkpaths } from "./link-maps";
+import { linkText } from "./link-text";
+import type { LinkFormat } from "./link-text";
+import { resolveCandidates } from "./resolve";
+
+export interface IndexOptions {
+  root: string;
+  folderNote: string;
+  linkFormat: LinkFormat;
+}
+
+/**
+ * The vault index held in memory: files, parsed metadata and link maps. It is
+ * pure and synchronous; the host plugin feeds it from the file system, the
+ * indexing worker and open documents, and decides when indexing has settled.
+ */
+export class MemoryVaultIndex implements VaultIndex {
+  readonly root: string;
+  private options: IndexOptions;
+  private readonly table = new FileTable();
+  private readonly notes = new Map<string, NoteMetadata>();
+  private readonly links = new LinkMaps((linkpath, source) =>
+    this.resolveLink(linkpath, source),
+  );
+  private readonly changeListeners = new Set<(change: VaultChange) => void>();
+  private readonly resolveListeners = new Set<() => void>();
+  private tagCounts?: Map<string, number>;
+
+  constructor(options: IndexOptions) {
+    this.root = options.root;
+    this.options = options;
+  }
+
+  // Reading (the VaultIndex contract)
+
+  files(): readonly VaultFile[] {
+    return this.table.all();
+  }
+
+  file(path: string): VaultFile | undefined {
+    return this.table.get(path);
+  }
+
+  metadata(path: string): NoteMetadata | undefined {
+    return this.notes.get(path);
+  }
+
+  resolveLink(linktext: string, sourcePath: string): VaultFile | undefined {
+    return this.resolveLinkCandidates(linktext, sourcePath)[0];
+  }
+
+  resolveLinkCandidates(
+    linktext: string,
+    sourcePath: string,
+  ): readonly VaultFile[] {
+    return resolveCandidates(this.table, linktext, sourcePath, this.options);
+  }
+
+  linkText(target: VaultFile, sourcePath: string): string {
+    return linkText(this.table, target, sourcePath, this.options.linkFormat);
+  }
+
+  resolvedLinks(sourcePath: string): ReadonlyMap<string, number> {
+    return this.links.resolvedLinks(sourcePath);
+  }
+
+  unresolvedLinks(sourcePath: string): ReadonlyMap<string, number> {
+    return this.links.unresolvedLinks(sourcePath);
+  }
+
+  backlinks(targetPath: string): readonly Backlink[] {
+    return this.links.backlinks(targetPath);
+  }
+
+  /** Tag counts across the vault, keyed as written without `#` (`project/a`). */
+  tags(): ReadonlyMap<string, number> {
+    this.tagCounts ??= countTags(this.notes.values());
+    return this.tagCounts;
+  }
+
+  onDidChange(listener: (change: VaultChange) => void): Disposer {
+    this.changeListeners.add(listener);
+    return () => {
+      this.changeListeners.delete(listener);
+    };
+  }
+
+  onDidResolve(listener: () => void): Disposer {
+    this.resolveListeners.add(listener);
+    return () => {
+      this.resolveListeners.delete(listener);
+    };
+  }
+
+  // Writing (the vault host plugin)
+
+  /** Replace the whole file list, as at start-up. Metadata for kept files stays. */
+  replaceFiles(entries: readonly FileEntry[]): void {
+    const kept = new Set(entries.map((entry) => entry.path));
+    for (const file of [...this.table.all()]) {
+      if (!kept.has(file.path)) {
+        this.forgetFile(file.path);
+      }
+    }
+    for (const entry of entries) {
+      this.table.set(vaultFile(entry));
+    }
+    this.links.resolveSources([...this.links.sources()]);
+  }
+
+  /** A file was created, or its size or time changed. */
+  upsertFile(entry: FileEntry): void {
+    const isNew = !this.table.get(entry.path);
+    this.table.set(vaultFile(entry));
+    if (isNew) {
+      this.links.resolveSources(this.affectedBy(entry.path));
+    }
+    this.emit({ type: isNew ? "create" : "modify", path: entry.path });
+  }
+
+  deleteFile(path: string): void {
+    if (!this.table.get(path)) {
+      return;
+    }
+    this.forgetFile(path);
+    this.links.resolveSources(this.affectedBy(path));
+    this.emit({ type: "delete", path });
+  }
+
+  renameFile(oldPath: string, entry: FileEntry): void {
+    const metadata = this.notes.get(oldPath);
+    this.forgetFile(oldPath);
+    this.table.set(vaultFile(entry));
+    if (metadata) {
+      this.setNote(entry.path, metadata);
+    }
+    const affected = this.affectedBy(oldPath, entry.path);
+    affected.add(entry.path);
+    this.links.resolveSources(affected);
+    this.emit({ type: "rename", path: entry.path, oldPath });
+  }
+
+  /** Parsed metadata for a note, or `undefined` when it can no longer be read. */
+  setMetadata(path: string, metadata: NoteMetadata | undefined): void {
+    if (!this.table.get(path)) {
+      return;
+    }
+    if (metadata) {
+      this.setNote(path, metadata);
+    } else {
+      this.notes.delete(path);
+      this.links.deleteSource(path);
+      this.tagCounts = undefined;
+    }
+    this.emit({ type: "modify", path });
+  }
+
+  /** Settings that change how links resolve re-resolve every note. */
+  configure(options: Omit<IndexOptions, "root">): void {
+    this.options = { ...options, root: this.root };
+    this.links.resolveSources([...this.links.sources()]);
+  }
+
+  /** Called by the host when the indexing queue has drained. */
+  notifyResolved(): void {
+    for (const listener of [...this.resolveListeners]) {
+      listener();
+    }
+  }
+
+  private setNote(path: string, metadata: NoteMetadata): void {
+    this.notes.set(path, metadata);
+    this.links.setLinks(path, outgoingLinkpaths(metadata));
+    this.tagCounts = undefined;
+  }
+
+  private forgetFile(path: string): void {
+    this.table.delete(path);
+    if (this.notes.delete(path)) {
+      this.tagCounts = undefined;
+    }
+    this.links.deleteSource(path);
+  }
+
+  /**
+   * Notes whose links could resolve differently after a file appears or
+   * disappears at these paths: links by the file's name, and links to its
+   * folder when it may be that folder's note.
+   */
+  private affectedBy(...paths: string[]): Set<string> {
+    const keys = new Set<string>();
+    for (const path of paths) {
+      keys.add(lookupKey(path));
+      if (this.options.folderNote && nameOf(path) === this.options.folderNote) {
+        keys.add(nameOf(folderOf(path)).toLowerCase());
+      }
+    }
+    return this.links.sourcesMentioning(keys);
+  }
+
+  private emit(change: VaultChange): void {
+    for (const listener of [...this.changeListeners]) {
+      listener(change);
+    }
+  }
+}
+
+function countTags(notes: Iterable<NoteMetadata>): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const note of notes) {
+    for (const { tag } of note.tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return counts;
+}

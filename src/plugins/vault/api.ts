@@ -7,7 +7,16 @@ export interface VaultFile {
   mtime: number;
   size: number;
   uri: string;
+  /**
+   * Matched by `markdownWorkbench.vault.excludedFiles`. As in Obsidian, an
+   * excluded file is still indexed and links to it resolve, but quick switcher,
+   * suggestions, search and unlinked mentions leave it out.
+   */
+  excluded?: boolean;
 }
+export type VaultChange =
+  | { type: "create" | "modify" | "delete"; path: string }
+  | { type: "rename"; path: string; oldPath: string };
 export interface Backlink {
   path: string;
   count: number;
@@ -26,7 +35,7 @@ export interface VaultIndex {
   unresolvedLinks(sourcePath: string): ReadonlyMap<string, number>;
   backlinks(targetPath: string): readonly Backlink[];
   tags(): ReadonlyMap<string, number>;
-  onDidChange(listener: () => void): Disposer;
+  onDidChange(listener: (change: VaultChange) => void): Disposer;
   onDidResolve(listener: () => void): Disposer;
 }
 declare module "../../kernel/types" {
