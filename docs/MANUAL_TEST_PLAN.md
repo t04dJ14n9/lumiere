@@ -619,3 +619,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   verify reveal/highlighting boundaries. Type with IME, scroll between fences,
   and disable/re-enable while Prism loads. No stale controls should remain.
   Not run by the agent.
+
+- **Vim:** rerun all Vim and table mode-transfer scenarios. Exercise `:w`, `:q`,
+  `:wq`, `:x`, `:u`, `:red`, host shortcut consumption, normal-mode IME and
+  insert-mode selection. Disable/re-enable and confirm native hooks restore
+  and stopped Ex callbacks cannot act. Not run by the agent.

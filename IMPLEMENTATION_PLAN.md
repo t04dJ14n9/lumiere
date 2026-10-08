@@ -1804,3 +1804,18 @@ Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
 Known issues: remaining 18 backlog files, README/manual inventory and ordered
 readability completion checks; remaining Phase 4 plugins; Claude's incomplete
 Phase 5 handoff and Phases 6–8 as specified above.
+
+### Readability pass progress — Vim, 2026-10-08
+
+Delivered: apply names service, host-shortcut consumer, native action hooks, Ex
+commands and editor-extension registrations. Hook restoration, inert stopped Ex
+callbacks and table-cell mode transfer remain unchanged. README removes stale
+migration status and documents actual service/limits; manual inventory updated.
+Backlog: 18 → 17 distinct files; long-function 18 → 17; other counts unchanged.
+Checks: `pnpm check` 338/338; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-vim-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. No new exceptions, pure algorithms or behavior fixes.
+Deviations: none; existing removeEx limitation remains. Owner acceptance unrun.
+Known issues: remaining 17 backlog files, README/manual inventory and readability
+completion checks, remaining Phase 4 plugins, Claude's incomplete Phase 5 handoff
+and Phases 6–8 as specified above.

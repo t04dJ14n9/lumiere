@@ -1,10 +1,31 @@
 # Vim
 
-Owns vim through the editor service. The feature is resource-scoped
-and defaults to off. Disabling disposes its compartment and commands;
-re-enabling installs a fresh instance. No cross-plugin internals are imported.
-Manual acceptance is in docs/MANUAL_TEST_PLAN.md; Obsidian parity is not observed.
+Adds Vim editing and Ex commands, like Obsidian's Vim key bindings setting.
+It defaults to off and transfers insert/normal mode between the note and table cells.
 
-The library has no public `removeEx` API: disposal deactivates ex callbacks;
-re-enabling replaces them. Native undo/redo/save hooks are restored on disposal.
-Cell-editor mode transfer remains part of the unfinished tables migration.
+## How it works
+
+The plugin provides mode inspection and transfer through the injected Vim service.
+Its editor extension uses the override slot; host shortcut consumption is active
+only with the plugin. Native undo/redo/save hooks route through Commands and are
+restored on disposal. Ex callbacks become inert on disposal and are replaced when
+the plugin is enabled again. A beforeinput guard suppresses normal-mode text/IME input.
+
+## Files
+
+- `manifest.ts`: default enablement and host shortcut contributions.
+- `api.ts`: mode, extension and mode-transfer contract.
+- `webview.ts`: service, host action, Ex and editor extension registrations.
+
+## Services, events and settings
+
+Injects `editor` and `commands`; provides `vim`. No kernel event listeners or
+emissions. `markdownWorkbench.plugins.vim.enabled` defaults to false. Ex commands
+`:w`, `:q`, `:wq`, `:x`, `:u` and `:red` route to save, close, save-and-close, undo
+and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
+
+## Limits and differences from Obsidian
+
+The dependency has no public `removeEx` API, so stopped callbacks are deactivated
+rather than removed. Text, save and undo remain VS Code's. Mode transfer preserves
+selection; exact Vim/IME interaction parity awaits the owner's manual testing.

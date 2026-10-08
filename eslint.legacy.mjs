@@ -20,7 +20,6 @@ export default {
     "src/plugins/livePreview/webview.ts",
     "src/plugins/render/webview.ts",
     "src/plugins/resources/host.ts",
-    "src/plugins/vim/webview.ts",
     "src/webview/ui/menu.ts",
   ],
   complexity: [
