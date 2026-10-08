@@ -4,8 +4,8 @@ import { Context } from "../../../src/kernel";
 import { copyForAgentHost } from "../../../src/plugins/copyForAgent/host";
 import { protocol } from "../../../src/plugins/copyForAgent/protocol";
 import {
-  referencePath,
-  formatReference,
+  agentReferenceText,
+  workspaceRelativePath,
 } from "../../../src/plugins/copyForAgent/reference";
 import { fixture } from "./fixture";
 
@@ -51,27 +51,49 @@ test("selection capture rejects concurrent source changes and invented selected 
   });
   await f.pair.dispose();
 });
-test("reference paths distinguish one workspace, multi-root, outside and remote files", () => {
+test("references use the workspace-relative path in one local folder, else the full URI", () => {
   assert.equal(
-    referencePath("file:///vault/folder/A%20B.md", ["file:///vault"]),
+    workspaceRelativePath("file:///vault/folder/A%20B.md", ["file:///vault"]),
     "folder/A B.md",
   );
   assert.equal(
-    referencePath("file:///vault2/A.md", ["file:///vault"]),
-    "file:///vault2/A.md",
+    agentReferenceText(
+      "file:///vault/folder/A%20B.md",
+      ["file:///vault"],
+      2,
+      2,
+    ),
+    "@folder/A B.md#2",
   );
   assert.equal(
-    referencePath("file:///vault/A.md", ["file:///vault", "file:///other"]),
-    "file:///vault/A.md",
+    agentReferenceText("file:///vault2/A.md", ["file:///vault"], 1, 3),
+    "@file:///vault2/A.md#1-3",
   );
   assert.equal(
-    referencePath("vscode-remote://ssh-remote+host/A.md", [
-      "vscode-remote://ssh-remote+host/",
-    ]),
-    "vscode-remote://ssh-remote+host/A.md",
+    agentReferenceText(
+      "file:///vault/A.md",
+      ["file:///vault", "file:///other"],
+      4,
+      4,
+    ),
+    "@file:///vault/A.md#4",
   );
-  assert.equal(formatReference("note.md", 2, 2), "@note.md#2");
-  assert.throws(() => formatReference("note\n.md", 1, 2));
+  assert.equal(
+    agentReferenceText(
+      "vscode-remote://ssh-remote+host/A.md",
+      ["vscode-remote://ssh-remote+host/"],
+      1,
+      1,
+    ),
+    "@vscode-remote://ssh-remote+host/A.md#1",
+  );
+  // The ported LLM Wiki formatter rejects paths that escape the workspace.
+  assert.throws(() =>
+    agentReferenceText("file:///vault/a%0Ab.md", ["file:///vault"], 1, 2),
+  );
+  assert.throws(() =>
+    agentReferenceText("file:///vault/A.md", ["file:///vault"], 3, 2),
+  );
 });
 test("API copy refuses dirty notes; interactive choices copy text, cancel or save and recapture", async () => {
   const f = fixture();

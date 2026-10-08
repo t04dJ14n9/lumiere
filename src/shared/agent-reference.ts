@@ -10,6 +10,31 @@ export function formatMarkdownAgentReference(
       "Markdown agent reference path must be workspace-relative.",
     );
   }
+  return `@${normalizedPath}#${lineRange(startLine, endLine)}`;
+}
+
+/**
+ * The same reference with a full URI, for notes outside a single local
+ * workspace folder (multi-root and remote workspaces), where a relative path
+ * would be ambiguous.
+ */
+export function formatUriAgentReference(
+  uri: string,
+  startLine: number,
+  endLine: number,
+): string {
+  if (
+    !/^[A-Za-z][A-Za-z0-9+.-]*:/.test(uri) ||
+    uri.length > MAX_AGENT_CLIPBOARD_PATH_CHARACTERS ||
+    hasControlCharacters(uri) ||
+    /\s/.test(uri)
+  ) {
+    throw new TypeError("Markdown agent reference URI is not valid.");
+  }
+  return `@${uri}#${lineRange(startLine, endLine)}`;
+}
+
+function lineRange(startLine: number, endLine: number): string {
   if (!isPositiveSafeInteger(startLine) || !isPositiveSafeInteger(endLine)) {
     throw new TypeError(
       "Markdown agent reference lines must be positive safe integers.",
@@ -18,10 +43,7 @@ export function formatMarkdownAgentReference(
   if (endLine < startLine) {
     throw new RangeError("Markdown agent reference lines must be ordered.");
   }
-
-  const lineRange =
-    startLine === endLine ? String(startLine) : `${startLine}-${endLine}`;
-  return `@${normalizedPath}#${lineRange}`;
+  return startLine === endLine ? String(startLine) : `${startLine}-${endLine}`;
 }
 
 function normalizeWorkspaceRelativePath(value: unknown): string | undefined {

@@ -7,7 +7,7 @@ import type {
 } from "../editor/api";
 import type { Workbench } from "../../shared/runtime";
 import { RpcError, type Cancellation } from "../../shared/rpc/lifecycle";
-import { referencePath, formatReference } from "./reference";
+import { agentReferenceText } from "./reference";
 export class AgentReferences implements Agent {
   private live = true;
   dispose(): void {
@@ -31,12 +31,13 @@ export class AgentReferences implements Agent {
       );
     }
     const uri = panel.document.uri;
-    const path = referencePath(
-      uri,
-      this.options.workbench.workspaceFolders?.() ?? [],
-    );
     return Object.freeze({
-      text: formatReference(path, selection.startLine, selection.endLine),
+      text: agentReferenceText(
+        uri,
+        this.options.workbench.workspaceFolders?.() ?? [],
+        selection.startLine,
+        selection.endLine,
+      ),
       uri,
       startLine: selection.startLine,
       endLine: selection.endLine,
