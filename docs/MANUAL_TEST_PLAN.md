@@ -441,3 +441,18 @@ final settings, result and any console errors for each scenario.
 
 These scenarios supplement the retired source cases; no retired test was revived
 and the automated smoke suites were not expanded.
+
+## Readability pass regressions
+
+These are owner-run regression checks for behavior-preserving rewrites, not new
+smoke scenarios. Use only the disposable fixture vault described above.
+
+- **Tables:** rerun all seven steps in **Tables**, especially selection-to-source
+  mapping, keyboard boundary movement, clipboard and menus, row/column dragging
+  while scrolling, source disclosure, and Vim cell transfer. Repeat the
+  **Composition fixes** table/Vim toggle-order checks. Open one fixture note in
+  two panels, edit a cell, insert a row from the other panel, and confirm the first
+  cell's caret and Vim mode survive. Start a menu paste, change the table or
+  selection before the clipboard reply, and confirm stale text is rejected.
+  Toggle tables off during rendering, then back on; no old render may overwrite
+  the new cell editor. These scenarios have not been run by the agent.

@@ -36,24 +36,11 @@ export class TableSelectionDrag {
     this.scrolling = new EdgeScroll(viewport, table, (point) =>
       this.update(point),
     );
-    window.addEventListener(
-      "pointermove",
-      (event) => {
-        const gesture = this.gesture;
-        if (!gesture || gesture.pointer !== event.pointerId || !event.buttons) {
-          return;
-        }
-        gesture.point = { x: event.clientX, y: event.clientY };
-        this.update(gesture.point);
-        if (gesture.selected) {
-          event.preventDefault();
-        }
-        if (gesture.selected || !gesture.nativeText) {
-          this.scrolling.move(gesture.point);
-        }
-      },
-      { signal: this.events.signal },
-    );
+    this.registerEvents();
+  }
+
+  private registerEvents(): void {
+    this.registerPointerMove();
     window.addEventListener(
       "pointerup",
       (event) => {
@@ -90,11 +77,32 @@ export class TableSelectionDrag {
       },
       { capture: true, signal: this.events.signal },
     );
-    root.addEventListener(
+    this.root.addEventListener(
       "lostpointercapture",
       (event) => {
         if (this.gesture?.pointer === event.pointerId) {
           this.cancel();
+        }
+      },
+      { signal: this.events.signal },
+    );
+  }
+
+  private registerPointerMove(): void {
+    window.addEventListener(
+      "pointermove",
+      (event) => {
+        const gesture = this.gesture;
+        if (!gesture || gesture.pointer !== event.pointerId || !event.buttons) {
+          return;
+        }
+        gesture.point = { x: event.clientX, y: event.clientY };
+        this.update(gesture.point);
+        if (gesture.selected) {
+          event.preventDefault();
+        }
+        if (gesture.selected || !gesture.nativeText) {
+          this.scrolling.move(gesture.point);
         }
       },
       { signal: this.events.signal },

@@ -19,12 +19,6 @@ export type ArrowKey = (typeof arrowKeys)[number];
 export function cellNavigation(
   move: (step: CellStep, extend: boolean) => boolean,
 ) {
-  const motions: Partial<Record<string, ArrowKey>> = {
-    h: "ArrowLeft",
-    j: "ArrowDown",
-    k: "ArrowUp",
-    l: "ArrowRight",
-  };
   return Prec.highest(
     EditorView.domEventHandlers({
       keydown(event, view) {
@@ -36,22 +30,7 @@ export function cellNavigation(
         ) {
           return false;
         }
-        const vim = getCM(view)?.state.vim;
-        const normal = vim && !vim.insertMode && !vim.visualMode;
-        const pending =
-          vim &&
-          (vim.inputState.operator ||
-            vim.inputState.keyBuffer.length ||
-            vim.inputState.prefixRepeat.length ||
-            vim.inputState.motionRepeat.length);
-        if (pending) {
-          return false;
-        }
-        const key = arrowKeys.includes(event.key as ArrowKey)
-          ? (event.key as ArrowKey)
-          : normal
-            ? motions[event.key]
-            : undefined;
+        const key = navigationKey(event.key, getCM(view)?.state.vim);
         if (!key) {
           return false;
         }
@@ -67,11 +46,14 @@ export function cellNavigation(
 }
 
 export function arrowStep(key: ArrowKey, rtl = false): CellStep {
-  const horizontal = key === "ArrowLeft" ? -1 : key === "ArrowRight" ? 1 : 0;
-  return {
-    row: key === "ArrowUp" ? -1 : key === "ArrowDown" ? 1 : 0,
-    column: horizontal * (rtl ? -1 : 1),
+  const steps: Record<ArrowKey, CellStep> = {
+    ArrowLeft: { row: 0, column: -1 },
+    ArrowRight: { row: 0, column: 1 },
+    ArrowUp: { row: -1, column: 0 },
+    ArrowDown: { row: 1, column: 0 },
   };
+  const step = steps[key];
+  return { row: step.row, column: step.column * (rtl ? -1 : 1) };
 }
 
 /** Keep ordinary text movement inside the cell until its visual boundary. */
@@ -94,12 +76,7 @@ export function cellArrow(
     view.textDirectionAt(caret.head) === Direction.RTL,
   );
   if (step.column) {
-    const vim = getCM(view)?.state.vim;
-    const end =
-      vim && !vim.insertMode && !vim.visualMode && !extend
-        ? findClusterBreak(doc.toString(), doc.length, false)
-        : doc.length;
-    if (caret.head !== (step.column < 0 ? 0 : end)) {
+    if (!atHorizontalBoundary(view, step.column, extend)) {
       return undefined;
     }
   } else if (extend) {
@@ -116,4 +93,46 @@ export function cellArrow(
     }
   }
   return step;
+}
+
+function navigationKey(
+  key: string,
+  vim: NonNullable<ReturnType<typeof getCM>>["state"]["vim"],
+): ArrowKey | undefined {
+  const motions: Partial<Record<string, ArrowKey>> = {
+    h: "ArrowLeft",
+    j: "ArrowDown",
+    k: "ArrowUp",
+    l: "ArrowRight",
+  };
+  if (
+    vim &&
+    (vim.inputState.operator ||
+      vim.inputState.keyBuffer.length ||
+      vim.inputState.prefixRepeat.length ||
+      vim.inputState.motionRepeat.length)
+  ) {
+    return undefined;
+  }
+  if (arrowKeys.includes(key as ArrowKey)) {
+    return key as ArrowKey;
+  }
+  if (vim && !vim.insertMode && !vim.visualMode) {
+    return motions[key];
+  }
+  return undefined;
+}
+
+function atHorizontalBoundary(
+  view: EditorView,
+  column: number,
+  extend: boolean,
+): boolean {
+  const vim = getCM(view)?.state.vim;
+  const doc = view.state.doc;
+  const end =
+    vim && !vim.insertMode && !vim.visualMode && !extend
+      ? findClusterBreak(doc.toString(), doc.length, false)
+      : doc.length;
+  return view.state.selection.main.head === (column < 0 ? 0 : end);
 }

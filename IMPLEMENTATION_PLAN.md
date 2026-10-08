@@ -1096,3 +1096,47 @@ Known issues / remaining work (outside this run):
 Stop after the composition audit commit, with a clean tree for the owner's
 code-quality tooling. No push, publication, owner-profile installation or change
 to human-learning, its worktrees or vscode-embedPDF occurred.
+
+### Readability pass progress — Tables, 2026-10-08
+
+Delivered: committed the owner's tooling baseline unchanged (`21ac0e6`), then
+replaced the tables controller's imported `this:` fields with collaborators:
+`grid.ts` owns rendering/source snapshots, `projection.ts` owns the cell editor,
+`selection.ts` owns grid selection, `keyboard.ts` routes boundary movement,
+`clipboard.ts` owns clipboard/formatting, and `toolbar.ts` owns menus. The
+controller wires callbacks and reconciles snapshots. Rewrote the long cell editor,
+handle/selection gesture registrations and menu construction; table `apply` now
+lists named registrations and render-pass lifetime lives in `content.ts`.
+Rewrote the tables README and added the manual regression section.
+
+Backlog before → after (file counts per rule): max-lines-per-function 66 → 58;
+complexity 33 → 29; max-params 13 → 12; no-nested-ternary 19 → 18; max-depth
+1 → 1; no-restricted-syntax 6 → 0. Distinct backlog files: 86 → 73. All 13
+table files formerly listed are removed; no rule limit or exemption was added.
+Added five pure-logic unit tests; count 215 → 220. No behavior bug was found
+or intentionally fixed in this rewrite. Native wiring is unchanged.
+
+Checks: `pnpm check` 220/220, formatting/lint/typecheck/contributions passed;
+`pnpm test:browser` 14/14. Native smoke not rerun for this unit: no native
+wiring change. Logs: `docs/checks/readability-tables-{check,browser}.txt`.
+Baseline was independently checked: 215/215 unit, 14/14 browser smoke.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo,
+total 448. Manual scenarios documented, not run.
+Deviations: none; no new inline lint disables.
+
+Known issues / exact remaining work:
+- Readability first: properties controls/chips/lists and the rest of its backlog;
+  pagePreview/controller; host/workbench, editor and footnotes registrations;
+  markdown/search/evaluate and metadata/footnote-extract; all remaining entries
+  in eslint.legacy.mjs. Rewrite remaining plugin READMEs, add kernel generation/
+  Context-proxy why-comments, extend manual regression inventory per rewritten
+  plugin, then delete the empty backlog/config block and run ordered completion
+  checks with the dated completion record. This table unit is not completion
+  of the readability pass.
+- Then Phase 4 inlineTitle, tags, suggest, search, pasteHtml, copyForAgent and
+  markers, each with lifecycle/composition units, contributions, README and
+  manual scenarios. Phases 5–8 remain as specified above: live shared vault
+  index and host features, command/settings parity, public API, packaging/docs
+  and complete handover. No new feature or phase completion is claimed here.
+- Owner acceptance remains unrun; prioritize the table drag/scroll, cell
+  projection and two-panel/Vim scenarios in the manual regression section.

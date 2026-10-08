@@ -5,15 +5,9 @@ export function tableOperation(
   cell: CellPosition,
 ): TableOperation | undefined {
   const { row, column } = cell;
-  if (id.startsWith("align-")) {
-    const alignment = id.slice(6);
-    if (
-      alignment === "left" ||
-      alignment === "center" ||
-      alignment === "right"
-    ) {
-      return { type: "align", from: column, to: column, alignment };
-    }
+  const alignment = alignmentOperation(id, column);
+  if (alignment) {
+    return alignment;
   }
   if (id === "sort-ascending" || id === "sort-descending") {
     return {
@@ -45,6 +39,23 @@ export function tableOperation(
         index + (id.endsWith("up") || id.endsWith("left") ? -1 : 1),
       ),
     };
+  }
+  return undefined;
+}
+
+function alignmentOperation(
+  id: string,
+  column: number,
+): TableOperation | undefined {
+  if (id.startsWith("align-")) {
+    const alignment = id.slice(6);
+    if (
+      alignment === "left" ||
+      alignment === "center" ||
+      alignment === "right"
+    ) {
+      return { type: "align", from: column, to: column, alignment };
+    }
   }
   return undefined;
 }

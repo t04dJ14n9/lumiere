@@ -76,33 +76,7 @@ export class CellEditor {
           cellSyntax,
           cellNavigation((step, extend) => options.arrow(step, extend)),
           this.groups.extension,
-          Prec.highest(
-            keymap.of([
-              { key: "Mod-s", run: () => options.action("save") },
-              { key: "Mod-z", run: () => options.action("undo") },
-              { key: "Mod-Shift-z", run: () => options.action("redo") },
-              {
-                key: "Mod-b",
-                run: (view) => options.environment.wrap("**", view),
-                stopPropagation: true,
-              },
-              {
-                key: "Mod-i",
-                run: (view) => options.environment.wrap("*", view),
-                stopPropagation: true,
-              },
-              { key: "Tab", run: () => options.move(0, 1) },
-              { key: "Shift-Tab", run: () => options.move(0, -1) },
-              { key: "Enter", run: () => options.move(1, 0) },
-              {
-                key: "Shift-Enter",
-                run: (view) => {
-                  view.dispatch(view.state.replaceSelection("<br>"));
-                  return true;
-                },
-              },
-            ]),
-          ),
+          cellKeymap(options),
           // Table navigation gets the first chance at a cell boundary.
           this.vim.of(
             options.vim ? (this.environment.vim?.extension() ?? []) : [],
@@ -172,4 +146,34 @@ export class CellEditor {
     this.view.destroy();
     this.groups.dispose();
   }
+}
+
+function cellKeymap(options: CellEditorOptions) {
+  return Prec.highest(
+    keymap.of([
+      { key: "Mod-s", run: () => options.action("save") },
+      { key: "Mod-z", run: () => options.action("undo") },
+      { key: "Mod-Shift-z", run: () => options.action("redo") },
+      {
+        key: "Mod-b",
+        run: (view) => options.environment.wrap("**", view),
+        stopPropagation: true,
+      },
+      {
+        key: "Mod-i",
+        run: (view) => options.environment.wrap("*", view),
+        stopPropagation: true,
+      },
+      { key: "Tab", run: () => options.move(0, 1) },
+      { key: "Shift-Tab", run: () => options.move(0, -1) },
+      { key: "Enter", run: () => options.move(1, 0) },
+      {
+        key: "Shift-Enter",
+        run: (view) => {
+          view.dispatch(view.state.replaceSelection("<br>"));
+          return true;
+        },
+      },
+    ]),
+  );
 }

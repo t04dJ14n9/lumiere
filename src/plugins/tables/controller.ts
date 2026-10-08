@@ -1,84 +1,131 @@
 import type { EditorView } from "@codemirror/view";
 import {
-  clearCells,
-  copy,
-  copyFromMenu,
-  formatCells,
-  paste,
-  pasteFromMenu,
-  pasteText,
-} from "./clipboard";
-import type { TableEnvironment } from "./environment";
-import { arrow, keyDown, leave, move } from "./keyboard";
-import { close, execute, hostAction, open, replace } from "./projection";
-import {
-  highlight,
-  pointerDown,
-  position,
-  selectAxis,
-  selection,
-} from "./selection";
-import {
-  contextMenu,
-  controls,
-  menuActions,
-  report,
-  revealSource,
-  showMenu,
-} from "./toolbar";
-
-import {
   cellAtOffset,
   parseTable,
   type CellPosition,
   type CellRange,
-  type Table,
 } from "../../markdown/tables/model";
-import { operateTable } from "../../markdown/tables/operations";
+import {
+  operateTable,
+  type TableOperation,
+} from "../../markdown/tables/operations";
 import { difference } from "../../shared/document/wire";
 import type { RenderBlock } from "../livePreview/api";
-import type { CellEditor } from "./cell-editor";
+import type { TableEnvironment } from "./environment";
+import { TableGrid } from "./grid";
+import { CellProjection } from "./projection";
+import { TableSelection } from "./selection";
+import { TableKeyboard } from "./keyboard";
+import { TableClipboard } from "./clipboard";
+import { TableToolbar } from "./toolbar";
 import { TableHandles } from "./handles";
-import { TableSelectionDrag } from "./selection-drag";
-
 import { activeTables } from "./state";
 
-/** A table projects every cell edit into the outer Markdown document. */
+/** Wires table interactions and reconciles snapshots from the outer document. */
 export class TableController {
-  operationSequence = 0;
-  model: Table;
-  block: RenderBlock;
-  readonly table = document.createElement("table");
-  cells: HTMLElement[][] = [];
-  active?: CellPosition;
-  cellEditor?: CellEditor;
-  range?: CellRange;
-  gridCursor?: number;
-  readonly selectionDrag: TableSelectionDrag;
-  requested?: CellPosition;
-  readonly events = new AbortController();
-  closeMenu?: () => void;
-  readonly handles: TableHandles;
+  private readonly grid: TableGrid;
+  private readonly projection: CellProjection;
+  private readonly selected: TableSelection;
+  private readonly keyboard: TableKeyboard;
+  private readonly clipboard: TableClipboard;
+  private readonly toolbar: TableToolbar;
+  private readonly handles: TableHandles;
+  private readonly events = new AbortController();
+  private requested?: CellPosition;
 
-  get inner(): EditorView | undefined {
-    return this.cellEditor?.view;
+  constructor(
+    root: HTMLElement,
+    outer: EditorView,
+    block: RenderBlock,
+    environment: TableEnvironment,
+  ) {
+    this.grid = new TableGrid(root, outer, block, environment);
+    this.projection = this.createProjection(environment);
+    this.selected = new TableSelection(
+      this.grid,
+      this.projection,
+      {
+        activate: () => activeTables.set(this.grid.outer, this),
+        setHandle: (position) => this.handles.setActive(position),
+      },
+      environment.position,
+    );
+    this.clipboard = new TableClipboard(
+      this.grid,
+      this.projection,
+      this.selected,
+      environment,
+    );
+    this.toolbar = new TableToolbar(
+      this.grid,
+      {
+        range: () => this.selected.range,
+        active: () => this.projection.active,
+        open: (position) => this.projection.open(position),
+        request: (position) => {
+          this.requested = position;
+        },
+        execute: (operation, focus) => this.execute(operation, focus),
+      },
+      this.clipboard,
+      environment.openMenu,
+    );
+    this.keyboard = new TableKeyboard(
+      this.grid,
+      this.projection,
+      this.selected,
+      {
+        request: (position) => {
+          this.requested = position;
+        },
+        deactivate: () => activeTables.delete(this.grid.outer),
+        menu: (position, point) => this.toolbar.showMenu(position, point),
+      },
+    );
+    this.registerEvents();
+    root.append(this.toolbar.controls());
+    this.grid.render();
+    this.handles = this.createHandles();
+    this.handles.refresh();
+  }
+
+  private createProjection(environment: TableEnvironment): CellProjection {
+    return new CellProjection(this.grid, environment, {
+      activate: (position) => {
+        this.selected.range = undefined;
+        this.handles.setActive(position);
+        activeTables.set(this.grid.outer, this);
+      },
+      highlight: () => this.selected.highlight(),
+      move: (row, column) => this.keyboard.move(row, column),
+      arrow: (step, extend) => this.keyboard.arrow(step, extend),
+    });
   }
 
   get editor(): EditorView | undefined {
-    return this.inner;
+    return this.projection.inner;
+  }
+  get active(): CellPosition | undefined {
+    return this.projection.active;
+  }
+  get range(): CellRange | undefined {
+    return this.selected.range;
+  }
+  set range(range: CellRange | undefined) {
+    this.selected.range = range;
+  }
+  close(): void {
+    this.projection.close();
+  }
+  highlight(): void {
+    this.selected.highlight();
+  }
+  selection(): { from: number; to: number } | undefined {
+    return this.selected.sourceRange();
   }
 
-  constructor(
-    readonly root: HTMLElement,
-    public outer: EditorView,
-    block: RenderBlock,
-    readonly environment: TableEnvironment,
-  ) {
-    this.block = block;
-    this.model = parseTable(block.source)!;
-    this.table.className = "markdown-rendered";
-    this.table.setAttribute("aria-label", "Markdown table");
-    root.append(this.table);
+  private registerEvents(): void {
+    const { root, outer } = this.grid;
     outer.dom.addEventListener(
       "pointerdown",
       (event) => {
@@ -89,261 +136,137 @@ export class TableController {
         ) {
           activeTables.delete(outer);
           this.close();
-          this.range = undefined;
+          this.selected.range = undefined;
           this.highlight();
         }
       },
       { capture: true, signal: this.events.signal },
     );
-    root.addEventListener("pointerdown", (event) => this.pointerDown(event));
-    this.selectionDrag = new TableSelectionDrag(
-      root,
-      this.table,
-      outer.scrollDOM,
+    root.addEventListener("pointerdown", (event) =>
+      this.selected.pointerDown(event),
+    );
+    root.addEventListener("copy", (event) => this.clipboard.copy(event, false));
+    root.addEventListener("cut", (event) => this.clipboard.copy(event, true));
+    root.addEventListener("paste", (event) => this.clipboard.paste(event));
+    root.addEventListener("contextmenu", (event) =>
+      this.toolbar.contextMenu(event),
+    );
+    root.addEventListener("keydown", (event) => this.keyboard.keyDown(event));
+  }
+
+  private createHandles(): TableHandles {
+    return new TableHandles(
+      this.grid.root,
+      this.grid.table,
+      this.grid.outer.scrollDOM,
       {
-        select: (anchor, head) => {
-          this.close();
-          this.range = { anchor, head };
-          activeTables.set(this.outer, this);
-          window.getSelection()?.removeAllRanges();
-          this.highlight();
-          this.root.focus({ preventScroll: true });
+        select: (axis, index) => this.selected.selectAxis(axis, index),
+        move: (axis, from, to) => {
+          this.grid.replace(
+            operateTable(this.grid.model, {
+              type: "move",
+              axis,
+              from,
+              to: from,
+              destination: to,
+            }),
+          );
+          this.selected.selectAxis(axis, to);
         },
-        finish: (origin, offset, selected) => {
-          if (selected) {
-            this.root.focus({ preventScroll: true });
-          } else {
-            this.open(origin, offset);
-          }
+        menu: (axis, index, point) => {
+          this.selected.selectAxis(axis, index, false);
+          this.toolbar.showMenu(this.selected.range!.head, point, axis);
         },
       },
     );
-    root.addEventListener("copy", (event) => this.copy(event, false));
-    root.addEventListener("cut", (event) => this.copy(event, true));
-    root.addEventListener("paste", (event) => this.paste(event));
-    root.addEventListener("contextmenu", (event) => this.contextMenu(event));
-    root.addEventListener("keydown", (event) => this.keyDown(event));
-    root.append(this.controls());
-    this.render();
-    this.handles = new TableHandles(root, this.table, outer.scrollDOM, {
-      select: (axis, index) => this.selectAxis(axis, index),
-      move: (axis, from, to) => {
-        this.replace(
-          operateTable(this.model, {
-            type: "move",
-            axis,
-            from,
-            to: from,
-            destination: to,
-          }),
-        );
-        this.selectAxis(axis, to);
-      },
-      menu: (axis, index, point) => {
-        this.selectAxis(axis, index, false);
-        this.showMenu(this.range!.head, point, axis);
-      },
-    });
-    this.handles.refresh();
   }
 
   update(block: RenderBlock, outer: EditorView): void {
-    if (block.source !== this.block.source) {
+    if (block.source !== this.grid.block.source) {
       this.handles.cancel();
-      this.selectionDrag.cancel();
-      this.closeMenu?.();
-      this.closeMenu = undefined;
+      this.selected.drag.cancel();
+      this.toolbar.close();
     }
-    this.outer = outer;
+    this.grid.outer = outer;
     const model = parseTable(block.source);
     if (!model) {
       return;
     }
     const shapeChanged =
-      model.rows.length !== this.model.rows.length ||
-      model.alignments.length !== this.model.alignments.length;
+      model.rows.length !== this.grid.model.rows.length ||
+      model.alignments.length !== this.grid.model.alignments.length;
     let moved: CellPosition | undefined;
     if (shapeChanged && this.active && !this.requested) {
-      const previous = this.model.rows[this.active.row]![this.active.column]!;
+      const previous =
+        this.grid.model.rows[this.active.row]![this.active.column]!;
       moved = cellAtOffset(
         model,
-        difference(this.block.source, block.source).mapPos(previous.from, 1),
+        difference(this.grid.block.source, block.source).mapPos(
+          previous.from,
+          1,
+        ),
       );
     }
-    this.block = block;
-    this.model = model;
-    if (shapeChanged) {
-      this.range = undefined;
-      if (moved && this.inner && this.active) {
-        const focused = this.inner.hasFocus;
-        // Move the existing cell editor so its caret and Vim
-        // session survive rows inserted by another view.
-        Object.assign(this.active, moved);
-        this.render();
-        const element = this.cells[moved.row]![moved.column]!;
-        this.environment.disposeContent(element);
-        element.replaceChildren(this.inner.dom);
-        this.cellEditor!.label(moved);
-        if (focused) {
-          this.inner.focus();
-        }
-      } else {
-        this.close();
-        this.render();
-      }
-    } else {
-      for (let row = 0; row < this.cells.length; row++) {
-        for (let column = 0; column < this.cells[row]!.length; column++) {
-          if (!this.same(this.active, { row, column })) {
-            this.display({ row, column });
-          }
-        }
-      }
-    }
-    if (this.cellEditor && this.active) {
-      this.cellEditor.update(
-        this.block.source,
-        this.model.rows[this.active.row]![this.active.column]!,
-        this.vimEnabled(),
-      );
-    }
+    this.grid.block = block;
+    this.grid.model = model;
+    this.refreshCells(shapeChanged, moved);
+    this.projection.update();
     if (this.requested) {
       const next = this.requested;
       this.requested = undefined;
-      this.open(next, "all");
+      this.projection.open(next, "all");
     }
     this.highlight();
     this.handles.refresh();
   }
 
-  keyDown = keyDown;
-
-  /** Add row, add column and edit source buttons beside the table. */
-  controls = controls;
-
-  revealSource = revealSource;
-
-  start(): number {
-    return this.outer.posAtDOM(this.root);
-  }
-  vimEnabled(): boolean {
-    return this.environment.vim !== undefined;
-  }
-  same(left: CellPosition | undefined, right: CellPosition): boolean {
-    return left?.row === right.row && left.column === right.column;
-  }
-
-  render(): void {
-    for (const row of this.cells) {
-      for (const cell of row) {
-        this.environment.disposeContent(cell);
-      }
-    }
-    this.table.replaceChildren();
-    this.cells = [];
-    this.model.rows.forEach((row, rowIndex) => {
-      const tr = document.createElement("tr");
-      const elements: HTMLElement[] = [];
-      row.forEach((_cell, column) => {
-        const td = document.createElement(rowIndex === 0 ? "th" : "td");
-        td.dataset.row = String(rowIndex);
-        td.dataset.column = String(column);
-        td.setAttribute(
-          "aria-label",
-          `Row ${rowIndex + 1}, column ${column + 1}`,
-        );
-        elements.push(td);
-        tr.append(td);
-      });
-      this.cells.push(elements);
-      this.table.append(tr);
-      elements.forEach((_td, column) =>
-        this.display({ row: rowIndex, column }),
-      );
-    });
-  }
-
-  display(position: CellPosition): void {
-    const cell = this.model.rows[position.row]?.[position.column];
-    const element = this.cells[position.row]?.[position.column];
-    if (!cell || !element) {
+  private refreshCells(shapeChanged: boolean, moved?: CellPosition): void {
+    if (!shapeChanged) {
+      this.grid.refresh(this.active);
       return;
     }
-    this.environment.disposeContent(element);
-    element.style.textAlign = this.model.alignments[position.column] ?? "left";
-    this.environment.renderContent(
-      element,
-      cell.text,
-      this.block.from + cell.from,
-    );
+    this.selected.range = undefined;
+    if (moved && this.editor && this.active) {
+      this.projection.relocate(moved);
+    } else {
+      this.close();
+      this.grid.render();
+    }
   }
 
-  open = open;
-
-  close = close;
-
-  hostAction = hostAction;
-
-  selection = selection;
-
-  move = move;
-
-  arrow = arrow;
-
-  leave = leave;
-
-  selectAxis = selectAxis;
-
-  position = position;
-
-  pointerDown = pointerDown;
-
-  highlight = highlight;
-
-  copy = copy;
-
-  paste = paste;
-
-  pasteText = pasteText;
-
-  contextMenu = contextMenu;
-
-  showMenu = showMenu;
-
-  menuActions = menuActions;
-
-  /** Copy the text selected in the open cell, else the selected cells. */
-  copyFromMenu = copyFromMenu;
-
-  /**
-   * Reading the clipboard is asynchronous. Refuse to paste if the table or
-   * the selection changed while it was read.
-   */
-  pasteFromMenu = pasteFromMenu;
-
-  execute = execute;
-
-  clearCells = clearCells;
-
-  formatCells = formatCells;
-
-  report = report;
-
-  replace = replace;
+  execute(operation: TableOperation, focus: CellPosition): void {
+    const source = operateTable(this.grid.model, operation);
+    if (source === this.grid.block.source) {
+      (this.editor ?? this.grid.outer).focus();
+      return;
+    }
+    const next = parseTable(source);
+    this.close();
+    this.selected.range = undefined;
+    this.requested = next
+      ? {
+          row: Math.max(0, Math.min(focus.row, next.rows.length - 1)),
+          column: Math.max(
+            0,
+            Math.min(focus.column, next.alignments.length - 1),
+          ),
+        }
+      : undefined;
+    this.grid.replace(source);
+    if (!next) {
+      this.grid.outer.focus();
+    }
+  }
 
   destroy(): void {
-    this.selectionDrag.destroy();
+    this.selected.drag.destroy();
     this.handles.destroy();
-    this.closeMenu?.();
+    this.toolbar.close();
     this.events.abort();
-    if (activeTables.get(this.outer) === this) {
-      activeTables.delete(this.outer);
+    if (activeTables.get(this.grid.outer) === this) {
+      activeTables.delete(this.grid.outer);
     }
-    this.cellEditor?.destroy();
-    for (const row of this.cells) {
-      for (const cell of row) {
-        this.environment.disposeContent(cell);
-      }
-    }
+    this.projection.cellEditor?.destroy();
+    this.grid.disposeContent();
   }
 }

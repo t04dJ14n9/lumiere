@@ -43,103 +43,109 @@ export class TableHandles {
       this.updateTarget(point);
       this.refresh();
     });
-    for (const [axis, button] of [
-      ["row", this.row],
-      ["column", this.column],
-    ] as const) {
-      button.type = "button";
-      button.className = `table-handle table-${axis}-handle`;
-      button.title = `Drag to move ${axis}; press Enter for actions`;
-      button.textContent = axis === "row" ? "⠿" : "⠶";
-      button.addEventListener("pointerdown", (event) => {
-        if (event.button !== 0 || !event.isPrimary) {
-          return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        const from = this.active[axis];
-        const bounds = button.getBoundingClientRect();
-        actions.select(axis, from);
-        this.refresh();
-        this.drag = {
-          axis,
-          from,
-          to: from,
-          pointer: event.pointerId,
-          x: event.clientX,
-          y: event.clientY,
-          moved: false,
-          point: { x: event.clientX, y: event.clientY },
-          grab:
-            axis === "row"
-              ? event.clientY - bounds.top
-              : event.clientX - bounds.left,
-        };
-        button.setPointerCapture(event.pointerId);
-      });
-      button.addEventListener("lostpointercapture", (event) => {
-        if (this.drag?.pointer === event.pointerId) {
-          this.cancel();
-        }
-      });
-      const menu = (point: { x: number; y: number }): void => {
-        button.focus();
-        actions.menu(axis, this.active[axis], point);
-      };
-      button.addEventListener("contextmenu", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        menu({ x: event.clientX, y: event.clientY });
-      });
-      button.addEventListener("keydown", (event) => {
-        if (
-          ["Enter", " ", "ContextMenu"].includes(event.key) ||
-          (event.key === "F10" && event.shiftKey)
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          const bounds = button.getBoundingClientRect();
-          menu({ x: bounds.left, y: bounds.bottom });
-        }
-      });
-      root.append(button);
-    }
+    this.registerHandle("row", this.row, actions);
+    this.registerHandle("column", this.column, actions);
     this.indicator.className = "table-drop-indicator";
     this.indicator.hidden = true;
     root.append(this.indicator);
-    root.addEventListener("pointermove", (event) => {
+    this.registerHover();
+    this.registerDragEvents(actions);
+    this.resize = new ResizeObserver(() => this.refresh());
+    this.resize.observe(table);
+  }
+
+  private registerHandle(
+    axis: Axis,
+    button: HTMLButtonElement,
+    actions: HandleActions,
+  ): void {
+    button.type = "button";
+    button.className = `table-handle table-${axis}-handle`;
+    button.title = `Drag to move ${axis}; press Enter for actions`;
+    button.textContent = axis === "row" ? "⠿" : "⠶";
+    button.addEventListener("pointerdown", (event) =>
+      this.beginDrag(event, { axis, button, actions }),
+    );
+    button.addEventListener("lostpointercapture", (event) => {
+      if (this.drag?.pointer === event.pointerId) {
+        this.cancel();
+      }
+    });
+    const menu = (point: { x: number; y: number }): void => {
+      button.focus();
+      actions.menu(axis, this.active[axis], point);
+    };
+    button.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      menu({ x: event.clientX, y: event.clientY });
+    });
+    button.addEventListener("keydown", (event) => {
+      if (
+        ["Enter", " ", "ContextMenu"].includes(event.key) ||
+        (event.key === "F10" && event.shiftKey)
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        const bounds = button.getBoundingClientRect();
+        menu({ x: bounds.left, y: bounds.bottom });
+      }
+    });
+    this.root.append(button);
+  }
+  private beginDrag(
+    event: PointerEvent,
+    options: { axis: Axis; button: HTMLButtonElement; actions: HandleActions },
+  ): void {
+    const { axis, button, actions } = options;
+    if (event.button !== 0 || !event.isPrimary) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const from = this.active[axis];
+    const bounds = button.getBoundingClientRect();
+    actions.select(axis, from);
+    this.refresh();
+    this.drag = {
+      axis,
+      from,
+      to: from,
+      pointer: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+      point: { x: event.clientX, y: event.clientY },
+      grab:
+        axis === "row"
+          ? event.clientY - bounds.top
+          : event.clientX - bounds.left,
+    };
+    button.setPointerCapture(event.pointerId);
+  }
+  private registerHover(): void {
+    this.root.addEventListener("pointermove", (event) => {
       if (this.drag || !(event.target instanceof Element)) {
         return;
       }
       const cell = event.target.closest<HTMLElement>(
         "td[data-row], th[data-row]",
       );
-      if (cell && table.contains(cell)) {
+      if (cell && this.table.contains(cell)) {
         this.setActive({
           row: Number(cell.dataset.row),
           column: Number(cell.dataset.column),
         });
       }
     });
+  }
+  private registerDragEvents(actions: HandleActions): void {
     window.addEventListener("pointermove", (event) => this.pointerMove(event), {
       signal: this.events.signal,
     });
     window.addEventListener(
       "pointerup",
-      (event) => {
-        const drag = this.drag;
-        if (!drag || event.pointerId !== drag.pointer) {
-          return;
-        }
-        if (drag.moved) {
-          this.updateTarget({ x: event.clientX, y: event.clientY });
-        }
-        this.cancel();
-        if (drag.moved && drag.to !== drag.from) {
-          actions.move(drag.axis, drag.from, drag.to);
-          this.setActive({ ...this.active, [drag.axis]: drag.to });
-        }
-      },
+      (event) => this.finishDrag(event, actions),
       { signal: this.events.signal },
     );
     window.addEventListener(
@@ -165,8 +171,20 @@ export class TableHandles {
       },
       { capture: true, signal: this.events.signal },
     );
-    this.resize = new ResizeObserver(() => this.refresh());
-    this.resize.observe(table);
+  }
+  private finishDrag(event: PointerEvent, actions: HandleActions): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointer) {
+      return;
+    }
+    if (drag.moved) {
+      this.updateTarget({ x: event.clientX, y: event.clientY });
+    }
+    this.cancel();
+    if (drag.moved && drag.to !== drag.from) {
+      actions.move(drag.axis, drag.from, drag.to);
+      this.setActive({ ...this.active, [drag.axis]: drag.to });
+    }
   }
 
   setActive(position: CellPosition): void {

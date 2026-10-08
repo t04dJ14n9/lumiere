@@ -1,151 +1,182 @@
 import { editGroup } from "../document/api";
-
 import {
   materializeCell,
-  parseTable,
   type CellPosition,
 } from "../../markdown/tables/model";
-import {
-  operateTable,
-  type TableOperation,
-} from "../../markdown/tables/operations";
 import { difference } from "../../shared/document/wire";
 import { CellEditor } from "./cell-editor";
-import type { Action } from "./environment";
+import type { Action, TableEnvironment } from "./environment";
+import { tableActions, tableSelectionChanges } from "./state";
+import { sameCell, type TableGrid } from "./grid";
+import type { CellStep } from "./navigation";
 
-import { activeTables, tableActions, tableSelectionChanges } from "./state";
+interface ProjectionActions {
+  activate(position: CellPosition): void;
+  highlight(): void;
+  move(row: number, column: number): boolean;
+  arrow(step: CellStep, extend: boolean): boolean;
+}
 
-import type { TableController } from "./controller";
-export function open(
-  this: TableController,
-  position: CellPosition,
-  selection?: number | "all",
-): void {
-  const cell = this.model.rows[position.row]?.[position.column];
-  const element = this.cells[position.row]?.[position.column];
-  if (!cell || !element) {
-    return;
+/** One cell editor projects text into the outer document, including missing cells. */
+export class CellProjection {
+  active?: CellPosition;
+  cellEditor?: CellEditor;
+  get inner() {
+    return this.cellEditor?.view;
   }
-  if (this.same(this.active, position) && this.inner) {
-    this.inner.focus();
-    return;
+
+  constructor(
+    private readonly grid: TableGrid,
+    private readonly environment: TableEnvironment,
+    private readonly actions: ProjectionActions,
+  ) {}
+
+  open(position: CellPosition, selection?: number | "all"): void {
+    const cell = this.grid.model.rows[position.row]?.[position.column];
+    const element = this.grid.cells[position.row]?.[position.column];
+    if (!cell || !element) {
+      return;
+    }
+    if (sameCell(this.active, position) && this.inner) {
+      this.inner.focus();
+      return;
+    }
+    this.close();
+    this.active = position;
+    this.actions.activate(position);
+    this.environment.disposeContent(element);
+    element.replaceChildren();
+    this.cellEditor = new CellEditor({
+      parent: element,
+      cell,
+      position,
+      selection,
+      environment: this.environment,
+      vim: this.environment.vim !== undefined,
+      outer: this.grid.outer,
+      action: (action) => this.hostAction(action),
+      move: (row, column) => this.actions.move(row, column),
+      arrow: (step, extend) => this.actions.arrow(step, extend),
+      selected: (selected) =>
+        this.grid.outer.state.facet(tableSelectionChanges)(selected),
+      change: (text, group) => this.projectChange(position, text, group),
+    });
+    this.deferOuterCaret(this.cellEditor);
+    this.cellEditor.view.focus();
+    this.actions.highlight();
+    this.grid.outer.state.facet(tableSelectionChanges)(
+      !this.cellEditor.view.state.selection.main.empty,
+    );
   }
-  this.close();
-  this.range = undefined;
-  this.active = position;
-  this.handles.setActive(position);
-  activeTables.set(this.outer, this);
-  this.environment.disposeContent(element);
-  element.replaceChildren();
-  this.cellEditor = new CellEditor({
-    parent: element,
-    cell,
-    position,
-    selection,
-    environment: this.environment,
-    vim: this.vimEnabled(),
-    outer: this.outer,
-    action: (action) => this.hostAction(action),
-    move: (row, column) => this.move(row, column),
-    arrow: (step, extend) => this.arrow(step, extend),
-    selected: (selected) =>
-      this.outer.state.facet(tableSelectionChanges)(selected),
-    change: (text, group) => {
-      const current = this.model.rows[position.row]![position.column]!;
-      if (current.missing) {
-        const change = materializeCell(this.model, position, text);
-        this.cellEditor!.source.materialize();
-        this.outer.dispatch({
-          changes: {
-            from: this.start() + change.from,
-            insert: change.insert,
-          },
-          annotations: editGroup.of(group),
-        });
+
+  private projectChange(
+    position: CellPosition,
+    text: string,
+    group: string,
+  ): void {
+    const current = this.grid.model.rows[position.row]![position.column]!;
+    const editor = this.cellEditor!;
+    if (current.missing) {
+      const change = materializeCell(this.grid.model, position, text);
+      editor.source.materialize();
+      this.grid.outer.dispatch({
+        changes: {
+          from: this.grid.start() + change.from,
+          insert: change.insert,
+        },
+        annotations: editGroup.of(group),
+      });
+      return;
+    }
+    const { from, to } = editor.source.range(this.grid.block.source, current);
+    const changes = projectedChanges(
+      this.grid.block.source,
+      { from, to },
+      text,
+      this.grid.start(),
+    );
+    this.grid.outer.dispatch({ changes, annotations: editGroup.of(group) });
+  }
+
+  private deferOuterCaret(editor: CellEditor): void {
+    // A structural command can open the cell during the outer view's update.
+    // Delay dispatch, and reject work from an editor closed in the meantime.
+    queueMicrotask(() => {
+      if (
+        this.cellEditor !== editor ||
+        !this.active ||
+        !this.grid.root.isConnected
+      ) {
         return;
       }
-      const { from, to } = this.cellEditor!.source.range(
-        this.block.source,
-        current,
-      );
-      const start = this.start();
-      const changes: { from: number; to: number; insert: string }[] = [];
-      difference(this.block.source.slice(from, to), text).iterChanges(
-        (fromA, toA, _fromB, _toB, insert) => {
-          changes.push({
-            from: start + from + fromA,
-            to: start + from + toA,
-            insert: insert.toString(),
-          });
-        },
-      );
-      this.outer.dispatch({ changes, annotations: editGroup.of(group) });
-    },
-  });
-  const editor = this.cellEditor;
-  // Structural commands may open a cell during the outer view's update.
-  queueMicrotask(() => {
-    if (this.cellEditor === editor && this.active && this.root.isConnected) {
-      const current = this.model.rows[this.active.row]![this.active.column]!;
-      this.outer.dispatch({
-        selection: { anchor: this.start() + current.from },
+      const cell = this.grid.model.rows[this.active.row]![this.active.column]!;
+      this.grid.outer.dispatch({
+        selection: { anchor: this.grid.start() + cell.from },
       });
+    });
+  }
+
+  close(): void {
+    const active = this.active;
+    this.cellEditor?.destroy();
+    this.cellEditor = undefined;
+    this.active = undefined;
+    if (active) {
+      this.grid.display(active);
     }
-  });
-  this.cellEditor.view.focus();
-  this.highlight();
-  this.outer.state.facet(tableSelectionChanges)(
-    !this.cellEditor.view.state.selection.main.empty,
+  }
+
+  hostAction(action: Action): boolean {
+    this.grid.outer.state.facet(tableActions)(action);
+    return true;
+  }
+
+  relocate(position: CellPosition): void {
+    if (!this.active || !this.cellEditor) {
+      return;
+    }
+    const view = this.cellEditor.view;
+    const focused = view.hasFocus;
+    // Keep the position object captured by the cell's change callback alive.
+    Object.assign(this.active, position);
+    this.grid.render();
+    const element = this.grid.cells[position.row]![position.column]!;
+    this.environment.disposeContent(element);
+    element.replaceChildren(view.dom);
+    this.cellEditor.label(position);
+    if (focused) {
+      view.focus();
+    }
+  }
+
+  update(): void {
+    if (!this.active || !this.cellEditor) {
+      return;
+    }
+    this.cellEditor.update(
+      this.grid.block.source,
+      this.grid.model.rows[this.active.row]![this.active.column]!,
+      this.environment.vim !== undefined,
+    );
+  }
+}
+
+export function projectedChanges(
+  source: string,
+  range: { from: number; to: number },
+  text: string,
+  start: number,
+) {
+  const changes: { from: number; to: number; insert: string }[] = [];
+  difference(source.slice(range.from, range.to), text).iterChanges(
+    (...change) => {
+      const [from, to, , , insert] = change;
+      changes.push({
+        from: start + range.from + from,
+        to: start + range.from + to,
+        insert: insert.toString(),
+      });
+    },
   );
-}
-
-export function close(this: TableController): void {
-  const active = this.active;
-  this.cellEditor?.destroy();
-  this.cellEditor = undefined;
-  this.active = undefined;
-  if (active) {
-    this.display(active);
-  }
-}
-
-export function hostAction(this: TableController, action: Action): boolean {
-  this.outer.state.facet(tableActions)(action);
-  return true;
-}
-
-export function execute(
-  this: TableController,
-  operation: TableOperation,
-  focus: CellPosition,
-): void {
-  const source = operateTable(this.model, operation);
-  if (source === this.block.source) {
-    (this.inner ?? this.outer).focus();
-    return;
-  }
-  const next = parseTable(source);
-  this.close();
-  this.range = undefined;
-  this.requested = next
-    ? {
-        row: Math.max(0, Math.min(focus.row, next.rows.length - 1)),
-        column: Math.max(0, Math.min(focus.column, next.alignments.length - 1)),
-      }
-    : undefined;
-  this.replace(source);
-  if (!next) {
-    this.outer.focus();
-  }
-}
-
-export function replace(this: TableController, source: string): void {
-  if (source === this.block.source) {
-    return;
-  }
-  const from = this.start();
-  this.outer.dispatch({
-    changes: { from, to: from + this.block.source.length, insert: source },
-    annotations: editGroup.of(`table-command-${++this.operationSequence}`),
-  });
+  return changes;
 }

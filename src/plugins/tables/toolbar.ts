@@ -5,106 +5,141 @@ import {
   type CellPosition,
   type CellRange,
 } from "../../markdown/tables/model";
-import { type Axis } from "../../markdown/tables/operations";
+import type { Axis, TableOperation } from "../../markdown/tables/operations";
 import { tableMenu, type TableMenuActions } from "./menu";
-
 import { revealTableSource } from "./state";
+import type { TableGrid } from "./grid";
+import type { TableClipboard } from "./clipboard";
+import type { TableEnvironment } from "./environment";
 
-import type { TableController } from "./controller";
-export function controls(this: TableController): HTMLElement {
-  const controls = document.createElement("div");
-  controls.className = "table-controls";
-  const button = (label: string, run: () => void): void => {
-    const action = document.createElement("button");
-    action.type = "button";
-    action.textContent = label;
-    action.addEventListener("click", run);
-    controls.append(action);
-  };
-  button("Add row below", () => {
-    this.requested = { row: this.model.rows.length, column: 0 };
-    this.replace(insertRow(this.model, this.model.rows.length - 1));
-  });
-  button("Add column to the right", () => {
-    this.requested = {
-      row: this.active?.row ?? 0,
-      column: this.model.alignments.length,
+interface MenuSelection {
+  range(): CellRange | undefined;
+  active(): CellPosition | undefined;
+  open(position: CellPosition): void;
+  request(position: CellPosition): void;
+  execute(operation: TableOperation, focus: CellPosition): void;
+}
+
+/** Toolbar and contextual menu lifetime, independent of cell-editor internals. */
+export class TableToolbar {
+  private closeMenu?: () => void;
+  constructor(
+    private readonly grid: TableGrid,
+    private readonly selection: MenuSelection,
+    private readonly clipboard: TableClipboard,
+    private readonly openMenu: TableEnvironment["openMenu"],
+  ) {}
+
+  controls(): HTMLElement {
+    const controls = document.createElement("div");
+    controls.className = "table-controls";
+    const button = (label: string, run: () => void): void => {
+      const action = document.createElement("button");
+      action.type = "button";
+      action.textContent = label;
+      action.addEventListener("click", run);
+      controls.append(action);
     };
-    this.replace(insertColumn(this.model, this.model.alignments.length - 1));
-  });
-  button("Edit table source", () => this.revealSource());
-  return controls;
-}
-
-export function revealSource(this: TableController): void {
-  const from = this.start();
-  this.outer.dispatch({
-    effects: revealTableSource.of(from),
-    selection: { anchor: from },
-  });
-  this.outer.focus();
-}
-
-export function contextMenu(this: TableController, event: MouseEvent): void {
-  const position = this.position(event.target);
-  if (!position) {
-    return;
+    button("Add row below", () => {
+      this.selection.request({ row: this.grid.model.rows.length, column: 0 });
+      this.grid.replace(
+        insertRow(this.grid.model, this.grid.model.rows.length - 1),
+      );
+    });
+    button("Add column to the right", () => {
+      this.selection.request({
+        row: this.selection.active()?.row ?? 0,
+        column: this.grid.model.alignments.length,
+      });
+      this.grid.replace(
+        insertColumn(this.grid.model, this.grid.model.alignments.length - 1),
+      );
+    });
+    button("Edit table source", () => this.revealSource());
+    return controls;
   }
-  event.preventDefault();
-  event.stopPropagation();
-  this.showMenu(position, { x: event.clientX, y: event.clientY });
+
+  revealSource(): void {
+    const from = this.grid.start();
+    this.grid.outer.dispatch({
+      effects: revealTableSource.of(from),
+      selection: { anchor: from },
+    });
+    this.grid.outer.focus();
+  }
+
+  contextMenu(event: MouseEvent): void {
+    const position = this.grid.position(event.target);
+    if (!position) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.showMenu(position, { x: event.clientX, y: event.clientY });
+  }
+
+  showMenu(
+    position: CellPosition,
+    point: { x: number; y: number },
+    axis?: Axis,
+  ): void {
+    this.close();
+    const range = this.selection.range();
+    if (!containsCell(range, position)) {
+      this.selection.open(position);
+    }
+    const selected = this.selection.range() ?? {
+      anchor: { ...position },
+      head: { ...position },
+    };
+    this.closeMenu = this.openMenu(
+      this.grid.root,
+      tableMenu(this.grid.model, selected, this.menuActions(selected), axis),
+      point,
+      (message) => this.report(message),
+    );
+  }
+
+  private menuActions(range: CellRange): TableMenuActions {
+    return {
+      copy: (cut) => this.clipboard.copyFromMenu(range, cut),
+      paste: () => this.clipboard.pasteFromMenu(range),
+      format: (marker) => this.clipboard.formatCells(range, marker),
+      clear: () => this.clipboard.clearCells(range),
+      execute: (operation, focus) => this.selection.execute(operation, focus),
+      source: () => this.revealSource(),
+    };
+  }
+
+  private report(message: string): void {
+    let notice = this.grid.root.querySelector<HTMLElement>(".table-message");
+    if (!notice) {
+      notice = document.createElement("p");
+      notice.className = "table-message";
+      notice.setAttribute("role", "alert");
+      this.grid.root.append(notice);
+    }
+    notice.textContent = message;
+  }
+
+  close(): void {
+    this.closeMenu?.();
+    this.closeMenu = undefined;
+  }
 }
 
-export function showMenu(
-  this: TableController,
+export function containsCell(
+  range: CellRange | undefined,
   position: CellPosition,
-  point: { x: number; y: number },
-  axis?: Axis,
-): void {
-  this.closeMenu?.();
-  const selected = this.range && rectangle(this.range);
-  const inside =
-    selected &&
-    position.row >= selected.top &&
-    position.row <= selected.bottom &&
-    position.column >= selected.left &&
-    position.column <= selected.right;
-  if (!inside) {
-    this.open(position);
+): boolean {
+  if (!range) {
+    return false;
   }
-  const range = this.range ?? {
-    anchor: { ...position },
-    head: { ...position },
-  };
-  this.closeMenu = this.environment.openMenu(
-    this.root,
-    tableMenu(this.model, range, this.menuActions(range), axis),
-    point,
-    (message) => this.report(message),
+  const area = rectangle(range);
+  return (
+    position.row >= area.top &&
+    position.row <= area.bottom &&
+    position.column >= area.left &&
+    position.column <= area.right
   );
-}
-
-export function menuActions(
-  this: TableController,
-  range: CellRange,
-): TableMenuActions {
-  return {
-    copy: (cut) => this.copyFromMenu(range, cut),
-    paste: () => this.pasteFromMenu(range),
-    format: (marker) => this.formatCells(range, marker),
-    clear: () => this.clearCells(range),
-    execute: (operation, focus) => this.execute(operation, focus),
-    source: () => this.revealSource(),
-  };
-}
-
-export function report(this: TableController, message: string): void {
-  let notice = this.root.querySelector<HTMLElement>(".table-message");
-  if (!notice) {
-    notice = document.createElement("p");
-    notice.className = "table-message";
-    notice.setAttribute("role", "alert");
-    this.root.append(notice);
-  }
-  notice.textContent = message;
 }
