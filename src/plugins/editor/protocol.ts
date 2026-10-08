@@ -1,3 +1,4 @@
+import { runtimePluginStates } from "../../shared/plugin-state";
 import { config as editorConfig } from "./manifest";
 import { featureSettings } from "../../shared/features";
 import { Schema, defineProtocol } from "../../kernel";
@@ -47,6 +48,7 @@ export const viewState = Schema.object({
 });
 export const protocol = defineProtocol("editor", {
   requests: {
+    plugins: { params: Schema.object({}), result: runtimePluginStates },
     ready: {
       params: Schema.object({}),
       result: Schema.object({
@@ -79,6 +81,7 @@ export const protocol = defineProtocol("editor", {
     },
   },
   notifications: {
+    pluginsChanged: runtimePluginStates,
     initialized: Schema.object({}),
     configure: featureSettings,
     configureEditor: editorConfig,

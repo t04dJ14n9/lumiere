@@ -42,6 +42,9 @@ export async function bootstrap(
   root.plugin(editorHost, {
     features,
     configure(context, panel) {
+      context.on("links/open", (request) =>
+        root.bail("links/open", { ...request, editorId: panel.id }),
+      );
       if (workbench.config(panel.document).preset === "obsidian") {
         context.plugin(vaultHost, { documentUri: panel.document.uri });
         context.plugin(resourcesHost, { panel });

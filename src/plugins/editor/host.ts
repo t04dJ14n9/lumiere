@@ -40,6 +40,9 @@ export const editorHost: Plugin<EditorHostConfig> = {
           rank: ctx.runtime.rank,
         });
         panels.set(panel.id, panel);
+        panel.rpc.on(protocol, "pluginsChanged", () =>
+          ctx.emit("editor/pluginsChanged", panel),
+        );
         // The endpoint is disposed with the panel, which removes this listener.
         panel.rpc.on(protocol, "selectionChanged", ({ hasSelection }) =>
           ctx.emit("editor/selectionChanged", panel, hasSelection),

@@ -1,3 +1,4 @@
+import type { RuntimePluginState } from "../../shared/plugin-state";
 import type { config as editorConfig } from "./manifest";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import type { ViewStateContributions } from "./contributions";
@@ -43,6 +44,10 @@ export interface EditorService {
 }
 export interface EditorPanel extends PanelPort {
   readonly session: DocumentSession;
+  readonly ready?: Promise<void>;
+  webviewPluginStates?(): readonly RuntimePluginState[];
+  pluginStates?(): readonly RuntimePluginState[];
+  refreshPlugins?(): Promise<void>;
 }
 export interface ViewSnapshot {
   readonly editorId: string;
@@ -74,6 +79,8 @@ declare module "../../kernel/types" {
     /** @mode emit */ "editor/modeRestored": (
       mode: "source" | "livePreview",
     ) => void;
+    /** @mode emit */ "editor/configure": () => void;
+    /** @mode emit */ "editor/pluginsChanged": (panel: PanelPort) => void;
     /** @mode emit */ "editor/ready": (panel: PanelPort) => void;
     /** @mode emit */ "editor/opened": (panel: PanelPort) => void;
     /** @mode emit */ "editor/closed": (panel: PanelPort) => void;
