@@ -977,3 +977,73 @@ compatibility inputs; new captures store data in generic contributions.
 Known issues: finish catalog-wide behavioral composition checks, audit every
 plugin and document manual scenarios; then the previously listed remaining
 Phase 4 plugins and Phases 5–8. Manual acceptance remains unrun.
+
+**Composition fixes complete — 2026-10-08.** This closes every composition item
+in the preceding Known issues; it does not mark Phase 4 complete. The preserved
+work was reviewed before extension and committed in the state unit above. The
+final unit audits all 27 implemented plugins and adds owner manual scenarios.
+Full per-plugin evidence and scope: [composition audit](docs/COMPOSITION_AUDIT.md).
+
+Violations found and fixes (including the earlier composition commits):
+- Activation-history event priority → prepend slots plus shared catalog ranks,
+  stable owner/per-owner order and caller-bound service reads.
+- Append-order editor compartments → one sorted extension registry; stable
+  line-number/folding gutters and table-before-Vim overrides.
+- Delegated renderer ownership lost → caller forwarding through Live Preview.
+- Last matching renderer won → first-ranked match and explicit core fallback slot.
+- Missing core indentation settings → validated editor.useTabs/editor.tabSize,
+  resource-scoped host propagation and in-place editor reconfiguration.
+- Core owned feature view state → generic validated contributions; folding owns
+  ranges/field and callouts owns disclosures, with late restore and unknown keys.
+- Settings disposed/recreated fibers → fiber.update; editor, folding and autoPair
+  use compartments, properties retains its editing service while replacing its
+  renderer, links retains its listeners and initial-navigation lifetime.
+- Folding lost ranges/reparsed metadata → preserve fold state while reconfiguring
+  the service; query cached metadata using immutable Text identity.
+- Fold gutter stayed stale after config/tab-width changes → explicit foldingChanged
+  predicate, preserving current ranges while refreshing available markers.
+- Callout restore left mounted disclosures stale and missed nested rename identity
+  → owned live bindings and local/nested prefix remapping.
+- Catalog tests checked owners alone → compare keymaps, renderer order/winners,
+  content attributes, pair data and fold behavior with fresh starts; exercise
+  every feature, config changes and seeded toggles; assert state retention and
+  guard all production feature modules against editor singleton settings.
+
+Final checks, in required order: `pnpm check` **215/215 unit tests**, lint, all
+TypeScript projects and contribution generation passed; `pnpm test:browser`
+**14/14**; `pnpm test:vscode` **1/1**, freshly packaged in its isolated `/tmp`
+profile. Logs: `docs/checks/composition-audit-{check,browser,native}.txt`.
+No smoke assertions were removed or suites expanded. Ledger remains **87 ported,
+15 rewritten, 2 changed, 333 retired, 11 todo; total 448**. The pinned inventory
+contains 446 source scenarios plus two additional ledger rows. Manual scenarios
+are documented, **not run**; smoke success is not owner acceptance.
+
+Deviations: equal catalog ranks use owner ID as a deterministic tie break;
+legacy top-level folded/folds protocol data remains a validated compatibility
+input while new captures use generic contributions. Existing Vim Ex callbacks
+are deactivated on disposal because the dependency lacks a removeEx API; this
+pre-existing limitation is recorded in the audit. No other design deviation.
+
+Known issues / remaining work (outside this run):
+- Phase 4: inlineTitle (rename, focus intent and independent panel view transfer),
+  tags, suggest, search (sources/channels/worker/cancellation), pasteHtml,
+  copyForAgent and markers, with their lifecycle coverage, contributions, README
+  and manual scenarios. HTML paste into table cells and rename UI acceptance
+  await their owning units. None was started in this run.
+- Phase 5: shared live per-vault indexing, nearest-marker roots, workers,
+  persistence/overlays/exclusions/incremental resolution, consumer migration,
+  host views/link updates/quick switcher/word count and 10,000-note measurement.
+- Phase 6: command/settings parity, plugin management, editor association,
+  manual inventory and PARITY.md; verify bindings remain unbound.
+- Phase 7: frozen API/declarations, external contexts, selection/error facade,
+  markers/actions/processors, facade tests and API.md.
+- Phase 8: packaging/notices/allowlist, release documentation, sample external
+  plugin, complete handover, zero todo ledger rows and ordered release checks.
+- Owner manual acceptance remains unrun, including split-panel recovery,
+  gutter/widget appearance, property drafts and table/Vim focus. The current
+  vault remains the Phase 3 snapshot stub; nested-root preference isolation
+  and fresh index/resource invalidation remain later-phase work.
+
+Stop after the composition audit commit, with a clean tree for the owner's
+code-quality tooling. No push, publication, owner-profile installation or change
+to human-learning, its worktrees or vscode-embedPDF occurred.

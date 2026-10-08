@@ -69,3 +69,35 @@ test("invalid contribution data is ignored independently; legacy keys restore on
     /Duplicate/,
   );
 });
+
+test("disposing one contribution preserves its snapshot without reading it again or affecting another", async () => {
+  const contributions = new ViewContributions({} as EditorView);
+  let first = 1,
+    second = 2,
+    captures = 0;
+  const stop = contributions.contribute("first", {
+    schema: Schema.number(),
+    capture: () => {
+      captures++;
+      return first;
+    },
+    restore: (_view, value) => {
+      first = value;
+    },
+  });
+  contributions.contribute("second", {
+    schema: Schema.number(),
+    capture: () => second,
+    restore: (_view, value) => {
+      second = value;
+    },
+  });
+  await stop();
+  await stop();
+  first = 99;
+  assert.deepEqual(contributions.capture(), { first: 1, second: 2 });
+  assert.equal(captures, 1);
+  // A present invalid value must not silently fall back to a legacy value.
+  contributions.restore({ second: null }, "note.md", { second: 8 });
+  assert.equal(second, 2);
+});

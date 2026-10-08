@@ -52,6 +52,16 @@ export function foldRange(
   }
   return to > end ? { from: end, to } : null;
 }
+/** CodeMirror's gutter otherwise ignores fold-service and tab-width changes. */
+export function foldingChanged(update: {
+  startState: EditorState;
+  state: EditorState;
+}): boolean {
+  return (
+    update.startState.facet(foldService) !== update.state.facet(foldService) ||
+    update.startState.tabSize !== update.state.tabSize
+  );
+}
 const configurations = new WeakMap<Context, Compartment>();
 const foldingConfig = (options: Infer<typeof config>) =>
   foldService.of((state, start, end) => foldRange(state, start, end, options));
@@ -81,7 +91,7 @@ export const foldingWebview: Plugin<Infer<typeof config>> = {
     ctx.effect(() =>
       ctx.editor.extend([
         codeFolding(),
-        foldGutter(),
+        foldGutter({ foldingChanged }),
         foldState,
         compartment.of(foldingConfig(options)),
       ]),

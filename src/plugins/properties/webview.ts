@@ -1,5 +1,5 @@
 import { EditorView, keymap } from "@codemirror/view";
-import type { Plugin, Infer } from "../../kernel";
+import type { Context, Plugin, Infer } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../document/api";
 import type {} from "../commands/api";
@@ -7,15 +7,26 @@ import type {} from "../livePreview/api";
 import type {} from "../render/api";
 import type {} from "./api";
 import { protocol as actions } from "../commands/protocol";
-import type { config } from "./manifest";
+import { config } from "./manifest";
 import { protocol } from "./protocol";
 import { PropertyEditing } from "./editing";
 import { PropertyWidget } from "./widget";
 import { propertyHeadingFocus } from "./heading";
 import type { PropertyContext } from "./context";
 import { styles } from "./styles";
+const configurations = new WeakMap<
+  Context,
+  (settings: Infer<typeof config>) => void
+>();
 export const propertiesWebview: Plugin<Infer<typeof config>> = {
   name: "properties",
+  config,
+  reconfigure(ctx, settings) {
+    const configure = configurations.get(ctx);
+    if (!configure) return false;
+    configure(settings);
+    return true;
+  },
   inject: {
     required: ["editor", "commands", "livePreview", "rpc", "document", "menu"],
   },
@@ -86,9 +97,12 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
         };
       },
     };
-    ctx.effect(() => {
+    configurations.set(ctx, (settings) => {
+      display = settings.display;
       install();
-      return () => removeRenderer?.();
+    });
+    ctx.effect(() => () => {
+      configurations.delete(ctx);
     });
     ctx.effect(() =>
       ctx.editor.extend([
@@ -105,6 +119,10 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
         ]),
       ]),
     );
+    ctx.effect(() => {
+      install();
+      return () => removeRenderer?.();
+    });
     ctx.effect(() =>
       ctx.commands.register("markdown:add-metadata-property", () => {
         editing.add();

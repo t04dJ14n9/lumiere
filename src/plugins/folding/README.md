@@ -12,3 +12,6 @@ Disposal captures the ranges before removing the field, gutter and commands.
 Late enable restores valid ranges; config updates replace only the fold-service
 compartment and preserve existing ranges. Metadata uses the immutable Text key
 so gutter queries share the cached parse.
+
+The gutter's foldingChanged predicate observes both fold-service configuration
+and tab width, so setting changes refresh markers without a document edit.

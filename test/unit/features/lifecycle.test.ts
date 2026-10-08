@@ -1,180 +1,29 @@
-import { headings } from "../../../src/markdown/metadata/headings";
-import { foldState, foldedRanges } from "@codemirror/language";
-import { ViewContributions } from "../../../src/plugins/editor/contributions";
-import { ExtensionRegistry } from "../../../src/plugins/editor/extensions";
-import type { LivePreview } from "../../../src/plugins/livePreview/api";
-import type { CallerBound } from "../../../src/kernel";
-import type { MarkdownService } from "../../../src/plugins/dialect/api";
-import type { RenderPass } from "../../../src/plugins/render/api";
 import test from "node:test";
-import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import assert from "node:assert/strict";
 import { Compartment, EditorState } from "@codemirror/state";
-import type { TransactionSpec } from "@codemirror/state";
-import type { EditorView } from "@codemirror/view";
-import { Context, bindCaller } from "../../../src/kernel";
-import { featureController } from "../../../src/webview/features";
-import { features, pluginRank } from "../../../src/plugins/catalog";
-import type { EditorService } from "../../../src/plugins/editor/api";
-import { foldRange } from "../../../src/plugins/folding/webview";
+import {
+  indentUnit,
+  foldState,
+  foldedRanges,
+  foldService,
+} from "@codemirror/language";
+import { EditorView as ViewFacets, keymap } from "@codemirror/view";
+import type { Context } from "../../../src/kernel";
+import { markdownParser } from "../../../src/markdown/dialect";
+import { headings } from "../../../src/markdown/metadata/headings";
+import {
+  blockRenderers,
+  inlineRenderers,
+} from "../../../src/plugins/livePreview/registry";
+import type { RenderPass } from "../../../src/plugins/render/api";
+import { features } from "../../../src/plugins/catalog";
+import {
+  foldRange,
+  foldingChanged,
+} from "../../../src/plugins/folding/webview";
 import { pairs } from "../../../src/plugins/autoPair/webview";
 import { indentation } from "../../../src/plugins/indentGuides/webview";
-
-function fixture() {
-  const root = Context.create({ rank: pluginRank });
-  const compartment = new Compartment();
-  let state = EditorState.create({
-    doc: "# Heading\n\nbody",
-    extensions: compartment.of([]),
-  });
-  const view = {
-    get state() {
-      return state;
-    },
-    dispatch(spec: TransactionSpec) {
-      state = state.update(spec).state;
-    },
-  } as EditorView;
-  let extensions = 0;
-  root.provide("markdown", {
-    language: () => [],
-    renderer: {},
-  } as unknown as MarkdownService);
-  root.provide("menu", {
-    open() {
-      return () => {};
-    },
-  });
-  root.provide("document", {
-    beforeFlush() {
-      extensions++;
-      return () => {
-        extensions--;
-      };
-    },
-    extension: [],
-    attach() {
-      return () => {};
-    },
-    async flush() {},
-    pump() {},
-    error: undefined,
-  });
-  root.provide("resources", {
-    async load() {
-      throw new Error("No resources in unit fixture");
-    },
-  });
-  root.provide("render", {
-    async into() {
-      throw new Error("No DOM in unit fixture");
-    },
-  });
-  const preview: LivePreview & CallerBound<LivePreview> = {
-    mode: "source",
-    setMode() {},
-    block() {
-      throw new Error("unbound renderer");
-    },
-    inline() {
-      throw new Error("unbound renderer");
-    },
-    [bindCaller](caller) {
-      const register = () =>
-        registry.register(caller.fiber!.definition.name, []);
-      return { ...preview, block: register, inline: register };
-    },
-  };
-  root.provide("livePreview", preview);
-  let receive: (value: unknown) => void = () => {};
-  const rpc = new Endpoint(
-    {
-      listen(listener) {
-        receive = listener;
-        return () => {};
-      },
-      send(value) {
-        const message = value as { kind: string; id: number };
-        if (message.kind === "request")
-          queueMicrotask(() =>
-            receive({
-              kind: "response",
-              id: message.id,
-              result: { fragment: "" },
-            }),
-          );
-      },
-    },
-    {
-      after() {
-        return () => {};
-      },
-    },
-  );
-  root.provide("rpc", rpc);
-  root.effect(() => () => rpc.dispose());
-  const handlers = new Map<string, () => boolean | Promise<boolean>>();
-  const registry = new ExtensionRegistry(pluginRank, (extensions) => {
-    view.dispatch({ effects: compartment.reconfigure(extensions) });
-  });
-  const contributions = new ViewContributions(view);
-  const editor: EditorService & CallerBound<EditorService> = {
-    [bindCaller](caller) {
-      return {
-        ...editor,
-        extend: (extension, options) =>
-          registry.register(
-            options?.owner ?? caller.fiber!.definition.name,
-            extension,
-            options?.slot,
-          ),
-      };
-    },
-    view,
-    mode: "source",
-    source: "note.md",
-    viewState: contributions,
-    focus() {},
-    clipboard: {
-      async read() {
-        return "";
-      },
-      async write() {},
-    },
-    extend(extension, options) {
-      return registry.register(
-        options?.owner ?? "editor",
-        extension,
-        options?.slot,
-      );
-    },
-  };
-  root.provide("editor", editor);
-  root.provide("commands", {
-    register(id, run) {
-      assert.equal(handlers.has(id), false);
-      handlers.set(id, run);
-      return () => {
-        handlers.delete(id);
-      };
-    },
-    async run(id) {
-      return (await handlers.get(id)?.()) ?? false;
-    },
-  });
-  return {
-    root,
-    view,
-    registry,
-    contributions,
-    handlers,
-    configure: featureController(root),
-    get extensions() {
-      return extensions + registry.ordered().length;
-    },
-  };
-}
-
+import { fixture } from "./fixture";
 async function renderHooks(root: Context) {
   let reads = 0;
   const container = {
@@ -294,7 +143,73 @@ function settingsFor(enabled: Set<string>) {
   );
 }
 function owners(f: ReturnType<typeof fixture>) {
+  for (const fiber of f.root.runtime.fibers)
+    assert.equal(
+      fiber.state,
+      "active",
+      `${fiber.definition.name}: ${String(fiber.error)}`,
+    );
   return f.registry.ordered().map(({ owner, slot }) => ({ owner, slot }));
+}
+function composition(f: ReturnType<typeof fixture>) {
+  const state = f.view.state;
+  const blocks = state.facet(blockRenderers);
+  const source = [
+    "---",
+    "title: Test",
+    "---",
+    "# Heading",
+    "",
+    "> [!note]",
+    "> Body",
+    "",
+    "```mermaid",
+    "graph TD; A-->B",
+    "```",
+    "",
+    "| A | B |",
+    "| - | - |",
+    "| C | D |",
+    "",
+    "![[Note]]",
+    "",
+    "$$",
+    "x",
+    "$$",
+  ].join("\n");
+  const sample = EditorState.create({ doc: source });
+  const matches: string[] = [];
+  markdownParser.parse(source).iterate({
+    enter(node) {
+      const renderer = blocks.find((renderer) => renderer.match(node, sample));
+      if (renderer)
+        matches.push(`${node.name}:${renderer.kind}:${renderer.editing}`);
+    },
+  });
+  return {
+    owners: owners(f),
+    keys: state
+      .facet(keymap)
+      .flat()
+      .map((binding) => ({
+        key: binding.key,
+        mac: binding.mac,
+        win: binding.win,
+        linux: binding.linux,
+        preventDefault: binding.preventDefault,
+        stopPropagation: binding.stopPropagation,
+      })),
+    blocks: blocks.map((renderer) => renderer.kind),
+    inline: state.facet(inlineRenderers).map((renderer) => renderer.nodes),
+    matches,
+    attributes: state
+      .facet(ViewFacets.contentAttributes)
+      .filter((value) => typeof value !== "function"),
+    pairs: state.languageDataAt("closeBrackets", 0),
+    folding: state.facet(foldService).map((service) => service(state, 0, 9)),
+    indent: state.facet(indentUnit),
+    tabSize: state.tabSize,
+  };
 }
 
 test("catalog composition has the same ordered owners after every toggle as a fresh editor", async () => {
@@ -303,8 +218,8 @@ test("catalog composition has the same ordered owners after every toggle as a fr
   const enabled = new Set(features.map((item) => item.id));
   await fresh.configure(settingsFor(enabled));
   await f.configure(settingsFor(enabled));
-  const expected = owners(fresh);
-  assert.ok(expected.some(({ owner }) => owner === "tables"));
+  const expected = composition(fresh);
+  assert.ok(expected.owners.some(({ owner }) => owner === "tables"));
   for (const manifest of features) {
     enabled.delete(manifest.id);
     await f.configure(settingsFor(enabled));
@@ -314,7 +229,7 @@ test("catalog composition has the same ordered owners after every toggle as a fr
     );
     enabled.add(manifest.id);
     await f.configure(settingsFor(enabled));
-    assert.deepEqual(owners(f), expected, manifest.id);
+    assert.deepEqual(composition(f), expected, manifest.id);
   }
   await f.root.dispose();
   await fresh.root.dispose();
@@ -333,7 +248,7 @@ test("seeded catalog toggle sequence ends with fresh-start owner order", async (
   }
   const fresh = fixture();
   await fresh.configure(settingsFor(enabled));
-  assert.deepEqual(owners(f), owners(fresh));
+  assert.deepEqual(composition(f), composition(fresh));
   await f.root.dispose();
   await fresh.root.dispose();
 });
@@ -374,11 +289,30 @@ test("catalog configuration changes preserve fresh-start ordered owners", async 
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === "boolean") config[key] = !value;
       if (key === "display") config[key] = "hidden";
+      if (key === "newLinkFormat") config[key] = "relative";
+      if (key === "folderNote") config[key] = "index";
     }
+    const fiber = [...f.root.runtime.fibers].find(
+      (item) => item.definition.name === manifest.id,
+    )!;
+    const context = fiber.context;
+    const foldIdentity = f.view.state.field(foldState);
     await f.configure(settings);
+    assert.equal(
+      [...f.root.runtime.fibers].find(
+        (item) => item.definition.name === manifest.id,
+      ),
+      fiber,
+    );
+    assert.equal(
+      fiber.context,
+      context,
+      `${manifest.id} reconfigures in place`,
+    );
+    assert.equal(f.view.state.field(foldState), foldIdentity);
     const fresh = fixture();
     await fresh.configure(settings);
-    assert.deepEqual(owners(f), owners(fresh), manifest.id);
+    assert.deepEqual(composition(f), composition(fresh), manifest.id);
     await fresh.root.dispose();
   }
   await f.root.dispose();
@@ -395,4 +329,48 @@ test("heading folding queries share metadata by Text identity and invalidate aft
   }).state;
   assert.notEqual(headings(next.doc), first);
   assert.equal(foldRange(next, 0, 5, { heading: true, indent: false }), null);
+});
+
+test("each feature leaves core settings and other plugin folds intact when toggled", async () => {
+  const f = fixture();
+  const enabled = new Set(features.map((item) => item.id));
+  await f.configure(settingsFor(enabled));
+  for (const manifest of features) {
+    const field = f.view.state.field(foldState);
+    enabled.delete(manifest.id);
+    await f.configure(settingsFor(enabled));
+    assert.equal(f.view.state.facet(indentUnit), "   ", manifest.id);
+    assert.equal(f.view.state.tabSize, 3, manifest.id);
+    assert.equal(f.view.state.readOnly, false, manifest.id);
+    if (manifest.id !== "folding")
+      assert.equal(f.view.state.field(foldState), field, manifest.id);
+    enabled.add(manifest.id);
+    await f.configure(settingsFor(enabled));
+    assert.equal(f.view.state.facet(indentUnit), "   ", manifest.id);
+  }
+  await f.root.dispose();
+});
+
+test("fold gutter refreshes on configuration and tab width without requiring an edit", async () => {
+  const f = fixture();
+  await f.configure({ folding: { enabled: true, config: {} } });
+  const initial = f.view.state;
+  await f.configure({ folding: { enabled: true, config: { heading: false } } });
+  assert.equal(
+    foldingChanged({ startState: initial, state: f.view.state }),
+    true,
+  );
+  assert.equal(
+    foldingChanged({ startState: f.view.state, state: f.view.state }),
+    false,
+  );
+  const settings = new Compartment();
+  const first = EditorState.create({
+    extensions: settings.of(EditorState.tabSize.of(4)),
+  });
+  const second = first.update({
+    effects: settings.reconfigure(EditorState.tabSize.of(2)),
+  }).state;
+  assert.equal(foldingChanged({ startState: first, state: second }), true);
+  await f.root.dispose();
 });

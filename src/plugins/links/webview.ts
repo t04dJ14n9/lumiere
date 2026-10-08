@@ -34,6 +34,11 @@ export function linkAt(
 export const linksWebview: Plugin = {
   name: "links",
   inject: { required: ["editor", "livePreview", "commands", "rpc"] },
+  // Link options are consumed by the host on each request. Keep this view's
+  // listeners and initial-navigation lifetime when only those options change.
+  reconfigure() {
+    return true;
+  },
   apply(ctx) {
     const view = ctx.editor.view;
     const navigate = ({ fragment, at }: { fragment: string; at?: number }) => {

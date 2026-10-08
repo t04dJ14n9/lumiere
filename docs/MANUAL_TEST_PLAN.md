@@ -385,3 +385,59 @@ pipes, `<br>`, formatting, links, footnotes and missing trailing cells.
   Formatting while a cell is active; text remains in the outer document.
 - Disable/re-enable Tables: source replaces widgets; no menus, drag handlers or
   cell selection survives. Test Add File Property while a cell is focused.
+
+## Composition fixes (§5.10) — owner acceptance, not run
+
+Use `Core.md` in the disposable vault/profile described above. Enable lineNumbers
+and Vim explicitly where indicated; both are disabled by default. Record the
+final settings, result and any console errors for each scenario.
+
+1. **Gutter order and fresh-start equivalence.** Enable lineNumbers and folding;
+   fold a heading. Toggle lineNumbers off/on, then folding off/on, then repeat
+   in reverse order. Expected: numbers always left of fold markers, one gutter
+   of each kind, no duplicate commands. Disabling folding reveals all text;
+   enabling restores its saved ranges. Reload at the same final settings and
+   compare appearance with the toggled view.
+2. **Live editor settings and independent panels.** Open Core.md twice; use
+   distinct selections, scroll positions and folds. Set editor.useTabs=false
+   and editor.tabSize=2, then true/8, then restore true/4. Insert/indent a list
+   item and inspect its actual whitespace in the text editor. Expected: settings
+   change without reopening, indentation guides and tab widths agree, selections,
+   text and folds remain intact. Repeat with a second folder's resource override;
+   only the affected resource uses that override. Toggle all features off/on:
+   none may reset the chosen core tab settings.
+3. **Folding reconfiguration without edits.** Add headings and an indented
+   paragraph containing mixed tabs/spaces. Leave one section folded. Change
+   folding.heading and folding.indent independently, without typing or scrolling.
+   Expected: available gutter markers refresh immediately; current folded ranges
+   remain folded and can be unfolded. Change tabSize and inspect indent-fold
+   boundaries. Reload and compare the available markers at identical settings.
+4. **Late feature state and panel isolation.** Use two views with different
+   folded sections and normal/nested callout disclosure states. Disable folding
+   and callouts, reload with them disabled, then enable them. Expected: each
+   panel restores its own state; one feature's toggle does not clear the other's
+   state. Repeat toggles without edits and confirm no duplicate disclosure
+   listeners (one click changes state once). Schema rejection/unknown keys and
+   explicit restore into mounted disclosures are covered by unit tests. Rename
+   view-transfer UI acceptance remains blocked on the future inlineTitle unit.
+5. **Renderer and key precedence.** Add a Mermaid fence, an ordinary code fence,
+   math, a callout, footnotes and a table. Toggle diagrams/codeBlocks in both
+   orders. Expected: Mermaid uses diagrams whenever enabled, general code only
+   when diagrams is disabled; other widgets keep their feature renderer. Enable
+   Vim and tables in both orders: cell Tab/Enter/boundary navigation still runs
+   before Vim, and host save/undo keeps priority. Compare after reload.
+6. **Every catalog feature/config.** Toggle each of tables, properties,
+   pagePreview, embeds, tasks, footnotes, callouts, diagrams, math, codeBlocks,
+   links, formatting, lineNumbers, folding, indentGuides, spellcheck, autoPair,
+   smartLists and Vim off/on, then repeat a mixed order. Test the commands from
+   its section. Expected: only the disabled feature's registrations disappear;
+   no duplicates, stale processors or changes to unrelated folds. Change
+   autoPair's two booleans, properties.display through all three values and
+   links.folderNote/useWikilinks/newLinkFormat, ending at identical settings
+   in a fresh panel. Compare behavior (link creation/index options still have
+   their documented later-phase limits). Spellcheck must return to the editor
+   default when disabled. Property draft behavior is also checked in its own
+   section; switching to hidden/source intentionally removes the sheet UI.
+
+These scenarios supplement the retired source cases; no retired test was revived
+and the automated smoke suites were not expanded.
