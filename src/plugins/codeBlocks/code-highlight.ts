@@ -37,11 +37,7 @@ export function tokenRanges(
       const from = offset;
       visit(tokens.content);
       if (offset > from) {
-        const aliases = Array.isArray(tokens.alias)
-          ? tokens.alias
-          : tokens.alias
-            ? [tokens.alias]
-            : [];
+        const aliases = tokenAliases(tokens.alias);
         result.push({
           from,
           to: offset,
@@ -52,4 +48,11 @@ export function tokenRanges(
   };
   visit(Prism.tokenize(source, grammar));
   return result;
+}
+
+function tokenAliases(alias: string | string[] | undefined): string[] {
+  if (Array.isArray(alias)) {
+    return alias;
+  }
+  return alias ? [alias] : [];
 }

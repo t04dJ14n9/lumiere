@@ -1788,3 +1788,19 @@ consumers; owner acceptance remains unrun.
 Known issues: remaining 22 backlog files, README/manual inventory and ordered
 readability completion checks; Phase 4 remaining plugins, Claude's incomplete
 Phase 5 handoff, then Phases 6–8 as specified above.
+
+### Readability pass progress — Code Blocks, 2026-10-08
+
+Delivered: selected-fence discovery/caching is separate from lazy highlighter
+loading and viewport traversal; render-pass controls, copy and source reveal have
+named operations. Source-offset mapping takes named coordinates; Prism aliases
+use explicit branching. Added a fence-boundary selection unit without changing
+existing offset assertions. README/manual inventory updated.
+Backlog: 22 → 18 distinct files; long-function 20 → 18; complexity 9 → 8;
+parameters 4 → 3; nested-ternary 6 → 5. No new exceptions or behavior fixes.
+Checks: `pnpm check` 338/338; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-codeblocks-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: remaining 18 backlog files, README/manual inventory and ordered
+readability completion checks; remaining Phase 4 plugins; Claude's incomplete
+Phase 5 handoff and Phases 6–8 as specified above.

@@ -613,3 +613,9 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   Toggle at a caret inside formatted text, on a plain word, with delimiters
   selected, and across multiple selections. Repeat in table cells and read-only
   views; confirm list numbering, heading removal, line moves and undo. Not run here.
+
+- **Code Blocks:** rerun highlighted fences, indented code, Copy and click-to-
+  source scenarios. Select the final fence character and the following line start;
+  verify reveal/highlighting boundaries. Type with IME, scroll between fences,
+  and disable/re-enable while Prism loads. No stale controls should remain.
+  Not run by the agent.

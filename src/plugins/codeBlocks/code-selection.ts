@@ -15,16 +15,30 @@ export function codePosition(
   const selected = before.toString().split("\n");
   const row = selected.length - 1;
   const column = selected[row]!.length;
-  return codeOffset(source, code.textContent ?? "", row, column, fenced);
+  return codeOffset({
+    source,
+    text: code.textContent ?? "",
+    row,
+    column,
+    fenced,
+  });
 }
 
-export function codeOffset(
-  source: string,
-  text: string,
-  row: number,
-  column: number,
-  fenced: boolean,
-): number | undefined {
+interface CodeCoordinates {
+  source: string;
+  text: string;
+  row: number;
+  column: number;
+  fenced: boolean;
+}
+
+export function codeOffset({
+  source,
+  text,
+  row,
+  column,
+  fenced,
+}: CodeCoordinates): number | undefined {
   const lines = source.split("\n");
   const lineIndex = row + (fenced ? 1 : 0);
   const raw = lines[lineIndex];

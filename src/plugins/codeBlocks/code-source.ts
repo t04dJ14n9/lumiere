@@ -1,5 +1,6 @@
 import { syntaxTree } from "@codemirror/language";
-import { StateEffect, type Range } from "@codemirror/state";
+import type { SyntaxNodeRef } from "@lezer/common";
+import { StateEffect, type EditorState, type Range } from "@codemirror/state";
 import {
   Decoration,
   ViewPlugin,
@@ -41,46 +42,11 @@ class CodeSource {
             return;
           }
           visited.add(node.from);
-          const active = view.state.selection.ranges.some(
-            (range) =>
-              range.to >= node.from &&
-              (range.from < node.to ||
-                (range.from === node.to &&
-                  view.state.doc.lineAt(node.to).from < node.to)),
-          );
-          if (!active) {
+          const highlighted = this.highlightFence(view, node);
+          if (!highlighted) {
             return false;
           }
-          const info = node.node.getChild("CodeInfo");
-          const code = node.node.getChild("CodeText");
-          const language =
-            info &&
-            /^[\w-]+/.exec(view.state.sliceDoc(info.from, info.to))?.[0];
-          if (!code || !language) {
-            return false;
-          }
-          if (!this.tokenize) {
-            if (!this.loading) {
-              this.loading = true;
-              void import("./code-highlight")
-                .then((module) => {
-                  this.tokenize = module.tokenRanges;
-                  if (!this.destroyed && view.dom.isConnected) {
-                    view.dispatch({ effects: ready.of(null) });
-                  }
-                })
-                .catch(() => {
-                  this.loading = false;
-                });
-            }
-            return false;
-          }
-          const text = view.state.sliceDoc(code.from, code.to);
-          const previous = this.cache.get(node.from);
-          const cached =
-            previous?.text === text && previous.language === language
-              ? previous
-              : { text, language, tokens: this.tokenize(text, language) };
+          const { code, cached } = highlighted;
           next.set(node.from, cached);
           for (const token of cached.tokens) {
             const from = code.from + token.from;
@@ -97,6 +63,47 @@ class CodeSource {
     }
     this.cache = next;
     this.decorations = Decoration.set(marks, true);
+  }
+
+  private highlightFence(view: EditorView, node: SyntaxNodeRef) {
+    if (!fenceSelected(view.state, node)) {
+      return undefined;
+    }
+    const info = node.node.getChild("CodeInfo");
+    const code = node.node.getChild("CodeText");
+    const language =
+      info && /^[\w-]+/.exec(view.state.sliceDoc(info.from, info.to))?.[0];
+    if (!code || !language) {
+      return undefined;
+    }
+    if (!this.tokenize) {
+      this.loadHighlighter(view);
+      return undefined;
+    }
+    const text = view.state.sliceDoc(code.from, code.to);
+    const previous = this.cache.get(node.from);
+    const cached =
+      previous?.text === text && previous.language === language
+        ? previous
+        : { text, language, tokens: this.tokenize(text, language) };
+    return { code, cached };
+  }
+
+  private loadHighlighter(view: EditorView): void {
+    if (this.loading) {
+      return;
+    }
+    this.loading = true;
+    void import("./code-highlight")
+      .then((module) => {
+        this.tokenize = module.tokenRanges;
+        if (!this.destroyed && view.dom.isConnected) {
+          view.dispatch({ effects: ready.of(null) });
+        }
+      })
+      .catch(() => {
+        this.loading = false;
+      });
   }
 
   update(update: ViewUpdate): void {
@@ -132,3 +139,15 @@ export const codeSource = ViewPlugin.fromClass(CodeSource, {
     },
   },
 });
+
+export function fenceSelected(
+  state: EditorState,
+  node: { from: number; to: number },
+): boolean {
+  return state.selection.ranges.some(
+    (range) =>
+      range.to >= node.from &&
+      (range.from < node.to ||
+        (range.from === node.to && state.doc.lineAt(node.to).from < node.to)),
+  );
+}
