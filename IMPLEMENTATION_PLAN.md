@@ -1390,3 +1390,28 @@ remaining eslint.legacy.mjs entries; remaining plugin READMEs, kernel comments
 and manual regression inventory. Remove the exhausted backlog and run ordered
 readability completion checks before remaining Phase 4 and Phases 5–8. Those
 phase deliverables are unchanged from the Tables record. Owner acceptance unrun.
+
+### Readability pass progress — Footnote metadata, 2026-10-08
+
+Delivered: extraction now reads definitions, collects reference candidates and
+assigns reading-order numbers as separate stages. `footnote-definitions.ts`
+owns syntax exclusion and continuation/source segments; `footnote-candidates.ts`
+owns tree collection and quote/list-prefix normalization. Candidate collection
+receives only definition ranges. Added segment-boundary and unmappable-candidate/
+duplicate-definition units; all original footnote assertions remain intact.
+
+Backlog since preceding unit → now: max-lines-per-function 38 → 37; complexity
+20 → 19; max-params 7 → 7; no-nested-ternary 12 → 12; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 52 → 51. No added lint exceptions.
+Unit count 238 → 240. Checks: `pnpm check` 240/240; `pnpm test:browser` 14/14.
+Native not rerun: pure extraction rewrite, no native wiring change. Logs:
+`docs/checks/readability-footnote-metadata-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none. No behavior bug fixed.
+Manual Footnotes regression scenarios above cover consumers; not run by the agent.
+
+Known issues / exact remaining work: the 51 files still listed in
+eslint.legacy.mjs, including the kernel proxy/event/schema backlog, remaining
+pure Markdown modules, shared utilities and plugin registrations. Finish all
+remaining plugin READMEs and kernel why-comments, manual inventory and ordered
+completion checks; delete the empty backlog/config block only once all entries
+comply. Remaining Phase 4 plugins and Phases 5–8 remain unchanged and incomplete.
