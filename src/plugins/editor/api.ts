@@ -20,6 +20,10 @@ export interface Menu {
   ): Disposer;
 }
 export interface EditorService {
+  readonly clipboard: {
+    read(): Promise<string>;
+    write(text: string): Promise<void>;
+  };
   mode: "source" | "livePreview";
   readonly folds: Map<string, boolean>;
   readonly view: EditorView;
@@ -51,10 +55,17 @@ declare module "../../kernel/types" {
     editors: Editors;
   }
   interface Events {
-    /** @mode emit */ "editor/modeRestored": (mode: "source" | "livePreview") => void;
+    /** @mode emit */ "editor/modeRestored": (
+      mode: "source" | "livePreview",
+    ) => void;
     /** @mode emit */ "editor/opened": (panel: PanelPort) => void;
     /** @mode emit */ "editor/closed": (panel: PanelPort) => void;
-    /** @mode emit */ "editor/activeChanged": (panel: PanelPort | undefined) => void;
-    /** @mode emit */ "editor/selectionChanged": (panel: PanelPort, hasSelection: boolean) => void;
+    /** @mode emit */ "editor/activeChanged": (
+      panel: PanelPort | undefined,
+    ) => void;
+    /** @mode emit */ "editor/selectionChanged": (
+      panel: PanelPort,
+      hasSelection: boolean,
+    ) => void;
   }
 }

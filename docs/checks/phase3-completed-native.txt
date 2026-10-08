@@ -1,0 +1,71 @@
+
+> vscode-markdown-workbench@0.1.0 test:vscode /Users/t04dj14n9/Code/vscode-markdown-workbench
+> pnpm build && playwright test -c test/vscode/playwright.config.ts
+
+
+> vscode-markdown-workbench@0.1.0 build /Users/t04dj14n9/Code/vscode-markdown-workbench
+> node scripts/build.mjs
+
+
+  dist/extension.js      1.1mb ⚠️
+  dist/extension.js.map  2.4mb
+
+⚡ Done in 78ms
+
+  dist/webview/editor.js       1.2mb ⚠️
+  dist/webview/editor.css      1.3kb
+  dist/webview/editor.js.map   2.6mb
+  dist/webview/editor.css.map  2.2kb
+
+⚡ Done in 52ms
+
+  dist/workers/search.cjs      805b 
+  dist/workers/vault.cjs       801b 
+  dist/workers/search.cjs.map  234b 
+  dist/workers/vault.cjs.map   233b 
+
+⚡ Done in 1ms
+(node:82202) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ WARNING  A 'repository' field is missing from the 'package.json' manifest file.
+Use --allow-missing-repository to bypass.
+ INFO  Files included in the VSIX:
+extension.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ LICENSE.txt [1.04 KB]
+   ├─ package.json [6.14 KB]
+   ├─ readme.md [0.49 KB]
+   └─ dist/
+      ├─ extension.js [1.14 MB]
+      ├─ extension.js.map [2.36 MB]
+      ├─ api/
+      │  └─ types.d.ts [0.01 KB]
+      ├─ webview/
+      │  ├─ editor.css [1.3 KB]
+      │  ├─ editor.css.map [2.21 KB]
+      │  ├─ editor.js [1.22 MB]
+      │  └─ editor.js.map [2.61 MB]
+      └─ workers/
+         ├─ search.cjs [0.79 KB]
+         ├─ search.cjs.map [0.23 KB]
+         ├─ vault.cjs [0.78 KB]
+         └─ vault.cjs.map [0.23 KB]
+
+ DONE  Packaged: /tmp/markdown-workbench-e2e-7235d867/extension.vsix (16 files, 1.72 MB)
+Testing Code 1.140.0 (/Applications/Visual Studio Code.app/Contents/MacOS/Code) with profile /tmp/markdown-workbench-e2e-7235d867
+
+Running 1 test using 1 worker
+
+(node:82298) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82298) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:82298) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Native: closing all editors
+Native: opening fixture
+Native: waiting for Markdown Workbench webview
+  ✓  1 test/vscode/core.spec.ts:18:5 › isolated installed editor types, saves and performs native document undo (2.7s)
+
+  1 passed (7.5s)

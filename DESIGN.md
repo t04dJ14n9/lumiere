@@ -46,8 +46,9 @@ Goals:
 3. Code that reads well. Each module has one job and states it. Each plugin
    has a short README. No file exceeds about 400 lines (the source's
    `table/controller.ts` at 952 lines must be split). One way to do each thing.
-4. No regressions against the source branch's tested behaviour: 106 unit, 293
-   browser and the Markdown share of 62 installed-VS Code scenarios.
+4. No regressions against the source branch's behaviour: its unit tests still
+   pass where the behaviour exists, and its browser and native scenarios are
+   covered by the owner's computer-use acceptance pass (§21).
 5. A versioned API that lets LLM Wiki (and others) add Query markers, source
    links, actions and code-block renderers without forking the editor.
 
@@ -1313,30 +1314,32 @@ comparison with Obsidian. Record raw samples with each result.
   mode.
 - Host plugins run against `test/support/vscode-fake.ts`.
 
-### 21.2 Browser (`pnpm test:browser`, Playwright, headless Chromium)
+Unit tests are the only automated suite that grows. Pure editing commands
+and CodeMirror state logic are tested on `EditorState` without a browser.
 
-The webview runs against `test/browser/fake-host.ts`, a port of
-`test/browser-host.ts` that speaks the new RPC and runs host plugin halves
-that do not need VS Code. Port all 13 spec files (including both fuzzers and
-their 18,112 generated operations) and add, per feature plugin, a test that
-turning it off shows source and turning it on renders again without reload.
+### 21.2 Smoke suites
 
-### 21.3 Native (`pnpm test:vscode`)
+`pnpm test:browser` (the webview against `test/browser/fake-host.ts`) and
+`pnpm test:vscode` (the VSIX in an isolated `/tmp` profile) are small sanity
+checks that the editor boots, edits, saves and undoes. They are kept passing
+but not expanded. The source branch's browser suites, fuzzers and native
+scenarios are not ported.
 
-As in PDF Workbench: build a VSIX, install it in an isolated profile under
-`/tmp` and drive VS Code with Playwright, plus a probe extension that calls the
-API (including an external plugin with markers and a `links/open` handler).
-Port the Markdown scenarios from human-learning's `test/vscode-e2e`
-(`markdown`, `properties`, `file-title`, `rename-state`, `obsidian-commands`),
-replacing LLM Wiki-specific steps. Close every editor before each test. Run
-native hosts sequentially; set `VSCODE_EXECUTABLE` for Cursor.
+### 21.3 Computer-use acceptance
+
+The owner accepts the extension by using it, with computer use, against
+`docs/MANUAL_TEST_PLAN.md`. The plan is grouped by plugin; each scenario names
+a note in `test/fixtures/vault`, the steps and the expected result. It covers
+the retired source scenarios, every command and setting, turning each plugin
+off and on, two panels of one note, external edits, reload recovery and the
+API through a sample external plugin.
 
 ### 21.4 Obsidian parity
 
 `docs/PARITY.md` holds one row per behaviour in §13–§15: the action, the
-Obsidian 1.13.7 observation (date, how observed), our result and the test that
-pins it. Use a disposable vault (never the owner's). A behaviour is "matched"
-only with a recorded observation and a passing test.
+Obsidian 1.13.7 observation (date, how observed), our result and how it was
+checked. Use a disposable vault (never the owner's). Rows stay "not observed"
+until the owner's computer-use pass compares them with the live reference.
 
 ## 22. Build and toolchain
 
@@ -1403,9 +1406,10 @@ of `dist/` outputs and the docs.
     `SCHEMA.md`) instead of the vault root.
 13. `table/controller.ts` (952 lines) needs splitting into selection,
     keyboard, toolbar/menu and edit projection.
-14. Two known intermittent failures: `table-drag.spec.ts` "a held row can
-    scroll down and back up before its single drop" and the native split
-    footnote undo step. Find their causes rather than retrying.
+14. Two known intermittent failures in the source's (now retired) suites:
+    table row drag with scrolling before a single drop, and the split-view
+    footnote undo step. Include both behaviours in the manual test plan so
+    the computer-use pass checks them.
 
 ## 25. Open questions (recommended defaults in bold)
 

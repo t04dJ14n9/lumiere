@@ -4,6 +4,31 @@ Companion to [DESIGN.md](DESIGN.md). It lists the phases in order, what each
 must deliver, how to check it, and where every source file goes. Section
 numbers such as §12 refer to DESIGN.md.
 
+## Testing policy (changed 7 October 2026, after Phase 3's first record)
+
+The owner will accept the extension by testing it hands-on with computer use.
+Automated testing is therefore **unit tests only**:
+
+- Port a source unit test when it still covers behaviour that exists here.
+  Write unit tests for new logic (kernel, vault resolution, plugin wiring,
+  routing, API) using `test/support/vscode-fake.ts` and in-memory fakes.
+- Do **not** port the source browser suites, native suites or fuzzers. Mark
+  their ledger rows `retired` with the reason "covered by computer-use
+  acceptance (docs/MANUAL_TEST_PLAN.md)".
+- Keep the existing small smoke suites (`pnpm test:browser`, 14 tests;
+  `pnpm test:vscode`, 1 test) as a quick sanity check. Fix them when a change
+  breaks them; do not expand them.
+- Instead of browser and native tests, maintain `docs/MANUAL_TEST_PLAN.md`:
+  scenarios the owner runs with computer use, grouped by plugin. Each has
+  setup (a note in `test/fixtures/vault`), steps and the expected result.
+  Draw them from the retired source scenarios and DESIGN §13–§17; one
+  scenario may cover several retired tests. Add each plugin's scenarios in
+  the phase that delivers the plugin.
+
+This replaces every earlier requirement below to port browser or native
+suites, fuzzers or flaky-test investigations. Phase 3's first record is
+re-judged under this policy.
+
 ## How to work
 
 - Source: `~/Code/human-learning`, branch `claude/markdown-integration`,
@@ -19,16 +44,16 @@ numbers such as §12 refer to DESIGN.md.
   Never edit any human-learning checkout or worktree.
 - Template: `~/Code/vscode-embedPDF`. Copy its toolchain files and adapt them;
   do not change that repository.
-- Port behaviour with its tests. A source test is moved, rewritten for the new
-  API, or retired with a reason in `docs/TEST_LEDGER.md`. It is never dropped
-  silently.
+- Port behaviour with its unit tests (see Testing policy). Every source test
+  has a ledger row in `docs/TEST_LEDGER.md`: ported, rewritten, changed or
+  retired with a reason. None is dropped silently.
 - Keep each phase's tree green. Run checks in this order, never two at once
-  (the browser and native suites load built files):
+  (the smoke suites load built files):
 
   ```sh
   pnpm check            # lint, typecheck, unit tests, contributions check
-  pnpm test:browser
-  pnpm test:vscode      # opens VS Code; only in phases that touch native behaviour
+  pnpm test:browser     # 14-test smoke suite
+  pnpm test:vscode      # 1-test native smoke; opens VS Code; Phase 8 and when native wiring changes
   ```
 
 - At the end of each phase, add a dated record (template at the end) and
@@ -44,7 +69,7 @@ numbers such as §12 refer to DESIGN.md.
 vscode-markdown-workbench/
 ├── AGENTS.md  CLAUDE.md  README.md  DESIGN.md  IMPLEMENTATION_PLAN.md
 ├── API.md  CAPABILITIES.md  CHANGELOG.md  THIRD_PARTY_NOTICES.md  LICENSE
-├── docs/          PARITY.md  TEST_LEDGER.md  images/
+├── docs/          MANUAL_TEST_PLAN.md  PARITY.md  TEST_LEDGER.md  images/
 ├── package.json   pnpm-workspace.yaml  tsconfig*.json  eslint.config.mjs  .vscodeignore
 ├── scripts/       build.mjs  prism.mjs  generate-contributions.ts  third-party-notices.mjs
 │                  measure-editor.ts  test-ledger.mjs
@@ -64,10 +89,9 @@ vscode-markdown-workbench/
 └── test/
     ├── support/   vscode-fake.ts  memory-fs.ts
     ├── unit/      kernel/  shared/  markdown/  contributions.test.ts
-    ├── browser/   fake-host.ts  harness.ts  page-server.ts  setup.ts  *.spec.ts
-    ├── vscode/    playwright.config.ts  global-setup.ts  workbench.ts  *.spec.ts
-    │              probe-extension/
-    └── fixtures/  vault/ (.obsidian marker)  media/  performance/
+    ├── browser/   smoke suite only (existing 14 tests)
+    ├── vscode/    native smoke only (existing 1 test)
+    └── fixtures/  vault/ (.obsidian marker; notes used by MANUAL_TEST_PLAN.md)  media/
 ```
 
 Plugin unit tests sit beside their code (`src/plugins/<id>/*.test.ts`); the
@@ -156,19 +180,22 @@ the source's resolution behaviour behind the `VaultIndex` interface) and
 - `resources` (§12.4).
 - Host and webview bootstraps and presets: `minimal` and `obsidian` (which,
   at this phase, equals the core plugins).
-- Browser harness: `test/browser/fake-host.ts` speaking the new RPC.
+- Browser harness: `test/browser/fake-host.ts` speaking the new RPC (done;
+  smoke suite only).
 
-Port the browser suites that test core behaviour, splitting
-`browser.spec.ts` by feature as you go: `integration.spec.ts`,
-`view-state.spec.ts`, `keystroke-fuzz.spec.ts`, `command-fuzz.spec.ts`, and
-the core parts of `browser.spec.ts` (sync, selection, reveal, Escape,
-rendered-position clicks, clipboard routing). The fuzzers must keep their
-operation counts (18,112 edits, 128 Vim sequences; Vim cases run once phase 4
-adds `vim`).
+Still to finish (from the first Phase 3 record): source block rendering
+through the new registry and `render` service, clipboard routing,
+structural block motion (ArrowUp/Down over blocks, Escape out of block
+source), and the remaining view-transfer behaviour.
 
-Accept: the ported suites pass; the `minimal` preset edits, saves and undoes
-in the browser harness; a kernel-level test shows `livePreview` off gives
-plain source with no widget.
+Accept: the items above work; unit tests cover the core logic you can test
+without a browser (document session and authority, undo groups, flush and
+save ordering, view-state capture and restore, reveal rule, renderer registry
+add and remove, Source mode switching); a kernel-level test shows
+`livePreview` off gives plain source with no widget; the smoke suites pass;
+`docs/MANUAL_TEST_PLAN.md` exists with core scenarios (typing, save, undo and
+redo, two panels of one note, external edit, CRLF, Source mode, reveal around
+the caret, Escape and arrow motion over blocks, window reload recovery).
 
 ## Phase 4 — Feature plugins
 
@@ -194,15 +221,20 @@ so that dependencies exist first:
 For each plugin:
 
 - manifest, README, settings and contributions through the generator;
-- its browser specs ported (`table.spec.ts`, `table-drag.spec.ts`,
+- unit tests for its logic (ported source unit tests, plus new ones for code
+  that has none);
+- a kernel-level toggle unit test: disabling the plugin removes its
+  renderers, post-processors, commands and RPC handlers, and enabling it adds
+  them again;
+- its section in `docs/MANUAL_TEST_PLAN.md`, drawn from its retired browser
+  and native scenarios (`table.spec.ts`, `table-drag.spec.ts`,
   `property-*.spec.ts`, `file-title.spec.ts`, `suggest.spec.ts`,
-  `source-links.spec.mts` rewritten for `links/open`);
-- a toggle test: off shows source and removes its commands and keys; on
-  renders again without reloading the webview.
+  `source-links.spec.mts` and the native specs), including turning the plugin
+  off and on in Settings.
 
-Accept: all browser scenarios ported or retired with reasons;
-`table-drag.spec.ts` passes 20 consecutive runs (find the cause of the
-intermittent failure; DESIGN §24.14).
+Accept: every plugin above is delivered with the items listed; `pnpm check`
+and the smoke suites pass; every browser and native ledger row is retired
+with the policy reason and reflected in the manual test plan.
 
 ## Phase 5 — Vault index and host features
 
@@ -216,22 +248,31 @@ intermittent failure; DESIGN §24.14).
   (with unlinked mentions and status bar count), `outgoingLinks`, `tags` view.
 - `linkUpdates`, `quickSwitcher`, `wordCount`.
 
-Accept: link-resolution table tests for each step of DESIGN §12.3; a
-10,000-note generated vault indexes without blocking the host for more than
-50 ms at a time and restarts warm within budget (§20); a rename test rewrites
-links in other notes, keeps aliases and subpaths, and is undone by one undo.
+Accept: link-resolution table tests for each step of DESIGN §12.3; unit
+tests for incremental re-resolution, persistence round trip and the
+open-document overlay (in-memory file system); a unit test that a rename
+produces one `WorkspaceEdit` rewriting links in other notes while keeping
+aliases and subpaths; a script (`scripts/measure-vault.ts`) that indexes a
+generated 10,000-note vault and reports the longest host block and warm-start
+time, with results in the phase record; manual test plan sections for the
+views, quick switcher, rename and word count.
 
 ## Phase 6 — Commands, settings and Obsidian parity pass
 
-- Every command in DESIGN §14 is registered, routed and tested in the browser
-  (webview half) and by one native smoke test per plugin.
+- Every command in DESIGN §14 is registered and routed. Unit tests check that
+  each manifest command maps to a registered webview or host command, and
+  test the pure editing commands (formatting, headings, lists, swap lines) on
+  `EditorState` without a browser.
 - Every setting in DESIGN §15 exists with Obsidian's default and is read
   through the plugin config.
-- Confirm each "verify" key binding in Obsidian 1.13.7 before binding it.
-- Start `docs/PARITY.md` (DESIGN §21.4) with one row per behaviour.
+- Leave every "verify" key binding unbound and list it in the manual test
+  plan for the owner to confirm in Obsidian.
+- Start `docs/PARITY.md` (DESIGN §21.4) with one row per behaviour, status
+  "not observed" until the owner's computer-use pass.
 
-Accept: `pnpm check` confirms contributions; parity rows exist for every
-behaviour in §13–§15, with at least the "verify" bindings observed.
+Accept: `pnpm check` confirms contributions and command routing; every
+command and setting appears in the manual test plan; parity rows exist for
+every behaviour in §13–§15.
 
 ## Phase 7 — Public API v1
 
@@ -242,35 +283,32 @@ behaviour in §13–§15, with at least the "verify" bindings observed.
   plugin that sets markers and claims a link scheme.
 - `dist/api/` declarations from the same typechecked source.
 
-Accept: the probe extension in `test/vscode/probe-extension` exercises every
-API member, including two panels of one note, a dirty document, a stale
-selection, plugin disable and re-enable, and marker mapping across edits.
+Accept: unit tests drive the API facade against `vscode-fake` and cover every
+member, including two panels of one note, a dirty document, a stale
+selection, plugin disable and re-enable, external plugin isolation (no access
+to internal services) and marker mapping across edits. No probe extension.
 
-## Phase 8 — Native suite, packaging and documentation
+## Phase 8 — Packaging, documentation and hand-over for acceptance
 
-- Port the Markdown native scenarios (`markdown`, `properties`, `file-title`,
-  `rename-state`, `obsidian-commands`) into `test/vscode`, with the isolated
-  profile harness from PDF Workbench. Close every editor before each test.
-  Find the cause of the split-footnote undo intermittent failure.
 - `pnpm package` produces a VSIX; `.vscodeignore` allowlist;
   `THIRD_PARTY_NOTICES.md`.
-- README, CAPABILITIES.md and CHANGELOG.md, with screenshots taken from
-  generated fixtures in an isolated profile.
-- Run the native suite in VS Code and, when the owner provides a signed-in
-  profile, in Cursor.
+- Run the native smoke test once against the packaged VSIX.
+- README, API.md, CAPABILITIES.md and CHANGELOG.md. Screenshots are optional.
+- Finish `docs/MANUAL_TEST_PLAN.md`: every plugin, command and setting, the
+  API example from API.md (a sample external plugin under
+  `test/fixtures/sample-plugin/` the owner can install), and how to install
+  the VSIX into an isolated profile for testing.
 
-Accept: native suite passes twice in a row in VS Code; the VSIX installs in a
-fresh profile and opens the fixture vault; documentation matches behaviour.
+Accept: the VSIX builds and the native smoke passes against it; the ledger has
+no `todo` rows; the manual test plan covers DESIGN §13–§18; documentation
+matches behaviour.
 
-## Phase 9 — Parity audit and performance
+## Phase 9 — Owner acceptance (not Codex)
 
-- Fill `docs/PARITY.md` against the live reference for every row.
-- Measure the budgets in DESIGN §20 and record the raw samples.
-- Prototype the import-map build for webview modules (DESIGN §18.5) behind a
-  test; do not ship the contribution point.
-
-Accept: every parity row is matched, deliberately divergent (DESIGN §15.3) or
-filed as a known gap in CAPABILITIES.md.
+The owner tests the VSIX with computer use against `docs/MANUAL_TEST_PLAN.md`
+and fills `docs/PARITY.md` against the live Obsidian reference. Fixes found
+there become follow-up work. Performance measurement (DESIGN §20) and the
+webview-module import-map prototype (§18.5) are deferred.
 
 ## Source → destination map
 
@@ -375,12 +413,11 @@ file's parts go to the listed places.
 | `test/*.test.ts` | `test/unit/**` or beside the owning plugin |
 | `test/browser-host.ts` | `test/browser/fake-host.ts` (new RPC) |
 | `test/editor-harness.ts`, `page-server.ts`, `browser-setup.ts` | `test/browser/{harness,page-server,setup}.ts` |
-| `test/browser.spec.ts` | split by feature across `test/browser/*.spec.ts` |
-| other `test/*.spec.ts`, `source-links.spec.mts` | `test/browser/` (source links rewritten for `links/open`) |
-| `test/vscode-integration.ts` | `test/vscode/document.spec.ts` |
-| `test/performance-fixtures.mts`, `scripts/measure-editor.ts` | `test/fixtures/performance/`, `scripts/measure-editor.ts` |
-| `test/fixtures/*` | `test/fixtures/media/` |
-| `vscode-extension/test/vscode-e2e/{markdown,properties,file-title,rename-state,obsidian-commands}.spec.ts` | `test/vscode/*.spec.ts` (LLM Wiki steps removed) |
+| `test/*.spec.ts`, `source-links.spec.mts` (browser) | not ported; scenarios go into `docs/MANUAL_TEST_PLAN.md` |
+| `test/vscode-integration.ts` | not ported; its document-session cases become unit tests against `vscode-fake` |
+| `test/performance-fixtures.mts`, `scripts/measure-editor.ts` | deferred (Phase 9) |
+| `test/fixtures/*` | `test/fixtures/media/` (for manual-test notes) |
+| `vscode-extension/test/vscode-e2e/{markdown,properties,file-title,rename-state,obsidian-commands}.spec.ts` | not ported; scenarios go into `docs/MANUAL_TEST_PLAN.md` |
 | `vscode-extension/test/vscode-e2e/fixtures/test-vault` | `test/fixtures/vault` (add `.obsidian/`; remove LLM Wiki files) |
 | `scripts/build.mjs`, `prism.mjs` | `scripts/build.mjs` (all outputs), `scripts/prism.mjs` |
 
@@ -543,3 +580,34 @@ feature phases depend on the unfinished engine integration; they were not
 started. Next: finish Phase 3's source interaction ports and fuzz harnesses,
 retain their original operation counts, run the ordered checks, then proceed
 to Phase 4. This record is not a claim of an external/environmental blocker.
+
+### Phase 3 (completed) — Core plugins, 2026-10-07
+
+Delivered: core code/HTML/rule block rendering through the registry and shared
+render service; widget-owned async render-pass disposal; renderer precedence
+for feature overrides; structural arrow motion and EOF-safe Escape; editor
+clipboard service over validated host RPC; persistence on mode reconfiguration.
+Added unit coverage for registry add/remove, kernel disposal, Source switching,
+reveal boundaries, block motion, clipboard RPC, version-checked view capture,
+independent panels, fold replacement and clamped selection/scroll restoration.
+Added a disposable core vault fixture and docs/MANUAL_TEST_PLAN.md. Included the
+owner's AGENTS.md, DESIGN.md and implementation/testing-policy edits unchanged.
+
+Checks: `pnpm check` (144 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, packaged extension in isolated /tmp profile).
+Logs: docs/checks/phase3-completed-{check,browser,native}.txt.
+Ledger: 83/8/2/340/15 (ported/rewritten/changed/retired/todo), total 448.
+All 340 browser/native rows, including previously ported smoke scenarios and
+fuzzers, are retired with the owner's policy reason. Existing smoke tests
+remain unchanged; remaining unit rows belong to later feature work.
+
+Deviations from DESIGN.md: clipboard is exposed on the editor service; focused
+property routing and HTML conversion remain owned by their Phase 4 plugins.
+At EOF Escape uses the preceding line; a block occupying the whole document
+has no outside position and the command falls through. Feature renderer
+registrations take precedence over basic core renderers. No Obsidian observation
+or fuzz-count claim is made. Temporary per-panel vault snapshots remain until
+Phase 5, as recorded previously.
+Known issues: owner manual acceptance is not run. Advanced block widgets,
+rename orchestration, properties clipboard and folding controls require their
+Phase 4 plugins; core transfer primitives and generic rendering are ready.

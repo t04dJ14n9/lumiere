@@ -3,4 +3,11 @@
 Core `editor` plugin. Its registrations belong to the plugin context and are
 removed on disposal. See DESIGN.md for its service and lifecycle contract.
 
-Phase 3 implementation and regression port are in progress; no parity claim yet.
+Core Phase 3 is implemented; owner visual acceptance is pending.
+
+The editor service exposes host-mediated clipboard read/write for feature
+menus. Native CodeMirror clipboard events retain source text; structured
+properties and HTML conversion belong to their feature plugins. View transfer
+flushes first, rejects a moving document version, and retains the old source
+identity to remap disclosure keys after rename. Unit tests cover independent
+panel captures, backward selections, fold replacement and scroll restoration.

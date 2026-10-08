@@ -9,6 +9,7 @@ import type {} from "../dialect/api";
 import type { EditorService } from "./api";
 import { protocol, viewState } from "./protocol";
 import type { Infer } from "../../kernel";
+import { createClipboard } from "./clipboard";
 import { createViewState } from "./view-state";
 export const editorWebview: Plugin<{
   source: string;
@@ -34,7 +35,10 @@ export const editorWebview: Plugin<{
           ctx.markdown.language(),
           drawSelection(),
           EditorView.lineWrapping,
-          EditorView.contentAttributes.of({ "aria-label": "Markdown content", spellcheck: "true" }),
+          EditorView.contentAttributes.of({
+            "aria-label": "Markdown content",
+            spellcheck: "true",
+          }),
           Prec.low(keymap.of(defaultKeymap)),
           EditorView.updateListener.of((update) => {
             if (update.selectionSet || update.focusChanged)
@@ -49,6 +53,7 @@ export const editorWebview: Plugin<{
     ctx.effect(() => ctx.document.attach(view));
     const editor: EditorService = {
       view,
+      clipboard: createClipboard(ctx.rpc),
       folds,
       get mode() {
         return mode;
@@ -67,9 +72,12 @@ export const editorWebview: Plugin<{
             keymap: Prec.default,
             base: Prec.low,
           }[options?.slot ?? "keymap"];
-        view.dispatch({ effects: StateEffect.appendConfig.of(compartment.of(wrap(extension))) });
+        view.dispatch({
+          effects: StateEffect.appendConfig.of(compartment.of(wrap(extension))),
+        });
         return () => {
-          if (view.dom.isConnected) view.dispatch({ effects: compartment.reconfigure([]) });
+          if (view.dom.isConnected)
+            view.dispatch({ effects: compartment.reconfigure([]) });
         };
       },
     };
@@ -77,7 +85,13 @@ export const editorWebview: Plugin<{
     const openMenu = createMenu();
     ctx.provide("menu", {
       open(owner, items, point, label) {
-        return openMenu(owner, items, point, (message) => ctx.logger.error(message), label);
+        return openMenu(
+          owner,
+          items,
+          point,
+          (message) => ctx.logger.error(message),
+          label,
+        );
       },
     });
     const status = document.createElement("div");
@@ -139,7 +153,12 @@ export const editorWebview: Plugin<{
     ctx.effect(() =>
       editor.extend(
         EditorView.updateListener.of((update) => {
-          if (update.selectionSet || update.docChanged) config.persist?.(capture());
+          if (
+            update.selectionSet ||
+            update.docChanged ||
+            update.transactions.some((tr) => tr.reconfigured)
+          )
+            config.persist?.(capture());
         }),
       ),
     );
@@ -158,8 +177,12 @@ export const editorWebview: Plugin<{
     }
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "reveal", ({ from, to, focus }) => {
-        if (from > to || to > view.state.doc.length) throw new Error("Invalid selection");
-        view.dispatch({ selection: { anchor: from, head: to }, scrollIntoView: true });
+        if (from > to || to > view.state.doc.length)
+          throw new Error("Invalid selection");
+        view.dispatch({
+          selection: { anchor: from, head: to },
+          scrollIntoView: true,
+        });
         if (focus) view.focus();
         return true;
       }),

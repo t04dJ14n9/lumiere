@@ -4,10 +4,13 @@ import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
 import { documentTree } from "./document-tree";
 import type { BlockRenderer, RenderBlock } from "./api";
-export const blockIndex = StateField.define<(RenderBlock & { renderer: BlockRenderer })[]>({
+export const blockIndex = StateField.define<
+  (RenderBlock & { renderer: BlockRenderer })[]
+>({
   create: (state) => index(state),
   update(value, tr) {
-    return tr.docChanged || tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers)
+    return tr.docChanged ||
+      tr.startState.facet(blockRenderers) !== tr.state.facet(blockRenderers)
       ? index(tr.state)
       : value;
   },
@@ -16,7 +19,9 @@ function index(state: Parameters<typeof revealed>[0]) {
   const blocks: (RenderBlock & { renderer: BlockRenderer })[] = [];
   state.field(documentTree).iterate({
     enter(node) {
-      const renderer = state.facet(blockRenderers).find((r) => r.match(node, state));
+      const renderer = [...state.facet(blockRenderers)]
+        .reverse()
+        .find((r) => r.match(node, state));
       if (renderer) {
         blocks.push({
           from: node.from,
@@ -80,12 +85,20 @@ export function blockDecorations(report: (error: unknown) => void) {
   const build = (state: Parameters<typeof revealed>[0]): DecorationSet =>
     Decoration.set(
       state.field(blockIndex).flatMap((block) => {
-        if (block.renderer.editing === "reveal" && revealed(state, block.from, block.to)) return [];
+        if (
+          block.renderer.editing === "reveal" &&
+          revealed(state, block.from, block.to)
+        )
+          return [];
         try {
           return [
             Decoration.replace({
               block: true,
-              widget: new GuardedWidget(block, block.renderer.widget(block), report),
+              widget: new GuardedWidget(
+                block,
+                block.renderer.widget(block),
+                report,
+              ),
             }).range(block.from, block.to),
           ];
         } catch (error) {

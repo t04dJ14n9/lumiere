@@ -22,8 +22,10 @@ that everything is a plugin. Read [DESIGN.md](DESIGN.md) and
   Compare in a disposable vault, never the owner's.
 - Read the source from `~/Code/human-learning` at commit `ff3a902e`; never
   modify that repository or its worktrees.
-- Every source test is ported, rewritten or retired with a reason in
-  `docs/TEST_LEDGER.md`.
+- Automated tests are unit tests only. Do not port the source's browser or
+  native suites; record them as retired in `docs/TEST_LEDGER.md` and cover
+  their behaviour in `docs/MANUAL_TEST_PLAN.md`, which the owner runs with
+  computer use. See "Testing policy" in IMPLEMENTATION_PLAN.md.
 
 ## Checks
 
@@ -31,8 +33,8 @@ Run before committing, in this order:
 
 ```sh
 pnpm check
-pnpm test:browser
-pnpm test:vscode   # opens a VS Code window
+pnpm test:browser  # small smoke suite
+pnpm test:vscode   # one native smoke test; opens a VS Code window; Phase 8 or when native wiring changes
 ```
 
 Commit at the end of each phase with its record in IMPLEMENTATION_PLAN.md.
