@@ -73,35 +73,32 @@ export class Context {
         if (Reflect.has(target, key) || typeof key !== "string") {
           return Reflect.get(target, key, receiver);
         }
-        target.assertLive();
-        const name = key as keyof Services;
-        if (
-          !fiber?.definition.inject?.required?.includes(name) &&
-          !fiber?.definition.inject?.optional?.includes(name)
-        ) {
-          throw new KernelError(
-            "UndeclaredService",
-            `${fiber?.definition.name ?? "root"} did not inject ${key}`,
-          );
-        }
-        const value = runtime.value(name);
-        if (
-          value &&
-          (typeof value === "object" || typeof value === "function") &&
-          bindCaller in value &&
-          typeof value[bindCaller] === "function"
-        ) {
-          if (!target.bound.has(value)) {
-            target.bound.set(
-              value,
-              (value as CallerBound)[bindCaller](receiver),
-            );
-          }
-          return target.bound.get(value);
-        }
-        return value;
+        return target.readService(key, receiver);
       },
     });
+  }
+  // Service reads need the actual consumer proxy for delegated ownership; cache
+  // by provider identity so replacement never reuses the previous provider's facade.
+  private readService(key: string, receiver: Context): unknown {
+    this.assertLive();
+    const name = key as keyof Services;
+    if (
+      !this.fiber?.definition.inject?.required?.includes(name) &&
+      !this.fiber?.definition.inject?.optional?.includes(name)
+    ) {
+      throw new KernelError(
+        "UndeclaredService",
+        `${this.fiber?.definition.name ?? "root"} did not inject ${key}`,
+      );
+    }
+    const value = this.runtime.value(name);
+    if (isCallerBound(value)) {
+      if (!this.bound.has(value)) {
+        this.bound.set(value, value[bindCaller](receiver));
+      }
+      return this.bound.get(value);
+    }
+    return value;
   }
   static create(
     options: {
@@ -190,13 +187,11 @@ export class Context {
     options?: { prepend?: boolean },
   ): Disposer {
     return this.effect(() =>
-      this.runtime.events.on(
-        name,
-        listener,
-        this.logger,
-        options?.prepend,
-        this.fiber?.definition.name ?? "root",
-      ),
+      this.runtime.events.on(name, listener, {
+        logger: this.logger,
+        prepend: options?.prepend,
+        owner: this.fiber?.definition.name ?? "root",
+      }),
     );
   }
   emit<K extends keyof Events>(
@@ -268,4 +263,13 @@ export class Context {
     this.bound.clear();
     this.runtime.changed();
   }
+}
+
+function isCallerBound(value: unknown): value is CallerBound {
+  return (
+    !!value &&
+    (typeof value === "object" || typeof value === "function") &&
+    bindCaller in value &&
+    typeof value[bindCaller] === "function"
+  );
 }

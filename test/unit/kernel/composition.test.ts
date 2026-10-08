@@ -77,3 +77,21 @@ test("event slots and owner rank survive reversed loading, update and toggles", 
   assert.equal(await root.waterfall("ranked", ""), expected);
   await root.dispose();
 });
+
+test("equal-rank event owners keep lexical order across restart", async () => {
+  const root = Context.create();
+  const plugin = (name: string): Plugin => ({
+    name,
+    apply(ctx) {
+      ctx.on("ranked", (value) => value + name);
+    },
+  });
+  const last = root.plugin(plugin("z"));
+  root.plugin(plugin("a"));
+  await root.settled();
+  assert.equal(await root.waterfall("ranked", ""), "az");
+  await last.update(undefined);
+  await root.settled();
+  assert.equal(await root.waterfall("ranked", ""), "az");
+  await root.dispose();
+});

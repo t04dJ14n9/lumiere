@@ -14,6 +14,8 @@ export class Fiber<C = unknown> {
   error?: unknown;
   config: C;
   context?: Context;
+  // An async apply can outlive disposal or dependency replacement. Only the
+  // current generation may publish services or report its failure as current.
   private generation = 0;
   private stopping?: Promise<void>;
   private dependencies: unknown[] = [];
@@ -92,6 +94,7 @@ export class Fiber<C = unknown> {
     if (this.stopping) {
       return this.stopping;
     }
+    // Invalidate outstanding apply work before awaiting its effect cleanup.
     ++this.generation;
     const ctx = this.context;
     this.context = undefined;

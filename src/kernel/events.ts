@@ -12,10 +12,9 @@ export class EventBus {
   on<K extends keyof Events>(
     name: K,
     run: EventFunction<K>,
-    logger: Logger,
-    prepend = false,
-    owner = "root",
+    options: { logger: Logger; prepend?: boolean; owner?: string },
   ): Disposer {
+    const { logger, prepend = false, owner = "root" } = options;
     const entry = {
       run: run as Listener["run"],
       logger,
@@ -29,7 +28,7 @@ export class EventBus {
       (a, b) =>
         a.slot - b.slot ||
         this.rank(a.owner) - this.rank(b.owner) ||
-        (a.owner < b.owner ? -1 : a.owner > b.owner ? 1 : 0),
+        compareOwners(a.owner, b.owner),
     );
     this.listeners.set(name, list);
     return () => {
@@ -93,4 +92,11 @@ export class EventBus {
     }
     return value;
   }
+}
+
+function compareOwners(left: string, right: string): number {
+  if (left < right) {
+    return -1;
+  }
+  return left > right ? 1 : 0;
 }

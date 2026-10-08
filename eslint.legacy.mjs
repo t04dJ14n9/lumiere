@@ -44,7 +44,6 @@ export default {
   ],
   complexity: [
     "src/host/navigation.ts",
-    "src/kernel/context.ts",
     "src/markdown/html/callouts.ts",
     "src/markdown/metadata/index.ts",
     "src/markdown/properties/edits.ts",
@@ -65,7 +64,6 @@ export default {
   ],
   "max-params": [
     "src/host/navigation.ts",
-    "src/kernel/events.ts",
     "src/markdown/html/html.ts",
     "src/plugins/codeBlocks/code-selection.ts",
     "src/plugins/document/session.ts",
@@ -73,8 +71,6 @@ export default {
     "src/webview/ui/menu.ts",
   ],
   "no-nested-ternary": [
-    "src/kernel/events.ts",
-    "src/kernel/schema.ts",
     "src/markdown/metadata/index.ts",
     "src/markdown/search/canvas.ts",
     "src/markdown/search/query.ts",

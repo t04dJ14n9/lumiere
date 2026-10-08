@@ -59,3 +59,33 @@ test("schema errors identify nested paths and record keys cannot pollute prototy
   assert.equal(Object.getPrototypeOf(value), Object.prototype);
   assert.equal(Object.hasOwn(value, "__proto__"), true);
 });
+
+test("schema bounds keep numeric, array and string measurement and JSON keywords aligned", () => {
+  for (const [schema, lower, upper, valid, short, long] of [
+    [Schema.number().min(2).max(3), "minimum", "maximum", 2, 1, 4],
+    [
+      Schema.array(Schema.string()).min(2).max(3),
+      "minItems",
+      "maxItems",
+      ["a", "b"],
+      ["a"],
+      ["a", "b", "c", "d"],
+    ],
+    [
+      Schema.string().min(2).max(3),
+      "minLength",
+      "maxLength",
+      "ab",
+      "a",
+      "abcd",
+    ],
+  ] as const) {
+    assert.deepEqual(schema.parse(valid), valid);
+    assert.throws(() => schema.parse(short));
+    assert.throws(() => schema.parse(long));
+    assert.equal(schema.toJSONSchema()[lower], 2);
+    assert.equal(schema.toJSONSchema()[upper], 3);
+  }
+  assert.throws(() => Schema.unknown().min(1).parse({ length: 2 }));
+  assert.throws(() => Schema.unknown().max(3).parse(true));
+});

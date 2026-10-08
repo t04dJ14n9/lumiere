@@ -1415,3 +1415,29 @@ pure Markdown modules, shared utilities and plugin registrations. Finish all
 remaining plugin READMEs and kernel why-comments, manual inventory and ordered
 completion checks; delete the empty backlog/config block only once all entries
 comply. Remaining Phase 4 plugins and Phases 5–8 remain unchanged and incomplete.
+
+### Readability pass progress — Kernel, 2026-10-08
+
+Delivered: Context proxy delegates declared-service reads and caller binding to
+named logic; comments explain the actual consumer receiver, provider-identity
+cache and Promise `then` probe. Fiber comments explain generation invalidation
+before awaited cleanup. Event registration uses named owner/logger/slot options;
+owner tie-breaking and schema bound keywords/measurements are explicit helpers.
+Clarified the kernel README's API-boundary responsibility without claiming Phase 7.
+
+Backlog since preceding unit → now: max-lines-per-function 37 → 37; complexity
+19 → 18; max-params 7 → 6; no-nested-ternary 12 → 10; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 51 → 48. Kernel stays at 878 formatted
+production lines, under the unchanged 1,000-line budget. No inline disables added.
+Two schema/event units raise count 240 → 242; existing lifecycle/race assertions
+remain intact. Checks: `pnpm check` 242/242; `pnpm test:browser` 14/14.
+Native not rerun: no native adapter change since Editor's 1/1. Logs:
+`docs/checks/readability-kernel-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none. No behavior bug fixed.
+
+Known issues / exact remaining work: the 48 files still in eslint.legacy.mjs;
+remaining plugin README rewrites and manual regression inventory; delete the
+backlog/config block only after all remaining files comply, then run ordered
+readability completion checks and write its final before/after record. The
+requested kernel why-comments are now done. Remaining Phase 4 plugins and
+Phases 5–8 remain undelivered as specified above; owner manual acceptance unrun.

@@ -51,27 +51,11 @@ export class Schema<T> {
     return this.bound(value, true);
   }
   private bound(value: number, max: boolean): Schema<T> {
-    const key =
-      this.json.type === "number"
-        ? max
-          ? "maximum"
-          : "minimum"
-        : this.json.type === "array"
-          ? max
-            ? "maxItems"
-            : "minItems"
-          : max
-            ? "maxLength"
-            : "minLength";
+    const key = boundKeyword(this.json.type, max);
     return new Schema(
       (v, p) => {
         const parsed = this.read(v, p);
-        const size =
-          typeof parsed === "number"
-            ? parsed
-            : typeof parsed === "string" || Array.isArray(parsed)
-              ? parsed.length
-              : NaN;
+        const size = measuredSize(parsed);
         if (!Number.isFinite(size) || (max ? size > value : size < value)) {
           throw new ValidationError(p, `violates ${key} ${value}`);
         }
@@ -213,4 +197,24 @@ export class Schema<T> {
       { type: "object", additionalProperties: item.toJSONSchema() },
     );
   }
+}
+
+function boundKeyword(type: unknown, maximum: boolean): string {
+  if (type === "number") {
+    return maximum ? "maximum" : "minimum";
+  }
+  if (type === "array") {
+    return maximum ? "maxItems" : "minItems";
+  }
+  return maximum ? "maxLength" : "minLength";
+}
+
+function measuredSize(value: unknown): number {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string" || Array.isArray(value)) {
+    return value.length;
+  }
+  return NaN;
 }
