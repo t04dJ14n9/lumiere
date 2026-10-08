@@ -1140,3 +1140,34 @@ Known issues / exact remaining work:
   and complete handover. No new feature or phase completion is claimed here.
 - Owner acceptance remains unrun; prioritize the table drag/scroll, cell
   projection and two-panel/Vim scenarios in the manual regression section.
+
+### Readability pass progress — Property chips and lists, 2026-10-08
+
+Delivered: chip draft commit/cancel/focus recovery is owned by `chip-draft.ts`;
+chip focus/menu/clipboard registrations stay in `chips.ts` with an options object
+and narrow `chip-actions.ts` contract. List reconciliation, latest-value writes
+and pending-entry removal live in `lists.ts`; input events and scalar normalization
+are separate responsibilities in `list-input.ts` and `list-values.ts`.
+`chip-values.ts` retains duplicate-occurrence matching. Rewrote the Properties
+README to the prescribed template; its earlier nested-vault status remains in
+Phase 4/Phase 5 records. Added owner regression scenarios; not run.
+
+Backlog since preceding unit → now: max-lines-per-function 58 → 56; complexity
+29 → 28; max-params 12 → 11; no-nested-ternary 18 → 17; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 73 → 71. Removed chips/lists entries;
+no added exemptions, inline disables, weakened tests or intentional behavior
+changes. Added two scalar/occurrence units: count 220 → 222.
+Checks: `pnpm check` 222/222, formatting/lint/types/contributions passed;
+`pnpm test:browser` 14/14. Native not run: no native wiring changes.
+Logs: `docs/checks/readability-property-lists-{check,browser}.txt`.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo.
+Deviations: none. No newly discovered behavior bug.
+
+Known issues / exact remaining work: readability remains incomplete. Next are
+properties controls, then editing/fields/form/order/selection/sheet-html/sheet/
+webview; pagePreview/controller; host/workbench, editor and footnotes apply;
+markdown/search/evaluate and metadata/footnote-extract; every other entry still
+listed in eslint.legacy.mjs. Finish remaining READMEs, kernel why-comments and
+manual regression inventory, remove the exhausted backlog and run completion
+smokes. Then deliver remaining Phase 4 plugins and Phases 5–8 as specified in
+the preceding record. No new plugin or phase was completed by this unit.

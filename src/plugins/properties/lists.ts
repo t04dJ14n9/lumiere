@@ -2,21 +2,22 @@ import { bindPropertyChips, itemOccurrence } from "./chips";
 import { frontmatter, type PropertyScalar } from "../../markdown/properties";
 import { validTag } from "../../markdown/tags/grammar";
 import type { PropertyContext } from "./context";
+import { bindListInput } from "./list-input";
+import { listValues } from "./list-values";
 
 const bound = new WeakSet<HTMLElement>();
 const lifetimes = new WeakMap<HTMLElement, Map<HTMLElement, () => void>>();
-function listValues(raw: unknown): PropertyScalar[] | undefined {
-  const values =
-    raw === null || raw === undefined ? [] : Array.isArray(raw) ? raw : [raw];
-  return values.every(
-    (value) =>
-      value === null ||
-      typeof value === "string" ||
-      typeof value === "boolean" ||
-      (typeof value === "number" && Number.isFinite(value)),
-  )
-    ? values
-    : undefined;
+
+type PropertyEditor = NonNullable<PropertyContext["propertyEditor"]>;
+interface ListOptions {
+  container: HTMLElement;
+  list: HTMLElement;
+  key: string;
+  original: readonly PropertyScalar[];
+  source: string;
+  editor?: PropertyEditor;
+  openMenu: PropertyContext["openMenu"];
+  copy: PropertyContext["copy"];
 }
 
 export function bindPropertyLists(
@@ -24,15 +25,7 @@ export function bindPropertyLists(
   source: string,
   context: PropertyContext,
 ): () => void {
-  const cleanups =
-    lifetimes.get(container) ?? new Map<HTMLElement, () => void>();
-  lifetimes.set(container, cleanups);
-  for (const [list, close] of cleanups) {
-    if (!container.contains(list)) {
-      close();
-      cleanups.delete(list);
-    }
-  }
+  const cleanups = retainedLists(container);
   const properties = frontmatter(source);
   const editor =
     context.propertyEditor?.source === context.source
@@ -46,190 +39,196 @@ export function bindPropertyLists(
       }
       bound.add(list);
       const key = list.dataset.propertyList!;
-      const originalValues = listValues(properties?.values?.[key]);
-      const current = () => frontmatter(editor?.currentSource?.() ?? source);
-      const values = () => listValues(current()?.values?.[key]);
-      if (!originalValues) {
+      const original = listValues(properties?.values?.[key]);
+      if (!original) {
         return;
       }
-      const input = list.querySelector<HTMLInputElement>("input")!;
-      input.hidden = !editor;
-      const update = (next: PropertyScalar[], refocus = true): boolean => {
-        const owner = container.closest(".cm-editor");
-        input.dataset.propertyCommitting = "true";
-        let applied: boolean | undefined;
-        try {
-          applied = editor?.set(current()?.raw ?? "", key, next);
-        } finally {
-          delete input.dataset.propertyCommitting;
-        }
-        if (!applied) {
-          input.setCustomValidity(
-            "The properties changed. Reopen this field and try again.",
-          );
-          input.reportValidity();
-          return false;
-        }
-        if (refocus) {
-          owner
-            ?.querySelector<HTMLInputElement>(
-              `[data-property-list="${CSS.escape(key)}"] input`,
-            )
-            ?.focus();
-        }
-        return true;
-      };
-      const pendingValue = (input: HTMLInputElement): string | undefined => {
-        const value =
-          key.toLowerCase() === "tags"
-            ? input.value.trim().replace(/^#/, "")
-            : input.value.trim();
-        if (value && key.toLowerCase() === "tags" && !validTag(value)) {
-          input.setCustomValidity(
-            "Use a tag without spaces or punctuation other than -, _ and /.",
-          );
-          input.reportValidity();
-          return undefined;
-        }
-        return value;
-      };
-      let committing = false;
-      const commit = (refocus = false): boolean => {
-        if (committing || !editor) {
-          return true;
-        }
-        const value = pendingValue(input);
-        const latest = values();
-        if (value === undefined || !latest) {
-          return false;
-        }
-        if (!value || latest.includes(value)) {
-          input.value = "";
-          editor?.refresh?.();
-          return true;
-        }
-        committing = true;
-        try {
-          return update([...latest, value], refocus);
-        } finally {
-          committing = false;
-        }
-      };
-      const remove = (index: number, previous = false): void => {
-        const pending = pendingValue(input);
-        const latest = values();
-        if (pending === undefined || !latest) {
-          return;
-        }
-        const at = itemOccurrence(originalValues, latest, index);
-        if (at < 0) {
-          input.focus();
-          input.setCustomValidity(
-            "This item changed in another editor. Finish the pending entry or press Escape.",
-          );
-          input.reportValidity();
-          return;
-        }
-        const next = latest.filter((_value, index) => index !== at);
-        if (pending && !next.includes(pending)) {
-          next.push(pending);
-        }
-        if (update(next, !previous) && previous) {
-          const current = container.querySelector<HTMLElement>(
-            `[data-property-list="${CSS.escape(key)}"]`,
-          );
-          const chip = current?.querySelector<HTMLElement>(
-            `[data-property-chip="${Math.max(0, at - 1)}"]`,
-          );
-          (chip ?? current?.querySelector<HTMLInputElement>("input"))?.focus();
-        }
-      };
-      list
-        .querySelectorAll<HTMLButtonElement>("[data-property-remove]")
-        .forEach((button) => {
-          button.hidden = !editor;
-          button.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            remove(Number(button.dataset.propertyRemove));
-          });
-        });
-      cleanups.set(
+      const binding = new PropertyList({
+        container,
         list,
-        bindPropertyChips(
-          container,
-          list,
-          key,
-          originalValues,
-          {
-            editable: !!editor,
-            values,
-            value: pendingValue,
-            update,
-            remove,
-            refresh: () => editor?.refresh?.(),
-            copy: (text) => context.copy?.(text),
-            action: (action) => editor?.action?.(action),
-          },
-          context.openMenu,
-        ),
-      );
-      input.addEventListener("input", () => input.setCustomValidity(""));
-      input.addEventListener("compositionstart", () => {
-        input.dataset.propertyEditing = "true";
+        key,
+        original,
+        source,
+        editor,
+        openMenu: context.openMenu,
+        copy: context.copy,
       });
-      input.addEventListener("compositionend", () => {
-        delete input.dataset.propertyEditing;
-      });
-      input.addEventListener("blur", (event) => {
-        if (
-          event.relatedTarget instanceof Element &&
-          list.contains(event.relatedTarget) &&
-          event.relatedTarget.closest("[data-property-remove]")
-        ) {
-          return;
-        }
-        commit();
-      });
-      input.addEventListener("property-commit", (event) => {
-        if (!commit()) {
-          event.preventDefault();
-        }
-      });
-      input.addEventListener("keydown", (event) => {
-        if (event.isComposing) {
-          return;
-        }
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          input.value = "";
-          input.setCustomValidity("");
-          input.blur();
-          return;
-        }
-        if (
-          (event.metaKey || event.ctrlKey) &&
-          event.key.toLowerCase() === "s"
-        ) {
-          event.preventDefault();
-          event.stopPropagation();
-          if (commit()) {
-            editor?.action?.("save");
-          }
-          return;
-        }
-        if (event.key !== "Enter") {
-          return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        commit(true);
-      });
+      cleanups.set(list, binding.bind());
     });
   return () => {
     cleanups.forEach((close) => close());
     cleanups.clear();
     lifetimes.delete(container);
   };
+}
+
+function retainedLists(container: HTMLElement): Map<HTMLElement, () => void> {
+  const cleanups =
+    lifetimes.get(container) ?? new Map<HTMLElement, () => void>();
+  lifetimes.set(container, cleanups);
+  for (const [list, close] of cleanups) {
+    if (!container.contains(list)) {
+      close();
+      cleanups.delete(list);
+    }
+  }
+  return cleanups;
+}
+
+/** One list reconciles every edit with the latest header rather than its rendered snapshot. */
+class PropertyList {
+  private readonly input: HTMLInputElement;
+  private committing = false;
+  constructor(private readonly options: ListOptions) {
+    this.input = options.list.querySelector<HTMLInputElement>("input")!;
+    this.input.hidden = !options.editor;
+  }
+
+  private current() {
+    return frontmatter(
+      this.options.editor?.currentSource?.() ?? this.options.source,
+    );
+  }
+  private values() {
+    return listValues(this.current()?.values?.[this.options.key]);
+  }
+
+  bind(): () => void {
+    const { container, list, key, original, editor, openMenu, copy } =
+      this.options;
+    this.bindRemoveButtons();
+    const close = bindPropertyChips({
+      container,
+      list,
+      key,
+      original,
+      openMenu,
+      actions: {
+        editable: !!editor,
+        values: () => this.values(),
+        value: (input) => this.pendingValue(input),
+        update: (values, refocus) => this.update(values, refocus),
+        remove: (index, previous) => this.remove(index, previous),
+        refresh: () => editor?.refresh?.(),
+        copy: (text) => copy?.(text),
+        action: (action) => editor?.action?.(action),
+      },
+    });
+    bindListInput(list, this.input, {
+      commit: (refocus) => this.commit(refocus),
+      save: () => editor?.action?.("save"),
+    });
+    return close;
+  }
+
+  private update(next: PropertyScalar[], refocus = true): boolean {
+    const { container, editor, key } = this.options;
+    const owner = container.closest(".cm-editor");
+    this.input.dataset.propertyCommitting = "true";
+    let applied: boolean | undefined;
+    try {
+      applied = editor?.set(this.current()?.raw ?? "", key, next);
+    } finally {
+      delete this.input.dataset.propertyCommitting;
+    }
+    if (!applied) {
+      this.input.setCustomValidity(
+        "The properties changed. Reopen this field and try again.",
+      );
+      this.input.reportValidity();
+      return false;
+    }
+    if (refocus) {
+      owner
+        ?.querySelector<HTMLInputElement>(
+          `[data-property-list="${CSS.escape(key)}"] input`,
+        )
+        ?.focus();
+    }
+    return true;
+  }
+
+  private pendingValue(input: HTMLInputElement): string | undefined {
+    const isTag = this.options.key.toLowerCase() === "tags";
+    const value = isTag
+      ? input.value.trim().replace(/^#/, "")
+      : input.value.trim();
+    if (value && isTag && !validTag(value)) {
+      input.setCustomValidity(
+        "Use a tag without spaces or punctuation other than -, _ and /.",
+      );
+      input.reportValidity();
+      return undefined;
+    }
+    return value;
+  }
+
+  private commit(refocus = false): boolean {
+    if (this.committing || !this.options.editor) {
+      return true;
+    }
+    const value = this.pendingValue(this.input);
+    const latest = this.values();
+    if (value === undefined || !latest) {
+      return false;
+    }
+    if (!value || latest.includes(value)) {
+      this.input.value = "";
+      this.options.editor.refresh?.();
+      return true;
+    }
+    this.committing = true;
+    try {
+      return this.update([...latest, value], refocus);
+    } finally {
+      this.committing = false;
+    }
+  }
+
+  private remove(index: number, previous = false): void {
+    const pending = this.pendingValue(this.input);
+    const latest = this.values();
+    if (pending === undefined || !latest) {
+      return;
+    }
+    const at = itemOccurrence(this.options.original, latest, index);
+    if (at < 0) {
+      this.input.focus();
+      this.input.setCustomValidity(
+        "This item changed in another editor. Finish the pending entry or press Escape.",
+      );
+      this.input.reportValidity();
+      return;
+    }
+    const next = latest.filter((_value, index) => index !== at);
+    if (pending && !next.includes(pending)) {
+      next.push(pending);
+    }
+    if (this.update(next, !previous) && previous) {
+      this.focusPrevious(at);
+    }
+  }
+
+  private focusPrevious(index: number): void {
+    const current = this.options.container.querySelector<HTMLElement>(
+      `[data-property-list="${CSS.escape(this.options.key)}"]`,
+    );
+    const chip = current?.querySelector<HTMLElement>(
+      `[data-property-chip="${Math.max(0, index - 1)}"]`,
+    );
+    (chip ?? current?.querySelector<HTMLInputElement>("input"))?.focus();
+  }
+
+  private bindRemoveButtons(): void {
+    this.options.list
+      .querySelectorAll<HTMLButtonElement>("[data-property-remove]")
+      .forEach((button) => {
+        button.hidden = !this.options.editor;
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.remove(Number(button.dataset.propertyRemove));
+        });
+      });
+  }
 }

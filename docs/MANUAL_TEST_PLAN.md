@@ -456,3 +456,11 @@ smoke scenarios. Use only the disposable fixture vault described above.
   selection before the clipboard reply, and confirm stale text is rejected.
   Toggle tables off during rendering, then back on; no old render may overwrite
   the new cell editor. These scenarios have not been run by the agent.
+
+- **Properties — chips and lists:** rerun the **Properties** list/chip, duplicate
+  occurrence, pending draft, IME, structured clipboard and save-rejection cases.
+  Edit a chip while a second panel inserts or removes an equal-valued item;
+  commit must target the same occurrence or report that it disappeared. Move
+  focus to another chip or the add-item input while committing; focus must follow
+  the replacement DOM. Check Escape, Enter, Mod+S, blur, remove buttons and chip
+  menus. Toggle Properties off/on with a chip menu open. Not run by the agent.
