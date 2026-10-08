@@ -558,6 +558,12 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
 5. Close and reopen the window: links in an open note resolve immediately (warm
    start), before indexing finishes. With a large copy (`scripts/measure-vault.ts`
    for numbers), typing stays responsive while indexing runs.
+6. Unresolved styling, in Live Preview: in `Daily.md`, `[[Someday]]` is dimmed
+   with a dotted underline; `[[Projects/Plan]]` is not. Put the caret in
+   `[[Someday]]`: the revealed source is not dimmed. Create `Someday.md` in the
+   Explorer: the link becomes normal within a second; delete it: dimmed again.
+   Type `[[Nowhere]]` and move the caret away: it dims after a short pause.
+   With the note open in two panels, both update. Compare with Obsidian.
 
 ### Backlinks and outgoing links
 

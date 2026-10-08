@@ -1,3 +1,5 @@
+import { splitLinktext } from "../../shared/vault-path";
+
 /** Decode once and reject ambiguous paths before the host resolves a target. */
 export function linkParts(href: string): { path: string; fragment: string } {
   const clean = href.split("|")[0]!;
@@ -14,4 +16,12 @@ export function linkParts(href: string): { path: string; fragment: string } {
 }
 export function externalScheme(href: string): string | undefined {
   return /^([a-z][a-z\d+.-]*):/i.exec(href)?.[1]?.toLowerCase();
+}
+
+/**
+ * A wikilink target's key in the host's unresolved set: the path as written,
+ * without its `#subpath`, lower-cased because links resolve regardless of case.
+ */
+export function unresolvedKey(href: string): string {
+  return splitLinktext(href.split("|")[0]!).path.toLowerCase();
 }

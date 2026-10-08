@@ -1,12 +1,15 @@
+import { StateEffect, StateField } from "@codemirror/state";
+import type { EditorState } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import type {} from "../livePreview/api";
+import type { InlineRenderer } from "../livePreview/api";
 import type {} from "./api";
 import { markdownParser } from "../../markdown/dialect";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
+import { unresolvedKey } from "./target";
 
 export function linkAt(
   text: string,
@@ -48,6 +51,7 @@ export const linksWebview: Plugin = {
     const navigate = navigator(view);
     const open = linkOpener(ctx, navigate);
     registerNavigation(ctx, navigate);
+    registerUnresolvedLinks(ctx);
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
@@ -109,30 +113,83 @@ function registerNavigation(ctx: Context, navigate: Navigate): void {
     .catch((error) => ctx.logger.warn("Initial link navigation failed", error));
 }
 
-function registerWikiLinks(ctx: Context): void {
-  ctx.effect(() =>
-    ctx.livePreview.inline({
-      nodes: ["WikiLink"],
-      decorate(node, cx) {
-        const text = cx.state.sliceDoc(node.from + 2, node.to - 2);
-        const separator = text.indexOf("|");
-        const href = text.split("|")[0]!;
-        const revealed = cx.revealed(node.from, node.to);
-        const from = node.from + 2 + (separator < 0 ? 0 : separator + 1);
-        cx.mark(
-          revealed ? node.from : from,
-          revealed ? node.to : node.to - 2,
-          revealed ? "md-link" : "md-link md-link-rendered",
-          { "data-href": href, "data-wiki": "true" },
-        );
-        if (!revealed) {
-          cx.hide(node.from, from);
-          cx.hide(node.to - 2, node.to);
-        }
-      },
-    }),
-  );
+const setUnresolved = StateEffect.define<ReadonlySet<string>>();
+/** The host's unresolved link paths for this note, as `unresolvedKey`s. */
+export const unresolvedLinks = StateField.define<ReadonlySet<string>>({
+  create: () => new Set(),
+  update(value, transaction) {
+    for (const effect of transaction.effects) {
+      if (effect.is(setUnresolved)) {
+        value = effect.value;
+      }
+    }
+    return value;
+  },
+});
+
+function isUnresolved(state: EditorState, href: string): boolean {
+  const key = unresolvedKey(href);
+  return key !== "" && !!state.field(unresolvedLinks, false)?.has(key);
 }
+
+/** Ask the host for the note's unresolved links, then follow its updates. */
+function registerUnresolvedLinks(ctx: Context): void {
+  const view = ctx.editor.view;
+  let live = true;
+  ctx.effect(() => () => {
+    live = false;
+  });
+  const apply = (paths: readonly string[]) => {
+    if (live) {
+      view.dispatch({ effects: setUnresolved.of(new Set(paths)) });
+    }
+  };
+  ctx.effect(() => ctx.editor.extend([unresolvedLinks, unresolvedTheme]));
+  ctx.effect(() => ctx.rpc.on(protocol, "unresolvedChanged", apply));
+  void ctx.rpc
+    .call(protocol, "unresolved", {})
+    .then(apply)
+    .catch((error) => ctx.logger.warn("Unresolved links unavailable", error));
+}
+
+const unresolvedTheme = EditorView.baseTheme({
+  ".md-link-rendered.is-unresolved": {
+    opacity: "0.65",
+    textDecorationStyle: "dotted",
+  },
+});
+
+function registerWikiLinks(ctx: Context): void {
+  ctx.effect(() => ctx.livePreview.inline(wikiLinkRenderer));
+}
+
+export const wikiLinkRenderer: InlineRenderer = {
+  nodes: ["WikiLink"],
+  decorate(node, cx) {
+    const text = cx.state.sliceDoc(node.from + 2, node.to - 2);
+    const separator = text.indexOf("|");
+    const href = text.split("|")[0]!;
+    const revealed = cx.revealed(node.from, node.to);
+    const from = node.from + 2 + (separator < 0 ? 0 : separator + 1);
+    // Unresolved styling shows only while the link is rendered.
+    let cls = "md-link";
+    if (!revealed) {
+      cls += isUnresolved(cx.state, href)
+        ? " md-link-rendered is-unresolved"
+        : " md-link-rendered";
+    }
+    cx.mark(
+      revealed ? node.from : from,
+      revealed ? node.to : node.to - 2,
+      cls,
+      { "data-href": href, "data-wiki": "true" },
+    );
+    if (!revealed) {
+      cx.hide(node.from, from);
+      cx.hide(node.to - 2, node.to);
+    }
+  },
+};
 
 function registerLinkClicks(ctx: Context, open: OpenLink): void {
   const view = ctx.editor.view;

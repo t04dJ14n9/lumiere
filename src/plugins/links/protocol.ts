@@ -11,10 +11,19 @@ export const request = Schema.object({
   wiki: Schema.boolean().default(false),
   side: Schema.boolean().default(false),
 });
+export const MAX_UNRESOLVED = 10_000;
+/** Lower-cased link paths in the note that name no vault file. */
+export const unresolvedLinkpaths = Schema.array(Schema.string().max(8192)).max(
+  MAX_UNRESOLVED,
+);
 export const protocol = defineProtocol("links", {
   requests: {
     initial: { params: Schema.object({}), result: navigationTarget },
     open: { params: request, result: Schema.boolean() },
+    unresolved: { params: Schema.object({}), result: unresolvedLinkpaths },
   },
-  notifications: { navigate: navigationTarget },
+  notifications: {
+    navigate: navigationTarget,
+    unresolvedChanged: unresolvedLinkpaths,
+  },
 });
