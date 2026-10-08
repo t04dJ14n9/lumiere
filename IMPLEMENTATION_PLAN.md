@@ -1727,3 +1727,16 @@ readability completion checks; remaining Phase 4 plugins. Phase 5 part one is on
 main but not complete; Claude owns its remaining consumer migration, Tags view
 and unresolved styling. Do not start Phase 6 without its completion record.
 Phases 6–8 remain as specified above.
+
+### Readability pass progress — Table alignment, 2026-10-08
+
+Delivered: replaced nested alignment ternaries with explicit center/left/right
+branches, preserving divider parsing and all table behavior. No logic extraction
+or new tests; existing alignment/round-trip units remain intact.
+Backlog: 26 → 25 distinct files; nested-ternary 8 → 7; other counts unchanged.
+Checks: `pnpm check` 333/333; log `docs/checks/readability-table-model-check.txt`.
+Smoke suites not rerun for this pure branch rewrite. No new lint exceptions.
+Ledger: 87/16/2/333/10. Deviations: none. Manual acceptance unrun.
+Known issues: remaining 25 backlog files and README/manual inventory before
+readability completion; Phase 4's remaining plugins; Claude's incomplete Phase 5
+handoff; Phases 6–8 remain as specified above.

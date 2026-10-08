@@ -51,7 +51,6 @@ export default {
     "src/markdown/metadata/index.ts",
     "src/markdown/search/canvas.ts",
     "src/markdown/search/query.ts",
-    "src/markdown/tables/model.ts",
     "src/plugins/codeBlocks/code-highlight.ts",
     "src/plugins/embeds/image.ts",
     "src/plugins/livePreview/rendered-position.ts",

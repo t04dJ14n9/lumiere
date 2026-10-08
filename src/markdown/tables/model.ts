@@ -81,13 +81,13 @@ export function parseTable(source: string): Table | undefined {
   const alignments = divider.map((cell) => {
     const left = cell.text.startsWith(":");
     const right = cell.text.endsWith(":");
-    return left && right
-      ? ("center" as const)
-      : left
-        ? ("left" as const)
-        : right
-          ? ("right" as const)
-          : null;
+    if (left && right) {
+      return "center" as const;
+    }
+    if (left) {
+      return "left" as const;
+    }
+    return right ? ("right" as const) : null;
   });
   const rows = [header];
   let offset = lines[0]!.length + lines[1]!.length + 2;
