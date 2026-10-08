@@ -9,6 +9,7 @@ import { tableCommands } from "./manifest";
 import { arrowStep } from "./navigation";
 import { nearestEntry } from "./hit-test";
 import { revealTableSource, tableSource } from "./state";
+import { displayedCell } from "./content";
 const source = "| head | second |\n| --- | --- |\n| value | other |";
 
 test("cell source projection retains entered whitespace and escapes pipes without a second history", () => {
@@ -56,4 +57,12 @@ test("table hit testing uses physical coordinates in RTL and source disclosure m
   state = state.update({ effects: revealTableSource.of(0) }).state;
   state = state.update({ changes: { from: 0, insert: "prefix\n" } }).state;
   assert.equal(state.field(tableSource), 7);
+});
+
+test("a rendered cell shows an escaped pipe without its backslash, even in code", () => {
+  assert.equal(
+    displayedCell("`code \\| pipe` and a \\| b"),
+    "`code | pipe` and a | b",
+  );
+  assert.equal(displayedCell("no pipes"), "no pipes");
 });

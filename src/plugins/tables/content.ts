@@ -27,7 +27,7 @@ export class TableContent {
     };
     this.passes.set(element, entry);
     void this.render
-      .into(element, source, {
+      .into(element, displayedCell(source), {
         signal: entry.abort.signal,
         sourceLine: this.view.state.doc.lineAt(offset).number - 1,
         measure: () => {
@@ -52,4 +52,13 @@ export class TableContent {
       this.disposeContent(element);
     }
   }
+}
+
+/**
+ * GFM removes the backslash of an escaped pipe before parsing a cell, even
+ * inside code spans, so `` `a \| b` `` shows `a | b`. The cell editor keeps
+ * the escape; only the rendered cell drops it.
+ */
+export function displayedCell(source: string): string {
+  return source.replace(/\\\|/g, "|");
 }
