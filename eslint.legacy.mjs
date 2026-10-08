@@ -18,7 +18,6 @@ export default {
     "src/plugins/livePreview/inline.ts",
     "src/plugins/livePreview/rendered-position.ts",
     "src/plugins/livePreview/webview.ts",
-    "src/plugins/render/webview.ts",
     "src/plugins/resources/host.ts",
     "src/webview/ui/menu.ts",
   ],
@@ -30,7 +29,6 @@ export default {
     "src/plugins/embeds/webm.ts",
     "src/plugins/links/host.ts",
     "src/plugins/livePreview/inline.ts",
-    "src/plugins/render/webview.ts",
   ],
   "max-params": [
     "src/host/navigation.ts",

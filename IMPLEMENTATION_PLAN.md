@@ -1819,3 +1819,19 @@ Deviations: none; existing removeEx limitation remains. Owner acceptance unrun.
 Known issues: remaining 17 backlog files, README/manual inventory and readability
 completion checks, remaining Phase 4 plugins, Claude's incomplete Phase 5 handoff
 and Phases 6–8 as specified above.
+
+### Readability pass progress — Render pipeline, 2026-10-08
+
+Delivered: render pass lifetime, remote-content restrictions and fence dispatch
+are separate responsibilities; apply owns cleanup and service assembly. Preserved
+preprocess/sanitize/fence/postprocess/measure order, trust rules and abort checks.
+Added a unit for reverse cleanup, reentrant disposal and late registrations.
+README/manual inventory updated, removing stale Phase 3 progress prose.
+Backlog: 17 → 16 distinct files; long-function 17 → 16; complexity 8 → 7;
+other counts unchanged. No new lint exceptions or intentional behavior fixes.
+Checks: `pnpm check` 339/339; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-render-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: remaining 16 backlog files, README/manual inventory and readability
+completion checks; remaining Phase 4 plugins, Claude's incomplete Phase 5 handoff
+and Phases 6–8 as specified above.

@@ -624,3 +624,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   `:wq`, `:x`, `:u`, `:red`, host shortcut consumption, normal-mode IME and
   insert-mode selection. Disable/re-enable and confirm native hooks restore
   and stopped Ex callbacks cannot act. Not run by the agent.
+
+- **Rendered Content:** rerun core rendering, Math, Diagrams, Code Blocks, Embeds
+  and Footnotes scenarios in trusted and untrusted workspaces. Dispose a widget
+  during preprocessing/lazy loading and verify stale content cannot overwrite its
+  replacement. Confirm remote media/iframes follow trust. Not run by the agent.
