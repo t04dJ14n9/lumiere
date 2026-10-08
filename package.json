@@ -218,6 +218,16 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.toggleChecklist",
+        "title": "Toggle Checklist Status",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.cycleListChecklist",
+        "title": "Cycle List Checklist",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "title": "Consume Vim Host Shortcut",
         "category": "Markdown Workbench"
@@ -478,6 +488,14 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.math"
         },
         {
+          "command": "markdownWorkbench.toggleChecklist",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tasks"
+        },
+        {
+          "command": "markdownWorkbench.cycleListChecklist",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tasks"
+        },
+        {
           "command": "markdownWorkbench.consumeVimHostShortcut",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
         }
@@ -570,6 +588,12 @@
           "default": true,
           "scope": "resource",
           "description": "Spellcheck in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.tasks.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Interactive checkboxes and checklist commands."
         },
         "markdownWorkbench.plugins.vim.enabled": {
           "type": "boolean",

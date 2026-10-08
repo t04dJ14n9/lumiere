@@ -1,3 +1,4 @@
+import tasks from "./tasks/manifest";
 import footnotes from "./footnotes/manifest";
 import callouts from "./callouts/manifest";
 import diagrams from "./diagrams/manifest";
@@ -14,6 +15,7 @@ import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
 import vim from "./vim/manifest";
 export const features: readonly Manifest[] = [
+  tasks,
   footnotes,
   callouts,
   diagrams,

@@ -11,6 +11,11 @@ export const resourcesHost: Plugin<{ panel: PanelShell }> = {
   apply(ctx, { panel }) {
     const known = new Set([panel.document.uri]);
     const resources: Resources = {
+      async authorize(source) {
+        if (!known.has(source) || !contains(ctx.vault.root, source)) throw new Error("Unknown note source");
+        const stat = await ctx.workbench.stat(source);
+        await containedResource(ctx.vault.root, source, stat.symbolicLink, (uri) => ctx.workbench.stat(uri));
+      },
       async load(target, source = panel.document.uri) {
         if (!known.has(source) || !contains(ctx.vault.root, source))
           throw new Error("Unknown note source");

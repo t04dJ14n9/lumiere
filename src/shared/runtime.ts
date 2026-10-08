@@ -93,4 +93,5 @@ export interface Navigation {
 }
 export interface Workbench {
   navigation?: Navigation;
+  openDocument?(uri: string): Promise<HostDocument>;
 }

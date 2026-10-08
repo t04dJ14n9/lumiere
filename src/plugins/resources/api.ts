@@ -5,6 +5,7 @@ export interface Resource {
   text?: string;
 }
 export interface Resources {
+  authorize?(source: string): Promise<void>;
   load(target: string, source?: string): Promise<Resource>;
 }
 declare module "../../kernel/types" {

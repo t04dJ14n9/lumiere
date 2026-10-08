@@ -17,6 +17,7 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
         let live = true;
         const pass: RenderPass = {
           source,
+          documentUri: context.documentUri,
           container,
           sourceLine: context.sourceLine ?? 0,
           ancestry: context.ancestry ?? [],

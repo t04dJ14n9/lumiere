@@ -276,3 +276,18 @@ a callout/table. Include nested Markdown and math in the note text.
    without retaining an extra undo step (the source suite's intermittent case).
 5. Disable/re-enable Footnotes: references, previews, definition widgets and the
    insertion command disappear and return. Source and caret remain valid.
+
+## Tasks
+
+Setup: in `Core.md`, add unchecked/checked tasks, a custom `[?]` status, nested
+and quoted ordered tasks, and tasks inside a callout and (when available) embed.
+
+1. Click a checkbox outside revealed source. Only the status character changes;
+   labels, whitespace and prefixes remain. Save, undo and redo natively.
+2. Run Toggle Checklist Status and Cycle List Checklist on multiple selected
+   lines. A selection ending at column zero excludes that final line.
+3. Edit the same task in another panel, then try an old rendered checkbox: a
+   stale expected line must not overwrite the edit. Repeat for an embedded note.
+4. Disable/re-enable Tasks: checkbox handlers, decorations, commands and the
+   embedded-task RPC handler disappear and return. These commands' `verify`
+   key bindings remain unbound pending the owner's Obsidian check.

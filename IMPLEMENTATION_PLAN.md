@@ -760,3 +760,20 @@ cross-block references. Definition changes invalidate rendered blocks; performan
 measurement remains Phase 9. Known issues: tasks remains in step 4, then Phase 4
 steps 5–10 and Phases 5–8. Embedded-note footnote context needs integration with
 embeds in step 5. No phase-completion claim.
+
+### Phase 4 progress — Tasks, 2026-10-07
+
+Delivered: inline/rendered task checkboxes, checklist commands, exact expected-line
+checks and contained native edits for authorized embedded-note sources. Host and
+webview handlers stop/restart with the feature. Added command, stale-line,
+source-authorization and RPC-lifecycle unit coverage.
+Checks: `pnpm check` (181 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, packaged isolated profile). Logs:
+`docs/checks/phase4-tasks-{check,browser,native}.txt`.
+Ledger: 84/14/2/334/14. Manual task scenarios added; verify keys remain unbound.
+Deviations: Resources exposes a host authorization operation for previously
+loaded note identities; render context carries an optional embedded document URI.
+Known issues: Phase 4 steps 5–10 remain (embeds/pagePreview, properties, tables,
+inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/markers), then Phases
+5–8. Embedded task UI and footnote source context need step 5 integration.
+No owner manual acceptance or phase-completion claim.

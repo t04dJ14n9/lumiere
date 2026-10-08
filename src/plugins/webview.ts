@@ -19,3 +19,4 @@ export { mathWebview } from "./math/webview";
 export { diagramsWebview } from "./diagrams/webview";
 export { calloutsWebview } from "./callouts/webview";
 export { footnotesWebview } from "./footnotes/webview";
+export { tasksWebview } from "./tasks/webview";

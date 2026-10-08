@@ -6,3 +6,4 @@ export { livePreviewHost } from "./livePreview/host";
 export { vaultHost } from "./vault/host";
 export { resourcesHost } from "./resources/host";
 export { linksHost } from "./links/host";
+export { tasksHost } from "./tasks/host";

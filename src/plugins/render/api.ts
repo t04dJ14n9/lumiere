@@ -4,6 +4,7 @@ import type { Disposer } from "../../kernel";
 export interface RenderPass {
   source: string;
   displaySource?: string;
+  documentUri?: string;
   container: Element;
   sourceLine: number;
   ancestry: readonly string[];
@@ -16,7 +17,7 @@ export interface RenderService {
   into(
     container: Element,
     source: string,
-    context?: { measure?: () => void; sourceLine?: number; ancestry?: readonly string[] },
+    context?: { documentUri?: string; measure?: () => void; sourceLine?: number; ancestry?: readonly string[] },
   ): Promise<RenderPass>;
 }
 export interface Fence {
