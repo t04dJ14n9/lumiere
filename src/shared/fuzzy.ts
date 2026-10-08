@@ -3,6 +3,16 @@ export interface FuzzyMatch {
   score: number;
   matches: readonly [number, number][];
 }
+// Callers score many candidates against the same query, one call each.
+let lastQuery: { query: string; tokens: readonly string[] } | undefined;
+
+function cachedTokens(query: string): readonly string[] {
+  if (lastQuery?.query !== query) {
+    lastQuery = { query, tokens: queryTokens(query) };
+  }
+  return lastQuery.tokens;
+}
+
 export function queryTokens(query: string): string[] {
   const tokens: string[] = [];
   let word = "";
@@ -33,7 +43,7 @@ export function fuzzyMatch(
   query: string,
   text: string,
 ): FuzzyMatch | undefined {
-  const tokens = queryTokens(query);
+  const tokens = cachedTokens(query);
   if (!tokens.length) {
     return { score: 0, matches: [] };
   }
@@ -64,15 +74,25 @@ interface SourceRange {
   to: number;
 }
 
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+const PRINTABLE_ASCII = /^[\x20-\x7e]*$/;
+
+/**
+ * Lower-case, NFKC-normalized text, and for each of its positions the source
+ * range it came from; `undefined` when every position maps to itself.
+ */
 function normalizeText(text: string): {
   lower: string;
-  original: SourceRange[];
+  original?: SourceRange[];
 } {
+  // Each printable ASCII character is its own grapheme, unchanged by NFKC
+  // and lower-cased to one character, so positions map one to one.
+  if (PRINTABLE_ASCII.test(text)) {
+    return { lower: text.toLowerCase() };
+  }
   let lower = "";
   const original: { from: number; to: number }[] = [];
-  for (const part of new Intl.Segmenter(undefined, {
-    granularity: "grapheme",
-  }).segment(text)) {
+  for (const part of graphemes.segment(text)) {
     const normalized = part.segment.normalize("NFKC").toLowerCase();
     lower += normalized;
     for (let i = 0; i < normalized.length; i++) {
@@ -83,7 +103,10 @@ function normalizeText(text: string): {
 }
 
 /** Whole tokens may match out of order, but never reuse a character. */
-function matchTokens(tokens: string[], lower: string): number[] | undefined {
+function matchTokens(
+  tokens: readonly string[],
+  lower: string,
+): number[] | undefined {
   const used = new Set<number>();
   const positions: number[] = [];
   for (const token of tokens) {
@@ -108,7 +131,7 @@ function matchTokens(tokens: string[], lower: string): number[] | undefined {
 }
 
 function matchSubsequence(
-  tokens: string[],
+  tokens: readonly string[],
   lower: string,
 ): number[] | undefined {
   const positions: number[] = [];
@@ -142,8 +165,11 @@ function contiguousRanges(positions: number[]): [number, number][] {
 /** Normalization can expand one grapheme into several UTF-16 positions. */
 function sourceRanges(
   matches: [number, number][],
-  original: SourceRange[],
+  original: SourceRange[] | undefined,
 ): [number, number][] {
+  if (!original) {
+    return matches.map(([from, to]) => [from, to]);
+  }
   const sourceMatches: [number, number][] = [];
   for (const [from, to] of matches) {
     const start = original[from]!.from;
