@@ -5,7 +5,7 @@ export default defineManifest({
   description:
     "Outgoing links view: the notes and files the active note links to, and links not created yet.",
   kind: "feature",
-  defaultEnabled: true,
+  defaultEnabled: false,
   surfaces: ["host"],
   contributes: {
     views: [

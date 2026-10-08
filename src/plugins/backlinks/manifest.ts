@@ -5,7 +5,7 @@ export default defineManifest({
   description:
     "Backlinks view and status bar count for the active note, with unlinked mentions.",
   kind: "feature",
-  defaultEnabled: true,
+  defaultEnabled: false,
   surfaces: ["host"],
   contributes: {
     views: [{ id: "backlinks", name: "Backlinks", scope: "workbench" }],

@@ -86,9 +86,31 @@ test("outgoing links list resolved files with counts, then links not created yet
   assert.deepEqual(await tree.roots(), []);
 });
 
+test("Backlinks and Outgoing Links are off until turned on", async () => {
+  const { vaults } = memoryVaults(notes);
+  const fake = fakeViews();
+  const root = Context.create();
+  root.provide("vaults", vaults);
+  const workbench = workbenchWith(fake.views);
+  root.provide("workbench", workbench);
+  workbenchFeatures(root, workbench, [
+    { manifest: backlinks, plugin: backlinksHost },
+    { manifest: outgoingLinks, plugin: outgoingLinksHost },
+  ]);
+  await root.settled();
+  await wait();
+  assert.equal(fake.trees.has("markdownWorkbench.backlinks"), false);
+  assert.equal(fake.trees.has("markdownWorkbench.outgoingLinks"), false);
+  assert.equal(fake.statuses.has("markdownWorkbench.backlinks"), false);
+  await root.dispose();
+});
+
 test("view plugins follow the active note and their setting, and clean up when turned off", async () => {
   const { vaults, opened } = memoryVaults(notes);
-  const fake = fakeViews();
+  const fake = fakeViews({
+    "plugins.backlinks.enabled": true,
+    "plugins.outgoingLinks.enabled": true,
+  });
   const root = Context.create();
   root.provide("vaults", vaults);
   const workbench = workbenchWith(fake.views);

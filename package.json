@@ -812,7 +812,7 @@
         },
         "markdownWorkbench.plugins.backlinks.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "resource",
           "description": "Backlinks view and status bar count for the active note, with unlinked mentions."
         },
@@ -902,7 +902,7 @@
         },
         "markdownWorkbench.plugins.outgoingLinks.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "resource",
           "description": "Outgoing links view: the notes and files the active note links to, and links not created yet."
         },
