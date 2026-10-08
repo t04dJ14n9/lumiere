@@ -592,6 +592,12 @@
           "scope": "resource",
           "description": "Render TeX formulas with MathJax."
         },
+        "markdownWorkbench.plugins.pagePreview.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Preview internal links with a modifier hover or keyboard."
+        },
         "markdownWorkbench.plugins.smartLists.enabled": {
           "type": "boolean",
           "default": true,

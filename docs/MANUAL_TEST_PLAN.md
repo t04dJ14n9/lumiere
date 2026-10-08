@@ -313,3 +313,18 @@ embedded note, with links relative to that note's folder.
    media, inspector, styles, nested render passes and command are removed/restored.
 7. Check embedded footnote text/numbering and definition navigation separately;
    record any target mismatch in the acceptance notes.
+
+## Page Preview
+
+Setup: links in `Core.md` to a note, heading, block, image, PDF and missing target.
+
+1. Hold Cmd/Ctrl over an internal link for 300 ms: a preview opens without
+   changing the current document. Move into it; leaving dismisses after the delay.
+2. Focus a rendered link and press Alt+Enter: focus moves into the popup. Escape
+   or Close dismisses it and restores editor focus. Open uses the link's source
+   folder, including links inside an embedded note.
+3. Rapidly move between links or close while a resource loads: late results must
+   not replace a newer preview. Edit the document: the preview closes.
+4. Task controls inside previews are read-only. External schemes do not preview.
+5. Disable/re-enable Page Preview while a popup or image inspector is open;
+   pending timers, listeners and render passes disappear, then behavior returns.

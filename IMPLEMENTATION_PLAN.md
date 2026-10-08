@@ -797,3 +797,21 @@ for embedded footnote definitions. Media/graphics remain lazy and pass-owned.
 Known issues: pagePreview and Phase 4 steps 6–10 remain, followed by Phases 5–8.
 Live resource/index invalidation remains Phase 5. Owner manual acceptance is not
 run; no phase-completion claim.
+
+### Phase 4 progress — Page Preview, 2026-10-07
+
+Delivered: source-compatible modifier-hover and Alt+Enter previews, keyboard
+focus/escape behavior, read-only task previews, attachment rendering, late-reply
+generation checks and lifecycle cleanup. Internal previews preserve the originating
+note and distinguish Markdown links from wikilinks when opened.
+Checks: `pnpm check` (187 unit tests passed), `pnpm test:browser` (14/14).
+Native not rerun: no native wiring change since embeds' 1/1 check. Logs:
+`docs/checks/phase4-pagepreview-{check,browser}.txt`.
+Ledger: 86/15/2/333/12. Manual preview scenarios added, not run.
+Deviations: popup is attached to its editor DOM so plugin-owned theme and link
+handlers apply; it still uses fixed viewport positioning.
+Known issues: Phase 4 steps 6–10 remain: full structured properties, split table
+controller/cell projection, inlineTitle rename/view transfer, tags/suggest/search,
+pasteHtml/copyForAgent/markers. Then Phase 5 index/host features, Phase 6 command/
+settings/parity inventory, Phase 7 public API and Phase 8 packaging/handover remain.
+No phase-completion claim; owner manual acceptance is not run.
