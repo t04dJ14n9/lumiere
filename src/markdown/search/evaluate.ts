@@ -11,6 +11,7 @@ export interface SearchDocument {
   path: string;
   text: string;
   kind?: "markdown" | "canvas" | "file";
+  metadata?: { tags: string[]; properties: Record<string, unknown> };
 }
 interface Regions {
   block: string[];
@@ -125,6 +126,8 @@ class DocumentSearch {
   ) {
     this.kind = document.kind ?? documentKind(document.path);
     this.text = document.text;
+    this.tags = document.metadata?.tags;
+    this.metadata = document.metadata?.properties;
     this.prepared = this.kind !== "canvas";
   }
 

@@ -1,4 +1,4 @@
-import type { VaultIndex } from "../vault/api";
+import type { VaultIndex, VaultFile } from "../vault/api";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { folderOf, nameOf, relativeVaultPath } from "../../shared/vault-path";
@@ -33,11 +33,11 @@ export async function searchVault(input: SearchInput): Promise<SearchResponse> {
       continue;
     }
     try {
-      const text = kind === "file" ? "" : await read(file.uri);
+      const document = await searchDocument({ vault, worker, read }, file);
       if (token.cancelled) {
         throw new RpcError("Cancelled", "Search cancelled");
       }
-      if (await worker.matches({ path: file.path, text, kind })) {
+      if (await worker.matches(document)) {
         const href = relativeVaultPath(folderOf(origin.path), file.path)
           .split("/")
           .map(encodeURIComponent)
@@ -63,4 +63,30 @@ function documentKind(extension: string): "markdown" | "canvas" | "file" {
     return "markdown";
   }
   return extension.toLowerCase() === "canvas" ? "canvas" : "file";
+}
+
+async function searchDocument(
+  input: Pick<SearchInput, "vault" | "worker" | "read">,
+  file: VaultFile,
+) {
+  const kind = documentKind(file.extension);
+  const cached =
+    input.worker.requiresMetadata && !input.worker.requiresText
+      ? input.vault.metadata(file.path)
+      : undefined;
+  const metadata = cached
+    ? {
+        tags: cached.tags.map(({ tag }) => tag.replace(/^#/, "")),
+        properties: cached.frontmatter ?? {},
+      }
+    : undefined;
+  const needsMetadata =
+    input.worker.requiresMetadata && kind === "markdown" && !metadata;
+  const read = kind !== "file" && (input.worker.requiresText || needsMetadata);
+  return {
+    path: file.path,
+    kind,
+    text: read ? await input.read(file.uri) : "",
+    metadata: read ? undefined : metadata,
+  };
 }

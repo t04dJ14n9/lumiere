@@ -178,3 +178,30 @@ test("search host cancels work on disable and registers again on enable", async 
   await root.dispose();
   await pair.dispose();
 });
+
+test("search worker advertises indexed requirements and evaluates transported metadata", async () => {
+  const worker = new SearchWorker(path, "tag:project [priority:>2]");
+  try {
+    await worker.ready;
+    assert.equal(worker.requiresText, false);
+    assert.equal(worker.requiresMetadata, true);
+    assert.equal(
+      await worker.matches({
+        path: "Note.md",
+        text: "",
+        metadata: { tags: ["project/notes"], properties: { priority: 3 } },
+      }),
+      true,
+    );
+    assert.equal(
+      await worker.matches({
+        path: "Note.md",
+        text: "",
+        metadata: { tags: ["project"], properties: { priority: 1 } },
+      }),
+      false,
+    );
+  } finally {
+    await worker.dispose();
+  }
+});

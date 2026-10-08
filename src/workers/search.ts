@@ -1,3 +1,4 @@
+import { queryRequirements } from "../markdown/search/plan";
 import { parentPort, workerData } from "node:worker_threads";
 import { compileSearch } from "../markdown/search/evaluate";
 import { parseSearch, searchesFiles } from "../markdown/search/query";
@@ -34,7 +35,13 @@ try {
       send({ type: "rejected", id: request.id, message: String(error) });
     }
   });
-  send({ type: "ready", files: searchesFiles(query) });
+  const needs = queryRequirements(query);
+  send({
+    type: "ready",
+    files: searchesFiles(query),
+    content: needs.text,
+    metadata: needs.metadata,
+  });
 } catch (error) {
   send({ type: "error", message: String(error) });
   port.close();

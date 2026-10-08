@@ -2378,3 +2378,21 @@ phase-completing commit; suggestion candidate caching/measurement also remains
 from Claude's Phase 5 record. Then Phases 6–8. Manual marker interactions and
 provider replacement remain unrun; owner should test badges inside rendered
 blocks, two providers/panels, exact disjoint edits and pending local edits first.
+
+### Phase 4 follow-up — Indexed search predicates, 2026-10-08
+
+Closed the DESIGN §13 fast-path gap: a conservative scope-aware query plan tells
+the worker/host whether content and metadata are needed. File/path predicates
+avoid reads, and tag/property predicates use indexed metadata when available;
+missing metadata falls back to a live read. Content queries parse one coherent
+current text snapshot rather than mixing it with older metadata. New planning,
+read-avoidance and real-worker transport tests preserve nested-scope semantics.
+No VaultIndex interface or Claude-owned implementation was changed.
+Checks in order: `pnpm check` **411/411**; browser smoke **14/14**; native smoke
+**1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase4-indexed-search-{check,browser,native}.txt`.
+Ledger unchanged, **91/22/2/333/0**, total 448. No lint exceptions or smoke changes.
+Deviations: mixed content queries conservatively read content; metadata-only
+queries use the index. Read failures keep the existing unreadable-file count.
+Known issues: suggestion candidate caching/measurement from Phase 5, then Phase 4
+completion checks and Phases 6–8. Manual acceptance remains owner-run.

@@ -1,0 +1,82 @@
+(node:11318) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 test:browser /Users/t04dj14n9/Code/vscode-markdown-workbench
+> pnpm build && playwright test -c test/browser/playwright.config.ts
+
+(node:11362) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 build /Users/t04dj14n9/Code/vscode-markdown-workbench
+> node scripts/build.mjs
+
+
+  dist/extension.js      1.3mb ⚠️
+  dist/extension.js.map  2.8mb
+
+⚡ Done in 58ms
+
+  dist/webview/mathjax-PBZPKRMV.js                         2.4mb ⚠️
+  dist/webview/editor.js                                   1.9mb ⚠️
+  dist/webview/chunk-TQU4O5JR.js                         938.0kb
+  dist/webview/code-highlight-WTGHTZBB.js                854.2kb
+  dist/webview/chunk-E2YAVA5H.js                         704.8kb
+  dist/webview/katex-MXR5ZGD3.js                         479.4kb
+  dist/webview/architectureDiagram-UYN6MBPD-NCO25MQY.js  408.5kb
+  dist/webview/chunk-ZVCL6A5U.js                         347.8kb
+  dist/webview/mindmap-definition-GWI6TPTV-WQLNW6HB.js   245.9kb
+  dist/webview/chunk-74Q4ATEC.js                         209.8kb
+  dist/webview/sequenceDiagram-G6AWOVSC-HSRDYRJW.js      149.1kb
+  dist/webview/blockDiagram-ZHA2E4KO-4MPCX35I.js         132.9kb
+  dist/webview/c4Diagram-6F5ED5ID-FNFDJL62.js            117.8kb
+  dist/webview/flowDiagram-7ASYPVHJ-ZISNYYX6.js           96.7kb
+  dist/webview/chunk-AAE3JPLH.js                          91.2kb
+  dist/webview/chunk-AOVXKVLB.js                          85.2kb
+  dist/webview/ganttDiagram-NTVNEXSI-4APK2DPX.js          80.7kb
+  dist/webview/chunk-WRBLPIAL.js                          74.5kb
+  dist/webview/xychartDiagram-6QU3TZC5-T4Y7R7PE.js        68.2kb
+  dist/webview/chunk-M2CL6DGP.js                          64.0kb
+  ...and 120 more output files...
+
+⚡ Done in 440ms
+
+  dist/workers/search.cjs      1.1mb ⚠️
+  dist/workers/vault.cjs       1.1mb ⚠️
+  dist/workers/search.cjs.map  2.3mb
+  dist/workers/vault.cjs.map   2.2mb
+
+⚡ Done in 42ms
+(node:11424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11424) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:11424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+[2mRunning [22m14[2m tests using [22m2[2m workers[22m
+
+(node:11466) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11465) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11465) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:11466) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:11465) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11466) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  [32m✓[39m  [2m 1 [22mtest/browser/build.spec.ts:3:5 › the production webview entry loads in Chromium[2m (283ms)[22m
+  [32m✓[39m  [2m 3 [22mtest/browser/kernel.spec.ts:3:5 › the unchanged pure kernel runs and disposes in Chromium[2m (73ms)[22m
+  [32m✓[39m  [2m 4 [22mtest/browser/markdown.spec.ts:3:5 › pure dialect, metadata and renderer run unchanged in Chromium[2m (172ms)[22m
+  [32m✓[39m  [2m 2 [22mtest/browser/core.spec.ts:3:5 › minimal preset synchronizes Unicode typing, saves and undoes with host authority[2m (1.0s)[22m
+  [32m✓[39m  [2m 6 [22mtest/browser/core.spec.ts:25:5 › selection export captures the acknowledged revision after delayed Unicode typing[2m (596ms)[22m
+  [32m✓[39m  [2m 5 [22mtest/browser/sync.spec.ts:7:5 › rapid typing survives delayed acknowledgement and an external edit[2m (1.2s)[22m
+  [32m✓[39m  [2m 7 [22mtest/browser/core.spec.ts:41:5 › two panels of the same note share text while retaining independent selections[2m (562ms)[22m
+  [32m✓[39m  [2m 9 [22mtest/browser/core.spec.ts:57:5 › Live Preview reveals syntax at the caret and toggles to source without reloading[2m (477ms)[22m
+  [32m✓[39m  [2m 8 [22mtest/browser/sync.spec.ts:29:5 › save waits for a queued burst of Unicode input[2m (1.3s)[22m
+  [32m✓[39m  [2m10 [22mtest/browser/core.spec.ts:73:5 › disposing the livePreview fiber removes its widgets and decorations[2m (483ms)[22m
+  [32m✓[39m  [2m12 [22mtest/browser/view-state.spec.ts:3:5 › restoring a pane retains backward selection without changing source or history[2m (844ms)[22m
+  [32m✓[39m  [2m11 [22mtest/browser/undo.spec.ts:4:5 › plain typing remains one undo group across acknowledged transport batches[2m (1.1s)[22m
+  [32m✓[39m  [2m13 [22mtest/browser/view-state.spec.ts:31:5 › captured Source mode follows the current view and restores without document edits[2m (678ms)[22m
+  [32m✓[39m  [2m14 [22mtest/browser/undo.spec.ts:30:5 › moving the plain caret creates a new undo group without losing the earlier typing[2m (786ms)[22m
+
+[32m  14 passed[39m[2m (6.0s)[22m

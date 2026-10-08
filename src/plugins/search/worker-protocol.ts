@@ -5,12 +5,18 @@ export const submission = Schema.object({
   document: Schema.object({
     path: Schema.string().max(8192),
     text: Schema.string(),
+    metadata: Schema.object({
+      tags: Schema.array(Schema.string()),
+      properties: Schema.record(Schema.unknown()),
+    }).optional(),
     kind: Schema.union(["markdown", "canvas", "file"]).optional(),
   }),
 });
 const ready = Schema.object({
   type: Schema.union(["ready"]),
   files: Schema.boolean(),
+  content: Schema.boolean(),
+  metadata: Schema.boolean(),
 });
 const failed = Schema.object({
   type: Schema.union(["error"]),

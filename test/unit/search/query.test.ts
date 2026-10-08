@@ -33,6 +33,8 @@ test("vault search uses live text, excludes hidden files and counts per-document
   const worker: SearchEvaluator = {
     ready: Promise.resolve(),
     includesFiles: false,
+    requiresText: true,
+    requiresMetadata: false,
     stopped: false,
     matches: async (doc) => compileSearch("content:meeting")(doc),
     dispose: async () => {},
@@ -61,4 +63,54 @@ test("vault search uses live text, excludes hidden files and counts per-document
   const token = new CancelToken();
   token.cancel();
   await assert.rejects(searchVault({ ...input, token }), { code: "Cancelled" });
+});
+
+test("indexed predicates avoid note reads while content scopes conservatively request text", async () => {
+  const { metadata } = await import("../../../src/markdown/metadata");
+  const { queryRequirements } = await import(
+    "../../../src/markdown/search/plan"
+  );
+  const { parseSearch } = await import("../../../src/markdown/search/query");
+  const index = vault();
+  index.setMetadata(
+    "folder/Note.md",
+    metadata("---\npriority: 3\n---\n#Project/notes"),
+  );
+  index.setMetadata("other/A #.md", metadata("#unrelated"));
+  const query = "tag:project [priority:>2]";
+  const needs = queryRequirements(parseSearch(query));
+  assert.deepEqual(needs, { text: false, metadata: true });
+  const worker: SearchEvaluator = {
+    ready: Promise.resolve(),
+    includesFiles: false,
+    requiresText: needs.text,
+    requiresMetadata: needs.metadata,
+    stopped: false,
+    matches: async (doc) => compileSearch(query)(doc),
+    dispose: async () => {},
+  };
+  const result = await searchVault({
+    vault: index,
+    source: "file:///vault/folder/Note.md",
+    worker,
+    token: new CancelToken(),
+    read: async () => {
+      throw new Error("Indexed predicates must not read notes");
+    },
+  });
+  assert.equal(result.unreadable, 0);
+  assert.deepEqual(
+    result.results.map((item) => item.path),
+    ["folder/Note.md"],
+  );
+  assert.equal(
+    queryRequirements(parseSearch("path:folder OR file:Note")).text,
+    false,
+  );
+  assert.equal(queryRequirements(parseSearch("tag:(content:body)")).text, true);
+  assert.equal(queryRequirements(parseSearch("block:(file:Note)")).text, true);
+  assert.equal(
+    queryRequirements(parseSearch("path:(line:folder)")).text,
+    false,
+  );
 });

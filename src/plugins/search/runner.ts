@@ -11,6 +11,8 @@ interface Pending {
 export interface SearchEvaluator {
   ready: Promise<void>;
   includesFiles: boolean;
+  requiresText: boolean;
+  requiresMetadata: boolean;
   stopped: boolean;
   matches(document: SearchDocument): Promise<boolean>;
   dispose(): Promise<void>;
@@ -28,6 +30,8 @@ export class SearchWorker implements SearchEvaluator {
   private readonly startupTimer: ReturnType<typeof setTimeout>;
   private stopCancellation: () => void = () => {};
   includesFiles = false;
+  requiresText = true;
+  requiresMetadata = true;
   constructor(
     path: string,
     query: string,
@@ -104,6 +108,8 @@ export class SearchWorker implements SearchEvaluator {
       }
       if (reply.type === "ready") {
         this.includesFiles = reply.files;
+        this.requiresText = reply.content;
+        this.requiresMetadata = reply.metadata;
         clearTimeout(this.startupTimer);
         this.resolveReady();
         return;

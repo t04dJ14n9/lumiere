@@ -829,3 +829,7 @@ and actions vanish; re-enable without duplicates. Try stale/future versions,
 pane during action dispatch and confirm the other pane survives. This replaces
 the source's Query annotation UI with generic badges; no vault Query watcher or
 LLM Wiki-specific path opening is included.
+
+For search blocks, repeat metadata-only tag/property and file/path predicates in
+a large disposable vault: they should use the index without per-note reads. Mixed
+content predicates must still see live text and preserve scoped query behavior.

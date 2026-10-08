@@ -8,7 +8,9 @@ Obsidian's embedded search results.
 A query-specific block renderer precedes generic code blocks. Each rendered fence
 owns an RPC subscription; refresh, source exposure and disposal cancel old work.
 The host lists eligible indexed files, reads current text through the shared
-vault service, and sends each document to a worker. Per-document parse errors are
+vault service, and sends each document to a worker. A conservative query plan
+uses indexed tags/properties and file paths without reading note content when
+possible; mixed content predicates read one coherent current text snapshot. Per-document parse errors are
 counted; timeout or cancellation terminates the worker. Index resolution refreshes
 live subscriptions. Result links use encoded relative paths and normal navigation.
 
@@ -18,7 +20,8 @@ live subscriptions. Result links use encoded relative paths and normal navigatio
 - `protocol.ts`: query, response and change-notification schemas.
 - `worker-protocol.ts`: validated worker startup, submissions and replies.
 - `runner.ts`: worker startup, deadlines, pending requests and termination.
-- `query.ts`: indexed file eligibility, live reads and result ordering.
+- `query.ts`: indexed file eligibility, cached metadata/live reads and result ordering.
+- `../../markdown/search/plan.ts`: scope-aware content/metadata requirements.
 - `host.ts`: RPC handlers and index change notification.
 - `client.ts`: subscriptions, refresh generations and cancellation.
 - `blocks.ts`: accessible status, refresh button and result links.
