@@ -1366,3 +1366,27 @@ footnote-extract next; every other remaining eslint.legacy.mjs entry, remaining
 plugin READMEs, kernel why-comments and manual regression coverage; then remove
 the empty backlog and run readability completion checks. The rest of Phase 4
 and Phases 5–8 remain as above. Owner manual scenarios remain unrun.
+
+### Readability pass progress — Search evaluation, 2026-10-08
+
+Delivered: compiled queries share a `SearchComparison` regex cache; each evaluated
+document owns lazy content, tag, property and structural-region caches. Named
+methods separate Boolean, property, tag and scoped evaluation. Scalar/null/numeric
+comparison and document-kind inference no longer use nested ternaries. Existing
+source search assertions remain intact; three units cover typed comparisons,
+recursive arrays, regex sensitivity cache isolation and file-kind inference.
+
+Backlog since preceding unit → now: max-lines-per-function 39 → 38; complexity
+21 → 20; max-params 7 → 7; no-nested-ternary 13 → 12; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 53 → 52. No new exceptions. Unit
+count 235 → 238. Checks: `pnpm check` 238/238; `pnpm test:browser` 14/14.
+Native not rerun: pure evaluation rewrite, no native wiring change. Logs:
+`docs/checks/readability-search-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none; no behavior bug fixed.
+The search plugin is still undelivered; this is its existing pure foundation only.
+
+Known issues / exact remaining work: metadata/footnote-extract, then all other
+remaining eslint.legacy.mjs entries; remaining plugin READMEs, kernel comments
+and manual regression inventory. Remove the exhausted backlog and run ordered
+readability completion checks before remaining Phase 4 and Phases 5–8. Those
+phase deliverables are unchanged from the Tables record. Owner acceptance unrun.
