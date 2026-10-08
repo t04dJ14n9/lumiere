@@ -37,7 +37,6 @@ export default {
     "src/plugins/links/host.ts",
     "src/plugins/livePreview/inline.ts",
     "src/plugins/render/webview.ts",
-    "src/webview/features.ts",
   ],
   "max-params": [
     "src/host/navigation.ts",

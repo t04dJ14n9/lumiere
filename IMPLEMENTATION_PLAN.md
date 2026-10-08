@@ -1756,3 +1756,18 @@ Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
 Known issues: remaining 24 backlog files and README/manual inventory; ordered
 readability completion checks; Phase 4's seven plugins; Claude's incomplete
 Phase 5 handoff and Phases 6–8 as specified above.
+
+### Readability pass progress — Feature reconciliation, 2026-10-08
+
+Delivered: a controller owns the serialized settings queue and active fibers;
+per-feature enable/disable/update is separate from catalogue traversal. Parsing,
+configuration signatures, update rather than recreation, disposal guards and
+render invalidation remain unchanged. No pure algorithm added.
+Backlog: 24 → 23 distinct files; complexity 11 → 10; other counts unchanged.
+Checks: `pnpm check` 335/335; `pnpm test:browser` 14/14. Native not rerun:
+webview reconciliation only. Logs: `docs/checks/readability-features-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. No new lint exceptions or behavior fixes. Deviations: none.
+Known issues: remaining 23 backlog files, README/manual inventory and ordered
+readability completion checks, then the remaining Phase 4 plugins. Claude's
+Phase 5 is incomplete; Phases 6–8 remain gated. Owner composition/manual scenarios
+are documented but unrun.

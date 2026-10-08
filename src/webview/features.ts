@@ -3,55 +3,83 @@ import type { featureSettings } from "../shared/features";
 import { features } from "../plugins/catalog";
 import * as plugins from "../plugins/webview";
 
+type FeatureSettings = Infer<typeof featureSettings>;
+
 /** Serialize reconciliation so a slow stop cannot race a newer setting. */
 export function featureController(root: Context) {
-  const active = new Map<
+  const controller = new FeatureController(root);
+  root.effect(() => () => controller.dispose());
+  return (settings: FeatureSettings, defaults = false): Promise<void> =>
+    controller.update(settings, defaults);
+}
+
+class FeatureController {
+  private readonly active = new Map<
     string,
     { fiber: Fiber<unknown>; signature: string }
   >();
-  let queue = Promise.resolve();
-  let disposed = false;
-  root.effect(() => () => {
-    disposed = true;
-  });
-  return (
-    settings: Infer<typeof featureSettings>,
-    defaults = false,
-  ): Promise<void> => {
-    queue = queue
+  private queue = Promise.resolve();
+  private isDisposed = false;
+
+  constructor(private readonly root: Context) {}
+
+  dispose(): void {
+    this.isDisposed = true;
+  }
+
+  update(settings: FeatureSettings, defaults: boolean): Promise<void> {
+    // A failed configuration must not prevent a later valid update from running.
+    this.queue = this.queue
       .catch(() => {})
-      .then(async () => {
-        if (disposed) {
-          return;
-        }
-        for (const manifest of features) {
-          const setting = settings[manifest.id];
-          const enabled =
-            setting?.enabled ?? (defaults && manifest.defaultEnabled);
-          const config = manifest.config?.parse(setting?.config ?? {}) ?? {};
-          const signature = JSON.stringify(config);
-          const previous = active.get(manifest.id);
-          if (previous && !enabled) {
-            await previous.fiber.dispose();
-            active.delete(manifest.id);
-          }
-          if (enabled && previous && previous.signature !== signature) {
-            await previous.fiber.update(config);
-            previous.signature = signature;
-          }
-          if (enabled && !active.has(manifest.id)) {
-            const plugin = plugins[
-              `${manifest.id}Webview` as keyof typeof plugins
-            ] as Plugin<unknown>;
-            active.set(manifest.id, {
-              fiber: root.plugin(plugin, config),
-              signature,
-            });
-          }
-        }
-        await root.settled();
-        root.emit("render/changed");
+      .then(() => this.reconcile(settings, defaults));
+    return this.queue;
+  }
+
+  private async reconcile(
+    settings: FeatureSettings,
+    defaults: boolean,
+  ): Promise<void> {
+    if (this.isDisposed) {
+      return;
+    }
+    for (const manifest of features) {
+      const setting = settings[manifest.id];
+      const enabled = setting?.enabled ?? (defaults && manifest.defaultEnabled);
+      const config = manifest.config?.parse(setting?.config ?? {}) ?? {};
+      const pending = this.reconcileFeature(manifest.id, enabled, config);
+      if (pending) {
+        await pending;
+      }
+    }
+    await this.root.settled();
+    this.root.emit("render/changed");
+  }
+
+  private reconcileFeature(
+    id: string,
+    enabled: boolean,
+    config: unknown,
+  ): Promise<void> | undefined {
+    const signature = JSON.stringify(config);
+    const previous = this.active.get(id);
+    if (previous && !enabled) {
+      return previous.fiber.dispose().then(() => {
+        this.active.delete(id);
       });
-    return queue;
-  };
+    }
+    if (enabled && previous && previous.signature !== signature) {
+      return previous.fiber.update(config).then(() => {
+        previous.signature = signature;
+      });
+    }
+    if (enabled && !this.active.has(id)) {
+      const plugin = plugins[
+        `${id}Webview` as keyof typeof plugins
+      ] as Plugin<unknown>;
+      this.active.set(id, {
+        fiber: this.root.plugin(plugin, config),
+        signature,
+      });
+    }
+  }
 }
