@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160" viewBox="0 0 320 160">
+  <rect x="8" y="8" width="304" height="144" rx="12" fill="#e8f0fe" stroke="#3367d6" stroke-width="4"/>
+  <circle cx="80" cy="80" r="36" fill="#3367d6"/>
+  <text x="140" y="90" font-family="sans-serif" font-size="28" fill="#202124">Fixture</text>
+</svg>
