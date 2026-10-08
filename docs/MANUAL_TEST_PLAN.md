@@ -587,6 +587,22 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
 3. Open the same note in the text editor: Note Outline hides; VS Code's own
    Outline lists the headings once (no duplicates).
 
+### Tags view
+
+1. Add `#Project/alpha` to `Core.md`, `#project` twice to `Daily.md` and
+   `tags: [project/beta]` to the properties of `Projects/Plan.md`. The Explorer's
+   **Tags** view shows `Project 3` (one entry despite the different case; counts
+   are notes, so `Daily.md` counts once) with `alpha 1` and `beta 1` below it.
+   Compare the counts and nesting with Obsidian's Tags view on the same folder.
+2. Click `project`: a picker lists the three notes; choose one: it opens. Click
+   `alpha`: only `Core.md` is listed.
+3. Type `#newtag` in an open note without saving: `newtag` appears within a
+   second. Close without saving: it goes away.
+4. Set `markdownWorkbench.tags.viewSort` to `frequency`: `Project` moves above
+   tags in fewer notes. Turn off `markdownWorkbench.tags.viewNested`: the view
+   is a flat list with full paths (`Project/alpha`). Turn off `markdownWorkbench.plugins.tags.enabled`: the
+   view disappears and tags in notes stop rendering as buttons.
+
 ### Quick switcher, word count and link updates
 
 1. Run **Markdown Workbench: Quick Switcher**: an empty query lists recent notes.

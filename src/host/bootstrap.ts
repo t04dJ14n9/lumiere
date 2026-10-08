@@ -1,6 +1,5 @@
-import { pluginRank, workbenchFeatures } from "../plugins/catalog";
+import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
-import { features } from "../plugins/catalog";
 import { Context } from "../kernel";
 import type { Workbench } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
@@ -20,6 +19,7 @@ import {
   quickSwitcherHost,
   wordCountHost,
   linkUpdatesHost,
+  tagsViewHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
 export async function bootstrap(
@@ -54,12 +54,15 @@ export async function bootstrap(
     quickSwitcherHost,
     wordCountHost,
     linkUpdatesHost,
+    tagsViewHost,
   ];
+  // Window halves of editor features (the Tags view) share their manifest.
+  const manifests = [...workbenchFeatures, ...features];
   startWorkbenchFeatures(
     root,
     workbench,
     windowPlugins.map((plugin) => ({
-      manifest: workbenchFeatures.find((item) => item.id === plugin.name)!,
+      manifest: manifests.find((item) => item.id === plugin.name)!,
       plugin,
     })),
   );

@@ -2,7 +2,7 @@ import type { Plugin } from "../../kernel";
 import type { PanelShell } from "../../shared/runtime";
 import type {} from "../vault/api";
 import { protocol } from "./protocol";
-import { taggedNotes, filterTagNotes } from "./search";
+import { pickTaggedNote } from "./search";
 export const tagsHost: Plugin<{ panel: PanelShell }> = {
   name: "tags",
   inject: { required: ["rpc", "vault", "workbench"] },
@@ -14,20 +14,11 @@ export const tagsHost: Plugin<{ panel: PanelShell }> = {
         if (!views || !navigation) {
           throw new Error("Tag search is unavailable");
         }
-        const items = taggedNotes(ctx.vault, tag);
-        const selected = await views.pick({
-          placeholder: `#${tag} — ${items.length} ${items.length === 1 ? "note" : "notes"}`,
-          items: (query) => filterTagNotes(items, query),
-        });
-        if (!selected?.item || token.cancelled) {
+        const file = await pickTaggedNote(views, ctx.vault, tag);
+        if (!file || token.cancelled) {
           return false;
         }
-        await navigation.open(
-          ctx.vault.root,
-          selected.item.value.uri,
-          "",
-          false,
-        );
+        await navigation.open(ctx.vault.root, file.uri, "", false);
         return true;
       }),
     );

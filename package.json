@@ -456,6 +456,11 @@
           "id": "markdownWorkbench.outline",
           "name": "Note Outline",
           "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled && activeCustomEditorId == 'markdownWorkbench.editor'"
+        },
+        {
+          "id": "markdownWorkbench.tags",
+          "name": "Tags",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.tags.enabled"
         }
       ]
     },
@@ -863,7 +868,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Render tags and find notes with matching hierarchical tags."
+          "description": "Render tags, find notes with matching hierarchical tags, and list the vault's tags in the Tags view."
         },
         "markdownWorkbench.plugins.tasks.enabled": {
           "type": "boolean",
@@ -951,6 +956,21 @@
             "source"
           ],
           "default": "visible",
+          "scope": "resource"
+        },
+        "markdownWorkbench.tags.viewSort": {
+          "enum": [
+            "name",
+            "frequency"
+          ],
+          "default": "name",
+          "description": "Order of the Tags view: `name` (A to Z) or `frequency` (most notes first).",
+          "scope": "resource"
+        },
+        "markdownWorkbench.tags.viewNested": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show nested tags (`#a/b`) under their parent in the Tags view, rather than as a flat list.",
           "scope": "resource"
         },
         "markdownWorkbench.vault.rootMarkers": {

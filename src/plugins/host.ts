@@ -18,3 +18,4 @@ export { inlineTitleHost } from "./inlineTitle/host";
 export { tagsHost } from "./tags/host";
 export { suggestHost } from "./suggest/host";
 export { searchHost } from "./search/host";
+export { tagsViewHost } from "./tags/view";

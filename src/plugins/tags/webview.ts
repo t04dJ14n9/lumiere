@@ -10,6 +10,10 @@ import { protocol } from "./protocol";
 export const tagsWebview: Plugin = {
   name: "tags",
   inject: { required: ["editor", "livePreview", "rpc"] },
+  // The settings only shape the window's Tags view; widgets stay as they are.
+  reconfigure() {
+    return true;
+  },
   apply(ctx) {
     ctx.on("suggest/trigger", tagSuggestion);
     const search = (tag: string) => {

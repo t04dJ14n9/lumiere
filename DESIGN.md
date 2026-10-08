@@ -1003,8 +1003,9 @@ Short specifications, beyond the source's tested behaviour:
 - **links**: plain click opens a rendered link; Cmd/Ctrl-click opens revealed
   source; a click that ends a text selection only selects. Unresolved
   wikilinks get `is-unresolved` styling while not revealed, from
-  `vault.unresolvedLinks` (host pushes the set for the note on
-  `vault/resolved`). Opening goes through `links/open` (§16). Cmd/Ctrl+Alt+click
+  `vault.unresolvedLinks` (the host pushes the note's set when it changes after
+  each re-resolution, through `VaultIndex.onDidResolve`: panel kernels do not
+  see the window's `vault/resolved` event). Opening goes through `links/open` (§16). Cmd/Ctrl+Alt+click
   opens to the side.
 - **suggest**: sources are `[[` files and frontmatter `aliases` and unresolved
   link texts; `[[Note#` headings; `[[Note#^` and `[[^^` blocks; `#` tags.
