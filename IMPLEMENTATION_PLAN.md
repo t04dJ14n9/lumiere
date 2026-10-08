@@ -1198,3 +1198,30 @@ metadata/footnote-extract, and all other remaining eslint.legacy.mjs entries.
 Complete remaining README rewrites, kernel why-comments and manual regression
 inventory before the readability completion record and ordered checks. Remaining
 Phase 4 plugins and Phases 5–8 are unchanged from the Tables progress record.
+
+### Readability pass progress — Property scalar editing, 2026-10-08
+
+Delivered: scalar drafts have a `PropertyField` owner with named begin/commit/
+cancel/event operations; checkbox registration remains in `fields.ts`.
+`PropertyEditing` takes named options instead of nine positional parameters.
+Extracted pure edit/order composition to `edit-transaction.ts` and separated
+conversion confirmation from its stale-source check and application. Added tests
+for rename/removal ordering, explicit order, no-op/stale edits and conversion
+value policy. Existing unit assertions were preserved. README/manual updated.
+
+Backlog since preceding unit → now: max-lines-per-function 55 → 53; complexity
+27 → 26; max-params 11 → 10; no-nested-ternary 16 → 16; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 70 → 68. No exemptions or inline
+disables added. Unit count 224 → 227.
+Checks: `pnpm check` 227/227; `pnpm test:browser` 14/14. Native not run because
+native wiring is unchanged. Logs: `docs/checks/readability-property-editing-{check,browser}.txt`.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo.
+Deviations: none. No intentional behavior changes or new bug fixes.
+
+Known issues / exact remaining work: properties form/order/selection/sheet-html/
+sheet/webview; then pagePreview/controller, host/workbench, editor and footnotes
+registrations, markdown/search/evaluate and metadata/footnote-extract, and all
+other remaining eslint.legacy.mjs entries. Finish remaining READMEs, kernel
+why-comments, manual regression inventory and readability completion checks.
+Remaining Phase 4 plugins and Phases 5–8 remain as previously recorded. Owner
+manual acceptance has not run; no phase completion is claimed.

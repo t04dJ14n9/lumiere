@@ -1,9 +1,8 @@
-import { ChangeSet } from "@codemirror/state";
+import { propertyTransaction } from "./edit-transaction";
 import type { EditorView } from "@codemirror/view";
 import {
   frontmatter,
   matchesPropertyKind,
-  propertyChanges,
   type PropertyEdit,
 } from "../../markdown/properties";
 import { editGroup } from "../document/api";
@@ -15,6 +14,18 @@ import {
 } from "../../markdown/properties/types";
 
 import { confirmPropertyType } from "./type-dialog";
+
+interface PropertyEditingOptions {
+  view(): EditorView | undefined;
+  setStatus(message: string): void;
+  action(action: Action): void;
+  refresh(): void;
+  setType(key: string, kind: PropertyKind | null): void;
+  show(): void;
+  focusTitle(): void;
+  pageHeading(backward: boolean): void;
+  signal: AbortSignal;
+}
 
 type PropertyEditor = NonNullable<PropertyContext["propertyEditor"]>;
 
@@ -36,28 +47,18 @@ export class PropertyEditing {
   private requestedType: { key: string; kind: PropertyKind | null } | undefined;
   private sequence = 0;
 
-  constructor(
-    private readonly view: () => EditorView | undefined,
-    private readonly setStatus: (message: string) => void,
-    private readonly action: (action: Action) => void,
-    private readonly refresh: () => void,
-    private readonly setType: (key: string, kind: PropertyKind | null) => void,
-    private readonly show: () => void,
-    private readonly focusTitle: () => void,
-    private readonly pageHeading: (backward: boolean) => void,
-    private readonly signal: AbortSignal,
-  ) {}
+  constructor(private readonly options: PropertyEditingOptions) {}
 
   /** The `propertyEditor` capabilities handed to the rendered property sheet. */
   editor(source: string): PropertyEditor {
     return {
       source,
-      currentSource: () => this.view()?.state.doc.toString() ?? "",
+      currentSource: () => this.options.view()?.state.doc.toString() ?? "",
       refresh: () => {
-        const owner = this.view();
+        const owner = this.options.view();
         queueMicrotask(() => {
-          if (owner && this.view() === owner) {
-            this.refresh();
+          if (owner && this.options.view() === owner) {
+            this.options.refresh();
           }
         });
       },
@@ -69,18 +70,18 @@ export class PropertyEditing {
       setType: (key, kind) => {
         this.requestedType = { key, kind };
         this.forced.delete(key);
-        this.setType(key, kind);
+        this.options.setType(key, kind);
       },
-      action: this.action,
+      action: this.options.action,
       focusTitle: () => {
-        const view = this.view();
+        const view = this.options.view();
         if (view) {
-          this.focusTitle();
+          this.options.focusTitle();
         }
       },
-      pageHeading: (backward) => this.pageHeading(backward),
+      pageHeading: (backward) => this.options.pageHeading(backward),
       focusBody: () => {
-        const view = this.view();
+        const view = this.options.view();
         if (view) {
           view.dispatch({
             selection: {
@@ -99,59 +100,23 @@ export class PropertyEditing {
    * sort is persisted together with the edit as one undoable change.
    */
   edit(expected: string, operation: PropertyEdit): boolean {
-    const view = this.view();
+    const view = this.options.view();
     if (!view) {
       return false;
     }
-    const source = view.state.doc.toString();
-    const current = frontmatter(source)?.raw ?? "";
-    if (current.replace(/\r?\n$/, "") !== expected.replace(/\r?\n$/, "")) {
-      return false;
-    }
-    const changes = propertyChanges(source, operation);
-    if (!changes) {
-      return false;
-    }
-    let changeSet = ChangeSet.of(
-      changes.filter(
-        (change) => source.slice(change.from, change.to) !== change.insert,
-      ),
-      source.length,
-    );
     const displayed = [
       ...view.dom.querySelectorAll<HTMLElement>(
         ".hybrid-properties > div > .properties > dl > [data-property-row]",
       ),
     ].map((row) => row.dataset.propertyRow!);
-    const stored = Object.keys(frontmatter(source)?.values ?? {});
-    if (
-      operation.type !== "order" &&
-      displayed.length === stored.length &&
-      displayed.some((key, index) => key !== stored[index])
-    ) {
-      const next = changeSet.apply(view.state.doc);
-      const remaining = new Set(
-        Object.keys(frontmatter(next.toString())?.values ?? {}),
-      );
-      const order: string[] = [];
-      for (const key of displayed) {
-        const name =
-          operation.type === "rename" && key === operation.key
-            ? operation.name
-            : key;
-        if (remaining.delete(name)) {
-          order.push(name);
-        }
-      }
-      order.push(...remaining);
-      const reorder = propertyChanges(next.toString(), {
-        type: "order",
-        keys: order,
-      });
-      if (!reorder) {
-        return false;
-      }
-      changeSet = changeSet.compose(ChangeSet.of(reorder, next.length));
+    const changeSet = propertyTransaction({
+      document: view.state.doc,
+      expected,
+      operation,
+      displayed,
+    });
+    if (!changeSet) {
+      return false;
     }
     if (!changeSet.empty) {
       view.dispatch({
@@ -164,17 +129,19 @@ export class PropertyEditing {
 
   /** Obsidian's "Add file property": create the sheet if needed and start a new row. */
   add(): void {
-    const view = this.view();
+    const view = this.options.view();
     if (!view || document.querySelector("dialog[open]")) {
       return;
     }
     const source = view.state.doc.toString();
     const header = frontmatter(source);
     if (header?.error || (!header && /^---(?:\r?\n|$)/.test(source))) {
-      this.setStatus("Fix the properties source before adding a field.");
+      this.options.setStatus(
+        "Fix the properties source before adding a field.",
+      );
       return;
     }
-    this.show();
+    this.options.show();
     const emptyHeader = "---\n---\n";
     view.dispatch({
       ...(!header
@@ -186,7 +153,8 @@ export class PropertyEditing {
       selection: { anchor: header?.end ?? emptyHeader.length },
     });
     queueMicrotask(() =>
-      this.view()
+      this.options
+        .view()
         ?.dom.querySelector<HTMLButtonElement>("[data-property-add]")
         ?.click(),
     );
@@ -202,7 +170,7 @@ export class PropertyEditing {
       }
     }
     this.preferences = message.types;
-    this.refresh();
+    this.options.refresh();
     const request = this.requestedType;
     if (
       request &&
@@ -217,7 +185,7 @@ export class PropertyEditing {
   }
 
   private forcedTypes(): PropertyTypes {
-    const view = this.view();
+    const view = this.options.view();
     const values = view && frontmatter(view.state.doc.toString())?.values;
     for (const [key, entry] of this.forced) {
       if (token(values?.[key]) !== entry.value) {
@@ -237,7 +205,7 @@ export class PropertyEditing {
     key: string,
     kind: PropertyKind,
   ): Promise<void> {
-    const owner = this.view();
+    const owner = this.options.view();
     if (!owner) {
       return;
     }
@@ -246,15 +214,8 @@ export class PropertyEditing {
     if (!header || matchesPropertyKind(kind, value)) {
       return;
     }
-    const scalarList =
-      Array.isArray(value) &&
-      value.every(
-        (item) =>
-          item === null ||
-          ["string", "number", "boolean"].includes(typeof item),
-      );
-    if (typeof value === "object" && value !== null && !scalarList) {
-      this.setStatus("Edit nested property values in source.");
+    if (isNestedPropertyValue(value)) {
+      this.options.setStatus("Edit nested property values in source.");
       return;
     }
     const row = (): HTMLElement | null =>
@@ -264,18 +225,30 @@ export class PropertyEditing {
         key,
         inferPropertyKind(key, value),
         kind,
-        this.signal,
+        this.options.signal,
       ))
     ) {
       row()?.focus();
       return;
     }
+    this.finishConversion({ owner, header: header.raw, key, kind, value, row });
+  }
+
+  private finishConversion(options: {
+    owner: EditorView;
+    header: string;
+    key: string;
+    kind: PropertyKind;
+    value: unknown;
+    row(): HTMLElement | null;
+  }): void {
+    const { owner, header, key, kind, value, row } = options;
     if (
-      this.view() !== owner ||
-      frontmatter(owner.state.doc.toString())?.raw !== header.raw ||
+      this.options.view() !== owner ||
+      frontmatter(owner.state.doc.toString())?.raw !== header ||
       inferPropertyKind(key, value, this.preferences) !== kind
     ) {
-      this.setStatus(
+      this.options.setStatus(
         "The properties changed. Choose the type again to update this value.",
       );
       return;
@@ -285,7 +258,7 @@ export class PropertyEditing {
       return;
     }
     this.forced.set(key, { kind, value: valueToken });
-    this.refresh();
+    this.options.refresh();
     row()?.querySelector<HTMLButtonElement>("[data-property-edit]")?.click();
     row()?.querySelector<HTMLInputElement>("dd input:not([hidden])")?.focus();
   }
@@ -297,4 +270,14 @@ function token(value: unknown): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+export function isNestedPropertyValue(value: unknown): boolean {
+  const scalarList =
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        item === null || ["string", "number", "boolean"].includes(typeof item),
+    );
+  return typeof value === "object" && value !== null && !scalarList;
 }

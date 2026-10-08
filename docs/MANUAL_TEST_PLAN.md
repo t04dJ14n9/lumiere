@@ -471,3 +471,10 @@ smoke scenarios. Use only the disposable fixture vault described above.
   undo/redo and save. Rename while saving and verify invalid or duplicate names
   block the operation; successful edits restore focus to the requested row.
   Reconcile a second-panel change while a type menu is open. Not run by the agent.
+
+- **Properties — scalar drafts and transactions:** rerun checkbox changes,
+  scalar number/date validation, Enter/Escape/blur/Mod+S and save rejection.
+  Sort the sheet, then rename/edit/remove a row; one undo should restore both
+  its value and the original source order. Repeat with two panels and stale
+  headers. Change a property type, then change the source while its confirmation
+  is open; the old confirmation must not convert the new value. Not run here.

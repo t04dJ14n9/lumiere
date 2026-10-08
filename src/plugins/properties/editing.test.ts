@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import type { TransactionSpec } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import { PropertyEditing } from "./editing";
+import { PropertyEditing, isNestedPropertyValue } from "./editing";
 import { frontmatter } from "../../markdown/properties";
 import { itemOccurrence } from "./chips";
 import { protocol } from "./protocol";
@@ -26,17 +26,17 @@ test("property edits reject stale headers and combine displayed ordering with on
       transactions++;
     },
   } as unknown as EditorView;
-  const editing = new PropertyEditing(
-    () => view,
-    () => {},
-    () => {},
-    () => {},
-    () => {},
-    () => {},
-    () => {},
-    () => {},
-    new AbortController().signal,
-  );
+  const editing = new PropertyEditing({
+    view: () => view,
+    setStatus: () => {},
+    action: () => {},
+    refresh: () => {},
+    setType: () => {},
+    show: () => {},
+    focusTitle: () => {},
+    pageHeading: () => {},
+    signal: new AbortController().signal,
+  });
   assert.equal(
     editing.edit("stale", { type: "set", key: "a", value: 2 }),
     false,
@@ -77,4 +77,13 @@ test("property RPC rejects arbitrary preference types and oversized keys", () =>
   assert.deepEqual(protocol.requests.setType.params.parse({ key: "a" }), {
     key: "a",
   });
+});
+
+test("type conversion leaves nested objects in source but permits scalar lists", () => {
+  for (const value of [null, "text", 1, false, [], [null, 1, "text", false]]) {
+    assert.equal(isNestedPropertyValue(value), false);
+  }
+  for (const value of [{ child: 1 }, [["nested"]], [{ child: 1 }]]) {
+    assert.equal(isNestedPropertyValue(value), true);
+  }
 });

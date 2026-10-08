@@ -56,16 +56,16 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
           new PropertyWidget(block.source, context, display === "hidden"),
       });
     };
-    const editing = new PropertyEditing(
-      () => (lifetime.signal.aborted ? undefined : view),
-      (message) => ctx.logger.warn(message),
-      (action) => {
+    const editing = new PropertyEditing({
+      view: () => (lifetime.signal.aborted ? undefined : view),
+      setStatus: (message) => ctx.logger.warn(message),
+      action: (action) => {
         void ctx.rpc
           .call(actions, "action", { action })
           .catch((error) => ctx.logger.error("Property action failed", error));
       },
-      refresh,
-      (key, kind) => {
+      refresh: refresh,
+      setType: (key, kind) => {
         void ctx.rpc
           .call(protocol, "setType", { key, kind: kind ?? undefined })
           .then((types) => {
@@ -77,17 +77,17 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
             ctx.logger.error("Property preference failed", error),
           );
       },
-      () => {
+      show: () => {
         ctx.emit("editor/clearProjection");
         display = "visible";
         install();
       },
-      () => {
+      focusTitle: () => {
         ctx.bail("editor/focusTitle");
       },
-      (backward) => view.plugin(heading)?.page(backward),
-      lifetime.signal,
-    );
+      pageHeading: (backward) => view.plugin(heading)?.page(backward),
+      signal: lifetime.signal,
+    });
     const context: PropertyContext = {
       source: "current",
       propertyEditor: editing.editor("current"),

@@ -21,13 +21,16 @@ input. Type preferences are stored by the injected vault root.
 - `type-store.ts`: persisted preferences and shared subscriptions.
 - `webview.ts`: renderer, draft flush, commands and editing service registrations.
 - `context.ts`: internal sheet adapter capabilities.
-- `editing.ts`: source transactions, focus and property edit orchestration.
+- `editing.ts`: source edits, focus and type-conversion orchestration.
+- `edit-transaction.ts`: pure edit/order composition into one ChangeSet.
+- `edit-transaction.test.ts`: stale, no-op, rename, removal and order coverage.
 - `widget.ts`: Live Preview sheet widget lifetime and reuse.
 - `sheet.ts`: DOM reconciliation and draft preservation.
 - `sheet-html.ts`: initial sheet and property row HTML.
 - `sanitize.ts`: property-specific sanitized HTML policy.
 - `rows.ts`: row reconciliation and focused field retention.
-- `fields.ts`: scalar input bindings and validation.
+- `fields.ts`: checkbox and scalar field registrations.
+- `field-draft.ts`: one scalar draft, validation and commit/cancel focus.
 - `controls.ts`: structural controls, retained panel bindings and ordering.
 - `control-edits.ts`: structural transactions and focus restoration.
 - `row-name.ts`: name validation, rename commit and chosen-type retention.
