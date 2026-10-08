@@ -3,6 +3,7 @@ import { captureView, restoreView } from "./view-transfer";
 import type { PanelShell } from "../../shared/runtime";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
+import type {} from "../vault/api";
 import type { EditorPanel } from "./api";
 import { createPanel } from "./panel";
 import { protocol } from "./protocol";
@@ -12,7 +13,7 @@ interface EditorHostConfig {
 }
 export const editorHost: Plugin<EditorHostConfig> = {
   name: "editor",
-  inject: { required: ["workbench", "documents"] },
+  inject: { required: ["workbench", "documents"], optional: ["vaults"] },
   apply(ctx, config) {
     const panels = new Map<string, EditorPanel>();
     const active = () => [...panels.values()].find((panel) => panel.active());
@@ -26,7 +27,13 @@ export const editorHost: Plugin<EditorHostConfig> = {
             ctx.emit("editor/closed", panel);
           },
           onState: () => ctx.emit("editor/activeChanged", active()),
-          configure: config.configure,
+          configure(context, panel) {
+            // Panel kernels are isolated; share the window-level registry explicitly.
+            if (ctx.vaults) {
+              context.provide("vaults", ctx.vaults);
+            }
+            config.configure(context, panel);
+          },
           rank: ctx.runtime.rank,
         });
         panels.set(panel.id, panel);

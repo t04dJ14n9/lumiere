@@ -2134,3 +2134,21 @@ Tags view and unresolved styling; do not start Phase 6 until its completion
 record is on main. Phases 6–8 remain as planned. Native smoke proves boot/edit/
 save/undo, not hands-on rename correctness; owner should test split-pane title
 rename and Properties focus first for this plugin.
+
+### Core fix — Panel vault service bridge, 2026-10-08
+
+Found while wiring Phase 4 tag search: editor panels create isolated runtimes,
+but the shared root `vaults` registry was never provided to them. Consequently
+panel `vault` and its dependent host features stayed pending after the Phase 5
+part-one merge. Editor now optionally injects the registry and provides that
+same instance before panel feature configuration. RPC runtimes stay independent.
+Added a unit proving two distinct panel kernels share the registry. Claude's
+index implementation, worktree, branch and VaultIndex interface are unchanged.
+This is a separately committed core wiring bug fix, not a readability rewrite
+or a claim to complete any Phase 5 deliverable.
+Checks in order: `pnpm check` 362/362; `pnpm test:browser` 14/14;
+`pnpm test:vscode` 1/1, isolated fresh VSIX. Logs:
+`docs/checks/panel-vault-bridge-{check,browser,native}.txt`.
+Ledger unchanged: 87/19/2/333/7. No lint exceptions. Manual acceptance unrun.
+Known issues: continue Phase 4 tags/suggest/search/pasteHtml/copyForAgent/markers;
+Claude's Phase 5 completion gate still precedes Phases 6–8.
