@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import { documentTree } from "./document-tree";
 import { inlineRenderers } from "./registry";
-import { inlineDecorations } from "./inline";
+import { bareUrlTarget, inlineDecorations } from "./inline";
 
 test("inline decorations retain basic marks, rendered links and deduplicated heading lines", () => {
   const doc = "# Title\n\n**bold** [label](target)\n\nafter";
@@ -55,4 +55,40 @@ test("custom inline renderers can retain detached context functions and replace 
     classes.push(value.spec.class);
   });
   assert.deepEqual(classes, ["custom"]);
+});
+
+test("bare URLs, www addresses and angle-bracket links are rendered links", () => {
+  const doc =
+    "See https://example.com, www.example.org and <https://x.test>.\n\nend";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const links: string[] = [];
+  const hidden: string[] = [];
+  inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+    0,
+    doc.length,
+    (from, to, value) => {
+      const href = value.spec.attributes?.["data-href"];
+      if (href) {
+        links.push(href);
+      } else if (!value.spec.class && !value.spec.widget) {
+        hidden.push(doc.slice(from, to));
+      }
+    },
+  );
+  assert.deepEqual(links, [
+    "https://example.com",
+    "https://www.example.org",
+    "https://x.test",
+  ]);
+  assert.deepEqual(hidden, ["<", ">"]);
+});
+
+test("a bare URL's target keeps its scheme and maps addresses to https or mail", () => {
+  assert.equal(bareUrlTarget("http://a.test/x"), "http://a.test/x");
+  assert.equal(bareUrlTarget("www.a.test"), "https://www.a.test");
+  assert.equal(bareUrlTarget("me@a.test"), "mailto:me@a.test");
 });

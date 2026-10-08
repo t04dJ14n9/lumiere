@@ -103,6 +103,7 @@ class InlineDecorations implements InlineContext {
     }
     this.decorateBlockLines(node, visible);
     this.decorateLink(node);
+    this.decorateBareUrl(node);
     this.hideSyntax(node);
     return undefined;
   }
@@ -167,6 +168,27 @@ class InlineDecorations implements InlineContext {
         this.hide(closingLabel.from, to);
       }
       this.hide(from, from + 1);
+    }
+  }
+
+  /** URLs written as text (`https://…`, `www.…`, `<…>`) are links, as in Obsidian. */
+  private decorateBareUrl(node: SyntaxNodeRef): void {
+    const parent = node.node.parent;
+    if (
+      node.name !== "URL" ||
+      parent?.name === "Link" ||
+      parent?.name === "Image"
+    ) {
+      return;
+    }
+    const { from, to } = node;
+    const isRendered = !this.revealed(from, to);
+    this.mark(from, to, isRendered ? "md-link md-link-rendered" : "md-link", {
+      "data-href": bareUrlTarget(this.state.sliceDoc(from, to)),
+    });
+    if (isRendered && parent?.name === "Autolink") {
+      this.hide(parent.from, from);
+      this.hide(to, parent.to);
     }
   }
 
@@ -261,3 +283,13 @@ export const hybridInline = ViewPlugin.fromClass(
     },
   },
 );
+
+/** The address a bare URL opens: GFM links `www.` to https and plain addresses to mail. */
+export function bareUrlTarget(text: string): string {
+  if (/^[a-z][a-z\d+.-]*:/i.test(text)) {
+    return text;
+  }
+  return text.includes("@") && !text.includes("/")
+    ? `mailto:${text}`
+    : `https://${text}`;
+}
