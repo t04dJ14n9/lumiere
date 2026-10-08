@@ -2007,3 +2007,21 @@ Ledger: 87/16/2/333/10. Deviations: none. Manual inventory updated; acceptance u
 Known issues: Embeds post-process/webview, remaining README/manual inventory and
 readability completion checks; remaining Phase 4 plugins, Claude's Phase 5 gate
 and Phases 6–8 as specified above.
+
+### Readability pass progress — Embeds lifecycle, 2026-10-08
+
+Delivered: EmbedPass owns placeholder restoration, resource resolution, per-kind
+image/media/note rendering and nested-pass disposal. It receives only its render,
+resource and opening capabilities; plugin apply names renderer/content/command
+registrations. README lists actual files/services/limits and manual regressions.
+Backlog exhausted: 2 → 0 distinct files, long-function 2 → 0; all other lists
+already empty. Deleted eslint.legacy.mjs and its config block. No rule limits
+changed, no new inline disables or intentional behavior fixes.
+Checks: `pnpm check` 352/352; `pnpm test:browser` 14/14. Native not rerun for
+this webview-only unit; completion check follows. Logs:
+`docs/checks/readability-embeds-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: finish the remaining README template audit (autoPair, dialect,
+folding, indentGuides, lineNumbers, smartLists, spellcheck), manual inventory and
+ordered readability completion checks/record. Then remaining Phase 4 plugins,
+Claude's Phase 5 completion gate and Phases 6–8 as specified above.

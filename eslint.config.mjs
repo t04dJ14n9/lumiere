@@ -1,7 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import path from "node:path";
-import legacy from "./eslint.legacy.mjs";
 // Same baseline as PDF Workbench, with architecture boundaries for this project.
 const boundaries = {
   meta: {
@@ -86,11 +85,6 @@ const size = {
     },
   ],
 };
-// eslint.legacy.mjs is the readability backlog: files that broke a size rule
-// when the rules came in. Files only ever leave it.
-const backlog = Object.entries(legacy)
-  .filter(([, files]) => files.length > 0)
-  .map(([rule, files]) => ({ files, rules: { [rule]: "off" } }));
 export default tseslint.config(
   {
     ignores: [
@@ -118,7 +112,6 @@ export default tseslint.config(
   },
   { files: ["**/*.ts", "**/*.mjs"], rules: style },
   { files: ["src/**/*.ts"], ignores: ["**/*.test.ts"], rules: size },
-  ...backlog,
   {
     files: ["**/*.mjs"],
     languageOptions: {

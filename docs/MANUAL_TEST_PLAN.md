@@ -665,3 +665,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   media controls. Close/disable during fetch, source-open and buffer append;
   object URLs/readers/listeners must be released. Verify first playback after
   Opus preroll and visible unsupported/truncated-media errors. Not run here.
+
+- **Embeds — pass lifecycle:** rerun note/heading/block transclusion, cycles,
+  embedded tasks/links/footnotes, remote trust, attachments and Insert Embed.
+  Disable while a resource or nested note render is pending; late passes must
+  dispose, media must stop and original placeholders must return. Not run here.
