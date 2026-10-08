@@ -799,6 +799,11 @@ ctx.effect(() => ctx.livePreview.block(tableRenderer));
 ctx.effect(() => ctx.livePreview.inline(tagRenderer));
 ```
 
+When several block renderers match a node, the first in rank order (§5.10)
+wins, as with `bail` events. Specific renderers rank before general ones in
+the catalog, for example `diagrams` before `codeBlocks`, which both match a
+Mermaid fence.
+
 Registries are facets fed from fiber compartments. Turning a plugin off
 removes its renderers, and the engine dispatches a render-revision bump so its
 widgets fall back to source. Basic syntax (emphasis, strong, strikethrough,

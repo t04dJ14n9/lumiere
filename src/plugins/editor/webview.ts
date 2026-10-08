@@ -1,6 +1,9 @@
+import { bindCaller } from "../../kernel";
+import type { CallerBound } from "../../kernel";
+import { ExtensionRegistry } from "./extensions";
 import { foldState, foldedRanges } from "@codemirror/language";
 import { createMenu } from "../../webview/ui/menu";
-import { Compartment, EditorState, StateEffect, Prec } from "@codemirror/state";
+import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
 import { getSyncedVersion } from "@codemirror/collab";
@@ -25,12 +28,14 @@ export const editorWebview: Plugin<{
   apply(ctx, config) {
     const presentation = createViewState(),
       folds = new Map<string, boolean>();
+    const pluginExtensions = new Compartment();
     let mode = config.mode;
     const view = new EditorView({
       parent: config.parent,
       state: EditorState.create({
         doc: config.text,
         extensions: [
+          pluginExtensions.of([]),
           presentation.restoreScrollPosition,
           foldState,
           ctx.document.extension,
@@ -51,7 +56,19 @@ export const editorWebview: Plugin<{
     });
     ctx.effect(() => () => view.destroy());
     ctx.effect(() => ctx.document.attach(view));
-    const editor: EditorService = {
+    const registry = new ExtensionRegistry(ctx.runtime.rank, (extensions) => {
+      view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
+    });
+    const editor: EditorService & CallerBound<EditorService> = {
+      [bindCaller](caller) {
+        return new Proxy(editor, {
+          get(target, key, receiver) {
+            if (key === "extend") return (extension: Parameters<EditorService["extend"]>[0], options?: Parameters<EditorService["extend"]>[1]) =>
+              registry.register(options?.owner ?? caller.fiber!.definition.name, extension, options?.slot);
+            return Reflect.get(target, key, receiver);
+          },
+        });
+      },
       view,
       clipboard: createClipboard(ctx.rpc),
       folds,
@@ -65,20 +82,7 @@ export const editorWebview: Plugin<{
         view.focus();
       },
       extend(extension, options) {
-        const compartment = new Compartment(),
-          wrap = {
-            override: Prec.highest,
-            suggest: Prec.high,
-            keymap: Prec.default,
-            base: Prec.low,
-          }[options?.slot ?? "keymap"];
-        view.dispatch({
-          effects: StateEffect.appendConfig.of(compartment.of(wrap(extension))),
-        });
-        return () => {
-          if (view.dom.isConnected)
-            view.dispatch({ effects: compartment.reconfigure([]) });
-        };
+        return registry.register(options?.owner ?? "editor", extension, options?.slot);
       },
     };
     ctx.provide("editor", editor);

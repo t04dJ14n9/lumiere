@@ -1,22 +1,26 @@
+import { ExtensionRegistry } from "../../../src/plugins/editor/extensions";
+import type { LivePreview } from "../../../src/plugins/livePreview/api";
+import type { CallerBound } from "../../../src/kernel";
 import type { MarkdownService } from "../../../src/plugins/dialect/api";
 import type { RenderPass } from "../../../src/plugins/render/api";
 import test from "node:test";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import assert from "node:assert/strict";
-import { Compartment, EditorState, StateEffect } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import type { TransactionSpec } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import { Context } from "../../../src/kernel";
+import { Context, bindCaller } from "../../../src/kernel";
 import { featureController } from "../../../src/webview/features";
-import { features } from "../../../src/plugins/catalog";
+import { features, pluginRank } from "../../../src/plugins/catalog";
 import type { EditorService } from "../../../src/plugins/editor/api";
 import { foldRange } from "../../../src/plugins/folding/webview";
 import { pairs } from "../../../src/plugins/autoPair/webview";
 import { indentation } from "../../../src/plugins/indentGuides/webview";
 
 function fixture() {
-  const root = Context.create();
-  let state = EditorState.create({ doc: "# Heading\n\nbody" });
+  const root = Context.create({ rank: pluginRank });
+  const compartment = new Compartment();
+  let state = EditorState.create({ doc: "# Heading\n\nbody", extensions: compartment.of([]) });
   const view = {
     get state() {
       return state;
@@ -60,22 +64,17 @@ function fixture() {
       throw new Error("No DOM in unit fixture");
     },
   });
-  root.provide("livePreview", {
+  const preview: LivePreview & CallerBound<LivePreview> = {
     mode: "source",
     setMode() {},
-    block() {
-      extensions++;
-      return () => {
-        extensions--;
-      };
+    block() { throw new Error("unbound renderer"); },
+    inline() { throw new Error("unbound renderer"); },
+    [bindCaller](caller) {
+      const register = () => registry.register(caller.fiber!.definition.name, []);
+      return { ...preview, block: register, inline: register };
     },
-    inline() {
-      extensions++;
-      return () => {
-        extensions--;
-      };
-    },
-  });
+  };
+  root.provide("livePreview", preview);
   let receive: (value: unknown) => void = () => {};
   const rpc = new Endpoint(
     {
@@ -104,7 +103,14 @@ function fixture() {
   root.provide("rpc", rpc);
   root.effect(() => () => rpc.dispose());
   const handlers = new Map<string, () => boolean | Promise<boolean>>();
-  root.provide("editor", {
+  const registry = new ExtensionRegistry(pluginRank, (extensions) => {
+    view.dispatch({ effects: compartment.reconfigure(extensions) });
+  });
+  const editor: EditorService & CallerBound<EditorService> = {
+    [bindCaller](caller) {
+      return { ...editor, extend: (extension, options) =>
+        registry.register(options?.owner ?? caller.fiber!.definition.name, extension, options?.slot) };
+    },
     view,
     mode: "source",
     folds: new Map(),
@@ -115,18 +121,11 @@ function fixture() {
       },
       async write() {},
     },
-    extend(extension) {
-      extensions++;
-      const compartment = new Compartment();
-      view.dispatch({
-        effects: StateEffect.appendConfig.of(compartment.of(extension)),
-      });
-      return () => {
-        extensions--;
-        view.dispatch({ effects: compartment.reconfigure([]) });
-      };
+    extend(extension, options) {
+      return registry.register(options?.owner ?? "editor", extension, options?.slot);
     },
-  } satisfies EditorService);
+  };
+  root.provide("editor", editor);
   root.provide("commands", {
     register(id, run) {
       assert.equal(handlers.has(id), false);
@@ -142,10 +141,11 @@ function fixture() {
   return {
     root,
     view,
+    registry,
     handlers,
     configure: featureController(root),
     get extensions() {
-      return extensions;
+      return extensions + registry.ordered().length;
     },
   };
 }
@@ -255,4 +255,52 @@ test("pair settings separate Markdown from brackets and indentation uses tab sto
   assert.ok(pairs({ brackets: false, markdown: true }).includes("*"));
   assert.equal(pairs({ brackets: false, markdown: true }).includes("("), false);
   assert.equal(indentation(" \t  text", 4), 6);
+});
+
+function settingsFor(enabled: Set<string>) {
+  return Object.fromEntries(features.map((manifest) => [manifest.id, {
+    enabled: enabled.has(manifest.id),
+    config: (manifest.config?.parse({}) ?? {}) as Record<string, unknown>,
+  }]));
+}
+function owners(f: ReturnType<typeof fixture>) {
+  return f.registry.ordered().map(({ owner, slot }) => ({ owner, slot }));
+}
+
+test("catalog composition has the same ordered owners after every toggle as a fresh editor", async () => {
+  const f = fixture();
+  const fresh = fixture();
+  const enabled = new Set(features.map((item) => item.id));
+  await fresh.configure(settingsFor(enabled));
+  await f.configure(settingsFor(enabled));
+  const expected = owners(fresh);
+  assert.ok(expected.some(({ owner }) => owner === "tables"));
+  for (const manifest of features) {
+    enabled.delete(manifest.id);
+    await f.configure(settingsFor(enabled));
+    assert.equal(owners(f).some(({ owner }) => owner === manifest.id), false);
+    enabled.add(manifest.id);
+    await f.configure(settingsFor(enabled));
+    assert.deepEqual(owners(f), expected, manifest.id);
+  }
+  await f.root.dispose();
+  await fresh.root.dispose();
+});
+
+test("seeded catalog toggle sequence ends with fresh-start owner order", async () => {
+  const f = fixture();
+  const enabled = new Set<string>();
+  let seed = 104729;
+  for (let step = 0; step < 60; step++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const id = features[seed % features.length]!.id;
+    if (enabled.has(id)) enabled.delete(id);
+    else enabled.add(id);
+    await f.configure(settingsFor(enabled));
+  }
+  const fresh = fixture();
+  await fresh.configure(settingsFor(enabled));
+  assert.deepEqual(owners(f), owners(fresh));
+  await f.root.dispose();
+  await fresh.root.dispose();
 });

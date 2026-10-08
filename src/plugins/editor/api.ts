@@ -29,7 +29,7 @@ export interface EditorService {
   readonly view: EditorView;
   extend(
     extension: Extension,
-    options?: { slot?: "override" | "suggest" | "keymap" | "base" },
+    options?: { slot?: "override" | "suggest" | "keymap" | "base"; owner?: string },
   ): Disposer;
   focus(): void;
 }

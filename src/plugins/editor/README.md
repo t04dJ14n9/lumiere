@@ -11,3 +11,9 @@ properties and HTML conversion belong to their feature plugins. View transfer
 flushes first, rejects a moving document version, and retains the old source
 identity to remap disclosure keys after rename. Unit tests cover independent
 panel captures, backward selections, fold replacement and scroll restoration.
+
+Extensions use one reconfigured compartment and the pure `ExtensionRegistry`.
+Registrations sort by slot, catalog rank, owner ID and per-owner registration
+order. `editor` binds `extend` to its consumer; an explicit owner supports
+service forwarding such as Live Preview's caller-bound block/inline methods.
+The registry removes registrations rather than leaving empty compartments.

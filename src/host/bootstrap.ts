@@ -1,3 +1,4 @@
+import { pluginRank } from "../plugins/catalog";
 import { hostFeatures } from "./features";
 import { features } from "../plugins/catalog";
 import { Context } from "../kernel";
@@ -12,7 +13,7 @@ import {
   resourcesHost,
 } from "../plugins/host";
 export async function bootstrap(workbench: Workbench) {
-  const root = Context.create();
+  const root = Context.create({ rank: pluginRank });
   root.provide("workbench", workbench);
   root.plugin(documentHost);
   root.plugin(editorHost, {

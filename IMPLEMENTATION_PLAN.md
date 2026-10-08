@@ -937,3 +937,19 @@ registry and caller forwarding, editor settings, view-state contributions,
 folding ownership/reconfiguration/cache fix, controller updates, catalog-wide
 composition tests and plugin audit/manual scenarios. Then Phase 4 inlineTitle,
 tags/suggest/search, pasteHtml/copyForAgent/markers and Phases 5–8 remain.
+
+Composition registry unit, 2026-10-08: replaced append-only compartments with
+one sorted registry; caller-bound editor and Live Preview registrations preserve
+consumer ownership. Host, panel and webview roots receive the same catalog rank.
+Line numbers precede folding; tables precede Vim in the override slot. Included
+the owner's additional first-ranked renderer rule: block selection now takes the
+first match, with generic core renderers explicitly in the base fallback slot.
+Violations fixed: activation-history extension priority, delegated renderers
+losing their owner, and reversed renderer precedence. Registry tests preserve
+unrelated state-field identity; the feature fixture uses the real registry and
+asserts ordered owners after every feature toggle and a seeded toggle sequence.
+Checks: `pnpm check` (204/204); smoke suites still deferred to final composition
+commit. Log: `docs/checks/composition-registry.txt`. Ledger unchanged.
+Known issues: editor settings, feature-owned view state, folding reconfigure/cache,
+controller update, remaining composition audit and config-change tests still
+come first; remaining Phase 4 plugins and Phases 5–8 are unchanged above.

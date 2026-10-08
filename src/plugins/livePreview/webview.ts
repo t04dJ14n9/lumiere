@@ -1,3 +1,6 @@
+import { bindCaller } from "../../kernel";
+import type { CallerBound } from "../../kernel";
+import type { LivePreview } from "./api";
 import { renderedPosition } from "./rendered-position";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
@@ -41,7 +44,16 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
     ctx.effect(() =>
       ctx.editor.extend(compartment.of(mode === "source" ? [] : extension)),
     );
-    const service = {
+    const service: LivePreview & CallerBound<LivePreview> = {
+      [bindCaller](caller) {
+        const owner = caller.fiber!.definition.name;
+        return {
+          ...service,
+          get mode() { return service.mode; },
+          block: (renderer) => ctx.editor.extend(blockRenderers.of(renderer), { owner }),
+          inline: (renderer) => ctx.editor.extend(inlineRenderers.of(renderer), { owner }),
+        };
+      },
       inlineExtensions: () => [documentTree, hybridInline],
       position: renderedPosition,
       block(renderer: Parameters<typeof blockRenderers.of>[0]) {
@@ -73,12 +85,12 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
       "FencedCode",
     ]) {
       ctx.effect(() =>
-        service.block({
+        ctx.editor.extend(blockRenderers.of({
           kind,
           editing: "reveal",
           match: (node) => node.name === kind,
           widget: (block) => new MarkdownBlock(block, ctx.render),
-        }),
+        }), { slot: "base" }),
       );
     }
     ctx.effect(() =>

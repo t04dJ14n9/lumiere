@@ -27,8 +27,7 @@ function index(state: Parameters<typeof revealed>[0]) {
     enter(node) {
       if (blocks.length && node.from < blocks[blocks.length - 1]!.to)
         return false;
-      const renderer = [...state.facet(blockRenderers)]
-        .reverse()
+      const renderer = state.facet(blockRenderers)
         .find((r) => r.match(node, state));
       if (renderer) {
         const range = renderer.range?.(node, state) ?? node;

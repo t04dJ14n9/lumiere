@@ -67,6 +67,7 @@ export const editorHost: Plugin<{
           },
           () => ctx.emit("editor/activeChanged", active()),
           config.configure,
+          ctx.runtime.rank,
         );
         panels.set(panel.id, panel);
         ctx.emit("editor/opened", panel);

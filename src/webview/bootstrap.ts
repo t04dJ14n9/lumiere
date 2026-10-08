@@ -1,3 +1,4 @@
+import { pluginRank } from "../plugins/catalog";
 import { featureController } from "./features";
 import type { Infer } from "../kernel";
 import type { viewState } from "../plugins/editor/protocol";
@@ -22,7 +23,7 @@ export async function bootstrap(
   } = {},
 ) {
   const init = await rpc.call(protocol, "ready", {}),
-    root = Context.create();
+    root = Context.create({ rank: pluginRank });
   root.provide("rpc", rpc);
   root.plugin(documentWebview, init);
   root.plugin(dialectWebview);
