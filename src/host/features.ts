@@ -5,6 +5,7 @@ import {
   tasksHost,
   propertiesHost,
   tagsHost,
+  suggestHost,
 } from "../plugins/host";
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
@@ -26,7 +27,13 @@ export function hostFeatures(
           return;
         }
         const config = workbench.config(panel.document);
-        for (const plugin of [linksHost, tasksHost, propertiesHost, tagsHost]) {
+        for (const plugin of [
+          linksHost,
+          tasksHost,
+          propertiesHost,
+          tagsHost,
+          suggestHost,
+        ]) {
           const enabled =
             config.preset === "obsidian" &&
             (config.features?.[plugin.name]?.enabled ?? true);

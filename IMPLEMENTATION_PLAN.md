@@ -2172,3 +2172,29 @@ Tags view remains Claude's Phase 5 work; its interface was not changed.
 Known issues: Phase 4 suggest, search, pasteHtml (including cells), copyForAgent
 and markers remain. Phase 5 completion must be on main before Phase 6; Phases 6–8
 remain as planned. Owner tag/native interaction acceptance has not run.
+
+### Phase 4 progress — Suggestions, 2026-10-08
+
+Delivered: default-on completion framework, caller-owned trigger service/event,
+Links and Tags sources, fuzzy-ranked indexed files/aliases/unresolved texts,
+headings, explicit local/global blocks and case-merged tags. Requests/results are
+bounded and validated, source switches are checked by the host, excluded files
+are omitted, code/frontmatter is suppressed, bracket pairs are reused and
+pending requests cancel on abort/disposal. Keys use the suggestion slot.
+Six focused units cover triggers, insertion, literal-code suppression, indexed
+candidates, schemas and host lifecycle; catalog composition now compares source
+trigger outcomes across enablement histories. README/manual/ledger updated.
+
+Checks in order: `pnpm check` **376/376**; browser smoke **14/14**; native smoke
+**1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase4-suggest-{check,browser,native}.txt`. Existing suites unchanged.
+Ledger remains **87/20/2/333/6**, total 448. No lint exceptions.
+Deviations: built-in sources use the typed bail event directly to avoid optional
+service dependency restarts; third-party sources can use caller-bound
+`suggest.register`. Explicit block IDs only; arbitrary paragraphs do not acquire
+new IDs on suggestion acceptance. No filesystem scan per request.
+Known issues: Phase 4 search, pasteHtml (including table cells), copyForAgent and
+markers remain. Claude's Phase 5 completion record must be on main before Phase 6;
+Phases 6–8 remain as planned. Owner should test popup focus/IME, closing-bracket
+reuse, alias/block navigation and toggles with table/Vim keys first. Manual
+acceptance has not run.

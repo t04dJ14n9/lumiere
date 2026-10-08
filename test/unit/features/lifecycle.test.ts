@@ -194,6 +194,12 @@ function composition(f: ReturnType<typeof fixture>) {
     },
   });
   return {
+    suggestions: ["[[No", "#pro", "[[^^body"].map((doc) =>
+      f.root.bail("suggest/trigger", {
+        state: EditorState.create({ doc }),
+        pos: doc.length,
+      }),
+    ),
     owners: owners(f),
     keys: state
       .facet(keymap)

@@ -1,3 +1,4 @@
+import { tagSuggestion } from "./suggestions";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
@@ -10,6 +11,7 @@ export const tagsWebview: Plugin = {
   name: "tags",
   inject: { required: ["editor", "livePreview", "rpc"] },
   apply(ctx) {
+    ctx.on("suggest/trigger", tagSuggestion);
     const search = (tag: string) => {
       void ctx.rpc
         .call(protocol, "search", { tag })

@@ -14,6 +14,8 @@ are omitted. No per-request filesystem scan or note read occurs.
 
 ## Files
 
+- `suggestions.ts`: plugin-owned completion trigger through `suggest/trigger`.
+
 - `manifest.ts`: default enablement and host/webview declarations.
 - `protocol.ts`: grammar-validated tag search request.
 - `widget.ts`: inline button, callback identity and cleanup.
@@ -23,6 +25,8 @@ are omitted. No per-request filesystem scan or note read occurs.
 - `../../../test/unit/tags/search.test.ts`: indexed search and host lifecycle units.
 
 ## Services, events and settings
+
+Listens to `suggest/trigger` for its own completion syntax.
 
 Webview injects `editor`, `livePreview` and `rpc`; host injects `rpc`, `vault` and
 `workbench`. Provides no services. Listens to `render/postProcess`; emits no

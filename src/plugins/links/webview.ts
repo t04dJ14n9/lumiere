@@ -1,3 +1,4 @@
+import { linkSuggestion } from "./suggestions";
 import { StateEffect, StateField } from "@codemirror/state";
 import type { EditorState } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
@@ -47,6 +48,7 @@ export const linksWebview: Plugin = {
     return true;
   },
   apply(ctx) {
+    ctx.on("suggest/trigger", linkSuggestion);
     const view = ctx.editor.view;
     const navigate = navigator(view);
     const open = linkOpener(ctx, navigate);

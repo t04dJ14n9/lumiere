@@ -22,6 +22,8 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 
 ## Files
 
+- `suggestions.ts`: plugin-owned completion trigger through `suggest/trigger`.
+
 - `manifest.ts`: link settings and insert/follow/side command contributions.
 - `api.ts`: typed link claim events.
 - `protocol.ts`: initial/open/unresolved request and navigation/unresolved
@@ -37,6 +39,8 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
   the host's set updates.
 
 ## Services, events and settings
+
+Listens to `suggest/trigger` for its own completion syntax.
 
 Webview injects `editor`, `livePreview`, `commands` and `rpc`; host injects `rpc`,
 `workbench`, `vault` and `resources`. Provides no service. Queries `link/click`

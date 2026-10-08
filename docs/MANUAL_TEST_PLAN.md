@@ -729,3 +729,19 @@ and YAML `tags: [project]`; create a second fixture note with `#projectile`.
   Native hierarchical Tags view scenarios belong to Phase 5.
 
 These scenarios are documented, not run by the agent.
+
+## Suggestions
+
+In a disposable fixture vault, create a note with an alias, headings and explicit
+block IDs, an attachment, an unresolved link, nested tags and an excluded note.
+Type `[[`, `[[Note#`, `[[Note#^`, `[[^^` and `#`; check relevant candidates,
+alias insertion, global block text matching and absence of excluded results.
+Accept with Enter; existing auto-paired `]]` must not be duplicated and the caret
+must move after the link. Escape closes an active list without leaving the link.
+Repeat in Source mode; headings (`# `), inline/fenced code and frontmatter must
+not open tag/link lists. Rapidly type, erase, switch notes and disable Suggestions
+while a list is loading: no stale popup or edit should appear. Disable Links and
+Tags separately and verify only that source disappears, then re-enable in reverse
+order. Check completion keys against table and Vim overrides. All verify bindings
+remain unbound. These replace the retired suggestion browser/native cases;
+automated coverage is unit/composition only plus the unchanged smoke suites.

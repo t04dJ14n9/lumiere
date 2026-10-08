@@ -1,3 +1,4 @@
+import suggest from "./suggest/manifest";
 import inlineTitle from "./inlineTitle/manifest";
 import tags from "./tags/manifest";
 import tables from "./tables/manifest";
@@ -41,6 +42,7 @@ export const features: readonly Manifest[] = [
   codeBlocks,
   links,
   tags,
+  suggest,
   formatting,
   // Match VS Code: line numbers to the left of fold markers.
   lineNumbers,

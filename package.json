@@ -841,6 +841,12 @@
           "scope": "resource",
           "description": "Spellcheck in the Markdown editor."
         },
+        "markdownWorkbench.plugins.suggest.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Complete links, headings, blocks and tags from the vault index."
+        },
         "markdownWorkbench.plugins.tables.enabled": {
           "type": "boolean",
           "default": true,
