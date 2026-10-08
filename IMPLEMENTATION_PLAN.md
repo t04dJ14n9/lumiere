@@ -1441,3 +1441,26 @@ backlog/config block only after all remaining files comply, then run ordered
 readability completion checks and write its final before/after record. The
 requested kernel why-comments are now done. Remaining Phase 4 plugins and
 Phases 5–8 remain undelivered as specified above; owner manual acceptance unrun.
+
+### Readability pass progress — Markdown HTML rules, 2026-10-08
+
+Delivered: named inline/block math rules, callout transformation/closing-token/
+metadata helpers, early-return block-ID attachment, and a typed raw-HTML guard.
+The Markdown-It renderer callback tuple is forwarded without exceeding the
+parameter limit. Added alias/fold and math/block-ID units; existing render
+security, nested-callout and Markdown assertions remain unchanged.
+
+Backlog since preceding unit → now: max-lines-per-function 37 → 35; complexity
+18 → 17; max-params 6 → 5; no-nested-ternary 10 → 10; max-depth 1 → 0;
+no-restricted-syntax 0 → 0. Distinct files 48 → 44. No new lint exceptions.
+Unit count 242 → 244. Checks: `pnpm check` 244/244; `pnpm test:browser` 14/14.
+Native not rerun: pure rendering rules, no native wiring change. Logs:
+`docs/checks/readability-html-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none; no behavior fixes.
+Existing Live Preview, Math and Callouts manual scenarios cover these rules;
+owner acceptance remains unrun.
+
+Known issues / exact remaining work: the 44 files remaining in eslint.legacy.mjs,
+remaining plugin README rewrites and manual regression inventory; then remove
+the empty backlog/config block and run readability completion checks. Remaining
+Phase 4 plugins and Phases 5–8 are unchanged and still incomplete.

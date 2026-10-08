@@ -5,8 +5,6 @@
 export default {
   "max-lines-per-function": [
     "src/host/navigation.ts",
-    "src/markdown/html/callouts.ts",
-    "src/markdown/html/math.ts",
     "src/markdown/metadata/index.ts",
     "src/markdown/properties/edits.ts",
     "src/markdown/properties/merge.ts",
@@ -44,7 +42,6 @@ export default {
   ],
   complexity: [
     "src/host/navigation.ts",
-    "src/markdown/html/callouts.ts",
     "src/markdown/metadata/index.ts",
     "src/markdown/properties/edits.ts",
     "src/markdown/properties/merge.ts",
@@ -64,7 +61,6 @@ export default {
   ],
   "max-params": [
     "src/host/navigation.ts",
-    "src/markdown/html/html.ts",
     "src/plugins/codeBlocks/code-selection.ts",
     "src/plugins/document/session.ts",
     "src/plugins/embeds/image.ts",
@@ -82,6 +78,5 @@ export default {
     "src/plugins/math/commands.ts",
     "src/plugins/resources/host.ts",
   ],
-  "max-depth": ["src/markdown/html/block-ids.ts"],
   "no-restricted-syntax": [],
 };
