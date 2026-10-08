@@ -55,6 +55,11 @@ declare module "../../kernel/types" {
     editors: Editors;
   }
   interface Events {
+    /** @mode emit */ "editor/clearProjection": () => void;
+    /** @mode bail */ "editor/activeView": () => EditorView | undefined;
+    /** @mode bail */ "editor/projectSelection": () =>
+      | { from: number; to: number }
+      | undefined;
     /** @mode emit */ "editor/modeRestored": (
       mode: "source" | "livePreview",
     ) => void;

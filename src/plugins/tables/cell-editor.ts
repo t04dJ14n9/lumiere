@@ -1,0 +1,175 @@
+import { defaultKeymap } from "@codemirror/commands";
+import { Compartment, EditorState, Prec } from "@codemirror/state";
+import { EditorView, keymap } from "@codemirror/view";
+import { getCM } from "@replit/codemirror-vim";
+import type { Cell, CellPosition } from "../../markdown/tables/model";
+import { difference } from "../../shared/document/wire";
+import type { InputGrouping } from "../document/api";
+import { editGroup } from "../document/api";
+import { CellSource, cellSyntax } from "./cell-source";
+import type { Action, TableEnvironment } from "./environment";
+import { cellNavigation, type CellStep } from "./navigation";
+
+interface CellEditorOptions {
+  parent: HTMLElement;
+  cell: Cell;
+  position: CellPosition;
+  selection?: number | "all";
+  environment: TableEnvironment;
+  vim: boolean;
+  outer: EditorView;
+  change(text: string, group: string): void;
+  selected(selected: boolean): void;
+  action(action: Action): boolean;
+  move(row: number, column: number): boolean;
+  arrow(step: CellStep, extend: boolean): boolean;
+}
+
+let session = 0;
+
+/** A temporary cell view; all edits and history belong to the host document. */
+export class CellEditor {
+  readonly view: EditorView;
+  readonly source: CellSource;
+  private readonly vim = new Compartment();
+  private readonly groups: InputGrouping;
+  private vimEnabled: boolean;
+  private reconciling = false;
+  private readonly outer: EditorView;
+  private readonly environment: TableEnvironment;
+  private unbindMode?: () => void;
+
+  constructor(options: CellEditorOptions) {
+    const { cell, selection } = options;
+    this.environment = options.environment;
+    this.groups = options.environment.inputGroups();
+    this.source = new CellSource(cell);
+    this.vimEnabled = options.vim;
+    this.outer = options.outer;
+    const groupPrefix = `cell-${++session}`;
+    this.view = new EditorView({
+      parent: options.parent,
+      dispatchTransactions: (transactions, view) => {
+        view.update(transactions);
+        if (
+          !this.reconciling &&
+          transactions.some((transaction) => transaction.docChanged)
+        ) {
+          options.change(
+            view.state.doc.toString(),
+            `${groupPrefix}/${transactions.at(-1)?.annotation(editGroup) ?? "input"}`,
+          );
+        }
+      },
+      state: EditorState.create({
+        doc: cell.text,
+        selection: {
+          anchor: selection === "all" ? 0 : (selection ?? cell.text.length),
+          head:
+            selection === "all"
+              ? cell.text.length
+              : (selection ?? cell.text.length),
+        },
+        extensions: [
+          options.environment.language,
+          options.environment.inline,
+          cellSyntax,
+          cellNavigation((step, extend) => options.arrow(step, extend)),
+          this.groups.extension,
+          Prec.highest(
+            keymap.of([
+              { key: "Mod-s", run: () => options.action("save") },
+              { key: "Mod-z", run: () => options.action("undo") },
+              { key: "Mod-Shift-z", run: () => options.action("redo") },
+              {
+                key: "Mod-b",
+                run: (view) => options.environment.wrap("**", view),
+                stopPropagation: true,
+              },
+              {
+                key: "Mod-i",
+                run: (view) => options.environment.wrap("*", view),
+                stopPropagation: true,
+              },
+              { key: "Tab", run: () => options.move(0, 1) },
+              { key: "Shift-Tab", run: () => options.move(0, -1) },
+              { key: "Enter", run: () => options.move(1, 0) },
+              {
+                key: "Shift-Enter",
+                run: (view) => {
+                  view.dispatch(view.state.replaceSelection("<br>"));
+                  return true;
+                },
+              },
+            ]),
+          ),
+          // Table navigation gets the first chance at a cell boundary.
+          this.vim.of(
+            options.vim ? (this.environment.vim?.extension() ?? []) : [],
+          ),
+          keymap.of(defaultKeymap),
+          EditorView.updateListener.of((update) => {
+            if (update.selectionSet) {
+              options.selected(!update.state.selection.main.empty);
+            }
+          }),
+        ],
+      }),
+    });
+    this.label(options.position);
+    this.groups.attach(this.view);
+    this.bindMode();
+  }
+
+  private bindMode(): void {
+    this.unbindMode?.();
+    this.unbindMode = undefined;
+    const inner = getCM(this.view);
+    if (!inner?.state.vim) {
+      return;
+    }
+    this.environment.vim?.sync(this.outer, this.view);
+    const sync = (): void => this.environment.vim?.sync(this.view, this.outer);
+    inner.on("vim-mode-change", sync);
+    this.unbindMode = () => inner.off("vim-mode-change", sync);
+  }
+
+  label(position: CellPosition): void {
+    this.view.contentDOM.setAttribute(
+      "aria-label",
+      `Table cell ${position.row + 1}, ${position.column + 1}`,
+    );
+  }
+
+  update(source: string, cell: Cell, vim: boolean): void {
+    const { from, to } = this.source.range(source, cell);
+    const text = source.slice(from, to);
+    this.reconciling = true;
+    try {
+      if (this.view.state.doc.toString() !== text) {
+        this.view.dispatch({
+          changes: difference(this.view.state.doc.toString(), text),
+        });
+      }
+      if (this.vimEnabled !== vim) {
+        this.unbindMode?.();
+        this.unbindMode = undefined;
+        this.vimEnabled = vim;
+        this.view.dispatch({
+          effects: this.vim.reconfigure(
+            vim ? (this.environment.vim?.extension() ?? []) : [],
+          ),
+        });
+        this.bindMode();
+      }
+    } finally {
+      this.reconciling = false;
+    }
+  }
+
+  destroy(): void {
+    this.unbindMode?.();
+    this.view.destroy();
+    this.groups.dispose();
+  }
+}

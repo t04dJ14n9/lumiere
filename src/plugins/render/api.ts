@@ -21,6 +21,7 @@ export interface RenderService {
     container: Element,
     source: string,
     context?: {
+      signal?: AbortSignal;
       documentText?: string;
       taskLineCount?: number;
       documentUri?: string;

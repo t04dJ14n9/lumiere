@@ -32,12 +32,13 @@ export const propertiesHost: Plugin<{ panel: PanelShell }> = {
         }
         await preferences.set(scope, key, kind ?? null);
         const types = preferences.read(scope);
-        ctx.emit("properties/typesChanged", scope, types);
         return types;
       }),
     );
-    ctx.on("properties/typesChanged", (root, types) => {
-      if (root === scope) ctx.rpc.notify(protocol, "types", types);
-    });
+    ctx.effect(() =>
+      preferences.subscribe((root, types) => {
+        if (root === scope) ctx.rpc.notify(protocol, "types", types);
+      }),
+    );
   },
 };

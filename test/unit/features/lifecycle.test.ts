@@ -1,3 +1,4 @@
+import type { MarkdownService } from "../../../src/plugins/dialect/api";
 import type { RenderPass } from "../../../src/plugins/render/api";
 import test from "node:test";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
@@ -25,6 +26,10 @@ function fixture() {
     },
   } as EditorView;
   let extensions = 0;
+  root.provide("markdown", {
+    language: () => [],
+    renderer: {},
+  } as unknown as MarkdownService);
   root.provide("menu", {
     open() {
       return () => {};

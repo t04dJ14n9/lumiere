@@ -1,3 +1,4 @@
+import { renderedPosition } from "./rendered-position";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import type { Plugin } from "../../kernel";
@@ -41,6 +42,8 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
       ctx.editor.extend(compartment.of(mode === "source" ? [] : extension)),
     );
     const service = {
+      inlineExtensions: () => [documentTree, hybridInline],
+      position: renderedPosition,
       block(renderer: Parameters<typeof blockRenderers.of>[0]) {
         return ctx.editor.extend(blockRenderers.of(renderer));
       },

@@ -51,6 +51,7 @@ export class PropertyWidget extends WidgetType {
     _view: EditorView,
     previous: this,
   ): boolean {
+    if (this.context !== previous.context) return false;
     if (this.hidden || previous.hidden) return this.hidden === previous.hidden;
     return (
       !!dom.firstElementChild &&

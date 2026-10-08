@@ -98,8 +98,9 @@ export function blockDecorations(report: (error: unknown) => void) {
     Decoration.set(
       state.field(blockIndex).flatMap((block) => {
         if (
-          block.renderer.editing === "reveal" &&
-          revealed(state, block.from, block.to)
+          (block.renderer.editing === "reveal" &&
+            revealed(state, block.from, block.to)) ||
+          block.renderer.showSource?.(state, block)
         )
           return [];
         try {

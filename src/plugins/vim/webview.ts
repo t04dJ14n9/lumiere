@@ -1,7 +1,14 @@
-import { CodeMirror, Vim, getCM, vim } from "@replit/codemirror-vim";
+import {
+  CodeMirror,
+  Vim,
+  getCM,
+  vim,
+  type CodeMirrorV,
+} from "@replit/codemirror-vim";
 import { EditorView } from "@codemirror/view";
 import type { Plugin } from "../../kernel";
 import type {} from "../editor/api";
+import type {} from "./api";
 import type {} from "../commands/api";
 
 /** Each webview has one editor; restore the library hooks when its fiber stops. */
@@ -9,6 +16,24 @@ export const vimWebview: Plugin = {
   name: "vim",
   inject: { required: ["editor", "commands"] },
   apply(ctx) {
+    ctx.provide("vim", {
+      mode: (view) => getCM(view)?.state.vim ?? undefined,
+      extension: () => vim({ status: false }),
+      sync(from, to) {
+        const source = getCM(from)?.state.vim;
+        const target = getCM(to);
+        if (
+          !source ||
+          !target?.state.vim ||
+          source.insertMode === target.state.vim.insertMode
+        )
+          return;
+        const selection = to.state.selection;
+        if (source.insertMode) Vim.handleKey(target, "i", "api");
+        else Vim.exitInsertMode(target as CodeMirrorV, true);
+        if (!selection.eq(to.state.selection)) to.dispatch({ selection });
+      },
+    });
     ctx.effect(() =>
       ctx.commands.register("vim:consume-host-shortcut", () => true),
     );

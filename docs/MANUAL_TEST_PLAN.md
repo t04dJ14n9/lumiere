@@ -358,3 +358,30 @@ values. Use two Workbench panels of that note.
   row/chip keyboard navigation, and disabling/re-enabling Properties. Source YAML
   remains editable; no old menu, drag, dialog or shortcut survives disabling.
 - Title focus from the heading awaits inlineTitle integration later in Phase 4.
+
+## Tables
+
+Setup: in a disposable copy of `test/fixtures/vault/Core.md`, use Insert Table,
+then create enough rows to extend beyond the viewport; include Unicode, escaped
+pipes, `<br>`, formatting, links, footnotes and missing trailing cells.
+
+- Click rendered text and edit cells. Whitespace and escaped pipes remain valid
+  Markdown; body text does not move unexpectedly. Tab/Shift+Tab traverse cells,
+  Enter moves down, Shift+Enter inserts `<br>`, and boundary arrows leave the grid.
+- Select a rectangle by dragging or Shift+arrows. Copy/cut/paste TSV, including
+  a larger rectangle. Undo/redo use native history and restore the full operation.
+  Copy for Agent must report cell source ranges once that plugin is delivered.
+- Exercise every table palette/menu action: insert/delete/move rows and columns,
+  alignment, sorting, duplicate, clear, format, and Edit Table Source. Arrow away
+  from revealed source to render again; Source mode displays the full Markdown.
+- Drag row/column handles while scrolling before one drop (the source's known
+  intermittent scenario). Expect exactly one reorder; Escape, blur, pointer cancel
+  and plugin disable must cancel the gesture without a source edit.
+- Open a second panel; insert/delete a row while the first edits a cell. Its cell
+  caret stays with the mapped source, or safely closes if that cell disappears.
+  Read clipboard asynchronously while changing the selection: stale paste refuses.
+- Enable Vim; cross from note to cell and back in insert and normal modes. Verify
+  h/j/k/l boundary navigation, :w/:u/:red and native undo grouping. Toggle Vim and
+  Formatting while a cell is active; text remains in the outer document.
+- Disable/re-enable Tables: source replaces widgets; no menus, drag handlers or
+  cell selection survives. Test Add File Property while a cell is focused.

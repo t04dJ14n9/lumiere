@@ -18,7 +18,15 @@ export interface Documents {
   session(document: HostDocument): DocumentSession;
   release(document: HostDocument): void;
 }
+export interface InputGrouping {
+  extension: Extension;
+  attach(view: EditorView): void;
+  dispose(): void;
+}
 export interface ViewDocument {
+  inputGroups?(
+    vimMode?: (view: EditorView) => { insertMode?: boolean } | undefined,
+  ): InputGrouping;
   beforeFlush?(commit: () => void): Disposer;
   readonly extension: Extension;
   attach(view: EditorView): Disposer;

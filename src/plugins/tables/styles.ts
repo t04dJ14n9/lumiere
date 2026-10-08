@@ -1,0 +1,104 @@
+export const styles = {
+  ".hybrid-table": {
+    outline: "none",
+    position: "relative",
+  },
+  ".table-handle": {
+    position: "absolute",
+    "z-index": "2",
+    display: "grid",
+    "place-items": "center",
+    padding: "0",
+    border: "0",
+    "border-radius": "3px",
+    background: "transparent",
+    color: "var(--muted)",
+    cursor: "grab",
+    "touch-action": "none",
+    opacity: "0",
+  },
+  ".table-handle[hidden], .table-drop-indicator[hidden]": {
+    display: "none",
+  },
+  ".table-row-handle": {
+    width: "14px",
+  },
+  ".table-column-handle": {
+    height: "14px",
+  },
+  ".hybrid-table:hover .table-handle,\n.hybrid-table:focus-within .table-handle":
+    {
+      opacity: "1",
+    },
+  ".table-handle:hover,\n.table-handle:focus-visible": {
+    background: "var(--vscode-list-hoverBackground, #ffffff12)",
+    color: "var(--accent)",
+  },
+  ".table-handle:focus-visible": {
+    outline: "1px solid var(--accent)",
+  },
+  ".table-dragging, .table-dragging .table-handle": {
+    cursor: "grabbing",
+  },
+  ".table-drop-indicator": {
+    position: "absolute",
+    "z-index": "3",
+    background: "var(--accent)",
+    "pointer-events": "none",
+  },
+  ".hybrid-table table": {
+    "border-collapse": "collapse",
+    margin: "0",
+    "max-width": "100%",
+  },
+  ".hybrid-table th,\n.hybrid-table td": {
+    "min-width": "60px",
+    border: "1px solid var(--line)",
+    padding: "3px 10px",
+    "vertical-align": "top",
+  },
+  ".hybrid-table th": {
+    "font-weight": "650",
+  },
+  ".hybrid-table .table-cell-selected": {
+    background: "var(--vscode-editor-selectionBackground, #65529266)",
+    outline: "1px solid var(--accent)",
+  },
+  ".table-controls": {
+    display: "flex",
+    gap: "4px",
+    "margin-top": "4px",
+    opacity: "0",
+  },
+  ".hybrid-table:hover .table-controls,\n.hybrid-table:focus-within .table-controls":
+    {
+      opacity: "1",
+    },
+  ".table-controls button": {
+    "font-size": "11px",
+    color: "var(--muted)",
+    background: "transparent",
+    border: "0",
+    cursor: "pointer",
+  },
+  ".table-message": {
+    color: "var(--vscode-errorForeground, #e88)",
+    "font-size": "13px",
+  },
+  ".hybrid-table .cm-editor": {
+    height: "auto",
+    "min-width": "40px",
+  },
+  ".hybrid-table .cm-editor .cm-scroller": {
+    overflow: "visible",
+  },
+  ".hybrid-table .cm-editor .cm-content": {
+    padding: "0",
+    "min-height": "1.5em",
+    width: "auto",
+    "max-width": "none",
+  },
+  ".hybrid-table .cm-editor .cm-line": {
+    padding: "0",
+  },
+};

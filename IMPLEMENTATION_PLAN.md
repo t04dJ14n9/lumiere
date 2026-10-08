@@ -893,3 +893,28 @@ Known issues: tables, inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/
 markers remain in Phase 4, followed by Phases 5–8 as itemized in the preceding
 incomplete record. Nested-root preference isolation and title-focus integration
 are pending those owning units. Owner manual acceptance has not run.
+
+### Phase 4 progress — Tables, 2026-10-08
+
+Delivered: split table controller, projected cell editing, rectangular selection,
+clipboard, boundary navigation, row/column menus, sorting, handles and edge scroll;
+15 table operations and insertion contributed to the palette. Formatting and Vim
+cell transfer use injected services. Selection capture maps cell ranges into the
+outer document. Fixed source-disclosure mapping on prefix insertion, stale widget
+reuse after plugin restart, and cancelled rendering overwriting cell editors.
+Also corrected property-type broadcasts between independently owned panel contexts
+using disposable shared-store subscriptions and tested strict draft flush errors.
+Checks: `pnpm check` (199 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, packaged isolated profile). Logs:
+`docs/checks/phase4-tables-{check,browser,native}.txt`.
+Ledger: 87/15/2/333/11. Source table browser/native scenarios remain retired;
+manual table scenarios added, including the drag/scroll regression.
+Deviations: controller operations are split by responsibility into functions with
+an explicitly typed controller receiver; all modules remain below 400 lines.
+The editor exposes typed active-view/projected-selection hooks; document input
+markers and grouping, basic inline presentation, formatting and Vim transfer use
+public plugin contracts. Render requests accept cancellation before DOM writes.
+Known issues: inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/markers,
+then Phases 5–8 remain. Nested vault discovery and the full host index remain
+Phase 5. Cell HTML-paste conversion awaits pasteHtml. Owner manual acceptance,
+including table drag and nested cell presentation, has not run.

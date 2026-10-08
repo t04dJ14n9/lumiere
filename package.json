@@ -228,6 +228,86 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.insertTable",
+        "title": "Insert Table",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableInsertRowAbove",
+        "title": "Table: Insert Row Above",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableInsertRowBelow",
+        "title": "Table: Insert Row Below",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableInsertColumnLeft",
+        "title": "Table: Insert Column Left",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableInsertColumnRight",
+        "title": "Table: Insert Column Right",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableDeleteRow",
+        "title": "Table: Delete Row",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableDeleteColumn",
+        "title": "Table: Delete Column",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableMoveRowUp",
+        "title": "Table: Move Row Up",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableMoveRowDown",
+        "title": "Table: Move Row Down",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableMoveColumnLeft",
+        "title": "Table: Move Column Left",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableMoveColumnRight",
+        "title": "Table: Move Column Right",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableAlignLeft",
+        "title": "Table: Align Left",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableAlignCenter",
+        "title": "Table: Align Center",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableAlignRight",
+        "title": "Table: Align Right",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableSortAscending",
+        "title": "Table: Sort Ascending",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.tableSortDescending",
+        "title": "Table: Sort Descending",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleChecklist",
         "title": "Toggle Checklist Status",
         "category": "Markdown Workbench"
@@ -512,6 +592,70 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
         },
         {
+          "command": "markdownWorkbench.insertTable",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableInsertRowAbove",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableInsertRowBelow",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableInsertColumnLeft",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableInsertColumnRight",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableDeleteRow",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableDeleteColumn",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableMoveRowUp",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableMoveRowDown",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableMoveColumnLeft",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableMoveColumnRight",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableAlignLeft",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableAlignCenter",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableAlignRight",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableSortAscending",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
+          "command": "markdownWorkbench.tableSortDescending",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tables"
+        },
+        {
           "command": "markdownWorkbench.toggleChecklist",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tasks"
         },
@@ -630,6 +774,12 @@
           "default": true,
           "scope": "resource",
           "description": "Spellcheck in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.tables.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Edit Markdown tables as grids with projected cell editing."
         },
         "markdownWorkbench.plugins.tasks.enabled": {
           "type": "boolean",

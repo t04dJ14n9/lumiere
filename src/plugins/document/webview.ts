@@ -18,6 +18,7 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
     let sync: Synchronizer | undefined;
     const queue: Parameters<Synchronizer["receive"]>[0][] = [];
     ctx.provide("document", {
+      inputGroups: (vimMode) => new InputGroups(vimMode),
       beforeFlush(commit) {
         commits.add(commit);
         return () => {

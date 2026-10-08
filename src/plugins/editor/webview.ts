@@ -106,7 +106,8 @@ export const editorWebview: Plugin<{
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "captureSelection", async () => {
         await ctx.document.flush();
-        const { from, to } = view.state.selection.main;
+        const { from, to } =
+          ctx.bail("editor/projectSelection") ?? view.state.selection.main;
         return {
           from,
           to,
@@ -183,6 +184,7 @@ export const editorWebview: Plugin<{
     }
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "reveal", ({ from, to, focus }) => {
+        ctx.emit("editor/clearProjection");
         if (from > to || to > view.state.doc.length)
           throw new Error("Invalid selection");
         view.dispatch({

@@ -11,6 +11,19 @@ interface PreferenceStorage {
 /** Preferences are scoped by vault root; note values remain in TextDocuments. */
 export class PropertyTypeStore {
   private pending: Promise<void> = Promise.resolve();
+  private readonly listeners = new Set<
+    (scope: string, types: PropertyTypes) => void
+  >();
+
+  subscribe(
+    listener: (scope: string, types: PropertyTypes) => void,
+  ): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
   private readonly key = "markdownPropertyTypes";
 
   constructor(private readonly storage: PreferenceStorage) {}
@@ -38,6 +51,7 @@ export class PropertyTypeStore {
         types = { ...types, [key.toLowerCase()]: kind };
       }
       await this.storage.update(this.key, { ...all, [scope]: types });
+      for (const listener of this.listeners) listener(scope, types);
     });
     this.pending = update.catch(() => {});
     return update;

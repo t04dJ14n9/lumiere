@@ -61,6 +61,7 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
           );
       },
       () => {
+        ctx.emit("editor/clearProjection");
         display = "visible";
         install();
       },

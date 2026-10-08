@@ -41,6 +41,10 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
         if (context.documentUri)
           container.dataset.noteSource = context.documentUri;
         await ctx.serial("render/preProcess", pass);
+        if (context.signal?.aborted) {
+          await pass.dispose();
+          return pass;
+        }
         container.innerHTML = ctx.markdown.renderer.renderMarkdown(
           pass.displaySource ?? source,
           {
@@ -82,6 +86,10 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
             },
             pass,
           );
+        if (context.signal?.aborted) {
+          await pass.dispose();
+          return pass;
+        }
         await ctx.serial("render/postProcess", pass);
         pass.measure();
         return pass;

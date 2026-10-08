@@ -4,13 +4,18 @@ import type { Command } from "@codemirror/view";
 import type { Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import { wrapSelection } from "./inline";
+import type {} from "./api";
+import { clearInlineFormatting, wrapSelection } from "./inline";
 import { lineEdit, linkEdit } from "./lines";
 
 export const formattingWebview: Plugin = {
   name: "formatting",
   inject: { required: ["editor", "commands"] },
   apply(ctx) {
+    ctx.provide("formatting", {
+      wrap: (marker, view) => wrapSelection(marker)(view),
+      clear: clearInlineFormatting,
+    });
     const commands = new Map<string, Command>();
     for (const [id, marker] of [
       ["bold", "**"],
@@ -53,7 +58,11 @@ export const formattingWebview: Plugin = {
     commands.set("editor:swap-line-up", moveLineUp);
     commands.set("editor:swap-line-down", moveLineDown);
     for (const [id, run] of commands)
-      ctx.effect(() => ctx.commands.register(id, () => run(ctx.editor.view)));
+      ctx.effect(() =>
+        ctx.commands.register(id, () =>
+          run(ctx.bail("editor/activeView") ?? ctx.editor.view),
+        ),
+      );
     ctx.effect(() =>
       ctx.editor.extend(
         keymap.of([
