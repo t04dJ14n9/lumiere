@@ -1,0 +1,572 @@
+(node:83010) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 check /Users/t04dj14n9/Code/vscode-markdown-workbench
+> pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check
+
+(node:83050) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 format:check /Users/t04dj14n9/Code/vscode-markdown-workbench
+> prettier --check .
+
+(node:83070) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Checking formatting...
+All matched files use Prettier code style!
+(node:83108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 lint /Users/t04dj14n9/Code/vscode-markdown-workbench
+> eslint . --max-warnings=0
+
+(node:83128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:83161) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 typecheck /Users/t04dj14n9/Code/vscode-markdown-workbench
+> tsc -p tsconfig.json && tsc -p src/host && tsc -p src/webview && tsc -p src/plugins/tsconfig.host.json && tsc -p src/plugins/tsconfig.webview.json && tsc -p src/workers && tsc -p test
+
+(node:83321) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 test /Users/t04dj14n9/Code/vscode-markdown-workbench
+> node scripts/test.mjs
+
+(node:83356) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:83370) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:83376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:83377) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ callout insertion quotes every selected line in one source transaction [90m(11.203167ms)[39m[39m
+(node:83378) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ callout transfer remaps local and nested identity and refreshes live disclosures [90m(0.826167ms)[39m[39m
+(node:83379) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ highlighted clicks map indentation and UTF-16 back to fenced and indented source [90m(0.399667ms)[39m[39m
+[32m✔ editable fence selection includes final characters but excludes a following line start [90m(0.463042ms)[39m[39m
+(node:83380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ command registration preserves async results, duplicate rejection and removal [90m(0.627209ms)[39m[39m
+(node:83381) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ diagrams claim only the Mermaid fence language [90m(1.341625ms)[39m[39m
+(node:83382) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ document flush rejects draft errors before transport and unregisters stopped participants [90m(1.622833ms)[39m[39m
+(node:83383) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ plain input grouping follows adjacency, timing and selection boundaries [90m(2.006708ms)[39m[39m
+[32m✔ explicit and remote edits end plain-input groups without overriding their annotations [90m(0.237542ms)[39m[39m
+(node:83384) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ clipboard routes reads and writes through validated host RPC and removes handlers [90m(1.042792ms)[39m[39m
+(node:83385) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ late view-state contributors restore validated data and carry unknown keys [90m(0.877417ms)[39m[39m
+[32m✔ invalid contribution data is ignored independently; legacy keys restore on late registration [90m(0.266542ms)[39m[39m
+[32m✔ disposing one contribution preserves its snapshot without reading it again or affecting another [90m(0.123667ms)[39m[39m
+(node:83386) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ extension slots, rank and per-owner order survive removal and re-registration [90m(3.92ms)[39m[39m
+[32m✔ equal-ranked extension owners sort by ID independent of registration history [90m(0.129667ms)[39m[39m
+(node:83387) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ editor indentation settings reconfigure without replacing document, selection or unrelated state [90m(1.492083ms)[39m[39m
+(node:83388) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ note transclusion retains full-document line offsets and detects cycles and missing sections [90m(24.883542ms)[39m[39m
+(node:83389) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ WebM metadata identifies video and audio tracks without guessing the extension [90m(20.466208ms)[39m[39m
+[32m✔ streaming preserves unknown-size cluster boundaries and orders complete blocks [90m(0.849834ms)[39m[39m
+(node:83390) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ insertion uses an unused label, moves selection to its definition and supports EOF [90m(5.186667ms)[39m[39m
+(node:83391) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ rendered-block footnotes resolve definitions and inline numbering in the owning note [90m(6.828292ms)[39m[39m
+[32m✔ footnote preprocessing leaves missing references intact and reuses repeated definitions [90m(7.209375ms)[39m[39m
+(node:83392) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ formatting toggles exact markers while retaining selection and obeying read-only [90m(35.464708ms)[39m[39m
+[32m✔ line commands exclude a final column-zero line and numbered lists toggle as a group [90m(0.437459ms)[39m[39m
+[32m✔ insert link selects the URL while keeping the selected label [90m(0.11775ms)[39m[39m
+[32m✔ clearing inline formatting retains comment contents, links and escaped literals [90m(0.838083ms)[39m[39m
+[32m✔ caret formatting unwraps enclosing syntax and wraps a plain word [90m(1.2235ms)[39m[39m
+[32m✔ formatting handles selected delimiters and independent multiple ranges [90m(0.917334ms)[39m[39m
+(node:83393) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ links host owns handlers, fixes source identity, confirms schemes and routes side opens [90m(3.027125ms)[39m[39m
+(node:83394) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ links retain aliases, Unicode fragments and source caret identity [90m(11.683ms)[39m[39m
+[32m✔ link requests reject malformed values and ambiguous paths [90m(0.259875ms)[39m[39m
+(node:83395) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ reveal includes both endpoints and every selection range [90m(3.254792ms)[39m[39m
+[32m✔ vertical navigation skips rendered blocks and Escape leaves final source [90m(0.834208ms)[39m[39m
+[32m✔ kernel disposal and Source mode remove the engine; registry effects add and remove [90m(2.336416ms)[39m[39m
+[32m✔ explicit renderer ranges cover multiline definitions without overlapping later nodes [90m(15.020041ms)[39m[39m
+(node:83396) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ math commands preserve selected formulas and unwrap the same source [90m(1.289459ms)[39m[39m
+[32m✔ display math inserts a leading newline only inside an existing line [90m(0.230417ms)[39m[39m
+(node:83397) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ page previews load only internal targets and fragments [90m(0.461917ms)[39m[39m
+[32m✔ note previews retain source offsets and disable embedded task edits [90m(6.268ms)[39m[39m
+[32m✔ preview labels decode valid escapes and preserve malformed targets [90m(6.026834ms)[39m[39m
+(node:83398) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property removal focuses the next surviving row, then the previous row [90m(16.213208ms)[39m[39m
+[32m✔ property row keys preserve motion priority and Vim-only actions [90m(0.272125ms)[39m[39m
+(node:83402) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property transactions combine a rename or removal with current displayed order [90m(7.370375ms)[39m[39m
+[32m✔ property transactions reject stale input and preserve empty or explicit-order changes [90m(9.512417ms)[39m[39m
+(node:83403) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property edits reject stale headers and combine displayed ordering with one source transaction [90m(7.006666ms)[39m[39m
+[32m✔ chip editing tracks duplicate occurrences through concurrent list additions and removals [90m(0.104584ms)[39m[39m
+[32m✔ property RPC rejects arbitrary preference types and oversized keys [90m(0.221666ms)[39m[39m
+[32m✔ type conversion leaves nested objects in source but permits scalar lists [90m(0.088541ms)[39m[39m
+(node:83404) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property RPC shares preferences, validates keys and disposes handlers on disable [90m(4.1515ms)[39m[39m
+(node:83405) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property lists accept YAML scalars without coercing values [90m(0.777417ms)[39m[39m
+[32m✔ chip occurrence matching distinguishes scalar identity after concurrent changes [90m(0.100208ms)[39m[39m
+(node:83406) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property sheet distinguishes editable scalars, list chips and escaped nested values [90m(13.815291ms)[39m[39m
+[32m✔ forced property types preserve warnings and editable control selection [90m(3.576875ms)[39m[39m
+[32m✔ property rendering bounds recursive aliases and leaves absent frontmatter alone [90m(4.251875ms)[39m[39m
+(node:83407) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property type preferences serialize concurrent writes and stay within their vault [90m(1.729917ms)[39m[39m
+[32m✔ preference subscriptions notify separate panel consumers only until disposed [90m(0.166042ms)[39m[39m
+(node:83408) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ render passes dispose in reverse order and immediately clean late registrations [90m(0.759541ms)[39m[39m
+(node:83409) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ resource kinds preserve note and PDF precedence and unknown-file fallback [90m(0.500333ms)[39m[39m
+(node:83410) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ cell projection preserves table syntax and the surrounding document [90m(0.899584ms)[39m[39m
+[32m✔ axis selections and reverse rectangles use inclusive cell bounds [90m(0.469209ms)[39m[39m
+[32m✔ cell movement wraps columns while retaining exit and append-row targets [90m(0.086083ms)[39m[39m
+[32m✔ table menus preserve axis bounds, command focus and action order [90m(0.371208ms)[39m[39m
+[32m✔ table command parsing keeps alignment validation and movement boundaries [90m(0.1145ms)[39m[39m
+(node:83411) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ cell source projection retains entered whitespace and escapes pipes without a second history [90m(4.697625ms)[39m[39m
+[32m✔ every contributed table command produces a valid operation and preserves an editable table [90m(1.581917ms)[39m[39m
+[32m✔ table hit testing uses physical coordinates in RTL and source disclosure maps through edits [90m(0.350833ms)[39m[39m
+(node:83412) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ task RPC authorizes known notes, rejects stale lines and stops with its fiber [90m(2.365833ms)[39m[39m
+(node:83413) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ checkbox changes check the expected line and preserve quotes, labels and custom states [90m(3.458083ms)[39m[39m
+[32m✔ checklist cycling preserves list identity and excludes a final column-zero line [90m(0.559459ms)[39m[39m
+[32m✔ cycling a completed task without trailing text preserves the next line [90m(0.104ms)[39m[39m
+(node:83414) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ linked lines give one trimmed context line per link to the target [90m(34.85725ms)[39m[39m
+[32m✔ unlinked mentions match whole words, any case, outside links and properties [90m(1.640291ms)[39m[39m
+[32m✔ long context lines are cut around the mention [90m(24.476958ms)[39m[39m
+(node:83415) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ package contributions match the generator [90m(75.544333ms)[39m[39m
+[32m✔ the source ledger preserves the complete pinned inventory [90m(4.074667ms)[39m[39m
+[32m✔ manifest surfaces match the host and webview registries [90m(3.39975ms)[39m[39m
+(node:83416) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ document actions serialize across panels and a rejected action does not poison later actions [90m(1.031625ms)[39m[39m
+[32m✔ a failed final document flush rejects native save despite event listener error isolation [90m(0.825458ms)[39m[39m
+[32m✔ overlapping saves wait for the actual saved event and release their listener [90m(16.385625ms)[39m[39m
+[32m✔ save failure releases subscriptions without declaring the document saved [90m(0.180041ms)[39m[39m
+(node:83417) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ view capture flushes before reading version and rejects concurrent changes [90m(0.942875ms)[39m[39m
+[32m✔ two panels keep independent transfer state and rename retains old disclosure identity [90m(0.162458ms)[39m[39m
+[32m✔ restore clamps selection, replaces folds, and restores raw scroll without centering [90m(1.605ms)[39m[39m
+[32m✔ view-state rejects malformed fold ranges and accepts fractional scroll anchors [90m(0.271292ms)[39m[39m
+(node:83418) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ feature modules never supply editor-wide singleton settings [90m(282.356583ms)[39m[39m
+(node:83422) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ host feature commands disappear when disabled and target the current panel after switching [90m(4.327583ms)[39m[39m
+(node:83423) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ tables: disabling and re-enabling disposes its extensions and commands [90m(4.039417ms)[39m[39m
+[32m✔ properties: disabling and re-enabling disposes its extensions and commands [90m(12.04275ms)[39m[39m
+[32m✔ pagePreview: disabling and re-enabling disposes its extensions and commands [90m(0.600708ms)[39m[39m
+[32m✔ embeds: disabling and re-enabling disposes its extensions and commands [90m(0.832208ms)[39m[39m
+[32m✔ tasks: disabling and re-enabling disposes its extensions and commands [90m(0.888084ms)[39m[39m
+[32m✔ footnotes: disabling and re-enabling disposes its extensions and commands [90m(74.7175ms)[39m[39m
+[32m✔ callouts: disabling and re-enabling disposes its extensions and commands [90m(0.746458ms)[39m[39m
+[32m✔ diagrams: disabling and re-enabling disposes its extensions and commands [90m(0.587ms)[39m[39m
+[32m✔ math: disabling and re-enabling disposes its extensions and commands [90m(0.502625ms)[39m[39m
+[32m✔ codeBlocks: disabling and re-enabling disposes its extensions and commands [90m(9.787333ms)[39m[39m
+[32m✔ links: disabling and re-enabling disposes its extensions and commands [90m(0.673292ms)[39m[39m
+[32m✔ formatting: disabling and re-enabling disposes its extensions and commands [90m(0.579291ms)[39m[39m
+[32m✔ lineNumbers: disabling and re-enabling disposes its extensions and commands [90m(4.809042ms)[39m[39m
+[32m✔ folding: disabling and re-enabling disposes its extensions and commands [90m(2.11125ms)[39m[39m
+[32m✔ indentGuides: disabling and re-enabling disposes its extensions and commands [90m(3.580083ms)[39m[39m
+[32m✔ spellcheck: disabling and re-enabling disposes its extensions and commands [90m(0.403167ms)[39m[39m
+[32m✔ autoPair: disabling and re-enabling disposes its extensions and commands [90m(0.44325ms)[39m[39m
+[32m✔ smartLists: disabling and re-enabling disposes its extensions and commands [90m(0.256666ms)[39m[39m
+[32m✔ vim: disabling and re-enabling disposes its extensions and commands [90m(0.585416ms)[39m[39m
+[32m✔ queued setting updates settle on the latest configuration and recover after invalid input [90m(0.365542ms)[39m[39m
+[32m✔ heading and indent folding respect independent settings and section boundaries [90m(0.67775ms)[39m[39m
+[32m✔ pair settings separate Markdown from brackets and indentation uses tab stops [90m(0.0845ms)[39m[39m
+[32m✔ catalog composition has the same ordered owners after every toggle as a fresh editor [90m(92.807875ms)[39m[39m
+[32m✔ seeded catalog toggle sequence ends with fresh-start owner order [90m(41.412292ms)[39m[39m
+[32m✔ folding owns ranges, restores late and preserves folds across configuration update [90m(1.208292ms)[39m[39m
+[32m✔ catalog configuration changes preserve fresh-start ordered owners [90m(216.8305ms)[39m[39m
+[32m✔ heading folding queries share metadata by Text identity and invalidate after edits [90m(0.882167ms)[39m[39m
+[32m✔ each feature leaves core settings and other plugin folds intact when toggled [90m(11.530292ms)[39m[39m
+[32m✔ fold gutter refreshes on configuration and tab width without requiring an edit [90m(0.276292ms)[39m[39m
+(node:83424) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ caller-bound reads cache per context and refresh across provider replacement [90m(6.323084ms)[39m[39m
+[32m✔ event slots and owner rank survive reversed loading, update and toggles [90m(4.196583ms)[39m[39m
+[32m✔ equal-rank event owners keep lexical order across restart [90m(2.005958ms)[39m[39m
+(node:83425) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ emit uses registration order, prepend, listener isolation, and effect cleanup [90m(1.298583ms)[39m[39m
+[32m✔ serial awaits listeners; parallel starts all before awaiting [90m(0.235833ms)[39m[39m
+[32m✔ bail skips throwing listeners and stops at first non-undefined; waterfall awaits transformations [90m(0.249458ms)[39m[39m
+(node:83427) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ required services gate, withdraw, and resume independent of load order [90m(1.417041ms)[39m[39m
+[32m✔ effects are LIFO, then children, then provided services withdraw; disposal errors are isolated [90m(0.35275ms)[39m[39m
+[32m✔ duplicate providers fail without affecting consumers; replacement stacks restore the prior provider [90m(0.401375ms)[39m[39m
+[32m✔ undeclared services throw; optional injection is allowed and refreshes on availability [90m(0.306125ms)[39m[39m
+[32m✔ update reconfigures or restarts with validated config; failed apply retries and rolls back [90m(3.935917ms)[39m[39m
+[32m✔ async failure rolls back effects and does not fail siblings [90m(5.878833ms)[39m[39m
+[32m✔ disposal during async apply rejects late effects and never publishes a service [90m(0.524375ms)[39m[39m
+[32m✔ Service class publishes only after async start and is withdrawn on stop [90m(0.937291ms)[39m[39m
+[32m✔ logs identify plugin and record load and stop timings [90m(0.822541ms)[39m[39m
+[32m✔ service withdrawal during loading invalidates the old activation and gates before restarting [90m(1.731917ms)[39m[39m
+[32m✔ contexts can cross async boundaries without being mistaken for thenables [90m(0.190583ms)[39m[39m
+(node:83428) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ RPC namespaces methods, validates results, and unregistering disables a channel [90m(2.17425ms)[39m[39m
+[32m✔ RPC rejects invalid outbound params, drops malformed envelopes and inbound params [90m(2.948875ms)[39m[39m
+[32m✔ invalid handler results and forged response payloads reject callers [90m(0.287458ms)[39m[39m
+[32m✔ notifications validate both directions and isolate listeners [90m(4.479875ms)[39m[39m
+[32m✔ timeout defaults to ten seconds, cancels remote work, and ignores a late result [90m(1.432333ms)[39m[39m
+[32m✔ explicit cancellation and disposal reject requests and clean subscriptions [90m(1.673458ms)[39m[39m
+[32m✔ disabling a handler cancels in-flight work and rejects its caller [90m(0.469459ms)[39m[39m
+[32m✔ cancellation listeners can detach and late listeners observe cancellation immediately [90m(0.329084ms)[39m[39m
+[32m✔ duplicate request IDs cannot replace an in-flight handler [90m(1.439791ms)[39m[39m
+(node:83429) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ schemas validate every setting type, apply independent defaults and emit JSON Schema [90m(1.414792ms)[39m[39m
+[32m✔ schema errors identify nested paths and record keys cannot pollute prototypes [90m(0.190291ms)[39m[39m
+[32m✔ schema bounds keep numeric, array and string measurement and JSON keywords aligned [90m(0.181375ms)[39m[39m
+(node:83430) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ kernel stays under 1,000 formatted production lines [90m(0.786917ms)[39m[39m
+[32m✔ typed event call sites use the declared dispatch mode [90m(597.394833ms)[39m[39m
+(node:83431) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ pure tsconfig rejects DOM [90m(218.146833ms)[39m[39m
+[32m✔ pure tsconfig rejects VS Code [90m(185.520125ms)[39m[39m
+[32m✔ pure tsconfig rejects Node [90m(205.381916ms)[39m[39m
+(node:83432) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ a rename asks once and returns one edit list for every linking note [90m(40.448875ms)[39m[39m
+[32m✔ declining, or the never mode, changes nothing; always does not ask [90m(1.63625ms)[39m[39m
+[32m✔ renaming a folder updates links to every file in it [90m(5.408208ms)[39m[39m
+(node:83433) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ links to a renamed note keep their form, subpath and alias [90m(20.273583ms)[39m[39m
+[32m✔ an attachment keeps its extension; formats follow the setting [90m(1.039042ms)[39m[39m
+[32m✔ a name that becomes ambiguous is written as a path [90m(0.315083ms)[39m[39m
+[32m✔ a moved note rewrites its own path-style links, not bare names [90m(0.288875ms)[39m[39m
+[32m✔ links that do not touch a renamed file are left alone [90m(20.529458ms)[39m[39m
+(node:83434) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ definition segments map continuations across blank lines without borrowing following prose [90m(6.313167ms)[39m[39m
+[32m✔ candidate collection drops unmappable ranges and duplicate definitions retain last-label resolution [90m(1.202375ms)[39m[39m
+(node:83436) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ callout aliases, fallback kinds and fold flags preserve distinct containers [90m(4.316792ms)[39m[39m
+[32m✔ math delimiters and paragraph block IDs retain literal boundary behavior [90m(0.35475ms)[39m[39m
+(node:83439) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property comparison keeps typed null, numeric operators and exact scalar matching [90m(1.586208ms)[39m[39m
+[32m✔ search comparison guards recursive arrays and keeps regex sensitivity caches separate [90m(0.425875ms)[39m[39m
+[32m✔ search file kinds use case-insensitive final extensions [90m(0.293542ms)[39m[39m
+(node:83441) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ headings nest by level, and skipped levels nest under the nearest heading [90m(4.599958ms)[39m[39m
+[32m✔ the caret's section is the last heading at or before it [90m(0.564583ms)[39m[39m
+(node:83442) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ formats exact Markdown agent references [90m(0.553584ms)[39m[39m
+[32m✔ rejects URI schemes and all Windows drive-prefixed Markdown paths [90m(0.223625ms)[39m[39m
+(node:83444) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ delayed acknowledgements preserve edits typed after a submitted batch [90m(2.0585ms)[39m[39m
+[32m✔ two split views converge when both edit before receiving the other change [90m(0.4345ms)[39m[39m
+[32m✔ external changes are rebased against unconfirmed typing [90m(0.227167ms)[39m[39m
+[32m✔ retried batches are acknowledged once [90m(0.086125ms)[39m[39m
+[32m✔ actual host changes override a mismatched expected edit [90m(0.079583ms)[39m[39m
+[32m✔ multi-transaction batch remains individually confirmable [90m(0.445292ms)[39m[39m
+[32m✔ invalid revisions and malformed edit lengths do not mutate the authority [90m(0.1495ms)[39m[39m
+[32m✔ random concurrent insertions, removals and replacements converge [90m(71.429917ms)[39m[39m
+[32m✔ LF transport normalizes CRLF without counting CR as a source character [90m(0.17675ms)[39m[39m
+[32m✔ rendering without a DOM sanitizer escapes HTML and rejects script links [90m(9.722584ms)[39m[39m
+(node:83445) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ complete syntax is shared by outline and footnote indexes and retained for selections [90m(39.460291ms)[39m[39m
+[32m✔ incremental syntax reparses fences, frontmatter and math boundaries beyond the edit [90m(228.728292ms)[39m[39m
+[32m✔ incremental syntax and indexes match fresh parses through deterministic structural edits [90m(1415.417459ms)[39m[39m
+(node:83446) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ footnotes number references in reading order and retain exact source positions [90m(5.090667ms)[39m[39m
+[32m✔ code, escaped references and frontmatter do not become footnotes [90m(15.959417ms)[39m[39m
+[32m✔ inline footnotes share numbering and preserve nested brackets and code [90m(0.440833ms)[39m[39m
+[32m✔ escaped, code and unclosed inline notes remain literal [90m(0.27575ms)[39m[39m
+[32m✔ references inside definition bodies map through removed indentation [90m(0.486959ms)[39m[39m
+[32m✔ section fragments include only needed definitions and terminate cyclic dependencies [90m(2.183375ms)[39m[39m
+[32m✔ multiline inline notes omit surrounding quote and list markers from their body [90m(0.546ms)[39m[39m
+[32m✔ comment markers inside inline code do not hide later footnotes [90m(0.264959ms)[39m[39m
+(node:83451) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ webview accepts its real wrapper after VS Code masks window.parent [90m(0.417083ms)[39m[39m
+(node:83452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ link suggestions use the Obsidian boundary, gap, spread and length penalties [90m(11.487916ms)[39m[39m
+[32m✔ every query word must match, in any field, case-insensitively [90m(0.17075ms)[39m[39m
+[32m✔ CJK characters are separate tokens and repeated query tokens cannot reuse one occurrence [90m(0.825709ms)[39m[39m
+[32m✔ mixed CJK tokens and compatibility normalization preserve original UTF-16 highlight ranges [90m(0.112167ms)[39m[39m
+[32m✔ whole tokens may reorder while subsequence fallback preserves query order [90m(0.108166ms)[39m[39m
+[32m✔ repeated tokens skip occupied matches and normalized ranges coalesce [90m(0.098666ms)[39m[39m
+(node:83453) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ one metadata result contains positions, aliases, links, embeds, blocks and tasks [90m(45.90675ms)[39m[39m
+[32m✔ reference links resolve through definitions and syntax inside code remains opaque [90m(0.774084ms)[39m[39m
+[32m✔ renderer instances isolate line-break configuration and emit generic fence placeholders [90m(20.5235ms)[39m[39m
+[32m✔ footnote metadata maps links, tags and nested list parents back to source [90m(6.909667ms)[39m[39m
+[32m✔ block IDs exclude opaque syntax and standalone IDs target preceding blocks [90m(1.075ms)[39m[39m
+(node:83454) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ outline recognizes real headings and excludes properties, code and math [90m(8.907125ms)[39m[39m
+[32m✔ fold ranges respect quote boundaries and repeated headings get distinct identities [90m(0.596958ms)[39m[39m
+(node:83455) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ recursive YAML properties render without throwing or mistaking shared aliases for cycles [90m(4.9505ms)[39m[39m
+[32m✔ nested property values preserve links, empty lists and multiline text [90m(2.981833ms)[39m[39m
+[32m✔ boolean property edits preserve anchors, comments, flow syntax and CRLF [90m(0.6835ms)[39m[39m
+[32m✔ property strings cannot introduce extra interactive property controls [90m(0.359916ms)[39m[39m
+[32m✔ text property edits preserve quote style and string types [90m(1.319083ms)[39m[39m
+[32m✔ numeric property edits preserve neighboring text and reject non-finite values [90m(0.61175ms)[39m[39m
+[32m✔ boolean property edits reject aliases, strings and duplicate keys [90m(0.276583ms)[39m[39m
+[32m✔ list edits preserve neighboring YAML, string types and line endings [90m(59.060583ms)[39m[39m
+[32m✔ scalar serialization preserves negative zero and quotes multiline replacements [90m(0.50475ms)[39m[39m
+(node:83457) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ empty headers and new properties preserve the note body and line endings [90m(5.72175ms)[39m[39m
+[32m✔ rename and removal preserve unrelated comments, multiline values and formatting [90m(1.45775ms)[39m[39m
+[32m✔ property edits retain flow mappings and reject removal of a referenced anchor [90m(2.741834ms)[39m[39m
+[32m✔ explicit value editing changes scalar types and retains unrelated inline comments [90m(1.553709ms)[39m[39m
+[32m✔ adding properties distinguishes an unfinished header from ordinary Markdown [90m(0.171292ms)[39m[39m
+[32m✔ new properties reject non-finite scalar and list values [90m(0.073084ms)[39m[39m
+[32m✔ structured property paste merges nested values and unions lists without touching other YAML [90m(2.195834ms)[39m[39m
+[32m✔ structured property paste handles flow maps, empty values and null merge rules [90m(1.45225ms)[39m[39m
+[32m✔ an invalid property in a paste rejects the whole batch [90m(0.27775ms)[39m[39m
+[32m✔ structured paste treats inherited-looking names as ordinary own properties [90m(0.408166ms)[39m[39m
+[32m✔ key edits reject missing and duplicate keys without partial removal [90m(0.42075ms)[39m[39m
+(node:83458) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ property order moves complete entries with comments and multiline values [90m(11.215917ms)[39m[39m
+[32m✔ flow property maps retain values, quotes and comments through a reorder [90m(6.276083ms)[39m[39m
+[32m✔ invalid key permutations cannot remove or duplicate a property [90m(0.484167ms)[39m[39m
+[32m✔ alias dependencies remain valid and forward-alias reorders are rejected [90m(1.084458ms)[39m[39m
+[32m✔ empty values, empty headers and punctuation in keys keep their source meaning [90m(0.34375ms)[39m[39m
+[32m✔ flow reordering retains CRLF and rejects non-string YAML keys [90m(0.467666ms)[39m[39m
+(node:83459) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ protocol rejects unknown actions and invalid message shapes [90m(0.653583ms)[39m[39m
+(node:83460) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ hybrid syntax keeps code opaque while parsing highlights, comments and formulas [90m(2.251208ms)[39m[39m
+[32m✔ properties parse scalar and list types without accepting duplicate keys [90m(7.63275ms)[39m[39m
+[32m✔ nested and folded callouts preserve inline formatting and independent containers [90m(4.313458ms)[39m[39m
+[32m✔ diagram and formula payloads are encoded before becoming HTML attributes [90m(0.254458ms)[39m[39m
+[32m✔ aliases and image dimensions handle escaped table pipes [90m(0.320375ms)[39m[39m
+[32m✔ heading fragments include descendants and stop before a sibling, ignoring fenced headings [90m(2.7705ms)[39m[39m
+[32m✔ block fragments support a paragraph and a separately identified list [90m(0.888833ms)[39m[39m
+[32m✔ rendered note embeds hide block identifiers while fenced code remains literal [90m(0.276916ms)[39m[39m
+[32m✔ named footnotes and collapsed reference links retain their separate syntax [90m(8.819583ms)[39m[39m
+(node:83461) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ inline projections retain source offsets through nested formatting and escapes [90m(38.501375ms)[39m[39m
+[32m✔ inline projections preserve entities, links and literal code source [90m(2.715416ms)[39m[39m
+(node:83462) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ search gives implicit AND precedence over OR and supports grouped negation [90m(3.826167ms)[39m[39m
+[32m✔ search parses quoted paths, escaped phrases, regexes and nested scopes [90m(0.229083ms)[39m[39m
+[32m✔ search property filters preserve existence, alternatives and numeric comparisons [90m(0.120125ms)[39m[39m
+[32m✔ malformed or unsupported searches fail rather than silently becoming literal text [90m(0.285208ms)[39m[39m
+[32m✔ document search evaluates Boolean expressions, paths and scoped case sensitivity [90m(0.53575ms)[39m[39m
+[32m✔ line, block and section scopes keep all terms inside the requested region [90m(37.067334ms)[39m[39m
+[32m✔ task search excludes code and distinguishes custom completion markers [90m(3.311167ms)[39m[39m
+[32m✔ property filters distinguish null and empty values and compare numeric properties [90m(61.610375ms)[39m[39m
+[32m✔ tag search uses parsed tags and Canvas search uses card contents [90m(19.500083ms)[39m[39m
+[32m✔ file-search detection traverses negation and Boolean groups but not property literals [90m(0.185375ms)[39m[39m
+[32m✔ parser retains exact error offsets after groups and property values [90m(0.152958ms)[39m[39m
+(node:83463) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ source selections and annotation positions round trip across mixed newlines and Unicode [90m(0.605917ms)[39m[39m
+[32m✔ empty files, bounds and positions inside CRLF separators stay in range [90m(0.110584ms)[39m[39m
+(node:83464) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ table ranges select exact source cells and preserve escaped pipes and alignments [90m(1.023416ms)[39m[39m
+[32m✔ rectangular clipboard and paste grow the table without destroying untouched cells [90m(0.3655ms)[39m[39m
+[32m✔ structural inserts preserve the header and column alignment [90m(0.2035ms)[39m[39m
+[32m✔ omitted trailing cells gain delimiters without rewriting existing rows [90m(0.173ms)[39m[39m
+[32m✔ short table separators retain HTML line breaks and empty trailing cells [90m(0.080834ms)[39m[39m
+[32m✔ pasted text splits into rows and tab-separated cells [90m(0.105083ms)[39m[39m
+[32m✔ range texts keep source escapes that copying removes [90m(0.07875ms)[39m[39m
+[32m✔ formatting markers toggle and leave empty cells empty [90m(0.065625ms)[39m[39m
+[32m✔ an offset inside a cell's padding finds that cell [90m(0.127083ms)[39m[39m
+(node:83465) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ row operations can exchange or replace the header without losing cell content [90m(1.29625ms)[39m[39m
+[32m✔ column moves and duplication keep alignment with the source values [90m(0.216542ms)[39m[39m
+[32m✔ alignment and sorting preserve the header and unrelated cell contents [90m(12.595ms)[39m[39m
+(node:83468) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ tag hierarchy merges case variants and counts each note once in parent totals [90m(6.886292ms)[39m[39m
+[32m✔ flat tags retain full paths while frequency sorting orders each level [90m(0.2275ms)[39m[39m
+(node:83469) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags [90m(18.656584ms)[39m[39m
+[32m✔ rendered tag controls preserve hierarchy and leave code literal [90m(38.577ms)[39m[39m
+[32m✔ tags in footnote definitions remain searchable [90m(5.750875ms)[39m[39m
+(node:83470) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ task markers preserve quote prefixes, ordered lists and custom status [90m(0.588ms)[39m[39m
+(node:83471) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ logical groups replay native undo steps in both directions [90m(0.466416ms)[39m[39m
+[32m✔ unexpected native state stops grouped replay rather than undoing unrelated edits [90m(0.092958ms)[39m[39m
+(node:83472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ an empty query lists notes by most recent change [90m(7.758458ms)[39m[39m
+[32m✔ prefix matches rank first, names above paths; aliases and not-created links are found; excluded files are not [90m(22.896334ms)[39m[39m
+[32m✔ no create item when a note already has that name [90m(6.895042ms)[39m[39m
+(node:83473) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ resource containment rejects sibling prefixes, traversal and different authorities [90m(0.511041ms)[39m[39m
+[32m✔ realpath checks reject symlink escapes while permitting contained files [90m(12.657583ms)[39m[39m
+[32m✔ virtual resource checks reject symlinked ancestor directories [90m(0.230166ms)[39m[39m
+(node:83474) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ cold start lists, parses each note once, resolves links and saves a snapshot [90m(170.855334ms)[39m[39m
+[32m✔ warm start serves the snapshot before listing and re-reads only changed notes [90m(156.054917ms)[39m[39m
+[32m✔ file events keep the index current; a rename keeps metadata without reading [90m(1.087667ms)[39m[39m
+[32m✔ an open note is indexed from its unsaved text until it closes [90m(9.9065ms)[39m[39m
+[32m✔ excluded files stay resolvable and are flagged; hidden folders are not indexed [90m(0.539625ms)[39m[39m
+[32m✔ a listing over the limit reports a partial index [90m(0.135125ms)[39m[39m
+[32m✔ an unreadable note is reported and does not stop indexing [90m(1.953875ms)[39m[39m
+[32m✔ deleting a folder removes every file in it [90m(0.363834ms)[39m[39m
+(node:83475) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ link maps count links, embeds and property links, and skip external and in-note links [90m(15.793417ms)[39m[39m
+[32m✔ markdown link destinations are decoded before resolving [90m(0.399125ms)[39m[39m
+[32m✔ backlinks invert resolved links and exclude the note itself [90m(0.440708ms)[39m[39m
+[32m✔ creating a file resolves links that mention its name, and only those [90m(0.291292ms)[39m[39m
+[32m✔ a nearer file with the same name takes over an ambiguous link [90m(0.290833ms)[39m[39m
+[32m✔ deleting a target makes its links unresolved; deleting a source drops its links [90m(5.150292ms)[39m[39m
+[32m✔ renaming re-resolves incoming links by name and the renamed note's own relative links [90m(6.010541ms)[39m[39m
+[32m✔ a new folder note resolves links to its folder [90m(1.008042ms)[39m[39m
+[32m✔ changing the folder-note setting re-resolves every note [90m(7.193958ms)[39m[39m
+[32m✔ tags count every occurrence, from text and properties [90m(3.487125ms)[39m[39m
+[32m✔ change listeners receive each change, and resolve listeners fire on request [90m(2.988291ms)[39m[39m
+(node:83476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ notes in one vault share one index; a marker folder starts its own vault [90m(9.081584ms)[39m[39m
+[32m✔ typing in an open note updates its vault's index; closing restores the file [90m(402.206375ms)[39m[39m
+[32m✔ index changes become vault/changed and vault/resolved events with the vault root [90m(0.658042ms)[39m[39m
+[32m✔ a note outside the workspace is a vault of its own folder [90m(0.221375ms)[39m[39m
+[32m✔ each panel's vault service is the shared index of its note's vault [90m(0.298ms)[39m[39m
+[32m✔ locate and text give a note's vault, path and current text [90m(0.565667ms)[39m[39m
+(node:83477) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ resolveLink: empty path means the source note [90m(0.98025ms)[39m[39m
+[32m✔ resolveLink: exact path without extension [90m(0.147875ms)[39m[39m
+[32m✔ resolveLink: exact path with extension [90m(0.077708ms)[39m[39m
+[32m✔ resolveLink: exact path ignores subpath and case [90m(0.076709ms)[39m[39m
+[32m✔ resolveLink: unique basename anywhere [90m(0.088916ms)[39m[39m
+[32m✔ resolveLink: unique basename for attachments keeps extension [90m(0.088375ms)[39m[39m
+[32m✔ resolveLink: unique basename ignores case [90m(0.068ms)[39m[39m
+[32m✔ resolveLink: ./ resolves from the source folder [90m(0.103292ms)[39m[39m
+[32m✔ resolveLink: ../ climbs from the source folder [90m(0.083959ms)[39m[39m
+[32m✔ resolveLink: ../ beyond the vault root does not resolve [90m(0.190791ms)[39m[39m
+[32m✔ resolveLink: leading slash starts at the vault root [90m(0.080667ms)[39m[39m
+[32m✔ resolveLink: ambiguous name prefers the same folder [90m(0.127208ms)[39m[39m
+[32m✔ resolveLink: ambiguous name prefers the nearest folder [90m(0.062458ms)[39m[39m
+[32m✔ resolveLink: ambiguous name with equal distance sorts by path [90m(0.075917ms)[39m[39m
+[32m✔ resolveLink: path suffix narrows ambiguous names [90m(0.056334ms)[39m[39m
+[32m✔ resolveLink: unknown note does not resolve [90m(0.058708ms)[39m[39m
+[32m✔ resolveLink: folder link without a folder note does not resolve [90m(0.049458ms)[39m[39m
+[32m✔ resolveLink: alias text is not part of the path [90m(0.070458ms)[39m[39m
+[32m✔ resolveLink: a folder link opens the configured folder note [90m(0.088708ms)[39m[39m
+[32m✔ resolveLinkCandidates lists every ambiguous match nearest first [90m(0.408ms)[39m[39m
+[32m✔ linkText follows the new link format [90m(0.984ms)[39m[39m
+(node:83478) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ the vault root is the nearest folder with a marker, else the workspace folder [90m(0.848834ms)[39m[39m
+[32m✔ excluded-file filters: prefixes as in Obsidian, globs when wildcards are present [90m(0.383791ms)[39m[39m
+[32m✔ hidden folders and node_modules are never indexed [90m(0.073625ms)[39m[39m
+[32m✔ snapshots round-trip in shards, rewrite only what changed and drop orphans [90m(149.552666ms)[39m[39m
+[32m✔ snapshots from another version or unreadable files start empty [90m(0.184333ms)[39m[39m
+[32m✔ snapshots keep Maps in metadata, such as footnote references [90m(155.692708ms)[39m[39m
+[32m✔ packing positions round-trips real metadata exactly [90m(8.184958ms)[39m[39m
+[32m✔ unpacking never lets a stored key set a prototype [90m(0.234791ms)[39m[39m
+[32m✔ nested vaults get separate property scopes within one opened workspace [90m(0.126708ms)[39m[39m
+(node:83479) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ backlinks list linking notes with context lines, and unlinked mentions on request [90m(12.251041ms)[39m[39m
+[32m✔ a line opens its note at the mention [90m(1.089791ms)[39m[39m
+[32m✔ outgoing links list resolved files with counts, then links not created yet [90m(0.846ms)[39m[39m
+[32m✔ view plugins follow the active note and their setting, and clean up when turned off [90m(435.727708ms)[39m[39m
+(node:83493) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m✔ words skip properties and Markdown punctuation; CJK characters count one each [90m(1.491292ms)[39m[39m
+[32m✔ characters exclude line breaks; a selection counts its properties too [90m(3.210417ms)[39m[39m
+[32m✔ counts read like Obsidian's status bar [90m(11.374458ms)[39m[39m
+[34mℹ tests 342[39m
+[34mℹ suites 0[39m
+[34mℹ pass 342[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 2956.853792[39m
+(node:83502) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 contributions /Users/t04dj14n9/Code/vscode-markdown-workbench
+> tsx scripts/generate-contributions.ts --check
+
+(node:83526) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:83532) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

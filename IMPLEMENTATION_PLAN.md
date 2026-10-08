@@ -1852,3 +1852,18 @@ Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
 Known issues: remaining 15 backlog files and README/manual inventory before
 readability completion checks, remaining Phase 4 plugins, Claude's incomplete
 Phase 5 handoff and Phases 6–8 as specified above.
+
+### Readability pass progress — Query grammar, 2026-10-08
+
+Delivered: SearchParser owns its cursor and named expression/unary/group/property/
+quoted/regex/unquoted rules. File-search detection uses explicit union branches.
+Added two units for recursive file scope detection, property literals/negative
+numbers and exact parse-error positions. Original search assertions are intact.
+Backlog: 15 → 14 distinct files; long-function 15 → 14; complexity 7 → 6;
+nested-ternary 4 → 3; other counts unchanged. No exceptions or behavior fixes.
+Checks: `pnpm check` 342/342; log `docs/checks/readability-query-check.txt`.
+Smoke suites not rerun: pure parser rewrite. Ledger: 87/16/2/333/10.
+Deviations: none. Search feature delivery remains Phase 4, not this rewrite.
+Known issues: remaining 14 backlog files and README/manual inventory, ordered
+readability completion checks, remaining Phase 4 plugins, Claude's incomplete
+Phase 5 handoff and Phases 6–8 as specified above. Owner acceptance unrun.

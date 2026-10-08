@@ -21,53 +21,89 @@ export const searchScopes = new Set([
   "task-done",
 ]);
 export function searchesFiles(term: SearchQuery): boolean {
-  return term.kind === "scope"
-    ? term.scope === "file" || term.scope === "path" || searchesFiles(term.term)
-    : term.kind === "and" || term.kind === "or"
-      ? term.terms.some(searchesFiles)
-      : term.kind === "not"
-        ? searchesFiles(term.term)
-        : false;
+  switch (term.kind) {
+    case "scope":
+      return (
+        term.scope === "file" ||
+        term.scope === "path" ||
+        searchesFiles(term.term)
+      );
+    case "and":
+    case "or":
+      return term.terms.some(searchesFiles);
+    case "not":
+      return searchesFiles(term.term);
+    default:
+      return false;
+  }
 }
 
 /** Parse query syntax separately from document evaluation and result rendering. */
 export function parseSearch(source: string): SearchQuery {
-  let at = 0;
-  const fail = (message: string): never => {
-    throw new Error(`${message} at character ${at + 1}.`);
-  };
-  const space = (): void => {
-    while (/\s/.test(source[at] ?? "") && at < source.length) {
-      at++;
+  return new SearchParser(source).parse();
+}
+
+class SearchParser {
+  private at = 0;
+  constructor(private readonly source: string) {}
+
+  parse(): SearchQuery {
+    this.space();
+    if (this.at === this.source.length) {
+      return this.fail("Search query is empty");
     }
-  };
-  const or = (): boolean =>
-    source.slice(at, at + 2) === "OR" &&
-    (at + 2 === source.length || /[\s()[\]]/.test(source[at + 2]!));
-  const quoted = (): string => {
-    at++;
+    const result = this.expression("", true);
+    this.space();
+    if (this.at !== this.source.length) {
+      return this.fail("Unexpected query character");
+    }
+    return result;
+  }
+  private fail(message: string): never {
+    throw new Error(`${message} at character ${this.at + 1}.`);
+  }
+  private space(): void {
+    while (
+      /\s/.test(this.source[this.at] ?? "") &&
+      this.at < this.source.length
+    ) {
+      this.at++;
+    }
+  }
+  private or(): boolean {
+    return (
+      this.source.slice(this.at, this.at + 2) === "OR" &&
+      (this.at + 2 === this.source.length ||
+        /[\s()[\]]/.test(this.source[this.at + 2]!))
+    );
+  }
+  private quoted(): string {
+    this.at++;
     let text = "";
-    while (at < source.length) {
-      const char = source[at++]!;
+    while (this.at < this.source.length) {
+      const char = this.source[this.at++]!;
       if (char === '"') {
         return text;
       }
-      if (char === "\\" && (source[at] === '"' || source[at] === "\\")) {
-        text += source[at++]!;
+      if (
+        char === "\\" &&
+        (this.source[this.at] === '"' || this.source[this.at] === "\\")
+      ) {
+        text += this.source[this.at++]!;
       } else {
         text += char;
       }
     }
-    return fail("Unclosed quoted phrase");
-  };
-  const regex = (): SearchQuery => {
-    at++;
+    return this.fail("Unclosed quoted phrase");
+  }
+  private regex(): SearchQuery {
+    this.at++;
     let pattern = "";
     let bracket = false;
-    while (at < source.length) {
-      const char = source[at++]!;
-      if (char === "\\" && at < source.length) {
-        pattern += char + source[at++]!;
+    while (this.at < this.source.length) {
+      const char = this.source[this.at++]!;
+      if (char === "\\" && this.at < this.source.length) {
+        pattern += char + this.source[this.at++]!;
         continue;
       }
       if (char === "[") {
@@ -77,127 +113,132 @@ export function parseSearch(source: string): SearchQuery {
         bracket = false;
       }
       if (char === "/" && !bracket) {
-        const flags = /^[imsu]*/.exec(source.slice(at))![0];
-        at += flags.length;
+        const flags = /^[imsu]*/.exec(this.source.slice(this.at))![0];
+        this.at += flags.length;
         try {
           new RegExp(pattern, flags);
         } catch {
-          return fail("Invalid regular expression");
+          return this.fail("Invalid regular expression");
         }
         return { kind: "regex", value: pattern, flags };
       }
       pattern += char;
     }
-    return fail("Unclosed regular expression");
-  };
-  const expression = (
+    return this.fail("Unclosed regular expression");
+  }
+  private expression(
     stops: string,
     scopes: boolean,
     propertyValue = false,
-  ): SearchQuery => {
+  ): SearchQuery {
     const alternatives: SearchQuery[] = [];
     while (true) {
       const terms: SearchQuery[] = [];
-      space();
-      while (at < source.length && !stops.includes(source[at]!) && !or()) {
-        terms.push(unary(stops, scopes, propertyValue));
-        space();
+      this.space();
+      while (
+        this.at < this.source.length &&
+        !stops.includes(this.source[this.at]!) &&
+        !this.or()
+      ) {
+        terms.push(this.unary(stops, scopes, propertyValue));
+        this.space();
       }
       if (!terms.length) {
-        return fail("Expected a search term");
+        return this.fail("Expected a search term");
       }
       alternatives.push(
         terms.length === 1 ? terms[0]! : { kind: "and", terms },
       );
-      if (!or()) {
+      if (!this.or()) {
         break;
       }
-      at += 2;
-      space();
+      this.at += 2;
+      this.space();
     }
     return alternatives.length === 1
       ? alternatives[0]!
       : { kind: "or", terms: alternatives };
-  };
-  const unary = (
+  }
+  private unary(
     stops: string,
     scopes: boolean,
     propertyValue: boolean,
-  ): SearchQuery => {
-    space();
+  ): SearchQuery {
+    this.space();
     if (
-      source[at] === "-" &&
-      !(propertyValue && /^-\d/.test(source.slice(at)))
+      this.source[this.at] === "-" &&
+      !(propertyValue && /^-\d/.test(this.source.slice(this.at)))
     ) {
-      at++;
-      return { kind: "not", term: unary(stops, scopes, propertyValue) };
+      this.at++;
+      return { kind: "not", term: this.unary(stops, scopes, propertyValue) };
     }
-    if (source[at] === "(") {
-      at++;
-      const result = expression(")", scopes, propertyValue);
-      if (source[at] !== ")") {
-        return fail("Unclosed group");
-      }
-      at++;
-      return result;
+    if (this.source[this.at] === "(") {
+      return this.group(scopes, propertyValue);
     }
-    if (source[at] === "[" && scopes) {
-      at++;
-      const name = expression(":]", false);
-      let value: SearchQuery | undefined;
-      if (source[at] === ":") {
-        at++;
-        value = expression("]", false, true);
-      }
-      if (source[at] !== "]") {
-        return fail("Unclosed property filter");
-      }
-      at++;
-      return value
-        ? { kind: "property", name, value }
-        : { kind: "property", name };
+    if (this.source[this.at] === "[" && scopes) {
+      return this.property();
     }
     if (scopes) {
-      const operator = /^([a-z-]+):/.exec(source.slice(at));
+      const operator = /^([a-z-]+):/.exec(this.source.slice(this.at));
       if (operator) {
-        at += operator[0].length;
+        this.at += operator[0].length;
         if (!searchScopes.has(operator[1]!)) {
-          return fail(`Unsupported search operator ${operator[1]}`);
+          return this.fail(`Unsupported search operator ${operator[1]}`);
         }
         return {
           kind: "scope",
           scope: operator[1]!,
-          term: unary(stops, scopes, propertyValue),
+          term: this.unary(stops, scopes, propertyValue),
         };
       }
     }
-    if (source[at] === '"') {
-      return { kind: "text", value: quoted() };
+    if (this.source[this.at] === '"') {
+      return { kind: "text", value: this.quoted() };
     }
-    if (source[at] === "/") {
-      return regex();
+    if (this.source[this.at] === "/") {
+      return this.regex();
     }
-    const start = at;
+    return this.unquoted(stops);
+  }
+
+  private unquoted(stops: string): SearchQuery {
+    const start = this.at;
     while (
-      at < source.length &&
-      !/\s|[()[\]]/.test(source[at]!) &&
-      !stops.includes(source[at]!)
+      this.at < this.source.length &&
+      !/\s|[()[\]]/.test(this.source[this.at]!) &&
+      !stops.includes(this.source[this.at]!)
     ) {
-      at++;
+      this.at++;
     }
-    if (at === start) {
-      return fail("Expected a search term");
+    if (this.at === start) {
+      return this.fail("Expected a search term");
     }
-    return { kind: "text", value: source.slice(start, at) };
-  };
-  space();
-  if (at === source.length) {
-    return fail("Search query is empty");
+    return { kind: "text", value: this.source.slice(start, this.at) };
   }
-  const result = expression("", true);
-  space();
-  if (at !== source.length) {
-    return fail("Unexpected query character");
+  private group(scopes: boolean, propertyValue: boolean): SearchQuery {
+    this.at++;
+    const result = this.expression(")", scopes, propertyValue);
+    if (this.source[this.at] !== ")") {
+      return this.fail("Unclosed group");
+    }
+    this.at++;
+    return result;
   }
-  return result;
+
+  private property(): SearchQuery {
+    this.at++;
+    const name = this.expression(":]", false);
+    let value: SearchQuery | undefined;
+    if (this.source[this.at] === ":") {
+      this.at++;
+      value = this.expression("]", false, true);
+    }
+    if (this.source[this.at] !== "]") {
+      return this.fail("Unclosed property filter");
+    }
+    this.at++;
+    return value
+      ? { kind: "property", name, value }
+      : { kind: "property", name };
+  }
 }

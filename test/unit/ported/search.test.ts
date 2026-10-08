@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseSearch } from "../../../src/markdown/search/query";
+import { parseSearch, searchesFiles } from "../../../src/markdown/search/query";
 import { compileSearch } from "../../../src/markdown/search/evaluate";
 
 test("search gives implicit AND precedence over OR and supports grouped negation", () => {
@@ -204,4 +204,27 @@ test("tag search uses parsed tags and Canvas search uses card contents", () => {
   };
   assert.equal(compileSearch("Canvas words")(canvas), true);
   assert.equal(compileSearch("tag:tag")(canvas), false);
+});
+
+test("file-search detection traverses negation and Boolean groups but not property literals", () => {
+  assert.equal(searchesFiles(parseSearch("-(tag:one OR path:notes)")), true);
+  assert.equal(searchesFiles(parseSearch("[name:file:notes]")), false);
+  assert.equal(searchesFiles(parseSearch("content:(one OR two)")), false);
+  assert.deepEqual(parseSearch("[count:-12]"), {
+    kind: "property",
+    name: { kind: "text", value: "count" },
+    value: { kind: "text", value: "-12" },
+  });
+});
+
+test("parser retains exact error offsets after groups and property values", () => {
+  assert.throws(() => parseSearch("(one"), {
+    message: "Unclosed group at character 5.",
+  });
+  assert.throws(() => parseSearch("[key:value"), {
+    message: "Unclosed property filter at character 11.",
+  });
+  assert.throws(() => parseSearch("one OR"), {
+    message: "Expected a search term at character 7.",
+  });
 });

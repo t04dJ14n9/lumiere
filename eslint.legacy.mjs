@@ -7,7 +7,6 @@ export default {
     "src/host/navigation.ts",
     "src/markdown/properties/merge.ts",
     "src/markdown/search/canvas.ts",
-    "src/markdown/search/query.ts",
     "src/plugins/embeds/image-dialog.ts",
     "src/plugins/embeds/image.ts",
     "src/plugins/embeds/post-process.ts",
@@ -24,7 +23,6 @@ export default {
     "src/host/navigation.ts",
     "src/markdown/properties/merge.ts",
     "src/markdown/search/canvas.ts",
-    "src/markdown/search/query.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/links/host.ts",
     "src/plugins/livePreview/inline.ts",
@@ -36,7 +34,6 @@ export default {
   ],
   "no-nested-ternary": [
     "src/markdown/search/canvas.ts",
-    "src/markdown/search/query.ts",
     "src/plugins/embeds/image.ts",
     "src/plugins/livePreview/rendered-position.ts",
   ],
