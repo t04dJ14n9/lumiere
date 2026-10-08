@@ -10,10 +10,12 @@ import { protocol as actions } from "../commands/protocol";
 import { config } from "./manifest";
 import { protocol } from "./protocol";
 import { PropertyEditing } from "./editing";
-import { PropertyWidget } from "./widget";
+import { PropertyPresentation } from "./presentation";
 import { propertyHeadingFocus } from "./heading";
 import type { PropertyContext } from "./context";
+import type { PropertyKind } from "../../markdown/properties/types";
 import { styles } from "./styles";
+
 const configurations = new WeakMap<
   Context,
   (settings: Infer<typeof config>) => void
@@ -33,141 +35,196 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     required: ["editor", "commands", "livePreview", "rpc", "document", "menu"],
   },
   apply(ctx, settings) {
-    const view = ctx.editor.view;
     const lifetime = new AbortController();
     ctx.effect(() => () => lifetime.abort());
-    const refresh = () => {
-      if (!lifetime.signal.aborted) {
-        ctx.emit("render/changed");
-      }
-    };
     const heading = propertyHeadingFocus(() => {
       ctx.bail("editor/focusTitle");
     });
-    let display = settings.display;
-    let removeRenderer: (() => void | Promise<void>) | undefined;
-    const install = () => {
-      void removeRenderer?.();
-      removeRenderer = ctx.livePreview.block({
-        kind: "properties",
-        editing: display === "hidden" ? "reveal" : "widget",
-        match: (node) => display !== "source" && node.name === "Frontmatter",
-        widget: (block) =>
-          new PropertyWidget(block.source, context, display === "hidden"),
-      });
-    };
-    const editing = new PropertyEditing({
-      view: () => (lifetime.signal.aborted ? undefined : view),
-      setStatus: (message) => ctx.logger.warn(message),
-      action: (action) => {
-        void ctx.rpc
-          .call(actions, "action", { action })
-          .catch((error) => ctx.logger.error("Property action failed", error));
-      },
-      refresh: refresh,
-      setType: (key, kind) => {
-        void ctx.rpc
-          .call(protocol, "setType", { key, kind: kind ?? undefined })
-          .then((types) => {
-            if (!lifetime.signal.aborted) {
-              editing.receiveTypes({ types });
-            }
-          })
-          .catch((error) =>
-            ctx.logger.error("Property preference failed", error),
-          );
-      },
+    const editing = createEditing(ctx, lifetime.signal, {
       show: () => {
         ctx.emit("editor/clearProjection");
-        display = "visible";
-        install();
+        presentation.configure("visible");
       },
-      focusTitle: () => {
-        ctx.bail("editor/focusTitle");
-      },
-      pageHeading: (backward) => view.plugin(heading)?.page(backward),
-      signal: lifetime.signal,
+      pageHeading: (backward) =>
+        ctx.editor.view.plugin(heading)?.page(backward),
     });
-    const context: PropertyContext = {
-      source: "current",
-      propertyEditor: editing.editor("current"),
-      copy: (text) => {
-        void ctx.editor.clipboard
-          .write(text)
-          .catch((error) => ctx.logger.error("Copy failed", error));
-      },
-      openMenu: (owner, items, point, _report, label) => {
-        const stop = ctx.menu.open(owner, items, point, label);
-        return () => {
-          void stop();
-        };
-      },
-    };
-    configurations.set(ctx, (settings) => {
-      display = settings.display;
-      install();
-    });
-    ctx.effect(() => () => {
-      configurations.delete(ctx);
-    });
-    ctx.effect(() =>
-      ctx.editor.extend([
-        heading,
-        EditorView.baseTheme(styles),
-        keymap.of([
-          {
-            key: "Mod-;",
-            run: () => {
-              editing.add();
-              return true;
-            },
-          },
-        ]),
-      ]),
+    const presentation = new PropertyPresentation(
+      ctx.livePreview,
+      createSheetContext(ctx, editing),
+      settings.display,
     );
+    registerConfiguration(ctx, presentation);
+    registerEditorControls(ctx, { heading, editing });
     ctx.effect(() => {
-      install();
-      return () => removeRenderer?.();
+      presentation.install();
+      return () => presentation.dispose();
     });
-    ctx.effect(() =>
-      ctx.commands.register("markdown:add-metadata-property", () => {
-        editing.add();
-        return true;
-      }),
-    );
-    ctx.effect(() =>
-      ctx.rpc.on(protocol, "types", (types) => editing.receiveTypes({ types })),
-    );
-    void ctx.rpc
-      .call(protocol, "types", {})
-      .then((types) => {
-        if (!lifetime.signal.aborted) {
-          editing.receiveTypes({ types });
-        }
-      })
-      .catch((error) =>
-        ctx.logger.warn("Property preferences unavailable", error),
-      );
-    if (ctx.document.beforeFlush) {
-      ctx.effect(() =>
-        ctx.document.beforeFlush!(() => {
-          const inputs = view.dom.querySelectorAll<HTMLInputElement>(
-            ".hybrid-properties input",
-          );
-          for (const input of inputs) {
-            if (
-              input.isConnected &&
-              !input.dispatchEvent(
-                new Event("property-commit", { cancelable: true }),
-              )
-            ) {
-              throw new Error(
-                "Finish or cancel the invalid property draft before saving.",
-              );
-            }
-          }
-        }),
-      );
-    }
+    registerAddProperty(ctx, editing);
+    registerPreferences(ctx, editing, lifetime.signal);
+    registerDraftFlush(ctx);
   },
 };
+
+function createEditing(
+  ctx: Context,
+  signal: AbortSignal,
+  navigation: { show(): void; pageHeading(backward: boolean): void },
+): PropertyEditing {
+  const view = ctx.editor.view;
+  const editing = new PropertyEditing({
+    view: () => (signal.aborted ? undefined : view),
+    setStatus: (message) => ctx.logger.warn(message),
+    action: (action) => {
+      void ctx.rpc
+        .call(actions, "action", { action })
+        .catch((error) => ctx.logger.error("Property action failed", error));
+    },
+    refresh: () => {
+      if (!signal.aborted) {
+        ctx.emit("render/changed");
+      }
+    },
+    setType: (key, kind) =>
+      setPropertyType(ctx, { key, kind, editing, signal }),
+    show: () => navigation.show(),
+    focusTitle: () => {
+      ctx.bail("editor/focusTitle");
+    },
+    pageHeading: (backward) => navigation.pageHeading(backward),
+    signal,
+  });
+  return editing;
+}
+
+function setPropertyType(
+  ctx: Context,
+  options: {
+    key: string;
+    kind: PropertyKind | null;
+    editing: PropertyEditing;
+    signal: AbortSignal;
+  },
+): void {
+  const { key, kind, editing, signal } = options;
+  void ctx.rpc
+    .call(protocol, "setType", { key, kind: kind ?? undefined })
+    .then((types) => {
+      if (!signal.aborted) {
+        editing.receiveTypes({ types });
+      }
+    })
+    .catch((error) => ctx.logger.error("Property preference failed", error));
+}
+
+function createSheetContext(
+  ctx: Context,
+  editing: PropertyEditing,
+): PropertyContext {
+  return {
+    source: "current",
+    propertyEditor: editing.editor("current"),
+    copy: (text) => {
+      void ctx.editor.clipboard
+        .write(text)
+        .catch((error) => ctx.logger.error("Copy failed", error));
+    },
+    openMenu: (...args) => {
+      const [owner, items, point, , label] = args;
+      const stop = ctx.menu.open(owner, items, point, label);
+      return () => {
+        void stop();
+      };
+    },
+  };
+}
+
+function registerConfiguration(
+  ctx: Context,
+  presentation: PropertyPresentation,
+): void {
+  configurations.set(ctx, (settings) =>
+    presentation.configure(settings.display),
+  );
+  ctx.effect(() => () => {
+    configurations.delete(ctx);
+  });
+}
+
+function registerEditorControls(
+  ctx: Context,
+  options: {
+    heading: ReturnType<typeof propertyHeadingFocus>;
+    editing: PropertyEditing;
+  },
+): void {
+  ctx.effect(() =>
+    ctx.editor.extend([
+      options.heading,
+      EditorView.baseTheme(styles),
+      keymap.of([
+        {
+          key: "Mod-;",
+          run: () => {
+            options.editing.add();
+            return true;
+          },
+        },
+      ]),
+    ]),
+  );
+}
+
+function registerAddProperty(ctx: Context, editing: PropertyEditing): void {
+  ctx.effect(() =>
+    ctx.commands.register("markdown:add-metadata-property", () => {
+      editing.add();
+      return true;
+    }),
+  );
+}
+
+function registerPreferences(
+  ctx: Context,
+  editing: PropertyEditing,
+  signal: AbortSignal,
+): void {
+  ctx.effect(() =>
+    ctx.rpc.on(protocol, "types", (types) => editing.receiveTypes({ types })),
+  );
+  void ctx.rpc
+    .call(protocol, "types", {})
+    .then((types) => {
+      if (!signal.aborted) {
+        editing.receiveTypes({ types });
+      }
+    })
+    .catch((error) =>
+      ctx.logger.warn("Property preferences unavailable", error),
+    );
+}
+
+function registerDraftFlush(ctx: Context): void {
+  const view = ctx.editor.view;
+  if (!ctx.document.beforeFlush) {
+    return;
+  }
+  ctx.effect(() =>
+    ctx.document.beforeFlush!(() => {
+      const inputs = view.dom.querySelectorAll<HTMLInputElement>(
+        ".hybrid-properties input",
+      );
+      for (const input of inputs) {
+        if (
+          input.isConnected &&
+          !input.dispatchEvent(
+            new Event("property-commit", { cancelable: true }),
+          )
+        ) {
+          throw new Error(
+            "Finish or cancel the invalid property draft before saving.",
+          );
+        }
+      }
+    }),
+  );
+}

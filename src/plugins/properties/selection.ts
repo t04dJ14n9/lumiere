@@ -19,22 +19,14 @@ export class PropertySelection {
         this.clear();
       }
     });
-    const selectable = (event: MouseEvent): HTMLElement | undefined => {
-      if (!(event.target instanceof Element)) {
-        return;
-      }
-      const row = event.target.closest<HTMLElement>("[data-property-row]");
-      if (
-        row &&
-        (event.target === row ||
-          event.target.closest("[data-property-type]") ||
-          ["DT", "DD"].includes(event.target.tagName))
-      ) {
-        return row;
-      }
-      return undefined;
-    };
-    panel.addEventListener(
+    this.registerPointerSelection();
+    panel.addEventListener("keydown", (event) => this.keydown(event), true);
+    this.registerPaste();
+    this.registerCopy();
+  }
+
+  private registerPointerSelection(): void {
+    this.panel.addEventListener(
       "mousedown",
       (event) => {
         const row =
@@ -42,7 +34,7 @@ export class PropertySelection {
             ? event.target.closest<HTMLElement>("[data-property-row]")
             : null;
         if (
-          ((event.altKey || event.shiftKey) && selectable(event)) ||
+          ((event.altKey || event.shiftKey) && selectableRow(event)) ||
           (event.button === 2 && row && this.has(row))
         ) {
           event.preventDefault();
@@ -50,10 +42,10 @@ export class PropertySelection {
       },
       true,
     );
-    panel.addEventListener(
+    this.panel.addEventListener(
       "click",
       (event) => {
-        const row = selectable(event);
+        const row = selectableRow(event);
         if (!row) {
           return;
         }
@@ -82,8 +74,9 @@ export class PropertySelection {
       },
       true,
     );
-    panel.addEventListener("keydown", (event) => this.keydown(event), true);
-    panel.addEventListener("paste", (event) => {
+  }
+  private registerPaste(): void {
+    this.panel.addEventListener("paste", (event) => {
       const data = event.clipboardData?.getData("obsidian/properties");
       if (!data) {
         return;
@@ -99,8 +92,10 @@ export class PropertySelection {
         // A malformed structured payload must not fall through into note text.
       }
     });
+  }
+  private registerCopy(): void {
     for (const type of ["copy", "cut"] as const) {
-      panel.addEventListener(type, (event) => {
+      this.panel.addEventListener(type, (event) => {
         if (
           !this.rows().includes(document.activeElement as HTMLElement) ||
           !event.clipboardData
@@ -147,7 +142,10 @@ export class PropertySelection {
     const keys = this.rows()
       .filter((row) => this.has(row))
       .map((row) => row.dataset.propertyRow!);
-    return keys.length ? keys : fallback ? [fallback.dataset.propertyRow!] : [];
+    if (keys.length) {
+      return keys;
+    }
+    return fallback ? [fallback.dataset.propertyRow!] : [];
   }
 
   private values(keys: string[]): Record<string, unknown> {
@@ -207,16 +205,11 @@ export class PropertySelection {
     const row = rows[index]!;
     const mod = event.metaKey || event.ctrlKey;
     if (event.shiftKey && ["ArrowUp", "ArrowDown"].includes(event.key)) {
-      const next = rows[index + (event.key === "ArrowDown" ? 1 : -1)];
-      if (next) {
-        if (this.has(row) && this.has(next)) {
-          this.toggle(row, false);
-        } else {
-          this.toggle(row, true);
-          this.toggle(next, true);
-        }
-        next.focus();
-      }
+      this.extendKeyboardSelection(
+        rows,
+        index,
+        event.key === "ArrowDown" ? 1 : -1,
+      );
     } else if (mod && event.key.toLowerCase() === "a") {
       rows.forEach((row) => this.toggle(row, true));
     } else if (event.key === "Escape" && this.selected.size) {
@@ -224,21 +217,58 @@ export class PropertySelection {
     } else if (event.key === "Delete" || (mod && event.key === "Backspace")) {
       this.remove(this.keys(row));
     } else {
-      if (["ArrowUp", "ArrowDown", "Tab", "j", "k"].includes(event.key)) {
-        this.clear();
-      } else if (
-        this.selected.size > 1 &&
-        ["Enter", " ", "ArrowLeft", "ArrowRight", "h", "l", "i", "A"].includes(
-          event.key,
-        )
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      this.handleUnselectedKey(event);
       return;
     }
     this.sync();
     event.preventDefault();
     event.stopPropagation();
   }
+  private extendKeyboardSelection(
+    rows: HTMLElement[],
+    index: number,
+    direction: number,
+  ): void {
+    const row = rows[index]!;
+    const next = rows[index + direction];
+    if (next) {
+      if (this.has(row) && this.has(next)) {
+        this.toggle(row, false);
+      } else {
+        this.toggle(row, true);
+        this.toggle(next, true);
+      }
+      next.focus();
+    }
+  }
+
+  private handleUnselectedKey(event: KeyboardEvent): void {
+    if (["ArrowUp", "ArrowDown", "Tab", "j", "k"].includes(event.key)) {
+      this.clear();
+    } else if (
+      this.selected.size > 1 &&
+      ["Enter", " ", "ArrowLeft", "ArrowRight", "h", "l", "i", "A"].includes(
+        event.key,
+      )
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+}
+
+function selectableRow(event: MouseEvent): HTMLElement | undefined {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+  const row = event.target.closest<HTMLElement>("[data-property-row]");
+  if (
+    row &&
+    (event.target === row ||
+      event.target.closest("[data-property-type]") ||
+      ["DT", "DD"].includes(event.target.tagName))
+  ) {
+    return row;
+  }
+  return undefined;
 }

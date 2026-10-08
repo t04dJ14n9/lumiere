@@ -478,3 +478,11 @@ smoke scenarios. Use only the disposable fixture vault described above.
   its value and the original source order. Repeat with two panels and stale
   headers. Change a property type, then change the source while its confirmation
   is open; the old confirmation must not convert the new value. Not run here.
+
+- **Properties — sheet, selection and ordering:** rerun every remaining Properties
+  scenario: add form and heading navigation, Shift/Alt row selection, structured
+  copy/cut/paste, sorting and dragging with scroll/cancel, focused input/IME
+  preservation during second-panel changes, and visible/hidden/source settings.
+  Test recursive YAML aliases, tags, nested values and forced-type warnings.
+  Repeat the composition tests for Properties config changes and off/on; existing
+  folds, table state and unrelated extension order must survive. Not run here.

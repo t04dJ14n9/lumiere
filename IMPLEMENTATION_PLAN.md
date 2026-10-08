@@ -1225,3 +1225,33 @@ other remaining eslint.legacy.mjs entries. Finish remaining READMEs, kernel
 why-comments, manual regression inventory and readability completion checks.
 Remaining Phase 4 plugins and Phases 5–8 remain as previously recorded. Owner
 manual acceptance has not run; no phase completion is claimed.
+
+### Readability pass progress — Properties complete, 2026-10-08
+
+Delivered: finished the Properties backlog. Form heading navigation and creation
+are separate operations; selection has named pointer/clipboard/keyboard handlers;
+ordering separates gesture creation, movement, drop and cancellation. Sheet
+reconciliation separates row reuse from deferred focus restoration. HTML rendering
+has named row, scalar, list, checkbox and nested-value renderers. `apply` lists
+registrations, with renderer reconfiguration owned by `PropertyPresentation`.
+README lists every file and actual injected services/events; manual regression
+inventory now covers all rewritten property interactions.
+
+Backlog since preceding unit → now: max-lines-per-function 53 → 47; complexity
+26 → 22; max-params 10 → 9; no-nested-ternary 16 → 14; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct backlog files 68 → 62. All Properties files
+are removed; no new exceptions/inline disables. Three rendering units raise the
+count 227 → 230. No intentional behavior changes or separately discovered bugs.
+Checks: `pnpm check` 230/230 and `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-properties-final-{check,browser}.txt`.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo.
+Deviations: none. Owner manual acceptance remains unrun.
+
+Known issues / exact remaining work: pagePreview/controller; host/workbench,
+editor and footnotes registrations; markdown/search/evaluate and metadata/
+footnote-extract; every other remaining eslint.legacy.mjs entry. Complete all
+remaining plugin README rewrites and kernel why-comments; extend the manual
+regression inventory and finish ordered readability checks/record. Then finish
+Phase 4 inlineTitle/tags/suggest/search/pasteHtml/copyForAgent/markers and Phases
+5–8 exactly as specified above. Only the Tables and Properties portions of the
+readability backlog are complete; this is not overall readability completion.

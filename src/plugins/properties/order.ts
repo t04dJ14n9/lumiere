@@ -55,11 +55,15 @@ export class PropertyOrder {
       },
       { capture: true, signal: this.events.signal },
     );
-    const heading = panel.querySelector<HTMLElement>("summary")!;
+    this.registerHeadingMenu();
+  }
+
+  private registerHeadingMenu(): void {
+    const heading = this.panel.querySelector<HTMLElement>("summary")!;
     const menu = (point: PointerPoint): void => {
       this.closeMenu?.();
       this.closeMenu = this.openMenu(
-        panel,
+        this.panel,
         [
           { label: "Add property", run: () => this.actions.add() },
           { label: "Sort properties A to Z", run: () => this.sort(false) },
@@ -178,57 +182,60 @@ export class PropertyOrder {
     event.preventDefault();
     window.addEventListener(
       "pointermove",
-      (move) => {
-        const drag = this.drag;
-        if (!drag || move.pointerId !== drag.pointer) {
-          return;
-        }
-        if (
-          !drag.moved &&
-          Math.hypot(move.clientX - drag.start.x, move.clientY - drag.start.y) <
-            10
-        ) {
-          return;
-        }
-        if (!drag.moved) {
-          drag.moved = true;
-          this.panel.setPointerCapture(drag.pointer);
-          const ghost = document.createElement("div");
-          ghost.className = "property-drag-ghost";
-          ghost.setAttribute("aria-hidden", "true");
-          ghost.inert = true;
-          ghost.style.width = `${bounds.width}px`;
-          ghost.style.font = getComputedStyle(row).font;
-          ghost.append(row.cloneNode(true));
-          (this.panel.closest(".cm-editor") ?? document.body).append(ghost);
-          drag.ghost = ghost;
-          row.classList.add("property-drag-placeholder");
-        }
-        move.preventDefault();
-        this.scroll.move({ x: move.clientX, y: move.clientY });
-      },
+      (event) => this.moveDrag(event, bounds.width),
       options,
     );
-    window.addEventListener(
-      "pointerup",
-      (up) => {
-        const drag = this.drag;
-        if (!drag || up.pointerId !== drag.pointer) {
-          return;
-        }
-        if (drag.moved) {
-          this.preview({ x: up.clientX, y: up.clientY });
-        }
-        const keys = this.keys();
-        this.cancel(false);
-        if (drag.moved) {
-          if (!this.actions.commit(keys)) {
-            this.place(drag.keys);
-          }
-        }
-      },
-      options,
-    );
+    window.addEventListener("pointerup", (event) => this.drop(event), options);
+    this.registerGestureCancellation(options);
+  }
+
+  private moveDrag(move: PointerEvent, width: number): void {
+    const drag = this.drag;
+    if (!drag || move.pointerId !== drag.pointer) {
+      return;
+    }
+    if (
+      !drag.moved &&
+      Math.hypot(move.clientX - drag.start.x, move.clientY - drag.start.y) < 10
+    ) {
+      return;
+    }
+    if (!drag.moved) {
+      drag.moved = true;
+      this.panel.setPointerCapture(drag.pointer);
+      const ghost = document.createElement("div");
+      ghost.className = "property-drag-ghost";
+      ghost.setAttribute("aria-hidden", "true");
+      ghost.inert = true;
+      ghost.style.width = `${width}px`;
+      ghost.style.font = getComputedStyle(drag.row).font;
+      ghost.append(drag.row.cloneNode(true));
+      (this.panel.closest(".cm-editor") ?? document.body).append(ghost);
+      drag.ghost = ghost;
+      drag.row.classList.add("property-drag-placeholder");
+    }
+    move.preventDefault();
+    this.scroll.move({ x: move.clientX, y: move.clientY });
+  }
+
+  private drop(up: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || up.pointerId !== drag.pointer) {
+      return;
+    }
+    if (drag.moved) {
+      this.preview({ x: up.clientX, y: up.clientY });
+    }
+    const keys = this.keys();
+    this.cancel(false);
+    if (drag.moved) {
+      if (!this.actions.commit(keys)) {
+        this.place(drag.keys);
+      }
+    }
+  }
+
+  private registerGestureCancellation(options: { signal: AbortSignal }): void {
     const cancelPointer = (cancel: PointerEvent): void => {
       if (cancel.pointerId === this.drag?.pointer) {
         this.cancel();
