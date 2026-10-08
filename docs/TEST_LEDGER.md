@@ -6,106 +6,106 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 
 | Source | Title | Status | Destination or reason |
 | --- | --- | --- | --- |
-| `unit/authority.test.ts` | delayed acknowledgements preserve edits typed after a submitted batch | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | two split views converge when both edit before receiving the other change | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | external changes are rebased against unconfirmed typing | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | retried batches are acknowledged once | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | actual host changes override a mismatched expected edit | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | multi-transaction batch remains individually confirmable | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | invalid revisions and malformed edit lengths do not mutate the authority | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | random concurrent insertions, removals and replacements converge | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | LF transport normalizes CRLF without counting CR as a source character | todo | Awaiting scheduled port |
+| `unit/authority.test.ts` | delayed acknowledgements preserve edits typed after a submitted batch | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | two split views converge when both edit before receiving the other change | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | external changes are rebased against unconfirmed typing | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | retried batches are acknowledged once | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | actual host changes override a mismatched expected edit | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | multi-transaction batch remains individually confirmable | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | invalid revisions and malformed edit lengths do not mutate the authority | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | random concurrent insertions, removals and replacements converge | ported | `test/unit/ported/authority.test.ts` |
+| `unit/authority.test.ts` | LF transport normalizes CRLF without counting CR as a source character | ported | `test/unit/ported/authority.test.ts` |
 | `unit/authority.test.ts` | protocol rejects unknown actions and invalid message shapes | todo | Awaiting scheduled port |
-| `unit/authority.test.ts` | rendering without a DOM sanitizer escapes HTML and rejects script links | todo | Awaiting scheduled port |
+| `unit/authority.test.ts` | rendering without a DOM sanitizer escapes HTML and rejects script links | ported | `test/unit/ported/authority.test.ts` |
 | `unit/authority.test.ts` | title responses and selection restores validate optional error and focus fields | todo | Awaiting scheduled port |
 | `unit/document-tree.test.ts` | complete syntax is shared by outline and footnote indexes and retained for selections | todo | Awaiting scheduled port |
 | `unit/document-tree.test.ts` | incremental syntax reparses fences, frontmatter and math boundaries beyond the edit | todo | Awaiting scheduled port |
 | `unit/document-tree.test.ts` | incremental syntax and indexes match fresh parses through deterministic structural edits | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | footnotes number references in reading order and retain exact source positions | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | code, escaped references and frontmatter do not become footnotes | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | inline footnotes share numbering and preserve nested brackets and code | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | escaped, code and unclosed inline notes remain literal | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | references inside definition bodies map through removed indentation | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | section fragments include only needed definitions and terminate cyclic dependencies | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | multiline inline notes omit surrounding quote and list markers from their body | todo | Awaiting scheduled port |
-| `unit/footnotes.test.ts` | comment markers inside inline code do not hide later footnotes | todo | Awaiting scheduled port |
+| `unit/footnotes.test.ts` | footnotes number references in reading order and retain exact source positions | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | code, escaped references and frontmatter do not become footnotes | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | inline footnotes share numbering and preserve nested brackets and code | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | escaped, code and unclosed inline notes remain literal | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | references inside definition bodies map through removed indentation | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | section fragments include only needed definitions and terminate cyclic dependencies | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | multiline inline notes omit surrounding quote and list markers from their body | ported | `test/unit/ported/footnotes.test.ts` |
+| `unit/footnotes.test.ts` | comment markers inside inline code do not hide later footnotes | ported | `test/unit/ported/footnotes.test.ts` |
 | `unit/host-event.test.ts` | webview accepts its real wrapper after VS Code masks window.parent | todo | Awaiting scheduled port |
-| `unit/match.test.ts` | link suggestions rank name prefixes above name and path matches | todo | Awaiting scheduled port |
-| `unit/match.test.ts` | every query word must match, in any field, case-insensitively | todo | Awaiting scheduled port |
-| `unit/outline.test.ts` | outline recognizes real headings and excludes properties, code and math | todo | Awaiting scheduled port |
-| `unit/outline.test.ts` | fold ranges respect quote boundaries and repeated headings get distinct identities | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | recursive YAML properties render without throwing or mistaking shared aliases for cycles | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | nested property values preserve links, empty lists and multiline text | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | boolean property edits preserve anchors, comments, flow syntax and CRLF | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | property strings cannot introduce extra interactive property controls | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | text property edits preserve quote style and string types | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | numeric property edits preserve neighboring text and reject non-finite values | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | boolean property edits reject aliases, strings and duplicate keys | todo | Awaiting scheduled port |
-| `unit/properties.test.ts` | list edits preserve neighboring YAML, string types and line endings | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | empty headers and new properties preserve the note body and line endings | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | rename and removal preserve unrelated comments, multiline values and formatting | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | property edits retain flow mappings and reject removal of a referenced anchor | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | explicit value editing changes scalar types and retains unrelated inline comments | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | adding properties distinguishes an unfinished header from ordinary Markdown | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | new properties reject non-finite scalar and list values | todo | Awaiting scheduled port |
+| `unit/match.test.ts` | link suggestions rank name prefixes above name and path matches | changed | `test/unit/ported/match.test.ts`; DESIGN §13 fuzzy scoring, study §8 |
+| `unit/match.test.ts` | every query word must match, in any field, case-insensitively | ported | `test/unit/ported/match.test.ts`; DESIGN §13 fuzzy scoring, study §8 |
+| `unit/outline.test.ts` | outline recognizes real headings and excludes properties, code and math | rewritten | `test/unit/ported/outline.test.ts`; unified metadata/factory API (same behaviour) |
+| `unit/outline.test.ts` | fold ranges respect quote boundaries and repeated headings get distinct identities | rewritten | `test/unit/ported/outline.test.ts`; unified metadata/factory API (same behaviour) |
+| `unit/properties.test.ts` | recursive YAML properties render without throwing or mistaking shared aliases for cycles | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | nested property values preserve links, empty lists and multiline text | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | boolean property edits preserve anchors, comments, flow syntax and CRLF | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | property strings cannot introduce extra interactive property controls | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | text property edits preserve quote style and string types | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | numeric property edits preserve neighboring text and reject non-finite values | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | boolean property edits reject aliases, strings and duplicate keys | ported | `test/unit/ported/properties.test.ts` |
+| `unit/properties.test.ts` | list edits preserve neighboring YAML, string types and line endings | ported | `test/unit/ported/properties.test.ts` |
+| `unit/property-editing.test.ts` | empty headers and new properties preserve the note body and line endings | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | rename and removal preserve unrelated comments, multiline values and formatting | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | property edits retain flow mappings and reject removal of a referenced anchor | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | explicit value editing changes scalar types and retains unrelated inline comments | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | adding properties distinguishes an unfinished header from ordinary Markdown | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | new properties reject non-finite scalar and list values | ported | `test/unit/ported/property-editing.test.ts` |
 | `unit/property-editing.test.ts` | property type preferences serialize concurrent writes and stay within their vault | todo | Awaiting scheduled port |
 | `unit/property-editing.test.ts` | nested vaults get separate property scopes within one opened workspace | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | structured property paste merges nested values and unions lists without touching other YAML | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | structured property paste handles flow maps, empty values and null merge rules | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | an invalid property in a paste rejects the whole batch | todo | Awaiting scheduled port |
-| `unit/property-editing.test.ts` | structured paste treats inherited-looking names as ordinary own properties | todo | Awaiting scheduled port |
-| `unit/property-order.test.ts` | property order moves complete entries with comments and multiline values | todo | Awaiting scheduled port |
-| `unit/property-order.test.ts` | flow property maps retain values, quotes and comments through a reorder | todo | Awaiting scheduled port |
-| `unit/property-order.test.ts` | invalid key permutations cannot remove or duplicate a property | todo | Awaiting scheduled port |
-| `unit/property-order.test.ts` | alias dependencies remain valid and forward-alias reorders are rejected | todo | Awaiting scheduled port |
-| `unit/property-order.test.ts` | empty values, empty headers and punctuation in keys keep their source meaning | todo | Awaiting scheduled port |
+| `unit/property-editing.test.ts` | structured property paste merges nested values and unions lists without touching other YAML | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | structured property paste handles flow maps, empty values and null merge rules | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | an invalid property in a paste rejects the whole batch | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-editing.test.ts` | structured paste treats inherited-looking names as ordinary own properties | ported | `test/unit/ported/property-editing.test.ts` |
+| `unit/property-order.test.ts` | property order moves complete entries with comments and multiline values | ported | `test/unit/ported/property-order.test.ts` |
+| `unit/property-order.test.ts` | flow property maps retain values, quotes and comments through a reorder | ported | `test/unit/ported/property-order.test.ts` |
+| `unit/property-order.test.ts` | invalid key permutations cannot remove or duplicate a property | ported | `test/unit/ported/property-order.test.ts` |
+| `unit/property-order.test.ts` | alias dependencies remain valid and forward-alias reorders are rejected | ported | `test/unit/ported/property-order.test.ts` |
+| `unit/property-order.test.ts` | empty values, empty headers and punctuation in keys keep their source meaning | ported | `test/unit/ported/property-order.test.ts` |
 | `unit/query-client.test.ts` | query refresh cancels the old request and ignores late replies | todo | Awaiting scheduled port |
 | `unit/query-client.test.ts` | search protocol rejects invalid request and result shapes | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | hybrid syntax keeps code opaque while parsing highlights, comments and formulas | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | properties parse scalar and list types without accepting duplicate keys | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | nested and folded callouts preserve inline formatting and independent containers | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | diagram and formula payloads are encoded before becoming HTML attributes | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | aliases and image dimensions handle escaped table pipes | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | heading fragments include descendants and stop before a sibling, ignoring fenced headings | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | block fragments support a paragraph and a separately identified list | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | rendered note embeds hide block identifiers while fenced code remains literal | todo | Awaiting scheduled port |
-| `unit/render.test.ts` | named footnotes and collapsed reference links retain their separate syntax | todo | Awaiting scheduled port |
+| `unit/render.test.ts` | hybrid syntax keeps code opaque while parsing highlights, comments and formulas | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | properties parse scalar and list types without accepting duplicate keys | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | nested and folded callouts preserve inline formatting and independent containers | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | diagram and formula payloads are encoded before becoming HTML attributes | changed | `test/unit/ported/render.test.ts`; DESIGN §10.3 generic data-fence/data-source payload |
+| `unit/render.test.ts` | aliases and image dimensions handle escaped table pipes | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | heading fragments include descendants and stop before a sibling, ignoring fenced headings | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | block fragments support a paragraph and a separately identified list | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | rendered note embeds hide block identifiers while fenced code remains literal | ported | `test/unit/ported/render.test.ts` |
+| `unit/render.test.ts` | named footnotes and collapsed reference links retain their separate syntax | ported | `test/unit/ported/render.test.ts` |
 | `unit/rendered-position.test.ts` | inline projections retain source offsets through nested formatting and escapes | todo | Awaiting scheduled port |
 | `unit/rendered-position.test.ts` | inline projections preserve entities, links and literal code source | todo | Awaiting scheduled port |
 | `unit/search-worker.test.ts` | search worker evaluates multiple documents and survives a document parse error | todo | Awaiting scheduled port |
 | `unit/search-worker.test.ts` | invalid search queries reject worker readiness | todo | Awaiting scheduled port |
 | `unit/search-worker.test.ts` | search cancellation rejects pending work and prevents later submissions | todo | Awaiting scheduled port |
 | `unit/search-worker.test.ts` | a pathological regex times out in its worker and a fresh worker remains usable | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | search gives implicit AND precedence over OR and supports grouped negation | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | search parses quoted paths, escaped phrases, regexes and nested scopes | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | search property filters preserve existence, alternatives and numeric comparisons | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | malformed or unsupported searches fail rather than silently becoming literal text | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | document search evaluates Boolean expressions, paths and scoped case sensitivity | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | line, block and section scopes keep all terms inside the requested region | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | task search excludes code and distinguishes custom completion markers | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | property filters distinguish null and empty values and compare numeric properties | todo | Awaiting scheduled port |
-| `unit/search.test.ts` | tag search uses parsed tags and Canvas search uses card contents | todo | Awaiting scheduled port |
-| `unit/source-coordinates.test.ts` | source selections and annotation positions round trip across mixed newlines and Unicode | todo | Awaiting scheduled port |
-| `unit/source-coordinates.test.ts` | empty files, bounds and positions inside CRLF separators stay in range | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | table ranges select exact source cells and preserve escaped pipes and alignments | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | rectangular clipboard and paste grow the table without destroying untouched cells | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | structural inserts preserve the header and column alignment | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | omitted trailing cells gain delimiters without rewriting existing rows | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | short table separators retain HTML line breaks and empty trailing cells | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | pasted text splits into rows and tab-separated cells | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | range texts keep source escapes that copying removes | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | formatting markers toggle and leave empty cells empty | todo | Awaiting scheduled port |
-| `unit/table-model.test.ts` | an offset inside a cell's padding finds that cell | todo | Awaiting scheduled port |
-| `unit/table-operations.test.ts` | row operations can exchange or replace the header without losing cell content | todo | Awaiting scheduled port |
-| `unit/table-operations.test.ts` | column moves and duplication keep alignment with the source values | todo | Awaiting scheduled port |
-| `unit/table-operations.test.ts` | alignment and sorting preserve the header and unrelated cell contents | todo | Awaiting scheduled port |
+| `unit/search.test.ts` | search gives implicit AND precedence over OR and supports grouped negation | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | search parses quoted paths, escaped phrases, regexes and nested scopes | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | search property filters preserve existence, alternatives and numeric comparisons | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | malformed or unsupported searches fail rather than silently becoming literal text | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | document search evaluates Boolean expressions, paths and scoped case sensitivity | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | line, block and section scopes keep all terms inside the requested region | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | task search excludes code and distinguishes custom completion markers | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | property filters distinguish null and empty values and compare numeric properties | ported | `test/unit/ported/search.test.ts` |
+| `unit/search.test.ts` | tag search uses parsed tags and Canvas search uses card contents | ported | `test/unit/ported/search.test.ts` |
+| `unit/source-coordinates.test.ts` | source selections and annotation positions round trip across mixed newlines and Unicode | ported | `test/unit/ported/source-coordinates.test.ts` |
+| `unit/source-coordinates.test.ts` | empty files, bounds and positions inside CRLF separators stay in range | ported | `test/unit/ported/source-coordinates.test.ts` |
+| `unit/table-model.test.ts` | table ranges select exact source cells and preserve escaped pipes and alignments | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | rectangular clipboard and paste grow the table without destroying untouched cells | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | structural inserts preserve the header and column alignment | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | omitted trailing cells gain delimiters without rewriting existing rows | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | short table separators retain HTML line breaks and empty trailing cells | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | pasted text splits into rows and tab-separated cells | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | range texts keep source escapes that copying removes | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | formatting markers toggle and leave empty cells empty | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-model.test.ts` | an offset inside a cell's padding finds that cell | ported | `test/unit/ported/table-model.test.ts` |
+| `unit/table-operations.test.ts` | row operations can exchange or replace the header without losing cell content | ported | `test/unit/ported/table-operations.test.ts` |
+| `unit/table-operations.test.ts` | column moves and duplication keep alignment with the source values | ported | `test/unit/ported/table-operations.test.ts` |
+| `unit/table-operations.test.ts` | alignment and sorting preserve the header and unrelated cell contents | ported | `test/unit/ported/table-operations.test.ts` |
 | `unit/table-operations.test.ts` | clearing inline formatting retains comment contents, links and escaped literals | todo | Awaiting scheduled port |
-| `unit/tag-tree.test.ts` | tag hierarchy merges case variants and counts each note once in parent totals | todo | Awaiting scheduled port |
-| `unit/tag-tree.test.ts` | flat tags retain full paths while frequency sorting orders each level | todo | Awaiting scheduled port |
-| `unit/tags.test.ts` | tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags | todo | Awaiting scheduled port |
-| `unit/tags.test.ts` | rendered tag controls preserve hierarchy and leave code literal | todo | Awaiting scheduled port |
-| `unit/tags.test.ts` | tags in footnote definitions remain searchable | todo | Awaiting scheduled port |
-| `unit/task.test.ts` | task markers preserve quote prefixes, ordered lists and custom status | todo | Awaiting scheduled port |
+| `unit/tag-tree.test.ts` | tag hierarchy merges case variants and counts each note once in parent totals | ported | `test/unit/ported/tag-tree.test.ts` |
+| `unit/tag-tree.test.ts` | flat tags retain full paths while frequency sorting orders each level | ported | `test/unit/ported/tag-tree.test.ts` |
+| `unit/tags.test.ts` | tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags | todo | `test/unit/ported/tags.test.ts`; pure assertions pass; original tag RPC assertions await Phase 4 schema |
+| `unit/tags.test.ts` | rendered tag controls preserve hierarchy and leave code literal | rewritten | `test/unit/ported/tags.test.ts`; unified metadata/factory API (same behaviour) |
+| `unit/tags.test.ts` | tags in footnote definitions remain searchable | rewritten | `test/unit/ported/tags.test.ts`; unified metadata/factory API (same behaviour) |
+| `unit/task.test.ts` | task markers preserve quote prefixes, ordered lists and custom status | ported | `test/unit/ported/task.test.ts` |
 | `unit/undo-groups.test.ts` | logical groups replay native undo steps in both directions | todo | Awaiting scheduled port |
 | `unit/undo-groups.test.ts` | unexpected native state stops grouped replay rather than undoing unrelated edits | todo | Awaiting scheduled port |
 | `unit/view-state.test.ts` | pane transfers accept backward selections, fractional scroll offsets and independent focus intent | todo | Awaiting scheduled port |
@@ -452,6 +452,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/rename-state.spec.ts` | native ArrowDown after a title edit reaches its intended control with collapsed properties | todo | Awaiting scheduled port |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/rename-state.spec.ts` | native Properties paging retains keyboard navigation beyond the rendered header | todo | Awaiting scheduled port |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/rename-state.spec.ts` | native rename retains each pane's folds, reading position and backward selection | todo | Awaiting scheduled port |
+| `adapter/agentClipboard.test.mjs` | formats exact Markdown agent references | ported | `test/unit/ported/agent-reference.test.ts` (Markdown-only source adapter test) |
+| `adapter/agentClipboard.test.mjs` | rejects URI schemes and all Windows drive-prefixed Markdown paths | ported | `test/unit/ported/agent-reference.test.ts` (Markdown-only source adapter test) |
 
-Phase 1 adds kernel/schema/RPC conformance coverage; no source scenario is
-ported or retired by this infrastructure phase. Counts remain 446 `todo`.
+Phase 2 additionally inventories two Markdown adapter tests from `vscode-extension/test/agentClipboard.test.mjs`. PDF-only tests are outside this extraction.

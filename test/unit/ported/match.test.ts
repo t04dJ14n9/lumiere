@@ -1,0 +1,28 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { matchScore, fuzzyMatch, queryTokens } from "../../../src/shared/fuzzy";
+test("link suggestions use the Obsidian boundary, gap, spread and length penalties", () => {
+  assert.ok(
+    matchScore("att", "Attention", "notes/Attention.md")! >
+      matchScore("ten", "Attention", "notes/Attention.md")!,
+  );
+  assert.ok(
+    matchScore("att", "Attention", "notes/Attention.md")! >
+      matchScore("atn", "Attention", "notes/Attention.md")!,
+  );
+  assert.equal(fuzzyMatch("a", "abc")?.score, -0.0103);
+  assert.deepEqual(fuzzyMatch("ab", "a-b")?.matches, [
+    [0, 1],
+    [2, 3],
+  ]);
+});
+test("every query word must match, in any field, case-insensitively", () => {
+  assert.ok(matchScore("ML atten", "Attention", "ml/Attention.md") !== undefined);
+  assert.equal(matchScore("attention zebra", "Attention", "ml/Attention.md"), undefined);
+  assert.equal(matchScore("", "Anything", "Anything.md"), 0);
+});
+test("CJK characters are separate tokens and repeated query tokens cannot reuse one occurrence", () => {
+  assert.deepEqual(queryTokens("机器 Learning"), ["机", "器", "learning"]);
+  assert.ok(fuzzyMatch("机器", "器械与机械") !== undefined);
+  assert.equal(fuzzyMatch("a a", "a"), undefined);
+});

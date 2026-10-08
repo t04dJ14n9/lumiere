@@ -453,3 +453,32 @@ RPC cancellation and clock interfaces are platform-neutral injected adapters.
 These decisions prevent partial async providers and keep pure layers platform-free.
 Known issues: external API service isolation remains scheduled for Phase 7;
 no editor implementation until Phase 3.
+
+### Phase 2 — Pure layers, 2026-10-07
+
+Delivered: document authority and LF/source coordinates, position/media helpers,
+Markdown agent-reference formatter, independently implemented fuzzy scoring,
+one shared Lezer dialect and CodeMirror language support, unified cached metadata,
+HTML renderer factory with syntax modules, YAML parsing/value/structural edits,
+table model/operations, search query/evaluation, tags, tasks and footnotes.
+Metadata backs headings, fragments, tags and footnotes and includes link ranges,
+reference links, embeds, YAML links, blocks, aliases, sections and task items.
+All new production modules are below 400 lines. Renderer configuration isolation
+and the pure layers are exercised in Chromium as well as unit tests.
+Checks: `pnpm check` (118 unit tests passed), `pnpm test:browser` (3/3),
+`pnpm test:vscode` (not run: no native behaviour).
+Ledger: 78/4/2/0/364 (ported/rewritten/changed/retired/todo); total 448, including
+two additional Markdown-only adapter tests from `agentClipboard.test.mjs`.
+Deviations from DESIGN.md: property sheet HTML and open-source Lucide icon
+helpers are staged in their destination modules early to retain the source's
+property rendering tests; no properties plugin is registered yet. Fences use
+`data-fence` and encoded `data-source` rather than source-specific diagram/query
+attributes, per §10.3. The fuzzy scorer uses the study's stated formula and CJK
+tokenization; exact live-reference parity is reserved for the parity audit.
+The tag suite's mixed grammar/RPC row remains todo until its original RPC
+assertions can target the Phase 4 channel; passing grammar assertions alone do
+not complete that row. The remaining protocol, host, UI and folding tests remain
+scheduled with their owners. Ledger regeneration now preserves existing statuses
+and supplementary adapter rows.
+Known issues: live-reference fuzzy tie/range parity is not observed; no native
+editor yet. Attachment and platform-specific agent references remain host work.
