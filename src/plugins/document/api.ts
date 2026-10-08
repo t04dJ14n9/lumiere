@@ -19,6 +19,7 @@ export interface Documents {
   release(document: HostDocument): void;
 }
 export interface ViewDocument {
+  beforeFlush?(commit: () => void): Disposer;
   readonly extension: Extension;
   attach(view: EditorView): Disposer;
   flush(): Promise<void>;
@@ -33,6 +34,10 @@ declare module "../../kernel/types" {
   interface Events {
     /** @mode emit */ "document/syncStatus": (message: string) => void;
     /** @mode emit */ "document/changed": (session: DocumentSession) => void;
-    /** @mode serial */ "document/willSave": (session: DocumentSession) => void | Promise<void>;
+    /** @mode serial */ "document/willSave": (
+      session: DocumentSession,
+    ) => void | Promise<void>;
   }
 }
+
+export { editGroup } from "./input-annotation";

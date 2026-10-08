@@ -1,3 +1,4 @@
+import properties from "./properties/manifest";
 import pagePreview from "./pagePreview/manifest";
 import embeds from "./embeds/manifest";
 import tasks from "./tasks/manifest";
@@ -17,6 +18,7 @@ import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
 import vim from "./vim/manifest";
 export const features: readonly Manifest[] = [
+  properties,
   pagePreview,
   embeds,
   tasks,

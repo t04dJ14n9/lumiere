@@ -1,0 +1,81 @@
+
+> vscode-markdown-workbench@0.1.0 test:vscode /Users/t04dj14n9/Code/vscode-markdown-workbench
+> pnpm build && playwright test -c test/vscode/playwright.config.ts
+
+
+> vscode-markdown-workbench@0.1.0 build /Users/t04dj14n9/Code/vscode-markdown-workbench
+> node scripts/build.mjs
+
+
+  dist/extension.js      1.2mb ⚠️
+  dist/extension.js.map  2.4mb
+
+⚡ Done in 46ms
+
+  dist/webview/mathjax-PBZPKRMV.js                         2.4mb ⚠️
+  dist/webview/editor.js                                   1.7mb ⚠️
+  dist/webview/chunk-TQU4O5JR.js                         938.0kb
+  dist/webview/code-highlight-4LMVB4H3.js                854.1kb
+  dist/webview/chunk-E2YAVA5H.js                         704.8kb
+  dist/webview/katex-MXR5ZGD3.js                         479.4kb
+  dist/webview/architectureDiagram-UYN6MBPD-NCO25MQY.js  408.5kb
+  dist/webview/chunk-ZVCL6A5U.js                         347.8kb
+  dist/webview/mindmap-definition-GWI6TPTV-WQLNW6HB.js   245.9kb
+  dist/webview/chunk-74Q4ATEC.js                         209.8kb
+  dist/webview/sequenceDiagram-G6AWOVSC-HSRDYRJW.js      149.1kb
+  dist/webview/blockDiagram-ZHA2E4KO-4MPCX35I.js         132.9kb
+  dist/webview/c4Diagram-6F5ED5ID-FNFDJL62.js            117.8kb
+  dist/webview/flowDiagram-7ASYPVHJ-ZISNYYX6.js           96.7kb
+  dist/webview/chunk-AAE3JPLH.js                          91.2kb
+  dist/webview/chunk-AOVXKVLB.js                          85.2kb
+  dist/webview/ganttDiagram-NTVNEXSI-4APK2DPX.js          80.7kb
+  dist/webview/chunk-WRBLPIAL.js                          74.5kb
+  dist/webview/xychartDiagram-6QU3TZC5-T4Y7R7PE.js        68.2kb
+  dist/webview/chunk-M2CL6DGP.js                          64.0kb
+  ...and 120 more output files...
+
+⚡ Done in 409ms
+
+  dist/workers/search.cjs      805b 
+  dist/workers/vault.cjs       801b 
+  dist/workers/search.cjs.map  234b 
+  dist/workers/vault.cjs.map   233b 
+
+⚡ Done in 2ms
+(node:19279) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ WARNING  A 'repository' field is missing from the 'package.json' manifest file.
+Use --allow-missing-repository to bypass.
+ INFO  Files included in the VSIX:
+extension.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ LICENSE.txt [1.04 KB]
+   ├─ package.json [27.18 KB]
+   ├─ readme.md [1.12 KB]
+   └─ dist/
+      ├─ extension.js [1.17 MB]
+      ├─ extension.js.map [2.42 MB]
+      ├─ api/ (1 file) [0.01 KB]
+      ├─ webview/ (140 files) [27 MB]
+      └─ workers/ (4 files) [2.02 KB]
+
+=> Run vsce ls --tree to see all included files.
+
+ DONE  Packaged: /tmp/markdown-workbench-e2e-7235d867/extension.vsix (152 files, 6.64 MB)
+Testing Code 1.140.0 (/Applications/Visual Studio Code.app/Contents/MacOS/Code) with profile /tmp/markdown-workbench-e2e-7235d867
+
+Running 1 test using 1 worker
+
+(node:19346) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19346) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:19346) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Native: closing all editors
+Native: opening fixture
+Native: waiting for Markdown Workbench webview
+  ✓  1 test/vscode/core.spec.ts:18:5 › isolated installed editor types, saves and performs native document undo (2.7s)
+
+  1 passed (8.2s)

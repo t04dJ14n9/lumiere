@@ -223,6 +223,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.addProperty",
+        "title": "Add File Property",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleChecklist",
         "title": "Toggle Checklist Status",
         "category": "Markdown Workbench"
@@ -256,6 +261,12 @@
         "key": "ctrl+k",
         "mac": "cmd+k",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+      },
+      {
+        "command": "markdownWorkbench.addProperty",
+        "key": "ctrl+;",
+        "mac": "cmd+;",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
@@ -497,6 +508,10 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.math"
         },
         {
+          "command": "markdownWorkbench.addProperty",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
+        },
+        {
           "command": "markdownWorkbench.toggleChecklist",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.tasks"
         },
@@ -598,6 +613,12 @@
           "scope": "resource",
           "description": "Preview internal links with a modifier hover or keyboard."
         },
+        "markdownWorkbench.plugins.properties.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Edit YAML properties as typed fields, lists and ordered rows."
+        },
         "markdownWorkbench.plugins.smartLists.enabled": {
           "type": "boolean",
           "default": true,
@@ -659,6 +680,15 @@
         "markdownWorkbench.links.folderNote": {
           "type": "string",
           "default": "",
+          "scope": "resource"
+        },
+        "markdownWorkbench.properties.display": {
+          "enum": [
+            "visible",
+            "hidden",
+            "source"
+          ],
+          "default": "visible",
           "scope": "resource"
         },
         "markdownWorkbench.files.newNoteFolder": {

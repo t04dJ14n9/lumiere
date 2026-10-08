@@ -9,9 +9,21 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
   inject: { required: ["rpc"] },
   apply(ctx, config) {
     const groups = new InputGroups();
+    const commits = new Set<() => void>();
+    const flush = async () => {
+      for (const commit of commits) commit();
+      if (!sync) throw new Error("Editor not mounted");
+      await sync.flush();
+    };
     let sync: Synchronizer | undefined;
     const queue: Parameters<Synchronizer["receive"]>[0][] = [];
     ctx.provide("document", {
+      beforeFlush(commit) {
+        commits.add(commit);
+        return () => {
+          commits.delete(commit);
+        };
+      },
       extension: [
         collab(config),
         groups.extension,
@@ -34,7 +46,7 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
         sync?.pump();
       },
       flush() {
-        return sync ? sync.flush() : Promise.reject(new Error("Editor not mounted"));
+        return flush();
       },
       get error() {
         return sync?.error;
@@ -48,8 +60,7 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
     );
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "flush", async () => {
-        if (!sync) throw new Error("Editor not mounted");
-        await sync.flush();
+        await flush();
         return true;
       }),
     );

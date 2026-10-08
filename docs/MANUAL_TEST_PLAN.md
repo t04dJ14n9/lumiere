@@ -330,3 +330,31 @@ Setup: links in `Core.md` to a note, heading, block, image, PDF and missing targ
 4. Task controls inside previews are read-only. External schemes do not preview.
 5. Disable/re-enable Page Preview while a popup or image inspector is open;
    pending timers, listeners and render passes disappear, then behavior returns.
+
+## Properties
+
+Setup: use a disposable copy of `test/fixtures/vault/Core.md`; add YAML with text,
+number, checkbox, date, datetime, aliases, tags, a nested object and commented
+values. Use two Workbench panels of that note.
+
+- Add File Property (palette or Mod+;) creates a header if absent, focuses a new
+  name, and rejects duplicates. Rename/delete rows; body and comments survive.
+- Edit each scalar type, cancel with Escape, commit with Enter, blur, Mod+S and
+  the native Save command. Invalid number/date drafts block saving. Verify one
+  native undo restores each structural change and redo reapplies it.
+- Keep a text draft focused (also during IME composition) while changing another
+  row in the second panel. The draft stays connected; cancel reveals current YAML.
+- Add/remove/edit chips, including duplicate source values. Edit the other panel
+  before committing: the intended occurrence changes, unrelated items survive.
+- Select rows with Shift/Alt, copy/cut, paste into another sheet, and paste malformed
+  structured data. Valid data merges; malformed structured data never enters text.
+- Sort A–Z/Z–A from the heading menu, then edit a row: order and value persist as
+  one undo. Drag a type grip through scrolling, drop once, cancel with Escape;
+  comments stay with entries and YAML anchor dependencies are protected.
+- Choose property types and decline/accept conversion. Preferences persist on
+  reload and are shared between panels in the same vault. Nested vault isolation
+  awaits Phase 5 root discovery.
+- Test visible/hidden/source display, Source mode, heading arrows/Space paging,
+  row/chip keyboard navigation, and disabling/re-enabling Properties. Source YAML
+  remains editable; no old menu, drag, dialog or shortcut survives disabling.
+- Title focus from the heading awaits inlineTitle integration later in Phase 4.

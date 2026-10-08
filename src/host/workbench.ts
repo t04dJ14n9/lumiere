@@ -5,7 +5,10 @@ import { randomUUID, createHash } from "node:crypto";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
 const viewType = "markdownWorkbench.editor";
-export function createWorkbench(extensionUri: vscode.Uri): Workbench {
+export function createWorkbench(
+  extensionUri: vscode.Uri,
+  storage?: vscode.Memento,
+): Workbench {
   const wrappers = new WeakMap<vscode.TextDocument, HostDocument>(),
     originals = new WeakMap<HostDocument, vscode.TextDocument>();
   function wrap(document: vscode.TextDocument): HostDocument {
@@ -35,6 +38,7 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
     return wrapped;
   }
   return {
+    storage,
     navigation: createNavigation(),
     async openDocument(uri) {
       return wrap(

@@ -872,3 +872,24 @@ This is an incomplete checkpoint, not a phase-completion record. No external
 permission/tool/resource blocker was found; this run did not finish the requested
 through-Phase-8 scope. No push, publication, owner-profile installation or source
 repository modification occurred.
+
+### Phase 4 progress — Properties sheet, 2026-10-08
+
+Delivered: structured scalar/list/chip editing, focused draft reconciliation,
+row selection and structured clipboard, sorting/drag ordering, type preferences,
+heading paging and Add File Property. Split sheet/form controls under 400 lines.
+Added strict pre-flush draft participants to the document service; invalid drafts
+reject save. Host preferences and webview registrations dispose with the plugin.
+Checks: `pnpm check` (193 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, packaged isolated /tmp profile). Logs:
+`docs/checks/phase4-properties-{check,browser,native}.txt`.
+Ledger: 87/15/2/333/11 (ported/rewritten/changed/retired/todo).
+Deviations: property controls use a plugin-local sheet adapter over injected
+services; strict document flush participants propagate draft errors rather than
+using error-isolating events. Type preferences use the vault service root, whose
+nested-marker discovery remains Phase 5. Heading-to-title focus is a typed event
+for the upcoming inlineTitle plugin.
+Known issues: tables, inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/
+markers remain in Phase 4, followed by Phases 5–8 as itemized in the preceding
+incomplete record. Nested-root preference isolation and title-focus integration
+are pending those owning units. Owner manual acceptance has not run.

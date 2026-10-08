@@ -48,7 +48,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/property-editing.test.ts` | explicit value editing changes scalar types and retains unrelated inline comments | ported | `test/unit/ported/property-editing.test.ts` |
 | `unit/property-editing.test.ts` | adding properties distinguishes an unfinished header from ordinary Markdown | ported | `test/unit/ported/property-editing.test.ts` |
 | `unit/property-editing.test.ts` | new properties reject non-finite scalar and list values | ported | `test/unit/ported/property-editing.test.ts` |
-| `unit/property-editing.test.ts` | property type preferences serialize concurrent writes and stay within their vault | todo | Awaiting scheduled port |
+| `unit/property-editing.test.ts` | property type preferences serialize concurrent writes and stay within their vault | ported | `src/plugins/properties/type-store.test.ts` |
 | `unit/property-editing.test.ts` | nested vaults get separate property scopes within one opened workspace | todo | Awaiting scheduled port |
 | `unit/property-editing.test.ts` | structured property paste merges nested values and unions lists without touching other YAML | ported | `test/unit/ported/property-editing.test.ts` |
 | `unit/property-editing.test.ts` | structured property paste handles flow maps, empty values and null merge rules | ported | `test/unit/ported/property-editing.test.ts` |

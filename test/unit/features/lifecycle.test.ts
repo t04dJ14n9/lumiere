@@ -25,6 +25,26 @@ function fixture() {
     },
   } as EditorView;
   let extensions = 0;
+  root.provide("menu", {
+    open() {
+      return () => {};
+    },
+  });
+  root.provide("document", {
+    beforeFlush() {
+      extensions++;
+      return () => {
+        extensions--;
+      };
+    },
+    extension: [],
+    attach() {
+      return () => {};
+    },
+    async flush() {},
+    pump() {},
+    error: undefined,
+  });
   root.provide("resources", {
     async load() {
       throw new Error("No resources in unit fixture");

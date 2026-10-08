@@ -1,5 +1,12 @@
-import { frontmatter, propertyInput, matchesPropertyKind } from "../../markdown/properties";
-import { inferPropertyKind, propertyKindLabels } from "../../markdown/properties/types";
+import {
+  frontmatter,
+  propertyInput,
+  matchesPropertyKind,
+} from "../../markdown/properties";
+import {
+  inferPropertyKind,
+  propertyKindLabels,
+} from "../../markdown/properties/types";
 import type { PropertyTypes } from "../../markdown/properties/types";
 import { propertyIcon } from "../../webview/ui/icons";
 import { validTag } from "../../markdown/tags/grammar";
@@ -24,11 +31,18 @@ function propertyInputText(value: unknown): string {
   return JSON.stringify(value) ?? "";
 }
 
-function propertyValue(value: unknown, key?: string, ancestors = new Set<object>()): string {
+function propertyValue(
+  value: unknown,
+  key?: string,
+  ancestors = new Set<object>(),
+): string {
   if (typeof value === "boolean") {
     return `<input type="checkbox"${key === undefined ? " disabled" : attr("data-property", key)}${value ? " checked" : ""}${attr("aria-label", key ?? "Property value")}>`;
   }
-  if (key !== undefined && (typeof value === "string" || typeof value === "number")) {
+  if (
+    key !== undefined &&
+    (typeof value === "string" || typeof value === "number")
+  ) {
     return `<span data-property-display>${propertyValue(value)}</span><button type="button" data-property-edit${attr("aria-label", `Edit ${key}`)}>Edit</button><input hidden${attr("type", typeof value === "number" ? "number" : "text")}${attr("data-property-input", key)}${attr("aria-label", key)}${attr("value", String(value))} step="any">`;
   }
   if (typeof value === "object" && value !== null) {
@@ -81,16 +95,24 @@ export function renderProperties(
     const expected = inferPropertyKind(key, value, types);
     const force = forced[key] === expected;
     const kind =
-      force || matchesPropertyKind(expected, value) ? expected : inferPropertyKind(key, value);
+      force || matchesPropertyKind(expected, value)
+        ? expected
+        : inferPropertyKind(key, value);
     const editable =
-      properties.editableKeys?.includes(key) || properties.editableLists?.includes(key);
+      properties.editableKeys?.includes(key) ||
+      properties.editableLists?.includes(key);
     if ((kind === "list" || kind === "tags") && editable) {
       const values: unknown[] =
-        value === null || value === undefined ? [] : Array.isArray(value) ? value : [value];
+        value === null || value === undefined
+          ? []
+          : Array.isArray(value)
+            ? value
+            : [value];
       const chips = values
         .map((item, index) => {
           const raw = propertyInputText(item);
-          const text = key.toLowerCase() === "tags" ? raw.replace(/^#/, "") : raw;
+          const text =
+            key.toLowerCase() === "tags" ? raw.replace(/^#/, "") : raw;
           const label =
             key.toLowerCase() === "tags" && validTag(text)
               ? `<button type="button" class="md-tag"${attr("data-tag", text)}${attr("aria-label", `Search tag #${text}`)}>${escape(text)}</button>`
@@ -103,7 +125,8 @@ export function renderProperties(
     if (key.toLowerCase() === "tags" && Array.isArray(value) && value.length) {
       return value
         .map((item) => {
-          const tag = typeof item === "string" ? item.replace(/^#/, "") : undefined;
+          const tag =
+            typeof item === "string" ? item.replace(/^#/, "") : undefined;
           return validTag(tag) ? tagButton(tag) : propertyValue(item);
         })
         .join(" ");

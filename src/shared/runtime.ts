@@ -111,3 +111,10 @@ export interface Workbench {
   navigation?: Navigation;
   openDocument?(uri: string): Promise<HostDocument>;
 }
+
+export interface Workbench {
+  storage?: {
+    get<T>(key: string, fallback: T): T;
+    update(key: string, value: unknown): PromiseLike<void>;
+  };
+}

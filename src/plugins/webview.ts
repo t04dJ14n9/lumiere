@@ -22,3 +22,4 @@ export { footnotesWebview } from "./footnotes/webview";
 export { tasksWebview } from "./tasks/webview";
 export { embedsWebview } from "./embeds/webview";
 export { pagePreviewWebview } from "./pagePreview/webview";
+export { propertiesWebview } from "./properties/webview";
