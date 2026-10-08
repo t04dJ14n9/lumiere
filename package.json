@@ -83,6 +83,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.insertFootnote",
+        "title": "Insert Footnote",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleBold",
         "title": "Toggle Bold",
         "category": "Markdown Workbench"
@@ -365,6 +370,10 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.folding"
         },
         {
+          "command": "markdownWorkbench.insertFootnote",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.footnotes"
+        },
+        {
           "command": "markdownWorkbench.toggleBold",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
         },
@@ -513,6 +522,12 @@
           "default": true,
           "scope": "resource",
           "description": "Folding in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.footnotes.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Footnote references, definitions, previews and navigation."
         },
         "markdownWorkbench.plugins.formatting.enabled": {
           "type": "boolean",

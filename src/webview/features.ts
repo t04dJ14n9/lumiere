@@ -44,6 +44,7 @@ export function featureController(root: Context) {
           }
         }
         await root.settled();
+        root.emit("render/changed");
       });
     return queue;
   };

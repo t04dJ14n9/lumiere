@@ -743,3 +743,20 @@ Native not rerun: no native wiring change. Logs: `docs/checks/phase4-callouts-*`
 Ledger: 84/14/2/334/14. Manual callout scenarios added, not run.
 Deviations: none. Known issues: footnotes and tasks remain in step 4, then
 Phase 4 steps 5–10 and Phases 5–8. No phase-completion claim.
+
+### Phase 4 progress — Footnotes, 2026-10-07
+
+Delivered: named/inline reference widgets, hover/focus previews, definition
+navigation, multiline definition rendering, insertion and render pre-processing
+for references inside other blocks. Added explicit renderer ranges and render
+revision invalidation so changing definitions or feature enablement refreshes
+retained rendered blocks. Random placeholder IDs avoid source markup collisions.
+Checks: `pnpm check` (176 unit tests passed), `pnpm test:browser` (14/14).
+Native not rerun: no native wiring change. Logs: `docs/checks/phase4-footnotes-*`.
+Ledger: 84/14/2/334/14. Manual footnote scenarios include the source's split-view
+undo case; no manual acceptance result is claimed.
+Deviations: render/preProcess and render/changed are typed lifecycle hooks for
+cross-block references. Definition changes invalidate rendered blocks; performance
+measurement remains Phase 9. Known issues: tasks remains in step 4, then Phase 4
+steps 5–10 and Phases 5–8. Embedded-note footnote context needs integration with
+embeds in step 5. No phase-completion claim.

@@ -24,6 +24,7 @@ export interface BlockRenderer {
   kind: string;
   match(node: SyntaxNodeRef, state: EditorState): boolean;
   editing: "reveal" | "widget";
+  range?(node: SyntaxNodeRef, state: EditorState): { from: number; to: number };
   widget(block: RenderBlock): WidgetType;
   estimatedHeight?: number;
 }

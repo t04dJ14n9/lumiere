@@ -259,3 +259,20 @@ Setup: in `Core.md`, add normal, nested and foldable callouts, including
 3. Disable/re-enable Callouts: widgets, disclosure listeners, styling and command
    disappear and return. Source stays unchanged. Links in titles must follow
    links without also toggling disclosure.
+
+## Footnotes
+
+Setup: in `Core.md`, add repeated named references, an inline `^[note]`, a
+multiline definition with indented continuation paragraphs, and references inside
+a callout/table. Include nested Markdown and math in the note text.
+
+1. Leave references: check labels/numbering. Hover or focus a reference for a
+   rendered preview; Escape dismisses it. Activate it to reveal the definition.
+2. Edit a definition and leave it: every reference preview reflects the change.
+   A multiline definition renders as one block and reveals as one source range.
+3. Insert Footnote on a selection and at EOF, including an existing numeric label;
+   verify a fresh label, preserved selected text and native undo/redo.
+4. Open two panels, insert a footnote in one, then undo there. Verify both converge
+   without retaining an extra undo step (the source suite's intermittent case).
+5. Disable/re-enable Footnotes: references, previews, definition widgets and the
+   insertion command disappear and return. Source and caret remain valid.

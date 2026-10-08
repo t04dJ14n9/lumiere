@@ -3,6 +3,7 @@ type Element = EditorView["dom"];
 import type { Disposer } from "../../kernel";
 export interface RenderPass {
   source: string;
+  displaySource?: string;
   container: Element;
   sourceLine: number;
   ancestry: readonly string[];
@@ -28,7 +29,9 @@ declare module "../../kernel/types" {
     render: RenderService;
   }
   interface Events {
+    /** @mode emit */ "render/changed": () => void;
     /** @mode bail */ "render/fence": (fence: Fence, pass: RenderPass) => true | undefined;
+    /** @mode serial */ "render/preProcess": (pass: RenderPass) => void | Promise<void>;
     /** @mode serial */ "render/postProcess": (pass: RenderPass) => void | Promise<void>;
   }
 }

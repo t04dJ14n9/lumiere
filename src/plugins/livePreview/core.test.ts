@@ -128,3 +128,16 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   assert.equal(state.facet(blockRenderers).length, 0);
   await root.dispose();
 });
+
+test("explicit renderer ranges cover multiline definitions without overlapping later nodes", () => {
+  const text = "Text[^a]\n\n[^a]: definition\n    continued\n\n    next\n\nend";
+  const from = text.indexOf("[^a]:");
+  const to = text.indexOf("\n\nend");
+  const state = EditorState.create({ doc: text, extensions: [documentTree, blockIndex,
+    blockRenderers.of({ kind: "definition", editing: "reveal", match: (node) => node.from === from,
+      range: () => ({ from, to }), widget: () => { throw new Error("No DOM"); } }),
+    blockRenderers.of({ kind: "code", editing: "reveal", match: (node) => node.name === "CodeBlock",
+      widget: () => { throw new Error("No DOM"); } }),
+  ] });
+  assert.deepEqual(state.field(blockIndex).map(({ from, to }) => ({ from, to })), [{ from, to }]);
+});

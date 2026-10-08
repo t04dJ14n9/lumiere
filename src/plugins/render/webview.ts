@@ -34,7 +34,8 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
           },
         };
         passes.add(pass);
-        container.innerHTML = ctx.markdown.renderer.renderMarkdown(source, {
+        await ctx.serial("render/preProcess", pass);
+        container.innerHTML = ctx.markdown.renderer.renderMarkdown(pass.displaySource ?? source, {
           sanitize: (html) =>
             purifier.sanitize(html, {
               ADD_TAGS: config.trusted ? ["iframe"] : [],

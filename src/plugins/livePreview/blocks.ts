@@ -1,9 +1,14 @@
-import { StateField } from "@codemirror/state";
+import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
 import { documentTree } from "./document-tree";
 import type { BlockRenderer, RenderBlock } from "./api";
+export const refreshRender = StateEffect.define<null>();
+export const renderRevision = StateField.define<number>({
+  create: () => 0,
+  update: (value, tr) => tr.effects.some((effect) => effect.is(refreshRender)) ? value + 1 : value,
+});
 export const blockIndex = StateField.define<
   (RenderBlock & { renderer: BlockRenderer })[]
 >({
@@ -19,15 +24,17 @@ function index(state: Parameters<typeof revealed>[0]) {
   const blocks: (RenderBlock & { renderer: BlockRenderer })[] = [];
   state.field(documentTree).iterate({
     enter(node) {
+      if (blocks.length && node.from < blocks[blocks.length - 1]!.to) return false;
       const renderer = [...state.facet(blockRenderers)]
         .reverse()
         .find((r) => r.match(node, state));
       if (renderer) {
+        const range = renderer.range?.(node, state) ?? node;
         blocks.push({
-          from: node.from,
-          to: node.to,
+          from: range.from,
+          to: range.to,
           kind: renderer.kind,
-          source: state.sliceDoc(node.from, node.to),
+          source: state.sliceDoc(range.from, range.to),
           renderer,
         });
         return false;
@@ -41,12 +48,14 @@ class GuardedWidget extends WidgetType {
   constructor(
     readonly block: RenderBlock & { renderer: BlockRenderer },
     readonly widget: WidgetType,
+    readonly revision: number,
     private readonly report: (error: unknown) => void,
   ) {
     super();
   }
   override eq(other: GuardedWidget): boolean {
     return (
+      this.revision === other.revision &&
       this.block.renderer === other.block.renderer &&
       this.block.kind === other.block.kind &&
       this.block.source === other.block.source &&
@@ -98,6 +107,7 @@ export function blockDecorations(report: (error: unknown) => void) {
               widget: new GuardedWidget(
                 block,
                 block.renderer.widget(block),
+                state.field(renderRevision, false) ?? 0,
                 report,
               ),
             }).range(block.from, block.to),
