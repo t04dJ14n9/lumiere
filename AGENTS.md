@@ -41,12 +41,12 @@ code. `pnpm check` enforces the mechanical part:
   object instead); files at most 400 lines; no class spread across files
   through `this:` functions attached as fields.
 
-`eslint.legacy.mjs` is the readability backlog: the files that broke a rule
-when the rules came in, with that rule off for them. Remove a file from a list
-when you rewrite it. Never add a file. New and ported code complies from the
-start: when porting a long source function, rewrite it rather than copying it.
-A genuine exception (a data table, an exhaustive `switch` over a closed union)
-gets an inline `// eslint-disable-next-line <rule> -- <reason>`.
+All source meets these limits, and they have no exceptions. When porting a
+long source function, rewrite it rather than copying it. Another rule may have
+a genuine exception (a type-only declaration merge, an untyped dependency): an
+inline `// eslint-disable-next-line <rule> -- <reason>`, added to the reviewed
+list in `test/unit/lint-rules.test.ts`. That test fails if the old backlog file
+returns, if a limit changes, or if an exception is not on its list.
 
 What the linter cannot check:
 

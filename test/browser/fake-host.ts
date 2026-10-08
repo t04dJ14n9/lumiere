@@ -31,7 +31,7 @@ export class BrowserHost {
     this.text = this.saved = source;
     this.history = [source];
     // Accessor descriptors below must read the owning fake host.
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- accessors below must read the fake host
     const self = this;
     this.document = {
       id: "note",

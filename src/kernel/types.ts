@@ -1,9 +1,9 @@
 import type { Context } from "./context";
 import type { Schema } from "./schema";
 // Open interfaces are extended by pure service and event contracts.
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- plugins add members by declaration merging
 export interface Services {}
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- plugins add members by declaration merging
 export interface Events {}
 export type Disposer = () => void | Promise<void>;
 export interface Inject {

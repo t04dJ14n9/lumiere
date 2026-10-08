@@ -45,9 +45,9 @@ export class Runtime {
 }
 // Declaration merging exposes typed injected services as properties.
 // The Proxy below implements each property from the open Services contract.
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging -- typed service properties (DESIGN §5.2)
 export interface Context extends Services {}
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging -- the class half of the merge above
 export class Context {
   readonly logger: Logger;
   readonly children: Fiber<unknown>[] = [];

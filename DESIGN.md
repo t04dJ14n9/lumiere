@@ -1432,8 +1432,9 @@ Same toolchain as PDF Workbench: pnpm, TypeScript (strict,
 `noUncheckedIndexedAccess`), esbuild, ESLint flat config with
 `consistent-type-imports`, Playwright, `@vscode/vsce`. Prettier (default
 options) formats the code, and `pnpm check` runs `prettier --check` first.
-ESLint also enforces the readability limits in `AGENTS.md` ("Code norms"),
-with a shrinking backlog of existing files in `eslint.legacy.mjs`.
+ESLint also enforces the readability limits in `AGENTS.md` ("Code norms");
+`test/unit/lint-rules.test.ts` keeps the limits and the list of inline
+exceptions from changing unnoticed.
 
 | Output | Entry | Format |
 | --- | --- | --- |

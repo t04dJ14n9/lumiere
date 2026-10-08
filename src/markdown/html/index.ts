@@ -1,5 +1,5 @@
 // The ambient declaration must join every consuming TypeScript project.
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- markdown-it plugins have no types; see vendor.d.ts
 /// <reference path="./vendor.d.ts" />
 import MarkdownIt from "markdown-it";
 import footnote from "markdown-it-footnote";
