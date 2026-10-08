@@ -68,6 +68,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.insertEmbed",
+        "title": "Insert Embed",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.foldAll",
         "title": "Fold All",
         "category": "Markdown Workbench"
@@ -368,6 +373,10 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
+          "command": "markdownWorkbench.insertEmbed",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.embeds"
+        },
+        {
           "command": "markdownWorkbench.foldAll",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.folding"
         },
@@ -534,6 +543,12 @@
           "default": true,
           "scope": "resource",
           "description": "Render Mermaid diagrams in strict mode."
+        },
+        "markdownWorkbench.plugins.embeds.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Transclude notes, images and media; open attachment cards."
         },
         "markdownWorkbench.plugins.folding.enabled": {
           "type": "boolean",

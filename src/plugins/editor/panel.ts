@@ -54,6 +54,7 @@ export function createPanel(
         text: session.text,
         version: session.version,
         clientID: shell.id,
+        trusted: shell.trusted,
         source: shell.document.uri,
         ...config,
         features: config.features ?? {},

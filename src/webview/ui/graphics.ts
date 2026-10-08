@@ -5,6 +5,13 @@ export function sanitizeGraphics(html: string): string {
     USE_PROFILES: { html: true, svg: true, svgFilters: true },
     ADD_TAGS: ["mjx-container", "use"],
     ADD_ATTR: ["xlink:href"],
-    FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "foreignObject"],
+    FORBID_TAGS: [
+      "script",
+      "iframe",
+      "object",
+      "embed",
+      "form",
+      "foreignObject",
+    ],
   });
 }

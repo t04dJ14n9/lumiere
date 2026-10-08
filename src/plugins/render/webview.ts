@@ -12,12 +12,15 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
       for (const pass of passes) await pass.dispose();
     });
     ctx.provide("render", {
+      trusted: config.trusted,
       async into(container, source, context = {}) {
         const disposers: Disposer[] = [];
         let live = true;
         const pass: RenderPass = {
           source,
           documentUri: context.documentUri,
+          documentText: context.documentText,
+          taskLineCount: context.taskLineCount,
           container,
           sourceLine: context.sourceLine ?? 0,
           ancestry: context.ancestry ?? [],
@@ -35,27 +38,41 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
           },
         };
         passes.add(pass);
+        if (context.documentUri)
+          container.dataset.noteSource = context.documentUri;
         await ctx.serial("render/preProcess", pass);
-        container.innerHTML = ctx.markdown.renderer.renderMarkdown(pass.displaySource ?? source, {
-          sanitize: (html) =>
-            purifier.sanitize(html, {
-              ADD_TAGS: config.trusted ? ["iframe"] : [],
-              FORBID_TAGS: ["script", "style", "form", "object", "embed"],
-              FORBID_ATTR: ["srcdoc"],
-            }),
-        });
+        container.innerHTML = ctx.markdown.renderer.renderMarkdown(
+          pass.displaySource ?? source,
+          {
+            sanitize: (html) =>
+              purifier.sanitize(html, {
+                ADD_TAGS: config.trusted ? ["iframe"] : [],
+                FORBID_TAGS: ["script", "style", "form", "object", "embed"],
+                FORBID_ATTR: ["srcdoc"],
+              }),
+          },
+        );
         for (const frame of container.querySelectorAll("iframe")) {
-          if (!config.trusted || !/^https:\/\//i.test(frame.getAttribute("src") ?? ""))
+          if (
+            !config.trusted ||
+            !/^https:\/\//i.test(frame.getAttribute("src") ?? "")
+          )
             frame.remove();
           else {
-            frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+            frame.setAttribute(
+              "sandbox",
+              "allow-scripts allow-same-origin allow-presentation",
+            );
             frame.loading = "lazy";
           }
         }
         if (!config.trusted)
           for (const media of container.querySelectorAll("[src]"))
-            if (/^https?:/i.test(media.getAttribute("src") ?? "")) media.removeAttribute("src");
-        for (const element of container.querySelectorAll<HTMLElement>("[data-fence]"))
+            if (/^https?:/i.test(media.getAttribute("src") ?? ""))
+              media.removeAttribute("src");
+        for (const element of container.querySelectorAll<HTMLElement>(
+          "[data-fence]",
+        ))
           ctx.bail(
             "render/fence",
             {

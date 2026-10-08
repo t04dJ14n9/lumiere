@@ -5,7 +5,12 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "./api";
 import { blockRenderers, inlineRenderers } from "./registry";
-import { blockIndex, blockDecorations, renderRevision, refreshRender } from "./blocks";
+import {
+  blockIndex,
+  blockDecorations,
+  renderRevision,
+  refreshRender,
+} from "./blocks";
 import { documentTree } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
@@ -54,7 +59,9 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
       },
     };
     ctx.provide("livePreview", service);
-    ctx.on("render/changed", () => view.dispatch({ effects: refreshRender.of(null) }));
+    ctx.on("render/changed", () =>
+      view.dispatch({ effects: refreshRender.of(null) }),
+    );
     ctx.on("editor/modeRestored", (next) => service.setMode(next));
     for (const kind of [
       "HorizontalRule",

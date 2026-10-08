@@ -82,14 +82,30 @@ export interface PanelShell {
   resource(uri: string): string;
 }
 
+export interface NavigationTarget {
+  fragment: string;
+  at?: number;
+}
 export interface Navigation {
-  takeReveal(uri: string): string;
-  onReveal(listener: (uri: string, fragment: string) => void): Disposer;
+  takeReveal(uri: string): NavigationTarget;
+  onReveal(listener: (uri: string, target: NavigationTarget) => void): Disposer;
   readonly scheme: string;
   external(href: string): Promise<boolean>;
   confirm(message: string): Promise<boolean>;
-  resolve(request: { root: string; source: string; path: string; create: boolean; folderNote: string }): Promise<string | undefined>;
-  open(root: string, uri: string, fragment: string, side: boolean): Promise<void>;
+  resolve(request: {
+    root: string;
+    source: string;
+    path: string;
+    create: boolean;
+    folderNote: string;
+  }): Promise<string | undefined>;
+  open(
+    root: string,
+    uri: string,
+    fragment: string,
+    side: boolean,
+    at?: number,
+  ): Promise<void>;
 }
 export interface Workbench {
   navigation?: Navigation;

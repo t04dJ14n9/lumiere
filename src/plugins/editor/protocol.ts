@@ -44,6 +44,7 @@ export const protocol = defineProtocol("editor", {
         text: Schema.string(),
         version: offset,
         clientID: Schema.string(),
+        trusted: Schema.boolean().default(false),
         source: Schema.string(),
         features: featureSettings,
         preset: Schema.union(["minimal", "obsidian"]),

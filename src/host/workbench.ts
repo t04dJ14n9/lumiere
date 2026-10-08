@@ -36,7 +36,11 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
   }
   return {
     navigation: createNavigation(),
-    async openDocument(uri) { return wrap(await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))); },
+    async openDocument(uri) {
+      return wrap(
+        await vscode.workspace.openTextDocument(vscode.Uri.parse(uri)),
+      );
+    },
     fingerprint(text) {
       return createHash("sha256").update(text).digest("hex");
     },

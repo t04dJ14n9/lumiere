@@ -777,3 +777,23 @@ Known issues: Phase 4 steps 5–10 remain (embeds/pagePreview, properties, table
 inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/markers), then Phases
 5–8. Embedded task UI and footnote source context need step 5 integration.
 No owner manual acceptance or phase-completion claim.
+
+### Phase 4 progress — Embeds, 2026-10-07
+
+Delivered: note/heading/block transclusion, circular/depth checks, image inspector,
+audio/video with pinned-source WebM recovery, attachment cards and embed insertion.
+Embedded render contexts retain source URI/text/line offsets for links, tasks and
+footnotes; host source identity is re-authorized before navigation or edits. Native
+workspace trust now controls remote rendering. Resource reads see unsaved native
+text. Ported both remaining WebM unit tests and fixtures. Formatted this run's
+TypeScript into readable statements and kept production modules below 400 lines.
+Checks: `pnpm check` (185 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, isolated packaged profile). Logs:
+`docs/checks/phase4-embeds-{check,browser,native}.txt`.
+Ledger: 86/15/2/333/12. Corrected the retained native typing/save/undo row to
+rewritten; historical records retain their original counts.
+Deviations: links navigation additionally accepts a schema-checked source offset
+for embedded footnote definitions. Media/graphics remain lazy and pass-owned.
+Known issues: pagePreview and Phase 4 steps 6–10 remain, followed by Phases 5–8.
+Live resource/index invalidation remains Phase 5. Owner manual acceptance is not
+run; no phase-completion claim.

@@ -24,20 +24,57 @@ function fixture() {
     },
   } as EditorView;
   let extensions = 0;
-  root.provide("render", { async into() { throw new Error("No DOM in unit fixture"); } });
+  root.provide("resources", {
+    async load() {
+      throw new Error("No resources in unit fixture");
+    },
+  });
+  root.provide("render", {
+    async into() {
+      throw new Error("No DOM in unit fixture");
+    },
+  });
   root.provide("livePreview", {
-    mode: "source", setMode() {},
-    block() { extensions++; return () => { extensions--; }; },
-    inline() { extensions++; return () => { extensions--; }; },
+    mode: "source",
+    setMode() {},
+    block() {
+      extensions++;
+      return () => {
+        extensions--;
+      };
+    },
+    inline() {
+      extensions++;
+      return () => {
+        extensions--;
+      };
+    },
   });
   let receive: (value: unknown) => void = () => {};
-  const rpc = new Endpoint({
-    listen(listener) { receive = listener; return () => {}; },
-    send(value) {
-      const message = value as { kind: string; id: number };
-      if (message.kind === "request") queueMicrotask(() => receive({ kind: "response", id: message.id, result: "" }));
+  const rpc = new Endpoint(
+    {
+      listen(listener) {
+        receive = listener;
+        return () => {};
+      },
+      send(value) {
+        const message = value as { kind: string; id: number };
+        if (message.kind === "request")
+          queueMicrotask(() =>
+            receive({
+              kind: "response",
+              id: message.id,
+              result: { fragment: "" },
+            }),
+          );
+      },
     },
-  }, { after() { return () => {}; } });
+    {
+      after() {
+        return () => {};
+      },
+    },
+  );
   root.provide("rpc", rpc);
   root.effect(() => () => rpc.dispose());
   const handlers = new Map<string, () => boolean | Promise<boolean>>();

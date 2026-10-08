@@ -11,7 +11,12 @@ export interface RenderBlock {
 export interface InlineContext {
   state: EditorState;
   revealed(from: number, to: number): boolean;
-  mark(from: number, to: number, cls: string, attributes?: Record<string, string>): void;
+  mark(
+    from: number,
+    to: number,
+    cls: string,
+    attributes?: Record<string, string>,
+  ): void;
   hide(from: number, to: number): void;
   replace(from: number, to: number, widget: WidgetType): void;
   line(at: number, cls: string): void;

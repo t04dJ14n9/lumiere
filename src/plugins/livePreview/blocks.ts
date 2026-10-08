@@ -7,7 +7,8 @@ import type { BlockRenderer, RenderBlock } from "./api";
 export const refreshRender = StateEffect.define<null>();
 export const renderRevision = StateField.define<number>({
   create: () => 0,
-  update: (value, tr) => tr.effects.some((effect) => effect.is(refreshRender)) ? value + 1 : value,
+  update: (value, tr) =>
+    tr.effects.some((effect) => effect.is(refreshRender)) ? value + 1 : value,
 });
 export const blockIndex = StateField.define<
   (RenderBlock & { renderer: BlockRenderer })[]
@@ -24,7 +25,8 @@ function index(state: Parameters<typeof revealed>[0]) {
   const blocks: (RenderBlock & { renderer: BlockRenderer })[] = [];
   state.field(documentTree).iterate({
     enter(node) {
-      if (blocks.length && node.from < blocks[blocks.length - 1]!.to) return false;
+      if (blocks.length && node.from < blocks[blocks.length - 1]!.to)
+        return false;
       const renderer = [...state.facet(blockRenderers)]
         .reverse()
         .find((r) => r.match(node, state));

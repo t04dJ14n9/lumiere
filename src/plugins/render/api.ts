@@ -5,6 +5,8 @@ export interface RenderPass {
   source: string;
   displaySource?: string;
   documentUri?: string;
+  documentText?: string;
+  taskLineCount?: number;
   container: Element;
   sourceLine: number;
   ancestry: readonly string[];
@@ -14,10 +16,18 @@ export interface RenderPass {
   dispose(): Promise<void>;
 }
 export interface RenderService {
+  readonly trusted?: boolean;
   into(
     container: Element,
     source: string,
-    context?: { documentUri?: string; measure?: () => void; sourceLine?: number; ancestry?: readonly string[] },
+    context?: {
+      documentText?: string;
+      taskLineCount?: number;
+      documentUri?: string;
+      measure?: () => void;
+      sourceLine?: number;
+      ancestry?: readonly string[];
+    },
   ): Promise<RenderPass>;
 }
 export interface Fence {
@@ -31,8 +41,15 @@ declare module "../../kernel/types" {
   }
   interface Events {
     /** @mode emit */ "render/changed": () => void;
-    /** @mode bail */ "render/fence": (fence: Fence, pass: RenderPass) => true | undefined;
-    /** @mode serial */ "render/preProcess": (pass: RenderPass) => void | Promise<void>;
-    /** @mode serial */ "render/postProcess": (pass: RenderPass) => void | Promise<void>;
+    /** @mode bail */ "render/fence": (
+      fence: Fence,
+      pass: RenderPass,
+    ) => true | undefined;
+    /** @mode serial */ "render/preProcess": (
+      pass: RenderPass,
+    ) => void | Promise<void>;
+    /** @mode serial */ "render/postProcess": (
+      pass: RenderPass,
+    ) => void | Promise<void>;
   }
 }

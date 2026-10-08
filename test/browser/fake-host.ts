@@ -1,9 +1,16 @@
 import type { Context } from "../../src/kernel";
 import { Endpoint } from "../../src/shared/rpc/endpoint";
-import type { HostDocument, Workbench, PanelShell } from "../../src/shared/runtime";
+import type {
+  HostDocument,
+  Workbench,
+  PanelShell,
+} from "../../src/shared/runtime";
 import { SourceCoordinates } from "../../src/shared/document/coordinates";
 import { Session } from "../../src/plugins/document/session";
-import { protocol as editorProtocol, viewState } from "../../src/plugins/editor/protocol";
+import {
+  protocol as editorProtocol,
+  viewState,
+} from "../../src/plugins/editor/protocol";
 import { protocol as commandProtocol } from "../../src/plugins/commands/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 export class BrowserHost {
@@ -147,6 +154,7 @@ export class BrowserHost {
         text: this.session.text,
         version: this.session.version,
         features: {},
+        trusted: false,
         clientID: id,
         source: this.document.uri,
         preset,
@@ -161,7 +169,8 @@ export class BrowserHost {
     host.handle(commandProtocol, "action", async ({ action }) => {
       await this.session.flush();
       if (action === "save") await this.session.save();
-      if (action === "undo" || action === "redo") await this.session.history(action);
+      if (action === "undo" || action === "redo")
+        await this.session.history(action);
       return true;
     });
     const context = await bootstrap(view, parent);
@@ -169,10 +178,19 @@ export class BrowserHost {
     return context;
   }
   async restore(
-    state: { anchor: number; head: number; scrollTop: number; mode: "source" | "livePreview" },
+    state: {
+      anchor: number;
+      head: number;
+      scrollTop: number;
+      mode: "source" | "livePreview";
+    },
     panel = 0,
   ) {
-    return this.endpoints[panel]!.call(editorProtocol, "restoreView", viewState.parse(state));
+    return this.endpoints[panel]!.call(
+      editorProtocol,
+      "restoreView",
+      viewState.parse(state),
+    );
   }
   async viewState(panel = 0) {
     return this.endpoints[panel]!.call(editorProtocol, "captureView", {});
@@ -181,10 +199,16 @@ export class BrowserHost {
     return this.endpoints[panel]!.call(editorProtocol, "captureSelection", {});
   }
   async reveal(from: number, to = from, panel = 0) {
-    return this.endpoints[panel]!.call(editorProtocol, "reveal", { from, to, focus: true });
+    return this.endpoints[panel]!.call(editorProtocol, "reveal", {
+      from,
+      to,
+      focus: true,
+    });
   }
   async mode(panel = 0) {
-    return this.endpoints[panel]!.call(commandProtocol, "run", { command: "editor:toggle-source" });
+    return this.endpoints[panel]!.call(commandProtocol, "run", {
+      command: "editor:toggle-source",
+    });
   }
   external(text: string) {
     this.text = text;

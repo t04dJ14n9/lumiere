@@ -4,16 +4,28 @@ import type {} from "../resources/api";
 import { protocol } from "./protocol";
 import { taskEdit } from "./edits";
 export const tasksHost: Plugin<{ panel: PanelShell }> = {
-  name: "tasks", inject: { required: ["workbench", "rpc", "resources"] },
+  name: "tasks",
+  inject: { required: ["workbench", "rpc", "resources"] },
   apply(ctx, { panel }) {
-    ctx.effect(() => ctx.rpc.handle(protocol, "toggle", async (request) => {
-      const source = request.source ?? panel.document.uri;
-      if (!ctx.resources.authorize) throw new Error("Resource authorization unavailable");
-      await ctx.resources.authorize(source);
-      const document = source === panel.document.uri ? panel.document : await ctx.workbench.openDocument?.(source);
-      if (!document) throw new Error("Document unavailable");
-      const change = taskEdit(document.getText().replace(/\r\n/g, "\n"), request.line, request.expected, request.checked);
-      return change ? ctx.workbench.apply(document, [change]) : false;
-    }));
+    ctx.effect(() =>
+      ctx.rpc.handle(protocol, "toggle", async (request) => {
+        const source = request.source ?? panel.document.uri;
+        if (!ctx.resources.authorize)
+          throw new Error("Resource authorization unavailable");
+        await ctx.resources.authorize(source);
+        const document =
+          source === panel.document.uri
+            ? panel.document
+            : await ctx.workbench.openDocument?.(source);
+        if (!document) throw new Error("Document unavailable");
+        const change = taskEdit(
+          document.getText().replace(/\r\n/g, "\n"),
+          request.line,
+          request.expected,
+          request.checked,
+        );
+        return change ? ctx.workbench.apply(document, [change]) : false;
+      }),
+    );
   },
 };

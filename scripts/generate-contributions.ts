@@ -93,8 +93,11 @@ export async function contributions() {
           ),
         ),
         "markdownWorkbench.files.newNoteFolder": {
-          type: "string", default: "", scope: "resource",
-          description: "New notes: empty for vault root, . for current folder, or a vault-relative path.",
+          type: "string",
+          default: "",
+          scope: "resource",
+          description:
+            "New notes: empty for vault root, . for current folder, or a vault-relative path.",
         },
         "markdownWorkbench.preset": {
           type: "string",

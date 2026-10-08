@@ -4,7 +4,10 @@ export function linkParts(href: string): { path: string; fragment: string } {
   const hash = clean.indexOf("#");
   const path = decodeURIComponent(hash < 0 ? clean : clean.slice(0, hash));
   const fragment = hash < 0 ? "" : clean.slice(hash + 1);
-  if ([...path].some((char) => char.charCodeAt(0) < 32 || char === "\\") || /%2f|%5c/i.test(path))
+  if (
+    [...path].some((char) => char.charCodeAt(0) < 32 || char === "\\") ||
+    /%2f|%5c/i.test(path)
+  )
     throw new Error("Invalid link path");
   return { path, fragment };
 }

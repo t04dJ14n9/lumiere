@@ -291,3 +291,25 @@ and quoted ordered tasks, and tasks inside a callout and (when available) embed.
 4. Disable/re-enable Tasks: checkbox handlers, decorations, commands and the
    embedded-task RPC handler disappear and return. These commands' `verify`
    key bindings remain unbound pending the owner's Obsidian check.
+
+## Embeds and media
+
+Setup: copy files from `test/fixtures/media` into the disposable vault. Add full
+note, heading and block embeds, an image with `|200x100`, WebM/audio, a PDF, a
+missing target and a self-referencing note. Include tasks and footnotes in the
+embedded note, with links relative to that note's folder.
+
+1. Check full/section/block transclusion, dimensions, recursive embeds and the
+   circular/depth fallback. Relative links must open from the embedded source.
+2. Click an embedded task: only its source document changes. Reject stale task
+   lines and verify dirty embedded text is read from the native TextDocument.
+3. Inspect an image: fit/actual size, zoom buttons, +/−/0/1 keys, modified wheel,
+   pan, close/Escape and restored trigger focus. Disable Embeds while it is open.
+4. Play each WebM fixture, including audio, seek, and remove the embed or disable
+   the plugin during loading/playback. No player, fetch or object URL remains.
+5. PDF/file cards open the associated editor. HTTPS media is blocked in untrusted
+   workspaces. A local symlink escaping the vault remains blocked in both modes.
+6. Run Insert Embed on selected text and undo. Disable/re-enable Embeds: widgets,
+   media, inspector, styles, nested render passes and command are removed/restored.
+7. Check embedded footnote text/numbering and definition navigation separately;
+   record any target mismatch in the acceptance notes.

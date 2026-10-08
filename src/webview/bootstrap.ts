@@ -35,7 +35,7 @@ export async function bootstrap(
   root.plugin(commandsWebview);
   if (init.preset === "obsidian") {
     root.plugin(resourcesWebview);
-    root.plugin(renderWebview, { trusted: false });
+    root.plugin(renderWebview, { trusted: init.trusted });
     root.plugin(livePreviewWebview, { mode: init.mode });
   }
   const configure = featureController(root);

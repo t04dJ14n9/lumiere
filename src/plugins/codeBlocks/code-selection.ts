@@ -18,7 +18,13 @@ export function codePosition(
   return codeOffset(source, code.textContent ?? "", row, column, fenced);
 }
 
-export function codeOffset(source: string, text: string, row: number, column: number, fenced: boolean): number | undefined {
+export function codeOffset(
+  source: string,
+  text: string,
+  row: number,
+  column: number,
+  fenced: boolean,
+): number | undefined {
   const lines = source.split("\n");
   const lineIndex = row + (fenced ? 1 : 0);
   const raw = lines[lineIndex];

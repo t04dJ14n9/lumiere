@@ -20,3 +20,4 @@ export { diagramsWebview } from "./diagrams/webview";
 export { calloutsWebview } from "./callouts/webview";
 export { footnotesWebview } from "./footnotes/webview";
 export { tasksWebview } from "./tasks/webview";
+export { embedsWebview } from "./embeds/webview";

@@ -110,8 +110,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/undo-groups.test.ts` | unexpected native state stops grouped replay rather than undoing unrelated edits | ported | test/unit/ported/undo-groups.test.ts |
 | `unit/view-state.test.ts` | pane transfers accept backward selections, fractional scroll offsets and independent focus intent | todo | Awaiting scheduled port |
 | `unit/view-state.test.ts` | pane transfers reject malformed positions, folding state and focus targets | todo | Awaiting scheduled port |
-| `unit/webm.test.ts` | WebM metadata identifies video and audio tracks without guessing the extension | todo | Awaiting scheduled port |
-| `unit/webm.test.ts` | streaming preserves unknown-size cluster boundaries and orders complete blocks | todo | Awaiting scheduled port |
+| `unit/webm.test.ts` | WebM metadata identifies video and audio tracks without guessing the extension | ported | `src/plugins/embeds/webm.test.ts` |
+| `unit/webm.test.ts` | streaming preserves unknown-size cluster boundaries and orders complete blocks | ported | `src/plugins/embeds/webm.test.ts` |
 | `browser/browser.spec.ts` | footnote references reveal definition source at its exact position | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/browser.spec.ts` | inline footnotes preview formatting and expose editable source with Vim enabled | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/browser.spec.ts` | multiline inline footnotes render and expose their original lines for Vim editing | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
@@ -407,7 +407,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/view-state.spec.ts` | rename transfers heading folds, callout expansion and the outline panel | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/file-title.spec.ts` | native wrapped title rename preserves dirty content and synchronized split views | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/file-title.spec.ts` | native title cancellation and rename rejection preserve both files and allow retry | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/markdown.spec.ts` | the current Markdown editor types, saves and uses document undo through its UI | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
+| `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/markdown.spec.ts` | the current Markdown editor types, saves and uses document undo through its UI | rewritten | `test/vscode/core.spec.ts` (existing isolated native smoke) |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/markdown.spec.ts` | native Markdown typing preserves CRLF and Unicode through save | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/markdown.spec.ts` | native Markdown renders math, highlighted code, properties and tables | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/markdown.spec.ts` | native source reveal keeps prose typography and line numbers aligned | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
@@ -458,7 +458,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 Phase 2 additionally inventories two Markdown adapter tests from `vscode-extension/test/agentClipboard.test.mjs`. PDF-only tests are outside this extraction.
 
 Phase 3 is completed under the revised testing policy. The source fuzzers and
-all browser/native rows are retired; their former operation counts are not
+browser/native rows outside the retained smoke coverage are retired; their former operation counts are not
 claimed. The existing 14 browser and 1 native smoke checks remain, without
 expansion. Phase 4 is incomplete; remaining `todo` rows are unit cases for
 undelivered features or protocols, not retired browser scenarios.
