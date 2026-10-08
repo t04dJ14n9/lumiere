@@ -1564,3 +1564,22 @@ remain. Phase 5 belongs exclusively to Claude on claude/phase5-vault; do not
 change its branch, worktree or VaultIndex interface. Phase 6 must wait for the
 Phase 5 completion record on main. Phase 6 command/settings/parity, Phase 7 API
 and Phase 8 packaging/documentation deliverables remain as listed above.
+
+### Readability pass progress — YAML ordering and scalars, 2026-10-08
+
+Delivered: property ordering separates entry/source-token discovery, flow/block
+reordering and value-preservation verification. Scalar serialization names its
+quote-style policy. Added two units for CRLF flow maps, unsupported numeric keys,
+negative zero and multiline strings. Existing alias/comment/quoting tests remain.
+Backlog: 37 → 35 distinct files; long-function 30 → 29; complexity 15 → 13;
+other counts unchanged. No new exemptions, inline disables or behavior fixes.
+Checks: `pnpm check` 251/251, including formatting/lint/types/contributions.
+Log: `docs/checks/readability-property-order-check.txt`. Smoke suites not rerun:
+only pure YAML helpers changed. Ledger: 87/15/2/333/11, unchanged.
+Deviations: none. Existing Properties manual regressions cover sorting and scalar
+editing; owner acceptance remains unrun.
+
+Known issues: the remaining 35 backlog files, README/manual inventory and ordered
+readability completion checks; then Phase 4 inlineTitle, tags, suggest, search,
+pasteHtml, copyForAgent and markers. Claude owns Phase 5; its completion record
+must be on main before Phase 6. Phases 6–8 remain as specified in the plan.

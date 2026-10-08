@@ -107,3 +107,17 @@ test("list edits preserve neighboring YAML, string types and line endings", () =
     assert.equal(listPropertyChange(source, "tags", ["two"]), undefined);
   }
 });
+
+test("scalar serialization preserves negative zero and quotes multiline replacements", () => {
+  const numeric = "---\nvalue: 2 # keep\n---";
+  const change = scalarPropertyChange(numeric, "value", -0);
+  assert.equal(change?.insert, "-0");
+  for (const quoted of ["'old'", '"old"', "old"]) {
+    const source = `---\nvalue: ${quoted}\n---`;
+    const edit = scalarPropertyChange(source, "value", "first\nsecond");
+    assert.ok(edit);
+    const result =
+      source.slice(0, edit.from) + edit.insert + source.slice(edit.to);
+    assert.equal(frontmatter(result)?.values?.value, "first\nsecond");
+  }
+});

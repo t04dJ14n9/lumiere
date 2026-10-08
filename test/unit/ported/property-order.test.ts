@@ -83,3 +83,17 @@ test("empty values, empty headers and punctuation in keys keep their source mean
   const empty = "---\n# empty\n---\nBody";
   assert.equal(ordered(empty, []), empty);
 });
+
+test("flow reordering retains CRLF and rejects non-string YAML keys", () => {
+  const source = '---\r\n{z: "quoted", a: 2}\r\n---\r\nBody';
+  const result = ordered(source, ["a", "z"]);
+  assert.deepEqual(frontmatter(result)?.values, { a: 2, z: "quoted" });
+  assert.equal(result.replaceAll("\r\n", "").includes("\n"), false);
+  assert.equal(
+    propertyChanges("---\n1: value\na: 2\n---", {
+      type: "order",
+      keys: ["a", "1"],
+    }),
+    undefined,
+  );
+});

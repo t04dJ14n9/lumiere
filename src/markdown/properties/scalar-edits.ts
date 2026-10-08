@@ -54,16 +54,7 @@ export function scalarPropertyChange(
   if (typeof value === "number" && !Number.isFinite(value)) {
     return;
   }
-  let insert = Object.is(value, -0) ? "-0" : String(value);
-  if (typeof value === "string") {
-    if (node.type === "QUOTE_SINGLE" && !/[\r\n]/.test(value)) {
-      insert = "'" + value.replaceAll("'", "''") + "'";
-    } else if (node.type === "QUOTE_DOUBLE" || /[\r\n]/.test(value)) {
-      insert = JSON.stringify(value);
-    } else {
-      insert = stringify(value, { lineWidth: 0 }).trimEnd();
-    }
-  }
+  const insert = scalarText(value, node.type);
   const candidate = parseDocument(
     header.body.slice(0, node.range[0]) +
       insert +
@@ -87,4 +78,17 @@ export function booleanPropertyChange(
   value: boolean,
 ) {
   return scalarPropertyChange(source, key, value);
+}
+
+function scalarText(value: PropertyScalar, style: string | undefined): string {
+  if (typeof value !== "string") {
+    return Object.is(value, -0) ? "-0" : String(value);
+  }
+  if (style === "QUOTE_SINGLE" && !/[\r\n]/.test(value)) {
+    return "'" + value.replaceAll("'", "''") + "'";
+  }
+  if (style === "QUOTE_DOUBLE" || /[\r\n]/.test(value)) {
+    return JSON.stringify(value);
+  }
+  return stringify(value, { lineWidth: 0 }).trimEnd();
 }
