@@ -332,3 +332,30 @@ test("contexts can cross async boundaries without being mistaken for thenables",
   assert.equal(await Promise.resolve(fiber.context), fiber.context);
   await root.dispose();
 });
+
+test("effects undone early and child fibers disposed on their own are forgotten", async () => {
+  const ctx = Context.create();
+  const undone: string[] = [];
+  for (let i = 0; i < 100; i++) {
+    const dispose = ctx.effect(() => () => {
+      undone.push(`early ${i}`);
+    });
+    await dispose();
+  }
+  ctx.effect(() => () => {
+    undone.push("last");
+  });
+  // White-box: the list a long-lived context keeps must not grow per effect.
+  assert.equal((ctx as unknown as { effects: unknown[] }).effects.length, 1);
+  for (let i = 0; i < 100; i++) {
+    await ctx.plugin({ name: `child${i}`, apply() {} }).dispose();
+  }
+  ctx.plugin({ name: "kept", apply() {} });
+  assert.deepEqual(
+    ctx.children.map((fiber) => fiber.definition.name),
+    ["kept"],
+  );
+  await ctx.dispose();
+  assert.equal(undone.length, 101);
+  assert.equal(undone.at(-1), "last");
+});

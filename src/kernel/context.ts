@@ -124,6 +124,13 @@ export class Context {
   plugin<C>(definition: ServiceClass<C>, config?: C): Fiber<C>;
   plugin<C>(definition: Plugin<C> | ServiceClass<C>, config?: C): Fiber<C> {
     this.assertLive();
+    // Forget children disposed on their own (a feature turned off), so a
+    // long-lived context does not keep every fiber it ever started.
+    for (let i = this.children.length - 1; i >= 0; i--) {
+      if (this.children[i]!.state === "disposed") {
+        this.children.splice(i, 1);
+      }
+    }
     const fiber = new Fiber(this.runtime, asPlugin(definition), config as C);
     this.children.push(fiber as Fiber<unknown>);
     fiber.reconcile();
@@ -172,6 +179,11 @@ export class Context {
         return;
       }
       active = false;
+      // An effect undone early leaves the list; see dispose() for the rest.
+      const index = this.effects.indexOf(dispose);
+      if (index >= 0) {
+        this.effects.splice(index, 1);
+      }
       if (typeof result === "function") {
         await result();
       } else {
@@ -241,7 +253,7 @@ export class Context {
       return;
     }
     this.live = false;
-    for (const dispose of this.effects.reverse()) {
+    for (const dispose of this.effects.splice(0).reverse()) {
       try {
         await dispose();
       } catch (error) {
