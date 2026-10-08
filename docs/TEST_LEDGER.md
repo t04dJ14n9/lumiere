@@ -462,3 +462,7 @@ browser/native rows outside the retained smoke coverage are retired; their forme
 claimed. The existing 14 browser and 1 native smoke checks remain, without
 expansion. Phase 4 is incomplete; remaining `todo` rows are unit cases for
 undelivered features or protocols, not retired browser scenarios.
+
+HTML conversion and delayed-paste guards have new unit coverage in
+`test/unit/paste-html/conversion.test.ts`. Table paste interaction remains in the
+manual plan; no source browser/native suite has been expanded or restored.

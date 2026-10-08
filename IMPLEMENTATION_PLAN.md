@@ -2293,3 +2293,29 @@ Known issues:
 - Manual acceptance not run: Phase 5 section of docs/MANUAL_TEST_PLAN.md,
   including the new unresolved-link and Tags view scenarios.
 Phase 5 is complete: after Phase 4, Codex may start Phase 6.
+
+### Phase 4 progress — HTML paste, 2026-10-08
+
+Delivered: default-on HTML conversion with sanitizer, awaited typed
+`paste/transform` waterfall and focused CodeMirror routing, including projected
+table cells. Plain-text shortcuts, code and property inputs bypass conversion;
+rectangular table paste keeps TSV behavior. Delayed transforms cannot overwrite
+changed text/selections or closed views. Conversion preserves literal escaping,
+formatting, tasks, tables, wiki aliases/embeds, TeX and callouts using the existing
+Turndown dependency plus domain rules. Table clipboard now respects an already
+handled event. Added five conversion/stale-paste/code-context units and catalog
+lifecycle/composition coverage. README, manual plan and ledger notes updated.
+
+Checks: `pnpm check` **396/396**, formatting/lint/types/contributions;
+`pnpm test:browser` **14/14**. Logs:
+`docs/checks/phase4-paste-html-{check,browser}.txt`. No native wiring changed;
+native smoke not repeated for this unit. No smoke expansion or lint exceptions.
+Ledger remains **91/22/2/333/0**, total 448.
+Deviations: existing Turndown rules replace the source's handwritten generic DOM
+walker; domain-specific conversions remain explicit. Rich paste does not download
+attachments; menu paste and rectangular table ranges retain plain-text behavior.
+Known issues: Phase 4 copyForAgent and markers remain. Claude's dated
+"Phase 5 (completed)" record is now on main (c5b5a7a); after Phase 4, proceed to
+Phases 6–8. Suggestion candidate caching/measurement remains in our ownership as
+reported by Claude. Owner should test rich paste into an active cell, undo,
+Shift+Mod+V and plugin toggles first; manual acceptance is unrun.

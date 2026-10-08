@@ -40,6 +40,9 @@ export class TableClipboard {
   }
 
   paste(event: ClipboardEvent): void {
+    if (event.defaultPrevented) {
+      return;
+    }
     const text = event.clipboardData?.getData("text/plain");
     const range =
       this.selection.range ??

@@ -822,6 +822,12 @@
           "scope": "resource",
           "description": "Preview internal links with a modifier hover or keyboard."
         },
+        "markdownWorkbench.plugins.pasteHtml.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Convert rich clipboard HTML into Markdown in notes and table cells."
+        },
         "markdownWorkbench.plugins.properties.enabled": {
           "type": "boolean",
           "default": true,

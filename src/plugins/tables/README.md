@@ -53,3 +53,6 @@ Save, undo and redo belong to VS Code's TextDocument. Cell selections map to
 Markdown offsets for consumers of the editor selection API. Edit Table Source
 reveals source until the caret leaves the table. HTML conversion is delegated
 to the paste pipeline rather than implemented by the table widget.
+
+HTML paste in a focused cell uses the outer editor capture pipeline; the table
+clipboard ignores already-handled events. Rectangular paste keeps TSV semantics.

@@ -1,3 +1,4 @@
+import pasteHtml from "./pasteHtml/manifest";
 import search from "./search/manifest";
 import suggest from "./suggest/manifest";
 import inlineTitle from "./inlineTitle/manifest";
@@ -46,6 +47,7 @@ export const features: readonly Manifest[] = [
   tags,
   suggest,
   formatting,
+  pasteHtml,
   // Match VS Code: line numbers to the left of fold markers.
   lineNumbers,
   folding,

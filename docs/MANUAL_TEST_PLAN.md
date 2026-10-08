@@ -777,3 +777,17 @@ fixture: its query must report a timeout while the editor remains responsive;
 a subsequent normal query must work. Check this alongside Links disabled/enabled
 and two panels. This replaces retired query-block/browser interaction coverage;
 worker failure/cancellation and late replies are covered by unit tests.
+
+## HTML paste
+
+Copy rich HTML with headings, bold/italic/strike/highlight, nested task lists,
+links/wiki aliases, images/embeds, a table, TeX annotations and a folded callout.
+Paste into a disposable note in both editor modes, then inspect source and undo.
+Expect Markdown structure, escaped literal punctuation, safe destinations and one
+undoable paste. Repeat inside an active table cell and ensure only that cell's
+source changes; a rectangular table selection still pastes plain TSV. Check
+Shift+Mod+V, inline/fenced code and property inputs keep plain/native paste.
+Toggle Auto convert HTML off/on and repeat without duplicate insertion. During a
+delayed transform, move the caret, type, close the cell or disable the plugin;
+no stale result should overwrite current text. Menu paste remains plain text.
+Sanitization must remove active containers; no pasted HTML should execute.
