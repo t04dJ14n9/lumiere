@@ -1686,9 +1686,9 @@ signal and remember callback; saved per-panel memory and registration order rema
 unchanged. README and manual regression inventory follow the required template.
 Backlog: 31 → 30 distinct files; long-function 26 → 25; other counts unchanged.
 No new exemptions, inline disables, pure algorithm or intentional behavior fix.
-Checks: `pnpm check` 253/253; `pnpm test:browser` 14/14. Native not rerun:
+Checks: `pnpm check` 331/331; `pnpm test:browser` 14/14. Native not rerun:
 no native wiring change. Logs: `docs/checks/readability-callouts-{check,browser}.txt`.
-Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
+Ledger: 87/16/2/333/10 after Claude’s Phase 5 part-one merge. Deviations: none. Manual acceptance unrun.
 Known issues: remaining 30 backlog files, README/manual inventory and readability
 completion checks; remaining Phase 4 plugins, Claude's Phase 5 handoff gate and
 Phases 6–8 as listed above.
@@ -1702,9 +1702,28 @@ capabilities. Expected-line checks and disabled-preview/disposal behavior remain
 README rewritten; manual regression inventory includes stale lines and toggles.
 Backlog: 30 → 29 distinct files; long-function 25 → 24; other counts unchanged.
 No new exceptions, inline disables, pure algorithm or intentional behavior fixes.
-Checks: `pnpm check` 253/253; `pnpm test:browser` 14/14. Native not rerun:
+Checks: `pnpm check` 331/331; `pnpm test:browser` 14/14. Native not rerun:
 no native wiring change. Logs: `docs/checks/readability-tasks-{check,browser}.txt`.
-Ledger unchanged: 87/15/2/333/11. Deviations: none. Owner acceptance unrun.
+Ledger: 87/16/2/333/10 after Claude’s Phase 5 part-one merge. Deviations: none. Owner acceptance unrun.
 Known issues: remaining 29 backlog files and README/manual inventory, followed by
 readability completion checks; Phase 4's remaining seven plugins, Claude's Phase 5
 handoff gate and Phases 6–8 as specified above.
+
+### Readability pass progress — Formatting, 2026-10-08
+
+Delivered: named command assembly, command/key registrations, caret-based unwrap,
+word wrapping and selected-text toggling. Line-prefix selection has an explicit
+branch. Added two units for caret/word/empty selection and independent multiple
+ranges. README/manual regressions updated; existing source assertions retained.
+Backlog: 29 → 26 distinct files; long-function 24 → 22; nested-ternary 9 → 8;
+other counts unchanged. No exceptions or intentional behavior fixes.
+Checks: `pnpm check` 333/333; `pnpm test:browser` 14/14. Native not rerun:
+formatting changed no native wiring. Logs: `docs/checks/readability-formatting-{check,browser}.txt`.
+Ledger: 87/16/2/333/10 after Claude's Phase 5 part-one merge. Corrected preceding
+Callouts/Tasks records to their actual 331-test logs; the merge added 78 tests.
+Deviations: none. Manual acceptance remains unrun.
+Known issues: remaining 26 backlog files and README/manual inventory, then ordered
+readability completion checks; remaining Phase 4 plugins. Phase 5 part one is on
+main but not complete; Claude owns its remaining consumer migration, Tags view
+and unresolved styling. Do not start Phase 6 without its completion record.
+Phases 6–8 remain as specified above.

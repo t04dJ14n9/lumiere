@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EditorState } from "@codemirror/state";
+import { EditorSelection, EditorState } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { markdownLanguageSupport } from "../../markdown/dialect";
 import { clearInlineFormatting, wrapSelection } from "./inline";
@@ -70,5 +70,58 @@ test("clearing inline formatting retains comment contents, links and escaped lit
       "**Bold** *soft* ~~old~~ ==marked== %%kept%% `code` $x$ [Link](target) \\*literal\\*",
     ),
     "Bold soft old marked kept code x [Link](target) \\*literal\\*",
+  );
+});
+
+test("caret formatting unwraps enclosing syntax and wraps a plain word", () => {
+  for (const [doc, position, expected, caret] of [
+    ["**hello**", 4, "hello", 2],
+    ["hello", 2, "**hello**", 4],
+    [" ", 0, "**** ", 2],
+  ] as const) {
+    let state = EditorState.create({
+      doc,
+      selection: { anchor: position },
+      extensions: [markdownLanguageSupport()],
+    });
+    const view = {
+      get state() {
+        return state;
+      },
+      dispatch(spec: Parameters<EditorState["update"]>[0]) {
+        state = state.update(spec).state;
+      },
+    } as EditorView;
+    wrapSelection("**")(view);
+    assert.equal(state.doc.toString(), expected);
+    assert.equal(state.selection.main.head, caret);
+  }
+});
+
+test("formatting handles selected delimiters and independent multiple ranges", () => {
+  let state = EditorState.create({
+    doc: "**one** two",
+    extensions: [
+      EditorState.allowMultipleSelections.of(true),
+      markdownLanguageSupport(),
+    ],
+    selection: EditorSelection.create([
+      EditorSelection.range(0, 7),
+      EditorSelection.range(8, 11),
+    ]),
+  });
+  const view = {
+    get state() {
+      return state;
+    },
+    dispatch(spec: Parameters<EditorState["update"]>[0]) {
+      state = state.update(spec).state;
+    },
+  } as EditorView;
+  wrapSelection("**")(view);
+  assert.equal(state.doc.toString(), "one **two**");
+  assert.deepEqual(
+    state.selection.ranges.map((range) => state.sliceDoc(range.from, range.to)),
+    ["one", "two"],
   );
 });

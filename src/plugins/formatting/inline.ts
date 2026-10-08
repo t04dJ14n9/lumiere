@@ -1,5 +1,10 @@
-import { EditorSelection } from "@codemirror/state";
+import {
+  EditorSelection,
+  type EditorState,
+  type SelectionRange,
+} from "@codemirror/state";
 import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode } from "@lezer/common";
 import type { Command } from "@codemirror/view";
 import { markdownParser } from "../../markdown/dialect";
 const formattingParser = markdownParser;
@@ -37,98 +42,114 @@ export function wrapSelection(marker: string): Command {
     if (view.state.readOnly) {
       return false;
     }
-    const changes = view.state.changeByRange((range) => {
-      if (range.empty) {
-        const kind = {
-          "**": "StrongEmphasis",
-          "*": "Emphasis",
-          "~~": "Strikethrough",
-          "==": "Highlight",
-          "`": "InlineCode",
-        }[marker];
-        for (
-          let node = syntaxTree(view.state).resolveInner(range.from, 1);
-          node;
-          node = node.parent!
-        ) {
-          if (
-            node.name === kind &&
-            view.state.sliceDoc(node.from, node.from + marker.length) ===
-              marker &&
-            view.state.sliceDoc(node.to - marker.length, node.to) === marker &&
-            range.from >= node.from + marker.length &&
-            range.from <= node.to - marker.length
-          ) {
-            return {
-              changes: [
-                { from: node.from, to: node.from + marker.length },
-                { from: node.to - marker.length, to: node.to },
-              ],
-              range: EditorSelection.cursor(range.from - marker.length),
-            };
-          }
-        }
-        const word = view.state.wordAt(range.from);
-        if (word) {
-          return {
-            changes: {
-              from: word.from,
-              to: word.to,
-              insert: marker + view.state.sliceDoc(word.from, word.to) + marker,
-            },
-            range: EditorSelection.cursor(range.from + marker.length),
-          };
-        }
-      }
-      const selected = view.state.sliceDoc(range.from, range.to);
-      if (
-        selected.startsWith(marker) &&
-        selected.endsWith(marker) &&
-        selected.length >= marker.length * 2
-      ) {
-        return {
-          changes: {
-            from: range.from,
-            to: range.to,
-            insert: selected.slice(marker.length, -marker.length),
-          },
-          range: EditorSelection.range(
-            range.from,
-            range.to - marker.length * 2,
-          ),
-        };
-      }
-      if (
-        view.state.sliceDoc(
-          Math.max(0, range.from - marker.length),
-          range.from,
-        ) === marker &&
-        view.state.sliceDoc(range.to, range.to + marker.length) === marker
-      ) {
-        return {
-          changes: [
-            { from: range.from - marker.length, to: range.from },
-            { from: range.to, to: range.to + marker.length },
-          ],
-          range: EditorSelection.range(
-            range.from - marker.length,
-            range.to - marker.length,
-          ),
-        };
-      }
-      return {
-        changes: {
-          from: range.from,
-          to: range.to,
-          insert: marker + selected + marker,
-        },
-        range: EditorSelection.range(
-          range.from + marker.length,
-          range.to + marker.length,
-        ),
-      };
-    });
+    const changes = view.state.changeByRange((range) =>
+      toggleRange(view.state, range, marker),
+    );
     view.dispatch({ ...changes, userEvent: "input" });
     return true;
+  };
+}
+
+function toggleRange(
+  state: EditorState,
+  range: SelectionRange,
+  marker: string,
+) {
+  if (range.empty) {
+    const unwrapped = unwrapAtCaret(state, range.from, marker);
+    if (unwrapped) {
+      return unwrapped;
+    }
+    const word = state.wordAt(range.from);
+    if (word) {
+      return {
+        changes: {
+          from: word.from,
+          to: word.to,
+          insert: marker + state.sliceDoc(word.from, word.to) + marker,
+        },
+        range: EditorSelection.cursor(range.from + marker.length),
+      };
+    }
+  }
+  return toggleSelectedText(state, range, marker);
+}
+
+function unwrapAtCaret(state: EditorState, position: number, marker: string) {
+  const kind = {
+    "**": "StrongEmphasis",
+    "*": "Emphasis",
+    "~~": "Strikethrough",
+    "==": "Highlight",
+    "`": "InlineCode",
+  }[marker];
+  let node: SyntaxNode | null = syntaxTree(state).resolveInner(position, 1);
+  while (node) {
+    if (
+      node.name === kind &&
+      state.sliceDoc(node.from, node.from + marker.length) === marker &&
+      state.sliceDoc(node.to - marker.length, node.to) === marker &&
+      position >= node.from + marker.length &&
+      position <= node.to - marker.length
+    ) {
+      return {
+        changes: [
+          { from: node.from, to: node.from + marker.length },
+          { from: node.to - marker.length, to: node.to },
+        ],
+        range: EditorSelection.cursor(position - marker.length),
+      };
+    }
+    node = node.parent;
+  }
+  return undefined;
+}
+
+function toggleSelectedText(
+  state: EditorState,
+  range: SelectionRange,
+  marker: string,
+) {
+  const selected = state.sliceDoc(range.from, range.to);
+  if (
+    selected.startsWith(marker) &&
+    selected.endsWith(marker) &&
+    selected.length >= marker.length * 2
+  ) {
+    return {
+      changes: {
+        from: range.from,
+        to: range.to,
+        insert: selected.slice(marker.length, -marker.length),
+      },
+      range: EditorSelection.range(range.from, range.to - marker.length * 2),
+    };
+  }
+  if (
+    state.sliceDoc(Math.max(0, range.from - marker.length), range.from) ===
+      marker &&
+    state.sliceDoc(range.to, range.to + marker.length) === marker
+  ) {
+    return {
+      changes: [
+        { from: range.from - marker.length, to: range.from },
+        { from: range.to, to: range.to + marker.length },
+      ],
+      range: EditorSelection.range(
+        range.from - marker.length,
+        range.to - marker.length,
+      ),
+    };
+  }
+  return {
+    changes: {
+      from: range.from,
+      to: range.to,
+      insert: marker + selected + marker,
+    },
+    range: EditorSelection.range(
+      range.from + marker.length,
+      range.to + marker.length,
+    ),
   };
 }

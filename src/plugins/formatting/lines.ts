@@ -21,12 +21,7 @@ export function lineEdit(state: EditorState, prefix: string): TransactionSpec {
       return { from: line.from, to: line.from + old.length, insert: prefix };
     }
     const actual = prefix === "1. " ? `${index + 1}. ` : prefix;
-    const old =
-      prefix === "1. "
-        ? /^\d+\. /.exec(line.text)?.[0]
-        : all
-          ? prefix
-          : undefined;
+    const old = existingListPrefix(line.text, prefix, all);
     return {
       from: line.from,
       to: line.from + (old?.length ?? 0),
@@ -46,4 +41,15 @@ export function linkEdit(state: EditorState): TransactionSpec {
     },
     userEvent: "input",
   };
+}
+
+function existingListPrefix(
+  text: string,
+  prefix: string,
+  all: boolean,
+): string | undefined {
+  if (prefix === "1. ") {
+    return /^\d+\. /.exec(text)?.[0];
+  }
+  return all ? prefix : undefined;
 }

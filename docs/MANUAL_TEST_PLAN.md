@@ -608,3 +608,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   commands. In a second panel change the expected task line before toggling;
   a stale edit must be rejected. Check read-only footnote previews and truncated
   embeds; disable/re-enable Tasks while controls are mounted. Not run here.
+
+- **Formatting:** rerun all formatting commands and composition command checks.
+  Toggle at a caret inside formatted text, on a plain word, with delimiters
+  selected, and across multiple selections. Repeat in table cells and read-only
+  views; confirm list numbering, heading removal, line moves and undo. Not run here.
