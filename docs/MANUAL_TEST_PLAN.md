@@ -670,3 +670,10 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   embedded tasks/links/footnotes, remote trust, attachments and Insert Embed.
   Disable while a resource or nested note render is pending; late passes must
   dispose, media must stop and original placeholders must return. Not run here.
+
+- **Remaining README audit:** rerun the existing Auto pair, Folding, Indentation
+  guides, Line numbers, Smart lists and Spellcheck scenarios. Check independent
+  pair flags, fold retention after tab-width/config updates, gutter order after
+  toggles, list Enter/Backspace and spellcheck host behavior. Dialect consumers
+  use the same syntax in notes, embeds and metadata. These are documentation
+  clarifications, not new feature behavior; owner acceptance remains unrun.

@@ -2025,3 +2025,18 @@ Known issues: finish the remaining README template audit (autoPair, dialect,
 folding, indentGuides, lineNumbers, smartLists, spellcheck), manual inventory and
 ordered readability completion checks/record. Then remaining Phase 4 plugins,
 Claude's Phase 5 completion gate and Phases 6–8 as specified above.
+
+### Readability pass progress — Remaining plugin READMEs, 2026-10-08
+
+Delivered: rewrote autoPair, dialect, folding, indentGuides, lineNumbers,
+smartLists and spellcheck READMEs from the live implementations. Each now names
+user behavior, flow, files, services/events/settings and limits. Removed stale
+Phase 3 status and generic claims of commands where none exist. Reviewed the
+other built-in READMEs, including Claude's new Phase 5 documentation; his files
+remain untouched. Added the remaining manual regression inventory.
+Checks: `pnpm check` 352/352; log `docs/checks/readability-readmes-check.txt`.
+Smoke suites deferred to the immediate readability completion checks; docs only.
+Ledger: 87/16/2/333/10. No new code, exceptions or behavior changes.
+Known issues: run the ordered readability completion checks and write the final
+before/after record, then continue remaining Phase 4 plugins. Claude's Phase 5
+completion gate and Phases 6–8 remain as specified above. Manual acceptance unrun.

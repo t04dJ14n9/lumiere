@@ -1,17 +1,32 @@
 # Folding
 
-Owns folding through the editor service. The feature is resource-scoped
-and defaults to on. Disabling disposes its compartment and commands;
-re-enabling installs a fresh instance. No cross-plugin internals are imported.
-Manual acceptance is in docs/MANUAL_TEST_PLAN.md; Obsidian parity is not observed.
+Collapses headings and indented sections with gutter controls and commands,
+corresponding to Obsidian's Fold heading and Fold indent settings.
 
-Provides `fold` and owns Fold All, Unfold All and Toggle Fold commands.
-`heading` and `indent` default to true. Heading ranges use shared metadata;
-indentation uses the document tab width. The plugin owns the fold state field and its `folded` view-state contribution.
-Disposal captures the ranges before removing the field, gutter and commands.
-Late enable restores valid ranges; config updates replace only the fold-service
-compartment and preserve existing ranges. Metadata uses the immutable Text key
-so gutter queries share the cached parse.
+## How it works
 
-The gutter's foldingChanged predicate observes both fold-service configuration
-and tab width, so setting changes refresh markers without a document edit.
+Heading ranges use metadata cached by immutable document identity; indentation
+uses the configured tab width. The plugin owns the fold state, gutter, service
+and `folded` view-state contribution. A private fold-service compartment updates
+configuration while retaining ranges. Gutter invalidation observes configuration
+and tab width. Disposal captures ranges before removing controls; late enable
+restores valid saved ranges.
+
+## Files
+
+- `manifest.ts`: heading/indent settings and three command contributions.
+- `api.ts`: fold service contract.
+- `webview.ts`: range calculation, gutter, commands and reconfiguration.
+- `view-state.ts`: fold capture, validation, source mapping and restore.
+
+## Services, events and settings
+
+Injects `editor` and `commands`; provides `fold`. No kernel events. Contributes
+`folded` view state. `plugins.folding.enabled`, `folding.heading` and
+`folding.indent` under `markdownWorkbench` default to true. Commands: Fold All,
+Unfold All and Toggle Fold; no default keybindings.
+
+## Limits and differences from Obsidian
+
+Uses CodeMirror's gutter and fold mechanics with VS Code colors. Fold state is
+per panel; two panels of one note may differ. Text and undo remain host-owned.

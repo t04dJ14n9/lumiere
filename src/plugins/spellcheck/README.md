@@ -1,9 +1,26 @@
 # Spellcheck
 
-Owns spellcheck through the editor service. The feature is resource-scoped
-and defaults to on. Disabling disposes its compartment and commands;
-re-enabling installs a fresh instance. No cross-plugin internals are imported.
-Manual acceptance is in docs/MANUAL_TEST_PLAN.md; Obsidian parity is not observed.
+Enables spelling checks in the editable note, corresponding to Obsidian's
+Spellcheck setting.
 
-Sets the contenteditable `spellcheck` attribute. Dictionaries and visible
-underlines are provided by the editor host/OS, not by a bundled dictionary.
+## How it works
+
+The plugin contributes the `spellcheck=true` contenteditable attribute through
+Editor, above the editor's default. Removing the registration restores the default
+without changing other content attributes or editor state.
+
+## Files
+
+- `manifest.ts`: enablement and empty configuration schema.
+- `webview.ts`: owned spellcheck attribute registration.
+
+## Services, events and settings
+
+Injects `editor`; provides no service and listens to/emits no kernel events.
+`markdownWorkbench.plugins.spellcheck.enabled` defaults to true. No commands
+or keybindings.
+
+## Limits and differences from Obsidian
+
+Dictionaries and visible underlines come from the host browser/OS. No dictionary
+or language selector is bundled; availability may differ between VS Code hosts.
