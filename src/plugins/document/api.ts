@@ -1,7 +1,7 @@
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { Endpoint } from "../../shared/rpc/endpoint";
-import type { HostDocument } from "../../shared/runtime";
+import type { HostDocument, SourceEdit } from "../../shared/runtime";
 import type { Disposer } from "../../kernel";
 export interface DocumentSession {
   readonly document: HostDocument;
@@ -41,7 +41,10 @@ declare module "../../kernel/types" {
   }
   interface Events {
     /** @mode emit */ "document/syncStatus": (message: string) => void;
-    /** @mode emit */ "document/changed": (session: DocumentSession) => void;
+    /** @mode emit */ "document/changed": (
+      session: DocumentSession,
+      changes?: readonly SourceEdit[],
+    ) => void;
     /** @mode serial */ "document/willSave": (
       session: DocumentSession,
     ) => void | Promise<void>;

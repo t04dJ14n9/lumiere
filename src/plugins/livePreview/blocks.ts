@@ -1,4 +1,4 @@
-import { StateEffect, StateField } from "@codemirror/state";
+import { StateEffect, StateField, type EditorState } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
@@ -131,4 +131,23 @@ export function blockDecorations(report: (error: unknown) => void) {
     },
     provide: (field) => EditorView.decorations.from(field),
   });
+}
+
+/** Positions inside a replacement remain reachable immediately after its rendered block. */
+export function visiblePosition(
+  state: EditorState,
+  position: number,
+): { position: number; block: boolean } {
+  const block = state
+    .field(blockIndex, false)
+    ?.find((block) => block.from <= position && position < block.to);
+  if (
+    !block ||
+    (block.renderer.editing === "reveal" &&
+      revealed(state, block.from, block.to)) ||
+    block.renderer.showSource?.(state, block)
+  ) {
+    return { position, block: false };
+  }
+  return { position: block.to, block: true };
 }

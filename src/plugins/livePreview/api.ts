@@ -35,6 +35,10 @@ export interface BlockRenderer {
   estimatedHeight?: number;
 }
 export interface LivePreview {
+  visiblePosition?(
+    state: EditorState,
+    position: number,
+  ): { position: number; block: boolean };
   inlineExtensions?(): Extension;
   position?(
     source: string,

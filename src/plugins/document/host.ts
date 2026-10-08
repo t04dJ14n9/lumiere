@@ -33,11 +33,11 @@ export const documentHost: Plugin = {
     ctx.provide("documents", documents);
     ctx.on("document/willSave", (session) => session.flush());
     ctx.effect(() =>
-      ctx.workbench.onChange((document) => {
+      ctx.workbench.onChange((document, changes) => {
         const session = sessions.get(document)?.session;
         if (session) {
           session.changed();
-          ctx.emit("document/changed", session);
+          ctx.emit("document/changed", session, changes);
         }
       }),
     );

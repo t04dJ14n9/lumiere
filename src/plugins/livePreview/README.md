@@ -41,3 +41,6 @@ Source mode retains the inline title. A block covering the whole document has no
 outside destination for Escape. Rendered-position mapping refuses mismatched DOM
 text such as embedded media/math. VS Code owns text/undo; exact visual parity is
 left to the owner's manual comparison.
+
+The `visiblePosition` service query places external badges after replacement
+blocks without exposing renderer internals to marker providers.

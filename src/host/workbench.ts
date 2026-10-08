@@ -103,7 +103,14 @@ function documentOperations(
     },
     onChange(listener) {
       const stop = vscode.workspace.onDidChangeTextDocument((event) =>
-        listener(documents.wrap(event.document)),
+        listener(
+          documents.wrap(event.document),
+          event.contentChanges.map((change) => ({
+            from: change.rangeOffset,
+            to: change.rangeOffset + change.rangeLength,
+            insert: change.text,
+          })),
+        ),
       );
       return () => stop.dispose();
     },

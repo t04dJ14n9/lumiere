@@ -2349,3 +2349,32 @@ Known issues: Phase 4 markers remains. Phase 5 is completed on main; then contin
 Phases 6–8, including suggestion caching/measurement from its record. Manual
 acceptance remains unrun; owner should test table selection references, dirty
 choices, CRLF and switching two panels before command completion first.
+
+### Phase 4 progress — Source markers, 2026-10-08
+
+Delivered: core marker service, caller-owned atomic sets/actions, per-panel
+validated snapshots and activation RPC, plain-text badges and Live Preview
+replacement-aware placement. Exact native source edits (including CRLF and
+separated edits) now accompany `document/changed`; history remaps old-version
+sets and drops deleted ranges. The webview maps wire history and pending local
+updates without double-counting acknowledgements. Snapshot revisions prevent
+late initial replies from replacing newer sets. Provider disposal clears only its
+markers/actions and revokes retained service handles. Bootstrap marks supported
+root services replaceable; no Query folder watcher is included.
+
+Seven new units cover source/wire mapping, deletion/anchors, two panels, owner
+isolation and revocation, atomic limits, core composition/disposal/re-enable and
+replacement-versus-source placement. README/manual/ledger notes updated.
+Checks in order: `pnpm check` **409/409**; browser smoke **14/14**; native smoke
+**1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase4-markers-{check,browser,native}.txt`. Smoke suites unchanged.
+Ledger **91/22/2/333/0**, total 448. No lint exceptions.
+Deviations: source history retains 128 native revisions, wire history 512 changes;
+unknown old versions are rejected instead of guessed. Public markers use native
+source coordinates/versions, while transport converts to normalized positions.
+`livePreview.visiblePosition` exposes placement without cross-plugin imports.
+Known issues: review Phase 4's indexed-search predicate fast path before the
+phase-completing commit; suggestion candidate caching/measurement also remains
+from Claude's Phase 5 record. Then Phases 6–8. Manual marker interactions and
+provider replacement remain unrun; owner should test badges inside rendered
+blocks, two providers/panels, exact disjoint edits and pending local edits first.

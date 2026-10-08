@@ -43,3 +43,6 @@ or separate settings.
 The TextDocument owns saving, EOL and undo. Wire positions are LF-normalized
 UTF-16 offsets. A view must attach before it can flush, and a stale/invalid
 update is checked against native authority rather than overwriting the document.
+
+`document/changed` also carries optional original-source native edits so marker
+providers can preserve ranges between disjoint changes, including CRLF offsets.

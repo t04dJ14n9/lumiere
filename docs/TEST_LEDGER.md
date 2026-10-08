@@ -471,3 +471,7 @@ Copy for Agent adds focused units in `test/unit/copy-for-agent/agent.test.ts` fo
 host-held selection identity, CRLF line references, dirty choices and handler
 lifetimes. Retired source handoff/browser interactions remain manual; no chat or
 PDF export behavior is ported into this Markdown extension.
+
+Generic marker mapping/ownership/composition units are in `test/unit/markers/`.
+Source Query annotation/browser scenarios remain retired and are represented by
+the Source markers manual section; marker actions replace Query-specific paths.

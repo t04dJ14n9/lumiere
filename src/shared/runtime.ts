@@ -29,7 +29,9 @@ export interface PanelPort {
 export interface Workbench {
   fingerprint(text: string): string;
   apply(document: HostDocument, edits: readonly TextEdit[]): Promise<boolean>;
-  onChange(listener: (document: HostDocument) => void): Disposer;
+  onChange(
+    listener: (document: HostDocument, changes?: readonly SourceEdit[]) => void,
+  ): Disposer;
   onSave(listener: (document: HostDocument) => void): Disposer;
   onWillSave(listener: (document: HostDocument) => Promise<void>): Disposer;
   command(id: string, run: () => unknown): Disposer;
@@ -206,4 +208,11 @@ export interface Workbench {
 
 export interface Workbench {
   workspaceFolders?(): readonly string[];
+}
+
+/** Original-source offsets from a native document change, including CR characters. */
+export interface SourceEdit {
+  from: number;
+  to: number;
+  insert: string;
 }

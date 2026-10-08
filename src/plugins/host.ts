@@ -20,3 +20,4 @@ export { suggestHost } from "./suggest/host";
 export { searchHost } from "./search/host";
 export { tagsViewHost } from "./tags/view";
 export { copyForAgentHost } from "./copyForAgent/host";
+export { markersHost } from "./markers/host";

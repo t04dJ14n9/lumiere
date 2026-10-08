@@ -811,3 +811,21 @@ cancelled operations must not copy a fabricated reference. Disable/re-enable the
 plugin and verify commands, title/menu action and RPC go away/return once.
 Save/reopen untitled notes before copying disk references; text-only copy works
 without a disk path. Nothing is submitted to an agent/chat.
+
+## Source markers
+
+Use the sample external plugin (API phase) in an isolated profile and disposable
+vault. Set two providers' markers in two panels of one note. Expect independent
+sets, labels/tooltips rendered as plain text and actions dispatched only to the
+provider that owns the clicked marker. Place markers in paragraphs, tables,
+callouts and fenced blocks: rendered source must not swallow the badge; revealing
+source or toggling Live Preview must reposition it without text changes.
+
+Type before/inside a range, edit two separated regions together, undo/redo, and
+repeat with CRLF and delayed synchronization. Markers should follow exact edits;
+fully deleted ranges disappear. Dispose one provider and confirm only its sets
+and actions vanish; re-enable without duplicates. Try stale/future versions,
+1,001 markers, oversized labels and duplicate IDs: reject atomically. Close a
+pane during action dispatch and confirm the other pane survives. This replaces
+the source's Query annotation UI with generic badges; no vault Query watcher or
+LLM Wiki-specific path opening is included.

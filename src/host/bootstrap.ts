@@ -5,6 +5,7 @@ import type { Workbench } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
 import {
   inlineTitleHost,
+  markersHost,
   copyForAgentHost,
   documentHost,
   editorHost,
@@ -27,7 +28,10 @@ export async function bootstrap(
   workbench: Workbench,
   vaultSystem?: VaultSystem,
 ) {
-  const root = Context.create({ rank: pluginRank });
+  const root = Context.create({
+    rank: pluginRank,
+    replaceable: ["vault", "resources", "markers"],
+  });
   root.provide("workbench", workbench);
   if (vaultSystem) {
     root.provide("vaultSystem", vaultSystem);
@@ -44,6 +48,7 @@ export async function bootstrap(
       }
     },
   });
+  root.plugin(markersHost);
   root.plugin(inlineTitleHost);
   root.plugin(copyForAgentHost);
   root.plugin(dialectHost);

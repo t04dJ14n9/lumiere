@@ -7,6 +7,7 @@ import type { Endpoint } from "../shared/rpc/endpoint";
 import { protocol } from "../plugins/editor/protocol";
 import {
   documentWebview,
+  markersWebview,
   editorWebview,
   dialectWebview,
   commandsWebview,
@@ -23,7 +24,10 @@ export async function bootstrap(
   } = {},
 ) {
   const init = await rpc.call(protocol, "ready", {});
-  const root = Context.create({ rank: pluginRank });
+  const root = Context.create({
+    rank: pluginRank,
+    replaceable: ["resources", "markers"],
+  });
   root.provide("rpc", rpc);
   root.plugin(documentWebview, init);
   root.plugin(dialectWebview);
@@ -34,6 +38,7 @@ export async function bootstrap(
     mode: init.preset === "minimal" ? "source" : init.mode,
   });
   root.plugin(commandsWebview);
+  root.plugin(markersWebview);
   if (init.preset === "obsidian") {
     root.plugin(resourcesWebview);
     root.plugin(renderWebview, { trusted: init.trusted });

@@ -11,6 +11,7 @@ import type {} from "./api";
 import { blockRenderers, inlineRenderers } from "./registry";
 import {
   blockIndex,
+  visiblePosition,
   blockDecorations,
   renderRevision,
   refreshRender,
@@ -59,6 +60,7 @@ function registerEngine(
     },
     inlineExtensions: () => [documentTree, hybridInline],
     position: renderedPosition,
+    visiblePosition,
     block(renderer: Parameters<typeof blockRenderers.of>[0]) {
       return ctx.editor.extend(blockRenderers.of(renderer));
     },

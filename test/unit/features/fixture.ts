@@ -99,13 +99,16 @@ export function fixture() {
         return () => {};
       },
       send(value) {
-        const message = value as { kind: string; id: number };
+        const message = value as { kind: string; id: number; channel: string };
         if (message.kind === "request") {
           queueMicrotask(() =>
             receive({
               kind: "response",
               id: message.id,
-              result: { fragment: "" },
+              result:
+                message.channel === "markers"
+                  ? { version: 0, revision: 0, owners: {} }
+                  : { fragment: "" },
             }),
           );
         }
