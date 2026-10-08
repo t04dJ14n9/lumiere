@@ -26,7 +26,13 @@ export interface PanelPort {
   reveal(): void;
   dispose(): void;
 }
+/**
+ * The VS Code adapter (DESIGN §7.1): every host capability plugins use, as
+ * plain functions that return disposers, so plugins run against a fake in
+ * unit tests. Optional members are absent in fakes and minimal hosts.
+ */
 export interface Workbench {
+  // Documents and saving.
   fingerprint(text: string): string;
   apply(document: HostDocument, edits: readonly TextEdit[]): Promise<boolean>;
   onChange(
@@ -34,33 +40,14 @@ export interface Workbench {
   ): Disposer;
   onSave(listener: (document: HostDocument) => void): Disposer;
   onWillSave(listener: (document: HostDocument) => Promise<void>): Disposer;
+  openDocument?(uri: string): Promise<HostDocument>;
+  renameFile?(document: HostDocument, target: string): Promise<void>;
+  // Commands, clipboard and messages.
   command(id: string, run: () => unknown): Disposer;
   execute(id: string, ...args: unknown[]): Promise<unknown>;
   clipboard: { read(): Promise<string>; write(text: string): Promise<void> };
   error(message: string): void;
-}
-declare module "../kernel/types" {
-  interface Services {
-    rpc: Endpoint;
-    workbench: Workbench;
-  }
-}
-export interface PanelShell {
-  readonly column?: number;
-  readonly id: string;
-  readonly document: HostDocument;
-  readonly transport: Transport;
-  readonly cspSource: string;
-  readonly trusted: boolean;
-  active(): boolean;
-  reveal(): void;
-  dispose(): void;
-  setHTML(html: string): void;
-  asset(relative: string): string;
-  onDispose(listener: () => void): Disposer;
-  onState(listener: () => void): Disposer;
-}
-export interface Workbench {
+  // Editors and settings.
   registerEditor(open: (panel: PanelShell) => void): Disposer;
   onConfiguration?(listener: () => void): Disposer;
   config(document: HostDocument): {
@@ -76,13 +63,42 @@ export interface Workbench {
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
   };
-}
-export interface Workbench {
+  // Files, workspace and storage.
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
+  workspaceFolders?(): readonly string[];
+  isTrusted?(): boolean;
+  storage?: {
+    get<T>(key: string, fallback: T): T;
+    update(key: string, value: unknown): PromiseLike<void>;
+  };
+  workerPath?(name: "search"): string;
+  // Native navigation, views and prompts.
+  navigation?: Navigation;
+  views?: HostViews;
 }
+declare module "../kernel/types" {
+  interface Services {
+    rpc: Endpoint;
+    workbench: Workbench;
+  }
+}
+/** One editor panel as the VS Code adapter hands it to the editor host. */
 export interface PanelShell {
+  readonly column?: number;
+  readonly id: string;
+  readonly document: HostDocument;
+  readonly transport: Transport;
+  readonly cspSource: string;
+  readonly trusted: boolean;
+  active(): boolean;
+  reveal(): void;
+  dispose(): void;
+  setHTML(html: string): void;
+  asset(relative: string): string;
   resource(uri: string): string;
+  onDispose(listener: () => void): Disposer;
+  onState(listener: () => void): Disposer;
 }
 
 export interface NavigationTarget {
@@ -110,17 +126,6 @@ export interface Navigation {
     side: boolean,
     at?: number,
   ): Promise<void>;
-}
-export interface Workbench {
-  navigation?: Navigation;
-  openDocument?(uri: string): Promise<HostDocument>;
-}
-
-export interface Workbench {
-  storage?: {
-    get<T>(key: string, fallback: T): T;
-    update(key: string, value: unknown): PromiseLike<void>;
-  };
 }
 
 /** A node in a native tree view, free of VS Code types. */
@@ -202,29 +207,9 @@ export interface HostViews {
     ) => Promise<readonly FileTextEdits[]>,
   ): Disposer;
 }
-export interface Workbench {
-  views?: HostViews;
-}
-
-export interface Workbench {
-  renameFile?(document: HostDocument, target: string): Promise<void>;
-}
-
-export interface Workbench {
-  workerPath?(name: "search"): string;
-}
-
-export interface Workbench {
-  workspaceFolders?(): readonly string[];
-}
-
 /** Original-source offsets from a native document change, including CR characters. */
 export interface SourceEdit {
   from: number;
   to: number;
   insert: string;
-}
-
-export interface Workbench {
-  isTrusted?(): boolean;
 }

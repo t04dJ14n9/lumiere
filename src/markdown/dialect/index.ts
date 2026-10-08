@@ -46,4 +46,3 @@ export function parseMarkdown(
   }
   return tree;
 }
-export const parseCached = parseMarkdown;

@@ -1,4 +1,5 @@
 import type { Context, Fiber } from "../kernel";
+import { features } from "../plugins/catalog";
 import type { PanelShell, Workbench } from "../shared/runtime";
 import {
   linksHost,
@@ -38,7 +39,11 @@ export function hostFeatures(
         ]) {
           const enabled =
             config.preset === "obsidian" &&
-            (config.features?.[plugin.name]?.enabled ?? true);
+            (config.features?.[plugin.name]?.enabled ??
+              features.some(
+                (manifest) =>
+                  manifest.id === plugin.name && manifest.defaultEnabled,
+              ));
           const previous = active.get(plugin.name);
           if (!enabled && previous) {
             await previous.dispose();
