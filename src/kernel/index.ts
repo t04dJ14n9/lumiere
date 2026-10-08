@@ -1,7 +1,7 @@
 export { Context } from "./context";
 export { Fiber } from "./fiber";
 export type { FiberState } from "./fiber";
-export { Service } from "./services";
+export { Service, bindCaller } from "./services";
 export type { ServiceClass } from "./services";
 export { KernelError } from "./errors";
 export { Schema, ValidationError } from "./schema";
@@ -10,3 +10,4 @@ export type { Logger } from "./logger";
 export type { Services, Events, Plugin, Inject, Disposer } from "./types";
 export { defineProtocol } from "./protocol";
 export type { Protocol } from "./protocol";
+export type { CallerBound } from "./services";

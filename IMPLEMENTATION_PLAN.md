@@ -918,3 +918,22 @@ Known issues: inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/markers,
 then Phases 5–8 remain. Nested vault discovery and the full host index remain
 Phase 5. Cell HTML-paste conversion awaits pasteHtml. Owner manual acceptance,
 including table drag and nested cell presentation, has not run.
+
+### Phase 4 (composition fixes) — 2026-10-08
+
+Delivered (kernel unit): caller-bound service reads through the exported
+`bindCaller` symbol, cached per consumer context and provider identity; injected
+rank ordering for event listeners, with prepend as a slot and stable per-owner
+registration order. Included the owner's uncommitted DESIGN.md changes.
+Violation fixed: event listener priority previously depended on activation
+history; ordering now uses rank and owner ID, including after update/restart.
+Checks: `pnpm check` (201 unit tests passed). Smoke suites deferred until the
+last composition commit, as requested. Log: `docs/checks/composition-kernel.txt`.
+Ledger: 87/15/2/333/11 (ported/rewritten/changed/retired/todo).
+Deviations from DESIGN.md: tied ranks sort by owner ID, allowing all external
+plugins to share the rank after built-ins while remaining deterministic.
+Known issues: composition still needs bootstrap catalog ranks, ordered editor
+registry and caller forwarding, editor settings, view-state contributions,
+folding ownership/reconfiguration/cache fix, controller updates, catalog-wide
+composition tests and plugin audit/manual scenarios. Then Phase 4 inlineTitle,
+tags/suggest/search, pasteHtml/copyForAgent/markers and Phases 5–8 remain.

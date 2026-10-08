@@ -3,19 +3,22 @@ import { EventBus } from "./events";
 import { Fiber } from "./fiber";
 import { silentLogger, taggedLogger } from "./logger";
 import type { Logger } from "./logger";
-import { asPlugin } from "./services";
-import type { ServiceClass } from "./services";
+import { asPlugin, bindCaller } from "./services";
+import type { CallerBound, ServiceClass } from "./services";
 import type { Disposer, EventFunction, Events, Plugin, Services } from "./types";
 type Provider = { ctx: Context; value: unknown };
 export class Runtime {
-  readonly events = new EventBus();
+  readonly events: EventBus;
   readonly fibers = new Set<Fiber<unknown>>();
   readonly providers = new Map<keyof Services, Provider[]>();
   readonly jobs = new Set<Promise<unknown>>();
   constructor(
     readonly logger: Logger,
     readonly replaceable: ReadonlySet<keyof Services>,
-  ) {}
+    readonly rank: (owner: string) => number = () => 0,
+  ) {
+    this.events = new EventBus(rank);
+  }
   value(name: keyof Services): unknown {
     return this.providers.get(name)?.at(-1)?.value;
   }
@@ -40,6 +43,7 @@ export class Context {
   readonly children: Fiber<unknown>[] = [];
   private readonly effects: Disposer[] = [];
   private readonly offered = new Map<keyof Services, unknown>();
+  private readonly bound = new Map<unknown, unknown>();
   private live = true;
   private published = false;
   constructor(
@@ -63,14 +67,22 @@ export class Context {
             "UndeclaredService",
             `${fiber?.definition.name ?? "root"} did not inject ${key}`,
           );
-        return runtime.value(name);
+        const value = runtime.value(name);
+        if (value && (typeof value === "object" || typeof value === "function") &&
+            bindCaller in value && typeof value[bindCaller] === "function") {
+          if (!target.bound.has(value)) {
+            target.bound.set(value, (value as CallerBound)[bindCaller](receiver));
+          }
+          return target.bound.get(value);
+        }
+        return value;
       },
     });
   }
   static create(
-    options: { logger?: Logger; replaceable?: readonly (keyof Services)[] } = {},
+    options: { logger?: Logger; replaceable?: readonly (keyof Services)[]; rank?: (owner: string) => number } = {},
   ): Context {
-    return new Context(new Runtime(options.logger ?? silentLogger, new Set(options.replaceable)));
+    return new Context(new Runtime(options.logger ?? silentLogger, new Set(options.replaceable), options.rank));
   }
   assertLive(): void {
     if (!this.live) throw new KernelError("Disposed", "Context is disposed");
@@ -125,7 +137,7 @@ export class Context {
     listener: EventFunction<K>,
     options?: { prepend?: boolean },
   ): Disposer {
-    return this.effect(() => this.runtime.events.on(name, listener, this.logger, options?.prepend));
+    return this.effect(() => this.runtime.events.on(name, listener, this.logger, options?.prepend, this.fiber?.definition.name ?? "root"));
   }
   emit<K extends keyof Events>(name: K, ...args: Parameters<EventFunction<K>>): void {
     this.assertLive();
@@ -175,6 +187,7 @@ export class Context {
           stack.filter((p) => p.ctx !== this),
         );
     }
+    this.bound.clear();
     this.runtime.changed();
   }
 }

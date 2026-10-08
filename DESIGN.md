@@ -268,6 +268,14 @@ export function apply(ctx: Context, config: BacklinksConfig): void {
 - Services expose disposable registrations (`register(...)` returns a
   `Disposer`). Consumers wrap them in `ctx.effect` so they are undone with the
   consumer's fiber.
+- A service can be **caller-bound**, Cordis's way of tracing the calling
+  context. If the provided value has a `[bindCaller](caller)` method (the
+  symbol is exported by the kernel), a consumer that reads the service through
+  its own context gets `value[bindCaller](caller)`, cached per consumer
+  context, instead of the shared value. `caller` exposes the consumer's plugin
+  name and logger. That is how `editor.extend` and `livePreview.block` know
+  which plugin owns a registration, without call sites passing their own
+  name.
 
 ### 5.5 Events
 
@@ -277,8 +285,8 @@ sites).
 
 | Mode | Awaited | Behaviour | Typical use |
 | --- | --- | --- | --- |
-| `emit` | no | every listener, registration order, errors isolated | notifications |
-| `serial` | yes | one at a time, in order | `document/willSave` |
+| `emit` | no | every listener, in rank order (§5.10), errors isolated | notifications |
+| `serial` | yes | one at a time, in rank order | `document/willSave` |
 | `parallel` | yes | all at once | `vault/indexed` |
 | `bail` | no | stop at the first non-`undefined` result | `links/open`, `render/fence` |
 | `waterfall` | yes | each listener transforms the value | `paste/transform` |
@@ -362,6 +370,48 @@ Keep Cordis's names and semantics (`plugin`, `inject`, `provide`, `effect`,
 so that moving to `cordis` later is a mechanical change. `src/kernel/README.md`
 records every intentional difference. The kernel has its own conformance tests
 (§21.1).
+
+### 5.10 Composition rules
+
+Plugins compose across time and across the editor: enabling, disabling and
+reconfiguring plugins, in any order, gives the same result. Every plugin
+follows these rules, and unit tests check them (§21.1).
+
+1. **The outcome depends on the set, not the history.** What the editor does
+   depends only on which plugins are enabled and their configs, never on the
+   order they loaded or were toggled. Turning a plugin off and on, or changing
+   its config, gives the same editor as a fresh start with the same settings:
+   the same gutter order, the same key priority, the same decorations.
+2. **Order comes from rank, not time.** Wherever order matters (CodeMirror
+   extensions, render hooks, event listeners whose order is visible),
+   registrations sort by `(slot, owner rank, registration order within the
+   owner's apply)`. Owner rank is the plugin's position in the catalog (core
+   plugins first, then `features` in `src/plugins/catalog.ts`). Plugins from
+   outside extensions rank after built-ins, by plugin ID. The bootstrap gives
+   the runtime a rank function (`Context.create({ rank })`), and both the
+   event bus and the editor's extension registry use it, so there is one
+   source of order. For events, `prepend: true` acts as a slot: prepended
+   listeners run first, each group in rank order. The catalog order is
+   deliberate and commented where it matters: for example, `lineNumbers`
+   comes before `folding` so line numbers sit to the left of fold markers, as
+   in VS Code.
+3. **A plugin owns only what it says it does.** Editor-wide settings with one
+   winner (`indentUnit`, `EditorState.tabSize`, line wrapping, read-only)
+   belong to the `editor` core plugin and come from its settings (§15:
+   `editor.useTabs`, `editor.tabSize`). A feature plugin never sets them. A
+   plugin that needs to change one asks the owning service through an API
+   that composes (as `spellcheck` overrides the `spellcheck` content
+   attribute at a higher precedence than the editor's default).
+4. **A plugin's state lives in the plugin.** State that exists only because a
+   plugin is enabled (folded ranges, a table's selection, a suggestion list)
+   is created, saved and restored by that plugin, not by core. Core offers
+   extension points (for example, view-state contributions in §9.2) instead
+   of knowing about features.
+5. **Config changes go through `update`.** The settings controller calls
+   `fiber.update(config)`; it never disposes and recreates a fiber itself.
+   Plugins whose config can change cheaply implement `reconfigure` (usually by
+   reconfiguring a compartment of their own) so the change keeps user state,
+   such as folds.
 
 ## 6. Plugin packaging
 
@@ -475,7 +525,7 @@ quick pick of states for the active editor. `setPluginEnabled` and
 | `menu` | webview | `editor` | In-editor menus (tables, properties, chips) |
 | `markers` | both | `markers` | Source-bound badges from plugins and the API (§18.3) |
 | `agent` | host | `copyForAgent` | Agent references for selections (§17) |
-| `fold` | webview | `folding` | Heading and indent folds, persisted per view |
+| `fold` | webview | `folding` | Heading and indent folds, persisted per view through a view-state contribution (§9.2) |
 
 `vault`, `resources` and `markers` are `replaceable`: an outside plugin (for
 example LLM Wiki) may provide a richer implementation that implements the same
@@ -601,9 +651,27 @@ keymap…"). The new `editor` plugin:
 
 - creates the `EditorView` after `init`, with the base extensions only:
   `collab` (from `document`), the language (from `dialect`), selection drawing,
-  line wrapping, content attributes and base keymap;
-- gives each fiber a `Compartment`. `ctx.editor.extend(extension, { slot })`
-  reconfigures that compartment, and the fiber's disposal empties it;
+  line wrapping, content attributes, base keymap, and the editor-wide settings
+  it owns (`indentUnit` and `EditorState.tabSize` from `editor.useTabs` and
+  `editor.tabSize`, §5.10 rule 3);
+- keeps plugin extensions in an ordered registry, not in compartments
+  appended over time. `editor` is caller-bound (§5.4), so
+  `ctx.editor.extend(extension, { slot })` records the calling plugin as
+  owner. The registry sorts by slot, owner rank and registration order within
+  the owner (§5.10 rule 2), and reconfigures one plugin-extensions compartment
+  with the sorted list. Disposing a registration removes it and reconfigures
+  again. CodeMirror keeps the state of fields and view plugins that remain in
+  the configuration, so other plugins are unaffected. A plugin may also
+  register on another plugin's behalf with an explicit owner, as
+  `livePreview.block` does for its callers. The ordering logic is a pure
+  module (`editor/extensions.ts`), unit-tested on `EditorState`;
+- offers **view-state contributions**:
+  `ctx.editor.viewState.contribute(key, { schema, capture(view), restore(view, value) })`.
+  The editor saves each contribution under its key with the panel's view
+  state, restores it when the contributor registers (including when a plugin
+  is enabled after the panel opened), and carries keys with no live
+  contributor over unchanged. Folded ranges are the `folding` plugin's
+  contribution, not core state;
 - has named precedence slots instead of comments:
 
 | Slot | Precedence | Used by |
@@ -1302,7 +1370,13 @@ comparison with Obsidian. Record raw samples with each result.
 
 - Kernel conformance: lifecycle transitions, gating and re-gating, service
   replacement, effect order, event modes, error isolation, `update` and
-  `reconfigure`, child disposal, `UndeclaredService`.
+  `reconfigure`, child disposal, `UndeclaredService`, caller-bound services.
+- Composition (§5.10): for every feature plugin, toggling it off and on and
+  changing its config each leave the editor's ordered extension list equal to
+  a fresh start with the same settings. Seeded random sequences of toggles
+  over all features end equal to a fresh start. No feature plugin sets an
+  editor-wide setting with one winner. Disabling a plugin removes its
+  view-state contribution and leaves other plugins' state intact.
 - Pure modules: dialect, metadata, footnotes, properties YAML edits and
   ordering, tables model and operations, search parse and evaluate, fuzzy
   scoring, authority and coordinates, RPC schemas, agent reference format.

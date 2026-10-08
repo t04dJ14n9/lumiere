@@ -1,18 +1,22 @@
 import type { Disposer, EventFunction, Events } from "./types";
 import type { Logger } from "./logger";
-type Listener = { run: (...args: never[]) => unknown; logger: Logger };
+type Listener = { run: (...args: never[]) => unknown; logger: Logger; owner: string; slot: number };
 export class EventBus {
   private readonly listeners = new Map<keyof Events, Listener[]>();
+  constructor(private readonly rank: (owner: string) => number = () => 0) {}
   on<K extends keyof Events>(
     name: K,
     run: EventFunction<K>,
     logger: Logger,
     prepend = false,
+    owner = "root",
   ): Disposer {
-    const entry = { run: run as Listener["run"], logger };
+    const entry = { run: run as Listener["run"], logger, owner, slot: prepend ? 0 : 1 };
     const list = this.listeners.get(name) ?? [];
-    if (prepend) list.unshift(entry);
-    else list.push(entry);
+    list.push(entry);
+    // Stable sort retains registration order inside each owner's slot.
+    list.sort((a, b) => a.slot - b.slot || this.rank(a.owner) - this.rank(b.owner) ||
+      (a.owner < b.owner ? -1 : a.owner > b.owner ? 1 : 0));
     this.listeners.set(name, list);
     return () => {
       const i = list.indexOf(entry);

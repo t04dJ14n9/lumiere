@@ -36,3 +36,14 @@ Intentional differences from Cordis:
 
 External service isolation is implemented at the API boundary in Phase 7;
 ordinary child plugins share this kernel's service tree.
+
+Composition uses `Context.create({ rank })`: rank is the catalog position of
+an owner. Events sort by prepend slot, rank, then owner ID (for tied ranks),
+keeping registration order within an owner. Restarting a fiber cannot move its
+listeners behind another owner. Equal-rank external owners sort by ID.
+
+A service can implement the exported `[bindCaller](context)` symbol to return a
+consumer facade. Reads still require declared injection; the facade is cached
+by provider identity within the consuming context. The hook receives that actual
+context, including its fiber name and tagged logger. Replacement and restart get
+fresh caches; ordinary services retain their shared identity.

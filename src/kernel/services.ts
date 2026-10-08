@@ -1,5 +1,10 @@
 import type { Context } from "./context";
 import type { Inject, Plugin, Services } from "./types";
+/** Optional service hook: resolve a facade for the context reading the service. */
+export const bindCaller = Symbol("bindCaller");
+export interface CallerBound<T = unknown> {
+  [bindCaller](caller: Context): T;
+}
 export abstract class Service<C = void> {
   static readonly inject?: Inject;
   constructor(
