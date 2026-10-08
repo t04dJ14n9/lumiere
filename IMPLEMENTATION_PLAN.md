@@ -1919,3 +1919,21 @@ the backlog. Finish remaining README/manual inventory and readability completion
 checks, then Phase 4 inlineTitle/tags/suggest/search/pasteHtml/copyForAgent/markers.
 Claude owns remaining Phase 5 consumers/styling; its completion record must precede
 Phase 6. Phases 6–8 remain as specified above.
+
+### Readability pass progress — Native navigation, 2026-10-08
+
+Delivered: separate local-realpath and virtual-symlink containment, resolution,
+note creation and native opening operations. The existing five-argument Navigation
+contract is adapted with its typed parameter tuple to named internal options;
+callers (including Claude's vault registry) and VaultIndex remain unchanged.
+No pure algorithm added, no behavior fixes, exemptions or inline disables.
+Backlog: 10 → 9 distinct files; long-function 10 → 9; complexity 4 → 3;
+parameters 2 → 1; other counts unchanged.
+Checks in order: `pnpm check` 344/344; `pnpm test:browser` 14/14;
+`pnpm test:vscode` 1/1, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/readability-navigation-{check,browser,native}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Manual inventory updated; acceptance unrun.
+Known issues: markdown/search/canvas; embeds image-dialog/image/post-process/webm/
+webview; livePreview inline/rendered-position/webview; remaining README/manual
+inventory and readability completion checks. Then remaining Phase 4 plugins,
+Claude's Phase 5 completion gate, and Phases 6–8 as specified above.

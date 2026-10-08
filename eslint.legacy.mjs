@@ -4,7 +4,6 @@
 // one: new and ported code complies from the start.
 export default {
   "max-lines-per-function": [
-    "src/host/navigation.ts",
     "src/markdown/search/canvas.ts",
     "src/plugins/embeds/image-dialog.ts",
     "src/plugins/embeds/image.ts",
@@ -16,7 +15,6 @@ export default {
     "src/plugins/livePreview/webview.ts",
   ],
   complexity: [
-    "src/host/navigation.ts",
     "src/markdown/search/canvas.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/livePreview/inline.ts",

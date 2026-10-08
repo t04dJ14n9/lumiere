@@ -644,3 +644,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   commands. Change link settings without reopening; disable/re-enable during
   initial RPC. Confirm external-scheme prompts and unsafe-scheme rejection.
   Not run by the agent.
+
+- **Native navigation:** rerun link opening/creation, configured new-note folders,
+  folder notes, Explorer folder reveal, side opens and fragments/offsets. Check
+  local symlink escapes, missing parent paths and virtual-filesystem symlinks.
+  The navigation contract remains unchanged. Not run by the agent.
