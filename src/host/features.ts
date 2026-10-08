@@ -1,6 +1,11 @@
 import type { Context, Fiber } from "../kernel";
 import type { PanelShell, Workbench } from "../shared/runtime";
-import { linksHost, tasksHost, propertiesHost } from "../plugins/host";
+import {
+  linksHost,
+  tasksHost,
+  propertiesHost,
+  tagsHost,
+} from "../plugins/host";
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
 export function hostFeatures(
@@ -21,7 +26,7 @@ export function hostFeatures(
           return;
         }
         const config = workbench.config(panel.document);
-        for (const plugin of [linksHost, tasksHost, propertiesHost]) {
+        for (const plugin of [linksHost, tasksHost, propertiesHost, tagsHost]) {
           const enabled =
             config.preset === "obsidian" &&
             (config.features?.[plugin.name]?.enabled ?? true);

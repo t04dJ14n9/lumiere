@@ -15,3 +15,4 @@ export { quickSwitcherHost } from "./quickSwitcher/host";
 export { wordCountHost } from "./wordCount/host";
 export { linkUpdatesHost } from "./linkUpdates/host";
 export { inlineTitleHost } from "./inlineTitle/host";
+export { tagsHost } from "./tags/host";

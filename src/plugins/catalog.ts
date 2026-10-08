@@ -1,4 +1,5 @@
 import inlineTitle from "./inlineTitle/manifest";
+import tags from "./tags/manifest";
 import tables from "./tables/manifest";
 import properties from "./properties/manifest";
 import pagePreview from "./pagePreview/manifest";
@@ -39,6 +40,7 @@ export const features: readonly Manifest[] = [
   math,
   codeBlocks,
   links,
+  tags,
   formatting,
   // Match VS Code: line numbers to the left of fold markers.
   lineNumbers,

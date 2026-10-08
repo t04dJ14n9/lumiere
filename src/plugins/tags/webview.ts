@@ -1,0 +1,129 @@
+import { EditorView, ViewPlugin } from "@codemirror/view";
+import type { Context, Plugin } from "../../kernel";
+import type {} from "../editor/api";
+import type {} from "../livePreview/api";
+import type {} from "../render/api";
+import { validTag } from "../../markdown/tags/grammar";
+import { TagWidget } from "./widget";
+import { protocol } from "./protocol";
+export const tagsWebview: Plugin = {
+  name: "tags",
+  inject: { required: ["editor", "livePreview", "rpc"] },
+  apply(ctx) {
+    const search = (tag: string) => {
+      void ctx.rpc
+        .call(protocol, "search", { tag })
+        .catch((error) => ctx.logger.warn("Tag search failed", error));
+    };
+    registerTagRenderer(ctx, search);
+    registerTagControls(ctx, search);
+    registerDelegatedTags(ctx, search);
+    ctx.effect(() =>
+      ctx.editor.extend(
+        EditorView.baseTheme({
+          ".md-tag": {
+            color: "var(--vscode-textLink-foreground)",
+            background: "var(--vscode-badge-background)",
+            border: "0",
+            borderRadius: "4px",
+            padding: "0 4px",
+            cursor: "pointer",
+            font: "inherit",
+          },
+        }),
+      ),
+    );
+  },
+};
+function registerTagRenderer(
+  ctx: Context,
+  search: (tag: string) => void,
+): void {
+  ctx.effect(() =>
+    ctx.livePreview.inline({
+      nodes: ["Tag"],
+      decorate(node, cx) {
+        if (!cx.revealed(node.from, node.to)) {
+          cx.replace(
+            node.from,
+            node.to,
+            new TagWidget(cx.state.sliceDoc(node.from + 1, node.to), search),
+          );
+        }
+      },
+    }),
+  );
+}
+function registerTagControls(
+  ctx: Context,
+  search: (tag: string) => void,
+): void {
+  const cleanups = new Set<() => void>();
+  ctx.effect(() => () => {
+    for (const stop of cleanups) {
+      stop();
+    }
+    cleanups.clear();
+  });
+  ctx.on("render/postProcess", (pass) => {
+    const events = new AbortController();
+    const controls = [
+      ...pass.container.querySelectorAll<HTMLButtonElement>("button[data-tag]"),
+    ];
+    const stop = () => {
+      events.abort();
+      for (const button of controls) {
+        button.disabled = true;
+      }
+      cleanups.delete(stop);
+    };
+    cleanups.add(stop);
+    pass.onDispose(stop);
+    for (const button of controls) {
+      const tag = button.dataset.tag;
+      if (!validTag(tag)) {
+        button.disabled = true;
+        continue;
+      }
+      button.addEventListener(
+        "click",
+        (event) => {
+          event.stopPropagation();
+          search(tag);
+        },
+        { signal: events.signal },
+      );
+    }
+  });
+}
+
+/** Reconciled widget content (such as Properties) can emit the same tag placeholders. */
+function registerDelegatedTags(
+  ctx: Context,
+  search: (tag: string) => void,
+): void {
+  ctx.effect(() =>
+    ctx.editor.extend(
+      ViewPlugin.define((view) => {
+        const events = new AbortController();
+        view.dom.addEventListener(
+          "click",
+          (event) => {
+            const button =
+              event.target instanceof Element
+                ? event.target.closest<HTMLButtonElement>("button[data-tag]")
+                : null;
+            if (!button || button.disabled || !validTag(button.dataset.tag)) {
+              return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            search(button.dataset.tag);
+          },
+          { signal: events.signal },
+        );
+        return { destroy: () => events.abort() };
+      }),
+    ),
+  );
+}

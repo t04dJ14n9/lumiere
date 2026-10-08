@@ -705,3 +705,21 @@ Use a disposable copy of `test/fixtures/vault/Core.md` (never an owner vault).
 
 These scenarios are documented, not run by the agent. The existing native smoke
 only proves boot, typing, save and undo; it does not substitute for rename testing.
+
+## Tags (Phase 4 editor/search)
+
+In a disposable copy of `Core.md`, add `#project`, `#Project/notes`, a Unicode tag,
+and YAML `tags: [project]`; create a second fixture note with `#projectile`.
+
+- Click rendered tags in prose, a callout, table, footnote and embedded note.
+  A native picker lists matching notes; parent tags include descendants regardless
+  of case, but `project` does not match `projectile`. Selecting opens the note.
+- Code, escaped hashes, comments and numeric-only tags remain literal. Caret
+  reveal shows source; disabling Tags removes inline widgets and click handlers.
+  Re-enable and verify other feature order/state remains unchanged.
+- Edit a YAML/inline tag in another panel and wait for indexing; repeat the
+  search. Excluded notes must be omitted. No new whole-workspace scan occurs.
+- Disable Tags while a picker is open; selecting a stale result must not open it.
+  Native hierarchical Tags view scenarios belong to Phase 5.
+
+These scenarios are documented, not run by the agent.

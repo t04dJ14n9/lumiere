@@ -847,6 +847,12 @@
           "scope": "resource",
           "description": "Edit Markdown tables as grids with projected cell editing."
         },
+        "markdownWorkbench.plugins.tags.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Render tags and find notes with matching hierarchical tags."
+        },
         "markdownWorkbench.plugins.tasks.enabled": {
           "type": "boolean",
           "default": true,

@@ -2152,3 +2152,23 @@ Checks in order: `pnpm check` 362/362; `pnpm test:browser` 14/14;
 Ledger unchanged: 87/19/2/333/7. No lint exceptions. Manual acceptance unrun.
 Known issues: continue Phase 4 tags/suggest/search/pasteHtml/copyForAgent/markers;
 Claude's Phase 5 completion gate still precedes Phases 6–8.
+
+### Phase 4 progress — Tags, 2026-10-08
+
+Delivered: inline tag widgets, rendered/shared-placeholder click handling and
+validated tag search RPC. Host results use VaultIndex metadata (YAML, inline and
+footnote tags), case-insensitive descendant matching, excluded-file filtering and
+fuzzy quick-pick queries; opening uses the contained native navigation adapter.
+Listeners/widgets/RPC dispose with the feature. Added indexed-search and host
+lifecycle units, catalog composition coverage, README and manual scenarios.
+The original tag RPC assertions now target the new schema.
+Checks in order: `pnpm check` **365/365**; `pnpm test:browser` **14/14**;
+`pnpm test:vscode` **1/1**, isolated fresh VSIX. Logs:
+`docs/checks/phase4-tags-{check,browser,native}.txt`.
+Ledger: **87/20/2/333/6**, total 448. No smoke expansion or lint exceptions.
+Deviations: native quick pick instead of an in-editor results pane; indexed
+metadata replaces the source's filesystem scan as designed. The hierarchical
+Tags view remains Claude's Phase 5 work; its interface was not changed.
+Known issues: Phase 4 suggest, search, pasteHtml (including cells), copyForAgent
+and markers remain. Phase 5 completion must be on main before Phase 6; Phases 6–8
+remain as planned. Owner tag/native interaction acceptance has not run.

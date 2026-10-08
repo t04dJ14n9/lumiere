@@ -72,7 +72,7 @@ for (const manifest of features) {
     }
     const activeHooks = await renderHooks(f.root);
     if (
-      ["codeBlocks", "math", "callouts", "tasks", "embeds"].includes(
+      ["codeBlocks", "math", "callouts", "tasks", "embeds", "tags"].includes(
         manifest.id,
       )
     ) {

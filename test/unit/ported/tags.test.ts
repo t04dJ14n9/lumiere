@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { noteTags } from "../../../src/markdown/metadata/tags";
 import { tagMatches, validTag } from "../../../src/markdown/tags/grammar";
+import { protocol } from "../../../src/plugins/tags/protocol";
 import { createRenderer } from "../../../src/markdown/html";
 const { renderMarkdown } = createRenderer();
 
@@ -18,6 +19,13 @@ test("tags combine Markdown and YAML while excluding code, escapes, comments and
   assert.equal(validTag("two words"), false);
   assert.equal(validTag("Project/Notes"), true);
   assert.equal(validTag("bad\nquery"), false);
+  assert.equal(
+    protocol.requests.search.params.parse({ tag: "Project/Notes" }).tag,
+    "Project/Notes",
+  );
+  assert.throws(() =>
+    protocol.requests.search.params.parse({ tag: "bad\nquery" }),
+  );
 });
 
 test("rendered tag controls preserve hierarchy and leave code literal", () => {

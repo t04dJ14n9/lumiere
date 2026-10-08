@@ -102,7 +102,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `unit/table-operations.test.ts` | clearing inline formatting retains comment contents, links and escaped literals | ported | `src/plugins/formatting/formatting.test.ts` |
 | `unit/tag-tree.test.ts` | tag hierarchy merges case variants and counts each note once in parent totals | ported | `test/unit/ported/tag-tree.test.ts` |
 | `unit/tag-tree.test.ts` | flat tags retain full paths while frequency sorting orders each level | ported | `test/unit/ported/tag-tree.test.ts` |
-| `unit/tags.test.ts` | tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags | todo | `test/unit/ported/tags.test.ts`; pure assertions pass; original tag RPC assertions await Phase 4 schema |
+| `unit/tags.test.ts` | tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags | rewritten | `test/unit/ported/tags.test.ts`; grammar plus validated tags RPC |
 | `unit/tags.test.ts` | rendered tag controls preserve hierarchy and leave code literal | rewritten | `test/unit/ported/tags.test.ts`; unified metadata/factory API (same behaviour) |
 | `unit/tags.test.ts` | tags in footnote definitions remain searchable | rewritten | `test/unit/ported/tags.test.ts`; unified metadata/factory API (same behaviour) |
 | `unit/task.test.ts` | task markers preserve quote prefixes, ordered lists and custom status | ported | `test/unit/ported/task.test.ts` |
