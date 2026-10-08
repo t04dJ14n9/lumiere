@@ -1771,3 +1771,20 @@ Known issues: remaining 23 backlog files, README/manual inventory and ordered
 readability completion checks, then the remaining Phase 4 plugins. Claude's
 Phase 5 is incomplete; Phases 6–8 remain gated. Owner composition/manual scenarios
 are documented but unrun.
+
+### Readability pass progress — Metadata collection, 2026-10-08
+
+Delivered: metadata entry point owns caching and assembly; collect.ts owns
+reference definitions and syntax collection with separate wiki/Markdown/list
+operations; block-extract.ts owns block-ID targeting and opaque-syntax exclusion.
+Footnote bodies retain offset mapping into original source. Added two units for
+footnote links/tags/list parents, standalone/opaque block IDs and alias forms.
+Backlog: 23 → 22 distinct files; long-function 21 → 20; complexity 10 → 9;
+nested-ternary 7 → 6; other counts unchanged. No new exceptions or behavior fixes.
+Checks: `pnpm check` 337/337; log `docs/checks/readability-metadata-check.txt`.
+Smoke suites not rerun: pure metadata only. Ledger: 87/16/2/333/10.
+Deviations: none. Existing Footnotes/Properties/core manual scenarios cover
+consumers; owner acceptance remains unrun.
+Known issues: remaining 22 backlog files, README/manual inventory and ordered
+readability completion checks; Phase 4 remaining plugins, Claude's incomplete
+Phase 5 handoff, then Phases 6–8 as specified above.

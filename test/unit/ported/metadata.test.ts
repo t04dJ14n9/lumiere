@@ -64,3 +64,42 @@ test("renderer instances isolate line-break configuration and emit generic fence
     /properties|<input/,
   );
 });
+
+test("footnote metadata maps links, tags and nested list parents back to source", () => {
+  const source =
+    "Text[^a]\n\n[^a]: [[Note]] #inside\n    - parent\n      - [x] child [site][r]\n\n[r]: target.md\n";
+  const note = metadata(source);
+  assert.deepEqual(
+    note.links.map((link) => link.link),
+    ["Note", "target.md"],
+  );
+  for (const link of note.links) {
+    assert.equal(
+      source.slice(link.position.start.offset, link.position.end.offset),
+      link.original,
+    );
+  }
+  const tag = note.tags.find((tag) => tag.tag === "inside");
+  assert.ok(tag);
+  assert.equal(
+    source.slice(tag.position.start.offset, tag.position.end.offset),
+    "#inside",
+  );
+  const child = note.listItems.find((item) => item.task === "x");
+  assert.equal(child?.parent, 3);
+});
+
+test("block IDs exclude opaque syntax and standalone IDs target preceding blocks", () => {
+  const source =
+    "Paragraph\n\n^standalone\n\n$$\nx ^math\n$$\n\n%% hidden ^comment\n%%\n\n```\ncode ^code\n```\n";
+  const note = metadata(source);
+  assert.equal(note.blocks.standalone?.text, "Paragraph");
+  assert.equal(note.blocks.math, undefined);
+  assert.equal(note.blocks.comment, undefined);
+  assert.equal(note.blocks.code, undefined);
+  assert.deepEqual(metadata("---\naliases: [one, 2, two]\n---").aliases, [
+    "one",
+    "two",
+  ]);
+  assert.deepEqual(metadata("---\nalias: only\n---").aliases, ["only"]);
+});
