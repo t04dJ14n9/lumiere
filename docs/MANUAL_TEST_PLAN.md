@@ -629,3 +629,7 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   and Footnotes scenarios in trusted and untrusted workspaces. Dispose a widget
   during preprocessing/lazy loading and verify stale content cannot overwrite its
   replacement. Confirm remote media/iframes follow trust. Not run by the agent.
+
+- **Resources:** rerun contained resources, nested embeds, previews and unsaved
+  embedded-note edits. Confirm relative nested links and mtime URLs, refusal of
+  unknown source identities, realpath escapes and virtual symlinks. Not run here.

@@ -18,7 +18,6 @@ export default {
     "src/plugins/livePreview/inline.ts",
     "src/plugins/livePreview/rendered-position.ts",
     "src/plugins/livePreview/webview.ts",
-    "src/plugins/resources/host.ts",
     "src/webview/ui/menu.ts",
   ],
   complexity: [
@@ -40,7 +39,6 @@ export default {
     "src/markdown/search/query.ts",
     "src/plugins/embeds/image.ts",
     "src/plugins/livePreview/rendered-position.ts",
-    "src/plugins/resources/host.ts",
   ],
   "no-restricted-syntax": [],
 };

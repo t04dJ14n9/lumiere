@@ -1835,3 +1835,20 @@ Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
 Known issues: remaining 16 backlog files, README/manual inventory and readability
 completion checks; remaining Phase 4 plugins, Claude's incomplete Phase 5 handoff
 and Phases 6–8 as specified above.
+
+### Readability pass progress — Resources, 2026-10-08
+
+Delivered: NoteResources owns each panel's known sources, authorization, contained
+stat/read operations and resource classification. Host apply registers the service
+and RPC. Kept the VaultIndex interface unchanged, realpath/virtual-symlink checks,
+unsaved native text and mtime URLs. Added a kind-precedence/fallback unit; README
+and manual regressions updated without the obsolete snapshot-resolver claim.
+Backlog: 16 → 15 distinct files; long-function 16 → 15; nested-ternary 5 → 4;
+other counts unchanged. No new exceptions or intentional behavior fixes.
+Checks in order: `pnpm check` 340/340; `pnpm test:browser` 14/14;
+`pnpm test:vscode` 1/1, freshly packaged in the isolated /tmp profile.
+Logs: `docs/checks/readability-resources-{check,browser,native}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: remaining 15 backlog files and README/manual inventory before
+readability completion checks, remaining Phase 4 plugins, Claude's incomplete
+Phase 5 handoff and Phases 6–8 as specified above.
