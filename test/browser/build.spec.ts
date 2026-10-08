@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { servePage } from "./page-server";
 test("the production webview entry loads in Chromium", async ({ page }) => {
-  await page.setContent('<main id="editor"></main>');
+  await servePage(page, '<main id="editor"></main>');
   await page.evaluate(() => {
     Object.assign(window, {
       acquireVsCodeApi: () => ({
@@ -17,7 +17,7 @@ test("the production webview entry loads in Chromium", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error));
   await page.addScriptTag({
     type: "module",
-    content: readFileSync("dist/webview/editor.js", "utf8"),
+    url: "http://editor.test/dist/webview/editor.js",
   });
   await expect(page.locator("#editor")).toBeVisible({ visible: false });
   expect(errors).toEqual([]);

@@ -694,3 +694,20 @@ policy stays in links. Dangerous executable schemes are refused outright.
 Known issues: Phase 4 steps 4–10 remain, followed by Phases 5–8. Index-backed
 unresolved styling, fresh resolution and new-link-format consumers remain
 Phase 5 work. Manual acceptance has not run. No phase-completion claim.
+
+### Phase 4 progress — Code Blocks, 2026-10-07
+
+Delivered: codeBlocks plugin, lazy Prism grammars, editable-fence highlighting,
+rendered copy and highlighted-click source mapping. Shared Markdown widget helper
+and renderer-identity-aware reuse keep plugin replacement correct. Pass cleanup
+removes buttons, highlighting and async work. Added offset and toggle unit coverage.
+Checks: `pnpm check` (167 unit tests passed), `pnpm test:browser` (14/14).
+Native smoke not rerun: no native wiring changed since the links 1/1 result.
+Logs: `docs/checks/phase4-codeblocks-{check,browser}.txt`.
+Ledger: 84/14/2/334/14; source code-block scenarios remain retired and are covered
+by the new manual section.
+Deviations: browser smoke setup now uses the production Prism build plugin and
+loads the production entry over its existing fixture server so split ESM chunks
+resolve. Test count and assertions are unchanged. No source suite was added.
+Known issues: Phase 4 step 4 still needs math, diagrams, callouts, footnotes and
+tasks; steps 5–10 and Phases 5–8 remain. Owner manual acceptance is not run.

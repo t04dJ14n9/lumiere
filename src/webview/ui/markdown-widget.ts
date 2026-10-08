@@ -1,7 +1,7 @@
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
-import type { RenderBlock } from "./api";
-import type { RenderPass, RenderService } from "../render/api";
+import type { RenderBlock } from "../../plugins/livePreview/api";
+import type { RenderPass, RenderService } from "../../plugins/render/api";
 
 /** Own a render pass even when an async post-processor finishes after removal. */
 export class MarkdownBlock extends WidgetType {

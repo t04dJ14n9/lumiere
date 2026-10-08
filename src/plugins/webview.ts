@@ -14,3 +14,4 @@ export { smartListsWebview } from "./smartLists/webview";
 export { vimWebview } from "./vim/webview";
 export { formattingWebview } from "./formatting/webview";
 export { linksWebview } from "./links/webview";
+export { codeBlocksWebview } from "./codeBlocks/webview";

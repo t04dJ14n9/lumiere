@@ -9,7 +9,7 @@ import { blockIndex, blockDecorations } from "./blocks";
 import { documentTree } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
-import { MarkdownBlock } from "./block-widget";
+import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { escapeBlock, verticalBlock, moveTo } from "./motion";
 export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   name: "livePreview",

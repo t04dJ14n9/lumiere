@@ -39,7 +39,7 @@ function index(state: Parameters<typeof revealed>[0]) {
 }
 class GuardedWidget extends WidgetType {
   constructor(
-    readonly block: RenderBlock,
+    readonly block: RenderBlock & { renderer: BlockRenderer },
     readonly widget: WidgetType,
     private readonly report: (error: unknown) => void,
   ) {
@@ -47,6 +47,7 @@ class GuardedWidget extends WidgetType {
   }
   override eq(other: GuardedWidget): boolean {
     return (
+      this.block.renderer === other.block.renderer &&
       this.block.kind === other.block.kind &&
       this.block.source === other.block.source &&
       this.widget.eq(other.widget)

@@ -24,6 +24,7 @@ function fixture() {
     },
   } as EditorView;
   let extensions = 0;
+  root.provide("render", { async into() { throw new Error("No DOM in unit fixture"); } });
   root.provide("livePreview", {
     mode: "source", setMode() {},
     block() { extensions++; return () => { extensions--; }; },

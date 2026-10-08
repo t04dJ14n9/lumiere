@@ -206,3 +206,17 @@ Setup: open `Core.md` in the disposable fixture vault. Add `[[Core#Heading]]`,
 
 `links.newLinkFormat` and `links.useWikilinks` are consumed by Phase 5 link
 creation/suggestion features; `links.folderNote` controls folder navigation.
+
+## Code blocks
+
+Setup: add fenced JavaScript, Python, an unknown language and indented code to
+`Core.md`, followed by a paragraph so the caret can leave every block.
+
+1. Move outside a fence: highlighted code and Copy appear. Copy yields the code
+   without fence markers. Click a token: source appears at the corresponding
+   UTF-16 offset. Include emoji and indentation in the example.
+2. Type in a revealed fence: syntax highlighting stays, typing synchronizes,
+   and native undo/redo restores it. Repeat with IME composition and Source mode.
+3. Scroll a long fence in and out of view. Unknown languages stay readable.
+4. Disable Code Blocks: enhanced renderers, copy buttons and source highlighting
+   are removed; the core readable fence remains. Re-enable and repeat.

@@ -463,6 +463,12 @@
           "scope": "resource",
           "description": "Auto pair in the Markdown editor."
         },
+        "markdownWorkbench.plugins.codeBlocks.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Highlight rendered and editable code fences; copy code."
+        },
         "markdownWorkbench.plugins.folding.enabled": {
           "type": "boolean",
           "default": true,

@@ -1,9 +1,21 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["node"]
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "node"
+    ]
   },
-  "include": ["**/*.ts", "../scripts/*.ts"],
-  "exclude": ["fixtures/layers"]
+  "include": [
+    "**/*.ts",
+    "../scripts/*.ts",
+    "../src/plugins/**/*.d.ts"
+  ],
+  "exclude": [
+    "fixtures/layers"
+  ]
 }
