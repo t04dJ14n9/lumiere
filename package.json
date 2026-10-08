@@ -487,6 +487,12 @@
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
         },
+        "markdownWorkbench.plugins.diagrams.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Render Mermaid diagrams in strict mode."
+        },
         "markdownWorkbench.plugins.folding.enabled": {
           "type": "boolean",
           "default": true,

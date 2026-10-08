@@ -233,3 +233,15 @@ invalid TeX and a paragraph after the formula.
 3. Disable/re-enable Math during a slow first render. Disabled formulas stay
    readable source; a late async render must not restore an obsolete widget.
 4. Check invalid TeX remains readable and does not prevent editing other content.
+
+## Diagrams
+
+Setup: add a fenced `mermaid` flowchart (`graph TD; A-->B`) and a malformed
+Mermaid fence to `Core.md`.
+
+1. Outside the block, verify the flowchart renders. Enter it to edit source;
+   leave it to see the update. Invalid input stays readable and editable.
+2. Disable/re-enable Diagrams: the source code fallback replaces the diagram,
+   then rendering returns. Repeat while the lazy library is loading.
+3. Test a diagram with an HTML label or script-like content: no script or external
+   action runs. Check light/dark themes and two panels with independent carets.

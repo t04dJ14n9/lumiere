@@ -721,3 +721,15 @@ Native not rerun: no native wiring change. Logs: `docs/checks/phase4-math-*`.
 Ledger: 84/14/2/334/14. Manual math scenarios added, not run.
 Deviations: none. Known issues: diagrams, callouts, footnotes and tasks remain in
 step 4, then Phase 4 steps 5–10 and Phases 5–8. No phase-completion claim.
+
+### Phase 4 progress — Diagrams, 2026-10-07
+
+Delivered: lazy strict Mermaid rendering, sanitized SVG, language-specific
+renderer, serial render queue and cancellation/restoration on disposal.
+Checks: `pnpm check` (171 unit tests passed), `pnpm test:browser` (14/14).
+Native not rerun: no native wiring change. Logs: `docs/checks/phase4-diagrams-*`.
+Ledger: 84/14/2/334/14. Manual diagrams section added, not run.
+Deviations: random SVG ID prefixes use getRandomValues (available in the HTTP
+smoke harness as well as the native webview), rather than secure-context-only
+randomUUID. Known issues: callouts, footnotes and tasks remain in step 4, then
+Phase 4 steps 5–10 and Phases 5–8. No phase-completion claim.
