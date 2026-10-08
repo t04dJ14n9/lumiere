@@ -182,3 +182,33 @@ test("explicit renderer ranges cover multiline definitions without overlapping l
     [{ from, to }],
   );
 });
+
+test("a renderer claiming the start of a node leaves its later children to match", () => {
+  // Lezer parses consecutive footnote definitions as one paragraph.
+  const text = "[^a]: first\n[^b]: second\n    continued";
+  const second = text.indexOf("[^b]");
+  const definitions = [
+    { from: 0, to: second - 1 },
+    { from: second, to: text.length },
+  ];
+  const state = EditorState.create({
+    doc: text,
+    extensions: [
+      documentTree,
+      blockIndex,
+      blockRenderers.of({
+        kind: "definition",
+        editing: "reveal",
+        match: (node) => definitions.some(({ from }) => from === node.from),
+        range: (node) => definitions.find(({ from }) => from === node.from)!,
+        widget: () => {
+          throw new Error("No DOM");
+        },
+      }),
+    ],
+  });
+  assert.deepEqual(
+    state.field(blockIndex).map(({ from, to }) => ({ from, to })),
+    definitions,
+  );
+});

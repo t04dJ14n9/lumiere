@@ -40,7 +40,10 @@ function index(state: Parameters<typeof revealed>[0]) {
           source: state.sliceDoc(range.from, range.to),
           renderer,
         });
-        return false;
+        // A renderer may claim only the start of a node (one footnote
+        // definition of a paragraph holding several); later children can
+        // still be blocks of their own.
+        return range.to < node.to ? undefined : false;
       }
       return undefined;
     },
