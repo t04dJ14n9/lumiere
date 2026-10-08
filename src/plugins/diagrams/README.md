@@ -1,6 +1,30 @@
 # Diagrams
 
-Claims Mermaid fences through render/fence and a reveal-on-caret block renderer.
-Mermaid loads lazily, uses strict security, disables HTML labels, and serializes
-renders. SVG is sanitized before insertion. Disposal restores the original code
-and cancels late results. Injects livePreview and render; no commands or keys.
+Renders Mermaid code fences as diagrams, like Obsidian's Mermaid support in
+Live Preview. Moving the caret into a diagram reveals the editable fence.
+
+## How it works
+
+The block renderer recognizes Mermaid fences and delegates display to the shared
+render service. A fence listener queues lazy Mermaid conversions, using strict
+security and disabling HTML labels. Sanitized SVG replaces the original fence.
+Pass and plugin disposal restore the source and prevent late results from writing.
+
+## Files
+
+- `manifest.ts`: feature metadata and default enablement.
+- `webview.ts`: language recognition, block and fence registrations.
+- `renderer.ts`: serial rendering queue, per-render cancellation and cleanup.
+- `diagrams.test.ts`: language recognition unit coverage.
+
+## Services, events and settings
+
+Injects `livePreview` and `render`; provides no services. Listens to `render/fence`;
+emits no events. `markdownWorkbench.plugins.diagrams.enabled` defaults to true.
+No commands or default keybindings.
+
+## Limits and differences from Obsidian
+
+HTML labels are disabled and SVG is sanitized. Theme is chosen from the VS Code
+light/dark theme when rendering. Live-reference visual parity remains for the
+owner's manual comparison.

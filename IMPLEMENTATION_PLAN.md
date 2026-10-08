@@ -1615,3 +1615,18 @@ Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
 Known issues: remaining 32 backlog files, remaining README/manual inventory and
 ordered readability completion checks; Phase 4 inlineTitle/tags/suggest/search/
 pasteHtml/copyForAgent/markers; Claude's Phase 5 handoff gate; Phases 6–8 as planned.
+
+### Readability pass progress — Diagrams, 2026-10-08
+
+Delivered: apply names block and fence registrations; DiagramRenderer owns the
+serial Mermaid queue, render identities, per-pass cancellation and restoration.
+The lazy-load/security/sanitization behavior and cleanup ordering are unchanged.
+README follows the template; manual regressions include queued loads and errors.
+Backlog: 32 → 31 distinct files; long-function 27 → 26; other counts unchanged.
+No new exemptions, inline disables, pure algorithm or intentional behavior fix.
+Checks in order: `pnpm check` 253/253; `pnpm test:browser` 14/14. Native not
+rerun: no native wiring change. Logs: `docs/checks/readability-diagrams-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
+Known issues: remaining 31 backlog files, README/manual inventory and readability
+completion checks; Phase 4's seven remaining plugins; Claude's Phase 5 handoff;
+Phases 6–8 as specified above. No phase completion is claimed.

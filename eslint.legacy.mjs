@@ -12,7 +12,6 @@ export default {
     "src/plugins/callouts/webview.ts",
     "src/plugins/codeBlocks/code-source.ts",
     "src/plugins/codeBlocks/webview.ts",
-    "src/plugins/diagrams/webview.ts",
     "src/plugins/embeds/image-dialog.ts",
     "src/plugins/embeds/image.ts",
     "src/plugins/embeds/post-process.ts",

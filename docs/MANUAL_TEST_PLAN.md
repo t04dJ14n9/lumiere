@@ -530,3 +530,8 @@ smoke scenarios. Use only the disposable fixture vault described above.
   commands, selection/undo and formulas inside other rendered blocks. Disable
   Math or close the panel while MathJax loads; late output must not replace
   disposed content. Re-enable and verify rendering resumes. Not run by the agent.
+
+- **Diagrams:** rerun all **Diagrams** scenarios, including multiple Mermaid
+  fences, errors, theme/reveal and off/on. Close a panel or disable the plugin
+  while its lazy render is queued; no late SVG may replace disposed content.
+  Re-enable after an error and verify later diagrams still render. Not run here.
