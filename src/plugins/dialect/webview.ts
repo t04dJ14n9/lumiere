@@ -1,1 +1,3 @@
-export { dialect as dialectWebview } from "./definition";
+import { calloutIcon } from "../../webview/ui/icons";
+import { dialectPlugin } from "./definition";
+export const dialectWebview = dialectPlugin({ calloutIcon });

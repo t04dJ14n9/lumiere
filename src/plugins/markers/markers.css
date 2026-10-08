@@ -1,0 +1,14 @@
+/* Source markers set by plugins and the API: small badges after the text. */
+.md-source-marker {
+  margin: 0 4px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 1em;
+  color: var(--vscode-badge-foreground, #fff);
+  background: var(--vscode-badge-background, var(--accent));
+  font: inherit;
+  font-size: 0.75em;
+  line-height: 1.6;
+  vertical-align: 0.1em;
+  cursor: pointer;
+}

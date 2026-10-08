@@ -1,7 +1,7 @@
 import { webviewTransport } from "./transport";
 import { Endpoint } from "../shared/rpc/endpoint";
 import { bootstrap } from "./bootstrap";
-import "./styles/base.css";
+import "./styles/index.css";
 declare function acquireVsCodeApi(): {
   postMessage(message: unknown): void;
   getState(): unknown;

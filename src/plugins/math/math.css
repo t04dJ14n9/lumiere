@@ -1,0 +1,33 @@
+/* MathJax output, inline and in display blocks. */
+.math-placeholder {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.math-display {
+  display: block;
+  padding: 8px 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.math-placeholder.render-error {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: color-mix(
+    in srgb,
+    var(--vscode-errorForeground, #e05252) 12%,
+    transparent
+  );
+  font-family: var(--code-font);
+  font-size: 0.875em;
+}
+mjx-container {
+  display: inline-block;
+  direction: ltr;
+  line-height: 0;
+  text-indent: 0;
+}
+mjx-container svg {
+  max-width: 100%;
+  overflow: visible;
+}

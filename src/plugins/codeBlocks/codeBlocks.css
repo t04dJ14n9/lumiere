@@ -1,0 +1,74 @@
+/* Rendered code blocks: Prism colours and a copy button shown on hover. */
+.copy-code {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 52px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--vscode-editor-background, transparent);
+  font-size: 11px;
+  line-height: 1.6;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.hybrid-block:hover .copy-code,
+.copy-code:focus-visible {
+  opacity: 1;
+}
+.copy-code:hover {
+  color: var(--vscode-editor-foreground);
+  background: var(--hover);
+}
+.md-processed-code {
+  white-space: normal;
+}
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--vscode-editorCodeLens-foreground, var(--muted));
+  font-style: italic;
+}
+.token.keyword,
+.token.selector,
+.token.important,
+.token.atrule {
+  color: var(--vscode-symbolIcon-keywordForeground, #c678dd);
+}
+.token.string,
+.token.char,
+.token.attr-value,
+.token.regex,
+.token.template-string {
+  color: var(--vscode-debugTokenExpression-string, #98c379);
+}
+.token.function,
+.token.class-name {
+  color: var(--vscode-symbolIcon-functionForeground, #61afef);
+}
+.token.number,
+.token.boolean,
+.token.constant,
+.token.symbol {
+  color: var(--vscode-debugTokenExpression-number, #d19a66);
+}
+.token.builtin,
+.token.property,
+.token.tag {
+  color: var(--vscode-symbolIcon-propertyForeground, #e5c07b);
+}
+.token.operator,
+.token.punctuation,
+.token.interpolation-punctuation {
+  color: var(--muted);
+}
+.token.deleted {
+  color: var(--vscode-gitDecoration-deletedResourceForeground, #e06c75);
+}
+.token.inserted {
+  color: var(--vscode-gitDecoration-addedResourceForeground, #98c379);
+}

@@ -8,7 +8,9 @@ export function bindSearchBlock(
   source: string,
 ): () => void {
   const document = fence.element.ownerDocument;
+  fence.element.classList.add("embedded-search");
   const header = document.createElement("div");
+  header.className = "search-header";
   const code = document.createElement("code");
   code.textContent = fence.source.trim();
   const refresh = document.createElement("button");
@@ -64,7 +66,7 @@ function renderResults(
   const unreadable = update.unreadable
     ? ` · ${update.unreadable} files could not be searched`
     : "";
-  status.textContent = `${matches.length} results${unreadable}`;
+  status.textContent = `${matches.length} ${matches.length === 1 ? "result" : "results"}${unreadable}`;
   for (const result of matches) {
     const item = results.ownerDocument.createElement("li");
     const link = results.ownerDocument.createElement("a");

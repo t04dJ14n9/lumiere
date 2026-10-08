@@ -19,13 +19,14 @@ export class FootnoteDefinition extends MarkdownBlock {
   override toDOM(view: EditorView): HTMLElement {
     const shell = super.toDOM(view);
     const navigation = document.createElement("nav");
+    navigation.className = "footnote-backlinks";
     navigation.setAttribute(
       "aria-label",
       `Footnote ${this.note.label} references`,
     );
     const label = document.createElement("span");
-    label.textContent = `[^${this.note.label}] `;
-    navigation.append(label);
+    label.className = "footnote-label";
+    label.textContent = `[^${this.note.label}]`;
     const events = new AbortController();
     this.controls.set(shell, events);
     for (const [index, at] of this.note.references.entries()) {
@@ -52,7 +53,8 @@ export class FootnoteDefinition extends MarkdownBlock {
       );
       navigation.append(button);
     }
-    shell.prepend(navigation);
+    shell.prepend(label);
+    shell.append(navigation);
     return shell;
   }
 

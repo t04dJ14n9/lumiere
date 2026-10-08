@@ -31,7 +31,7 @@ export default defineManifest({
   surfaces: ["host", "webview"],
   contributes: {
     commands: [
-      { id: "titleActions", title: "Note Actions" },
+      { id: "titleActions", title: "Note Actions", icon: "$(zap)" },
       { id: "selectionActions", title: "Selection Actions" },
     ],
     menus: [

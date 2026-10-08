@@ -1,4 +1,3 @@
-import { EditorView } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../document/api";
@@ -21,7 +20,6 @@ import type { TableEnvironment } from "./environment";
 import { TableContent } from "./content";
 import { tableCommands } from "./manifest";
 import { tableOperation } from "./commands";
-import { styles } from "./styles";
 export const tablesWebview: Plugin = {
   name: "tables",
   inject: {
@@ -96,7 +94,6 @@ function registerTableExtensions(ctx: Context): void {
     ctx.editor.extend(
       [
         tableSource,
-        EditorView.baseTheme(styles),
         tableActions.of((action) => {
           void ctx.commands.run(action);
         }),

@@ -25,6 +25,8 @@ export interface Manifest {
     commands?: readonly {
       id: string;
       title: string;
+      /** A codicon such as `$(go-to-file)`; title-bar buttons show it instead of the title. */
+      icon?: string;
       editorCommand?: string;
       palette?: boolean;
       key?: string;

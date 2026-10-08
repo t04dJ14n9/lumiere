@@ -23,7 +23,6 @@ export const footnotesWebview: Plugin = {
       (note, pass) => navigateReference(ctx, note, pass),
     );
     ctx.effect(() => () => references.dispose());
-    registerReferenceTheme(ctx);
     registerInlineReferences(ctx);
     registerDefinitions(ctx);
     ctx.on("render/preProcess", (pass) => references.prepare(pass));
@@ -54,27 +53,6 @@ function registerDefinitionInvalidation(ctx: Context): void {
             ctx.emit("render/changed");
           }
         });
-      }),
-    ),
-  );
-}
-
-function registerReferenceTheme(ctx: Context): void {
-  ctx.effect(() =>
-    ctx.editor.extend(
-      EditorView.baseTheme({
-        ".hybrid-footnote-ref": { position: "relative" },
-        ".footnote-preview": {
-          position: "absolute",
-          left: "0",
-          top: "100%",
-          zIndex: "100",
-          width: "min(320px, 70vw)",
-          padding: "12px",
-          background: "var(--vscode-editorHoverWidget-background)",
-          border: "1px solid var(--vscode-editorHoverWidget-border)",
-          fontSize: "14px",
-        },
       }),
     ),
   );

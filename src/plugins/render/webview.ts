@@ -47,6 +47,7 @@ function renderService({
     trusted,
     async into(container, source, context = {}) {
       const pass = createRenderPass({ container, source, context, passes });
+      container.classList.add("markdown-rendered");
       if (context.documentUri) {
         container.dataset.noteSource = context.documentUri;
       }

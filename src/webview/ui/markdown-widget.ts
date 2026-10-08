@@ -22,8 +22,10 @@ export class MarkdownBlock extends WidgetType {
 
   override toDOM(view: EditorView): HTMLElement {
     const shell = document.createElement("section");
-    shell.className = "hybrid-block";
+    shell.className = `hybrid-block hybrid-${this.block.kind}`;
     const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "edit-block";
     edit.textContent = "Edit";
     edit.setAttribute("aria-label", `Edit ${this.block.kind} source`);
     const body = document.createElement("div");

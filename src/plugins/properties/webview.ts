@@ -1,4 +1,4 @@
-import { EditorView, keymap } from "@codemirror/view";
+import { keymap } from "@codemirror/view";
 import type { Context, Plugin, Infer } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../document/api";
@@ -14,7 +14,6 @@ import { PropertyPresentation } from "./presentation";
 import { propertyHeadingFocus } from "./heading";
 import type { PropertyContext } from "./context";
 import type { PropertyKind } from "../../markdown/properties/types";
-import { styles } from "./styles";
 
 const configurations = new WeakMap<
   Context,
@@ -170,7 +169,6 @@ function registerEditorControls(
   ctx.effect(() =>
     ctx.editor.extend([
       options.heading,
-      EditorView.baseTheme(styles),
       keymap.of([
         {
           key: "Mod-;",

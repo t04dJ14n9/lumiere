@@ -1,4 +1,5 @@
-import { EditorView, ViewPlugin } from "@codemirror/view";
+import type { EditorView } from "@codemirror/view";
+import { ViewPlugin } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../resources/api";
@@ -9,30 +10,9 @@ export const pagePreviewWebview: Plugin = {
   name: "pagePreview",
   inject: { required: ["editor", "resources", "render", "rpc"] },
   apply(ctx) {
-    registerPreviewTheme(ctx);
     registerPreviewController(ctx);
   },
 };
-
-function registerPreviewTheme(ctx: Context): void {
-  ctx.effect(() =>
-    ctx.editor.extend(
-      EditorView.baseTheme({
-        ".link-preview": {
-          position: "fixed",
-          zIndex: "150",
-          width: "min(420px, 80vw)",
-          maxHeight: "350px",
-          overflow: "auto",
-          padding: "12px",
-          background: "var(--vscode-editorHoverWidget-background)",
-          border: "1px solid var(--vscode-editorHoverWidget-border)",
-          boxShadow: "0 4px 14px #0004",
-        },
-      }),
-    ),
-  );
-}
 
 function registerPreviewController(ctx: Context): void {
   ctx.effect(() =>

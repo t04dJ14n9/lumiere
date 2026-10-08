@@ -1,5 +1,5 @@
 import { tagSuggestion } from "./suggestions";
-import { EditorView, ViewPlugin } from "@codemirror/view";
+import { ViewPlugin } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../livePreview/api";
@@ -24,21 +24,6 @@ export const tagsWebview: Plugin = {
     registerTagRenderer(ctx, search);
     registerTagControls(ctx, search);
     registerDelegatedTags(ctx, search);
-    ctx.effect(() =>
-      ctx.editor.extend(
-        EditorView.baseTheme({
-          ".md-tag": {
-            color: "var(--vscode-textLink-foreground)",
-            background: "var(--vscode-badge-background)",
-            border: "0",
-            borderRadius: "4px",
-            padding: "0 4px",
-            cursor: "pointer",
-            font: "inherit",
-          },
-        }),
-      ),
-    );
   },
 };
 function registerTagRenderer(

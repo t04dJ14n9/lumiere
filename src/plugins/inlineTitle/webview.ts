@@ -1,4 +1,3 @@
-import { EditorView } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../properties/api";
@@ -40,7 +39,7 @@ function registerTitle(ctx: Context): void {
         });
     },
   });
-  ctx.effect(() => ctx.editor.extend([field, titleTheme]));
+  ctx.effect(() => ctx.editor.extend(field));
 }
 
 function registerFocus(ctx: Context): void {
@@ -82,35 +81,3 @@ function focusAfterTitle(ctx: Context, target: TitleFocus): void {
   }
   ctx.editor.view.focus();
 }
-const titleTheme = EditorView.baseTheme({
-  ".file-title": {
-    display: "grid",
-    position: "relative",
-    margin: "0 0 16px",
-    fontSize: "2em",
-    fontWeight: "700",
-    lineHeight: "1.3",
-  },
-  ".file-title textarea, .file-title-measure": {
-    gridArea: "1 / 1",
-    font: "inherit",
-    padding: "0",
-    margin: "0",
-    border: "0",
-    whiteSpace: "pre-wrap",
-    overflowWrap: "anywhere",
-    width: "100%",
-  },
-  ".file-title textarea": {
-    background: "transparent",
-    color: "inherit",
-    resize: "none",
-    overflow: "hidden",
-    outline: "none",
-    height: "100%",
-  },
-  ".file-title-measure": { visibility: "hidden", pointerEvents: "none" },
-  ".file-title textarea[aria-invalid=true]": {
-    outline: "1px solid var(--vscode-inputValidation-errorBorder)",
-  },
-});

@@ -15,9 +15,10 @@ export function settingsExtensions(options: Partial<Infer<typeof config>>) {
     editorSettings.of(value),
     indentUnit.of(value.useTabs ? "\t" : " ".repeat(value.tabSize)),
     EditorState.tabSize.of(value.tabSize),
-    EditorView.editorAttributes.of({ dir: value.rightToLeft ? "rtl" : "ltr" }),
-    EditorView.theme({
-      ".cm-content": { maxWidth: value.readableLineLength ? "700px" : "none" },
+    EditorView.editorAttributes.of({
+      dir: value.rightToLeft ? "rtl" : "ltr",
+      // The stylesheet centres a 700 px measure when this class is present.
+      ...(value.readableLineLength ? { class: "is-readable-line-width" } : {}),
     }),
   ];
 }

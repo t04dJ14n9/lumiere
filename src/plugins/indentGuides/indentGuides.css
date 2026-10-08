@@ -1,0 +1,13 @@
+/* One faint vertical line per indentation level of a list. */
+.mw-indent-guide {
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(var(--indent-step) - 1px),
+    var(--vscode-editorIndentGuide-background1, #7774)
+      calc(var(--indent-step) - 1px),
+    var(--vscode-editorIndentGuide-background1, #7774) var(--indent-step)
+  );
+  background-repeat: no-repeat;
+  background-size: var(--indent-width) 100%;
+}

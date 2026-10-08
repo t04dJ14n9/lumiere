@@ -44,9 +44,11 @@ export const editorWebview: Plugin<EditorConfig> = {
     const presentation = createViewState();
     const pluginExtensions = new Compartment();
     const settings = new Compartment();
+    const modeClass = new Compartment();
     const view = createEditorView(ctx, config, presentation, {
       settings,
       pluginExtensions,
+      modeClass,
     });
     ctx.effect(() => () => view.destroy());
     registerSettings(ctx, view, settings);
@@ -62,6 +64,8 @@ export const editorWebview: Plugin<EditorConfig> = {
       source: config.source,
       mode: config.mode,
       rpc: ctx.rpc,
+      onModeChanged: (mode) =>
+        view.dispatch({ effects: modeClass.reconfigure(modeAttributes(mode)) }),
     });
     ctx.provide("editor", editor);
     provideMenu(ctx);
@@ -87,9 +91,10 @@ function createEditorView(
   compartments: {
     settings: Compartment;
     pluginExtensions: Compartment;
+    modeClass: Compartment;
   },
 ): EditorView {
-  const { settings, pluginExtensions } = compartments;
+  const { settings, pluginExtensions, modeClass } = compartments;
   return new EditorView({
     parent: config.parent,
     state: EditorState.create({
@@ -99,6 +104,10 @@ function createEditorView(
         settings.of(
           settingsExtensions(editorConfig.parse(config.editor ?? {})),
         ),
+        // The stylesheet scopes the main editor's layout to this class, so
+        // nested cell editors inside tables keep their own.
+        EditorView.editorAttributes.of({ class: "mw-editor" }),
+        modeClass.of(modeAttributes(config.mode)),
         presentation.restoreScrollPosition,
         ctx.document.extension,
         ctx.markdown.language(),
@@ -122,6 +131,13 @@ function createEditorView(
         }),
       ],
     }),
+  });
+}
+
+/** Source mode shows Markdown in the code font. */
+function modeAttributes(mode: "source" | "livePreview") {
+  return EditorView.editorAttributes.of({
+    class: mode === "source" ? "is-source-mode" : "",
   });
 }
 

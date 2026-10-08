@@ -30,7 +30,10 @@ export function bindCodePass(options: CodePassOptions): void {
   };
   cleanups.add(cleanup);
   pass.onDispose(cleanup);
-  for (const code of pass.container.querySelectorAll<HTMLElement>("pre code")) {
+  // Only fenced code; other blocks (query results) may contain code elements.
+  for (const code of pass.container.querySelectorAll<HTMLElement>(
+    "pre > code",
+  )) {
     const copy = copyButton(code, options, events.signal);
     copies.push(copy);
     originals.set(code, code.textContent ?? "");
@@ -68,6 +71,8 @@ function copyButton(
 ): HTMLButtonElement {
   const pre = code.parentElement!;
   const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "copy-code";
   copy.textContent = "Copy";
   copy.setAttribute("aria-label", "Copy code");
   pre.before(copy);

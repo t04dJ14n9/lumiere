@@ -1,0 +1,26 @@
+/*
+ * The editor's stylesheet, bundled into dist/webview/editor.css. Core styles
+ * first, then each plugin's own stylesheet in catalog order. Plugin modules do
+ * not import CSS themselves, so unit tests can load them under Node.
+ */
+@import "./base.css";
+@import "./markdown.css";
+@import "../ui/menu.css";
+@import "../../plugins/markers/markers.css";
+@import "../../plugins/properties/properties.css";
+@import "../../plugins/inlineTitle/inlineTitle.css";
+@import "../../plugins/links/links.css";
+@import "../../plugins/embeds/embeds.css";
+@import "../../plugins/tables/tables.css";
+@import "../../plugins/callouts/callouts.css";
+@import "../../plugins/math/math.css";
+@import "../../plugins/diagrams/diagrams.css";
+@import "../../plugins/codeBlocks/codeBlocks.css";
+@import "../../plugins/footnotes/footnotes.css";
+@import "../../plugins/tasks/tasks.css";
+@import "../../plugins/tags/tags.css";
+@import "../../plugins/suggest/suggest.css";
+@import "../../plugins/pagePreview/pagePreview.css";
+@import "../../plugins/search/search.css";
+@import "../../plugins/lineNumbers/lineNumbers.css";
+@import "../../plugins/indentGuides/indentGuides.css";

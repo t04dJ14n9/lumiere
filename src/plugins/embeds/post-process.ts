@@ -95,9 +95,14 @@ class EmbedPass {
     return resources.load(target, pass.documentUri);
   }
 
-  private openButton(target: string, label: string): HTMLButtonElement {
+  private openButton(
+    target: string,
+    label: string,
+    className: "open-embed" | "attachment-open",
+  ): HTMLButtonElement {
     const node = document.createElement("button");
     node.type = "button";
+    node.className = className;
     node.textContent = label;
     node.setAttribute("aria-label", `Open ${target}`);
     node.addEventListener("click", () => this.options.open(target), {
@@ -121,7 +126,7 @@ class EmbedPass {
     } else if (resource.kind === "note" && resource.text !== undefined) {
       await this.showNote(node, target, resource);
     } else {
-      node.replaceChildren(this.openButton(target, target));
+      node.replaceChildren(this.openButton(target, target, "attachment-open"));
     }
     if (this.isActive) {
       this.options.pass.measure();
@@ -161,6 +166,7 @@ class EmbedPass {
     }
     const inspect = document.createElement("button");
     inspect.type = "button";
+    inspect.className = "inspect-image";
     inspect.textContent = "⤢";
     inspect.setAttribute("aria-label", `Inspect image: ${image.alt}`);
     image.after(inspect);
@@ -218,7 +224,7 @@ class EmbedPass {
     const section = document.createElement("section");
     section.className = "note-embed";
     const content = document.createElement("div");
-    section.append(this.openButton(target, "Open note ↗"), content);
+    section.append(this.openButton(target, "↗", "open-embed"), content);
     node.replaceChildren(section);
     const nested = await render.into(content, selection.text, {
       readOnly: pass.readOnly,

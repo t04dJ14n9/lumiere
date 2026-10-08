@@ -1,0 +1,47 @@
+/* Embedded query blocks: the query, a refresh button, a status and results. */
+.embedded-search {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  font-family: var(--text-font);
+  font-size: 1rem;
+  white-space: normal;
+}
+.embedded-search > .search-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-right: 44px;
+}
+.embedded-search code {
+  font-family: var(--code-font);
+  font-size: 0.875em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.embedded-search button {
+  padding: 1px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+.embedded-search button:hover {
+  color: var(--vscode-editor-foreground);
+  background: var(--hover);
+}
+.embedded-search > p {
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+.embedded-search ul {
+  max-height: 400px;
+  margin: 0;
+  padding-inline-start: 1.4em;
+  overflow: auto;
+}

@@ -21,6 +21,7 @@ export async function contributions() {
       command: `markdownWorkbench.${command.id}`,
       title: command.title,
       category: "Markdown Workbench",
+      ...(command.icon ? { icon: command.icon } : {}),
     })),
   );
   const menus = manifests.flatMap((manifest) =>

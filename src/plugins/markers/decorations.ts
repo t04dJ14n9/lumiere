@@ -57,16 +57,3 @@ export function markerDecorations(
     ),
   );
 }
-export const markerTheme = EditorView.baseTheme({
-  ".md-source-marker": {
-    font: "inherit",
-    fontSize: "0.85em",
-    color: "var(--vscode-button-foreground)",
-    background: "var(--vscode-button-background)",
-    border: "0",
-    borderRadius: "3px",
-    margin: "0 4px",
-    padding: "1px 4px",
-    cursor: "pointer",
-  },
-});

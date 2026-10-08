@@ -1,0 +1,59 @@
+/* Footnote references with a hover preview, and rendered definitions. */
+.hybrid-footnote-ref {
+  position: relative;
+}
+.hybrid-footnote-ref button {
+  padding: 0 1px;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.footnote-preview {
+  position: absolute;
+  z-index: 50;
+  top: 100%;
+  left: 0;
+  width: min(360px, 70vw);
+  max-height: 40vh;
+  padding: 10px 12px;
+  overflow: auto;
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--line));
+  border-radius: 6px;
+  color: var(--vscode-editorHoverWidget-foreground, inherit);
+  background: var(--vscode-editorHoverWidget-background, var(--surface));
+  box-shadow: 0 4px 16px #0004;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.5;
+  white-space: normal;
+}
+.hybrid-footnote {
+  display: grid;
+  grid-template-columns: fit-content(35%) minmax(0, 1fr);
+  column-gap: 0.65em;
+  font-size: 0.9em;
+}
+.hybrid-footnote > .footnote-label {
+  grid-column: 1;
+  color: var(--muted);
+}
+.hybrid-footnote > .markdown-rendered {
+  grid-column: 2;
+  min-width: 0;
+}
+.hybrid-footnote > .footnote-backlinks {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 2;
+  gap: 0.25em;
+}
+.footnote-backlinks > button {
+  padding: 0 2px;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}

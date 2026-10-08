@@ -1,0 +1,38 @@
+/* Link, heading, block and tag suggestions (Obsidian's editor suggest). */
+#app .cm-tooltip.cm-tooltip-autocomplete {
+  padding: 4px;
+  border: 1px solid var(--vscode-editorSuggestWidget-border, var(--line));
+  border-radius: 8px;
+  color: var(--vscode-editorSuggestWidget-foreground, inherit);
+  background: var(--vscode-editorSuggestWidget-background, var(--surface));
+  box-shadow: 0 6px 24px #0006;
+}
+#app .cm-tooltip.cm-tooltip-autocomplete > ul {
+  min-width: 260px;
+  max-width: min(480px, 90vw);
+  max-height: 18em;
+  font-family: var(--text-font);
+  font-size: 14px;
+}
+#app .cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 10px;
+  border-radius: 4px;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#app .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  color: var(--vscode-editorSuggestWidget-selectedForeground, inherit);
+  background: var(
+    --vscode-editorSuggestWidget-selectedBackground,
+    var(--hover)
+  );
+}
+#app .cm-tooltip-autocomplete .cm-completionDetail {
+  margin: 1px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}

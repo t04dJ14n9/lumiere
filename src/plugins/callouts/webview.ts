@@ -1,5 +1,4 @@
 import { StateEffect } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
 import { DisclosureState } from "./view-state";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
@@ -22,28 +21,11 @@ export const calloutsWebview: Plugin = {
       }
       cleanups.clear();
     });
-    registerCalloutTheme(ctx);
     registerCalloutRenderer(ctx);
     registerDisclosures(ctx, folds, cleanups);
     registerInsertion(ctx);
   },
 };
-
-function registerCalloutTheme(ctx: Context): void {
-  ctx.effect(() =>
-    ctx.editor.extend(
-      EditorView.baseTheme({
-        ".callout": {
-          borderLeft: "3px solid var(--vscode-textLink-foreground)",
-          padding: "8px 12px",
-          background: "var(--vscode-textBlockQuote-background)",
-        },
-        ".callout-title": { fontWeight: "600", cursor: "pointer" },
-        ".callout-content > :last-child": { marginBottom: "0" },
-      }),
-    ),
-  );
-}
 
 function registerCalloutRenderer(ctx: Context): void {
   ctx.effect(() =>

@@ -19,6 +19,7 @@ export default defineManifest({
       {
         id: "addProperty",
         title: "Add File Property",
+        icon: "$(symbol-property)",
         editorCommand: "markdown:add-metadata-property",
         key: "ctrl+;",
         mac: "cmd+;",

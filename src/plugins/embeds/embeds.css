@@ -1,5 +1,4 @@
-import { ViewPlugin } from "@codemirror/view";
-const css = `
+/* Embedded images, media, notes and attachments, and the image inspector. */
 .image-inspector {
   width: calc(100vw - 48px);
   height: calc(100vh - 48px);
@@ -75,6 +74,9 @@ const css = `
   margin: 8px 16px;
 }
 .inspect-image {
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity 120ms;
   vertical-align: top;
   border: 0;
   border-radius: 4px;
@@ -83,17 +85,73 @@ const css = `
   cursor: pointer;
   padding: 3px;
 }
-`;
-export const imageStyles = ViewPlugin.fromClass(
-  class {
-    readonly style: HTMLStyleElement;
-    constructor() {
-      this.style = document.createElement("style");
-      this.style.textContent = css;
-      document.head.append(this.style);
-    }
-    destroy(): void {
-      this.style.remove();
-    }
-  },
-);
+.file-embed:hover .inspect-image,
+.markdown-rendered p:hover > .inspect-image,
+.inspect-image:focus-visible {
+  opacity: 1;
+}
+
+/* Note embeds: a bordered excerpt with a link to the note. */
+.file-embed {
+  display: inline-block;
+  max-width: 100%;
+}
+.file-embed:has(.note-embed) {
+  display: block;
+}
+.file-embed img,
+.file-embed video,
+.file-embed audio {
+  max-width: 100%;
+  vertical-align: top;
+}
+.file-embed video {
+  border-radius: 4px;
+}
+.note-embed {
+  position: relative;
+  margin: 4px 0;
+  padding: 2px 32px 2px 16px;
+  border-left: 2px solid var(--accent);
+}
+.open-embed {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+}
+.open-embed:hover {
+  color: var(--accent);
+  background: var(--hover);
+}
+.unresolved-embed {
+  display: block;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+}
+/* Files without a preview (PDFs and others) appear as a card that opens them. */
+.attachment-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--accent);
+  background: var(--code);
+  cursor: pointer;
+}
+.attachment-open::before {
+  content: "\1F4C4";
+}
+.attachment-open:hover {
+  background: var(--hover);
+}

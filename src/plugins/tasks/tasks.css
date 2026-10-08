@@ -1,0 +1,11 @@
+/* Task checkboxes; done tasks in rendered Markdown are struck through. */
+.markdown-rendered .task-list-item {
+  list-style: none;
+}
+.markdown-rendered .task-list-item > input[type="checkbox"] {
+  margin-inline-start: -1.4em;
+}
+.markdown-rendered input[data-task]:checked ~ .task-label {
+  color: var(--muted);
+  text-decoration: line-through;
+}

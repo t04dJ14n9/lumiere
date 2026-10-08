@@ -1,0 +1,13 @@
+/* Tags as clickable pills. */
+.md-tag {
+  padding: 0 0.5em;
+  border: 0;
+  border-radius: 1em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  font: inherit;
+  cursor: pointer;
+}
+.md-tag:hover {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}

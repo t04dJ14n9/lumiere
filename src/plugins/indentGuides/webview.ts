@@ -1,5 +1,5 @@
-import { Decoration, EditorView, ViewPlugin } from "@codemirror/view";
-import type { DecorationSet } from "@codemirror/view";
+import { Decoration, ViewPlugin } from "@codemirror/view";
+import type { DecorationSet, EditorView } from "@codemirror/view";
 import type { Range } from "@codemirror/state";
 import type { Plugin } from "../../kernel";
 import type {} from "../editor/api";
@@ -53,14 +53,6 @@ export const indentGuidesWebview: Plugin = {
           }),
           { decorations: (value) => value.decorations },
         ),
-        EditorView.baseTheme({
-          ".mw-indent-guide": {
-            backgroundImage:
-              "repeating-linear-gradient(to right, transparent 0, transparent calc(var(--indent-step) - 1px), var(--vscode-editorIndentGuide-background1, #7774) calc(var(--indent-step) - 1px), var(--vscode-editorIndentGuide-background1, #7774) var(--indent-step))",
-            backgroundSize: "var(--indent-width) 100%",
-            backgroundRepeat: "no-repeat",
-          },
-        }),
       ]),
     );
   },

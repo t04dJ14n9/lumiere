@@ -1,71 +1,218 @@
+/*
+ * Editor frame: theme tokens, layout and CodeMirror chrome.
+ *
+ * Selectors start with #app so they outrank CodeMirror's injected base theme
+ * (`.ͼ1 .cm-scroller` and similar, two classes, added after this stylesheet)
+ * without !important. Colours come from the VS Code theme; sizes follow
+ * Obsidian's default theme, as on the source branch.
+ */
+:root {
+  color-scheme: light dark;
+  --accent: var(--vscode-textLink-foreground, #7c6fe0);
+  --accent-hover: var(--vscode-textLink-activeForeground, var(--accent));
+  --muted: var(--vscode-descriptionForeground, #8a8a96);
+  --faint: var(
+    --vscode-editorLineNumber-foreground,
+    color-mix(in srgb, var(--muted) 70%, transparent)
+  );
+  --line: var(
+    --vscode-widget-border,
+    color-mix(in srgb, var(--vscode-editor-foreground, #888) 16%, transparent)
+  );
+  --code: var(
+    --vscode-textCodeBlock-background,
+    color-mix(in srgb, var(--vscode-editor-foreground, #888) 8%, transparent)
+  );
+  --hover: var(
+    --vscode-toolbar-hoverBackground,
+    color-mix(in srgb, var(--vscode-editor-foreground, #888) 10%, transparent)
+  );
+  --surface: var(--vscode-editorWidget-background, var(--code));
+  --text-font: var(
+    --vscode-font-family,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+  );
+  --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
+  --text-size: 16px;
+  --file-line-width: 700px;
+  --file-margins: 32px;
+}
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+html,
 body {
-  margin: 0;
-  background: var(--vscode-editor-background, #fff);
-  color: var(--vscode-editor-foreground, #222);
-  font-family: var(--vscode-font-family, system-ui);
-}
-#app {
-  height: 100vh;
-}
-.cm-editor {
   height: 100%;
 }
-.cm-scroller {
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--vscode-editor-foreground, #222);
+  background: var(--vscode-editor-background, #fff);
+  font-family: var(--text-font);
+}
+button {
+  font: inherit;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+#app .cm-editor {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+#app .cm-editor.cm-focused {
+  outline: none;
+}
+#app .cm-scroller {
   overflow: auto;
-  font-family: inherit;
-  line-height: 1.6;
+  font-family: var(--text-font);
+  font-size: var(--text-size);
+  line-height: 1.5;
 }
-.cm-content {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 24px 32px 100px;
+#app .cm-content {
+  padding: 32px var(--file-margins) 40vh;
+  caret-color: var(--vscode-editorCursor-foreground, currentColor);
+}
+#app .cm-line {
+  padding: 0 2px;
+}
+/*
+ * Readable line length (Obsidian's 700 px measure). Auto margins on the
+ * gutters and the content centre them as one group, so line numbers and fold
+ * markers stay next to the text instead of at the window's edge.
+ */
+#app .cm-editor.is-readable-line-width .cm-content {
+  flex-grow: 0;
   width: 100%;
+  max-width: var(--file-line-width);
+  margin-inline-end: auto;
 }
-.cm-focused {
-  outline: none !important;
+#app .cm-editor.is-readable-line-width .cm-gutters {
+  margin-inline-start: auto;
 }
-.md-strong {
-  font-weight: 700;
+#app
+  .cm-editor.is-readable-line-width
+  .cm-scroller:not(:has(> .cm-gutters))
+  .cm-content {
+  margin-inline-start: auto;
 }
-.md-emphasis {
-  font-style: italic;
+/* Source mode shows Markdown as code. */
+#app .cm-editor.is-source-mode .cm-scroller {
+  font-family: var(--code-font);
+  font-size: 14px;
 }
-.md-strike {
-  text-decoration: line-through;
+#app .cm-cursor,
+#app .cm-dropCursor {
+  border-left-color: var(--vscode-editorCursor-foreground, currentColor);
 }
-.md-inline-code {
-  font-family: var(--vscode-editor-font-family, monospace);
-  background: var(--vscode-textCodeBlock-background, #eee);
+#app .cm-selectionBackground {
+  background: var(--vscode-editor-inactiveSelectionBackground, #8884);
+}
+#app .cm-editor.cm-focused .cm-selectionBackground,
+#app .cm-content ::selection {
+  background: var(--vscode-editor-selectionBackground, #8886);
+}
+/* Gutters: no panel of their own, as in Obsidian. */
+#app .cm-gutters {
+  border: 0;
+  color: var(--faint);
+  background: transparent;
+}
+#app .cm-lineNumbers .cm-gutterElement {
+  min-width: 2.5em;
+  padding: 0 10px 0 6px;
+  font-size: 0.8125em;
+  font-variant-numeric: tabular-nums;
+  line-height: 24px;
+}
+#app .cm-activeLineGutter {
+  color: var(--vscode-editorLineNumber-activeForeground, var(--muted));
+  background: transparent;
+}
+#app .cm-foldGutter .cm-gutterElement {
+  padding: 0 4px;
+  color: var(--faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+/* Fold markers appear while the pointer is over the editor, like Obsidian's. */
+#app .cm-editor:hover .cm-foldGutter .cm-gutterElement {
+  opacity: 0.7;
+}
+#app .cm-foldGutter .cm-gutterElement:hover {
+  color: var(--vscode-editor-foreground);
+  opacity: 1;
+}
+#app .cm-foldPlaceholder {
+  margin: 0 4px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  background: var(--code);
+}
+#app .cm-panels {
+  color: inherit;
+  background: var(--surface);
+}
+#app .cm-panels.cm-panels-top {
+  border-bottom: 1px solid var(--line);
+}
+#app .cm-panels.cm-panels-bottom {
+  border-top: 1px solid var(--line);
+}
+#app .cm-textfield,
+#app .cm-button {
+  border: 1px solid var(--vscode-input-border, var(--line));
   border-radius: 3px;
+  color: var(--vscode-input-foreground, inherit);
+  background: var(--vscode-input-background, transparent);
+  background-image: none;
 }
-.md-heading {
-  font-weight: 650;
-  margin-top: 0.8em;
+#app .cm-searchMatch {
+  background: var(--vscode-editor-findMatchHighlightBackground, #ea5c0055);
 }
-.md-h1 {
-  font-size: 2em;
+#app .cm-searchMatch-selected {
+  background: var(--vscode-editor-findMatchBackground, #515c6a);
 }
-.md-h2 {
-  font-size: 1.6em;
+#app .cm-tooltip {
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--line));
+  border-radius: 6px;
+  color: var(--vscode-editorHoverWidget-foreground, inherit);
+  background: var(--vscode-editorHoverWidget-background, var(--surface));
 }
-.md-h3 {
-  font-size: 1.3em;
+/* Synchronization problems; empty while the document is in sync. */
+.sync-status {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 60;
+  max-width: calc(100vw - 24px);
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
-.md-quote {
-  border-left: 3px solid var(--vscode-textBlockQuote-border, #aaa);
-  padding-left: 1em;
+.sync-status:empty {
+  display: none;
 }
-.md-link {
-  color: var(--vscode-textLink-foreground, #246ac7);
-  text-decoration: underline;
-}
-.md-highlight {
-  background: #ffdf6680;
-}
-.md-comment {
-  opacity: 0.5;
-}
-.render-error {
-  border: 1px solid var(--vscode-errorForeground, red);
-  white-space: pre-wrap;
+@media (max-width: 560px) {
+  :root {
+    --file-margins: 20px;
+  }
 }

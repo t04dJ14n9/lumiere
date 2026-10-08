@@ -67,17 +67,20 @@
       {
         "command": "markdownWorkbench.openAsText",
         "title": "Open as Text",
-        "category": "Markdown Workbench"
+        "category": "Markdown Workbench",
+        "icon": "$(go-to-file)"
       },
       {
         "command": "markdownWorkbench.copyForAgent",
         "title": "Copy for Agent",
-        "category": "Markdown Workbench"
+        "category": "Markdown Workbench",
+        "icon": "$(copy)"
       },
       {
         "command": "markdownWorkbench.titleActions",
         "title": "Note Actions",
-        "category": "Markdown Workbench"
+        "category": "Markdown Workbench",
+        "icon": "$(zap)"
       },
       {
         "command": "markdownWorkbench.selectionActions",
@@ -242,7 +245,8 @@
       {
         "command": "markdownWorkbench.addProperty",
         "title": "Add File Property",
-        "category": "Markdown Workbench"
+        "category": "Markdown Workbench",
+        "icon": "$(symbol-property)"
       },
       {
         "command": "markdownWorkbench.quickSwitcher",

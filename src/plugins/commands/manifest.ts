@@ -31,6 +31,7 @@ export default defineManifest({
       {
         id: "openAsText",
         title: "Open as Text",
+        icon: "$(go-to-file)",
       },
     ],
   },

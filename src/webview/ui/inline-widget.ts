@@ -40,10 +40,7 @@ export class MarkdownInline extends WidgetType {
           void pass.dispose();
           return;
         }
-        const paragraph = node.firstElementChild;
-        if (paragraph?.tagName === "P" && node.children.length === 1) {
-          paragraph.replaceWith(...paragraph.childNodes);
-        }
+        unwrapParagraph(node);
       })
       .catch(() => {
         if (live) {
@@ -58,5 +55,22 @@ export class MarkdownInline extends WidgetType {
   override destroy(node: HTMLElement): void {
     this.disposeDOM.get(node)?.();
     this.disposeDOM.delete(node);
+  }
+}
+
+/**
+ * Inline content renders as one paragraph; keep only its contents. The
+ * newlines around it would otherwise show as line breaks, because the editor
+ * preserves white space.
+ */
+function unwrapParagraph(node: HTMLElement): void {
+  for (const child of [...node.childNodes]) {
+    if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) {
+      child.remove();
+    }
+  }
+  const paragraph = node.firstElementChild;
+  if (paragraph?.tagName === "P" && node.childNodes.length === 1) {
+    paragraph.replaceWith(...paragraph.childNodes);
   }
 }

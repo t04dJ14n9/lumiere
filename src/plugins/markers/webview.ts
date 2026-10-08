@@ -5,7 +5,7 @@ import type {} from "../livePreview/api";
 import { protocol as documentProtocol } from "../document/protocol";
 import { protocol, type snapshot } from "./protocol";
 import { markerState, setMarkers, WireMarkerHistory } from "./view-state";
-import { markerDecorations, markerTheme } from "./decorations";
+import { markerDecorations } from "./decorations";
 export const markersWebview: Plugin = {
   name: "markers",
   inject: { required: ["editor", "rpc"], optional: ["livePreview"] },
@@ -23,7 +23,6 @@ function registerMarkerDecorations(ctx: Context): void {
   ctx.effect(() =>
     ctx.editor.extend([
       markerState,
-      markerTheme,
       markerDecorations(
         activate,
         (state, position) =>

@@ -27,6 +27,10 @@ test("editor settings have application defaults and reconfigure without changing
     selection: { anchor: 2 },
     extensions: compartment.of(settingsExtensions({})),
   });
+  assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
+    dir: "ltr",
+    class: "is-readable-line-width",
+  });
   const previous = state;
   state = state.update({
     effects: compartment.reconfigure(

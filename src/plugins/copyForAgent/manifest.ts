@@ -26,6 +26,7 @@ export default defineManifest({
       {
         id: "copyForAgent",
         title: "Copy for Agent",
+        icon: "$(copy)",
         editorCommand: "copyForAgent",
         key: "ctrl+alt+c",
         mac: "cmd+alt+c",

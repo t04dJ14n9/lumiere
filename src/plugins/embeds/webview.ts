@@ -6,7 +6,6 @@ import type {} from "../resources/api";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
-import { imageStyles } from "./styles";
 import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
 export const embedsWebview: Plugin = {
@@ -29,7 +28,6 @@ export const embedsWebview: Plugin = {
       }
       cleanups.clear();
     });
-    ctx.effect(() => ctx.editor.extend(imageStyles));
     registerEmbedRenderers(ctx);
     registerEmbedContent(ctx, cleanups);
     registerInsertion(ctx);

@@ -1,0 +1,29 @@
+/*
+ * Heading lines are taller than body text and padded above. Give their line
+ * numbers the heading's padding and line height so each number sits level
+ * with the heading text, as in Obsidian. Source mode has no heading sizes.
+ */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h1-gutter {
+  padding-top: calc(0.4 * var(--h1-scale) * var(--text-size));
+  line-height: calc(var(--h1-line-height) * var(--h1-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h2-gutter {
+  padding-top: calc(0.4 * var(--h2-scale) * var(--text-size));
+  line-height: calc(var(--h2-line-height) * var(--h2-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h3-gutter {
+  padding-top: calc(0.4 * var(--h3-scale) * var(--text-size));
+  line-height: calc(var(--h3-line-height) * var(--h3-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h4-gutter {
+  padding-top: calc(0.4 * var(--h4-scale) * var(--text-size));
+  line-height: calc(var(--h4-line-height) * var(--h4-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h5-gutter {
+  padding-top: calc(0.4 * var(--h5-scale) * var(--text-size));
+  line-height: calc(var(--h5-line-height) * var(--h5-scale) * var(--text-size));
+}
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h6-gutter {
+  padding-top: calc(0.4 * var(--h6-scale) * var(--text-size));
+  line-height: calc(var(--h6-line-height) * var(--h6-scale) * var(--text-size));
+}

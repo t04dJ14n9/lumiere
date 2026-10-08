@@ -14,6 +14,7 @@ export function createEditorService(options: {
   source: string;
   mode: EditorService["mode"];
   rpc: Endpoint;
+  onModeChanged(mode: EditorService["mode"]): void;
 }): EditorService & CallerBound<EditorService> {
   const { view, registry, contributions, source, rpc } = options;
   let mode = options.mode;
@@ -48,6 +49,7 @@ export function createEditorService(options: {
     },
     set mode(value) {
       mode = value;
+      options.onModeChanged(value);
     },
     focus() {
       view.focus();

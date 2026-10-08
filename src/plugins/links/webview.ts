@@ -146,20 +146,13 @@ function registerUnresolvedLinks(ctx: Context): void {
       view.dispatch({ effects: setUnresolved.of(new Set(paths)) });
     }
   };
-  ctx.effect(() => ctx.editor.extend([unresolvedLinks, unresolvedTheme]));
+  ctx.effect(() => ctx.editor.extend(unresolvedLinks));
   ctx.effect(() => ctx.rpc.on(protocol, "unresolvedChanged", apply));
   void ctx.rpc
     .call(protocol, "unresolved", {})
     .then(apply)
     .catch((error) => ctx.logger.warn("Unresolved links unavailable", error));
 }
-
-const unresolvedTheme = EditorView.baseTheme({
-  ".md-link-rendered.is-unresolved": {
-    opacity: "0.65",
-    textDecorationStyle: "dotted",
-  },
-});
 
 function registerWikiLinks(ctx: Context): void {
   ctx.effect(() => ctx.livePreview.inline(wikiLinkRenderer));

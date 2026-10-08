@@ -1,0 +1,17 @@
+/* Mermaid diagrams, centred; a failed diagram shows its source and the error. */
+pre[data-fence="mermaid"]:has(> svg) {
+  padding: 8px 0;
+  overflow-x: auto;
+  text-align: center;
+  background: none;
+}
+pre[data-fence="mermaid"] svg {
+  max-width: 100%;
+  height: auto;
+}
+.diagram-error {
+  margin: 4px 0 0;
+  color: var(--vscode-errorForeground, #e05252);
+  font-size: 0.875em;
+  white-space: pre-wrap;
+}

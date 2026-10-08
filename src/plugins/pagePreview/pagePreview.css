@@ -1,0 +1,20 @@
+/* The hover preview of a linked note. */
+.link-preview {
+  position: fixed;
+  z-index: 150;
+  width: min(440px, calc(100vw - 16px));
+  max-height: 340px;
+  padding: 12px 16px;
+  overflow: auto;
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--line));
+  border-radius: 6px;
+  color: var(--vscode-editorHoverWidget-foreground, inherit);
+  background: var(--vscode-editorHoverWidget-background, var(--surface));
+  box-shadow: 0 5px 20px #0005;
+  font-size: 14px;
+  white-space: normal;
+}
+.link-preview img,
+.link-preview video {
+  max-width: 100%;
+}
