@@ -506,3 +506,9 @@ smoke scenarios. Use only the disposable fixture vault described above.
   pinning. Keep folds/callout disclosures while changing indentation; verify
   projected table selections and clipboard. Native smoke passed; owner checks
   have not been run.
+
+- **Footnotes:** rerun all **Footnotes** scenarios and the split-view undo
+  regression. Check repeated/named/inline references inside prose, tables and
+  embeds; numbering, popup keyboard focus, definition links and back-references
+  must remain consistent. Disable Footnotes while a preview render is pending,
+  then re-enable; stale controls must not survive. Not run by the agent.

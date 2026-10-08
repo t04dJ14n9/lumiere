@@ -1,93 +1,126 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
+interface ReferenceOptions {
+  render: RenderService;
+  navigate(): void;
+  measure(): void;
+}
+
 /** Both inline widgets and references inside rendered blocks use this control. */
 export function mountReference(
   sup: HTMLElement,
   note: Footnote,
-  render: RenderService,
-  navigate: () => void,
-  measure: () => void,
+  options: ReferenceOptions,
 ): () => void {
-  const events = new AbortController();
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = note.label ? `[^${note.label}]` : `[${note.number}]`;
-  button.setAttribute("aria-label", `Footnote ${note.label || note.number}`);
-  const preview = document.createElement("span");
-  preview.className = "footnote-preview";
-  preview.hidden = true;
-  preview.setAttribute("role", "tooltip");
-  sup.classList.add("hybrid-footnote-ref");
-  sup.replaceChildren(button, preview);
-  let active = true;
-  let rendered = false;
-  let pass: RenderPass | undefined;
-  const hide = () => {
-    preview.hidden = true;
-  };
-  const show = () => {
-    preview.hidden = false;
-    if (rendered) {
+  const reference = new ReferenceControl(sup, note, options);
+  return () => reference.dispose();
+}
+
+class ReferenceControl {
+  private readonly events = new AbortController();
+  private readonly button = document.createElement("button");
+  private readonly preview = document.createElement("span");
+  private active = true;
+  private rendered = false;
+  private pass?: RenderPass;
+
+  constructor(
+    private readonly sup: HTMLElement,
+    private readonly note: Footnote,
+    private readonly options: ReferenceOptions,
+  ) {
+    this.button.type = "button";
+    this.button.textContent = note.label
+      ? `[^${note.label}]`
+      : `[${note.number}]`;
+    this.button.setAttribute(
+      "aria-label",
+      `Footnote ${note.label || note.number}`,
+    );
+    this.preview.className = "footnote-preview";
+    this.preview.hidden = true;
+    this.preview.setAttribute("role", "tooltip");
+    sup.classList.add("hybrid-footnote-ref");
+    sup.replaceChildren(this.button, this.preview);
+    this.registerEvents();
+  }
+
+  private hide(): void {
+    this.preview.hidden = true;
+  }
+
+  private show(): void {
+    this.preview.hidden = false;
+    if (this.rendered) {
       return;
     }
-    rendered = true;
-    void render
-      .into(preview, note.text, { ancestry: ["footnote-preview"], measure })
+    this.rendered = true;
+    void this.options.render
+      .into(this.preview, this.note.text, {
+        ancestry: ["footnote-preview"],
+        measure: this.options.measure,
+      })
       .then((result) => {
-        pass = result;
-        if (!active) {
+        this.pass = result;
+        if (!this.active) {
           void result.dispose();
         }
       })
       .catch(() => {
-        if (active) {
-          preview.textContent = note.text;
+        if (this.active) {
+          this.preview.textContent = this.note.text;
         }
       });
-  };
-  for (const event of ["mouseenter", "focusin"]) {
-    sup.addEventListener(event, show, { signal: events.signal });
   }
-  sup.addEventListener("mouseleave", hide, { signal: events.signal });
-  sup.addEventListener(
-    "focusout",
-    (event) => {
-      if (
-        !(event.relatedTarget instanceof Node) ||
-        !sup.contains(event.relatedTarget)
-      ) {
-        hide();
-      }
-    },
-    { signal: events.signal },
-  );
-  sup.addEventListener(
-    "keydown",
-    (event) => {
-      if (event.key === "Escape") {
+
+  private registerEvents(): void {
+    const options = { signal: this.events.signal };
+    for (const event of ["mouseenter", "focusin"]) {
+      this.sup.addEventListener(event, () => this.show(), options);
+    }
+    this.sup.addEventListener("mouseleave", () => this.hide(), options);
+    this.sup.addEventListener(
+      "focusout",
+      (event) => {
+        if (
+          !(event.relatedTarget instanceof Node) ||
+          !this.sup.contains(event.relatedTarget)
+        ) {
+          this.hide();
+        }
+      },
+      options,
+    );
+    this.sup.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape") {
+          event.stopPropagation();
+          this.hide();
+          this.button.focus();
+        }
+      },
+      options,
+    );
+    this.button.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
         event.stopPropagation();
-        hide();
-        button.focus();
-      }
-    },
-    { signal: events.signal },
-  );
-  button.addEventListener(
-    "click",
-    (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      navigate();
-    },
-    { signal: events.signal },
-  );
-  return () => {
-    active = false;
-    events.abort();
-    void pass?.dispose();
-  };
+        this.options.navigate();
+      },
+      options,
+    );
+  }
+
+  dispose(): void {
+    this.active = false;
+    this.events.abort();
+    void this.pass?.dispose();
+  }
 }
+
 export class FootnoteReference extends WidgetType {
   private readonly cleanups = new WeakMap<HTMLElement, () => void>();
   constructor(
@@ -109,19 +142,17 @@ export class FootnoteReference extends WidgetType {
     const sup = document.createElement("sup");
     this.cleanups.set(
       sup,
-      mountReference(
-        sup,
-        this.note,
-        this.render,
-        () => {
+      mountReference(sup, this.note, {
+        render: this.render,
+        navigate: () => {
           view.dispatch({
             selection: { anchor: this.note.from },
             effects: EditorView.scrollIntoView(this.note.from),
           });
           view.focus();
         },
-        () => view.requestMeasure(),
-      ),
+        measure: () => view.requestMeasure(),
+      }),
     );
     return sup;
   }

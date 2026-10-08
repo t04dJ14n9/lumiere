@@ -28,8 +28,6 @@ export default {
     "src/plugins/embeds/post-process.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/embeds/webview.ts",
-    "src/plugins/footnotes/reference-widget.ts",
-    "src/plugins/footnotes/webview.ts",
     "src/plugins/formatting/inline.ts",
     "src/plugins/formatting/webview.ts",
     "src/plugins/links/host.ts",
@@ -76,7 +74,6 @@ export default {
     "src/plugins/codeBlocks/code-selection.ts",
     "src/plugins/document/session.ts",
     "src/plugins/embeds/image.ts",
-    "src/plugins/footnotes/reference-widget.ts",
     "src/webview/ui/menu.ts",
   ],
   "no-nested-ternary": [

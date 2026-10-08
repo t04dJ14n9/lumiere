@@ -1342,3 +1342,27 @@ entry. Rewrite remaining plugin READMEs and add kernel why-comments; finish manu
 regression inventory, remove the empty backlog/config block, and run readability
 completion checks. Then remaining Phase 4 plugins and Phases 5–8 as recorded
 above. Full owner acceptance remains unrun; no phase completion is claimed.
+
+### Readability pass progress — Footnotes plugin, 2026-10-08
+
+Delivered: apply lists definition invalidation, theme, inline/block renderers,
+pass processors and insertion registration. `preprocess.ts` resolves placeholders
+as pure logic; `RenderedReferences` owns render-pass controls and cleanup;
+`ReferenceControl` owns preview DOM, listeners and late-render disposal. Reference
+mounting takes named capabilities rather than five positional parameters. README
+and manual regression inventory updated. Existing behavior is preserved.
+
+Backlog since preceding unit → now: max-lines-per-function 41 → 39; complexity
+21 → 21; max-params 8 → 7; no-nested-ternary 13 → 13; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 55 → 53. No new lint exceptions.
+Added two preprocessing units; count 233 → 235.
+Checks: `pnpm check` 235/235; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change since Editor's 1/1. Logs:
+`docs/checks/readability-footnotes-{check,browser}.txt`.
+Ledger unchanged: 87/15/2/333/11, total 448. Deviations: none. No new bug fix.
+
+Known issues / exact remaining work: markdown/search/evaluate and metadata/
+footnote-extract next; every other remaining eslint.legacy.mjs entry, remaining
+plugin READMEs, kernel why-comments and manual regression coverage; then remove
+the empty backlog and run readability completion checks. The rest of Phase 4
+and Phases 5–8 remain as above. Owner manual scenarios remain unrun.
