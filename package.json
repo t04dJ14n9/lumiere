@@ -178,6 +178,21 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.insertWikilink",
+        "title": "Insert Wikilink",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.followLink",
+        "title": "Follow Link",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.openLinkToSide",
+        "title": "Open Link to Side",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleSourceMode",
         "title": "Toggle Live Preview/Source Mode",
         "category": "Markdown Workbench"
@@ -411,6 +426,18 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
         },
         {
+          "command": "markdownWorkbench.insertWikilink",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.links"
+        },
+        {
+          "command": "markdownWorkbench.followLink",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.links"
+        },
+        {
+          "command": "markdownWorkbench.openLinkToSide",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.links"
+        },
+        {
           "command": "markdownWorkbench.toggleSourceMode",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.livePreview"
         },
@@ -460,6 +487,12 @@
           "scope": "resource",
           "description": "Line numbers in the Markdown editor."
         },
+        "markdownWorkbench.plugins.links.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Follow Markdown links and wikilinks."
+        },
         "markdownWorkbench.plugins.smartLists.enabled": {
           "type": "boolean",
           "default": true,
@@ -497,6 +530,31 @@
           "type": "boolean",
           "default": true,
           "scope": "resource"
+        },
+        "markdownWorkbench.links.newLinkFormat": {
+          "enum": [
+            "shortest",
+            "relative",
+            "absolute"
+          ],
+          "default": "shortest",
+          "scope": "resource"
+        },
+        "markdownWorkbench.links.useWikilinks": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.links.folderNote": {
+          "type": "string",
+          "default": "",
+          "scope": "resource"
+        },
+        "markdownWorkbench.files.newNoteFolder": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "New notes: empty for vault root, . for current folder, or a vault-relative path."
         },
         "markdownWorkbench.preset": {
           "type": "string",

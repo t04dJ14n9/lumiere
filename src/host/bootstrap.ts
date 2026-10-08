@@ -1,3 +1,4 @@
+import { hostFeatures } from "./features";
 import { features } from "../plugins/catalog";
 import { Context } from "../kernel";
 import type { Workbench } from "../shared/runtime";
@@ -20,6 +21,7 @@ export async function bootstrap(workbench: Workbench) {
       if (workbench.config(panel.document).preset === "obsidian") {
         context.plugin(vaultHost, { root: workbench.root(panel.document) });
         context.plugin(resourcesHost, { panel });
+        hostFeatures(context, panel, workbench);
       }
     },
   });

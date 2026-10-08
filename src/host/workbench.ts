@@ -1,3 +1,4 @@
+import { createNavigation } from "./navigation";
 import { features } from "../plugins/catalog";
 import * as vscode from "vscode";
 import { randomUUID, createHash } from "node:crypto";
@@ -34,6 +35,7 @@ export function createWorkbench(extensionUri: vscode.Uri): Workbench {
     return wrapped;
   }
   return {
+    navigation: createNavigation(),
     fingerprint(text) {
       return createHash("sha256").update(text).digest("hex");
     },

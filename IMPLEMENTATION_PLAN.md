@@ -676,3 +676,21 @@ this run stops here rather than beginning those dependent phases or claiming
 Phase 4 complete. Next implementation step: links (Phase 4 step 3), followed by
 the remaining ordered feature ports and their unit/manual coverage. Phase 9
 was not started. No push, publication or owner-profile installation occurred.
+
+### Phase 4 progress — Links, 2026-10-07
+
+Delivered: links plugin with wikilink decoration, click rules, insertion/follow/
+side commands, fragment navigation, validated host RPC and native navigation
+adapter. Native opens and note creation enforce vault and symlink containment.
+Other application schemes ask before opening; script/data/command/file schemes
+are refused. Host and webview feature registrations follow resource enablement.
+Corrected six source ledger rows still exercised by the existing smoke suite.
+Checks: `pnpm check` (165 unit tests passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, isolated packaged profile). Logs:
+`docs/checks/phase4-links-{check,browser,native}.txt`.
+Ledger: 84/14/2/334/14 (ported/rewritten/changed/retired/todo).
+Deviations from DESIGN.md: native navigation is a workbench adapter; plugin
+policy stays in links. Dangerous executable schemes are refused outright.
+Known issues: Phase 4 steps 4–10 remain, followed by Phases 5–8. Index-backed
+unresolved styling, fresh resolution and new-link-format consumers remain
+Phase 5 work. Manual acceptance has not run. No phase-completion claim.

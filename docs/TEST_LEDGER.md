@@ -122,8 +122,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/browser.spec.ts` | embedded footnotes navigate locally without opening a host link | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/browser.spec.ts` | section embeds resolve external footnotes without making appended tasks editable | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/browser.spec.ts` | one hybrid surface renders blocks and reveals active syntax without altering source | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `browser/browser.spec.ts` | rapid typing survives delayed acknowledgement and an external edit | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `browser/browser.spec.ts` | save waits for a queued burst of Unicode input | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
+| `browser/browser.spec.ts` | rapid typing survives delayed acknowledgement and an external edit | rewritten | `test/browser/sync.spec.ts` (existing smoke suite) |
+| `browser/browser.spec.ts` | save waits for a queued burst of Unicode input | rewritten | `test/browser/sync.spec.ts` (existing smoke suite) |
 | `browser/browser.spec.ts` | formatting, undo and redo use source transactions | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/browser.spec.ts` | clicking a task checkbox changes exactly its source marker | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/browser.spec.ts` | search and list continuation use CodeMirror editing commands | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
@@ -237,7 +237,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/file-title.spec.ts` | title and property keyboard navigation follows the reference with Vim off | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/file-title.spec.ts` | title and property keyboard navigation follows the reference with Vim on | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/file-title.spec.ts` | the Properties heading supports collapse, expansion and space scrolling | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `browser/integration.spec.ts` | selection export captures the acknowledged revision after delayed Unicode typing | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
+| `browser/integration.spec.ts` | selection export captures the acknowledged revision after delayed Unicode typing | rewritten | `test/browser/core.spec.ts` (existing smoke suite) |
 | `browser/integration.spec.ts` | Query annotations navigate and move with edits without changing source text | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/integration.spec.ts` | Query badges stay accessible when their source is inside a rendered table | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/integration.spec.ts` | an exact source anchor reveals and selects text inside a rendered table | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
@@ -250,8 +250,8 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/integration.spec.ts` | the caret at a block's final character remains an editing position: "oe\n```\t() " | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/integration.spec.ts` | the caret at a block's final character remains an editing position: "```js\nconst x = 1;\n```" | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/integration.spec.ts` | the caret at a block's final character remains an editing position: "$$\nx^2\n$$" | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `browser/integration.spec.ts` | plain typing remains one undo group across acknowledged transport batches | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `browser/integration.spec.ts` | moving the plain caret creates a new undo group without losing the earlier typing | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
+| `browser/integration.spec.ts` | plain typing remains one undo group across acknowledged transport batches | rewritten | `test/browser/undo.spec.ts` (existing smoke suite) |
+| `browser/integration.spec.ts` | moving the plain caret creates a new undo group without losing the earlier typing | rewritten | `test/browser/undo.spec.ts` (existing smoke suite) |
 | `browser/integration.spec.ts` | editable code retains Prism tokens while typing and after returning to rendered code | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/integration.spec.ts` | selection colors switch when focus leaves the source editor | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/integration.spec.ts` | formatting b toggles the word at an empty caret without moving it within the word | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
@@ -401,7 +401,7 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `browser/table.spec.ts` | row grips expose their structural menu to keyboard users | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/table.spec.ts` | arrow navigation creates space before a table at the document boundary | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/table.spec.ts` | arrow navigation creates space after a table at the document boundary | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
-| `browser/view-state.spec.ts` | restoring a pane retains backward selection without changing source or history | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
+| `browser/view-state.spec.ts` | restoring a pane retains backward selection without changing source or history | rewritten | `test/browser/view-state.spec.ts` (existing smoke suite) |
 | `browser/view-state.spec.ts` | restoring a reading position inside paragraphs survives a taller title | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/view-state.spec.ts` | restoring a reading position inside one wrapped line survives a taller title | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |
 | `browser/view-state.spec.ts` | rename transfers heading folds, callout expansion and the outline panel | retired | covered by computer-use acceptance (docs/MANUAL_TEST_PLAN.md) |

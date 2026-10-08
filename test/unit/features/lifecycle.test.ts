@@ -1,4 +1,5 @@
 import test from "node:test";
+import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import assert from "node:assert/strict";
 import { Compartment, EditorState, StateEffect } from "@codemirror/state";
 import type { TransactionSpec } from "@codemirror/state";
@@ -23,6 +24,21 @@ function fixture() {
     },
   } as EditorView;
   let extensions = 0;
+  root.provide("livePreview", {
+    mode: "source", setMode() {},
+    block() { extensions++; return () => { extensions--; }; },
+    inline() { extensions++; return () => { extensions--; }; },
+  });
+  let receive: (value: unknown) => void = () => {};
+  const rpc = new Endpoint({
+    listen(listener) { receive = listener; return () => {}; },
+    send(value) {
+      const message = value as { kind: string; id: number };
+      if (message.kind === "request") queueMicrotask(() => receive({ kind: "response", id: message.id, result: "" }));
+    },
+  }, { after() { return () => {}; } });
+  root.provide("rpc", rpc);
+  root.effect(() => () => rpc.dispose());
   const handlers = new Map<string, () => boolean | Promise<boolean>>();
   root.provide("editor", {
     view,

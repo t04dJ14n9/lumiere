@@ -13,3 +13,4 @@ export { autoPairWebview } from "./autoPair/webview";
 export { smartListsWebview } from "./smartLists/webview";
 export { vimWebview } from "./vim/webview";
 export { formattingWebview } from "./formatting/webview";
+export { linksWebview } from "./links/webview";

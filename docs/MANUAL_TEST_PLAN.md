@@ -184,3 +184,25 @@ particular, a properties sheet or interactive table must not be accepted merely
 because its pure parser/HTML renderer passes unit tests. The source's table cell
 edit projection, property draft reconciliation, menus, clipboard, Vim transfer
 and rename focus rules need migration to the service/lifecycle model together.
+
+## Links
+
+Setup: open `Core.md` in the disposable fixture vault. Add `[[Core#Heading]]`,
+`[[Missing note|alias]]`, `[web](https://example.com)` and `[local](Core.md#Heading)`.
+
+1. Move the caret out of the wikilink: only its label is visible. Plain click
+   follows it. Move into source: plain click edits, Cmd/Ctrl-click follows.
+2. Select text across a rendered link and release: the selection remains and
+   no navigation occurs. Cmd/Ctrl+Alt-click opens a second group.
+3. Follow a heading and `#^block` reference; the caret scrolls to the target.
+   Run Follow Link and Open Link to Side while the caret is within link syntax.
+4. Click the missing wikilink: create and open one Markdown file without
+   overwriting an existing file. Test the new-note folder setting.
+5. Open an HTTPS link and an application scheme. The latter asks before opening.
+   A path outside the vault and a symlink escaping it must be refused.
+6. Run Insert Wikilink on selected text, then undo. Disable/re-enable the links
+   plugin: wiki decorations, click behavior, commands and host handlers disappear
+   and return. Repeat with two panels of the same document.
+
+`links.newLinkFormat` and `links.useWikilinks` are consumed by Phase 5 link
+creation/suggestion features; `links.folderNote` controls folder navigation.

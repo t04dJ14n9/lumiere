@@ -1,3 +1,4 @@
+import links from "./links/manifest";
 import formatting from "./formatting/manifest";
 import type { Manifest } from "../shared/manifest";
 import folding from "./folding/manifest";
@@ -8,6 +9,7 @@ import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
 import vim from "./vim/manifest";
 export const features: readonly Manifest[] = [
+  links,
   formatting,
   folding,
   lineNumbers,

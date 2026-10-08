@@ -1,0 +1,58 @@
+
+> vscode-markdown-workbench@0.1.0 test:browser /Users/t04dj14n9/Code/vscode-markdown-workbench
+> pnpm build && playwright test -c test/browser/playwright.config.ts
+
+
+> vscode-markdown-workbench@0.1.0 build /Users/t04dj14n9/Code/vscode-markdown-workbench
+> node scripts/build.mjs
+
+
+  dist/extension.js      1.2mb ⚠️
+  dist/extension.js.map  2.4mb
+
+⚡ Done in 50ms
+
+  dist/webview/editor.js       1.6mb ⚠️
+  dist/webview/editor.css      1.3kb
+  dist/webview/editor.js.map   3.4mb
+  dist/webview/editor.css.map  2.2kb
+
+⚡ Done in 56ms
+
+  dist/workers/search.cjs      805b 
+  dist/workers/vault.cjs       801b 
+  dist/workers/search.cjs.map  234b 
+  dist/workers/vault.cjs.map   233b 
+
+⚡ Done in 1ms
+(node:16477) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 14 tests using 2 workers
+
+(node:16488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16487) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16488) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:16487) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:16488) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:16487) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 test/browser/build.spec.ts:3:5 › the production webview entry loads in Chromium (259ms)
+  ✓   3 test/browser/kernel.spec.ts:3:5 › the unchanged pure kernel runs and disposes in Chromium (62ms)
+  ✓   4 test/browser/markdown.spec.ts:3:5 › pure dialect, metadata and renderer run unchanged in Chromium (147ms)
+  ✓   2 test/browser/core.spec.ts:3:5 › minimal preset synchronizes Unicode typing, saves and undoes with host authority (602ms)
+  ✓   6 test/browser/core.spec.ts:17:5 › selection export captures the acknowledged revision after delayed Unicode typing (310ms)
+  ✓   7 test/browser/core.spec.ts:31:5 › two panels of the same note share text while retaining independent selections (240ms)
+  ✓   8 test/browser/core.spec.ts:45:5 › Live Preview reveals syntax at the caret and toggles to source without reloading (145ms)
+  ✓   5 test/browser/sync.spec.ts:7:5 › rapid typing survives delayed acknowledgement and an external edit (952ms)
+  ✓   9 test/browser/core.spec.ts:61:5 › disposing the livePreview fiber removes its widgets and decorations (139ms)
+  ✓  11 test/browser/undo.spec.ts:4:5 › plain typing remains one undo group across acknowledged transport batches (609ms)
+  ✓  10 test/browser/sync.spec.ts:23:5 › save waits for a queued burst of Unicode input (1.0s)
+  ✓  12 test/browser/undo.spec.ts:22:5 › moving the plain caret creates a new undo group without losing the earlier typing (584ms)
+  ✓  13 test/browser/view-state.spec.ts:3:5 › restoring a pane retains backward selection without changing source or history (344ms)
+  ✓  14 test/browser/view-state.spec.ts:26:5 › captured Source mode follows the current view and restores without document edits (191ms)
+
+  14 passed (3.5s)
