@@ -2396,3 +2396,29 @@ Deviations: mixed content queries conservatively read content; metadata-only
 queries use the index. Read failures keep the existing unreadable-file count.
 Known issues: suggestion candidate caching/measurement from Phase 5, then Phase 4
 completion checks and Phases 6–8. Manual acceptance remains owner-run.
+
+### Phase 4 follow-up — Suggestion candidate caching, 2026-10-08
+
+Addressed Claude's Phase 5 consumer finding in our suggestion plugin. Candidate
+groups invalidate on index changes/resolution; unchanged files retain prepared
+ranking text. Bounded best-50 selection avoids sorting the whole vault, and
+`vault.linkText` runs only for displayed entries. Prepared scores retain the
+existing fuzzy formula, including CJK and grapheme normalization; single-token
+substring scoring avoids building unused highlight ranges. Added score-parity
+and cache-invalidation/materialization-count units.
+
+`pnpm exec tsx scripts/measure-suggestions.ts` generates 10,000 in-memory notes
+(four headings, one block and one alias each). Warm median/p95 milliseconds:
+link "Note" 1.68/2.55; multi-token link 12.37/13.46; empty link 0.43/0.58;
+global headings 4.19/5.98; global blocks 1.27/1.64; tags under 0.01. Each query
+after one changed file measured 1.39–12.69 ms. Cold candidate construction still
+reached 28.87 ms, above the frame budget; full first-open performance remains
+Phase 9 measurement work. Log: `docs/checks/phase4-suggest-cache-measure.txt`.
+Checks: `pnpm check` **413/413**, formatting/lint/types/contributions. Final smoke
+results follow in the Phase 4 completion record. Ledger unchanged **91/22/2/333/0**.
+Deviations: exact score/label ties use canonical file paths, allowing link text to
+be deferred to displayed entries. No VaultIndex interface changes, lint exceptions
+or smoke expansion. No owner data is used by the measurement script.
+Known issues: run Phase 4 completion checks/record, then Phases 6–8. Cold suggestion
+construction and Phase 5 indexing's 19–23 ms host block remain performance limits;
+owner manual acceptance has not run.

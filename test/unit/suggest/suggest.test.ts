@@ -184,3 +184,54 @@ test("suggest host enforces source feature switches and disposes RPC handlers", 
   );
   await pair.dispose();
 });
+
+test("suggestion cache invalidates changed metadata and computes link text only for shown results", async () => {
+  const { SuggestionIndex } = await import(
+    "../../../src/plugins/suggest/sources"
+  );
+  const vault = index();
+  for (let n = 0; n < 100; n++) {
+    vault.upsertFile({
+      path: `Extra${n}.md`,
+      uri: `file:///vault/Extra${n}.md`,
+      mtime: 0,
+      size: 0,
+    });
+  }
+  const cached = new SuggestionIndex(vault);
+  const stop = vault.onDidChange((change) => cached.invalidate(change));
+  let calls = 0;
+  const original = vault.linkText.bind(vault);
+  vault.linkText = (file, source) => {
+    calls++;
+    return original(file, source);
+  };
+  assert.equal(
+    cached.query("Home.md", { kind: "link", query: "Extra" }).length,
+    50,
+  );
+  assert.equal(calls, 50);
+  assert.equal(
+    cached.query("Home.md", { kind: "heading", query: "", note: "Note" })[0]!
+      .label,
+    "Heading",
+  );
+  vault.setMetadata("Note.md", metadata("# Changed"));
+  assert.equal(
+    cached.query("Home.md", { kind: "heading", query: "", note: "Note" })[0]!
+      .label,
+    "Changed",
+  );
+  vault.upsertFile({
+    path: "Note.md",
+    uri: "file:///vault/Note.md",
+    mtime: 1,
+    size: 1,
+    excluded: true,
+  });
+  assert.deepEqual(
+    cached.query("Home.md", { kind: "heading", query: "", note: "Note" }),
+    [],
+  );
+  await stop();
+});

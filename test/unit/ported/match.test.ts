@@ -54,3 +54,40 @@ test("repeated tokens skip occupied matches and normalized ranges coalesce", () 
   assert.deepEqual(fuzzyMatch("f f i", "ﬃ")?.matches, [[0, 1]]);
   assert.deepEqual(fuzzyMatch("---", "anything"), { score: 0, matches: [] });
 });
+
+test("prepared ranking scores equal highlighted fuzzy scores for ASCII, CJK and normalization", async () => {
+  const { prepareFuzzyText, preparedFuzzyScore } = await import(
+    "../../../src/shared/fuzzy"
+  );
+  for (const query of [
+    "",
+    "a",
+    "ab",
+    "a a",
+    "ab cd",
+    "beta alpha",
+    "机器",
+    "ffi",
+    "å",
+    "σ",
+    "---",
+  ]) {
+    for (const text of [
+      "abc",
+      "a-b c-d",
+      "alpha beta",
+      "aaaa",
+      "器械与机械",
+      "ﬃ",
+      "A\u030a",
+      "ΟΣ",
+      "H2 · Note.md",
+    ]) {
+      assert.equal(
+        preparedFuzzyScore(query, prepareFuzzyText(text)),
+        fuzzyMatch(query, text)?.score,
+        `${query}: ${text}`,
+      );
+    }
+  }
+});

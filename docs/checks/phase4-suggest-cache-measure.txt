@@ -1,0 +1,20 @@
+(node:31921) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31925) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31934) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Generated 10000 notes; 4 headings, 1 block, 1 alias each.
+link "Note": cold 28.66 ms; warm median 1.68 ms; p95 2.55 ms
+link "note 123": cold 16.26 ms; warm median 12.37 ms; p95 13.46 ms
+link "": cold 1.98 ms; warm median 0.43 ms; p95 0.58 ms
+heading "Section": cold 28.87 ms; warm median 4.19 ms; p95 5.98 ms
+block "body": cold 16.64 ms; warm median 1.27 ms; p95 1.64 ms
+tag "project": cold 10.13 ms; warm median 0.00 ms; p95 0.00 ms
+After change link "Note": 7.43 ms
+After change link "note 123": 12.69 ms
+After change link "": 1.39 ms
+After change heading "Section": 9.81 ms
+After change block "body": 4.37 ms
+After change tag "project": 7.08 ms
+One changed file + all six queries: 43.34 ms

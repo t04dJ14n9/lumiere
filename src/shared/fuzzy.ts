@@ -75,7 +75,7 @@ interface SourceRange {
 }
 
 const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" });
-const PRINTABLE_ASCII = /^[\x20-\x7e]*$/;
+const SIMPLE_CHARACTERS = /^[\x20-\x7e\u00b7]*$/;
 
 /**
  * Lower-case, NFKC-normalized text, and for each of its positions the source
@@ -85,9 +85,9 @@ function normalizeText(text: string): {
   lower: string;
   original?: SourceRange[];
 } {
-  // Each printable ASCII character is its own grapheme, unchanged by NFKC
+  // Printable ASCII and the display separator middle dot are single graphemes, unchanged by NFKC
   // and lower-cased to one character, so positions map one to one.
-  if (PRINTABLE_ASCII.test(text)) {
+  if (SIMPLE_CHARACTERS.test(text)) {
     return { lower: text.toLowerCase() };
   }
   let lower = "";
@@ -194,4 +194,46 @@ export function matchScore(
     fuzzyMatch(query, path)?.score,
   ].filter((v): v is number => v !== undefined);
   return scores.length ? Math.max(...scores) : undefined;
+}
+
+/** Prepared ranking text avoids rebuilding grapheme maps on every keystroke. */
+export function prepareFuzzyText(text: string): string {
+  return normalizeText(text).lower;
+}
+export function preparedFuzzyScore(
+  query: string,
+  lower: string,
+): number | undefined {
+  const tokens = cachedTokens(query);
+  if (!tokens.length) {
+    return 0;
+  }
+  if (tokens.length === 1) {
+    const token = tokens[0]!;
+    const at = lower.indexOf(token);
+    if (at >= 0) {
+      const boundary = at > 0 && /[\p{L}\p{N}]/u.test(lower[at - 1]!) ? 1 : 0;
+      return (
+        -boundary / 10 - token.length / 100 - at / 1000 - lower.length / 10000
+      );
+    }
+  }
+  const positions =
+    matchTokens(tokens, lower) ?? matchSubsequence(tokens, lower);
+  if (!positions) {
+    return undefined;
+  }
+  positions.sort((a, b) => a - b);
+  const matches = contiguousRanges(positions);
+  const boundaries = matches.filter(
+    ([from]) => from > 0 && /[\p{L}\p{N}]/u.test(lower[from - 1]!),
+  ).length;
+  const spread = positions.at(-1)! - positions[0]! + 1;
+  return (
+    -(matches.length - 1) -
+    boundaries / 10 -
+    spread / 100 -
+    positions[0]! / 1000 -
+    lower.length / 10000
+  );
 }

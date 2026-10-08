@@ -8,7 +8,8 @@ corresponding to Obsidian's EditorSuggest lists.
 Links and Tags own trigger handlers on a typed bail event. The framework skips
 literal code/frontmatter, requests ranked candidates over validated RPC, and
 installs CodeMirror completion keys in the suggestion priority slot. The host
-queries existing vault metadata, omits excluded files and honors source feature
+caches candidates and prepared ranking text by file, invalidates on index
+changes, materializes only 50 link texts, omits excluded files and honors source feature
 switches. Accepting a link reuses closing brackets. Aborted requests and plugin
 disposal cancel pending work.
 
@@ -17,7 +18,9 @@ disposal cancel pending work.
 - `api.ts`: caller-owned source registration and trigger event.
 - `manifest.ts`: default enablement and surfaces.
 - `protocol.ts`: bounded query and result schemas.
-- `sources.ts`: indexed candidates and fuzzy ranking.
+- `sources.ts`: indexed candidate groups and per-file cache invalidation.
+- `candidates.ts`: metadata candidate construction and deferred link text.
+- `rank.ts`: prepared scoring and bounded best-50 selection.
 - `host.ts`: per-panel RPC and source enablement checks.
 - `completion.ts`: code exclusion and insertion transaction.
 - `webview.ts`: source service, asynchronous completion and key priority.
@@ -31,6 +34,8 @@ to true. No palette commands or assigned verify shortcuts.
 
 ## Limits and differences from Obsidian
 
-At most 50 results; existing indexed metadata can lag typing by the indexer's
+At most 50 results; exact score/label ties use canonical paths for deterministic
+ordering. First candidate construction can exceed a frame on large vaults; warm
+queries reuse prepared data. Existing indexed metadata can lag typing by the indexer's
 refresh interval. Block completion uses explicit IDs already present in a note;
 it does not create IDs for arbitrary paragraphs. The popup uses CodeMirror's UI.
