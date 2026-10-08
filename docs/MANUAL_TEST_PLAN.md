@@ -270,6 +270,8 @@ a callout/table. Include nested Markdown and math in the note text.
    rendered preview; Escape dismisses it. Activate it to reveal the definition.
 2. Edit a definition and leave it: every reference preview reflects the change.
    A multiline definition renders as one block and reveals as one source range.
+   Activate each definition back-reference button: it returns to the corresponding
+   reference, including when one definition has multiple references.
 3. Insert Footnote on a selection and at EOF, including an existing numeric label;
    verify a fresh label, preserved selected text and native undo/redo.
 4. Open two panels, insert a footnote in one, then undo there. Verify both converge

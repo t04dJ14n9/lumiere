@@ -9,7 +9,7 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../livePreview/api";
 import type { RenderPass } from "../render/api";
-import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import { FootnoteDefinition } from "./definition-widget";
 import { FootnoteReference, mountReference } from "./reference-widget";
 import { insertFootnote } from "./edit";
 export const footnotesWebview: Plugin = {
@@ -93,13 +93,9 @@ export const footnotesWebview: Plugin = {
           const note = footnotes(view.state.doc).definitions.find(
             (note) => note.from === block.from,
           );
-          return new MarkdownBlock(
-            {
-              ...block,
-              source: `**[^${note?.label ?? ""}]** ${note?.text ?? block.source}`,
-            },
-            ctx.render,
-          );
+          if (!note)
+            throw new Error("Footnote definition changed while rendering");
+          return new FootnoteDefinition(block, note, ctx.render);
         },
       }),
     );

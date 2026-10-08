@@ -816,16 +816,59 @@ pasteHtml/copyForAgent/markers. Then Phase 5 index/host features, Phase 6 comman
 settings/parity inventory, Phase 7 public API and Phase 8 packaging/handover remain.
 No phase-completion claim; owner manual acceptance is not run.
 
-### Phase 4 progress — Rendered link routing, 2026-10-07
+### Phase 4 (incomplete) — Feature plugins continuation, 2026-10-07
 
-Delivered: direct, disposable editor-DOM link listeners so interactive widgets
-cannot bypass the links plugin via CodeMirror's ignoreEvent filter. Extended the
-kernel toggle tests to verify render pre/post-processors and fence claims are
-removed and restored, in addition to compartments and commands.
-Checks: `pnpm check` (187 unit tests passed), `pnpm test:browser` (14/14).
-Native not rerun: no host wiring change since embeds' 1/1 result.
-Ledger: 86/15/2/333/12. Deviations: none.
-Known issues: exact remaining implementation is Phase 4 steps 6–10 (properties,
-tables, inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/markers), then
-Phases 5–8. The latest completed feature is pagePreview. No Phase 4 completion
-or owner acceptance is claimed. Next unit is the structured properties port.
+Delivered in this run: links, codeBlocks, math, diagrams, callouts, footnotes,
+tasks, embeds and pagePreview, each committed with unit coverage, README and
+manual scenarios. Added direct, disposable editor-DOM link listeners so widgets
+cannot bypass link handling via CodeMirror's ignoreEvent filter. Added definition
+back-reference controls for repeated footnotes. Kernel toggle checks now verify
+render pre/post-processors and fence claims as well as compartments and commands.
+Seven retained smoke ledger rows are correctly rewritten rather than retired.
+
+Final checks, in order: `pnpm check` (187 unit tests passed; lint, all TypeScript
+projects and contribution generation passed), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, latest packaged extension in its isolated /tmp profile).
+Logs: `docs/checks/phase4-continuation-{check,browser,native}.txt`.
+Ledger: 86/15/2/333/12 (ported/rewritten/changed/retired/todo), total 448.
+
+Deviations from DESIGN.md: typed render/preProcess and render/changed hooks
+support cross-block footnotes and feature refresh; links accepts a validated
+source offset for embedded footnote navigation. The existing browser smoke build
+uses the production Prism plugin and loads split modules over its fixture server.
+Script/data/command/file application schemes are refused rather than confirmed.
+All recommended section 25 defaults remain adopted; verify keys remain unbound.
+
+Known issues / exact remaining work:
+- Phase 4: structured properties (draft reconciliation, scalar/list/chip editing,
+  row sorting/dragging, structured clipboard, type preferences keyed by vault,
+  heading focus and save-time draft commit); tables (split controller, cell edit
+  projection, selection, navigation, menus, drag/scroll, clipboard and Vim cell
+  transfer); inlineTitle (rename, focus intent and independent panel view transfer);
+  tags/suggest/search (channels, sources, worker/cancellation); pasteHtml,
+  copyForAgent and markers. Each still needs its full lifecycle unit coverage,
+  README, contributions and manual scenarios.
+- Phase 5: replace the per-panel snapshot vault with shared per-vault indexes,
+  nearest-marker roots, worker parsing, persistence, open-document overlays,
+  exclusions and incremental link resolution; migrate resource/suggestion/tag/
+  search consumers; unresolved styling; outline/symbols, backlinks/unlinked
+  mentions, outgoing links, tags view, linkUpdates, quickSwitcher and wordCount;
+  the 10,000-note measurement and its record.
+- Phase 6: finish command/setting routing and defaults, plugin management and
+  workspace editor association command; comprehensive manual inventory and
+  PARITY.md with unobserved rows. Keep verify bindings unbound.
+- Phase 7: frozen public API/declarations, isolated external plugin contexts,
+  selection snapshots and errors, marker mapping, external actions/processors,
+  complete facade unit tests and API.md.
+- Phase 8: final packaging/notices and allowlist audit, README/CAPABILITIES/
+  CHANGELOG, sample external plugin, complete manual handover, zero todo ledger
+  rows and ordered release checks. Native smoke packaging during this run does
+  not establish Phase 8 completion.
+- Manual acceptance has not run. Fresh resource/index invalidation is still
+  absent. The latest completed feature is pagePreview; the next implementation
+  unit is structured properties. Its pinned source was inspected but not ported.
+
+This is an incomplete checkpoint, not a phase-completion record. No external
+permission/tool/resource blocker was found; this run did not finish the requested
+through-Phase-8 scope. No push, publication, owner-profile installation or source
+repository modification occurred.
