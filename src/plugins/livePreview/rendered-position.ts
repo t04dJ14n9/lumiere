@@ -1,3 +1,4 @@
+import type { SyntaxNodeRef } from "@lezer/common";
 import { markdownParser as inlineParser } from "../../markdown/dialect";
 
 import { decodeMarkdownText } from "../../markdown/html";
@@ -7,7 +8,12 @@ export function inlineSourceMap(source: string): {
   text: string;
   positions: readonly number[];
 } {
-  const replacements: { from: number; to: number; text: string }[] = [];
+  return projectInlineText(source, inlineReplacements(source));
+}
+
+type Replacement = { from: number; to: number; text: string };
+function inlineReplacements(source: string): Replacement[] {
+  const replacements: Replacement[] = [];
   // A prefix keeps cell contents such as "# heading" in an inline paragraph.
   inlineParser.parse("x " + source).iterate({
     enter(node) {
@@ -19,22 +25,7 @@ export function inlineSourceMap(source: string): {
         return false;
       };
       if (node.name === "InlineCode") {
-        const marks = node.node.getChildren("CodeMark");
-        let start = (marks[0]?.to ?? node.from) - 2;
-        let end = (marks.at(-1)?.from ?? node.to) - 2;
-        const content = source.slice(start, end);
-        if (
-          content.startsWith(" ") &&
-          content.endsWith(" ") &&
-          /\S/.test(content)
-        ) {
-          start++;
-          end--;
-        }
-        replacements.push(
-          { from, to: start, text: "" },
-          { from: end, to, text: "" },
-        );
+        replacements.push(...codeDelimiters(source, node));
         return false;
       }
       if (
@@ -69,6 +60,13 @@ export function inlineSourceMap(source: string): {
       return undefined;
     },
   });
+  return replacements;
+}
+
+function projectInlineText(
+  source: string,
+  replacements: Replacement[],
+): { text: string; positions: readonly number[] } {
   let text = "";
   const positions: number[] = [];
   const append = (
@@ -83,13 +81,7 @@ export function inlineSourceMap(source: string): {
       positions.push(from);
     }
     for (let index = 0; index < value.length; index++) {
-      positions.push(
-        value.length === to - from
-          ? from + index + 1
-          : index === value.length - 1
-            ? to
-            : from,
-      );
+      positions.push(mappedOffset({ from, to, length: value.length, index }));
     }
     text += value;
   };
@@ -125,4 +117,38 @@ export function renderedPosition(
   before.selectNodeContents(element);
   before.setEnd(caret.startContainer, caret.startOffset);
   return projection.positions[before.toString().length];
+}
+
+function mappedOffset({
+  from,
+  to,
+  length,
+  index,
+}: {
+  from: number;
+  to: number;
+  length: number;
+  index: number;
+}): number {
+  if (length === to - from) {
+    return from + index + 1;
+  }
+  return index === length - 1 ? to : from;
+}
+
+function codeDelimiters(source: string, node: SyntaxNodeRef): Replacement[] {
+  const from = node.from - 2;
+  const to = node.to - 2;
+  const marks = node.node.getChildren("CodeMark");
+  let start = (marks[0]?.to ?? node.from) - 2;
+  let end = (marks.at(-1)?.from ?? node.to) - 2;
+  const content = source.slice(start, end);
+  if (content.startsWith(" ") && content.endsWith(" ") && /\S/.test(content)) {
+    start++;
+    end--;
+  }
+  return [
+    { from, to: start, text: "" },
+    { from: end, to, text: "" },
+  ];
 }

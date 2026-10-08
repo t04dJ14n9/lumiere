@@ -649,3 +649,9 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   folder notes, Explorer folder reveal, side opens and fragments/offsets. Check
   local symlink escapes, missing parent paths and virtual-filesystem symlinks.
   The navigation contract remains unchanged. Not run by the agent.
+
+- **Live Preview:** rerun core reveal/source-mode, structural motion, custom
+  renderer toggles, rendered click placement, IME and mouse-drag selection.
+  Include nested emphasis, Markdown links, headings, quotes and task/list markers.
+  Restore a Source-mode panel and toggle features in different orders; identical
+  settings must give identical renderer priority. Not run by the agent.

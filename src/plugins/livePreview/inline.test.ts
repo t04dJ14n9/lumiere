@@ -1,0 +1,58 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { EditorState } from "@codemirror/state";
+import { documentTree } from "./document-tree";
+import { inlineRenderers } from "./registry";
+import { inlineDecorations } from "./inline";
+
+test("inline decorations retain basic marks, rendered links and deduplicated heading lines", () => {
+  const doc = "# Title\n\n**bold** [label](target)\n\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const decorations = inlineDecorations(state, [
+    { from: 0, to: 7 },
+    { from: 0, to: doc.length },
+  ]);
+  const classes: string[] = [];
+  const links: string[] = [];
+  decorations.between(0, doc.length, (_from, _to, value) => {
+    if (value.spec.class) {
+      classes.push(value.spec.class);
+    }
+    if (value.spec.attributes?.["data-href"]) {
+      links.push(value.spec.attributes["data-href"]);
+    }
+  });
+  assert.equal(
+    classes.filter((value) => value === "md-heading md-h1").length,
+    1,
+  );
+  assert.ok(classes.includes("md-strong"));
+  assert.ok(classes.includes("md-link md-link-rendered"));
+  assert.deepEqual(links, ["target"]);
+});
+
+test("custom inline renderers can retain detached context functions and replace core behavior", () => {
+  const doc = "**bold**";
+  const state = EditorState.create({
+    doc,
+    extensions: [
+      documentTree,
+      inlineRenderers.of({
+        nodes: ["StrongEmphasis"],
+        decorate(node, { mark }) {
+          mark(node.from, node.to, "custom");
+        },
+      }),
+    ],
+  });
+  const decorations = inlineDecorations(state, [{ from: 0, to: doc.length }]);
+  const classes: string[] = [];
+  decorations.between(0, doc.length, (_from, _to, value) =>
+    classes.push(value.spec.class),
+  );
+  assert.deepEqual(classes, ["custom"]);
+});

@@ -9,18 +9,9 @@ export default {
     "src/plugins/embeds/post-process.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/embeds/webview.ts",
-    "src/plugins/livePreview/inline.ts",
-    "src/plugins/livePreview/rendered-position.ts",
-    "src/plugins/livePreview/webview.ts",
   ],
-  complexity: [
-    "src/plugins/embeds/webm.ts",
-    "src/plugins/livePreview/inline.ts",
-  ],
+  complexity: ["src/plugins/embeds/webm.ts"],
   "max-params": ["src/host/navigation.ts", "src/plugins/embeds/image.ts"],
-  "no-nested-ternary": [
-    "src/plugins/embeds/image.ts",
-    "src/plugins/livePreview/rendered-position.ts",
-  ],
+  "no-nested-ternary": ["src/plugins/embeds/image.ts"],
   "no-restricted-syntax": [],
 };

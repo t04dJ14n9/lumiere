@@ -31,3 +31,12 @@ test("inline projections preserve entities, links and literal code source", () =
     source.indexOf("literal") + 2,
   );
 });
+
+test("inline projection maps expanded Unicode entities and stripped-only text", () => {
+  const source = "&#x1f9e0;";
+  const result = inlineSourceMap(source);
+  assert.equal(result.text, "🧠");
+  assert.deepEqual(result.positions, [0, 0, source.length]);
+  assert.deepEqual(inlineSourceMap("%%hidden%%"), { text: "", positions: [0] });
+  assert.equal(inlineSourceMap("`  `").text, "  ");
+});

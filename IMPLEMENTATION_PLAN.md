@@ -1953,3 +1953,22 @@ Known issues: embeds image-dialog/image/post-process/webm/webview and livePrevie
 inline/rendered-position/webview; remaining README/manual inventory and readability
 completion checks. Then remaining Phase 4 plugins, Claude's Phase 5 completion
 gate and Phases 6–8 as specified above. Owner acceptance unrun.
+
+### Readability pass progress — Live Preview, 2026-10-08
+
+Delivered: an inline decoration builder owns ranges/line deduplication and named
+bullet/block/link/syntax operations; custom renderers retain detached callable
+context methods. Source projection separates syntax removal from offset mapping.
+Apply names engine, invalidation, fallback and mode registrations. README corrects
+stale renderer-priority prose; manual regressions include drag/IME and toggles.
+Added three units for basic/custom decorations and Unicode/empty projections.
+Backlog: 8 → 5 distinct files; long-function 8 → 5; complexity 2 → 1;
+nested-ternary 2 → 1; parameters unchanged at 1. No new exceptions or behavior fixes.
+Checks: `pnpm check` 350/350; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-livepreview-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: Embeds image-dialog/image/post-process/webm/webview are the five
+remaining backlog files. Finish remaining README/manual inventory and ordered
+readability completion checks, then Phase 4 inlineTitle/tags/suggest/search/
+pasteHtml/copyForAgent/markers. Claude's Phase 5 completion gate and Phases 6–8
+remain as specified above.

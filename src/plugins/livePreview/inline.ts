@@ -1,4 +1,4 @@
-import type { Range } from "@codemirror/state";
+import type { Range, EditorState } from "@codemirror/state";
 import { Decoration, ViewPlugin, WidgetType } from "@codemirror/view";
 import type { EditorView, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { linkDestination } from "../../markdown/html";
@@ -13,171 +13,192 @@ class Bullet extends WidgetType {
   }
 }
 
-function decorations(view: EditorView): DecorationSet {
-  const ranges: Range<Decoration>[] = [];
-  const lines = new Set<string>();
-  const active = (from: number, to: number): boolean =>
-    revealed(view.state, from, to);
-  const mark = (
+import type { SyntaxNodeRef } from "@lezer/common";
+import type { InlineContext } from "./api";
+const inlineClasses: Readonly<Record<string, string>> = {
+  Highlight: "md-highlight",
+  StrongEmphasis: "md-strong",
+  Emphasis: "md-emphasis",
+  Strikethrough: "md-strike",
+  InlineCode: "md-inline-code",
+};
+
+export function inlineDecorations(
+  state: EditorState,
+  visibleRanges: readonly { from: number; to: number }[],
+): DecorationSet {
+  const builder = new InlineDecorations(state);
+  for (const visible of visibleRanges) {
+    state.field(documentTree).iterate({
+      from: visible.from,
+      to: visible.to,
+      enter: (node) => builder.decorate(node, visible),
+    });
+  }
+  return Decoration.set(builder.ranges, true);
+}
+
+class InlineDecorations implements InlineContext {
+  readonly ranges: Range<Decoration>[] = [];
+  private readonly lines = new Set<string>();
+  constructor(readonly state: EditorState) {}
+
+  revealed = (from: number, to: number): boolean =>
+    revealed(this.state, from, to);
+  mark = (
     from: number,
     to: number,
     cls: string,
     attributes?: Record<string, string>,
   ): void => {
     if (from < to) {
-      ranges.push(Decoration.mark({ class: cls, attributes }).range(from, to));
+      this.ranges.push(
+        Decoration.mark({ class: cls, attributes }).range(from, to),
+      );
     }
   };
-  const hide = (from: number, to: number): void => {
+  hide = (from: number, to: number): void => {
     if (from < to) {
-      ranges.push(Decoration.replace({}).range(from, to));
+      this.ranges.push(Decoration.replace({}).range(from, to));
     }
   };
-  const line = (at: number, cls: string): void => {
-    const from = view.state.doc.lineAt(at).from;
-    if (lines.has(`${from}:${cls}`)) {
+  replace = (from: number, to: number, widget: WidgetType): void => {
+    this.ranges.push(Decoration.replace({ widget }).range(from, to));
+  };
+  line = (at: number, cls: string): void => {
+    const from = this.state.doc.lineAt(at).from;
+    if (this.lines.has(`${from}:${cls}`)) {
       return;
     }
-    lines.add(`${from}:${cls}`);
-    ranges.push(Decoration.line({ class: cls }).range(from));
+    this.lines.add(`${from}:${cls}`);
+    this.ranges.push(Decoration.line({ class: cls }).range(from));
   };
-  for (const visible of view.visibleRanges) {
-    view.state.field(documentTree).iterate({
-      from: visible.from,
-      to: visible.to,
-      enter(node) {
-        const { name, from, to } = node;
-        const custom = view.state
-          .facet(inlineRenderers)
-          .find((renderer) => renderer.nodes.includes(name));
-        if (custom) {
-          custom.decorate(node, {
-            state: view.state,
-            revealed: active,
-            mark,
-            hide,
-            line,
-            replace(from, to, widget) {
-              ranges.push(Decoration.replace({ widget }).range(from, to));
-            },
-          });
-          return false;
-        }
-        if (name === "Highlight") {
-          mark(from, to, "md-highlight");
-        }
-        if (name === "ObsidianComment") {
-          mark(from, to, "md-comment");
-          return false;
-        }
-        if (name === "Escape" && !active(from, to)) {
-          hide(from, from + 1);
-        }
-        if (
-          name === "ListMark" &&
-          /^[-+*]$/.test(view.state.sliceDoc(from, to))
-        ) {
-          const task = node.node.nextSibling?.getChild("TaskMarker");
-          if (task) {
-            hide(from, task.from);
-          } else if (!active(from, to)) {
-            ranges.push(
-              Decoration.replace({ widget: new Bullet() }).range(from, to),
-            );
-          }
-        }
-        if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
-          line(from, `md-heading md-h${name.at(-1)}`);
-        }
-        if (name === "StrongEmphasis") {
-          mark(from, to, "md-strong");
-        }
-        if (name === "Emphasis") {
-          mark(from, to, "md-emphasis");
-        }
-        if (name === "Strikethrough") {
-          mark(from, to, "md-strike");
-        }
-        if (name === "InlineCode") {
-          mark(from, to, "md-inline-code");
-        }
-        if (name === "Blockquote") {
-          for (
-            let pos = Math.max(from, visible.from);
-            pos <= Math.min(to, visible.to);
 
-          ) {
-            const current = view.state.doc.lineAt(pos);
-            line(pos, "md-quote");
-            pos = current.to + 1;
-          }
-        }
-        if (name === "FencedCode" || name === "Table") {
-          for (
-            let pos = Math.max(from, visible.from);
-            pos <= Math.min(to, visible.to);
-
-          ) {
-            const current = view.state.doc.lineAt(pos);
-            line(pos, name === "Table" ? "md-table-source" : "md-code-line");
-            pos = current.to + 1;
-          }
-        }
-        if (name === "Link") {
-          const url = node.node.getChild("URL");
-          if (url) {
-            const closingLabel = node.node.getChildren("LinkMark")[1];
-            const rendered = !active(from, to);
-            // A rendered label opens on plain click, as in Obsidian's Live
-            // Preview; revealed link source needs Cmd/Ctrl-click.
-            mark(
-              from + 1,
-              closingLabel?.from ?? to,
-              rendered ? "md-link md-link-rendered" : "md-link",
-              {
-                "data-href": linkDestination(
-                  view.state.sliceDoc(url.from, url.to),
-                ),
-              },
-            );
-            if (rendered) {
-              if (closingLabel) {
-                hide(closingLabel.from, to);
-              }
-              hide(from, from + 1);
-            }
-          }
-        }
-        const parent = node.node.parent;
-        if (
-          [
-            "EmphasisMark",
-            "StrikethroughMark",
-            "HeaderMark",
-            "CodeMark",
-            "QuoteMark",
-            "HighlightMark",
-          ].includes(name) &&
-          parent &&
-          !active(parent.from, parent.to)
-        ) {
-          if (name === "CodeMark" && parent.name !== "InlineCode") {
-            return;
-          }
-          hide(
-            from,
-            to +
-              (["HeaderMark", "QuoteMark"].includes(name) &&
-              view.state.sliceDoc(to, to + 1) === " "
-                ? 1
-                : 0),
-          );
-        }
-        return undefined;
-      },
-    });
+  decorate(
+    node: SyntaxNodeRef,
+    visible: { from: number; to: number },
+  ): false | undefined {
+    const { name, from, to } = node;
+    const custom = this.state
+      .facet(inlineRenderers)
+      .find((renderer) => renderer.nodes.includes(name));
+    if (custom) {
+      custom.decorate(node, this);
+      return false;
+    }
+    const cls = inlineClasses[name];
+    if (cls) {
+      this.mark(from, to, cls);
+    }
+    if (name === "ObsidianComment") {
+      this.mark(from, to, "md-comment");
+      return false;
+    }
+    if (name === "Escape" && !this.revealed(from, to)) {
+      this.hide(from, from + 1);
+    }
+    this.decorateBullet(node);
+    if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
+      this.line(from, `md-heading md-h${name.at(-1)}`);
+    }
+    this.decorateBlockLines(node, visible);
+    this.decorateLink(node);
+    this.hideSyntax(node);
+    return undefined;
   }
-  return Decoration.set(ranges, true);
+
+  private decorateBullet(node: SyntaxNodeRef): void {
+    const { name, from, to } = node;
+    if (name !== "ListMark" || !/^[-+*]$/.test(this.state.sliceDoc(from, to))) {
+      return;
+    }
+    const task = node.node.nextSibling?.getChild("TaskMarker");
+    if (task) {
+      this.hide(from, task.from);
+    } else if (!this.revealed(from, to)) {
+      this.replace(from, to, new Bullet());
+    }
+  }
+
+  private decorateBlockLines(
+    node: SyntaxNodeRef,
+    visible: { from: number; to: number },
+  ): void {
+    const classes: Readonly<Record<string, string>> = {
+      Blockquote: "md-quote",
+      FencedCode: "md-code-line",
+      Table: "md-table-source",
+    };
+    const cls = classes[node.name];
+    if (!cls) {
+      return;
+    }
+    for (
+      let pos = Math.max(node.from, visible.from);
+      pos <= Math.min(node.to, visible.to);
+
+    ) {
+      const current = this.state.doc.lineAt(pos);
+      this.line(pos, cls);
+      pos = current.to + 1;
+    }
+  }
+
+  private decorateLink(node: SyntaxNodeRef): void {
+    if (node.name !== "Link") {
+      return;
+    }
+    const { from, to } = node;
+    const url = node.node.getChild("URL");
+    if (!url) {
+      return;
+    }
+    const closingLabel = node.node.getChildren("LinkMark")[1];
+    const isRendered = !this.revealed(from, to);
+    // Rendered labels open on plain click; source needs Cmd/Ctrl-click.
+    this.mark(
+      from + 1,
+      closingLabel?.from ?? to,
+      isRendered ? "md-link md-link-rendered" : "md-link",
+      { "data-href": linkDestination(this.state.sliceDoc(url.from, url.to)) },
+    );
+    if (isRendered) {
+      if (closingLabel) {
+        this.hide(closingLabel.from, to);
+      }
+      this.hide(from, from + 1);
+    }
+  }
+
+  private hideSyntax(node: SyntaxNodeRef): void {
+    const { name, from, to } = node;
+    const parent = node.node.parent;
+    if (
+      ![
+        "EmphasisMark",
+        "StrikethroughMark",
+        "HeaderMark",
+        "CodeMark",
+        "QuoteMark",
+        "HighlightMark",
+      ].includes(name) ||
+      !parent ||
+      this.revealed(parent.from, parent.to)
+    ) {
+      return;
+    }
+    if (name === "CodeMark" && parent.name !== "InlineCode") {
+      return;
+    }
+    this.hide(
+      from,
+      to +
+        (["HeaderMark", "QuoteMark"].includes(name) &&
+        this.state.sliceDoc(to, to + 1) === " "
+          ? 1
+          : 0),
+    );
+  }
 }
 
 export const hybridInline = ViewPlugin.fromClass(
@@ -189,7 +210,7 @@ export const hybridInline = ViewPlugin.fromClass(
       this.events.abort();
     }
     constructor(view: EditorView) {
-      this.decorations = decorations(view);
+      this.decorations = inlineDecorations(view.state, view.visibleRanges);
     }
     update(update: ViewUpdate): void {
       // Keep composition's DOM stable, then rebuild at compositionend.
@@ -197,7 +218,10 @@ export const hybridInline = ViewPlugin.fromClass(
         this.decorations = this.decorations.map(update.changes);
         return;
       }
-      this.decorations = decorations(update.view);
+      this.decorations = inlineDecorations(
+        update.view.state,
+        update.view.visibleRanges,
+      );
     }
   },
   {
