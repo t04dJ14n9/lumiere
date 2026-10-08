@@ -7,8 +7,9 @@ export function linkParts(href: string): { path: string; fragment: string } {
   if (
     [...path].some((char) => char.charCodeAt(0) < 32 || char === "\\") ||
     /%2f|%5c/i.test(path)
-  )
+  ) {
     throw new Error("Invalid link path");
+  }
   return { path, fragment };
 }
 export function externalScheme(href: string): string | undefined {

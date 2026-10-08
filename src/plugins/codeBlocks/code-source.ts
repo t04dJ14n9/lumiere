@@ -51,8 +51,8 @@ class CodeSource {
           if (!active) {
             return false;
           }
-          const info = node.node.getChild("CodeInfo"),
-            code = node.node.getChild("CodeText");
+          const info = node.node.getChild("CodeInfo");
+          const code = node.node.getChild("CodeText");
           const language =
             info &&
             /^[\w-]+/.exec(view.state.sliceDoc(info.from, info.to))?.[0];
@@ -83,8 +83,8 @@ class CodeSource {
               : { text, language, tokens: this.tokenize(text, language) };
           next.set(node.from, cached);
           for (const token of cached.tokens) {
-            const from = code.from + token.from,
-              to = code.from + token.to;
+            const from = code.from + token.from;
+            const to = code.from + token.to;
             if (to > visible.from && from < visible.to) {
               marks.push(
                 Decoration.mark({ class: token.classes }).range(from, to),

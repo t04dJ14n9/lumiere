@@ -129,7 +129,9 @@ export function materializeCell(
   return {
     from: cell.from,
     insert:
-      (closed ? "" : " |") + "  |".repeat(position.column - firstMissing) + ` ${cellText(text)} |`,
+      (closed ? "" : " |") +
+      "  |".repeat(position.column - firstMissing) +
+      ` ${cellText(text)} |`,
   };
 }
 
@@ -194,7 +196,9 @@ export function rangeTexts(table: Table, range: CellRange): string[][] {
   const area = rectangle(range);
   return table.rows
     .slice(area.top, area.bottom + 1)
-    .map((row) => row.slice(area.left, area.right + 1).map((cell) => cell.text));
+    .map((row) =>
+      row.slice(area.left, area.right + 1).map((cell) => cell.text),
+    );
 }
 
 /** Tab-separated cells, as spreadsheets copy them. */
@@ -218,13 +222,18 @@ export function toggleMarker(text: string, marker: string): string {
   if (!text) {
     return "";
   }
-  return text.startsWith(marker) && text.endsWith(marker) && text.length >= marker.length * 2
+  return text.startsWith(marker) &&
+    text.endsWith(marker) &&
+    text.length >= marker.length * 2
     ? text.slice(marker.length, -marker.length)
     : marker + text + marker;
 }
 
 /** The cell whose raw source, including padding, contains an offset. */
-export function cellAtOffset(table: Table, offset: number): CellPosition | undefined {
+export function cellAtOffset(
+  table: Table,
+  offset: number,
+): CellPosition | undefined {
   for (let row = 0; row < table.rows.length; row++) {
     const column = table.rows[row]!.findIndex(
       (cell) => cell.rawFrom <= offset && offset <= cell.rawTo,
@@ -266,7 +275,11 @@ export function writeCells(
 
 export function insertRow(table: Table, after: number): string {
   const rows = table.rows.map((row) => row.map((cell) => cell.text));
-  rows.splice(Math.max(1, after + 1), 0, Array<string>(table.alignments.length).fill(""));
+  rows.splice(
+    Math.max(1, after + 1),
+    0,
+    Array<string>(table.alignments.length).fill(""),
+  );
   return serializeTable(rows, table.alignments);
 }
 

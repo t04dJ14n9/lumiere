@@ -5,7 +5,9 @@ export function insertFootnote(state: EditorState): TransactionSpec {
     footnotes(state.doc).definitions.map((note) => note.label),
   );
   let number = 1;
-  while (labels.has(String(number))) number++;
+  while (labels.has(String(number))) {
+    number++;
+  }
   const { from, to } = state.selection.main;
   const selected = state.sliceDoc(from, to);
   const marker = `[^${number}]`;

@@ -15,7 +15,9 @@ export function defineProtocol<
   id: string,
   methods: { requests: R; notifications: N },
 ): Readonly<{ id: string; requests: R; notifications: N }> {
-  if (!/^[a-zA-Z][\w.-]*$/.test(id)) throw new Error("Invalid protocol namespace");
+  if (!/^[a-zA-Z][\w.-]*$/.test(id)) {
+    throw new Error("Invalid protocol namespace");
+  }
   return Object.freeze({
     id,
     requests: Object.freeze({ ...methods.requests }),

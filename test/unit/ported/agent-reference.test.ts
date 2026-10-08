@@ -3,8 +3,14 @@ import assert from "node:assert/strict";
 import { formatMarkdownAgentReference } from "../../../src/shared/agent-reference";
 
 test("formats exact Markdown agent references", () => {
-  assert.equal(formatMarkdownAgentReference("notes/a.md", 7, 7), "@notes/a.md#7");
-  assert.equal(formatMarkdownAgentReference("notes\\a.md", 7, 9), "@notes/a.md#7-9");
+  assert.equal(
+    formatMarkdownAgentReference("notes/a.md", 7, 7),
+    "@notes/a.md#7",
+  );
+  assert.equal(
+    formatMarkdownAgentReference("notes\\a.md", 7, 9),
+    "@notes/a.md#7-9",
+  );
 });
 
 test("rejects URI schemes and all Windows drive-prefixed Markdown paths", () => {

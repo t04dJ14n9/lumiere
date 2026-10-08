@@ -34,7 +34,9 @@ export const editorWebview: Plugin<{
   inject: { required: ["document", "markdown", "rpc"] },
   reconfigure(ctx, config) {
     const settings = configurations.get(ctx);
-    if (!settings) return false;
+    if (!settings) {
+      return false;
+    }
     settings(editorConfig.parse(config.editor ?? {}));
     return true;
   },
@@ -61,10 +63,11 @@ export const editorWebview: Plugin<{
           Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
           Prec.low(keymap.of(defaultKeymap)),
           EditorView.updateListener.of((update) => {
-            if (update.selectionSet || update.focusChanged)
+            if (update.selectionSet || update.focusChanged) {
               ctx.rpc.notify(protocol, "selectionChanged", {
                 hasSelection: !update.state.selection.main.empty,
               });
+            }
           }),
         ],
       }),
@@ -87,7 +90,7 @@ export const editorWebview: Plugin<{
       [bindCaller](caller) {
         return new Proxy(editor, {
           get(target, key, receiver) {
-            if (key === "extend")
+            if (key === "extend") {
               return (
                 extension: Parameters<EditorService["extend"]>[0],
                 options?: Parameters<EditorService["extend"]>[1],
@@ -97,6 +100,7 @@ export const editorWebview: Plugin<{
                   extension,
                   options?.slot,
                 );
+            }
             return Reflect.get(target, key, receiver);
           },
         });
@@ -199,8 +203,9 @@ export const editorWebview: Plugin<{
             update.selectionSet ||
             update.docChanged ||
             update.transactions.some((tr) => tr.effects.length > 0)
-          )
+          ) {
             config.persist?.(capture());
+          }
         }),
       ),
     );
@@ -212,7 +217,9 @@ export const editorWebview: Plugin<{
     if (config.saved) {
       try {
         const saved = viewState.parse(config.saved);
-        if (saved.source === config.source) restore(saved);
+        if (saved.source === config.source) {
+          restore(saved);
+        }
       } catch (error) {
         ctx.logger.warn("Ignored invalid saved view state", error);
       }
@@ -220,13 +227,16 @@ export const editorWebview: Plugin<{
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "reveal", ({ from, to, focus }) => {
         ctx.emit("editor/clearProjection");
-        if (from > to || to > view.state.doc.length)
+        if (from > to || to > view.state.doc.length) {
           throw new Error("Invalid selection");
+        }
         view.dispatch({
           selection: { anchor: from, head: to },
           scrollIntoView: true,
         });
-        if (focus) view.focus();
+        if (focus) {
+          view.focus();
+        }
         return true;
       }),
     );

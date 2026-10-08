@@ -17,7 +17,9 @@ export function featureCommands(
   const refresh = () => {
     queue = queue
       .then(async () => {
-        if (!live) return;
+        if (!live) {
+          return;
+        }
         const panel = ctx.editors.active();
         const settings = panel
           ? ctx.workbench.config(panel.document)
@@ -34,7 +36,9 @@ export function featureCommands(
             await previous.dispose();
             fibers.delete(manifest.id);
           }
-          if (!enabled || fibers.has(manifest.id)) continue;
+          if (!enabled || fibers.has(manifest.id)) {
+            continue;
+          }
           fibers.set(
             manifest.id,
             ctx.plugin({
@@ -46,7 +50,9 @@ export function featureCommands(
                       `markdownWorkbench.${command.id}`,
                       () => {
                         const active = ctx.editors.active();
-                        if (!active || !command.editorCommand) return;
+                        if (!active || !command.editorCommand) {
+                          return;
+                        }
                         const current = ctx.workbench.config(active.document);
                         if (
                           current.preset !== "obsidian" ||
@@ -54,8 +60,9 @@ export function featureCommands(
                             current.features?.[manifest.id]?.enabled ??
                             manifest.defaultEnabled
                           )
-                        )
+                        ) {
                           return;
+                        }
                         return active.rpc.call(protocol, "run", {
                           command: command.editorCommand,
                         });
@@ -75,7 +82,8 @@ export function featureCommands(
   ctx.on("editor/activeChanged", refresh);
   ctx.on("editor/opened", refresh);
   ctx.on("editor/closed", refresh);
-  if (ctx.workbench.onConfiguration)
+  if (ctx.workbench.onConfiguration) {
     ctx.effect(() => ctx.workbench.onConfiguration!(refresh));
+  }
   refresh();
 }

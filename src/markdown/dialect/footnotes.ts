@@ -17,8 +17,8 @@ export const footnotes: MarkdownConfig = {
             continue;
           }
           if (char === 96) {
-            const tail = cx.slice(end, cx.end),
-              run = /^`+/.exec(tail)![0];
+            const tail = cx.slice(end, cx.end);
+            const run = /^`+/.exec(tail)![0];
             const code = new RegExp("(?<!`)" + run + "(?!`)", "g");
             code.lastIndex = run.length;
             const close = code.exec(tail);
@@ -45,7 +45,9 @@ export const footnotes: MarkdownConfig = {
           return -1;
         }
         const match = /^\[\^([^\]\s]+)\]/.exec(cx.slice(pos, cx.end));
-        return match ? cx.addElement(cx.elt("FootnoteRef", pos, pos + match[0].length)) : -1;
+        return match
+          ? cx.addElement(cx.elt("FootnoteRef", pos, pos + match[0].length))
+          : -1;
       },
     },
   ],

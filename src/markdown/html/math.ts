@@ -18,7 +18,11 @@ export function math(md: MarkdownIt): void {
       return false;
     }
     if (!silent) {
-      const token = state.push(delimiter === "$$" ? "math_block" : "math_inline", "", 0);
+      const token = state.push(
+        delimiter === "$$" ? "math_block" : "math_inline",
+        "",
+        0,
+      );
       token.content = state.src.slice(start, end);
     }
     state.pos = end + delimiter.length;
@@ -26,8 +30,10 @@ export function math(md: MarkdownIt): void {
   });
   const mathHTML = (expression: string, display: boolean): string =>
     `<span class="math-placeholder${display ? " math-display" : ""}"${attr("data-math", encodeURIComponent(expression))}${attr("data-display", String(display))}>${escape(expression)}</span>`;
-  md.renderer.rules.math_inline = (tokens, index) => mathHTML(tokens[index]!.content, false);
-  md.renderer.rules.math_block = (tokens, index) => mathHTML(tokens[index]!.content, true);
+  md.renderer.rules.math_inline = (tokens, index) =>
+    mathHTML(tokens[index]!.content, false);
+  md.renderer.rules.math_block = (tokens, index) =>
+    mathHTML(tokens[index]!.content, true);
 
   md.block.ruler.before(
     "fence",
@@ -37,15 +43,21 @@ export function math(md: MarkdownIt): void {
         state.bMarks[start]! + state.tShift[start]!,
         state.eMarks[start],
       );
-      if (!first.startsWith("$$") || state.sCount[start]! - state.blkIndent >= 4) {
+      if (
+        !first.startsWith("$$") ||
+        state.sCount[start]! - state.blkIndent >= 4
+      ) {
         return false;
       }
-      let last = start,
-        content = first.slice(2),
-        closing = content.indexOf("$$");
+      let last = start;
+      let content = first.slice(2);
+      let closing = content.indexOf("$$");
       while (closing < 0 && last + 1 < end) {
         last++;
-        const line = state.src.slice(state.bMarks[last]! + state.tShift[last]!, state.eMarks[last]);
+        const line = state.src.slice(
+          state.bMarks[last]! + state.tShift[last]!,
+          state.eMarks[last],
+        );
         const found = line.indexOf("$$");
         if (found >= 0) {
           content += "\n" + line.slice(0, found);

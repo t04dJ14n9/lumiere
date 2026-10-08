@@ -38,13 +38,21 @@ export class Session implements DocumentSession {
     return this.authority.version;
   }
   attach(id: string, rpc: Endpoint) {
-    if (this.clients.has(id)) throw new Error("Duplicate panel");
+    if (this.clients.has(id)) {
+      throw new Error("Duplicate panel");
+    }
     const client = { rpc, sent: this.version };
     this.clients.set(id, client);
     const stop = rpc.handle(protocol, "push", (params) => {
       const request = this.queue.then(async () => {
-        const prepared = this.authority.prepare(params.version, params.changes, id);
-        if (!prepared) return true;
+        const prepared = this.authority.prepare(
+          params.version,
+          params.changes,
+          id,
+        );
+        if (!prepared) {
+          return true;
+        }
         const before = this.fingerprint();
         if (prepared.text.eq(this.authority.doc)) {
           this.authority.record(this.document.getText(), prepared);
@@ -53,14 +61,21 @@ export class Session implements DocumentSession {
         }
         const edits: TextEdit[] = [];
         prepared.changes.iterChanges((from, to, _a, _b, insert) =>
-          edits.push({ from, to, insert: insert.sliceString(0, insert.length, this.document.eol) }),
+          edits.push({
+            from,
+            to,
+            insert: insert.sliceString(0, insert.length, this.document.eol),
+          }),
         );
         this.expected = prepared;
         try {
-          if (!(await this.workbench.apply(this.document, edits)))
+          if (!(await this.workbench.apply(this.document, edits))) {
             throw new Error("The host could not apply the edit.");
+          }
           // Real workbenches fire change before apply resolves. Fakes may not.
-          if (this.expected) this.changed();
+          if (this.expected) {
+            this.changed();
+          }
           this.groups.record(
             before,
             this.fingerprint(),
@@ -80,14 +95,18 @@ export class Session implements DocumentSession {
     };
   }
   changed(): void {
-    if (!this.expected && !this.historyAction) this.groups.clear();
+    if (!this.expected && !this.historyAction) {
+      this.groups.clear();
+    }
     this.authority.record(this.document.getText(), this.expected);
     this.expected = undefined;
     this.broadcast();
   }
   private broadcast(): void {
     for (const client of this.clients.values()) {
-      if (client.sent === this.version) continue;
+      if (client.sent === this.version) {
+        continue;
+      }
       client.rpc.notify(protocol, "updates", {
         version: client.sent,
         updates: this.authority.since(client.sent),

@@ -6,12 +6,18 @@ export const documentHost: Plugin = {
   name: "document",
   inject: { required: ["workbench"] },
   apply(ctx) {
-    const sessions = new Map<HostDocument, { session: Session; references: number }>();
+    const sessions = new Map<
+      HostDocument,
+      { session: Session; references: number }
+    >();
     const documents: Documents = {
       session(document) {
         let entry = sessions.get(document);
         if (!entry) {
-          entry = { session: new Session(document, ctx.workbench), references: 0 };
+          entry = {
+            session: new Session(document, ctx.workbench),
+            references: 0,
+          };
           sessions.set(document, entry);
         }
         entry.references++;
@@ -19,7 +25,9 @@ export const documentHost: Plugin = {
       },
       release(document) {
         const entry = sessions.get(document);
-        if (entry && --entry.references <= 0) sessions.delete(document);
+        if (entry && --entry.references <= 0) {
+          sessions.delete(document);
+        }
       },
     };
     ctx.provide("documents", documents);

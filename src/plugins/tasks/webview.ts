@@ -13,14 +13,16 @@ export const tasksWebview: Plugin = {
   apply(ctx) {
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() =>
       ctx.livePreview.inline({
         nodes: ["TaskMarker"],
         decorate(node, cx) {
-          if (!cx.revealed(node.from, node.to))
+          if (!cx.revealed(node.from, node.to)) {
             cx.replace(
               node.from,
               node.to,
@@ -29,6 +31,7 @@ export const tasksWebview: Plugin = {
                 cx.state.sliceDoc(node.from + 1, node.from + 2) !== " ",
               ),
             );
+          }
         },
       }),
     );
@@ -41,7 +44,9 @@ export const tasksWebview: Plugin = {
       ];
       const cleanup = () => {
         events.abort();
-        for (const box of controls) box.disabled = true;
+        for (const box of controls) {
+          box.disabled = true;
+        }
         cleanups.delete(cleanup);
       };
       cleanups.add(cleanup);
@@ -60,7 +65,9 @@ export const tasksWebview: Plugin = {
         box.addEventListener(
           "click",
           () => {
-            if (box.disabled || expected === undefined) return;
+            if (box.disabled || expected === undefined) {
+              return;
+            }
             const line = pass.sourceLine + local;
             if (pass.documentUri) {
               void ctx.rpc
@@ -71,7 +78,9 @@ export const tasksWebview: Plugin = {
                   checked: box.checked,
                 })
                 .then((ok) => {
-                  if (!ok) box.checked = !box.checked;
+                  if (!ok) {
+                    box.checked = !box.checked;
+                  }
                 })
                 .catch((error) => {
                   box.checked = !box.checked;
@@ -84,12 +93,14 @@ export const tasksWebview: Plugin = {
                 expected,
                 box.checked,
               );
-              if (change)
+              if (change) {
                 ctx.editor.view.dispatch({
                   changes: change,
                   userEvent: "input.task",
                 });
-              else box.checked = !box.checked;
+              } else {
+                box.checked = !box.checked;
+              }
             }
           },
           { signal: events.signal },

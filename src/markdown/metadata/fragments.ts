@@ -6,7 +6,10 @@ export interface SourceRange {
   text: string;
 }
 
-export function noteFragment(source: string, fragment: string): SourceRange | undefined {
+export function noteFragment(
+  source: string,
+  fragment: string,
+): SourceRange | undefined {
   if (!fragment) {
     return { from: 0, to: source.length, text: source };
   }
@@ -18,7 +21,9 @@ export function noteFragment(source: string, fragment: string): SourceRange | un
   const note = metadata(source);
   if (fragment.startsWith("^")) {
     const block = note.blocks[fragment.slice(1)];
-    return block ? { from: block.from, to: block.to, text: block.text } : undefined;
+    return block
+      ? { from: block.from, to: block.to, text: block.text }
+      : undefined;
   }
   const headings = note.headings;
   const requested = fragment.split("#").map((part) => headingId(part));
@@ -32,11 +37,16 @@ export function noteFragment(source: string, fragment: string): SourceRange | un
     if (
       requested.every(
         (part, index) =>
-          part === headingId(ancestors[ancestors.length - requested.length + index]?.heading ?? ""),
+          part ===
+          headingId(
+            ancestors[ancestors.length - requested.length + index]?.heading ??
+              "",
+          ),
       )
     ) {
       const end =
-        headings.slice(i + 1).find((next) => next.level <= heading.level)?.from ?? source.length;
+        headings.slice(i + 1).find((next) => next.level <= heading.level)
+          ?.from ?? source.length;
       return {
         from: heading.from,
         to: end,

@@ -44,7 +44,11 @@ export function setPropertyChange(
     return undefined;
   }
   let insert = yamlValue(value);
-  if (isScalar(node) && typeof value === typeof node.value && typeof value === "string") {
+  if (
+    isScalar(node) &&
+    typeof value === typeof node.value &&
+    typeof value === "string"
+  ) {
     if (node.type === "QUOTE_SINGLE" && !/[\r\n]/.test(value)) {
       insert = "'" + value.replaceAll("'", "''") + "'";
     } else if (node.type === "QUOTE_DOUBLE" || /[\r\n]/.test(value)) {
@@ -63,10 +67,14 @@ export function setPropertyChange(
 }
 
 /** Structural edits touch selected keys/values, preserving unrelated YAML bytes. */
-export function propertyChanges(source: string, edit: PropertyEdit): PropertyChange[] | undefined {
+export function propertyChanges(
+  source: string,
+  edit: PropertyEdit,
+): PropertyChange[] | undefined {
   if (edit.type === "order") {
     const header = headerParts(source);
-    const ordered = header && orderPropertyBody(header.body, edit.keys, header.eol);
+    const ordered =
+      header && orderPropertyBody(header.body, edit.keys, header.eol);
     return header && ordered !== undefined
       ? [
           {
@@ -88,7 +96,9 @@ export function propertyChanges(source: string, edit: PropertyEdit): PropertyCha
   }
   if (
     (edit.type === "set" && !propertyValue(edit.value)) ||
-    (edit.type === "add" && edit.value !== undefined && !propertyValue(edit.value))
+    (edit.type === "add" &&
+      edit.value !== undefined &&
+      !propertyValue(edit.value))
   ) {
     return undefined;
   }
@@ -107,7 +117,10 @@ export function propertyChanges(source: string, edit: PropertyEdit): PropertyCha
     ];
   }
   const document = parseDocument(header.body, { uniqueKeys: true });
-  if (document.errors.length || (document.contents !== null && !isMap(document.contents))) {
+  if (
+    document.errors.length ||
+    (document.contents !== null && !isMap(document.contents))
+  ) {
     return undefined;
   }
   const items = isMap(document.contents) ? document.contents.items : [];
@@ -150,7 +163,9 @@ export function propertyChanges(source: string, edit: PropertyEdit): PropertyCha
       insert: yamlValue(edit.name),
     });
   } else if (edit.type === "remove") {
-    if (edit.keys.some((key) => !validPropertyName(key) || !document.has(key))) {
+    if (
+      edit.keys.some((key) => !validPropertyName(key) || !document.has(key))
+    ) {
       return undefined;
     }
     if (isMap(document.contents) && document.contents.flow) {
@@ -171,7 +186,10 @@ export function propertyChanges(source: string, edit: PropertyEdit): PropertyCha
           continue;
         }
         const start = header.body.lastIndexOf("\n", item.key.range[0] - 1) + 1;
-        let end = isNode(item.value) && item.value.range ? item.value.range[2] : item.key.range[2];
+        let end =
+          isNode(item.value) && item.value.range
+            ? item.value.range[2]
+            : item.key.range[2];
         if (header.body[end] === "\r") {
           end++;
         }
@@ -195,7 +213,10 @@ export function propertyChanges(source: string, edit: PropertyEdit): PropertyCha
   try {
     let candidate = source;
     for (const change of [...changes].sort((a, b) => b.from - a.from)) {
-      candidate = candidate.slice(0, change.from) + change.insert + candidate.slice(change.to);
+      candidate =
+        candidate.slice(0, change.from) +
+        change.insert +
+        candidate.slice(change.to);
     }
     const checked = frontmatter(candidate);
     if (!checked?.values || checked.error) {

@@ -48,7 +48,9 @@ export class BrowserHost {
       getText: () => this.text,
       async save() {
         self.saved = self.text;
-        for (const listener of self.saves) listener(self.document);
+        for (const listener of self.saves) {
+          listener(self.document);
+        }
         return true;
       },
     };
@@ -59,11 +61,12 @@ export class BrowserHost {
       stat: async () => ({ mtime: 0, symbolicLink: false }),
       async apply(_document, edits) {
         const coordinates = new SourceCoordinates(self.text);
-        for (const edit of [...edits].sort((a, b) => b.from - a.from))
+        for (const edit of [...edits].sort((a, b) => b.from - a.from)) {
           self.text =
             self.text.slice(0, coordinates.toSource(edit.from)) +
             edit.insert +
             self.text.slice(coordinates.toSource(edit.to));
+        }
         self.version++;
         self.history.splice(self.cursor + 1);
         self.history.push(self.text);
@@ -72,9 +75,11 @@ export class BrowserHost {
         return true;
       },
       async execute(action) {
-        if (action === "undo") self.cursor = Math.max(0, self.cursor - 1);
-        else if (action === "redo")
+        if (action === "undo") {
+          self.cursor = Math.max(0, self.cursor - 1);
+        } else if (action === "redo") {
           self.cursor = Math.min(self.history.length - 1, self.cursor + 1);
+        }
         self.text = self.history[self.cursor]!;
         self.version++;
         self.session.changed();
@@ -110,8 +115,8 @@ export class BrowserHost {
     const parent = document.createElement("section");
     parent.className = "panel";
     document.getElementById("app")!.append(parent);
-    let receiveHost: (message: unknown) => void = () => {},
-      receiveView: (message: unknown) => void = () => {};
+    let receiveHost: (message: unknown) => void = () => {};
+    let receiveView: (message: unknown) => void = () => {};
     const clock = {
       after(ms: number, callback: () => void) {
         const timer = setTimeout(callback, ms);
@@ -169,9 +174,12 @@ export class BrowserHost {
     });
     host.handle(commandProtocol, "action", async ({ action }) => {
       await this.session.flush();
-      if (action === "save") await this.session.save();
-      if (action === "undo" || action === "redo")
+      if (action === "save") {
+        await this.session.save();
+      }
+      if (action === "undo" || action === "redo") {
         await this.session.history(action);
+      }
       return true;
     });
     const context = await bootstrap(view, parent);

@@ -15,7 +15,9 @@ export function linkAt(
   let found: { href: string; wiki: boolean } | undefined;
   markdownParser.parse(text).iterate({
     enter(node) {
-      if (node.from > at || node.to < at) return false;
+      if (node.from > at || node.to < at) {
+        return false;
+      }
       if (node.name === "WikiLink") {
         found = {
           href: text.slice(node.from + 2, node.to - 2).split("|")[0]!,
@@ -24,7 +26,9 @@ export function linkAt(
       }
       if (node.name === "Link") {
         const url = node.node.getChild("URL");
-        if (url) found = { href: text.slice(url.from, url.to), wiki: false };
+        if (url) {
+          found = { href: text.slice(url.from, url.to), wiki: false };
+        }
       }
       return undefined;
     },
@@ -46,7 +50,9 @@ export const linksWebview: Plugin = {
         at === undefined
           ? noteFragment(view.state.doc.toString(), fragment)
           : { from: Math.min(at, view.state.doc.length) };
-      if (!target) return;
+      if (!target) {
+        return;
+      }
       view.dispatch({
         selection: { anchor: target.from },
         effects: EditorView.scrollIntoView(target.from),
@@ -60,7 +66,9 @@ export const linksWebview: Plugin = {
       source?: string,
     ) => {
       const request = { href, wiki, side, source };
-      if (ctx.bail("link/click", request)) return true;
+      if (ctx.bail("link/click", request)) {
+        return true;
+      }
       if (href.startsWith("#") && !side && !source) {
         navigate({ fragment: href.slice(1) });
         return true;
@@ -75,8 +83,9 @@ export const linksWebview: Plugin = {
     void ctx.rpc
       .call(protocol, "initial", {})
       .then((target) => {
-        if (live && (target.fragment || target.at !== undefined))
+        if (live && (target.fragment || target.at !== undefined)) {
           navigate(target);
+        }
       })
       .catch((error) =>
         ctx.logger.warn("Initial link navigation failed", error),
@@ -130,7 +139,9 @@ export const linksWebview: Plugin = {
       },
       click(event: MouseEvent) {
         const link = target(event);
-        if (!link) return false;
+        if (!link) {
+          return false;
+        }
         event.preventDefault();
         const selection = view.dom.ownerDocument.getSelection();
         if (
@@ -139,10 +150,11 @@ export const linksWebview: Plugin = {
             !selection.isCollapsed &&
             (link.contains(selection.anchorNode) ||
               link.contains(selection.focusNode)))
-        )
+        ) {
           return true;
+        }
         const href = link.getAttribute("href") ?? link.dataset.href;
-        if (href)
+        if (href) {
           void open(
             href,
             link.dataset.wiki === "true" ||
@@ -150,6 +162,7 @@ export const linksWebview: Plugin = {
             (event.metaKey || event.ctrlKey) && event.altKey,
             link.closest<HTMLElement>("[data-note-source]")?.dataset.noteSource,
           ).catch((error) => ctx.logger.error("Link failed", error));
+        }
         return true;
       },
     };

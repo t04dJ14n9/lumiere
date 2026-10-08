@@ -50,7 +50,10 @@ test("search parses quoted paths, escaped phrases, regexes and nested scopes", (
     term: { kind: "regex", value: "\\d{4}[-/]\\d{2}", flags: "" },
   });
   assert.equal(parseSearch("task:(call OR email)").kind, "scope");
-  assert.equal(parseSearch("match-case:(HappyCat -ignore-case:dog)").kind, "scope");
+  assert.equal(
+    parseSearch("match-case:(HappyCat -ignore-case:dog)").kind,
+    "scope",
+  );
 });
 test("search property filters preserve existence, alternatives and numeric comparisons", () => {
   assert.deepEqual(parseSearch("[aliases]"), {
@@ -110,9 +113,18 @@ test("document search evaluates Boolean expressions, paths and scoped case sensi
   ]) {
     assert.equal(compileSearch(query)(document), false, query);
   }
-  assert.equal(compileSearch("file:.jpg")({ path: "images/photo.jpg", text: "" }), true);
-  assert.equal(compileSearch("-meeting")({ path: "images/photo.jpg", text: "" }), false);
-  assert.equal(compileSearch("file:.canvas")({ path: "Broken.canvas", text: "{broken" }), true);
+  assert.equal(
+    compileSearch("file:.jpg")({ path: "images/photo.jpg", text: "" }),
+    true,
+  );
+  assert.equal(
+    compileSearch("-meeting")({ path: "images/photo.jpg", text: "" }),
+    false,
+  );
+  assert.equal(
+    compileSearch("file:.canvas")({ path: "Broken.canvas", text: "{broken" }),
+    true,
+  );
 });
 
 test("line, block and section scopes keep all terms inside the requested region", () => {

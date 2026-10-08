@@ -6,7 +6,8 @@ export const resourcesWebview: Plugin = {
   inject: { required: ["rpc"] },
   apply(ctx) {
     ctx.provide("resources", {
-      load: (target, source) => ctx.rpc.call(protocol, "load", { target, source }),
+      load: (target, source) =>
+        ctx.rpc.call(protocol, "load", { target, source }),
     });
   },
 };

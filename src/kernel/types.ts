@@ -17,6 +17,8 @@ export interface Plugin<C = void> {
   apply(ctx: Context, config: C): void | Promise<void>;
   reconfigure?(ctx: Context, config: C): boolean;
 }
-export type EventFunction<K extends keyof Events> = Events[K] extends (...args: infer A) => infer R
+export type EventFunction<K extends keyof Events> = Events[K] extends (
+  ...args: infer A
+) => infer R
   ? (...args: A) => R
   : never;

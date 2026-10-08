@@ -28,20 +28,27 @@ export function mountReference(
   };
   const show = () => {
     preview.hidden = false;
-    if (rendered) return;
+    if (rendered) {
+      return;
+    }
     rendered = true;
     void render
       .into(preview, note.text, { ancestry: ["footnote-preview"], measure })
       .then((result) => {
         pass = result;
-        if (!active) void result.dispose();
+        if (!active) {
+          void result.dispose();
+        }
       })
       .catch(() => {
-        if (active) preview.textContent = note.text;
+        if (active) {
+          preview.textContent = note.text;
+        }
       });
   };
-  for (const event of ["mouseenter", "focusin"])
+  for (const event of ["mouseenter", "focusin"]) {
     sup.addEventListener(event, show, { signal: events.signal });
+  }
   sup.addEventListener("mouseleave", hide, { signal: events.signal });
   sup.addEventListener(
     "focusout",
@@ -49,8 +56,9 @@ export function mountReference(
       if (
         !(event.relatedTarget instanceof Node) ||
         !sup.contains(event.relatedTarget)
-      )
+      ) {
         hide();
+      }
     },
     { signal: events.signal },
   );

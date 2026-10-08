@@ -19,7 +19,9 @@ export function fakeWorkbench(overrides: Partial<Workbench> = {}): Workbench {
     ...overrides,
   };
 }
-export function fakeDocument(overrides: Partial<HostDocument> = {}): HostDocument {
+export function fakeDocument(
+  overrides: Partial<HostDocument> = {},
+): HostDocument {
   return {
     id: "fixture",
     uri: "file:///fixture/Note.md",

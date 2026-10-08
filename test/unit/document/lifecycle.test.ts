@@ -8,8 +8,8 @@ import type { Documents } from "../../../src/plugins/document/api";
 import type { HostDocument } from "../../../src/shared/runtime";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 test("document actions serialize across panels and a rejected action does not poison later actions", async () => {
-  const session = new Session(fakeDocument(), fakeWorkbench()),
-    order: string[] = [];
+  const session = new Session(fakeDocument(), fakeWorkbench());
+  const order: string[] = [];
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
@@ -44,8 +44,8 @@ test("a failed final document flush rejects native save despite event listener e
   root.provide("workbench", workbench);
   root.plugin(documentHost);
   await root.settled();
-  const doc = fakeDocument(),
-    session = (root.runtime.value("documents") as Documents).session(doc);
+  const doc = fakeDocument();
+  const session = (root.runtime.value("documents") as Documents).session(doc);
   session.flush = async () => {
     throw new Error("still syncing");
   };
@@ -53,8 +53,8 @@ test("a failed final document flush rejects native save despite event listener e
   await root.dispose();
 });
 test("overlapping saves wait for the actual saved event and release their listener", async () => {
-  let saved!: (document: HostDocument) => void,
-    listeners = 0;
+  let saved!: (document: HostDocument) => void;
+  let listeners = 0;
   const workbench = fakeWorkbench({
     onSave(listener) {
       listeners++;

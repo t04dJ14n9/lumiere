@@ -16,7 +16,8 @@ class Bullet extends WidgetType {
 function decorations(view: EditorView): DecorationSet {
   const ranges: Range<Decoration>[] = [];
   const lines = new Set<string>();
-  const active = (from: number, to: number): boolean => revealed(view.state, from, to);
+  const active = (from: number, to: number): boolean =>
+    revealed(view.state, from, to);
   const mark = (
     from: number,
     to: number,
@@ -72,12 +73,17 @@ function decorations(view: EditorView): DecorationSet {
         if (name === "Escape" && !active(from, to)) {
           hide(from, from + 1);
         }
-        if (name === "ListMark" && /^[-+*]$/.test(view.state.sliceDoc(from, to))) {
+        if (
+          name === "ListMark" &&
+          /^[-+*]$/.test(view.state.sliceDoc(from, to))
+        ) {
           const task = node.node.nextSibling?.getChild("TaskMarker");
           if (task) {
             hide(from, task.from);
           } else if (!active(from, to)) {
-            ranges.push(Decoration.replace({ widget: new Bullet() }).range(from, to));
+            ranges.push(
+              Decoration.replace({ widget: new Bullet() }).range(from, to),
+            );
           }
         }
         if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
@@ -96,14 +102,22 @@ function decorations(view: EditorView): DecorationSet {
           mark(from, to, "md-inline-code");
         }
         if (name === "Blockquote") {
-          for (let pos = Math.max(from, visible.from); pos <= Math.min(to, visible.to); ) {
+          for (
+            let pos = Math.max(from, visible.from);
+            pos <= Math.min(to, visible.to);
+
+          ) {
             const current = view.state.doc.lineAt(pos);
             line(pos, "md-quote");
             pos = current.to + 1;
           }
         }
         if (name === "FencedCode" || name === "Table") {
-          for (let pos = Math.max(from, visible.from); pos <= Math.min(to, visible.to); ) {
+          for (
+            let pos = Math.max(from, visible.from);
+            pos <= Math.min(to, visible.to);
+
+          ) {
             const current = view.state.doc.lineAt(pos);
             line(pos, name === "Table" ? "md-table-source" : "md-code-line");
             pos = current.to + 1;
@@ -121,7 +135,9 @@ function decorations(view: EditorView): DecorationSet {
               closingLabel?.from ?? to,
               rendered ? "md-link md-link-rendered" : "md-link",
               {
-                "data-href": linkDestination(view.state.sliceDoc(url.from, url.to)),
+                "data-href": linkDestination(
+                  view.state.sliceDoc(url.from, url.to),
+                ),
               },
             );
             if (rendered) {
@@ -151,7 +167,8 @@ function decorations(view: EditorView): DecorationSet {
           hide(
             from,
             to +
-              (["HeaderMark", "QuoteMark"].includes(name) && view.state.sliceDoc(to, to + 1) === " "
+              (["HeaderMark", "QuoteMark"].includes(name) &&
+              view.state.sliceDoc(to, to + 1) === " "
                 ? 1
                 : 0),
           );
@@ -193,7 +210,9 @@ export const hybridInline = ViewPlugin.fromClass(
           () => {
             this.dragging = false;
             queueMicrotask(() => {
-              if (view.dom.isConnected) view.dispatch({});
+              if (view.dom.isConnected) {
+                view.dispatch({});
+              }
             });
           },
           { once: true, signal: this.events.signal },
@@ -202,7 +221,9 @@ export const hybridInline = ViewPlugin.fromClass(
       mouseup(_event, view) {
         this.dragging = false;
         queueMicrotask(() => {
-          if (view.dom.isConnected) view.dispatch({});
+          if (view.dom.isConnected) {
+            view.dispatch({});
+          }
         });
       },
 

@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { collab, getSyncedVersion, receiveUpdates, sendableUpdates } from "@codemirror/collab";
+import {
+  collab,
+  getSyncedVersion,
+  receiveUpdates,
+  sendableUpdates,
+} from "@codemirror/collab";
 import { ChangeSet, EditorState } from "@codemirror/state";
 import { Authority } from "../../../src/shared/document/authority";
 import { difference } from "../../../src/shared/document/wire";
@@ -123,7 +128,9 @@ test("invalid revisions and malformed edit lengths do not mutate the authority",
   const authority = new Authority("note");
   assert.throws(() => authority.prepare(100, [], "one"));
   assert.throws(() => authority.prepare(0, [null], "one"));
-  assert.throws(() => authority.prepare(0, [ChangeSet.empty(10).toJSON()], "one"));
+  assert.throws(() =>
+    authority.prepare(0, [ChangeSet.empty(10).toJSON()], "one"),
+  );
   assert.equal(authority.doc.toString(), "note");
 });
 
@@ -172,7 +179,9 @@ test("LF transport normalizes CRLF without counting CR as a source character", (
   assert.equal(authority.doc.toString(), "first\n你好\n");
   assert.equal(authority.doc.line(2).from, 6);
   assert.equal(
-    difference("🧠 note", "🧡 note").apply(new Authority("🧠 note").doc).toString(),
+    difference("🧠 note", "🧡 note")
+      .apply(new Authority("🧠 note").doc)
+      .toString(),
     "🧡 note",
   );
 });
@@ -184,5 +193,7 @@ test("rendering without a DOM sanitizer escapes HTML and rejects script links", 
   assert.ok(!result.includes("<script>"));
   assert.ok(!result.includes('href="javascript:'));
   assert.ok(!result.includes('src="https://remote.example'));
-  assert.ok(result.includes('data-resource="https://remote.example/image.png"'));
+  assert.ok(
+    result.includes('data-resource="https://remote.example/image.png"'),
+  );
 });

@@ -46,7 +46,9 @@ test("task RPC authorizes known notes, rejects stale lines and stops with its fi
       throw new Error("unused");
     },
     async authorize(source) {
-      if (source !== document.uri) throw new Error("Unknown note source");
+      if (source !== document.uri) {
+        throw new Error("Unknown note source");
+      }
       authorized.push(source);
     },
   });

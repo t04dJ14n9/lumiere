@@ -15,14 +15,14 @@ export function linkPreviews(
   context: () => PreviewContext,
   restoreFocus?: () => void,
 ): { dispose(): void; refresh(): void; close(): void } {
-  const abort = new AbortController(),
-    options = { signal: abort.signal };
-  let hovered: HTMLElement | null = null,
-    shown: HTMLElement | null = null;
-  let popup: HTMLElement | undefined,
-    body: HTMLElement | undefined,
-    timer: ReturnType<typeof setTimeout> | undefined,
-    generation = 0;
+  const abort = new AbortController();
+  const options = { signal: abort.signal };
+  let hovered: HTMLElement | null = null;
+  let shown: HTMLElement | null = null;
+  let popup: HTMLElement | undefined;
+  let body: HTMLElement | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let generation = 0;
   let renderedPass: RenderPass | undefined;
   let reload: (() => void) | undefined;
   const close = (): void => {
@@ -54,9 +54,9 @@ export function linkPreviews(
     }
     close();
     shown = link;
-    const base = context(),
-      source =
-        link.closest<HTMLElement>("[data-note-source]")?.dataset.noteSource;
+    const base = context();
+    const source =
+      link.closest<HTMLElement>("[data-note-source]")?.dataset.noteSource;
     popup = document.createElement("aside");
     popup.className = "link-preview";
     popup.setAttribute("role", "dialog");
@@ -113,7 +113,9 @@ export function linkPreviews(
         if (resource.kind === "note" && resource.text !== undefined) {
           const fragment = href.split("#").slice(1).join("#");
           const selection = noteFragment(resource.text, fragment);
-          if (!selection) throw new Error("Section not found.");
+          if (!selection) {
+            throw new Error("Section not found.");
+          }
           next = await base.render.into(body, selection.text, {
             documentUri: resource.source,
             documentText: resource.text,
@@ -131,8 +133,11 @@ export function linkPreviews(
         } else {
           body.textContent = `${resource.kind.toUpperCase()} attachment — use Open to view it.`;
         }
-        if (request !== generation) await next?.dispose();
-        else renderedPass = next;
+        if (request !== generation) {
+          await next?.dispose();
+        } else {
+          renderedPass = next;
+        }
       } catch (error) {
         if (body && request === generation) {
           body.textContent = String(error);

@@ -1,19 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022"
-    ],
-    "types": [
-      "vscode"
-    ],
+    "lib": ["ES2022"],
+    "types": ["vscode"],
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "dist/api",
     "rootDir": "src/host/api"
   },
-  "include": [
-    "src/host/api/types.ts"
-  ]
+  "include": ["src/host/api/types.ts"]
 }

@@ -10,14 +10,17 @@ export const tasksHost: Plugin<{ panel: PanelShell }> = {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "toggle", async (request) => {
         const source = request.source ?? panel.document.uri;
-        if (!ctx.resources.authorize)
+        if (!ctx.resources.authorize) {
           throw new Error("Resource authorization unavailable");
+        }
         await ctx.resources.authorize(source);
         const document =
           source === panel.document.uri
             ? panel.document
             : await ctx.workbench.openDocument?.(source);
-        if (!document) throw new Error("Document unavailable");
+        if (!document) {
+          throw new Error("Document unavailable");
+        }
         const change = taskEdit(
           document.getText().replace(/\r\n/g, "\n"),
           request.line,

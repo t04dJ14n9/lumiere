@@ -58,7 +58,9 @@ export const tablesWebview: Plugin = {
         const groups = ctx.document.inputGroups?.((target) =>
           ctx.vim?.mode(target),
         );
-        if (!groups) throw new Error("Document input grouping is unavailable");
+        if (!groups) {
+          throw new Error("Document input grouping is unavailable");
+        }
         return groups;
       },
       disposeContent,
@@ -73,12 +75,17 @@ export const tablesWebview: Plugin = {
             signal: entry.abort.signal,
             sourceLine: view.state.doc.lineAt(offset).number - 1,
             measure: () => {
-              if (live) view.requestMeasure();
+              if (live) {
+                view.requestMeasure();
+              }
             },
           })
           .then((pass) => {
-            if (!live || passes.get(element) !== entry) void pass.dispose();
-            else entry.pass = pass;
+            if (!live || passes.get(element) !== entry) {
+              void pass.dispose();
+            } else {
+              entry.pass = pass;
+            }
           })
           .catch((error) => ctx.logger.error("Table rendering failed", error));
       },
@@ -101,7 +108,9 @@ export const tablesWebview: Plugin = {
     };
     ctx.effect(() => () => {
       live = false;
-      for (const element of passes.keys()) disposeContent(element);
+      for (const element of passes.keys()) {
+        disposeContent(element);
+      }
     });
     ctx.effect(() =>
       ctx.editor.extend(
@@ -155,17 +164,22 @@ export const tablesWebview: Plugin = {
         return true;
       }),
     );
-    for (const [id] of tableCommands)
+    for (const [id] of tableCommands) {
       ctx.effect(() =>
         ctx.commands.register("editor:table-" + id, () => {
           const controller = activeTables.get(view);
           const position = controller?.range?.head ?? controller?.active;
-          if (!controller || !position) return false;
+          if (!controller || !position) {
+            return false;
+          }
           const operation = tableOperation(id, position);
-          if (!operation) return false;
+          if (!operation) {
+            return false;
+          }
           controller.execute(operation, position);
           return true;
         }),
       );
+    }
   },
 };

@@ -23,7 +23,9 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
   config,
   reconfigure(ctx, settings) {
     const configure = configurations.get(ctx);
-    if (!configure) return false;
+    if (!configure) {
+      return false;
+    }
     configure(settings);
     return true;
   },
@@ -35,7 +37,9 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     const lifetime = new AbortController();
     ctx.effect(() => () => lifetime.abort());
     const refresh = () => {
-      if (!lifetime.signal.aborted) ctx.emit("render/changed");
+      if (!lifetime.signal.aborted) {
+        ctx.emit("render/changed");
+      }
     };
     const heading = propertyHeadingFocus(() => {
       ctx.bail("editor/focusTitle");
@@ -65,7 +69,9 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
         void ctx.rpc
           .call(protocol, "setType", { key, kind: kind ?? undefined })
           .then((types) => {
-            if (!lifetime.signal.aborted) editing.receiveTypes({ types });
+            if (!lifetime.signal.aborted) {
+              editing.receiveTypes({ types });
+            }
           })
           .catch((error) =>
             ctx.logger.error("Property preference failed", error),
@@ -135,12 +141,14 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     void ctx.rpc
       .call(protocol, "types", {})
       .then((types) => {
-        if (!lifetime.signal.aborted) editing.receiveTypes({ types });
+        if (!lifetime.signal.aborted) {
+          editing.receiveTypes({ types });
+        }
       })
       .catch((error) =>
         ctx.logger.warn("Property preferences unavailable", error),
       );
-    if (ctx.document.beforeFlush)
+    if (ctx.document.beforeFlush) {
       ctx.effect(() =>
         ctx.document.beforeFlush!(() => {
           const inputs = view.dom.querySelectorAll<HTMLInputElement>(
@@ -160,5 +168,6 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
           }
         }),
       );
+    }
   },
 };

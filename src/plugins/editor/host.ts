@@ -29,15 +29,17 @@ export const editorHost: Plugin<{
           ),
         );
       }
-      for (const id of ["editor", "commands", "livePreview"])
+      for (const id of ["editor", "commands", "livePreview"]) {
         void ctx.workbench.execute(
           "setContext",
           `markdownWorkbench.plugin.${id}`,
           Boolean(active()),
         );
+      }
     };
-    if (ctx.workbench.onConfiguration)
+    if (ctx.workbench.onConfiguration) {
       ctx.effect(() => ctx.workbench.onConfiguration!(contexts));
+    }
     ctx.on("editor/activeChanged", contexts);
     ctx.on("editor/opened", contexts);
     ctx.on("editor/closed", contexts);
@@ -46,12 +48,16 @@ export const editorHost: Plugin<{
       active,
       async capture(id) {
         const panel = panels.get(id);
-        if (!panel) throw new Error("Editor not found");
+        if (!panel) {
+          throw new Error("Editor not found");
+        }
         return captureView(panel);
       },
       async restore(id, snapshot) {
         const panel = panels.get(id);
-        if (!panel) throw new Error("Editor not found");
+        if (!panel) {
+          throw new Error("Editor not found");
+        }
         await restoreView(panel, snapshot);
       },
     });
@@ -74,7 +80,9 @@ export const editorHost: Plugin<{
       }),
     );
     ctx.effect(() => () => {
-      for (const panel of panels.values()) panel.dispose();
+      for (const panel of panels.values()) {
+        panel.dispose();
+      }
       panels.clear();
     });
   },

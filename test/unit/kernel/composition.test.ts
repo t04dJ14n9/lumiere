@@ -40,7 +40,9 @@ test("caller-bound reads cache per context and refresh across provider replaceme
   assert.notEqual(calls[0], calls[1]);
   const replacement = root.plugin({
     name: "replacement",
-    apply(ctx) { ctx.provide("traced", service("two:")); },
+    apply(ctx) {
+      ctx.provide("traced", service("two:"));
+    },
   });
   await root.settled();
   assert.deepEqual(seen.slice(2), ["two:a", "two:b"]);

@@ -21,7 +21,9 @@ export const autoPairWebview: Plugin<Infer<typeof config>> = {
   inject: { required: ["editor"] },
   reconfigure(ctx, options) {
     const compartment = configurations.get(ctx);
-    if (!compartment) return false;
+    if (!compartment) {
+      return false;
+    }
     ctx.editor.view.dispatch({
       effects: compartment.reconfigure(pairData(options)),
     });

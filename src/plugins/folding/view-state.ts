@@ -15,8 +15,9 @@ export const foldedSchema = Schema.array(
         !Number.isSafeInteger(range.to) ||
         range.from < 0 ||
         range.from >= range.to
-      )
+      ) {
         throw new Error("Invalid fold range");
+      }
       return range;
     },
     { type: "object" },
@@ -37,7 +38,9 @@ export const foldedViewState = {
       effects.push(unfoldEffect.of({ from, to }));
     });
     for (const range of ranges) {
-      if (range.to <= view.state.doc.length) effects.push(foldEffect.of(range));
+      if (range.to <= view.state.doc.length) {
+        effects.push(foldEffect.of(range));
+      }
     }
     view.dispatch({ effects });
   },

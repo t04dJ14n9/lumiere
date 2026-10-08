@@ -21,16 +21,23 @@ export class CancelToken implements Cancellation {
   cancelled = false;
   private readonly listeners = new Set<() => void>();
   onCancel(callback: () => void): Disposer {
-    if (this.cancelled) callback();
-    else this.listeners.add(callback);
+    if (this.cancelled) {
+      callback();
+    } else {
+      this.listeners.add(callback);
+    }
     return () => {
       this.listeners.delete(callback);
     };
   }
   cancel(): void {
-    if (this.cancelled) return;
+    if (this.cancelled) {
+      return;
+    }
     this.cancelled = true;
-    for (const callback of this.listeners) callback();
+    for (const callback of this.listeners) {
+      callback();
+    }
     this.listeners.clear();
   }
 }
@@ -42,7 +49,10 @@ export class RpcError extends Error {
     super(message);
   }
 }
-type Handler = { protocol: Protocol; run: (value: unknown, token: Cancellation) => unknown };
+type Handler = {
+  protocol: Protocol;
+  run: (value: unknown, token: Cancellation) => unknown;
+};
 type Pending = {
   schema: Schema<unknown>;
   resolve(value: unknown): void;
@@ -55,7 +65,10 @@ export class Endpoint {
   private readonly handlers = new Map<string, Handler>();
   private readonly notifications = new Map<string, Set<Handler>>();
   private readonly pending = new Map<number, Pending>();
-  private readonly incoming = new Map<number, { token: CancelToken; key: string }>();
+  private readonly incoming = new Map<
+    number,
+    { token: CancelToken; key: string }
+  >();
   private readonly unlisten: Disposer;
   constructor(
     private readonly transport: Transport,
@@ -70,7 +83,9 @@ export class Endpoint {
     return `${protocol.id}/${method}`;
   }
   private assertLive(): void {
-    if (this.disposed) throw new RpcError("Disposed", "RPC endpoint disposed");
+    if (this.disposed) {
+      throw new RpcError("Disposed", "RPC endpoint disposed");
+    }
   }
   private send(value: Envelope): void {
     this.assertLive();
@@ -82,22 +97,29 @@ export class Endpoint {
     run: (
       params: Infer<P["requests"][M]["params"]>,
       token: Cancellation,
-    ) => Infer<P["requests"][M]["result"]> | Promise<Infer<P["requests"][M]["result"]>>,
+    ) =>
+      | Infer<P["requests"][M]["result"]>
+      | Promise<Infer<P["requests"][M]["result"]>>,
   ): Disposer {
     this.assertLive();
     const key = this.key(protocol, method);
-    if (this.handlers.has(key)) throw new RpcError("DuplicateContribution", key);
+    if (this.handlers.has(key)) {
+      throw new RpcError("DuplicateContribution", key);
+    }
     const handler = { protocol, run: run as Handler["run"] };
     this.handlers.set(key, handler);
     return () => {
-      if (this.handlers.get(key) !== handler) return;
+      if (this.handlers.get(key) !== handler) {
+        return;
+      }
       this.handlers.delete(key);
-      for (const [id, request] of this.incoming)
+      for (const [id, request] of this.incoming) {
         if (request.key === key) {
           request.token.cancel();
           this.incoming.delete(id);
           this.sendError(id, "PluginDisabled", key);
         }
+      }
     };
   }
   on<P extends Protocol, M extends keyof P["notifications"] & string>(
@@ -106,8 +128,8 @@ export class Endpoint {
     run: (params: Infer<P["notifications"][M]>) => void | Promise<void>,
   ): Disposer {
     this.assertLive();
-    const key = this.key(protocol, method),
-      handlers = this.notifications.get(key) ?? new Set<Handler>();
+    const key = this.key(protocol, method);
+    const handlers = this.notifications.get(key) ?? new Set<Handler>();
     const handler = { protocol, run: run as Handler["run"] };
     handlers.add(handler);
     this.notifications.set(key, handlers);
@@ -145,17 +167,21 @@ export class Endpoint {
     } catch (error) {
       return Promise.reject(error);
     }
-    if (options.token?.cancelled) return Promise.reject(new RpcError("Cancelled", method));
+    if (options.token?.cancelled) {
+      return Promise.reject(new RpcError("Cancelled", method));
+    }
     const id = this.next++;
     return new Promise((resolve, reject) => {
-      let timer: Disposer = () => {},
-        cancel: Disposer = () => {};
+      let timer: Disposer = () => {};
+      let cancel: Disposer = () => {};
       const cleanup = () => {
         void timer();
         void cancel();
       };
       const fail = (code: string) => {
-        if (!this.pending.delete(id)) return;
+        if (!this.pending.delete(id)) {
+          return;
+        }
         cleanup();
         reject(new RpcError(code, method));
         this.send({ kind: "cancel", id });
@@ -166,10 +192,18 @@ export class Endpoint {
         reject,
         cleanup,
       });
-      timer = this.clock.after(options.timeout ?? 10_000, () => fail("Timeout"));
+      timer = this.clock.after(options.timeout ?? 10_000, () =>
+        fail("Timeout"),
+      );
       cancel = options.token?.onCancel(() => fail("Cancelled")) ?? cancel;
       try {
-        this.send({ kind: "request", id, channel: protocol.id, method, params: parsed });
+        this.send({
+          kind: "request",
+          id,
+          channel: protocol.id,
+          method,
+          params: parsed,
+        });
       } catch (error) {
         this.pending.delete(id);
         cleanup();
@@ -178,10 +212,14 @@ export class Endpoint {
     });
   }
   private sendError(id: number, code: string, message: string): void {
-    if (!this.disposed) this.send({ kind: "error", id, code, message: message.slice(0, 4096) });
+    if (!this.disposed) {
+      this.send({ kind: "error", id, code, message: message.slice(0, 4096) });
+    }
   }
   private async receive(value: unknown): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed) {
+      return;
+    }
     let envelope: Envelope;
     try {
       envelope = parseEnvelope(value);
@@ -196,11 +234,14 @@ export class Endpoint {
     }
     if (envelope.kind === "response" || envelope.kind === "error") {
       const pending = this.pending.get(envelope.id);
-      if (!pending) return;
+      if (!pending) {
+        return;
+      }
       this.pending.delete(envelope.id);
       pending.cleanup();
-      if (envelope.kind === "error") pending.reject(new RpcError(envelope.code, envelope.message));
-      else {
+      if (envelope.kind === "error") {
+        pending.reject(new RpcError(envelope.code, envelope.message));
+      } else {
         try {
           pending.resolve(pending.schema.parse(envelope.result));
         } catch (error) {
@@ -214,7 +255,9 @@ export class Endpoint {
       for (const handler of [...(this.notifications.get(key) ?? [])]) {
         try {
           await handler.run(
-            handler.protocol.notifications[envelope.method]!.parse(envelope.params),
+            handler.protocol.notifications[envelope.method]!.parse(
+              envelope.params,
+            ),
             new CancelToken(),
           );
         } catch (error) {
@@ -244,7 +287,9 @@ export class Endpoint {
     this.incoming.set(envelope.id, { token, key });
     try {
       const result = await handler.run(params, token);
-      if (token.cancelled || this.disposed) return;
+      if (token.cancelled || this.disposed) {
+        return;
+      }
       let parsed: unknown;
       try {
         parsed = definition.result.parse(result);
@@ -254,25 +299,30 @@ export class Endpoint {
       }
       this.send({ kind: "response", id: envelope.id, result: parsed });
     } catch (error) {
-      if (!token.cancelled)
+      if (!token.cancelled) {
         this.sendError(
           envelope.id,
           error instanceof RpcError ? error.code : "HandlerFailed",
           String(error),
         );
+      }
     } finally {
       this.incoming.delete(envelope.id);
     }
   }
   async dispose(): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed) {
+      return;
+    }
     this.disposed = true;
     await this.unlisten();
     for (const pending of this.pending.values()) {
       pending.cleanup();
       pending.reject(new RpcError("Disposed", "RPC endpoint disposed"));
     }
-    for (const incoming of this.incoming.values()) incoming.token.cancel();
+    for (const incoming of this.incoming.values()) {
+      incoming.token.cancel();
+    }
     this.pending.clear();
     this.incoming.clear();
     this.handlers.clear();

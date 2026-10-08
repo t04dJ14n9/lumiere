@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { build } from "esbuild";
-test("the unchanged pure kernel runs and disposes in Chromium", async ({ page }) => {
+test("the unchanged pure kernel runs and disposes in Chromium", async ({
+  page,
+}) => {
   const bundle = await build({
     stdin: {
       contents: `
@@ -23,6 +25,9 @@ test("the unchanged pure kernel runs and disposes in Chromium", async ({ page })
     target: "chrome120",
   });
   await page.setContent("<body></body>");
-  await page.addScriptTag({ type: "module", content: bundle.outputFiles[0]!.text });
+  await page.addScriptTag({
+    type: "module",
+    content: bundle.outputFiles[0]!.text,
+  });
   await expect(page.locator("body")).toHaveText('["active","disposed"]');
 });

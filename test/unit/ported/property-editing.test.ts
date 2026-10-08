@@ -1,12 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { frontmatter, propertyChanges, type PropertyEdit } from "../../../src/markdown/properties";
+import {
+  frontmatter,
+  propertyChanges,
+  type PropertyEdit,
+} from "../../../src/markdown/properties";
 
 function edit(source: string, operation: PropertyEdit): string {
   const changes = propertyChanges(source, operation);
   assert.ok(changes, `Rejected ${operation.type}`);
   for (const change of [...changes].sort((a, b) => b.from - a.from)) {
-    source = source.slice(0, change.from) + change.insert + source.slice(change.to);
+    source =
+      source.slice(0, change.from) + change.insert + source.slice(change.to);
   }
   return source;
 }
@@ -23,7 +28,10 @@ test("empty headers and new properties preserve the note body and line endings",
       key: "first property",
       value: "literal: value",
     });
-    assert.equal(frontmatter(filled)?.values?.["first property"], "literal: value");
+    assert.equal(
+      frontmatter(filled)?.values?.["first property"],
+      "literal: value",
+    );
     assert.ok(filled.endsWith(source));
   }
 });
@@ -42,7 +50,10 @@ test("rename and removal preserve unrelated comments, multiline values and forma
     undefined,
   );
   const removed = edit(renamed, { type: "remove", keys: ["block"] });
-  assert.equal(removed, renamed.replace("block: |\n  line one\n  line two\n", ""));
+  assert.equal(
+    removed,
+    renamed.replace("block: |\n  line one\n  line two\n", ""),
+  );
   assert.ok(removed.includes("# keep next\nlast: 2"));
 });
 
@@ -55,9 +66,14 @@ test("property edits retain flow mappings and reject removal of a referenced anc
     other: ["a", 3],
   });
   const anchored = "---\ntitle: &name Original\ncopy: *name\n---\nBody";
-  assert.equal(propertyChanges(anchored, { type: "remove", keys: ["title"] }), undefined);
+  assert.equal(
+    propertyChanges(anchored, { type: "remove", keys: ["title"] }),
+    undefined,
+  );
   assert.deepEqual(
-    frontmatter(edit(anchored, { type: "rename", key: "title", name: "renamed" }))?.values,
+    frontmatter(
+      edit(anchored, { type: "rename", key: "title", name: "renamed" }),
+    )?.values,
     { renamed: "Original", copy: "Original" },
   );
 });
@@ -70,7 +86,10 @@ test("explicit value editing changes scalar types and retains unrelated inline c
   assert.equal(frontmatter(text)?.values?.count, "43");
   const filled = edit(text, { type: "set", key: "empty", value: true });
   assert.equal(frontmatter(filled)?.values?.empty, true);
-  assert.equal(propertyChanges(source, { type: "set", key: "count", value: Infinity }), undefined);
+  assert.equal(
+    propertyChanges(source, { type: "set", key: "count", value: Infinity }),
+    undefined,
+  );
 });
 
 test("adding properties distinguishes an unfinished header from ordinary Markdown", () => {
@@ -78,8 +97,15 @@ test("adding properties distinguishes an unfinished header from ordinary Markdow
   const added = edit(source, { type: "add", key: "topic", value: "notes" });
   assert.ok(added.endsWith(source));
   assert.equal(frontmatter(added)?.values?.topic, "notes");
-  for (const unfinished of ["---", "---\ntitle: value", "---\r\ntitle: value"]) {
-    assert.equal(propertyChanges(unfinished, { type: "add", key: "topic" }), undefined);
+  for (const unfinished of [
+    "---",
+    "---\ntitle: value",
+    "---\r\ntitle: value",
+  ]) {
+    assert.equal(
+      propertyChanges(unfinished, { type: "add", key: "topic" }),
+      undefined,
+    );
   }
 });
 
@@ -90,7 +116,10 @@ test("new properties reject non-finite scalar and list values", () => {
     "---\n{title: Original}\n---\nBody",
   ]) {
     for (const value of [NaN, Infinity, -Infinity, ["valid", Infinity]]) {
-      assert.equal(propertyChanges(source, { type: "add", key: "value", value }), undefined);
+      assert.equal(
+        propertyChanges(source, { type: "add", key: "value", value }),
+        undefined,
+      );
     }
   }
 });
@@ -127,7 +156,11 @@ test("structured property paste merges nested values and unions lists without to
     });
     assert.ok(result.includes("title: 'New' # title"));
     assert.ok(result.includes("tags: [one, two, three] # tags"));
-    assert.ok(result.includes(["literal: |", "  Unchanged text.", "# trailing"].join(eol)));
+    assert.ok(
+      result.includes(
+        ["literal: |", "  Unchanged text.", "# trailing"].join(eol),
+      ),
+    );
     assert.ok(result.endsWith(["---", "", "Body"].join(eol)));
   }
 });
@@ -176,7 +209,10 @@ test("an invalid property in a paste rejects the whole batch", () => {
   }
   const cycle: Record<string, unknown> = {};
   cycle.self = cycle;
-  assert.equal(propertyChanges(source, { type: "merge", values: cycle }), undefined);
+  assert.equal(
+    propertyChanges(source, { type: "merge", values: cycle }),
+    undefined,
+  );
   assert.equal(
     propertyChanges(source, {
       type: "merge",

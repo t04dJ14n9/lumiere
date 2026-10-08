@@ -15,7 +15,9 @@ export const wiki: MarkdownConfig = {
         if (end < 0 || cx.slice(start, cx.offset + end).includes("\n")) {
           return -1;
         }
-        return cx.addElement(cx.elt(embed ? "WikiEmbed" : "WikiLink", pos, cx.offset + end + 2));
+        return cx.addElement(
+          cx.elt(embed ? "WikiEmbed" : "WikiLink", pos, cx.offset + end + 2),
+        );
       },
     },
   ],

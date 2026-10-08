@@ -13,8 +13,8 @@ function vint(
   if (!first) {
     return;
   }
-  let length = 1,
-    mask = 128;
+  let length = 1;
+  let mask = 128;
   while (!(first & mask) && length <= 8) {
     length++;
     mask >>= 1;
@@ -227,8 +227,8 @@ export function mediaRecovery(
   failed: (detail: string) => void,
 ): () => void {
   const abort = new AbortController();
-  let attempted = false,
-    objectUrl: string | undefined;
+  let attempted = false;
+  let objectUrl: string | undefined;
   const report = (error: unknown): void => {
     if (!abort.signal.aborted) {
       failed(String(error));
@@ -255,8 +255,8 @@ export function mediaRecovery(
           },
           { once: true },
         );
-        let header = new Uint8Array(0),
-          mime: string | undefined;
+        let header = new Uint8Array(0);
+        let mime: string | undefined;
         while (!mime) {
           const part = await reader.read();
           if (part.done) {

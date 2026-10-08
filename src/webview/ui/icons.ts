@@ -19,7 +19,10 @@ import {
   Text,
   type IconNode,
 } from "lucide";
-import { inferPropertyKind, type PropertyKind } from "../../markdown/properties/types";
+import {
+  inferPropertyKind,
+  type PropertyKind,
+} from "../../markdown/properties/types";
 
 const calloutIcons: Record<string, IconNode> = {
   note: Pencil,

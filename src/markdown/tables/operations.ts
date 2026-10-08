@@ -31,7 +31,11 @@ export function operateTable(table: Table, operation: TableOperation): string {
       .slice(1)
       .sort(
         (left, right) =>
-          direction * collator.compare(left[operation.column] ?? "", right[operation.column] ?? ""),
+          direction *
+          collator.compare(
+            left[operation.column] ?? "",
+            right[operation.column] ?? "",
+          ),
       );
     rows.splice(1, rows.length - 1, ...body);
   } else {
@@ -39,11 +43,18 @@ export function operateTable(table: Table, operation: TableOperation): string {
       if (operation.type === "insert") {
         items.splice(operation.index, 0, empty());
       } else if (operation.type === "duplicate") {
-        items.splice(operation.to + 1, 0, ...items.slice(operation.from, operation.to + 1));
+        items.splice(
+          operation.to + 1,
+          0,
+          ...items.slice(operation.from, operation.to + 1),
+        );
       } else if (operation.type === "delete") {
         items.splice(operation.from, operation.to - operation.from + 1);
       } else if (operation.type === "move") {
-        const moved = items.splice(operation.from, operation.to - operation.from + 1);
+        const moved = items.splice(
+          operation.from,
+          operation.to - operation.from + 1,
+        );
         items.splice(operation.destination, 0, ...moved);
       }
     };
@@ -56,5 +67,7 @@ export function operateTable(table: Table, operation: TableOperation): string {
       }
     }
   }
-  return rows.length && alignments.length ? serializeTable(rows, alignments) : "";
+  return rows.length && alignments.length
+    ? serializeTable(rows, alignments)
+    : "";
 }

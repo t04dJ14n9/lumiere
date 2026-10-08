@@ -138,7 +138,7 @@ configuration.
 
 ## 5. The plugin kernel
 
-`src/kernel` is a small (target under 800 lines) dependency-free
+`src/kernel` is a small (under 1,000 lines as formatted by Prettier) dependency-free
 implementation of Cordis's model. It runs unchanged in Node, Chromium and
 `tsx --test`. §5.9 explains why it is in-house rather than the npm `cordis`
 package.
@@ -1424,7 +1424,10 @@ until the owner's computer-use pass compares them with the live reference.
 
 Same toolchain as PDF Workbench: pnpm, TypeScript (strict,
 `noUncheckedIndexedAccess`), esbuild, ESLint flat config with
-`consistent-type-imports`, Playwright, `@vscode/vsce`.
+`consistent-type-imports`, Playwright, `@vscode/vsce`. Prettier (default
+options) formats the code, and `pnpm check` runs `prettier --check` first.
+ESLint also enforces the readability limits in `AGENTS.md` ("Code norms"),
+with a shrinking backlog of existing files in `eslint.legacy.mjs`.
 
 | Output | Entry | Format |
 | --- | --- | --- |

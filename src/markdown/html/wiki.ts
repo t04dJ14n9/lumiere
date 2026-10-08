@@ -7,8 +7,8 @@ export function wiki(md: MarkdownIt): void {
     if (!embed && !state.src.startsWith("[[", state.pos)) {
       return false;
     }
-    const start = state.pos + (embed ? 3 : 2),
-      end = state.src.indexOf("]]", start);
+    const start = state.pos + (embed ? 3 : 2);
+    const end = state.src.indexOf("]]", start);
     if (end < 0 || state.src.slice(start, end).includes("\n")) {
       return false;
     }
@@ -22,8 +22,8 @@ export function wiki(md: MarkdownIt): void {
     return true;
   });
   md.renderer.rules.wiki_link = (tokens, index) => {
-    const token = tokens[index]!,
-      link = token.meta as WikiTarget;
+    const token = tokens[index]!;
+    const link = token.meta as WikiTarget;
     return `<a class="internal-link" data-wiki="true"${attr("href", link.target)}>${escape(link.label)}</a>`;
   };
   md.renderer.rules.wiki_embed = (tokens, index) => {

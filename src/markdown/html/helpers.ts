@@ -35,8 +35,11 @@ export function decodeMarkdownText(raw: string): string {
   return md.utils.unescapeAll(raw);
 }
 export function linkDestination(raw: string): string {
-  const value = raw.startsWith("<") && raw.endsWith(">") ? raw.slice(1, -1) : raw;
+  const value =
+    raw.startsWith("<") && raw.endsWith(">") ? raw.slice(1, -1) : raw;
   return md.normalizeLink(md.utils.unescapeAll(value));
 }
-export const attr = (name: string, value: string | number | undefined): string =>
-  value === undefined ? "" : ` ${name}="${escape(String(value))}"`;
+export const attr = (
+  name: string,
+  value: string | number | undefined,
+): string => (value === undefined ? "" : ` ${name}="${escape(String(value))}"`);

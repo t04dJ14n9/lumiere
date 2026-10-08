@@ -6,10 +6,12 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
   name: "render",
   inject: { required: ["markdown"] },
   apply(ctx, config) {
-    const purifier = createDOMPurify(window),
-      passes = new Set<RenderPass>();
+    const purifier = createDOMPurify(window);
+    const passes = new Set<RenderPass>();
     ctx.effect(() => async () => {
-      for (const pass of passes) await pass.dispose();
+      for (const pass of passes) {
+        await pass.dispose();
+      }
     });
     ctx.provide("render", {
       trusted: config.trusted,
@@ -27,19 +29,27 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
           renderKey: source,
           measure: context.measure ?? (() => {}),
           onDispose(dispose) {
-            if (!live) void dispose();
-            else disposers.push(dispose);
+            if (!live) {
+              void dispose();
+            } else {
+              disposers.push(dispose);
+            }
           },
           async dispose() {
-            if (!live) return;
+            if (!live) {
+              return;
+            }
             live = false;
             passes.delete(pass);
-            for (const dispose of disposers.reverse()) await dispose();
+            for (const dispose of disposers.reverse()) {
+              await dispose();
+            }
           },
         };
         passes.add(pass);
-        if (context.documentUri)
+        if (context.documentUri) {
           container.dataset.noteSource = context.documentUri;
+        }
         await ctx.serial("render/preProcess", pass);
         if (context.signal?.aborted) {
           await pass.dispose();
@@ -60,9 +70,9 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
           if (
             !config.trusted ||
             !/^https:\/\//i.test(frame.getAttribute("src") ?? "")
-          )
+          ) {
             frame.remove();
-          else {
+          } else {
             frame.setAttribute(
               "sandbox",
               "allow-scripts allow-same-origin allow-presentation",
@@ -70,13 +80,16 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
             frame.loading = "lazy";
           }
         }
-        if (!config.trusted)
-          for (const media of container.querySelectorAll("[src]"))
-            if (/^https?:/i.test(media.getAttribute("src") ?? ""))
+        if (!config.trusted) {
+          for (const media of container.querySelectorAll("[src]")) {
+            if (/^https?:/i.test(media.getAttribute("src") ?? "")) {
               media.removeAttribute("src");
+            }
+          }
+        }
         for (const element of container.querySelectorAll<HTMLElement>(
           "[data-fence]",
-        ))
+        )) {
           ctx.bail(
             "render/fence",
             {
@@ -86,6 +99,7 @@ export const renderWebview: Plugin<{ trusted: boolean }> = {
             },
             pass,
           );
+        }
         if (context.signal?.aborted) {
           await pass.dispose();
           return pass;

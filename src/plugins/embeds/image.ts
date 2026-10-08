@@ -60,14 +60,14 @@ export function imageControls(
     if (!image.naturalWidth) {
       return;
     }
-    const bounds = image.getBoundingClientRect(),
-      viewport = area.getBoundingClientRect();
+    const bounds = image.getBoundingClientRect();
+    const viewport = area.getBoundingClientRect();
     point ??= {
       x: viewport.left + viewport.width / 2,
       y: viewport.top + viewport.height / 2,
     };
-    const x = (point.x - bounds.left) / bounds.width,
-      y = (point.y - bounds.top) / bounds.height;
+    const x = (point.x - bounds.left) / bounds.width;
+    const y = (point.y - bounds.top) / bounds.height;
     scale = value === null ? null : Math.min(8, Math.max(minimum(), value));
     update();
     const next = image.getBoundingClientRect();

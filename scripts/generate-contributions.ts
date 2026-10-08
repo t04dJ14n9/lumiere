@@ -8,7 +8,9 @@ export async function contributions() {
     withFileTypes: true,
   }).filter((entry) => entry.isDirectory())) {
     const file = path.resolve("src/plugins", directory.name, "manifest.ts");
-    if (!existsSync(file)) continue;
+    if (!existsSync(file)) {
+      continue;
+    }
     const module = (await import(pathToFileURL(file).href)) as {
       default: Manifest;
     };
@@ -118,20 +120,22 @@ export async function contributions() {
   };
 }
 async function main() {
-  const file = new URL("../package.json", import.meta.url),
-    pkg = JSON.parse(readFileSync(file, "utf8"));
+  const file = new URL("../package.json", import.meta.url);
+  const pkg = JSON.parse(readFileSync(file, "utf8"));
   const generated = await contributions();
   if (process.argv.includes("--check")) {
-    if (JSON.stringify(pkg.contributes) !== JSON.stringify(generated))
+    if (JSON.stringify(pkg.contributes) !== JSON.stringify(generated)) {
       throw new Error("Run pnpm contributions");
+    }
   } else {
     pkg.contributes = generated;
     writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
   }
 }
 
-if (process.argv[1]?.endsWith("generate-contributions.ts"))
+if (process.argv[1]?.endsWith("generate-contributions.ts")) {
   void main().catch((error) => {
     console.error(error);
     process.exitCode = 1;
   });
+}

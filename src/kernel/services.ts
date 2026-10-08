@@ -17,7 +17,10 @@ export abstract class Service<C = void> {
   async activate(): Promise<void> {
     this.ctx.effect(() => () => this.stop?.());
     await this.start?.();
-    this.ctx.provide(this.serviceName, this as unknown as Services[keyof Services]);
+    this.ctx.provide(
+      this.serviceName,
+      this as unknown as Services[keyof Services],
+    );
   }
 }
 export interface ServiceClass<C> {
@@ -25,7 +28,9 @@ export interface ServiceClass<C> {
   readonly name: string;
   readonly inject?: Inject;
 }
-export function asPlugin<C>(definition: Plugin<C> | ServiceClass<C>): Plugin<C> {
+export function asPlugin<C>(
+  definition: Plugin<C> | ServiceClass<C>,
+): Plugin<C> {
   return typeof definition === "function"
     ? {
         name: definition.name,

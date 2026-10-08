@@ -26,12 +26,18 @@ export const vimWebview: Plugin = {
           !source ||
           !target?.state.vim ||
           source.insertMode === target.state.vim.insertMode
-        )
+        ) {
           return;
+        }
         const selection = to.state.selection;
-        if (source.insertMode) Vim.handleKey(target, "i", "api");
-        else Vim.exitInsertMode(target as CodeMirrorV, true);
-        if (!selection.eq(to.state.selection)) to.dispatch({ selection });
+        if (source.insertMode) {
+          Vim.handleKey(target, "i", "api");
+        } else {
+          Vim.exitInsertMode(target as CodeMirrorV, true);
+        }
+        if (!selection.eq(to.state.selection)) {
+          to.dispatch({ selection });
+        }
       },
     });
     ctx.effect(() =>
@@ -65,7 +71,9 @@ export const vimWebview: Plugin = {
     ] as const) {
       ctx.effect(() => {
         Vim.defineEx(name, short, () => {
-          if (live) action(command);
+          if (live) {
+            action(command);
+          }
         });
         return () => {};
       });

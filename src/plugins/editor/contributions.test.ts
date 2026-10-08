@@ -72,9 +72,9 @@ test("invalid contribution data is ignored independently; legacy keys restore on
 
 test("disposing one contribution preserves its snapshot without reading it again or affecting another", async () => {
   const contributions = new ViewContributions({} as EditorView);
-  let first = 1,
-    second = 2,
-    captures = 0;
+  let first = 1;
+  let second = 2;
+  let captures = 0;
   const stop = contributions.contribute("first", {
     schema: Schema.number(),
     capture: () => {

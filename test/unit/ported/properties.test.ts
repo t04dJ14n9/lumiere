@@ -10,9 +10,14 @@ import { renderProperties } from "../../../src/plugins/properties/sheet-html";
 
 test("recursive YAML properties render without throwing or mistaking shared aliases for cycles", () => {
   for (const yaml of ["items: &items [*items]", "item: &item {self: *item}"]) {
-    assert.match(renderProperties(`---\n${yaml}\n---\n`), /Recursive YAML alias/);
+    assert.match(
+      renderProperties(`---\n${yaml}\n---\n`),
+      /Recursive YAML alias/,
+    );
   }
-  const repeated = renderProperties("---\nfirst: &shared [one, two]\nsecond: *shared\n---\n");
+  const repeated = renderProperties(
+    "---\nfirst: &shared [one, two]\nsecond: *shared\n---\n",
+  );
   assert.doesNotMatch(repeated, /Recursive YAML alias/);
   assert.equal((repeated.match(/>one<\/span>/g) ?? []).length, 2);
 });
@@ -53,7 +58,8 @@ test("text property edits preserve quote style and string types", () => {
   ]) {
     const source = `---\nname: ${before} # keep\n---\nBody\n`;
     const change = scalarPropertyChange(source, "name", value!)!;
-    const result = source.slice(0, change.from) + change.insert + source.slice(change.to);
+    const result =
+      source.slice(0, change.from) + change.insert + source.slice(change.to);
     assert.equal(result, source.replace(before!, after!));
     assert.equal(frontmatter(result)!.values!.name, value);
   }
@@ -67,7 +73,10 @@ test("numeric property edits preserve neighboring text and reject non-finite val
   );
   assert.equal(scalarPropertyChange(source, "count", Infinity), undefined);
   assert.equal(scalarPropertyChange(source, "count", "3.5"), undefined);
-  assert.equal(scalarPropertyChange("---\ncount: !!int 2\n---", "count", 3.5), undefined);
+  assert.equal(
+    scalarPropertyChange("---\ncount: !!int 2\n---", "count", 3.5),
+    undefined,
+  );
 });
 test("boolean property edits reject aliases, strings and duplicate keys", () => {
   for (const source of [
@@ -86,11 +95,15 @@ test("list edits preserve neighboring YAML, string types and line endings", () =
   ]) {
     const change = listPropertyChange(source, "tags", ["one", "true", "3"])!;
     assert.ok(change);
-    const result = source.slice(0, change.from) + change.insert + source.slice(change.to);
+    const result =
+      source.slice(0, change.from) + change.insert + source.slice(change.to);
     assert.deepEqual(frontmatter(result)!.values!.tags, ["one", "true", "3"]);
     assert.ok(result.endsWith(source.slice(source.indexOf("name:"))));
   }
-  for (const source of ["---\ntags: [&tag one, *tag]\n---", "---\ntags:\n  - one # keep\n---"]) {
+  for (const source of [
+    "---\ntags: [&tag one, *tag]\n---",
+    "---\ntags:\n  - one # keep\n---",
+  ]) {
     assert.equal(listPropertyChange(source, "tags", ["two"]), undefined);
   }
 });

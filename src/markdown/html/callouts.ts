@@ -35,34 +35,42 @@ interface Callout {
   title: string;
   fold?: string;
 }
-export function callouts(md: MarkdownIt, calloutIcon: (kind: string) => string = () => ""): void {
+export function callouts(
+  md: MarkdownIt,
+  calloutIcon: (kind: string) => string = () => "",
+): void {
   md.core.ruler.after("inline", "callouts", (state) => {
     for (let index = 0; index < state.tokens.length; index++) {
       const token = state.tokens[index]!;
       if (token.type !== "blockquote_open") {
         continue;
       }
-      const paragraph = state.tokens[index + 1],
-        inline = state.tokens[index + 2];
+      const paragraph = state.tokens[index + 1];
+      const inline = state.tokens[index + 2];
       if (paragraph?.type !== "paragraph_open" || inline?.type !== "inline") {
         continue;
       }
-      const match = /^\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.exec(inline.content);
+      const match = /^\[!([\w-]+)\]([+-])?(?:[ \t]+([^\n]*))?(?:\n|$)/.exec(
+        inline.content,
+      );
       if (!match) {
         continue;
       }
-      let depth = 1,
-        closing = index + 1;
+      let depth = 1;
+      let closing = index + 1;
       for (; closing < state.tokens.length; closing++) {
         if (state.tokens[closing]!.type === "blockquote_open") {
           depth++;
         }
-        if (state.tokens[closing]!.type === "blockquote_close" && --depth === 0) {
+        if (
+          state.tokens[closing]!.type === "blockquote_close" &&
+          --depth === 0
+        ) {
           break;
         }
       }
-      const raw = match[1]!.toLowerCase(),
-        canonical = calloutAliases[raw] ?? raw;
+      const raw = match[1]!.toLowerCase();
+      const canonical = calloutAliases[raw] ?? raw;
       token.type = "callout_open";
       token.meta = {
         kind: calloutKinds.has(canonical) ? canonical : "note",
@@ -88,8 +96,8 @@ export function callouts(md: MarkdownIt, calloutIcon: (kind: string) => string =
     }
   });
   md.renderer.rules.callout_open = (tokens, index, _options, env) => {
-    const data = tokens[index]!.meta as Callout,
-      title = md.renderInline(data.title, env);
+    const data = tokens[index]!.meta as Callout;
+    const title = md.renderInline(data.title, env);
     const icon = calloutIcon(data.kind);
     return data.fold
       ? `<details class="callout" data-callout="${data.kind}"${data.fold === "+" ? " open" : ""}><summary class="callout-title">${icon}${title}</summary><div class="callout-content">`

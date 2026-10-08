@@ -16,15 +16,17 @@ class FakeClock implements Clock {
     };
   }
   expire() {
-    for (const callback of [...this.timers.keys()]) callback();
+    for (const callback of [...this.timers.keys()]) {
+      callback();
+    }
   }
 }
 function pair() {
-  const clock = new FakeClock(),
-    logs: string[] = [],
-    sent: unknown[] = [];
-  let toA: (v: unknown) => void = () => {},
-    toB: (v: unknown) => void = () => {};
+  const clock = new FakeClock();
+  const logs: string[] = [];
+  const sent: unknown[] = [];
+  let toA: (v: unknown) => void = () => {};
+  let toB: (v: unknown) => void = () => {};
   const aTransport: Transport = {
     send(v) {
       sent.push(v);
@@ -58,9 +60,17 @@ function pair() {
       logs.push(m);
     },
   };
-  const a = new Endpoint(aTransport, clock, logger),
-    b = new Endpoint(bTransport, clock, logger);
-  return { a, b, clock, logs, sent, toA: (v: unknown) => toA(v), toB: (v: unknown) => toB(v) };
+  const a = new Endpoint(aTransport, clock, logger);
+  const b = new Endpoint(bTransport, clock, logger);
+  return {
+    a,
+    b,
+    clock,
+    logs,
+    sent,
+    toA: (v: unknown) => toA(v),
+    toB: (v: unknown) => toB(v),
+  };
 }
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 test("RPC namespaces methods, validates results, and unregistering disables a channel", async () => {
@@ -68,12 +78,17 @@ test("RPC namespaces methods, validates results, and unregistering disables a ch
   const stop = b.handle(protocol, "double", (n) => n * 2);
   assert.equal(await a.call(protocol, "double", 3), 6);
   assert.equal(clock.timers.size, 0);
-  const other = defineProtocol("other", { requests: protocol.requests, notifications: {} });
+  const other = defineProtocol("other", {
+    requests: protocol.requests,
+    notifications: {},
+  });
   b.handle(other, "double", (n) => n * 3);
   assert.equal(await a.call(other, "double", 3), 9);
   assert.throws(() => b.handle(protocol, "double", (n) => n));
   await stop();
-  await assert.rejects(a.call(protocol, "double", 1), { code: "PluginDisabled" });
+  await assert.rejects(a.call(protocol, "double", 1), {
+    code: "PluginDisabled",
+  });
   await a.dispose();
   await b.dispose();
 });
@@ -88,12 +103,32 @@ test("RPC rejects invalid outbound params, drops malformed envelopes and inbound
   assert.equal(sent.length, 0);
   for (const value of [
     null,
-    { kind: "request", id: 1.1, channel: "example", method: "double", params: 1 },
+    {
+      kind: "request",
+      id: 1.1,
+      channel: "example",
+      method: "double",
+      params: 1,
+    },
     { kind: "__proto__" },
-    { kind: "request", id: 1, channel: "example", method: "double", params: "bad" },
-    { kind: "request", id: 1, channel: "example", method: "double", params: 1, extra: true },
-  ])
+    {
+      kind: "request",
+      id: 1,
+      channel: "example",
+      method: "double",
+      params: "bad",
+    },
+    {
+      kind: "request",
+      id: 1,
+      channel: "example",
+      method: "double",
+      params: 1,
+      extra: true,
+    },
+  ]) {
     toB(value);
+  }
   await tick();
   assert.equal(calls, 0);
   assert.equal(logs.length, 5);
@@ -104,7 +139,9 @@ test("RPC rejects invalid outbound params, drops malformed envelopes and inbound
 test("invalid handler results and forged response payloads reject callers", async () => {
   const { a, b, toA } = pair();
   const stop = b.handle(protocol, "double", () => "bad" as unknown as number);
-  await assert.rejects(a.call(protocol, "double", 2), { code: "InvalidResult" });
+  await assert.rejects(a.call(protocol, "double", 2), {
+    code: "InvalidResult",
+  });
   await stop();
   b.handle(protocol, "double", () => new Promise<number>(() => {}));
   const pending = a.call(protocol, "double", 1);
@@ -138,8 +175,8 @@ test("notifications validate both directions and isolate listeners", async () =>
 });
 test("timeout defaults to ten seconds, cancels remote work, and ignores a late result", async () => {
   const { a, b, clock } = pair();
-  let cancelled = false,
-    resolve!: (n: number) => void;
+  let cancelled = false;
+  let resolve!: (n: number) => void;
   b.handle(protocol, "double", (_n, token) => {
     token.onCancel(() => {
       cancelled = true;
@@ -169,15 +206,17 @@ test("explicit cancellation and disposal reject requests and clean subscriptions
     });
     return new Promise(() => {});
   });
-  const token = new CancelToken(),
-    result = a.call(protocol, "double", 2, { token });
+  const token = new CancelToken();
+  const result = a.call(protocol, "double", 2, { token });
   const rejected = assert.rejects(result, { code: "Cancelled" });
   token.cancel();
   await rejected;
   assert.equal(cancelled, 1);
-  await assert.rejects(a.call(protocol, "double", 2, { token }), { code: "Cancelled" });
-  const pending = a.call(protocol, "double", 3),
-    disposed = assert.rejects(pending, { code: "Disposed" });
+  await assert.rejects(a.call(protocol, "double", 2, { token }), {
+    code: "Cancelled",
+  });
+  const pending = a.call(protocol, "double", 3);
+  const disposed = assert.rejects(pending, { code: "Disposed" });
   await a.dispose();
   await disposed;
   await b.dispose();
@@ -194,8 +233,8 @@ test("disabling a handler cancels in-flight work and rejects its caller", async 
     });
     return new Promise(() => {});
   });
-  const pending = a.call(protocol, "double", 1),
-    rejected = assert.rejects(pending, { code: "PluginDisabled" });
+  const pending = a.call(protocol, "double", 1);
+  const rejected = assert.rejects(pending, { code: "PluginDisabled" });
   await stop();
   await rejected;
   assert.ok(cancelled);

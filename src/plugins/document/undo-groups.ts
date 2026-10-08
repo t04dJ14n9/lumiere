@@ -23,11 +23,14 @@ export class UndoGroups {
     current: () => string,
     native: () => Promise<unknown>,
   ): Promise<void> {
-    const from = action === "undo" ? this.undo : this.redo,
-      to = action === "undo" ? this.redo : this.undo;
-    const first = from.at(-1),
-      group = first?.group;
-    if (!first || current() !== (action === "undo" ? first.after : first.before)) {
+    const from = action === "undo" ? this.undo : this.redo;
+    const to = action === "undo" ? this.redo : this.undo;
+    const first = from.at(-1);
+    const group = first?.group;
+    if (
+      !first ||
+      current() !== (action === "undo" ? first.after : first.before)
+    ) {
       this.clear();
       await native();
       return;

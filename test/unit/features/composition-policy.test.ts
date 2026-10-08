@@ -11,7 +11,9 @@ test("feature modules never supply editor-wide singleton settings", () => {
       recursive: true,
       encoding: "utf8",
     })) {
-      if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
+      if (!file.endsWith(".ts") || file.endsWith(".test.ts")) {
+        continue;
+      }
       const path = `${directory}/${file}`;
       const tree = ts.createSourceFile(
         path,
@@ -25,20 +27,26 @@ test("feature modules never supply editor-wide singleton settings", () => {
           !ts.isImportDeclaration(node) ||
           !ts.isStringLiteral(node.moduleSpecifier) ||
           !node.moduleSpecifier.text.startsWith("@codemirror/")
-        )
+        ) {
           continue;
+        }
         const bindings = node.importClause?.namedBindings;
-        if (bindings && ts.isNamedImports(bindings))
-          for (const name of bindings.elements)
+        if (bindings && ts.isNamedImports(bindings)) {
+          for (const name of bindings.elements) {
             names.set(
               name.name.text,
               name.propertyName?.text ?? name.name.text,
             );
+          }
+        }
       }
       const normalized = (node: ts.Expression): string => {
-        if (ts.isIdentifier(node)) return names.get(node.text) ?? node.text;
-        if (ts.isPropertyAccessExpression(node))
+        if (ts.isIdentifier(node)) {
+          return names.get(node.text) ?? node.text;
+        }
+        if (ts.isPropertyAccessExpression(node)) {
           return `${normalized(node.expression)}.${node.name.text}`;
+        }
         return "";
       };
       function visit(node: ts.Node) {

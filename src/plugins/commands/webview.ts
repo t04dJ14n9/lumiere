@@ -11,7 +11,9 @@ export const commandsWebview: Plugin = {
     const handlers = new Map<string, () => boolean | Promise<boolean>>();
     const commands: Commands = {
       register(id, run) {
-        if (handlers.has(id)) throw new Error(`Duplicate command ${id}`);
+        if (handlers.has(id)) {
+          throw new Error(`Duplicate command ${id}`);
+        }
         handlers.set(id, run);
         return () => {
           handlers.delete(id);
@@ -22,24 +24,46 @@ export const commandsWebview: Plugin = {
       },
     };
     ctx.provide("commands", commands);
-    type Action = "save" | "undo" | "redo" | "close" | "saveClose" | "openAsText";
+    type Action =
+      | "save"
+      | "undo"
+      | "redo"
+      | "close"
+      | "saveClose"
+      | "openAsText";
     const host = async (action: Action) => {
       await ctx.document.flush();
       return ctx.rpc.call(protocol, "action", { action });
     };
     const trigger = (action: Action): boolean => {
-      void host(action).catch((error) => ctx.logger.error("Command failed", error));
+      void host(action).catch((error) =>
+        ctx.logger.error("Command failed", error),
+      );
       return true;
     };
-    for (const action of ["save", "undo", "redo", "close", "saveClose", "openAsText"] as const)
+    for (const action of [
+      "save",
+      "undo",
+      "redo",
+      "close",
+      "saveClose",
+      "openAsText",
+    ] as const) {
       ctx.effect(() => commands.register(action, () => host(action)));
-    ctx.effect(() => ctx.rpc.handle(protocol, "run", ({ command }) => commands.run(command)));
+    }
+    ctx.effect(() =>
+      ctx.rpc.handle(protocol, "run", ({ command }) => commands.run(command)),
+    );
     ctx.effect(() =>
       ctx.editor.extend(
         keymap.of([
           { key: "Mod-s", run: () => trigger("save"), preventDefault: true },
           { key: "Mod-z", run: () => trigger("undo"), preventDefault: true },
-          { key: "Mod-Shift-z", run: () => trigger("redo"), preventDefault: true },
+          {
+            key: "Mod-Shift-z",
+            run: () => trigger("redo"),
+            preventDefault: true,
+          },
           { key: "Mod-y", run: () => trigger("redo"), preventDefault: true },
         ]),
         { slot: "override" },

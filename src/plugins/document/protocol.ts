@@ -9,15 +9,18 @@ const change = new Schema<unknown[]>(
 );
 const version = new Schema<number>(
   (v) => {
-    if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0)
+    if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 0) {
       throw new Error("Invalid version");
+    }
     return v;
   },
   { type: "integer", minimum: 0 },
 );
 export const updates = Schema.object({
   version,
-  updates: Schema.array(Schema.object({ clientID: Schema.string().max(128), changes: change })),
+  updates: Schema.array(
+    Schema.object({ clientID: Schema.string().max(128), changes: change }),
+  ),
 });
 export const protocol = defineProtocol("document", {
   requests: {

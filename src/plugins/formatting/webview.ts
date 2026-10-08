@@ -37,18 +37,24 @@ export const formattingWebview: Plugin = {
       ]),
     ]) {
       commands.set(`editor:${id}`, (view) => {
-        if (view.state.readOnly) return false;
+        if (view.state.readOnly) {
+          return false;
+        }
         view.dispatch(lineEdit(view.state, prefix!));
         return true;
       });
     }
     commands.set("editor:insert-link", (view) => {
-      if (view.state.readOnly) return false;
+      if (view.state.readOnly) {
+        return false;
+      }
       view.dispatch(linkEdit(view.state));
       return true;
     });
     commands.set("editor:insert-horizontal-rule", (view) => {
-      if (view.state.readOnly) return false;
+      if (view.state.readOnly) {
+        return false;
+      }
       view.dispatch({
         ...view.state.replaceSelection("\n\n---\n\n"),
         userEvent: "input",
@@ -57,12 +63,13 @@ export const formattingWebview: Plugin = {
     });
     commands.set("editor:swap-line-up", moveLineUp);
     commands.set("editor:swap-line-down", moveLineDown);
-    for (const [id, run] of commands)
+    for (const [id, run] of commands) {
       ctx.effect(() =>
         ctx.commands.register(id, () =>
           run(ctx.bail("editor/activeView") ?? ctx.editor.view),
         ),
       );
+    }
     ctx.effect(() =>
       ctx.editor.extend(
         keymap.of([

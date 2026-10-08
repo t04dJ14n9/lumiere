@@ -17,7 +17,9 @@ export function hostFeatures(
   const refresh = () => {
     queue = queue
       .then(async () => {
-        if (!live) return;
+        if (!live) {
+          return;
+        }
         const config = workbench.config(panel.document);
         for (const plugin of [linksHost, tasksHost, propertiesHost]) {
           const enabled =
@@ -28,15 +30,17 @@ export function hostFeatures(
             await previous.dispose();
             active.delete(plugin.name);
           }
-          if (enabled && !active.has(plugin.name))
+          if (enabled && !active.has(plugin.name)) {
             active.set(plugin.name, root.plugin(plugin, { panel }));
+          }
         }
       })
       .catch((error) =>
         root.logger.error("Host feature configuration failed", error),
       );
   };
-  if (workbench.onConfiguration)
+  if (workbench.onConfiguration) {
     root.effect(() => workbench.onConfiguration!(refresh));
+  }
   refresh();
 }

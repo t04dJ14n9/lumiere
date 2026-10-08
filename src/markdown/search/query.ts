@@ -62,8 +62,8 @@ export function parseSearch(source: string): SearchQuery {
   };
   const regex = (): SearchQuery => {
     at++;
-    let pattern = "",
-      bracket = false;
+    let pattern = "";
+    let bracket = false;
     while (at < source.length) {
       const char = source[at++]!;
       if (char === "\\" && at < source.length) {
@@ -90,7 +90,11 @@ export function parseSearch(source: string): SearchQuery {
     }
     return fail("Unclosed regular expression");
   };
-  const expression = (stops: string, scopes: boolean, propertyValue = false): SearchQuery => {
+  const expression = (
+    stops: string,
+    scopes: boolean,
+    propertyValue = false,
+  ): SearchQuery => {
     const alternatives: SearchQuery[] = [];
     while (true) {
       const terms: SearchQuery[] = [];
@@ -102,18 +106,29 @@ export function parseSearch(source: string): SearchQuery {
       if (!terms.length) {
         return fail("Expected a search term");
       }
-      alternatives.push(terms.length === 1 ? terms[0]! : { kind: "and", terms });
+      alternatives.push(
+        terms.length === 1 ? terms[0]! : { kind: "and", terms },
+      );
       if (!or()) {
         break;
       }
       at += 2;
       space();
     }
-    return alternatives.length === 1 ? alternatives[0]! : { kind: "or", terms: alternatives };
+    return alternatives.length === 1
+      ? alternatives[0]!
+      : { kind: "or", terms: alternatives };
   };
-  const unary = (stops: string, scopes: boolean, propertyValue: boolean): SearchQuery => {
+  const unary = (
+    stops: string,
+    scopes: boolean,
+    propertyValue: boolean,
+  ): SearchQuery => {
     space();
-    if (source[at] === "-" && !(propertyValue && /^-\d/.test(source.slice(at)))) {
+    if (
+      source[at] === "-" &&
+      !(propertyValue && /^-\d/.test(source.slice(at)))
+    ) {
       at++;
       return { kind: "not", term: unary(stops, scopes, propertyValue) };
     }
@@ -138,7 +153,9 @@ export function parseSearch(source: string): SearchQuery {
         return fail("Unclosed property filter");
       }
       at++;
-      return value ? { kind: "property", name, value } : { kind: "property", name };
+      return value
+        ? { kind: "property", name, value }
+        : { kind: "property", name };
     }
     if (scopes) {
       const operator = /^([a-z-]+):/.exec(source.slice(at));
@@ -161,7 +178,11 @@ export function parseSearch(source: string): SearchQuery {
       return regex();
     }
     const start = at;
-    while (at < source.length && !/\s|[()[\]]/.test(source[at]!) && !stops.includes(source[at]!)) {
+    while (
+      at < source.length &&
+      !/\s|[()[\]]/.test(source[at]!) &&
+      !stops.includes(source[at]!)
+    ) {
       at++;
     }
     if (at === start) {

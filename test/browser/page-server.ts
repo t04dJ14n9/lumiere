@@ -10,8 +10,8 @@ export async function servePage(page: Page, html: string): Promise<void> {
       return;
     }
     const target = path.resolve("." + decodeURIComponent(url.pathname));
-    const allowed = ["dist", "artifacts", "test/fixtures", "examples"].some((folder) =>
-      target.startsWith(path.resolve(folder) + "/"),
+    const allowed = ["dist", "artifacts", "test/fixtures", "examples"].some(
+      (folder) => target.startsWith(path.resolve(folder) + "/"),
     );
     if (!allowed) {
       await route.abort();
@@ -36,11 +36,17 @@ export async function servePage(page: Page, html: string): Promise<void> {
       return;
     }
     {
-      const contentType = types[path.extname(target)] ?? "application/octet-stream";
-      const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? "");
+      const contentType =
+        types[path.extname(target)] ?? "application/octet-stream";
+      const range = /^bytes=(\d+)-(\d*)$/.exec(
+        route.request().headers().range ?? "",
+      );
       if (range) {
-        const start = Number(range[1]),
-          end = Math.min(body.length - 1, range[2] ? Number(range[2]) : body.length - 1);
+        const start = Number(range[1]);
+        const end = Math.min(
+          body.length - 1,
+          range[2] ? Number(range[2]) : body.length - 1,
+        );
         await route.fulfill({
           status: 206,
           contentType,

@@ -32,21 +32,24 @@ export class ViewContributions implements ViewStateContributions {
     this.source = source;
     this.legacy = legacy;
     for (const [key, contribution] of this.active) {
-      if (Object.hasOwn(this.values, key) || Object.hasOwn(this.legacy, key))
+      if (Object.hasOwn(this.values, key) || Object.hasOwn(this.legacy, key)) {
         contribution.restore(
           Object.hasOwn(this.values, key) ? this.values[key] : this.legacy[key],
         );
+      }
     }
   }
   capture(): Record<string, unknown> {
     const values = { ...this.legacy, ...this.values };
-    for (const [key, contribution] of this.active)
+    for (const [key, contribution] of this.active) {
       values[key] = contribution.capture();
+    }
     return values;
   }
   contribute<T>(key: string, contribution: ViewStateContribution<T>): Disposer {
-    if (this.active.has(key))
+    if (this.active.has(key)) {
       throw new Error(`Duplicate view-state contribution: ${key}`);
+    }
     const entry = {
       capture: () => contribution.schema.parse(contribution.capture(this.view)),
       restore: (value: unknown) => {
@@ -60,12 +63,15 @@ export class ViewContributions implements ViewStateContributions {
       },
     };
     this.active.set(key, entry);
-    if (Object.hasOwn(this.values, key) || Object.hasOwn(this.legacy, key))
+    if (Object.hasOwn(this.values, key) || Object.hasOwn(this.legacy, key)) {
       entry.restore(
         Object.hasOwn(this.values, key) ? this.values[key] : this.legacy[key],
       );
+    }
     return () => {
-      if (this.active.get(key) !== entry) return;
+      if (this.active.get(key) !== entry) {
+        return;
+      }
       this.values[key] = entry.capture();
       this.active.delete(key);
     };

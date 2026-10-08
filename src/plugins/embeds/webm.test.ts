@@ -31,8 +31,8 @@ test("streaming preserves unknown-size cluster boundaries and orders complete bl
     ...cluster,
     ...block(3),
   ]);
-  const stream = new WebmStream(),
-    chunks: Uint8Array[] = [];
+  const stream = new WebmStream();
+  const chunks: Uint8Array[] = [];
   for (const byte of bytes) {
     chunks.push(...stream.push(Uint8Array.of(byte)));
   }

@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { build } from "esbuild";
-test("pure dialect, metadata and renderer run unchanged in Chromium", async ({ page }) => {
+test("pure dialect, metadata and renderer run unchanged in Chromium", async ({
+  page,
+}) => {
   const bundle = await build({
     stdin: {
       contents: `
@@ -23,7 +25,10 @@ test("pure dialect, metadata and renderer run unchanged in Chromium", async ({ p
     target: "chrome120",
   });
   await page.setContent("<body></body>");
-  await page.addScriptTag({ type: "module", content: bundle.outputFiles[0]!.text });
+  await page.addScriptTag({
+    type: "module",
+    content: bundle.outputFiles[0]!.text,
+  });
   await expect(page.locator("h1")).toHaveText("Browser");
   await expect(page.locator("a.internal-link")).toHaveText("Note");
   await expect(page.locator("body")).toHaveAttribute("data-links", "1");

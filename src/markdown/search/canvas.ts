@@ -66,9 +66,9 @@ export function canvasData(source: string): CanvasData {
   ) {
     throw new Error("Canvas must contain node and edge arrays.");
   }
-  const nodes: CanvasNode[] = [],
-    edges: CanvasEdge[] = [],
-    ids = new Set<string>();
+  const nodes: CanvasNode[] = [];
+  const edges: CanvasEdge[] = [];
+  const ids = new Set<string>();
   for (const node of data.nodes ?? []) {
     if (
       !record(node) ||
@@ -76,7 +76,8 @@ export function canvasData(source: string): CanvasData {
       ids.has(node.id) ||
       !["text", "file", "link", "group"].includes(String(node.type)) ||
       !["x", "y", "width", "height"].every(
-        (key) => typeof node[key] === "number" && Number.isSafeInteger(node[key]),
+        (key) =>
+          typeof node[key] === "number" && Number.isSafeInteger(node[key]),
       ) ||
       Number(node.width) <= 0 ||
       Number(node.height) <= 0
@@ -148,7 +149,8 @@ export function canvasData(source: string): CanvasData {
     for (const key of ["fromEnd", "toEnd"]) {
       if (
         edge[key] !== undefined &&
-        (typeof edge[key] !== "string" || !["none", "arrow"].includes(edge[key]))
+        (typeof edge[key] !== "string" ||
+          !["none", "arrow"].includes(edge[key]))
       ) {
         throw new Error("Invalid Canvas edge end.");
       }
@@ -164,12 +166,21 @@ export function canvasData(source: string): CanvasData {
   return { nodes, edges };
 }
 export function canvasColor(value?: string): string {
-  const colors = ["#e05252", "#dc923f", "#c9b63e", "#55a769", "#51a5bc", "#a576cc"];
+  const colors = [
+    "#e05252",
+    "#dc923f",
+    "#c9b63e",
+    "#55a769",
+    "#51a5bc",
+    "#a576cc",
+  ];
   return value && /^#[\da-f]{6}$/i.test(value)
     ? value
     : (colors[Number(value) - 1] ?? "var(--vscode-panel-border, #777)");
 }
-export function canvasBounds(nodes: readonly Pick<CanvasNode, "x" | "y" | "width" | "height">[]): {
+export function canvasBounds(
+  nodes: readonly Pick<CanvasNode, "x" | "y" | "width" | "height">[],
+): {
   x: number;
   y: number;
   width: number;
@@ -178,10 +189,10 @@ export function canvasBounds(nodes: readonly Pick<CanvasNode, "x" | "y" | "width
   if (!nodes.length) {
     return { x: 0, y: 0, width: 1, height: 1 };
   }
-  let x = Infinity,
-    y = Infinity,
-    right = -Infinity,
-    bottom = -Infinity;
+  let x = Infinity;
+  let y = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
   for (const node of nodes) {
     x = Math.min(x, node.x);
     y = Math.min(y, node.y);
@@ -190,10 +201,17 @@ export function canvasBounds(nodes: readonly Pick<CanvasNode, "x" | "y" | "width
   }
   return { x, y, width: right - x, height: bottom - y };
 }
-export function edgePoint(node: CanvasNode, side: string): { x: number; y: number } {
+export function edgePoint(
+  node: CanvasNode,
+  side: string,
+): { x: number; y: number } {
   return {
-    x: node.x + (side === "left" ? 0 : side === "right" ? node.width : node.width / 2),
-    y: node.y + (side === "top" ? 0 : side === "bottom" ? node.height : node.height / 2),
+    x:
+      node.x +
+      (side === "left" ? 0 : side === "right" ? node.width : node.width / 2),
+    y:
+      node.y +
+      (side === "top" ? 0 : side === "bottom" ? node.height : node.height / 2),
   };
 }
 
@@ -209,20 +227,27 @@ export function edgeCurve(
   to: CanvasNode,
   edge: CanvasEdge,
 ): { path: string; label: Point; bounds: ReturnType<typeof canvasBounds> } {
-  const dx = to.x + to.width / 2 - from.x - from.width / 2,
-    dy = to.y + to.height / 2 - from.y - from.height / 2;
+  const dx = to.x + to.width / 2 - from.x - from.width / 2;
+  const dy = to.y + to.height / 2 - from.y - from.height / 2;
   const automatic =
-    Math.abs(dx) >= Math.abs(dy) ? (dx >= 0 ? "right" : "left") : dy >= 0 ? "bottom" : "top";
+    Math.abs(dx) >= Math.abs(dy)
+      ? dx >= 0
+        ? "right"
+        : "left"
+      : dy >= 0
+        ? "bottom"
+        : "top";
   const opposite: Record<string, string> = {
     top: "bottom",
     bottom: "top",
     left: "right",
     right: "left",
   };
-  const fromSide = edge.fromSide ?? automatic,
-    toSide = edge.toSide ?? (from.id === to.id ? "top" : opposite[automatic]!);
-  const start = edgePoint(from, fromSide),
-    end = edgePoint(to, toSide);
+  const fromSide = edge.fromSide ?? automatic;
+  const toSide =
+    edge.toSide ?? (from.id === to.id ? "top" : opposite[automatic]!);
+  const start = edgePoint(from, fromSide);
+  const end = edgePoint(to, toSide);
   const outside = (point: Point, side: string, distance: number): Point => ({
     x: point.x + direction[side]!.x * distance,
     y: point.y + direction[side]!.y * distance,
@@ -232,8 +257,8 @@ export function edgeCurve(
     canvasBounds(points.map((point) => ({ ...point, width: 0, height: 0 })));
   if (from.id !== to.id) {
     const distance = Math.max(40, Math.min(160, Math.hypot(dx, dy) / 2));
-    const a = outside(start, fromSide, distance),
-      b = outside(end, toSide, distance);
+    const a = outside(start, fromSide, distance);
+    const b = outside(end, toSide, distance);
     return {
       path: `M ${format(start)} C ${format(a)} ${format(b)} ${format(end)}`,
       label: {
@@ -243,17 +268,17 @@ export function edgeCurve(
       bounds: boundsFor([start, a, b, end]),
     };
   }
-  const margin = 64,
-    order = ["top", "right", "bottom", "left"];
-  const first = order.indexOf(fromSide),
-    last = order.indexOf(toSide),
-    clockwise = (last - first + 4) % 4;
-  const step = clockwise <= 2 ? 1 : -1,
-    steps = clockwise === 0 ? 4 : step === 1 ? clockwise : 4 - clockwise;
-  const left = from.x - margin,
-    top = from.y - margin,
-    right = from.x + from.width + margin,
-    bottom = from.y + from.height + margin;
+  const margin = 64;
+  const order = ["top", "right", "bottom", "left"];
+  const first = order.indexOf(fromSide);
+  const last = order.indexOf(toSide);
+  const clockwise = (last - first + 4) % 4;
+  const step = clockwise <= 2 ? 1 : -1;
+  const steps = clockwise === 0 ? 4 : step === 1 ? clockwise : 4 - clockwise;
+  const left = from.x - margin;
+  const top = from.y - margin;
+  const right = from.x + from.width + margin;
+  const bottom = from.y + from.height + margin;
   const corners = [
     { x: right, y: top },
     { x: right, y: bottom },
@@ -266,7 +291,10 @@ export function edgeCurve(
   }
   points.push(outside(end, toSide, margin), end);
   const towards = (point: Point, other: Point): Point => {
-    const amount = Math.min(0.5, 12 / Math.hypot(other.x - point.x, other.y - point.y));
+    const amount = Math.min(
+      0.5,
+      12 / Math.hypot(other.x - point.x, other.y - point.y),
+    );
     return {
       x: point.x + (other.x - point.x) * amount,
       y: point.y + (other.y - point.y) * amount,

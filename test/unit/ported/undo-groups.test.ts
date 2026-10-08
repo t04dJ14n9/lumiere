@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { UndoGroups } from "../../../src/plugins/document/undo-groups";
 
 test("logical groups replay native undo steps in both directions", async () => {
-  const groups = new UndoGroups(),
-    states = ["a", "ab", "abc", "abc!"];
-  let index = 3,
-    calls = 0;
+  const groups = new UndoGroups();
+  const states = ["a", "ab", "abc", "abc!"];
+  let index = 3;
+  let calls = 0;
   groups.record("a", "ab", "insert");
   groups.record("ab", "abc", "insert");
   groups.record("abc", "abc!", "operator");
@@ -31,8 +31,8 @@ test("unexpected native state stops grouped replay rather than undoing unrelated
   const groups = new UndoGroups();
   groups.record("a", "ab", "insert");
   groups.record("ab", "abc", "insert");
-  let state = "abc",
-    calls = 0;
+  let state = "abc";
+  let calls = 0;
   await groups.run(
     "undo",
     () => state,

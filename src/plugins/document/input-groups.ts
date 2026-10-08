@@ -6,8 +6,9 @@ import { editGroup } from "./input-annotation";
 /** Group transport batches by the user's edit, while keeping native history authoritative. */
 export class InputGroups {
   constructor(
-    private readonly vimMode: (view: EditorView) => { insertMode?: boolean } | undefined = () =>
-      undefined,
+    private readonly vimMode: (
+      view: EditorView,
+    ) => { insertMode?: boolean } | undefined = () => undefined,
   ) {}
   private view?: EditorView;
   private sequence = 0;
@@ -25,7 +26,10 @@ export class InputGroups {
       return null;
     }
     if (!transaction.docChanged) {
-      if (transaction.selection && !transaction.selection.eq(transaction.startState.selection)) {
+      if (
+        transaction.selection &&
+        !transaction.selection.eq(transaction.startState.selection)
+      ) {
         this.boundary();
       }
       return null;
@@ -42,7 +46,9 @@ export class InputGroups {
     let adjacent = false;
     transaction.changes.iterChangedRanges((from, to, nextFrom, nextTo) => {
       adjacent ||=
-        this.previous?.ranges.some((range) => from <= range.to && to >= range.from) ?? false;
+        this.previous?.ranges.some(
+          (range) => from <= range.to && to >= range.from,
+        ) ?? false;
       ranges.push({ from: nextFrom, to: nextTo });
     });
     const continuous =

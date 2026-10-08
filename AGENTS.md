@@ -27,6 +27,58 @@ that everything is a plugin. Read [DESIGN.md](DESIGN.md) and
   their behaviour in `docs/MANUAL_TEST_PLAN.md`, which the owner runs with
   computer use. See "Testing policy" in IMPLEMENTATION_PLAN.md.
 
+## Code norms
+
+Write for a human reader who knows TypeScript and CodeMirror but not this
+code. `pnpm check` enforces the mechanical part:
+
+- Prettier formatting (`pnpm format` fixes it; `.prettierignore` lists what it
+  skips).
+- Braces on every block and one declaration per statement.
+- In `src` (not tests): no nested ternaries; nesting depth at most 4;
+  functions at most 60 lines, not counting blank lines and comments;
+  cyclomatic complexity at most 15; at most 4 parameters (pass an options
+  object instead); files at most 400 lines; no class spread across files
+  through `this:` functions attached as fields.
+
+`eslint.legacy.mjs` is the readability backlog: the files that broke a rule
+when the rules came in, with that rule off for them. Remove a file from a list
+when you rewrite it. Never add a file. New and ported code complies from the
+start: when porting a long source function, rewrite it rather than copying it.
+A genuine exception (a data table, an exhaustive `switch` over a closed union)
+gets an inline `// eslint-disable-next-line <rule> -- <reason>`.
+
+What the linter cannot check:
+
+- **Split by responsibility, not by length.** A function does the one thing
+  its name says. An extracted unit receives only the state it needs, as
+  parameters or a narrow interface, never the whole owner object. Moving code
+  unchanged into another file to meet a limit is not a fix.
+- **A plugin's `apply` reads as a table of contents**: a short sequence of
+  named registrations (`registerFoldGutter(ctx, options)`), each defined below
+  it or in its own module.
+- **Names say what things mean** in the domain (`revealSourceAroundCaret`, not
+  `handle` or `run2`). Booleans read as predicates (`isRevealed`,
+  `hasFocus`). Avoid abbreviations other than well-known ones (`id`, `url`,
+  `rpc`).
+- **Prefer early returns** to nested conditions, and narrowing to the non-null
+  assertion `!`. Use `!` only where an invariant guarantees the value.
+- **Comments explain why**: invariants, ordering constraints, races, browser
+  and VS Code workarounds, and anything a reader might otherwise "fix" by
+  mistake. Do not narrate what the next line does.
+- **Rewrites preserve behaviour.** Never mix a behaviour change into a
+  readability commit. If a rewrite exposes a bug, fix it in its own commit
+  with a unit test. Extracted pure logic gets unit tests.
+- **Plugin READMEs** follow this template and contain no project status
+  (status belongs in IMPLEMENTATION_PLAN.md):
+  1. What it does, in one or two sentences, in user terms, with the Obsidian
+     equivalent.
+  2. How it works: the main flow in a short paragraph.
+  3. Files: one line per file.
+  4. Services injected and provided, events listened to and emitted,
+     settings.
+  5. Limits and known differences from Obsidian.
+
 ## Checks
 
 Run before committing, in this order:

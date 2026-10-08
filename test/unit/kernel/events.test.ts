@@ -7,12 +7,14 @@ declare module "../../../src/kernel/types" {
     /** @mode serial */ sequence: () => void | Promise<void>;
     /** @mode parallel */ concurrent: () => void | Promise<void>;
     /** @mode bail */ claim: () => string | undefined;
-    /** @mode waterfall */ transform: (value: string) => string | Promise<string>;
+    /** @mode waterfall */ transform: (
+      value: string,
+    ) => string | Promise<string>;
   }
 }
 test("emit uses registration order, prepend, listener isolation, and effect cleanup", async () => {
-  const root = Context.create(),
-    order: number[] = [];
+  const root = Context.create();
+  const order: number[] = [];
   const fiber = root.plugin({
     name: "events",
     apply(ctx) {
@@ -40,8 +42,8 @@ test("emit uses registration order, prepend, listener isolation, and effect clea
   await root.dispose();
 });
 test("serial awaits listeners; parallel starts all before awaiting", async () => {
-  const root = Context.create(),
-    order: string[] = [];
+  const root = Context.create();
+  const order: string[] = [];
   root.on("sequence", async () => {
     await Promise.resolve();
     order.push("a");

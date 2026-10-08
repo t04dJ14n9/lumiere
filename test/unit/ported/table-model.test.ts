@@ -64,18 +64,24 @@ test("omitted trailing cells gain delimiters without rewriting existing rows", (
     const sparse = source.replace("| Alpha | 10 | A \\| pipe |", row);
     const table = parseTable(sparse)!;
     const edit = materializeCell(table, { row: 1, column: 2 }, " new|value ");
-    const nextSource = sparse.slice(0, edit.from) + edit.insert + sparse.slice(edit.from);
+    const nextSource =
+      sparse.slice(0, edit.from) + edit.insert + sparse.slice(edit.from);
     const next = parseTable(nextSource)!;
     assert.equal(next.rows[1]![0]!.text, table.rows[1]![0]!.text);
     assert.equal(next.rows[1]![1]!.text, "");
     assert.equal(next.rows[1]![2]!.text, "new\\|value");
     assert.equal(next.rows[1]![2]!.missing, undefined);
-    assert.equal(nextSource.slice(edit.from + edit.insert.length), sparse.slice(edit.from));
+    assert.equal(
+      nextSource.slice(edit.from + edit.insert.length),
+      sparse.slice(edit.from),
+    );
   }
 });
 
 test("short table separators retain HTML line breaks and empty trailing cells", () => {
-  const table = parseTable("| A | B | C |\n| - | - | - |\n| first<br/><br/>second | | |")!;
+  const table = parseTable(
+    "| A | B | C |\n| - | - | - |\n| first<br/><br/>second | | |",
+  )!;
   assert.deepEqual(table.alignments, [null, null, null]);
   assert.deepEqual(
     table.rows[1]!.map((cell) => cell.text),

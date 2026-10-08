@@ -6,8 +6,8 @@ import { DisclosureState } from "./view-state";
 test("callout transfer remaps local and nested identity and refreshes live disclosures", () => {
   const state = new DisclosureState("new.md");
   const view = {} as EditorView;
-  const details = { open: true },
-    nested = { open: true };
+  const details = { open: true };
+  const nested = { open: true };
   let measures = 0;
   const binding = state.bind("new.md|a|0", details, () => measures++);
   state.bind("new.md/embed.md|a|0", nested, () => measures++);

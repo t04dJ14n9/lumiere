@@ -6,21 +6,28 @@ export function formatMarkdownAgentReference(
 ): string {
   const normalizedPath = normalizeWorkspaceRelativePath(relativePath);
   if (!normalizedPath) {
-    throw new TypeError("Markdown agent reference path must be workspace-relative.");
+    throw new TypeError(
+      "Markdown agent reference path must be workspace-relative.",
+    );
   }
   if (!isPositiveSafeInteger(startLine) || !isPositiveSafeInteger(endLine)) {
-    throw new TypeError("Markdown agent reference lines must be positive safe integers.");
+    throw new TypeError(
+      "Markdown agent reference lines must be positive safe integers.",
+    );
   }
   if (endLine < startLine) {
     throw new RangeError("Markdown agent reference lines must be ordered.");
   }
 
-  const lineRange = startLine === endLine ? String(startLine) : `${startLine}-${endLine}`;
+  const lineRange =
+    startLine === endLine ? String(startLine) : `${startLine}-${endLine}`;
   return `@${normalizedPath}#${lineRange}`;
 }
 
 function normalizeWorkspaceRelativePath(value: unknown): string | undefined {
-  if (typeof value !== "string") return undefined;
+  if (typeof value !== "string") {
+    return undefined;
+  }
   const normalized = value.replaceAll("\\", "/");
   if (
     !normalized ||
@@ -31,8 +38,9 @@ function normalizeWorkspaceRelativePath(value: unknown): string | undefined {
     /^[A-Za-z][A-Za-z0-9+.-]*:/.test(normalized) ||
     /^[A-Za-z]:($|\/)/.test(normalized) ||
     normalized.split("/").some((segment) => segment === "..")
-  )
+  ) {
     return undefined;
+  }
   return normalized;
 }
 

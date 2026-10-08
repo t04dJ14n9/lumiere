@@ -9,8 +9,8 @@ export function createWorkbench(
   extensionUri: vscode.Uri,
   storage?: vscode.Memento,
 ): Workbench {
-  const wrappers = new WeakMap<vscode.TextDocument, HostDocument>(),
-    originals = new WeakMap<HostDocument, vscode.TextDocument>();
+  const wrappers = new WeakMap<vscode.TextDocument, HostDocument>();
+  const originals = new WeakMap<HostDocument, vscode.TextDocument>();
   function wrap(document: vscode.TextDocument): HostDocument {
     let wrapped = wrappers.get(document);
     if (!wrapped) {
@@ -50,10 +50,12 @@ export function createWorkbench(
     },
     async apply(document, edits) {
       const native = originals.get(document);
-      if (!native) throw new Error("Unknown document");
-      const coordinates = new SourceCoordinates(native.getText()),
-        edit = new vscode.WorkspaceEdit();
-      for (const change of edits)
+      if (!native) {
+        throw new Error("Unknown document");
+      }
+      const coordinates = new SourceCoordinates(native.getText());
+      const edit = new vscode.WorkspaceEdit();
+      for (const change of edits) {
         edit.replace(
           native.uri,
           new vscode.Range(
@@ -62,6 +64,7 @@ export function createWorkbench(
           ),
           change.insert,
         );
+      }
       return vscode.workspace.applyEdit(edit);
     },
     onChange(listener) {
@@ -87,8 +90,9 @@ export function createWorkbench(
       return () => stop.dispose();
     },
     async execute(id, ...args) {
-      if (id === "vscode.openWith" && typeof args[0] === "string")
+      if (id === "vscode.openWith" && typeof args[0] === "string") {
         args[0] = vscode.Uri.parse(args[0]);
+      }
       return vscode.commands.executeCommand(id, ...args);
     },
     clipboard: {
@@ -184,10 +188,10 @@ export function createWorkbench(
         viewType,
         {
           resolveCustomTextEditor(document, panel) {
-            const id = randomUUID(),
-              root =
-                vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
-                vscode.Uri.joinPath(document.uri, "..");
+            const id = randomUUID();
+            const root =
+              vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
+              vscode.Uri.joinPath(document.uri, "..");
             panel.webview.options = {
               enableScripts: true,
               localResourceRoots: [
@@ -210,8 +214,8 @@ export function createWorkbench(
                 },
               },
               active() {
-                const group = vscode.window.tabGroups.activeTabGroup,
-                  input = group.activeTab?.input;
+                const group = vscode.window.tabGroups.activeTabGroup;
+                const input = group.activeTab?.input;
                 return (
                   group.viewColumn === panel.viewColumn &&
                   input instanceof vscode.TabInputCustom &&
@@ -245,8 +249,9 @@ export function createWorkbench(
                 return () => stop.dispose();
               },
               onState(listener) {
-                const a = panel.onDidChangeViewState(listener),
-                  b = vscode.window.tabGroups.onDidChangeTabGroups(listener);
+                const a = panel.onDidChangeViewState(listener);
+                const b =
+                  vscode.window.tabGroups.onDidChangeTabGroups(listener);
                 return () => {
                   a.dispose();
                   b.dispose();

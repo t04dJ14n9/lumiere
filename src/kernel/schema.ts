@@ -29,7 +29,10 @@ export class Schema<T> {
     return JSON.parse(JSON.stringify(this.json));
   }
   optional(): Schema<T | undefined> {
-    return new Schema((v, p) => (v === undefined ? undefined : this.read(v, p)), this.json);
+    return new Schema(
+      (v, p) => (v === undefined ? undefined : this.read(v, p)),
+      this.json,
+    );
   }
   default(value: T): Schema<T> {
     this.parse(value);
@@ -69,8 +72,9 @@ export class Schema<T> {
             : typeof parsed === "string" || Array.isArray(parsed)
               ? parsed.length
               : NaN;
-        if (!Number.isFinite(size) || (max ? size > value : size < value))
+        if (!Number.isFinite(size) || (max ? size > value : size < value)) {
           throw new ValidationError(p, `violates ${key} ${value}`);
+        }
         return parsed;
       },
       { ...this.json, [key]: value },
@@ -82,9 +86,12 @@ export class Schema<T> {
         const parsed = this.read(v, p);
         if (
           typeof parsed !== "string" ||
-          !new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, "")).test(parsed)
-        )
+          !new RegExp(pattern.source, pattern.flags.replace(/[gy]/g, "")).test(
+            parsed,
+          )
+        ) {
           throw new ValidationError(p, "pattern mismatch");
+        }
         return parsed;
       },
       { ...this.json, pattern: pattern.source },
@@ -93,7 +100,9 @@ export class Schema<T> {
   static boolean(): Schema<boolean> {
     return new Schema(
       (v, p) => {
-        if (typeof v !== "boolean") throw new ValidationError(p, "expected boolean");
+        if (typeof v !== "boolean") {
+          throw new ValidationError(p, "expected boolean");
+        }
         return v;
       },
       { type: "boolean" },
@@ -102,8 +111,9 @@ export class Schema<T> {
   static number(): Schema<number> {
     return new Schema(
       (v, p) => {
-        if (typeof v !== "number" || !Number.isFinite(v))
+        if (typeof v !== "number" || !Number.isFinite(v)) {
           throw new ValidationError(p, "expected finite number");
+        }
         return v;
       },
       { type: "number" },
@@ -112,7 +122,9 @@ export class Schema<T> {
   static string(): Schema<string> {
     return new Schema(
       (v, p) => {
-        if (typeof v !== "string") throw new ValidationError(p, "expected string");
+        if (typeof v !== "string") {
+          throw new ValidationError(p, "expected string");
+        }
         return v;
       },
       { type: "string" },
@@ -126,7 +138,9 @@ export class Schema<T> {
   ): Schema<T[number]> {
     return new Schema(
       (v, p) => {
-        if (!values.includes(v as T[number])) throw new ValidationError(p, "expected enum member");
+        if (!values.includes(v as T[number])) {
+          throw new ValidationError(p, "expected enum member");
+        }
         return v as T[number];
       },
       { enum: [...values] },
@@ -135,7 +149,9 @@ export class Schema<T> {
   static array<T>(item: Schema<T>): Schema<T[]> {
     return new Schema(
       (v, p) => {
-        if (!Array.isArray(v)) throw new ValidationError(p, "expected array");
+        if (!Array.isArray(v)) {
+          throw new ValidationError(p, "expected array");
+        }
         return v.map((x, i) => item.at(x, `${p}[${i}]`));
       },
       { type: "array", items: item.toJSONSchema() },
@@ -144,17 +160,23 @@ export class Schema<T> {
   static object<S extends Shape>(shape: S): Schema<ObjectValue<S>> {
     return new Schema(
       (v, p) => {
-        if (!v || typeof v !== "object" || Array.isArray(v))
+        if (!v || typeof v !== "object" || Array.isArray(v)) {
           throw new ValidationError(p, "expected object");
+        }
         const input = v as Record<string, unknown>;
-        for (const key of Object.keys(input))
-          if (!Object.hasOwn(shape, key))
+        for (const key of Object.keys(input)) {
+          if (!Object.hasOwn(shape, key)) {
             throw new ValidationError(`${p}.${key}`, "unexpected property");
+          }
+        }
         return Object.fromEntries(
           Object.entries(shape)
             .map(([key, schema]) => [
               key,
-              schema.at(Object.hasOwn(input, key) ? input[key] : undefined, `${p}.${key}`),
+              schema.at(
+                Object.hasOwn(input, key) ? input[key] : undefined,
+                `${p}.${key}`,
+              ),
             ])
             .filter(([, value]) => value !== undefined),
         ) as ObjectValue<S>;
@@ -181,9 +203,12 @@ export class Schema<T> {
   static record<T>(item: Schema<T>): Schema<Record<string, T>> {
     return new Schema(
       (v, p) => {
-        if (!v || typeof v !== "object" || Array.isArray(v))
+        if (!v || typeof v !== "object" || Array.isArray(v)) {
           throw new ValidationError(p, "expected record");
-        return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, item.at(x, `${p}.${k}`)]));
+        }
+        return Object.fromEntries(
+          Object.entries(v).map(([k, x]) => [k, item.at(x, `${p}.${k}`)]),
+        );
       },
       { type: "object", additionalProperties: item.toJSONSchema() },
     );

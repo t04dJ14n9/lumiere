@@ -21,8 +21,8 @@ export function confirmPropertyType(
     heading.textContent = `Change property type to ${propertyKindLabels[after]}`;
     const description = document.createElement("p");
     description.textContent = `“${key}” currently has a ${propertyKindLabels[before]} value. Update it to match the new type?`;
-    const update = document.createElement("button"),
-      cancel = document.createElement("button");
+    const update = document.createElement("button");
+    const cancel = document.createElement("button");
     update.type = cancel.type = "button";
     update.textContent = "Update";
     cancel.textContent = "Cancel";

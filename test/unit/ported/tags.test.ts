@@ -30,5 +30,8 @@ test("rendered tag controls preserve hierarchy and leave code literal", () => {
 });
 
 test("tags in footnote definitions remain searchable", () => {
-  assert.deepEqual(noteTags("Body[^a].\n\n[^a]: #Footnote\n  with `#excluded`"), ["Footnote"]);
+  assert.deepEqual(
+    noteTags("Body[^a].\n\n[^a]: #Footnote\n  with `#excluded`"),
+    ["Footnote"],
+  );
 });

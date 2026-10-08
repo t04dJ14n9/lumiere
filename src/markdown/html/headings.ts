@@ -11,8 +11,8 @@ export function headings(md: MarkdownIt): void {
           .filter((child) => child.type !== "html_inline")
           .map((child) => child.content)
           .join("");
-        const base = headingId(text),
-          count = headingCounts.get(base) ?? 0;
+        const base = headingId(text);
+        const count = headingCounts.get(base) ?? 0;
         headingCounts.set(base, count + 1);
         token.attrSet("id", base + (count ? `-${count}` : ""));
         token.attrSet("data-heading", text);

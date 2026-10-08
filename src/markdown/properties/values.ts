@@ -2,7 +2,10 @@ import type { PropertyKind } from "./types";
 export type PropertyScalar = string | number | boolean | null;
 export type PropertyValue = PropertyScalar | readonly PropertyScalar[];
 
-export function propertyInput(kind: PropertyKind, text: string): PropertyScalar | undefined {
+export function propertyInput(
+  kind: PropertyKind,
+  text: string,
+): PropertyScalar | undefined {
   if (kind === "text") {
     return text;
   }
@@ -24,14 +27,18 @@ export function propertyInput(kind: PropertyKind, text: string): PropertyScalar 
       return undefined;
     }
     const date = new Date(text.slice(0, 10) + "T00:00:00Z");
-    return Number.isFinite(date.valueOf()) && date.toISOString().slice(0, 10) === text.slice(0, 10)
+    return Number.isFinite(date.valueOf()) &&
+      date.toISOString().slice(0, 10) === text.slice(0, 10)
       ? text
       : undefined;
   }
   return undefined;
 }
 
-export function matchesPropertyKind(kind: PropertyKind, value: unknown): boolean {
+export function matchesPropertyKind(
+  kind: PropertyKind,
+  value: unknown,
+): boolean {
   if (value === null || value === undefined) {
     return true;
   }
@@ -47,6 +54,8 @@ export function matchesPropertyKind(kind: PropertyKind, value: unknown): boolean
       return typeof value === "boolean";
     case "date":
     case "datetime":
-      return typeof value === "string" && propertyInput(kind, value) !== undefined;
+      return (
+        typeof value === "string" && propertyInput(kind, value) !== undefined
+      );
   }
 }

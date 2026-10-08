@@ -1,17 +1,11 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022"
-    ],
+    "lib": ["ES2022"],
     "types": [],
     "paths": {
-      "vscode": [
-        "./test/fixtures/layers/forbidden.ts"
-      ],
-      "node:*": [
-        "./test/fixtures/layers/forbidden.ts"
-      ]
+      "vscode": ["./test/fixtures/layers/forbidden.ts"],
+      "node:*": ["./test/fixtures/layers/forbidden.ts"]
     }
   },
   "include": [

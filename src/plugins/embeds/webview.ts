@@ -23,7 +23,9 @@ export const embedsWebview: Plugin = {
   apply(ctx) {
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() => ctx.editor.extend(imageStyles));
@@ -32,7 +34,9 @@ export const embedsWebview: Plugin = {
         kind: "embed",
         editing: "reveal",
         match(node, state) {
-          if (node.name !== "Paragraph") return false;
+          if (node.name !== "Paragraph") {
+            return false;
+          }
           const first = node.node.firstChild;
           return Boolean(
             first &&
@@ -48,7 +52,7 @@ export const embedsWebview: Plugin = {
       ctx.livePreview.inline({
         nodes: ["WikiEmbed", "Image"],
         decorate(node, cx) {
-          if (!cx.revealed(node.from, node.to))
+          if (!cx.revealed(node.from, node.to)) {
             cx.replace(
               node.from,
               node.to,
@@ -57,6 +61,7 @@ export const embedsWebview: Plugin = {
                 ctx.render,
               ),
             );
+          }
         },
       }),
     );

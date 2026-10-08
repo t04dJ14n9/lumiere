@@ -17,7 +17,10 @@ export interface VaultIndex {
   files(): readonly VaultFile[];
   metadata(path: string): NoteMetadata | undefined;
   resolveLink(linktext: string, sourcePath: string): VaultFile | undefined;
-  resolveLinkCandidates(linktext: string, sourcePath: string): readonly VaultFile[];
+  resolveLinkCandidates(
+    linktext: string,
+    sourcePath: string,
+  ): readonly VaultFile[];
   linkText(target: VaultFile, sourcePath: string): string;
   resolvedLinks(sourcePath: string): ReadonlyMap<string, number>;
   unresolvedLinks(sourcePath: string): ReadonlyMap<string, number>;

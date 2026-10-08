@@ -17,7 +17,9 @@ export const calloutsWebview: Plugin = {
     ctx.effect(() => ctx.editor.viewState.contribute("folds", folds));
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() =>
@@ -48,7 +50,9 @@ export const calloutsWebview: Plugin = {
       const bindings: { dispose(): void }[] = [];
       const cleanup = () => {
         events.abort();
-        for (const binding of bindings) binding.dispose();
+        for (const binding of bindings) {
+          binding.dispose();
+        }
         cleanups.delete(cleanup);
       };
       cleanups.add(cleanup);
@@ -70,8 +74,9 @@ export const calloutsWebview: Plugin = {
               if (
                 event.target instanceof Element &&
                 event.target.closest("a, button, input")
-              )
+              ) {
                 return;
+              }
               event.preventDefault();
               event.stopPropagation();
               details.open = !details.open;

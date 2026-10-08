@@ -47,11 +47,13 @@ re-judged under this policy.
 - Port behaviour with its unit tests (see Testing policy). Every source test
   has a ledger row in `docs/TEST_LEDGER.md`: ported, rewritten, changed or
   retired with a reason. None is dropped silently.
+- Follow "Code norms" in AGENTS.md. New and ported code meets them from the
+  start; `pnpm check` enforces the mechanical part.
 - Keep each phase's tree green. Run checks in this order, never two at once
   (the smoke suites load built files):
 
   ```sh
-  pnpm check            # lint, typecheck, unit tests, contributions check
+  pnpm check            # format check, lint, typecheck, unit tests, contributions check
   pnpm test:browser     # 14-test smoke suite
   pnpm test:vscode      # 1-test native smoke; opens VS Code; Phase 8 and when native wiring changes
   ```
@@ -235,6 +237,53 @@ For each plugin:
 Accept: every plugin above is delivered with the items listed; `pnpm check`
 and the smoke suites pass; every browser and native ledger row is retired
 with the policy reason and reflected in the manual test plan.
+
+## Readability pass (after Phase 4 step 7, before step 8)
+
+Added on 8 October 2026, after the owner reviewed the code: files were split
+to meet the size limits, but most long source functions were moved unchanged,
+and the tables controller was spread across files as `this:` functions. The
+owner has added Prettier, the ESLint limits in AGENTS.md ("Code norms") and
+the backlog `eslint.legacy.mjs` (86 files: 66 with functions over 60 lines,
+33 over complexity 15, 13 with more than 4 parameters, 19 with nested
+ternaries, 1 nested too deeply, 6 with the `this:` pattern).
+
+1. Commit the owner's uncommitted tooling change as it is (Prettier and
+   ESLint configuration, `eslint.legacy.mjs`, `AGENTS.md`, `DESIGN.md` and
+   this section, the formatting and automatic fixes, and the kernel size
+   budget raised to 1,000 formatted lines). Review it first; if something is
+   wrong, fix it in a separate commit. Message: "Code norms: formatting,
+   lint limits and readability backlog".
+2. Rewrite the backlog, one plugin or module per commit ("Readability:
+   tables"), worst first:
+   - `tables`: replace the `this: TableController` functions with
+     collaborators that each receive only the state they need (selection,
+     keyboard, clipboard, menu, edit projection), so that a reader can follow
+     a keystroke without opening every file;
+   - `properties` (`controls`, `chips`, `lists`), `pagePreview` (`controller`);
+   - `host/workbench.ts`, the `editor` and `footnotes` `apply` functions;
+   - `markdown/search/evaluate.ts`, `markdown/metadata/footnote-extract.ts`;
+   - everything else in `eslint.legacy.mjs`.
+   Remove each file from the backlog as it complies. When every list is
+   empty, delete `eslint.legacy.mjs` and the backlog block in
+   `eslint.config.mjs`.
+3. Rewrite every plugin README to the template in AGENTS.md, and move status
+   lines from READMEs into the phase records. Add why-comments where a reader
+   would otherwise have to rediscover an invariant (start with the kernel's
+   fiber generations and the Context proxy).
+4. Rewrites preserve behaviour. Extracted pure logic gets unit tests; the
+   unit test count never goes down. A bug found while rewriting gets its own
+   commit with a unit test. Run `pnpm check` before every commit and the
+   browser smoke suite before every commit that touches webview code.
+5. Add a "Readability pass regressions" section to `docs/MANUAL_TEST_PLAN.md`
+   listing each rewritten plugin and the existing scenarios the owner should
+   rerun for it.
+
+Accept: `eslint.legacy.mjs` is gone; any inline `eslint-disable` added has a
+reason and is listed in the record; READMEs follow the template; `pnpm check`
+and the smoke suites pass; a dated record "Readability pass — <date>" gives
+the backlog counts before and after per rule, the files rewritten, bugs
+found, and the unit test count before and after.
 
 ## Phase 5 — Vault index and host features
 

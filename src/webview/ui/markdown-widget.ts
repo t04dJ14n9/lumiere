@@ -49,12 +49,16 @@ export class MarkdownBlock extends WidgetType {
       .into(body, this.block.source, {
         sourceLine: view.state.doc.lineAt(this.block.from).number - 1,
         measure: () => {
-          if (live) view.requestMeasure();
+          if (live) {
+            view.requestMeasure();
+          }
         },
       })
       .then((result) => {
         pass = result;
-        if (!live) void pass.dispose();
+        if (!live) {
+          void pass.dispose();
+        }
       })
       .catch(() => {
         if (live) {

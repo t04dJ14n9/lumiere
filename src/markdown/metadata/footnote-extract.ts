@@ -17,7 +17,10 @@ export interface Footnotes {
   references: Map<number, Footnote>;
 }
 
-export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnotes {
+export function extractFootnotes(
+  doc: Text,
+  tree = parseMarkdown(doc),
+): Footnotes {
   const source = doc.toString();
   if (!source.includes("[^") && !source.includes("^[")) {
     const empty: Footnotes = { definitions: [], references: new Map() };
@@ -27,18 +30,22 @@ export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnote
   const definitions: Footnote[] = [];
   const continuation = /^(?: {2,4}| {0,3}\t)/;
   for (let number = 1; number <= doc.lines; number++) {
-    const line = doc.line(number),
-      match = /^( {0,3})\[\^([^\]\s]+)\]:[ \t]*(.*)$/.exec(line.text);
+    const line = doc.line(number);
+    const match = /^( {0,3})\[\^([^\]\s]+)\]:[ \t]*(.*)$/.exec(line.text);
     if (!match) {
       continue;
     }
-    let node = tree.resolveInner(line.from + match[1]!.length, 1),
-      excluded = false;
+    let node = tree.resolveInner(line.from + match[1]!.length, 1);
+    let excluded = false;
     while (node.parent) {
       if (
-        ["FencedCode", "CodeBlock", "Frontmatter", "MathBlock", "ObsidianComment"].includes(
-          node.name,
-        )
+        [
+          "FencedCode",
+          "CodeBlock",
+          "Frontmatter",
+          "MathBlock",
+          "ObsidianComment",
+        ].includes(node.name)
       ) {
         excluded = true;
       }
@@ -47,10 +54,12 @@ export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnote
     if (excluded) {
       continue;
     }
-    const parts = [match[3]!],
-      segments = [{ from: line.to - match[3]!.length, to: line.to, offset: 0 }];
-    let to = line.to,
-      length = match[3]!.length;
+    const parts = [match[3]!];
+    const segments = [
+      { from: line.to - match[3]!.length, to: line.to, offset: 0 },
+    ];
+    let to = line.to;
+    let length = match[3]!.length;
     while (number < doc.lines) {
       const next = doc.line(number + 1);
       if (continuation.test(next.text)) {
@@ -87,8 +96,8 @@ export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnote
       segments,
     });
   }
-  const labels = new Map(definitions.map((note) => [note.label, note])),
-    references = new Map<number, Footnote>();
+  const labels = new Map(definitions.map((note) => [note.label, note]));
+  const references = new Map<number, Footnote>();
   const definitionPositions = definitions.map((note) => note.from);
   const candidates: {
     from: number;
@@ -107,17 +116,18 @@ export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnote
         if (!["FootnoteRef", "InlineFootnote"].includes(node.name)) {
           return;
         }
-        const containing = definitions[lowerBound(definitionPositions, node.from + 1) - 1];
+        const containing =
+          definitions[lowerBound(definitionPositions, node.from + 1) - 1];
         if (!inDefinition && containing && node.from < containing.to) {
           return false;
         }
-        const from = position(node.from),
-          to = position(node.to);
+        const from = position(node.from);
+        const to = position(node.to);
         let body = text.slice(node.from + 2, node.to - 1);
         if (node.name === "InlineFootnote" && body.includes("\n")) {
-          let parent = node.node.parent,
-            quotes = 0,
-            paragraphFrom = node.from;
+          let parent = node.node.parent;
+          let quotes = 0;
+          let paragraphFrom = node.from;
           while (parent) {
             if (parent.name === "Blockquote") {
               quotes++;
@@ -134,7 +144,10 @@ export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnote
             return line;
           };
           const prefix = stripQuotes(
-            text.slice(text.lastIndexOf("\n", paragraphFrom - 1) + 1, paragraphFrom),
+            text.slice(
+              text.lastIndexOf("\n", paragraphFrom - 1) + 1,
+              paragraphFrom,
+            ),
           );
           body = body
             .split("\n")
@@ -170,7 +183,9 @@ export function extractFootnotes(doc: Text, tree = parseMarkdown(doc)): Footnote
       language.parse(note.text),
       (at) => {
         const segment = note.segments?.find(
-          (segment) => at >= segment.offset && at <= segment.offset + segment.to - segment.from,
+          (segment) =>
+            at >= segment.offset &&
+            at <= segment.offset + segment.to - segment.from,
         );
         return segment ? segment.from + at - segment.offset : undefined;
       },

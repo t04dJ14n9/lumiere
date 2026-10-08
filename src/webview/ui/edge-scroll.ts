@@ -65,12 +65,13 @@ export class EdgeScroll {
       innerHeight,
       bounds.top + this.viewport.clientTop + this.viewport.clientHeight,
     );
-    const elapsed = this.previous === undefined ? 16 : Math.min(50, time - this.previous);
+    const elapsed =
+      this.previous === undefined ? 16 : Math.min(50, time - this.previous);
     this.previous = time;
     const x = this.distance("x", edgeVelocity(point.x, left, right), elapsed);
     const y = this.distance("y", edgeVelocity(point.y, top, bottom), elapsed);
-    const beforeX = this.viewport.scrollLeft,
-      beforeY = this.viewport.scrollTop;
+    const beforeX = this.viewport.scrollLeft;
+    const beforeY = this.viewport.scrollTop;
     this.viewport.scrollBy({ left: x, top: y, behavior: "instant" });
     this.update(point);
     if (

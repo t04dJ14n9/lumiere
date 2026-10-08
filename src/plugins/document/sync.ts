@@ -1,4 +1,8 @@
-import { getSyncedVersion, receiveUpdates, sendableUpdates } from "@codemirror/collab";
+import {
+  getSyncedVersion,
+  receiveUpdates,
+  sendableUpdates,
+} from "@codemirror/collab";
 import { ChangeSet } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { Endpoint } from "../../shared/rpc/endpoint";
@@ -8,13 +12,17 @@ export class Synchronizer {
   private sending = false;
   private stopped = false;
   error?: string;
-  private readonly waiting: { resolve(): void; reject(error: Error): void }[] = [];
+  private readonly waiting: { resolve(): void; reject(error: Error): void }[] =
+    [];
   constructor(
     private readonly view: EditorView,
     private readonly rpc: Endpoint,
     private readonly status: (message: string) => void,
   ) {}
-  receive(message: { version: number; updates: { clientID: string; changes: unknown }[] }): void {
+  receive(message: {
+    version: number;
+    updates: { clientID: string; changes: unknown }[];
+  }): void {
     if (message.version !== getSyncedVersion(this.view.state)) {
       this.fail(
         new Error(
@@ -39,18 +47,27 @@ export class Synchronizer {
     queueMicrotask(() => this.pump());
   }
   pump(): void {
-    if (this.stopped || this.error || this.view.composing || this.sending) return;
+    if (this.stopped || this.error || this.view.composing || this.sending) {
+      return;
+    }
     const updates = sendableUpdates(this.view.state);
     if (!updates.length) {
       this.status("");
-      for (const pending of this.waiting.splice(0)) pending.resolve();
+      for (const pending of this.waiting.splice(0)) {
+        pending.resolve();
+      }
       return;
     }
     this.sending = true;
     this.status("Syncing…");
     const group = updates[0]!.origin.annotation(editGroup);
-    const end = updates.findIndex((update) => update.origin.annotation(editGroup) !== group);
-    const batch = updates.slice(0, Math.min(512, end < 0 ? updates.length : end));
+    const end = updates.findIndex(
+      (update) => update.origin.annotation(editGroup) !== group,
+    );
+    const batch = updates.slice(
+      0,
+      Math.min(512, end < 0 ? updates.length : end),
+    );
     void this.rpc
       .call(protocol, "push", {
         version: getSyncedVersion(this.view.state),
@@ -66,8 +83,9 @@ export class Synchronizer {
       );
   }
   flush(): Promise<void> {
-    if (this.error || this.stopped)
+    if (this.error || this.stopped) {
       return Promise.reject(new Error(this.error ?? "Document closed"));
+    }
     return new Promise((resolve, reject) => {
       this.waiting.push({ resolve, reject });
       this.pump();
@@ -76,12 +94,16 @@ export class Synchronizer {
   dispose(): void {
     this.stopped = true;
     this.error = "Document closed";
-    for (const pending of this.waiting.splice(0)) pending.reject(new Error(this.error));
+    for (const pending of this.waiting.splice(0)) {
+      pending.reject(new Error(this.error));
+    }
   }
   private fail(error: unknown): void {
     this.error = String(error);
     this.sending = false;
     this.status(this.error);
-    for (const pending of this.waiting.splice(0)) pending.reject(new Error(this.error));
+    for (const pending of this.waiting.splice(0)) {
+      pending.reject(new Error(this.error));
+    }
   }
 }

@@ -6,9 +6,9 @@ export function inspectImage(
   name: string,
   openFile: () => void,
 ): () => void {
-  let dialog: HTMLDialogElement | undefined,
-    abort: AbortController | undefined,
-    saved: unknown;
+  let dialog: HTMLDialogElement | undefined;
+  let abort: AbortController | undefined;
+  let saved: unknown;
   const close = (restoreFocus = true): void => {
     if (!dialog) {
       return;

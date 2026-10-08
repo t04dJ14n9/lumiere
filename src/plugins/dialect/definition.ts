@@ -1,5 +1,8 @@
 import type { Plugin } from "../../kernel";
-import { markdownParser, markdownLanguageSupport } from "../../markdown/dialect";
+import {
+  markdownParser,
+  markdownLanguageSupport,
+} from "../../markdown/dialect";
 import { metadata } from "../../markdown/metadata";
 import { createRenderer } from "../../markdown/html";
 import type {} from "./api";

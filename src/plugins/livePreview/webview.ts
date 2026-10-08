@@ -24,8 +24,8 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   name: "livePreview",
   inject: { required: ["editor", "commands", "render"] },
   apply(ctx, config) {
-    const view = ctx.editor.view,
-      compartment = new Compartment();
+    const view = ctx.editor.view;
+    const compartment = new Compartment();
     let mode = ctx.editor.mode ?? config.mode;
     const extension = [
       documentTree,
@@ -49,9 +49,13 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
         const owner = caller.fiber!.definition.name;
         return {
           ...service,
-          get mode() { return service.mode; },
-          block: (renderer) => ctx.editor.extend(blockRenderers.of(renderer), { owner }),
-          inline: (renderer) => ctx.editor.extend(inlineRenderers.of(renderer), { owner }),
+          get mode() {
+            return service.mode;
+          },
+          block: (renderer) =>
+            ctx.editor.extend(blockRenderers.of(renderer), { owner }),
+          inline: (renderer) =>
+            ctx.editor.extend(inlineRenderers.of(renderer), { owner }),
         };
       },
       inlineExtensions: () => [documentTree, hybridInline],
@@ -85,12 +89,15 @@ export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
       "FencedCode",
     ]) {
       ctx.effect(() =>
-        ctx.editor.extend(blockRenderers.of({
-          kind,
-          editing: "reveal",
-          match: (node) => node.name === kind,
-          widget: (block) => new MarkdownBlock(block, ctx.render),
-        }), { slot: "base" }),
+        ctx.editor.extend(
+          blockRenderers.of({
+            kind,
+            editing: "reveal",
+            match: (node) => node.name === kind,
+            widget: (block) => new MarkdownBlock(block, ctx.render),
+          }),
+          { slot: "base" },
+        ),
       );
     }
     ctx.effect(() =>

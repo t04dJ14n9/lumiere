@@ -7,7 +7,9 @@ export const livePreviewHost: Plugin = {
   apply(ctx) {
     ctx.effect(() =>
       ctx.workbench.command("markdownWorkbench.toggleSourceMode", () =>
-        ctx.editors.active()?.rpc.call(protocol, "run", { command: "editor:toggle-source" }),
+        ctx.editors
+          .active()
+          ?.rpc.call(protocol, "run", { command: "editor:toggle-source" }),
       ),
     );
   },

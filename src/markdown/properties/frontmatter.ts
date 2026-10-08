@@ -50,10 +50,13 @@ export function frontmatter(source: string):
           typeof pair.key.value === "string" &&
           isScalar(pair.value) &&
           (pair.value.value === null ||
-            ["boolean", "string", "number"].includes(typeof pair.value.value)) &&
+            ["boolean", "string", "number"].includes(
+              typeof pair.value.value,
+            )) &&
           !/BLOCK/.test(pair.value.type ?? "") &&
           !/[\r\n]/.test(String(pair.value.value)) &&
-          (typeof pair.value.value !== "number" || Number.isFinite(pair.value.value))
+          (typeof pair.value.value !== "number" ||
+            Number.isFinite(pair.value.value))
             ? [pair.key.value]
             : [],
         )
@@ -65,7 +68,9 @@ export function frontmatter(source: string):
       editableKeys,
       editableLists: isMap(document.contents)
         ? document.contents.items.flatMap((pair) =>
-            isScalar(pair.key) && typeof pair.key.value === "string" && editableList(pair.value)
+            isScalar(pair.key) &&
+            typeof pair.key.value === "string" &&
+            editableList(pair.value)
               ? [pair.key.value]
               : [],
           )
@@ -82,7 +87,8 @@ export function editableList(node: unknown): boolean {
     node.items.every(
       (item) =>
         isScalar(item) &&
-        (item.value === null || ["string", "number", "boolean"].includes(typeof item.value)) &&
+        (item.value === null ||
+          ["string", "number", "boolean"].includes(typeof item.value)) &&
         !item.anchor &&
         !item.tag &&
         !item.comment &&

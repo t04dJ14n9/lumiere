@@ -7,12 +7,18 @@ export function taskEdit(
   expected: string,
   checked: boolean,
 ): TextEdit | undefined {
-  if (!Number.isSafeInteger(lineNumber) || lineNumber < 0) return undefined;
+  if (!Number.isSafeInteger(lineNumber) || lineNumber < 0) {
+    return undefined;
+  }
   const lines = text.split("\n");
   const line = lines[lineNumber];
-  if (line !== expected) return undefined;
+  if (line !== expected) {
+    return undefined;
+  }
   const marker = taskMarker(line);
-  if (marker === undefined) return undefined;
+  if (marker === undefined) {
+    return undefined;
+  }
   const from =
     lines.slice(0, lineNumber).reduce((sum, line) => sum + line.length + 1, 0) +
     marker;
@@ -32,18 +38,19 @@ export function checklistEdit(
     const line = state.doc.line(number);
     const marker = taskMarker(line.text);
     if (marker !== undefined) {
-      if (cycle && line.text[marker] !== " ")
+      if (cycle && line.text[marker] !== " ") {
         changes.push({
           from: line.from + marker - 1,
           to: line.from + marker + 2 + (line.text[marker + 2] === " " ? 1 : 0),
           insert: "",
         });
-      else
+      } else {
         changes.push({
           from: line.from + marker,
           to: line.from + marker + 1,
           insert: line.text[marker] === " " ? "x" : " ",
         });
+      }
     } else {
       const list = /^(?:[ \t]*>[ \t]*)*[ \t]*(?:[-+*]|\d+[.)])[ \t]+/.exec(
         line.text,

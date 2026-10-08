@@ -78,8 +78,8 @@ export function bindPropertyChips(
         cancel(refocus);
         return true;
       }
-      const value = actions.value(input),
-        latest = actions.values();
+      const value = actions.value(input);
+      const latest = actions.values();
       if (value === undefined || !latest) {
         return false;
       }

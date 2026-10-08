@@ -12,8 +12,9 @@ async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
     relative === ".." ||
     relative.startsWith("../") ||
     path.posix.isAbsolute(relative)
-  )
+  ) {
     throw new Error("Link escapes the vault");
+  }
   if (root.scheme === "file") {
     const base = await realpath(root.fsPath);
     let candidate = target.fsPath;
@@ -25,13 +26,18 @@ async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
           rel === ".." ||
           rel.startsWith(".." + path.sep) ||
           path.isAbsolute(rel)
-        )
+        ) {
           throw new Error("Link symlink escapes the vault");
+        }
         break;
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw error;
+        }
         const parent = path.dirname(candidate);
-        if (parent === candidate) throw error;
+        if (parent === candidate) {
+          throw error;
+        }
         candidate = parent;
       }
     }
@@ -41,14 +47,16 @@ async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
       current = vscode.Uri.joinPath(current, component);
       try {
         const stat = await vscode.workspace.fs.stat(current);
-        if (stat.type & vscode.FileType.SymbolicLink)
+        if (stat.type & vscode.FileType.SymbolicLink) {
           throw new Error("Symbolic link refused");
+        }
       } catch (error) {
         if (
           !(error instanceof vscode.FileSystemError) ||
           error.code !== "FileNotFound"
-        )
+        ) {
           throw error;
+        }
       }
     }
   }
@@ -103,10 +111,13 @@ export function createNavigation(): Navigation {
         if (
           !(error instanceof vscode.FileSystemError) ||
           error.code !== "FileNotFound"
-        )
+        ) {
           throw error;
+        }
       }
-      if (!create) return undefined;
+      if (!create) {
+        return undefined;
+      }
       const config = vscode.workspace.getConfiguration(
         "markdownWorkbench",
         sourceUri,
@@ -119,12 +130,15 @@ export function createNavigation(): Navigation {
             : vscode.Uri.joinPath(base, folder);
         uri = vscode.Uri.joinPath(parent, link);
       }
-      if (!/\.md$/i.test(uri.path)) uri = uri.with({ path: uri.path + ".md" });
+      if (!/\.md$/i.test(uri.path)) {
+        uri = uri.with({ path: uri.path + ".md" });
+      }
       await contained(base, uri);
       const edit = new vscode.WorkspaceEdit();
       edit.createFile(uri, { ignoreIfExists: true });
-      if (!(await vscode.workspace.applyEdit(edit)))
+      if (!(await vscode.workspace.applyEdit(edit))) {
         throw new Error("Could not create note");
+      }
       return uri.toString();
     },
     async open(root, target, fragment, side, at) {
@@ -141,8 +155,9 @@ export function createNavigation(): Navigation {
         if (fragment || at !== undefined) {
           const destination = { fragment, at };
           pending.set(uri.toString(), destination);
-          for (const listener of listeners)
+          for (const listener of listeners) {
             listener(uri.toString(), destination);
+          }
         }
       } else {
         await vscode.commands.executeCommand(

@@ -27,11 +27,17 @@ test("isolated installed editor types, saves and performs native document undo",
     await command(page, "View: Close All Editor Groups");
     console.log("Native: opening fixture");
     await page.keyboard.press("ControlOrMeta+p");
-    await page.locator(".quick-input-widget input").fill(path.join(paths.workspace, "Note.md"));
+    await page
+      .locator(".quick-input-widget input")
+      .fill(path.join(paths.workspace, "Note.md"));
     await page.keyboard.press("Enter");
-    await expect(page.locator(".tabs-container .tab").filter({ hasText: "Note.md" })).toBeVisible();
+    await expect(
+      page.locator(".tabs-container .tab").filter({ hasText: "Note.md" }),
+    ).toBeVisible();
     await page.keyboard.press("ControlOrMeta+Shift+p");
-    await page.locator(".quick-input-widget input").fill(">View: Reopen Editor With");
+    await page
+      .locator(".quick-input-widget input")
+      .fill(">View: Reopen Editor With");
     await page
       .locator(".quick-input-list .monaco-list-row")
       .filter({ hasText: "View: Reopen Editor With..." })
@@ -50,18 +56,25 @@ test("isolated installed editor types, saves and performs native document undo",
       .poll(() => {
         frame = page
           .frames()
-          .find((f) => f.url().includes("vscode-webview") && f.url().includes("index.html"));
+          .find(
+            (f) =>
+              f.url().includes("vscode-webview") &&
+              f.url().includes("index.html"),
+          );
         return Boolean(frame);
       })
       .toBe(true);
     // The custom editor can be nested inside VS Code's outer webview frame.
     await expect
       .poll(async () => {
-        for (const f of page.frames())
-          if (await f.getByRole("textbox", { name: "Markdown content" }).count()) {
+        for (const f of page.frames()) {
+          if (
+            await f.getByRole("textbox", { name: "Markdown content" }).count()
+          ) {
             frame = f;
             return true;
           }
+        }
         return false;
       })
       .toBe(true);
@@ -79,6 +92,9 @@ test("isolated installed editor types, saves and performs native document undo",
       .poll(() => readFileSync(path.join(paths.workspace, "Note.md"), "utf8"))
       .toBe("# Native Markdown\n\nOriginal line");
   } finally {
-    await Promise.race([browser.close(), new Promise((resolve) => setTimeout(resolve, 1000))]);
+    await Promise.race([
+      browser.close(),
+      new Promise((resolve) => setTimeout(resolve, 1000)),
+    ]);
   }
 });

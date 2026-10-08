@@ -19,8 +19,16 @@ function nodes(tree: Tree): [string, number, number][] {
 }
 function check(state: EditorState, step: string): void {
   const source = state.doc.toString();
-  assert.deepEqual(nodes(state.field(documentTree)), nodes(markdownParser.parse(source)), step);
-  assert.deepEqual(state.field(headingIndex), headings(source), step + " headings");
+  assert.deepEqual(
+    nodes(state.field(documentTree)),
+    nodes(markdownParser.parse(source)),
+    step,
+  );
+  assert.deepEqual(
+    state.field(headingIndex),
+    headings(source),
+    step + " headings",
+  );
   assert.deepEqual(
     footnotes(state.doc),
     footnotes(Text.of(source.split("\n"))),
@@ -57,14 +65,20 @@ test("incremental syntax reparses fences, frontmatter and math boundaries beyond
     state = state.update({ changes }).state;
     check(state, label);
   };
-  apply({ from: 0, insert: "Intro\n\n" }, "frontmatter moved away from the first line");
+  apply(
+    { from: 0, insert: "Intro\n\n" },
+    "frontmatter moved away from the first line",
+  );
   apply({ from: 0, to: 7 }, "frontmatter restored to the first line");
   const body = state.doc.toString().indexOf("## Section 0");
   apply(
     { from: body, insert: "```md\n" },
     "an opening fence excludes all later headings and notes",
   );
-  apply({ from: state.doc.length, insert: "\n```\n# After fence\n" }, "closing fence");
+  apply(
+    { from: state.doc.length, insert: "\n```\n# After fence\n" },
+    "closing fence",
+  );
   apply({ from: body, to: body + 6 }, "remove opening fence");
   apply({ from: body, insert: "$$\n" }, "math opening");
   apply({ from: body, to: body + 3 }, "math opening removed");
@@ -78,7 +92,10 @@ test("incremental syntax reparses fences, frontmatter and math boundaries beyond
 });
 
 test("incremental syntax and indexes match fresh parses through deterministic structural edits", () => {
-  let state = EditorState.create({ doc: sections, extensions: [documentTree, headingIndex] });
+  let state = EditorState.create({
+    doc: sections,
+    extensions: [documentTree, headingIndex],
+  });
   let seed = 271828;
   const random = (limit: number): number => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;

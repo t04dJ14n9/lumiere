@@ -29,36 +29,44 @@ interface Regions {
 
 function regions(source: string): Regions {
   const result: Regions = {
-      block: [],
-      section: [],
-      task: [],
-      "task-todo": [],
-      "task-done": [],
-    },
-    headings: number[] = [];
+    block: [],
+    section: [],
+    task: [],
+    "task-todo": [],
+    "task-done": [],
+  };
+  const headings: number[] = [];
   language.parse(source).iterate({
     enter(node) {
       if (/^(ATX|Setext)Heading[1-6]$/.test(node.name)) {
         headings.push(node.from);
       }
       if (
-        ["Paragraph", "Task", "Table", "FencedCode", "CodeBlock", "HTMLBlock"].includes(
-          node.name,
-        ) ||
+        [
+          "Paragraph",
+          "Task",
+          "Table",
+          "FencedCode",
+          "CodeBlock",
+          "HTMLBlock",
+        ].includes(node.name) ||
         /Heading[1-6]$/.test(node.name)
       ) {
         result.block.push(source.slice(node.from, node.to));
       }
       if (node.name === "ListItem") {
-        const firstLine = source.slice(node.from, node.to).split("\n")[0]!,
-          marker = taskMarker(firstLine);
+        const firstLine = source.slice(node.from, node.to).split("\n")[0]!;
+        const marker = taskMarker(firstLine);
         if (marker === undefined) {
           return;
         }
-        const body = node.node.getChild("Task") ?? node.node.getChild("Paragraph");
+        const body =
+          node.node.getChild("Task") ?? node.node.getChild("Paragraph");
         const text = source.slice(node.from, body?.to ?? node.to);
         result.task.push(text);
-        result[firstLine[marker] === " " ? "task-todo" : "task-done"].push(text);
+        result[firstLine[marker] === " " ? "task-todo" : "task-done"].push(
+          text,
+        );
       }
     },
   });
@@ -69,7 +77,9 @@ function regions(source: string): Regions {
   return result;
 }
 function properties(source: string): Record<string, unknown> {
-  const header = /^---\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)(?:\r?\n|$)/.exec(source);
+  const header = /^---\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)(?:\r?\n|$)/.exec(
+    source,
+  );
   if (!header) {
     return {};
   }
@@ -88,9 +98,11 @@ function properties(source: string): Record<string, unknown> {
 }
 
 /** User-supplied regex evaluation must run in a cancellable worker, not the host UI thread. */
-export function compileSearch(source: string | SearchQuery): (document: SearchDocument) => boolean {
-  const query = typeof source === "string" ? parseSearch(source) : source,
-    expressions = new WeakMap<SearchQuery, Map<string, RegExp>>();
+export function compileSearch(
+  source: string | SearchQuery,
+): (document: SearchDocument) => boolean {
+  const query = typeof source === "string" ? parseSearch(source) : source;
+  const expressions = new WeakMap<SearchQuery, Map<string, RegExp>>();
   const includesFiles = searchesFiles(query);
   return (document) => {
     const kind =
@@ -103,20 +115,23 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
     if (kind === "file" && !includesFiles) {
       return false;
     }
-    let text = document.text,
-      prepared = kind !== "canvas";
+    let text = document.text;
+    let prepared = kind !== "canvas";
     const content = (): string => {
       if (!prepared) {
         const canvas = canvasData(text);
         text = [
-          ...canvas.nodes.map((node) => node.text ?? node.label ?? node.url ?? node.file ?? ""),
+          ...canvas.nodes.map(
+            (node) => node.text ?? node.label ?? node.url ?? node.file ?? "",
+          ),
           ...canvas.edges.map((edge) => edge.label ?? ""),
         ].join("\n");
         prepared = true;
       }
       return text;
     };
-    let tags: string[] | undefined, metadata: Record<string, unknown> | undefined;
+    let tags: string[] | undefined;
+    let metadata: Record<string, unknown> | undefined;
     const structure = new Map<string, Regions>();
     const compare = (
       term: Extract<SearchQuery, { kind: "text" | "regex" }>,
@@ -141,9 +156,10 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
         if (value === null) {
           return false;
         }
-        const numeric = /^(<=|>=|<|>|=)([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)$/i.exec(
-          term.value,
-        );
+        const numeric =
+          /^(<=|>=|<|>|=)([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)$/i.exec(
+            term.value,
+          );
         if (numeric) {
           if (typeof value !== "number") {
             return false;
@@ -167,7 +183,9 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
             ? String(value)
             : "";
       if (term.kind === "regex") {
-        const flags = [...new Set(term.flags + (context.sensitive ? "" : "i"))].join("");
+        const flags = [
+          ...new Set(term.flags + (context.sensitive ? "" : "i")),
+        ].join("");
         let cache = expressions.get(term);
         if (!cache) {
           cache = new Map();
@@ -183,9 +201,11 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
       if (context.mode === "tag") {
         return tagMatches(candidate, term.value.replace(/^#/, ""));
       }
-      const a = context.sensitive ? candidate : candidate.toLowerCase(),
-        b = context.sensitive ? term.value : term.value.toLowerCase();
-      return context.mode === "name" || context.mode === "property" ? a === b : a.includes(b);
+      const a = context.sensitive ? candidate : candidate.toLowerCase();
+      const b = context.sensitive ? term.value : term.value.toLowerCase();
+      return context.mode === "name" || context.mode === "property"
+        ? a === b
+        : a.includes(b);
     };
     const evaluate = (term: SearchQuery, context: Context): boolean => {
       switch (term.kind) {
@@ -199,7 +219,9 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
         case "regex":
           return (
             context.allowed &&
-            (context.values ?? [context.text()]).some((value) => compare(term, value, context))
+            (context.values ?? [context.text()]).some((value) =>
+              compare(term, value, context),
+            )
           );
         case "property": {
           if (kind !== "markdown") {
@@ -236,7 +258,9 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
               ...plain,
               allowed: true,
               text: () =>
-                term.scope === "file" ? document.path.split("/").at(-1)! : document.path,
+                term.scope === "file"
+                  ? document.path.split("/").at(-1)!
+                  : document.path,
             });
           }
           if (term.scope === "content") {
@@ -262,7 +286,9 @@ export function compileSearch(source: string | SearchQuery): (document: SearchDo
             return context
               .text()
               .split(/\r?\n/)
-              .some((line) => evaluate(term.term, { ...plain, text: () => line }));
+              .some((line) =>
+                evaluate(term.term, { ...plain, text: () => line }),
+              );
           }
           if (kind !== "markdown") {
             return false;

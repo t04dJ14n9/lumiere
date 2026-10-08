@@ -5,7 +5,11 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   timeout: 60000,
-  use: { actionTimeout: 10000, trace: "retain-on-failure", screenshot: "only-on-failure" },
+  use: {
+    actionTimeout: 10000,
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+  },
   globalSetup: "./global-setup.ts",
   globalTeardown: "./global-teardown.ts",
 });

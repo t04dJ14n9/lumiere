@@ -23,11 +23,18 @@ export function inlineSourceMap(source: string): {
         let start = (marks[0]?.to ?? node.from) - 2;
         let end = (marks.at(-1)?.from ?? node.to) - 2;
         const content = source.slice(start, end);
-        if (content.startsWith(" ") && content.endsWith(" ") && /\S/.test(content)) {
+        if (
+          content.startsWith(" ") &&
+          content.endsWith(" ") &&
+          /\S/.test(content)
+        ) {
           start++;
           end--;
         }
-        replacements.push({ from, to: start, text: "" }, { from: end, to, text: "" });
+        replacements.push(
+          { from, to: start, text: "" },
+          { from: end, to, text: "" },
+        );
         return false;
       }
       if (
@@ -64,7 +71,11 @@ export function inlineSourceMap(source: string): {
   });
   let text = "";
   const positions: number[] = [];
-  const append = (from: number, to: number, value = source.slice(from, to)): void => {
+  const append = (
+    from: number,
+    to: number,
+    value = source.slice(from, to),
+  ): void => {
     if (!value) {
       return;
     }
@@ -73,7 +84,11 @@ export function inlineSourceMap(source: string): {
     }
     for (let index = 0; index < value.length; index++) {
       positions.push(
-        value.length === to - from ? from + index + 1 : index === value.length - 1 ? to : from,
+        value.length === to - from
+          ? from + index + 1
+          : index === value.length - 1
+            ? to
+            : from,
       );
     }
     text += value;

@@ -17,7 +17,9 @@ export function createMenu() {
     label = "Table actions",
   ): () => void {
     const originalFocus =
-      document.activeElement instanceof HTMLElement ? document.activeElement : undefined;
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : undefined;
     const events = new AbortController();
     const panels: HTMLElement[] = [];
     const parents = new WeakMap<HTMLElement, HTMLButtonElement>();
@@ -81,7 +83,12 @@ export function createMenu() {
             return;
           }
           const bounds = button.getBoundingClientRect();
-          show(item.children, { x: bounds.right, y: bounds.top }, depth + 1, button);
+          show(
+            item.children,
+            { x: bounds.right, y: bounds.top },
+            depth + 1,
+            button,
+          );
         };
         button.addEventListener("mouseenter", () => {
           if (item.children) {
@@ -94,14 +101,18 @@ export function createMenu() {
           event.stopPropagation();
           if (item.children) {
             expand();
-            panels[depth + 1]?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+            panels[depth + 1]
+              ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+              ?.focus();
           } else {
             close(false);
             Promise.resolve()
               .then(() => item.run?.())
               .catch((reason: unknown) =>
                 error(
-                  reason instanceof Error ? reason.message : "The command could not be completed.",
+                  reason instanceof Error
+                    ? reason.message
+                    : "The command could not be completed.",
                 ),
               );
           }
@@ -110,7 +121,9 @@ export function createMenu() {
           if (event.key === "ArrowRight" && item.children) {
             event.preventDefault();
             expand();
-            panels[depth + 1]?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+            panels[depth + 1]
+              ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+              ?.focus();
           }
         });
         panel.append(button);
@@ -120,7 +133,9 @@ export function createMenu() {
       });
       panel.addEventListener("keydown", (event) => {
         event.stopPropagation();
-        const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        const current = buttons.indexOf(
+          document.activeElement as HTMLButtonElement,
+        );
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
           event.preventDefault();
           const step = event.key === "ArrowDown" ? 1 : -1;
@@ -128,7 +143,10 @@ export function createMenu() {
         } else if (event.key === "Home" || event.key === "End") {
           event.preventDefault();
           buttons[event.key === "Home" ? 0 : buttons.length - 1]?.focus();
-        } else if ((event.key === "ArrowLeft" || event.key === "Escape") && parent) {
+        } else if (
+          (event.key === "ArrowLeft" || event.key === "Escape") &&
+          parent
+        ) {
           event.preventDefault();
           trim(depth);
           parent.focus();
@@ -163,7 +181,9 @@ export function createMenu() {
       signal: events.signal,
     });
     show(items, point, 0);
-    panels[0]?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    panels[0]
+      ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+      ?.focus();
     return close;
   }
 

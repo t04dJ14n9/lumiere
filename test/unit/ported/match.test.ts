@@ -17,8 +17,13 @@ test("link suggestions use the Obsidian boundary, gap, spread and length penalti
   ]);
 });
 test("every query word must match, in any field, case-insensitively", () => {
-  assert.ok(matchScore("ML atten", "Attention", "ml/Attention.md") !== undefined);
-  assert.equal(matchScore("attention zebra", "Attention", "ml/Attention.md"), undefined);
+  assert.ok(
+    matchScore("ML atten", "Attention", "ml/Attention.md") !== undefined,
+  );
+  assert.equal(
+    matchScore("attention zebra", "Attention", "ml/Attention.md"),
+    undefined,
+  );
   assert.equal(matchScore("", "Anything", "Anything.md"), 0);
 });
 test("CJK characters are separate tokens and repeated query tokens cannot reuse one occurrence", () => {

@@ -48,10 +48,9 @@ export default async function globalSetup(): Promise<void> {
         "window.dialogStyle": "custom",
         "files.simpleDialog.enable": true,
         // Extra settings for this throwaway profile only, as JSON (for diagnostics).
-        ...(JSON.parse(process.env.MARKDOWN_WORKBENCH_TEST_SETTINGS ?? "{}") as Record<
-          string,
-          unknown
-        >),
+        ...(JSON.parse(
+          process.env.MARKDOWN_WORKBENCH_TEST_SETTINGS ?? "{}",
+        ) as Record<string, unknown>),
       },
       null,
       2,
@@ -59,17 +58,22 @@ export default async function globalSetup(): Promise<void> {
   );
 
   mkdirSync(paths.workspace, { recursive: true });
-  writeFileSync(path.join(paths.workspace, "Note.md"), "# Native Markdown\n\nOriginal line");
+  writeFileSync(
+    path.join(paths.workspace, "Note.md"),
+    "# Native Markdown\n\nOriginal line",
+  );
   const vsix = path.join(paths.root, "extension.vsix");
   const suppliedVsix = process.env.MARKDOWN_WORKBENCH_TEST_VSIX;
-  if (suppliedVsix) copyFileSync(path.resolve(suppliedVsix), vsix);
-  else
+  if (suppliedVsix) {
+    copyFileSync(path.resolve(suppliedVsix), vsix);
+  } else {
     await createVSIX({
       cwd: paths.repository,
       packagePath: vsix,
       dependencies: false,
       rewriteRelativeLinks: false,
     });
+  }
   for (const extension of [vsix]) {
     execFileSync(
       host.cli,
@@ -117,8 +121,14 @@ export default async function globalSetup(): Promise<void> {
   vscode.unref();
 
   writeState({ pid: vscode.pid!, webSocket: "", host: host.name });
-  writeState({ pid: vscode.pid!, webSocket: await devToolsWebSocket(port), host: host.name });
-  console.log(`Testing ${host.name} (${host.executable}) with profile ${paths.root}`);
+  writeState({
+    pid: vscode.pid!,
+    webSocket: await devToolsWebSocket(port),
+    host: host.name,
+  });
+  console.log(
+    `Testing ${host.name} (${host.executable}) with profile ${paths.root}`,
+  );
 }
 
 /**
@@ -150,11 +160,18 @@ async function resolveVsCode(): Promise<Host> {
     hostExecutable ??
     (existsSync(installed)
       ? installed
-      : await downloadAndUnzipVSCode({ version: "stable", cachePath: paths.download }));
+      : await downloadAndUnzipVSCode({
+          version: "stable",
+          cachePath: paths.download,
+        }));
   // Newer macOS builds name the binary "Code"; the downloader still reports "Electron".
-  if (!existsSync(executable)) executable = path.join(path.dirname(executable), "Code");
+  if (!existsSync(executable)) {
+    executable = path.join(path.dirname(executable), "Code");
+  }
   const app =
-    process.platform === "darwin" ? path.resolve(executable, "..", "..") : path.dirname(executable);
+    process.platform === "darwin"
+      ? path.resolve(executable, "..", "..")
+      : path.dirname(executable);
   const resources =
     process.platform === "darwin"
       ? path.join(app, "Resources", "app")
@@ -162,8 +179,14 @@ async function resolveVsCode(): Promise<Host> {
   const cli =
     process.platform === "darwin"
       ? path.join(resources, "bin", "code")
-      : path.join(app, "bin", process.platform === "win32" ? "code.cmd" : "code");
-  const product = JSON.parse(readFileSync(path.join(resources, "product.json"), "utf8")) as {
+      : path.join(
+          app,
+          "bin",
+          process.platform === "win32" ? "code.cmd" : "code",
+        );
+  const product = JSON.parse(
+    readFileSync(path.join(resources, "product.json"), "utf8"),
+  ) as {
     nameShort: string;
     version: string;
   };
@@ -174,17 +197,25 @@ async function resolveVsCode(): Promise<Host> {
     .filter((file) => existsSync(file))
     .map((file) => readFileSync(file, "utf8"))
     .join("\n");
-  const supports = (option: string): boolean => main.includes(`"${option}":{type:"boolean"`);
+  const supports = (option: string): boolean =>
+    main.includes(`"${option}":{type:"boolean"`);
   const options = [
     // Keep secrets in memory rather than in the user's keychain.
-    ...(supports("use-inmemory-secretstorage") ? ["--use-inmemory-secretstorage"] : []),
+    ...(supports("use-inmemory-secretstorage")
+      ? ["--use-inmemory-secretstorage"]
+      : []),
     // Cursor's first-run onboarding covers the window.
     ...(supports("skip-onboarding") ? ["--skip-onboarding"] : []),
     ...(supports("disable-updates") ? ["--disable-updates"] : []),
     // Chromium's own keychain access (cookies, safe storage) on macOS.
     ...(process.platform === "darwin" ? ["--use-mock-keychain"] : []),
   ];
-  return { name: `${product.nameShort} ${product.version}`, executable, cli, options };
+  return {
+    name: `${product.nameShort} ${product.version}`,
+    executable,
+    cli,
+    options,
+  };
 }
 
 function freePort(): Promise<number> {
@@ -206,8 +237,10 @@ async function devToolsWebSocket(port: number): Promise<string> {
   while (Date.now() < deadline) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/version`);
-      if (response.ok)
-        return ((await response.json()) as { webSocketDebuggerUrl: string }).webSocketDebuggerUrl;
+      if (response.ok) {
+        return ((await response.json()) as { webSocketDebuggerUrl: string })
+          .webSocketDebuggerUrl;
+      }
     } catch {
       // VS Code is still starting.
     }

@@ -8,8 +8,9 @@ export const config = Schema.object({
         !Number.isInteger(value) ||
         value < 1 ||
         value > 16
-      )
+      ) {
         throw new Error("Tab size must be an integer from 1 to 16");
+      }
       return value;
     },
     { type: "integer", minimum: 1, maximum: 16 },

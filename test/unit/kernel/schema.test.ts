@@ -25,7 +25,10 @@ test("schemas validate every setting type, apply independent defaults and emit J
   assert.deepEqual(schema.parse(input), input);
   const a = schema.parse({ count: 1, name: "a", mode: "source" });
   a.items.push("x");
-  assert.deepEqual(schema.parse({ count: 1, name: "a", mode: "source" }).items, []);
+  assert.deepEqual(
+    schema.parse({ count: 1, name: "a", mode: "source" }).items,
+    [],
+  );
   for (const patch of [
     { count: NaN },
     { count: 5 },
@@ -35,18 +38,24 @@ test("schemas validate every setting type, apply independent defaults and emit J
     { items: ["a", "b", "c"] },
     { overrides: { a: 1 } },
     { extra: true },
-  ])
+  ]) {
     assert.throws(() => schema.parse({ ...input, ...patch }));
+  }
   assert.equal(schema.toJSONSchema().additionalProperties, false);
   assert.deepEqual(schema.toJSONSchema().required, ["count", "name", "mode"]);
   assert.equal(schema.toJSONSchema().description, "Config");
 });
 test("schema errors identify nested paths and record keys cannot pollute prototypes", () => {
   assert.throws(
-    () => Schema.object({ entries: Schema.array(Schema.number()) }).parse({ entries: ["bad"] }),
+    () =>
+      Schema.object({ entries: Schema.array(Schema.number()) }).parse({
+        entries: ["bad"],
+      }),
     /\$\.entries\[0\]/,
   );
-  const value = Schema.record(Schema.boolean()).parse(JSON.parse('{"__proto__":true}'));
+  const value = Schema.record(Schema.boolean()).parse(
+    JSON.parse('{"__proto__":true}'),
+  );
   assert.equal(Object.getPrototypeOf(value), Object.prototype);
   assert.equal(Object.hasOwn(value, "__proto__"), true);
 });

@@ -7,9 +7,13 @@ import type {} from "../editor/api";
 export function indentation(text: string, tabSize: number): number {
   let width = 0;
   for (const char of text) {
-    if (char === " ") width++;
-    else if (char === "\t") width += tabSize - (width % tabSize);
-    else break;
+    if (char === " ") {
+      width++;
+    } else if (char === "\t") {
+      width += tabSize - (width % tabSize);
+    } else {
+      break;
+    }
   }
   return width;
 }
@@ -19,7 +23,7 @@ function guides(view: EditorView): DecorationSet {
     for (let at = visible.from; at <= visible.to; ) {
       const line = view.state.doc.lineAt(at);
       const width = indentation(line.text, view.state.tabSize);
-      if (width)
+      if (width) {
         ranges.push(
           Decoration.line({
             attributes: {
@@ -28,6 +32,7 @@ function guides(view: EditorView): DecorationSet {
             },
           }).range(line.from),
         );
+      }
       at = line.to + 1;
     }
   }

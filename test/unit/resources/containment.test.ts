@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, symlink, rm } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { contains, containedResource } from "../../../src/plugins/resources/containment";
+import {
+  contains,
+  containedResource,
+} from "../../../src/plugins/resources/containment";
 test("resource containment rejects sibling prefixes, traversal and different authorities", () => {
   assert.equal(contains("file:///vault", "file:///vault/note.md"), true);
   for (const uri of [
@@ -11,8 +14,9 @@ test("resource containment rejects sibling prefixes, traversal and different aut
     "file:///vault/%2e%2e/secret",
     "file:///vault/a%2f../../secret",
     "vscode-remote://host/vault/note.md",
-  ])
+  ]) {
     assert.equal(contains("file:///vault", uri), false, uri);
+  }
 });
 test("realpath checks reject symlink escapes while permitting contained files", async () => {
   const temp = await mkdtemp("/tmp/mw-resources-");
@@ -35,13 +39,25 @@ test("realpath checks reject symlink escapes while permitting contained files", 
       /symlink escapes/,
     );
     await assert.rejects(
-      containedResource("vscode-remote://host/vault", "vscode-remote://host/vault/file", true),
+      containedResource(
+        "vscode-remote://host/vault",
+        "vscode-remote://host/vault/file",
+        true,
+      ),
       /Virtual symbolic/,
     );
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
 });
-test('virtual resource checks reject symlinked ancestor directories', async () => {
-  await assert.rejects(containedResource('vscode-remote://host/vault', 'vscode-remote://host/vault/link/note.md', false, async uri => ({ symbolicLink: uri.endsWith('/link') })), /Virtual symbolic/);
+test("virtual resource checks reject symlinked ancestor directories", async () => {
+  await assert.rejects(
+    containedResource(
+      "vscode-remote://host/vault",
+      "vscode-remote://host/vault/link/note.md",
+      false,
+      async (uri) => ({ symbolicLink: uri.endsWith("/link") }),
+    ),
+    /Virtual symbolic/,
+  );
 });

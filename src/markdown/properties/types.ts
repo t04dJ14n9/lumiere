@@ -20,7 +20,9 @@ export const propertyKindLabels: Record<PropertyKind, string> = {
 };
 
 export function propertyKind(value: unknown): value is PropertyKind {
-  return typeof value === "string" && propertyKinds.includes(value as PropertyKind);
+  return (
+    typeof value === "string" && propertyKinds.includes(value as PropertyKind)
+  );
 }
 
 export function validPropertyName(value: unknown): value is string {
@@ -58,7 +60,11 @@ export function inferPropertyKind(
   if (Object.hasOwn(types, normalized)) {
     return types[normalized]!;
   }
-  if (Array.isArray(value) || normalized === "aliases" || normalized === "cssclasses") {
+  if (
+    Array.isArray(value) ||
+    normalized === "aliases" ||
+    normalized === "cssclasses"
+  ) {
     return "list";
   }
   if (typeof value === "boolean") {
@@ -70,7 +76,10 @@ export function inferPropertyKind(
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return "date";
   }
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)) {
+  if (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)
+  ) {
     return "datetime";
   }
   return "text";

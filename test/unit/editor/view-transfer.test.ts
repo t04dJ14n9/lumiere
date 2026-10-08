@@ -149,6 +149,7 @@ test("view-state rejects malformed fold ranges and accepts fractional scroll anc
     { folded: [{ from: 5, to: 2 }] },
     { folded: [{ from: 2, to: 2 }] },
     { folds: { key: "false" } },
-  ])
+  ]) {
     assert.throws(() => viewState.parse({ ...saved, ...patch }));
+  }
 });

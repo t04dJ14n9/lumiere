@@ -3,8 +3,13 @@ import { featureSettings } from "../../shared/features";
 import { Schema, defineProtocol } from "../../kernel";
 export const offset = new Schema<number>(
   (value) => {
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0)
+    if (
+      typeof value !== "number" ||
+      !Number.isSafeInteger(value) ||
+      value < 0
+    ) {
       throw new Error("Invalid offset");
+    }
     return value;
   },
   { type: "integer", minimum: 0 },
@@ -18,7 +23,9 @@ export const selection = Schema.object({
 const foldRange = new Schema<{ from: number; to: number }>(
   (value) => {
     const range = Schema.object({ from: offset, to: offset }).parse(value);
-    if (range.from >= range.to) throw new Error("Invalid fold range");
+    if (range.from >= range.to) {
+      throw new Error("Invalid fold range");
+    }
     return range;
   },
   { type: "object" },

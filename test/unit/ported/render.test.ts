@@ -11,7 +11,9 @@ import { noteFragment } from "../../../src/markdown/metadata/fragments";
 test("hybrid syntax keeps code opaque while parsing highlights, comments and formulas", () => {
   const syntax = markdownParser;
   const tree = syntax
-    .parse("==highlight== and $x^2$ and %%comment%%\n\n```\n==not highlighted==\n```")
+    .parse(
+      "==highlight== and $x^2$ and %%comment%%\n\n```\n==not highlighted==\n```",
+    )
     .toString();
   assert.match(tree, /Highlight\(HighlightMark,HighlightMark\)/);
   assert.match(tree, /InlineMath/);
@@ -19,11 +21,14 @@ test("hybrid syntax keeps code opaque while parsing highlights, comments and for
   assert.equal(tree.match(/Highlight\(/g)?.length, 1);
 });
 test("properties parse scalar and list types without accepting duplicate keys", () => {
-  assert.deepEqual(frontmatter("---\ntags: [a, b]\nchecked: true\ncount: 2\n---\n")?.values, {
-    tags: ["a", "b"],
-    checked: true,
-    count: 2,
-  });
+  assert.deepEqual(
+    frontmatter("---\ntags: [a, b]\nchecked: true\ncount: 2\n---\n")?.values,
+    {
+      tags: ["a", "b"],
+      checked: true,
+      count: 2,
+    },
+  );
   assert.ok(frontmatter("---\nname: a\nname: b\n---\n")?.error);
 });
 test("nested and folded callouts preserve inline formatting and independent containers", () => {
@@ -68,7 +73,8 @@ test("heading fragments include descendants and stop before a sibling, ignoring 
   assert.equal(noteFragment(source, "Fake"), undefined);
 });
 test("block fragments support a paragraph and a separately identified list", () => {
-  const source = "# Note\n\nThis paragraph. ^paragraph\n\n- One\n- Two\n\n^list\n";
+  const source =
+    "# Note\n\nThis paragraph. ^paragraph\n\n- One\n- Two\n\n^list\n";
   assert.equal(noteFragment(source, "^paragraph")?.text, "This paragraph.");
   assert.equal(noteFragment(source, "^list")?.text, "- One\n- Two");
 });

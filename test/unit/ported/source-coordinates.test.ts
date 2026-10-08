@@ -7,7 +7,10 @@ test("source selections and annotation positions round trip across mixed newline
   const positions = new SourceCoordinates(source);
   const from = positions.editor.line(2).from;
   const to = positions.editor.line(2).to;
-  assert.equal(source.slice(positions.toSource(from), positions.toSource(to)), "你好 🧠");
+  assert.equal(
+    source.slice(positions.toSource(from), positions.toSource(to)),
+    "你好 🧠",
+  );
   for (let offset = 0; offset <= positions.editor.length; offset++) {
     assert.equal(positions.toEditor(positions.toSource(offset)), offset);
   }

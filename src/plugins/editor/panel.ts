@@ -15,8 +15,8 @@ export function createPanel(
   configure: (context: Context, shell: PanelShell) => void,
   rank: (owner: string) => number = () => 0,
 ): EditorPanel {
-  const owned = Context.create({ rank }),
-    session = documents.session(shell.document);
+  const owned = Context.create({ rank });
+  const session = documents.session(shell.document);
   const rpc = new Endpoint(shell.transport, {
     after(ms, callback) {
       const timer = setTimeout(callback, ms);

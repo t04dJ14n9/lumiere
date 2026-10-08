@@ -16,10 +16,17 @@ export function orderPropertyBody(
     }
     const map = original.contents;
     const entries = map.items.map((pair, index) => {
-      if (!isScalar(pair.key) || typeof pair.key.value !== "string" || !pair.key.range) {
+      if (
+        !isScalar(pair.key) ||
+        typeof pair.key.value !== "string" ||
+        !pair.key.range
+      ) {
         throw new Error("Unsupported property key");
       }
-      const start = index === 0 ? 0 : (pair.srcToken?.start[0]?.offset ?? pair.key.range[0]);
+      const start =
+        index === 0
+          ? 0
+          : (pair.srcToken?.start[0]?.offset ?? pair.key.range[0]);
       return { key: pair.key.value, pair, start };
     });
     const byKey = new Map(entries.map((entry) => [entry.key, entry]));
@@ -50,7 +57,10 @@ export function orderPropertyBody(
       );
       ordered = keys.map((key) => chunks.get(key)!).join("") + body.slice(end);
     }
-    const before = parseDocument(body).toJS({ maxAliasCount: 100 }) as Record<string, unknown>;
+    const before = parseDocument(body).toJS({ maxAliasCount: 100 }) as Record<
+      string,
+      unknown
+    >;
     const check = parseDocument(ordered, { uniqueKeys: true });
     if (check.errors.length || !isMap(check.contents)) {
       return undefined;
@@ -60,7 +70,9 @@ export function orderPropertyBody(
       check.contents.items.some(
         (pair, index) => !isScalar(pair.key) || pair.key.value !== keys[index],
       ) ||
-      keys.some((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
+      keys.some(
+        (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+      )
     ) {
       return undefined;
     }

@@ -12,8 +12,9 @@ export const resourcesHost: Plugin<{ panel: PanelShell }> = {
     const known = new Set([panel.document.uri]);
     const resources: Resources = {
       async authorize(source) {
-        if (!known.has(source) || !contains(ctx.vault.root, source))
+        if (!known.has(source) || !contains(ctx.vault.root, source)) {
           throw new Error("Unknown note source");
+        }
         const stat = await ctx.workbench.stat(source);
         await containedResource(
           ctx.vault.root,
@@ -23,10 +24,12 @@ export const resourcesHost: Plugin<{ panel: PanelShell }> = {
         );
       },
       async load(target, source = panel.document.uri) {
-        if (!known.has(source) || !contains(ctx.vault.root, source))
+        if (!known.has(source) || !contains(ctx.vault.root, source)) {
           throw new Error("Unknown note source");
-        if (/^[a-z][a-z\d+.-]*:/i.test(target) || target.startsWith("//"))
+        }
+        if (/^[a-z][a-z\d+.-]*:/i.test(target) || target.startsWith("//")) {
           throw new Error("Resource must be a vault link");
+        }
         const relativeSource = decodeURIComponent(
           new URL(source).pathname,
         ).slice(
@@ -36,7 +39,9 @@ export const resourcesHost: Plugin<{ panel: PanelShell }> = {
           ).length + 1,
         );
         const file = ctx.vault.resolveLink(target, relativeSource);
-        if (!file) throw new Error("Resource not found");
+        if (!file) {
+          throw new Error("Resource not found");
+        }
         const stat = await ctx.workbench.stat(file.uri);
         await containedResource(
           ctx.vault.root,
@@ -56,7 +61,9 @@ export const resourcesHost: Plugin<{ panel: PanelShell }> = {
                 : new TextDecoder().decode(await ctx.workbench.read(file.uri))
               ).replace(/\r\n/g, "\n")
             : undefined;
-        if (kind === "note") known.add(file.uri);
+        if (kind === "note") {
+          known.add(file.uri);
+        }
         return {
           kind,
           source: file.uri,

@@ -29,7 +29,9 @@ export class MarkdownInline extends WidgetType {
     void this.render
       .into(node, this.source, {
         measure: () => {
-          if (live) view.requestMeasure();
+          if (live) {
+            view.requestMeasure();
+          }
         },
       })
       .then((result) => {
@@ -39,11 +41,14 @@ export class MarkdownInline extends WidgetType {
           return;
         }
         const paragraph = node.firstElementChild;
-        if (paragraph?.tagName === "P" && node.children.length === 1)
+        if (paragraph?.tagName === "P" && node.children.length === 1) {
           paragraph.replaceWith(...paragraph.childNodes);
+        }
       })
       .catch(() => {
-        if (live) node.textContent = this.source;
+        if (live) {
+          node.textContent = this.source;
+        }
       });
     return node;
   }

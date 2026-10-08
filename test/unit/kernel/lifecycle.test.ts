@@ -60,8 +60,8 @@ test("required services gate, withdraw, and resume independent of load order", a
   await root.dispose();
 });
 test("effects are LIFO, then children, then provided services withdraw; disposal errors are isolated", async () => {
-  const order: string[] = [],
-    root = Context.create();
+  const order: string[] = [];
+  const root = Context.create();
   const parent = root.plugin({
     name: "parent",
     apply(ctx) {
@@ -138,8 +138,8 @@ test("duplicate providers fail without affecting consumers; replacement stacks r
   await root.dispose();
 });
 test("undeclared services throw; optional injection is allowed and refreshes on availability", async () => {
-  const root = Context.create(),
-    seen: (number | undefined)[] = [];
+  const root = Context.create();
+  const seen: (number | undefined)[] = [];
   const bad = root.plugin({
     name: "bad",
     apply(ctx) {
@@ -168,9 +168,9 @@ test("undeclared services throw; optional injection is allowed and refreshes on 
 });
 test("update reconfigures or restarts with validated config; failed apply retries and rolls back", async () => {
   const root = Context.create();
-  let runs = 0,
-    cleanups = 0,
-    config = 0;
+  let runs = 0;
+  let cleanups = 0;
+  let config = 0;
   const plugin = root.plugin(
     {
       name: "config",
@@ -180,7 +180,9 @@ test("update reconfigures or restarts with validated config; failed apply retrie
         ctx.effect(() => () => {
           cleanups++;
         });
-        if (value === 0) throw new Error("bad value");
+        if (value === 0) {
+          throw new Error("bad value");
+        }
         config = value;
       },
       reconfigure(_ctx, value) {
@@ -233,8 +235,8 @@ test("async failure rolls back effects and does not fail siblings", async () => 
   await root.dispose();
 });
 test("disposal during async apply rejects late effects and never publishes a service", async () => {
-  const root = Context.create(),
-    gate = deferred();
+  const root = Context.create();
+  const gate = deferred();
   let lateSetup = false;
   const fiber = root.plugin({
     name: "slow",
@@ -256,8 +258,8 @@ test("disposal during async apply rejects late effects and never publishes a ser
   await root.dispose();
 });
 test("Service class publishes only after async start and is withdrawn on stop", async () => {
-  const root = Context.create(),
-    fiber = root.plugin(AsyncService);
+  const root = Context.create();
+  const fiber = root.plugin(AsyncService);
   assert.equal(root.runtime.value("asynchronous"), undefined);
   await root.settled();
   assert.ok(root.runtime.value("asynchronous") instanceof AsyncService);
@@ -281,10 +283,10 @@ test("logs identify plugin and record load and stop timings", async () => {
   assert.deepEqual(logs, ["[timed] Loaded", "[timed] Stopped"]);
 });
 test("service withdrawal during loading invalidates the old activation and gates before restarting", async () => {
-  const root = Context.create(),
-    gate = deferred();
-  let runs = 0,
-    cleanups = 0;
+  const root = Context.create();
+  const gate = deferred();
+  let runs = 0;
+  let cleanups = 0;
   const provider = root.plugin({
     name: "provider",
     apply(ctx) {
@@ -300,7 +302,9 @@ test("service withdrawal during loading invalidates the old activation and gates
       ctx.effect(() => () => {
         cleanups++;
       });
-      if (runs === 1) await gate.promise;
+      if (runs === 1) {
+        await gate.promise;
+      }
     },
   });
   await provider.dispose();

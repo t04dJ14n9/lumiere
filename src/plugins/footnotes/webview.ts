@@ -25,12 +25,18 @@ export const footnotesWebview: Plugin = {
     ctx.effect(() =>
       ctx.editor.extend(
         EditorView.updateListener.of((update) => {
-          if (!update.docChanged) return;
+          if (!update.docChanged) {
+            return;
+          }
           const next = JSON.stringify(footnotes(update.state.doc).definitions);
-          if (next === key) return;
+          if (next === key) {
+            return;
+          }
           key = next;
           queueMicrotask(() => {
-            if (active) ctx.emit("render/changed");
+            if (active) {
+              ctx.emit("render/changed");
+            }
           });
         }),
       ),
@@ -41,7 +47,9 @@ export const footnotesWebview: Plugin = {
     >();
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() =>
@@ -67,12 +75,13 @@ export const footnotesWebview: Plugin = {
         nodes: ["FootnoteRef", "InlineFootnote"],
         decorate(node, cx) {
           const note = footnotes(cx.state.doc).references.get(node.from);
-          if (note && !cx.revealed(node.from, node.to))
+          if (note && !cx.revealed(node.from, node.to)) {
             cx.replace(
               node.from,
               node.to,
               new FootnoteReference(note, ctx.render),
             );
+          }
         },
       }),
     );
@@ -93,14 +102,17 @@ export const footnotesWebview: Plugin = {
           const note = footnotes(view.state.doc).definitions.find(
             (note) => note.from === block.from,
           );
-          if (!note)
+          if (!note) {
             throw new Error("Footnote definition changed while rendering");
+          }
           return new FootnoteDefinition(block, note, ctx.render);
         },
       }),
     );
     ctx.on("render/preProcess", (pass) => {
-      if (pass.ancestry.includes("footnote-preview")) return;
+      if (pass.ancestry.includes("footnote-preview")) {
+        return;
+      }
       const document =
         pass.documentText === undefined
           ? view.state.doc
@@ -119,15 +131,18 @@ export const footnotesWebview: Plugin = {
       }[] = [];
       markdownParser.parse(pass.source).iterate({
         enter(node) {
-          if (node.name !== "FootnoteRef" && node.name !== "InlineFootnote")
+          if (node.name !== "FootnoteRef" && node.name !== "InlineFootnote") {
             return;
+          }
           const label = pass.source.slice(node.from + 2, node.to - 1);
           const note =
             node.name === "FootnoteRef"
               ? registry.definitions.find((note) => note.label === label)
               : (registry.references.get(base + node.from) ??
                 local.references.get(node.from));
-          if (!note) return false;
+          if (!note) {
+            return false;
+          }
           const id = `fn-${nonce}-${replacements.length}`;
           replacements.push({ from: node.from, to: node.to, id, note });
           return false;
@@ -135,11 +150,12 @@ export const footnotesWebview: Plugin = {
       });
       references.set(pass, replacements);
       let source = pass.source;
-      for (const replacement of [...replacements].reverse())
+      for (const replacement of [...replacements].reverse()) {
         source =
           source.slice(0, replacement.from) +
           `<sup data-mw-footnote="${replacement.id}"></sup>` +
           source.slice(replacement.to);
+      }
       pass.displaySource = source;
     });
     ctx.on("render/postProcess", (pass) => {
@@ -147,7 +163,9 @@ export const footnotesWebview: Plugin = {
         const sup = pass.container.querySelector<HTMLElement>(
           `[data-mw-footnote="${id}"]`,
         );
-        if (!sup) continue;
+        if (!sup) {
+          continue;
+        }
         const stop = mountReference(
           sup,
           note,

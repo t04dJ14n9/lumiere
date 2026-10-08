@@ -10,9 +10,9 @@ export function nearestEntry(
 ): number {
   const horizontal = axis === "column";
   const position = horizontal ? point.x : point.y;
-  let nearest = Infinity,
-    selected = -1,
-    index = 0;
+  let nearest = Infinity;
+  let selected = -1;
+  let index = 0;
   for (const entry of entries) {
     const bounds = entry.getBoundingClientRect();
     const from = horizontal ? bounds.left : bounds.top;

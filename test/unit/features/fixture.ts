@@ -100,7 +100,7 @@ export function fixture() {
       },
       send(value) {
         const message = value as { kind: string; id: number };
-        if (message.kind === "request")
+        if (message.kind === "request") {
           queueMicrotask(() =>
             receive({
               kind: "response",
@@ -108,6 +108,7 @@ export function fixture() {
               result: { fragment: "" },
             }),
           );
+        }
       },
     },
     {

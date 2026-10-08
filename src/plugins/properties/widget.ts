@@ -26,7 +26,9 @@ export class PropertyWidget extends WidgetType {
   override toDOM(_view: EditorView): HTMLElement {
     const wrapper = document.createElement("div");
     wrapper.className = "hybrid-properties";
-    if (this.hidden) return wrapper;
+    if (this.hidden) {
+      return wrapper;
+    }
     const container = document.createElement("div");
     wrapper.append(container);
     container.innerHTML = sanitize(
@@ -51,8 +53,12 @@ export class PropertyWidget extends WidgetType {
     _view: EditorView,
     previous: this,
   ): boolean {
-    if (this.context !== previous.context) return false;
-    if (this.hidden || previous.hidden) return this.hidden === previous.hidden;
+    if (this.context !== previous.context) {
+      return false;
+    }
+    if (this.hidden || previous.hidden) {
+      return this.hidden === previous.hidden;
+    }
     return (
       !!dom.firstElementChild &&
       reconcileProperties(

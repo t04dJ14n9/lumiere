@@ -6,7 +6,8 @@ function ordered(source: string, keys: string[]): string {
   const changes = propertyChanges(source, { type: "order", keys });
   assert.ok(changes);
   return changes.reduceRight(
-    (source, change) => source.slice(0, change.from) + change.insert + source.slice(change.to),
+    (source, change) =>
+      source.slice(0, change.from) + change.insert + source.slice(change.to),
     source,
   );
 }
@@ -14,11 +15,17 @@ function ordered(source: string, keys: string[]): string {
 test("property order moves complete entries with comments and multiline values", () => {
   for (const eol of ["\n", "\r\n"]) {
     const z = ["# z comment", "z: 'quoted' # inline", ""].join(eol);
-    const a = ["", "# a comment", "a: |+", "  first", "  second", "", ""].join(eol);
+    const a = ["", "# a comment", "a: |+", "  first", "  second", "", ""].join(
+      eol,
+    );
     const m = ["m: [one, two]", ""].join(eol);
     const source = `---${eol}${z}${a}${m}# footer${eol}---${eol}${eol}Body`;
     const result = ordered(source, ["a", "m", "z"]);
-    assert.deepEqual(Object.keys(frontmatter(result)!.values!), ["a", "m", "z"]);
+    assert.deepEqual(Object.keys(frontmatter(result)!.values!), [
+      "a",
+      "m",
+      "z",
+    ]);
     assert.deepEqual(frontmatter(result)?.values, frontmatter(source)?.values);
     for (const fragment of [
       "# z comment",
@@ -40,7 +47,8 @@ test("property order moves complete entries with comments and multiline values",
 });
 
 test("flow property maps retain values, quotes and comments through a reorder", () => {
-  const source = '---\n{z: "quoted", a: [one, {two: true}], m: null} # footer\n---\nBody';
+  const source =
+    '---\n{z: "quoted", a: [one, {two: true}], m: null} # footer\n---\nBody';
   const result = ordered(source, ["a", "m", "z"]);
   assert.deepEqual(Object.keys(frontmatter(result)!.values!), ["a", "m", "z"]);
   assert.deepEqual(frontmatter(result)?.values, frontmatter(source)?.values);
@@ -60,7 +68,10 @@ test("alias dependencies remain valid and forward-alias reorders are rejected", 
   const source = "---\nz: &root [one, two]\na: *root\nother: 3\n---\nBody";
   const result = ordered(source, ["other", "z", "a"]);
   assert.deepEqual(frontmatter(result)?.values, frontmatter(source)?.values);
-  assert.equal(propertyChanges(source, { type: "order", keys: ["a", "z", "other"] }), undefined);
+  assert.equal(
+    propertyChanges(source, { type: "order", keys: ["a", "z", "other"] }),
+    undefined,
+  );
 });
 
 test("empty values, empty headers and punctuation in keys keep their source meaning", () => {

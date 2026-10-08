@@ -13,7 +13,9 @@ export const codeBlocksWebview: Plugin = {
     let live = true;
     ctx.effect(() => () => {
       live = false;
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() => ctx.editor.extend(codeSource));
@@ -35,8 +37,12 @@ export const codeBlocksWebview: Plugin = {
       const cleanup = () => {
         active = false;
         events.abort();
-        for (const copy of copies) copy.remove();
-        for (const [code, text] of originals) code.textContent = text;
+        for (const copy of copies) {
+          copy.remove();
+        }
+        for (const [code, text] of originals) {
+          code.textContent = text;
+        }
         cleanups.delete(cleanup);
       };
       cleanups.add(cleanup);
@@ -65,18 +71,26 @@ export const codeBlocksWebview: Plugin = {
           "click",
           (event) => {
             const view = ctx.editor.view;
-            if (!view.dom.contains(code)) return;
+            if (!view.dom.contains(code)) {
+              return;
+            }
             const offset = codePosition(
               pass.source,
               code,
               event,
               /^\s*(```|~~~)/.test(pass.source),
             );
-            if (offset === undefined) return;
+            if (offset === undefined) {
+              return;
+            }
             const shell = code.closest<HTMLElement>(".hybrid-block");
-            if (!shell) return;
+            if (!shell) {
+              return;
+            }
             const from = view.posAtDOM(shell) + offset;
-            if (from > view.state.doc.length) return;
+            if (from > view.state.doc.length) {
+              return;
+            }
             view.dispatch({
               selection: { anchor: from },
               scrollIntoView: true,

@@ -75,10 +75,15 @@ for (const manifest of features) {
       ["codeBlocks", "math", "callouts", "tasks", "embeds"].includes(
         manifest.id,
       )
-    )
+    ) {
       assert.ok(activeHooks.reads > 0);
-    if (manifest.id === "footnotes") assert.equal(activeHooks.prepared, true);
-    if (manifest.id === "diagrams") assert.equal(activeHooks.fence, true);
+    }
+    if (manifest.id === "footnotes") {
+      assert.equal(activeHooks.prepared, true);
+    }
+    if (manifest.id === "diagrams") {
+      assert.equal(activeHooks.fence, true);
+    }
     await f.configure({});
     assert.deepEqual(await renderHooks(f.root), {
       reads: 0,
@@ -143,12 +148,13 @@ function settingsFor(enabled: Set<string>) {
   );
 }
 function owners(f: ReturnType<typeof fixture>) {
-  for (const fiber of f.root.runtime.fibers)
+  for (const fiber of f.root.runtime.fibers) {
     assert.equal(
       fiber.state,
       "active",
       `${fiber.definition.name}: ${String(fiber.error)}`,
     );
+  }
   return f.registry.ordered().map(({ owner, slot }) => ({ owner, slot }));
 }
 function composition(f: ReturnType<typeof fixture>) {
@@ -182,8 +188,9 @@ function composition(f: ReturnType<typeof fixture>) {
   markdownParser.parse(source).iterate({
     enter(node) {
       const renderer = blocks.find((renderer) => renderer.match(node, sample));
-      if (renderer)
+      if (renderer) {
         matches.push(`${node.name}:${renderer.kind}:${renderer.editing}`);
+      }
     },
   });
   return {
@@ -242,8 +249,11 @@ test("seeded catalog toggle sequence ends with fresh-start owner order", async (
   for (let step = 0; step < 60; step++) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     const id = features[seed % features.length]!.id;
-    if (enabled.has(id)) enabled.delete(id);
-    else enabled.add(id);
+    if (enabled.has(id)) {
+      enabled.delete(id);
+    } else {
+      enabled.add(id);
+    }
     await f.configure(settingsFor(enabled));
   }
   const fresh = fixture();
@@ -287,10 +297,18 @@ test("catalog configuration changes preserve fresh-start ordered owners", async 
     const settings = settingsFor(enabled);
     const config = settings[manifest.id]!.config;
     for (const [key, value] of Object.entries(config)) {
-      if (typeof value === "boolean") config[key] = !value;
-      if (key === "display") config[key] = "hidden";
-      if (key === "newLinkFormat") config[key] = "relative";
-      if (key === "folderNote") config[key] = "index";
+      if (typeof value === "boolean") {
+        config[key] = !value;
+      }
+      if (key === "display") {
+        config[key] = "hidden";
+      }
+      if (key === "newLinkFormat") {
+        config[key] = "relative";
+      }
+      if (key === "folderNote") {
+        config[key] = "index";
+      }
     }
     const fiber = [...f.root.runtime.fibers].find(
       (item) => item.definition.name === manifest.id,
@@ -321,8 +339,9 @@ test("catalog configuration changes preserve fresh-start ordered owners", async 
 test("heading folding queries share metadata by Text identity and invalidate after edits", () => {
   const state = EditorState.create({ doc: "# Head\nbody\n# End" });
   const first = headings(state.doc);
-  for (let i = 0; i < 10; i++)
+  for (let i = 0; i < 10; i++) {
     foldRange(state, 0, 6, { heading: true, indent: true });
+  }
   assert.equal(headings(state.doc), first);
   const next = state.update({
     changes: { from: 0, to: 6, insert: "plain" },
@@ -342,8 +361,9 @@ test("each feature leaves core settings and other plugin folds intact when toggl
     assert.equal(f.view.state.facet(indentUnit), "   ", manifest.id);
     assert.equal(f.view.state.tabSize, 3, manifest.id);
     assert.equal(f.view.state.readOnly, false, manifest.id);
-    if (manifest.id !== "folding")
+    if (manifest.id !== "folding") {
       assert.equal(f.view.state.field(foldState), field, manifest.id);
+    }
     enabled.add(manifest.id);
     await f.configure(settingsFor(enabled));
     assert.equal(f.view.state.facet(indentUnit), "   ", manifest.id);

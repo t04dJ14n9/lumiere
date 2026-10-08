@@ -28,17 +28,24 @@ export function foldRange(
     const heading = headings(state.doc).find(
       (item) => item.from >= start && item.from <= end,
     );
-    if (heading && heading.end > heading.to)
+    if (heading && heading.end > heading.to) {
       return { from: heading.to, to: heading.end };
+    }
   }
-  if (!options.indent) return null;
+  if (!options.indent) {
+    return null;
+  }
   const line = state.doc.lineAt(start);
   const width = (text: string) => {
     let count = 0;
     for (const char of text) {
-      if (char === " ") count++;
-      else if (char === "\t") count += state.tabSize - (count % state.tabSize);
-      else break;
+      if (char === " ") {
+        count++;
+      } else if (char === "\t") {
+        count += state.tabSize - (count % state.tabSize);
+      } else {
+        break;
+      }
     }
     return count;
   };
@@ -46,8 +53,12 @@ export function foldRange(
   let to = end;
   for (let number = line.number + 1; number <= state.doc.lines; number++) {
     const next = state.doc.line(number);
-    if (!next.text.trim()) continue;
-    if (width(next.text) <= base) break;
+    if (!next.text.trim()) {
+      continue;
+    }
+    if (width(next.text) <= base) {
+      break;
+    }
     to = next.to;
   }
   return to > end ? { from: end, to } : null;
@@ -71,7 +82,9 @@ export const foldingWebview: Plugin<Infer<typeof config>> = {
   inject: { required: ["editor", "commands"] },
   reconfigure(ctx, options) {
     const compartment = configurations.get(ctx);
-    if (!compartment) return false;
+    if (!compartment) {
+      return false;
+    }
     ctx.editor.view.dispatch({
       effects: compartment.reconfigure(foldingConfig(options)),
     });

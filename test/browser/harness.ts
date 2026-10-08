@@ -18,5 +18,7 @@ export async function open(
     },
     { source, preset },
   );
-  await expect(page.getByRole("textbox", { name: "Markdown content" })).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Markdown content" }),
+  ).toBeVisible();
 }

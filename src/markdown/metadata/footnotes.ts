@@ -7,19 +7,22 @@ export function footnotes(doc: Text): Footnotes {
   return metadata(doc).footnotes;
 }
 /** Supply definitions needed by a fragment without admitting unrelated note content. */
-export function fragmentWithFootnotes(source: string, selection: SourceRange): string {
+export function fragmentWithFootnotes(
+  source: string,
+  selection: SourceRange,
+): string {
   if (selection.from === 0 && selection.to === source.length) {
     return selection.text;
   }
-  const registry = footnotes(Text.of(source.split("\n"))),
-    queue: Footnote[] = [];
+  const registry = footnotes(Text.of(source.split("\n")));
+  const queue: Footnote[] = [];
   for (const [at, note] of registry.references) {
     if (at >= selection.from && at < selection.to && note.label) {
       queue.push(note);
     }
   }
-  const visited = new Set<number>(),
-    missing: Footnote[] = [];
+  const visited = new Set<number>();
+  const missing: Footnote[] = [];
   for (let index = 0; index < queue.length; index++) {
     const note = queue[index]!;
     if (visited.has(note.from)) {
@@ -37,6 +40,10 @@ export function fragmentWithFootnotes(source: string, selection: SourceRange): s
   }
   return (
     selection.text +
-    missing.map((note) => `\n\n[^${note.label}]: ${note.text.replace(/\n/g, "\n    ")}`).join("")
+    missing
+      .map(
+        (note) => `\n\n[^${note.label}]: ${note.text.replace(/\n/g, "\n    ")}`,
+      )
+      .join("")
   );
 }

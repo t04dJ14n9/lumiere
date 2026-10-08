@@ -11,8 +11,12 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
     const groups = new InputGroups();
     const commits = new Set<() => void>();
     const flush = async () => {
-      for (const commit of commits) commit();
-      if (!sync) throw new Error("Editor not mounted");
+      for (const commit of commits) {
+        commit();
+      }
+      if (!sync) {
+        throw new Error("Editor not mounted");
+      }
       await sync.flush();
     };
     let sync: Synchronizer | undefined;
@@ -36,7 +40,9 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
           view.dom.setAttribute("data-sync-status", message);
           ctx.emit("document/syncStatus", message);
         });
-        for (const message of queue.splice(0)) sync.receive(message);
+        for (const message of queue.splice(0)) {
+          sync.receive(message);
+        }
         return () => {
           groups.dispose();
           sync?.dispose();
@@ -55,8 +61,11 @@ export const documentWebview: Plugin<{ version: number; clientID: string }> = {
     });
     ctx.effect(() =>
       ctx.rpc.on(protocol, "updates", (message) => {
-        if (sync) sync.receive(message);
-        else queue.push(message);
+        if (sync) {
+          sync.receive(message);
+        } else {
+          queue.push(message);
+        }
       }),
     );
     ctx.effect(() =>

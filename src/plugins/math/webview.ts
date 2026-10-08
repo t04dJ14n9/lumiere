@@ -13,7 +13,9 @@ export const mathWebview: Plugin = {
   apply(ctx) {
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() =>
@@ -28,7 +30,7 @@ export const mathWebview: Plugin = {
       ctx.livePreview.inline({
         nodes: ["InlineMath"],
         decorate(node, cx) {
-          if (!cx.revealed(node.from, node.to))
+          if (!cx.revealed(node.from, node.to)) {
             cx.replace(
               node.from,
               node.to,
@@ -37,6 +39,7 @@ export const mathWebview: Plugin = {
                 ctx.render,
               ),
             );
+          }
         },
       }),
     );
@@ -59,13 +62,17 @@ export const mathWebview: Plugin = {
             typeset(expression, node.dataset.display === "true"),
           )
           .then((html) => {
-            if (!active) return;
+            if (!active) {
+              return;
+            }
             node.innerHTML = sanitizeGraphics(html);
             node.setAttribute("aria-label", expression);
             pass.measure();
           })
           .catch((error) => {
-            if (!active) return;
+            if (!active) {
+              return;
+            }
             node.classList.add("render-error");
             node.title = String(error);
             ctx.logger.warn("Math rendering failed", error);

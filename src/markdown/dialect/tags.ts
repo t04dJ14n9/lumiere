@@ -11,7 +11,9 @@ export const tags: MarkdownConfig = {
           return -1;
         }
         const tag = readTag(cx.text, pos - cx.offset);
-        return tag ? cx.addElement(cx.elt("Tag", pos, pos + tag.length + 1)) : -1;
+        return tag
+          ? cx.addElement(cx.elt("Tag", pos, pos + tag.length + 1))
+          : -1;
       },
     },
   ],

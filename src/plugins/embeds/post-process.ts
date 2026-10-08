@@ -38,15 +38,21 @@ export function enhanceEmbeds(ctx: Context, pass: RenderPass): () => void {
     target: string,
     resource: Resource,
   ) => {
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     if (resource.kind === "image") {
       const image =
         node instanceof HTMLImageElement ? node : document.createElement("img");
       image.src = resource.url;
       image.alt ||= target;
       image.loading = "lazy";
-      if (node.dataset.width) image.width = Number(node.dataset.width);
-      if (node.dataset.height) image.height = Number(node.dataset.height);
+      if (node.dataset.width) {
+        image.width = Number(node.dataset.width);
+      }
+      if (node.dataset.height) {
+        image.height = Number(node.dataset.height);
+      }
       image.addEventListener("load", pass.measure, { signal: events.signal });
       image.addEventListener(
         "error",
@@ -56,7 +62,9 @@ export function enhanceEmbeds(ctx: Context, pass: RenderPass): () => void {
         },
         { signal: events.signal },
       );
-      if (image !== node) node.replaceChildren(image);
+      if (image !== node) {
+        node.replaceChildren(image);
+      }
       const inspect = document.createElement("button");
       inspect.type = "button";
       inspect.textContent = "⤢";
@@ -109,15 +117,19 @@ export function enhanceEmbeds(ctx: Context, pass: RenderPass): () => void {
         taskLineCount: selection.text.split("\n").length,
         measure: pass.measure,
       });
-      if (active)
+      if (active) {
         disposers.push(() => {
           void nested.dispose();
         });
-      else await nested.dispose();
+      } else {
+        await nested.dispose();
+      }
     } else {
       node.replaceChildren(button(target, target));
     }
-    if (active) pass.measure();
+    if (active) {
+      pass.measure();
+    }
   };
   for (const node of pass.container.querySelectorAll<HTMLElement>(
     "[data-resource]",
@@ -127,8 +139,11 @@ export function enhanceEmbeds(ctx: Context, pass: RenderPass): () => void {
     const src = node.getAttribute("src");
     restore.push(() => {
       node.innerHTML = original;
-      if (src === null) node.removeAttribute("src");
-      else node.setAttribute("src", src);
+      if (src === null) {
+        node.removeAttribute("src");
+      } else {
+        node.setAttribute("src", src);
+      }
     });
     let resolve: Promise<Resource>;
     if (/^https?:/i.test(target)) {
@@ -159,7 +174,11 @@ export function enhanceEmbeds(ctx: Context, pass: RenderPass): () => void {
   return () => {
     active = false;
     events.abort();
-    for (const dispose of disposers.reverse()) dispose();
-    for (const reset of restore) reset();
+    for (const dispose of disposers.reverse()) {
+      dispose();
+    }
+    for (const reset of restore) {
+      reset();
+    }
   };
 }

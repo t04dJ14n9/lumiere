@@ -51,7 +51,9 @@ export class PropertyTypeStore {
         types = { ...types, [key.toLowerCase()]: kind };
       }
       await this.storage.update(this.key, { ...all, [scope]: types });
-      for (const listener of this.listeners) listener(scope, types);
+      for (const listener of this.listeners) {
+        listener(scope, types);
+      }
     });
     this.pending = update.catch(() => {});
     return update;

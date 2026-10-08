@@ -34,8 +34,11 @@ export class TaskBox extends WidgetType {
           this.line,
           checkbox.checked,
         );
-        if (change) view.dispatch({ changes: change, userEvent: "input.task" });
-        else checkbox.checked = this.checked;
+        if (change) {
+          view.dispatch({ changes: change, userEvent: "input.task" });
+        } else {
+          checkbox.checked = this.checked;
+        }
       },
       { signal: events.signal },
     );

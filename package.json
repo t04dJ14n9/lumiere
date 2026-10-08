@@ -897,7 +897,9 @@
     "test": "node scripts/test.mjs",
     "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
     "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "contributions": "tsx scripts/generate-contributions.ts",
     "package": "pnpm build && vsce package --no-dependencies --no-rewrite-relative-links",
     "ledger": "node scripts/test-ledger.mjs"

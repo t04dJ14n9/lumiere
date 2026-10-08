@@ -15,7 +15,9 @@ export const diagramsWebview: Plugin = {
     let queue = Promise.resolve();
     const cleanups = new Set<() => void>();
     ctx.effect(() => () => {
-      for (const cleanup of cleanups) cleanup();
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
       cleanups.clear();
     });
     ctx.effect(() =>
@@ -33,7 +35,9 @@ export const diagramsWebview: Plugin = {
       }),
     );
     ctx.on("render/fence", (fence, pass) => {
-      if (!diagramLanguage(fence.language)) return undefined;
+      if (!diagramLanguage(fence.language)) {
+        return undefined;
+      }
       let active = true;
       const original = fence.element.innerHTML;
       const cleanup = () => {
@@ -45,9 +49,13 @@ export const diagramsWebview: Plugin = {
       pass.onDispose(cleanup);
       queue = queue
         .then(async () => {
-          if (!active) return;
+          if (!active) {
+            return;
+          }
           const { default: mermaid } = await import("mermaid");
-          if (!active) return;
+          if (!active) {
+            return;
+          }
           mermaid.initialize({
             startOnLoad: false,
             securityLevel: "strict",
@@ -62,7 +70,9 @@ export const diagramsWebview: Plugin = {
             `${prefix}-${++sequence}`,
             fence.source,
           );
-          if (!active) return;
+          if (!active) {
+            return;
+          }
           fence.element.innerHTML = sanitizeGraphics(result.svg);
           fence.element.setAttribute("aria-label", "Mermaid diagram");
           pass.measure();

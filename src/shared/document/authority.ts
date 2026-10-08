@@ -28,7 +28,11 @@ export class Authority {
     }));
   }
 
-  prepare(version: number, changes: unknown[], clientID: string): Prepared | undefined {
+  prepare(
+    version: number,
+    changes: unknown[],
+    clientID: string,
+  ): Prepared | undefined {
     this.validateVersion(version);
     let length = this.history[version]?.changes.length ?? this.doc.length;
     const received = changes.map((json) => {
@@ -64,7 +68,11 @@ export class Authority {
   }
 
   private validateVersion(version: number): void {
-    if (!Number.isSafeInteger(version) || version < 0 || version > this.version) {
+    if (
+      !Number.isSafeInteger(version) ||
+      version < 0 ||
+      version > this.version
+    ) {
       throw new Error("Unknown document revision.");
     }
   }

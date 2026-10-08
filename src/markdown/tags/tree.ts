@@ -10,13 +10,16 @@ export function tagTree(
   nested: boolean,
   frequency: boolean,
 ): TagNode[] {
-  const entries = new Map<string, { tag: string; notes: Set<string>; explicit: boolean }>();
+  const entries = new Map<
+    string,
+    { tag: string; notes: Set<string>; explicit: boolean }
+  >();
   for (const note of notes) {
     for (const tag of note.tags) {
       const parts = tag.split("/");
       for (let length = 1; length <= parts.length; length++) {
-        const path = parts.slice(0, length).join("/"),
-          key = path.toLowerCase();
+        const path = parts.slice(0, length).join("/");
+        const key = path.toLowerCase();
         let entry = entries.get(key);
         if (!entry) {
           entry = { tag: path, notes: new Set(), explicit: false };
@@ -42,7 +45,9 @@ export function tagTree(
   const roots: TagNode[] = [];
   for (const [key, node] of nodes) {
     const parent =
-      nested && key.includes("/") ? nodes.get(key.slice(0, key.lastIndexOf("/"))) : undefined;
+      nested && key.includes("/")
+        ? nodes.get(key.slice(0, key.lastIndexOf("/")))
+        : undefined;
     if (parent) {
       parent.children.push(node);
     } else {
@@ -50,7 +55,10 @@ export function tagTree(
     }
   }
   const sort = (items: TagNode[]): void => {
-    items.sort((a, b) => (frequency ? b.count - a.count : 0) || a.label.localeCompare(b.label));
+    items.sort(
+      (a, b) =>
+        (frequency ? b.count - a.count : 0) || a.label.localeCompare(b.label),
+    );
     items.forEach((node) => sort(node.children));
   };
   sort(roots);

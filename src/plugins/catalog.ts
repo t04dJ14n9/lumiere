@@ -44,8 +44,16 @@ export const features: readonly Manifest[] = [
 
 // Core rank is independent of activation order and shared by both runtimes.
 const owners = [
-  "document", "editor", "dialect", "commands", "vault", "resources",
-  "render", "livePreview", "markers", ...features.map((item) => item.id),
+  "document",
+  "editor",
+  "dialect",
+  "commands",
+  "vault",
+  "resources",
+  "render",
+  "livePreview",
+  "markers",
+  ...features.map((item) => item.id),
 ];
 export function pluginRank(owner: string): number {
   const index = owners.indexOf(owner);

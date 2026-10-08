@@ -7,7 +7,12 @@ import mark from "markdown-it-mark";
 import { frontmatter } from "../properties";
 import type { RenderOptions, RendererOptions } from "./types";
 export type { RenderOptions, RendererOptions } from "./types";
-export { wikiTarget, headingId, decodeMarkdownText, linkDestination } from "./helpers";
+export {
+  wikiTarget,
+  headingId,
+  decodeMarkdownText,
+  linkDestination,
+} from "./helpers";
 import { tags } from "./tags";
 import { wiki } from "./wiki";
 import { comments } from "./comments";
@@ -42,7 +47,10 @@ export function createRenderer(options: RendererOptions = {}) {
   return {
     renderMarkdown(source: string, options: RenderOptions = {}): string {
       const properties = frontmatter(source);
-      const html = md.render(properties ? source.slice(properties.end) : source, options);
+      const html = md.render(
+        properties ? source.slice(properties.end) : source,
+        options,
+      );
       return options.sanitize ? options.sanitize(html) : html;
     },
     renderInline(source: string, options: RenderOptions = {}): string {

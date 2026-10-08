@@ -11,7 +11,9 @@ export const propertiesHost: Plugin<{ panel: PanelShell }> = {
   inject: { required: ["rpc", "workbench", "vault"] },
   apply(ctx) {
     const storage = ctx.workbench.storage;
-    if (!storage) throw new Error("Property preference storage is unavailable");
+    if (!storage) {
+      throw new Error("Property preference storage is unavailable");
+    }
     let store = stores.get(ctx.workbench);
     if (!store) {
       store = new PropertyTypeStore(storage);
@@ -37,7 +39,9 @@ export const propertiesHost: Plugin<{ panel: PanelShell }> = {
     );
     ctx.effect(() =>
       preferences.subscribe((root, types) => {
-        if (root === scope) ctx.rpc.notify(protocol, "types", types);
+        if (root === scope) {
+          ctx.rpc.notify(protocol, "types", types);
+        }
       }),
     );
   },

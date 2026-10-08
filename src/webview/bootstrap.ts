@@ -22,8 +22,8 @@ export async function bootstrap(
     persist?: (state: Infer<typeof viewState>) => void;
   } = {},
 ) {
-  const init = await rpc.call(protocol, "ready", {}),
-    root = Context.create({ rank: pluginRank });
+  const init = await rpc.call(protocol, "ready", {});
+  const root = Context.create({ rank: pluginRank });
   root.provide("rpc", rpc);
   root.plugin(documentWebview, init);
   root.plugin(dialectWebview);
@@ -60,6 +60,8 @@ export async function bootstrap(
   const failed = [...root.runtime.fibers].find(
     (fiber) => fiber.state === "failed",
   );
-  if (failed) throw failed.error;
+  if (failed) {
+    throw failed.error;
+  }
   return root;
 }

@@ -1,36 +1,133 @@
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import path from 'node:path';
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import path from "node:path";
+import legacy from "./eslint.legacy.mjs";
 // Same baseline as PDF Workbench, with architecture boundaries for this project.
 const boundaries = {
-  meta: { type: 'problem', schema: [], messages: { boundary: 'Import violates the pure layer or plugin boundary: {{source}}' } },
+  meta: {
+    type: "problem",
+    schema: [],
+    messages: {
+      boundary: "Import violates the pure layer or plugin boundary: {{source}}",
+    },
+  },
   create(context) {
-    const file = context.filename.replaceAll('\\', '/');
+    const file = context.filename.replaceAll("\\", "/");
     function check(node) {
-      if (!node.source) return;
+      if (!node.source) {
+        return;
+      }
       const source = node.source.value;
-      const target = source.startsWith('.') ? path.resolve(path.dirname(file), source).replaceAll('\\', '/') : source;
+      const target = source.startsWith(".")
+        ? path.resolve(path.dirname(file), source).replaceAll("\\", "/")
+        : source;
       const pure = /\/src\/(kernel|shared|markdown)\//.test(file);
-      let invalid = pure && (source === 'vscode' || source.startsWith('node:') || /\/src\/(host|webview|plugins|workers)\//.test(target));
+      let invalid =
+        pure &&
+        (source === "vscode" ||
+          source.startsWith("node:") ||
+          /\/src\/(host|webview|plugins|workers)\//.test(target));
       const owner = file.match(/\/src\/plugins\/([^/]+)\//)?.[1];
       if (owner) {
         const other = target.match(/\/src\/plugins\/([^/]+)\/([^/]+)$/);
-        invalid ||= Boolean(other && other[1] !== owner && !/^(api|manifest|protocol)(\.ts)?$/.test(other[2]));
-        invalid ||= /\/src\/host\//.test(target) && !(target.endsWith('/host/api/types') && node.importKind === 'type');
-        invalid ||= /\/src\/webview\//.test(target) && !target.includes('/src/webview/ui/');
+        invalid ||= Boolean(
+          other &&
+            other[1] !== owner &&
+            !/^(api|manifest|protocol)(\.ts)?$/.test(other[2]),
+        );
+        invalid ||=
+          /\/src\/host\//.test(target) &&
+          !(target.endsWith("/host/api/types") && node.importKind === "type");
+        invalid ||=
+          /\/src\/webview\//.test(target) &&
+          !target.includes("/src/webview/ui/");
       }
-      if (invalid) context.report({ node, messageId: 'boundary', data: { source } });
+      if (invalid) {
+        context.report({ node, messageId: "boundary", data: { source } });
+      }
     }
-    return { ImportDeclaration: check, ExportNamedDeclaration: check, ExportAllDeclaration: check };
+    return {
+      ImportDeclaration: check,
+      ExportNamedDeclaration: check,
+      ExportAllDeclaration: check,
+    };
   },
 };
+// Code norms (AGENTS.md, "Code norms"). Style rules apply to all code; size
+// rules apply to source, not tests.
+const style = {
+  curly: ["error", "all"],
+  "one-var": ["error", "never"],
+};
+const size = {
+  "no-nested-ternary": "error",
+  "max-depth": ["error", 4],
+  "max-lines": [
+    "error",
+    { max: 400, skipBlankLines: true, skipComments: true },
+  ],
+  "max-lines-per-function": [
+    "error",
+    { max: 60, skipBlankLines: true, skipComments: true, IIFEs: true },
+  ],
+  complexity: ["error", 15],
+  "max-params": ["error", 4],
+  "no-restricted-syntax": [
+    "error",
+    {
+      selector: ":function > Identifier.params[name='this']",
+      message:
+        "Do not spread a class across files with `this:` functions. Extract a collaborator that receives only the state it needs.",
+    },
+    {
+      selector: "PropertyDefinition[value.type='Identifier']",
+      message:
+        "Do not attach imported functions to a class as fields. Define a method or call a collaborator.",
+    },
+  ],
+};
+// eslint.legacy.mjs is the readability backlog: files that broke a size rule
+// when the rules came in. Files only ever leave it.
+const backlog = Object.entries(legacy)
+  .filter(([, files]) => files.length > 0)
+  .map(([rule, files]) => ({ files, rules: { [rule]: "off" } }));
 export default tseslint.config(
-  { ignores: ['dist/**', '.cache/**', 'test-results/**', 'playwright-report/**', 'artifacts/**'] },
-  js.configs.recommended, ...tseslint.configs.recommended,
-  { files: ['**/*.ts'], plugins: { architecture: { rules: { boundaries } } }, rules: {
-    '@typescript-eslint/consistent-type-imports': 'error',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'architecture/boundaries': 'error', eqeqeq: ['error', 'always'],
-  } },
-  { files: ['**/*.mjs'], languageOptions: { globals: { process: 'readonly', console: 'readonly', Buffer: 'readonly', URL: 'readonly' } } },
+  {
+    ignores: [
+      "dist/**",
+      ".cache/**",
+      "test-results/**",
+      "playwright-report/**",
+      "artifacts/**",
+    ],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.ts"],
+    plugins: { architecture: { rules: { boundaries } } },
+    rules: {
+      "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
+      "architecture/boundaries": "error",
+      eqeqeq: ["error", "always"],
+    },
+  },
+  { files: ["**/*.ts", "**/*.mjs"], rules: style },
+  { files: ["src/**/*.ts"], ignores: ["**/*.test.ts"], rules: size },
+  ...backlog,
+  {
+    files: ["**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+        URL: "readonly",
+      },
+    },
+  },
 );

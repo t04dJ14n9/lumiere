@@ -7,14 +7,27 @@ test("inline projections retain source offsets through nested formatting and esc
   const mapped = inlineSourceMap(source);
   assert.equal(mapped.text, "Bold inner and A | pipe");
   assert.equal(mapped.positions[2], source.indexOf("Bold") + 2);
-  assert.equal(mapped.positions[mapped.text.indexOf("inner") + 3], source.indexOf("inner") + 3);
-  assert.equal(mapped.positions[mapped.text.indexOf("|") + 1], source.indexOf("|") + 1);
+  assert.equal(
+    mapped.positions[mapped.text.indexOf("inner") + 3],
+    source.indexOf("inner") + 3,
+  );
+  assert.equal(
+    mapped.positions[mapped.text.indexOf("|") + 1],
+    source.indexOf("|") + 1,
+  );
 });
 
 test("inline projections preserve entities, links and literal code source", () => {
-  const source = "# [**label**](target) &amp; ` **literal** ` <br> tail %%hidden%%";
+  const source =
+    "# [**label**](target) &amp; ` **literal** ` <br> tail %%hidden%%";
   const mapped = inlineSourceMap(source);
   assert.equal(mapped.text, "# label & **literal**  tail ");
-  assert.equal(mapped.positions[mapped.text.indexOf("&") + 1], source.indexOf("&amp;") + 5);
-  assert.equal(mapped.positions[mapped.text.indexOf("literal") + 2], source.indexOf("literal") + 2);
+  assert.equal(
+    mapped.positions[mapped.text.indexOf("&") + 1],
+    source.indexOf("&amp;") + 5,
+  );
+  assert.equal(
+    mapped.positions[mapped.text.indexOf("literal") + 2],
+    source.indexOf("literal") + 2,
+  );
 });

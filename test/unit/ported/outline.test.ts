@@ -11,7 +11,8 @@ test("outline recognizes real headings and excludes properties, code and math", 
   );
 });
 test("fold ranges respect quote boundaries and repeated headings get distinct identities", () => {
-  const source = "# Parent\n\n> ## Child\n> body\n\nOutside quote\n\n## Child\nbody\n";
+  const source =
+    "# Parent\n\n> ## Child\n> body\n\nOutside quote\n\n## Child\nbody\n";
   const [parent, quote, child] = headings(source);
   assert.equal(parent!.end, source.length);
   assert.ok(quote!.end < source.indexOf("Outside quote"));

@@ -1,7 +1,11 @@
 import { isSeq, isScalar, parseDocument, stringify } from "yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import type { PropertyScalar } from "./values";
-export function listPropertyChange(source: string, key: string, value: readonly PropertyScalar[]) {
+export function listPropertyChange(
+  source: string,
+  key: string,
+  value: readonly PropertyScalar[],
+) {
   const header = headerParts(source);
   if (!header || !frontmatter(source)?.editableLists?.includes(key)) {
     return undefined;
@@ -61,16 +65,26 @@ export function scalarPropertyChange(
     }
   }
   const candidate = parseDocument(
-    header.body.slice(0, node.range[0]) + insert + header.body.slice(node.range[1]),
+    header.body.slice(0, node.range[0]) +
+      insert +
+      header.body.slice(node.range[1]),
     { uniqueKeys: true },
   );
   const checked = candidate.get(key, true);
-  if (candidate.errors.length || !isScalar(checked) || !Object.is(checked.value, value)) {
+  if (
+    candidate.errors.length ||
+    !isScalar(checked) ||
+    !Object.is(checked.value, value)
+  ) {
     return;
   }
   const offset = source.indexOf("\n") + 1;
   return { from: offset + node.range[0], to: offset + node.range[1], insert };
 }
-export function booleanPropertyChange(source: string, key: string, value: boolean) {
+export function booleanPropertyChange(
+  source: string,
+  key: string,
+  value: boolean,
+) {
   return scalarPropertyChange(source, key, value);
 }

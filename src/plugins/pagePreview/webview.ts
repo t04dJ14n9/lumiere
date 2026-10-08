@@ -54,7 +54,9 @@ export const pagePreviewWebview: Plugin = {
               );
             }
             update(update: { docChanged: boolean }): void {
-              if (update.docChanged) this.controller.close();
+              if (update.docChanged) {
+                this.controller.close();
+              }
             }
             destroy(): void {
               this.controller.dispose();

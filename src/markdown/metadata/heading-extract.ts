@@ -11,8 +11,8 @@ export interface Heading {
   scope: string;
 }
 export function extractHeadings(source: string, tree: Tree): Heading[] {
-  const result: Heading[] = [],
-    counts = new Map<string, number>();
+  const result: Heading[] = [];
+  const counts = new Map<string, number>();
   tree.iterate({
     enter(node) {
       const match = /^(?:ATX|Setext)Heading([1-6])$/.exec(node.name);
@@ -26,15 +26,17 @@ export function extractHeadings(source: string, tree: Tree): Heading[] {
         .replace(/\s+#+\s*$/, "");
       const label = (inline.parseInline(text, {})[0]?.children ?? [])
         .map((token) =>
-          ["text", "code_inline", "image"].includes(token.type) ? token.content : "",
+          ["text", "code_inline", "image"].includes(token.type)
+            ? token.content
+            : "",
         )
         .join("")
         .replace(
           /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
           (_all, target: string, alias?: string) => alias ?? target,
         );
-      const base = `${match[1]}:${label}`,
-        count = counts.get(base) ?? 0;
+      const base = `${match[1]}:${label}`;
+      const count = counts.get(base) ?? 0;
       counts.set(base, count + 1);
       const parent = node.node.parent;
       result.push({
@@ -51,7 +53,10 @@ export function extractHeadings(source: string, tree: Tree): Heading[] {
   result.forEach((heading, index) => {
     const next = result
       .slice(index + 1)
-      .find((other) => other.scope === heading.scope && other.level <= heading.level);
+      .find(
+        (other) =>
+          other.scope === heading.scope && other.level <= heading.level,
+      );
     if (next) {
       heading.end = Math.max(heading.to, next.from - 1);
     }

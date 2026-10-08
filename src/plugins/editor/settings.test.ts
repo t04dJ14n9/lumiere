@@ -32,6 +32,7 @@ test("editor indentation settings reconfigure without replacing document, select
     assert.equal(state.selection, original.selection);
     assert.equal(state.field(field), original.field(field));
   }
-  for (const tabSize of [0, 17, 1.5, NaN, "4"])
+  for (const tabSize of [0, 17, 1.5, NaN, "4"]) {
     assert.throws(() => config.parse({ tabSize }));
+  }
 });

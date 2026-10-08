@@ -21,7 +21,9 @@ export function featureController(root: Context) {
     queue = queue
       .catch(() => {})
       .then(async () => {
-        if (disposed) return;
+        if (disposed) {
+          return;
+        }
         for (const manifest of features) {
           const setting = settings[manifest.id];
           const enabled =

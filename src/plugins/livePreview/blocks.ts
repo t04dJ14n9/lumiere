@@ -25,9 +25,11 @@ function index(state: Parameters<typeof revealed>[0]) {
   const blocks: (RenderBlock & { renderer: BlockRenderer })[] = [];
   state.field(documentTree).iterate({
     enter(node) {
-      if (blocks.length && node.from < blocks[blocks.length - 1]!.to)
+      if (blocks.length && node.from < blocks[blocks.length - 1]!.to) {
         return false;
-      const renderer = state.facet(blockRenderers)
+      }
+      const renderer = state
+        .facet(blockRenderers)
         .find((r) => r.match(node, state));
       if (renderer) {
         const range = renderer.range?.(node, state) ?? node;
@@ -100,8 +102,9 @@ export function blockDecorations(report: (error: unknown) => void) {
           (block.renderer.editing === "reveal" &&
             revealed(state, block.from, block.to)) ||
           block.renderer.showSource?.(state, block)
-        )
+        ) {
           return [];
+        }
         try {
           return [
             Decoration.replace({

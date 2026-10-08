@@ -1,0 +1,10 @@
+# Prettier formats code. Documentation, generated files and fixtures keep their own layout.
+dist/
+artifacts/
+test-results/
+playwright-report/
+.cache/
+pnpm-lock.yaml
+package.json
+*.md
+test/fixtures/

@@ -14,7 +14,9 @@ import { footnotes } from "./footnotes";
 import { wiki } from "./wiki";
 import { highlight } from "./highlight";
 import { comments } from "./comments";
-const data = defineLanguageFacet({ commentTokens: { block: { open: "%%", close: "%%" } } });
+const data = defineLanguageFacet({
+  commentTokens: { block: { open: "%%", close: "%%" } },
+});
 export const markdownParser = parser.configure([
   GFM,
   frontmatter,
@@ -31,7 +33,10 @@ export function markdownLanguageSupport(): LanguageSupport {
   return new LanguageSupport(language);
 }
 const trees = new WeakMap<Text, Tree>();
-export function parseMarkdown(doc: Text, fragments: readonly TreeFragment[] = []): Tree {
+export function parseMarkdown(
+  doc: Text,
+  fragments: readonly TreeFragment[] = [],
+): Tree {
   let tree = trees.get(doc);
   if (!tree) {
     tree = markdownParser.parse(doc.toString(), fragments);

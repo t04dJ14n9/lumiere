@@ -47,7 +47,9 @@ export class TableWidget extends WidgetType {
     view: EditorView,
     previous: this,
   ): boolean {
-    if (this.environment !== previous.environment) return false;
+    if (this.environment !== previous.environment) {
+      return false;
+    }
     const controller = controllers.get(root);
     if (!controller) {
       return false;

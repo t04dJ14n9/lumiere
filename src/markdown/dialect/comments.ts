@@ -10,7 +10,9 @@ export const comments: MarkdownConfig = {
           return -1;
         }
         const end = cx.text.indexOf("%%", pos + 2 - cx.offset);
-        return end < 0 ? -1 : cx.addElement(cx.elt("ObsidianComment", pos, end + cx.offset + 2));
+        return end < 0
+          ? -1
+          : cx.addElement(cx.elt("ObsidianComment", pos, end + cx.offset + 2));
       },
     },
   ],

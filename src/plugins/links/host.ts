@@ -19,37 +19,46 @@ export const linksHost: Plugin<{ panel: PanelShell }> = {
           },
       ),
     );
-    if (ctx.workbench.navigation)
+    if (ctx.workbench.navigation) {
       ctx.effect(() =>
         ctx.workbench.navigation!.onReveal((uri, fragment) => {
-          if (uri === panel.document.uri && panel.active())
+          if (uri === panel.document.uri && panel.active()) {
             ctx.rpc.notify(protocol, "navigate", fragment);
+          }
         }),
       );
+    }
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "open", async (request) => {
         const sourceUri = request.source ?? panel.document.uri;
         if (sourceUri !== panel.document.uri) {
-          if (!ctx.resources.authorize)
+          if (!ctx.resources.authorize) {
             throw new Error("Resource authorization unavailable");
+          }
           await ctx.resources.authorize(sourceUri);
         }
         const claimed = ctx.bail("links/open", {
           ...request,
           source: sourceUri,
         });
-        if (claimed) return claimed;
+        if (claimed) {
+          return claimed;
+        }
         const navigation = ctx.workbench.navigation;
-        if (!navigation) throw new Error("Navigation unavailable");
+        if (!navigation) {
+          throw new Error("Navigation unavailable");
+        }
         const scheme = externalScheme(request.href);
         if (scheme) {
-          if (["javascript", "data", "command", "file"].includes(scheme))
+          if (["javascript", "data", "command", "file"].includes(scheme)) {
             throw new Error("Unsafe link scheme");
+          }
           if (
             !["http", "https", "mailto", navigation.scheme].includes(scheme) &&
             !(await navigation.confirm(`Open ${scheme} application link?`))
-          )
+          ) {
             return false;
+          }
           return navigation.external(request.href);
         }
         const { path, fragment } = linkParts(request.href);
@@ -74,7 +83,9 @@ export const linksHost: Plugin<{ panel: PanelShell }> = {
             ),
           });
         }
-        if (!uri) return false;
+        if (!uri) {
+          return false;
+        }
         await navigation.open(root, uri, fragment, request.side, request.at);
         return true;
       }),

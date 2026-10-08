@@ -13,11 +13,17 @@ export const documentTree = StateField.define<Tree>({
     transaction.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
       changes.push({ fromA, toA, fromB, toB });
     });
-    let fragments = TreeFragment.applyChanges(TreeFragment.addTree(tree), changes);
+    let fragments = TreeFragment.applyChanges(
+      TreeFragment.addTree(tree),
+      changes,
+    );
     if (changes[0]!.fromA <= transaction.startState.doc.line(1).to) {
       // A moved horizontal rule may now open frontmatter. Its meaning depends
       // on being at document start, which reusable Markdown nodes do not track.
-      const end = Math.min(transaction.newDoc.length, transaction.newDoc.line(1).to + 1);
+      const end = Math.min(
+        transaction.newDoc.length,
+        transaction.newDoc.line(1).to + 1,
+      );
       fragments = fragments.flatMap((fragment) =>
         fragment.to <= end
           ? []
