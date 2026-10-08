@@ -1,4 +1,4 @@
-import { EditorView } from "@codemirror/view";
+import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
@@ -109,47 +109,64 @@ export const linksWebview: Plugin = {
       (!event.altKey &&
         !event.shiftKey &&
         link.classList.contains("md-link-rendered"));
+    const handlers = {
+      mousedown(event: MouseEvent) {
+        const link = target(event);
+        if (
+          event.button === 0 &&
+          link?.hasAttribute("data-href") &&
+          allowed(event, link)
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+          return true;
+        }
+        return false;
+      },
+      click(event: MouseEvent) {
+        const link = target(event);
+        if (!link) return false;
+        event.preventDefault();
+        const selection = view.dom.ownerDocument.getSelection();
+        if (
+          !allowed(event, link) ||
+          (selection &&
+            !selection.isCollapsed &&
+            (link.contains(selection.anchorNode) ||
+              link.contains(selection.focusNode)))
+        )
+          return true;
+        const href = link.getAttribute("href") ?? link.dataset.href;
+        if (href)
+          void open(
+            href,
+            link.dataset.wiki === "true" ||
+              link.classList.contains("internal-link"),
+            (event.metaKey || event.ctrlKey) && event.altKey,
+            link.closest<HTMLElement>("[data-note-source]")?.dataset.noteSource,
+          ).catch((error) => ctx.logger.error("Link failed", error));
+        return true;
+      },
+    };
     ctx.effect(() =>
       ctx.editor.extend(
-        EditorView.domEventHandlers({
-          mousedown(event) {
-            const link = target(event);
-            if (
-              event.button === 0 &&
-              link?.hasAttribute("data-href") &&
-              allowed(event, link)
-            ) {
-              event.preventDefault();
-              return true;
+        ViewPlugin.fromClass(
+          class {
+            private readonly events = new AbortController();
+            constructor() {
+              view.dom.addEventListener("mousedown", handlers.mousedown, {
+                capture: true,
+                signal: this.events.signal,
+              });
+              view.dom.addEventListener("click", handlers.click, {
+                signal: this.events.signal,
+              });
             }
-            return false;
+            destroy(): void {
+              this.events.abort();
+            }
           },
-          click(event) {
-            const link = target(event);
-            if (!link) return false;
-            event.preventDefault();
-            const selection = view.dom.ownerDocument.getSelection();
-            if (
-              !allowed(event, link) ||
-              (selection &&
-                !selection.isCollapsed &&
-                (link.contains(selection.anchorNode) ||
-                  link.contains(selection.focusNode)))
-            )
-              return true;
-            const href = link.getAttribute("href") ?? link.dataset.href;
-            if (href)
-              void open(
-                href,
-                link.dataset.wiki === "true" ||
-                  link.classList.contains("internal-link"),
-                (event.metaKey || event.ctrlKey) && event.altKey,
-                link.closest<HTMLElement>("[data-note-source]")?.dataset
-                  .noteSource,
-              ).catch((error) => ctx.logger.error("Link failed", error));
-            return true;
-          },
-        }),
+        ),
       ),
     );
     ctx.effect(() =>

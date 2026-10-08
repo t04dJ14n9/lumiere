@@ -1,3 +1,4 @@
+import type { RenderPass } from "../../../src/plugins/render/api";
 import test from "node:test";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import assert from "node:assert/strict";
@@ -124,6 +125,38 @@ function fixture() {
   };
 }
 
+async function renderHooks(root: Context) {
+  let reads = 0;
+  const container = {
+    innerHTML: "code",
+    querySelectorAll() {
+      reads++;
+      return [];
+    },
+  } as unknown as HTMLElement;
+  const pass: RenderPass = {
+    source: "body",
+    container,
+    sourceLine: 0,
+    ancestry: [],
+    renderKey: "body",
+    measure() {},
+    async dispose() {},
+    // Model a pass removed before any lazy work can resolve.
+    onDispose(stop) {
+      void stop();
+    },
+  };
+  await root.serial("render/preProcess", pass);
+  await root.serial("render/postProcess", pass);
+  const fence = root.bail(
+    "render/fence",
+    { language: "mermaid", source: "graph TD; A-->B", element: container },
+    pass,
+  );
+  return { reads, prepared: pass.displaySource !== undefined, fence };
+}
+
 for (const manifest of features) {
   test(`${manifest.id}: disabling and re-enabling disposes its extensions and commands`, async () => {
     const f = fixture();
@@ -138,11 +171,26 @@ for (const manifest of features) {
     for (const command of manifest.contributes?.commands ?? []) {
       assert.equal(f.handlers.has(command.editorCommand!), true);
     }
+    const activeHooks = await renderHooks(f.root);
+    if (
+      ["codeBlocks", "math", "callouts", "tasks", "embeds"].includes(
+        manifest.id,
+      )
+    )
+      assert.ok(activeHooks.reads > 0);
+    if (manifest.id === "footnotes") assert.equal(activeHooks.prepared, true);
+    if (manifest.id === "diagrams") assert.equal(activeHooks.fence, true);
     await f.configure({});
+    assert.deepEqual(await renderHooks(f.root), {
+      reads: 0,
+      prepared: false,
+      fence: undefined,
+    });
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
     await f.configure({ [manifest.id]: { enabled: true, config } });
     assert.ok(f.extensions > 0);
+    assert.deepEqual(await renderHooks(f.root), activeHooks);
     await f.root.dispose();
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);

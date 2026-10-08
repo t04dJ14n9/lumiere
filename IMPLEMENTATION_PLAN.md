@@ -815,3 +815,17 @@ controller/cell projection, inlineTitle rename/view transfer, tags/suggest/searc
 pasteHtml/copyForAgent/markers. Then Phase 5 index/host features, Phase 6 command/
 settings/parity inventory, Phase 7 public API and Phase 8 packaging/handover remain.
 No phase-completion claim; owner manual acceptance is not run.
+
+### Phase 4 progress — Rendered link routing, 2026-10-07
+
+Delivered: direct, disposable editor-DOM link listeners so interactive widgets
+cannot bypass the links plugin via CodeMirror's ignoreEvent filter. Extended the
+kernel toggle tests to verify render pre/post-processors and fence claims are
+removed and restored, in addition to compartments and commands.
+Checks: `pnpm check` (187 unit tests passed), `pnpm test:browser` (14/14).
+Native not rerun: no host wiring change since embeds' 1/1 result.
+Ledger: 86/15/2/333/12. Deviations: none.
+Known issues: exact remaining implementation is Phase 4 steps 6–10 (properties,
+tables, inlineTitle, tags/suggest/search, pasteHtml/copyForAgent/markers), then
+Phases 5–8. The latest completed feature is pagePreview. No Phase 4 completion
+or owner acceptance is claimed. Next unit is the structured properties port.
