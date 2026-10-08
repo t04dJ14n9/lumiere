@@ -1937,3 +1937,19 @@ Known issues: markdown/search/canvas; embeds image-dialog/image/post-process/web
 webview; livePreview inline/rendered-position/webview; remaining README/manual
 inventory and readability completion checks. Then remaining Phase 4 plugins,
 Claude's Phase 5 completion gate, and Phases 6–8 as specified above.
+
+### Readability pass progress — Canvas search data, 2026-10-08
+
+Delivered: canvas-data.ts validates node/edge identity and optional fields;
+canvas geometry names side selection, coordinate offsets and self-loop routing.
+Public exports and validation errors remain unchanged. Added three units for
+invalid payloads/edges, coordinate mapping, facing curves and full self loops.
+Backlog: 9 → 8 distinct files; long-function 9 → 8; complexity 3 → 2;
+nested-ternary 3 → 2; other counts unchanged. No new exceptions or behavior fixes.
+Checks: `pnpm check` 347/347; log `docs/checks/readability-canvas-data-check.txt`.
+Smoke suites not rerun: pure data/geometry only. Ledger: 87/16/2/333/10.
+Deviations: none; this preserves existing search foundation, not a Canvas feature.
+Known issues: embeds image-dialog/image/post-process/webm/webview and livePreview
+inline/rendered-position/webview; remaining README/manual inventory and readability
+completion checks. Then remaining Phase 4 plugins, Claude's Phase 5 completion
+gate and Phases 6–8 as specified above. Owner acceptance unrun.

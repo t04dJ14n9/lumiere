@@ -56,115 +56,7 @@ export function canvasState(value: unknown): CanvasState | undefined {
     fit: value.fit,
   };
 }
-const sides = ["top", "right", "bottom", "left"];
-export function canvasData(source: string): CanvasData {
-  const data: unknown = JSON.parse(source);
-  if (
-    !record(data) ||
-    (data.nodes !== undefined && !Array.isArray(data.nodes)) ||
-    (data.edges !== undefined && !Array.isArray(data.edges))
-  ) {
-    throw new Error("Canvas must contain node and edge arrays.");
-  }
-  const nodes: CanvasNode[] = [];
-  const edges: CanvasEdge[] = [];
-  const ids = new Set<string>();
-  for (const node of data.nodes ?? []) {
-    if (
-      !record(node) ||
-      typeof node.id !== "string" ||
-      ids.has(node.id) ||
-      !["text", "file", "link", "group"].includes(String(node.type)) ||
-      !["x", "y", "width", "height"].every(
-        (key) =>
-          typeof node[key] === "number" && Number.isSafeInteger(node[key]),
-      ) ||
-      Number(node.width) <= 0 ||
-      Number(node.height) <= 0
-    ) {
-      throw new Error("Canvas contains an invalid or duplicate node.");
-    }
-    for (const field of [
-      "color",
-      "text",
-      "file",
-      "subpath",
-      "url",
-      "label",
-      "background",
-      "backgroundStyle",
-    ]) {
-      if (node[field] !== undefined && typeof node[field] !== "string") {
-        throw new Error(`Invalid Canvas node ${field}.`);
-      }
-    }
-    const required =
-      node.type === "text"
-        ? "text"
-        : node.type === "file"
-          ? "file"
-          : node.type === "link"
-            ? "url"
-            : undefined;
-    if (required && typeof node[required] !== "string") {
-      throw new Error(`Canvas node requires ${required}.`);
-    }
-    if (
-      node.subpath !== undefined &&
-      (typeof node.subpath !== "string" || !node.subpath.startsWith("#"))
-    ) {
-      throw new Error("Canvas subpaths must begin with #.");
-    }
-    if (
-      node.backgroundStyle !== undefined &&
-      (typeof node.backgroundStyle !== "string" ||
-        !["cover", "ratio", "repeat"].includes(node.backgroundStyle))
-    ) {
-      throw new Error("Invalid Canvas background style.");
-    }
-    ids.add(node.id);
-    nodes.push(node as unknown as CanvasNode);
-  }
-  const edgeIds = new Set<string>();
-  for (const edge of data.edges ?? []) {
-    if (
-      !record(edge) ||
-      typeof edge.id !== "string" ||
-      edgeIds.has(edge.id) ||
-      typeof edge.fromNode !== "string" ||
-      !ids.has(edge.fromNode) ||
-      typeof edge.toNode !== "string" ||
-      !ids.has(edge.toNode)
-    ) {
-      throw new Error("Canvas contains an invalid edge.");
-    }
-    for (const key of ["fromSide", "toSide"]) {
-      if (
-        edge[key] !== undefined &&
-        (typeof edge[key] !== "string" || !sides.includes(edge[key]))
-      ) {
-        throw new Error("Invalid Canvas edge side.");
-      }
-    }
-    for (const key of ["fromEnd", "toEnd"]) {
-      if (
-        edge[key] !== undefined &&
-        (typeof edge[key] !== "string" ||
-          !["none", "arrow"].includes(edge[key]))
-      ) {
-        throw new Error("Invalid Canvas edge end.");
-      }
-    }
-    for (const key of ["label", "color"]) {
-      if (edge[key] !== undefined && typeof edge[key] !== "string") {
-        throw new Error(`Invalid Canvas edge ${key}.`);
-      }
-    }
-    edgeIds.add(edge.id);
-    edges.push(edge as unknown as CanvasEdge);
-  }
-  return { nodes, edges };
-}
+export { canvasData } from "./canvas-data";
 export function canvasColor(value?: string): string {
   const colors = [
     "#e05252",
@@ -206,12 +98,8 @@ export function edgePoint(
   side: string,
 ): { x: number; y: number } {
   return {
-    x:
-      node.x +
-      (side === "left" ? 0 : side === "right" ? node.width : node.width / 2),
-    y:
-      node.y +
-      (side === "top" ? 0 : side === "bottom" ? node.height : node.height / 2),
+    x: node.x + sideOffset(side, "left", "right", node.width),
+    y: node.y + sideOffset(side, "top", "bottom", node.height),
   };
 }
 
@@ -229,14 +117,7 @@ export function edgeCurve(
 ): { path: string; label: Point; bounds: ReturnType<typeof canvasBounds> } {
   const dx = to.x + to.width / 2 - from.x - from.width / 2;
   const dy = to.y + to.height / 2 - from.y - from.height / 2;
-  const automatic =
-    Math.abs(dx) >= Math.abs(dy)
-      ? dx >= 0
-        ? "right"
-        : "left"
-      : dy >= 0
-        ? "bottom"
-        : "top";
+  const automatic = facingSide(dx, dy);
   const opposite: Record<string, string> = {
     top: "bottom",
     bottom: "top",
@@ -248,13 +129,6 @@ export function edgeCurve(
     edge.toSide ?? (from.id === to.id ? "top" : opposite[automatic]!);
   const start = edgePoint(from, fromSide);
   const end = edgePoint(to, toSide);
-  const outside = (point: Point, side: string, distance: number): Point => ({
-    x: point.x + direction[side]!.x * distance,
-    y: point.y + direction[side]!.y * distance,
-  });
-  const format = (point: Point): string => `${point.x} ${point.y}`;
-  const boundsFor = (points: Point[]) =>
-    canvasBounds(points.map((point) => ({ ...point, width: 0, height: 0 })));
   if (from.id !== to.id) {
     const distance = Math.max(40, Math.min(160, Math.hypot(dx, dy) / 2));
     const a = outside(start, fromSide, distance);
@@ -268,13 +142,29 @@ export function edgeCurve(
       bounds: boundsFor([start, a, b, end]),
     };
   }
+  return loopCurve({ from, fromSide, toSide, start, end });
+}
+
+function loopCurve({
+  from,
+  fromSide,
+  toSide,
+  start,
+  end,
+}: {
+  from: CanvasNode;
+  fromSide: string;
+  toSide: string;
+  start: Point;
+  end: Point;
+}): ReturnType<typeof edgeCurve> {
   const margin = 64;
   const order = ["top", "right", "bottom", "left"];
   const first = order.indexOf(fromSide);
   const last = order.indexOf(toSide);
   const clockwise = (last - first + 4) % 4;
   const step = clockwise <= 2 ? 1 : -1;
-  const steps = clockwise === 0 ? 4 : step === 1 ? clockwise : 4 - clockwise;
+  const steps = loopSteps(clockwise, step);
   const left = from.x - margin;
   const top = from.y - margin;
   const right = from.x + from.width + margin;
@@ -290,16 +180,6 @@ export function edgeCurve(
     points.push(corners[(first + (step === 1 ? i : -i - 1) + 8) % 4]!);
   }
   points.push(outside(end, toSide, margin), end);
-  const towards = (point: Point, other: Point): Point => {
-    const amount = Math.min(
-      0.5,
-      12 / Math.hypot(other.x - point.x, other.y - point.y),
-    );
-    return {
-      x: point.x + (other.x - point.x) * amount,
-      y: point.y + (other.y - point.y) * amount,
-    };
-  };
   let path = `M ${format(start)}`;
   for (let i = 1; i < points.length - 1; i++) {
     const point = points[i]!;
@@ -311,4 +191,47 @@ export function edgeCurve(
     label: points[Math.floor(points.length / 2)]!,
     bounds: boundsFor(points),
   };
+}
+
+const outside = (point: Point, side: string, distance: number): Point => ({
+  x: point.x + direction[side]!.x * distance,
+  y: point.y + direction[side]!.y * distance,
+});
+const format = (point: Point): string => `${point.x} ${point.y}`;
+const boundsFor = (points: Point[]) =>
+  canvasBounds(points.map((point) => ({ ...point, width: 0, height: 0 })));
+
+const towards = (point: Point, other: Point): Point => {
+  const amount = Math.min(
+    0.5,
+    12 / Math.hypot(other.x - point.x, other.y - point.y),
+  );
+  return {
+    x: point.x + (other.x - point.x) * amount,
+    y: point.y + (other.y - point.y) * amount,
+  };
+};
+
+function loopSteps(clockwise: number, step: number): number {
+  if (clockwise === 0) {
+    return 4;
+  }
+  return step === 1 ? clockwise : 4 - clockwise;
+}
+function facingSide(dx: number, dy: number): string {
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0 ? "right" : "left";
+  }
+  return dy >= 0 ? "bottom" : "top";
+}
+function sideOffset(
+  side: string,
+  start: string,
+  end: string,
+  length: number,
+): number {
+  if (side === start) {
+    return 0;
+  }
+  return side === end ? length : length / 2;
 }
