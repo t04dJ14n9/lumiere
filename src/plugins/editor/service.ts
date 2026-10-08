@@ -1,3 +1,4 @@
+import { editorSettings } from "./settings";
 import { bindCaller, type CallerBound } from "../../kernel";
 import type { EditorService } from "./api";
 import type { Endpoint } from "../../shared/rpc/endpoint";
@@ -36,6 +37,9 @@ export function createEditorService(options: {
       });
     },
     view,
+    get settings() {
+      return view.state.facet(editorSettings);
+    },
     clipboard: createClipboard(rpc),
     source: source,
     viewState: contributions,

@@ -26,7 +26,10 @@ export async function contributions() {
   const menus = manifests.flatMap((manifest) =>
     (manifest.contributes?.commands ?? []).map((command) => ({
       command: `markdownWorkbench.${command.id}`,
-      when: whenEnabled(manifest, command.scope),
+      when:
+        command.palette === false
+          ? "false"
+          : whenEnabled(manifest, command.scope),
     })),
   );
   const views = manifests.flatMap((manifest) =>
@@ -101,31 +104,17 @@ export async function contributions() {
                 Record<string, unknown>
               >) ?? {},
             ).map(([key, value]) => [
-              `markdownWorkbench.${manifest.id}.${key}`,
+              `markdownWorkbench.${manifest.configKeys?.[key] ?? `${manifest.id}.${key}`}`,
               { ...value, scope: "resource" },
             ]),
           ),
         ),
-        "markdownWorkbench.files.newNoteFolder": {
-          type: "string",
-          default: "",
-          scope: "resource",
-          description:
-            "New notes: empty for vault root, . for current folder, or a vault-relative path.",
-        },
         "markdownWorkbench.preset": {
           type: "string",
           enum: ["obsidian", "minimal"],
           default: "obsidian",
           scope: "resource",
           description: "Editor plugin preset.",
-        },
-        "markdownWorkbench.editor.defaultMode": {
-          type: "string",
-          enum: ["livePreview", "source"],
-          default: "livePreview",
-          scope: "resource",
-          description: "Initial editing mode.",
         },
       },
     },

@@ -1,11 +1,11 @@
 import type { VaultIndex, VaultFile } from "../vault/api";
-import type { Suggestion } from "./protocol";
 import { prepareFuzzyText } from "../../shared/fuzzy";
 import { nameOf } from "../../shared/vault-path";
-type Value =
+export type Value =
   | { kind: "literal"; text: string }
   | { kind: "file"; target: VaultFile; alias?: string }
-  | { kind: "block"; target: VaultFile; id: string };
+  | { kind: "block"; target: VaultFile; id: string }
+  | { kind: "heading"; target: VaultFile; text: string };
 export interface Candidate {
   label: string;
   detail: string;
@@ -29,7 +29,7 @@ export function candidate(
   };
 }
 function candidateOrder(value: Value): string {
-  if (value.kind === "literal") {
+  if (value.kind === "literal" || value.kind === "heading") {
     return value.text;
   }
   return value.target.path;
@@ -43,7 +43,8 @@ export function fileCandidates(
   if (kind === "heading") {
     return (metadata?.headings ?? []).map(({ heading, level }) =>
       candidate(heading, `H${level} · ${file.path}`, {
-        kind: "literal",
+        kind: "heading",
+        target: file,
         text: heading,
       }),
     );
@@ -67,27 +68,6 @@ export function fileCandidates(
       candidate(alias, file.path, { kind: "file", target: file, alias }),
     ),
   ];
-}
-export function materialize(
-  vault: VaultIndex,
-  source: string,
-  entry: Candidate,
-  globalBlock: boolean,
-): Suggestion {
-  const value = entry.value;
-  let insert: string;
-  if (value.kind === "literal") {
-    insert = value.text;
-  } else if (value.kind === "block") {
-    insert = globalBlock
-      ? `${vault.linkText(value.target, source)}#^${value.id}`
-      : value.id;
-  } else {
-    insert =
-      vault.linkText(value.target, source) +
-      (value.alias ? `|${value.alias}` : "");
-  }
-  return { label: entry.label, detail: entry.detail, insert };
 }
 export function tagCandidates(vault: VaultIndex): Candidate[] {
   const counts = new Map<string, Map<string, number>>();

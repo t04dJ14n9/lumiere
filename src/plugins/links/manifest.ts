@@ -6,6 +6,16 @@ export const config = Schema.object({
   ),
   useWikilinks: Schema.boolean().default(true),
   folderNote: Schema.string().default(""),
+  newNoteFolder: Schema.string()
+    .default("")
+    .description(
+      "New notes: empty for vault root, . for current folder, or a vault-relative path.",
+    ),
+  attachmentFolder: Schema.string()
+    .default("")
+    .description(
+      "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+    ),
 });
 export default defineManifest({
   id: "links",
@@ -15,6 +25,10 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   config,
+  configKeys: {
+    newNoteFolder: "files.newNoteFolder",
+    attachmentFolder: "files.attachmentFolder",
+  },
   contributes: {
     commands: [
       {

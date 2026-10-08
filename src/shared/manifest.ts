@@ -1,6 +1,8 @@
 import type { Schema } from "../kernel";
 export interface Manifest {
   readonly config?: Schema<unknown>;
+  /** Public setting paths for fields shared with the files namespace. */
+  readonly configKeys?: Readonly<Record<string, string>>;
   readonly id: string;
   readonly title: string;
   readonly description: string;
@@ -24,6 +26,7 @@ export interface Manifest {
       id: string;
       title: string;
       editorCommand?: string;
+      palette?: boolean;
       key?: string;
       mac?: string;
       /**

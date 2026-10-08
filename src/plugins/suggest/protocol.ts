@@ -5,6 +5,7 @@ export const query = Schema.object({
   note: Schema.string().max(4096).optional(),
 });
 export const suggestion = Schema.object({
+  replaceLink: Schema.boolean().optional(),
   label: Schema.string().max(8192),
   insert: Schema.string().max(8192),
   detail: Schema.string().max(8192),

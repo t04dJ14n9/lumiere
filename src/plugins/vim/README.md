@@ -29,3 +29,7 @@ and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
 The dependency has no public `removeEx` API, so stopped callbacks are deactivated
 rather than removed. Text, save and undo remain VS Code's. Mode transfer preserves
 selection; exact Vim/IME interaction parity awaits the owner's manual testing.
+
+The host-shortcut consumer is hidden from the command palette. Its collision
+bindings remain those of the pinned source and still need owner comparison on
+each platform; no verify shortcut is assigned.

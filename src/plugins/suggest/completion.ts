@@ -25,9 +25,16 @@ export function completionEdit(
   state: EditorState,
   range: { from: number; to: number },
   insert: string,
-  closeLink: boolean,
+  closeLink: boolean | "replace",
 ): TransactionSpec {
-  const suffix = closeLink ? "]]" : "";
+  const suffix = closeLink === true ? "]]" : "";
+  if (closeLink === "replace") {
+    const line = state.doc.lineAt(range.from);
+    const opening = state.sliceDoc(line.from, range.from).lastIndexOf("[[");
+    if (opening >= 0) {
+      range = { ...range, from: line.from + opening };
+    }
+  }
   const reused = closeLink && state.sliceDoc(range.to, range.to + 2) === "]]";
   return {
     changes: {

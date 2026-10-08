@@ -51,8 +51,8 @@ test("custom inline renderers can retain detached context functions and replace 
   });
   const decorations = inlineDecorations(state, [{ from: 0, to: doc.length }]);
   const classes: string[] = [];
-  decorations.between(0, doc.length, (_from, _to, value) =>
-    classes.push(value.spec.class),
-  );
+  decorations.between(0, doc.length, (_from, _to, value) => {
+    classes.push(value.spec.class);
+  });
   assert.deepEqual(classes, ["custom"]);
 });

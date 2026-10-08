@@ -1,0 +1,153 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { EditorState, Compartment } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { config } from "../../../src/plugins/editor/manifest";
+import {
+  editorSettings,
+  settingsExtensions,
+} from "../../../src/plugins/editor/settings";
+import { readSettings } from "../../../src/host/settings";
+import type { SettingsReader } from "../../../src/host/settings";
+import { createRenderer } from "../../../src/markdown/html";
+import { contributions } from "../../../scripts/generate-contributions";
+
+test("editor settings have application defaults and reconfigure without changing text or selection", () => {
+  assert.deepEqual(config.parse({}), {
+    defaultMode: "livePreview",
+    readableLineLength: true,
+    strictLineBreaks: false,
+    rightToLeft: false,
+    useTabs: true,
+    tabSize: 4,
+  });
+  const compartment = new Compartment();
+  let state = EditorState.create({
+    doc: "one\ntwo",
+    selection: { anchor: 2 },
+    extensions: compartment.of(settingsExtensions({})),
+  });
+  const previous = state;
+  state = state.update({
+    effects: compartment.reconfigure(
+      settingsExtensions({
+        rightToLeft: true,
+        readableLineLength: false,
+        strictLineBreaks: true,
+      }),
+    ),
+  }).state;
+  assert.equal(state.doc, previous.doc);
+  assert.equal(state.selection, previous.selection);
+  assert.equal(state.facet(editorSettings).strictLineBreaks, true);
+  assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
+    dir: "rtl",
+  });
+});
+test("resource settings use manifest aliases and validate all editor fields", () => {
+  const values: Record<string, unknown> = {
+    "files.newNoteFolder": "notes",
+    "files.attachmentFolder": "./media",
+    "editor.rightToLeft": true,
+    "editor.defaultMode": "source",
+    "plugins.vim.enabled": true,
+  };
+  const reader: SettingsReader = {
+    get: <T>(key: string, fallback?: T) =>
+      key in values ? (values[key] as T) : fallback,
+  };
+  const result = readSettings(reader);
+  assert.equal(result.features?.links?.config.newNoteFolder, "notes");
+  assert.equal(result.features?.links?.config.attachmentFolder, "./media");
+  assert.equal(result.features?.vim?.enabled, true);
+  assert.equal(result.editor?.rightToLeft, true);
+  assert.equal(result.mode, "source");
+  values["editor.rightToLeft"] = "yes";
+  assert.throws(() => readSettings(reader));
+});
+test("strict line breaks are per-render and do not leak to later requests", () => {
+  const renderer = createRenderer();
+  assert.match(renderer.renderMarkdown("one\ntwo"), /<br>/);
+  assert.doesNotMatch(
+    renderer.renderMarkdown("one\ntwo", { strictLineBreaks: true }),
+    /<br>/,
+  );
+  assert.match(renderer.renderMarkdown("one\ntwo"), /<br>/);
+});
+test("required settings, title actions, native context menus and unbound verify commands are generated", async () => {
+  const generated = await contributions();
+  const properties = generated.configuration.properties as Record<
+    string,
+    { default: unknown; scope: string }
+  >;
+  for (const [key, value] of Object.entries({
+    "editor.readableLineLength": true,
+    "editor.strictLineBreaks": false,
+    "editor.rightToLeft": false,
+    "files.attachmentFolder": "",
+    "files.newNoteFolder": "",
+    "links.useWikilinks": true,
+    "plugins.lineNumbers.enabled": false,
+    "plugins.vim.enabled": false,
+  })) {
+    assert.deepEqual(
+      [
+        properties[`markdownWorkbench.${key}`]?.default,
+        properties[`markdownWorkbench.${key}`]?.scope,
+      ],
+      [value, "resource"],
+      key,
+    );
+  }
+  assert.deepEqual(
+    generated.menus["editor/title"].map((menu) => menu.command).sort(),
+    [
+      "markdownWorkbench.addProperty",
+      "markdownWorkbench.copyForAgent",
+      "markdownWorkbench.openAsText",
+    ],
+  );
+  assert.ok(
+    generated.menus["webview/context"].some(
+      (menu) =>
+        menu.command === "markdownWorkbench.toggleBold" &&
+        menu.when.includes("markdownContent"),
+    ),
+  );
+  for (const id of [
+    "toggleStrikethrough",
+    "toggleHighlight",
+    "toggleCode",
+    "toggleComment",
+    "toggleChecklist",
+    "cycleListChecklist",
+    "quickSwitcher",
+  ]) {
+    assert.ok(
+      !generated.keybindings.some(
+        (binding) => binding.command === `markdownWorkbench.${id}`,
+      ),
+      id,
+    );
+  }
+});
+
+test("manual and parity inventories include every generated command and setting", async () => {
+  const { readFileSync } = await import("node:fs");
+  const generated = await contributions();
+  const manual = readFileSync("docs/MANUAL_TEST_PLAN.md", "utf8");
+  const parity = readFileSync("docs/PARITY.md", "utf8");
+  for (const id of [
+    ...generated.commands.map((command) => command.command),
+    ...Object.keys(generated.configuration.properties),
+  ]) {
+    assert.ok(manual.includes(id), `manual: ${id}`);
+    assert.ok(parity.includes(id), `parity: ${id}`);
+  }
+  assert.equal(
+    generated.menus.commandPalette.find(
+      (menu) => menu.command === "markdownWorkbench.consumeVimHostShortcut",
+    )?.when,
+    "false",
+  );
+});

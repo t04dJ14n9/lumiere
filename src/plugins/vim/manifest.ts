@@ -15,6 +15,7 @@ export default defineManifest({
         id: "consumeVimHostShortcut",
         title: "Consume Vim Host Shortcut",
         editorCommand: "vim:consume-host-shortcut",
+        palette: false,
       },
     ],
     keybindings: [

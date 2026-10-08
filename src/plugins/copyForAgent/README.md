@@ -20,7 +20,7 @@ full URI otherwise. Nothing is sent to an agent or chat.
 - `reference.ts`: path policy and LLM Wiki reference formatting.
 - `agent.ts`: snapshot validation, dirty policy and clipboard write.
 - `host.ts`: root service and resource-enabled panel handler lifetimes.
-- `webview.ts`: command, selection-menu contribution and cell-aware shortcut.
+- `webview.ts`: command, contextual-widget menu contribution and cell-aware shortcut.
 
 ## Services, events and settings
 
@@ -36,3 +36,6 @@ An untitled document cannot supply a disk reference until saved and reopened as
 a file; Copy Text Only works without a disk path. Only Markdown Workbench panel
 selections are supported. Saved line references do not export attachments,
 snapshots or chat messages.
+
+Static editor selection actions use VS Code's native webview context menu; table
+actions continue through `editor/selectionMenu`.

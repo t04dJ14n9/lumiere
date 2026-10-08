@@ -1,9 +1,9 @@
+import { materialize } from "./insertion";
 import type { VaultIndex, VaultChange, VaultFile } from "../vault/api";
 import type { Query, Suggestion } from "./protocol";
 import {
   candidate,
   fileCandidates,
-  materialize,
   tagCandidates,
   type Candidate,
 } from "./candidates";
@@ -27,7 +27,7 @@ export class SuggestionIndex {
       this.files.delete(`${kind}:${path}`);
     }
   }
-  query(source: string, request: Query): Suggestion[] {
+  query(source: string, request: Query, useWikilinks = true): Suggestion[] {
     const entries = this.candidates(source, request);
     const selected =
       request.kind === "tag" && !request.query
@@ -35,7 +35,13 @@ export class SuggestionIndex {
         : rankedCandidates(entries, request.query);
     return selected
       .map((entry) =>
-        materialize(this.vault, source, entry, request.note === undefined),
+        materialize({
+          vault: this.vault,
+          source,
+          entry,
+          globalBlock: request.note === undefined,
+          useWikilinks: useWikilinks || request.kind === "tag",
+        }),
       )
       .filter((item) => item.insert.length <= 8192);
   }

@@ -26,7 +26,12 @@ export const suggestHost: Plugin<{ panel: PanelShell }> = {
         ) {
           return [];
         }
-        return index.query(source, request);
+        return index.query(
+          source,
+          request,
+          ctx.workbench.config(panel.document).features?.links?.config
+            .useWikilinks !== false,
+        );
       }),
     );
   },

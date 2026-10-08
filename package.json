@@ -715,14 +715,55 @@
         },
         {
           "command": "markdownWorkbench.consumeVimHostShortcut",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
+          "when": "false"
         }
       ],
-      "webview/context": [],
+      "webview/context": [
+        {
+          "command": "markdownWorkbench.copyForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "group": "agent"
+        },
+        {
+          "command": "markdownWorkbench.toggleBold",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleItalics",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleStrikethrough",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleHighlight",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting"
+        },
+        {
+          "command": "markdownWorkbench.toggleCode",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting"
+        },
+        {
+          "command": "markdownWorkbench.insertLink",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
+          "group": "formatting"
+        }
+      ],
       "editor/title": [
         {
           "command": "markdownWorkbench.copyForAgent",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && markdownWorkbench.hasSelection",
+          "group": "navigation"
+        },
+        {
+          "command": "markdownWorkbench.addProperty",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties",
           "group": "navigation"
         },
         {
@@ -931,6 +972,29 @@
           "default": true,
           "scope": "resource"
         },
+        "markdownWorkbench.editor.defaultMode": {
+          "enum": [
+            "livePreview",
+            "source"
+          ],
+          "default": "livePreview",
+          "scope": "resource"
+        },
+        "markdownWorkbench.editor.readableLineLength": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.editor.strictLineBreaks": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource"
+        },
+        "markdownWorkbench.editor.rightToLeft": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource"
+        },
         "markdownWorkbench.editor.useTabs": {
           "type": "boolean",
           "default": true,
@@ -982,6 +1046,18 @@
           "default": "",
           "scope": "resource"
         },
+        "markdownWorkbench.files.newNoteFolder": {
+          "type": "string",
+          "default": "",
+          "description": "New notes: empty for vault root, . for current folder, or a vault-relative path.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.files.attachmentFolder": {
+          "type": "string",
+          "default": "",
+          "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+          "scope": "resource"
+        },
         "markdownWorkbench.properties.display": {
           "enum": [
             "visible",
@@ -1026,12 +1102,6 @@
           "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
           "scope": "resource"
         },
-        "markdownWorkbench.files.newNoteFolder": {
-          "type": "string",
-          "default": "",
-          "scope": "resource",
-          "description": "New notes: empty for vault root, . for current folder, or a vault-relative path."
-        },
         "markdownWorkbench.preset": {
           "type": "string",
           "enum": [
@@ -1041,16 +1111,6 @@
           "default": "obsidian",
           "scope": "resource",
           "description": "Editor plugin preset."
-        },
-        "markdownWorkbench.editor.defaultMode": {
-          "type": "string",
-          "enum": [
-            "livePreview",
-            "source"
-          ],
-          "default": "livePreview",
-          "scope": "resource",
-          "description": "Initial editing mode."
         }
       }
     }

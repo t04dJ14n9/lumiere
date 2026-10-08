@@ -1,3 +1,4 @@
+import type { config as editorConfig } from "./manifest";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import type { ViewStateContributions } from "./contributions";
 import type { Infer } from "../../kernel";
@@ -22,6 +23,7 @@ export interface Menu {
   ): Disposer;
 }
 export interface EditorService {
+  readonly settings: Infer<typeof editorConfig>;
   readonly clipboard: {
     read(): Promise<string>;
     write(text: string): Promise<void>;

@@ -22,9 +22,10 @@ plugin disposal disposes all remaining passes.
 
 ## Services, events and settings
 
-Injects `markdown`; provides `render`. Dispatches `render/preProcess` and
+Injects `markdown` and `editor`; provides `render`. Dispatches `render/preProcess` and
 `render/postProcess` serially, and `render/fence` with bail semantics. No commands
-or user settings. Host-provided workspace trust controls remote content.
+or independent user settings. Render calls read `editor.strictLineBreaks`;
+host-provided workspace trust controls remote content.
 
 ## Limits and differences from Obsidian
 

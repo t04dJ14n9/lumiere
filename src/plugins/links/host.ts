@@ -139,6 +139,10 @@ async function openInternal(
       source: sourceUri,
       path,
       create: request.wiki,
+      newNoteFolder: String(
+        ctx.workbench.config(panel.document).features?.links?.config
+          .newNoteFolder ?? "",
+      ),
       folderNote: String(
         ctx.workbench.config(panel.document).features?.links?.config
           .folderNote ?? "",

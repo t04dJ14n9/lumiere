@@ -19,7 +19,8 @@ disposal cancel pending work.
 - `manifest.ts`: default enablement and surfaces.
 - `protocol.ts`: bounded query and result schemas.
 - `sources.ts`: indexed candidate groups and per-file cache invalidation.
-- `candidates.ts`: metadata candidate construction and deferred link text.
+- `candidates.ts`: metadata candidate construction.
+- `insertion.ts`: deferred wiki/Markdown insertion and destination encoding.
 - `rank.ts`: prepared scoring and bounded best-50 selection.
 - `host.ts`: per-panel RPC and source enablement checks.
 - `completion.ts`: code exclusion and insertion transaction.
@@ -39,3 +40,8 @@ ordering. First candidate construction can exceed a frame on large vaults; warm
 queries reuse prepared data. Existing indexed metadata can lag typing by the indexer's
 refresh interval. Block completion uses explicit IDs already present in a note;
 it does not create IDs for arbitrary paragraphs. The popup uses CodeMirror's UI.
+
+With `links.useWikilinks` off, accepting a link/head/block completion replaces
+the entire partial wiki token with a Markdown link. Existing `]]` are consumed.
+Unresolved Markdown destinations follow normal Markdown-link opening; unlike
+unresolved wikilinks, they do not create missing notes on click.

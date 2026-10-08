@@ -115,7 +115,7 @@ async function requestCompletions(
               view.state,
               { from, to },
               item.insert,
-              trigger.closeLink,
+              item.replaceLink ? "replace" : trigger.closeLink,
             ),
           ),
       })),

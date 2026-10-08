@@ -1,3 +1,4 @@
+import type {} from "../editor/api";
 import createDOMPurify from "dompurify";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../dialect/api";
@@ -7,7 +8,7 @@ import { constrainRemoteContent } from "./security";
 
 export const renderWebview: Plugin<{ trusted: boolean }> = {
   name: "render",
-  inject: { required: ["markdown"] },
+  inject: { required: ["markdown", "editor"] },
   apply(ctx, config) {
     const passes = new Set<RenderPass>();
     registerPassCleanup(ctx, passes);
@@ -56,7 +57,7 @@ function renderService({
       }
       container.innerHTML = ctx.markdown.renderer.renderMarkdown(
         pass.displaySource ?? source,
-        { sanitize },
+        { sanitize, strictLineBreaks: ctx.editor.settings.strictLineBreaks },
       );
       constrainRemoteContent(container, trusted);
       renderFences(ctx, pass);

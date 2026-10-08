@@ -55,3 +55,8 @@ VS Code owns text, saving and undo. The core editor cannot be disabled. Feature
 state belongs to its contributing plugin; inactive/unknown contribution keys
 are retained. Legacy top-level `folded`/`folds` fields remain readable compatibility
 inputs. Structured clipboard and HTML conversion are owned by their features.
+
+Editor config owns default mode, readable line length (700 px), strict rendered
+line breaks, right-to-left direction, tabs and tab size. Changing default mode
+does not overwrite an existing pane's presentation. Static commands use the native
+webview context section; contextual widgets retain their menu service.

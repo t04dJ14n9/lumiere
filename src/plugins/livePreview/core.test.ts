@@ -1,3 +1,4 @@
+import { config as editorConfig } from "../editor/manifest";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Compartment, EditorState, StateEffect } from "@codemirror/state";
@@ -73,6 +74,7 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   const root = Context.create();
   root.provide("editor", {
     view,
+    settings: editorConfig.parse({}),
     mode: "livePreview",
     source: "note.md",
     viewState: { contribute: () => () => {} },

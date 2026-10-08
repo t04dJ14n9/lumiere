@@ -12,6 +12,9 @@ export default defineManifest({
   surfaces: ["host", "webview"],
   config,
   contributes: {
+    menus: [
+      { command: "addProperty", location: "editor/title", group: "navigation" },
+    ],
     commands: [
       {
         id: "addProperty",

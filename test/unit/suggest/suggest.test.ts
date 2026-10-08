@@ -235,3 +235,39 @@ test("suggestion cache invalidates changed metadata and computes link text only 
   );
   await stop();
 });
+
+test("Use Wikilinks off materializes Markdown links and replaces the entire partial wiki token", async () => {
+  const { SuggestionIndex } = await import(
+    "../../../src/plugins/suggest/sources"
+  );
+  const cached = new SuggestionIndex(index());
+  const alias = cached.query(
+    "Home.md",
+    { kind: "link", query: "Alias" },
+    false,
+  )[0]!;
+  assert.equal(alias.insert, "[Alias](Note.md)");
+  assert.equal(alias.replaceLink, true);
+  const heading = cached.query(
+    "Home.md",
+    { kind: "heading", note: "Note", query: "Head" },
+    false,
+  )[0]!;
+  assert.equal(heading.insert, "[Heading](Note.md#Heading)");
+  const block = cached.query(
+    "Home.md",
+    { kind: "block", query: "body" },
+    false,
+  )[0]!;
+  assert.equal(block.insert, "[block](Note.md#^block)");
+  const state = EditorState.create({ doc: "text [[Note#Head]] tail" });
+  const edited = state.update(
+    completionEdit(state, { from: 12, to: 16 }, heading.insert, "replace"),
+  ).state;
+  assert.equal(edited.doc.toString(), "text [Heading](Note.md#Heading) tail");
+  assert.equal(
+    cached.query("Home.md", { kind: "tag", query: "Project" }, false)[0]!
+      .insert,
+    "Project",
+  );
+});

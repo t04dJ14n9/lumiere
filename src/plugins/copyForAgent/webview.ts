@@ -1,4 +1,4 @@
-import { EditorView, ViewPlugin } from "@codemirror/view";
+import { ViewPlugin } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../commands/api";
 import type {} from "../editor/api";
@@ -23,7 +23,6 @@ export const copyForAgentWebview: Plugin = {
       { label: "Copy for Agent", run: trigger },
     ]);
     registerCopyKeys(ctx, trigger);
-    registerSelectionMenu(ctx);
   },
 };
 function registerCopyKeys(ctx: Context, trigger: () => void): void {
@@ -56,39 +55,6 @@ function registerCopyKeys(ctx: Context, trigger: () => void): void {
           { capture: true, signal: events.signal },
         );
         return { destroy: () => events.abort() };
-      }),
-    ),
-  );
-}
-function registerSelectionMenu(ctx: Context): void {
-  let live = true;
-  let stop: (() => void | Promise<void>) | undefined;
-  ctx.effect(() => () => {
-    live = false;
-    void stop?.();
-  });
-  ctx.effect(() =>
-    ctx.editor.extend(
-      EditorView.domEventHandlers({
-        contextmenu(event) {
-          const range =
-            ctx.bail("editor/projectSelection") ??
-            ctx.editor.view.state.selection.main;
-          if (range.from === range.to) {
-            return false;
-          }
-          event.preventDefault();
-          void ctx.waterfall("editor/selectionMenu", []).then((items) => {
-            if (live) {
-              void stop?.();
-              stop = ctx.menu.open(ctx.editor.view.dom, items, {
-                x: event.clientX,
-                y: event.clientY,
-              });
-            }
-          });
-          return true;
-        },
       }),
     ),
   );

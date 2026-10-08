@@ -1,3 +1,4 @@
+import { config as editorConfig } from "../../src/plugins/editor/manifest";
 import type { Context } from "../../src/kernel";
 import { Endpoint } from "../../src/shared/rpc/endpoint";
 import type {
@@ -157,7 +158,7 @@ export class BrowserHost {
         text: this.session.text,
         version: this.session.version,
         features: {},
-        editor: { useTabs: true, tabSize: 4 },
+        editor: editorConfig.parse({}),
         trusted: false,
         clientID: id,
         source: this.document.uri,

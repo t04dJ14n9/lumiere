@@ -65,7 +65,14 @@ export interface Workbench {
   onConfiguration?(listener: () => void): Disposer;
   config(document: HostDocument): {
     features?: Infer<typeof featureSettings>;
-    editor?: { useTabs: boolean; tabSize: number };
+    editor?: {
+      useTabs: boolean;
+      tabSize: number;
+      readableLineLength?: boolean;
+      strictLineBreaks?: boolean;
+      rightToLeft?: boolean;
+      defaultMode?: "livePreview" | "source";
+    };
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
   };
@@ -94,6 +101,7 @@ export interface Navigation {
     path: string;
     create: boolean;
     folderNote: string;
+    newNoteFolder?: string;
   }): Promise<string | undefined>;
   open(
     root: string,

@@ -7,6 +7,19 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["webview"],
   contributes: {
+    menus: [
+      "toggleBold",
+      "toggleItalics",
+      "toggleStrikethrough",
+      "toggleHighlight",
+      "toggleCode",
+      "insertLink",
+    ].map((command) => ({
+      command,
+      location: "webview/context" as const,
+      when: "webviewSection == 'markdownContent'",
+      group: "formatting",
+    })),
     commands: [
       {
         id: "toggleBold",

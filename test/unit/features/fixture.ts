@@ -12,7 +12,10 @@ import type { MarkdownService } from "../../../src/plugins/dialect/api";
 import type { LivePreview } from "../../../src/plugins/livePreview/api";
 import { ViewContributions } from "../../../src/plugins/editor/contributions";
 import { ExtensionRegistry } from "../../../src/plugins/editor/extensions";
-import { settingsExtensions } from "../../../src/plugins/editor/settings";
+import {
+  settingsExtensions,
+  editorSettings,
+} from "../../../src/plugins/editor/settings";
 import {
   blockRenderers,
   inlineRenderers,
@@ -140,6 +143,9 @@ export function fixture() {
       };
     },
     view,
+    get settings() {
+      return view.state.facet(editorSettings);
+    },
     mode: "source",
     source: "note.md",
     viewState: contributions,

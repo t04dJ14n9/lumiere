@@ -1,4 +1,4 @@
-import { settingsExtensions } from "./settings";
+import { settingsExtensions, editorSettings } from "./settings";
 import { config as editorConfig } from "./manifest";
 import { ExtensionRegistry } from "./extensions";
 import { ViewContributions } from "./contributions";
@@ -102,7 +102,13 @@ function createEditorView(
         ctx.markdown.language(),
         drawSelection(),
         EditorView.lineWrapping,
-        EditorView.contentAttributes.of({ "aria-label": "Markdown content" }),
+        EditorView.contentAttributes.of({
+          "aria-label": "Markdown content",
+          "data-vscode-context": JSON.stringify({
+            webviewSection: "markdownContent",
+            preventDefaultContextMenuItems: true,
+          }),
+        }),
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
         Prec.low(keymap.of(defaultKeymap)),
         EditorView.updateListener.of((update) => {
@@ -123,9 +129,13 @@ function registerSettings(
   settings: Compartment,
 ): void {
   configurations.set(ctx, (value) => {
-    view.dispatch({
-      effects: settings.reconfigure(settingsExtensions(value)),
-    });
+    const strictChanged =
+      view.state.facet(editorSettings).strictLineBreaks !==
+      value.strictLineBreaks;
+    view.dispatch({ effects: settings.reconfigure(settingsExtensions(value)) });
+    if (strictChanged) {
+      ctx.emit("render/changed");
+    }
   });
   ctx.effect(() => () => {
     configurations.delete(ctx);

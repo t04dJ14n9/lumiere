@@ -1,5 +1,9 @@
 import { Schema } from "../../kernel";
 export const config = Schema.object({
+  defaultMode: Schema.union(["livePreview", "source"]).default("livePreview"),
+  readableLineLength: Schema.boolean().default(true),
+  strictLineBreaks: Schema.boolean().default(false),
+  rightToLeft: Schema.boolean().default(false),
   useTabs: Schema.boolean().default(true),
   tabSize: new Schema<number>(
     (value) => {

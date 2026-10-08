@@ -86,7 +86,9 @@ function registerActiveContexts(
       void ctx.workbench.execute(
         "setContext",
         `markdownWorkbench.plugin.${id}`,
-        Boolean(active()),
+        Boolean(
+          active() && (id !== "livePreview" || settings?.preset === "obsidian"),
+        ),
       );
     }
   };

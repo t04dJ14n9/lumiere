@@ -1,6 +1,6 @@
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
-import { features } from "../plugins/catalog";
+import { readSettings } from "./settings";
 import * as vscode from "vscode";
 import { randomUUID, createHash } from "node:crypto";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
@@ -166,41 +166,7 @@ function configurationOperations(): Pick<
         "markdownWorkbench",
         vscode.Uri.parse(document.uri),
       );
-      return {
-        editor: {
-          useTabs: config.get("editor.useTabs", true),
-          tabSize: config.get("editor.tabSize", 4),
-        },
-        features: Object.fromEntries(
-          features.map((manifest) => {
-            const properties =
-              (manifest.config?.toJSONSchema().properties as Record<
-                string,
-                unknown
-              >) ?? {};
-            return [
-              manifest.id,
-              {
-                enabled: config.get(
-                  `plugins.${manifest.id}.enabled`,
-                  manifest.defaultEnabled,
-                ),
-                config:
-                  (manifest.config?.parse(
-                    Object.fromEntries(
-                      Object.keys(properties).map((key) => [
-                        key,
-                        config.get(`${manifest.id}.${key}`),
-                      ]),
-                    ),
-                  ) as Record<string, unknown>) ?? {},
-              },
-            ];
-          }),
-        ),
-        preset: config.get("preset", "obsidian"),
-        mode: config.get("editor.defaultMode", "livePreview"),
-      };
+      return readSettings(config);
     },
   };
 }

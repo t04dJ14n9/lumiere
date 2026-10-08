@@ -2452,3 +2452,37 @@ Phase 5 indexing reported 19–23 ms host blocks (full performance acceptance is
 Phase 9). Manual acceptance is not claimed. Owner should first test table
 projection/undo, two-panel title rename, rich cell paste, dirty Copy for Agent,
 then marker/provider lifecycle and query cancellation with the API sample.
+
+### Phase 6 (completed) — Commands, settings and parity inventory, 2026-10-08
+
+Delivered: audited/routed all 60 commands and declared all 53 settings. Added
+readable line length, strict rendered line breaks, RTL and schema-owned default
+mode; settings reconfigure without replacing document/selection. Links owns the
+file-location schemas through public setting aliases, and native note creation
+uses them. `links.useWikilinks` now controls suggestion acceptance, with encoded
+Markdown destinations and replacement of the whole partial wiki token. Static
+formatting/Copy for Agent actions use native webview context menus; Add File
+Property joins Copy for Agent and Open as Text in the title. The internal Vim
+shortcut consumer is hidden from the palette; pinned-source bindings are retained,
+and all verify keys remain unbound.
+
+The manual inventory names every generated command/setting; `docs/PARITY.md`
+contains 243 rows, all "not observed". The updater preserves existing owner
+observations. TypeScript now checks plugin-local unit files too; corrected one
+fake's new settings field and one callback's void return, without weakening any
+assertion. The browser fixture only gained schema-default settings fields; the
+smoke suites remain 14 browser and 1 native test.
+Checks in order: `pnpm check` **421/421** (format/lint/all TypeScript projects,
+including plugin-local tests/contributions); browser smoke **14/14**; native
+smoke **1/1**, freshly packaged isolated /tmp profile. Logs:
+`docs/checks/phase6-complete-{check,browser,native}.txt`.
+Ledger **91/22/2/333/0**, total 448 (446 source scenarios plus 2 adapter cases).
+Deviations from DESIGN.md: attachment-folder is validated policy only; importing
+attachments is not supplied by HTML paste. Strict line breaks applies to rendered
+Markdown, not source line structure. Explicit Insert Wikilink keeps wiki syntax;
+unresolved Markdown-style suggestions follow normal Markdown opening and do not
+create missing files on click. No new lint exceptions or smoke cases.
+Known issues: Phase 7 public API/external contributions and Phase 8 packaging/docs
+remain. Manual parity is unobserved; cold suggestion/indexing frame-budget limits
+remain as recorded. Owner should test resource-scoped settings, native menus,
+Vim host collisions and wiki/Markdown suggestion acceptance first.

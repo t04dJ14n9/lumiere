@@ -1,4 +1,5 @@
 export interface RenderOptions {
+  strictLineBreaks?: boolean;
   sanitize?: (html: string) => string;
   source?: string;
   docId?: string;

@@ -25,11 +25,12 @@ import { tasks } from "./tasks";
 import { callouts } from "./callouts";
 import { html } from "./html";
 export function createRenderer(options: RendererOptions = {}) {
+  const defaultBreaks = !options.strictLineBreaks;
   const md = new MarkdownIt({
     html: true,
     linkify: true,
     typographer: false,
-    breaks: !options.strictLineBreaks,
+    breaks: defaultBreaks,
   })
     .use(footnote as unknown as (md: MarkdownIt) => void)
     .use(mark);
@@ -46,6 +47,10 @@ export function createRenderer(options: RendererOptions = {}) {
   html(md);
   return {
     renderMarkdown(source: string, options: RenderOptions = {}): string {
+      md.options.breaks =
+        options.strictLineBreaks === undefined
+          ? defaultBreaks
+          : !options.strictLineBreaks;
       const properties = frontmatter(source);
       const html = md.render(
         properties ? source.slice(properties.end) : source,
@@ -54,6 +59,10 @@ export function createRenderer(options: RendererOptions = {}) {
       return options.sanitize ? options.sanitize(html) : html;
     },
     renderInline(source: string, options: RenderOptions = {}): string {
+      md.options.breaks =
+        options.strictLineBreaks === undefined
+          ? defaultBreaks
+          : !options.strictLineBreaks;
       const html = md.renderInline(source, options);
       return options.sanitize ? options.sanitize(html) : html;
     },

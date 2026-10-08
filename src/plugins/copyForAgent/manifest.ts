@@ -11,6 +11,12 @@ export default defineManifest({
     menus: [
       {
         command: "copyForAgent",
+        location: "webview/context",
+        when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+        group: "agent",
+      },
+      {
+        command: "copyForAgent",
         location: "editor/title",
         when: "markdownWorkbench.hasSelection",
         group: "navigation",

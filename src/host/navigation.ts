@@ -1,3 +1,5 @@
+import linksManifest from "../plugins/links/manifest";
+import { pluginConfiguration } from "./settings";
 import * as vscode from "vscode";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
@@ -113,6 +115,7 @@ async function resolveNavigation({
   path: link,
   create,
   folderNote,
+  newNoteFolder,
 }: Parameters<Navigation["resolve"]>[0]): Promise<string | undefined> {
   const base = vscode.Uri.parse(root);
   const sourceUri = vscode.Uri.parse(source);
@@ -147,7 +150,13 @@ async function resolveNavigation({
   if (!create) {
     return undefined;
   }
-  return createNote({ base, sourceUri, link, uri });
+  return createNote({
+    base,
+    sourceUri,
+    link,
+    uri,
+    folder: newNoteFolder ?? configuredNewNoteFolder(sourceUri),
+  });
 }
 
 async function createNote({
@@ -155,18 +164,15 @@ async function createNote({
   sourceUri,
   link,
   uri: candidate,
+  folder,
 }: {
   base: vscode.Uri;
   sourceUri: vscode.Uri;
   link: string;
   uri: vscode.Uri;
+  folder: string;
 }): Promise<string> {
   let uri = candidate;
-  const config = vscode.workspace.getConfiguration(
-    "markdownWorkbench",
-    sourceUri,
-  );
-  const folder = config.get<string>("files.newNoteFolder", "");
   if (!link.startsWith("/")) {
     const parent =
       folder === "."
@@ -229,4 +235,9 @@ async function openNavigation({
       column,
     );
   }
+}
+
+function configuredNewNoteFolder(source: vscode.Uri): string {
+  const config = vscode.workspace.getConfiguration("markdownWorkbench", source);
+  return String(pluginConfiguration(config, linksManifest).newNoteFolder);
 }
