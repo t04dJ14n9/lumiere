@@ -1987,3 +1987,23 @@ Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
 Known issues: Embeds post-process/webm/webview, remaining README/manual inventory
 and readability completion checks. Then remaining Phase 4 plugins, Claude's
 Phase 5 completion gate and Phases 6–8 as specified above.
+
+### Readability pass progress — WebM recovery, 2026-10-08
+
+Delivered: binary metadata/cluster processing in webm-stream.ts, browser recovery
+in media-recovery.ts, and MediaSource buffer/event handling in media-source.ts;
+webm.ts preserves the public exports. Unknown-size boundary detection, timestamp
+ordering, cancellation and Opus-preroll behavior remain unchanged. Added a unit
+for truncated and invalid unknown-size elements; source fixture tests retained.
+Backlog audit found stale compact-array entries for navigation/image parameters,
+image ternaries and WebM complexity that earlier line-based removal missed.
+Removed them and reran check: only post-process.ts and webview.ts long-function
+entries remain (2 distinct files; all other rule lists empty). Earlier progress
+counts described rewritten files; this record corrects actual exemption removal.
+No new exemptions, inline disables or intentional behavior fixes.
+Checks: `pnpm check` 352/352; `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-webm-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Manual inventory updated; acceptance unrun.
+Known issues: Embeds post-process/webview, remaining README/manual inventory and
+readability completion checks; remaining Phase 4 plugins, Claude's Phase 5 gate
+and Phases 6–8 as specified above.

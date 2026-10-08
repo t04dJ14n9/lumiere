@@ -660,3 +660,8 @@ and `image.png` (any image). Run `Developer: Reload Window` once so indexing sta
   buttons/keys, Ctrl/Mod-wheel focal point, pan, resize and remembered scale.
   Close while loading or panning; observers/listeners must stop and focus return
   to the trigger when appropriate. Not run by the agent.
+
+- **Embeds — WebM recovery:** rerun the VP8/VP9/audio WebM fixtures and ordinary
+  media controls. Close/disable during fetch, source-open and buffer append;
+  object URLs/readers/listeners must be released. Verify first playback after
+  Opus preroll and visible unsupported/truncated-media errors. Not run here.

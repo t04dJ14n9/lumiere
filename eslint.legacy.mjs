@@ -5,11 +5,10 @@
 export default {
   "max-lines-per-function": [
     "src/plugins/embeds/post-process.ts",
-    "src/plugins/embeds/webm.ts",
     "src/plugins/embeds/webview.ts",
   ],
-  complexity: ["src/plugins/embeds/webm.ts"],
-  "max-params": ["src/host/navigation.ts", "src/plugins/embeds/image.ts"],
-  "no-nested-ternary": ["src/plugins/embeds/image.ts"],
+  complexity: [],
+  "max-params": [],
+  "no-nested-ternary": [],
   "no-restricted-syntax": [],
 };

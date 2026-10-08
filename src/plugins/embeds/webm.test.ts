@@ -42,3 +42,20 @@ test("streaming preserves unknown-size cluster boundaries and orders complete bl
     [...prefix, ...cluster, ...block(1), ...block(2), ...cluster, ...block(3)],
   );
 });
+
+test("WebM rejects truncated and invalid unknown-size elements", () => {
+  const stream = new WebmStream();
+  stream.push(Uint8Array.from([0x1a, 0x45]));
+  assert.throws(() => stream.finish(), /Truncated WebM element/);
+  assert.throws(
+    () => new WebmStream().push(Uint8Array.from([0xe7, 0xff])),
+    /Invalid unknown-size WebM element/,
+  );
+  const nested = [
+    0x18, 0x53, 0x80, 0x67, 0xff, 0x1f, 0x43, 0xb6, 0x75, 0xff, 0xe7, 0xff,
+  ];
+  assert.throws(
+    () => new WebmStream().push(Uint8Array.from(nested)),
+    /Invalid unknown-size WebM child/,
+  );
+});
