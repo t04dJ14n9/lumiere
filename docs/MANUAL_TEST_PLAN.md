@@ -519,3 +519,9 @@ smoke scenarios. Use only the disposable fixture vault described above.
   is never edited or closed. Disable/re-enable a command-owning feature and switch
   between minimal/Obsidian panels; palette execution must respect current settings.
   No owner manual run has been performed.
+
+- **Document:** rerun typing/save/undo, split-panel convergence, external edits
+  and CRLF cases in **document and editor (Phase 3)**. Verify adjacent typing
+  groups together, pausing/caret movement creates a new group, IME remains intact,
+  and table/Vim edits retain explicit groups. Save with an invalid property draft
+  must fail before transport; correcting it must allow save. Not run by the agent.

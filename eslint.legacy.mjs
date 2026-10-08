@@ -15,7 +15,6 @@ export default {
     "src/plugins/codeBlocks/code-source.ts",
     "src/plugins/codeBlocks/webview.ts",
     "src/plugins/diagrams/webview.ts",
-    "src/plugins/document/webview.ts",
     "src/plugins/embeds/image-dialog.ts",
     "src/plugins/embeds/image.ts",
     "src/plugins/embeds/post-process.ts",
@@ -47,7 +46,6 @@ export default {
     "src/markdown/search/canvas.ts",
     "src/markdown/search/query.ts",
     "src/plugins/codeBlocks/code-source.ts",
-    "src/plugins/document/input-groups.ts",
     "src/plugins/embeds/webm.ts",
     "src/plugins/links/host.ts",
     "src/plugins/livePreview/inline.ts",
@@ -59,7 +57,6 @@ export default {
   "max-params": [
     "src/host/navigation.ts",
     "src/plugins/codeBlocks/code-selection.ts",
-    "src/plugins/document/session.ts",
     "src/plugins/embeds/image.ts",
     "src/webview/ui/menu.ts",
   ],

@@ -1486,3 +1486,60 @@ Known issues / exact remaining work: remaining 41 backlog files, other plugin
 READMEs and manual regressions; remove empty backlog/config block and run
 readability completion checks. Remaining Phase 4 plugins and Phases 5–8 are
 still undelivered as recorded above. Owner manual acceptance remains unrun.
+
+### Readability pass progress — Document, 2026-10-08
+
+Delivered: `ViewConnection` owns attachment, buffered updates, synchronization
+and strict draft flushes; webview apply lists service/update/flush registrations.
+Input grouping separates boundary checks from ordinary typing continuity. Native
+edit iteration uses the library's typed callback tuple. README and manual
+regression inventory updated. Added two transaction-based grouping units without
+expanding the browser/native suites; original draft-flush assertions remain.
+
+Backlog since preceding unit → now: max-lines-per-function 32 → 31; complexity
+17 → 16; max-params 5 → 4; no-nested-ternary 10 → 10; max-depth 0 → 0;
+no-restricted-syntax 0 → 0. Distinct files 41 → 38. No new lint exceptions.
+Unit count 245 → 247. Checks in order: `pnpm check` 247/247;
+`pnpm test:browser` 14/14; `pnpm test:vscode` 1/1, freshly packaged isolated /tmp
+profile. Logs: `docs/checks/readability-document-{check,browser,native}.txt`.
+Ledger independently recounted: 87 ported, 15 rewritten, 2 changed, 333 retired,
+11 todo; 448 total. Deviations: none. No behavior bug fixed.
+
+Known issues / exact remaining work, readability first:
+- Backlog: host/navigation; markdown/metadata/index; markdown/properties
+  edits/merge/order/scalar-edits; markdown/search canvas/query; markdown/tables/model;
+  plugins/callouts/webview; codeBlocks code-highlight/code-selection/code-source/
+  webview; diagrams/webview; embeds image-dialog/image/post-process/webm/webview;
+  formatting inline/lines/webview; links host/webview; livePreview inline/
+  rendered-position/webview; math commands/webview; render/webview; resources/host;
+  tasks/webview; vim/webview; shared/fuzzy; shared/rpc/endpoint; webview/features;
+  webview/ui/menu. These are the exact 38 remaining files in eslint.legacy.mjs.
+- README template pass still needed for autoPair, callouts, codeBlocks, diagrams,
+  dialect, embeds, folding, formatting, indentGuides, lineNumbers, links,
+  livePreview, math, render, resources, smartLists, spellcheck, tasks, vault, vim.
+  Extend manual regressions for each rewritten plugin. Kernel why-comments are
+  done. After all entries comply, delete backlog/config block and write the dated
+  readability completion record with ordered completion checks.
+- Phase 4: inlineTitle rename/focus/view transfer; tags; suggest sources/channels;
+  search worker/cancellation; pasteHtml including table cells; copyForAgent;
+  markers. Each needs contributions, lifecycle/composition units, README and manual
+  scenarios. No new Phase 4 plugin was delivered in this run.
+- Phase 5: shared live per-vault index, nearest-marker roots, workers, persistence,
+  unsaved overlays, exclusions, incremental resolution, consumer migration,
+  unresolved styling, outline/symbols, backlinks/unlinked mentions, outgoing links,
+  tags view, rename link updates, quick switcher, word count and 10,000-note measure.
+- Phase 6: complete commands/settings routing, plugin management, workspace editor
+  association, manual inventory and PARITY.md. Keep verify bindings unbound.
+- Phase 7: frozen facade/declarations, isolated external contexts, selection/error
+  handling, marker mapping, external actions/processors, full facade tests/API.md.
+- Phase 8: packaging/notices/allowlist audit, release docs, sample external plugin,
+  complete handover, zero todo ledger rows and ordered final release checks.
+- Owner acceptance remains unrun. Prioritize table drag/scroll and cell projection,
+  Properties drafts/IME/row operations, then two-panel state/undo and plugin toggles.
+
+Cumulative readability counts so far: 86 → 38 distinct files;
+66 → 31 long-function, 33 → 16 complexity, 13 → 4 parameter,
+19 → 10 nested-ternary, 1 → 0 depth, 6 → 0 receiver-pattern files;
+215 → 247 unit tests. The readability pass and all requested later phases remain
+incomplete. No external tool, permission or resource blocker has been identified.
+No push, publication, owner-profile installation or source-repository changes.

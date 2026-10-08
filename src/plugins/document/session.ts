@@ -60,13 +60,14 @@ export class Session implements DocumentSession {
           return true;
         }
         const edits: TextEdit[] = [];
-        prepared.changes.iterChanges((from, to, _a, _b, insert) =>
+        prepared.changes.iterChanges((...change) => {
+          const [from, to, , , insert] = change;
           edits.push({
             from,
             to,
             insert: insert.sliceString(0, insert.length, this.document.eol),
-          }),
-        );
+          });
+        });
         this.expected = prepared;
         try {
           if (!(await this.workbench.apply(this.document, edits))) {

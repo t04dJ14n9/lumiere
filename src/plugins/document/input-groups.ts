@@ -40,6 +40,10 @@ export class InputGroups {
     if (this.vimMode(this.view)) {
       return { annotations: editGroup.of(`vim-${this.sequence}`) };
     }
+    return this.plainInput(transaction);
+  });
+
+  private plainInput(transaction: Transaction) {
     const time = transaction.annotation(Transaction.time)!;
     const event = transaction.annotation(Transaction.userEvent);
     const ranges: { from: number; to: number }[] = [];
@@ -62,7 +66,7 @@ export class InputGroups {
     }
     this.previous = { time, ranges };
     return { annotations: editGroup.of(`input-${this.sequence}`) };
-  });
+  }
 
   private boundary(): void {
     this.sequence++;
