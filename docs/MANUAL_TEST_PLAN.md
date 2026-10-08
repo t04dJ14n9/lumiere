@@ -464,3 +464,10 @@ smoke scenarios. Use only the disposable fixture vault described above.
   focus to another chip or the add-item input while committing; focus must follow
   the replacement DOM. Check Escape, Enter, Mod+S, blur, remove buttons and chip
   menus. Toggle Properties off/on with a chip menu open. Not run by the agent.
+
+- **Properties — structural controls:** rerun property rename validation,
+  chosen-type retention, single/multiple row menus, row removal and order commit.
+  Test arrow/Tab and Vim h/j/k/l/i/A/o focus, Alt+Down to body, Mod+Backspace,
+  undo/redo and save. Rename while saving and verify invalid or duplicate names
+  block the operation; successful edits restore focus to the requested row.
+  Reconcile a second-panel change while a type menu is open. Not run by the agent.

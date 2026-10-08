@@ -1171,3 +1171,30 @@ listed in eslint.legacy.mjs. Finish remaining READMEs, kernel why-comments and
 manual regression inventory, remove the exhausted backlog and run completion
 smokes. Then deliver remaining Phase 4 plugins and Phases 5–8 as specified in
 the preceding record. No new plugin or phase was completed by this unit.
+
+### Readability pass progress — Property controls, 2026-10-08
+
+Delivered: replaced the monolithic structural-control binder with named panel,
+row and order registrations. `control-edits.ts` owns commit guards/focus recovery;
+`row-name.ts` owns rename validation/type retention; `row-menu.ts` owns type and
+selection menus; `row-navigation.ts` maps keys to row actions. Retained panel/
+row bindings and existing selection/order lifetimes preserve reconciliation.
+Added pure units for post-removal focus and key priority; README/manual inventory
+updated. No intentional behavior changes or newly discovered bug.
+
+Backlog since preceding unit → now: max-lines-per-function 56 → 55; complexity
+28 → 27; max-params 11 → 11; no-nested-ternary 17 → 16; max-depth 1 → 1;
+no-restricted-syntax 0 → 0. Distinct files 71 → 70. No new lint disables or
+exceptions. Unit count 222 → 224.
+Checks: `pnpm check` 224/224 and `pnpm test:browser` 14/14. Native not rerun:
+no native wiring change. Logs: `docs/checks/readability-property-controls-{check,browser}.txt`.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo.
+Deviations: none. Manual acceptance has not run.
+
+Known issues / exact remaining work: properties editing/fields/form/order/
+selection/sheet-html/sheet/webview; then pagePreview/controller, host/workbench,
+editor and footnotes registration functions, markdown/search/evaluate and
+metadata/footnote-extract, and all other remaining eslint.legacy.mjs entries.
+Complete remaining README rewrites, kernel why-comments and manual regression
+inventory before the readability completion record and ordered checks. Remaining
+Phase 4 plugins and Phases 5–8 are unchanged from the Tables progress record.

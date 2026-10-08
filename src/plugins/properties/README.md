@@ -28,7 +28,12 @@ input. Type preferences are stored by the injected vault root.
 - `sanitize.ts`: property-specific sanitized HTML policy.
 - `rows.ts`: row reconciliation and focused field retention.
 - `fields.ts`: scalar input bindings and validation.
-- `controls.ts`: property rename, type menus and structural controls.
+- `controls.ts`: structural controls, retained panel bindings and ordering.
+- `control-edits.ts`: structural transactions and focus restoration.
+- `row-name.ts`: name validation, rename commit and chosen-type retention.
+- `row-menu.ts`: type and row selection menus.
+- `row-navigation.ts`: row keyboard routing and focus movement.
+- `controls.test.ts`: removal focus and key-routing unit tests.
 - `form.ts`: add-property form and header controls.
 - `heading.ts`: sheet heading focus and paging.
 - `lists.ts`: list reconciliation and add/remove transactions.
