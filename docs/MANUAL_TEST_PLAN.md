@@ -512,3 +512,10 @@ smoke scenarios. Use only the disposable fixture vault described above.
   embeds; numbering, popup keyboard focus, definition links and back-references
   must remain consistent. Disable Footnotes while a preview render is pending,
   then re-enable; stale controls must not survive. Not run by the agent.
+
+- **Commands:** rerun **commands and resources (Phase 3)** plus the composition
+  command-availability checks. Run save/undo/redo/close/Open as Text from keys and
+  the palette; change the active group while flushing and verify the wrong panel
+  is never edited or closed. Disable/re-enable a command-owning feature and switch
+  between minimal/Obsidian panels; palette execution must respect current settings.
+  No owner manual run has been performed.

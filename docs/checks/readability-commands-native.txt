@@ -1,0 +1,88 @@
+(node:13530) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 test:vscode /Users/t04dj14n9/Code/vscode-markdown-workbench
+> pnpm build && playwright test -c test/vscode/playwright.config.ts
+
+(node:13553) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+> vscode-markdown-workbench@0.1.0 build /Users/t04dj14n9/Code/vscode-markdown-workbench
+> node scripts/build.mjs
+
+
+  dist/extension.js      1.2mb ⚠️
+  dist/extension.js.map  2.4mb
+
+⚡ Done in 46ms
+
+  dist/webview/mathjax-PBZPKRMV.js                         2.4mb ⚠️
+  dist/webview/editor.js                                   1.8mb ⚠️
+  dist/webview/chunk-TQU4O5JR.js                         938.0kb
+  dist/webview/code-highlight-4LMVB4H3.js                854.1kb
+  dist/webview/chunk-E2YAVA5H.js                         704.8kb
+  dist/webview/katex-MXR5ZGD3.js                         479.4kb
+  dist/webview/architectureDiagram-UYN6MBPD-NCO25MQY.js  408.5kb
+  dist/webview/chunk-ZVCL6A5U.js                         347.8kb
+  dist/webview/mindmap-definition-GWI6TPTV-WQLNW6HB.js   245.9kb
+  dist/webview/chunk-74Q4ATEC.js                         209.8kb
+  dist/webview/sequenceDiagram-G6AWOVSC-HSRDYRJW.js      149.1kb
+  dist/webview/blockDiagram-ZHA2E4KO-4MPCX35I.js         132.9kb
+  dist/webview/c4Diagram-6F5ED5ID-FNFDJL62.js            117.8kb
+  dist/webview/flowDiagram-7ASYPVHJ-ZISNYYX6.js           96.7kb
+  dist/webview/chunk-AAE3JPLH.js                          91.2kb
+  dist/webview/chunk-AOVXKVLB.js                          85.2kb
+  dist/webview/ganttDiagram-NTVNEXSI-4APK2DPX.js          80.7kb
+  dist/webview/chunk-WRBLPIAL.js                          74.5kb
+  dist/webview/xychartDiagram-6QU3TZC5-T4Y7R7PE.js        68.2kb
+  dist/webview/chunk-M2CL6DGP.js                          64.0kb
+  ...and 120 more output files...
+
+⚡ Done in 411ms
+
+  dist/workers/search.cjs      805b 
+  dist/workers/vault.cjs       801b 
+  dist/workers/search.cjs.map  234b 
+  dist/workers/vault.cjs.map   233b 
+
+⚡ Done in 1ms
+(node:13580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13580) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13580) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[43m[30m WARNING [39m[49m A 'repository' field is missing from the 'package.json' manifest file.
+Use --allow-missing-repository to bypass.
+[104m[30m INFO [39m[49m [1m[34mFiles included in the VSIX:[39m[22m
+[1m[34m[39m[22m[1mextension.vsix[22m
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ [1mextension/[22m
+   ├─ LICENSE.txt [90m[1.04 KB][39m
+   ├─ package.json [90m[33.22 KB][39m
+   ├─ readme.md [90m[1.12 KB][39m
+   └─ [1mdist/[22m
+      ├─ extension.js [90m[1.18 MB][39m
+      ├─ extension.js.map [90m[2.45 MB][39m
+      ├─ [1mapi/[22m [32m(1 file)[39m [90m[0.01 KB][39m
+      ├─ [1mwebview/[22m [32m(140 files)[39m [31m[27.35 MB][39m
+      └─ [1mworkers/[22m [32m(4 files)[39m [90m[2.02 KB][39m
+
+=> Run [1mvsce ls --tree[22m to see all included files.
+
+[42m[30m DONE [39m[49m Packaged: /tmp/markdown-workbench-e2e-7235d867/extension.vsix [1m(152 files, 6.73 MB)[22m
+Testing Code 1.140.0 (/Applications/Visual Studio Code.app/Contents/MacOS/Code) with profile /tmp/markdown-workbench-e2e-7235d867
+
+[2mRunning [22m1[2m test using [22m1[2m worker[22m
+
+(node:13624) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13624) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(node:13624) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Native: closing all editors
+Native: opening fixture
+Native: waiting for Markdown Workbench webview
+  [32m✓[39m  [2m1 [22mtest/vscode/core.spec.ts:18:5 › isolated installed editor types, saves and performs native document undo[2m (2.6s)[22m
+
+[32m  1 passed[39m[2m (8.3s)[22m

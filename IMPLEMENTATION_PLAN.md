@@ -1464,3 +1464,25 @@ Known issues / exact remaining work: the 44 files remaining in eslint.legacy.mjs
 remaining plugin README rewrites and manual regression inventory; then remove
 the empty backlog/config block and run readability completion checks. Remaining
 Phase 4 plugins and Phases 5–8 are unchanged and still incomplete.
+
+### Readability pass progress — Commands, 2026-10-08
+
+Delivered: named per-panel action binding, host palette and feature-command
+reconciliation/invocation guards. Webview command map is a pure registry; apply
+lists service, host-action, RPC and key registrations. Action ordering remains
+flush → focus guard → native action inside the session queue. README rewritten
+and command regression scenarios added; old README progress text is superseded
+by existing Phase 3 completion records. No new feature behavior.
+
+Backlog since preceding unit → now: max-lines-per-function 35 → 32; complexity
+17 → 17; max-params 5 → 5; no-nested-ternary 10 → 10; max-depth 0 → 0;
+no-restricted-syntax 0 → 0. Distinct files 44 → 41. No exceptions added.
+Registry unit raises count 244 → 245. Checks in order: `pnpm check` 245/245;
+`pnpm test:browser` 14/14; `pnpm test:vscode` 1/1, fresh isolated-profile VSIX.
+Logs: `docs/checks/readability-commands-{check,browser,native}.txt`.
+Ledger unchanged: 87/15/2/333/11. Deviations: none; no intentional bug fixes.
+
+Known issues / exact remaining work: remaining 41 backlog files, other plugin
+READMEs and manual regressions; remove empty backlog/config block and run
+readability completion checks. Remaining Phase 4 plugins and Phases 5–8 are
+still undelivered as recorded above. Owner manual acceptance remains unrun.
