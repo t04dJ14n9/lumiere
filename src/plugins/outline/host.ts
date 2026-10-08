@@ -37,6 +37,10 @@ export const outlineHost: Plugin = {
       timer = setTimeout(() => void refresh(), REFRESH_DELAY_MS);
     };
     ctx.effect(() => () => clearTimeout(timer));
+    // A newly opened editor is already active, so VS Code reports no change
+    // of active editor for it; refresh on open and close as well.
+    ctx.on("editor/opened", schedule);
+    ctx.on("editor/closed", schedule);
     ctx.on("editor/activeChanged", schedule);
     ctx.on("document/changed", schedule);
     ctx.on("editor/selectionChanged", (panel) => {
