@@ -33,6 +33,11 @@
     ],
     "commands": [
       {
+        "command": "markdownWorkbench.insertCallout",
+        "title": "Insert Callout",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.save",
         "title": "Save",
         "category": "Markdown Workbench"
@@ -320,6 +325,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "markdownWorkbench.insertCallout",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.callouts"
+        },
+        {
           "command": "markdownWorkbench.save",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
@@ -480,6 +489,12 @@
           "default": true,
           "scope": "resource",
           "description": "Auto pair in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.callouts.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Render callouts and remember their disclosure state per panel."
         },
         "markdownWorkbench.plugins.codeBlocks.enabled": {
           "type": "boolean",

@@ -733,3 +733,13 @@ Deviations: random SVG ID prefixes use getRandomValues (available in the HTTP
 smoke harness as well as the native webview), rather than secure-context-only
 randomUUID. Known issues: callouts, footnotes and tasks remain in step 4, then
 Phase 4 steps 5–10 and Phases 5–8. No phase-completion claim.
+
+### Phase 4 progress — Callouts, 2026-10-07
+
+Delivered: callout rendering, nested/foldable disclosure memory per panel,
+presentation persistence, insertion command, owned styles and listener cleanup.
+Checks: `pnpm check` (173 unit tests passed), `pnpm test:browser` (14/14).
+Native not rerun: no native wiring change. Logs: `docs/checks/phase4-callouts-*`.
+Ledger: 84/14/2/334/14. Manual callout scenarios added, not run.
+Deviations: none. Known issues: footnotes and tasks remain in step 4, then
+Phase 4 steps 5–10 and Phases 5–8. No phase-completion claim.

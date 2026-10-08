@@ -1,3 +1,4 @@
+import callouts from "./callouts/manifest";
 import diagrams from "./diagrams/manifest";
 import math from "./math/manifest";
 import codeBlocks from "./codeBlocks/manifest";
@@ -12,6 +13,7 @@ import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
 import vim from "./vim/manifest";
 export const features: readonly Manifest[] = [
+  callouts,
   diagrams,
   math,
   codeBlocks,

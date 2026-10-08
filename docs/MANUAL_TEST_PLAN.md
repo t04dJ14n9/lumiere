@@ -245,3 +245,17 @@ Mermaid fence to `Core.md`.
    then rendering returns. Repeat while the lazy library is loading.
 3. Test a diagram with an HTML label or script-like content: no script or external
    action runs. Check light/dark themes and two panels with independent carets.
+
+## Callouts
+
+Setup: in `Core.md`, add normal, nested and foldable callouts, including
+`> [!warning]- Closed title`, `> [!tip]+ Open title` and an unknown callout kind.
+
+1. Leave their source: verify titles, body Markdown, nesting and default open
+   states. Toggle disclosure, move away, edit elsewhere and reload the window;
+   the state persists in that panel. A second panel has independent state.
+2. Put the caret inside: syntax reveals and normal text editing works. Run
+   Insert Callout on multiple selected lines and undo the single source edit.
+3. Disable/re-enable Callouts: widgets, disclosure listeners, styling and command
+   disappear and return. Source stays unchanged. Links in titles must follow
+   links without also toggling disclosure.

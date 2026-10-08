@@ -17,3 +17,4 @@ export { linksWebview } from "./links/webview";
 export { codeBlocksWebview } from "./codeBlocks/webview";
 export { mathWebview } from "./math/webview";
 export { diagramsWebview } from "./diagrams/webview";
+export { calloutsWebview } from "./callouts/webview";
