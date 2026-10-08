@@ -2040,3 +2040,64 @@ Ledger: 87/16/2/333/10. No new code, exceptions or behavior changes.
 Known issues: run the ordered readability completion checks and write the final
 before/after record, then continue remaining Phase 4 plugins. Claude's Phase 5
 completion gate and Phases 6–8 remain as specified above. Manual acceptance unrun.
+
+### Readability pass — 2026-10-08
+
+**Completed against the plan's automated acceptance criteria.** Owner hands-on
+acceptance remains Phase 9 and is not claimed.
+
+Delivered: exhausted the original 86-file backlog with responsibility-based
+rewrites, preserving behavior; removed eslint.legacy.mjs and its config block.
+All current source is checked under the unchanged limits. Plugin READMEs follow
+the required behavior/flow/files/contracts/limits structure, stale project-status
+prose is removed, kernel lifetime/proxy invariants are explained, and the manual
+plan includes regressions for rewritten plugins. Earlier progress records cover
+Tables, Properties, Page Preview, native Workbench, Editor, Footnotes, kernel,
+HTML rendering, Commands and Document.
+
+This run completed the 38 files outstanding at its start:
+- host/navigation; markdown/metadata/index; markdown/properties edits, merge,
+  order, scalar-edits; markdown/search canvas, query; markdown/tables/model;
+- plugins/callouts/webview; codeBlocks code-highlight, code-selection, code-source,
+  webview; diagrams/webview; embeds image-dialog, image, post-process, webm, webview;
+- formatting inline, lines, webview; links host, webview; livePreview inline,
+  rendered-position, webview; math commands, webview; render/webview;
+  resources/host; tasks/webview; vim/webview;
+- shared/fuzzy; shared/rpc/endpoint; webview/features; webview/ui/menu.
+New collaborators are named and documented in the unit records/READMEs. The
+original baseline list remains auditable in commit 21ac0e6; all 86 paths are
+covered by this record and the preceding readability records.
+
+Backlog before → after: 86 → 0 distinct files; max-lines-per-function 66 → 0;
+complexity 33 → 0; max-params 13 → 0; nested-ternary 19 → 0; depth 1 → 0;
+receiver-pattern 6 → 0. During this run 38 → 0 distinct files. A final audit
+removed stale compact-array exemptions missed by line-based edits, as recorded
+in WebM. No added inline eslint-disable directives; no raised limits or added
+legacy files. No behavioral bugs were intentionally fixed in this pass.
+
+Unit tests before → after: 215 → 352 overall. Readability added 59 units across
+runs (32 before this run, 27 here); Claude's concurrent Phase 5 part-one merge
+added 78. Existing assertions and the smoke suites were not weakened or expanded.
+Final checks, in order: `pnpm check` **352/352**, formatting/lint/all TypeScript
+projects/contributions passed; `pnpm test:browser` **14/14**;
+`pnpm test:vscode` **1/1**, freshly packaged VSIX in the isolated /tmp profile.
+Logs: `docs/checks/readability-complete-{check,browser,native}.txt`.
+Ledger: **87 ported / 16 rewritten / 2 changed / 333 retired / 10 todo**, 448 total.
+The ledger change came from Claude's Phase 5 root-discovery unit. No source
+scenario was dropped or newly retired in this readability run.
+
+Deviations: none. Native navigation adapts its existing typed argument tuple to
+named internal options to preserve the interface used by the concurrent vault
+work. No push, publication, owner-profile installation or source-worktree edits.
+
+Known issues / next work:
+- Phase 4: inlineTitle rename/focus/per-panel view transfer; tags; suggest
+  sources/channels; search query worker/cancellation; pasteHtml including cells;
+  copyForAgent; markers. Each needs manifest, composition/lifecycle units, README,
+  contributions, ledger and manual coverage. None was delivered by this pass.
+- Phase 5 part one is on main, but no "Phase 5 (completed)" record exists.
+  Claude owns remaining consumer integration, Tags view and unresolved styling.
+  Keep VaultIndex unchanged and do not start Phase 6 until that gate is met.
+- Phases 6–8: command/settings/parity, public API and packaging/handover as planned.
+- Owner should first rerun table drag/scroll/cell projection and Properties drafts/
+  IME, then two-panel undo/state, plugin toggles and embed/media cleanup.
