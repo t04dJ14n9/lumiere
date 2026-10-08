@@ -37,6 +37,37 @@ export function fuzzyMatch(
   if (!tokens.length) {
     return { score: 0, matches: [] };
   }
+  const { lower, original } = normalizeText(text);
+  const positions =
+    matchTokens(tokens, lower) ?? matchSubsequence(tokens, lower);
+  if (!positions) {
+    return undefined;
+  }
+  positions.sort((a, b) => a - b);
+  const matches = contiguousRanges(positions);
+  const boundaries = matches.filter(
+    ([from]) => from > 0 && /[\p{L}\p{N}]/u.test(lower[from - 1]!),
+  ).length;
+  const spread = positions.at(-1)! - positions[0]! + 1;
+  return {
+    score:
+      -(matches.length - 1) -
+      boundaries / 10 -
+      spread / 100 -
+      positions[0]! / 1000 -
+      lower.length / 10000,
+    matches: sourceRanges(matches, original),
+  };
+}
+interface SourceRange {
+  from: number;
+  to: number;
+}
+
+function normalizeText(text: string): {
+  lower: string;
+  original: SourceRange[];
+} {
   let lower = "";
   const original: { from: number; to: number }[] = [];
   for (const part of new Intl.Segmenter(undefined, {
@@ -48,8 +79,13 @@ export function fuzzyMatch(
       original.push({ from: part.index, to: part.index + part.segment.length });
     }
   }
+  return { lower, original };
+}
+
+/** Whole tokens may match out of order, but never reuse a character. */
+function matchTokens(tokens: string[], lower: string): number[] | undefined {
   const used = new Set<number>();
-  let positions: number[] = [];
+  const positions: number[] = [];
   for (const token of tokens) {
     let at = lower.indexOf(token);
     while (
@@ -61,28 +97,36 @@ export function fuzzyMatch(
       at = lower.indexOf(token, at + 1);
     }
     if (at < 0) {
-      positions = [];
-      break;
+      return undefined;
     }
     for (let i = at; i < at + token.length; i++) {
       used.add(i);
       positions.push(i);
     }
   }
-  if (!positions.length) {
-    let at = 0;
-    for (const char of tokens.join("")) {
-      const found = lower.indexOf(char, at);
-      if (found < 0) {
-        return undefined;
-      }
-      for (let i = 0; i < char.length; i++) {
-        positions.push(found + i);
-      }
-      at = found + char.length;
+  return positions;
+}
+
+function matchSubsequence(
+  tokens: string[],
+  lower: string,
+): number[] | undefined {
+  const positions: number[] = [];
+  let at = 0;
+  for (const char of tokens.join("")) {
+    const found = lower.indexOf(char, at);
+    if (found < 0) {
+      return undefined;
     }
+    for (let i = 0; i < char.length; i++) {
+      positions.push(found + i);
+    }
+    at = found + char.length;
   }
-  positions.sort((a, b) => a - b);
+  return positions;
+}
+
+function contiguousRanges(positions: number[]): [number, number][] {
   const matches: [number, number][] = [];
   for (const pos of positions) {
     const previous = matches.at(-1);
@@ -92,10 +136,14 @@ export function fuzzyMatch(
       matches.push([pos, pos + 1]);
     }
   }
-  const boundaries = matches.filter(
-    ([from]) => from > 0 && /[\p{L}\p{N}]/u.test(lower[from - 1]!),
-  ).length;
-  const spread = positions.at(-1)! - positions[0]! + 1;
+  return matches;
+}
+
+/** Normalization can expand one grapheme into several UTF-16 positions. */
+function sourceRanges(
+  matches: [number, number][],
+  original: SourceRange[],
+): [number, number][] {
   const sourceMatches: [number, number][] = [];
   for (const [from, to] of matches) {
     const start = original[from]!.from;
@@ -107,16 +155,9 @@ export function fuzzyMatch(
       sourceMatches.push([start, end]);
     }
   }
-  return {
-    score:
-      -(matches.length - 1) -
-      boundaries / 10 -
-      spread / 100 -
-      positions[0]! / 1000 -
-      lower.length / 10000,
-    matches: sourceMatches,
-  };
+  return sourceMatches;
 }
+
 export function matchScore(
   query: string,
   name: string,

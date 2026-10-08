@@ -1543,3 +1543,24 @@ Cumulative readability counts so far: 86 → 38 distinct files;
 215 → 247 unit tests. The readability pass and all requested later phases remain
 incomplete. No external tool, permission or resource blocker has been identified.
 No push, publication, owner-profile installation or source-repository changes.
+
+### Readability pass progress — Fuzzy matching, 2026-10-08
+
+Delivered: separated grapheme normalization, non-overlapping whole-token matching,
+ordered subsequence fallback, contiguous ranges and source-coordinate mapping.
+The scoring formula and original UTF-16 highlights are preserved. Added two units
+covering reordered tokens, fallback ordering, occupied matches and normalization.
+Backlog: 38 → 37 distinct files; long-function 31 → 30; complexity 16 → 15;
+other rule counts unchanged. No new exemptions, inline disables or behavior fixes.
+Checks: `pnpm check` 249/249. Smoke suites not rerun for this pure helper rewrite;
+no webview or native wiring changed. Log: `docs/checks/readability-fuzzy-check.txt`.
+Ledger unchanged: 87 ported / 15 rewritten / 2 changed / 333 retired / 11 todo.
+Deviations: none. Owner acceptance remains unrun.
+
+Known issues: finish the remaining 37 eslint.legacy.mjs files, remaining README
+and manual regression inventory, then ordered readability completion checks.
+Phase 4 inlineTitle, tags, suggest, search, pasteHtml, copyForAgent and markers
+remain. Phase 5 belongs exclusively to Claude on claude/phase5-vault; do not
+change its branch, worktree or VaultIndex interface. Phase 6 must wait for the
+Phase 5 completion record on main. Phase 6 command/settings/parity, Phase 7 API
+and Phase 8 packaging/documentation deliverables remain as listed above.

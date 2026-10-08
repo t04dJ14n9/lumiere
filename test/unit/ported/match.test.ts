@@ -36,3 +36,21 @@ test("mixed CJK tokens and compatibility normalization preserve original UTF-16 
   assert.deepEqual(fuzzyMatch("ffi", "ﬃ")?.matches, [[0, 1]]);
   assert.deepEqual(fuzzyMatch("å", "A\u030a")?.matches, [[0, 2]]);
 });
+test("whole tokens may reorder while subsequence fallback preserves query order", () => {
+  assert.deepEqual(fuzzyMatch("beta alpha", "alpha beta")?.matches, [
+    [0, 5],
+    [6, 10],
+  ]);
+  assert.deepEqual(fuzzyMatch("ab cd", "a-b c-d")?.matches, [
+    [0, 1],
+    [2, 3],
+    [4, 5],
+    [6, 7],
+  ]);
+  assert.equal(fuzzyMatch("ab cd", "c-d a-b"), undefined);
+});
+test("repeated tokens skip occupied matches and normalized ranges coalesce", () => {
+  assert.deepEqual(fuzzyMatch("aa aa", "aaaa")?.matches, [[0, 4]]);
+  assert.deepEqual(fuzzyMatch("f f i", "ﬃ")?.matches, [[0, 1]]);
+  assert.deepEqual(fuzzyMatch("---", "anything"), { score: 0, matches: [] });
+});
