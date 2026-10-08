@@ -8,14 +8,18 @@ import { VaultRegistry } from "./registry";
  */
 export const vaultsHost: Plugin = {
   name: "vault",
-  inject: { required: ["vaultSystem"] },
+  inject: { required: ["vaultSystem"], optional: ["workbench"] },
   apply(ctx) {
     const system = ctx.vaultSystem;
-    const registry = new VaultRegistry(system, {
-      changed: (root, change) => ctx.emit("vault/changed", root, change),
-      resolved: (root) => ctx.emit("vault/resolved", root),
-      error: (message, error) => ctx.logger.warn(message, error),
-    });
+    const registry = new VaultRegistry(
+      system,
+      {
+        changed: (root, change) => ctx.emit("vault/changed", root, change),
+        resolved: (root) => ctx.emit("vault/resolved", root),
+        error: (message, error) => ctx.logger.warn(message, error),
+      },
+      ctx.workbench?.navigation,
+    );
     ctx.effect(() => () => registry.dispose());
     ctx.effect(() =>
       system.onDocumentChanged((uri, text) => registry.setOverlay(uri, text)),

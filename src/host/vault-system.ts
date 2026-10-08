@@ -23,6 +23,10 @@ export function createVaultSystem(
       vscode.workspace
         .getWorkspaceFolder(vscode.Uri.parse(uri))
         ?.uri.toString(),
+    workspaceFolders: () =>
+      (vscode.workspace.workspaceFolders ?? []).map((folder) =>
+        folder.uri.toString(),
+      ),
     exists,
     list: listVault,
     read: async (uri) => vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),

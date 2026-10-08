@@ -5,6 +5,7 @@ import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
 import type { EditorPanel } from "./api";
 import { createPanel } from "./panel";
+import { protocol } from "./protocol";
 interface EditorHostConfig {
   features?: readonly Manifest[];
   configure: (context: Context, panel: PanelShell) => void;
@@ -29,6 +30,10 @@ export const editorHost: Plugin<EditorHostConfig> = {
           rank: ctx.runtime.rank,
         });
         panels.set(panel.id, panel);
+        // The endpoint is disposed with the panel, which removes this listener.
+        panel.rpc.on(protocol, "selectionChanged", ({ hasSelection }) =>
+          ctx.emit("editor/selectionChanged", panel, hasSelection),
+        );
         ctx.emit("editor/opened", panel);
       }),
     );

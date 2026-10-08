@@ -24,6 +24,7 @@ export interface Backlink {
 export interface VaultIndex {
   readonly root: string;
   files(): readonly VaultFile[];
+  file(path: string): VaultFile | undefined;
   metadata(path: string): NoteMetadata | undefined;
   resolveLink(linktext: string, sourcePath: string): VaultFile | undefined;
   resolveLinkCandidates(
@@ -81,6 +82,7 @@ export interface VaultSettings {
 export interface VaultSystem extends VaultFileSystem {
   /** The workspace folder containing this URI, if any. */
   workspaceFolder(uri: string): string | undefined;
+  workspaceFolders(): readonly string[];
   exists(uri: string): Promise<boolean>;
   /** Persistent storage for a vault's snapshot; absent without a workspace. */
   store(root: string): SnapshotStore | undefined;
@@ -104,6 +106,20 @@ export interface Vault {
 export interface Vaults {
   /** The vault that contains a note, indexed on first use (DESIGN §12.1). */
   forDocument(uri: string): Promise<Vault>;
+  /** The vault of each workspace folder, for commands with no note open. */
+  forWorkspace(): Promise<Vault | undefined>;
+  /** A URI's vault and vault path, or `undefined` outside the workspace. */
+  locate(uri: string): Promise<{ vault: Vault; path: string } | undefined>;
+  /** A note's current text: unsaved text while it is open, else the file. */
+  text(uri: string): Promise<string>;
+  /**
+   * Open a vault file in the editor, at an offset in its current text when
+   * given (for example a heading or a link found in that text).
+   */
+  open(
+    uri: string,
+    options?: { offset?: number; side?: boolean },
+  ): Promise<void>;
   all(): readonly Vault[];
 }
 declare module "../../kernel/types" {

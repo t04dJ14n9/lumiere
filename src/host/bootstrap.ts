@@ -1,4 +1,4 @@
-import { pluginRank } from "../plugins/catalog";
+import { pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
 import { features } from "../plugins/catalog";
 import { Context } from "../kernel";
@@ -13,7 +13,11 @@ import {
   vaultHost,
   vaultsHost,
   resourcesHost,
+  backlinksHost,
+  outgoingLinksHost,
+  outlineHost,
 } from "../plugins/host";
+import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
 export async function bootstrap(
   workbench: Workbench,
   vaultSystem?: VaultSystem,
@@ -38,6 +42,15 @@ export async function bootstrap(
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
   root.plugin(livePreviewHost);
+  const windowPlugins = [backlinksHost, outgoingLinksHost, outlineHost];
+  startWorkbenchFeatures(
+    root,
+    workbench,
+    windowPlugins.map((plugin) => ({
+      manifest: workbenchFeatures.find((item) => item.id === plugin.name)!,
+      plugin,
+    })),
+  );
   await root.settled();
   return root;
 }

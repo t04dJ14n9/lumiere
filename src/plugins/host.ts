@@ -8,3 +8,6 @@ export { resourcesHost } from "./resources/host";
 export { linksHost } from "./links/host";
 export { tasksHost } from "./tasks/host";
 export { propertiesHost } from "./properties/host";
+export { backlinksHost } from "./backlinks/host";
+export { outgoingLinksHost } from "./outgoingLinks/host";
+export { outlineHost } from "./outline/host";

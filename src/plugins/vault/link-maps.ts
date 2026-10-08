@@ -1,37 +1,16 @@
 import type { NoteMetadata } from "../../markdown/metadata";
-import {
-  decodeLinkPath,
-  isExternalLink,
-  linkLookupKey,
-  splitLinktext,
-} from "../../shared/vault-path";
+import { linkpathOf, vaultLinks } from "../../markdown/metadata/linkpaths";
+import { linkLookupKey } from "../../shared/vault-path";
 import type { Backlink, VaultFile } from "./api";
 
 type Resolver = (linkpath: string, sourcePath: string) => VaultFile | undefined;
 
 /**
  * The vault paths a note links to, as written: links, embeds and links in
- * properties, without `#subpaths`. External URLs and in-note links (`#Heading`)
- * are not vault links.
+ * properties, without `#subpaths`.
  */
 export function outgoingLinkpaths(metadata: NoteMetadata): string[] {
-  const all = [
-    ...metadata.links,
-    ...metadata.embeds,
-    ...metadata.frontmatterLinks,
-  ];
-  const paths: string[] = [];
-  for (const { link, original } of all) {
-    if (isExternalLink(link)) {
-      continue;
-    }
-    const isWikilink = /^!?\[\[/.test(original);
-    const { path } = splitLinktext(isWikilink ? link : decodeLinkPath(link));
-    if (path) {
-      paths.push(path);
-    }
-  }
-  return paths;
+  return vaultLinks(metadata).map((link) => linkpathOf(link)!);
 }
 
 /**

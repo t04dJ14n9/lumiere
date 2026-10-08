@@ -110,3 +110,86 @@ export interface Workbench {
     update(key: string, value: unknown): PromiseLike<void>;
   };
 }
+
+/** A node in a native tree view, free of VS Code types. */
+export interface TreeNode {
+  id: string;
+  label: string;
+  description?: string;
+  tooltip?: string;
+  /** A codicon name, such as `file` or `link`. */
+  icon?: string;
+  /** Shows the file's icon and allows dragging the file. */
+  resourceUri?: string;
+  /** Undefined for a leaf; otherwise whether it starts expanded. */
+  expanded?: boolean;
+  /** Runs when the node is clicked. */
+  command?: { id: string; args?: unknown[] };
+}
+export interface TreeSource {
+  roots(): TreeNode[] | Promise<TreeNode[]>;
+  children(node: TreeNode): TreeNode[] | Promise<TreeNode[]>;
+  /** Needed to reveal a node below the roots. */
+  parent?(node: TreeNode): TreeNode | undefined;
+}
+export interface TreeHandle {
+  refresh(): void;
+  /** Text shown above the tree, such as "No note is open". */
+  setMessage(message: string | undefined): void;
+  reveal(node: TreeNode): void;
+  readonly visible: boolean;
+  onVisibilityChanged(listener: (visible: boolean) => void): Disposer;
+  dispose(): void;
+}
+export interface StatusHandle {
+  show(text: string, tooltip?: string, command?: string): void;
+  hide(): void;
+  dispose(): void;
+}
+export interface PickItem<T> {
+  label: string;
+  description?: string;
+  detail?: string;
+  value: T;
+}
+/** Text edits for one file, by line and column (UTF-16 code units). */
+export interface FileTextEdits {
+  uri: string;
+  edits: {
+    start: { line: number; col: number };
+    end: { line: number; col: number };
+    text: string;
+  }[];
+}
+/** Native views, status bar and prompts for host plugins (DESIGN §7.1). */
+export interface HostViews {
+  tree(viewId: string, source: TreeSource): TreeHandle;
+  status(id: string, priority: number): StatusHandle;
+  /** A quick pick whose items are recomputed as the user types. */
+  pick<T>(options: {
+    placeholder: string;
+    items(query: string): readonly PickItem<T>[];
+  }): Promise<{ item?: PickItem<T>; query: string } | undefined>;
+  /** Ask with buttons; resolves to the chosen button, or undefined. */
+  ask(message: string, actions: readonly string[]): Promise<string | undefined>;
+  command(id: string, run: (...args: unknown[]) => unknown): Disposer;
+  /** The note in the active tab, in this editor or the text editor. */
+  activeNote(): string | undefined;
+  onActiveNoteChanged(listener: () => void): Disposer;
+  /** The text and selection of a note open in a text editor. */
+  textEditor(uri: string): { text: string; selection: string } | undefined;
+  onTextSelectionChanged(listener: () => void): Disposer;
+  /** The current text of an open document, saved or not. */
+  documentText(uri: string): string | undefined;
+  /** A window-level setting under `markdownWorkbench.`. */
+  setting<T>(key: string, fallback: T): T;
+  /** Before files are renamed in VS Code; the edits apply with the rename. */
+  onWillRename(
+    listener: (
+      renames: readonly { oldUri: string; newUri: string }[],
+    ) => Promise<readonly FileTextEdits[]>,
+  ): Disposer;
+}
+export interface Workbench {
+  views?: HostViews;
+}

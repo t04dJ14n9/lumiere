@@ -18,6 +18,9 @@ import spellcheck from "./spellcheck/manifest";
 import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
 import vim from "./vim/manifest";
+import backlinks from "./backlinks/manifest";
+import outgoingLinks from "./outgoingLinks/manifest";
+import outline from "./outline/manifest";
 export const features: readonly Manifest[] = [
   // Table navigation claims override keys before Vim.
   tables,
@@ -42,6 +45,17 @@ export const features: readonly Manifest[] = [
   vim,
 ];
 
+/**
+ * Window-level feature plugins: native views, the status bar and commands
+ * that work without an open editor. They have no editor half, so the editor
+ * feature switch and composition tests (which iterate `features`) skip them.
+ */
+export const workbenchFeatures: readonly Manifest[] = [
+  backlinks,
+  outgoingLinks,
+  outline,
+];
+
 // Core rank is independent of activation order and shared by both runtimes.
 const owners = [
   "document",
@@ -54,6 +68,7 @@ const owners = [
   "livePreview",
   "markers",
   ...features.map((item) => item.id),
+  ...workbenchFeatures.map((item) => item.id),
 ];
 export function pluginRank(owner: string): number {
   const index = owners.indexOf(owner);

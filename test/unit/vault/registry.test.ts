@@ -29,6 +29,7 @@ function system(fs: MemoryFileSystem, markers: string[] = []) {
     watch: (root, listener) => fs.watch(root, listener),
     workspaceFolder: (uri) =>
       uri.startsWith("memory:///vault/") ? "memory:///vault" : undefined,
+    workspaceFolders: () => ["memory:///vault"],
     exists: async (uri) => markers.includes(uri),
     store: () => undefined,
     settings: () => ({
@@ -171,5 +172,20 @@ test("each panel's vault service is the shared index of its note's vault", async
     panel.context!.runtime.value("vault"),
     (await vaults.forDocument("memory:///vault/A.md")).index,
   );
+  await root.dispose();
+});
+
+test("locate and text give a note's vault, path and current text", async () => {
+  const fs = new MemoryFileSystem({ "A.md": "saved" });
+  const { root, host, vaults } = await start(fs);
+  const located = await vaults.locate("memory:///vault/A.md");
+  assert.equal(located?.path, "A.md");
+  assert.equal(await vaults.locate("file:///elsewhere/B.md"), undefined);
+  assert.equal(await vaults.text("memory:///vault/A.md"), "saved");
+  host.type("memory:///vault/A.md", "unsaved");
+  assert.equal(await vaults.text("memory:///vault/A.md"), "unsaved");
+  host.close("memory:///vault/A.md");
+  assert.equal(await vaults.text("memory:///vault/A.md"), "saved");
+  assert.equal((await vaults.forWorkspace())?.index.root, "memory:///vault");
   await root.dispose();
 });

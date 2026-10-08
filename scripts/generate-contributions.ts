@@ -26,7 +26,16 @@ export async function contributions() {
   const menus = manifests.flatMap((manifest) =>
     (manifest.contributes?.commands ?? []).map((command) => ({
       command: `markdownWorkbench.${command.id}`,
-      when: `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`,
+      when: whenEnabled(manifest, command.scope),
+    })),
+  );
+  const views = manifests.flatMap((manifest) =>
+    (manifest.contributes?.views ?? []).map((view) => ({
+      id: `markdownWorkbench.${view.id}`,
+      name: view.name,
+      when: [whenEnabled(manifest, view.scope), view.when]
+        .filter(Boolean)
+        .join(" && "),
     })),
   );
   return {
@@ -52,9 +61,10 @@ export async function contributions() {
         command: `markdownWorkbench.${command.id}`,
         key: command.key,
         ...(command.mac ? { mac: command.mac } : {}),
-        when: `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`,
+        when: whenEnabled(manifest, command.scope),
       })),
     ),
+    ...(views.length > 0 ? { views: { explorer: views } } : {}),
     menus: {
       commandPalette: menus,
       "editor/title": [
@@ -119,6 +129,24 @@ export async function contributions() {
     },
   };
 }
+/**
+ * The when-clause for a plugin's command or view. In the editor, the editor
+ * host keeps `markdownWorkbench.plugin.<id>` current for the active panel.
+ * Elsewhere, the plugin's setting decides.
+ */
+function whenEnabled(
+  manifest: Manifest,
+  scope: "editor" | "workbench" = "editor",
+): string {
+  if (scope === "editor") {
+    return `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`;
+  }
+  if (manifest.kind === "core") {
+    return "config.markdownWorkbench.preset != 'minimal'";
+  }
+  return `config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.${manifest.id}.enabled`;
+}
+
 async function main() {
   const file = new URL("../package.json", import.meta.url);
   const pkg = JSON.parse(readFileSync(file, "utf8"));

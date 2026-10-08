@@ -433,6 +433,25 @@
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "markdownWorkbench.backlinks",
+          "name": "Backlinks",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.backlinks.enabled"
+        },
+        {
+          "id": "markdownWorkbench.outgoingLinks",
+          "name": "Outgoing Links",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outgoingLinks.enabled"
+        },
+        {
+          "id": "markdownWorkbench.outline",
+          "name": "Note Outline",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled && activeCustomEditorId == 'markdownWorkbench.editor'"
+        }
+      ]
+    },
     "menus": {
       "commandPalette": [
         {
@@ -685,6 +704,12 @@
           "scope": "resource",
           "description": "Auto pair in the Markdown editor."
         },
+        "markdownWorkbench.plugins.backlinks.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Backlinks view and status bar count for the active note, with unlinked mentions."
+        },
         "markdownWorkbench.plugins.callouts.enabled": {
           "type": "boolean",
           "default": true,
@@ -750,6 +775,18 @@
           "default": true,
           "scope": "resource",
           "description": "Render TeX formulas with MathJax."
+        },
+        "markdownWorkbench.plugins.outgoingLinks.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Outgoing links view: the notes and files the active note links to, and links not created yet."
+        },
+        "markdownWorkbench.plugins.outline.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Outline view of the active note's headings, following the caret. VS Code's own Outline covers the text editor."
         },
         "markdownWorkbench.plugins.pagePreview.enabled": {
           "type": "boolean",

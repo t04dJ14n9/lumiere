@@ -1,3 +1,5 @@
+import { SourceCoordinates } from "../../shared/document/coordinates";
+import type { Navigation } from "../../shared/runtime";
 import { isMarkdownPath } from "../../shared/vault-path";
 import type { Vault, VaultChange, Vaults, VaultSystem } from "./api";
 import { VaultIndexer } from "./indexer";
@@ -21,10 +23,13 @@ export class VaultRegistry implements Vaults {
   /** Vaults by root from the moment indexing starts, for routing open documents. */
   private readonly opened = new Map<string, IndexedVault>();
   private parser?: ReturnType<VaultSystem["createParser"]>;
+  /** The latest text of each open note, kept without the indexing delay. */
+  private readonly openTexts = new Map<string, string>();
 
   constructor(
     private readonly system: VaultSystem,
     private readonly events: RegistryEvents,
+    private readonly navigation?: Navigation,
   ) {}
 
   async forDocument(uri: string): Promise<Vault> {
@@ -35,10 +40,57 @@ export class VaultRegistry implements Vaults {
     const root = await this.findRoot(uri, workspace);
     let vault = this.ready.get(root);
     if (!vault) {
-      vault = this.open(root);
+      vault = this.openVault(root);
       this.ready.set(root, vault);
     }
     return vault;
+  }
+
+  async forWorkspace(): Promise<Vault | undefined> {
+    const folder = this.system.workspaceFolders()[0];
+    // A note at the folder's root finds the folder's own vault.
+    return folder ? this.forDocument(`${folder}/`) : undefined;
+  }
+
+  async locate(
+    uri: string,
+  ): Promise<{ vault: Vault; path: string } | undefined> {
+    if (!this.system.workspaceFolder(uri)) {
+      return undefined;
+    }
+    const vault = await this.forDocument(uri);
+    const path = vault.pathOf(uri);
+    return path === undefined ? undefined : { vault, path };
+  }
+
+  async text(uri: string): Promise<string> {
+    const open = this.openTexts.get(uri);
+    if (open !== undefined) {
+      return open;
+    }
+    return new TextDecoder().decode(await this.system.read(uri));
+  }
+
+  async open(
+    uri: string,
+    options: { offset?: number; side?: boolean } = {},
+  ): Promise<void> {
+    const located = await this.locate(uri);
+    if (!located || !this.navigation) {
+      return;
+    }
+    // The editor counts line breaks as one character; the file may use CRLF.
+    const at =
+      options.offset === undefined
+        ? undefined
+        : new SourceCoordinates(await this.text(uri)).toEditor(options.offset);
+    await this.navigation.open(
+      located.vault.index.root,
+      uri,
+      "",
+      options.side ?? false,
+      at,
+    );
   }
 
   all(): readonly Vault[] {
@@ -47,6 +99,7 @@ export class VaultRegistry implements Vaults {
 
   /** An open note's unsaved text replaces its file on disk in the index. */
   setOverlay(uri: string, text: string): void {
+    this.openTexts.set(uri, text);
     const owner = this.owner(uri);
     if (owner && isMarkdownPath(owner.path)) {
       owner.vault.indexer.setOverlay(owner.path, text);
@@ -54,6 +107,7 @@ export class VaultRegistry implements Vaults {
   }
 
   clearOverlay(uri: string): void {
+    this.openTexts.delete(uri);
     const owner = this.owner(uri);
     owner?.vault.indexer.clearOverlay(owner.path);
   }
@@ -86,7 +140,7 @@ export class VaultRegistry implements Vaults {
     return (await findVaultRoot(folders, hasMarker)) ?? workspace;
   }
 
-  private async open(root: string): Promise<IndexedVault> {
+  private async openVault(root: string): Promise<IndexedVault> {
     this.parser ??= this.system.createParser();
     const indexer = new VaultIndexer({
       root,
