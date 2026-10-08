@@ -5,50 +5,10 @@ import type { Logger } from "../../kernel/logger";
 import { silentLogger } from "../../kernel/logger";
 import { parseEnvelope } from "./envelope";
 import type { Envelope } from "./envelope";
-export interface Transport {
-  send(message: unknown): void;
-  listen(receive: (message: unknown) => void): Disposer;
-}
-/** Timers are injected so shared code needs neither DOM nor Node ambient APIs. */
-export interface Clock {
-  after(ms: number, callback: () => void): Disposer;
-}
-export interface Cancellation {
-  readonly cancelled: boolean;
-  onCancel(callback: () => void): Disposer;
-}
-export class CancelToken implements Cancellation {
-  cancelled = false;
-  private readonly listeners = new Set<() => void>();
-  onCancel(callback: () => void): Disposer {
-    if (this.cancelled) {
-      callback();
-    } else {
-      this.listeners.add(callback);
-    }
-    return () => {
-      this.listeners.delete(callback);
-    };
-  }
-  cancel(): void {
-    if (this.cancelled) {
-      return;
-    }
-    this.cancelled = true;
-    for (const callback of this.listeners) {
-      callback();
-    }
-    this.listeners.clear();
-  }
-}
-export class RpcError extends Error {
-  constructor(
-    readonly code: string,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+import type { Transport, Clock, Cancellation } from "./lifecycle";
+import { CancelToken, RpcError } from "./lifecycle";
+export { CancelToken, RpcError } from "./lifecycle";
+export type { Transport, Clock, Cancellation } from "./lifecycle";
 type Handler = {
   protocol: Protocol;
   run: (value: unknown, token: Cancellation) => unknown;
@@ -59,6 +19,13 @@ type Pending = {
   reject(error: unknown): void;
   cleanup(): void;
 };
+interface OutgoingRequest {
+  protocol: Protocol;
+  method: string;
+  parsed: unknown;
+  schema: Schema<unknown>;
+  options: { timeout?: number; token?: Cancellation };
+}
 export class Endpoint {
   private next = 1;
   private disposed = false;
@@ -170,6 +137,22 @@ export class Endpoint {
     if (options.token?.cancelled) {
       return Promise.reject(new RpcError("Cancelled", method));
     }
+    return this.sendRequest({
+      protocol,
+      method,
+      parsed,
+      schema: definition.result,
+      options,
+    }) as Promise<Infer<P["requests"][M]["result"]>>;
+  }
+
+  private sendRequest({
+    protocol,
+    method,
+    parsed,
+    schema,
+    options,
+  }: OutgoingRequest): Promise<unknown> {
     const id = this.next++;
     return new Promise((resolve, reject) => {
       let timer: Disposer = () => {};
@@ -187,7 +170,7 @@ export class Endpoint {
         this.send({ kind: "cancel", id });
       };
       this.pending.set(id, {
-        schema: definition.result,
+        schema,
         resolve: resolve as (value: unknown) => void,
         reject,
         cleanup,
@@ -227,45 +210,65 @@ export class Endpoint {
       this.logger.warn("Dropped invalid RPC envelope", error);
       return;
     }
-    if (envelope.kind === "cancel") {
-      this.incoming.get(envelope.id)?.token.cancel();
-      this.incoming.delete(envelope.id);
-      return;
-    }
-    if (envelope.kind === "response" || envelope.kind === "error") {
-      const pending = this.pending.get(envelope.id);
-      if (!pending) {
+    switch (envelope.kind) {
+      case "cancel":
+        this.incoming.get(envelope.id)?.token.cancel();
+        this.incoming.delete(envelope.id);
         return;
-      }
-      this.pending.delete(envelope.id);
-      pending.cleanup();
-      if (envelope.kind === "error") {
-        pending.reject(new RpcError(envelope.code, envelope.message));
-      } else {
-        try {
-          pending.resolve(pending.schema.parse(envelope.result));
-        } catch (error) {
-          pending.reject(new RpcError("InvalidResult", String(error)));
-        }
-      }
+      case "response":
+      case "error":
+        this.receiveResponse(envelope);
+        return;
+      case "notify":
+        await this.receiveNotification(envelope);
+        return;
+      case "request":
+        await this.receiveRequest(envelope);
+    }
+  }
+
+  private receiveResponse(
+    envelope: Extract<Envelope, { kind: "response" | "error" }>,
+  ): void {
+    const pending = this.pending.get(envelope.id);
+    if (!pending) {
       return;
     }
+    this.pending.delete(envelope.id);
+    pending.cleanup();
+    if (envelope.kind === "error") {
+      pending.reject(new RpcError(envelope.code, envelope.message));
+      return;
+    }
+    try {
+      pending.resolve(pending.schema.parse(envelope.result));
+    } catch (error) {
+      pending.reject(new RpcError("InvalidResult", String(error)));
+    }
+  }
+
+  private async receiveNotification(
+    envelope: Extract<Envelope, { kind: "notify" }>,
+  ): Promise<void> {
     const key = `${envelope.channel}/${envelope.method}`;
-    if (envelope.kind === "notify") {
-      for (const handler of [...(this.notifications.get(key) ?? [])]) {
-        try {
-          await handler.run(
-            handler.protocol.notifications[envelope.method]!.parse(
-              envelope.params,
-            ),
-            new CancelToken(),
-          );
-        } catch (error) {
-          this.logger.warn("Dropped notification or failed listener", error);
-        }
+    for (const handler of [...(this.notifications.get(key) ?? [])]) {
+      try {
+        await handler.run(
+          handler.protocol.notifications[envelope.method]!.parse(
+            envelope.params,
+          ),
+          new CancelToken(),
+        );
+      } catch (error) {
+        this.logger.warn("Dropped notification or failed listener", error);
       }
-      return;
     }
+  }
+
+  private async receiveRequest(
+    envelope: Extract<Envelope, { kind: "request" }>,
+  ): Promise<void> {
+    const key = `${envelope.channel}/${envelope.method}`;
     const handler = this.handlers.get(key);
     if (!handler) {
       this.sendError(envelope.id, "PluginDisabled", key);
@@ -290,14 +293,7 @@ export class Endpoint {
       if (token.cancelled || this.disposed) {
         return;
       }
-      let parsed: unknown;
-      try {
-        parsed = definition.result.parse(result);
-      } catch (error) {
-        this.sendError(envelope.id, "InvalidResult", String(error));
-        return;
-      }
-      this.send({ kind: "response", id: envelope.id, result: parsed });
+      this.sendResult(envelope.id, definition.result, result);
     } catch (error) {
       if (!token.cancelled) {
         this.sendError(
@@ -309,6 +305,21 @@ export class Endpoint {
     } finally {
       this.incoming.delete(envelope.id);
     }
+  }
+
+  private sendResult(
+    id: number,
+    schema: Schema<unknown>,
+    result: unknown,
+  ): void {
+    let parsed: unknown;
+    try {
+      parsed = schema.parse(result);
+    } catch (error) {
+      this.sendError(id, "InvalidResult", String(error));
+      return;
+    }
+    this.send({ kind: "response", id, result: parsed });
   }
   async dispose(): Promise<void> {
     if (this.disposed) {

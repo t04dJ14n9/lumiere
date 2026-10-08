@@ -1740,3 +1740,19 @@ Ledger: 87/16/2/333/10. Deviations: none. Manual acceptance unrun.
 Known issues: remaining 25 backlog files and README/manual inventory before
 readability completion; Phase 4's remaining plugins; Claude's incomplete Phase 5
 handoff; Phases 6–8 remain as specified above.
+
+### Readability pass progress — RPC dispatch, 2026-10-08
+
+Delivered: endpoint dispatch separates response settlement, notification delivery,
+request execution and result validation; outbound validation delegates request
+lifetime setup. Cancellation/error primitives live in lifecycle.ts, re-exported
+through the unchanged endpoint API. Added cancellation-listener and duplicate-ID
+units; validation, timeout, handler-disable and late-result assertions remain.
+Backlog: 25 → 24 distinct files; long-function 22 → 21; complexity 12 → 11;
+other counts unchanged. No new exceptions or intentional behavior fixes.
+Checks: `pnpm check` 335/335; `pnpm test:browser` 14/14. Native not rerun:
+no native adapter wiring change. Logs: `docs/checks/readability-rpc-{check,browser}.txt`.
+Ledger: 87/16/2/333/10. Deviations: none. Owner acceptance unrun.
+Known issues: remaining 24 backlog files and README/manual inventory; ordered
+readability completion checks; Phase 4's seven plugins; Claude's incomplete
+Phase 5 handoff and Phases 6–8 as specified above.

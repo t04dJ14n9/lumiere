@@ -241,3 +241,41 @@ test("disabling a handler cancels in-flight work and rejects its caller", async 
   await a.dispose();
   await b.dispose();
 });
+
+test("cancellation listeners can detach and late listeners observe cancellation immediately", async () => {
+  const token = new CancelToken();
+  const seen: string[] = [];
+  const remove = token.onCancel(() => seen.push("removed"));
+  token.onCancel(() => seen.push("active"));
+  await remove();
+  token.cancel();
+  token.cancel();
+  token.onCancel(() => seen.push("late"));
+  assert.deepEqual(seen, ["active", "late"]);
+});
+
+test("duplicate request IDs cannot replace an in-flight handler", async () => {
+  const { a, b, toB, logs } = pair();
+  let calls = 0;
+  let finish!: (value: number) => void;
+  b.handle(protocol, "double", () => {
+    calls++;
+    return new Promise<number>((resolve) => {
+      finish = resolve;
+    });
+  });
+  const pending = a.call(protocol, "double", 3);
+  toB({
+    kind: "request",
+    id: 1,
+    channel: "example",
+    method: "double",
+    params: 9,
+  });
+  assert.equal(calls, 1);
+  assert.ok(logs.includes("Dropped duplicate RPC request"));
+  finish(6);
+  assert.equal(await pending, 6);
+  await a.dispose();
+  await b.dispose();
+});

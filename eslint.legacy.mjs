@@ -24,7 +24,6 @@ export default {
     "src/plugins/render/webview.ts",
     "src/plugins/resources/host.ts",
     "src/plugins/vim/webview.ts",
-    "src/shared/rpc/endpoint.ts",
     "src/webview/ui/menu.ts",
   ],
   complexity: [
@@ -38,7 +37,6 @@ export default {
     "src/plugins/links/host.ts",
     "src/plugins/livePreview/inline.ts",
     "src/plugins/render/webview.ts",
-    "src/shared/rpc/endpoint.ts",
     "src/webview/features.ts",
   ],
   "max-params": [
