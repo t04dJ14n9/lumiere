@@ -434,3 +434,22 @@ Known issues: no editor implementation yet (scheduled Phase 3). Native test
 command has no scenarios until native behaviour is introduced. Dependency
 install left optional signing/keychain native build scripts disabled; no
 signing or publishing is performed.
+
+### Phase 1 — Kernel, schema and RPC, 2026-10-07
+
+Delivered: 608-line dependency-free kernel, plugin and Service fibers, required
+and optional injection, replaceable service stacks, async lifecycle rollback,
+LIFO effects and child disposal, all five event modes with listener isolation,
+configuration schemas and JSON Schema output, and namespaced validated RPC with
+request/response/notifications/cancellation, deadlines and channel disposal.
+Conformance includes withdrawal during async loading and late registration after
+disposal. A Chromium test runs the same kernel source. README documents semantics.
+Checks: `pnpm check` (29 unit tests passed), `pnpm test:browser` (2/2),
+`pnpm test:vscode` (not run: pure infrastructure, no native behaviour).
+Ledger: 0/0/0/0/446 (ported/rewritten/changed/retired/todo).
+Deviations from DESIGN.md: service publication is atomic after successful apply;
+optional injection changes restart consumers. Root Context has no owning fiber.
+RPC cancellation and clock interfaces are platform-neutral injected adapters.
+These decisions prevent partial async providers and keep pure layers platform-free.
+Known issues: external API service isolation remains scheduled for Phase 7;
+no editor implementation until Phase 3.

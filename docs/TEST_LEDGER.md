@@ -452,3 +452,6 @@ Raw source runner output: [source-test-inventory](source-test-inventory/).
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/rename-state.spec.ts` | native ArrowDown after a title edit reaches its intended control with collapsed properties | todo | Awaiting scheduled port |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/rename-state.spec.ts` | native Properties paging retains keyboard navigation beyond the rendered header | todo | Awaiting scheduled port |
 | `native/../../../../../../../../../../private/var/folders/qb/9vk9_rss1932804nnp3cvxdc0000gn/T/mw-ledger-dbaHdR/packages/vscode-extension/test/vscode-e2e/rename-state.spec.ts` | native rename retains each pane's folds, reading position and backward selection | todo | Awaiting scheduled port |
+
+Phase 1 adds kernel/schema/RPC conformance coverage; no source scenario is
+ported or retired by this infrastructure phase. Counts remain 446 `todo`.
