@@ -49,7 +49,11 @@ test("search worker evaluates multiple documents and survives a document parse e
 test("invalid search queries reject worker readiness", async () => {
   const worker = new SearchWorker(path, "meeting OR");
   try {
-    await assert.rejects(worker.ready, /Expected a search term/);
+    // The message crosses the worker boundary once, without "Error: " prefixes.
+    await assert.rejects(worker.ready, (error: Error) => {
+      assert.match(error.message, /^Expected a search term/);
+      return true;
+    });
   } finally {
     await worker.dispose();
   }

@@ -1,6 +1,7 @@
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import { CancelToken } from "../../shared/rpc/lifecycle";
 import { protocol, type SearchResponse } from "./protocol";
+import { errorMessage } from "../../shared/errors";
 export type SearchUpdate =
   | { loading: true }
   | ({ loading: false; error?: string } & Partial<SearchResponse>);
@@ -55,7 +56,10 @@ export class QueryClient {
         },
         (error) => {
           if (!token.cancelled) {
-            subscription.update({ loading: false, error: String(error) });
+            subscription.update({
+              loading: false,
+              error: errorMessage(error),
+            });
           }
         },
       );

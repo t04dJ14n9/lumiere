@@ -1,6 +1,7 @@
 import type { Logger } from "../../kernel";
 import type { Fence, RenderPass } from "../render/api";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
+import { errorMessage } from "../../shared/errors";
 
 interface DiagramRender {
   fence: Fence;
@@ -19,9 +20,11 @@ export class DiagramRenderer {
   render(fence: Fence, pass: RenderPass): void {
     const request = { fence, pass, isActive: true };
     const original = fence.element.innerHTML;
+    let failure: HTMLElement | undefined;
     const cleanup = () => {
       request.isActive = false;
       fence.element.innerHTML = original;
+      failure?.remove();
       this.cleanups.delete(cleanup);
     };
     this.cleanups.add(cleanup);
@@ -31,7 +34,9 @@ export class DiagramRenderer {
       .then(() => this.renderQueued(request))
       .catch((error) => {
         if (request.isActive) {
-          fence.element.title = String(error);
+          // The source stays visible; say why it did not become a diagram.
+          failure = showFailure(fence.element, error);
+          pass.measure();
           this.logger.warn("Diagram rendering failed", error);
         }
       });
@@ -73,4 +78,13 @@ export class DiagramRenderer {
     request.fence.element.setAttribute("aria-label", "Mermaid diagram");
     request.pass.measure();
   }
+}
+
+function showFailure(element: HTMLElement, error: unknown): HTMLElement {
+  const message = element.ownerDocument.createElement("p");
+  message.className = "diagram-error";
+  message.setAttribute("role", "status");
+  message.textContent = `Mermaid could not draw this diagram: ${errorMessage(error)}`;
+  element.after(message);
+  return message;
 }

@@ -7,6 +7,7 @@ import {
   submission,
   workerReply,
 } from "../plugins/search/worker-protocol";
+import { errorMessage } from "../shared/errors";
 const port = parentPort;
 if (!port) {
   throw new Error("Search evaluation requires a worker thread");
@@ -32,7 +33,7 @@ try {
         matched: matches(request.document),
       });
     } catch (error) {
-      send({ type: "rejected", id: request.id, message: String(error) });
+      send({ type: "rejected", id: request.id, message: errorMessage(error) });
     }
   });
   const needs = queryRequirements(query);
@@ -43,6 +44,6 @@ try {
     metadata: needs.metadata,
   });
 } catch (error) {
-  send({ type: "error", message: String(error) });
+  send({ type: "error", message: errorMessage(error) });
   port.close();
 }

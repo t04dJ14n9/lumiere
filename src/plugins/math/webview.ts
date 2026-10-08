@@ -7,6 +7,7 @@ import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { mathEdit } from "./commands";
+import { errorMessage } from "../../shared/errors";
 export const mathWebview: Plugin = {
   name: "math",
   inject: { required: ["editor", "commands", "livePreview", "render"] },
@@ -115,7 +116,7 @@ function typesetNode({ node, pass, cleanups, logger }: TypesetOptions): void {
         return;
       }
       node.classList.add("render-error");
-      node.title = String(error);
+      node.title = errorMessage(error);
       logger.warn("Math rendering failed", error);
     });
 }

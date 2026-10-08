@@ -3,6 +3,7 @@ import type { SearchDocument } from "../../markdown/search/evaluate";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { startup, submission, workerReply } from "./worker-protocol";
+import { errorMessage } from "../../shared/errors";
 interface Pending {
   resolve(value: boolean): void;
   reject(error: Error): void;
@@ -92,7 +93,7 @@ export class SearchWorker implements SearchEvaluator {
       try {
         this.worker.postMessage(request);
       } catch (error) {
-        this.fail(new Error(String(error)));
+        this.fail(new Error(errorMessage(error)));
       }
     });
   }
@@ -126,7 +127,7 @@ export class SearchWorker implements SearchEvaluator {
         request.reject(new Error(reply.message));
       }
     } catch (error) {
-      this.fail(new Error(String(error)));
+      this.fail(new Error(errorMessage(error)));
     }
   }
   private fail(error: Error): void {

@@ -36,5 +36,11 @@ export async function typeset(
     ex: 8,
     containerWidth: 704,
   })) as HTMLElement;
+  // MathJax draws TeX errors as a box whose text needs its own stylesheet;
+  // report them instead, so the caller shows the source and the message.
+  const error = result.querySelector("[data-mjx-error]");
+  if (error) {
+    throw new Error(error.getAttribute("data-mjx-error") ?? "TeX error");
+  }
   return adaptor.outerHTML(result);
 }
