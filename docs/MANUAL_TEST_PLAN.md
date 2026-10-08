@@ -535,3 +535,65 @@ smoke scenarios. Use only the disposable fixture vault described above.
   fences, errors, theme/reveal and off/on. Close a panel or disable the plugin
   while its lazy render is queued; no late SVG may replace disposed content.
   Re-enable after an error and verify later diagrams still render. Not run here.
+## Vault index and host views (Phase 5) — not run
+
+Setup: copy `test/fixtures/vault` to a scratch folder and open that folder in an
+isolated profile. Add `Projects/Plan.md` (`---\naliases: [Roadmap]\n---\n# Plan\n## Goals\nSee [[Core]].`),
+`Archive/Plan.md` (empty), `Daily.md` (`[[Projects/Plan]] and [[Someday]]; mentions core here.`)
+and `image.png` (any image). Run `Developer: Reload Window` once so indexing starts.
+
+### Vault and link resolution
+
+1. In `Core.md`, add `[[Plan]]`, `[[Archive/Plan]]`, `[[./Daily]]` and `![[image.png]]`;
+   follow each. `[[Plan]]` names two notes, both one folder away, so it opens
+   `Archive/Plan.md` (nearest folder first, then path order). Check that
+   Obsidian picks the same note.
+2. Rename `image.png` to `photo.png` in the Explorer outside VS Code (Finder):
+   the embed becomes unresolved within a second; rename it back: it resolves.
+3. Add `"Archive/"` to `markdownWorkbench.vault.excludedFiles`: `[[Archive/Plan]]`
+   still opens (Obsidian keeps excluded files linkable), but the quick switcher no
+   longer lists it.
+4. Create `Sub/.obsidian/` and `Sub/Inner.md` with `[[Core]]`: from `Inner.md`,
+   `[[Core]]` is unresolved (a separate vault). Remove the marker and reload: it resolves.
+5. Close and reopen the window: links in an open note resolve immediately (warm
+   start), before indexing finishes. With a large copy (`scripts/measure-vault.ts`
+   for numbers), typing stays responsive while indexing runs.
+
+### Backlinks and outgoing links
+
+1. Open `Core.md`: the Explorer's **Backlinks** shows `Daily` is not listed under
+   linked mentions but is under **Unlinked mentions** (it says "core"); `Projects/Plan`
+   is listed under linked mentions with its line. The status bar reads "1 backlink".
+2. Click a context line: the note opens with the caret at the link.
+3. Edit `Daily.md` to link `[[Core]]` without saving: Backlinks updates within a
+   second. Close without saving: it returns to the saved state.
+4. **Outgoing Links** for `Daily.md` lists `Plan` under Links and `Someday` under
+   **Not created yet**. Works the same with the note open in the text editor.
+5. Turn off `markdownWorkbench.plugins.backlinks.enabled`: the view and status bar
+   item disappear; turn it on: they return. Set `markdownWorkbench.preset` to
+   `minimal`: all Phase 5 views disappear.
+
+### Note Outline
+
+1. Open `Projects/Plan.md` in Markdown Workbench: **Note Outline** shows Plan › Goals.
+   Click Goals: the caret moves to that heading.
+2. Move the caret through the note: the outline selects the current section.
+3. Open the same note in the text editor: Note Outline hides; VS Code's own
+   Outline lists the headings once (no duplicates).
+
+### Quick switcher, word count and link updates
+
+1. Run **Markdown Workbench: Quick Switcher**: an empty query lists recent notes.
+   Type `road`: `Roadmap → Plan` appears; Enter opens `Projects/Plan.md`. Type
+   `Someday`: choose it to create `Someday.md` (in the new-note folder). Type a new
+   name and press Enter with no item selected: the note is created.
+2. The status bar shows words and characters for the active note; select text:
+   it counts the selection. Compare `日本語 text` (4 words) with Obsidian.
+3. Add `[[Projects/Plan#Goals|goals]]` to `Daily.md`. Rename `Projects/Plan.md` to
+   `Projects/Strategy.md` in the Explorer: a dialog asks "Update links in 1 file?".
+   Accept: `Daily.md` now reads `[[Strategy]]` and `[[Strategy#Goals|goals]]`;
+   `[[Plan]]` in `Core.md`, which points at `Archive/Plan.md`, is unchanged. One
+   Undo reverts the rename and the edits together. Repeat declining: no note changes.
+4. Rename the `Projects` folder: links to every file inside are updated. Set
+   `markdownWorkbench.linkUpdates.mode` to `never` and rename again: nothing is asked.
+5. Compare each scenario with Obsidian in a disposable vault and record differences.

@@ -1630,3 +1630,50 @@ Ledger unchanged: 87/15/2/333/11. Deviations: none. Manual acceptance unrun.
 Known issues: remaining 31 backlog files, README/manual inventory and readability
 completion checks; Phase 4's seven remaining plugins; Claude's Phase 5 handoff;
 Phases 6–8 as specified above. No phase completion is claimed.
+### Phase 5 (incomplete) — Vault index and host features, part 1 (Claude), 2026-10-08
+
+Delivered: the vault index (DESIGN §12) replaces the Phase 3 stub behind the
+unchanged `VaultIndex` interface, extended with `file(path)` and a
+`VaultChange` argument for change listeners. One index per vault is shared by
+panels and views (`vaults` service), with root discovery from
+`vault.rootMarkers`, a warm start from a persisted snapshot, reconciliation by
+time and size, parsing in `dist/workers/vault.cjs` one note at a time, file and
+folder events, unsaved text of open notes, Obsidian's `getLinkpathDest` order,
+incremental re-resolution, excluded files and a 50,000-file limit. Host
+features: Backlinks (linked and unlinked mentions, status bar count), Outgoing
+Links, Note Outline (beside this editor, following the caret), Quick Switcher,
+Word Count and Link Updates (prompt/always/never, folder renames). The VS Code
+side is `src/host/vault-system.ts` and `src/host/views.ts`;
+`scripts/measure-vault.ts` (`pnpm measure:vault`) measures the budgets.
+Checks: `pnpm check` (330 passed after rebasing on main), `pnpm test:browser` (14/14),
+`pnpm test:vscode` (1/1, isolated profile).
+Measurements (10,000 generated notes, 35 MB, worker parsing, Apple Silicon,
+with Codex building on the same machine): cold index 5.1–5.7 s with the longest
+host block 19–23 ms; warm start until links resolve about 1.0 s with the longest
+block about 17 ms (one outlier of 74 ms under load); reconciliation after a warm
+start about 90 ms, longest block 2 ms. Snapshot 55 MB in 129 files.
+Ledger: 87/16/2/333/10 (ported/rewritten/changed/retired/todo); the nested-vault
+property scope test is rewritten as a root-discovery test.
+Deviations from DESIGN.md:
+- Excluded files follow Obsidian: indexed and resolvable, flagged `excluded`
+  and left out of the switcher, suggestions, search and unlinked mentions
+  (DESIGN §12.2 updated).
+- `vault/changed` and `vault/resolved` carry the vault root (DESIGN §7.3 updated).
+- No `DocumentSymbolProvider`: VS Code's Markdown support already provides one,
+  and a second would list headings twice. Note Outline shows only beside this
+  editor.
+- Window-level plugins (views, switcher, word count, link updates) are listed in
+  `workbenchFeatures` in the catalog, switched by `workbench-features.ts`, and
+  are not part of the editor composition tests, which have no editor half to
+  compose.
+- The snapshot is sharded and packs positions (DESIGN §12.2 says one JSON file).
+Known issues:
+- Tags view and unresolved-link styling in `links` wait for Phase 4's `tags`
+  and `links` changes; `suggest`, `tags` and `search` must use the vault index
+  (not scans) when they land. Claude does these after rebasing on Phase 4.
+- The host block is at or slightly above the 16 ms budget on 10,000 notes; the
+  remaining cost is replacing the file list and resolving one batch of links.
+- Plugin-local `*.test.ts` files under `src/plugins` are not in any tsconfig
+  project, so they are run but not type-checked; Phase 5 tests live under
+  `test/unit` for that reason.
+- Manual acceptance (docs/MANUAL_TEST_PLAN.md, Phase 5 section) not run.

@@ -155,3 +155,35 @@ test("unpacking never lets a stored key set a prototype", async () => {
   assert.equal(({} as Record<string, unknown>).polluted, undefined);
   assert.deepEqual(Object.keys(restored.frontmatter!), ["__proto__"]);
 });
+
+test("nested vaults get separate property scopes within one opened workspace", async () => {
+  // Ported from the source's property-editing tests: the property type scope
+  // is now the vault root (DESIGN §12.1), found from root markers.
+  const roots = new Set([
+    "file:///workspace/PersonalVault",
+    "file:///workspace/DServerWiki",
+  ]);
+  const visited: string[] = [];
+  const isVault = async (folder: string) => {
+    visited.push(folder);
+    return roots.has(folder);
+  };
+  const rootOf = (note: string) =>
+    findVaultRoot(foldersUpTo(note, "file:///workspace"), isVault);
+  assert.equal(
+    await rootOf("file:///workspace/PersonalVault/wiki/one.md"),
+    "file:///workspace/PersonalVault",
+  );
+  assert.equal(
+    await rootOf("file:///workspace/DServerWiki/wiki/two.md"),
+    "file:///workspace/DServerWiki",
+  );
+  assert.equal(
+    await rootOf("file:///workspace/docs/three.md"),
+    "file:///workspace",
+  );
+  assert.equal(
+    visited.some((folder) => !folder.startsWith("file:///workspace")),
+    false,
+  );
+});
