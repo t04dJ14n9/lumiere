@@ -108,10 +108,13 @@ export function fixture() {
             receive({
               kind: "response",
               id: message.id,
-              result:
-                message.channel === "markers"
-                  ? { version: 0, revision: 0, owners: {} }
-                  : { fragment: "" },
+              result: (
+                {
+                  markers: { version: 0, revision: 0, owners: {} },
+                  codeBlocks: { epoch: 0, revision: 0, languages: [] },
+                  editorActions: [],
+                } as Record<string, unknown>
+              )[message.channel] ?? { fragment: "" },
             }),
           );
         }

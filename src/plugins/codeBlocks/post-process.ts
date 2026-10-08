@@ -37,13 +37,17 @@ export function bindCodePass(options: CodePassOptions): void {
     pass.onDispose(() => copy.remove());
     code.addEventListener(
       "click",
-      (event) =>
+      (event) => {
+        if (pass.readOnly) {
+          return;
+        }
         revealCode({
           code,
           event,
           source: pass.source,
           editor: options.editor,
-        }),
+        });
+      },
       { signal: events.signal },
     );
     void import("./code-highlight")

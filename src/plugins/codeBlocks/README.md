@@ -33,3 +33,22 @@ defaults to true. No palette commands or default keybindings.
 Languages without a loaded Prism grammar remain plain code. Selection/reveal
 uses Markdown source offsets and VS Code owns undo and saving. Exact visual
 parity remains for the owner's comparison.
+
+Host-provided processors claim registered fence languages before generic code.
+Only data (Markdown or HTML) crosses RPC; it passes through the normal sanitized
+renderer. Generated tasks are read-only. Recursive output is bounded at eight
+levels. Results cache by registry generation, language, source hash, URI and line
+hint, with 64 completed entries. Disabling/replacing a provider cancels stale work.
+
+- `api.ts`: host processor contract and caller ownership.
+- `protocol.ts`: validated registry, request and result messages.
+- `host.ts`: panel routing, trust, source containment and service lifetime.
+- `processors.ts`: unique language ownership and late-result rejection.
+- `processor-client.ts`: generation-aware cache and cancellation.
+- `processor-view.ts`: fence interception and nested render-pass cleanup.
+
+Host injects `editors`, `workbench` and optional `vaults`, provides `codeBlocks`.
+Webview additionally injects `rpc`, listens to `render/fence`, and emits
+`render/changed` when available processors change. External processors are off in
+untrusted workspaces; this differs from executing Obsidian plugin code in the UI.
+The source-line value is a render-context hint, not a validated edit location.

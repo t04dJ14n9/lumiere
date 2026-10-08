@@ -247,3 +247,5 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Rename link updates prompt by default | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native outline/backlinks/tags views | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | External application schemes prompt; own application scheme opens directly | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkbench.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |

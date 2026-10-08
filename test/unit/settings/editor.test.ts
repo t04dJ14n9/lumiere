@@ -105,6 +105,7 @@ test("required settings, title actions, native context menus and unbound verify 
       "markdownWorkbench.addProperty",
       "markdownWorkbench.copyForAgent",
       "markdownWorkbench.openAsText",
+      "markdownWorkbench.titleActions",
     ],
   );
   assert.ok(

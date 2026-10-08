@@ -1,3 +1,4 @@
+import { registerActionMenus } from "./actions-webview";
 import { settingsExtensions, editorSettings } from "./settings";
 import { config as editorConfig } from "./manifest";
 import { ExtensionRegistry } from "./extensions";
@@ -64,6 +65,7 @@ export const editorWebview: Plugin<EditorConfig> = {
     });
     ctx.provide("editor", editor);
     provideMenu(ctx);
+    registerActionMenus(ctx);
     registerSyncStatus(ctx, config.parent);
 
     registerSelectionCapture(ctx, view);

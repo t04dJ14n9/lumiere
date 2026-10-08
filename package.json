@@ -75,6 +75,16 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.titleActions",
+        "title": "Note Actions",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.selectionActions",
+        "title": "Selection Actions",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.insertEmbed",
         "title": "Insert Embed",
         "category": "Markdown Workbench"
@@ -510,6 +520,14 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
         },
         {
+          "command": "markdownWorkbench.titleActions",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
+        },
+        {
+          "command": "markdownWorkbench.selectionActions",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
+        },
+        {
           "command": "markdownWorkbench.insertEmbed",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.embeds"
         },
@@ -725,6 +743,11 @@
           "group": "agent"
         },
         {
+          "command": "markdownWorkbench.selectionActions",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection && markdownWorkbench.hasSelectionActions",
+          "group": "agent"
+        },
+        {
           "command": "markdownWorkbench.toggleBold",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && webviewSection == 'markdownContent'",
           "group": "formatting"
@@ -759,6 +782,11 @@
         {
           "command": "markdownWorkbench.copyForAgent",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && markdownWorkbench.hasSelection",
+          "group": "navigation"
+        },
+        {
+          "command": "markdownWorkbench.titleActions",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && markdownWorkbench.hasTitleActions",
           "group": "navigation"
         },
         {

@@ -1,3 +1,4 @@
+import { registerProcessors } from "./processor-view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../render/api";
@@ -7,7 +8,7 @@ import { codeSource } from "./code-source";
 import { bindCodePass } from "./post-process";
 export const codeBlocksWebview: Plugin = {
   name: "codeBlocks",
-  inject: { required: ["editor", "livePreview", "render"] },
+  inject: { required: ["editor", "livePreview", "render", "rpc"] },
   apply(ctx) {
     const cleanups = new Set<() => void>();
     let live = true;
@@ -20,6 +21,7 @@ export const codeBlocksWebview: Plugin = {
     });
     ctx.effect(() => ctx.editor.extend(codeSource));
     registerCodeBlocks(ctx);
+    registerProcessors(ctx);
     ctx.on("render/postProcess", (pass) => {
       bindCodePass({
         pass,

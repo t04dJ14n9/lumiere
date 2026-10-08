@@ -36,6 +36,7 @@ export function bindRenderedTasks(options: TaskControls): void {
     const local = Number(box.dataset.line) + removed;
     const expected = lines[local];
     box.disabled =
+      pass.readOnly === true ||
       pass.ancestry.includes("footnote-preview") ||
       expected === undefined ||
       (pass.taskLineCount !== undefined && local >= pass.taskLineCount);

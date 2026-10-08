@@ -2,6 +2,7 @@ import type { EditorView } from "@codemirror/view";
 type Element = EditorView["dom"];
 import type { Disposer } from "../../kernel";
 export interface RenderPass {
+  readOnly?: boolean;
   source: string;
   displaySource?: string;
   documentUri?: string;
@@ -22,6 +23,7 @@ export interface RenderService {
     source: string,
     context?: {
       signal?: AbortSignal;
+      readOnly?: boolean;
       documentText?: string;
       taskLineCount?: number;
       documentUri?: string;

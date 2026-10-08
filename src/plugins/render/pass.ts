@@ -14,6 +14,7 @@ export function createRenderPass(options: {
   let isLive = true;
   const pass: RenderPass = {
     source,
+    readOnly: context.readOnly,
     documentUri: context.documentUri,
     documentText: context.documentText,
     taskLineCount: context.taskLineCount,

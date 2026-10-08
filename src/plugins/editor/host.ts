@@ -1,3 +1,4 @@
+import { registerEditorActions } from "./actions-host";
 import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
@@ -5,7 +6,7 @@ import type { PanelShell } from "../../shared/runtime";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
 import type {} from "../vault/api";
-import type { EditorPanel } from "./api";
+import type { EditorPanel, Editors } from "./api";
 import { createPanel } from "./panel";
 import { protocol } from "./protocol";
 interface EditorHostConfig {
@@ -20,11 +21,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     const active = () => [...panels.values()].find((panel) => panel.active());
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
-    provideEditors(ctx, panels, active);
-    ctx.provide(
-      "selections",
-      new SelectionSnapshots((id) => panels.get(id), ctx.workbench),
-    );
+    provideEditorServices(ctx, panels, active);
     ctx.effect(() =>
       ctx.workbench.registerEditor((shell) => {
         const panel = createPanel(shell, ctx.documents, ctx.workbench, {
@@ -100,12 +97,12 @@ function registerActiveContexts(
   ctx.on("editor/closed", contexts);
 }
 
-function provideEditors(
+function provideEditorServices(
   ctx: Context,
   panels: Map<string, EditorPanel>,
   active: () => EditorPanel | undefined,
 ): void {
-  ctx.provide("editors", {
+  const editors: Editors = {
     all: () => [...panels.values()],
     active,
     async capture(id) {
@@ -122,7 +119,14 @@ function provideEditors(
       }
       await restoreView(panel, snapshot);
     },
-  });
+  };
+  ctx.provide("editors", editors);
+  const selections = new SelectionSnapshots(
+    (id) => panels.get(id),
+    ctx.workbench,
+  );
+  ctx.provide("selections", selections);
+  registerEditorActions(ctx, editors, selections);
 }
 
 function registerSelectionContext(

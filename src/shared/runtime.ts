@@ -224,3 +224,7 @@ export interface SourceEdit {
   to: number;
   insert: string;
 }
+
+export interface Workbench {
+  isTrusted?(): boolean;
+}

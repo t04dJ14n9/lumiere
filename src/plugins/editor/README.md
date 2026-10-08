@@ -60,3 +60,17 @@ Editor config owns default mode, readable line length (700 px), strict rendered
 line breaks, right-to-left direction, tabs and tab size. Changing default mode
 does not overwrite an existing pane's presentation. Static commands use the native
 webview context section; contextual widgets retain their menu service.
+
+Host actions contribute plain labels to Note Actions (title) and Selection Actions
+(context/palette). Selection callbacks receive freshly captured host-held
+snapshots. The owner is rechecked after flushing/capture; provider disposal removes
+its entries and revokes retained service handles. There are no default shortcuts.
+
+- `actions-api.ts`: title/selection action service contract.
+- `actions-protocol.ts`: data-only action messages.
+- `actions.ts`: owner registry and native action picker.
+- `actions-host.ts`: caller-bound service, panel RPC and context keys.
+- `actions-webview.ts`: contextual selection-menu contributions.
+
+Host provides `editorActions`; webview listens to `editor/selectionMenu` and the
+action-registry notifications. Callbacks remain in the extension host.

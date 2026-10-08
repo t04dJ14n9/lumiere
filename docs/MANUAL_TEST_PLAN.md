@@ -849,6 +849,8 @@ Use a disposable copy of `test/fixtures/vault/Core.md`; add the note/table/prope
 | `markdownWorkbench.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.copyForAgent` — Copy for Agent | ctrl+alt+c (Mac cmd+alt+c) | On a disposable fixture, run Copy for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertEmbed` — Insert Embed | unbound | On a disposable fixture, run Insert Embed; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.foldAll` — Fold All | unbound | On a disposable fixture, run Fold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.unfoldAll` — Unfold All | unbound | On a disposable fixture, run Unfold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -960,3 +962,19 @@ Use a disposable copy of `test/fixtures/vault/Core.md`; add the note/table/prope
 
 Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
+
+## External host data contributions
+
+Use the sample plugin described in API.md in an isolated profile and disposable
+vault. Register title and selection actions; verify labels appear only for enabled
+providers, select text and inspect the returned original-source range, then close
+the pane or disable the provider while capture is pending. No late callback should
+run. Note Actions uses the native quick picker; table menus also include registered
+selection actions. Repeat with two panes of the same note.
+
+Register a fence processor returning Markdown, then HTML with scripts, event
+attributes and a task checkbox. Verify output is sanitized and the generated task
+cannot change the note. Repeat rendering, edit the fence, change its source note,
+disable/re-enable the provider and close the pane during a slow render. Old output
+must not return. Recursive output stops at the depth limit. In an untrusted
+workspace, custom processors remain off and the fence stays ordinary code.

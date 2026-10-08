@@ -221,6 +221,7 @@ class EmbedPass {
     section.append(this.openButton(target, "Open note ↗"), content);
     node.replaceChildren(section);
     const nested = await render.into(content, selection.text, {
+      readOnly: pass.readOnly,
       documentUri: resource.source,
       documentText: resource.text,
       ancestry: selection.ancestry,

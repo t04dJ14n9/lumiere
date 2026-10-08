@@ -5,5 +5,5 @@ export default defineManifest({
   description: "Highlight rendered and editable code fences; copy code.",
   kind: "feature",
   defaultEnabled: true,
-  surfaces: ["webview"],
+  surfaces: ["host", "webview"],
 });

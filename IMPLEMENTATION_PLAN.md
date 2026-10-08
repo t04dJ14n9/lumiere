@@ -2486,3 +2486,33 @@ Known issues: Phase 7 public API/external contributions and Phase 8 packaging/do
 remain. Manual parity is unobserved; cold suggestion/indexing frame-budget limits
 remain as recorded. Owner should test resource-scoped settings, native menus,
 Vim host collisions and wiki/Markdown suggestion acceptance first.
+
+### Phase 7 — Host-owned actions and code processors, 2026-10-08
+
+Delivered: core editor action registry, native title/selection pickers and contextual
+selection labels; callbacks remain in the host with owner cleanup and authentic
+selection capture. Code-block processors have caller ownership, duplicate-language
+checks, validated data-only RPC, trusted-workspace and source-containment checks,
+generation-aware caching, cancellation and late-result rejection. Returned output
+uses the normal sanitized renderer; generated tasks are read-only, including nested
+embeds. Composition tests cover the updated codeBlocks feature. The manual/parity
+inventory updater appends new entries without replacing owner observations.
+
+Checks in order: `pnpm check` **429/429**; existing browser smoke **14/14**;
+existing native smoke **1/1**, freshly packaged in an isolated /tmp profile.
+Logs: `docs/checks/phase7-contributions-{check,browser,native}.txt`.
+Ledger remains **91 ported / 22 rewritten / 2 changed / 333 retired / 0 todo**.
+
+Deviations: contributed title and selection actions use native quick pickers (plus
+contextual widget selection menus), avoiding injected webview code. Processor cache
+keys also include source URI, line hint and registry generation to prevent reuse
+across contexts; sourceLine is an advisory render-context hint, not edit authority.
+Generated output is read-only and recursion is limited to eight render ancestors.
+No lint exceptions or smoke cases were added.
+
+Known issues: Phase 7 is incomplete. Still required: frozen activation API and
+public declarations, isolated external plugin manager and scoped settings, actual
+plugin state reporting/events, API-wide unit coverage, API.md and complete sample
+plugin. Phase 8 packaging/notices/documentation/handover remains. Owner should test
+external action menus and slow/recursive/sanitized processor output after the API
+sample is available; earlier manual parity and performance limits remain open.

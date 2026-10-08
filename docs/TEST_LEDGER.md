@@ -475,3 +475,10 @@ PDF export behavior is ported into this Markdown extension.
 Generic marker mapping/ownership/composition units are in `test/unit/markers/`.
 Source Query annotation/browser scenarios remain retired and are represented by
 the Source markers manual section; marker actions replace Query-specific paths.
+
+Phase 7 data-contribution units (new API behavior, outside the pinned-source row
+count): owner-scoped action cleanup, authentic selection capture, late callback
+rejection, duplicate processor languages, generation invalidation, cache source
+identity, cancelled RPC, workspace trust, source containment, feature gating,
+retained handle revocation and read-only generated tasks. Existing smoke suites
+are unchanged; visual acceptance is in the manual data-contributions scenario.

@@ -5,6 +5,7 @@ import type { Workbench } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
 import {
   inlineTitleHost,
+  codeBlocksHost,
   markersHost,
   copyForAgentHost,
   documentHost,
@@ -49,6 +50,7 @@ export async function bootstrap(
     },
   });
   root.plugin(markersHost);
+  root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
   root.plugin(copyForAgentHost);
   root.plugin(dialectHost);

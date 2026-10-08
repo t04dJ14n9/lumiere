@@ -21,3 +21,4 @@ export { searchHost } from "./search/host";
 export { tagsViewHost } from "./tags/view";
 export { copyForAgentHost } from "./copyForAgent/host";
 export { markersHost } from "./markers/host";
+export { codeBlocksHost } from "./codeBlocks/host";

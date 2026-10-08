@@ -60,6 +60,23 @@ async function main() {
   );
   if (!existsSync("docs/PARITY.md")) {
     writeParity(generated);
+  } else {
+    const path = "docs/PARITY.md";
+    const text = readFileSync(path, "utf8");
+    const additions = [
+      ...generated.commands.map((item) => `Command: ${item.command}`),
+      ...Object.keys(generated.configuration.properties).map(
+        (key) => `Setting: ${key}`,
+      ),
+    ]
+      .filter((item) => !text.includes(item))
+      .map(
+        (item) =>
+          `| ${item} | not observed | not manually observed | Manual scenario pending | not observed |`,
+      );
+    if (additions.length) {
+      writeFileSync(path, text.trimEnd() + "\n" + additions.join("\n") + "\n");
+    }
   }
 }
 function writeParity(generated: Awaited<ReturnType<typeof contributions>>) {

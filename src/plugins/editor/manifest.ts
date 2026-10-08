@@ -30,6 +30,23 @@ export default defineManifest({
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   contributes: {
-    commands: [],
+    commands: [
+      { id: "titleActions", title: "Note Actions" },
+      { id: "selectionActions", title: "Selection Actions" },
+    ],
+    menus: [
+      {
+        command: "titleActions",
+        location: "editor/title",
+        when: "markdownWorkbench.hasTitleActions",
+        group: "navigation",
+      },
+      {
+        command: "selectionActions",
+        location: "webview/context",
+        when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection && markdownWorkbench.hasSelectionActions",
+        group: "agent",
+      },
+    ],
   },
 } as const);
