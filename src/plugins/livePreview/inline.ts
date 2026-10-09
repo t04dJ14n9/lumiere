@@ -1,18 +1,15 @@
 import type { Range, EditorState } from "@codemirror/state";
-import { Decoration, ViewPlugin, WidgetType } from "@codemirror/view";
-import type { EditorView, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { Decoration, ViewPlugin } from "@codemirror/view";
+import type {
+  EditorView,
+  DecorationSet,
+  ViewUpdate,
+  WidgetType,
+} from "@codemirror/view";
 import { linkDestination } from "../../markdown/html";
 import { documentTree } from "./document-tree";
 import { inlineRenderers, revealed } from "./registry";
-class Bullet extends WidgetType {
-  override toDOM(): HTMLElement {
-    const bullet = document.createElement("span");
-    bullet.textContent = "•";
-    bullet.className = "list-bullet";
-    return bullet;
-  }
-}
-
+import { decorateListItem } from "./lists";
 import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
 const inlineClasses: Readonly<Record<string, string>> = {
@@ -112,7 +109,7 @@ class InlineDecorations implements InlineContext {
     if (name === "Escape" && !this.revealed(from, to)) {
       this.hide(from, from + 1);
     }
-    this.decorateBullet(node);
+    decorateListItem(node, this);
     if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
       this.line(from, `md-heading md-h${name.at(-1)}`);
     }
@@ -121,19 +118,6 @@ class InlineDecorations implements InlineContext {
     this.decorateBareUrl(node);
     this.hideSyntax(node);
     return undefined;
-  }
-
-  private decorateBullet(node: SyntaxNodeRef): void {
-    const { name, from, to } = node;
-    if (name !== "ListMark" || !/^[-+*]$/.test(this.state.sliceDoc(from, to))) {
-      return;
-    }
-    const task = node.node.nextSibling?.getChild("TaskMarker");
-    if (task) {
-      this.hide(from, task.from);
-    } else if (!this.revealed(from, to)) {
-      this.replace(from, to, new Bullet());
-    }
   }
 
   private decorateBlockLines(

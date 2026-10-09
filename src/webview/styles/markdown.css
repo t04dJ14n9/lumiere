@@ -130,8 +130,40 @@
   color: var(--accent-hover);
   text-decoration-color: currentColor;
 }
+/*
+ * Lists: each level is one --list-indent step with a faint guide under the
+ * parent's bullet; markers are muted and wrapped text hangs under the text.
+ */
+#app .cm-line.md-list-line {
+  --list-hang: calc(
+    var(--list-depth, 0) * var(--list-indent) + var(--list-marker, 1.1em)
+  );
+  padding-inline-start: calc(2px + var(--list-hang));
+  text-indent: calc(-1 * var(--list-hang));
+}
+.md-list-indent {
+  display: inline-block;
+  width: calc(var(--list-depth, 0) * var(--list-indent));
+  height: 1lh;
+  vertical-align: top;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0 0.3em,
+    var(--list-guide) 0.3em calc(0.3em + 1px),
+    transparent calc(0.3em + 1px) var(--list-indent)
+  );
+}
 .list-bullet {
+  display: inline-block;
+  width: 1.1em;
   color: var(--muted);
+  text-indent: 0;
+}
+.md-list-number {
+  display: inline-block;
+  min-width: var(--list-marker);
+  color: var(--muted);
+  text-indent: 0;
 }
 /* Revealed source of fenced code, quotes and tables. */
 #app .cm-line.md-code-line {

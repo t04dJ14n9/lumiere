@@ -11,6 +11,11 @@
   --accent: var(--vscode-textLink-foreground, #7c6fe0);
   --accent-hover: var(--vscode-textLink-activeForeground, var(--accent));
   --muted: var(--vscode-descriptionForeground, #8a8a96);
+  --list-indent: 1.6em;
+  --list-guide: var(
+    --vscode-editorIndentGuide-background1,
+    color-mix(in srgb, var(--muted) 35%, transparent)
+  );
   --faint: var(
     --vscode-editorLineNumber-foreground,
     color-mix(in srgb, var(--muted) 70%, transparent)
