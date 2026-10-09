@@ -17,8 +17,9 @@ export function Toolbar({ navigation, onSearch }: { navigation: Navigation; onSe
         suffix={`of ${pageCount}`}
         onCommit={page => {
           if (!Number.isInteger(page)) return false;
-          navigation.goToPage(page);
-          return true;
+          const target = Math.min(Math.max(1, page), pageCount);
+          navigation.goToPage(target);
+          return target;
         }}
       />
       <button type="button" aria-label="Next page" title="Next page" disabled={currentPage >= pageCount} onClick={() => navigation.step(1)}>›</button>
@@ -29,8 +30,9 @@ export function Toolbar({ navigation, onSearch }: { navigation: Navigation; onSe
         value={Math.round(state.currentZoomLevel * 100)}
         suffix="%"
         onCommit={percent => {
-          zoom?.requestZoom(Math.min(ZOOM_RANGE.max, Math.max(ZOOM_RANGE.min, percent / 100)));
-          return true;
+          const level = Math.min(ZOOM_RANGE.max, Math.max(ZOOM_RANGE.min, percent / 100));
+          zoom?.requestZoom(level);
+          return Math.round(level * 100);
         }}
       />
       <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoom?.zoomIn()}>+</button>

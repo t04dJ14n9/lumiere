@@ -186,6 +186,28 @@ test('a page typed in the field opens at its top, and leaving the field does not
   expect(await pageOffset(page, 7)).toBe(before);
 });
 
+test('the page and zoom fields show the clamped value, even when it is the current one', async ({ page }) => {
+  await open(page);
+  const field = page.getByRole('textbox', { name: 'Page' });
+  await field.fill('0');
+  await field.press('Enter');
+  await expect(field).toHaveValue('1');
+  await field.fill('12');
+  await field.press('Enter');
+  await expect(field).toHaveValue('12');
+  await field.fill('99');
+  await field.press('Enter');
+  await expect(field).toHaveValue('12');
+
+  const zoom = page.getByRole('textbox', { name: 'Zoom' });
+  await zoom.fill('400');
+  await zoom.press('Enter');
+  await expect(zoom).toHaveValue('400');
+  await zoom.fill('900');
+  await zoom.press('Enter');
+  await expect(zoom).toHaveValue('400');
+});
+
 test('links in the PDF open their page, or ask the extension to open a web address', async ({ page }) => {
   await open(page);
   await page.getByRole('link', { name: 'Go to page 5' }).click();

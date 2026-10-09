@@ -9,8 +9,12 @@ export function NumberField({ label, value, suffix, onCommit }: {
   label: string;
   value: number;
   suffix: string;
-  /** Returns false for input that cannot be used; the field then resets. */
-  onCommit: (value: number) => boolean;
+  /**
+   * Applies the typed value and returns the value actually used (after
+   * clamping, say), which the field then shows; or false for input that
+   * cannot be used, and the field resets.
+   */
+  onCommit: (value: number) => number | false;
 }): React.JSX.Element {
   const [draft, setDraft] = useState(String(value));
   const edited = useRef(false);
@@ -20,7 +24,10 @@ export function NumberField({ label, value, suffix, onCommit }: {
     if (!edited.current) return;
     edited.current = false;
     const number = Number.parseFloat(draft);
-    if (!Number.isFinite(number) || !onCommit(number)) setDraft(String(value));
+    const used = Number.isFinite(number) ? onCommit(number) : false;
+    // Show what was used: a clamped value can equal the current one, and
+    // then no new value arrives to replace the draft.
+    setDraft(String(used === false ? value : used));
   };
 
   return (
