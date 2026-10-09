@@ -20,6 +20,11 @@
   cursor: pointer;
 }
 
+/* VS Code outlines focused links; show that for the keyboard only. */
+.page-link:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .page-link:hover {
   background: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 15%, transparent);
 }

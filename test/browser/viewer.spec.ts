@@ -73,6 +73,22 @@ test('opens the PDF, shows the page count and reports the nested outline', async
   ]);
 });
 
+test('VS Code\'s default webview styles neither shift the viewer nor outline clicked links', async ({ page }) => {
+  await open(page);
+  const width = page.viewportSize()!.width;
+  const viewer = (await page.locator('.viewer').boundingBox())!;
+  expect([viewer.x, viewer.width]).toEqual([0, width]);
+  const find = (await page.getByRole('button', { name: 'Find in PDF' }).boundingBox())!;
+  expect(find.x + find.width).toBeLessThanOrEqual(width);
+
+  await page.getByRole('textbox', { name: 'Page' }).fill('2');
+  await page.getByRole('textbox', { name: 'Page' }).press('Enter');
+  const link = page.getByRole('link', { name: 'Open https://example.com/paper' });
+  await link.click();
+  await expect(link).toBeFocused();
+  expect(await link.evaluate(element => getComputedStyle(element).outlineStyle)).toBe('none');
+});
+
 test('a text drag reports its text and line box, and the copy command copies the text', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);
