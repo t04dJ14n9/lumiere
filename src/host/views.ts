@@ -7,6 +7,7 @@ import type {
   TreeNode,
   TreeSource,
 } from "../shared/runtime";
+import { cleanEditedUris } from "./rename-save";
 
 /** The VS Code side of `workbench.views` (DESIGN §7.1). */
 export function createHostViews(): HostViews {
@@ -47,10 +48,39 @@ export function createHostViews(): HostViews {
             oldUri: oldUri.toString(),
             newUri: newUri.toString(),
           }));
-          event.waitUntil(listener(renames).then(workspaceEdit));
+          event.waitUntil(
+            listener(renames).then((files) => {
+              saveAfterRename(files);
+              return workspaceEdit(files);
+            }),
+          );
         }),
       ),
   };
+}
+
+/**
+ * Obsidian writes link updates straight to disk. Save the notes the update
+ * edited once the rename lands, unless they already had unsaved changes, so
+ * a closed editor's "Don't Save" can't leave a stale edited buffer behind.
+ */
+function saveAfterRename(files: readonly FileTextEdits[]): void {
+  const uris = cleanEditedUris(files, (uri) =>
+    vscode.workspace.textDocuments.some(
+      (document) => document.uri.toString() === uri && document.isDirty,
+    ),
+  );
+  if (uris.length === 0) {
+    return;
+  }
+  const done = vscode.workspace.onDidRenameFiles(() => {
+    done.dispose();
+    for (const document of vscode.workspace.textDocuments) {
+      if (uris.includes(document.uri.toString()) && document.isDirty) {
+        void document.save();
+      }
+    }
+  });
 }
 
 function toDisposer(disposable: vscode.Disposable): () => void {

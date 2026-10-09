@@ -76,3 +76,21 @@ test("renaming a folder updates links to every file in it", async () => {
   );
   await root.dispose();
 });
+
+test("edits are computed from the open document, not a stale vault copy", async () => {
+  const { root, fake } = await start({ "linkUpdates.mode": "always" });
+  const open = '---\nrelated: "[[Old]]"\n---\nNew line [[Old|the old note]].';
+  fake.views.documentText = (uri) => (uri === uriOf("A.md") ? open : undefined);
+  const edits = await fake.rename(rename);
+  const a = edits.find((file) => file.uri === uriOf("A.md"));
+  assert.deepEqual(
+    a?.edits
+      .map((edit) => [edit.start.line, edit.start.col, edit.text])
+      .sort((x, y) => Number(x[0]) - Number(y[0])),
+    [
+      [1, 10, "[[New]]"],
+      [3, 9, "[[New|the old note]]"],
+    ],
+  );
+  await root.dispose();
+});
