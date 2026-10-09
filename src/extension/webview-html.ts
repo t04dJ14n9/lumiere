@@ -31,7 +31,7 @@ export function viewerHtml(webview: vscode.Webview, extensionUri: vscode.Uri, to
   <title>PDF</title>
 </head>
 <body>
-  <div id="root" data-pdfium-wasm="${asset('pdfium.wasm').toString()}" data-toolbar="${toolbar.mode}"></div>
+  <div id="root" data-pdfium-wasm="${asset('pdfium.wasm').toString()}" data-toolbar="${toolbar.mode}" data-dock="${toolbar.dock}"></div>
   <script nonce="${nonce}" src="${asset('viewer.js').toString()}"></script>
 </body>
 </html>`;

@@ -9,7 +9,8 @@
  *    │                                    region, again with its text and image
  *    │  ◄──────────── copyForAgent        the viewer's Copy for Agent button
  *    │  ◄──────────── askAgent            the viewer's Ask Agent button
- *    │  ◄──────────── toggleOutline       the slim bar's outline button
+ *    │  ◄──────────── toggleOutline       the viewer bar's outline button
+ *    │  ◄──────────── floatingDock        the floating bar dragged to an edge
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
  *    │  ◄──────────── view { view }       page and zoom, after each change
  *    │  goTo { location } ──────►         open a page (and box)
@@ -21,7 +22,7 @@
  */
 import type { PdfLocation } from './pdf-location';
 import { parseSelection, type PdfSelection } from './selection';
-import type { ToolbarSettings } from './toolbar-settings';
+import { isFloatingDock, type FloatingDock, type ToolbarSettings } from './toolbar-settings';
 import { parseViewState, type ViewerAction, type ViewState } from './view-state';
 
 /** One entry of the PDF's outline (bookmarks), with the page it opens. */
@@ -43,6 +44,8 @@ export type ViewerMessage =
   | { type: 'askAgent' }
   /** The viewer's outline button: show or hide the PDF Outline view. */
   | { type: 'toggleOutline' }
+  /** The floating bar was dragged to another edge. */
+  | { type: 'floatingDock'; dock: FloatingDock }
   | { type: 'openExternal'; url: string }
   | { type: 'error'; message: string }
   | { type: 'view'; view: ViewState };
@@ -79,6 +82,8 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     }
     case 'outline':
       return { type: 'outline', items: parseOutline(message.items) };
+    case 'floatingDock':
+      return isFloatingDock(message.dock) ? { type: 'floatingDock', dock: message.dock } : undefined;
     case 'openExternal':
       return isWebUrl(message.url) ? { type: 'openExternal', url: message.url } : undefined;
     case 'error':

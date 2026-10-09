@@ -94,4 +94,7 @@ test('unknown messages are ignored', () => {
   assert.deepEqual(parseViewerMessage({ type: 'copyForAgent', extra: 'ignored' }), { type: 'copyForAgent' });
   assert.deepEqual(parseViewerMessage({ type: 'askAgent', query: 'ignored' }), { type: 'askAgent' });
   assert.deepEqual(parseViewerMessage({ type: 'toggleOutline', open: 'ignored' }), { type: 'toggleOutline' });
+  assert.deepEqual(parseViewerMessage({ type: 'floatingDock', dock: 'right' }), { type: 'floatingDock', dock: 'right' });
+  assert.equal(parseViewerMessage({ type: 'floatingDock', dock: 'center' }), undefined);
+  assert.equal(parseViewerMessage({ type: 'floatingDock' }), undefined);
 });

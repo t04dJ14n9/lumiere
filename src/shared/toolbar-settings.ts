@@ -2,20 +2,57 @@
  * Where the viewer's controls are (setting `vscodeEmbedPdf.toolbar.mode`):
  *   chrome    VS Code's own: editor title actions and the status bar
  *   slim      a slim bar along the top of the viewer
+ *   floating  a bar over the pages, docked to an edge the reader drags it to
  *   none      no controls; keyboard shortcuts, menus and commands only
  */
-export type ToolbarMode = 'chrome' | 'slim' | 'none';
-export const TOOLBAR_MODES: readonly ToolbarMode[] = ['chrome', 'slim', 'none'];
+export type ToolbarMode = 'chrome' | 'slim' | 'floating' | 'none';
+export const TOOLBAR_MODES: readonly ToolbarMode[] = ['chrome', 'slim', 'floating', 'none'];
 export const DEFAULT_TOOLBAR_MODE: ToolbarMode = 'chrome';
+
+/** The edge of the viewer the floating bar is docked to. */
+export type FloatingDock = 'top' | 'bottom' | 'left' | 'right';
+export const FLOATING_DOCKS: readonly FloatingDock[] = ['top', 'bottom', 'left', 'right'];
+export const DEFAULT_FLOATING_DOCK: FloatingDock = 'bottom';
 
 /** The toolbar settings the viewer needs. */
 export interface ToolbarSettings {
   mode: ToolbarMode;
+  /** Where the floating bar is; the reader's choice, kept by the extension. */
+  dock: FloatingDock;
 }
 
 /** A setting's value as a mode; anything unknown is the default. */
 export function parseToolbarMode(value: unknown): ToolbarMode {
   return TOOLBAR_MODES.includes(value as ToolbarMode) ? value as ToolbarMode : DEFAULT_TOOLBAR_MODE;
+}
+
+export function isFloatingDock(value: unknown): value is FloatingDock {
+  return FLOATING_DOCKS.includes(value as FloatingDock);
+}
+
+/** A stored dock; anything unknown is the default. */
+export function parseFloatingDock(value: unknown): FloatingDock {
+  return isFloatingDock(value) ? value : DEFAULT_FLOATING_DOCK;
+}
+
+/** Toolbar settings from a message, with defaults for anything malformed. */
+export function parseToolbarSettings(value: unknown): ToolbarSettings {
+  const settings = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+  return { mode: parseToolbarMode(settings.mode), dock: parseFloatingDock(settings.dock) };
+}
+
+/**
+ * The edge nearest to a point in a box of `width` by `height`: where a
+ * dragged floating bar docks when dropped there.
+ */
+export function nearestDock(x: number, y: number, width: number, height: number): FloatingDock {
+  const distances: [FloatingDock, number][] = [
+    ['top', y],
+    ['bottom', height - y],
+    ['left', x],
+    ['right', width - x],
+  ];
+  return distances.reduce((nearest, next) => next[1] < nearest[1] ? next : nearest)[0];
 }
 
 /**

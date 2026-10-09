@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import {
+  parseFloatingDock,
   parseToolbarMode,
   showStatusBarButtons,
   titleActionsInMenu,
+  type FloatingDock,
   type ToolbarMode,
   type ToolbarSettings,
 } from '../shared/toolbar-settings';
@@ -10,10 +12,39 @@ import { pageLabel, zoomLabel } from '../shared/view-state';
 import type { PdfPanels } from './pdf-panels';
 
 const SECTION = 'vscodeEmbedPdf.toolbar';
+const DOCK_KEY = 'vscodeEmbedPdf.floatingDock';
 
-/** The toolbar settings, as the viewer needs them. */
-export function toolbarSettings(): ToolbarSettings {
-  return { mode: parseToolbarMode(vscode.workspace.getConfiguration(SECTION).get('mode')) };
+/**
+ * The toolbar settings the viewers need: the mode from the settings, and
+ * the floating bar's edge, which the reader picks by dragging it and which
+ * is kept in the extension's global state rather than in the settings.
+ */
+export class ToolbarPreferences implements vscode.Disposable {
+  private readonly changed = new vscode.EventEmitter<void>();
+  readonly onDidChange = this.changed.event;
+  private readonly subscription = vscode.workspace.onDidChangeConfiguration(event => {
+    if (event.affectsConfiguration(SECTION)) this.changed.fire();
+  });
+
+  constructor(private readonly state: vscode.Memento) {}
+
+  get settings(): ToolbarSettings {
+    return {
+      mode: parseToolbarMode(vscode.workspace.getConfiguration(SECTION).get('mode')),
+      dock: parseFloatingDock(this.state.get(DOCK_KEY)),
+    };
+  }
+
+  async setDock(dock: FloatingDock): Promise<void> {
+    if (dock === this.settings.dock) return;
+    await this.state.update(DOCK_KEY, dock);
+    this.changed.fire();
+  }
+
+  dispose(): void {
+    this.subscription.dispose();
+    this.changed.dispose();
+  }
 }
 
 /**
@@ -22,16 +53,16 @@ export function toolbarSettings(): ToolbarSettings {
  * command that picks where the controls go. The editor title actions are
  * contributed in package.json and follow the same setting.
  */
-export function registerToolbar(panels: PdfPanels): vscode.Disposable {
+export function registerToolbar(panels: PdfPanels, preferences: ToolbarPreferences): vscode.Disposable {
   // Where the title bar would only add the viewer's buttons to its "…" menu,
   // they would repeat that menu's own page and zoom entries: leave them out.
   void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.titleActionsInMenu', titleActionsInMenu(vscode.env.appName));
   const statusBar = new StatusBar(panels);
   return vscode.Disposable.from(
     statusBar,
-    vscode.workspace.onDidChangeConfiguration(event => {
-      if (!event.affectsConfiguration(SECTION)) return;
-      const settings = toolbarSettings();
+    // Every open viewer follows, the one the bar was dragged in included.
+    preferences.onDidChange(() => {
+      const settings = preferences.settings;
       for (const panel of panels.all) panel.setToolbar(settings);
       statusBar.update();
     }),
@@ -107,6 +138,7 @@ class StatusBar implements vscode.Disposable {
 const MODE_CHOICES: { mode: ToolbarMode; label: string; detail: string }[] = [
   { mode: 'chrome', label: '$(layout-statusbar) Editor Title Bar and Status Bar', detail: 'VS Code\'s own controls: buttons next to the tab, page and zoom in the status bar' },
   { mode: 'slim', label: '$(layout-panel-off) Slim Bar in the Viewer', detail: 'A slim bar along the top of the viewer' },
+  { mode: 'floating', label: '$(layout-centered) Floating Bar in the Viewer', detail: 'A bar over the pages that fades while you read; drag its grip to another edge' },
   { mode: 'none', label: '$(eye-closed) None', detail: 'Keyboard shortcuts, the right-click menu and the command palette only' },
 ];
 

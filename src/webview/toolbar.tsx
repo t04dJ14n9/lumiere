@@ -47,22 +47,24 @@ function IconButton({ icon, label, keys, disabled, pressed, onClick }: {
 }
 
 /**
- * The page, zoom, fit, tool, outline and find controls, as a slim bar along
- * the top of the viewer (`vscodeEmbedPdf.toolbar.mode`: `slim`). The buttons
- * run the same actions as the extension's commands.
+ * The page, zoom, fit, tool, outline and find controls, in groups. The
+ * buttons run the same actions as the extension's commands.
  */
-export function Toolbar({ navigation, tool, run }: ToolbarProps): React.JSX.Element {
+export function ToolbarControls({ navigation, tool, run, compact = false }: ToolbarProps & {
+  /** Shorter page suffix ("/ 12"), for the floating bar. */
+  compact?: boolean;
+}): React.JSX.Element {
   const { state } = useZoom(DOCUMENT_ID);
   const { currentPage, pageCount } = navigation;
   const fit = fitMode(state.zoomLevel);
   return (
-    <div className="toolbar" role="toolbar" aria-label="PDF toolbar">
+    <>
       <span className="toolbar-group">
         <IconButton icon="chevron-up" label="Previous page" keys="Alt+PageUp" disabled={currentPage <= 1} onClick={() => run({ action: 'previousPage' })} />
         <NumberField
           label="Page"
           value={currentPage}
-          suffix={`of ${pageCount}`}
+          suffix={compact ? `/ ${pageCount}` : `of ${pageCount}`}
           onCommit={page => {
             if (!Number.isInteger(page)) return false;
             const target = Math.min(Math.max(1, page), pageCount);
@@ -99,6 +101,15 @@ export function Toolbar({ navigation, tool, run }: ToolbarProps): React.JSX.Elem
         <IconButton icon="list-tree" label="Toggle outline" keys={shortcut('⌃⌘O', 'Ctrl+Alt+O')} onClick={() => postToHost({ type: 'toggleOutline' })} />
         <IconButton icon="search" label="Find in PDF" keys={shortcut('⌘F', 'Ctrl+F')} onClick={() => run({ action: 'find' })} />
       </span>
+    </>
+  );
+}
+
+/** The controls as a slim bar along the top of the viewer (`toolbar.mode`: `slim`). */
+export function Toolbar(props: ToolbarProps): React.JSX.Element {
+  return (
+    <div className="toolbar" role="toolbar" aria-label="PDF toolbar">
+      <ToolbarControls {...props} />
     </div>
   );
 }

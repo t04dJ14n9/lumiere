@@ -8,6 +8,7 @@ import { parseViewerMessage, type HostMessage, type OutlineItem } from '../share
 import type { PdfLocation } from '../shared/pdf-location';
 import type { PdfSelection, RegionSelection } from '../shared/selection';
 import type { ToolbarSettings } from '../shared/toolbar-settings';
+import type { ToolbarPreferences } from './toolbar';
 import type { ViewerAction, ViewState } from '../shared/view-state';
 import type { RegionImages } from './region-images';
 import { viewerHtml } from './webview-html';
@@ -52,7 +53,7 @@ export class PdfPanel implements vscode.Disposable {
     readonly webviewPanel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
     private readonly regionImages: RegionImages,
-    toolbar: ToolbarSettings,
+    private readonly toolbar: ToolbarPreferences,
   ) {
     const webview = webviewPanel.webview;
     webview.options = {
@@ -64,7 +65,7 @@ export class PdfPanel implements vscode.Disposable {
       webview.onDidReceiveMessage(message => this.receive(message)),
       this.reloadWhenFileChanges(),
     );
-    webview.html = viewerHtml(webview, extensionUri, toolbar);
+    webview.html = viewerHtml(webview, extensionUri, toolbar.settings);
   }
 
   /**
@@ -171,6 +172,9 @@ export class PdfPanel implements vscode.Disposable {
         break;
       case 'toggleOutline':
         await vscode.commands.executeCommand('vscodeEmbedPdf.toggleOutline');
+        break;
+      case 'floatingDock':
+        await this.toolbar.setDock(message.dock);
         break;
       case 'openExternal':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));

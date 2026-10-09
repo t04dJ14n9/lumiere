@@ -17,13 +17,14 @@ import { useIgnoreSecondaryButtons } from './secondary-buttons';
 import { useSelectionReporting } from './selection';
 import { useToolMode } from './tool-mode';
 import { currentToolbarSettings, rememberToolbarSettings } from './toolbar-settings';
+import { FloatingToolbar } from './floating-toolbar';
 import { Toolbar } from './toolbar';
 import { useViewActions, useViewReporting } from './view-sync';
 import { useWheelZoom } from './wheel-zoom';
 
 /**
- * The open PDF: the toolbar (unless the controls are in VS Code's own UI or
- * hidden), an optional search bar, and the scrolling pages.
+ * The open PDF: the slim or floating bar (unless the controls are in VS
+ * Code's own UI or hidden), an optional search bar, and the scrolling pages.
  */
 export function Viewer({ document: pdf }: { document: PdfDocumentObject }): React.JSX.Element {
   const navigation = useNavigation(DOCUMENT_ID);
@@ -84,6 +85,15 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
       <CopyToClipboard />
       {toolbar.mode === 'slim' && <Toolbar navigation={navigation} tool={tool} run={runAction} />}
       <div className="document" ref={documentArea}>
+        {toolbar.mode === 'floating' && (
+          <FloatingToolbar
+            navigation={navigation}
+            tool={tool}
+            run={runAction}
+            dock={toolbar.dock}
+            onDock={dock => setToolbar(current => rememberToolbarSettings({ ...current, dock }))}
+          />
+        )}
         {searching && <SearchBar navigation={navigation} focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">
           <ZoomGestureWrapper documentId={DOCUMENT_ID} enableWheel={false}>

@@ -39,8 +39,22 @@ function zoomPercent(label: string): number {
 
 /** Give the viewer the keyboard focus with a click on empty space of a page in view. */
 async function focusViewer(page: Page, viewer: Frame, pageNumber: number): Promise<void> {
+  // The status bar shows a page as soon as it is reached; wait for it to settle at the top.
+  await expect.poll(() => pageAtTop(viewer, pageNumber)).toBe(true);
   const at = await pagePoint(viewer, pageNumber);
   await page.mouse.click(...at(20, 20).screen);
+}
+
+/** Wait until the pages have stopped scrolling. */
+async function scrollSettled(viewer: Frame): Promise<void> {
+  const scrollTop = () => viewer.evaluate(() => document.querySelector('.viewport')!.scrollTop);
+  let last = await scrollTop();
+  await expect.poll(async () => {
+    const now = await scrollTop();
+    const still = now === last;
+    last = now;
+    return still;
+  }, { intervals: [200] }).toBe(true);
 }
 
 /** The tool the viewer is using, from its class. */
@@ -149,10 +163,13 @@ test('keyboard shortcuts page, zoom, fit, find and pick the tool while the PDF h
   await expect.poll(async () => zoomPercent(await zoomStatus(page).innerText())).toBeLessThan(fitted);
   await page.keyboard.press(`${modifier}+0`);
   await expect(zoomStatus(page)).toHaveText(/^Fit Width/u);
+  // The viewer scrolls to keep its place just after a zoom; a page asked
+  // for meanwhile would be scrolled away from.
+  await scrollSettled(viewer);
 
   await page.keyboard.press('Control+g');
   const input = quickInputTitled(page, /^Go to Page/u);
-  await expect(input).toBeVisible();
+  await expect(input).toHaveValue(/^\d+$/u);
   await input.fill('9');
   await input.press('Enter');
   await expect(statusBarEntry(page, /^Page 9 \/ 12$/u)).toBeVisible();
@@ -170,21 +187,50 @@ test('keyboard shortcuts page, zoom, fit, find and pick the tool while the PDF h
 
 test('the toolbar setting moves the controls into the viewer and back, live', async ({ workbench: page }) => {
   await openFile(page, PDF);
-  const viewer = await pdfViewer(page);
+  let viewer = await pdfViewer(page);
   await expect(statusBarEntry(page, PAGE_STATUS)).toBeVisible();
   try {
     await setToolbarMode(page, /Slim Bar/u);
     await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 12');
     await expect(statusBarEntry(page, PAGE_STATUS)).toHaveCount(0);
     await expect(page.locator('.editor-actions').getByRole('button', { name: 'Zoom In' })).toHaveCount(0);
-    // The bar's outline button shows and hides the PDF Outline view.
+    // The bar's outline button shows the PDF Outline view, or hides the
+    // side bar it is shown in.
     const outline = page.locator('.pane-header', { hasText: 'PDF Outline' });
+    const entry = page.getByRole('treeitem', { name: /Part One/u });
     await expect(outline).toBeVisible();
     const toggle = viewer.getByRole('button', { name: 'Toggle outline' });
+    // A fresh profile may have the view collapsed: then the button opens it.
+    if (!await entry.isVisible()) {
+      await toggle.click();
+      await expect(entry).toBeVisible();
+    }
     await toggle.click();
     await expect(outline).toBeHidden();
     await toggle.click();
-    await expect(outline).toBeVisible();
+    await expect(entry).toBeVisible();
+
+    // The floating bar: dragged to an edge, it stays there for PDFs opened later.
+    await setToolbarMode(page, /Floating Bar/u);
+    const floating = viewer.getByRole('toolbar', { name: 'PDF toolbar' });
+    await expect(floating).toHaveAttribute('aria-orientation', 'horizontal');
+    const grip = floating.getByRole('button', { name: /^Move toolbar/u });
+    const from = (await grip.boundingBox())!;
+    const area = (await viewer.locator('.viewport').boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(area.x + area.width - 30, area.y + area.height / 2, { steps: 10 });
+    await page.mouse.up();
+    await expect(floating).toHaveAttribute('aria-orientation', 'vertical');
+    await command(page, 'View: Close Editor');
+    await openFile(page, PDF);
+    viewer = await pdfViewer(page);
+    const reopened = viewer.getByRole('toolbar', { name: 'PDF toolbar' });
+    await expect(reopened).toHaveAttribute('aria-orientation', 'vertical');
+    // Back to the bottom, with the keyboard.
+    await reopened.getByRole('button', { name: /^Move toolbar/u }).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(reopened).toHaveAttribute('aria-orientation', 'horizontal');
 
     await setToolbarMode(page, /None/u);
     await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toHaveCount(0);

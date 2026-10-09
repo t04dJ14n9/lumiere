@@ -415,11 +415,13 @@
           "enum": [
             "chrome",
             "slim",
+            "floating",
             "none"
           ],
           "enumDescriptions": [
             "VS Code's own: find, zoom, fit and tool buttons in the editor title bar, and the page and zoom in the status bar (click them to go to a page or pick a zoom).",
             "A slim bar along the top of the viewer.",
+            "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
             "No controls: keyboard shortcuts, the right-click menu and the command palette only."
           ],
           "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
