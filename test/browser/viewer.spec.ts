@@ -174,6 +174,19 @@ test('a drag over empty space selects that region; Escape clears it', async ({ p
   await expect.poll(() => lastSelection(page)).toBeNull();
 });
 
+test('a region at the bottom of the viewer gets its menu above it, on screen', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  const [, bottomOfView] = at(0, 350);
+  expect(bottomOfView).toBeLessThan(page.viewportSize()!.height);
+  await drag(page, at(240, 320), at(290, 350));
+  const menu = (await page.getByRole('toolbar', { name: 'PDF region actions' }).boundingBox())!;
+  const region = (await page.locator('.region-selection').boundingBox())!;
+  const viewport = (await page.locator('.viewport').boundingBox())!;
+  expect(menu.y + menu.height).toBeLessThanOrEqual(viewport.y + viewport.height);
+  expect(menu.y + menu.height).toBeLessThanOrEqual(region.y);
+});
+
 test('a location sent while the PDF loads opens its page and flashes its box', async ({ page }) => {
   const location = { page: 5, viewRect: { left: 72, top: 83, width: 134, height: 21 } };
   await page.goto(`/?goto=${encodeURIComponent(JSON.stringify(location))}`);

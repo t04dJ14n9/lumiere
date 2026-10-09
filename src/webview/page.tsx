@@ -3,7 +3,7 @@ import { PagePointerProvider } from '@embedpdf/plugin-interaction-manager/react'
 import { RenderLayer } from '@embedpdf/plugin-render/react';
 import { SearchLayer } from '@embedpdf/plugin-search/react';
 import { SelectionLayer, type SelectionSelectionMenuProps } from '@embedpdf/plugin-selection/react';
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import type { PageRect } from '../shared/geometry';
 import type { RegionSelection } from '../shared/selection';
 import type { Highlight } from './navigation';
@@ -60,9 +60,7 @@ export function Page({
       {region?.page === page && (
         <>
           <Box className="region-selection" rect={region.rect} scale={scale} />
-          <div className="selection-menu" role="toolbar" aria-label="PDF region actions" style={menuBelow(region.rect, scale)}>
-            <button type="button" onClick={() => void selection.copyForAgent()}>Copy for Agent</button>
-          </div>
+          <RegionMenu rect={region.rect} scale={scale} onCopy={() => void selection.copyForAgent()} />
         </>
       )}
       <SelectionLayer
@@ -106,6 +104,43 @@ function Box({ rect, scale, className }: { rect: PageRect; scale: number; classN
   );
 }
 
-function menuBelow([left, , , bottom]: PageRect, scale: number): React.CSSProperties {
-  return { left: left * scale, top: bottom * scale + 6 };
+/** Space between a selected region and its menu, in pixels. */
+const MENU_GAP = 6;
+
+/**
+ * The menu of a selected region: below it, or above it when there is no
+ * room below in the viewer (a region dragged at the bottom of the screen).
+ */
+function RegionMenu({ rect: [left, top, , bottom], scale, onCopy }: {
+  rect: PageRect;
+  scale: number;
+  onCopy: () => void;
+}): React.JSX.Element {
+  const menu = useRef<HTMLDivElement>(null);
+  const [above, setAbove] = useState(false);
+  useLayoutEffect(() => {
+    const element = menu.current;
+    const page = element?.parentElement;
+    const viewport = element?.closest('.viewport');
+    if (!element || !page || !viewport) return;
+    const place = (): void => {
+      const pageTop = page.getBoundingClientRect().top;
+      const view = viewport.getBoundingClientRect();
+      const height = element.offsetHeight;
+      const fitsBelow = pageTop + bottom * scale + MENU_GAP + height <= view.bottom;
+      const fitsAbove = pageTop + top * scale - MENU_GAP - height >= view.top;
+      setAbove(!fitsBelow && fitsAbove);
+    };
+    place();
+    viewport.addEventListener('scroll', place, { passive: true });
+    return () => viewport.removeEventListener('scroll', place);
+  }, [bottom, scale, top]);
+  const style: React.CSSProperties = above
+    ? { left: left * scale, top: top * scale - MENU_GAP, transform: 'translateY(-100%)' }
+    : { left: left * scale, top: bottom * scale + MENU_GAP };
+  return (
+    <div ref={menu} className="selection-menu" role="toolbar" aria-label="PDF region actions" style={style}>
+      <button type="button" onClick={onCopy}>Copy for Agent</button>
+    </div>
+  );
 }
