@@ -23,6 +23,21 @@
   color: var(--vscode-editor-foreground);
   background: var(--hover);
 }
+/* The language sits in the corner and gives way to the buttons on hover. */
+.code-language {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  pointer-events: none;
+  transition: opacity 120ms;
+}
+.hybrid-block:hover .code-language {
+  opacity: 0;
+}
 .md-processed-code {
   white-space: normal;
 }

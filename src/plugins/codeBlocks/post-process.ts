@@ -2,6 +2,7 @@ import type { Logger } from "../../kernel";
 import type { EditorService } from "../editor/api";
 import type { RenderPass } from "../render/api";
 import { codePosition } from "./code-selection";
+import { languageLabel } from "./code-label";
 
 interface CodePassOptions {
   pass: RenderPass;
@@ -36,6 +37,10 @@ export function bindCodePass(options: CodePassOptions): void {
   )) {
     const copy = copyButton(code, options, events.signal);
     copies.push(copy);
+    const label = labelFor(code, copy);
+    if (label) {
+      copies.push(label);
+    }
     originals.set(code, code.textContent ?? "");
     pass.onDispose(() => copy.remove());
     code.addEventListener(
@@ -62,6 +67,18 @@ export function bindCodePass(options: CodePassOptions): void {
       })
       .catch((error) => options.logger.warn("Code highlighting failed", error));
   }
+}
+
+function labelFor(code: HTMLElement, copy: HTMLElement): HTMLElement | null {
+  const label = languageLabel(code.className);
+  if (!label) {
+    return null;
+  }
+  const tag = document.createElement("span");
+  tag.className = "code-language";
+  tag.textContent = label;
+  copy.before(tag);
+  return tag;
 }
 
 function copyButton(
