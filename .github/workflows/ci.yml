@@ -76,6 +76,11 @@ jobs:
         with:
           path: .vscode-test
           key: vscode-test-${{ runner.os }}-${{ steps.vscode.outputs.version }}
+      - name: Let Electron's sandbox start
+        # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor,
+        # so VS Code's Chromium sandbox aborts at launch. Lift the restriction
+        # instead of running VS Code with --no-sandbox.
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: pnpm test:vscode under xvfb
         run: xvfb-run -a --server-args="-screen 0 1920x1080x24" pnpm test:vscode
       - name: Upload test results
