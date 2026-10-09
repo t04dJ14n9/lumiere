@@ -55,16 +55,11 @@ export function createPanel(
     rpc,
     active: () => shell.active(),
     reveal: () => shell.reveal(),
-    dispose: () => shell.dispose(),
+    dispose: () => close(),
   };
+  const close = panelShutdown(owned, shell, onClose);
   owned.effect(() => () => documents.release(shell.document));
   owned.effect(() => () => rpc.dispose());
-  owned.effect(() =>
-    shell.onDispose(() => {
-      onClose();
-      void owned.dispose();
-    }),
-  );
   owned.effect(() => shell.onState(onState));
   registerSessionHandshake(owned, { shell, session, rpc, workbench });
   registerClipboard(owned, rpc, workbench.clipboard);
@@ -201,4 +196,50 @@ function sendConfiguration(
     "configure",
     config.preset === "minimal" ? {} : (config.features ?? {}),
   );
+}
+
+/**
+ * One shutdown, shared by the host's dispose and VS Code closing the panel
+ * (which re-enters here from `shell.dispose()`): the close notification
+ * cannot skip the cleanup, and every caller awaits it. Never rejects.
+ */
+function panelShutdown(
+  owned: Context,
+  shell: PanelShell,
+  onClose: () => void,
+): () => Promise<void> {
+  let closing: Promise<void> | undefined;
+  let shellClosed = false;
+  const shutdown = async () => {
+    try {
+      onClose();
+    } catch (error) {
+      owned.logger.error("Panel close notification failed", error);
+    }
+    try {
+      if (!shellClosed) {
+        shellClosed = true;
+        shell.dispose();
+      }
+    } catch (error) {
+      owned.logger.error("Closing the panel failed", error);
+    }
+    // Never rejects: cleanup errors are logged by the context.
+    await owned.dispose();
+  };
+  const close = (): Promise<void> => {
+    if (!closing) {
+      let adopt!: (work: Promise<void>) => void;
+      closing = new Promise<void>((resolve) => (adopt = resolve));
+      adopt(shutdown());
+    }
+    return closing;
+  };
+  owned.effect(() =>
+    shell.onDispose(() => {
+      shellClosed = true;
+      void close();
+    }),
+  );
+  return close;
 }
