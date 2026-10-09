@@ -5,7 +5,7 @@
  * server starts.
  *
  * Invariant: the server runs only while `vscodeEmbedPdf.agentBridge.enabled`
- * is on AND something uses it: a PDF editor is open in this window, or the
+ * is on AND it has been used in this window: a PDF editor was opened, or the
  * user ran Copy MCP Setup. Turning the setting off stops it at once, without
  * a reload; starts and stops run one at a time, in order.
  */
@@ -33,10 +33,13 @@ export function registerAgentBridge(options: BridgeOptions): vscode.Disposable {
   const { panels, log } = options;
   const shim = vscode.Uri.joinPath(options.globalStorageUri, 'bridge-stdio.js').fsPath;
   let running: RunningBridge | undefined;
-  let setupRequested = false;
+  // Used: a PDF editor was opened in this window, or Copy MCP Setup was run.
+  // Once used, the bridge stays up until the setting goes off, so an agent
+  // that connected does not lose it when the last PDF closes.
+  let used = panels.all.length > 0;
   let stopped = false;
   let queue = Promise.resolve();
-  const wanted = (): boolean => !stopped && agentBridgeEnabled() && (setupRequested || true);
+  const wanted = (): boolean => !stopped && used && agentBridgeEnabled();
   const sync = (): void => {
     queue = queue.then(async () => {
       if (wanted() && !running) {
@@ -57,7 +60,10 @@ export function registerAgentBridge(options: BridgeOptions): vscode.Disposable {
     vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration('vscodeEmbedPdf.agentBridge.enabled')) sync();
     }),
-    panels.onDidOpen(sync),
+    panels.onDidOpen(() => {
+      used = true;
+      sync();
+    }),
     vscode.commands.registerCommand('vscodeEmbedPdf.copyMcpSetup', async () => {
       if (!agentBridgeEnabled()) {
         const turnOn = 'Turn On';
@@ -68,7 +74,7 @@ export function registerAgentBridge(options: BridgeOptions): vscode.Disposable {
         if (choice !== turnOn) return;
         await vscode.workspace.getConfiguration('vscodeEmbedPdf').update('agentBridge.enabled', true, vscode.ConfigurationTarget.Global);
       }
-      setupRequested = true;
+      used = true;
       sync();
       await copyMcpSetup(shim);
     }),

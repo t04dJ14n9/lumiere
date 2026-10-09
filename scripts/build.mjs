@@ -1,5 +1,9 @@
 // Builds the two halves of the extension:
 //   dist/extension.js         the VS Code host (Node, CommonJS)
+//   dist/agent-bridge-server.js  the agent bridge's MCP server, loaded by the
+//                             host only when the bridge starts (it carries the
+//                             MCP SDK and zod, which the host never loads otherwise)
+//   dist/bridge-stdio.js      the stdio shim MCP clients run (see Copy MCP Setup)
 //   dist/webview/viewer.js    the PDF viewer page (browser), plus viewer.css
 //   dist/webview/pdfium.wasm  the PDF engine, loaded by the viewer at runtime
 //
@@ -23,10 +27,38 @@ const shared = {
   logLevel: 'info',
 };
 
+const bridgeServerEntry = path.join(root, 'src/extension/plugins/agentBridge/mcp/server.ts');
+
+/**
+ * Keeps the bridge server out of dist/extension.js: the controller's
+ * `import('./server')` becomes a require of dist/agent-bridge-server.js,
+ * built separately below.
+ */
+const lazyBridgeServer = {
+  name: 'lazy-agent-bridge-server',
+  setup(build) {
+    build.onResolve({ filter: /^\.\/server$/ }, args =>
+      path.join(args.resolveDir, 'server.ts') === bridgeServerEntry
+        ? { path: './agent-bridge-server.js', external: true }
+        : undefined);
+  },
+};
+
 const extension = {
   ...shared,
   entryPoints: [path.join(root, 'src/extension/extension.ts')],
   outfile: path.join(dist, 'extension.js'),
+  platform: 'node',
+  format: 'cjs',
+  target: 'node20',
+  external: ['vscode'],
+  plugins: [lazyBridgeServer],
+};
+
+const bridgeServer = {
+  ...shared,
+  entryPoints: [bridgeServerEntry],
+  outfile: path.join(dist, 'agent-bridge-server.js'),
   platform: 'node',
   format: 'cjs',
   target: 'node20',
@@ -68,8 +100,8 @@ async function copyEngine() {
 await rm(dist, { recursive: true, force: true });
 await copyEngine();
 if (watch) {
-  const contexts = await Promise.all([esbuild.context(extension), esbuild.context(bridgeStdio), esbuild.context(webview)]);
+  const contexts = await Promise.all([extension, bridgeServer, bridgeStdio, webview].map(options => esbuild.context(options)));
   await Promise.all(contexts.map(context => context.watch()));
 } else {
-  await Promise.all([esbuild.build(extension), esbuild.build(bridgeStdio), esbuild.build(webview)]);
+  await Promise.all([extension, bridgeServer, bridgeStdio, webview].map(options => esbuild.build(options)));
 }

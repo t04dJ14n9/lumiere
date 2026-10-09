@@ -24,9 +24,7 @@
     "cursor"
   ],
   "main": "./dist/extension.js",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "activationEvents": [],
   "contributes": {
     "customEditors": [
       {
