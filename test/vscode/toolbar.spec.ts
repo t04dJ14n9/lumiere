@@ -47,15 +47,23 @@ async function focusViewer(page: Page, viewer: Frame, pageNumber: number): Promi
   await page.mouse.click(...at(20, 20).screen);
 }
 
-/** Wait until the pages have stopped scrolling. */
+/**
+ * Wait until the pages have stopped scrolling and resizing: after a zoom the
+ * pages are laid out again and the viewer scrolls back to its place, and that
+ * can start a moment after the zoom is reported.
+ */
 async function scrollSettled(viewer: Frame): Promise<void> {
-  const scrollTop = () => viewer.evaluate(() => document.querySelector('.viewport')!.scrollTop);
-  let last = await scrollTop();
+  const layout = () => viewer.evaluate(() => {
+    const viewport = document.querySelector('.viewport')!;
+    return `${viewport.scrollTop}:${viewport.scrollHeight}`;
+  });
+  let last = await layout();
+  let stillFor = 0;
   await expect.poll(async () => {
-    const now = await scrollTop();
-    const still = now === last;
+    const now = await layout();
+    stillFor = now === last ? stillFor + 1 : 0;
     last = now;
-    return still;
+    return stillFor >= 3;
   }, { intervals: [200] }).toBe(true);
 }
 
