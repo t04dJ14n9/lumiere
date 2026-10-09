@@ -145,14 +145,14 @@ test('Copy for Agent right after a text drag reports the selection before the co
   expect(order.indexOf('text')).toBeLessThan(order.indexOf('copy'));
 });
 
-test('Ask Agent, from a text or region menu, comes after the full selection report', async ({ page }) => {
+test('Copy Link for Agent, from a text or region menu, comes after the full selection report', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);
   await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
   const textMenu = page.getByRole('toolbar', { name: 'PDF text selection actions' });
-  await expect(textMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy for Agent', 'Copy text']);
-  await textMenu.getByRole('button', { name: 'Ask Agent' }).click();
-  await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('askAgent');
+  await expect(textMenu.getByRole('button')).toHaveText(['Copy Link for Agent', 'Copy for Agent', 'Copy text']);
+  await textMenu.getByRole('button', { name: 'Copy Link for Agent' }).click();
+  await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('copyLinkForAgent');
   const beforeAsk = (await messages(page)).filter(message => message.type === 'selection').at(-1);
   expect(beforeAsk?.selection).toMatchObject({ kind: 'text', text: 'Synthetic page 1' });
 
@@ -160,11 +160,11 @@ test('Ask Agent, from a text or region menu, comes after the full selection repo
   await page.keyboard.press('Escape');
   await drag(page, at(60, 70), at(230, 120));
   const regionMenu = page.getByRole('toolbar', { name: 'PDF region actions' });
-  await expect(regionMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy for Agent']);
-  await regionMenu.getByRole('button', { name: 'Ask Agent' }).click();
-  await expect.poll(async () => (await messages(page)).filter(message => message.type === 'askAgent').length).toBe(2);
+  await expect(regionMenu.getByRole('button')).toHaveText(['Copy Link for Agent', 'Copy for Agent']);
+  await regionMenu.getByRole('button', { name: 'Copy Link for Agent' }).click();
+  await expect.poll(async () => (await messages(page)).filter(message => message.type === 'copyLinkForAgent').length).toBe(2);
   const all = await messages(page);
-  const ask = all.length - 1 - [...all].reverse().findIndex(message => message.type === 'askAgent');
+  const ask = all.length - 1 - [...all].reverse().findIndex(message => message.type === 'copyLinkForAgent');
   const last = all.slice(0, ask).filter(message => message.type === 'selection').at(-1);
   expect(last?.selection).toMatchObject({ kind: 'region', text: 'Synthetic page 1' });
   expect(last?.image).toMatch(/^data:image\/png;base64,/);
@@ -628,8 +628,8 @@ test('the Select Region tool selects a region even over text; Escape puts it dow
   expect(rect[1]).toBeCloseTo(TEXT_MIDLINE, -1);
 
   // The region's menu still asks the agent.
-  await menu.getByRole('button', { name: 'Ask Agent' }).click();
-  await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('askAgent');
+  await menu.getByRole('button', { name: 'Copy Link for Agent' }).click();
+  await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('copyLinkForAgent');
 
   // A click elsewhere (away from the page's links) clears the region, as it does without the tool.
   await page.mouse.click(...at(20, 300));

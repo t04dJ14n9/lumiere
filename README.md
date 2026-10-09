@@ -3,10 +3,10 @@
 [![CI](https://github.com/t04dJ14n9/vscode-embedPDF/actions/workflows/ci.yml/badge.svg)](https://github.com/t04dJ14n9/vscode-embedPDF/actions/workflows/ci.yml)
 
 A PDF viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
-and its PDFium engine. Select text or drag a box over a figure, press
-**Ask Agent**, and type your question: the agent chat opens with the exact
-page and box, the file's hash, the selected text, and for a box a snapshot
-of it. **Copy for Agent** copies the same for any other agent.
+and its PDFium engine. Select text or drag a box over a figure and press
+**Copy Link for Agent**: it copies a link to the exact page and box, the
+file's hash, the selected text, and for a box a snapshot of it, and opens
+the agent chat with it when the editor's own chat is the only agent. **Copy for Agent** copies the same for any other agent.
 
 ## Features
 
@@ -23,24 +23,29 @@ of it. **Copy for Agent** copies the same for any other agent.
   equation, a table with its caption); Escape puts the tool down.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
-- **Ask Agent and Copy for Agent.** Select text, or drag over empty page
+- **Copy Link for Agent and Copy for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   buttons next to the selection, the right-click menu, the editor title
-  buttons, or **PDF: Ask Agent** / **PDF: Copy for Agent**. ⌘C / Ctrl+C
+  buttons, or **PDF: Copy Link for Agent** / **PDF: Copy for Agent**. ⌘C / Ctrl+C
   copies just the text.
 
-  **Ask Agent** copies the selection and opens the agent chat with it typed
-  in, ready for your question:
+  **Copy Link for Agent** copies the selection and, when it knows which agent you use,
+  opens that agent's chat with it typed in, ready for your question:
   - in Cursor, a new agent chat, with a region's snapshot attached;
   - in VS Code, the chat view when a chat extension such as Copilot Chat is
-    installed (and `chat.disableAIFeatures` is off), with the snapshot attached;
-  - otherwise Claude Code or Codex, if installed: their chat opens and you
-    paste the selection (they take no prefilled text);
-  - otherwise it only copies, and says so.
+    installed (and `chat.disableAIFeatures` is off), with the snapshot attached.
 
-  The `vscodeEmbedPdf.askAgent.target` setting picks one of these instead.
+  Extensions cannot see which agent chat is focused, so this happens only when
+  the editor's chat is the only agent installed. With Claude Code or Codex
+  installed as well, Copy Link for Agent does not guess: it copies the selection (with
+  the region snapshot's path) and asks you to paste it into your agent.
 
-  In Cursor, the editor title bar keeps only a few buttons, so **Ask Agent**
+  The `vscodeEmbedPdf.copyLinkForAgent.target` setting sends it to one agent instead:
+  `claudeCode` (a new Claude Code conversation with the selection typed in),
+  `codex` (the selection and snapshot attached to the Codex thread), `cursor`,
+  `chat`, or `clipboard`.
+
+  In Cursor, the editor title bar keeps only a few buttons, so **Copy Link for Agent**
   and **Copy for Agent** sit in the **…** (More Actions) menu while something
   is selected. To pin them to the title bar, open that menu, choose
   **Configure Icon Visibility** and tick them.
@@ -167,7 +172,7 @@ src/
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
 │   ├── agent-text.ts     the text Copy for Agent copies
-│   ├── agent-target.ts   which agent chat Ask Agent opens
+│   ├── agent-target.ts   which agent chat Copy Link for Agent opens
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   ├── view-state.ts     page and zoom reported by the viewer; view actions
@@ -180,7 +185,7 @@ src/
 │   ├── pdf-panels.ts           all open editors and the active one
 │   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
-│   ├── commands.ts             Copy for Agent, Ask Agent, Open Location
+│   ├── commands.ts             Copy for Agent, Copy Link for Agent, Open Location
 │   ├── view-commands.ts        page, zoom, find and tool commands; Go to Page, zoom picker
 │   ├── toolbar.ts              the toolbar setting, status bar entries
 │   ├── agent-chat.ts           opening the agent chat with a selection

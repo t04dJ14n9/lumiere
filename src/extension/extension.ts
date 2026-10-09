@@ -7,12 +7,13 @@
  *   pdf-panels           all open editors and the active one
  *   region-images        PNG snapshots of selected regions, for agents
  *   outline-view         the "PDF Outline" tree in the Explorer
- *   commands             Copy for Agent, Ask Agent, Open PDF at Location
+ *   commands             Copy for Agent, Copy Link for Agent, Open PDF at Location
  *   view-commands        page, zoom, find and tool commands for the active PDF
  *   toolbar              where the controls are: status bar entries, setting
  *   agent-chat           opening the agent chat with a selection
  */
 import * as vscode from 'vscode';
+import { startAgentBridge } from './agent-bridge/bridge';
 import { registerCommands } from './commands';
 import { registerOutlineView } from './outline-view';
 import { PdfEditorProvider } from './pdf-editor-provider';
@@ -42,6 +43,9 @@ export function activate(context: vscode.ExtensionContext): void {
     registerViewCommands(panels),
     registerToolbar(panels, toolbar),
   );
+  const log = vscode.window.createOutputChannel('Agent PDF Viewer', { log: true });
+  context.subscriptions.push(log);
+  void startAgentBridge(context, panels, log).catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
 }
 
 export function deactivate(): void {}

@@ -24,7 +24,9 @@
     "cursor"
   ],
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "customEditors": [
       {
@@ -50,7 +52,7 @@
     "viewsWelcome": [
       {
         "view": "vscodeEmbedPdf.outline",
-        "contents": "Reading the outline\u2026",
+        "contents": "Reading the outline…",
         "when": "vscodeEmbedPdf.outlineLoading"
       },
       {
@@ -61,8 +63,8 @@
     ],
     "commands": [
       {
-        "command": "vscodeEmbedPdf.askAgent",
-        "title": "Ask Agent",
+        "command": "vscodeEmbedPdf.copyLinkForAgent",
+        "title": "Copy Link for Agent",
         "category": "PDF",
         "icon": "$(comment-discussion)",
         "enablement": "vscodeEmbedPdf.hasSelection"
@@ -76,12 +78,17 @@
       },
       {
         "command": "vscodeEmbedPdf.openLocation",
-        "title": "Open Location\u2026",
+        "title": "Open Location…",
         "category": "PDF"
       },
       {
         "command": "vscodeEmbedPdf.goToOutlineItem",
         "title": "Go to Outline Item",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.copyMcpSetup",
+        "title": "Copy MCP Setup for Claude Code / Codex…",
         "category": "PDF"
       },
       {
@@ -98,7 +105,7 @@
       },
       {
         "command": "vscodeEmbedPdf.goToPage",
-        "title": "Go to Page\u2026",
+        "title": "Go to Page…",
         "category": "PDF",
         "icon": "$(list-ordered)"
       },
@@ -116,7 +123,7 @@
       },
       {
         "command": "vscodeEmbedPdf.selectZoom",
-        "title": "Zoom\u2026",
+        "title": "Zoom…",
         "category": "PDF",
         "icon": "$(search-fuzzy)"
       },
@@ -158,7 +165,7 @@
       },
       {
         "command": "vscodeEmbedPdf.selectToolbarMode",
-        "title": "Choose Toolbar Location\u2026",
+        "title": "Choose Toolbar Location…",
         "category": "PDF",
         "icon": "$(layout)"
       }
@@ -166,7 +173,7 @@
     "menus": {
       "editor/title": [
         {
-          "command": "vscodeEmbedPdf.askAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
           "group": "navigation@1"
         },
@@ -278,7 +285,7 @@
       ],
       "commandPalette": [
         {
-          "command": "vscodeEmbedPdf.askAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
         {
@@ -343,7 +350,7 @@
       ],
       "webview/context": [
         {
-          "command": "vscodeEmbedPdf.askAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
           "group": "0_agent@1"
         },
@@ -382,7 +389,7 @@
     "configuration": {
       "title": "Agent PDF Viewer",
       "properties": {
-        "vscodeEmbedPdf.askAgent.target": {
+        "vscodeEmbedPdf.copyLinkForAgent.target": {
           "type": "string",
           "default": "auto",
           "enum": [
@@ -394,14 +401,14 @@
             "clipboard"
           ],
           "enumDescriptions": [
-            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat), else Claude Code, else Codex, else only copy.",
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
             "Cursor's chat.",
             "VS Code's chat.",
-            "Claude Code: opens it; paste the selection.",
-            "Codex: opens it; paste the selection.",
+            "Claude Code: a new conversation with the selection typed in.",
+            "Codex: the selection (and a region's snapshot) attached to the thread.",
             "Only copy the selection."
           ],
-          "markdownDescription": "Where **Ask Agent** sends a PDF selection. It is always copied too."
+          "markdownDescription": "Which agent chat, if any, **Copy Link for Agent** opens with a PDF selection. The link and selection are always copied. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the selection to it."
         },
         "vscodeEmbedPdf.regionImageCache.maxSizeMB": {
           "type": "number",
@@ -435,11 +442,16 @@
             "never"
           ],
           "enumDescriptions": [
-            "In Cursor, which keeps extension buttons in the editor title bar's \"\u2026\" menu: yes. In VS Code: no.",
+            "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
             "Always show the buttons.",
             "Only the page and the zoom."
           ],
           "markdownDescription": "With `#vscodeEmbedPdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+        },
+        "vscodeEmbedPdf.agentBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Serve the current PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected)."
         }
       }
     },
@@ -520,6 +532,12 @@
         "mac": "ctrl+cmd+r",
         "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
       }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "vscodeEmbedPdf.agentBridge",
+        "label": "Agent PDF Viewer"
+      }
     ]
   },
   "scripts": {
@@ -548,9 +566,11 @@
     "@embedpdf/plugin-selection": "2.15.1",
     "@embedpdf/plugin-viewport": "2.15.1",
     "@embedpdf/plugin-zoom": "2.15.1",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@vscode/codicons": "0.0.36",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",

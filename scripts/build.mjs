@@ -33,6 +33,15 @@ const extension = {
   external: ['vscode'],
 };
 
+const bridgeStdio = {
+  ...shared,
+  entryPoints: [path.join(root, 'src/bridge-stdio/main.ts')],
+  outfile: path.join(dist, 'bridge-stdio.js'),
+  platform: 'node',
+  format: 'cjs',
+  target: 'node20',
+};
+
 const webview = {
   ...shared,
   entryPoints: [path.join(root, 'src/webview/main.tsx')],
@@ -59,8 +68,8 @@ async function copyEngine() {
 await rm(dist, { recursive: true, force: true });
 await copyEngine();
 if (watch) {
-  const contexts = await Promise.all([esbuild.context(extension), esbuild.context(webview)]);
+  const contexts = await Promise.all([esbuild.context(extension), esbuild.context(bridgeStdio), esbuild.context(webview)]);
   await Promise.all(contexts.map(context => context.watch()));
 } else {
-  await Promise.all([esbuild.build(extension), esbuild.build(webview)]);
+  await Promise.all([esbuild.build(extension), esbuild.build(bridgeStdio), esbuild.build(webview)]);
 }

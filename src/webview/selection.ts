@@ -100,9 +100,9 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
     postToHost({ type: 'copyForAgent' });
   }, [reportSelection]);
 
-  const askAgent = useCallback(async (): Promise<void> => {
+  const copyLinkForAgent = useCallback(async (): Promise<void> => {
     await reportSelection();
-    postToHost({ type: 'askAgent' });
+    postToHost({ type: 'copyLinkForAgent' });
   }, [reportSelection]);
 
   const copyText = useCallback((): void => {
@@ -129,7 +129,7 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
     selection?.forDocument(documentId).clear();
   }, [changeRegion, documentId, selection]);
 
-  return { region, clear, askAgent, copyForAgent, copyText };
+  return { region, clear, copyLinkForAgent, copyForAgent, copyText };
 }
 
 export type SelectionReporting = ReturnType<typeof useSelectionReporting>;

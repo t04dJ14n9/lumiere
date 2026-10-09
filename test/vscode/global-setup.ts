@@ -39,7 +39,7 @@ export default async function globalSetup(): Promise<void> {
   const vsix = path.join(paths.root, 'extension.vsix');
   await createVSIX({ cwd: paths.repository, packagePath: vsix, dependencies: false });
   // A chat participant, as Copilot Chat declares, so VS Code's chat counts as
-  // served and Ask Agent opens it.
+  // served and Copy Link for Agent opens it.
   const participant = path.join(paths.root, 'chat-participant.vsix');
   await createVSIX({
     cwd: path.join(paths.repository, 'test', 'fixtures', 'chat-participant'),

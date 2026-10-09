@@ -15,10 +15,19 @@ import { viewerHtml } from './webview-html';
 
 /** What to tell the user when the chat could not take the text itself. */
 const PASTE_HINTS: Partial<Record<AgentTarget, string>> = {
-  claudeCode: 'Paste it into Claude Code and ask your question.',
-  codex: 'Paste it into Codex and ask your question.',
-  clipboard: 'No agent chat found: paste it into your agent and ask your question.',
+  codex: 'It is attached in Codex: type your question.',
+  clipboard: 'Paste it into your agent\'s chat and ask your question.',
 };
+
+/** A PDF selection for an agent: see `PdfPanel.agentSnapshot`. */
+export interface AgentSnapshot {
+  file: string;
+  uri: string;
+  sha256: string;
+  selection: PdfSelection;
+  agentText: string;
+  regionImage?: string;
+}
 
 /** Let a file write settle before reloading the PDF. */
 const RELOAD_DELAY_MS = 150;
@@ -98,13 +107,34 @@ export class PdfPanel implements vscode.Disposable {
    * Copy the selection, then open the agent chat with it typed in (and a
    * region's snapshot attached) so only the question is left to type.
    */
-  async askAgent(): Promise<boolean> {
+  async copyLinkForAgent(): Promise<boolean> {
     const copied = await this.copySelection();
     if (!copied) return false;
-    const target = await openAgentChat(copied.text, copied.image);
+    const target = await openAgentChat(copied.text, copied.image, this.uri);
     const paste = PASTE_HINTS[target];
-    if (paste) void vscode.window.showInformationMessage(`Selection copied for agent. ${paste}`);
+    if (paste) void vscode.window.showInformationMessage(`Link and selection copied for agent. ${paste}`);
     return true;
+  }
+
+  /**
+   * The selection as an agent should see it, without touching the clipboard:
+   * the same text Copy Link for Agent produces, plus the parts on their own.
+   * Used by the agent bridge (MCP).
+   */
+  async agentSnapshot(): Promise<AgentSnapshot | undefined> {
+    const selection = this.selection;
+    const sha256 = this.sha256;
+    if (!selection || !sha256) return undefined;
+    const image = selection.kind === 'region' ? await this.saveRegionImage(selection) : undefined;
+    const source = { path: displayPath(this.uri), sha256 };
+    return {
+      file: source.path,
+      uri: this.uri.toString(),
+      sha256,
+      selection,
+      agentText: agentText(selection, source, image ? { regionImage: image.fsPath } : {}),
+      ...(image ? { regionImage: image.fsPath } : {}),
+    };
   }
 
   private async copySelection(): Promise<{ text: string; image?: vscode.Uri } | undefined> {
@@ -167,8 +197,8 @@ export class PdfPanel implements vscode.Disposable {
       case 'copyForAgent':
         await this.copyForAgent();
         break;
-      case 'askAgent':
-        await this.askAgent();
+      case 'copyLinkForAgent':
+        await this.copyLinkForAgent();
         break;
       case 'toggleOutline':
         await vscode.commands.executeCommand('vscodeEmbedPdf.toggleOutline');
