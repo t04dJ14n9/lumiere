@@ -2547,3 +2547,31 @@ and installed in an isolated /tmp profile. No lint exceptions or smoke expansion
 Ledger remains **91/22/2/333/0** (448 rows). Phase 7 documentation/completion and
 Phase 8 remain, along with the audit's logging and management-command gaps.
 Manual acceptance is unrun.
+
+### Phase 7 (completed) — API documentation and sample external plugin, 2026-10-09
+
+Closed the audit's missing requirements first: §5.7 logging (one
+`Markdown Workbench` log output channel, webview records forwarded over the
+editor protocol, `markdownWorkbench.debug.logging` gates debug lines on both
+sides), §6.5 `Manage Plugins` and `Show Plugin Status` (failed and pending
+plugins listed first; selecting one opens its settings), and §25.2 `Use
+Markdown Workbench for Markdown in This Workspace` (writes the workspace
+`workbench.editorAssociations` entry, keeps other associations). The Linux
+browser redo smoke now presses `ControlOrMeta+Shift+Z`; it failed on main for
+the same reason. Each requirement has unit tests.
+
+`API.md` documents every v1 member, the external-plugin rules, markers,
+actions, code block processors, the error table and a complete example.
+`test/fixtures/sample-plugin` is that example as a real extension: it sets
+`TODO` markers with a describe action, claims `ticket:` links over
+`links/open`, renders `tickets` code blocks and contributes a command; `pnpm
+sample` builds it. `sample-plugin.test.ts` runs it against the real facade;
+`declarations.test.ts` emits `dist/api` and type-checks a consumer against it.
+
+Fix: the render sanitizer dropped `obsidian:` and other custom-scheme links;
+`sanitizer-options.ts` now allows unknown protocols (the link plugin still
+decides what opens) with its own unit test.
+
+Checks: `pnpm check` **472/472**; browser smoke **14/14**; native smoke **1/1**.
+No lint exceptions; eslint now ignores build output and `.vscode-test`.
+Ledger unchanged **91/22/2/333/0**. Phase 8 remains.
