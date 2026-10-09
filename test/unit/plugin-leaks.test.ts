@@ -36,6 +36,7 @@ async function startAndStop(only?: readonly string[]): Promise<string[]> {
   }
   const registered = vscode.outstanding();
   await runtime.dispose();
+  assert.deepEqual(errors, [], 'teardown logged errors');
   assert.deepEqual(runtime.resources(), {});
   assert.deepEqual(vscode.outstanding(), [], 'registrations left after dispose');
   return registered;
