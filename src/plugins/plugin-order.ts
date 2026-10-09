@@ -52,7 +52,7 @@ export const FEATURE_ORDER = [
   "suggest",
   "formatting",
   "pasteHtml",
-  "copyLinkForAgent",
+  "agentBridge",
   // Match VS Code: line numbers to the left of fold markers.
   "lineNumbers",
   "folding",

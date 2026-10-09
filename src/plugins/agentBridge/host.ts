@@ -1,12 +1,12 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import type {} from "../document/api";
-import { CopyLinkForAgent } from "./agent";
+import { AgentHandoff } from "./agent";
 import { protocol } from "./protocol";
-export const copyLinkForAgentHost: Plugin = {
-  name: "copyLinkForAgent",
+export const agentBridgeHost: Plugin = {
+  name: "agentBridge",
   inject: { required: ["editors", "selections", "workbench"] },
   apply(ctx) {
-    const agent = new CopyLinkForAgent({
+    const agent = new AgentHandoff({
       editors: ctx.editors,
       selections: ctx.selections,
       workbench: ctx.workbench,
@@ -16,7 +16,7 @@ export const copyLinkForAgentHost: Plugin = {
     registerPanelHandlers(ctx, agent);
   },
 };
-function registerPanelHandlers(ctx: Context, agent: CopyLinkForAgent): void {
+function registerPanelHandlers(ctx: Context, agent: AgentHandoff): void {
   const handlers = new Map<string, Disposer>();
   const refresh = () => {
     const panels = ctx.editors.all();
@@ -26,7 +26,7 @@ function registerPanelHandlers(ctx: Context, agent: CopyLinkForAgent): void {
       if (
         !config ||
         config.preset !== "obsidian" ||
-        config.features?.copyLinkForAgent?.enabled === false
+        config.features?.agentBridge?.enabled === false
       ) {
         void stop();
         handlers.delete(id);
@@ -37,7 +37,7 @@ function registerPanelHandlers(ctx: Context, agent: CopyLinkForAgent): void {
       if (
         handlers.has(panel.id) ||
         config.preset !== "obsidian" ||
-        config.features?.copyLinkForAgent?.enabled === false
+        config.features?.agentBridge?.enabled === false
       ) {
         continue;
       }

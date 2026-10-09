@@ -16,7 +16,7 @@ export interface AgentReference {
   readonly endLine: number;
 }
 /** Copy Link for Agent: the reference and quoted passage, to the agent chat. */
-export class CopyLinkForAgent {
+export class AgentHandoff {
   private live = true;
   dispose(): void {
     this.live = false;
@@ -144,7 +144,7 @@ export class CopyLinkForAgent {
     if (
       !this.live ||
       config.preset !== "obsidian" ||
-      config.features?.copyLinkForAgent?.enabled === false
+      config.features?.agentBridge?.enabled === false
     ) {
       throw new RpcError("PluginDisabled", "Copy Link for Agent is disabled");
     }

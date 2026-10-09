@@ -59,7 +59,7 @@ async function renderHooks(root: Context) {
 
 // Plugins that only post-process rendered HTML, or only contribute commands
 // and selection-menu items (Copy Link for Agent), add no editor extensions.
-const noEditorExtensions = new Set(["onlineVideos", "copyLinkForAgent"]);
+const noEditorExtensions = new Set(["onlineVideos", "agentBridge"]);
 const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
   noEditorExtensions.has(id) ? f.extensions === 0 : f.extensions > 0;
 
@@ -80,7 +80,7 @@ for (const manifest of features) {
     }
     const activeHooks = await renderHooks(f.root);
     const activeMenu = await f.root.waterfall("editor/selectionMenu", []);
-    if (manifest.id === "copyLinkForAgent") {
+    if (manifest.id === "agentBridge") {
       assert.deepEqual(
         activeMenu.map((item) => item.label),
         ["Copy Link for Agent"],

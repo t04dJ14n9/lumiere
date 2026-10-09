@@ -1,4 +1,4 @@
-import copyLinkForAgent from "./copyLinkForAgent/manifest";
+import agentBridge from "./agentBridge/manifest";
 import pasteHtml from "./pasteHtml/manifest";
 import search from "./search/manifest";
 import suggest from "./suggest/manifest";
@@ -45,7 +45,7 @@ export const features: readonly Manifest[] = inPluginOrder(
     autoPair,
     callouts,
     codeBlocks,
-    copyLinkForAgent,
+    agentBridge,
     diagrams,
     embeds,
     folding,

@@ -3,8 +3,8 @@ import type {} from "../commands/api";
 import type {} from "../editor/api";
 import type {} from "../document/api";
 import { protocol } from "./protocol";
-export const copyLinkForAgentWebview: Plugin = {
-  name: "copyLinkForAgent",
+export const agentBridgeWebview: Plugin = {
+  name: "agentBridge",
   inject: { required: ["editor", "commands", "document", "rpc", "menu"] },
   apply(ctx) {
     const copy = async () => {

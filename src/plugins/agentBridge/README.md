@@ -1,4 +1,4 @@
-# Copy Link for Agent (plugin id `copyLinkForAgent`)
+# Agent bridge (plugin id `agentBridge`; command Copy Link for Agent)
 
 **Copy Link for Agent** copies the selected saved Markdown for an agent: an
 LLM Wiki-compatible `@path#start-end` link, a blank line and the passage
@@ -29,7 +29,7 @@ only copies; each case ends in a notice saying where the passage went.
 - `protocol.ts`: validated interactive copy request.
 - `reference.ts`: path policy and LLM Wiki reference formatting.
 - `chat.ts`: picks the agent chat for Copy Link for Agent.
-- `agent.ts`: `CopyLinkForAgent`: snapshot validation, dirty prompt and chat hand-off
+- `agent.ts`: `AgentHandoff`: snapshot validation, dirty prompt and chat hand-off
   (with its clipboard fallback).
 - `host.ts`: resource-enabled panel handler lifetimes.
 - `webview.ts`: command and contextual-widget menu contribution.
@@ -40,7 +40,7 @@ Host provides no service, injecting `editors`, `selections` and `workbench`;
 webview injects `editor`, `commands`, `document`, `rpc` and `menu`. Host listens
 to editor open/close and configuration changes; saving awaits
 `document/willSave`. Webview contributes to `editor/selectionMenu`.
-`plugins.copyLinkForAgent.enabled` defaults to true. Command: Copy Link for Agent
+`plugins.agentBridge.enabled` defaults to true. Command: Copy Link for Agent
 (no shortcut; selection menu and editor context menu).
 `markdownWorkbench.copyLinkForAgent.target` forces the agent.
 

@@ -996,7 +996,7 @@ corresponds to. "Source" names the module on the source branch.
 | `pasteHtml` | *Auto convert HTML* | on | editor | `markdown/paste.ts`, `editor/clipboard.ts` |
 | `spellcheck` | *Spellcheck* | on | editor | content attributes |
 | `formatting` | `editor:toggle-*`, `editor:set-heading-*` and similar | on | editor, commands | `editor/markdown.ts` `wrapSelection`, main branch `obsidianLikeCommands` |
-| `copyLinkForAgent` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
+| `agentBridge` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
 | `linkUpdates` | *Automatically update internal links* | on (prompt) | vault, workbench | new |
 | `quickSwitcher` | Quick switcher | on | vault, workbench | new |
 | `wordCount` | Word count (status bar) | on | editors, workbench | new |
@@ -1085,7 +1085,7 @@ the active editor. They work in the command palette, keybindings and menus.
 | table commands (insert/move/delete row and column, align, sort) | `editor:table-*` | tables | — |
 | `toggleSourceMode` | `editor:toggle-source` | livePreview | — |
 | `openAsText` | none | editor | title action |
-| `copyLinkForAgent` | none | copyLinkForAgent | none (context menu) |
+| `agentBridge` | none | copyLinkForAgent | none (context menu) |
 | `quickSwitcher` | `switcher:open` | quickSwitcher | none by default (Mod+O conflicts with VS Code's Open) |
 
 Rules:
@@ -1189,17 +1189,20 @@ The host `links` plugin owns one pipeline:
        (`markdownWorkbench.files.newNoteFolder`) and open it, as Obsidian
        does.
 
-## 17. Copy Link for Agent (`copyLinkForAgent` plugin)
+## 17. Copy Link for Agent (`agentBridge` plugin)
 
 Owner decision (2026-10-09): the Copy for Agent command, Mod+Alt+C, its
 title button and menu items are removed; plain Ctrl/Cmd+C copies text.
 The single remaining action was then renamed **Copy Link for Agent** (it
 was Ask Agent about Selection); it keeps producing the text below, copies
 it, and opens a chat only when the editor's own chat is the only agent or
-`copyLinkForAgent.target` forces one. Nothing was published, so the plugin,
+`copyLinkForAgent.target` forces one. Nothing was published, so the
 command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
 `askAgentAboutSelection`, `askAgent.target`) with no migration, and the
-public API has no agent methods or service.
+public API has no agent methods or service. Review fixes (round 1) settled the names
+shared with Agent PDF Viewer: plugin `agentBridge`, service class
+`AgentHandoff`, command `copyLinkForAgent`; the plugin setting is now
+`markdownWorkbench.plugins.agentBridge.enabled`.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 

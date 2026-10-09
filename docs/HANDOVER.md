@@ -120,12 +120,12 @@ completion and Phase 8 records) first.
   blank line and the selected passage quoted with `> `, copies it, and
   opens a chat only as before. Nothing was published, so ids were renamed
   with no migration: command `markdownWorkbench.copyLinkForAgent`, plugin
-  `copyLinkForAgent` (`markdownWorkbench.plugins.copyLinkForAgent.enabled`,
-  context key `markdownWorkbench.plugin.copyLinkForAgent`), setting
+  `agentBridge` (renamed from `copyLinkForAgent` by the review fixes; `markdownWorkbench.plugins.agentBridge.enabled`,
+  context key `markdownWorkbench.plugin.agentBridge`), setting
   `markdownWorkbench.copyLinkForAgent.target` (was `askAgent.target`). The
   `agent` kernel service is gone, and the public API no longer has
   `createAgentReference`, `copyForAgent`, `AgentReference` or an `agent`
-  external-plugin service. `CopyLinkForAgent` (`src/plugins/copyLinkForAgent/agent.ts`) and
+  external-plugin service. `AgentHandoff` (`src/plugins/agentBridge/agent.ts`) and
   `reference.ts` build the text internally. Plans in `docs/plans/` that
   mention the `agent` service (okf) predate this and need a new seam if
   revived.

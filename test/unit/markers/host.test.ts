@@ -4,7 +4,7 @@ import { Context } from "../../../src/kernel";
 import { markersHost } from "../../../src/plugins/markers/host";
 import { protocol } from "../../../src/plugins/markers/protocol";
 import type { Markers } from "../../../src/plugins/markers/api";
-import { fixture } from "../copy-link-for-agent/fixture";
+import { fixture } from "../agent-bridge/fixture";
 test("markers isolate owners, validate atomically and revoke disposed providers and actions", async () => {
   const f = fixture();
   const root = Context.create();

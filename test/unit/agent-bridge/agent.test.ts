@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
-import { copyLinkForAgentHost } from "../../../src/plugins/copyLinkForAgent/host";
-import { protocol } from "../../../src/plugins/copyLinkForAgent/protocol";
+import { agentBridgeHost } from "../../../src/plugins/agentBridge/host";
+import { protocol } from "../../../src/plugins/agentBridge/protocol";
 import {
   agentReferenceText,
   workspaceRelativePath,
-} from "../../../src/plugins/copyLinkForAgent/reference";
+} from "../../../src/plugins/agentBridge/reference";
 import { fixture } from "./fixture";
 
 test("selection capture returns frozen original CRLF offsets and excludes a trailing column-zero line", async () => {
@@ -119,7 +119,7 @@ test("Copy Link for Agent host removes disabled handlers and restores them on en
   root.provide("editors", f.editors);
   root.provide("selections", f.selections);
   root.provide("workbench", f.workbench);
-  root.plugin(copyLinkForAgentHost);
+  root.plugin(agentBridgeHost);
   await root.settled();
   assert.equal(await f.pair.client.call(protocol, "copy", {}), true);
   f.state.enabled = false;

@@ -225,9 +225,7 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
 test("only Copy Link for Agent remains of the agent commands", async () => {
   const generated = await contributions();
   const settings = Object.keys(generated.configuration.properties);
-  assert.ok(
-    settings.includes("markdownWorkbench.plugins.copyLinkForAgent.enabled"),
-  );
+  assert.ok(settings.includes("markdownWorkbench.plugins.agentBridge.enabled"));
   assert.equal(
     settings.some((key) => key.includes("copyForAgent")),
     false,

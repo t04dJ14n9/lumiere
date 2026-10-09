@@ -20,7 +20,7 @@ export { onlineVideosHost } from "./onlineVideos/host";
 export { suggestHost } from "./suggest/host";
 export { searchHost } from "./search/host";
 export { tagsViewHost } from "./tags/view";
-export { copyLinkForAgentHost } from "./copyLinkForAgent/host";
+export { agentBridgeHost } from "./agentBridge/host";
 export { markersHost } from "./markers/host";
 export { codeBlocksHost } from "./codeBlocks/host";
 

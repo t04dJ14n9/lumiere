@@ -39,6 +39,12 @@
     ],
     "commands": [
       {
+        "command": "markdownWorkbench.copyLinkForAgent",
+        "title": "Copy Link for Agent",
+        "category": "Markdown Workbench",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "markdownWorkbench.insertCallout",
         "title": "Insert Callout",
         "category": "Markdown Workbench"
@@ -73,12 +79,6 @@
         "title": "Open as Text",
         "category": "Markdown Workbench",
         "icon": "$(go-to-file)"
-      },
-      {
-        "command": "markdownWorkbench.copyLinkForAgent",
-        "title": "Copy Link for Agent",
-        "category": "Markdown Workbench",
-        "icon": "$(comment-discussion)"
       },
       {
         "command": "markdownWorkbench.titleActions",
@@ -505,6 +505,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "markdownWorkbench.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.agentBridge"
+        },
+        {
           "command": "markdownWorkbench.insertCallout",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.callouts"
         },
@@ -531,10 +535,6 @@
         {
           "command": "markdownWorkbench.openAsText",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
-        },
-        {
-          "command": "markdownWorkbench.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyLinkForAgent"
         },
         {
           "command": "markdownWorkbench.titleActions",
@@ -765,7 +765,7 @@
       "webview/context": [
         {
           "command": "markdownWorkbench.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyLinkForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.agentBridge && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
           "group": "agent"
         },
         {
@@ -825,6 +825,12 @@
     "configuration": {
       "title": "Markdown Workbench",
       "properties": {
+        "markdownWorkbench.plugins.agentBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Copy selected text with a link to its saved source lines, for an agent."
+        },
         "markdownWorkbench.plugins.autoPair.enabled": {
           "type": "boolean",
           "default": true,
@@ -848,12 +854,6 @@
           "default": true,
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
-        },
-        "markdownWorkbench.plugins.copyLinkForAgent.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Copy selected text with a link to its saved source lines, for an agent."
         },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",
