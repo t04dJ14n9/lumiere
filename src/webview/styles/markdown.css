@@ -110,7 +110,8 @@
 }
 /* A setext heading's underline stays visible, faint, as in Obsidian. */
 .md-setext-mark,
-.md-syntax-mark {
+.md-syntax-mark,
+.md-block-id {
   color: var(--faint);
 }
 /* Inline HTML drawn in place: <kbd>, <u>, <sub> and friends. */

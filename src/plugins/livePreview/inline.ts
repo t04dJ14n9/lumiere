@@ -11,6 +11,7 @@ import { documentTree } from "./document-tree";
 import { inlineRenderers, revealed } from "./registry";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
+import { decorateBlockId } from "./block-id";
 import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
 const inlineClasses: Readonly<Record<string, string>> = {
@@ -112,6 +113,7 @@ class InlineDecorations implements InlineContext {
     }
     decorateListItem(node, this);
     decorateInlineHtml(node, this);
+    decorateBlockId(node, this);
     if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
       this.line(from, `md-heading md-h${name.at(-1)}`);
     }
