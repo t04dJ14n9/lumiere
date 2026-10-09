@@ -37,7 +37,7 @@
   top: calc(100% + 0.9em);
   left: -0.5em;
   width: max-content;
-  max-width: min(420px, 70vw);
+  max-width: min(420px, calc(100vw - 16px));
   max-height: 40vh;
   padding: 8px 12px;
   overflow: auto;
@@ -53,6 +53,11 @@
   vertical-align: baseline;
   white-space: normal;
 }
+/* Near the bottom of the webview the preview opens above the reference. */
+.footnote-preview.is-above {
+  top: auto;
+  bottom: calc(100% + 0.9em);
+}
 /* The gap above the preview still counts as hovering the reference. */
 .footnote-preview::before {
   content: "";
@@ -61,6 +66,10 @@
   bottom: 100%;
   left: 0;
   height: 1em;
+}
+.footnote-preview.is-above::before {
+  top: 100%;
+  bottom: auto;
 }
 .footnote-preview > .markdown-rendered > :first-child {
   margin-top: 0;

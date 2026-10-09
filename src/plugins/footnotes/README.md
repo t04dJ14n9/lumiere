@@ -41,6 +41,9 @@ remaining references, render passes, listeners and commands.
 - `preprocess.test.ts`: owning-note numbering, missing and repeated references.
 - `../../../test/unit/footnotes/inline.test.ts`: reference and definition
   numbers, the caret inside a reference, selections, definition markers.
+- `preview-position.ts`: keeps the hover preview inside the webview (moves it
+  left at the right edge, opens it above near the bottom); unit-tested in
+  `preview-position.test.ts` and `test/browser/footnotes.spec.ts`.
 - `footnotes.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

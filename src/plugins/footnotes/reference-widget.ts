@@ -1,6 +1,7 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
+import { fitPreview } from "./preview-position";
 /**
  * The text a reference shows: its number in order of first reference, as
  * in a LaTeX paper. Named labels are numbered too.
@@ -55,6 +56,7 @@ class ReferenceControl {
 
   private show(): void {
     this.preview.hidden = false;
+    this.fit();
     if (this.rendered) {
       return;
     }
@@ -62,19 +64,42 @@ class ReferenceControl {
     void this.options.render
       .into(this.preview, this.note.text, {
         ancestry: ["footnote-preview"],
-        measure: this.options.measure,
+        measure: () => {
+          this.fit();
+          this.options.measure();
+        },
       })
       .then((result) => {
         this.pass = result;
         if (!this.active) {
           void result.dispose();
+          return;
         }
+        this.fit();
       })
       .catch(() => {
         if (this.active) {
           this.preview.textContent = this.note.text;
+          this.fit();
         }
       });
+  }
+
+  /** Keeps the open preview inside the webview; its size changes as it renders. */
+  private fit(): void {
+    if (this.preview.hidden) {
+      return;
+    }
+    this.preview.style.translate = "";
+    this.preview.classList.remove("is-above");
+    const root = this.sup.ownerDocument.documentElement;
+    const { shift, isAbove } = fitPreview(
+      this.preview.getBoundingClientRect(),
+      this.sup.getBoundingClientRect(),
+      { width: root.clientWidth, height: root.clientHeight },
+    );
+    this.preview.style.translate = shift ? `${shift}px 0` : "";
+    this.preview.classList.toggle("is-above", isAbove);
   }
 
   private registerEvents(): void {
