@@ -5,6 +5,7 @@ import { paths } from './state';
 import {
   command,
   drag,
+  editorTitleAction,
   expect,
   fitPage,
   openFile,
@@ -73,7 +74,7 @@ test('Copy for Agent works from the selection menu and the editor title button',
 
   await drag(page, at(150, 150), at(250, 250));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
-  await page.locator('.editor-actions').getByRole('button', { name: 'Copy for Agent' }).click();
+  await editorTitleAction(page, 'Copy for Agent');
   await expect(confirmation).toBeVisible();
 });
 

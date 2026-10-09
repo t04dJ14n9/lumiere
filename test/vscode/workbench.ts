@@ -63,6 +63,26 @@ export async function openFile(page: Page, relativePath: string): Promise<void> 
   await page.mouse.move(0, 0);
 }
 
+/**
+ * Click an editor title action: its button, or, where the editor keeps it in
+ * the More Actions menu (Cursor does, for extension actions), that menu item.
+ */
+export async function editorTitleAction(page: Page, label: string): Promise<void> {
+  const actions = page.locator('.editor-actions');
+  const button = actions.getByRole('button', { name: label });
+  // The button appears once the editor reports the state that enables it.
+  if (await button.waitFor({ timeout: 5_000 }).then(() => true, () => false)) {
+    await button.click();
+    return;
+  }
+  // The overflow dropdown is a plain labelled link, without a button role.
+  await actions.locator('[aria-label^="More Actions"]').click();
+  // Menu items act on mouse up after the pointer has entered them.
+  const item = page.locator('.monaco-menu').getByRole('menuitem', { name: label });
+  await item.hover();
+  await item.click();
+}
+
 export async function closeAllEditors(page: Page): Promise<void> {
   if (await page.locator('.tabs-container .tab').count()) await command(page, 'View: Close All Editor Groups');
   await expect(page.locator('.tabs-container .tab')).toHaveCount(0);
