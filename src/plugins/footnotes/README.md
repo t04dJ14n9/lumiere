@@ -1,26 +1,27 @@
 # Footnotes
 
-Footnotes as in Obsidian's Live Preview: a reference (`[^1]`, `[^note]` or an
-inline `^[text]`) shows as a small superscript of its own source with faint
-brackets, as Obsidian 1.14 does, and keeps that look under the caret or a
-selection, where it is edited in place; inside rendered blocks it is a number
-in reading order. Hovering or focusing it previews the footnote; clicking
-jumps to the definition (an inline footnote puts the caret in itself).
-Definitions stay editable text, set a little smaller and led by their label
-in superscript; the caret or a selection on the marker shows the faint,
-small `[^label]:` source. Insert Footnote adds a reference and definition in
-one edit.
+Footnotes in LaTeX paper style, a deliberate departure from Obsidian's Live
+Preview: a reference (`[^1]`, `[^note]` or an inline `^[text]`) shows as a
+superscript number in the text colour, numbered in order of first reference
+(named labels too; a repeated reference reuses its number), in Live Preview
+and inside rendered blocks. Selections, Ctrl+A included, keep it rendered;
+only a caret inside its source shows the faint `[^label]` for editing.
+Hovering or focusing it previews the footnote; clicking jumps to the
+definition (an inline footnote puts the caret in itself). A definition shows
+the same number before its text, set a little smaller; the caret on its
+marker shows the faint `[^label]:` source. Insert Footnote adds a reference
+and definition in one edit.
 
 ## How it works
 
 Shared metadata supplies numbering, definitions and reference ranges. The
-inline renderer replaces each reference off the caret with a widget; under the
-caret or a selection it marks the same source instead (`mw-footnote-ref
-is-source is-editing`, brackets `mw-footnote-bracket`). It marks
-definition lines (`mw-footnote-def`, `is-continued` for indented lines); off
-the caret it hides a definition's `[^` and `]:` and marks the label
-(`mw-footnote-label`), at the caret it marks the marker (`mw-footnote-marker`). Inline widgets and references inside rendered
-blocks mount the same accessible control.
+inline renderer replaces each reference with a numbered widget unless a caret
+(an empty selection) is inside its source, where it marks the source faint
+(`md-syntax-mark`). It marks definition lines (`mw-footnote-def`,
+`is-continued` for indented lines) and replaces a definition's `[^label]: `
+with its number (`mw-footnote-number`), or marks the marker
+(`mw-footnote-marker`) while the caret is on it. Inline widgets and
+references inside rendered blocks mount the same accessible control.
 Render preprocessing resolves references against the owning note and substitutes
 opaque placeholders; postprocessing mounts controls with pass-owned cleanup.
 Changing definitions invalidates rendered blocks. Plugin disposal removes all
@@ -38,8 +39,8 @@ remaining references, render passes, listeners and commands.
 - `edit.ts`: insertion with an unused definition label.
 - `footnotes.test.ts`: insertion unit coverage.
 - `preprocess.test.ts`: owning-note numbering, missing and repeated references.
-- `../../../test/unit/footnotes/inline.test.ts`: reference numbers, references
-  under the caret and in selections, definition lines and markers.
+- `../../../test/unit/footnotes/inline.test.ts`: reference and definition
+  numbers, the caret inside a reference, selections, definition markers.
 - `footnotes.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
@@ -52,6 +53,8 @@ The feature switch is `markdownWorkbench.plugins.footnotes.enabled`.
 ## Limits and differences from Obsidian
 
 Editing and undo use the native TextDocument. Definition ranges include multiline
-continuations. Like Obsidian's Live Preview there is no rendered footnotes
+continuations. Obsidian's Live Preview shows a reference as its own
+`[^label]` source; this plugin shows numbers instead (owner decision). Like
+Obsidian's Live Preview there is no rendered footnotes
 section and no back-reference links; Reading view does not exist here. Preview ancestry prevents recursive footnote enhancement. Rendered
 embedded-note links re-enter the host's authorized navigation path.

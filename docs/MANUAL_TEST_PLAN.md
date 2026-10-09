@@ -313,18 +313,18 @@ Contained file access and the vault index (Obsidian's metadata cache).
 
 `Footnotes.md`.
 
-1. References show as a small superscript of their own source, as in
-   Obsidian 1.14: `[^1]`, `[^note]` and `^[Inline text]` with faint brackets.
-   Inside a rendered block (table, callout) they are numbers in reading
-   order. With the caret in a reference, or a selection over it (Ctrl+A
-   included), it stays the same superscript and is edited in place, as in
-   Obsidian. Hovering or focusing one previews the rendered footnote; Escape
-   closes it. Clicking jumps to the definition (an inline footnote puts the
-   caret in itself).
-2. Definitions stay editable text, a little smaller than the note, led by
-   the label in superscript; with the caret or a selection on the marker,
-   the faint, small `[^label]:` source shows. The caret elsewhere on the line
-   leaves the label. The indented continuation belongs to the same footnote.
+1. References show as superscript numbers in the text colour, LaTeX paper
+   style (not Obsidian's look, by owner decision): `[^1]` is 1, `[^note]` 2,
+   `^[Inline text]` 3 and the repeated `[^1]` 1 again, tight against the
+   word. Inside a rendered block (table, callout) they look the same. A
+   selection over them, Ctrl+A included, keeps the numbers; a caret inside a
+   reference shows its faint source, and moving away renders it again.
+   Hovering or focusing one previews the rendered footnote; Escape closes
+   it. Clicking jumps to the definition (an inline footnote puts the caret
+   in itself).
+2. Definitions show the same number before their text, a little smaller
+   than the note; with the caret on the marker, the faint `[^label]:`
+   source shows. The indented continuation belongs to the same footnote.
 3. **Insert Footnote** adds a fresh label at the caret and a definition at
    the end; undo removes both.
 4. With two panels, insert in one and undo there: both converge with no

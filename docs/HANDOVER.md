@@ -26,16 +26,16 @@ completion and Phase 8 records) first.
   setext underlines, nested quote bars, checked-task styling in Live Preview
   (`data-task` on lines, checkboxes and list items), line numbers beside
   rendered blocks. DESIGN §13/§19, PARITY.md and plugin READMEs corrected.
-- Footnotes re-checked against Obsidian 1.14 (ac66543): a reference shows
-  as a small superscript of its own source (`[^1]`, `[^note]`,
-  `^[text]`) with faint brackets, numbers only inside rendered blocks; a
-  definition leads with its label in superscript, the faint `[^label]:`
-  source at the caret. Hover previews and click-to-definition kept.
-  21bde75: a reference stays that superscript under the caret and in any
-  selection (Ctrl+A, partial), as Obsidian's Live Preview does; before, a
-  selection turned it into full-size raw `[^1]`. A revealed definition
-  marker is faint and small; definition lines are a little smaller than
-  the note. Paired screenshots: `/workspace/obsidian-compare/4[01]-*`.
+- Footnotes are LaTeX paper style by owner decision, an intentional
+  departure from Obsidian (supersedes ac66543 and 21bde75, which matched
+  Obsidian's `[^label]` superscripts): a reference is a superscript number
+  in the text colour (about 0.7em, raised about 0.35em, no gap), numbered
+  by first reference, named labels too, a repeat reusing its number. A
+  selection or Ctrl+A keeps it rendered; only a caret inside its source
+  shows the faint `[^label]`. A definition shows its number before its text
+  in a slightly smaller block, the faint `[^label]:` only with the caret on
+  the marker. Hover previews and click-to-definition kept. Screenshots:
+  `/workspace/obsidian-compare/41-*` (before) and `43-*` (after).
 - The editor follows Obsidian's default look with plain CSS:
   `src/webview/styles/` plus one `<plugin>.css` per plugin. Do not
   reintroduce `EditorView.baseTheme` style objects.

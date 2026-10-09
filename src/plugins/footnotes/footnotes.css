@@ -1,22 +1,25 @@
 /*
- * Footnotes. In Live Preview a reference is a small superscript of its own
- * source with faint brackets, also under the caret or a selection; inside
- * rendered blocks it is a number in the accent colour. Hovering or focusing
- * either shows the footnote. A definition leads with its label in
- * superscript; at the caret its [^label]: marker is faint, small source.
+ * Footnotes, LaTeX paper style (a deliberate departure from Obsidian): a
+ * reference is a superscript number in the text colour, about 0.7em and
+ * raised about a third of the text size, tight against the word before it,
+ * in Live Preview and inside rendered blocks alike. Hovering or focusing it
+ * shows the footnote. A definition leads with the same number and is set a
+ * little smaller; at the caret its [^label]: marker is faint source.
  */
-.mw-footnote-ref {
+.mw-footnote-ref,
+.mw-footnote-number {
   position: relative;
-  font-size: 0.75em;
+  font-size: 0.7em;
   line-height: 0;
-  vertical-align: super;
+  /* Lengths here are in the 0.7em size, so this raises about 0.35em. */
+  vertical-align: 0.5em;
 }
 .mw-footnote-ref > button {
-  margin: 0 0.05em;
-  padding: 0 0.1em;
+  margin: 0;
+  padding: 0;
   border: 0;
-  border-radius: 3px;
-  color: var(--accent);
+  border-radius: 2px;
+  color: inherit;
   background: transparent;
   font: inherit;
   line-height: 1;
@@ -24,6 +27,7 @@
 }
 .mw-footnote-ref > button:hover,
 .mw-footnote-ref > button:focus-visible {
+  color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   outline: none;
 }
@@ -66,29 +70,11 @@
 }
 .mw-footnote-marker {
   color: var(--faint);
-  font-size: 0.75em;
-  line-height: 0;
-  vertical-align: super;
 }
-/*
- * A source-style reference reads as text: normal colour, faint brackets,
- * no button padding, so it sits against the word before it. At the caret
- * or in a selection the same look comes from marks over the source.
- */
-.mw-footnote-ref.is-source > button {
-  margin: 0;
-  padding: 0;
-  color: inherit;
+.mw-footnote-number {
+  margin-right: 0.5em;
 }
-.mw-footnote-bracket {
-  color: var(--faint);
-}
-.mw-footnote-label {
-  font-size: 0.75em;
-  line-height: 0;
-  vertical-align: super;
-}
-/* The definition block is set a little smaller than the note, as in Obsidian. */
+/* The definition block is set a little smaller than the note, like a paper's footnotes. */
 .cm-line.mw-footnote-def {
   font-size: 0.875em;
 }

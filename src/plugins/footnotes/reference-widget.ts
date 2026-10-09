@@ -1,31 +1,15 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
-/** The text a reference shows: its number in reading order, as in Obsidian. */
+/**
+ * The text a reference shows: its number in order of first reference, as
+ * in a LaTeX paper. Named labels are numbered too.
+ */
 export function referenceText(note: Footnote): string {
   return String(note.number ?? note.label);
 }
 
-/**
- * How Live Preview shows a reference off the caret, as Obsidian 1.14 does:
- * its own source in superscript, brackets faint, label or inline text plain.
- */
-export function referenceSource(note: Footnote): {
-  open: string;
-  text: string;
-  close: string;
-} {
-  if (note.label) {
-    return { open: "[^", text: note.label, close: "]" };
-  }
-  return { open: "^[", text: note.text, close: "]" };
-}
-
-/** `number` inside rendered blocks; `source` in Live Preview lines. */
-export type ReferenceStyle = "number" | "source";
-
 interface ReferenceOptions {
-  style?: ReferenceStyle;
   render: RenderService;
   navigate(): void;
   measure(): void;
@@ -55,7 +39,7 @@ class ReferenceControl {
     private readonly options: ReferenceOptions,
   ) {
     this.button.type = "button";
-    this.fill(options.style ?? "number");
+    this.button.textContent = referenceText(note);
     this.button.setAttribute("aria-label", `Footnote ${referenceText(note)}`);
     this.preview.className = "footnote-preview";
     this.preview.hidden = true;
@@ -63,22 +47,6 @@ class ReferenceControl {
     sup.classList.add("mw-footnote-ref");
     sup.replaceChildren(this.button, this.preview);
     this.registerEvents();
-  }
-
-  private fill(style: ReferenceStyle): void {
-    if (style === "number") {
-      this.button.textContent = referenceText(this.note);
-      return;
-    }
-    const { open, text, close } = referenceSource(this.note);
-    const bracket = (value: string) => {
-      const span = document.createElement("span");
-      span.className = "mw-footnote-bracket";
-      span.textContent = value;
-      return span;
-    };
-    this.button.replaceChildren(bracket(open), text, bracket(close));
-    this.sup.classList.add("is-source");
   }
 
   private hide(): void {
@@ -161,7 +129,6 @@ export class FootnoteReference extends WidgetType {
   constructor(
     readonly note: Footnote,
     private readonly render: RenderService,
-    readonly style: ReferenceStyle = "number",
   ) {
     super();
   }
@@ -171,7 +138,6 @@ export class FootnoteReference extends WidgetType {
       this.note.text === other.note.text &&
       this.note.label === other.note.label &&
       this.note.number === other.note.number &&
-      this.style === other.style &&
       this.note.from === other.note.from
     );
   }
@@ -180,7 +146,6 @@ export class FootnoteReference extends WidgetType {
     this.cleanups.set(
       sup,
       mountReference(sup, this.note, {
-        style: this.style,
         render: this.render,
         navigate: () => {
           view.dispatch({
