@@ -26,6 +26,9 @@ completion and Phase 8 records) first.
   setext underlines, nested quote bars, checked-task styling in Live Preview
   (`data-task` on lines, checkboxes and list items), line numbers beside
   rendered blocks. DESIGN §13/§19, PARITY.md and plugin READMEs corrected.
+- Footnotes redesigned after Obsidian's Live Preview: superscript numbers in
+  reading order, hover previews, click to the definition, definitions kept
+  as source with a muted marker (no definition widget or back-references).
 - The editor follows Obsidian's default look with plain CSS:
   `src/webview/styles/` plus one `<plugin>.css` per plugin. Do not
   reintroduce `EditorView.baseTheme` style objects.
