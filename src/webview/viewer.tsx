@@ -1,14 +1,15 @@
 import type { PdfDocumentObject } from '@embedpdf/models';
-import { Scroller } from '@embedpdf/plugin-scroll/react';
+import { Scroller, useScroll } from '@embedpdf/plugin-scroll/react';
 import { CopyToClipboard } from '@embedpdf/plugin-selection/react';
 import { Viewport } from '@embedpdf/plugin-viewport/react';
-import { ZoomGestureWrapper } from '@embedpdf/plugin-zoom/react';
+import { ZoomGestureWrapper, useZoom } from '@embedpdf/plugin-zoom/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { listenToHost } from './host';
-import { useNavigation } from './navigation';
+import { useNavigation, type Navigation } from './navigation';
 import { useOutlinePublishing } from './outline';
 import { Page } from './page';
-import { DOCUMENT_ID } from './plugins';
+import { DOCUMENT_ID, PAGE_GAP } from './plugins';
+import { rememberPosition, rememberedPosition } from './reading-position';
 import { SearchBar } from './search-bar';
 import { useSelectionReporting } from './selection';
 import { Toolbar } from './toolbar';
@@ -28,6 +29,8 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   useOutlinePublishing(DOCUMENT_ID, pdf);
 
   const show = navigation.show;
+  useKeepReadingPosition(pdf, show);
+
   useEffect(() => listenToHost(message => {
     if (message.type === 'goTo') show(message.location, message.top);
   }), [show]);
@@ -78,6 +81,43 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
       </div>
     </div>
   );
+}
+
+/**
+ * Reopen at the previous viewer's position (the file was reloaded), then
+ * keep the position up to date for the next reload.
+ */
+function useKeepReadingPosition(pdf: PdfDocumentObject, show: Navigation['show']): void {
+  const { provides: scroll } = useScroll(DOCUMENT_ID);
+  const { provides: zoomScope, state: zoom } = useZoom(DOCUMENT_ID);
+  // Restore the zoom first, then the place: zooming moves the pages.
+  const restoring = useRef(rememberedPosition());
+  useEffect(() => {
+    const previous = restoring.current;
+    if (previous && zoomScope && zoom.zoomLevel !== previous.zoom) zoomScope.requestZoom(previous.zoom);
+  }, [zoomScope, zoom.zoomLevel]);
+  useEffect(() => {
+    const previous = restoring.current;
+    if (!previous || zoom.zoomLevel !== previous.zoom) return;
+    restoring.current = undefined;
+    show({ page: Math.min(previous.page, pdf.pages.length) }, previous.top);
+  }, [pdf, show, zoom.zoomLevel]);
+
+  const zoomLevel = useRef(zoom.zoomLevel);
+  zoomLevel.current = zoom.zoomLevel;
+  const place = useRef<{ page: number; top: number } | undefined>(undefined);
+  useEffect(() => scroll?.onScroll(metrics => {
+    // The topmost visible page, and how far down it the viewer starts.
+    const first = metrics.pageVisibilityMetrics[0];
+    // Until restored, the old position stands (the file may change again).
+    if (!first || restoring.current) return;
+    // EmbedPDF measures from the outer edge of the viewport's padding.
+    place.current = { page: first.pageNumber, top: Math.max(0, first.original.pageY - PAGE_GAP / first.scaled.scale) };
+    rememberPosition({ ...place.current, zoom: zoomLevel.current });
+  }), [scroll]);
+  useEffect(() => {
+    if (place.current && !restoring.current) rememberPosition({ ...place.current, zoom: zoom.zoomLevel });
+  }, [zoom.zoomLevel]);
 }
 
 /** The screen's pixel ratio, updated when the window moves to another display. */

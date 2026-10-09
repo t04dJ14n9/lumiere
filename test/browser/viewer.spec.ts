@@ -285,6 +285,32 @@ test('a new search starts at the current page', async ({ page }) => {
   await expect(page.getByRole('textbox', { name: 'Page' })).toHaveValue('7');
 });
 
+test('a reloaded file reopens at the same place and zoom', async ({ page }) => {
+  await open(page);
+  const field = page.getByRole('textbox', { name: 'Page' });
+  const zoom = page.getByRole('textbox', { name: 'Zoom' });
+  await zoom.fill('300');
+  await zoom.press('Enter');
+  await expect(zoom).toHaveValue('300');
+  await field.fill('7');
+  await field.press('Enter');
+  await expect.poll(async () => Math.abs((await pageOffset(page, 7))!)).toBeLessThan(16);
+  // Partway down page 7.
+  await page.locator('.viewport').evaluate(viewport => viewport.scrollBy(0, 200));
+  await expect(field).toHaveValue('7');
+  const before = (await pageOffset(page, 7))!;
+
+  await page.evaluate(async () => {
+    document.querySelector('.viewer')!.classList.add('before-reload');
+    const data = await (await fetch('/fixtures/outline.pdf')).arrayBuffer();
+    (window as unknown as { hostSend: (message: unknown) => void }).hostSend({ type: 'load', data });
+  });
+  await expect(page.locator('.viewer:not(.before-reload) .page[data-page-index="6"] img')).toBeVisible();
+  await expect(zoom).toHaveValue('300');
+  await expect(field).toHaveValue('7');
+  await expect.poll(async () => Math.abs((await pageOffset(page, 7))! - before)).toBeLessThan(2);
+});
+
 test('zoom buttons and the zoom field change the zoom', async ({ page }) => {
   await open(page);
   const zoom = page.getByRole('textbox', { name: 'Zoom' });

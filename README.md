@@ -9,6 +9,8 @@ and box, the file's hash, and the selected text.
 
 - **Viewer.** Continuous scrolling, page and zoom controls, fit width and fit
   page, pinch zoom, find in PDF (⌘F / Ctrl+F), internal links and web links.
+  When the file changes on disk (a rebuilt paper), the viewer reloads at the
+  same page and zoom.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
 - **Copy for Agent.** Select text, or drag over empty page space to select a
@@ -79,6 +81,7 @@ src/
     ├── viewer.tsx              toolbar, search, pages
     ├── page.tsx, page-links.tsx
     ├── navigation.ts           pages, locations, highlights
+    ├── reading-position.ts     the place and zoom kept across reloads
     ├── selection.ts            reporting text and region selections
     └── styles/                 CSS using VS Code theme colours
 ```
