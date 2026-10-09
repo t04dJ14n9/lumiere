@@ -1,4 +1,5 @@
 import { StateEffect, StateField, type EditorState } from "@codemirror/state";
+import type { Range } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
@@ -97,34 +98,81 @@ class GuardedWidget extends WidgetType {
     return this.widget.estimatedHeight;
   }
 }
+function guarded(
+  state: Parameters<typeof revealed>[0],
+  block: RenderBlock & { renderer: BlockRenderer },
+  report: (error: unknown) => void,
+): GuardedWidget {
+  return new GuardedWidget(
+    block,
+    block.renderer.widget(block),
+    state.field(renderRevision, false) ?? 0,
+    report,
+  );
+}
+
+/** Revealed source lines, highlighted, with the rendered result below. */
+export function editingDecorations(
+  state: Parameters<typeof revealed>[0],
+  block: RenderBlock & { renderer: BlockRenderer },
+  widget: () => WidgetType,
+): Range<Decoration>[] {
+  const preview = block.renderer.editingPreview;
+  if (!preview) {
+    return [];
+  }
+  const lines: Range<Decoration>[] = [];
+  const last = state.doc.lineAt(block.to).number;
+  for (let n = state.doc.lineAt(block.from).number; n <= last; n++) {
+    lines.push(
+      Decoration.line({ class: preview.sourceClass }).range(
+        state.doc.line(n).from,
+      ),
+    );
+  }
+  lines.push(
+    Decoration.widget({ block: true, side: 1, widget: widget() }).range(
+      block.to,
+    ),
+  );
+  return lines;
+}
+
+function blockDecoration(
+  state: Parameters<typeof revealed>[0],
+  block: RenderBlock & { renderer: BlockRenderer },
+  report: (error: unknown) => void,
+): Range<Decoration>[] {
+  try {
+    if (block.renderer.showSource?.(state, block)) {
+      return [];
+    }
+    if (
+      block.renderer.editing === "reveal" &&
+      revealed(state, block.from, block.to)
+    ) {
+      return editingDecorations(state, block, () =>
+        guarded(state, block, report),
+      );
+    }
+    return [
+      Decoration.replace({
+        block: true,
+        widget: guarded(state, block, report),
+      }).range(block.from, block.to),
+    ];
+  } catch (error) {
+    report(error);
+    return [];
+  }
+}
+
 export function blockDecorations(report: (error: unknown) => void) {
   const build = (state: Parameters<typeof revealed>[0]): DecorationSet =>
     Decoration.set(
-      state.field(blockIndex).flatMap((block) => {
-        if (
-          (block.renderer.editing === "reveal" &&
-            revealed(state, block.from, block.to)) ||
-          block.renderer.showSource?.(state, block)
-        ) {
-          return [];
-        }
-        try {
-          return [
-            Decoration.replace({
-              block: true,
-              widget: new GuardedWidget(
-                block,
-                block.renderer.widget(block),
-                state.field(renderRevision, false) ?? 0,
-                report,
-              ),
-            }).range(block.from, block.to),
-          ];
-        } catch (error) {
-          report(error);
-          return [];
-        }
-      }),
+      state
+        .field(blockIndex)
+        .flatMap((block) => blockDecoration(state, block, report)),
       true,
     );
   return StateField.define<DecorationSet>({

@@ -30,6 +30,12 @@ export interface BlockRenderer {
   match(node: SyntaxNodeRef, state: EditorState): boolean;
   editing: "reveal" | "widget";
   showSource?(state: EditorState, block: RenderBlock): boolean;
+  /**
+   * While the caret is in a revealed block, keep the rendered result below
+   * the source, and mark the source lines with this class, as Obsidian
+   * does for block math.
+   */
+  editingPreview?: { sourceClass: string };
   range?(node: SyntaxNodeRef, state: EditorState): { from: number; to: number };
   widget(block: RenderBlock): WidgetType;
   estimatedHeight?: number;

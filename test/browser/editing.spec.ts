@@ -70,3 +70,21 @@ test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
     .poll(() => page.evaluate(() => window.harness.text))
     .toContain("!");
 });
+
+test("block math reveals its source above the preview on click and arrow entry", async ({
+  page,
+}) => {
+  await open(page, "before\n\n$$\nx^2\n$$\n\nafter");
+  const source = page.locator(".cm-line.md-math-source");
+  await expect(page.locator(".hybrid-math")).toHaveCount(1);
+  await expect(source).toHaveCount(0);
+  await page.locator(".hybrid-math").click();
+  await expect(source).toHaveCount(3);
+  // The rendered result stays below the source while editing.
+  await expect(page.locator(".hybrid-math")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(source).toHaveCount(0);
+  await page.evaluate(() => window.harness.reveal(7));
+  await page.keyboard.press("ArrowDown");
+  await expect(source).toHaveCount(3);
+});

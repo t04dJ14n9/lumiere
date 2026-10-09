@@ -10,6 +10,7 @@ export class MarkdownBlock extends WidgetType {
   constructor(
     readonly block: RenderBlock,
     private readonly render: RenderService,
+    private readonly clickToEdit = true,
   ) {
     super();
   }
@@ -42,6 +43,13 @@ export class MarkdownBlock extends WidgetType {
       },
       { signal: events.signal },
     );
+    if (this.clickToEdit) {
+      shell.addEventListener(
+        "mousedown",
+        (event) => editOnClick(view, shell, event),
+        { signal: events.signal },
+      );
+    }
     this.lifetimes.set(shell, () => {
       live = false;
       events.abort();
@@ -76,4 +84,38 @@ export class MarkdownBlock extends WidgetType {
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
   }
+}
+
+/** Controls inside a rendered block keep their own click behaviour. */
+const interactive =
+  "a, button, input, select, textarea, summary, label, [contenteditable='true'], [data-href], .internal-link, .external-link";
+
+/**
+ * Clicking a rendered block (math, code, a callout, a diagram) reveals its
+ * source with the caret at the end of the first line, as in Obsidian.
+ */
+export function editOnClick(
+  view: EditorView,
+  shell: HTMLElement,
+  event: MouseEvent,
+): void {
+  const target = event.target;
+  // Only controls inside the block count (the editor content around it is
+  // contenteditable, and the editor marks the block itself as not editable).
+  const control =
+    target instanceof Element ? target.closest(interactive) : null;
+  if (
+    event.button !== 0 ||
+    (control && control !== shell && shell.contains(control))
+  ) {
+    return;
+  }
+  // The editor's own mousedown handling would move the caret back out.
+  event.preventDefault();
+  event.stopPropagation();
+  const line = view.state.doc.lineAt(view.posAtDOM(shell));
+  // Focus first: focusing afterwards would restore the browser's old DOM
+  // selection, which the editor then reads back.
+  view.focus();
+  view.dispatch({ selection: { anchor: line.to }, scrollIntoView: true });
 }

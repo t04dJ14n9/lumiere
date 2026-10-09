@@ -51,7 +51,8 @@ function registerEmbedRenderers(ctx: Context): void {
             state.sliceDoc(first.to, node.to).trim() === "",
         );
       },
-      widget: (block) => new MarkdownBlock(block, ctx.render),
+      // Embedded notes keep clicks for their content, as in Obsidian.
+      widget: (block) => new MarkdownBlock(block, ctx.render, false),
     }),
   );
   ctx.effect(() =>

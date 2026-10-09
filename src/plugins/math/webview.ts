@@ -25,6 +25,7 @@ function registerMathRenderers(ctx: Context): void {
       kind: "math",
       editing: "reveal",
       match: (node) => node.name === "MathBlock",
+      editingPreview: { sourceClass: "md-math-source" },
       widget: (block) => new MarkdownBlock(block, ctx.render),
     }),
   );
@@ -32,7 +33,10 @@ function registerMathRenderers(ctx: Context): void {
     ctx.livePreview.inline({
       nodes: ["InlineMath"],
       decorate(node, cx) {
-        if (!cx.revealed(node.from, node.to)) {
+        if (cx.revealed(node.from, node.to)) {
+          // Revealed source reads as code, as in Obsidian.
+          cx.mark(node.from, node.to, "md-math-source-inline");
+        } else {
           cx.replace(
             node.from,
             node.to,
