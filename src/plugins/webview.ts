@@ -30,5 +30,5 @@ export { tagsWebview } from "./tags/webview";
 export { suggestWebview } from "./suggest/webview";
 export { searchWebview } from "./search/webview";
 export { pasteHtmlWebview } from "./pasteHtml/webview";
-export { copyForAgentWebview } from "./copyForAgent/webview";
+export { askAgentWebview } from "./askAgent/webview";
 export { markersWebview } from "./markers/webview";

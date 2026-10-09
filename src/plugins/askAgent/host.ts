@@ -1,24 +1,22 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
-import type {} from "./api";
 import type {} from "../document/api";
-import { AgentReferences } from "./agent";
+import { AskAgent } from "./agent";
 import { protocol } from "./protocol";
-export const copyForAgentHost: Plugin = {
-  name: "copyForAgent",
+export const askAgentHost: Plugin = {
+  name: "askAgent",
   inject: { required: ["editors", "selections", "workbench"] },
   apply(ctx) {
-    const agent = new AgentReferences({
+    const agent = new AskAgent({
       editors: ctx.editors,
       selections: ctx.selections,
       workbench: ctx.workbench,
       beforeSave: (panel) => ctx.serial("document/willSave", panel.session),
     });
-    ctx.provide("agent", agent);
     ctx.effect(() => () => agent.dispose());
     registerPanelHandlers(ctx, agent);
   },
 };
-function registerPanelHandlers(ctx: Context, agent: AgentReferences): void {
+function registerPanelHandlers(ctx: Context, agent: AskAgent): void {
   const handlers = new Map<string, Disposer>();
   const refresh = () => {
     const panels = ctx.editors.all();
@@ -28,7 +26,7 @@ function registerPanelHandlers(ctx: Context, agent: AgentReferences): void {
       if (
         !config ||
         config.preset !== "obsidian" ||
-        config.features?.copyForAgent?.enabled === false
+        config.features?.askAgent?.enabled === false
       ) {
         void stop();
         handlers.delete(id);
@@ -39,12 +37,12 @@ function registerPanelHandlers(ctx: Context, agent: AgentReferences): void {
       if (
         handlers.has(panel.id) ||
         config.preset !== "obsidian" ||
-        config.features?.copyForAgent?.enabled === false
+        config.features?.askAgent?.enabled === false
       ) {
         continue;
       }
       const ask = panel.rpc.handle(protocol, "ask", (_request, token) =>
-        agent.copy(panel.id, { interactive: true, token, ask: true }),
+        agent.ask(panel.id, token),
       );
       handlers.set(panel.id, () => {
         void ask();

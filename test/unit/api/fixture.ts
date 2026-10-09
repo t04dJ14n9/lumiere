@@ -1,10 +1,9 @@
 import type { Uri } from "vscode";
 import { Context } from "../../../src/kernel";
-import { fixture as selectionFixture } from "../copy-for-agent/fixture";
+import { fixture as selectionFixture } from "../ask-agent/fixture";
 import { rpcPair } from "../../support/rpc-pair";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import { SelectionSnapshots } from "../../../src/plugins/editor/selection";
-import { AgentReferences } from "../../../src/plugins/copyForAgent/agent";
 import { registerEditorActions } from "../../../src/plugins/editor/actions-host";
 import { markersHost } from "../../../src/plugins/markers/host";
 import { codeBlocksHost } from "../../../src/plugins/codeBlocks/host";
@@ -102,15 +101,6 @@ export async function fixture() {
   root.provide("workbench", workbench);
   root.provide("editors", editors);
   root.provide("selections", selections);
-  root.provide(
-    "agent",
-    new AgentReferences({
-      editors,
-      selections,
-      workbench,
-      beforeSave: async () => {},
-    }),
-  );
   root.plugin({
     name: "editor",
     inject: { required: ["workbench"] },

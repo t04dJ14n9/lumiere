@@ -5,7 +5,7 @@ import { Session } from "../../../src/plugins/document/session";
 import { SelectionSnapshots } from "../../../src/plugins/editor/selection";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import { protocol } from "../../../src/plugins/editor/protocol";
-import { AgentReferences } from "../../../src/plugins/copyForAgent/agent";
+import { AskAgent } from "../../../src/plugins/askAgent/agent";
 export function fixture() {
   const state = {
     text: "one\r\ntwo\r\nthree",
@@ -53,7 +53,7 @@ export function fixture() {
     config: () => ({
       preset: "obsidian",
       mode: "livePreview",
-      features: { copyForAgent: { enabled: state.enabled, config: {} } },
+      features: { askAgent: { enabled: state.enabled, config: {} } },
     }),
     onConfiguration: (listener) => {
       changed = listener;
@@ -91,7 +91,7 @@ export function fixture() {
     (id) => editors.all().find((item) => item.id === id),
     workbench,
   );
-  const agent = new AgentReferences({
+  const agent = new AskAgent({
     editors,
     selections,
     workbench,

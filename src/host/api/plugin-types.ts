@@ -80,10 +80,6 @@ export interface PublicServices {
     "resolveLink" | "getMetadata" | "getBacklinks" | "onDidResolveLinks"
   >;
   readonly markers: Markers;
-  readonly agent: Pick<
-    MarkdownWorkbenchApi,
-    "createAgentReference" | "copyForAgent"
-  >;
   /** VS Code commands; IDs must start with the owner extension's ID. */
   readonly commands: { register(id: string, run: () => unknown): Disposable };
   readonly codeBlocks: { register(processor: CodeProcessor): Disposable };

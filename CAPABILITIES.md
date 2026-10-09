@@ -54,7 +54,7 @@ records it in `docs/PARITY.md`.
 | formatting | Bold, italics, strikethrough, highlight, code, comment, link, headings, lists, quote, line swaps | Only Mod+B, Mod+I, Mod+K are bound until the owner checks Obsidian's hotkeys |
 | vim | Vim mode with `:w`, `:q`, `:u`, `:red` mapped to VS Code | Off by default |
 | pasteHtml | Rich paste as Markdown | Images are not downloaded |
-| copyForAgent (Ask Agent) | **Ask Agent about Selection** sends `@path#lines` and the quoted passage to the agent chat, or copies it when no chat can take it | Not an Obsidian feature. The separate Copy for Agent command was removed (plain Ctrl+C copies text); the plugin id and the API's `copyForAgent` stay for compatibility |
+| askAgent | **Ask Agent about Selection** sends `@path#lines` and the quoted passage to the agent chat, or copies it when no chat can take it | Not an Obsidian feature. The separate Copy for Agent command was removed (plain Ctrl+C copies text). No public API |
 | markers | Badges and actions that other extensions place on source ranges | Plain text only; at most 1,000 per plugin per editor |
 
 ## Workbench

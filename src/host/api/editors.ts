@@ -21,13 +21,7 @@ export function editorOperations(
   platform: ApiPlatform,
 ): Pick<
   MarkdownWorkbenchApi,
-  | "getEditors"
-  | "getActiveEditor"
-  | "open"
-  | "reveal"
-  | "getSelection"
-  | "createAgentReference"
-  | "copyForAgent"
+  "getEditors" | "getActiveEditor" | "open" | "reveal" | "getSelection"
 > {
   return {
     getEditors: () =>
@@ -45,20 +39,6 @@ export function editorOperations(
       withCancellation(options?.token, (token) =>
         root.selections.capture(id, token),
       ),
-    async createAgentReference(selection) {
-      if (!root.agent) {
-        throw new RpcError("PluginDisabled", "Ask Agent is unavailable");
-      }
-      const reference = root.agent.reference(selection);
-      return Object.freeze({ ...reference, uri: platform.uri(reference.uri) });
-    },
-    async copyForAgent(id) {
-      panelById(root, id);
-      if (!root.agent) {
-        throw new RpcError("PluginDisabled", "Ask Agent is unavailable");
-      }
-      await root.agent.copy(id);
-    },
   };
 }
 async function openEditor(

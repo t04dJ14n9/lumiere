@@ -39,6 +39,12 @@
     ],
     "commands": [
       {
+        "command": "markdownWorkbench.askAgentAboutSelection",
+        "title": "Ask Agent about Selection",
+        "category": "Markdown Workbench",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "markdownWorkbench.insertCallout",
         "title": "Insert Callout",
         "category": "Markdown Workbench"
@@ -73,12 +79,6 @@
         "title": "Open as Text",
         "category": "Markdown Workbench",
         "icon": "$(go-to-file)"
-      },
-      {
-        "command": "markdownWorkbench.askAgentAboutSelection",
-        "title": "Ask Agent about Selection",
-        "category": "Markdown Workbench",
-        "icon": "$(comment-discussion)"
       },
       {
         "command": "markdownWorkbench.titleActions",
@@ -505,6 +505,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "markdownWorkbench.askAgentAboutSelection",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.askAgent"
+        },
+        {
           "command": "markdownWorkbench.insertCallout",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.callouts"
         },
@@ -531,10 +535,6 @@
         {
           "command": "markdownWorkbench.openAsText",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
-        },
-        {
-          "command": "markdownWorkbench.askAgentAboutSelection",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
         },
         {
           "command": "markdownWorkbench.titleActions",
@@ -765,7 +765,7 @@
       "webview/context": [
         {
           "command": "markdownWorkbench.askAgentAboutSelection",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.askAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
           "group": "agent"
         },
         {
@@ -825,6 +825,12 @@
     "configuration": {
       "title": "Markdown Workbench",
       "properties": {
+        "markdownWorkbench.plugins.askAgent.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Ask an agent about selected text, with a saved source line reference."
+        },
         "markdownWorkbench.plugins.autoPair.enabled": {
           "type": "boolean",
           "default": true,
@@ -848,12 +854,6 @@
           "default": true,
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
-        },
-        "markdownWorkbench.plugins.copyForAgent.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Ask an agent about selected text, with a saved source line reference."
         },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",

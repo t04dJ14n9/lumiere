@@ -1,8 +1,6 @@
 import { defineManifest } from "../../shared/manifest";
-// The id stays `copyForAgent` so `markdownWorkbench.plugins.copyForAgent.enabled`
-// and the public API's `copyForAgent` keep working for existing users.
 export default defineManifest({
-  id: "copyForAgent",
+  id: "askAgent",
   title: "Ask Agent",
   description:
     "Ask an agent about selected text, with a saved source line reference.",

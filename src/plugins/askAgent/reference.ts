@@ -42,7 +42,7 @@ export function workspaceRelativePath(
 }
 
 /**
- * What Ask Agent about Selection (and the API's `copyForAgent`) hands over: the line reference, so the agent
+ * What Ask Agent about Selection hands over: the line reference, so the agent
  * can open the note at that range, then the selected passage quoted, so it
  * reads the exact words without opening anything.
  */

@@ -50,12 +50,6 @@ export function externalServices(
       onDidResolveLinks: api.onDidResolveLinks,
     });
   }
-  if (host.agent) {
-    services.agent = Object.freeze({
-      createAgentReference: api.createAgentReference,
-      copyForAgent: api.copyForAgent,
-    });
-  }
   if (host.markers) {
     services.markers = markerServices(bindings, assertLive);
   }

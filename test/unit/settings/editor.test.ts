@@ -192,6 +192,12 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
 
 test("only Ask Agent about Selection remains of the agent commands", async () => {
   const generated = await contributions();
+  const settings = Object.keys(generated.configuration.properties);
+  assert.ok(settings.includes("markdownWorkbench.plugins.askAgent.enabled"));
+  assert.equal(
+    settings.some((key) => key.includes("copyForAgent")),
+    false,
+  );
   const commands = generated.commands.map((command) => command.command);
   assert.ok(commands.includes("markdownWorkbench.askAgentAboutSelection"));
   assert.equal(commands.includes("markdownWorkbench.copyForAgent"), false);

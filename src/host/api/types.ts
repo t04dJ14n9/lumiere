@@ -69,13 +69,6 @@ export interface SelectionSnapshot {
   readonly endLine: number;
   readonly text: string;
 }
-/** An LLM Wiki-compatible reference: `@notes/a.md#12-18`. */
-export interface AgentReference {
-  readonly text: string;
-  readonly uri: Uri;
-  readonly startLine: number;
-  readonly endLine: number;
-}
 export interface Backlink {
   /** The linking note's path inside its vault. */
   readonly path: string;
@@ -132,21 +125,12 @@ export interface MarkdownWorkbenchApi {
     options?: { readonly focus?: boolean },
   ): Promise<void>;
 
-  // Selections and agent references
+  // Selections
   /** The editor's selection after its pending edits reach the document. */
   getSelection(
     editorId: EditorId,
     options?: OperationOptions,
   ): Promise<SelectionSnapshot | undefined>;
-  /** Rejects with `DocumentDirty` unless the note is saved. */
-  createAgentReference(selection: SelectionSnapshot): Promise<AgentReference>;
-  /**
-   * Copy the selection's reference and quoted passage without prompts (the
-   * text Ask Agent about Selection sends); rejects with `DocumentDirty` for
-   * unsaved notes. Kept for existing callers after the editor's Copy for
-   * Agent command was removed.
-   */
-  copyForAgent(editorId: EditorId): Promise<void>;
 
   // Vault (read-only)
   /** Resolve a link as Obsidian does, from the note at `source`. */

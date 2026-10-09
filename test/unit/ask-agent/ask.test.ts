@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { agentPayload } from "../../../src/plugins/copyForAgent/reference";
+import { agentPayload } from "../../../src/plugins/askAgent/reference";
 import {
   openAgentChat,
   type AgentEnvironment,
-} from "../../../src/plugins/copyForAgent/chat";
+} from "../../../src/plugins/askAgent/chat";
 
 test("the agent payload links the line range and quotes the exact passage", () => {
   assert.equal(
@@ -227,9 +227,7 @@ test("with no agent but VS Code's empty chat, the passage is only copied", async
 });
 
 test("scratch file names keep the note name and line range", async () => {
-  const { scratchName } = await import(
-    "../../../src/plugins/copyForAgent/agent"
-  );
+  const { scratchName } = await import("../../../src/plugins/askAgent/agent");
   assert.equal(
     scratchName("@notes/Transformer.md#5-6"),
     "Transformer.md-5-6.md",
@@ -238,9 +236,7 @@ test("scratch file names keep the note name and line range", async () => {
 });
 
 test("the Codex attachment names the note's file, since it lives outside the workspace", async () => {
-  const { scratchText } = await import(
-    "../../../src/plugins/copyForAgent/agent"
-  );
+  const { scratchText } = await import("../../../src/plugins/askAgent/agent");
   assert.equal(
     scratchText("@notes/a.md#5-6\n\n> x", {
       text: "@notes/a.md#5-6",

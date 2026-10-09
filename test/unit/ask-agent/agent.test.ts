@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
-import { copyForAgentHost } from "../../../src/plugins/copyForAgent/host";
-import { protocol } from "../../../src/plugins/copyForAgent/protocol";
+import { askAgentHost } from "../../../src/plugins/askAgent/host";
+import { protocol } from "../../../src/plugins/askAgent/protocol";
 import {
   agentReferenceText,
   workspaceRelativePath,
-} from "../../../src/plugins/copyForAgent/reference";
+} from "../../../src/plugins/askAgent/reference";
 import { fixture } from "./fixture";
 
 test("selection capture returns frozen original CRLF offsets and excludes a trailing column-zero line", async () => {
@@ -95,21 +95,20 @@ test("references use the workspace-relative path in one local folder, else the f
     agentReferenceText("file:///vault/A.md", ["file:///vault"], 3, 2),
   );
 });
-test("API copy refuses dirty notes; interactive choices copy text, cancel or save and recapture", async () => {
+test("Ask Agent on an unsaved note: cancel, copy text only, or save and recapture", async () => {
   const f = fixture();
   f.state.dirty = true;
-  await assert.rejects(f.agent.copy("panel"), { code: "DocumentDirty" });
+  assert.equal(await f.agent.ask("panel"), false);
   assert.deepEqual(f.copied, []);
-  assert.equal(await f.agent.copy("panel", { interactive: true }), false);
   f.state.choice = "Copy Text Only";
-  assert.equal(await f.agent.copy("panel", { interactive: true }), true);
+  assert.equal(await f.agent.ask("panel"), true);
   assert.equal(f.copied.pop(), "one\ntwo\n");
   f.state.choice = "Save and Copy";
   f.beforeSave(() => {
     f.state.from = 4;
     f.state.to = 7;
   });
-  assert.equal(await f.agent.copy("panel", { interactive: true }), true);
+  assert.equal(await f.agent.ask("panel"), true);
   assert.equal(f.copied.pop(), "@Note.md#2\n\n> two");
   assert.equal(f.state.dirty, false);
   await f.pair.dispose();
@@ -120,7 +119,7 @@ test("Ask Agent host removes disabled handlers and restores them on enable", asy
   root.provide("editors", f.editors);
   root.provide("selections", f.selections);
   root.provide("workbench", f.workbench);
-  root.plugin(copyForAgentHost);
+  root.plugin(askAgentHost);
   await root.settled();
   assert.equal(await f.pair.client.call(protocol, "ask", {}), true);
   f.state.enabled = false;

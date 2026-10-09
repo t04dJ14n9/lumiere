@@ -114,9 +114,16 @@ completion and Phase 8 records) first.
   items) was removed by owner decision on 2026-10-09 (branch
   `remove-copy-for-agent`): plain Ctrl/Cmd+C covers copying. Ask Agent
   about Selection keeps sending `@Note.md#a-b`, a blank line and the
-  selected passage quoted with `> `, and its clipboard fallback. The plugin
-  id `copyForAgent` (its enable setting) and the public API's
-  `createAgentReference`/`copyForAgent` are unchanged for existing callers.
+  selected passage quoted with `> `, and its clipboard fallback. Nothing
+  was published, so the backwards-compatibility leftovers went too: the
+  plugin id is now `askAgent` (`markdownWorkbench.plugins.askAgent.enabled`,
+  context key `markdownWorkbench.plugin.askAgent`; no migration), the
+  `agent` kernel service is gone, and the public API no longer has
+  `createAgentReference`, `copyForAgent`, `AgentReference` or an `agent`
+  external-plugin service. `AskAgent` (`src/plugins/askAgent/agent.ts`) and
+  `reference.ts` build the text internally. Plans in `docs/plans/` that
+  mention the `agent` service (okf) predate this and need a new seam if
+  revived.
 - **Ask Agent about Selection** (selection menu and editor context menu)
   opens Cursor's agent chat with that payload on the clipboard (Cursor
   offers no prefill) and a notice saying so; in VS Code it opens the chat
