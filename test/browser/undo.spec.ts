@@ -21,7 +21,9 @@ test("plain typing remains one undo group across acknowledged transport batches"
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("Start\n");
-  await page.keyboard.press("ControlOrMeta+Shift+z");
+  // Uppercase, as a real keyboard reports it: Playwright on Linux sends
+  // key "z" for "Shift+z", which CodeMirror reads as Mod-z (undo).
+  await page.keyboard.press("ControlOrMeta+Shift+Z");
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe(expected);

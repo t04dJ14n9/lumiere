@@ -17,7 +17,9 @@ test("minimal preset synchronizes Unicode typing, saves and undoes with host aut
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("first\r\nsecond");
-  await page.keyboard.press("ControlOrMeta+Shift+z");
+  // Uppercase, as a real keyboard reports it: Playwright on Linux sends
+  // key "z" for "Shift+z", which CodeMirror reads as Mod-z (undo).
+  await page.keyboard.press("ControlOrMeta+Shift+Z");
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("first\r\nsecond你好 🧠");
