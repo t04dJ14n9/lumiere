@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, rm, stat, utimes, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
-import { RegionImages, RegionTooLargeError, regionCacheBytes } from '../../src/extension/plugins/pdfRegions/region-images';
+import { RegionCacheFullError, RegionImages, RegionTooLargeError, regionCacheBytes, type CacheFiles } from '../../src/extension/plugins/pdfRegions/region-images';
 
 let folder: string;
 beforeEach(async () => { folder = path.join(await mkdtemp(path.join(tmpdir(), 'region-images-')), 'regions'); });
@@ -140,4 +140,82 @@ test('a snapshot exactly the size of the cap is kept, alone', async () => {
   await images.save('/p.pdf', 1, png(1));
   const whole = await images.save('/p.pdf', 2, png(2, 1_000));
   assert.deepEqual(await names(), [path.basename(whole)]);
+});
+
+/** The real file operations, except that deleting `failing` files fails with `code`. */
+function failingUnlink(failing: (file: string) => boolean, code = 'EACCES'): CacheFiles {
+  return {
+    unlink: async file => {
+      if (failing(file)) throw Object.assign(new Error(`${code}: cannot delete ${path.basename(file)}`), { code });
+      await unlink(file);
+    },
+    writeFile: (file, bytes) => writeFile(file, bytes),
+  };
+}
+
+const totalSize = async (): Promise<number> =>
+  (await Promise.all((await readdir(folder)).map(async name => (await stat(path.join(folder, name))).size))).reduce((a, b) => a + b, 0);
+
+test('a deletion that fails does not count as freed: the next one is tried, and the cap holds', async () => {
+  let blocked = '';
+  const images = new RegionImages(folder, () => 1_000, failingUnlink(file => file === blocked));
+  const a = await images.save('/p.pdf', 1, png(1));
+  const b = await images.save('/p.pdf', 1, png(2));
+  await usedSecondsAgo(a, 30);
+  await usedSecondsAgo(b, 20);
+  blocked = a;
+  // 1,200 > 1,000: a is oldest but cannot go, so b goes instead.
+  const c = await images.save('/p.pdf', 1, png(3));
+  assert.deepEqual(await names(), [a, c].map(file => path.basename(file)).sort());
+  assert.ok(await totalSize() <= 1_000);
+});
+
+test('when not enough can be freed, the save fails and writes nothing; the cache stays within the cap', async () => {
+  let blocked = false;
+  const images = new RegionImages(folder, () => 1_000, failingUnlink(() => blocked));
+  const a = await images.save('/p.pdf', 1, png(1));
+  const b = await images.save('/p.pdf', 1, png(2));
+  blocked = true;
+  await assert.rejects(images.save('/p.pdf', 1, png(3)), (error: unknown) =>
+    error instanceof RegionCacheFullError && /cannot delete/u.test(error.message));
+  assert.deepEqual(await names(), [a, b].map(file => path.basename(file)).sort());
+  assert.ok(await totalSize() <= 1_000);
+});
+
+test('a file already gone counts as freed', async () => {
+  const images = new RegionImages(folder, () => 1_000, failingUnlink(() => true, 'ENOENT'));
+  await images.save('/p.pdf', 1, png(1));
+  await images.save('/p.pdf', 1, png(2));
+  const c = await images.save('/p.pdf', 1, png(3));
+  assert.ok((await names()).includes(path.basename(c)));
+});
+
+test('room is made before writing, so the cache never exceeds the cap even during a save', async () => {
+  let peak = 0;
+  const files: CacheFiles = {
+    unlink: file => unlink(file),
+    writeFile: async (file, bytes) => {
+      peak = Math.max(peak, (await totalSize()) + bytes.length);
+      await writeFile(file, bytes);
+    },
+  };
+  const images = new RegionImages(folder, () => 1_000, files);
+  for (let seed = 1; seed <= 6; seed++) {
+    const file = await images.save('/p.pdf', seed, png(seed));
+    await usedSecondsAgo(file, 100 - seed);
+  }
+  assert.ok(peak > 0 && peak <= 1_000, `peak ${peak}`);
+});
+
+test('a write that fails is removed and reported', async () => {
+  const files: CacheFiles = {
+    unlink: file => unlink(file),
+    writeFile: async file => {
+      await writeFile(file, Buffer.alloc(10));
+      throw new Error('disk full');
+    },
+  };
+  const images = new RegionImages(folder, () => 1_000, files);
+  await assert.rejects(images.save('/p.pdf', 1, png(1)), /disk full/u);
+  assert.deepEqual(await names(), []);
 });
