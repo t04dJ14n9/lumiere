@@ -9,6 +9,7 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import { downloadAndUnzipVSCode } from '@vscode/test-electron';
 import { createVSIX } from '@vscode/vsce';
@@ -61,10 +62,16 @@ export default async function globalSetup(): Promise<void> {
  * The environment for the test VS Code: its own home folder, because VS Code
  * reads and rewrites `~/.vscode/argv.json` whatever profile it is given, and
  * no variable that would make Electron act as Node.
+ *
+ * On Linux, X11 finds its authorization cookie in `~/.Xauthority` unless
+ * XAUTHORITY says otherwise; point it at the real home's cookie, or the
+ * window cannot open once HOME has moved.
  */
 function cleanEnvironment(): NodeJS.ProcessEnv {
   const environment: NodeJS.ProcessEnv = { ...process.env, HOME: paths.home };
   delete environment.ELECTRON_RUN_AS_NODE;
+  const cookie = path.join(homedir(), '.Xauthority');
+  if (process.platform === 'linux' && !environment.XAUTHORITY && existsSync(cookie)) environment.XAUTHORITY = cookie;
   return environment;
 }
 
