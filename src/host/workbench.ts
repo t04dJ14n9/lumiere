@@ -5,6 +5,9 @@ import { panelIsActive } from "./active-panel";
 import * as vscode from "vscode";
 import { textBypass } from "./reclaim";
 import { randomUUID, createHash } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
 const viewType = "markdownWorkbench.editor";
@@ -31,6 +34,7 @@ export function createWorkbench(
     },
     ...documentOperations(documents),
     ...commandOperations(),
+    ...agentOperations(),
     ...configurationOperations(),
     editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
@@ -132,6 +136,37 @@ function documentOperations(
     },
   };
 }
+/** Ask Agent about Selection: which agent chats exist, and files to attach. */
+function agentOperations(): Pick<
+  Workbench,
+  "agentEnvironment" | "writeScratchFile"
+> {
+  return {
+    async agentEnvironment() {
+      return {
+        commands: new Set(await vscode.commands.getCommands(true)),
+        hasChatParticipant: vscode.extensions.all.some((extension) => {
+          const participants = (
+            extension.packageJSON as
+              | { contributes?: { chatParticipants?: unknown } }
+              | undefined
+          )?.contributes?.chatParticipants;
+          return Array.isArray(participants) && participants.length > 0;
+        }),
+        chatDisabled: vscode.workspace
+          .getConfiguration("chat")
+          .get<boolean>("disableAIFeatures", false),
+      };
+    },
+    async writeScratchFile(name, text) {
+      const folder = path.join(os.tmpdir(), "markdown-workbench-agent");
+      await mkdir(folder, { recursive: true, mode: 0o700 });
+      const file = path.join(folder, path.basename(name));
+      await writeFile(file, text, { mode: 0o600 });
+      return vscode.Uri.file(file).toString();
+    },
+  };
+}
 function commandOperations(): Pick<
   Workbench,
   "command" | "execute" | "clipboard" | "error" | "inform"
@@ -147,6 +182,9 @@ function commandOperations(): Pick<
           // Opened as text on purpose: the reclaim must not undo it.
           textBypass.allow(args[0]);
         }
+        args[0] = vscode.Uri.parse(args[0]);
+      }
+      if (id === "chatgpt.addFileToThread" && typeof args[0] === "string") {
         args[0] = vscode.Uri.parse(args[0]);
       }
       return vscode.commands.executeCommand(id, ...args);

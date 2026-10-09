@@ -48,6 +48,10 @@ export interface Workbench {
   clipboard: { read(): Promise<string>; write(text: string): Promise<void> };
   error(message: string): void;
   inform?(message: string): void;
+  /** What Ask Agent can reach: registered commands and VS Code's chat state. */
+  agentEnvironment?(): Promise<AgentEnvironment>;
+  /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */
+  writeScratchFile?(name: string, text: string): Promise<string>;
   // Editors and settings.
   registerEditor(open: (panel: PanelShell) => void): Disposer;
   onConfiguration?(listener: () => void): Disposer;
@@ -222,4 +226,13 @@ export interface SourceEdit {
   from: number;
   to: number;
   insert: string;
+}
+/** What the editor offers Ask Agent about Selection. */
+export interface AgentEnvironment {
+  /** Every registered command. */
+  commands: ReadonlySet<string>;
+  /** Whether an installed extension (e.g. Copilot Chat) answers in VS Code's chat. */
+  hasChatParticipant: boolean;
+  /** VS Code's `chat.disableAIFeatures`: the chat is hidden. */
+  chatDisabled: boolean;
 }
