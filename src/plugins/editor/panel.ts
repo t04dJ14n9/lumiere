@@ -202,6 +202,12 @@ function sendConfiguration(
  * One shutdown, shared by the host's dispose and VS Code closing the panel
  * (which re-enters here from `shell.dispose()`): the close notification
  * cannot skip the cleanup, and every caller awaits it. Never rejects.
+ *
+ * Order and error handling: `onClose` first (the host forgets the panel), then
+ * the shell, then the panel's own kernel. A failure in a step is logged and
+ * never skips the next, so cleanup always runs. "Closed" as observed through
+ * `onClose` means logical removal, not complete disposal: listeners of a
+ * synchronous close event can still see the panel's kernel alive.
  */
 function panelShutdown(
   owned: Context,
