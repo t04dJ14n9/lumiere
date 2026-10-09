@@ -9,6 +9,8 @@ export { expect };
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 /** Fixture pages are 300 points wide (test/fixtures/make-fixtures.mjs). */
 export const PAGE_WIDTH = 300;
+/** The most room fit page leaves around a page, in CSS pixels (about 40 seen). */
+const FIT_MARGIN = 48;
 
 /** `workbench`: VS Code's main window, with every editor closed first. */
 export const test = base.extend<{ workbench: Page }>({
@@ -153,13 +155,31 @@ export function pointAtTop(viewer: Frame, number: number, top: number): Promise<
 /**
  * Fit whole pages in the viewer, so every point of a page is on screen. The
  * default fit-to-width zoom can make the narrow fixture pages taller than the
- * window.
+ * window. When the editor is narrow (Cursor's agent pane on a small screen),
+ * fit width already is fit page and the zoom does not change, so this waits
+ * for the fitted state itself rather than for a change.
  */
 export async function fitPage(viewer: Frame): Promise<void> {
-  const zoom = viewer.getByRole('textbox', { name: 'Zoom' });
-  const before = await zoom.inputValue();
   await viewer.getByRole('button', { name: 'Fit page' }).click();
-  await expect(zoom).not.toHaveValue(before);
+  await expect.poll(() => pageFit(viewer), { message: 'The page did not fit the viewer' })
+    .toEqual({ fitsWidth: true, fitsHeight: true, fills: true });
+}
+
+/**
+ * Whether the first page fits inside the viewer at its current zoom, and fills
+ * it in one direction (less the page margins), as fit page leaves it.
+ */
+function pageFit(viewer: Frame): Promise<{ fitsWidth: boolean; fitsHeight: boolean; fills: boolean }> {
+  return viewer.evaluate(margin => {
+    const viewport = document.querySelector('.viewport')!;
+    const page = document.querySelector('.page[data-page-index="0"]')!.getBoundingClientRect();
+    const { clientWidth: width, clientHeight: height } = viewport;
+    return {
+      fitsWidth: page.width <= width,
+      fitsHeight: page.height <= height,
+      fills: page.width >= width - margin || page.height >= height - margin,
+    };
+  }, FIT_MARGIN);
 }
 
 /** Show a page through the page field and wait until it is at the top. */
