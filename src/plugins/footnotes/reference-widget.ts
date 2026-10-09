@@ -1,6 +1,11 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
+/** The text a reference shows: its number in reading order, as in Obsidian. */
+export function referenceText(note: Footnote): string {
+  return String(note.number ?? note.label);
+}
+
 interface ReferenceOptions {
   render: RenderService;
   navigate(): void;
@@ -31,17 +36,12 @@ class ReferenceControl {
     private readonly options: ReferenceOptions,
   ) {
     this.button.type = "button";
-    this.button.textContent = note.label
-      ? `[^${note.label}]`
-      : `[${note.number}]`;
-    this.button.setAttribute(
-      "aria-label",
-      `Footnote ${note.label || note.number}`,
-    );
+    this.button.textContent = referenceText(note);
+    this.button.setAttribute("aria-label", `Footnote ${referenceText(note)}`);
     this.preview.className = "footnote-preview";
     this.preview.hidden = true;
     this.preview.setAttribute("role", "tooltip");
-    sup.classList.add("hybrid-footnote-ref");
+    sup.classList.add("mw-footnote-ref");
     sup.replaceChildren(this.button, this.preview);
     this.registerEvents();
   }
