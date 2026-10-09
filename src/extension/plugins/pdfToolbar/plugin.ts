@@ -20,7 +20,8 @@ export const pdfToolbarPlugin: PluginDefinition<PdfServices> = {
     // Where the title bar would only add the viewer's buttons to its "…" menu,
     // they would repeat that menu's own page and zoom entries: leave them out.
     void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.titleActionsInMenu', titleActionsInMenu(vscode.env.appName));
-    scope.acquire(new vscode.Disposable(() => void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.titleActionsInMenu', false)), 'context key');
+    // Lifecycle work: the reset is returned, so teardown awaits it.
+    scope.acquire({ dispose: () => vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.titleActionsInMenu', false) }, 'context key');
     const statusBar = scope.acquire(new StatusBar(panels), 'statusBar');
     scope.acquire(panels.provideViewerToolbar(() => preferences.settings), 'viewer settings');
     scope.acquire(panels.handle('floatingDock', (_panel, message) => preferences.setDock(message.dock)), 'message handler');

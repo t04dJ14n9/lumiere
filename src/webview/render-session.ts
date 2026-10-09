@@ -12,8 +12,9 @@
  *   which is why the session, not the hook, starts engines.)
  * - At most one engine per mode. Giving up on the worker (`release('worker')`)
  *   stops its engine, and no other engine starts until that stop has
- *   finished (`destroyEngine` settles within a deadline; see
- *   engine-destruction.ts).
+ *   settled: the engine's documents closed (or the deadline passed) and its
+ *   `destroy()` terminated the worker (see engine-destruction.ts). A stop
+ *   whose `destroy()` fails is reported, and the next engine still starts.
  * - `dispose()` drops the bytes and revokes the blob URLs first, so a failing
  *   engine stop cannot skip them, and resolves once every engine has
  *   stopped. It never rejects: stop failures go to `reportError`.

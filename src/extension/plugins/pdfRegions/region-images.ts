@@ -52,7 +52,9 @@ const nodeFiles: CacheFiles = { unlink, writeFile };
  * storage, not the workspace. A snapshot's modification time is when it was
  * last used: saving it, or saving it again to hand it to an agent.
  *
- * Invariant: as long as only this class writes the folder, its PNGs
+ * Invariant: as long as only this instance writes the folder (another VS
+ * Code window's instance counts as someone else: each keeps to the cap for
+ * what it can see, not for the two together), its PNGs
  * together never take more than the cap (`maxBytes`, read at every save so
  * a changed setting applies at once), at any instant, not only after a
  * save. Room is reclaimed before the new file is written: the least
