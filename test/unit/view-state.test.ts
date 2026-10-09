@@ -13,11 +13,13 @@ import {
 test('view reports from the viewer are validated and the zoom rounded', () => {
   assert.deepEqual(parseViewerMessage({ type: 'view', view: { page: 4, pageCount: 15, zoomPercent: 163.7, fit: 'width' } }), {
     type: 'view',
-    view: { page: 4, pageCount: 15, zoomPercent: 164, fit: 'width' },
+    view: { page: 4, pageCount: 15, zoomPercent: 164, fit: 'width', tool: 'text' },
   });
-  // An unknown fit is no fit.
-  assert.deepEqual(parseViewState({ page: 1, pageCount: 1, zoomPercent: 100, fit: 'stretch' }),
-    { page: 1, pageCount: 1, zoomPercent: 100, fit: null });
+  assert.deepEqual(parseViewState({ page: 1, pageCount: 1, zoomPercent: 100, fit: null, tool: 'region' }),
+    { page: 1, pageCount: 1, zoomPercent: 100, fit: null, tool: 'region' });
+  // An unknown fit is no fit, and an unknown tool the default one.
+  assert.deepEqual(parseViewState({ page: 1, pageCount: 1, zoomPercent: 100, fit: 'stretch', tool: 'pen' }),
+    { page: 1, pageCount: 1, zoomPercent: 100, fit: null, tool: 'text' });
   for (const view of [
     { page: 16, pageCount: 15, zoomPercent: 100 },
     { page: 1.5, pageCount: 15, zoomPercent: 100 },
@@ -39,11 +41,13 @@ test('actions for the viewer are validated', () => {
   }
   assert.deepEqual(parseViewerAction({ action: 'goToPage', page: 7 }), { action: 'goToPage', page: 7 });
   assert.deepEqual(parseViewerAction({ action: 'setZoom', percent: 140 }), { action: 'setZoom', percent: 140 });
+  assert.deepEqual(parseViewerAction({ action: 'setTool', tool: 'region' }), { action: 'setTool', tool: 'region' });
   for (const action of [
     { action: 'goToPage', page: 0 },
     { action: 'goToPage', page: '7' },
     { action: 'setZoom', percent: -5 },
     { action: 'setZoom', percent: Number.POSITIVE_INFINITY },
+    { action: 'setTool', tool: 'pen' },
     { action: 'print' },
     { action: 42 },
     undefined,
@@ -71,7 +75,7 @@ test('a typed zoom takes an optional percent sign and is clamped to the zoom ran
 });
 
 test('the status bar labels name the page and the zoom or fit', () => {
-  const view = { page: 4, pageCount: 15, zoomPercent: 164, fit: null };
+  const view = { page: 4, pageCount: 15, zoomPercent: 164, fit: null, tool: 'text' } as const;
   assert.equal(pageLabel(view), 'Page 4 / 15');
   assert.equal(zoomLabel(view), '164%');
   assert.equal(zoomLabel({ ...view, fit: 'width' }), 'Fit Width (164%)');

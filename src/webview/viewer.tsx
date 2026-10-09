@@ -15,6 +15,7 @@ import { rememberPosition, rememberedPosition } from './reading-position';
 import { SearchBar } from './search-bar';
 import { useIgnoreSecondaryButtons } from './secondary-buttons';
 import { useSelectionReporting } from './selection';
+import { useToolMode } from './tool-mode';
 import { Toolbar } from './toolbar';
 import { useViewActions, useViewReporting } from './view-sync';
 import { useWheelZoom } from './wheel-zoom';
@@ -40,8 +41,9 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
 
-  useViewReporting(navigation);
-  const runAction = useViewActions(navigation, openSearch);
+  const { tool, setTool } = useToolMode(DOCUMENT_ID);
+  useViewReporting(navigation, tool);
+  const runAction = useViewActions(navigation, openSearch, setTool);
   useEffect(() => listenToHost(message => {
     if (message.type === 'goTo') show(message.location, message.top);
     else if (message.type === 'action') {
@@ -50,8 +52,8 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
     }
   }), [show, runAction]);
 
-  const latest = useRef({ selection, searching });
-  latest.current = { selection, searching };
+  const latest = useRef({ selection, searching, tool, setTool });
+  latest.current = { selection, searching, tool, setTool };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
@@ -59,8 +61,11 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
         setSearching(true);
         setFindRequest(request => request + 1);
       } else if (event.key === 'Escape') {
-        if (latest.current.searching) setSearching(false);
-        else latest.current.selection.clear();
+        const { searching, selection, tool, setTool } = latest.current;
+        if (searching) setSearching(false);
+        // With nothing selected, Escape puts down the Select Region tool.
+        else if (tool === 'region' && !selection.region) setTool('text');
+        else selection.clear();
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -68,7 +73,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   }, []);
 
   return (
-    <div className="viewer">
+    <div className={`viewer tool-${tool}`}>
       <CopyToClipboard />
       <Toolbar navigation={navigation} onSearch={openSearch} />
       <div className="document" ref={documentArea}>

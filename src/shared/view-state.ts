@@ -1,12 +1,18 @@
 /**
- * Where the reader is in the PDF (page and zoom), and what the editor's own
- * controls ask the viewer to do. Shared by the viewer and the extension's
- * status bar, editor title actions and keybindings.
+ * Where the reader is in the PDF (page, zoom and tool), and what the
+ * editor's own controls ask the viewer to do. Shared by the viewer and the
+ * extension's status bar, editor title actions and keybindings.
  */
 import { MAX_ZOOM, MIN_ZOOM } from './zoom-steps';
 
 /** A zoom that follows the editor's size. */
 export type FitMode = 'width' | 'page';
+
+/**
+ * What a drag on a page selects: `text` selects text, or a region when it
+ * starts on empty page space; `region` always selects a region.
+ */
+export type ToolMode = 'text' | 'region';
 
 /** What the viewer reports after each change, for the editor's controls. */
 export interface ViewState {
@@ -15,20 +21,22 @@ export interface ViewState {
   /** The zoom actually shown, in whole percent. */
   zoomPercent: number;
   fit: FitMode | null;
+  tool: ToolMode;
 }
 
 /** What the editor's controls (commands, buttons, status bar) ask the viewer to do. */
 export type ViewerAction =
   | { action: 'previousPage' | 'nextPage' | 'zoomIn' | 'zoomOut' | 'fitWidth' | 'fitPage' | 'find' }
   | { action: 'goToPage'; page: number }
-  | { action: 'setZoom'; percent: number };
+  | { action: 'setZoom'; percent: number }
+  | { action: 'setTool'; tool: ToolMode };
 
 const SIMPLE_ACTIONS = new Set(['previousPage', 'nextPage', 'zoomIn', 'zoomOut', 'fitWidth', 'fitPage', 'find']);
 
 /** Accept a view report only if it is well-formed (it comes from the untrusted viewer). */
 export function parseViewState(value: unknown): ViewState | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const { page, pageCount, zoomPercent, fit } = value as Record<string, unknown>;
+  const { page, pageCount, zoomPercent, fit, tool } = value as Record<string, unknown>;
   if (!isCount(pageCount) || !isCount(page) || page > pageCount) return undefined;
   if (typeof zoomPercent !== 'number' || !Number.isFinite(zoomPercent) || zoomPercent <= 0 || zoomPercent > 100_000) return undefined;
   return {
@@ -36,17 +44,19 @@ export function parseViewState(value: unknown): ViewState | undefined {
     pageCount,
     zoomPercent: Math.round(zoomPercent),
     fit: fit === 'width' || fit === 'page' ? fit : null,
+    tool: tool === 'region' ? 'region' : 'text',
   };
 }
 
 /** Accept an action only if it is well-formed; numbers are clamped by the viewer. */
 export function parseViewerAction(value: unknown): ViewerAction | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const { action, page, percent } = value as Record<string, unknown>;
+  const { action, page, percent, tool } = value as Record<string, unknown>;
   if (typeof action !== 'string') return undefined;
   if (SIMPLE_ACTIONS.has(action)) return { action } as ViewerAction;
   if (action === 'goToPage') return isCount(page) && page >= 1 ? { action, page } : undefined;
   if (action === 'setZoom') return typeof percent === 'number' && Number.isFinite(percent) && percent > 0 ? { action, percent } : undefined;
+  if (action === 'setTool') return tool === 'text' || tool === 'region' ? { action, tool } : undefined;
   return undefined;
 }
 
