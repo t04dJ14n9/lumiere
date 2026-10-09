@@ -232,5 +232,10 @@ test('reloads never overlap engines: the next document starts only after the pre
   assert.equal(peak, 1, 'two engines were alive at once');
   assert.equal(live, 1);
   assert.equal(shown.length, 4);
+  // The skipped loads hold no bytes while they wait, and stay disposed.
+  for (const skipped of shown.slice(1, 3)) {
+    assert.ok(skipped.disposed, 'a skipped load was not disposed');
+    assert.throws(() => skipped.buffer, RenderSessionDisposedError);
+  }
   void session;
 });

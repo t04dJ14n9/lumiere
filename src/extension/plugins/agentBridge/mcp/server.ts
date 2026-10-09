@@ -31,6 +31,7 @@ import type { AddressInfo } from 'node:net';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { tokenScrubber } from './scrub';
 import type { PdfPanels } from '../../pdf/panels';
 import type { AgentHandoff } from '../handoff';
 import { DISCOVERY_DIR, PROVIDER_ID, SERVER_NAME, type BridgeInfo } from './constants';
@@ -72,7 +73,7 @@ export async function startAgentBridge(options: ServerOptions): Promise<RunningB
   const token = randomBytes(24).toString('hex');
   // The whole startup boundary is scrubbed, rollback logs and the error the
   // caller gets included: an adapter's error may quote the URL or header.
-  const scrub = (text: string): string => text.replaceAll(token, '<token>');
+  const scrub = tokenScrubber(token);
   try {
     return await listen(options, undo, token, scrub);
   } catch (error) {
