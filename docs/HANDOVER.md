@@ -108,19 +108,36 @@ completion and Phase 8 records) first.
   instead of the note, which is Cursor's global undo routing; Edit: Undo
   and Ctrl+Z after clicking into the note work.
 
-### Copy for Agent and Ask Agent about Selection (0dd4d09, 86152c3)
+### Copy Link for Agent (0dd4d09, 86152c3)
 
-- Copy for Agent (Ctrl/Cmd+Alt+C) copies `@Note.md#a-b`, a blank line and
-  the selected passage quoted with `> `.
-- **Ask Agent about Selection** (selection menu and editor context menu)
-  opens Cursor's agent chat with that payload on the clipboard (Cursor
-  offers no prefill) and a notice saying so; in VS Code it opens the chat
+- Copy for Agent (its command, Ctrl/Cmd+Alt+C, title button and menu
+  items) was removed by owner decision on 2026-10-09 (branch
+  `remove-copy-for-agent`): plain Ctrl/Cmd+C covers copying. The remaining
+  action, formerly Ask Agent about Selection, is now **Copy Link for
+  Agent** (owner decision, same day). It keeps building `@Note.md#a-b`, a
+  blank line and the selected passage quoted with `> `, copies it, and
+  opens a chat only as before. Nothing was published, so ids were renamed
+  with no migration: command `markdownWorkbench.copyLinkForAgent`, plugin
+  `copyLinkForAgent` (`markdownWorkbench.plugins.copyLinkForAgent.enabled`,
+  context key `markdownWorkbench.plugin.copyLinkForAgent`), setting
+  `markdownWorkbench.copyLinkForAgent.target` (was `askAgent.target`). The
+  `agent` kernel service is gone, and the public API no longer has
+  `createAgentReference`, `copyForAgent`, `AgentReference` or an `agent`
+  external-plugin service. `CopyLinkForAgent` (`src/plugins/copyLinkForAgent/agent.ts`) and
+  `reference.ts` build the text internally. Plans in `docs/plans/` that
+  mention the `agent` service (okf) predate this and need a new seam if
+  revived.
+- **Copy Link for Agent** (selection menu and editor context menu)
+  copies the payload; with `target: auto` it opens a chat only when the
+  editor's own chat is the only agent installed. It opens Cursor's agent
+  chat with that payload on the clipboard (Cursor offers no prefill) and a
+  notice saying so; in VS Code it opens the chat
   view prefilled with the payload and the caret after it, ready for the
   question; with no chat, it copies and says so.
 - Friction, VS Code: before, select, Ctrl+Alt+C, open chat, paste, type
   the question, and the agent had to open the file to see the words (an
   agent without file access answered "I can't see the contents"). After:
-  select, right-click, Ask Agent about Selection, type the question. In
+  select, right-click, Copy Link for Agent, type the question. In
   Cursor, one paste remains.
 - Local round trip with DeepSeek (`deepseek-flash`, OpenAI-compatible
   chat/completions; script kept outside the repo in

@@ -3,7 +3,7 @@ import test from "node:test";
 import { Context } from "../../../src/kernel";
 import { codeBlocksHost } from "../../../src/plugins/codeBlocks/host";
 import { protocol } from "../../../src/plugins/codeBlocks/protocol";
-import { fixture } from "../copy-for-agent/fixture";
+import { fixture } from "../copy-link-for-agent/fixture";
 
 test("processor RPC enforces trust, source containment, feature enablement and owner lifetime", async () => {
   const f = fixture();

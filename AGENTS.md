@@ -16,7 +16,7 @@ that everything is a plugin. Read [DESIGN.md](DESIGN.md) and
 - The webview is untrusted. Every message has a schema and is validated in
   both directions; the host re-checks paths and containment.
 - Track editors per panel, never by file path: one note can be open twice.
-- Keep the Copy for Agent wording compatible with LLM Wiki
+- Keep the Copy Link for Agent reference wording compatible with LLM Wiki
   (`@path#start-end`).
 - Obsidian is a behaviour reference only. Never copy its code, CSS or assets.
   Compare in a disposable vault, never the owner's.

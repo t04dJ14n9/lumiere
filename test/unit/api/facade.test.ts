@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { fixture, uri } from "./fixture";
 import { targetRange } from "../../../src/host/api/editors";
 import { SourceCoordinates } from "../../../src/shared/document/coordinates";
-import type { SelectionSnapshot } from "../../../src/host/api/types";
 
 test("frozen facade keeps two panels of one document distinct and targets native source coordinates", async () => {
   const f = await fixture();
@@ -48,7 +47,7 @@ test("frozen facade keeps two panels of one document distinct and targets native
   await f.dispose();
 });
 
-test("API selection identity rejects clones, stale source and dirty agent copies", async () => {
+test("API selections are frozen snapshots; there is no agent API", async () => {
   const f = await fixture();
   const selection = await f.api.getSelection("second");
   assert.ok(selection);
@@ -57,21 +56,10 @@ test("API selection identity rejects clones, stale source and dirty agent copies
     [selection.from, selection.to, selection.startLine, selection.endLine],
     [5, 8, 2, 2],
   );
-  const reference = await f.api.createAgentReference(selection);
-  assert.equal(reference.text, "@Note.md#2");
-  assert.equal(reference.uri.toString(), f.panel.document.uri);
-  // Only the host-held object is a selection; a copy is not one.
-  await assert.rejects(f.api.createAgentReference({ ...selection }), {
-    code: "InvalidArgument",
-  });
-  await f.api.copyForAgent("panel");
-  assert.equal(f.copied.pop(), "@Note.md#1-2\n\n> one\n> two");
-  f.state.dirty = true;
-  await assert.rejects(f.api.copyForAgent("panel"), { code: "DocumentDirty" });
-  f.state.version++;
-  await assert.rejects(f.api.createAgentReference(selection), {
-    code: "StaleSelection",
-  });
+  assert.equal(selection.text, "two");
+  // Copy Link for Agent is an editor command only: nothing published uses it.
+  assert.equal("createAgentReference" in f.api, false);
+  assert.equal("copyForAgent" in f.api, false);
   await assert.rejects(f.api.getSelection("missing"), {
     code: "EditorNotFound",
   });
@@ -195,9 +183,6 @@ test("cancelled API selection never yields a reference", async () => {
     }),
     { code: "Cancelled" },
   );
-  await assert.rejects(f.api.createAgentReference({} as SelectionSnapshot), {
-    code: "InvalidArgument",
-  });
   await f.dispose();
 });
 

@@ -17,7 +17,6 @@ const serviceDependencies: Record<
   editors: ["editors", "editorActions", "selections"],
   vault: ["vaults"],
   markers: ["markers"],
-  agent: ["agent"],
   commands: ["workbench"],
   codeBlocks: ["codeBlocks"],
   logger: [],

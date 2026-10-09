@@ -467,7 +467,7 @@ HTML conversion and delayed-paste guards have new unit coverage in
 `test/unit/paste-html/conversion.test.ts`. Table paste interaction remains in the
 manual plan; no source browser/native suite has been expanded or restored.
 
-Copy for Agent adds focused units in `test/unit/copy-for-agent/agent.test.ts` for
+Copy for Agent (now Copy Link for Agent) adds focused units in `test/unit/copy-link-for-agent/agent.test.ts` for
 host-held selection identity, CRLF line references, dirty choices and handler
 lifetimes. Retired source handoff/browser interactions remain manual; no chat or
 PDF export behavior is ported into this Markdown extension.

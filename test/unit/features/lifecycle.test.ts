@@ -56,10 +56,11 @@ async function renderHooks(root: Context) {
   return { reads, prepared: pass.displaySource !== undefined, fence };
 }
 
-// Plugins that only post-process rendered HTML add no editor extensions.
-const renderOnly = new Set(["onlineVideos"]);
+// Plugins that only post-process rendered HTML, or only contribute commands
+// and selection-menu items (Copy Link for Agent), add no editor extensions.
+const noEditorExtensions = new Set(["onlineVideos", "copyLinkForAgent"]);
 const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
-  renderOnly.has(id) ? f.extensions === 0 : f.extensions > 0;
+  noEditorExtensions.has(id) ? f.extensions === 0 : f.extensions > 0;
 
 for (const manifest of features) {
   test(`${manifest.id}: disabling and re-enabling disposes its extensions and commands`, async () => {
@@ -77,10 +78,10 @@ for (const manifest of features) {
     }
     const activeHooks = await renderHooks(f.root);
     const activeMenu = await f.root.waterfall("editor/selectionMenu", []);
-    if (manifest.id === "copyForAgent") {
+    if (manifest.id === "copyLinkForAgent") {
       assert.deepEqual(
         activeMenu.map((item) => item.label),
-        ["Ask Agent about Selection", "Copy for Agent"],
+        ["Copy Link for Agent"],
       );
     }
     if (

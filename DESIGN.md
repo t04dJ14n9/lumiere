@@ -524,7 +524,6 @@ quick pick of states for the active editor. `setPluginEnabled` and
 | `suggest` | webview | `suggest` | EditorSuggest framework; plugins register sources |
 | `menu` | webview | `editor` | In-editor menus (tables, properties, chips) |
 | `markers` | both | `markers` | Source-bound badges from plugins and the API (§18.3) |
-| `agent` | host | `copyForAgent` | Agent references for selections (§17) |
 | `fold` | webview | `folding` | Heading and indent folds, persisted per view through a view-state contribution (§9.2) |
 
 `vault`, `resources` and `markers` are `replaceable`: an outside plugin (for
@@ -993,7 +992,7 @@ corresponds to. "Source" names the module on the source branch.
 | `pasteHtml` | *Auto convert HTML* | on | editor | `markdown/paste.ts`, `editor/clipboard.ts` |
 | `spellcheck` | *Spellcheck* | on | editor | content attributes |
 | `formatting` | `editor:toggle-*`, `editor:set-heading-*` and similar | on | editor, commands | `editor/markdown.ts` `wrapSelection`, main branch `obsidianLikeCommands` |
-| `copyForAgent` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
+| `copyLinkForAgent` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
 | `linkUpdates` | *Automatically update internal links* | on (prompt) | vault, workbench | new |
 | `quickSwitcher` | Quick switcher | on | vault, workbench | new |
 | `wordCount` | Word count (status bar) | on | editors, workbench | new |
@@ -1082,7 +1081,7 @@ the active editor. They work in the command palette, keybindings and menus.
 | table commands (insert/move/delete row and column, align, sort) | `editor:table-*` | tables | — |
 | `toggleSourceMode` | `editor:toggle-source` | livePreview | — |
 | `openAsText` | none | editor | title action |
-| `copyForAgent` | none | copyForAgent | Mod+Alt+C |
+| `copyLinkForAgent` | none | copyLinkForAgent | none (context menu) |
 | `quickSwitcher` | `switcher:open` | quickSwitcher | none by default (Mod+O conflicts with VS Code's Open) |
 
 Rules:
@@ -1093,11 +1092,11 @@ Rules:
   (Vim's Ctrl-O, Ctrl-B and others) are consumed only while the `vim` plugin is
   active (`markdownWorkbench.plugin.vim` context key), as the source's
   `consumeVimHostShortcut` does. The list moves to the `vim` manifest.
-- The editor title bar keeps **Copy for Agent** (with a selection),
-  **Add File Property** and **Open as Text**. **Toggle Outline** goes away
+- The editor title bar keeps **Add File Property** and **Open as Text**
+  (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
   (§13 outline).
 - The right-click menu uses VS Code's `webview/context` menu with
-  `webviewSection` for static commands (formatting, Copy for Agent).
+  `webviewSection` for static commands (formatting, Copy Link for Agent).
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions
@@ -1186,7 +1185,17 @@ The host `links` plugin owns one pipeline:
        (`markdownWorkbench.files.newNoteFolder`) and open it, as Obsidian
        does.
 
-## 17. Copy for Agent (`copyForAgent` plugin)
+## 17. Copy Link for Agent (`copyLinkForAgent` plugin)
+
+Owner decision (2026-10-09): the Copy for Agent command, Mod+Alt+C, its
+title button and menu items are removed; plain Ctrl/Cmd+C copies text.
+The single remaining action was then renamed **Copy Link for Agent** (it
+was Ask Agent about Selection); it keeps producing the text below, copies
+it, and opens a chat only when the editor's own chat is the only agent or
+`copyLinkForAgent.target` forces one. Nothing was published, so the plugin,
+command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
+`askAgentAboutSelection`, `askAgent.target`) with no migration, and the
+public API has no agent methods or service.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 
@@ -1198,14 +1207,14 @@ Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
   reference uses the full URI. Lines are 1-based, from source offsets (a
   selection ending at column 0 excludes that line, as now).
 - Line numbers must match the file on disk. With unsaved changes, interactive
-  Copy for Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
-  PDF Workbench does. The API refuses a dirty document with `DocumentDirty`.
+  Copy Link for Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
+  PDF Workbench does.
 - The selection is captured from the webview with `editor.captureSelection`
   after a flush, and is rejected if the document version moved (as
   `captureActiveSelectionContext` does). A table cell selection maps to its
   source range.
-- Available from the title bar (with a selection), the context menu, the
-  command palette and Mod+Alt+C.
+- Available from the editor context menu, the selection menu and the
+  command palette.
 
 ## 18. Public API v1 and outside extensions
 
@@ -1225,10 +1234,8 @@ export interface MarkdownWorkbenchApi {
   reveal(editorId: EditorId, target: SourceTarget, options?: { focus?: boolean }): Promise<void>;
   //   SourceTarget = { from: number; to: number } (source offsets) | { line: number } | { fragment: string }
 
-  // Selections and agent references
+  // Selections
   getSelection(editorId: EditorId, options?: OperationOptions): Promise<SelectionSnapshot | undefined>;
-  createAgentReference(selection: SelectionSnapshot): Promise<AgentReference>;
-  copyForAgent(editorId: EditorId): Promise<void>;
 
   // Vault (read-only)
   resolveLink(linktext: string, source: Uri): Uri | undefined;
@@ -1281,7 +1288,7 @@ context.subscriptions.push(wiki);
 ```
 
 - External plugins run in an isolated child context that can see only the
-  public services: `editors`, `vault` (read-only facade), `markers`, `agent`,
+  public services: `editors`, `vault` (read-only facade), `markers`,
   `commands` (IDs restricted to the owner's namespace), `links` events,
   `codeBlocks` (§18.4) and `logger`. Internal services stay hidden.
 - They follow the same lifecycle, gating and error isolation. Enablement

@@ -8,7 +8,7 @@ import {
   inlineTitleHost,
   codeBlocksHost,
   markersHost,
-  copyForAgentHost,
+  copyLinkForAgentHost,
   documentHost,
   editorHost,
   dialectHost,
@@ -62,7 +62,7 @@ export async function bootstrap(
   root.plugin(markersHost);
   root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
-  root.plugin(copyForAgentHost);
+  root.plugin(copyLinkForAgentHost);
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
   root.plugin(livePreviewHost);

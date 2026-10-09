@@ -1,6 +1,5 @@
 import { publicApiHost } from "../../plugins/publicApi/host";
 import type { Context } from "../../kernel";
-import type {} from "../../plugins/copyForAgent/api";
 import type {} from "../../plugins/codeBlocks/api";
 import type { ApiPlatform } from "./platform";
 import type {

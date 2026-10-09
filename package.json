@@ -75,16 +75,10 @@
         "icon": "$(go-to-file)"
       },
       {
-        "command": "markdownWorkbench.askAgentAboutSelection",
-        "title": "Ask Agent about Selection",
+        "command": "markdownWorkbench.copyLinkForAgent",
+        "title": "Copy Link for Agent",
         "category": "Markdown Workbench",
         "icon": "$(comment-discussion)"
-      },
-      {
-        "command": "markdownWorkbench.copyForAgent",
-        "title": "Copy for Agent",
-        "category": "Markdown Workbench",
-        "icon": "$(copy)"
       },
       {
         "command": "markdownWorkbench.titleActions",
@@ -376,12 +370,6 @@
     ],
     "keybindings": [
       {
-        "command": "markdownWorkbench.copyForAgent",
-        "key": "ctrl+alt+c",
-        "mac": "cmd+alt+c",
-        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
-      },
-      {
         "command": "markdownWorkbench.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
@@ -545,12 +533,8 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
-          "command": "markdownWorkbench.askAgentAboutSelection",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
-        },
-        {
-          "command": "markdownWorkbench.copyForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
+          "command": "markdownWorkbench.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyLinkForAgent"
         },
         {
           "command": "markdownWorkbench.titleActions",
@@ -780,13 +764,8 @@
       ],
       "webview/context": [
         {
-          "command": "markdownWorkbench.askAgentAboutSelection",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
-          "group": "agent"
-        },
-        {
-          "command": "markdownWorkbench.copyForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "command": "markdownWorkbench.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyLinkForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
           "group": "agent"
         },
         {
@@ -826,11 +805,6 @@
         }
       ],
       "editor/title": [
-        {
-          "command": "markdownWorkbench.copyForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && markdownWorkbench.hasSelection",
-          "group": "navigation"
-        },
         {
           "command": "markdownWorkbench.titleActions",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && markdownWorkbench.hasTitleActions",
@@ -875,11 +849,11 @@
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
         },
-        "markdownWorkbench.plugins.copyForAgent.enabled": {
+        "markdownWorkbench.plugins.copyLinkForAgent.enabled": {
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Copy a saved source line reference or selected text for an agent."
+          "description": "Copy selected text with a link to its saved source lines, for an agent."
         },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",
@@ -1198,7 +1172,7 @@
           "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
           "scope": "resource"
         },
-        "markdownWorkbench.askAgent.target": {
+        "markdownWorkbench.copyLinkForAgent.target": {
           "type": "string",
           "enum": [
             "auto",
@@ -1218,7 +1192,7 @@
           ],
           "default": "auto",
           "scope": "window",
-          "markdownDescription": "Where **Ask Agent about Selection** sends the passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the passage to it."
+          "markdownDescription": "Which chat **Copy Link for Agent** opens after copying the link and passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when the editor's own chat is the only agent; pick one here to send the passage to it."
         },
         "markdownWorkbench.debug.logging": {
           "type": "boolean",

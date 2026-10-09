@@ -54,7 +54,7 @@ records it in `docs/PARITY.md`.
 | formatting | Bold, italics, strikethrough, highlight, code, comment, link, headings, lists, quote, line swaps | Only Mod+B, Mod+I, Mod+K are bound until the owner checks Obsidian's hotkeys |
 | vim | Vim mode with `:w`, `:q`, `:u`, `:red` mapped to VS Code | Off by default |
 | pasteHtml | Rich paste as Markdown | Images are not downloaded |
-| copyForAgent | Copies `@path#lines` references for coding agents | Not an Obsidian feature |
+| copyLinkForAgent | **Copy Link for Agent** copies `@path#lines` and the quoted passage, opening a chat only when the editor's own chat is the only agent or a target is set | Not an Obsidian feature. The separate Copy for Agent command was removed (plain Ctrl+C copies text). No public API |
 | markers | Badges and actions that other extensions place on source ranges | Plain text only; at most 1,000 per plugin per editor |
 
 ## Workbench

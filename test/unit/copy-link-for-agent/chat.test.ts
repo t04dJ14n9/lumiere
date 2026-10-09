@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { agentPayload } from "../../../src/plugins/copyForAgent/reference";
+import { agentPayload } from "../../../src/plugins/copyLinkForAgent/reference";
 import {
   openAgentChat,
   type AgentEnvironment,
-} from "../../../src/plugins/copyForAgent/chat";
+} from "../../../src/plugins/copyLinkForAgent/chat";
 
 test("the agent payload links the line range and quotes the exact passage", () => {
   assert.equal(
@@ -125,7 +125,7 @@ test("auto never guesses between agents: with Claude Code or Codex installed it 
   }
 });
 
-test("askAgent.target = claudeCode gives Claude Code the passage as its prompt", async () => {
+test("copyLinkForAgent.target = claudeCode gives Claude Code the passage as its prompt", async () => {
   const commands = ["workbench.action.chat.open", CLAUDE, ...CODEX];
   const h = host(commands);
   assert.equal(
@@ -143,7 +143,7 @@ test("askAgent.target = claudeCode gives Claude Code the passage as its prompt",
   assert.deepEqual(h.copied, []);
 });
 
-test("askAgent.target = codex attaches the passage as a file, and copies it", async () => {
+test("copyLinkForAgent.target = codex attaches the passage as a file, and copies it", async () => {
   const commands = ["workbench.action.chat.open", CLAUDE, ...CODEX];
   const h = host(commands);
   const written: string[] = [];
@@ -228,7 +228,7 @@ test("with no agent but VS Code's empty chat, the passage is only copied", async
 
 test("scratch file names keep the note name and line range", async () => {
   const { scratchName } = await import(
-    "../../../src/plugins/copyForAgent/agent"
+    "../../../src/plugins/copyLinkForAgent/agent"
   );
   assert.equal(
     scratchName("@notes/Transformer.md#5-6"),
@@ -239,7 +239,7 @@ test("scratch file names keep the note name and line range", async () => {
 
 test("the Codex attachment names the note's file, since it lives outside the workspace", async () => {
   const { scratchText } = await import(
-    "../../../src/plugins/copyForAgent/agent"
+    "../../../src/plugins/copyLinkForAgent/agent"
   );
   assert.equal(
     scratchText("@notes/a.md#5-6\n\n> x", {

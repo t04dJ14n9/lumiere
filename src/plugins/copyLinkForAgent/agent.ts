@@ -1,4 +1,3 @@
-import type { Agent, AgentReference } from "./api";
 import type {
   Editors,
   Selections,
@@ -9,7 +8,15 @@ import type { Workbench } from "../../shared/runtime";
 import { RpcError, type Cancellation } from "../../shared/rpc/lifecycle";
 import { agentPayload, agentReferenceText } from "./reference";
 import { openAgentChat } from "./chat";
-export class AgentReferences implements Agent {
+/** A saved note's line reference: `@notes/a.md#12-18` (LLM Wiki wording). */
+export interface AgentReference {
+  readonly text: string;
+  readonly uri: string;
+  readonly startLine: number;
+  readonly endLine: number;
+}
+/** Copy Link for Agent: the reference and quoted passage, to the agent chat. */
+export class CopyLinkForAgent {
   private live = true;
   dispose(): void {
     this.live = false;
@@ -44,36 +51,29 @@ export class AgentReferences implements Agent {
       endLine: selection.endLine,
     });
   }
-  async copy(
-    id: string,
-    options: {
-      interactive?: boolean;
-      token?: Cancellation;
-      ask?: boolean;
-    } = {},
-  ): Promise<boolean> {
+  /**
+   * Copy the editor's selection with its link, opening a chat only when the
+   * editor's own chat is the only agent or a target is forced. An unsaved
+   * note asks first: save so the link matches the file, copy the text only,
+   * or cancel.
+   */
+  async copy(id: string, token?: Cancellation): Promise<boolean> {
     const panel = this.options.editors.all().find((item) => item.id === id);
     if (!panel) {
       throw new RpcError("EditorNotFound", "Editor not found");
     }
     this.assertEnabled(panel);
-    let selection = await this.options.selections.capture(id, options.token);
+    let selection = await this.options.selections.capture(id, token);
     if (!selection) {
       return false;
     }
-    this.assertActive(panel, options.token);
+    this.assertActive(panel, token);
     if (panel.document.isDirty || panel.document.isUntitled) {
-      if (!options.interactive) {
-        throw new RpcError(
-          "DocumentDirty",
-          "Save the note before copying for agent",
-        );
-      }
       const choice = await this.options.workbench.views?.ask(
         "This note has unsaved changes. Save it so the reference matches the file?",
         ["Save and Copy", "Copy Text Only", "Cancel"],
       );
-      this.assertActive(panel, options.token);
+      this.assertActive(panel, token);
       if (choice === "Copy Text Only") {
         return this.copyText(selection);
       }
@@ -81,22 +81,20 @@ export class AgentReferences implements Agent {
         return false;
       }
       await this.save(panel);
-      selection = await this.options.selections.capture(id, options.token);
+      selection = await this.options.selections.capture(id, token);
       if (!selection) {
         return false;
       }
     }
-    this.assertActive(panel, options.token);
+    this.assertActive(panel, token);
     const reference = this.reference(selection);
-    const payload = agentPayload(reference.text, selection.text);
-    if (options.ask) {
-      await this.ask(payload, reference);
-      return true;
-    }
-    await this.options.workbench.clipboard.write(payload);
+    await this.send(agentPayload(reference.text, selection.text), reference);
     return true;
   }
-  private async ask(payload: string, reference: AgentReference): Promise<void> {
+  private async send(
+    payload: string,
+    reference: AgentReference,
+  ): Promise<void> {
     const { workbench } = this.options;
     const target = await openAgentChat(
       (command, ...args) => workbench.execute(command, ...args),
@@ -114,16 +112,16 @@ export class AgentReferences implements Agent {
       },
     );
     if (target === "chatWithClipboard") {
-      workbench.inform?.("The passage is copied: paste it into the chat.");
+      workbench.inform?.("Link and passage copied: paste them into the chat.");
     }
     if (target === "codex") {
       workbench.inform?.(
-        "The passage is attached in Codex (and copied): type your question.",
+        "Link and passage copied and attached in Codex: type your question.",
       );
     }
     if (target === "clipboard") {
       workbench.inform?.(
-        "The passage is copied: paste it into your agent's chat and ask your question.",
+        "Link and passage copied: paste them into your agent's chat.",
       );
     }
   }
@@ -146,15 +144,15 @@ export class AgentReferences implements Agent {
     if (
       !this.live ||
       config.preset !== "obsidian" ||
-      config.features?.copyForAgent?.enabled === false
+      config.features?.copyLinkForAgent?.enabled === false
     ) {
-      throw new RpcError("PluginDisabled", "Copy for Agent is disabled");
+      throw new RpcError("PluginDisabled", "Copy Link for Agent is disabled");
     }
   }
   private assertActive(panel: EditorPanel, token?: Cancellation): void {
     this.assertEnabled(panel);
     if (token?.cancelled || !this.options.editors.all().includes(panel)) {
-      throw new RpcError("Cancelled", "Copy cancelled");
+      throw new RpcError("Cancelled", "Copy Link for Agent cancelled");
     }
   }
 }

@@ -26,7 +26,7 @@ test("external plugins are real isolated fibers with owned markers, actions, com
     ...definition,
     inject: {
       required: ["editors", "markers", "commands", "codeBlocks"],
-      optional: ["vault", "agent"],
+      optional: ["vault"],
     },
     apply(ctx) {
       retained = ctx;

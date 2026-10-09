@@ -51,8 +51,7 @@ The returned object and everything it returns are frozen.
 - **Source offsets** are UTF-16 code unit offsets into the text VS Code holds
   for the note, **counting CR characters** in CRLF files: the same offsets as
   `TextDocument.offsetAt`. They always refer to one document version.
-- **Lines** are 1-based in the API (`SourceTarget`, `SelectionSnapshot`,
-  `AgentReference`).
+- **Lines** are 1-based in the API (`SourceTarget`, `SelectionSnapshot`).
 - **Metadata** (`getMetadata`) uses the vault index's coordinates: offsets in
   LF-normalized text and 0-based lines and columns, as Obsidian's
   `CachedMetadata` does.
@@ -77,10 +76,9 @@ has two editors with two IDs and the same `documentId`.
 | Member | Behaviour |
 | --- | --- |
 | `getSelection(editorId, { token? })` | Waits until the editor's pending edits reach the document, then returns its main selection as a frozen, host-held `SelectionSnapshot` (`from`, `to`, `startLine`, `endLine`, `text`, `version`, `isDirty`, `sourceSha256`), or `undefined` for an empty selection. |
-| `createAgentReference(selection)` | The LLM Wiki-compatible reference, `@notes/a.md#12-18`. Accepts only the object `getSelection` returned: a copy is `InvalidArgument`, and the original is `StaleSelection` once the document has changed. `DocumentDirty` for unsaved notes, because the line numbers must match the file on disk. |
-| `copyForAgent(editorId)` | Copy for Agent without prompts. `DocumentDirty` for unsaved notes; `PluginDisabled` when the Copy for Agent plugin is off. |
 
-A selection ending at column 0 excludes that line, as Copy for Agent does.
+A selection ending at column 0 excludes that line, as Copy Link for Agent does.
+There is no agent API: Copy Link for Agent is an editor command only.
 
 ## Vault
 
@@ -167,7 +165,6 @@ Rules:
 | `editors` | `getEditors`, `getActiveEditor`, `open`, `reveal`, `getSelection`, `registerTitleAction`, `registerSelectionAction` |
 | `vault` | `resolveLink`, `getMetadata`, `getBacklinks`, `onDidResolveLinks` |
 | `markers` | `set`, `clear`, `registerAction` |
-| `agent` | `createAgentReference`, `copyForAgent` |
 | `commands` | `register(id, run)`: a VS Code command whose ID starts with the owner extension's ID (`acme.badges.refresh`). Declare it in your own `contributes.commands` to show it in the palette. |
 | `codeBlocks` | `register(processor)` |
 | `logger` | `debug`, `warn`, `error`, written to the **Markdown Workbench** output channel under the plugin's ID |
