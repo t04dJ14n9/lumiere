@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel/schema";
+import { Schema } from "../schema";
 /**
  * One message between the extension host and a webview. `batch` carries
  * coalesced notifications (see `Endpoint.notify`): its `version` grows by

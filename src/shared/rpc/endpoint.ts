@@ -1,5 +1,5 @@
 import type { Protocol } from "../../kernel/protocol";
-import type { Infer, Schema } from "../../kernel/schema";
+import type { Infer, Schema } from "../schema";
 import type { Disposer } from "../../kernel/types";
 import type { Logger } from "../../kernel/logger";
 import { silentLogger } from "../../kernel/logger";
