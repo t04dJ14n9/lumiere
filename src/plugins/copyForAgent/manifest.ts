@@ -10,6 +10,12 @@ export default defineManifest({
   contributes: {
     menus: [
       {
+        command: "askAgentAboutSelection",
+        location: "webview/context",
+        when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+        group: "agent",
+      },
+      {
         command: "copyForAgent",
         location: "webview/context",
         when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
@@ -23,6 +29,12 @@ export default defineManifest({
       },
     ],
     commands: [
+      {
+        id: "askAgentAboutSelection",
+        title: "Ask Agent about Selection",
+        icon: "$(comment-discussion)",
+        editorCommand: "askAgentAboutSelection",
+      },
       {
         id: "copyForAgent",
         title: "Copy for Agent",

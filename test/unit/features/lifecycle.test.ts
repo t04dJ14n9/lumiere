@@ -75,7 +75,7 @@ for (const manifest of features) {
     if (manifest.id === "copyForAgent") {
       assert.deepEqual(
         activeMenu.map((item) => item.label),
-        ["Copy for Agent"],
+        ["Ask Agent about Selection", "Copy for Agent"],
       );
     }
     if (

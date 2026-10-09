@@ -75,6 +75,12 @@
         "icon": "$(go-to-file)"
       },
       {
+        "command": "markdownWorkbench.askAgentAboutSelection",
+        "title": "Ask Agent about Selection",
+        "category": "Markdown Workbench",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "markdownWorkbench.copyForAgent",
         "title": "Copy for Agent",
         "category": "Markdown Workbench",
@@ -539,6 +545,10 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
+          "command": "markdownWorkbench.askAgentAboutSelection",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
+        },
+        {
           "command": "markdownWorkbench.copyForAgent",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
         },
@@ -769,6 +779,11 @@
         }
       ],
       "webview/context": [
+        {
+          "command": "markdownWorkbench.askAgentAboutSelection",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "group": "agent"
+        },
         {
           "command": "markdownWorkbench.copyForAgent",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",

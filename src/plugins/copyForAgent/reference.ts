@@ -40,3 +40,14 @@ export function workspaceRelativePath(
   }
   return decodeURIComponent(source.pathname.slice(prefix.length));
 }
+
+/**
+ * What Copy for Agent puts on the clipboard: the line reference, so the agent
+ * can open the note at that range, then the selected passage quoted, so it
+ * reads the exact words without opening anything.
+ */
+export function agentPayload(reference: string, text: string): string {
+  const lines = text.replace(/\r\n?/g, "\n").replace(/\n+$/, "").split("\n");
+  const quoted = lines.map((line) => (line ? `> ${line}` : ">")).join("\n");
+  return `${reference}\n\n${quoted}`;
+}

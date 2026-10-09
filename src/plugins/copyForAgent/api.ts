@@ -10,7 +10,7 @@ export interface Agent {
   reference(selection: SourceSelection): AgentReference;
   copy(
     editorId: string,
-    options?: { interactive?: boolean; token?: Cancellation },
+    options?: { interactive?: boolean; token?: Cancellation; ask?: boolean },
   ): Promise<boolean>;
 }
 declare module "../../kernel/types" {

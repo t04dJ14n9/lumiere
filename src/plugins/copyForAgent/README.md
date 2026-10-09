@@ -1,7 +1,9 @@
 # Copy for Agent
 
 Copies an LLM Wiki-compatible `@path#start-end` reference for selected saved
-Markdown, or offers to copy just the text. Obsidian has no built-in equivalent.
+Markdown followed by the selected passage quoted with `> `, so an agent both
+reads the exact words and can open the note at that range. Ask Agent about
+Selection hands the same payload to a chat. Obsidian has no built-in equivalent.
 
 ## How it works
 
@@ -10,7 +12,11 @@ Core selection snapshots retain host identity and convert normalized wire offset
 to original source offsets. Dirty notes offer Save and Copy, Copy Text Only or
 Cancel; saving recaptures the selection. The noninteractive service rejects dirty
 notes. References use a workspace-relative path for one local workspace and a
-full URI otherwise. Nothing is sent to an agent or chat.
+full URI otherwise. Copy for Agent sends nothing to a chat. Ask Agent about
+Selection (`chat.ts`) opens Cursor's agent chat with the payload on the
+clipboard (Cursor offers no prefill), else VS Code's chat with the payload
+prefilled and the question left to type, else only copies; each case ends in a
+notice saying where the passage went.
 
 ## Files
 
@@ -18,6 +24,7 @@ full URI otherwise. Nothing is sent to an agent or chat.
 - `api.ts`: agent service and immutable reference shape.
 - `protocol.ts`: validated interactive copy request.
 - `reference.ts`: path policy and LLM Wiki reference formatting.
+- `chat.ts`: picks the agent chat for Ask Agent about Selection.
 - `agent.ts`: snapshot validation, dirty policy and clipboard write.
 - `host.ts`: root service and resource-enabled panel handler lifetimes.
 - `webview.ts`: command, contextual-widget menu contribution and cell-aware shortcut.
@@ -28,7 +35,8 @@ Host provides `agent`, injecting `editors`, `selections` and `workbench`; webvie
 injects `editor`, `commands`, `document`, `rpc` and `menu`. Host listens to editor
 open/close and configuration changes; saving awaits `document/willSave`. Webview
 contributes to `editor/selectionMenu`. `plugins.copyForAgent.enabled` defaults to
-true. Command: Copy for Agent; shortcut: Mod+Alt+C.
+true. Commands: Copy for Agent (Mod+Alt+C) and Ask Agent about Selection (no
+shortcut; selection menu and editor context menu).
 
 ## Limits and differences from Obsidian
 

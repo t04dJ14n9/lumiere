@@ -110,7 +110,7 @@ test("API copy refuses dirty notes; interactive choices copy text, cancel or sav
     f.state.to = 7;
   });
   assert.equal(await f.agent.copy("panel", { interactive: true }), true);
-  assert.equal(f.copied.pop(), "@Note.md#2");
+  assert.equal(f.copied.pop(), "@Note.md#2\n\n> two");
   assert.equal(f.state.dirty, false);
   await f.pair.dispose();
 });

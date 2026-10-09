@@ -65,7 +65,7 @@ test("API selection identity rejects clones, stale source and dirty agent copies
     code: "InvalidArgument",
   });
   await f.api.copyForAgent("panel");
-  assert.equal(f.copied.pop(), "@Note.md#1-2");
+  assert.equal(f.copied.pop(), "@Note.md#1-2\n\n> one\n> two");
   f.state.dirty = true;
   await assert.rejects(f.api.copyForAgent("panel"), { code: "DocumentDirty" });
   f.state.version++;

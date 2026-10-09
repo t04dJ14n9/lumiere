@@ -7,7 +7,8 @@ import type {
 } from "../editor/api";
 import type { Workbench } from "../../shared/runtime";
 import { RpcError, type Cancellation } from "../../shared/rpc/lifecycle";
-import { agentReferenceText } from "./reference";
+import { agentPayload, agentReferenceText } from "./reference";
+import { openAgentChat } from "./chat";
 export class AgentReferences implements Agent {
   private live = true;
   dispose(): void {
@@ -45,7 +46,11 @@ export class AgentReferences implements Agent {
   }
   async copy(
     id: string,
-    options: { interactive?: boolean; token?: Cancellation } = {},
+    options: {
+      interactive?: boolean;
+      token?: Cancellation;
+      ask?: boolean;
+    } = {},
   ): Promise<boolean> {
     const panel = this.options.editors.all().find((item) => item.id === id);
     if (!panel) {
@@ -82,10 +87,30 @@ export class AgentReferences implements Agent {
       }
     }
     this.assertActive(panel, options.token);
-    await this.options.workbench.clipboard.write(
+    const payload = agentPayload(
       this.reference(selection).text,
+      selection.text,
     );
+    if (options.ask) {
+      await this.ask(payload);
+      return true;
+    }
+    await this.options.workbench.clipboard.write(payload);
     return true;
+  }
+  private async ask(payload: string): Promise<void> {
+    const { workbench } = this.options;
+    const target = await openAgentChat(
+      (command, ...args) => workbench.execute(command, ...args),
+      (text) => workbench.clipboard.write(text),
+      payload,
+    );
+    if (target === "chatWithClipboard") {
+      workbench.inform?.("The passage is copied: paste it into the chat.");
+    }
+    if (target === "clipboard") {
+      workbench.inform?.("No agent chat found; the passage is copied.");
+    }
   }
   private async copyText(selection: SourceSelection): Promise<boolean> {
     this.options.selections.validate(selection);
