@@ -3,9 +3,15 @@ import type { Page, Frame } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { paths, readState } from "./state";
+/**
+ * The visible text box of the quick input. Cursor's widget holds a second,
+ * hidden input, so the plain selector would match two elements; the
+ * select-all checkbox is an input too.
+ */
+const QUICK_INPUT = ".quick-input-widget input:not([type='checkbox']):visible";
 async function command(page: Page, title: string) {
   await page.keyboard.press("ControlOrMeta+Shift+p");
-  const input = page.locator(".quick-input-widget input");
+  const input = page.locator(QUICK_INPUT);
   await input.fill(">" + title);
   const item = page
     .locator(".quick-input-list .monaco-list-row")
@@ -27,17 +33,13 @@ test("isolated installed editor types, saves and performs native document undo",
     await command(page, "View: Close All Editor Groups");
     console.log("Native: opening fixture");
     await page.keyboard.press("ControlOrMeta+p");
-    await page
-      .locator(".quick-input-widget input")
-      .fill(path.join(paths.workspace, "Note.md"));
+    await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, "Note.md"));
     await page.keyboard.press("Enter");
     await expect(
       page.locator(".tabs-container .tab").filter({ hasText: "Note.md" }),
     ).toBeVisible();
     await page.keyboard.press("ControlOrMeta+Shift+p");
-    await page
-      .locator(".quick-input-widget input")
-      .fill(">View: Reopen Editor With");
+    await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
     await page
       .locator(".quick-input-list .monaco-list-row")
       .filter({ hasText: "View: Reopen Editor With..." })
