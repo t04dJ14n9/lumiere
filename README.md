@@ -1,5 +1,7 @@
 # Markdown Workbench
 
+[![CI](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/workflows/ci.yml)
+
 Obsidian's editing experience for Markdown in VS Code and Cursor: Live
 Preview that reveals syntax at the caret, wikilinks resolved the way
 Obsidian resolves them, embeds, callouts, properties, tables, math,
@@ -83,6 +85,32 @@ describes the architecture, [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
 records each phase, and [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md)
 is the owner's acceptance plan. Obsidian is a behaviour reference only; no
 Obsidian code, CSS or assets are used.
+
+## CI and quality gates
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull
+request and on pushes to `main`. Each job, and how to run it locally:
+
+| Job | What it proves | Locally |
+| --- | --- | --- |
+| `check` | Prettier, lint (with the code-norm limits), typecheck, unit tests and generated contributions pass | `pnpm check` |
+| `browser` | The webview suite in Chromium; on failure, `test-results/` is uploaded | `pnpm test:browser` |
+| `vscode (VS Code stable)` | The packaged extension in the latest VS Code stable, under `xvfb-run` | `xvfb-run -a pnpm test:vscode` |
+| `package` | `pnpm package` builds the VSIX, leaves committed files unchanged, and the VSIX is under 10 MB with no tests, sources, source maps or secret-shaped strings; the VSIX is uploaded as the `vsix` artifact | `pnpm package && bash .github/scripts/check-vsix.sh *.vsix 10` |
+| `secret-scan` | gitleaks finds no secrets in the git history | `gitleaks git --redact .` |
+| `audit (advisory)` | `pnpm audit --prod`; a warning, never a failure | `pnpm audit --prod` |
+
+Cursor cannot run in CI, so test it by hand with
+`VSCODE_EXECUTABLE=<cursor executable> xvfb-run -a pnpm test:vscode`. CI never
+uses API keys or other secrets. Dependabot proposes grouped npm and
+GitHub Actions updates weekly.
+
+Pushing a tag `v<version>` that matches `package.json` runs
+[`release.yml`](.github/workflows/release.yml): `pnpm check`, `pnpm package`,
+and a GitHub Release with the VSIX attached. Publishing stays manual: with a
+Marketplace PAT run `pnpm exec vsce publish --packagePath <file>.vsix`, and
+for Open VSX `pnpm dlx ovsx publish <file>.vsix -p <token>`. Do not store
+these tokens in the repository.
 
 ## License
 

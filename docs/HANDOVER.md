@@ -173,3 +173,7 @@ completion and Phase 8 records) first.
 - Native tests use isolated `/tmp` profiles, never the owner's VS Code or
   Cursor profiles.
 - Leave "verify" key bindings unbound.
+- CI (`.github/workflows/ci.yml`) runs `pnpm check`, the browser suite, the
+  native suite in VS Code stable under xvfb, packaging with VSIX checks, a
+  gitleaks scan and an advisory `pnpm audit`; see README, "CI and quality
+  gates". CI has no secrets: the DeepSeek round trip stays local.
