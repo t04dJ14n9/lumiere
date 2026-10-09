@@ -7,4 +7,5 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
+  capabilities: ["editing", "vaultIndex"],
 });

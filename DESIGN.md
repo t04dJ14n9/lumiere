@@ -452,12 +452,23 @@ export default defineManifest({
   kind: 'feature',            // 'core' plugins cannot be turned off
   defaultEnabled: true,
   surfaces: ['webview'],
+  capabilities: ['rendering', 'editing', 'commands'],
   config,                     // Schema (§5.6), or omitted
   contributes: {              // merged into package.json by the generator (§6.4)
     commands: [{ id: 'insertTable', title: 'Insert Table', editorCommand: 'editor:insert-table' }],
   },
 });
 ```
+
+`capabilities` says what the plugin does in host-neutral terms (registers
+the editor, renders, edits, contributes commands or views, reads the vault
+index, writes other files, uses the network, hands selections to agents);
+the `Capability` type in `src/shared/manifest.ts` lists them. Precedence is
+`src/plugins/plugin-order.ts` and dependencies are derived from each
+plugin's `inject` (`src/plugins/plugin-graph.ts`); the manifest declares
+neither. A unit test keeps `commands`, `keybindings` and `views` in step
+with `contributes`, allows `editorProvider` only on `editor`, and requires
+`network` plugins to check workspace trust.
 
 ### 6.3 Enabling, disabling and presets
 

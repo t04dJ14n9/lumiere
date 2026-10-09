@@ -6,6 +6,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["webview"],
+  capabilities: ["editing", "commands"],
   contributes: {
     menus: [
       "toggleBold",

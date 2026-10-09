@@ -7,6 +7,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
+  capabilities: ["views", "navigation"],
   contributes: {
     views: [
       {

@@ -19,5 +19,6 @@ export default defineManifest({
   kind: "core",
   defaultEnabled: true,
   surfaces: ["host"],
+  capabilities: ["vaultIndex"],
   config,
 } as const);

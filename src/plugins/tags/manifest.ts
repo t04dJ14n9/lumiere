@@ -20,6 +20,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
+  capabilities: ["syntax", "rendering", "vaultIndex", "views"],
   config,
   contributes: {
     views: [{ id: "tags", name: "Tags", scope: "workbench" }],

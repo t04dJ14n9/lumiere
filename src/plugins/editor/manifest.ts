@@ -35,6 +35,7 @@ export default defineManifest({
   nativeConfigKeys: fontNativeKeys,
   defaultEnabled: true,
   surfaces: ["host", "webview"],
+  capabilities: ["editorProvider", "commands"],
   contributes: {
     commands: [
       { id: "titleActions", title: "Note Actions", icon: "$(zap)" },

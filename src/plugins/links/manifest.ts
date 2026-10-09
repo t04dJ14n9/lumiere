@@ -24,6 +24,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
+  capabilities: ["rendering", "vaultIndex", "navigation", "commands"],
   config,
   configKeys: {
     newNoteFolder: "files.newNoteFolder",

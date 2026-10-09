@@ -7,6 +7,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: false,
   surfaces: ["host"],
+  capabilities: ["vaultIndex", "views", "navigation"],
   contributes: {
     views: [
       { id: "outgoingLinks", name: "Outgoing Links", scope: "workbench" },

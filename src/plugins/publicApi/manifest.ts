@@ -6,6 +6,7 @@ export default defineManifest({
   kind: "core",
   defaultEnabled: true,
   surfaces: ["host"],
+  capabilities: ["publicApi", "commands"],
   contributes: {
     commands: [
       { id: "managePlugins", title: "Manage Plugins", scope: "workbench" },

@@ -7,6 +7,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
+  capabilities: ["vaultIndex", "navigation", "commands"],
   contributes: {
     commands: [
       { id: "quickSwitcher", title: "Quick Switcher", scope: "workbench" },

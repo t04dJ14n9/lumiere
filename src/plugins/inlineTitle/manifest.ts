@@ -7,4 +7,5 @@ export default defineManifest({
   // Off by default (owner decision): line 1 starts at the top, as in VS Code.
   defaultEnabled: false,
   surfaces: ["host", "webview"],
+  capabilities: ["rendering", "fileWrites"],
 });
