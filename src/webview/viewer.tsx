@@ -54,7 +54,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
       <CopyToClipboard />
       <Toolbar navigation={navigation} onSearch={openSearch} />
       <div className="document">
-        {searching && <SearchBar focusRequest={findRequest} onClose={() => setSearching(false)} />}
+        {searching && <SearchBar navigation={navigation} focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">
           <ZoomGestureWrapper documentId={DOCUMENT_ID}>
             <Scroller

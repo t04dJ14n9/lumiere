@@ -229,15 +229,31 @@ test('search counts matches across pages and steps through them', async ({ page 
   await expect(page.locator('.search-count')).toHaveText('1 of 12');
   await input.press('Enter');
   await expect(page.locator('.search-count')).toHaveText('2 of 12');
+  // The viewer follows the match.
+  await expect(page.getByRole('textbox', { name: 'Page' })).toHaveValue('2');
+  await input.press('Shift+Enter');
+  await input.press('Shift+Enter');
+  await expect(page.locator('.search-count')).toHaveText('12 of 12');
+  await expect(page.getByRole('textbox', { name: 'Page' })).toHaveValue('12');
 
   // Find again while the bar is open focuses it and selects the text.
-  await page.locator('.page[data-page-index="0"]').click({ position: { x: 10, y: 10 } });
+  await page.locator('.page[data-page-index="11"]').click({ position: { x: 10, y: 10 } });
   await expect(input).not.toBeFocused();
   await page.keyboard.press('ControlOrMeta+f');
   await expect(input).toBeFocused();
   expect(await input.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd])).toEqual([0, 11]);
   await input.press('Escape');
   await expect(input).toHaveCount(0);
+});
+
+test('a new search starts at the current page', async ({ page }) => {
+  await open(page);
+  await page.getByRole('textbox', { name: 'Page' }).fill('7');
+  await page.getByRole('textbox', { name: 'Page' }).press('Enter');
+  await page.getByRole('button', { name: 'Find in PDF' }).click();
+  await page.getByRole('searchbox', { name: 'Find in PDF' }).fill('Second line');
+  await expect(page.locator('.search-count')).toHaveText('7 of 12');
+  await expect(page.getByRole('textbox', { name: 'Page' })).toHaveValue('7');
 });
 
 test('zoom buttons and the zoom field change the zoom', async ({ page }) => {

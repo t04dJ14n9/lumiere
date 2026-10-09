@@ -62,11 +62,23 @@ export function useNavigation(documentId: string) {
     }
   }, [scroll, show]);
 
+  /** Scroll a box (a search match) to the middle of the viewer, without flashing it. */
+  const reveal = useCallback((page: number, [left, top, right, bottom]: PageRect): void => {
+    scroll?.scrollToPage({
+      pageNumber: page,
+      behavior: 'instant',
+      pageCoordinates: { x: (left + right) / 2, y: (top + bottom) / 2 },
+      alignX: 50,
+      alignY: 50,
+    });
+  }, [scroll]);
+
   return {
     currentPage: state.currentPage,
     pageCount: state.totalPages,
     highlight,
     show,
+    reveal,
     goToPage: (page: number) => show({ page: Math.min(Math.max(1, page), state.totalPages) }),
     step: (delta: 1 | -1) => show({ page: Math.min(Math.max(1, state.currentPage + delta), state.totalPages) }),
   };
