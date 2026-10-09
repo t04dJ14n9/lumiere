@@ -170,7 +170,7 @@ export class Context {
     return this.hold(kind, undo);
   }
   private hold(kind: string, undo: () => unknown, fiber?: Fiber<unknown>) {
-    const entry: Held = { release: async () => {}, fiber };
+    const entry: Held = { release: async () => {}, ...(fiber && { fiber }) };
     entry.release = async () => {
       // Released once, early or at dispose; either way it leaves the list.
       const index = this.held.indexOf(entry);
@@ -192,8 +192,8 @@ export class Context {
     return this.effect(
       () =>
         this.runtime.events.on(name, listener, {
+          ...options,
           logger: this.logger,
-          prepend: options?.prepend,
           owner: this.owner,
         }),
       "listener",

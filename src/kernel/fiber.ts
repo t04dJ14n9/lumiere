@@ -106,7 +106,7 @@ export class Fiber<C = unknown> {
           });
           ctx.logger.error("Plugin failed", error);
           await ctx.dispose();
-          this.context = undefined;
+          delete this.context;
         }
       })(),
     );
@@ -118,7 +118,7 @@ export class Fiber<C = unknown> {
     // Invalidate outstanding apply work before awaiting its effect cleanup.
     ++this.generation;
     const ctx = this.context;
-    this.context = undefined;
+    delete this.context;
     if (this.state !== "disposed") {
       this.state = "pending";
     }
@@ -127,7 +127,7 @@ export class Fiber<C = unknown> {
       .then(() => ctx?.dispose())
       .then(() => {
         ctx?.logger.debug("Stopped", { ms: Date.now() - started });
-        this.stopping = undefined;
+        delete this.stopping;
       });
     return this.stopping;
   }

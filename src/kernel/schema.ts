@@ -3,7 +3,11 @@ type Shape = Record<string, Schema<unknown>>;
 type ObjectValue<S extends Shape> = {
   [K in keyof S as undefined extends Infer<S[K]> ? never : K]: Infer<S[K]>;
 } & {
-  [K in keyof S as undefined extends Infer<S[K]> ? K : never]?: Infer<S[K]>;
+  // Parsing drops undefined, so an optional key is absent, never undefined.
+  [K in keyof S as undefined extends Infer<S[K]> ? K : never]?: Exclude<
+    Infer<S[K]>,
+    undefined
+  >;
 };
 export class ValidationError extends Error {
   constructor(

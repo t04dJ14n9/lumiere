@@ -34,7 +34,7 @@ export function asPlugin<C>(
   return typeof definition === "function"
     ? {
         name: definition.name,
-        inject: definition.inject,
+        ...(definition.inject && { inject: definition.inject }),
         apply: (ctx, config) => new definition(ctx, config).activate(),
       }
     : definition;
