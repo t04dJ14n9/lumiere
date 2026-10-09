@@ -18,19 +18,22 @@ off with `"markdownWorkbench.plugins.external": { "mwsample.tickets": false }`.
 
 ## Install into an isolated profile
 
+Build it from the repository root, then package it:
+
 ```sh
+pnpm sample
 cd test/fixtures/sample-plugin
-npx @vscode/vsce package --allow-missing-repository --skip-license
-code --user-data-dir /tmp/mdwb-manual/user-data \
+npx @vscode/vsce package --no-dependencies --allow-missing-repository --skip-license
+code --user-data-dir /tmp/mdwb-manual/user \
   --extensions-dir /tmp/mdwb-manual/extensions \
   --install-extension tickets-0.0.1.vsix
 ```
 
 Install Markdown Workbench's own VSIX into the same profile first (see
-docs/MANUAL_TEST_PLAN.md). Or run it without packaging:
+docs/MANUAL_TEST_PLAN.md). Or, after `pnpm sample`, run it without packaging:
 
 ```sh
-code --user-data-dir /tmp/mdwb-manual/user-data \
+code --user-data-dir /tmp/mdwb-manual/user \
   --extensions-dir /tmp/mdwb-manual/extensions \
   --extensionDevelopmentPath "$PWD" ../vault
 ```
@@ -38,6 +41,8 @@ code --user-data-dir /tmp/mdwb-manual/user-data \
 ## Files
 
 - `package.json`: the extension manifest; it depends on Markdown Workbench.
-- `extension.cjs`: activation; gets the API and registers the plugin.
-- `plugin.cjs`: the plugin definition, with `vscode` passed in so unit tests
-  can run it (`test/unit/api/sample-plugin.test.ts`).
+- `src/extension.ts`: activation; gets the API and registers the plugin.
+- `src/plugin.ts`: the plugin definition, with `vscode` passed in so unit
+  tests can run it (`test/unit/api/sample-plugin.test.ts`).
+- `dist/extension.js`: the bundle `pnpm sample` builds
+  (`scripts/build-sample.mjs`); not committed.

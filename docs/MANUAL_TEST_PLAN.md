@@ -1,843 +1,509 @@
 # Manual acceptance plan
 
-The owner runs these scenarios with computer use. Results are **not run**;
-passing automated smoke checks is not evidence of manual acceptance or Obsidian
-parity. Use a disposable copy of `test/fixtures/vault`, never an owner's vault.
-Never install this development extension into an existing VS Code/Cursor profile.
-The native smoke harness creates its own `/tmp/markdown-workbench-e2e-*` profile.
+The owner runs these scenarios, by hand or with computer use, against the
+packaged VSIX. Automated tests do not count as manual acceptance or as
+Obsidian parity; record parity in `docs/PARITY.md`. The plan is ordered by
+plugin. Every command and setting also appears in the inventory at the end.
 
-## document and editor (Phase 3)
+## Setup
 
-1. **Typing, saving and native history.** Setup: open `Core.md` with Markdown
-   Workbench. Steps: type ASCII, CJK with IME, emoji and multiple lines; save;
-   undo and redo; use Save and Close then reopen. Expected: text and disk agree,
-   IME characters are not duplicated, save finishes pending edits, undo/redo
-   follows native history and focus returns to the editor.
-2. **Two panels and external changes.** Setup: split `Core.md` into two
-   Workbench panels and open it as text in another group. Steps: place distinct
-   selections and scroll positions in both panels, edit in each, undo from
-   the other, then edit in the text editor. Expected: all three share one
-   document; selections and scroll remain independent; edits synchronize
-   without replacing newer text. Repeat with a filesystem edit of a saved note.
-3. **CRLF.** Setup: save a disposable copy of `Core.md` as CRLF using the text
-   editor. Steps: edit across lines in Workbench, save, undo, and inspect EOL
-   in the text editor. Expected: file stays CRLF; source selection offsets,
-   emoji and edits do not drift.
-4. **Clipboard and focus.** Setup: `Core.md`. Steps: keyboard copy/cut/paste a
-   selection containing Markdown; undo a cut/paste; copy to a text editor.
-   Expected: exact source text is copied; native history owns the edit.
-   Host clipboard read/write is available to plugin menus through the editor
-   service. Structured property clipboard and HTML conversion are Phase 4.
-5. **Recovery and view transfer.** Setup: two panels of `Core.md` with distinct
-   selections/modes/scroll. Steps: reload the window, reopen the note, and
-   restore a captured view after a rename (inlineTitle scenario in Phase 4).
-   Expected: unsaved text follows VS Code recovery; each view restores its own
-   selection, mode, disclosure and scroll, without contaminating the other.
-   During transfer edit the document: stale captures must be rejected.
+### Build and install into an isolated profile
 
-## livePreview, dialect and render (Phase 3)
+Never install the extension into an existing VS Code or Cursor profile, and
+never open a real vault.
 
-1. **Reveal and modes.** Setup: `Core.md`. Steps: move the caret into and out
-   of each emphasis, heading, list and block; select across syntax; switch
-   Live Preview/Source in one of two panels; use the minimal preset in a
-   disposable workspace. Expected: syntax reveals at the selection (including
-   the last character of a block); Source/minimal show source without widgets;
-   the other panel's mode stays independent. IME and drag selections remain
-   stable while crossing syntax.
-2. **Block rendering and motion.** Setup: `Core.md`. Steps: click Edit on the
-   code/HTML block, edit it, Escape out, move ArrowUp/Down over the rendered
-   block. Repeat with a block at EOF. Expected: sanitized block rendering
-   returns; arrows cross the block as one unit; Escape at EOF goes before it.
-   A block occupying the entire file has no outside caret position and remains
-   source until navigation or new text creates one.
-3. **Renderer lifetime.** Setup: rendered blocks in `Core.md`. Steps: switch
-   Source/Live Preview repeatedly, close/reopen and edit blocks quickly.
-   Expected: no duplicate widgets, stale asynchronous output or controls from
-   disposed render passes. Feature-specific rendering belongs to Phase 4.
-4. **Sanitization.** Setup: copy `Core.md` and add script, iframe, event-handler
-   HTML and remote media. Steps: open in an untrusted disposable workspace.
-   Expected: scripts/handlers do not execute and remote content does not load;
-   editor typing and saving still work.
+1. Build the VSIX: `pnpm install && pnpm package`. It writes
+   `vscode-markdown-workbench-<version>.vsix` in the repository root.
+2. Copy the fixture vault: `cp -R test/fixtures/vault /tmp/mdwb-vault`.
+3. Install into a throwaway profile and open the vault:
 
-## commands and resources (Phase 3)
+   ```sh
+   code --user-data-dir /tmp/mdwb-manual/user \
+        --extensions-dir /tmp/mdwb-manual/extensions \
+        --install-extension vscode-markdown-workbench-0.1.0.vsix
+   code --user-data-dir /tmp/mdwb-manual/user \
+        --extensions-dir /tmp/mdwb-manual/extensions /tmp/mdwb-vault
+   ```
 
-1. **Core commands.** Setup: `Core.md`. Steps: run Save, Undo, Redo, Save and
-   Close, Close, Open as Text, Toggle Live Preview/Source from the palette;
-   repeat save/undo/redo using their keys. Expected: commands act on the active
-   panel/document; pending edits flush before the host action.
-2. **Containment.** Setup: disposable vault with an inside file and a symlink
-   pointing outside it. Steps: request the files from a resource-using plugin
-   in this release. Expected: inside files resolve; traversal,
-   sibling-prefix and symlink escape requests fail. Remote virtual filesystem
-   symlinks also fail. Vault refresh/root discovery is Phase 5.
+   For Cursor use `cursor` with the same flags. Delete `/tmp/mdwb-manual`
+   and `/tmp/mdwb-vault` afterwards.
+4. Run **Markdown Workbench: Use Markdown Workbench for Markdown in This
+   Workspace** once, so `.md` files open in the workbench (see Editor below).
+5. Turn on `markdownWorkbench.debug.logging` while testing and keep the
+   **Markdown Workbench** output channel open; note any error lines in the
+   result.
 
-## Retired source scenario coverage
+Change settings at workspace scope (or folder scope in a multi-root
+workspace), so the profile's user settings stay clean, and reset each
+override after its scenario.
 
-Retired source scenarios remain discoverable individually in TEST_LEDGER.md.
-Their retirement changes the testing method, not the delivery requirements.
-The scenarios below provide setup/steps/results for folding, lineNumbers,
-indentGuides, spellcheck, autoPair, smartLists, vim, formatting, links,
-codeBlocks, math, diagrams, callouts, footnotes, tasks, embeds, pagePreview,
-properties, tables, inlineTitle, tags, suggest, search, pasteHtml, copyForAgent
-and markers. Include table row drag with scrolling before a single drop and
-split-view footnote undo (the source's two intermittent scenarios).
+### The fixture vault
 
-Unbound pending owner verification: strikethrough, highlight, inline code,
-comment (including Mod+/), and cycle list/checklist. No `verify` key is bound.
-The old fuzzers are retired: manually exercise repeated typing/deleting,
-selection replacement, commands and Vim sequences; no fuzz operation count is
-claimed by this plan.
+`Welcome.md` lists the notes. Each covers one area: `Core.md` (editing,
+folding, formatting commands), `Formatting.md` (inline syntax, headings,
+quotes, lists, comments), `Links.md`, `Embeds.md`, `Properties.md`,
+`Tables.md`, `Callouts.md`, `Math.md`, `Diagrams.md`, `Code.md`,
+`Footnotes.md`, `Tasks.md`, `Tags.md`, `Search.md`, and `Target.md` (the
+note most others point at). `notes/` and `archive/` each hold a
+`Duplicate.md`; `attachments/` holds an SVG, a WebM video and a PDF. The
+`.obsidian` folder marks the vault root.
 
-## Phase 4 subset: settings and editor features
+### For every plugin
 
-These features are implemented; the remainder of Phase 4 is still incomplete.
-Use a disposable workspace and its workspace settings, never the owner's
-profile. For each enabled feature below, turn
-`markdownWorkbench.plugins.<id>.enabled` off and on while `Core.md` stays open.
-Expected in every case: its behavior and commands disappear and return without
-losing document text, selection or undo. Repeat in two panels and a multi-root
-workspace with different folder settings. The default `obsidian` preset loads
-enabled features; `minimal` loads none. Switching the preset itself currently
-requires reopening the editor; do not use live preset switching as acceptance
-of runtime feature enablement.
+Unless the section says otherwise, also check:
+
+- **Off and on.** Turn `markdownWorkbench.plugins.<id>.enabled` off with
+  the note open: the plugin's rendering, commands, keys and views disappear;
+  text, selection, undo history and other plugins' state stay. Turn it on:
+  everything returns once, with no duplicates.
+- **Two panels.** Open the note in two editor groups: selections, scroll,
+  folds and disclosure states stay independent; edits appear in both.
+- **Source mode.** Toggle Live Preview/Source: Source shows plain Markdown
+  with no widgets.
+- **Undo.** Every edit the plugin makes is one step in VS Code's undo.
+- **Obsidian.** Where a step says "as in Obsidian", compare with Obsidian
+  on a copy of the same vault and record the result in `docs/PARITY.md`.
+
+The `minimal` preset (`markdownWorkbench.preset`) loads only the core
+plugins; switching the preset takes effect for newly opened editors.
+
+## Core plugins
+
+### document
+
+Owns the text, saving and history; VS Code's TextDocument is the authority.
+
+1. In `Core.md`, type ASCII, CJK with an IME, emoji and several lines; save;
+   undo and redo; run Save and Close, then reopen. Text and disk agree, IME
+   characters are not duplicated, save includes pending edits, and undo/redo
+   follow VS Code's history. Typing without pausing undoes as one step;
+   moving the caret starts a new one.
+2. Split `Core.md` into two workbench panels and open it as text in a third
+   group (**Open as Text**). Edit in each; undo from another. All three show
+   one document. Edit the file on disk while it is saved: the editors reload
+   it without losing newer text.
+3. Save a copy of `Core.md` with CRLF line endings (text editor status bar).
+   Edit across lines in the workbench, save and undo: the file stays CRLF and
+   selections do not drift.
+4. Reload the window with unsaved changes: VS Code's hot exit restores them.
+
+### editor
+
+The CodeMirror view in a webview panel, its commands and view state.
+
+1. Copy, cut and paste Markdown with the keyboard; paste into a text
+   editor: the exact source is copied.
+2. Give two panels different selections, scroll positions and modes; reload
+   the window: each panel restores its own state.
+3. Run **Use Markdown Workbench for Markdown in This Workspace**: the
+   workspace `settings.json` gets `workbench.editorAssociations` entries for
+   `*.md` and `*.markdown`, other associations stay, and running it again
+   changes nothing. A note opened from the Explorer now opens in the
+   workbench. **Open as Text** still opens the text editor.
+4. Run **Note Actions** and **Selection Actions** from the palette (with and
+   without a selection): a quick pick lists the registered actions.
+5. Change `markdownWorkbench.editor.readableLineLength`,
+   `markdownWorkbench.editor.rightToLeft`, `markdownWorkbench.editor.useTabs`
+   and `markdownWorkbench.editor.tabSize` with the note open: the editor
+   updates without reopening and keeps text, folds and selection.
+   `markdownWorkbench.editor.defaultMode` applies to newly opened panels.
+6. With `markdownWorkbench.debug.logging` on, the **Markdown Workbench**
+   output channel shows debug lines from the host and the webview; with it
+   off, only warnings and errors.
+
+### dialect, render and livePreview
+
+The Markdown syntax, the HTML renderer and Live Preview's reveal-at-caret.
+
+1. In `Formatting.md`, move the caret into and out of each emphasis,
+   heading, quote and list: syntax shows only where the selection touches.
+   The `# ` of a heading shows only on its line. The setext heading keeps its
+   `---` underline visible, faint. `%%comments%%` stay visible, faint (as in
+   Obsidian, which hides them only in Reading view). A nested quote draws a
+   second, indented bar.
+2. In `Core.md`, click Edit on the code and HTML blocks, edit, press Escape;
+   move with ArrowUp/Down over a rendered block: the block is crossed as one
+   unit. Repeat with a block at the end of the file.
+3. Switch Live Preview/Source repeatedly and edit quickly: no duplicate
+   widgets or stale output.
+4. Copy `Core.md` into an untrusted workspace (**Workspaces: Manage
+   Workspace Trust**) and add a `<script>`, an `onclick` attribute, an
+   `<iframe>` and a remote image. Nothing executes and no remote content
+   loads; typing and saving still work. Links with application schemes
+   (`obsidian://`, `zotero://`) stay links in rendered blocks.
+5. `markdownWorkbench.editor.strictLineBreaks` on: single newlines in
+   rendered blocks no longer break lines.
+
+### commands
+
+1. Run Save, Undo, Redo, Close, Save and Close, Open as Text and **Toggle
+   Live Preview/Source Mode** from the palette, then save/undo/redo with
+   their keys. Each acts on the active panel and flushes pending edits first.
+2. Change the active editor group while a command runs: the wrong panel is
+   never edited or closed.
+
+### resources and vault
+
+Contained file access and the vault index (Obsidian's metadata cache).
+
+1. In `Links.md`, follow `[[Duplicate]]`: it opens `archive/Duplicate.md`
+   (nearest folder, then path order), as in Obsidian. From
+   `notes/Project plan.md`, `[[Duplicate]]` opens `notes/Duplicate.md`.
+2. Rename `attachments/diagram.svg` outside VS Code: its embeds in
+   `Embeds.md` become unresolved within a second; rename it back.
+3. Add `"archive/"` to `markdownWorkbench.vault.excludedFiles`: links to it
+   still open, but the quick switcher and search no longer list it.
+4. Create `Sub/.obsidian/` and `Sub/Inner.md` containing `[[Target]]`: it is
+   unresolved there (a separate vault). Remove the marker and reload: it
+   resolves. `markdownWorkbench.vault.rootMarkers` changes which folders
+   mark a vault.
+5. Create a symlink in the vault pointing outside it and embed it: it is
+   refused. So are paths with `..` that leave the vault.
+6. Close and reopen the window: links resolve immediately (saved index),
+   before indexing finishes.
+
+### Plugin management
+
+1. Run **Manage Plugins**: Settings opens filtered to the plugin switches.
+2. Run **Show Plugin Status**: every plugin of the active editor is listed,
+   failed and waiting ones first, each with its state and kind; choosing
+   one opens its switch.
+3. With the sample plugin installed (see External plugins),
+   `markdownWorkbench.plugins.external` holds its switch; turning it off
+   stops it in every panel.
+
+## Feature plugins
+
+### properties
+
+`Properties.md` and two panels of it.
+
+1. The sheet shows text, number, checkbox, date, date-time, list, tags,
+   aliases and link values, as in Obsidian.
+2. **Add File Property** (palette or Mod+;) adds a row and focuses its
+   name; duplicate names are refused. Rename and delete rows; the body and
+   YAML comments survive.
+3. Edit each type; Escape cancels, Enter, blur and Mod+S commit. Invalid
+   number/date drafts block saving. One undo restores each change.
+4. Keep a text draft focused (also during IME composition) while the other
+   panel changes another row: the draft stays.
+5. Add, remove and edit list chips, including duplicate values, while the
+   other panel edits the list: the intended item changes.
+6. Select rows with Shift/Alt, copy, cut and paste into another note;
+   malformed structured data never enters the text.
+7. Sort from the heading menu; drag a row through scrolling and drop once;
+   Escape cancels a drag.
+8. Change a property's type from its menu and accept or decline the
+   conversion; the type persists across reloads and panels of the vault.
+9. `markdownWorkbench.properties.display`: `visible`, `hidden` (sheet
+   hidden), `source` (YAML shown). Arrow keys and Tab move between title,
+   rows and body.
+
+### inlineTitle
+
+1. The file name shows above the note in both modes, not as document text.
+2. Rename with Enter, Tab or blur; Escape or an empty title restores it.
+   Names with `/`, `:`, newlines, over 255 characters, or of an existing
+   file are refused without touching other files.
+3. With two groups on the note, rename: both reopen the new file with their
+   own selection, scroll, mode, folds and disclosures.
+4. Down from the title focuses Properties; Alt+Down focuses the body;
+   Shift+Tab/Up from Properties returns to the title.
+
+### links
+
+`Links.md`.
+
+1. Off the caret, a wikilink shows its label; a plain click follows it.
+   With the caret in its source, a plain click edits and Mod-click follows;
+   Mod+Alt-click opens it to the side. Selecting across a link does not
+   follow it.
+2. Follow heading, block (`#^key-point`) and same-note links: the target
+   scrolls into view. **Follow Link** and **Open Link to Side** work with
+   the caret in link syntax.
+3. `[[Missing note]]` is dimmed; clicking creates and opens the note (in
+   `markdownWorkbench.files.newNoteFolder` when set). `[[Home]]` stays
+   unresolved (an alias is not a file name), as in Obsidian.
+4. HTTPS and mail links open externally; `obsidian://` asks first.
+5. **Insert Wikilink** wraps the selection; undo restores it.
+6. `markdownWorkbench.links.folderNote` sets the note a folder link opens.
+   `markdownWorkbench.links.newLinkFormat` and
+   `markdownWorkbench.links.useWikilinks` shape links inserted by
+   suggestions and link updates.
+
+### embeds
+
+`Embeds.md`.
+
+1. The image renders at width 200, the Markdown image at natural size, the
+   video plays (with sound and seeking), the PDF shows a card that opens
+   the PDF, `![[Target]]` and the `Next steps` section render, and the
+   missing file shows a placeholder. A note embedding itself stops at the
+   depth limit.
+2. Click an image: the inspector opens. Fit/actual size, zoom buttons,
+   + − 0 1 keys, Mod-wheel, pan, Escape; focus returns to the image.
+3. Tick a task inside the embedded `Next steps`: only
+   `notes/Project plan.md` changes. Links inside embeds open relative to
+   the embedded note.
+4. In an untrusted workspace, remote images do not load.
+5. **Insert Embed** wraps the selection; undo restores it.
+
+### pagePreview
+
+1. Hold Mod over an internal link in `Links.md` for about 300 ms: a preview
+   opens; moving into it keeps it, leaving closes it.
+2. Focus a rendered link and press Alt+Enter: focus moves into the preview;
+   Escape closes it and returns focus.
+3. Move quickly between links: a late preview never replaces a newer one.
+   Editing the note closes the preview. Tasks in previews are read-only.
+
+### tables
+
+`Tables.md`.
+
+1. Click a cell and type; Tab/Shift+Tab move between cells, Enter moves
+   down, Shift+Enter inserts `<br>`, arrows at the edge leave the table.
+   Escaped pipes stay valid.
+2. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
+   One undo restores each operation.
+3. Run **Insert Table** and every **Table:** command (insert, delete and
+   move rows and columns, align, sort) from the palette and the menu.
+4. Drag a row and a column handle while scrolling; drop once: exactly one
+   move. Escape cancels a drag.
+5. With Vim on, move between note and cells in normal and insert mode.
+
+### callouts
+
+`Callouts.md`.
+
+1. Titles, icons, bodies, nesting and the default fold states match
+   Obsidian. Click a foldable title to toggle; reload: each panel keeps its
+   own state. Clicking the link in a title follows it without folding.
+2. With the caret inside, the source shows and edits normally.
+3. **Insert Callout** wraps the selected lines; one undo removes it.
+
+### math
+
+`Math.md`.
+
+1. Formulas render; the caret reveals only the formula it is in. `$5 and
+   $10` is not math. Invalid TeX shows an error and the note stays
+   editable.
+2. **Toggle Inline Math** twice round-trips the selection; **Insert Math
+   Block** inserts a block.
+
+### diagrams
+
+`Diagrams.md`.
+
+1. Both diagrams render; the invalid one shows an error and stays
+   editable. The theme follows VS Code's light or dark theme.
+2. Turn the plugin off: the fences show as code; on: they render again.
+
+### codeBlocks
+
+`Code.md`.
+
+1. Fences are highlighted with a Copy button; Copy yields the code without
+   fences. Clicking a token places the caret at that character.
+2. Typing in a revealed fence keeps highlighting; the unlabelled fence,
+   indented code and tilde fence stay readable.
+
+### footnotes
+
+`Footnotes.md`.
+
+1. References are numbered in order; `[^1]` used twice shares its number.
+   Hover or focus a reference for a preview; activating it reveals the
+   definition. Back-reference buttons return to each reference.
+2. **Insert Footnote** adds a fresh label at the caret and a definition at
+   the end; undo removes both.
+3. With two panels, insert in one and undo there: both converge with no
+   extra undo step.
+
+### tasks
+
+`Tasks.md`.
+
+1. Click checkboxes: only the status character changes. Checked tasks
+   (`[x]`, and custom statuses like `[/]` and `[-]`) show a ticked box and
+   muted, struck-through text, the same in the note and in the embedded
+   `Next steps`, as in Obsidian's default theme. Each task's line and
+   checkbox carry `data-task`, so a CSS snippet can style custom statuses.
+2. **Toggle Checklist Status** and **Cycle List Checklist** act on all
+   selected lines; a selection ending at column zero excludes that line.
+3. Change a task in the other panel, then click the stale checkbox: the
+   edit is refused.
+
+### tags
+
+`Tags.md`.
+
+1. Inline and YAML tags render as tags; `#123`, the URL fragment and
+   `#code` do not. Clicking a tag lists the notes using it; `#idea` and
+   `#Idea` are one tag; a parent tag includes its children.
+2. The Explorer's **Tags** view nests `area › tags › nested` with note
+   counts. `markdownWorkbench.tags.viewSort` (`name`, `frequency`) and
+   `markdownWorkbench.tags.viewNested` change it. Typing a new tag without
+   saving adds it within a second.
+
+### suggest
+
+1. Type `[[Tar`, `[[Target#`, `[[Target#^` and `#ar` in any note: notes,
+   aliases (`[[Ho` suggests `[[Welcome|Home]]`), headings, blocks and tags
+   are offered; Enter inserts without duplicating `]]`.
+2. Suggestions do not open in code, headings or frontmatter.
+
+### search
+
+`Search.md`.
+
+1. Each `query` block lists matching notes; the invalid query shows an
+   error. Edit a matching note without saving: results refresh.
+2. Turn the plugin off: the blocks show as code.
+
+### outline
+
+1. With a workbench note active, the Explorer's **Note Outline** lists its
+   headings; clicking one moves the caret there, and the current section is
+   selected as the caret moves.
+2. In the text editor, Note Outline hides; VS Code's Outline lists headings
+   once.
+
+### backlinks and outgoingLinks
+
+Both are off by default (owner decision). Turn on
+`markdownWorkbench.plugins.backlinks.enabled` and
+`markdownWorkbench.plugins.outgoingLinks.enabled` first.
+
+1. Open `Target.md`: **Backlinks** lists Links, Welcome and Search with a
+   context line each, and **Unlinked mentions** lists notes that mention
+   "Target" without linking. The status bar shows the backlink count.
+2. Click a context line: the note opens at the link.
+3. **Outgoing Links** for `Links.md` lists its targets and `Missing note`
+   under not created yet.
+4. Edit a note to add a link without saving: both views update; closing
+   without saving reverts them. Turning the switches off hides the views.
+
+### quickSwitcher
+
+1. **Quick Switcher** with an empty query lists recent notes. `Dest`
+   finds `Target` by its alias; Enter opens it.
+2. A new name creates the note (in the new-note folder).
+
+### wordCount
+
+1. The status bar shows words and characters; with a selection, those of
+   the selection. CJK characters count one word each.
+
+### linkUpdates
+
+1. Rename `Target.md` to `Goal.md` in the Explorer: a dialog asks to update
+   links in the notes that link to it. Accept: links (with aliases,
+   headings and blocks) now point at `Goal`. Decline: nothing changes.
+2. `markdownWorkbench.linkUpdates.mode`: `always` skips the dialog,
+   `never` changes nothing.
 
 ### folding
 
-Setup: the Folding section in `Core.md`. Steps: use the gutter, then Fold All,
-Unfold All and Toggle Fold from the command palette; set `folding.heading` and
-`folding.indent` independently to false and back to true. Reload with a section
-folded; disable and re-enable folding. Expected: heading folds stop at the next
-same-level heading, indent folds include deeper children, the two settings act
-independently, reload restores saved folds, and disabling unfolds and removes
-its gutter/commands. Per-panel fold positions remain independent.
+`Core.md`.
+
+1. Use the gutter, **Fold All**, **Unfold All** and **Toggle Fold**.
+   Heading folds stop at the next heading of the same level; list folds
+   include children. Reload: folds are restored.
+2. `markdownWorkbench.folding.heading` and `markdownWorkbench.folding.indent`
+   act independently.
 
 ### lineNumbers
 
-Setup: `Core.md`, fresh settings (default off). Steps: enable lineNumbers,
-insert/delete multiple lines, open a second panel, then disable it. Expected:
-source line numbers update in the enabled panels; gutter disappears when off.
+Off by default.
+
+1. Turn it on: faint numbers sit level with each line, including headings.
+   A rendered block (table, callout, math, diagram) shows its first line's
+   number, as in Obsidian. Inserting and deleting lines renumbers.
 
 ### indentGuides
 
-Setup: nested list in `Core.md`; default on. Steps: add mixed spaces/tabs before
-children and scroll them out of view and back. Toggle indentGuides. Expected:
-guides follow tab stops and leading indentation, never cover non-indented text,
-and disappear when disabled. Validate appearance with the owner's theme.
+1. Nested lists in `Core.md` show guides that follow tab stops; they never
+   cover text.
 
 ### spellcheck
 
-Setup: misspelled prose in `Core.md`, default on. Steps: inspect spelling
-suggestions, disable spellcheck and repeat, then enable it. Expected: the
-contenteditable spellcheck attribute follows the setting; actual underlines
-and dictionaries depend on the VS Code/Electron host and OS language.
+1. Misspelled words are underlined (the dictionary is the OS's); off
+   removes underlines.
 
 ### autoPair
 
-Setup: a blank line in `Core.md`. Steps: type brackets/quotes and Markdown
-markers, wrap a selection, and Backspace an empty pair. Change
-`autoPair.brackets` and `autoPair.markdown` independently; disable the plugin.
-Expected: enabled families insert/remove pairs, disabled families type literal
-characters; the other family retains its configuration. Undo remains native.
+1. Brackets, quotes and Markdown markers (`**`, `==`, `` ` ``) pair and wrap
+   selections; Backspace removes an empty pair.
+   `markdownWorkbench.autoPair.brackets` and
+   `markdownWorkbench.autoPair.markdown` switch the two families.
 
 ### smartLists
 
-Setup: a list in `Core.md`. Steps: Enter at an item end, Enter on an empty item,
-Backspace at an item start, and repeat with an ordered list. Disable smartLists
-and repeat. Expected: enabled list continuation/exit follows Markdown editing;
-disabled mode uses plain editor behavior without automatic list markers.
-
-### vim
-
-Setup: `Core.md`; Vim defaults off. Steps: enable Vim in Settings; exercise
-normal/insert/visual modes, `i`, Escape, motions, selection replacement, IME in
-insert mode, `:w`, `:q`, `:wq`, `:x`, `:u`, and `:red`. Reopen after close;
-disable/re-enable Vim. Expected: text changes synchronize, ex commands use
-native save/undo, normal-mode IME cannot insert stray text, and disabling
-removes modal behavior. Repeat Ctrl/Cmd+O, B, I, K, Shift+X, Shift+T, Shift+H,
-and Alt+0 through Alt+6: Vim-only host shortcut consumption must disappear
-when disabled. No workspaceState toggle is used. Cell-editor Vim mode transfer
-is not implemented until the tables plugin lands.
+1. Enter continues a list item (bullets, numbers, tasks); Enter on an empty
+   item ends the list; Backspace at an item start removes the marker.
 
 ### formatting
 
-Setup: Formatting section in `Core.md`. Steps: select `alpha`, use Toggle Bold,
-Italics, Strikethrough, Highlight, Inline Code and Comment twice; repeat with a
-caret in a word. Use Insert Link and edit its selected URL; Insert Horizontal
-Rule; Set Heading 0 through 6; Toggle Bullet List, Numbered List and Blockquote;
-Swap Line Up/Down. Repeat multiline selections ending at column zero and
-backward selections. Expected: toggles preserve text, headings replace only
-the heading prefix, column-zero endpoints exclude the following line, swapping
-moves the selected lines, and all edits undo through the TextDocument.
-
-Test Mod+B, Mod+I and Mod+K. Strikethrough/highlight/code/comment keys remain
-unbound pending the owner's Obsidian Hotkeys observation. Disable formatting:
-its commands/keys disappear; enabling restores them. Copy/cut formatted source
-to a text editor and verify the Markdown characters, not rendered HTML.
-
-## Remaining Phase 4 dependency gate
-
-Do not treat this subset as the full feature release. Links, codeBlocks, math,
-diagrams, callouts, footnotes, tasks, embeds, pagePreview, structured properties,
-tables, inlineTitle, tags, suggestions, query blocks, pasteHtml, copyForAgent
-and markers still need their runtime plugins and acceptance scenarios. In
-particular, a properties sheet or interactive table must not be accepted merely
-because its pure parser/HTML renderer passes unit tests. The source's table cell
-edit projection, property draft reconciliation, menus, clipboard, Vim transfer
-and rename focus rules need migration to the service/lifecycle model together.
-
-## Links
-
-Setup: open `Core.md` in the disposable fixture vault. Add `[[Core#Heading]]`,
-`[[Missing note|alias]]`, `[web](https://example.com)` and `[local](Core.md#Heading)`.
-
-1. Move the caret out of the wikilink: only its label is visible. Plain click
-   follows it. Move into source: plain click edits, Cmd/Ctrl-click follows.
-2. Select text across a rendered link and release: the selection remains and
-   no navigation occurs. Cmd/Ctrl+Alt-click opens a second group.
-3. Follow a heading and `#^block` reference; the caret scrolls to the target.
-   Run Follow Link and Open Link to Side while the caret is within link syntax.
-4. Click the missing wikilink: create and open one Markdown file without
-   overwriting an existing file. Test the new-note folder setting.
-5. Open an HTTPS link and an application scheme. The latter asks before opening.
-   A path outside the vault and a symlink escaping it must be refused.
-6. Run Insert Wikilink on selected text, then undo. Disable/re-enable the links
-   plugin: wiki decorations, click behavior, commands and host handlers disappear
-   and return. Repeat with two panels of the same document.
-
-`links.newLinkFormat` and `links.useWikilinks` are consumed by Phase 5 link
-creation/suggestion features; `links.folderNote` controls folder navigation.
-
-## Code blocks
-
-Setup: add fenced JavaScript, Python, an unknown language and indented code to
-`Core.md`, followed by a paragraph so the caret can leave every block.
-
-1. Move outside a fence: highlighted code and Copy appear. Copy yields the code
-   without fence markers. Click a token: source appears at the corresponding
-   UTF-16 offset. Include emoji and indentation in the example.
-2. Type in a revealed fence: syntax highlighting stays, typing synchronizes,
-   and native undo/redo restores it. Repeat with IME composition and Source mode.
-3. Scroll a long fence in and out of view. Unknown languages stay readable.
-4. Disable Code Blocks: enhanced renderers, copy buttons and source highlighting
-   are removed; the core readable fence remains. Re-enable and repeat.
-
-## Math
-
-Setup: in `Core.md`, add `$x^2$`, a multiline `$$` formula with an AMS fraction,
-invalid TeX and a paragraph after the formula.
-
-1. Move the caret in and out: source reveals only at the selected formula;
-   elsewhere sanitized MathJax SVG appears. Source mode shows the delimiters.
-2. Select Unicode text, run Toggle Inline Math twice, and verify an exact source
-   round trip. Insert Math Block, edit it, save and undo through native history.
-3. Disable/re-enable Math during a slow first render. Disabled formulas stay
-   readable source; a late async render must not restore an obsolete widget.
-4. Check invalid TeX remains readable and does not prevent editing other content.
-
-## Diagrams
-
-Setup: add a fenced `mermaid` flowchart (`graph TD; A-->B`) and a malformed
-Mermaid fence to `Core.md`.
-
-1. Outside the block, verify the flowchart renders. Enter it to edit source;
-   leave it to see the update. Invalid input stays readable and editable.
-2. Disable/re-enable Diagrams: the source code fallback replaces the diagram,
-   then rendering returns. Repeat while the lazy library is loading.
-3. Test a diagram with an HTML label or script-like content: no script or external
-   action runs. Check light/dark themes and two panels with independent carets.
-
-## Callouts
-
-Setup: in `Core.md`, add normal, nested and foldable callouts, including
-`> [!warning]- Closed title`, `> [!tip]+ Open title` and an unknown callout kind.
-
-1. Leave their source: verify titles, body Markdown, nesting and default open
-   states. Toggle disclosure, move away, edit elsewhere and reload the window;
-   the state persists in that panel. A second panel has independent state.
-2. Put the caret inside: syntax reveals and normal text editing works. Run
-   Insert Callout on multiple selected lines and undo the single source edit.
-3. Disable/re-enable Callouts: widgets, disclosure listeners, styling and command
-   disappear and return. Source stays unchanged. Links in titles must follow
-   links without also toggling disclosure.
-
-## Footnotes
-
-Setup: in `Core.md`, add repeated named references, an inline `^[note]`, a
-multiline definition with indented continuation paragraphs, and references inside
-a callout/table. Include nested Markdown and math in the note text.
-
-1. Leave references: check labels/numbering. Hover or focus a reference for a
-   rendered preview; Escape dismisses it. Activate it to reveal the definition.
-2. Edit a definition and leave it: every reference preview reflects the change.
-   A multiline definition renders as one block and reveals as one source range.
-   Activate each definition back-reference button: it returns to the corresponding
-   reference, including when one definition has multiple references.
-3. Insert Footnote on a selection and at EOF, including an existing numeric label;
-   verify a fresh label, preserved selected text and native undo/redo.
-4. Open two panels, insert a footnote in one, then undo there. Verify both converge
-   without retaining an extra undo step (the source suite's intermittent case).
-5. Disable/re-enable Footnotes: references, previews, definition widgets and the
-   insertion command disappear and return. Source and caret remain valid.
-
-## Tasks
-
-Setup: in `Core.md`, add unchecked/checked tasks, a custom `[?]` status, nested
-and quoted ordered tasks, and tasks inside a callout and (when available) embed.
-
-1. Click a checkbox outside revealed source. Only the status character changes;
-   labels, whitespace and prefixes remain. Save, undo and redo natively.
-2. Run Toggle Checklist Status and Cycle List Checklist on multiple selected
-   lines. A selection ending at column zero excludes that final line.
-3. Edit the same task in another panel, then try an old rendered checkbox: a
-   stale expected line must not overwrite the edit. Repeat for an embedded note.
-4. Disable/re-enable Tasks: checkbox handlers, decorations, commands and the
-   embedded-task RPC handler disappear and return. These commands' `verify`
-   key bindings remain unbound pending the owner's Obsidian check.
-
-## Embeds and media
-
-Setup: copy files from `test/fixtures/media` into the disposable vault. Add full
-note, heading and block embeds, an image with `|200x100`, WebM/audio, a PDF, a
-missing target and a self-referencing note. Include tasks and footnotes in the
-embedded note, with links relative to that note's folder.
-
-1. Check full/section/block transclusion, dimensions, recursive embeds and the
-   circular/depth fallback. Relative links must open from the embedded source.
-2. Click an embedded task: only its source document changes. Reject stale task
-   lines and verify dirty embedded text is read from the native TextDocument.
-3. Inspect an image: fit/actual size, zoom buttons, +/−/0/1 keys, modified wheel,
-   pan, close/Escape and restored trigger focus. Disable Embeds while it is open.
-4. Play each WebM fixture, including audio, seek, and remove the embed or disable
-   the plugin during loading/playback. No player, fetch or object URL remains.
-5. PDF/file cards open the associated editor. HTTPS media is blocked in untrusted
-   workspaces. A local symlink escaping the vault remains blocked in both modes.
-6. Run Insert Embed on selected text and undo. Disable/re-enable Embeds: widgets,
-   media, inspector, styles, nested render passes and command are removed/restored.
-7. Check embedded footnote text/numbering and definition navigation separately;
-   record any target mismatch in the acceptance notes.
-
-## Page Preview
-
-Setup: links in `Core.md` to a note, heading, block, image, PDF and missing target.
-
-1. Hold Cmd/Ctrl over an internal link for 300 ms: a preview opens without
-   changing the current document. Move into it; leaving dismisses after the delay.
-2. Focus a rendered link and press Alt+Enter: focus moves into the popup. Escape
-   or Close dismisses it and restores editor focus. Open uses the link's source
-   folder, including links inside an embedded note.
-3. Rapidly move between links or close while a resource loads: late results must
-   not replace a newer preview. Edit the document: the preview closes.
-4. Task controls inside previews are read-only. External schemes do not preview.
-5. Disable/re-enable Page Preview while a popup or image inspector is open;
-   pending timers, listeners and render passes disappear, then behavior returns.
-
-## Properties
-
-Setup: use a disposable copy of `test/fixtures/vault/Core.md`; add YAML with text,
-number, checkbox, date, datetime, aliases, tags, a nested object and commented
-values. Use two Workbench panels of that note.
-
-- Add File Property (palette or Mod+;) creates a header if absent, focuses a new
-  name, and rejects duplicates. Rename/delete rows; body and comments survive.
-- Edit each scalar type, cancel with Escape, commit with Enter, blur, Mod+S and
-  the native Save command. Invalid number/date drafts block saving. Verify one
-  native undo restores each structural change and redo reapplies it.
-- Keep a text draft focused (also during IME composition) while changing another
-  row in the second panel. The draft stays connected; cancel reveals current YAML.
-- Add/remove/edit chips, including duplicate source values. Edit the other panel
-  before committing: the intended occurrence changes, unrelated items survive.
-- Select rows with Shift/Alt, copy/cut, paste into another sheet, and paste malformed
-  structured data. Valid data merges; malformed structured data never enters text.
-- Sort A–Z/Z–A from the heading menu, then edit a row: order and value persist as
-  one undo. Drag a type grip through scrolling, drop once, cancel with Escape;
-  comments stay with entries and YAML anchor dependencies are protected.
-- Choose property types and decline/accept conversion. Preferences persist on
-  reload and are shared between panels in the same vault. Nested vault isolation
-  awaits Phase 5 root discovery.
-- Test visible/hidden/source display, Source mode, heading arrows/Space paging,
-  row/chip keyboard navigation, and disabling/re-enabling Properties. Source YAML
-  remains editable; no old menu, drag, dialog or shortcut survives disabling.
-- Title focus from the heading awaits inlineTitle integration later in Phase 4.
-
-## Tables
-
-Setup: in a disposable copy of `test/fixtures/vault/Core.md`, use Insert Table,
-then create enough rows to extend beyond the viewport; include Unicode, escaped
-pipes, `<br>`, formatting, links, footnotes and missing trailing cells.
-
-- Click rendered text and edit cells. Whitespace and escaped pipes remain valid
-  Markdown; body text does not move unexpectedly. Tab/Shift+Tab traverse cells,
-  Enter moves down, Shift+Enter inserts `<br>`, and boundary arrows leave the grid.
-- Select a rectangle by dragging or Shift+arrows. Copy/cut/paste TSV, including
-  a larger rectangle. Undo/redo use native history and restore the full operation.
-  Copy for Agent must report cell source ranges once that plugin is delivered.
-- Exercise every table palette/menu action: insert/delete/move rows and columns,
-  alignment, sorting, duplicate, clear, format, and Edit Table Source. Arrow away
-  from revealed source to render again; Source mode displays the full Markdown.
-- Drag row/column handles while scrolling before one drop (the source's known
-  intermittent scenario). Expect exactly one reorder; Escape, blur, pointer cancel
-  and plugin disable must cancel the gesture without a source edit.
-- Open a second panel; insert/delete a row while the first edits a cell. Its cell
-  caret stays with the mapped source, or safely closes if that cell disappears.
-  Read clipboard asynchronously while changing the selection: stale paste refuses.
-- Enable Vim; cross from note to cell and back in insert and normal modes. Verify
-  h/j/k/l boundary navigation, :w/:u/:red and native undo grouping. Toggle Vim and
-  Formatting while a cell is active; text remains in the outer document.
-- Disable/re-enable Tables: source replaces widgets; no menus, drag handlers or
-  cell selection survives. Test Add File Property while a cell is focused.
-
-## Composition fixes (§5.10) — owner acceptance, not run
-
-Use `Core.md` in the disposable vault/profile described above. Enable lineNumbers
-and Vim explicitly where indicated; both are disabled by default. Record the
-final settings, result and any console errors for each scenario.
-
-1. **Gutter order and fresh-start equivalence.** Enable lineNumbers and folding;
-   fold a heading. Toggle lineNumbers off/on, then folding off/on, then repeat
-   in reverse order. Expected: numbers always left of fold markers, one gutter
-   of each kind, no duplicate commands. Disabling folding reveals all text;
-   enabling restores its saved ranges. Reload at the same final settings and
-   compare appearance with the toggled view.
-2. **Live editor settings and independent panels.** Open Core.md twice; use
-   distinct selections, scroll positions and folds. Set editor.useTabs=false
-   and editor.tabSize=2, then true/8, then restore true/4. Insert/indent a list
-   item and inspect its actual whitespace in the text editor. Expected: settings
-   change without reopening, indentation guides and tab widths agree, selections,
-   text and folds remain intact. Repeat with a second folder's resource override;
-   only the affected resource uses that override. Toggle all features off/on:
-   none may reset the chosen core tab settings.
-3. **Folding reconfiguration without edits.** Add headings and an indented
-   paragraph containing mixed tabs/spaces. Leave one section folded. Change
-   folding.heading and folding.indent independently, without typing or scrolling.
-   Expected: available gutter markers refresh immediately; current folded ranges
-   remain folded and can be unfolded. Change tabSize and inspect indent-fold
-   boundaries. Reload and compare the available markers at identical settings.
-4. **Late feature state and panel isolation.** Use two views with different
-   folded sections and normal/nested callout disclosure states. Disable folding
-   and callouts, reload with them disabled, then enable them. Expected: each
-   panel restores its own state; one feature's toggle does not clear the other's
-   state. Repeat toggles without edits and confirm no duplicate disclosure
-   listeners (one click changes state once). Schema rejection/unknown keys and
-   explicit restore into mounted disclosures are covered by unit tests. Rename
-   view-transfer UI acceptance remains blocked on the future inlineTitle unit.
-5. **Renderer and key precedence.** Add a Mermaid fence, an ordinary code fence,
-   math, a callout, footnotes and a table. Toggle diagrams/codeBlocks in both
-   orders. Expected: Mermaid uses diagrams whenever enabled, general code only
-   when diagrams is disabled; other widgets keep their feature renderer. Enable
-   Vim and tables in both orders: cell Tab/Enter/boundary navigation still runs
-   before Vim, and host save/undo keeps priority. Compare after reload.
-6. **Every catalog feature/config.** Toggle each of tables, properties,
-   pagePreview, embeds, tasks, footnotes, callouts, diagrams, math, codeBlocks,
-   links, formatting, lineNumbers, folding, indentGuides, spellcheck, autoPair,
-   smartLists and Vim off/on, then repeat a mixed order. Test the commands from
-   its section. Expected: only the disabled feature's registrations disappear;
-   no duplicates, stale processors or changes to unrelated folds. Change
-   autoPair's two booleans, properties.display through all three values and
-   links.folderNote/useWikilinks/newLinkFormat, ending at identical settings
-   in a fresh panel. Compare behavior (link creation/index options still have
-   their documented later-phase limits). Spellcheck must return to the editor
-   default when disabled. Property draft behavior is also checked in its own
-   section; switching to hidden/source intentionally removes the sheet UI.
-
-These scenarios supplement the retired source cases; no retired test was revived
-and the automated smoke suites were not expanded.
-
-## Readability pass regressions
-
-These are owner-run regression checks for behavior-preserving rewrites, not new
-smoke scenarios. Use only the disposable fixture vault described above.
-
-- **Tables:** rerun all seven steps in **Tables**, especially selection-to-source
-  mapping, keyboard boundary movement, clipboard and menus, row/column dragging
-  while scrolling, source disclosure, and Vim cell transfer. Repeat the
-  **Composition fixes** table/Vim toggle-order checks. Open one fixture note in
-  two panels, edit a cell, insert a row from the other panel, and confirm the first
-  cell's caret and Vim mode survive. Start a menu paste, change the table or
-  selection before the clipboard reply, and confirm stale text is rejected.
-  Toggle tables off during rendering, then back on; no old render may overwrite
-  the new cell editor. These scenarios have not been run by the agent.
-
-- **Properties — chips and lists:** rerun the **Properties** list/chip, duplicate
-  occurrence, pending draft, IME, structured clipboard and save-rejection cases.
-  Edit a chip while a second panel inserts or removes an equal-valued item;
-  commit must target the same occurrence or report that it disappeared. Move
-  focus to another chip or the add-item input while committing; focus must follow
-  the replacement DOM. Check Escape, Enter, Mod+S, blur, remove buttons and chip
-  menus. Toggle Properties off/on with a chip menu open. Not run by the agent.
-
-- **Properties — structural controls:** rerun property rename validation,
-  chosen-type retention, single/multiple row menus, row removal and order commit.
-  Test arrow/Tab and Vim h/j/k/l/i/A/o focus, Alt+Down to body, Mod+Backspace,
-  undo/redo and save. Rename while saving and verify invalid or duplicate names
-  block the operation; successful edits restore focus to the requested row.
-  Reconcile a second-panel change while a type menu is open. Not run by the agent.
-
-- **Properties — scalar drafts and transactions:** rerun checkbox changes,
-  scalar number/date validation, Enter/Escape/blur/Mod+S and save rejection.
-  Sort the sheet, then rename/edit/remove a row; one undo should restore both
-  its value and the original source order. Repeat with two panels and stale
-  headers. Change a property type, then change the source while its confirmation
-  is open; the old confirmation must not convert the new value. Not run here.
-
-- **Properties — sheet, selection and ordering:** rerun every remaining Properties
-  scenario: add form and heading navigation, Shift/Alt row selection, structured
-  copy/cut/paste, sorting and dragging with scroll/cancel, focused input/IME
-  preservation during second-panel changes, and visible/hidden/source settings.
-  Test recursive YAML aliases, tags, nested values and forced-type warnings.
-  Repeat the composition tests for Properties config changes and off/on; existing
-  folds, table state and unrelated extension order must survive. Not run here.
-
-- **Page Preview:** rerun all **Page Preview** scenarios, including modifier
-  delay, keyboard opening/focus, Escape, source/embedded link targets, attachment
-  previews and read-only tasks. Hover a second link while the first request is
-  pending, then close or disable the plugin; late results must not reopen the
-  popup or retain render passes. Move focus into an image inspector and back.
-  Restore focus to the editor after keyboard dismissal. Not run by the agent.
-
-- **Native workbench adapter:** rerun **document and editor (Phase 3)** and
-  **commands and resources (Phase 3)**, especially CRLF edits, save/undo,
-  independent panels, active-group routing, resource URLs and config changes.
-  The native smoke passed in an isolated profile; full owner acceptance is unrun.
-
-- **Editor:** rerun **document and editor (Phase 3)** and all **Composition fixes**
-  scenarios: two panels with distinct selections and scroll, version-checked view
-  transfers, restore/reload with delayed image/math layout, settings updates,
-  feature toggles and active-tab routing. Scroll/type during restore to cancel
-  pinning. Keep folds/callout disclosures while changing indentation; verify
-  projected table selections and clipboard. Native smoke passed; owner checks
-  have not been run.
-
-- **Footnotes:** rerun all **Footnotes** scenarios and the split-view undo
-  regression. Check repeated/named/inline references inside prose, tables and
-  embeds; numbering, popup keyboard focus, definition links and back-references
-  must remain consistent. Disable Footnotes while a preview render is pending,
-  then re-enable; stale controls must not survive. Not run by the agent.
-
-- **Commands:** rerun **commands and resources (Phase 3)** plus the composition
-  command-availability checks. Run save/undo/redo/close/Open as Text from keys and
-  the palette; change the active group while flushing and verify the wrong panel
-  is never edited or closed. Disable/re-enable a command-owning feature and switch
-  between minimal/Obsidian panels; palette execution must respect current settings.
-  No owner manual run has been performed.
-
-- **Document:** rerun typing/save/undo, split-panel convergence, external edits
-  and CRLF cases in **document and editor (Phase 3)**. Verify adjacent typing
-  groups together, pausing/caret movement creates a new group, IME remains intact,
-  and table/Vim edits retain explicit groups. Save with an invalid property draft
-  must fail before transport; correcting it must allow save. Not run by the agent.
-
-- **Math:** rerun all **Math** scenarios: inline/display reveal, both palette
-  commands, selection/undo and formulas inside other rendered blocks. Disable
-  Math or close the panel while MathJax loads; late output must not replace
-  disposed content. Re-enable and verify rendering resumes. Not run by the agent.
-
-- **Diagrams:** rerun all **Diagrams** scenarios, including multiple Mermaid
-  fences, errors, theme/reveal and off/on. Close a panel or disable the plugin
-  while its lazy render is queued; no late SVG may replace disposed content.
-  Re-enable after an error and verify later diagrams still render. Not run here.
-## Vault index and host views (Phase 5) — not run
-
-Setup: copy `test/fixtures/vault` to a scratch folder and open that folder in an
-isolated profile. Add `Projects/Plan.md` (`---\naliases: [Roadmap]\n---\n# Plan\n## Goals\nSee [[Core]].`),
-`Archive/Plan.md` (empty), `Daily.md` (`[[Projects/Plan]] and [[Someday]]; mentions core here.`)
-and `image.png` (any image). Run `Developer: Reload Window` once so indexing starts.
-
-### Vault and link resolution
-
-1. In `Core.md`, add `[[Plan]]`, `[[Archive/Plan]]`, `[[./Daily]]` and `![[image.png]]`;
-   follow each. `[[Plan]]` names two notes, both one folder away, so it opens
-   `Archive/Plan.md` (nearest folder first, then path order). Check that
-   Obsidian picks the same note.
-2. Rename `image.png` to `photo.png` in the Explorer outside VS Code (Finder):
-   the embed becomes unresolved within a second; rename it back: it resolves.
-3. Add `"Archive/"` to `markdownWorkbench.vault.excludedFiles`: `[[Archive/Plan]]`
-   still opens (Obsidian keeps excluded files linkable), but the quick switcher no
-   longer lists it.
-4. Create `Sub/.obsidian/` and `Sub/Inner.md` with `[[Core]]`: from `Inner.md`,
-   `[[Core]]` is unresolved (a separate vault). Remove the marker and reload: it resolves.
-5. Close and reopen the window: links in an open note resolve immediately (warm
-   start), before indexing finishes. With a large copy (`scripts/measure-vault.ts`
-   for numbers), typing stays responsive while indexing runs.
-6. Unresolved styling, in Live Preview: in `Daily.md`, `[[Someday]]` is dimmed
-   with a dotted underline; `[[Projects/Plan]]` is not. Put the caret in
-   `[[Someday]]`: the revealed source is not dimmed. Create `Someday.md` in the
-   Explorer: the link becomes normal within a second; delete it: dimmed again.
-   Type `[[Nowhere]]` and move the caret away: it dims after a short pause.
-   With the note open in two panels, both update. Compare with Obsidian.
-
-### Backlinks and outgoing links
-
-1. Open `Core.md`: the Explorer's **Backlinks** shows `Daily` is not listed under
-   linked mentions but is under **Unlinked mentions** (it says "core"); `Projects/Plan`
-   is listed under linked mentions with its line. The status bar reads "1 backlink".
-2. Click a context line: the note opens with the caret at the link.
-3. Edit `Daily.md` to link `[[Core]]` without saving: Backlinks updates within a
-   second. Close without saving: it returns to the saved state.
-4. **Outgoing Links** for `Daily.md` lists `Plan` under Links and `Someday` under
-   **Not created yet**. Works the same with the note open in the text editor.
-5. Turn off `markdownWorkbench.plugins.backlinks.enabled`: the view and status bar
-   item disappear; turn it on: they return. Set `markdownWorkbench.preset` to
-   `minimal`: all Phase 5 views disappear.
-
-### Note Outline
-
-1. Open `Projects/Plan.md` in Markdown Workbench: **Note Outline** shows Plan › Goals.
-   Click Goals: the caret moves to that heading.
-2. Move the caret through the note: the outline selects the current section.
-3. Open the same note in the text editor: Note Outline hides; VS Code's own
-   Outline lists the headings once (no duplicates).
-
-### Tags view
-
-1. Add `#Project/alpha` to `Core.md`, `#project` twice to `Daily.md` and
-   `tags: [project/beta]` to the properties of `Projects/Plan.md`. The Explorer's
-   **Tags** view shows `Project 3` (one entry despite the different case; counts
-   are notes, so `Daily.md` counts once) with `alpha 1` and `beta 1` below it.
-   Compare the counts and nesting with Obsidian's Tags view on the same folder.
-2. Click `project`: a picker lists the three notes; choose one: it opens. Click
-   `alpha`: only `Core.md` is listed.
-3. Type `#newtag` in an open note without saving: `newtag` appears within a
-   second. Close without saving: it goes away.
-4. Set `markdownWorkbench.tags.viewSort` to `frequency`: `Project` moves above
-   tags in fewer notes. Turn off `markdownWorkbench.tags.viewNested`: the view
-   is a flat list with full paths (`Project/alpha`). Turn off `markdownWorkbench.plugins.tags.enabled`: the
-   view disappears and tags in notes stop rendering as buttons.
-
-### Quick switcher, word count and link updates
-
-1. Run **Markdown Workbench: Quick Switcher**: an empty query lists recent notes.
-   Type `road`: `Roadmap → Plan` appears; Enter opens `Projects/Plan.md`. Type
-   `Someday`: choose it to create `Someday.md` (in the new-note folder). Type a new
-   name and press Enter with no item selected: the note is created.
-2. The status bar shows words and characters for the active note; select text:
-   it counts the selection. Compare `日本語 text` (4 words) with Obsidian.
-3. Add `[[Projects/Plan#Goals|goals]]` to `Daily.md`. Rename `Projects/Plan.md` to
-   `Projects/Strategy.md` in the Explorer: a dialog asks "Update links in 1 file?".
-   Accept: `Daily.md` now reads `[[Strategy]]` and `[[Strategy#Goals|goals]]`;
-   `[[Plan]]` in `Core.md`, which points at `Archive/Plan.md`, is unchanged. One
-   Undo reverts the rename and the edits together. Repeat declining: no note changes.
-4. Rename the `Projects` folder: links to every file inside are updated. Set
-   `markdownWorkbench.linkUpdates.mode` to `never` and rename again: nothing is asked.
-5. Compare each scenario with Obsidian in a disposable vault and record differences.
-
-- **Callouts:** rerun all **Callouts** and disclosure composition scenarios.
-  Click titles and nested links, toggle using keyboard disclosure controls,
-  restore two panels with different disclosures, and rename/reopen. Disable
-  Callouts with rendered disclosures mounted; old listeners must disappear and
-  re-enable must restore per-panel memory. Not run by the agent.
-
-- **Tasks:** rerun inline, rendered and embedded checkboxes plus both checklist
-  commands. In a second panel change the expected task line before toggling;
-  a stale edit must be rejected. Check read-only footnote previews and truncated
-  embeds; disable/re-enable Tasks while controls are mounted. Not run here.
-
-- **Formatting:** rerun all formatting commands and composition command checks.
-  Toggle at a caret inside formatted text, on a plain word, with delimiters
-  selected, and across multiple selections. Repeat in table cells and read-only
-  views; confirm list numbering, heading removal, line moves and undo. Not run here.
-
-- **Code Blocks:** rerun highlighted fences, indented code, Copy and click-to-
-  source scenarios. Select the final fence character and the following line start;
-  verify reveal/highlighting boundaries. Type with IME, scroll between fences,
-  and disable/re-enable while Prism loads. No stale controls should remain.
-  Not run by the agent.
-
-- **Vim:** rerun all Vim and table mode-transfer scenarios. Exercise `:w`, `:q`,
-  `:wq`, `:x`, `:u`, `:red`, host shortcut consumption, normal-mode IME and
-  insert-mode selection. Disable/re-enable and confirm native hooks restore
-  and stopped Ex callbacks cannot act. Not run by the agent.
-
-- **Rendered Content:** rerun core rendering, Math, Diagrams, Code Blocks, Embeds
-  and Footnotes scenarios in trusted and untrusted workspaces. Dispose a widget
-  during preprocessing/lazy loading and verify stale content cannot overwrite its
-  replacement. Confirm remote media/iframes follow trust. Not run by the agent.
-
-- **Resources:** rerun contained resources, nested embeds, previews and unsaved
-  embedded-note edits. Confirm relative nested links and mtime URLs, refusal of
-  unknown source identities, realpath escapes and virtual symlinks. Not run here.
-
-- **Editor menus:** rerun table and property menus, including nested submenus,
-  disabled entries, Arrow/Home/End, Escape/Tab, outside click, blur and command
-  errors. Verify focus restoration and right/bottom viewport placement; dispose
-  the owning widget while a menu is open. Not run by the agent.
-
-- **Links:** rerun rendered/source/modifier/side clicks, selection gestures,
-  local fragments, initial navigation, embedded-note identities and all three
-  commands. Change link settings without reopening; disable/re-enable during
-  initial RPC. Confirm external-scheme prompts and unsafe-scheme rejection.
-  Not run by the agent.
-
-- **Native navigation:** rerun link opening/creation, configured new-note folders,
-  folder notes, Explorer folder reveal, side opens and fragments/offsets. Check
-  local symlink escapes, missing parent paths and virtual-filesystem symlinks.
-  The navigation contract remains unchanged. Not run by the agent.
-
-- **Live Preview:** rerun core reveal/source-mode, structural motion, custom
-  renderer toggles, rendered click placement, IME and mouse-drag selection.
-  Include nested emphasis, Markdown links, headings, quotes and task/list markers.
-  Restore a Source-mode panel and toggle features in different orders; identical
-  settings must give identical renderer priority. Not run by the agent.
-
-- **Embeds — image inspector:** rerun image open/close, fit/actual size, zoom
-  buttons/keys, Ctrl/Mod-wheel focal point, pan, resize and remembered scale.
-  Close while loading or panning; observers/listeners must stop and focus return
-  to the trigger when appropriate. Not run by the agent.
-
-- **Embeds — WebM recovery:** rerun the VP8/VP9/audio WebM fixtures and ordinary
-  media controls. Close/disable during fetch, source-open and buffer append;
-  object URLs/readers/listeners must be released. Verify first playback after
-  Opus preroll and visible unsupported/truncated-media errors. Not run here.
-
-- **Embeds — pass lifecycle:** rerun note/heading/block transclusion, cycles,
-  embedded tasks/links/footnotes, remote trust, attachments and Insert Embed.
-  Disable while a resource or nested note render is pending; late passes must
-  dispose, media must stop and original placeholders must return. Not run here.
-
-- **Remaining README audit:** rerun the existing Auto pair, Folding, Indentation
-  guides, Line numbers, Smart lists and Spellcheck scenarios. Check independent
-  pair flags, fold retention after tab-width/config updates, gutter order after
-  toggles, list Enter/Backspace and spellcheck host behavior. Dialect consumers
-  use the same syntax in notes, embeds and metadata. These are documentation
-  clarifications, not new feature behavior; owner acceptance remains unrun.
-
-## Inline title (Phase 4)
-
-Use a disposable copy of `test/fixtures/vault/Core.md` (never an owner vault).
-
-- Enable/disable Inline title. It appears above Markdown in Live Preview and
-  Source mode without becoming document text; off/on leaves folds and scroll
-  intact. Repeat with the catalog composition toggle scenarios.
-- Rename using Enter, Tab and blur; whitespace trims, empty/Escape restores the
-  confirmed name. Type using IME and move focus during composition: commit only
-  after composition ends. A pending rename makes the title read-only/busy.
-- Try an existing filename, a separator, colon, newline and >255 characters.
-  Rename must fail without replacing another file. A focused invalid title shows
-  an error; leaving it restores the confirmed title. Untitled/non-file notes refuse.
-- Down on the title's last visual line focuses Properties; Alt+Down focuses body.
-  Shift+Tab/Up from Properties focuses/selects the title, including after scroll.
-  With Properties hidden/off or in Source mode, navigation falls back to body.
-- Open the same note in two editor groups. Give them different selections,
-  scroll, mode, folds and callout disclosures. Rename with one active: each group
-  reopens the new file and restores its own state; only the intended group focuses.
-  Repeat a long/backward selection and a Properties focus destination.
-- Edit from the other group while rename capture is pending: reject a stale
-  capture. Rename through Explorer and reopen: the title reflects the current
-  filename. Verify configured incoming-link updates through the separate Link
-  Updates plugin. Save/undo remain native operations.
-
-These scenarios are documented, not run by the agent. The existing native smoke
-only proves boot, typing, save and undo; it does not substitute for rename testing.
-
-## Tags (Phase 4 editor/search)
-
-In a disposable copy of `Core.md`, add `#project`, `#Project/notes`, a Unicode tag,
-and YAML `tags: [project]`; create a second fixture note with `#projectile`.
-
-- Click rendered tags in prose, a callout, table, footnote and embedded note.
-  A native picker lists matching notes; parent tags include descendants regardless
-  of case, but `project` does not match `projectile`. Selecting opens the note.
-- Code, escaped hashes, comments and numeric-only tags remain literal. Caret
-  reveal shows source; disabling Tags removes inline widgets and click handlers.
-  Re-enable and verify other feature order/state remains unchanged.
-- Edit a YAML/inline tag in another panel and wait for indexing; repeat the
-  search. Excluded notes must be omitted. No new whole-workspace scan occurs.
-- Disable Tags while a picker is open; selecting a stale result must not open it.
-  Native hierarchical Tags view scenarios belong to Phase 5.
-
-These scenarios are documented, not run by the agent.
-
-## Suggestions
-
-In a disposable fixture vault, create a note with an alias, headings and explicit
-block IDs, an attachment, an unresolved link, nested tags and an excluded note.
-Type `[[`, `[[Note#`, `[[Note#^`, `[[^^` and `#`; check relevant candidates,
-alias insertion, global block text matching and absence of excluded results.
-Accept with Enter; existing auto-paired `]]` must not be duplicated and the caret
-must move after the link. Escape closes an active list without leaving the link.
-Repeat in Source mode; headings (`# `), inline/fenced code and frontmatter must
-not open tag/link lists. Rapidly type, erase, switch notes and disable Suggestions
-while a list is loading: no stale popup or edit should appear. Disable Links and
-Tags separately and verify only that source disappears, then re-enable in reverse
-order. Check completion keys against table and Vim overrides. All verify bindings
-remain unbound. These replace the retired suggestion browser/native cases;
-automated coverage is unit/composition only plus the unchanged smoke suites.
-
-## Search query blocks
-
-In a disposable vault, render fenced `query` blocks using `tag:`, `path:`, Boolean,
-property, task, line/block/section and regex predicates. Include Markdown, Canvas,
-an attachment selected by a file query, an excluded note and a malformed Canvas.
-Expected: live unsaved text is searched, exclusions hold, result links open the
-right note from nested folders/embedded notes, and unreadable files are counted.
-Edit a target file and confirm automatic refresh; use Refresh, then introduce an
-invalid query and correct it. Expose source while searching and toggle Search off
-and on: subscriptions/results must disappear without late updates or duplicate
-buttons. Source mode shows the fence. Test a costly regex in the disposable
-fixture: its query must report a timeout while the editor remains responsive;
-a subsequent normal query must work. Check this alongside Links disabled/enabled
-and two panels. This replaces retired query-block/browser interaction coverage;
-worker failure/cancellation and late replies are covered by unit tests.
-
-## HTML paste
-
-Copy rich HTML with headings, bold/italic/strike/highlight, nested task lists,
-links/wiki aliases, images/embeds, a table, TeX annotations and a folded callout.
-Paste into a disposable note in both editor modes, then inspect source and undo.
-Expect Markdown structure, escaped literal punctuation, safe destinations and one
-undoable paste. Repeat inside an active table cell and ensure only that cell's
-source changes; a rectangular table selection still pastes plain TSV. Check
-Shift+Mod+V, inline/fenced code and property inputs keep plain/native paste.
-Toggle Auto convert HTML off/on and repeat without duplicate insertion. During a
-delayed transform, move the caret, type, close the cell or disable the plugin;
-no stale result should overwrite current text. Menu paste remains plain text.
-Sanitization must remove active containers; no pasted HTML should execute.
-
-## Copy for Agent
-
-Select one or more source lines and invoke Copy for Agent from the palette,
-selection context menu, title action and Mod+Alt+C. Expect `@path#start-end`
-(single-line `#N`), with a workspace-relative path in one local root, or a full
-URI for multiple roots, remote files or files outside the workspace. An endpoint
-at column zero must exclude that final line. Repeat with CRLF and Unicode, two
-panels of one note, a table cell selection and a rectangular range; references
-must identify the correct source lines and panel. The title action only shows
-while the active panel has a selection.
-
-For dirty text, test Save and Copy, Copy Text Only and Cancel separately. Text
-Only must not save; Cancel must not change the clipboard; Save and Copy must
-recapture after saving. The public service refuses dirty references. Race an
-external edit, a pane close and plugin disable with capture/prompt: stale or
-cancelled operations must not copy a fabricated reference. Disable/re-enable the
-plugin and verify commands, title/menu action and RPC go away/return once.
-Save/reopen untitled notes before copying disk references; text-only copy works
-without a disk path. Nothing is submitted to an agent/chat.
-
-## Source markers
-
-Use the sample external plugin (API phase) in an isolated profile and disposable
-vault. Set two providers' markers in two panels of one note. Expect independent
-sets, labels/tooltips rendered as plain text and actions dispatched only to the
-provider that owns the clicked marker. Place markers in paragraphs, tables,
-callouts and fenced blocks: rendered source must not swallow the badge; revealing
-source or toggling Live Preview must reposition it without text changes.
-
-Type before/inside a range, edit two separated regions together, undo/redo, and
-repeat with CRLF and delayed synchronization. Markers should follow exact edits;
-fully deleted ranges disappear. Dispose one provider and confirm only its sets
-and actions vanish; re-enable without duplicates. Try stale/future versions,
-1,001 markers, oversized labels and duplicate IDs: reject atomically. Close a
-pane during action dispatch and confirm the other pane survives. This replaces
-the source's Query annotation UI with generic badges; no vault Query watcher or
-LLM Wiki-specific path opening is included.
-
-For search blocks, repeat metadata-only tag/property and file/path predicates in
-a large disposable vault: they should use the index without per-note reads. Mixed
-content predicates must still see live text and preserve scoped query behavior.
+`Core.md` (Formatting section).
+
+1. Run **Toggle Bold**, **Toggle Italics**, **Toggle Strikethrough**,
+   **Toggle Highlight**, **Toggle Inline Code** and **Toggle Comment** on a
+   selection and at a caret, twice each. **Insert Link**, **Insert
+   Horizontal Rule**, **Set Heading 0**–**6**, **Toggle Bullet List**,
+   **Toggle Numbered List**, **Toggle Blockquote**, **Swap Line Up** and
+   **Swap Line Down** act on all selected lines.
+2. Mod+B, Mod+I and Mod+K are bound; the others are unbound until checked
+   against Obsidian's hotkeys.
+
+### vim
+
+Off by default.
+
+1. Normal, insert and visual modes; `:w`, `:q`, `:wq`, `:x`, `:u`, `:red`
+   use VS Code's save, close and undo. IME in normal mode inserts nothing.
+2. With Vim on, Mod+O, B, I, K, Shift+X, Shift+T, Shift+H and Alt+0–6 reach
+   Vim instead of VS Code; with Vim off they do not.
+
+### pasteHtml
+
+1. Copy a web page section with headings, emphasis, nested task lists,
+   links, images and a table; paste: Markdown arrives as one undo step.
+   Shift+Mod+V pastes plain text. Inside a table cell only that cell
+   changes. No pasted script runs.
+
+### copyForAgent
+
+1. Select lines and run **Copy for Agent** (palette, menu, title action,
+   Mod+Alt+C): the clipboard holds `@path#start-end` (`#N` for one line).
+2. With unsaved changes, a prompt offers Save and Copy, Copy Text Only and
+   Cancel; each does only that.
+
+## External plugins
+
+The sample plugin in `test/fixtures/sample-plugin/` is the example from
+`API.md`. Its README says how to build it (`pnpm sample`), package it and
+install it into the same isolated profile, and lists what it does.
+
+1. In a note with `TODO` in it, each `TODO` gets a badge; clicking one
+   shows which line it is on. Markers follow edits; deleting a line removes its
+   marker. Two panels have independent marker sets.
+2. Add `[#42](ticket:42)` to a note and click it: the issue page opens in
+   the browser (`mwsampleTickets.baseUrl`). No "open external
+   application?" prompt appears, because the plugin claims `ticket:`.
+3. A ```` ```tickets ```` fence lists ticket links, rendered and sanitized.
+   In an untrusted workspace it stays an ordinary code block.
+4. **Sample Tickets: Refresh TODO Badges** recomputes the badges.
+5. Turn it off in `markdownWorkbench.plugins.external` or uninstall it:
+   markers, link handling, the fence renderer and the command go away
+   without touching built-in plugins. **Show Plugin Status** lists it as
+   external.
 
 <!-- command-setting-inventory:start -->
 ## Complete command and setting acceptance inventory
 
-Use a disposable copy of `test/fixtures/vault/Core.md`; add the note/table/properties described in each plugin scenario above. These rows enumerate every generated command and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.
+Use the disposable fixture vault from Setup. These rows enumerate every generated command and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.
 
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
@@ -967,19 +633,3 @@ Use a disposable copy of `test/fixtures/vault/Core.md`; add the note/table/prope
 
 Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
-
-## External host data contributions
-
-Use the sample plugin described in API.md in an isolated profile and disposable
-vault. Register title and selection actions; verify labels appear only for enabled
-providers, select text and inspect the returned original-source range, then close
-the pane or disable the provider while capture is pending. No late callback should
-run. Note Actions uses the native quick picker; table menus also include registered
-selection actions. Repeat with two panes of the same note.
-
-Register a fence processor returning Markdown, then HTML with scripts, event
-attributes and a task checkbox. Verify output is sanitized and the generated task
-cannot change the note. Repeat rendering, edit the fence, change its source note,
-disable/re-enable the provider and close the pane during a slow render. Old output
-must not return. Recursive output stops at the depth limit. In an untrusted
-workspace, custom processors remain off and the fence stays ordinary code.

@@ -2575,3 +2575,34 @@ decides what opens) with its own unit test.
 Checks: `pnpm check` **472/472**; browser smoke **14/14**; native smoke **1/1**.
 No lint exceptions; eslint now ignores build output and `.vscode-test`.
 Ledger unchanged **91/22/2/333/0**. Phase 8 remains.
+
+### Phase 8 — Packaging, documentation and hand-over, 2026-10-09
+
+`pnpm package` builds a 3.2 MB VSIX (84 files) from an allowlist
+`.vscodeignore` and checks `THIRD_PARTY_NOTICES.md`, which
+`scripts/third-party-notices.mjs` generates from the packages esbuild
+actually bundled. The native smoke ran once against that VSIX
+(`MARKDOWN_WORKBENCH_TEST_VSIX`, isolated /tmp profile, own xvfb display):
+**1/1**.
+
+README, CAPABILITIES.md (every plugin, default and difference from
+Obsidian) and CHANGELOG.md are new or rewritten; API.md and the sample
+plugin came with Phase 7. `docs/MANUAL_TEST_PLAN.md` is rewritten by plugin
+against the fixture vault, with no phase status sections, and starts with
+installing the VSIX and the sample plugin into an isolated profile. The
+generated command and setting inventory is kept. DESIGN §13 and §19,
+PARITY.md and the plugin READMEs were corrected (Backlinks/Outgoing Links
+off by default, CSP `connect-src`, CSS files instead of removed style
+objects).
+
+Fixes from a side-by-side with Obsidian on the fixture vault, each with a
+unit test: setext underlines stay visible, nested quotes draw a bar per
+level, checked tasks are muted and struck through in Live Preview (any
+status but a space, with `data-task` for snippets), and rendered blocks get
+line numbers. The fixture's claim that comments hide in Live Preview was
+wrong: Obsidian shows them faint, as the workbench does.
+
+Checks: `pnpm check` **483/483**; browser smoke **14/14**; native smoke
+**1/1** against the packaged VSIX. Ledger **91/22/2/333/0**, no `todo`
+rows (`scripts/test-ledger.mjs` needs the unavailable source checkout, so
+the ledger was not regenerated). Manual acceptance (Phase 9) is unrun.
