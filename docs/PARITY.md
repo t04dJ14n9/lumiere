@@ -75,7 +75,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Readable line length | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Strict line breaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Properties in document | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Show inline title | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Show inline title | not observed | Off by default (owner decision, 2026-10-09; Obsidian shows it); when on, the file name above line 1 | Manual scenario pending; automated evidence is in phase records | not observed |
 | Fold heading, Fold indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Show line numbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Show indentation guides | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -196,7 +196,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.inlineTitle.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

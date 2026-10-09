@@ -68,7 +68,8 @@ completion and Phase 8 records) first.
   reintroduce `EditorView.baseTheme` style objects.
 - Backlinks and Outgoing Links are off by default (owner decision).
 - Owner-decided defaults: line numbers on, Mermaid on, readable line length
-  off (DESIGN §15.1).
+  off (DESIGN §15.1), inline title off (INLINECOMMIT): line 1 starts at the
+  top as in VS Code; the plugin and its setting stay.
 
 ### Obsidian 1.14 comparison follow-up (each fix with a unit test)
 
@@ -180,7 +181,7 @@ completion and Phase 8 records) first.
   `codeBlocks/code.test.ts`. Checks: `pnpm check` 577/577, browser 44/44,
   native 2/2.
 
-### Editor font (FONTCOMMIT)
+### Editor font (3a7be46)
 
 - Owner question: why the note's font looks odd, and whether it follows
   Cursor's or VS Code's font settings. Both apps work the same way (Cursor is

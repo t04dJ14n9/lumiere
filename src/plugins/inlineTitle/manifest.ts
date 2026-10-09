@@ -4,6 +4,7 @@ export default defineManifest({
   title: "Inline title",
   description: "Show and rename the note title above its Markdown content.",
   kind: "feature",
-  defaultEnabled: true,
+  // Off by default (owner decision): line 1 starts at the top, as in VS Code.
+  defaultEnabled: false,
   surfaces: ["host", "webview"],
 });

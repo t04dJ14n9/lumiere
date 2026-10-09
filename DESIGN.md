@@ -966,7 +966,7 @@ corresponds to. "Source" names the module on the source branch.
 | ID | Obsidian | Default | Injects | Source |
 | --- | --- | --- | --- | --- |
 | `properties` | Properties view; *Properties in document* | on | render, livePreview, markdown | `editor/properties/*`, `markdown/properties.ts`, `property-order.ts`, `host/property-types.ts` |
-| `inlineTitle` | *Show inline title*; rename from title | on | editor, documents | `editor/file-title.ts`, `markdown/rename-note.ts` |
+| `inlineTitle` | *Show inline title*; rename from title | off (owner decision, 2026-10-09) | editor, documents | `editor/file-title.ts`, `markdown/rename-note.ts` |
 | `links` | internal links, link following, unresolved styling | on | vault, livePreview, editors | `hybrid-inline.ts` (links), `app.ts` `listenForLinks`, `session.openLink` |
 | `embeds` | `![[ ]]` transclusion, attachments, media | on | resources, render | `render/embeds.ts`, `media/*` |
 | `tables` | Live Preview table editor | on | livePreview, render, menu | `table/*` |
@@ -1117,7 +1117,7 @@ default (§25).
 | Readable line length | `markdownWorkbench.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
 | Strict line breaks | `markdownWorkbench.editor.strictLineBreaks` | `false` |
 | Properties in document | `markdownWorkbench.properties.display` | `visible` |
-| Show inline title | plugin `inlineTitle` | on |
+| Show inline title | plugin `inlineTitle` | off (owner decision, 2026-10-09) |
 | Fold heading, Fold indent | `markdownWorkbench.folding.heading`, `.indent` | `true`, `true` |
 | Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |

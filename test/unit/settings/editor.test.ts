@@ -90,6 +90,7 @@ test("resource settings use manifest aliases and validate all editor fields", ()
   assert.equal(result.editor?.rightToLeft, true);
   assert.equal(result.mode, "source");
   assert.equal(result.features?.lineNumbers?.enabled, true);
+  assert.equal(result.features?.inlineTitle?.enabled, false);
   assert.equal(result.features?.lineNumbers?.config.style, "on");
   values["editor.rightToLeft"] = "yes";
   assert.throws(() => readSettings(reader));
@@ -117,6 +118,8 @@ test("required settings, title actions, native context menus and unbound verify 
     "files.newNoteFolder": "",
     "links.useWikilinks": true,
     "plugins.lineNumbers.enabled": true,
+    // Off by default: line 1 starts at the top, as in the text editor.
+    "plugins.inlineTitle.enabled": false,
     "plugins.diagrams.enabled": true,
     "plugins.vim.enabled": false,
   })) {

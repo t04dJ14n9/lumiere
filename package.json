@@ -893,7 +893,7 @@
         },
         "markdownWorkbench.plugins.inlineTitle.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "resource",
           "description": "Show and rename the note title above its Markdown content."
         },

@@ -40,7 +40,7 @@ Renderer registrations belong to their caller and dispose with that caller.
 
 ## Limits and differences from Obsidian
 
-Source mode retains the inline title. A block covering the whole document has no
+Source mode retains the inline title (when it is on). A block covering the whole document has no
 outside destination for Escape. Rendered-position mapping refuses mismatched DOM
 text such as embedded media/math. VS Code owns text/undo; exact visual parity is
 left to the owner's manual comparison.
