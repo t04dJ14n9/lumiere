@@ -1,10 +1,9 @@
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
-import { panelIsActive } from "./active-panel";
 import * as vscode from "vscode";
 import { textBypass } from "./reclaim";
-import { randomUUID, createHash } from "node:crypto";
+import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -12,10 +11,9 @@ import type {
   CopyLinkTarget,
   HostDocument,
   Workbench,
-  PanelShell,
 } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
-const viewType = "markdownWorkbench.editor";
+import { registerEditor } from "./editor-panels";
 
 export function createWorkbench(
   extensionUri: vscode.Uri,
@@ -43,12 +41,13 @@ export function createWorkbench(
     ...configurationOperations(),
     editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
-    registerEditor: (open) => registerEditor(extensionUri, documents, open),
+    registerEditor: (provider, open) =>
+      registerEditor(provider, { extensionUri, documents }, open),
   };
 }
 
 /** Stable adapter identity with live getters; the native document remains authoritative. */
-class NativeDocuments {
+export class NativeDocuments {
   private readonly wrappers = new WeakMap<vscode.TextDocument, HostDocument>();
   private readonly originals = new WeakMap<HostDocument, vscode.TextDocument>();
   native(document: HostDocument): vscode.TextDocument {
@@ -272,122 +271,4 @@ function fileOperations(): Pick<Workbench, "read" | "stat"> {
       };
     },
   };
-}
-function panelTransport(panel: vscode.WebviewPanel): PanelShell["transport"] {
-  return {
-    send(message) {
-      void panel.webview.postMessage(message);
-    },
-    listen(receive) {
-      const stop = panel.webview.onDidReceiveMessage(receive);
-      return () => stop.dispose();
-    },
-  };
-}
-function isActivePanel(
-  document: vscode.TextDocument,
-  panel: vscode.WebviewPanel,
-): boolean {
-  const group = vscode.window.tabGroups.activeTabGroup;
-  const input = group.activeTab?.input;
-  const custom = input instanceof vscode.TabInputCustom ? input : undefined;
-  return panelIsActive(
-    panel,
-    {
-      groupColumn: group.viewColumn,
-      viewType: custom?.viewType,
-      uri: custom?.uri.toString(),
-    },
-    { viewType, uri: document.uri.toString() },
-  );
-}
-function panelState(
-  panel: vscode.WebviewPanel,
-  listener: () => void,
-): ReturnType<PanelShell["onState"]> {
-  const panelSubscription = panel.onDidChangeViewState(listener);
-  const groupSubscription =
-    vscode.window.tabGroups.onDidChangeTabGroups(listener);
-  // Closing a tab opened over the panel (Ctrl+N, then close) changes tabs,
-  // not groups; without this the plugin context keys stayed false.
-  const tabSubscription = vscode.window.tabGroups.onDidChangeTabs(listener);
-  return () => {
-    panelSubscription.dispose();
-    groupSubscription.dispose();
-    tabSubscription.dispose();
-  };
-}
-function createPanelShell(
-  document: vscode.TextDocument,
-  panel: vscode.WebviewPanel,
-  extensionUri: vscode.Uri,
-  documents: NativeDocuments,
-): PanelShell {
-  const id = randomUUID();
-  const root =
-    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
-    vscode.Uri.joinPath(document.uri, "..");
-  panel.webview.options = {
-    enableScripts: true,
-    localResourceRoots: [vscode.Uri.joinPath(extensionUri, "dist"), root],
-  };
-
-  return {
-    id,
-    get column() {
-      return panel.viewColumn;
-    },
-    document: documents.wrap(document),
-    cspSource: panel.webview.cspSource,
-    trusted: vscode.workspace.isTrusted,
-    transport: panelTransport(panel),
-    active: () => isActivePanel(document, panel),
-    reveal() {
-      panel.reveal();
-    },
-    dispose() {
-      panel.dispose();
-    },
-    setHTML(html) {
-      panel.webview.html = html;
-    },
-    resource(uri) {
-      return panel.webview.asWebviewUri(vscode.Uri.parse(uri)).toString();
-    },
-    asset(relative) {
-      return panel.webview
-        .asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", relative))
-        .toString();
-    },
-    onDispose(listener) {
-      const stop = panel.onDidDispose(listener);
-      return () => stop.dispose();
-    },
-    onState: (listener) => panelState(panel, listener),
-  };
-}
-function registerEditor(
-  extensionUri: vscode.Uri,
-  documents: NativeDocuments,
-  open: (panel: PanelShell) => void,
-) {
-  const registration = vscode.window.registerCustomEditorProvider(
-    viewType,
-    {
-      resolveCustomTextEditor(document, panel) {
-        const shell = createPanelShell(
-          document,
-          panel,
-          extensionUri,
-          documents,
-        );
-        open(shell);
-      },
-    },
-    {
-      webviewOptions: { retainContextWhenHidden: true },
-      supportsMultipleEditorsPerDocument: true,
-    },
-  );
-  return () => registration.dispose();
 }

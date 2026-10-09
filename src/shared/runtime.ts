@@ -2,6 +2,7 @@ import type { Infer } from "../kernel";
 import type { featureSettings } from "./features";
 import type { Disposer } from "../kernel";
 import type { Endpoint, Transport } from "./rpc/endpoint";
+import type { EditorProvider } from "./editor-provider";
 export interface HostDocument {
   readonly id: string;
   readonly uri: string;
@@ -53,7 +54,11 @@ export interface Workbench {
   /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */
   writeScratchFile?(name: string, text: string): Promise<string>;
   // Editors and settings.
-  registerEditor(open: (panel: PanelShell) => void): Disposer;
+  /** Register an editor (see `EditorProvider`); its panels go to `open`. */
+  registerEditor(
+    provider: EditorProvider,
+    open: (panel: PanelShell) => void,
+  ): Disposer;
   onConfiguration?(listener: () => void): Disposer;
   /**
    * The workspace's own `workbench.editorAssociations`, not the user's or a

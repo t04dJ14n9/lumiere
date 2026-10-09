@@ -1,8 +1,8 @@
 import type { Context } from "../../kernel";
 import type { Workbench } from "../../shared/runtime";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 
-const viewType = "markdownWorkbench.editor";
-const markdownPatterns = ["*.md", "*.markdown"] as const;
+const { viewType, filenamePatterns: markdownPatterns } = MARKDOWN_EDITOR;
 
 /**
  * The workspace's editor associations with Markdown routed to this editor.

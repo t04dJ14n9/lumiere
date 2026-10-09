@@ -10,6 +10,7 @@ import type {} from "../vault/api";
 import type { EditorPanel, Editors } from "./api";
 import { createPanel } from "./panel";
 import { protocol } from "./protocol";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 interface EditorHostConfig {
   features?: readonly Manifest[];
   configure: (context: Context, panel: PanelShell) => void;
@@ -25,7 +26,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
     ctx.effect(() =>
-      ctx.workbench.registerEditor((shell) => {
+      ctx.workbench.registerEditor(MARKDOWN_EDITOR, (shell) => {
         const panel = createPanel(shell, ctx.documents, ctx.workbench, {
           onClose: () => {
             panels.delete(shell.id);

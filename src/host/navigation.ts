@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
 import type { Navigation, NavigationTarget } from "../shared/runtime";
+import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 
 /** All navigation paths are checked again in the native adapter, including symlinks. */
 async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
@@ -218,7 +219,7 @@ async function openNavigation({
     await vscode.commands.executeCommand(
       "vscode.openWith",
       uri,
-      "markdownWorkbench.editor",
+      MARKDOWN_EDITOR.viewType,
       column,
     );
     if (fragment || at !== undefined) {

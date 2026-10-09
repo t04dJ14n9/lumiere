@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 import type { Manifest } from "../src/shared/manifest";
+import { MARKDOWN_EDITOR, whenActive } from "../src/shared/editor-provider";
 export async function contributions() {
   const manifests: Manifest[] = [];
   for (const directory of readdirSync("src/plugins", {
@@ -46,13 +47,12 @@ export async function contributions() {
   return {
     customEditors: [
       {
-        viewType: "markdownWorkbench.editor",
-        displayName: "Markdown Workbench",
-        selector: [
-          { filenamePattern: "*.md" },
-          { filenamePattern: "*.markdown" },
-        ],
-        priority: "option",
+        viewType: MARKDOWN_EDITOR.viewType,
+        displayName: MARKDOWN_EDITOR.displayName,
+        selector: MARKDOWN_EDITOR.filenamePatterns.map((filenamePattern) => ({
+          filenamePattern,
+        })),
+        priority: MARKDOWN_EDITOR.priority,
       },
     ],
     commands,
@@ -81,7 +81,7 @@ export async function contributions() {
         ...manifestMenus(manifests, "editor/title"),
         {
           command: "markdownWorkbench.openAsText",
-          when: "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands",
+          when: `${whenActive(MARKDOWN_EDITOR)} && markdownWorkbench.plugin.commands`,
           group: "navigation",
         },
       ],
@@ -178,7 +178,7 @@ function whenEnabled(
   scope: "editor" | "workbench" = "editor",
 ): string {
   if (scope === "editor") {
-    return `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`;
+    return `${whenActive(MARKDOWN_EDITOR)} && markdownWorkbench.plugin.${manifest.id}`;
   }
   if (manifest.kind === "core") {
     // Core workbench commands (plugin management, the editor association)

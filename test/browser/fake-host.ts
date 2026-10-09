@@ -116,7 +116,8 @@ export class BrowserHost {
       error(message) {
         throw new Error(message);
       },
-      registerEditor: (_open: (panel: PanelShell) => void) => () => {},
+      registerEditor:
+        (_provider, _open: (panel: PanelShell) => void) => () => {},
       config: () => ({ preset: "obsidian", mode: "livePreview" }),
     };
     this.session = new Session(this.document, workbench);

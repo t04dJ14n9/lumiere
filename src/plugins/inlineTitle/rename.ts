@@ -4,6 +4,7 @@ import type { EditorPanel, Editors } from "../editor/api";
 import { renameTarget } from "./title";
 import { TitleTransfers } from "./transfers";
 import type { TitleFocus } from "./protocol";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 
 interface RenameOptions {
   panel: EditorPanel;
@@ -59,7 +60,7 @@ export class TitleRenames {
         await this.workbench.execute(
           "vscode.openWith",
           target,
-          "markdownWorkbench.editor",
+          MARKDOWN_EDITOR.viewType,
           { viewColumn: view.panel.column, preserveFocus: !view.active },
         );
         await this.restoreReady();

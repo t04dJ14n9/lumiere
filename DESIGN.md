@@ -663,6 +663,13 @@ Split `vscode-extension/src/markdown/provider.ts` (752 lines) into:
 | `view-transfer.ts` | Capture and restore view state across rename and reopen (current `renamedViews` logic) |
 | `webview-html.ts` | HTML, CSP and nonce (§19) |
 
+The editor is described by an `EditorProvider` (`src/shared/editor-provider.ts`:
+view type, display name, file patterns, document kind, panel options);
+`Workbench.registerEditor(provider, open)` and `src/host/editor-panels.ts`
+register whatever provider they are given and know nothing about Markdown.
+`MARKDOWN_EDITOR` is the single source of the view type and patterns for
+associations, reclaiming, navigation, renames and generated contributions.
+
 Registration keeps `retainContextWhenHidden: true` and
 `supportsMultipleEditorsPerDocument: true`. Two panels of one note share a
 session and history but keep their own selections, folds and scroll.

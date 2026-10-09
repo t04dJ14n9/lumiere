@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { ApiPlatform } from "./platform";
 import type { ConfigurationScope } from "./types";
 import { RpcError } from "../../shared/rpc/lifecycle";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 export function nativePlatform(): ApiPlatform {
   return {
     uri: (value) => vscode.Uri.parse(value, true),
@@ -9,7 +10,7 @@ export function nativePlatform(): ApiPlatform {
       await vscode.commands.executeCommand(
         "vscode.openWith",
         uri,
-        "markdownWorkbench.editor",
+        MARKDOWN_EDITOR.viewType,
         {
           viewColumn: options.viewColumn,
           preserveFocus: options.preserveFocus,

@@ -7,8 +7,9 @@ import {
   shouldReclaim,
 } from "./reclaim-policy";
 import type { TabKind } from "./reclaim-policy";
+import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 
-const viewType = "markdownWorkbench.editor";
+const { viewType } = MARKDOWN_EDITOR;
 
 /** Notes this extension opens as text keep it (Open as Text, source commands). */
 export const textBypass = new Bypass();

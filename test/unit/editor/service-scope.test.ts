@@ -24,7 +24,7 @@ test("independent panel kernels share the injected vault registry before feature
   root.provide(
     "workbench",
     fakeWorkbench({
-      registerEditor: (callback) => {
+      registerEditor: (_provider, callback) => {
         open = callback;
         return () => {};
       },
