@@ -13,17 +13,23 @@ Lifecycle invariants (tested in `test/unit/kernel/transaction.test.ts` and
   commit, and child plugins started during `apply` are held and start only on
   commit. A failing `apply` releases everything and leaves no trace.
 - **Teardown mirrors activation.** Stopping first withdraws the plugin's
-  services and waits until the consumers that stop because of it have finished
-  stopping, so nothing backing a service disappears under a consumer still
-  using it. Then effects and child plugins are released together, last
-  acquired first. Disposal errors are logged and do not stop the rest.
+  services and waits until every consumer of them has finished stopping (those
+  this stop stopped and those already stopping for another reason, such as a
+  disable or a second prerequisite lost at the same time), so nothing backing
+  a service disappears under a consumer still using it. Then effects and child
+  plugins are released together, last acquired first. Disposal errors are
+  logged and do not stop the rest. Concurrent `dispose()` calls all wait for
+  the same teardown.
 - **Late work is refused.** A disposed context rejects late registrations
   from asynchronous callbacks; a resource handed to `acquire` afterwards is
   released at once.
 - **Every resource is accounted for.** `runtime.ledger` counts live resources
   by owner (plugin name) and kind (`effect`, `listener`, `fiber`, `service`,
-  or the kind given to `acquire`). A plugin that stopped cleanly owns nothing;
-  the per-plugin leave-no-trace tests compare ledger snapshots.
+  or the kind given to `acquire`). A resource leaves the ledger only once its
+  cleanup has finished; a cleanup that throws leaves a `failed <kind>` entry
+  behind, so a failed teardown never looks clean. A plugin that stopped
+  cleanly owns nothing; the per-plugin leave-no-trace tests (core hosts
+  included) compare ledger snapshots and assert no teardown error was logged.
 
 Services are typed through declaration merging of `Services` in `types.ts`.
 The context Proxy enforces injection declarations. Non-replaceable names have
@@ -47,7 +53,7 @@ Intentional differences from Cordis:
   deterministic host, browser and test integration.
 - Root contexts have no fiber; plugin contexts do. No platform timer, console,
   DOM, VS Code or Node APIs exist in the kernel.
-- Config schemas reject unexpected object keys. They emit JSON Schema and infer
+- Config schemas (`src/shared/schema.ts`, re-exported here) reject unexpected object keys. They emit JSON Schema and infer
   optional/defaulted properties; validation errors carry a property path.
 - Plugin channels use the shared RPC endpoint. Its transport and timer adapter
   are injected. It validates envelopes, parameters and results at both ends,
