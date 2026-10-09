@@ -141,10 +141,10 @@ function documentOperations(
     },
   };
 }
-/** Ask Agent about Selection: which agent chats exist, and files to attach. */
 /** Extensions that bring an agent chat of their own besides the editor's. */
 const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
 
+/** Ask Agent about Selection: which agent chats exist, and files to attach. */
 function agentOperations(): Pick<
   Workbench,
   "agentEnvironment" | "writeScratchFile"

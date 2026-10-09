@@ -227,7 +227,6 @@ export interface SourceEdit {
   to: number;
   insert: string;
 }
-/** What the editor offers Ask Agent about Selection. */
 /** The `markdownWorkbench.askAgent.target` setting. */
 export type AskAgentTarget =
   | "auto"
@@ -237,6 +236,7 @@ export type AskAgentTarget =
   | "codex"
   | "clipboard";
 
+/** What the editor offers Ask Agent about Selection. */
 export interface AgentEnvironment {
   /** Where Ask Agent sends the passage: `auto` or one agent. */
   target: AskAgentTarget;
