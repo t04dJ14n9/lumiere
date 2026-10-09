@@ -35,24 +35,40 @@ export async function command(page: Page, title: string) {
   await item.click();
   await expect(input).not.toBeVisible();
 }
-/** Opens Note.md in Markdown Workbench and returns its editable content. */
-export async function openWorkbench(page: Page) {
+/**
+ * Opens a note (Note.md by default) in Markdown Workbench and returns its
+ * editable content. `timing` receives the clock at the choice of the editor
+ * and when its content is on screen, for load-time measurements.
+ */
+export async function openWorkbench(
+  page: Page,
+  file = "Note.md",
+  timing: { start?: number; end?: number } = {},
+) {
   await expect(page.locator(".monaco-workbench")).toBeVisible();
   console.log("Native: closing all editors");
   await command(page, "View: Close All Editor Groups");
   console.log("Native: opening fixture");
-  await page.keyboard.press("ControlOrMeta+p");
-  await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, "Note.md"));
+  // A focused webview can swallow the shortcut, so press it until it opens.
+  await expect(async () => {
+    if (!(await page.locator(QUICK_INPUT).isVisible())) {
+      // Take the focus out of a webview left from the previous note.
+      await page.locator(".part.statusbar").click({ position: { x: 5, y: 5 } });
+      await page.keyboard.press("ControlOrMeta+p");
+    }
+    await expect(page.locator(QUICK_INPUT)).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+  await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, file));
   // Enter before the result row exists does nothing on a busy machine.
   await expect(
     page
       .locator(".quick-input-list .monaco-list-row")
-      .filter({ hasText: "Note.md" })
+      .filter({ hasText: file })
       .first(),
   ).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(
-    page.locator(".tabs-container .tab").filter({ hasText: "Note.md" }),
+    page.locator(".tabs-container .tab").filter({ hasText: file }),
   ).toBeVisible();
   await page.keyboard.press("ControlOrMeta+Shift+p");
   await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
@@ -68,6 +84,7 @@ export async function openWorkbench(page: Page) {
     .filter({ hasText: "Markdown Workbench" })
     .first()
     .click();
+  timing.start = Date.now();
   console.log("Native: waiting for Markdown Workbench webview");
   let frame: Frame | undefined;
   await expect
@@ -96,6 +113,7 @@ export async function openWorkbench(page: Page) {
       return false;
     })
     .toBe(true);
+  timing.end = Date.now();
   return frame!.getByRole("textbox", { name: "Markdown content" });
 }
 export function workbenchPage(browser: Browser): Page {

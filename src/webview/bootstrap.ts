@@ -26,6 +26,7 @@ export async function bootstrap(
   logging = webviewLogging((record) => rpc.notify(protocol, "log", record)),
 ) {
   const init = await rpc.call(protocol, "ready", {});
+  performance.mark("mw:ready");
   logging.configure(init.debugLogging);
   const root = Context.create({
     logger: logging.logger,
@@ -66,6 +67,8 @@ export async function bootstrap(
   if (failed) {
     throw failed.error;
   }
+  performance.mark("mw:plugins");
+  requestAnimationFrame(() => performance.mark("mw:first-paint"));
   rpc.notify(protocol, "initialized", {});
   return root;
 }

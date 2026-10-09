@@ -1,0 +1,73 @@
+--- inclusive
+  1236 ms  (root) :-1
+   814 ms  (anonymous) fake-host.js:217072
+   813 ms  reconcile fake-host.js:217037
+   812 ms  start fake-host.js:217062
+   799 ms  publish fake-host.js:217421
+   798 ms  changed fake-host.js:217301
+   797 ms  (anonymous) fake-host.js:217302
+   763 ms  dispatch fake-host.js:230995
+   761 ms  update fake-host.js:231007
+   761 ms  (anonymous) fake-host.js:230972
+   746 ms  effect fake-host.js:217444
+   745 ms  refresh fake-host.js:237521
+   744 ms  (anonymous) fake-host.js:240368
+   742 ms  register fake-host.js:237526
+   738 ms  (anonymous) fake-host.js:238871
+   450 ms  iterate fake-host.js:233992
+   410 ms  update fake-host.js:224957
+   410 ms  updatePlugins fake-host.js:231135
+   321 ms  (anonymous) fake-host.js:224945
+   315 ms  update fake-host.js:233025
+   314 ms  updateGutters fake-host.js:233088
+   314 ms  apply fake-host.js:260237
+   314 ms  (anonymous) fake-host.js:260249
+   312 ms  SingleGutterView fake-host.js:233200
+   312 ms  plugin fake-host.js:231374
+   312 ms  markers fake-host.js:236988
+   312 ms  buildMarkers fake-host.js:236973
+   311 ms  (anonymous) fake-host.js:236965
+   311 ms  foldable fake-host.js:236717
+   310 ms  foldRange2 fake-host.js:260178
+   310 ms  (anonymous) fake-host.js:260222
+   309 ms  extractMetadata fake-host.js:257801
+   309 ms  metadata fake-host.js:257791
+   309 ms  headings2 fake-host.js:260173
+   230 ms  ensureAddr fake-host.js:220348
+   230 ms  _EditorState fake-host.js:220706
+   223 ms  applyTransaction fake-host.js:220750
+   223 ms  get state fake-host.js:220514
+   212 ms  index fake-host.js:259035
+   206 ms  (anonymous) fake-host.js:269402
+   198 ms  update fake-host.js:220130
+   198 ms  (anonymous) fake-host.js:220777
+   195 ms  __init fake-host.js:8
+   195 ms  src/plugins/codeBlocks/code-highlight.ts fake-host.js:23460
+   195 ms  prism-languages:all fake-host.js:23105
+open took 1194 ms (16000 blocks)
+sampled 1236 ms
+   117 ms  DFS fake-host.js:1645
+   107 ms  (anonymous) fake-host.js:226532
+    88 ms  (program) :-1
+    81 ms  nextChild fake-host.js:234246
+    44 ms  sibling fake-host.js:234717
+    39 ms  lineInner fake-host.js:218747
+    33 ms  (idle) :-1
+    31 ms  (garbage collector) :-1
+    28 ms  _EditorView fake-host.js:230947
+    27 ms  iterate fake-host.js:233992
+    26 ms  parseInline fake-host.js:243509
+    25 ms  enter fake-host.js:259040
+    21 ms  __init fake-host.js:8
+    21 ms  type fake-host.js:1329
+    19 ms  finishLeaf fake-host.js:243341
+    15 ms  enterChild fake-host.js:234635
+    13 ms  TreeCursor fake-host.js:234579
+    13 ms  parse fake-host.js:244380
+    13 ms  advance fake-host.js:243087
+    12 ms  yieldBuf fake-host.js:234605
+    12 ms  (anonymous) fake-host.js:259047
+    10 ms  enter fake-host.js:257712
+    10 ms  get fake-host.js:233732
+    10 ms  lineInner fake-host.js:218668
+     9 ms  get node fake-host.js:234827
