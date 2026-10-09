@@ -22,6 +22,7 @@ cleanup disables controls and removes listeners.
 - `edits.ts`: pure expected-line edits and checklist commands.
 - `tasks.test.ts`: pure edit and command units.
 - `host.test.ts`: authorization, stale-line and handler lifecycle units.
+- `tasks.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

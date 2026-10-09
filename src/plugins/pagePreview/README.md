@@ -19,6 +19,7 @@ their render passes. Preview task controls cannot edit the source.
 - `popup.ts`: popup controls, label decoding and viewport placement.
 - `content.ts`: note fragment context and attachment rendering.
 - `preview.test.ts`: internal-target policy, fragment context and label unit tests.
+- `pagePreview.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

@@ -981,8 +981,8 @@ corresponds to. "Source" names the module on the source branch.
 | `suggest` | EditorSuggest: `[[`, `[[#`, `[[^`, `#` | on | vault, editor | `editor/suggest.ts`, `host/suggestions.ts` |
 | `pagePreview` | Page preview (hover) | on | render, resources | `editor/link-preview.ts` |
 | `outline` | Outline view | on | editors, markdown, workbench | `markdownSymbols.ts` (rewritten); replaces the in-editor outline panel |
-| `backlinks` | Backlinks, unlinked mentions, count | on | vault, editors, workbench | `backlinksProvider.ts` (rewritten) |
-| `outgoingLinks` | Outgoing links | on | vault, editors, workbench | new |
+| `backlinks` | Backlinks, unlinked mentions, count | off | vault, editors, workbench | `backlinksProvider.ts` (rewritten) |
+| `outgoingLinks` | Outgoing links | off | vault, editors, workbench | new |
 | `search` | embedded `query` blocks | on | vault, render | `search/*`, `host/query-session.ts` |
 | `folding` | *Fold heading*, *Fold indent* | on | editor | `outline.ts` (folding parts), presentation folds |
 | `lineNumbers` | *Show line numbers* | off | editor | `lineNumbers()` |
@@ -1021,7 +1021,8 @@ Short specifications, beyond the source's tested behaviour:
   view container per §25). Group by file, one trimmed context line per
   reference, collapsed **Unlinked mentions** section (basename occurrences
   outside links, computed on demand), and a status bar count for the active
-  note (inverting `resolvedLinks`).
+  note (inverting `resolvedLinks`). Both are off by default (owner decision);
+  turning a switch on shows its view.
 - **tags**: the **Tags** view is hierarchical (`a/b/c` counts toward `a/b` and
   `a`), merges case and keeps the most frequent casing, and searches on click.
   Tag search uses the index, not a full read of the workspace.
@@ -1345,7 +1346,8 @@ and `markdown.previewScripts`. Markdown Workbench v2 adds:
   from `cspSource` plus inline style attributes (needed by CodeMirror);
   images from `cspSource`, `https:`, `data:`, `blob:`; media from `cspSource`,
   `https:` and `blob:`; `frame-src https:`; fonts from `cspSource` and
-  `data:`. In untrusted workspaces, drop remote images, media and frames.
+  `data:`; `connect-src` from `cspSource` and `blob:` (resource and worker
+  fetches). In untrusted workspaces, drop remote images, media and frames.
 - DOMPurify sanitizes all rendered HTML. Iframes are sandboxed and lazy;
   graphics (MathJax, Mermaid) go through the graphics sanitizer. The
   LLM Wiki-specific source-link exception in `render/sanitize.ts` is replaced

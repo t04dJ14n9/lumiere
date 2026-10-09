@@ -6,13 +6,14 @@ indentation guides setting.
 ## How it works
 
 A viewport view plugin calculates indentation in columns, accounting for tab
-stops, and adds line decorations. A base theme draws repeating guides using
-VS Code colors. Both the decorations and theme are owned editor registrations.
+stops, and adds line decorations. `indentGuides.css` draws repeating guides
+using VS Code colors. The decorations are an owned editor registration.
 
 ## Files
 
 - `manifest.ts`: enablement and empty configuration schema.
-- `webview.ts`: indentation calculation, viewport decoration and theme.
+- `webview.ts`: indentation calculation and viewport decoration.
+- `indentGuides.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

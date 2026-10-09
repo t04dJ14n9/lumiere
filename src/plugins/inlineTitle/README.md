@@ -17,7 +17,7 @@ last. Properties focus uses typed events rather than another plugin's DOM intern
 - `manifest.ts`: default enablement and runtime surfaces.
 - `protocol.ts`: rename/result/focus schemas and transfer validation.
 - `title.ts`: filename display and safe same-folder target construction.
-- `webview.ts`: title/theme registration, RPC and focus events.
+- `webview.ts`: title registration, RPC and focus events.
 - `widget.ts`: title state field and widget reconciliation/lifetime.
 - `input.ts`: draft, IME, commit/cancel and keyboard behavior.
 - `host.ts`: per-panel RPC enablement and initialized-view restoration.
@@ -26,6 +26,7 @@ last. Properties focus uses typed events rather than another plugin's DOM intern
 - `../../../test/unit/inline-title/title.test.ts`: title/schema unit coverage.
 - `../../../test/unit/inline-title/rename.test.ts`: split-view, stale/cancel/error units.
 - `../../../test/unit/inline-title/host.test.ts`: RPC enablement and disposal units.
+- `inlineTitle.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

@@ -15,7 +15,7 @@ remaining references, render passes, listeners and commands.
 ## Files
 
 - `manifest.ts`: feature identity and Insert Footnote contribution.
-- `webview.ts`: named invalidation, theme, renderer and command registrations.
+- `webview.ts`: named invalidation, renderer and command registrations.
 - `preprocess.ts`: pure reference resolution and placeholder substitution.
 - `render-references.ts`: pass reference registry and mounted-control lifetime.
 - `reference-widget.ts`: reference widget and hover/focus preview control.
@@ -23,6 +23,7 @@ remaining references, render passes, listeners and commands.
 - `edit.ts`: insertion with an unused definition label.
 - `footnotes.test.ts`: insertion unit coverage.
 - `preprocess.test.ts`: owning-note numbering, missing and repeated references.
+- `footnotes.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

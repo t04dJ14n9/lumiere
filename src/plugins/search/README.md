@@ -27,6 +27,7 @@ live subscriptions. Result links use encoded relative paths and normal navigatio
 - `blocks.ts`: accessible status, refresh button and result links.
 - `webview.ts`: query renderer and rendered-fence ownership.
 - `../../workers/search.ts`: isolated query compilation and evaluation entry.
+- `search.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

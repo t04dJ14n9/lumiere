@@ -29,7 +29,7 @@ it is visible. Both halves follow `markdownWorkbench.plugins.tags.enabled`.
 - `manifest.ts`: default enablement and host/webview declarations.
 - `protocol.ts`: grammar-validated tag search request.
 - `widget.ts`: inline button, callback identity and cleanup.
-- `webview.ts`: renderer, rendered-button lifetime and theme.
+- `webview.ts`: renderer, and rendered-button lifetime.
 - `search.ts`: metadata filtering and quick-pick query ranking.
 - `suggestions.ts`: plugin-owned completion trigger through `suggest/trigger`.
 - `host.ts`: RPC, native picker and contained note opening (per panel).
@@ -38,6 +38,7 @@ it is visible. Both halves follow `markdownWorkbench.plugins.tags.enabled`.
 - `../../../test/unit/tags/search.test.ts`: indexed search and host lifecycle units.
 - `../../../test/unit/tags/view.test.ts`: note counts, case merging, flat and
   frequency modes, excluded files, click-to-open and the enabled setting.
+- `tags.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

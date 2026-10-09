@@ -13,6 +13,9 @@ Disposal removes only this registration.
 
 - `manifest.ts`: default-off enablement and empty configuration schema.
 - `webview.ts`: owned line-number extension registration.
+- `headings.ts`: gutter classes on heading lines, so numbers align with the
+  larger heading text.
+- `lineNumbers.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

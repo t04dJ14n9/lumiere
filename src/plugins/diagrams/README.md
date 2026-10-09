@@ -16,6 +16,7 @@ Pass and plugin disposal restore the source and prevent late results from writin
 - `webview.ts`: language recognition, block and fence registrations.
 - `renderer.ts`: serial rendering queue, per-render cancellation and cleanup.
 - `diagrams.test.ts`: language recognition unit coverage.
+- `diagrams.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

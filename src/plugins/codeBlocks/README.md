@@ -21,6 +21,7 @@ handlers, original text and late-result guards.
 - `code-selection.ts`: highlighted DOM click to Markdown source coordinates.
 - `vendor.d.ts`: Prism bundle typing.
 - `code.test.ts`: source-offset and fence selection unit tests.
+- `codeBlocks.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

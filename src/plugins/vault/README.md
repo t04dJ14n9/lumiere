@@ -32,6 +32,7 @@ name are resolved again.
   links.
 - `exclusion.ts`: excluded-file filters and always-ignored folders.
 - `snapshot.ts`: the persisted format.
+- `manifest.ts`: root markers and excluded files settings.
 
 The VS Code adapter is `src/host/vault-system.ts`; the worker is
 `src/workers/vault.ts`, with its client in `src/host/vault-parser.ts`.

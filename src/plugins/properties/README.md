@@ -51,11 +51,12 @@ input. Type preferences are stored by the injected vault root.
 - `selection.ts`: row selection and structured clipboard payloads.
 - `order.ts`: sorting, row drag ordering and cancellation.
 - `type-dialog.ts`: confirmation for incompatible type conversion.
-- `styles.ts`: sheet and field styling.
 - `editing.test.ts`: edit ordering, stale headers, chip identity and RPC checks.
 - `list-values.test.ts`: list normalization and scalar identity checks.
 - `host.test.ts`: preference RPC lifecycle.
 - `type-store.test.ts`: persisted preferences and shared-store notifications.
+- `properties.css`: sheet and field styling, bundled through
+  `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

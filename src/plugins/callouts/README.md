@@ -14,11 +14,12 @@ bindings; plugin disposal removes registrations and remaining pass handlers.
 ## Files
 
 - `manifest.ts`: enablement and Insert Callout contribution.
-- `webview.ts`: theme, renderer, disclosure and command registrations.
+- `webview.ts`: renderer, disclosure and command registrations.
 - `edit.ts`: callout detection and pure insertion edits.
 - `view-state.ts`: disclosure memory, live bindings and source remapping.
 - `callouts.test.ts`: recognition and insertion units.
 - `view-state.test.ts`: persistence, restore and source-remapping units.
+- `callouts.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 
