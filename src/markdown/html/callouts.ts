@@ -109,12 +109,18 @@ function closingQuote(tokens: Token[], index: number): number {
   return closing;
 }
 
+/** A callout without a title shows its type, capitalised, hyphens as spaces. */
+function defaultTitle(type: string): string {
+  const words = type.replace(/-/g, " ");
+  return words[0]!.toUpperCase() + words.slice(1);
+}
+
 function calloutData(match: RegExpExecArray): Callout {
   const raw = match[1]!.toLowerCase();
   const canonical = calloutAliases[raw] ?? raw;
   return {
     kind: calloutKinds.has(canonical) ? canonical : "note",
-    title: match[3] || raw[0]!.toUpperCase() + raw.slice(1),
+    title: match[3] || defaultTitle(raw),
     fold: match[2],
   };
 }

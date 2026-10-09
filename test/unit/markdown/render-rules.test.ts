@@ -17,6 +17,13 @@ test("callout aliases, fallback kinds and fold flags preserve distinct container
   assert.equal((result.match(/<\/details>/g) ?? []).length, 2);
 });
 
+test("an untitled callout of a hyphenated type reads as words, as in Obsidian", () => {
+  assert.match(
+    renderMarkdown("> [!unknown-type]\n> Body"),
+    /class="callout-title">Unknown type<\/div>/,
+  );
+});
+
 test("math delimiters and paragraph block IDs retain literal boundary behavior", () => {
   assert.match(
     renderMarkdown("$$\na + b\n$$"),
