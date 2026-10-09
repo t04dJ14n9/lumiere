@@ -229,6 +229,13 @@ test('search counts matches across pages and steps through them', async ({ page 
   await expect(page.locator('.search-count')).toHaveText('1 of 12');
   await input.press('Enter');
   await expect(page.locator('.search-count')).toHaveText('2 of 12');
+
+  // Find again while the bar is open focuses it and selects the text.
+  await page.locator('.page[data-page-index="0"]').click({ position: { x: 10, y: 10 } });
+  await expect(input).not.toBeFocused();
+  await page.keyboard.press('ControlOrMeta+f');
+  await expect(input).toBeFocused();
+  expect(await input.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd])).toEqual([0, 11]);
   await input.press('Escape');
   await expect(input).toHaveCount(0);
 });

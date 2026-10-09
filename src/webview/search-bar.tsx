@@ -1,14 +1,24 @@
 import { useSearch } from '@embedpdf/plugin-search/react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DOCUMENT_ID } from './plugins';
 
 /** Wait this long after typing before searching the whole document. */
 const SEARCH_DELAY_MS = 150;
 
-/** Find text in the PDF: Enter for the next match, Shift+Enter for the previous. */
-export function SearchBar({ onClose }: { onClose: () => void }): React.JSX.Element {
+/**
+ * Find text in the PDF: Enter for the next match, Shift+Enter for the
+ * previous. Each new `focusRequest` (Find pressed again) focuses the field
+ * and selects its text, as in VS Code's own find widget.
+ */
+export function SearchBar({ focusRequest, onClose }: { focusRequest: number; onClose: () => void }): React.JSX.Element {
   const { provides: search, state } = useSearch(DOCUMENT_ID);
   const [query, setQuery] = useState('');
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    input.current?.focus();
+    input.current?.select();
+  }, [focusRequest]);
 
   useEffect(() => {
     if (!search) return;
@@ -35,8 +45,8 @@ export function SearchBar({ onClose }: { onClose: () => void }): React.JSX.Eleme
         type="search"
         aria-label="Find in PDF"
         placeholder="Find"
+        ref={input}
         value={query}
-        autoFocus
         onChange={event => setQuery(event.currentTarget.value)}
         onKeyDown={event => {
           if (event.key === 'Enter' && event.shiftKey) search?.previousResult();

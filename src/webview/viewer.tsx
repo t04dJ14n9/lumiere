@@ -19,6 +19,12 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   const selection = useSelectionReporting(DOCUMENT_ID);
   const devicePixelRatio = useDevicePixelRatio();
   const [searching, setSearching] = useState(false);
+  /** Counts Find requests, so Find on an open search bar focuses it again. */
+  const [findRequest, setFindRequest] = useState(0);
+  const openSearch = (): void => {
+    setSearching(true);
+    setFindRequest(request => request + 1);
+  };
   useOutlinePublishing(DOCUMENT_ID);
 
   const show = navigation.show;
@@ -33,6 +39,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
         event.preventDefault();
         setSearching(true);
+        setFindRequest(request => request + 1);
       } else if (event.key === 'Escape') {
         if (latest.current.searching) setSearching(false);
         else latest.current.selection.clearRegion();
@@ -45,9 +52,9 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   return (
     <div className="viewer">
       <CopyToClipboard />
-      <Toolbar navigation={navigation} onSearch={() => setSearching(true)} />
+      <Toolbar navigation={navigation} onSearch={openSearch} />
       <div className="document">
-        {searching && <SearchBar onClose={() => setSearching(false)} />}
+        {searching && <SearchBar focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">
           <ZoomGestureWrapper documentId={DOCUMENT_ID}>
             <Scroller
