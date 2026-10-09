@@ -91,18 +91,18 @@ export class PdfPanel implements vscode.Disposable {
    * Copy the selection, then open the agent chat with it typed in (and a
    * region's snapshot attached) so only the question is left to type.
    */
-  async askAgent(): Promise<boolean> {
+  async copyLinkForAgent(): Promise<boolean> {
     const copied = await this.copySelection();
     if (!copied) return false;
     const target = await openAgentChat(copied.text, copied.image, this.uri);
     const paste = PASTE_HINTS[target];
-    if (paste) void vscode.window.showInformationMessage(`Selection copied for agent. ${paste}`);
+    if (paste) void vscode.window.showInformationMessage(`Link and selection copied for agent. ${paste}`);
     return true;
   }
 
   /**
    * The selection as an agent should see it, without touching the clipboard:
-   * the same text Ask Agent produces, plus the parts on their own.
+   * the same text Copy Link for Agent produces, plus the parts on their own.
    * Used by the agent bridge (MCP).
    */
   async agentSnapshot(): Promise<AgentSnapshot | undefined> {
@@ -177,8 +177,8 @@ export class PdfPanel implements vscode.Disposable {
       case 'copyForAgent':
         await this.copyForAgent();
         break;
-      case 'askAgent':
-        await this.askAgent();
+      case 'copyLinkForAgent':
+        await this.copyLinkForAgent();
         break;
       case 'openExternal':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));

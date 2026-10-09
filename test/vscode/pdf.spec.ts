@@ -81,7 +81,7 @@ test('Copy for Agent works from the selection menu and the editor title button',
   await expect(confirmation).toBeVisible();
 });
 
-test('Ask Agent from the context menu opens the agent chat with the region typed in and its snapshot attached', async ({ workbench: page }) => {
+test('Copy Link for Agent from the context menu opens the agent chat with the region typed in and its snapshot attached', async ({ workbench: page }) => {
   // VS Code's chat counts as served thanks to test/fixtures/chat-participant; Cursor has its own.
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
@@ -90,7 +90,7 @@ test('Ask Agent from the context menu opens the agent chat with the region typed
   const at = await pagePoint(viewer, 3);
   await drag(page, at(60, 70), at(230, 150));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
-  await contextMenu(page, at(100, TEXT_MIDLINE), 'Ask Agent');
+  await contextMenu(page, at(100, TEXT_MIDLINE), 'Copy Link for Agent');
   await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
     .toContain(withoutSpaces(`Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`));
   // The snapshot: attached in VS Code's chat, a file pill in Cursor's.

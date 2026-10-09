@@ -21,7 +21,7 @@ const CODEX_RETRY_DELAYS_MS = [1000, 2000, 4000];
  */
 export async function openAgentChat(text: string, image: vscode.Uri | undefined, source?: vscode.Uri): Promise<AgentTarget> {
   const commands = new Set(await vscode.commands.getCommands(true));
-  const setting = vscode.workspace.getConfiguration('vscodeEmbedPdf').get<AgentTargetSetting>('askAgent.target', 'auto');
+  const setting = vscode.workspace.getConfiguration('vscodeEmbedPdf').get<AgentTargetSetting>('copyLinkForAgent.target', 'auto');
   const target = agentTarget(setting, {
     appName: vscode.env.appName,
     commands,

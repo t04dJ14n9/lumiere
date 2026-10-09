@@ -1,21 +1,21 @@
 /**
- * Which agent chat Ask Agent opens.
+ * Which agent chat Copy Link for Agent opens.
  *
  * No extension can tell which agent the user is working in: VS Code exposes
  * no context-key values (`getContextKeyInfo` lists keys without values), the
  * Claude Code and Codex sidebars leave no trace in `window.tabGroups`, neither
- * extension exports an API, and when Ask Agent runs the PDF has the focus
+ * extension exports an API, and when Copy Link for Agent runs the PDF has the focus
  * anyway. So `auto` never guesses: it opens the editor's own chat (Cursor's,
  * or VS Code's when an extension such as Copilot Chat serves it) only when
  * that is the only agent installed, and otherwise leaves the selection on the
  * clipboard for the user to paste into whichever agent they use. The
- * `vscodeEmbedPdf.askAgent.target` setting forces one agent: Claude Code (its
+ * `vscodeEmbedPdf.copyLinkForAgent.target` setting forces one agent: Claude Code (its
  * new conversation takes the selection as its prompt) or Codex (which takes no
  * prefilled text but gets the selection, and a region's snapshot, attached).
  */
 export type AgentTarget = 'cursor' | 'chat' | 'claudeCode' | 'codex' | 'clipboard';
 
-/** The `vscodeEmbedPdf.askAgent.target` setting: `auto` or one target. */
+/** The `vscodeEmbedPdf.copyLinkForAgent.target` setting: `auto` or one target. */
 export type AgentTargetSetting = 'auto' | AgentTarget;
 
 /** Extensions that bring their own agent chat besides the editor's. */
