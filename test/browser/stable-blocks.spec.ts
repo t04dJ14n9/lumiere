@@ -163,3 +163,80 @@ test("block math keeps its preview height while its source is shown above it", a
   expect(inside.math).toBeCloseTo(outside.math, 1);
   expect(inside.after).toBeCloseTo(outside.after + inside.source, 0);
 });
+
+/** The test vault's Code.md, where the owner saw lines 7→8 jump. */
+const codeNote = [
+  "# Code",
+  "",
+  "```ts",
+  "export function greet(name: string): string {",
+  "  return `Hello, ${name}`;",
+  "}",
+  "```",
+  "",
+  "```python",
+  "def greet(name):",
+  '    return f"Hello, {name}"',
+  "```",
+  "",
+  "```json",
+  '{ "fixture": true, "count": 3 }',
+  "```",
+  "",
+  "```",
+  "A fence without a language.",
+  "```",
+  "",
+  "    An indented code block.",
+  "",
+  "~~~markdown",
+  "# Tildes work too",
+  "~~~",
+].join("\n");
+
+/** The 1-based line holding the DOM caret. */
+async function caretLine(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const node = window.getSelection()!.focusNode!;
+    const element = node instanceof Element ? node : node.parentElement!;
+    const line = element.closest(".cm-line")!;
+    // Only source lines count (the note title is a widget above line 1).
+    return (
+      [...line.parentElement!.querySelectorAll(":scope > .cm-line")].indexOf(
+        line,
+      ) + 1
+    );
+  });
+}
+
+test("moving the caret from the closing fence (line 7) to the blank line 8 moves nothing", async ({
+  page,
+}) => {
+  await open(page, codeNote);
+  const line8 = codeNote.split("\n").slice(0, 7).join("\n").length + 1;
+  const outside = await caretAt(page, line8);
+  await page.keyboard.press("ArrowUp");
+  expect(await caretLine(page)).toBe(7);
+  expect(await layout(page), "caret on line 7").toEqual(outside);
+  await page.keyboard.press("ArrowDown");
+  expect(await caretLine(page)).toBe(8);
+  expect(await layout(page), "caret back on line 8").toEqual(outside);
+});
+
+test("walking the caret down and up through every line of the code note moves nothing", async ({
+  page,
+}) => {
+  await open(page, codeNote);
+  const lines = codeNote.split("\n").length;
+  const baseline = await caretAt(page, 0);
+  for (let line = 2; line <= lines; line++) {
+    await page.keyboard.press("ArrowDown");
+    expect(await caretLine(page), `ArrowDown to line ${line}`).toBe(line);
+    expect(await layout(page), `caret on line ${line}`).toEqual(baseline);
+  }
+  for (let line = lines - 1; line >= 1; line--) {
+    await page.keyboard.press("ArrowUp");
+    expect(await caretLine(page), `ArrowUp to line ${line}`).toBe(line);
+    expect(await layout(page), `caret on line ${line}`).toEqual(baseline);
+  }
+});
