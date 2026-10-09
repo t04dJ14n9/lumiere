@@ -280,55 +280,109 @@ export function blockDecorations(report: (error: unknown) => void) {
   });
 }
 
+/**
+ * Decorate again only the spans that may have changed: the lines
+ * `renderInvalidations` names, and after a text change everything from the
+ * changed region on (blocks there are new objects, shifted ones included,
+ * because their widgets hold source coordinates). Each span is widened to
+ * the blocks it touches. Blocks are found by binary search, so a caret move
+ * costs O(log blocks + touched) and an edit O(log blocks + blocks after
+ * it). `undefined` (decorate everything) when most blocks are dirty or the
+ * index was rebuilt whole.
+ */
 function redecorate(
   value: DecorationSet,
   tr: Parameters<typeof renderInvalidations>[0],
   report: (error: unknown) => void,
 ): DecorationSet | undefined {
   const blocks = tr.state.field(blockIndex);
-  const unchanged = new Set(tr.startState.field(blockIndex));
-  const lines = renderInvalidations(tr).map(({ fromLine, toLine }) => ({
-    from: tr.state.doc.line(fromLine).from,
-    to: tr.state.doc.line(toLine).to,
+  const doc = tr.state.doc;
+  const spans = renderInvalidations(tr).map(({ fromLine, toLine }) => ({
+    from: doc.line(fromLine).from,
+    to: doc.line(toLine).to,
   }));
-  const kept: IndexedBlock[] = [];
-  const dirty: IndexedBlock[] = [];
-  for (const block of blocks) {
-    const touched = lines.some(
-      (line) => line.from <= block.to && line.to >= block.from,
-    );
-    (unchanged.has(block) && !touched ? kept : dirty).push(block);
+  const region = changedRegion(tr);
+  if (region) {
+    const same = firstEndingAtOrAfter(blocks, region.from);
+    const before = tr.startState.field(blockIndex);
+    if (same > 0 && blocks[same - 1] !== before[same - 1]) {
+      return undefined;
+    }
+    if (2 * (blocks.length - same) > blocks.length + 1) {
+      return undefined;
+    }
+    spans.push({
+      from: Math.min(region.from, blocks[same]?.from ?? region.from),
+      to: doc.length,
+    });
   }
-  if (2 * dirty.length > blocks.length + 1) {
-    return undefined;
+  let set = value.map(tr.changes);
+  for (const span of widened(tr.state, blocks, spans)) {
+    const dirty = blocks.slice(span.first, span.last);
+    set = set.update({
+      filterFrom: span.from,
+      filterTo: span.to,
+      filter: (from, to) => from < span.from || to > span.to,
+      add: dirty.flatMap((block) => blockDecoration(tr.state, block, report)),
+      sort: true,
+    });
   }
-  return value.map(tr.changes).update({
-    filter: (from, to) => containing(kept, from, to),
-    add: dirty.flatMap((block) => blockDecoration(tr.state, block, report)),
-    sort: true,
-  });
+  return set;
 }
 
-/** Whether a kept block (sorted, disjoint) contains `[from, to]`. */
-function containing(
+/** The index of the first block (sorted, disjoint) with `to >= position`. */
+function firstEndingAtOrAfter(
   blocks: readonly IndexedBlock[],
-  from: number,
-  to: number,
-): boolean {
+  position: number,
+): number {
   let low = 0;
-  let high = blocks.length - 1;
-  while (low <= high) {
+  let high = blocks.length;
+  while (low < high) {
     const middle = (low + high) >> 1;
-    const block = blocks[middle]!;
-    if (block.to < from) {
+    if (blocks[middle]!.to < position) {
       low = middle + 1;
-    } else if (block.from > to) {
-      high = middle - 1;
     } else {
-      return block.from <= from && to <= block.to;
+      high = middle;
     }
   }
-  return false;
+  return low;
+}
+
+/**
+ * Spans widened to cover every block they touch (from the start of its
+ * first line, where an editing block's line decorations begin), merged
+ * where they meet, in order, with the blocks inside each (`first` to
+ * `last`, exclusive).
+ */
+function widened(
+  state: EditorState,
+  blocks: readonly IndexedBlock[],
+  spans: readonly Region[],
+): (Region & { first: number; last: number })[] {
+  const result: (Region & { first: number; last: number })[] = [];
+  const sorted = [...spans].sort((a, b) => a.from - b.from);
+  for (const { from, to } of sorted) {
+    const first = firstEndingAtOrAfter(blocks, from);
+    let last = first;
+    while (last < blocks.length && blocks[last]!.from <= to) {
+      last++;
+    }
+    const start = last > first ? blocks[first]!.from : from;
+    const span = {
+      from: Math.min(from, state.doc.lineAt(start).from),
+      to: Math.max(to, last > first ? blocks[last - 1]!.to : to),
+      first,
+      last,
+    };
+    const previous = result.at(-1);
+    if (previous && span.from <= previous.to) {
+      previous.to = Math.max(previous.to, span.to);
+      previous.last = Math.max(previous.last, span.last);
+    } else {
+      result.push(span);
+    }
+  }
+  return result;
 }
 
 /** Positions inside a replacement remain reachable immediately after its rendered block. */

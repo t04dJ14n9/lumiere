@@ -30,13 +30,15 @@ map visible text back to source before syntax is revealed.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
 - `code-lines.test.ts`: code and thematic break line classes and hidden text.
 - `invalidation.test.ts`: incremental index and decorations equal a full rebuild (randomised); invalidation reasons.
+- `decoration-cost.test.ts`: renderer matches and widgets built per caret move and edit on a 4,000-block note.
 
 ## Incremental invalidation
 
 Each transaction yields `RenderInvalidation`s (`invalidation.ts`):
 `{ fromLine, toLine, reason }` with reason `text` (the lines whose blocks a
-text change may have altered: every top-level syntax node it touched, before
-and after, widened to whole lines), `selection` (lines the caret left or
+text change may have altered: every top-level syntax node, before or after
+the change, that touches it or the region found so far, widened to whole
+lines until stable), `selection` (lines the caret left or
 entered) or `metadata` (an effect, a reconfiguration or a renderer change:
 every line).
 
@@ -45,10 +47,17 @@ every line).
   half the note, or a block found there that reaches outside it, falls back
   to a full index.
 - `blockDecorations` rebuilds decorations only for blocks that are new to
-  the index or touched by an invalidation; `metadata` (or more than half the
-  blocks dirty) rebuilds all. Blocks after an edit get new widgets with
-  their new positions (widgets carry positions), but keep their DOM because
-  the source did not change.
+  the index or touched by an invalidation, found by binary search;
+  `metadata` (or more than half the blocks dirty) rebuilds all. A caret move
+  costs O(log blocks + blocks it enters or leaves).
+- Costs that remain document-wide (measured with
+  `scripts/measure-decorations.ts`; `decoration-cost.test.ts` pins the
+  counts): an edit still rebuilds the widgets of every block after it
+  (widgets carry source positions; their DOM is kept because the source did
+  not change), and `blockIndex` maps the positions of every block after it.
+  On a 16,000-block note (372 KB, a loaded machine) an edit at the start
+  costs about 10 ms more than the syntax tree's own ~11 ms; at the end, about
+  1 ms more; a caret move about 0.05 ms (was 2.8 ms).
 - Renderers' `match` and `range` may read only the node and the text around
   it; anything else they depend on must reach them as a facet change or an
   effect. `invalidation.test.ts` checks, over thousands of random edits and
