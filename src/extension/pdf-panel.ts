@@ -12,8 +12,7 @@ import { viewerHtml } from './webview-html';
 
 /** What to tell the user when the chat could not take the text itself. */
 const PASTE_HINTS: Partial<Record<AgentTarget, string>> = {
-  claudeCode: 'Paste it into Claude Code and ask your question.',
-  codex: 'Paste it into Codex and ask your question.',
+  codex: 'It is attached in Codex: type your question.',
   clipboard: 'No agent chat found: paste it into your agent and ask your question.',
 };
 
@@ -95,7 +94,7 @@ export class PdfPanel implements vscode.Disposable {
   async askAgent(): Promise<boolean> {
     const copied = await this.copySelection();
     if (!copied) return false;
-    const target = await openAgentChat(copied.text, copied.image);
+    const target = await openAgentChat(copied.text, copied.image, this.uri);
     const paste = PASTE_HINTS[target];
     if (paste) void vscode.window.showInformationMessage(`Selection copied for agent. ${paste}`);
     return true;

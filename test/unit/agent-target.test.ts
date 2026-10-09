@@ -7,21 +7,25 @@ const vscode = (commands: string[], hasChatParticipant = false): AgentEnvironmen
 
 test('Ask Agent prefers the editor\'s own chat, then Claude Code, then Codex', () => {
   assert.equal(agentTarget('auto', { appName: 'Cursor', commands: new Set(['workbench.action.chat.open']), hasChatParticipant: false }), 'cursor');
-  assert.equal(agentTarget('auto', vscode(['claude-vscode.editor.openLast'], true)), 'chat');
-  assert.equal(agentTarget('auto', vscode(['claude-vscode.editor.openLast', 'chatgpt.openSidebar'])), 'claudeCode');
-  assert.equal(agentTarget('auto', vscode(['chatgpt.openSidebar'])), 'codex');
+  assert.equal(agentTarget('auto', vscode(['claude-vscode.editor.open'], true)), 'chat');
+  assert.equal(agentTarget('auto', vscode(['claude-vscode.editor.open', 'chatgpt.openSidebar', 'chatgpt.addFileToThread'])), 'claudeCode');
+  assert.equal(agentTarget('auto', vscode(['chatgpt.openSidebar', 'chatgpt.addFileToThread'])), 'codex');
 });
 
 test('VS Code\'s chat command alone is not a chat: without a participant it shows nothing', () => {
   assert.equal(agentTarget('auto', vscode([])), 'clipboard');
   assert.equal(agentTarget('chat', vscode([])), 'clipboard');
   // Nor with AI features turned off.
-  assert.equal(agentTarget('auto', { ...vscode(['chatgpt.openSidebar'], true), chatDisabled: true }), 'codex');
+  assert.equal(agentTarget('auto', { ...vscode(['chatgpt.openSidebar', 'chatgpt.addFileToThread'], true), chatDisabled: true }), 'codex');
 });
 
 test('a chosen target is used when available, else the clipboard', () => {
-  const both = vscode(['claude-vscode.editor.openLast', 'chatgpt.openSidebar'], true);
+  const both = vscode(['claude-vscode.editor.open', 'chatgpt.openSidebar', 'chatgpt.addFileToThread'], true);
   assert.equal(agentTarget('codex', both), 'codex');
   assert.equal(agentTarget('clipboard', both), 'clipboard');
   assert.equal(agentTarget('cursor', both), 'clipboard');
+});
+
+test('Codex needs its add-file command: the selection is attached, not pasted', () => {
+  assert.equal(agentTarget('auto', { appName: 'Visual Studio Code', commands: new Set(['chatgpt.openSidebar']), hasChatParticipant: false }), 'clipboard');
 });

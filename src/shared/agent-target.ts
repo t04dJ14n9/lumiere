@@ -1,9 +1,10 @@
 /**
  * Which agent chat Ask Agent opens. The editor's own chat comes first: Cursor's
  * (Cursor answers VS Code's chat command with a new chat) or VS Code's, when
- * an extension such as Copilot Chat serves it. Then the Claude Code and Codex
- * extensions, which take no prefilled text: their chat opens and the
- * selection waits on the clipboard. Otherwise the clipboard alone.
+ * an extension such as Copilot Chat serves it. Then the Claude Code extension,
+ * whose new conversation takes the selection as its prompt, and Codex, which
+ * takes no prefilled text but gets the selection (and a region's snapshot)
+ * attached as files. Otherwise the clipboard alone.
  */
 export type AgentTarget = 'cursor' | 'chat' | 'claudeCode' | 'codex' | 'clipboard';
 
@@ -24,8 +25,9 @@ export interface AgentEnvironment {
 export const AGENT_COMMANDS = {
   chatOpen: 'workbench.action.chat.open',
   cursorAddFiles: 'composer.addfilestocomposer',
-  claudeCodeOpen: 'claude-vscode.editor.openLast',
+  claudeCodeOpen: 'claude-vscode.editor.open',
   codexOpen: 'chatgpt.openSidebar',
+  codexAddFile: 'chatgpt.addFileToThread',
 } as const;
 
 export function agentTarget(setting: AgentTargetSetting, environment: AgentEnvironment): AgentTarget {
@@ -39,7 +41,7 @@ export function agentTarget(setting: AgentTargetSetting, environment: AgentEnvir
       case 'claudeCode':
         return commands.has(AGENT_COMMANDS.claudeCodeOpen);
       case 'codex':
-        return commands.has(AGENT_COMMANDS.codexOpen);
+        return commands.has(AGENT_COMMANDS.codexOpen) && commands.has(AGENT_COMMANDS.codexAddFile);
       case 'clipboard':
         return true;
     }
