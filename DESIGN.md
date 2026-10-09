@@ -1202,7 +1202,8 @@ command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
 public API has no agent methods or service. Review fixes (round 1) settled the names
 shared with Agent PDF Viewer: plugin `agentBridge`, service class
 `AgentHandoff`, command `copyLinkForAgent`; the plugin setting is now
-`markdownWorkbench.plugins.agentBridge.enabled`.
+`markdownWorkbench.plugins.agentBridge.enabled`. The text format is shared with
+Agent PDF Viewer and specified in `docs/agent-handoff-format.md`.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 
