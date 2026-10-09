@@ -90,26 +90,24 @@ function registerRenderInvalidation(ctx: Context, service: LivePreview): void {
 }
 
 function registerFallbackBlocks(ctx: Context): void {
-  // Code blocks are decorated source lines instead (code-lines.ts), so
-  // revealing them never moves the text.
-  for (const kind of ["HorizontalRule", "HTMLBlock"]) {
-    ctx.effect(() =>
-      ctx.editor.extend(
-        blockRenderers.of({
-          kind,
-          editing: "reveal",
-          match: (node) => node.name === kind,
-          // Replace whole lines, including up to three spaces of indentation.
-          range: (node, state) => ({
-            from: state.doc.lineAt(node.from).from,
-            to: node.to,
-          }),
-          widget: (block) => new MarkdownBlock(block, ctx.render),
+  // Code blocks and thematic breaks are decorated source lines instead
+  // (code-lines.ts, inline.ts), so revealing them never moves the text.
+  ctx.effect(() =>
+    ctx.editor.extend(
+      blockRenderers.of({
+        kind: "HTMLBlock",
+        editing: "reveal",
+        match: (node) => node.name === "HTMLBlock",
+        // Replace whole lines, including up to three spaces of indentation.
+        range: (node, state) => ({
+          from: state.doc.lineAt(node.from).from,
+          to: node.to,
         }),
-        { slot: "base" },
-      ),
-    );
-  }
+        widget: (block) => new MarkdownBlock(block, ctx.render),
+      }),
+      { slot: "base" },
+    ),
+  );
 }
 
 function registerModeCommand(ctx: Context, service: LivePreview): void {

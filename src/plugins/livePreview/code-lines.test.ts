@@ -31,7 +31,7 @@ function lines(doc: string, caret: number) {
 }
 
 const code = (classes: string[]) =>
-  classes.filter((name) => name.startsWith("md-code"));
+  classes.filter((name) => name.startsWith("md-code") || name === "md-hr-line");
 
 test("fenced code keeps the same line classes with the caret outside or inside; only the fence text hides", () => {
   for (const doc of [
@@ -89,4 +89,15 @@ test("an unclosed fence has no closing line and indented code is code lines", ()
     ],
   );
   assert.equal(indented.map((line) => line.hidden).join(""), "");
+});
+
+test("a thematic break is one line: its source hides outside and shows inside", () => {
+  const doc = "Before\n\n---\n\nAfter";
+  const outside = lines(doc, 0)[2]!;
+  assert.deepEqual(code(outside.classes), ["md-hr-line"]);
+  assert.equal(outside.hidden, "---");
+  const inside = lines(doc, 9)[2]!;
+  assert.deepEqual(code(inside.classes), ["md-hr-line"]);
+  assert.ok(inside.classes.includes("is-revealed"));
+  assert.equal(inside.hidden, "");
 });

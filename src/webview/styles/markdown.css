@@ -239,6 +239,11 @@
 #app .cm-line.md-code-fence-close {
   border-radius: 0 0 4px 4px;
 }
+/* A thematic break is one line: the rule outside, its source inside. */
+#app .cm-line.md-hr-line:not(.is-revealed) {
+  background: linear-gradient(var(--line), var(--line)) center / 100% 1px
+    no-repeat;
+}
 #app .cm-line.md-table-source {
   font-family: var(--code-font);
   font-size: 0.875em;

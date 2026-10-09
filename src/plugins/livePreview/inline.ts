@@ -120,10 +120,28 @@ class InlineDecorations implements InlineContext {
     }
     this.decorateBlockLines(node, visible);
     decorateCodeLines(node, this);
+    this.decorateRule(node);
     this.decorateLink(node);
     this.decorateBareUrl(node);
     this.hideSyntax(node);
     return undefined;
+  }
+
+  /**
+   * A thematic break stays one line of the same height, as in Obsidian: the
+   * rule is drawn on the line, and the caret shows its source in its place.
+   */
+  private decorateRule(node: SyntaxNodeRef): void {
+    if (node.name !== "HorizontalRule") {
+      return;
+    }
+    if (this.revealed(node.from, node.to)) {
+      this.line(node.from, "md-hr-line is-revealed");
+      this.mark(node.from, node.to, "md-syntax-mark");
+      return;
+    }
+    this.line(node.from, "md-hr-line");
+    this.hide(node.from, node.to);
   }
 
   private decorateBlockLines(

@@ -23,12 +23,12 @@ map visible text back to source before syntax is revealed.
 - `blocks.ts`: block index, widget decorations and render revision.
 - `inline.ts`: basic inline decoration builder and composition/drag lifetime.
 - `code-lines.ts`: code block lines; only fence text hides, so reveals never
-  change the layout.
+  change the layout. Thematic breaks are likewise one decorated line.
 - `rendered-position.ts`: visible-text projection and DOM-to-source mapping.
 - `motion.ts`: Escape and vertical motion around rendered blocks.
 - `core.test.ts`: reveal, motion, mode and lifecycle unit coverage.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
-- `code-lines.test.ts`: code line classes and hidden fence text.
+- `code-lines.test.ts`: code and thematic break line classes and hidden text.
 
 ## Services, events and settings
 

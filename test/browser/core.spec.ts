@@ -75,8 +75,12 @@ test("Live Preview reveals syntax at the caret and toggles to source without rel
 test("disposing the livePreview fiber removes its widgets and decorations", async ({
   page,
 }) => {
-  await open(page, "Start\n\n---\n\nTail");
-  await expect(page.locator(".cm-content hr")).toHaveCount(1);
+  await open(page, "Start\n\n<div>Box</div>\n\n---\n\nTail");
+  const widgets = page.locator(".cm-content .hybrid-block");
+  const rule = page.locator(".cm-content .md-hr-line");
+  await expect(widgets).toHaveCount(1);
+  await expect(rule).toHaveCount(1);
+  await expect(rule).not.toContainText("---");
   await page.evaluate(async () => {
     const root = window.harness.views[0]!;
     const fiber = [...root.runtime.fibers].find(
@@ -85,6 +89,8 @@ test("disposing the livePreview fiber removes its widgets and decorations", asyn
     await fiber.dispose();
     await root.settled();
   });
-  await expect(page.locator(".cm-content hr")).toHaveCount(0);
+  await expect(widgets).toHaveCount(0);
+  await expect(rule).toHaveCount(0);
+  await expect(page.locator(".cm-content")).toContainText("<div>Box</div>");
   await expect(page.locator(".cm-content")).toContainText("---");
 });

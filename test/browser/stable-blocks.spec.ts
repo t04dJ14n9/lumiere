@@ -89,6 +89,12 @@ test("code blocks keep their layout with a larger editor font", async ({
   await expectStable(page, doc, block);
 });
 
+test("a horizontal rule keeps its line height when the caret is on it", async ({
+  page,
+}) => {
+  await expectStable(page, "Before\n\n---\n\nAfter one\n\nAfter two", "---");
+});
+
 test("a fenced block shows its language and copy button in the hidden opening fence line", async ({
   page,
 }) => {

@@ -144,9 +144,9 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   await root.dispose();
 });
 
-test("an HTML block renders from the start of its line; code stays source lines", async () => {
+test("an HTML block renders from the start of its line; code and rules stay source lines", async () => {
   const kernel = livePreviewKernel(
-    "Text\n\n  <div>x</div>\n\n    indented code\n\n```js\nx\n```\n",
+    "Text\n\n  <div>x</div>\n\n    indented code\n\n```js\nx\n```\n\n---\n",
   );
   await kernel.root.settled();
   const blocks = kernel.state().field(blockIndex);
