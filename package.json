@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "t04dj14n9",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"
+  },
   "private": true,
   "engines": {
     "vscode": "^1.90.0"
@@ -1205,10 +1209,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "contributions": "tsx scripts/generate-contributions.ts",
-    "package": "pnpm build && vsce package --no-dependencies --no-rewrite-relative-links",
+    "package": "pnpm build && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links",
     "sample": "node scripts/build-sample.mjs",
     "ledger": "node scripts/test-ledger.mjs",
-    "measure:vault": "pnpm build && tsx scripts/measure-vault.ts"
+    "measure:vault": "pnpm build && tsx scripts/measure-vault.ts",
+    "notices": "node scripts/third-party-notices.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.2",

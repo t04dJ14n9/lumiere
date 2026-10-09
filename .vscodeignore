@@ -1,5 +1,12 @@
+# Allowlist: vsce re-includes every ! pattern, so list file types, not maps.
 **
 !package.json
 !README.md
+!CHANGELOG.md
 !LICENSE
-!dist/**
+!THIRD_PARTY_NOTICES.md
+!API.md
+!dist/**/*.js
+!dist/**/*.cjs
+!dist/**/*.css
+!dist/api/**/*.d.ts
