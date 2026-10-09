@@ -1,18 +1,21 @@
 # Footnotes
 
 Footnotes as in Obsidian's Live Preview: a reference (`[^1]`, `[^note]` or an
-inline `^[text]`) shows as a small superscript number in reading order, with
-its source at the caret. Hovering or focusing it previews the footnote;
+inline `^[text]`) shows as a small superscript of its own source with faint
+brackets, as Obsidian 1.14 does, and as plain source at the caret; inside
+rendered blocks it is a number in reading order. Hovering or focusing it previews the footnote;
 clicking jumps to the definition (an inline footnote reveals its source).
-Definitions stay editable source with a muted `[^label]:` marker. Insert
+Definitions stay editable text led by their label in superscript; the caret
+on the marker shows the faint `[^label]:` source. Insert
 Footnote adds a reference and definition in one edit.
 
 ## How it works
 
 Shared metadata supplies numbering, definitions and reference ranges. The
 inline renderer replaces each reference off the caret with a widget and marks
-definition lines (`mw-footnote-def`, `is-continued` for indented lines) and
-markers (`mw-footnote-marker`). Inline widgets and references inside rendered
+definition lines (`mw-footnote-def`, `is-continued` for indented lines); off
+the caret it hides a definition's `[^` and `]:` and marks the label
+(`mw-footnote-label`), at the caret it marks the marker (`mw-footnote-marker`). Inline widgets and references inside rendered
 blocks mount the same accessible control.
 Render preprocessing resolves references against the owning note and substitutes
 opaque placeholders; postprocessing mounts controls with pass-owned cleanup.

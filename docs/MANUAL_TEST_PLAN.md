@@ -313,13 +313,15 @@ Contained file access and the vault index (Obsidian's metadata cache).
 
 `Footnotes.md`.
 
-1. References show as small superscript numbers in reading order (inline
-   footnotes included); `[^1]` used twice shares its number. With the caret
-   in a reference its source shows. Hovering or focusing one previews the
+1. References show as a small superscript of their own source, as in
+   Obsidian 1.14: `[^1]`, `[^note]` and `^[Inline text]` with faint brackets.
+   Inside a rendered block (table, callout) they are numbers in reading
+   order. With the caret in a reference its plain source shows. Hovering or focusing one previews the
    rendered footnote; Escape closes it. Clicking jumps to the definition (an
    inline footnote reveals its source), as in Obsidian.
-2. Definitions stay editable source with a muted `[^label]:` marker; the
-   indented continuation belongs to the same footnote.
+2. Definitions stay editable text led by the label in superscript; with the
+   caret on the marker, the faint `[^label]:` source shows. The indented
+   continuation belongs to the same footnote.
 3. **Insert Footnote** adds a fresh label at the caret and a definition at
    the end; undo removes both.
 4. With two panels, insert in one and undo there: both converge with no

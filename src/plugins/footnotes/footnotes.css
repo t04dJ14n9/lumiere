@@ -1,7 +1,9 @@
 /*
- * Footnotes. A reference is a small superscript number in the accent colour;
- * hovering or focusing it shows the footnote. Definitions stay source, with
- * the [^label]: marker muted, like the rest of Live Preview's syntax.
+ * Footnotes. In Live Preview a reference is a small superscript of its own
+ * source with faint brackets; inside rendered blocks it is a number in the
+ * accent colour. Hovering or focusing either shows the footnote. A
+ * definition leads with its label in superscript; at the caret its
+ * [^label]: marker is faint source.
  */
 .mw-footnote-ref {
   position: relative;
@@ -64,4 +66,17 @@
 }
 .mw-footnote-marker {
   color: var(--faint);
+}
+.mw-footnote-ref.is-source > button {
+  color: var(--muted);
+}
+.mw-footnote-bracket {
+  color: var(--faint);
+}
+.mw-footnote-label {
+  margin-right: 0.15em;
+  color: var(--muted);
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
 }

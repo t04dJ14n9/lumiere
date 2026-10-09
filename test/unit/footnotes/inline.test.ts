@@ -7,6 +7,7 @@ import { inlineRenderers } from "../../../src/plugins/livePreview/registry";
 import { footnoteInline } from "../../../src/plugins/footnotes/inline";
 import {
   FootnoteReference,
+  referenceSource,
   referenceText,
 } from "../../../src/plugins/footnotes/reference-widget";
 import type { RenderService } from "../../../src/plugins/render/api";
@@ -32,6 +33,9 @@ function decorate(anchor: number) {
     ],
   });
   const references: string[] = [];
+  const shown: string[] = [];
+  const hidden: string[] = [];
+  const labels: string[] = [];
   const lines: { line: number; cls: string }[] = [];
   const markers: string[] = [];
   const faint: string[] = [];
@@ -42,6 +46,13 @@ function decorate(anchor: number) {
       const widget = value.spec.widget;
       if (widget instanceof FootnoteReference) {
         references.push(referenceText(widget.note));
+        const { open, text, close } = referenceSource(widget.note);
+        shown.push(`${widget.style}:${open}${text}${close}`);
+      } else if (value.point && from < to) {
+        hidden.push(state.sliceDoc(from, to));
+      }
+      if (value.spec.class === "mw-footnote-label") {
+        labels.push(state.sliceDoc(from, to));
       }
       if (String(value.spec.class).startsWith("mw-footnote-def")) {
         lines.push({
@@ -57,11 +68,18 @@ function decorate(anchor: number) {
       }
     },
   );
-  return { references, lines, markers, faint };
+  return { references, shown, hidden, labels, lines, markers, faint };
 }
 
-test("references show compact numbers in reading order, inline footnotes included", () => {
-  const { references } = decorate(source.length);
+test("references show their own source in superscript, as in Obsidian 1.14", () => {
+  const { references, shown } = decorate(source.length);
+  assert.deepEqual(shown, [
+    "source:[^1]",
+    "source:[^note]",
+    "source:^[Inline text.]",
+    "source:[^1]",
+  ]);
+  // Rendered blocks still number references in reading order.
   assert.deepEqual(references, ["1", "2", "3", "1"]);
 });
 
@@ -71,9 +89,14 @@ test("a reference shows its source while the caret is in it", () => {
   assert.deepEqual(faint, ["[^note]"]);
 });
 
-test("definitions stay editable source with a muted marker and continued lines", () => {
-  const { lines, markers } = decorate(source.length);
-  assert.deepEqual(markers, ["[^1]:", "[^note]:"]);
+test("definitions lead with a superscript label; the caret reveals the faint marker", () => {
+  const { lines, markers, labels, hidden } = decorate(source.length);
+  assert.deepEqual(markers, []);
+  assert.deepEqual(labels, ["1", "note"]);
+  assert.deepEqual(hidden, ["[^", "]:", "[^", "]:"]);
+  const atNote = decorate(source.indexOf("[^note]:") + 3);
+  assert.deepEqual(atNote.markers, ["[^note]:"]);
+  assert.deepEqual(atNote.labels, ["1"]);
   assert.deepEqual(lines, [
     { line: 4, cls: "mw-footnote-def" },
     { line: 5, cls: "mw-footnote-def" },
