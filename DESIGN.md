@@ -195,7 +195,7 @@ export declare class Context {
   serial<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promise<void>;
   parallel<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promise<void>;
   bail<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]> | undefined;
-  waterfall<K extends keyof Events>(name: K, value: Parameters<Events[K]>[0]): Promise<Parameters<Events[K]>[0]>;
+  pipeline<K extends keyof Events>(name: K, value: Parameters<Events[K]>[0]): Promise<Parameters<Events[K]>[0]>;
 }
 
 // Services are read as properties, typed by declaration merging:
@@ -293,11 +293,11 @@ sites).
 | `serial` | yes | one at a time, in rank order | `document/willSave` |
 | `parallel` | yes | all at once | `vault/indexed` |
 | `bail` | no | stop at the first non-`undefined` result | `links/open`, `render/fence` |
-| `waterfall` | yes | each listener transforms the value | `paste/transform` |
+| `pipeline` | yes | each listener transforms the value | `paste/transform` |
 
 Errors thrown by listeners are logged against the listener's fiber and do not
-stop other listeners (for `bail` and `waterfall`, the listener is skipped).
-Unlike Cordis, `waterfall` is awaited, because paste transforms are
+stop other listeners (for `bail` and `pipeline`, the listener is skipped).
+Unlike Cordis, `pipeline` is awaited, because paste transforms are
 asynchronous. `bail` stays synchronous: a listener decides at once whether it
 claims the event and may return a promise for the work.
 The event catalogue is in §7.3.
@@ -370,7 +370,7 @@ the plugin as failed for that editor.
 - The needed subset is small and fully testable.
 
 Keep Cordis's names and semantics (`plugin`, `inject`, `provide`, `effect`,
-`on`/`emit`/`serial`/`parallel`/`bail`/`waterfall`, fibers, service gating)
+`on`/`emit`/`serial`/`parallel`/`bail`/`pipeline`, fibers, service gating)
 so that moving to `cordis` later is a mechanical change. `src/kernel/README.md`
 records every intentional difference. The kernel has its own conformance tests
 (§21.1).
@@ -561,7 +561,7 @@ interface.
 | `files/willRename` | host | serial | `(rename, edit: WorkspaceEdit)` | `linkUpdates` adds link rewrites |
 | `render/fence` | webview | bail | `(fence, pass) => RenderedFence \| undefined` | `math`, `diagrams`, `search`, `codeBlocks` claim languages |
 | `render/postProcess` | webview | serial | `(pass) => void` | Obsidian `registerMarkdownPostProcessor` |
-| `paste/transform` | webview | waterfall | `(data: PasteData) => PasteData` | HTML→Markdown, later attachment saving |
+| `paste/transform` | webview | pipeline | `(data: PasteData) => PasteData` | HTML→Markdown, later attachment saving |
 | `editor/menu` | webview | serial | `(menu, context)` | Obsidian `editor-menu` |
 | `link/click` | webview | bail | `(link, event) => true \| undefined` | in-note fragments handled locally; the rest go to the host |
 

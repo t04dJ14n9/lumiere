@@ -8,7 +8,7 @@ declare module "../../../src/kernel/types" {
     traced: { owner: string } & Partial<CallerBound<{ owner: string }>>;
   }
   interface Events {
-    /** @mode waterfall */ ranked: (value: string) => string;
+    /** @mode pipeline */ ranked: (value: string) => string;
   }
 }
 
@@ -67,14 +67,14 @@ test("event slots and owner rank survive reversed loading, update and toggles", 
   let a = root.plugin(plugin("a"));
   await root.settled();
   const expected = "aPbPa1a2b1b2";
-  assert.equal(await root.waterfall("ranked", ""), expected);
+  assert.equal(await root.pipeline("ranked", ""), expected);
   await a.update(undefined);
   await root.settled();
-  assert.equal(await root.waterfall("ranked", ""), expected);
+  assert.equal(await root.pipeline("ranked", ""), expected);
   await a.dispose();
   a = root.plugin(plugin("a"));
   await root.settled();
-  assert.equal(await root.waterfall("ranked", ""), expected);
+  assert.equal(await root.pipeline("ranked", ""), expected);
   await root.dispose();
 });
 
@@ -89,9 +89,9 @@ test("equal-rank event owners keep lexical order across restart", async () => {
   const last = root.plugin(plugin("z"));
   root.plugin(plugin("a"));
   await root.settled();
-  assert.equal(await root.waterfall("ranked", ""), "az");
+  assert.equal(await root.pipeline("ranked", ""), "az");
   await last.update(undefined);
   await root.settled();
-  assert.equal(await root.waterfall("ranked", ""), "az");
+  assert.equal(await root.pipeline("ranked", ""), "az");
   await root.dispose();
 });

@@ -53,7 +53,7 @@ test("typed event call sites use the declared dispatch mode", () => {
         const mode = node.expression.name.text;
         const name = node.arguments[0];
         if (
-          ["emit", "serial", "parallel", "bail", "waterfall"].includes(mode) &&
+          ["emit", "serial", "parallel", "bail", "pipeline"].includes(mode) &&
           name &&
           ts.isStringLiteral(name)
         ) {

@@ -42,7 +42,7 @@ Intentional differences from Cordis:
 
 - This is a dependency-free, in-house subset with an explicit pure runtime;
   it does not implement Cordis's full API or depend on its implementation.
-- `waterfall` is asynchronous. `bail` remains synchronous and may return a
+- `pipeline` is asynchronous. `bail` remains synchronous and may return a
   promise representing claimed work.
 - Services are published atomically after `apply` succeeds, avoiding consumers
   seeing a partly initialized async provider. Service subclasses publish after
