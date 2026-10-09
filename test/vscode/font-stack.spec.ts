@@ -8,8 +8,13 @@ import {
   openWorkbench,
   reopenWith,
   workbenchPage,
-  command,
 } from "./workbench";
+
+interface Measured {
+  style: Record<string, string>;
+  textWidth: number;
+  lineHeight: number;
+}
 
 const PROPS = [
   "fontFamily",
@@ -33,7 +38,9 @@ const PROPS = [
 
 async function editorFrame(page: Page): Promise<Frame> {
   for (const frame of page.frames()) {
-    if (await frame.locator(".cm-line").count()) return frame;
+    if (await frame.locator(".cm-line").count()) {
+      return frame;
+    }
   }
   throw new Error("No Markdown Workbench frame");
 }
@@ -72,7 +79,9 @@ for (const [name, extra] of Object.entries(scenarios)) {
     );
     const browser = await chromium.connectOverCDP(readState().webSocket);
     const out = process.env.FONT_OUT;
-    if (out) mkdirSync(out, { recursive: true });
+    if (out) {
+      mkdirSync(out, { recursive: true });
+    }
     try {
       const page = workbenchPage(browser);
       await openWorkbench(page);
@@ -90,23 +99,25 @@ for (const [name, extra] of Object.entries(scenarios)) {
         return { style, textWidth: range.getBoundingClientRect().width, lineHeight: rect.height, box: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
           vars: ["--vscode-editor-font-family","--vscode-editor-font-size","--vscode-editor-font-weight"].map((v) => v + "=" + getComputedStyle(document.documentElement).getPropertyValue(v)) };
       })()`;
-      const wb = (await frame.evaluate(measure(".cm-line"))) as any;
-      if (out)
+      const wb = (await frame.evaluate(measure(".cm-line"))) as Measured;
+      if (out) {
         await frame
           .locator(".cm-line", { hasText: /Original.line/ })
           .first()
           .screenshot({ path: path.join(out, `font-${name}-workbench.png`) });
+      }
       await reopenWith(page, "Text Editor");
       await page.locator(".monaco-editor .view-line").first().waitFor();
       await page.waitForTimeout(1500);
       const bi = (await page.evaluate(
         measure(".monaco-editor .view-line"),
-      )) as any;
-      if (out)
+      )) as Measured;
+      if (out) {
         await page
           .locator(".monaco-editor .view-line", { hasText: /Original.line/ })
           .first()
           .screenshot({ path: path.join(out, `font-${name}-builtin.png`) });
+      }
       const diff = Object.fromEntries(
         PROPS.filter((p) => wb.style[p] !== bi.style[p]).map((p) => [
           p,
