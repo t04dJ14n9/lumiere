@@ -171,8 +171,11 @@ it at once; no reload is needed.
 - **Claude Code** and **Codex** connect through a small stdio shim: **PDF: Copy
   MCP Setup for Claude Code / Codex…** copies the `claude mcp add …` or
   `codex mcp add …` command (or a config snippet) to run once. The shim picks
-  the window whose workspace contains the agent's folder, from the files each
-  running bridge writes to `~/.agent-pdf-viewer/bridges/`.
+  the window whose workspace contains the agent's folder (the most specific
+  one when workspaces nest), from the files each running bridge writes to
+  `~/.agent-pdf-viewer/bridges/`. If no window matches, or two match
+  equally, it refuses rather than guess; set `AGENT_PDF_BRIDGE_PID` (shown
+  in the extension's log) to name the window.
 
 This is a prototype: the Cursor registration uses an undocumented API, and
 only the on/off switch has an end-to-end test.

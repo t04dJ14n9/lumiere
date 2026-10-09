@@ -171,7 +171,7 @@ async function listen(options: ServerOptions, undo: Undo[]): Promise<RunningBrid
     workspaceFolders: (vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri.fsPath),
     startedAt: new Date().toISOString(),
   };
-  log.info(`Agent bridge listening on ${info.url}`);
+  log.info(`Agent bridge listening on ${info.url} (AGENT_PDF_BRIDGE_PID ${info.pid} picks this window)`);
 
   // Discovery file for the stdio shim (Claude Code, Codex, any MCP client).
   const discoveryFile = path.join(discoveryDir, `${port}.json`);

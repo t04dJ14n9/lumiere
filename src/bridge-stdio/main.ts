@@ -1,8 +1,9 @@
 /**
  * stdio <-> HTTP shim for the Agent PDF Viewer bridge, for MCP clients
- * configured with a command (Claude Code, Codex). It finds the bridge of the
- * VS Code / Cursor window whose workspace contains the client's working
- * directory (else the newest one) and forwards JSON-RPC messages to it.
+ * configured with a command (Claude Code, Codex). It forwards JSON-RPC
+ * messages to the bridge of the window whose workspace contains the
+ * client's working directory, or to the one named by AGENT_PDF_BRIDGE_PID;
+ * see discovery.ts for how (and when it refuses to) choose.
  *
  *     claude mcp add agent-pdf-viewer -- node bridge-stdio.js
  */
@@ -12,26 +13,25 @@ import * as path from 'node:path';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import { chooseBridge, parseBridgeRecord, type BridgeRecord } from './discovery';
 
 const DIR = process.env.AGENT_PDF_BRIDGE_DIR ?? path.join(os.homedir(), '.agent-pdf-viewer', 'bridges');
-
-interface BridgeInfo { url: string; token: string; pid: number; workspaceFolders: string[]; startedAt: string }
 
 function alive(pid: number): boolean {
   try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
-function findBridge(): BridgeInfo | undefined {
+function readRecords(): BridgeRecord[] {
   let files: string[] = [];
-  try { files = readdirSync(DIR).filter(file => file.endsWith('.json')); } catch { return undefined; }
-  const bridges = files.flatMap(file => {
-    try { return [JSON.parse(readFileSync(path.join(DIR, file), 'utf8')) as BridgeInfo]; } catch { return []; }
-  }).filter(bridge => alive(bridge.pid));
-  const cwd = process.cwd();
-  const inside = (folder: string): boolean => cwd === folder || cwd.startsWith(folder + path.sep);
-  const score = (bridge: BridgeInfo): number => Math.max(0, ...bridge.workspaceFolders.filter(inside).map(folder => folder.length));
-  bridges.sort((a, b) => score(b) - score(a) || b.startedAt.localeCompare(a.startedAt));
-  return bridges[0];
+  try { files = readdirSync(DIR).filter(file => file.endsWith('.json')); } catch { return []; }
+  return files.flatMap(file => {
+    try {
+      const record = parseBridgeRecord(JSON.parse(readFileSync(path.join(DIR, file), 'utf8')));
+      return record ? [record] : [];
+    } catch {
+      return [];
+    }
+  });
 }
 
 const stdio = new StdioServerTransport();
@@ -39,12 +39,15 @@ let http: StreamableHTTPClientTransport | undefined;
 
 async function upstream(): Promise<StreamableHTTPClientTransport> {
   if (http) return http;
-  const bridge = findBridge();
-  if (!bridge) throw new Error('No running VS Code/Cursor window with Agent PDF Viewer was found.');
+  const choice = chooseBridge(readRecords(), { cwd: process.cwd(), alive, pid: process.env.AGENT_PDF_BRIDGE_PID });
+  if ('error' in choice) throw new Error(choice.error);
+  const { bridge } = choice;
   const transport = new StreamableHTTPClientTransport(new URL(bridge.url), {
     requestInit: { headers: { Authorization: `Bearer ${bridge.token}` } },
   });
-  transport.onmessage = message => void stdio.send(message);
+  transport.onmessage = message => {
+    stdio.send(message).catch(report);
+  };
   transport.onerror = () => { http = undefined; };
   transport.onclose = () => { http = undefined; };
   await transport.start();
@@ -52,8 +55,13 @@ async function upstream(): Promise<StreamableHTTPClientTransport> {
   return transport;
 }
 
+/** Detached work's error sink: stderr, which MCP clients show as the server's log. */
+function report(error: unknown): void {
+  process.stderr.write(`agent-pdf-viewer bridge: ${error instanceof Error ? error.message : String(error)}\n`);
+}
+
 stdio.onmessage = (message: JSONRPCMessage) => {
-  void (async () => {
+  (async () => {
     try {
       await (await upstream()).send(message);
     } catch (error) {
@@ -62,6 +70,9 @@ stdio.onmessage = (message: JSONRPCMessage) => {
         await stdio.send({ jsonrpc: '2.0', id: message.id, error: { code: -32000, message: String(error instanceof Error ? error.message : error) } });
       }
     }
-  })();
+  })().catch(report);
 };
-void stdio.start();
+stdio.start().catch(error => {
+  report(error);
+  process.exitCode = 1;
+});
