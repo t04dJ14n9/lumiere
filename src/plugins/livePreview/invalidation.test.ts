@@ -226,3 +226,18 @@ test("an edit below a block keeps its index entry, and a caret move elsewhere ke
   });
   assert.ok(same, "the first quote's decoration was not rebuilt");
 });
+
+test("deleting a fence's closing line re-finds the blocks an old block opener it swallowed covered", () => {
+  // The old math block (`$$` … `$$`) does not touch the deleted line, but
+  // the fence now extends over its opener, so the text it covered parses
+  // differently: the region must include it.
+  const doc = "```\na\n```\nb\n\n$$\nx\n```\n\n> q\n\n$$\n\n> after";
+  const state = EditorState.create({ doc, extensions });
+  const close = doc.indexOf("```", 3);
+  const next = state.update({ changes: { from: close, to: close + 4 } }).state;
+  assert.deepEqual(blocks(next), blocks(fresh(next)));
+  assert.deepEqual(
+    described(next.field(decorations)),
+    described(fresh(next).field(decorations)),
+  );
+});
