@@ -122,7 +122,9 @@ export class AgentReferences implements Agent {
       );
     }
     if (target === "clipboard") {
-      workbench.inform?.("No agent chat found; the passage is copied.");
+      workbench.inform?.(
+        "The passage is copied: paste it into your agent's chat and ask your question.",
+      );
     }
   }
   private async copyText(selection: SourceSelection): Promise<boolean> {

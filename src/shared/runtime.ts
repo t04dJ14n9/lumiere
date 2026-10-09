@@ -228,7 +228,20 @@ export interface SourceEdit {
   insert: string;
 }
 /** What the editor offers Ask Agent about Selection. */
+/** The `markdownWorkbench.askAgent.target` setting. */
+export type AskAgentTarget =
+  | "auto"
+  | "cursor"
+  | "chat"
+  | "claudeCode"
+  | "codex"
+  | "clipboard";
+
 export interface AgentEnvironment {
+  /** Where Ask Agent sends the passage: `auto` or one agent. */
+  target: AskAgentTarget;
+  /** Installed agent extensions (Claude Code, Codex), active or not. */
+  agentExtensions: ReadonlySet<string>;
   /** Every registered command. */
   commands: ReadonlySet<string>;
   /** Whether an installed extension (e.g. Copilot Chat) answers in VS Code's chat. */

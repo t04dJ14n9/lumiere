@@ -1,4 +1,4 @@
-import type { AgentEnvironment } from "../../shared/runtime";
+import type { AgentEnvironment, AskAgentTarget } from "../../shared/runtime";
 
 /** Where Ask Agent about Selection put the passage. */
 export type ChatTarget =
@@ -21,7 +21,7 @@ export const AGENT_COMMANDS = {
 } as const;
 
 export interface AgentChatOptions {
-  /** Without it (other hosts, tests) VS Code's chat is tried blind, as before. */
+  /** Without it (other hosts, tests) Cursor's and VS Code's chats are tried blind. */
   environment?: AgentEnvironment;
   /** Saves the passage as a file Codex can attach; returns its URI. */
   writeScratchFile?(text: string): Promise<string>;
@@ -44,14 +44,18 @@ async function tryCommand(execute: Execute, id: string, ...args: unknown[]) {
 }
 
 /**
- * Opens an agent chat with the passage. Cursor's agent chat cannot be
- * prefilled by an extension, so it opens with the passage on the clipboard to
- * paste. VS Code's chat takes a prefilled, still-editable question, but only
- * when an extension answers there: VS Code registers its chat command even
- * with no chat extension installed. Next come the Claude Code extension, whose
- * new conversation takes the passage as its prompt (its `@path#a-b` mention
- * attaches those lines), and Codex, which gets the passage attached as a file.
- * With no chat at all, the passage is only copied.
+ * Opens an agent chat with the passage, but only one known for sure. No
+ * extension can tell which agent the user works in (VS Code shows no
+ * context-key values, the Claude Code and Codex sidebars leave no trace in its
+ * tab API, and the note has the focus anyway), so `auto` opens the editor's
+ * own chat only when it is the only agent installed: Cursor's agent chat
+ * (which an extension cannot prefill, so it opens with the passage on the
+ * clipboard) or VS Code's chat when an extension answers there (prefilled,
+ * still editable). With Claude Code or Codex installed as well, it does not
+ * guess: the passage is only copied, to paste into the user's agent. The
+ * `askAgent.target` setting forces one agent: Claude Code, whose new
+ * conversation takes the passage as its prompt (its `@path#a-b` mention
+ * attaches those lines), or Codex, which gets the passage attached as a file.
  */
 export async function openAgentChat(
   execute: Execute,
@@ -60,38 +64,82 @@ export async function openAgentChat(
   options: AgentChatOptions = {},
 ): Promise<ChatTarget> {
   const { environment } = options;
-  // Without an environment, try each command blind (as before).
-  const has = (id: string) => environment?.commands.has(id) ?? true;
+  const target = environment?.target ?? "auto";
+  const routes: Record<AskAgentTarget, Route[]> = {
+    // Without an environment (other hosts), the editor's chats are tried blind.
+    auto: hasOtherAgent(environment) ? [] : [openCursor, openChat],
+    cursor: [openCursor],
+    chat: [openChat],
+    claudeCode: [openClaudeCode],
+    codex: [attachToCodex],
+    clipboard: [],
+  };
+  const context = { execute, copy, payload, options };
+  for (const route of routes[target]) {
+    const opened = await route(context);
+    if (opened) {
+      return opened;
+    }
+  }
+  await copy(payload);
+  return "clipboard";
+}
+
+interface RouteContext {
+  execute: Execute;
+  copy: (text: string) => Promise<void>;
+  payload: string;
+  options: AgentChatOptions;
+}
+
+/** Opens one agent chat with the passage; returns how, or undefined if it could not. */
+type Route = (context: RouteContext) => Promise<ChatTarget | undefined>;
+
+async function openCursor({
+  execute,
+  copy,
+  payload,
+  options,
+}: RouteContext): Promise<ChatTarget | undefined> {
   if (
-    has(AGENT_COMMANDS.cursorChat) &&
-    (await tryCommand(execute, AGENT_COMMANDS.cursorChat))
+    options.environment?.commands.has(AGENT_COMMANDS.cursorChat) === false ||
+    !(await tryCommand(execute, AGENT_COMMANDS.cursorChat))
   ) {
-    await copy(payload);
-    return "chatWithClipboard";
+    return undefined;
   }
-  if (chatAnswers(environment) && (await openChat(execute, payload))) {
-    return "chat";
+  await copy(payload);
+  return "chatWithClipboard";
+}
+
+/** Claude Code or Codex is installed: the user may be working in it. */
+function hasOtherAgent(environment: AgentEnvironment | undefined): boolean {
+  if (!environment) {
+    return false;
   }
-  if (
-    has(AGENT_COMMANDS.claudeCodeOpen) &&
+  const { commands } = environment;
+  return (
+    environment.agentExtensions.size > 0 ||
+    commands.has(AGENT_COMMANDS.claudeCodeOpen) ||
+    commands.has(AGENT_COMMANDS.codexOpen)
+  );
+}
+
+async function openClaudeCode({
+  execute,
+  payload,
+  options,
+}: RouteContext): Promise<ChatTarget | undefined> {
+  const opened =
+    options.environment?.commands.has(AGENT_COMMANDS.claudeCodeOpen) !==
+      false &&
     // (viewColumn, initialPrompt): a new conversation with the prompt typed in, not sent.
     (await tryCommand(
       execute,
       AGENT_COMMANDS.claudeCodeOpen,
       undefined,
       `${payload}\n\n`,
-    ))
-  ) {
-    return "claudeCode";
-  }
-  await copy(payload);
-  if (
-    environment &&
-    (await attachToCodex(execute, environment, payload, options))
-  ) {
-    return "codex";
-  }
-  return "clipboard";
+    ));
+  return opened ? "claudeCode" : undefined;
 }
 
 /** VS Code registers its chat command even with no chat extension to answer. */
@@ -104,41 +152,52 @@ function chatAnswers(environment: AgentEnvironment | undefined): boolean {
   );
 }
 
-async function openChat(execute: Execute, payload: string): Promise<boolean> {
+async function openChat({
+  execute,
+  payload,
+  options,
+}: RouteContext): Promise<ChatTarget | undefined> {
   // A chat view that is not open yet drops the query, so open it first.
-  if (!(await tryCommand(execute, AGENT_COMMANDS.chatOpen))) {
-    return false;
+  if (
+    !chatAnswers(options.environment) ||
+    !(await tryCommand(execute, AGENT_COMMANDS.chatOpen))
+  ) {
+    return undefined;
   }
   await execute(AGENT_COMMANDS.chatOpen, {
     query: `${payload}\n\n`,
     isPartialQuery: true,
   });
-  return true;
+  return "chat";
 }
 
 /**
  * Codex takes no prefilled text from an extension (its `?prompt=` link leaves
  * the composer empty), but it attaches files: the passage goes in as one.
  */
-async function attachToCodex(
-  execute: Execute,
-  environment: AgentEnvironment,
-  payload: string,
-  options: AgentChatOptions,
-): Promise<boolean> {
+async function attachToCodex({
+  execute,
+  copy,
+  payload,
+  options,
+}: RouteContext): Promise<ChatTarget | undefined> {
+  const { environment, writeScratchFile } = options;
   if (
-    !options.writeScratchFile ||
+    !environment ||
+    !writeScratchFile ||
     !environment.commands.has(AGENT_COMMANDS.codexAddFile) ||
     !environment.commands.has(AGENT_COMMANDS.codexOpen)
   ) {
-    return false;
+    return undefined;
   }
-  const file = await options.writeScratchFile(payload);
+  // Codex shows the file, not its text: keep the passage on the clipboard too.
+  await copy(payload);
+  const file = await writeScratchFile(payload);
   if (
     !(await tryCommand(execute, AGENT_COMMANDS.codexOpen)) ||
     !(await tryCommand(execute, AGENT_COMMANDS.codexAddFile, file))
   ) {
-    return false;
+    return undefined;
   }
   void (async () => {
     for (const ms of options.codexRetryDelaysMs ?? CODEX_RETRY_DELAYS_MS) {
@@ -146,5 +205,5 @@ async function attachToCodex(
       await tryCommand(execute, AGENT_COMMANDS.codexAddFile, file);
     }
   })();
-  return true;
+  return "codex";
 }

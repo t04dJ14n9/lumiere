@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { agentPayload } from "../../../src/plugins/copyForAgent/reference";
-import { openAgentChat } from "../../../src/plugins/copyForAgent/chat";
+import {
+  openAgentChat,
+  type AgentEnvironment,
+} from "../../../src/plugins/copyForAgent/chat";
 
 test("the agent payload links the line range and quotes the exact passage", () => {
   assert.equal(
@@ -56,20 +59,78 @@ test("Cursor's agent chat opens with the passage on the clipboard; no chat only 
   assert.deepEqual(none.copied, ["p"]);
 });
 
-function environment(commands: string[], hasChatParticipant = false) {
+function environment(
+  commands: string[],
+  hasChatParticipant = false,
+  extra: Partial<AgentEnvironment> = {},
+): AgentEnvironment {
   return {
+    target: "auto",
+    agentExtensions: new Set(),
     commands: new Set(commands),
     hasChatParticipant,
     chatDisabled: false,
+    ...extra,
   };
 }
 
-test("VS Code's own chat is skipped when no extension answers there; Claude Code gets the passage as its prompt", async () => {
-  const commands = ["workbench.action.chat.open", "claude-vscode.editor.open"];
+const CLAUDE = "claude-vscode.editor.open";
+const CODEX = ["chatgpt.openSidebar", "chatgpt.addFileToThread"];
+
+test("VS Code's chat opens when an extension answers there and it is the only agent", async () => {
+  const commands = ["workbench.action.chat.open"];
+  const h = host(commands);
+  assert.equal(
+    await openAgentChat(h.execute, h.copy, "p", {
+      environment: environment(commands, true),
+    }),
+    "chat",
+  );
+});
+
+test("auto never guesses between agents: with Claude Code or Codex installed it only copies", async () => {
+  const cases: [string[], boolean, Partial<AgentEnvironment>][] = [
+    [["workbench.action.chat.open", CLAUDE], true, {}],
+    [["workbench.action.chat.open", ...CODEX], true, {}],
+    [["workbench.action.chat.open", CLAUDE], false, {}],
+    [["workbench.action.chat.open", ...CODEX], false, {}],
+    [
+      ["composer.newAgentChat", "workbench.action.chat.open", CLAUDE],
+      false,
+      {},
+    ],
+    // Installed but not activated yet: no commands, still another agent.
+    [
+      ["composer.newAgentChat"],
+      false,
+      { agentExtensions: new Set(["openai.chatgpt"]) },
+    ],
+    [
+      ["workbench.action.chat.open"],
+      true,
+      { agentExtensions: new Set(["anthropic.claude-code"]) },
+    ],
+  ];
+  for (const [commands, participant, extra] of cases) {
+    const h = host(commands);
+    assert.equal(
+      await openAgentChat(h.execute, h.copy, "p", {
+        environment: environment(commands, participant, extra),
+      }),
+      "clipboard",
+      commands.join(","),
+    );
+    assert.deepEqual(h.ran, []);
+    assert.deepEqual(h.copied, ["p"]);
+  }
+});
+
+test("askAgent.target = claudeCode gives Claude Code the passage as its prompt", async () => {
+  const commands = ["workbench.action.chat.open", CLAUDE, ...CODEX];
   const h = host(commands);
   assert.equal(
     await openAgentChat(h.execute, h.copy, "@A.md#1-2\n\n> a", {
-      environment: environment(commands),
+      environment: environment(commands, true, { target: "claudeCode" }),
     }),
     "claudeCode",
   );
@@ -82,28 +143,13 @@ test("VS Code's own chat is skipped when no extension answers there; Claude Code
   assert.deepEqual(h.copied, []);
 });
 
-test("VS Code's chat still comes first when a chat extension answers there", async () => {
-  const commands = ["workbench.action.chat.open", "claude-vscode.editor.open"];
-  const h = host(commands);
-  assert.equal(
-    await openAgentChat(h.execute, h.copy, "p", {
-      environment: environment(commands, true),
-    }),
-    "chat",
-  );
-});
-
-test("Codex gets the passage attached as a file, and copied", async () => {
-  const commands = [
-    "workbench.action.chat.open",
-    "chatgpt.openSidebar",
-    "chatgpt.addFileToThread",
-  ];
+test("askAgent.target = codex attaches the passage as a file, and copies it", async () => {
+  const commands = ["workbench.action.chat.open", CLAUDE, ...CODEX];
   const h = host(commands);
   const written: string[] = [];
   assert.equal(
     await openAgentChat(h.execute, h.copy, "@A.md#1\n\n> a", {
-      environment: environment(commands),
+      environment: environment(commands, true, { target: "codex" }),
       writeScratchFile: async (text) => {
         written.push(text);
         return "file:///tmp/markdown-workbench-agent/A.md-1.md";
@@ -127,6 +173,44 @@ test("Codex gets the passage attached as a file, and copied", async () => {
       args: ["file:///tmp/markdown-workbench-agent/A.md-1.md"],
     },
   ]);
+});
+
+test("a forced target that is unavailable only copies; chat and cursor can be forced past other agents", async () => {
+  const missing = host(["workbench.action.chat.open"]);
+  assert.equal(
+    await openAgentChat(missing.execute, missing.copy, "p", {
+      environment: environment(["workbench.action.chat.open"], true, {
+        target: "claudeCode",
+      }),
+    }),
+    "clipboard",
+  );
+  assert.deepEqual(missing.copied, ["p"]);
+  const chatCommands = ["workbench.action.chat.open", CLAUDE];
+  const chat = host(chatCommands);
+  assert.equal(
+    await openAgentChat(chat.execute, chat.copy, "p", {
+      environment: environment(chatCommands, true, { target: "chat" }),
+    }),
+    "chat",
+  );
+  const cursorCommands = ["composer.newAgentChat", CLAUDE];
+  const cursor = host(cursorCommands);
+  assert.equal(
+    await openAgentChat(cursor.execute, cursor.copy, "p", {
+      environment: environment(cursorCommands, false, { target: "cursor" }),
+    }),
+    "chatWithClipboard",
+  );
+  const copyOnlyCommands = ["workbench.action.chat.open"];
+  const copyOnly = host(copyOnlyCommands);
+  assert.equal(
+    await openAgentChat(copyOnly.execute, copyOnly.copy, "p", {
+      environment: environment(copyOnlyCommands, true, { target: "clipboard" }),
+    }),
+    "clipboard",
+  );
+  assert.deepEqual(copyOnly.ran, []);
 });
 
 test("with no agent but VS Code's empty chat, the passage is only copied", async () => {

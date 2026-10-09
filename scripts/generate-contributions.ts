@@ -118,6 +118,22 @@ export async function contributions() {
               ]),
           ),
         ),
+        "markdownWorkbench.askAgent.target": {
+          type: "string",
+          enum: ["auto", "cursor", "chat", "claudeCode", "codex", "clipboard"],
+          enumDescriptions: [
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+            "Cursor's agent chat, with the passage on the clipboard to paste.",
+            "VS Code's chat, with the passage typed in.",
+            "Claude Code: a new conversation with the passage typed in.",
+            "Codex: the passage attached to the thread as a file.",
+            "Only copy the passage.",
+          ],
+          default: "auto",
+          scope: "window",
+          markdownDescription:
+            "Where **Ask Agent about Selection** sends the passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the passage to it.",
+        },
         "markdownWorkbench.debug.logging": {
           type: "boolean",
           default: false,

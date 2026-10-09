@@ -131,7 +131,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.askAgentAboutSelection | no Obsidian equivalent | VS Code chat prefilled; Cursor agent chat + clipboard; copy fallback | Unit tests in test/unit/copy-for-agent/ask.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
+| Command: markdownWorkbench.askAgentAboutSelection | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `askAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-for-agent/ask.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
 | Command: markdownWorkbench.copyForAgent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -255,6 +255,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.askAgent.target | no Obsidian equivalent | forces the agent Ask Agent about Selection opens | Unit tests in test/unit/copy-for-agent/ask.test.ts | not observed |
 | Setting: markdownWorkbench.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |

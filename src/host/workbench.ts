@@ -8,7 +8,12 @@ import { randomUUID, createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
+import type {
+  AskAgentTarget,
+  HostDocument,
+  Workbench,
+  PanelShell,
+} from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
 const viewType = "markdownWorkbench.editor";
 
@@ -137,6 +142,9 @@ function documentOperations(
   };
 }
 /** Ask Agent about Selection: which agent chats exist, and files to attach. */
+/** Extensions that bring an agent chat of their own besides the editor's. */
+const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
+
 function agentOperations(): Pick<
   Workbench,
   "agentEnvironment" | "writeScratchFile"
@@ -144,6 +152,12 @@ function agentOperations(): Pick<
   return {
     async agentEnvironment() {
       return {
+        target: vscode.workspace
+          .getConfiguration("markdownWorkbench")
+          .get<AskAgentTarget>("askAgent.target", "auto"),
+        agentExtensions: new Set(
+          AGENT_EXTENSIONS.filter((id) => vscode.extensions.getExtension(id)),
+        ),
         commands: new Set(await vscode.commands.getCommands(true)),
         hasChatParticipant: vscode.extensions.all.some((extension) => {
           const participants = (
