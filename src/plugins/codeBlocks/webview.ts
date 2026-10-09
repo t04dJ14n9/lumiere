@@ -5,6 +5,7 @@ import type {} from "../render/api";
 import type {} from "../livePreview/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { codeSource } from "./code-source";
+import { codeBlockRange } from "./range";
 import { bindCodePass } from "./post-process";
 export const codeBlocksWebview: Plugin = {
   name: "codeBlocks",
@@ -41,6 +42,7 @@ function registerCodeBlocks(ctx: Context): void {
         kind,
         editing: "reveal",
         match: (node) => node.name === kind,
+        range: codeBlockRange,
         widget: (block) => new MarkdownBlock(block, ctx.render),
       }),
     );
