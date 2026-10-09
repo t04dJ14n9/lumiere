@@ -50,7 +50,7 @@ export class CellProjection {
       parent: element,
       cell,
       position,
-      selection,
+      ...(selection === undefined ? {} : { selection }),
       environment: this.environment,
       vim: this.environment.vim !== undefined,
       outer: this.grid.outer,
@@ -119,8 +119,8 @@ export class CellProjection {
   close(): void {
     const active = this.active;
     this.cellEditor?.destroy();
-    this.cellEditor = undefined;
-    this.active = undefined;
+    delete this.cellEditor;
+    delete this.active;
     if (active) {
       this.grid.display(active);
     }

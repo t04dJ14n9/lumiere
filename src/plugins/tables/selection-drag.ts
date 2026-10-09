@@ -119,7 +119,7 @@ export class TableSelectionDrag {
     this.gesture = {
       pointer: event.pointerId,
       origin,
-      offset,
+      ...(offset === undefined ? {} : { offset }),
       nativeText,
       selected: false,
       head: origin,
@@ -154,7 +154,7 @@ export class TableSelectionDrag {
 
   cancel(): void {
     const gesture = this.gesture;
-    this.gesture = undefined;
+    delete this.gesture;
     this.scrolling.stop();
     if (gesture && this.root.hasPointerCapture(gesture.pointer)) {
       this.root.releasePointerCapture(gesture.pointer);

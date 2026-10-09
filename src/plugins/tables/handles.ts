@@ -199,7 +199,7 @@ export class TableHandles {
       return;
     }
     this.frame = requestAnimationFrame(() => {
-      this.frame = undefined;
+      delete this.frame;
       if (this.root.isConnected) {
         this.measure();
       }
@@ -319,7 +319,7 @@ export class TableHandles {
   cancel(): void {
     this.scrolling.stop();
     const drag = this.drag;
-    this.drag = undefined;
+    delete this.drag;
     if (drag) {
       const button = drag.axis === "row" ? this.row : this.column;
       if (button.hasPointerCapture(drag.pointer)) {

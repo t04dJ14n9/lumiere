@@ -92,7 +92,7 @@ export class TableController {
   private createProjection(environment: TableEnvironment): CellProjection {
     return new CellProjection(this.grid, environment, {
       activate: (position) => {
-        this.selected.range = undefined;
+        delete this.selected.range;
         this.handles.setActive(position);
         activeTables.set(this.grid.outer, this);
       },
@@ -112,7 +112,11 @@ export class TableController {
     return this.selected.range;
   }
   set range(range: CellRange | undefined) {
-    this.selected.range = range;
+    if (range) {
+      this.selected.range = range;
+    } else {
+      delete this.selected.range;
+    }
   }
   close(): void {
     this.projection.close();
@@ -136,7 +140,7 @@ export class TableController {
         ) {
           activeTables.delete(outer);
           this.close();
-          this.selected.range = undefined;
+          delete this.selected.range;
           this.highlight();
         }
       },
@@ -213,7 +217,7 @@ export class TableController {
     this.projection.update();
     if (this.requested) {
       const next = this.requested;
-      this.requested = undefined;
+      delete this.requested;
       this.projection.open(next, "all");
     }
     this.highlight();
@@ -225,7 +229,7 @@ export class TableController {
       this.grid.refresh(this.active);
       return;
     }
-    this.selected.range = undefined;
+    delete this.selected.range;
     if (moved && this.editor && this.active) {
       this.projection.relocate(moved);
     } else {
@@ -242,16 +246,15 @@ export class TableController {
     }
     const next = parseTable(source);
     this.close();
-    this.selected.range = undefined;
-    this.requested = next
-      ? {
-          row: Math.max(0, Math.min(focus.row, next.rows.length - 1)),
-          column: Math.max(
-            0,
-            Math.min(focus.column, next.alignments.length - 1),
-          ),
-        }
-      : undefined;
+    delete this.selected.range;
+    if (next) {
+      this.requested = {
+        row: Math.max(0, Math.min(focus.row, next.rows.length - 1)),
+        column: Math.max(0, Math.min(focus.column, next.alignments.length - 1)),
+      };
+    } else {
+      delete this.requested;
+    }
     this.grid.replace(source);
     if (!next) {
       this.grid.outer.focus();
