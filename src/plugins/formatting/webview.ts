@@ -77,9 +77,25 @@ function registerFormattingKeys(
   ctx.effect(() =>
     ctx.editor.extend(
       keymap.of([
-        { key: "Mod-b", run: commands.get("editor:toggle-bold")! },
-        { key: "Mod-i", run: commands.get("editor:toggle-italics")! },
-        { key: "Mod-k", run: commands.get("editor:insert-link")! },
+        // VS Code forwards webview keystrokes that reach the window to its
+        // keybinding service, which would run the contributed Ctrl+B/I/K
+        // binding a second time (or Cursor's Ctrl+I agent). Stopping
+        // propagation keeps each shortcut in this one place.
+        {
+          key: "Mod-b",
+          run: commands.get("editor:toggle-bold")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-i",
+          run: commands.get("editor:toggle-italics")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-k",
+          run: commands.get("editor:insert-link")!,
+          stopPropagation: true,
+        },
       ]),
     ),
   );
