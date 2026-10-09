@@ -223,21 +223,15 @@ class InlineDecorations implements InlineContext {
   private hideSyntax(node: SyntaxNodeRef): void {
     const { name, from, to } = node;
     const parent = node.node.parent;
-    if (
-      ![
-        "EmphasisMark",
-        "StrikethroughMark",
-        "HeaderMark",
-        "CodeMark",
-        "QuoteMark",
-        "HighlightMark",
-      ].includes(name) ||
-      !parent ||
-      this.revealed(parent.from, parent.to)
-    ) {
+    if (!SYNTAX_MARKS.includes(name) || !parent) {
       return;
     }
     if (name === "CodeMark" && parent.name !== "InlineCode") {
+      return;
+    }
+    // Revealed syntax stays faint, as in Obsidian, so the text reads first.
+    if (this.revealed(parent.from, parent.to)) {
+      this.mark(from, to, "md-syntax-mark");
       return;
     }
     // A setext underline is its own line; Obsidian keeps it, faint.
@@ -255,6 +249,15 @@ class InlineDecorations implements InlineContext {
     );
   }
 }
+
+const SYNTAX_MARKS = [
+  "EmphasisMark",
+  "StrikethroughMark",
+  "HeaderMark",
+  "CodeMark",
+  "QuoteMark",
+  "HighlightMark",
+];
 
 export const hybridInline = ViewPlugin.fromClass(
   class {

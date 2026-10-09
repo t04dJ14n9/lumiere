@@ -139,3 +139,29 @@ test("each quote line records its nesting depth, so nested quotes draw a bar per
     "--quote-depth: 3",
   ]);
 });
+
+test("syntax revealed at the caret is marked faint rather than shown as text", () => {
+  const doc = "## Head **bold**\n\n> quote\n\nafter";
+  const marked = (anchor: number) => {
+    const state = EditorState.create({
+      doc,
+      selection: { anchor },
+      extensions: [documentTree],
+    });
+    const found: string[] = [];
+    inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+      0,
+      doc.length,
+      (from, to, value) => {
+        if (value.spec.class === "md-syntax-mark") {
+          found.push(doc.slice(from, to));
+        }
+      },
+    );
+    return found;
+  };
+  assert.deepEqual(marked(4), ["##"]);
+  assert.deepEqual(marked(doc.indexOf("bold")), ["##", "**", "**"]);
+  assert.deepEqual(marked(doc.indexOf("quote")), [">"]);
+  assert.deepEqual(marked(doc.length), []);
+});

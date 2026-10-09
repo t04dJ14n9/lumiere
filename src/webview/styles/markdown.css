@@ -109,8 +109,9 @@
   background: var(--highlight);
 }
 /* A setext heading's underline stays visible, faint, as in Obsidian. */
-.md-setext-mark {
-  color: var(--muted);
+.md-setext-mark,
+.md-syntax-mark {
+  color: var(--faint);
 }
 .md-comment {
   color: var(--muted);

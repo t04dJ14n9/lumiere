@@ -22,9 +22,14 @@ export function footnoteInline(render: RenderService): InlineRenderer {
         return;
       }
       const note = registry.references.get(node.from);
-      if (note && !cx.revealed(node.from, node.to)) {
-        cx.replace(node.from, node.to, new FootnoteReference(note, render));
+      if (!note) {
+        return;
       }
+      if (cx.revealed(node.from, node.to)) {
+        cx.mark(node.from, node.to, "md-syntax-mark");
+        return;
+      }
+      cx.replace(node.from, node.to, new FootnoteReference(note, render));
     },
   };
 }

@@ -34,6 +34,7 @@ function decorate(anchor: number) {
   const references: string[] = [];
   const lines: { line: number; cls: string }[] = [];
   const markers: string[] = [];
+  const faint: string[] = [];
   inlineDecorations(state, [{ from: 0, to: source.length }]).between(
     0,
     source.length,
@@ -51,9 +52,12 @@ function decorate(anchor: number) {
       if (value.spec.class === "mw-footnote-marker") {
         markers.push(state.sliceDoc(from, to));
       }
+      if (value.spec.class === "md-syntax-mark") {
+        faint.push(state.sliceDoc(from, to));
+      }
     },
   );
-  return { references, lines, markers };
+  return { references, lines, markers, faint };
 }
 
 test("references show compact numbers in reading order, inline footnotes included", () => {
@@ -62,8 +66,9 @@ test("references show compact numbers in reading order, inline footnotes include
 });
 
 test("a reference shows its source while the caret is in it", () => {
-  const { references } = decorate(source.indexOf("[^note]") + 2);
+  const { references, faint } = decorate(source.indexOf("[^note]") + 2);
   assert.deepEqual(references, ["1", "3", "1"]);
+  assert.deepEqual(faint, ["[^note]"]);
 });
 
 test("definitions stay editable source with a muted marker and continued lines", () => {
