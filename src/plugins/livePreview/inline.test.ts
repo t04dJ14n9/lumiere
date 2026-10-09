@@ -117,3 +117,25 @@ test("a setext heading keeps its underline visible and faint off the caret", () 
   assert.ok(!found.some((d) => d.from === underline && d.cls === undefined));
   assert.ok(found.some((d) => d.cls === "md-heading md-h2" && d.from === 0));
 });
+
+test("each quote line records its nesting depth, so nested quotes draw a bar per level", () => {
+  const doc = "> outer\n>\n> > nested\n> > > deepest\n\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const decorations = inlineDecorations(state, [{ from: 0, to: doc.length }]);
+  const depths: string[] = [];
+  decorations.between(0, doc.length, (_from, _to, value) => {
+    if (value.spec.class === "md-quote") {
+      depths.push(value.spec.attributes?.style);
+    }
+  });
+  assert.deepEqual(depths, [
+    "--quote-depth: 1",
+    "--quote-depth: 1",
+    "--quote-depth: 2",
+    "--quote-depth: 3",
+  ]);
+});

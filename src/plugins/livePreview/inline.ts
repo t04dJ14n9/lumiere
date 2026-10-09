@@ -13,7 +13,7 @@ class Bullet extends WidgetType {
   }
 }
 
-import type { SyntaxNodeRef } from "@lezer/common";
+import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
 const inlineClasses: Readonly<Record<string, string>> = {
   Highlight: "md-highlight",
@@ -22,6 +22,17 @@ const inlineClasses: Readonly<Record<string, string>> = {
   Strikethrough: "md-strike",
   InlineCode: "md-inline-code",
 };
+
+/** The number of quotes around a node, counting the node itself. */
+export function quoteDepth(node: SyntaxNode | null): number {
+  let depth = 0;
+  for (let current = node; current; current = current.parent) {
+    if (current.name === "Blockquote") {
+      depth++;
+    }
+  }
+  return depth;
+}
 
 export function inlineDecorations(
   state: EditorState,
@@ -65,13 +76,17 @@ class InlineDecorations implements InlineContext {
   replace = (from: number, to: number, widget: WidgetType): void => {
     this.ranges.push(Decoration.replace({ widget }).range(from, to));
   };
-  line = (at: number, cls: string): void => {
+  line = (
+    at: number,
+    cls: string,
+    attributes?: Record<string, string>,
+  ): void => {
     const from = this.state.doc.lineAt(at).from;
     if (this.lines.has(`${from}:${cls}`)) {
       return;
     }
     this.lines.add(`${from}:${cls}`);
-    this.ranges.push(Decoration.line({ class: cls }).range(from));
+    this.ranges.push(Decoration.line({ class: cls, attributes }).range(from));
   };
 
   decorate(
@@ -131,7 +146,8 @@ class InlineDecorations implements InlineContext {
       Table: "md-table-source",
     };
     const cls = classes[node.name];
-    if (!cls) {
+    // A nested quote's lines are decorated with the outermost quote.
+    if (!cls || (node.name === "Blockquote" && quoteDepth(node.node) > 1)) {
       return;
     }
     for (
@@ -140,9 +156,21 @@ class InlineDecorations implements InlineContext {
 
     ) {
       const current = this.state.doc.lineAt(pos);
-      this.line(pos, cls);
+      this.line(pos, cls, this.lineAttributes(node.name, current.to));
       pos = current.to + 1;
     }
+  }
+
+  /** Each quote level draws its own bar, as in Obsidian. */
+  private lineAttributes(
+    name: string,
+    lineEnd: number,
+  ): Record<string, string> | undefined {
+    if (name !== "Blockquote") {
+      return undefined;
+    }
+    const inner = this.state.field(documentTree).resolveInner(lineEnd, -1);
+    return { style: `--quote-depth: ${Math.max(1, quoteDepth(inner))}` };
   }
 
   private decorateLink(node: SyntaxNodeRef): void {

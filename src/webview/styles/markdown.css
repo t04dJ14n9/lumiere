@@ -143,9 +143,16 @@
   font-family: var(--code-font);
   font-size: 0.875em;
 }
+/* One bar per quote level (--quote-depth), each indented 16px further. */
 #app .cm-line.md-quote {
-  padding-left: 16px;
-  border-left: 2px solid var(--accent);
+  padding-left: calc(var(--quote-depth, 1) * 16px + 2px);
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--accent) 0 2px,
+    transparent 2px 16px
+  );
+  background-repeat: no-repeat;
+  background-size: calc(var(--quote-depth, 1) * 16px - 14px) 100%;
   color: var(--muted);
 }
 input[type="checkbox"] {
