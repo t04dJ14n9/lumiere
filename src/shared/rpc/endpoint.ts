@@ -1,32 +1,18 @@
 import type { Protocol } from "../../kernel/protocol";
 import type { Infer, Schema } from "../schema";
 import type { Disposer } from "../../kernel/types";
-import type { Logger } from "../../kernel/logger";
-import { silentLogger } from "../../kernel/logger";
-import { parseEnvelope } from "./envelope";
-import type { Envelope, Message } from "./envelope";
+import { silentLogger, type Logger } from "../../kernel/logger";
+import { ApplyQueue, CoalescingQueue } from "./queues";
+import { parseEnvelope, type Envelope } from "./envelope";
+import type {
+  Handler,
+  Notify,
+  OutgoingRequest,
+  Pending,
+} from "./endpoint-types";
 import type { Transport, Clock, Cancellation } from "./lifecycle";
 import { CancelToken, RpcError } from "./lifecycle";
-export { CancelToken, RpcError } from "./lifecycle";
-export type { Transport, Clock, Cancellation } from "./lifecycle";
-type Handler = {
-  protocol: Protocol;
-  run: (value: unknown, token: Cancellation) => unknown;
-};
-type Pending = {
-  schema: Schema<unknown>;
-  resolve(value: unknown): void;
-  reject(error: unknown): void;
-  cleanup(): void;
-};
-interface OutgoingRequest {
-  protocol: Protocol;
-  method: string;
-  parsed: unknown;
-  schema: Schema<unknown>;
-  options: { timeout?: number; token?: Cancellation };
-}
-type Notify = Extract<Message, { kind: "notify" }>;
+export * from "./lifecycle";
 /**
  * Typed requests and notifications over one transport.
  *
@@ -39,13 +25,20 @@ type Notify = Extract<Message, { kind: "notify" }>;
  *   notification, so a request never overtakes the state it depends on.
  * - A received batch with a version not above the last applied one is
  *   dropped whole; its notifications run in order.
+ * - Received state applies in arrival order: notifications and batches run
+ *   one at a time, each awaited (asynchronous handlers included) before the
+ *   next starts, and a received request starts only after everything that
+ *   arrived before it has applied. Responses, errors and cancels are handled
+ *   at once, so a handler awaiting a call cannot deadlock the queue.
+ * - After `dispose()`, no further notification handler starts.
  */
 export class Endpoint {
   private next = 1;
   private batchVersion = 0;
   private receivedBatch = 0;
-  private queued: Notify[] = [];
-  private flushScheduled = false;
+  /** Received state still applying (see the invariants). */
+  private readonly applying = new ApplyQueue();
+  private readonly outgoing = new CoalescingQueue<Notify>(() => this.flush());
   private disposed = false;
   private readonly handlers = new Map<string, Handler>();
   private readonly notifications = new Map<string, Set<Handler>>();
@@ -61,6 +54,7 @@ export class Endpoint {
     private readonly logger: Logger = silentLogger,
   ) {
     this.unlisten = transport.listen((value) => {
+      // Never rejects: every failure is logged inside.
       void this.receive(value);
     });
   }
@@ -79,32 +73,13 @@ export class Endpoint {
   }
   /** Send the coalesced notifications now, as one batch. */
   flush(): void {
-    if (this.disposed || this.queued.length === 0) {
+    const messages = this.disposed ? [] : this.outgoing.take();
+    if (messages.length === 0) {
       return;
     }
-    const messages = this.queued;
-    this.queued = [];
     this.transport.send(
       parseEnvelope({ kind: "batch", version: ++this.batchVersion, messages }),
     );
-  }
-  private enqueue(message: Notify): void {
-    const index = this.queued.findIndex(
-      (item) =>
-        item.channel === message.channel && item.method === message.method,
-    );
-    if (index === -1) {
-      this.queued.push(message);
-    } else {
-      this.queued[index] = message;
-    }
-    if (!this.flushScheduled) {
-      this.flushScheduled = true;
-      void Promise.resolve().then(() => {
-        this.flushScheduled = false;
-        this.flush();
-      });
-    }
   }
   handle<P extends Protocol, M extends keyof P["requests"] & string>(
     protocol: P,
@@ -171,7 +146,7 @@ export class Endpoint {
     };
     if (options.coalesce) {
       this.assertLive();
-      this.enqueue(message);
+      this.outgoing.add(message);
     } else {
       this.send(message);
     }
@@ -272,7 +247,7 @@ export class Endpoint {
     }
     switch (envelope.kind) {
       case "batch":
-        await this.receiveBatch(envelope);
+        await this.apply(() => this.receiveBatch(envelope));
         return;
       case "cancel":
         this.incoming.get(envelope.id)?.token.cancel();
@@ -283,11 +258,20 @@ export class Endpoint {
         this.receiveResponse(envelope);
         return;
       case "notify":
-        await this.receiveNotification(envelope);
+        await this.apply(() => this.receiveNotification(envelope));
         return;
       case "request":
-        await this.receiveRequest(envelope);
+        await this.receiveRequest(envelope, this.applying.barrier);
     }
+  }
+
+  /** Run `work` after the state received before it has applied. */
+  private apply(work: () => Promise<void>): Promise<void> {
+    return this.applying.run(async () => {
+      if (!this.disposed) {
+        await work();
+      }
+    });
   }
 
   private async receiveBatch(
@@ -299,6 +283,9 @@ export class Endpoint {
     }
     this.receivedBatch = batch.version;
     for (const message of batch.messages) {
+      if (this.disposed) {
+        return;
+      }
       await this.receiveNotification(message);
     }
   }
@@ -328,6 +315,9 @@ export class Endpoint {
   ): Promise<void> {
     const key = `${envelope.channel}/${envelope.method}`;
     for (const handler of [...(this.notifications.get(key) ?? [])]) {
+      if (this.disposed) {
+        return;
+      }
       try {
         await handler.run(
           handler.protocol.notifications[envelope.method]!.parse(
@@ -341,45 +331,70 @@ export class Endpoint {
     }
   }
 
+  /** Runs once `applied` (the state received before it) has applied. */
   private async receiveRequest(
     envelope: Extract<Envelope, { kind: "request" }>,
+    applied: Promise<void> | undefined,
   ): Promise<void> {
     const key = `${envelope.channel}/${envelope.method}`;
-    const handler = this.handlers.get(key);
-    if (!handler) {
-      this.sendError(envelope.id, "PluginDisabled", key);
-      return;
-    }
     if (this.incoming.has(envelope.id)) {
       this.logger.warn("Dropped duplicate RPC request");
       return;
     }
-    let params: unknown;
-    const definition = handler.protocol.requests[envelope.method]!;
-    try {
-      params = definition.params.parse(envelope.params);
-    } catch (error) {
-      this.logger.warn("Dropped invalid RPC params", error);
-      return;
-    }
+    // Registered while it waits, so a cancel or a disabled handler reaches it.
     const token = new CancelToken();
     this.incoming.set(envelope.id, { token, key });
     try {
-      const result = await handler.run(params, token);
+      if (applied) {
+        await applied;
+      }
       if (token.cancelled || this.disposed) {
         return;
       }
-      this.sendResult(envelope.id, definition.result, result);
+      const handler = this.handlers.get(key);
+      if (!handler) {
+        this.sendError(envelope.id, "PluginDisabled", key);
+        return;
+      }
+      let params: unknown;
+      const definition = handler.protocol.requests[envelope.method]!;
+      try {
+        params = definition.params.parse(envelope.params);
+      } catch (error) {
+        this.logger.warn("Dropped invalid RPC params", error);
+        return;
+      }
+      await this.runRequest(envelope.id, handler, definition.result, {
+        params,
+        token,
+      });
+    } finally {
+      if (this.incoming.get(envelope.id)?.token === token) {
+        this.incoming.delete(envelope.id);
+      }
+    }
+  }
+
+  private async runRequest(
+    id: number,
+    handler: Handler,
+    result: Schema<unknown>,
+    { params, token }: { params: unknown; token: CancelToken },
+  ): Promise<void> {
+    try {
+      const value = await handler.run(params, token);
+      if (token.cancelled || this.disposed) {
+        return;
+      }
+      this.sendResult(id, result, value);
     } catch (error) {
       if (!token.cancelled) {
         this.sendError(
-          envelope.id,
+          id,
           error instanceof RpcError ? error.code : "HandlerFailed",
           String(error),
         );
       }
-    } finally {
-      this.incoming.delete(envelope.id);
     }
   }
 

@@ -116,6 +116,8 @@ test("the host writes forwarded webview logs and re-checks the debug policy", as
   send("warn", "render failed");
   // A webview that claims debug is on cannot flood the channel by itself.
   send("debug", "ignored");
+  // Received notifications apply in order, each after the one before it.
+  await settle();
   debug = true;
   send("debug", "accepted");
   await settle();
