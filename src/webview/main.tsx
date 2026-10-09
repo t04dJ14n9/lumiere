@@ -38,7 +38,9 @@ if (!wasmUrl) {
     // Replace the old viewer first (flushSync unmounts it now), so nothing
     // still on screen uses the engines the old session is about to stop.
     flushSync(() => root.render(<PdfEngine key={++generation} session={next} />));
-    previous?.dispose();
+    void previous?.dispose(); // never rejects: failures go to reportError
   });
-  window.addEventListener('pagehide', () => session?.dispose());
+  window.addEventListener('pagehide', () => {
+    void session?.dispose();
+  });
 }

@@ -4,7 +4,11 @@
  * EmbedPDF imports and can be unit-tested under Node.
  */
 import type { PdfEngine } from '@embedpdf/models';
+import { stopEngine } from './engine-destruction';
 import type { EngineMode, RenderSessionEnvironment } from './render-session';
+
+/** How long an engine gets to close its documents before it is destroyed anyway. */
+const ENGINE_STOP_DEADLINE_MS = 2000;
 
 export type ViewerEngine = PdfEngine<Blob>;
 
@@ -20,16 +24,8 @@ export const browserRenderEnvironment: RenderSessionEnvironment<ViewerEngine> = 
       fontFallback: null,
     });
   },
-  destroyEngine(engine) {
-    const destroy = (): void => {
-      try {
-        engine.destroy?.();
-      } catch (error) {
-        console.warn('Could not stop the PDF engine', error);
-      }
-    };
-    engine.closeAllDocuments().wait(destroy, destroy);
-  },
+  destroyEngine: engine => stopEngine(engine, ENGINE_STOP_DEADLINE_MS),
+  reportError: (message, error) => console.warn(message, error),
   async fetchWasm(url) {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`PDFium request failed (${response.status})`);

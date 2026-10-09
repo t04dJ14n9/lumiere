@@ -22,7 +22,7 @@ const WORKER_TIMEOUT_MS = 15_000;
 export function PdfEngine({ session }: { session: PdfRenderSession<ViewerEngine> }): React.JSX.Element {
   const [mode, setMode] = useState<EngineMode>('worker');
   const useMainThread = useCallback(() => {
-    session.release('worker');
+    void session.release('worker'); // never rejects; the main-thread engine waits for it
     setMode('main-thread');
   }, [session]);
   return <EngineSession key={mode} session={session} mode={mode} onWorkerFailure={useMainThread} />;
