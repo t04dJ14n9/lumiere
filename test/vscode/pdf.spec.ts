@@ -76,7 +76,8 @@ test('Copy for Agent works from the selection menu and the editor title button',
 test('PDF: Open Location opens a pasted link at its page and flashes its box', async ({ workbench: page }) => {
   await command(page, 'PDF: Open Location…');
   const input = page.locator('.quick-input-widget input:visible');
-  await input.fill(`${PDF}#page=5&viewrect=72,83,134,21`);
+  // The source line exactly as Copy for Agent writes it.
+  await input.fill(`Source: [${PDF} (page 5)](<${PDF}#page=5&viewrect=72,83,134,21>)`);
   await input.press('Enter');
   const viewer = await pdfViewer(page);
   await expect(viewer.locator('.page[data-page-index="4"] .location-highlight')).toBeVisible();

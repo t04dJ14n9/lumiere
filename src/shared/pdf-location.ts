@@ -50,6 +50,17 @@ export function pdfLink(path: string, location: PdfLocation): string {
   return `${path}#${formatLocationFragment(location)}`;
 }
 
+/**
+ * The link in text a reader pasted: a bare link or path, `<link>`, or a
+ * Markdown link `[label](<link>)` such as the `Source:` line Copy for Agent
+ * writes (the first link, if there are several).
+ */
+export function extractPdfLink(text: string): string {
+  const markdown = /\]\(<([^>]+)>\)/.exec(text) ?? /\]\(([^)\s]+)\)/.exec(text);
+  const link = markdown ? markdown[1]! : text.trim().replace(/^sources?:\s*/i, '');
+  return link.trim().replace(/^<(.*)>$/, '$1');
+}
+
 function parseViewRect(value: string | undefined): ViewRect | undefined {
   if (!value) return undefined;
   const numbers = value.split(',').map(Number);
