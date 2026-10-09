@@ -18,6 +18,7 @@ import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
 import { indentationKeymap } from "./indentation";
 import { findExtension } from "./find";
+import { keepSelectAllInEditor } from "./select-all";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -82,6 +83,7 @@ export const editorWebview: Plugin<EditorConfig> = {
       config,
     );
     registerReveal(ctx, view);
+    ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
     view.focus();
   },
 };

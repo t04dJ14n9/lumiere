@@ -37,6 +37,8 @@ Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
 - `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
+- `select-all.ts`: stops VS Code's own Select All from undoing the
+  editor's Ctrl/Cmd+A (VS Code forwards every webview keydown).
 - `webview.ts`: view creation and named service/settings/RPC registrations.
 - `service.ts`: shared editor facade with caller-bound extension ownership.
 - `extensions.ts`: deterministic ordered extension registry.
