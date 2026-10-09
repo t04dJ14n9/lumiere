@@ -222,6 +222,31 @@ test('a region drag released outside the viewer ends when the pointer comes back
   [150, 150, 250, 250].forEach((value, index) => expect(Math.abs(rect[index]! - value)).toBeLessThan(2));
 });
 
+test('a right-click keeps the selection, for the context menu, and later drags still work', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  await drag(page, at(60, 70), at(230, 150));
+  await expect(page.locator('.region-selection')).toBeVisible();
+  // Over the text inside the region. In VS Code the context menu then takes the button release.
+  await page.mouse.move(...at(100, TEXT_MIDLINE));
+  await page.mouse.down({ button: 'right' });
+  await page.evaluate(() => {
+    const swallow = (event: Event): void => event.stopImmediatePropagation();
+    for (const type of ['pointerup', 'mouseup']) window.addEventListener(type, swallow, { capture: true, once: true });
+  });
+  await page.mouse.up({ button: 'right' });
+  await page.mouse.move(...at(150, 300), { steps: 4 });
+  await expect(page.locator('.region-selection')).toBeVisible();
+  expect(await lastSelection(page)).toMatchObject({ kind: 'region' });
+
+  await page.keyboard.press('Escape');
+  await drag(page, at(150, 200), at(250, 300));
+  await expect(page.locator('.region-selection')).toBeVisible();
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'region', page: 1 });
+  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'text', text: 'Synthetic page 1' });
+});
+
 test('a region at the bottom of the viewer gets its menu above it, on screen', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);

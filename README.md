@@ -107,6 +107,7 @@ src/
     ├── selection.ts            reporting text and region selections
     ├── region-details.ts       a region's text and PNG snapshot
     ├── drag-release.ts         ending drags released outside the viewer
+    ├── secondary-buttons.ts    right-clicks left to the context menu
     └── styles/                 CSS using VS Code theme colours
 ```
 

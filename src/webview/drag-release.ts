@@ -12,7 +12,7 @@ export function useEndDragsReleasedOutside(): void {
   useEffect(() => {
     let dragging: PointerEvent | undefined;
     const onDown = (event: PointerEvent): void => {
-      dragging = event;
+      if (event.button === 0) dragging = event;
     };
     const onMove = (event: PointerEvent): void => {
       if (!dragging) return;

@@ -12,6 +12,7 @@ import { Page } from './page';
 import { DOCUMENT_ID, PAGE_GAP } from './plugins';
 import { rememberPosition, rememberedPosition } from './reading-position';
 import { SearchBar } from './search-bar';
+import { useIgnoreSecondaryButtons } from './secondary-buttons';
 import { useSelectionReporting } from './selection';
 import { Toolbar } from './toolbar';
 import { useWheelZoom } from './wheel-zoom';
@@ -32,6 +33,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   const documentArea = useRef<HTMLDivElement>(null);
   useWheelZoom(documentArea);
   useEndDragsReleasedOutside();
+  useIgnoreSecondaryButtons(documentArea);
 
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
