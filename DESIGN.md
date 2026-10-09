@@ -140,8 +140,8 @@ configuration.
 
 `src/kernel` is a small (under 1,000 lines as formatted by Prettier) dependency-free
 implementation of Cordis's model. It runs unchanged in Node, Chromium and
-`tsx --test`. §5.9 explains why it is in-house rather than the npm `cordis`
-package.
+`tsx --test`. §5.9 explains why it is in-house, and why replacing it with the npm `cordis`
+package would not be mechanical.
 
 ### 5.1 Concepts
 
@@ -297,8 +297,8 @@ sites).
 
 Errors thrown by listeners are logged against the listener's fiber and do not
 stop other listeners (for `bail` and `pipeline`, the listener is skipped).
-Unlike Cordis, `pipeline` is awaited, because paste transforms are
-asynchronous. `bail` stays synchronous: a listener decides at once whether it
+`pipeline` is awaited, because paste transforms are asynchronous. It is not
+Cordis's `waterfall`: see §5.9. `bail` stays synchronous: a listener decides at once whether it
 claims the event and may return a promise for the work.
 The event catalogue is in §7.3.
 
@@ -367,13 +367,51 @@ the plugin as failed for that editor.
   tests, and integrate with CodeMirror compartments and per-panel RPC. Both are
   specific to this extension.
 - Cordis's README says its API is not stable yet.
-- The needed subset is small and fully testable.
+- The needed subset is small and fully testable, and its guarantees (below) are
+  not the ones this extension needs.
 
-Keep Cordis's names and semantics (`plugin`, `inject`, `provide`, `effect`,
-`on`/`emit`/`serial`/`parallel`/`bail`/`pipeline`, fibers, service gating)
-so that moving to `cordis` later is a mechanical change. `src/kernel/README.md`
-records every intentional difference. The kernel has its own conformance tests
-(§21.1).
+Cordis stays a **reference and a differential-test target**, not the runtime
+(decision of 2026-10-10, from an independent source audit of Cordis `518b8bc`,
+4.0.0-rc.10). The kernel borrows Cordis's vocabulary (`plugin`, `inject`,
+`provide`, `effect`, fibers, service gating) so that the model is familiar, but
+**moving to the `cordis` package would not be a mechanical change.** The
+semantics differ in ways that would have to be redesigned and re-tested:
+
+- **Event modes.** Our `pipeline` (awaited, ranked, each listener transforms the
+  value), `bail` (synchronous, first non-`undefined` result) and error isolation
+  (a throwing listener is logged and skipped) are not Cordis's `waterfall`,
+  `bail` and exception propagation. Same-looking method names behave
+  differently.
+- **Cleanup completion is joined.** Our contexts keep a resource represented
+  until its release settles, so `dispose()` waits for a release that started
+  earlier. Cordis guarantees only that a disposer is invoked at most once; a
+  second caller does not wait for the first cleanup, and an early-released
+  effect leaves its fiber's list before its cleanup finishes.
+- **Every release runs, in reverse order.** Our teardown releases each resource
+  one after another and carries on after a failure. Cordis chains the disposers
+  of one effect without per-disposer recovery (a rejection can skip the rest)
+  and runs separate effects of a fiber concurrently.
+- **Stopping consumers are a barrier.** Withdrawing a provider waits for
+  dependants that are already stopping. Cordis finds consumers among registered
+  fibers only, so a consumer that is already unloading can be missed.
+- **Unloading does not wait for initialization to finish** in our PDF runtime
+  (it cancels a starting scope); Cordis's unload waits for the initialization
+  promise to settle, so one that never settles blocks disposal.
+- **HMR does not roll back.** Cordis's HMR is a Node module-loader package that
+  does not undo a replacement that fails after swapping began. It is not an
+  option for esbuild webviews or the shared extension host.
+- **Manifests and dependencies do not map.** Required versus optional
+  injection, replaceable provider stacks, staged publication (services appear
+  after `apply` succeeds, children wait for their parent's commit), and our
+  manifests (capabilities, settings, commands, menus, views) have no Cordis
+  equivalent.
+
+The in-house kernel is therefore kept and repaired against written lifecycle
+invariants (ownership, completion, dependency safety, cancellation,
+quiescence). `src/kernel/README.md` records every intentional difference. The
+kernel has its own conformance tests (§21.1); Cordis may be used as a
+differential oracle for the semantics they share, never for asynchronous
+lifecycle correctness. Full reasoning: `docs/plans/cordis-decision.md`.
 
 ### 5.10 Composition rules
 
@@ -1562,6 +1600,6 @@ of `dist/` outputs and the docs.
    (like PDF Outline), or a Markdown Workbench activity-bar container.
 6. **Link updates on rename.** **`prompt`**, or Obsidian's always-update
    behaviour.
-7. **Kernel.** **In-house, Cordis-compatible**, or depend on the `cordis` npm
-   package now.
+7. **Kernel.** **In-house (decided; Cordis is a reference only, §5.9)**, or depend on the
+   `cordis` npm package.
 8. **Reading view.** **Not in v1**, or add a read-only rendered mode.
