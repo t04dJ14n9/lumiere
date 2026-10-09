@@ -68,7 +68,7 @@ completion and Phase 8 records) first.
   reintroduce `EditorView.baseTheme` style objects.
 - Backlinks and Outgoing Links are off by default (owner decision).
 - Owner-decided defaults: line numbers on, Mermaid on, readable line length
-  off (DESIGN §15.1), inline title off (INLINECOMMIT): line 1 starts at the
+  off (DESIGN §15.1), inline title off (3993fa5): line 1 starts at the
   top as in VS Code; the plugin and its setting stay.
 
 ### Obsidian 1.14 comparison follow-up (each fix with a unit test)
