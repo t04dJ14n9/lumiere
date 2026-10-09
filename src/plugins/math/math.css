@@ -31,3 +31,16 @@ mjx-container svg {
   max-width: 100%;
   overflow: visible;
 }
+/*
+ * Math source at the caret reads as code on a tinted background, as in
+ * Obsidian; a revealed block keeps its rendered result below the source.
+ */
+.cm-line.md-math-source,
+.md-math-source-inline {
+  font-family: var(--code-font);
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.md-math-source-inline {
+  border-radius: 3px;
+}

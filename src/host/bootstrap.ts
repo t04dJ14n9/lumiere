@@ -1,5 +1,6 @@
 import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
+import type { Logger } from "../kernel";
 import { Context } from "../kernel";
 import type { Workbench } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
@@ -7,7 +8,7 @@ import {
   inlineTitleHost,
   codeBlocksHost,
   markersHost,
-  copyForAgentHost,
+  agentBridgeHost,
   documentHost,
   editorHost,
   dialectHost,
@@ -28,9 +29,11 @@ import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-feature
 export async function bootstrap(
   workbench: Workbench,
   vaultSystem?: VaultSystem,
+  logger?: Logger,
 ) {
   const root = Context.create({
     rank: pluginRank,
+    ...(logger && { logger }),
     replaceable: ["vault", "resources", "markers"],
   });
   root.provide("workbench", workbench);
@@ -59,7 +62,7 @@ export async function bootstrap(
   root.plugin(markersHost);
   root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
-  root.plugin(copyForAgentHost);
+  root.plugin(agentBridgeHost);
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
   root.plugin(livePreviewHost);

@@ -2,7 +2,7 @@
 .callout {
   --callout-color: 68, 138, 255;
   margin: 4px 0;
-  padding: 12px 16px;
+  padding: 12px 12px 12px 24px;
   border-radius: 4px;
   background: rgba(var(--callout-color), 0.1);
 }
@@ -76,10 +76,10 @@ details.callout[open] > summary::after {
   transform: rotate(90deg);
 }
 .callout-content > :first-child {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 .callout-content > :last-child {
-  margin-bottom: 0;
+  margin-bottom: 4px;
 }
 .callout-content:empty {
   display: none;

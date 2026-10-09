@@ -1,4 +1,5 @@
 import { defineManifest } from "../../shared/manifest";
+import { MARKDOWN_EDITOR, whenActive } from "../../shared/editor-provider";
 export default defineManifest({
   id: "outline",
   title: "Outline",
@@ -7,13 +8,14 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
+  capabilities: ["views", "navigation"],
   contributes: {
     views: [
       {
         id: "outline",
         name: "Note Outline",
         scope: "workbench",
-        when: "activeCustomEditorId == 'markdownWorkbench.editor'",
+        when: whenActive(MARKDOWN_EDITOR),
       },
     ],
   },

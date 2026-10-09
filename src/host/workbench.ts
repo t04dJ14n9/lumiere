@@ -2,10 +2,18 @@ import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
 import * as vscode from "vscode";
-import { randomUUID, createHash } from "node:crypto";
-import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
+import { textBypass } from "./reclaim";
+import { createHash } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import * as os from "node:os";
+import * as path from "node:path";
+import type {
+  CopyLinkTarget,
+  HostDocument,
+  Workbench,
+} from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
-const viewType = "markdownWorkbench.editor";
+import { registerEditor } from "./editor-panels";
 
 export function createWorkbench(
   extensionUri: vscode.Uri,
@@ -13,7 +21,7 @@ export function createWorkbench(
 ): Workbench {
   const documents = new NativeDocuments();
   return {
-    storage,
+    ...(storage && { storage }),
     isTrusted: () => vscode.workspace.isTrusted,
     workspaceFolders: () =>
       (vscode.workspace.workspaceFolders ?? []).map((folder) =>
@@ -29,14 +37,17 @@ export function createWorkbench(
     },
     ...documentOperations(documents),
     ...commandOperations(),
+    ...agentOperations(),
     ...configurationOperations(),
+    editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
-    registerEditor: (open) => registerEditor(extensionUri, documents, open),
+    registerEditor: (provider, open) =>
+      registerEditor(provider, { extensionUri, documents }, open),
   };
 }
 
 /** Stable adapter identity with live getters; the native document remains authoritative. */
-class NativeDocuments {
+export class NativeDocuments {
   private readonly wrappers = new WeakMap<vscode.TextDocument, HostDocument>();
   private readonly originals = new WeakMap<HostDocument, vscode.TextDocument>();
   native(document: HostDocument): vscode.TextDocument {
@@ -129,9 +140,49 @@ function documentOperations(
     },
   };
 }
+/** Extensions that bring an agent chat of their own besides the editor's. */
+const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
+
+/** Copy Link for Agent: which agent chats exist, and files to attach. */
+function agentOperations(): Pick<
+  Workbench,
+  "agentEnvironment" | "writeScratchFile"
+> {
+  return {
+    async agentEnvironment() {
+      return {
+        target: vscode.workspace
+          .getConfiguration("markdownWorkbench")
+          .get<CopyLinkTarget>("copyLinkForAgent.target", "auto"),
+        agentExtensions: new Set(
+          AGENT_EXTENSIONS.filter((id) => vscode.extensions.getExtension(id)),
+        ),
+        commands: new Set(await vscode.commands.getCommands(true)),
+        hasChatParticipant: vscode.extensions.all.some((extension) => {
+          const participants = (
+            extension.packageJSON as
+              | { contributes?: { chatParticipants?: unknown } }
+              | undefined
+          )?.contributes?.chatParticipants;
+          return Array.isArray(participants) && participants.length > 0;
+        }),
+        chatDisabled: vscode.workspace
+          .getConfiguration("chat")
+          .get<boolean>("disableAIFeatures", false),
+      };
+    },
+    async writeScratchFile(name, text) {
+      const folder = path.join(os.tmpdir(), "markdown-workbench-agent");
+      await mkdir(folder, { recursive: true, mode: 0o700 });
+      const file = path.join(folder, path.basename(name));
+      await writeFile(file, text, { mode: 0o600 });
+      return vscode.Uri.file(file).toString();
+    },
+  };
+}
 function commandOperations(): Pick<
   Workbench,
-  "command" | "execute" | "clipboard" | "error"
+  "command" | "execute" | "clipboard" | "error" | "inform"
 > {
   return {
     command(id, run) {
@@ -140,6 +191,13 @@ function commandOperations(): Pick<
     },
     async execute(id, ...args) {
       if (id === "vscode.openWith" && typeof args[0] === "string") {
+        if (args[1] === "default") {
+          // Opened as text on purpose: the reclaim must not undo it.
+          textBypass.allow(args[0]);
+        }
+        args[0] = vscode.Uri.parse(args[0]);
+      }
+      if (id === "chatgpt.addFileToThread" && typeof args[0] === "string") {
         args[0] = vscode.Uri.parse(args[0]);
       }
       return vscode.commands.executeCommand(id, ...args);
@@ -150,6 +208,29 @@ function commandOperations(): Pick<
     },
     error(message) {
       void vscode.window.showErrorMessage(message);
+    },
+    inform(message) {
+      void vscode.window.showInformationMessage(message);
+    },
+  };
+}
+function workspaceEditorAssociations(): NonNullable<
+  Workbench["editorAssociations"]
+> {
+  const settings = () => vscode.workspace.getConfiguration("workbench");
+  return {
+    read() {
+      if (!vscode.workspace.workspaceFolders?.length) {
+        return undefined;
+      }
+      return settings().inspect("editorAssociations")?.workspaceValue ?? {};
+    },
+    async write(associations) {
+      await settings().update(
+        "editorAssociations",
+        associations,
+        vscode.ConfigurationTarget.Workspace,
+      );
     },
   };
 }
@@ -163,11 +244,17 @@ function configurationOperations(): Pick<
       return () => subscription.dispose();
     },
     config(document) {
+      const uri = vscode.Uri.parse(document.uri);
       const config = vscode.workspace.getConfiguration(
         "markdownWorkbench",
-        vscode.Uri.parse(document.uri),
+        uri,
       );
-      return readSettings(config);
+      // Native editor settings as they apply to Markdown files.
+      const native = vscode.workspace.getConfiguration(undefined, {
+        uri,
+        languageId: "markdown",
+      });
+      return readSettings(config, native);
     },
   };
 }
@@ -184,114 +271,4 @@ function fileOperations(): Pick<Workbench, "read" | "stat"> {
       };
     },
   };
-}
-function panelTransport(panel: vscode.WebviewPanel): PanelShell["transport"] {
-  return {
-    send(message) {
-      void panel.webview.postMessage(message);
-    },
-    listen(receive) {
-      const stop = panel.webview.onDidReceiveMessage(receive);
-      return () => stop.dispose();
-    },
-  };
-}
-function isActivePanel(
-  document: vscode.TextDocument,
-  panel: vscode.WebviewPanel,
-): boolean {
-  const group = vscode.window.tabGroups.activeTabGroup;
-  const input = group.activeTab?.input;
-  return (
-    group.viewColumn === panel.viewColumn &&
-    input instanceof vscode.TabInputCustom &&
-    input.viewType === viewType &&
-    input.uri.toString() === document.uri.toString()
-  );
-}
-function panelState(
-  panel: vscode.WebviewPanel,
-  listener: () => void,
-): ReturnType<PanelShell["onState"]> {
-  const panelSubscription = panel.onDidChangeViewState(listener);
-  const groupSubscription =
-    vscode.window.tabGroups.onDidChangeTabGroups(listener);
-  return () => {
-    panelSubscription.dispose();
-    groupSubscription.dispose();
-  };
-}
-function createPanelShell(
-  document: vscode.TextDocument,
-  panel: vscode.WebviewPanel,
-  extensionUri: vscode.Uri,
-  documents: NativeDocuments,
-): PanelShell {
-  const id = randomUUID();
-  const root =
-    vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
-    vscode.Uri.joinPath(document.uri, "..");
-  panel.webview.options = {
-    enableScripts: true,
-    localResourceRoots: [vscode.Uri.joinPath(extensionUri, "dist"), root],
-  };
-
-  return {
-    id,
-    get column() {
-      return panel.viewColumn;
-    },
-    document: documents.wrap(document),
-    cspSource: panel.webview.cspSource,
-    trusted: vscode.workspace.isTrusted,
-    transport: panelTransport(panel),
-    active: () => isActivePanel(document, panel),
-    reveal() {
-      panel.reveal();
-    },
-    dispose() {
-      panel.dispose();
-    },
-    setHTML(html) {
-      panel.webview.html = html;
-    },
-    resource(uri) {
-      return panel.webview.asWebviewUri(vscode.Uri.parse(uri)).toString();
-    },
-    asset(relative) {
-      return panel.webview
-        .asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", relative))
-        .toString();
-    },
-    onDispose(listener) {
-      const stop = panel.onDidDispose(listener);
-      return () => stop.dispose();
-    },
-    onState: (listener) => panelState(panel, listener),
-  };
-}
-function registerEditor(
-  extensionUri: vscode.Uri,
-  documents: NativeDocuments,
-  open: (panel: PanelShell) => void,
-) {
-  const registration = vscode.window.registerCustomEditorProvider(
-    viewType,
-    {
-      resolveCustomTextEditor(document, panel) {
-        const shell = createPanelShell(
-          document,
-          panel,
-          extensionUri,
-          documents,
-        );
-        open(shell);
-      },
-    },
-    {
-      webviewOptions: { retainContextWhenHidden: true },
-      supportsMultipleEditorsPerDocument: true,
-    },
-  );
-  return () => registration.dispose();
 }

@@ -27,7 +27,11 @@ export class TableGrid {
     this.model = parseTable(block.source)!;
     this.table.className = "markdown-rendered";
     this.table.setAttribute("aria-label", "Markdown table");
-    root.append(this.table);
+    // A wide table scrolls by itself, as in Obsidian, not the whole note.
+    const scroll = document.createElement("div");
+    scroll.className = "table-scroll";
+    scroll.append(this.table);
+    root.append(scroll);
   }
 
   start(): number {

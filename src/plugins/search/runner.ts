@@ -4,6 +4,7 @@ import type { Cancellation } from "../../shared/rpc/lifecycle";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { startup, submission, workerReply } from "./worker-protocol";
 import { errorMessage } from "../../shared/errors";
+import type { Disposer } from "../../kernel/types";
 interface Pending {
   resolve(value: boolean): void;
   reject(error: Error): void;
@@ -29,7 +30,7 @@ export class SearchWorker implements SearchEvaluator {
   private readonly resolveReady: () => void;
   private readonly rejectReady: (error: Error) => void;
   private readonly startupTimer: ReturnType<typeof setTimeout>;
-  private stopCancellation: () => void = () => {};
+  private stopCancellation: Disposer = () => {};
   includesFiles = false;
   requiresText = true;
   requiresMetadata = true;
@@ -68,8 +69,8 @@ export class SearchWorker implements SearchEvaluator {
       this.fail(new Error(`Search worker exited (${code})`)),
     );
     this.stopCancellation =
-      options.token?.onCancel(() =>
-        this.fail(new RpcError("Cancelled", "Search cancelled")),
+      options.token?.onCancel(
+        () => void this.fail(new RpcError("Cancelled", "Search cancelled")),
       ) ?? (() => {});
   }
   get stopped(): boolean {
@@ -136,7 +137,7 @@ export class SearchWorker implements SearchEvaluator {
     }
     this.closed = error;
     clearTimeout(this.startupTimer);
-    this.stopCancellation();
+    void this.stopCancellation();
     this.rejectReady(error);
     for (const request of this.pending.values()) {
       clearTimeout(request.timer);

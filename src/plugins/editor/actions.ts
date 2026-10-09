@@ -1,5 +1,5 @@
 import { type Infer } from "../../kernel";
-import type { Editors, Selections } from "./api";
+import type { Editors, Selections, SourceSelection } from "./api";
 import type { Workbench } from "../../shared/runtime";
 import {
   CancelToken,
@@ -87,12 +87,12 @@ export class ActionRegistry {
       return false;
     }
     await panel.session.flush();
-    const selection =
-      entry.value.scope === "selection"
-        ? await this.selections.capture(editorId, token)
-        : undefined;
-    if (entry.value.scope === "selection" && !selection) {
-      return false;
+    let selection: SourceSelection | undefined;
+    if (entry.value.scope === "selection") {
+      selection = await this.selections.capture(editorId, token);
+      if (!selection) {
+        return false;
+      }
     }
     if (
       token.cancelled ||
@@ -103,7 +103,7 @@ export class ActionRegistry {
     ) {
       throw new RpcError("Cancelled", "Editor action cancelled");
     }
-    await entry.value.run({ editorId, selection }, token);
+    await entry.value.run({ editorId, ...(selection && { selection }) }, token);
     return true;
   }
   async pick(scope: EditorAction["scope"]): Promise<boolean> {

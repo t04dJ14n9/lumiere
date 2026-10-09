@@ -14,12 +14,11 @@ stops. Original placeholders are restored and late resource results are ignored.
 ## Files
 
 - `manifest.ts`: enablement and Insert Embed contribution.
-- `webview.ts`: styles, renderer, post-processor and command registrations.
+- `webview.ts`: renderer, post-processor and command registrations.
 - `post-process.ts`: resource resolution, per-kind display and pass lifetime.
 - `note.ts`: note/heading/block selection, ancestry and source-line mapping.
 - `image.ts`: zoom toolbar, fit/actual sizing, pan and resize controls.
 - `image-dialog.ts`: inspector dialog, remembered scale and focus lifetime.
-- `styles.ts`: image inspector and embed theme extensions.
 - `webm.ts`: WebM parsing/recovery exports.
 - `webm-stream.ts`: EBML metadata, streaming boundaries and block time ordering.
 - `media-recovery.ts`: recovery fetch, header identification and streaming lifetime.
@@ -27,6 +26,8 @@ stops. Original placeholders are restored and late resource results are ignored.
 - `note.test.ts`: fragment, source-offset and circular-embed units.
 - `image.test.ts`: saved-scale validation and legacy state units.
 - `webm.test.ts`: real codec fixtures, stream ordering and invalid/truncated data.
+- `embeds.css`: embeds and the image inspector, bundled through
+  `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

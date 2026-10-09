@@ -15,7 +15,11 @@ export class UndoGroups {
     if (before === after) {
       return;
     }
-    this.undo.push({ before, after, group });
+    this.undo.push({
+      before,
+      after,
+      ...(group === undefined ? {} : { group }),
+    });
     this.redo = [];
   }
   async run(

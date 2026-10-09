@@ -11,6 +11,11 @@
   --accent: var(--vscode-textLink-foreground, #7c6fe0);
   --accent-hover: var(--vscode-textLink-activeForeground, var(--accent));
   --muted: var(--vscode-descriptionForeground, #8a8a96);
+  --list-indent: 1.6em;
+  --list-guide: var(
+    --vscode-editorIndentGuide-background1,
+    color-mix(in srgb, var(--muted) 35%, transparent)
+  );
   --faint: var(
     --vscode-editorLineNumber-foreground,
     color-mix(in srgb, var(--muted) 70%, transparent)
@@ -28,15 +33,24 @@
     color-mix(in srgb, var(--vscode-editor-foreground, #888) 10%, transparent)
   );
   --surface: var(--vscode-editorWidget-background, var(--code));
+  /*
+   * Note text follows VS Code's editor font settings for Markdown files: the
+   * editor plugin sets these on the editor (font.ts); these are fallbacks.
+   */
   --text-font: var(
-    --vscode-font-family,
+    --vscode-editor-font-family,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif
   );
   --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
-  --text-size: 16px;
+  --text-size: var(--vscode-editor-font-size, 16px);
+  /*
+   * Code uses the same editor font as the text, so it keeps the text's size
+   * (as in the built-in editor) rather than Obsidian's smaller code.
+   */
+  --code-size: 1em;
   --file-line-width: 700px;
   --file-margins: 32px;
 }
@@ -78,7 +92,11 @@ button {
   overflow: auto;
   font-family: var(--text-font);
   font-size: var(--text-size);
-  line-height: 1.5;
+  font-weight: var(--text-weight, normal);
+  line-height: var(--line-height, 1.5);
+  letter-spacing: var(--text-letter-spacing, normal);
+  font-feature-settings: var(--text-features, normal);
+  font-variation-settings: var(--text-variations, normal);
 }
 #app .cm-content {
   padding: 32px var(--file-margins) 40vh;
@@ -88,29 +106,19 @@ button {
   padding: 0 2px;
 }
 /*
- * Readable line length (Obsidian's 700 px measure). Auto margins on the
- * gutters and the content centre them as one group, so line numbers and fold
- * markers stay next to the text instead of at the window's edge.
+ * Readable line length (Obsidian's 700 px measure): the text is centred,
+ * while the gutters stay at the editor's left edge, as in VS Code's editor.
  */
 #app .cm-editor.is-readable-line-width .cm-content {
   flex-grow: 0;
   width: 100%;
   max-width: var(--file-line-width);
-  margin-inline-end: auto;
-}
-#app .cm-editor.is-readable-line-width .cm-gutters {
-  margin-inline-start: auto;
-}
-#app
-  .cm-editor.is-readable-line-width
-  .cm-scroller:not(:has(> .cm-gutters))
-  .cm-content {
-  margin-inline-start: auto;
+  margin-inline: auto;
 }
 /* Source mode shows Markdown as code. */
 #app .cm-editor.is-source-mode .cm-scroller {
   font-family: var(--code-font);
-  font-size: 14px;
+  font-size: var(--text-size);
 }
 #app .cm-cursor,
 #app .cm-dropCursor {
@@ -123,32 +131,33 @@ button {
 #app .cm-content ::selection {
   background: var(--vscode-editor-selectionBackground, #8886);
 }
-/* Gutters: no panel of their own, as in Obsidian. */
+/*
+ * Gutters look like VS Code's: at the editor's left edge, on the editor
+ * background, with the text starting right after them.
+ */
 #app .cm-gutters {
   border: 0;
-  color: var(--faint);
-  background: transparent;
+  color: var(--vscode-editorLineNumber-foreground, var(--faint));
+  background: var(
+    --vscode-editorGutter-background,
+    var(--vscode-editor-background)
+  );
 }
-#app .cm-lineNumbers .cm-gutterElement {
-  min-width: 2.5em;
-  padding: 0 10px 0 6px;
-  font-size: 0.8125em;
-  font-variant-numeric: tabular-nums;
-  line-height: 24px;
+#app .cm-scroller:has(> .cm-gutters) .cm-content {
+  padding-inline-start: 0;
 }
-#app .cm-activeLineGutter {
-  color: var(--vscode-editorLineNumber-activeForeground, var(--muted));
-  background: transparent;
-}
+/* VS Code's folding area between the numbers and the text. */
 #app .cm-foldGutter .cm-gutterElement {
-  padding: 0 4px;
-  color: var(--faint);
+  box-sizing: border-box;
+  width: 24px;
+  padding: 0 0 0 4px;
+  color: var(--vscode-editorGutter-foldingControlForeground, var(--faint));
   cursor: pointer;
   opacity: 0;
   transition: opacity 120ms;
 }
-/* Fold markers appear while the pointer is over the editor, like Obsidian's. */
-#app .cm-editor:hover .cm-foldGutter .cm-gutterElement {
+/* Fold markers appear while the pointer is over the gutter, as in VS Code. */
+#app .cm-gutters:hover .cm-foldGutter .cm-gutterElement {
   opacity: 0.7;
 }
 #app .cm-foldGutter .cm-gutterElement:hover {

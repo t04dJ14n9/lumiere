@@ -76,12 +76,29 @@ async function linkEdits(
     if (file?.extension !== "md") {
       continue;
     }
-    const edits = rewriteLinks(await vaults.text(file.uri), source, context);
+    const edits = rewriteLinks(
+      await sourceText(vaults, views, file.uri),
+      source,
+      context,
+    );
     if (edits.length > 0) {
       result.push({ uri: file.uri, edits });
     }
   }
   return result;
+}
+
+/**
+ * A note's text as VS Code holds it. An open document can differ from the
+ * vault's copy (unsaved edits, or a buffer left over from a closed editor),
+ * and the edits apply to that document, so offsets must come from it.
+ */
+export async function sourceText(
+  vaults: Pick<Vaults, "text">,
+  views: Pick<HostViews, "documentText">,
+  uri: string,
+): Promise<string> {
+  return views.documentText(uri) ?? (await vaults.text(uri));
 }
 
 /**

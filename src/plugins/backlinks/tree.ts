@@ -31,7 +31,11 @@ export class BacklinksTree implements TreeSource {
     this.files.clear();
     this.lines.clear();
     const located = uri ? await this.vaults.locate(uri) : undefined;
-    this.note = located && uri ? { uri, ...located } : undefined;
+    if (located && uri) {
+      this.note = { uri, ...located };
+    } else {
+      delete this.note;
+    }
   }
 
   get hasNote(): boolean {

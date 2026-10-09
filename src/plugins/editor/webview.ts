@@ -16,6 +16,9 @@ import type { Infer } from "../../kernel";
 import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
+import { indentationKeymap } from "./indentation";
+import { findExtension } from "./find";
+import { keepSelectAllInEditor } from "./select-all";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -80,6 +83,7 @@ export const editorWebview: Plugin<EditorConfig> = {
       config,
     );
     registerReveal(ctx, view);
+    ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
     view.focus();
   },
 };
@@ -112,6 +116,7 @@ function createEditorView(
         ctx.document.extension,
         ctx.markdown.language(),
         drawSelection(),
+        findExtension(),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({
           "aria-label": "Markdown content",
@@ -121,12 +126,15 @@ function createEditorView(
           }),
         }),
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
-        Prec.low(keymap.of(defaultKeymap)),
+        Prec.low(keymap.of([...indentationKeymap, ...defaultKeymap])),
         EditorView.updateListener.of((update) => {
           if (update.selectionSet || update.focusChanged) {
-            ctx.rpc.notify(protocol, "selectionChanged", {
-              hasSelection: !update.state.selection.main.empty,
-            });
+            ctx.rpc.notify(
+              protocol,
+              "selectionChanged",
+              { hasSelection: !update.state.selection.main.empty },
+              { coalesce: true },
+            );
           }
         }),
       ],
@@ -169,7 +177,7 @@ function provideMenu(ctx: Context): void {
         items,
         point,
         error: (message) => ctx.logger.error(message),
-        label,
+        ...(label === undefined ? {} : { label }),
       });
     },
   });

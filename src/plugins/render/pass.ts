@@ -14,10 +14,16 @@ export function createRenderPass(options: {
   let isLive = true;
   const pass: RenderPass = {
     source,
-    readOnly: context.readOnly,
-    documentUri: context.documentUri,
-    documentText: context.documentText,
-    taskLineCount: context.taskLineCount,
+    ...(context.readOnly === undefined ? {} : { readOnly: context.readOnly }),
+    ...(context.documentUri === undefined
+      ? {}
+      : { documentUri: context.documentUri }),
+    ...(context.documentText === undefined
+      ? {}
+      : { documentText: context.documentText }),
+    ...(context.taskLineCount === undefined
+      ? {}
+      : { taskLineCount: context.taskLineCount }),
     container,
     sourceLine: context.sourceLine ?? 0,
     ancestry: context.ancestry ?? [],

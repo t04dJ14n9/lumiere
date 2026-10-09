@@ -17,6 +17,7 @@ renders. Editing commands wrap or unwrap the selection through CodeMirror.
 - `commands.ts`: pure selection edits and delimiter placement.
 - `mathjax.ts`: lazy TeX-to-SVG conversion with supported TeX packages.
 - `math.test.ts`: selection and delimiter unit tests.
+- `math.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

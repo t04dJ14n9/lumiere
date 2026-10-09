@@ -1,5 +1,5 @@
 import { Context } from "./context";
-import type { Runtime } from "./context";
+import type { Runtime } from "./runtime";
 import { KernelError } from "./errors";
 import type { Plugin, Services } from "./types";
 export type FiberState =
@@ -8,6 +8,11 @@ export type FiberState =
   | "active"
   | "failed"
   | "disposed";
+/**
+ * One started plugin, gated on its required services. Invariants: only the
+ * current generation commits (a stale apply's context is already disposed),
+ * and a fiber started by an uncommitted parent is held until that commit.
+ */
 export class Fiber<C = unknown> {
   state: FiberState = "pending";
   waitingFor: readonly (keyof Services)[] = [];
@@ -19,17 +24,31 @@ export class Fiber<C = unknown> {
   private generation = 0;
   private stopping?: Promise<void>;
   private dependencies: unknown[] = [];
+  private held: boolean;
+  /** Set by the parent context: forget this fiber once it is disposed. */
+  detach?: () => unknown;
   constructor(
     readonly runtime: Runtime,
     readonly definition: Plugin<C>,
     config: C,
+    options: { heldUntilCommit?: boolean } = {},
   ) {
     this.config = config;
+    this.held = options.heldUntilCommit ?? false;
     runtime.fibers.add(this as Fiber<unknown>);
   }
-  reconcile(): void {
-    if (this.state === "disposed" || this.state === "failed" || this.stopping) {
-      return;
+  /** The parent committed: a held fiber may start now. */
+  startAfterCommit(): void {
+    if (this.held) {
+      this.held = false;
+      void this.reconcile();
+    }
+  }
+  /** Start, stop or restart to match the services; returns a stop it began. */
+  reconcile(): Promise<void> | undefined {
+    const done = this.state === "disposed" || this.state === "failed";
+    if (this.held || this.stopping || done) {
+      return undefined;
     }
     const required = this.definition.inject?.required ?? [];
     this.waitingFor = required.filter(
@@ -44,14 +63,16 @@ export class Fiber<C = unknown> {
       (this.waitingFor.length ||
         values.some((v, i) => v !== this.dependencies[i]))
     ) {
-      this.runtime.track(this.stop().then(() => this.reconcile()));
-      return;
+      const stopped = this.stop();
+      this.runtime.track(stopped.then(() => this.reconcile()));
+      return stopped;
     }
     if (this.waitingFor.length || this.context) {
-      return;
+      return undefined;
     }
     this.dependencies = values;
     this.start();
+    return undefined;
   }
   private start(): void {
     const generation = ++this.generation;
@@ -85,7 +106,7 @@ export class Fiber<C = unknown> {
           });
           ctx.logger.error("Plugin failed", error);
           await ctx.dispose();
-          this.context = undefined;
+          delete this.context;
         }
       })(),
     );
@@ -97,7 +118,7 @@ export class Fiber<C = unknown> {
     // Invalidate outstanding apply work before awaiting its effect cleanup.
     ++this.generation;
     const ctx = this.context;
-    this.context = undefined;
+    delete this.context;
     if (this.state !== "disposed") {
       this.state = "pending";
     }
@@ -106,8 +127,10 @@ export class Fiber<C = unknown> {
       .then(() => ctx?.dispose())
       .then(() => {
         ctx?.logger.debug("Stopped", { ms: Date.now() - started });
-        this.stopping = undefined;
+        delete this.stopping;
+        this.runtime.stopping.delete(this as Fiber<unknown>);
       });
+    this.runtime.stopping.set(this as Fiber<unknown>, this.stopping);
     return this.stopping;
   }
   async update(config: C): Promise<void> {
@@ -132,7 +155,7 @@ export class Fiber<C = unknown> {
     await this.stop();
     this.config = parsed;
     this.error = undefined;
-    this.reconcile();
+    void this.reconcile();
   }
   async dispose(): Promise<void> {
     if (this.state === "disposed") {
@@ -141,6 +164,7 @@ export class Fiber<C = unknown> {
     }
     this.state = "disposed";
     this.runtime.fibers.delete(this as Fiber<unknown>);
+    void this.detach?.();
     await this.stop();
   }
 }

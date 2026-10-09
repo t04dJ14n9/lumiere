@@ -57,11 +57,12 @@ test("the Tags view lists the vault's tags and a click picks a note to open", as
   fake.views.pick = async (options) => {
     const items = options.items("");
     picks.push(items.map((item) => item.label));
-    return { item: items[0], query: "" };
+    const item = items[0];
+    return { ...(item && { item }), query: "" };
   };
   await fake.commands.get(SEARCH_COMMAND)!("memory:///vault", "project");
   assert.deepEqual(picks, [["A.md", "B.md"]]);
-  assert.deepEqual(opened, [{ uri: uriOf("A.md"), offset: undefined }]);
+  assert.deepEqual(opened, [{ uri: uriOf("A.md") }]);
   await root.dispose();
   assert.equal(view.disposed, true);
 });

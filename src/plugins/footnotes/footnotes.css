@@ -1,59 +1,89 @@
-/* Footnote references with a hover preview, and rendered definitions. */
-.hybrid-footnote-ref {
+/*
+ * Footnotes, LaTeX paper style (a deliberate departure from Obsidian): a
+ * reference is a superscript number in the text colour, about 0.7em and
+ * raised about a third of the text size, tight against the word before it,
+ * in Live Preview and inside rendered blocks alike. Hovering or focusing it
+ * shows the footnote. A definition leads with the same number and is set a
+ * little smaller; at the caret its [^label]: marker is faint source.
+ */
+.mw-footnote-ref,
+.mw-footnote-number {
   position: relative;
+  font-size: 0.7em;
+  line-height: 0;
+  /* Lengths here are in the 0.7em size, so this raises about 0.35em. */
+  vertical-align: 0.5em;
 }
-.hybrid-footnote-ref button {
-  padding: 0 1px;
+.mw-footnote-ref > button {
+  margin: 0;
+  padding: 0;
   border: 0;
-  color: var(--accent);
+  border-radius: 2px;
+  color: inherit;
   background: transparent;
   font: inherit;
+  line-height: 1;
   cursor: pointer;
+}
+.mw-footnote-ref > button:hover,
+.mw-footnote-ref > button:focus-visible {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  outline: none;
 }
 .footnote-preview {
   position: absolute;
   z-index: 50;
-  top: 100%;
-  left: 0;
-  width: min(360px, 70vw);
+  top: calc(100% + 0.9em);
+  left: -0.5em;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 16px));
   max-height: 40vh;
-  padding: 10px 12px;
+  padding: 8px 12px;
   overflow: auto;
   border: 1px solid var(--vscode-editorHoverWidget-border, var(--line));
   border-radius: 6px;
   color: var(--vscode-editorHoverWidget-foreground, inherit);
   background: var(--vscode-editorHoverWidget-background, var(--surface));
-  box-shadow: 0 4px 16px #0004;
-  font-size: 14px;
+  box-shadow: 0 4px 16px #0003;
+  font-size: var(--text-size, 16px);
   font-weight: normal;
   line-height: 1.5;
+  text-align: start;
+  vertical-align: baseline;
   white-space: normal;
 }
-.hybrid-footnote {
-  display: grid;
-  grid-template-columns: fit-content(35%) minmax(0, 1fr);
-  column-gap: 0.65em;
-  font-size: 0.9em;
+/* Near the bottom of the webview the preview opens above the reference. */
+.footnote-preview.is-above {
+  top: auto;
+  bottom: calc(100% + 0.9em);
 }
-.hybrid-footnote > .footnote-label {
-  grid-column: 1;
-  color: var(--muted);
+/* The gap above the preview still counts as hovering the reference. */
+.footnote-preview::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 1em;
 }
-.hybrid-footnote > .markdown-rendered {
-  grid-column: 2;
-  min-width: 0;
+.footnote-preview.is-above::before {
+  top: 100%;
+  bottom: auto;
 }
-.hybrid-footnote > .footnote-backlinks {
-  display: flex;
-  flex-wrap: wrap;
-  grid-column: 2;
-  gap: 0.25em;
+.footnote-preview > .markdown-rendered > :first-child {
+  margin-top: 0;
 }
-.footnote-backlinks > button {
-  padding: 0 2px;
-  border: 0;
-  color: var(--accent);
-  background: transparent;
-  font: inherit;
-  cursor: pointer;
+.footnote-preview > .markdown-rendered > :last-child {
+  margin-bottom: 0;
+}
+.mw-footnote-marker {
+  color: var(--faint);
+}
+.mw-footnote-number {
+  margin-right: 0.5em;
+}
+/* The definition block is set a little smaller than the note, like a paper's footnotes. */
+.cm-line.mw-footnote-def {
+  font-size: 0.875em;
 }

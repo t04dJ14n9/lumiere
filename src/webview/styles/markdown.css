@@ -100,7 +100,7 @@
   color: var(--vscode-textPreformat-foreground, inherit);
   background: var(--code);
   font-family: var(--code-font);
-  font-size: 0.875em;
+  font-size: var(--code-size);
 }
 .md-highlight,
 .markdown-rendered mark {
@@ -108,9 +108,69 @@
   color: inherit;
   background: var(--highlight);
 }
+/* A setext heading's underline stays visible, faint, as in Obsidian. */
+.md-setext-mark,
+.md-syntax-mark,
+.md-block-id {
+  color: var(--faint);
+}
+/* Inline HTML drawn in place: <kbd>, <u>, <sub> and friends. */
+.md-html-kbd,
+.markdown-rendered kbd {
+  padding: 0.1em 0.35em;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--code);
+  font-family: var(--code-font);
+  font-size: 0.85em;
+}
+.md-html-u,
+.md-html-ins {
+  text-decoration: underline;
+}
+.md-html-s,
+.md-html-del {
+  text-decoration: line-through;
+}
+.md-html-mark {
+  background: var(--vscode-editor-findMatchHighlightBackground, #ffd54f66);
+}
+.md-html-sub {
+  vertical-align: sub;
+  font-size: 0.8em;
+}
+.md-html-sup {
+  vertical-align: super;
+  font-size: 0.8em;
+}
+.md-html-b,
+.md-html-strong {
+  font-weight: bold;
+}
+.md-html-i,
+.md-html-em {
+  font-style: italic;
+}
+.md-html-small {
+  font-size: 0.85em;
+}
 .md-comment {
   color: var(--muted);
   opacity: 0.6;
+}
+/* A small box-and-arrow after labelled links that leave the vault. */
+.md-link-external::after {
+  content: "";
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-inline-start: 0.15em;
+  background: currentColor;
+  opacity: 0.7;
+  vertical-align: 0.05em;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.4'%3E%3Cpath d='M5 2H2v8h8V7M7 1.5h3.5V5M10.5 1.5 5.5 6.5'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 .md-link,
 .markdown-rendered a {
@@ -125,24 +185,79 @@
   color: var(--accent-hover);
   text-decoration-color: currentColor;
 }
+/*
+ * Lists: each level is one --list-indent step with a faint guide under the
+ * parent's bullet; markers are muted and wrapped text hangs under the text.
+ */
+#app .cm-line.md-list-line {
+  --list-hang: calc(
+    var(--list-depth, 0) * var(--list-indent) + var(--list-marker, 1.1em)
+  );
+  padding-inline-start: calc(2px + var(--list-hang));
+  text-indent: calc(-1 * var(--list-hang));
+}
+.md-list-indent {
+  display: inline-block;
+  width: calc(var(--list-depth, 0) * var(--list-indent));
+  height: 1lh;
+  vertical-align: top;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0 0.3em,
+    var(--list-guide) 0.3em calc(0.3em + 1px),
+    transparent calc(0.3em + 1px) var(--list-indent)
+  );
+}
 .list-bullet {
+  display: inline-block;
+  width: 1.1em;
   color: var(--muted);
+  text-indent: 0;
+}
+.md-list-number {
+  display: inline-block;
+  min-width: var(--list-marker);
+  color: var(--muted);
+  text-indent: 0;
 }
 /* Revealed source of fenced code, quotes and tables. */
 #app .cm-line.md-code-line {
   padding-inline: 16px;
   background: var(--code);
   font-family: var(--code-font);
-  font-size: 0.875em;
+  font-size: var(--code-size);
+}
+/*
+ * Code blocks are always these lines, so the caret never changes their size:
+ * only the fence text is hidden, and the empty fence lines (one line box
+ * each) round off the block and hold the language label (codeBlocks.css).
+ */
+#app .cm-line.md-code-fence-open {
+  position: relative;
+  border-radius: 4px 4px 0 0;
+}
+#app .cm-line.md-code-fence-close {
+  border-radius: 0 0 4px 4px;
+}
+/* A thematic break is one line: the rule outside, its source inside. */
+#app .cm-line.md-hr-line:not(.is-revealed) {
+  background: linear-gradient(var(--line), var(--line)) center / 100% 1px
+    no-repeat;
 }
 #app .cm-line.md-table-source {
   font-family: var(--code-font);
-  font-size: 0.875em;
+  font-size: var(--code-size);
 }
+/* One bar per quote level (--quote-depth), each indented 16px further. */
 #app .cm-line.md-quote {
-  padding-left: 16px;
-  border-left: 2px solid var(--accent);
-  color: var(--muted);
+  padding-left: calc(var(--quote-depth, 1) * 16px + 2px);
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--accent) 0 2px,
+    transparent 2px 16px
+  );
+  background-repeat: no-repeat;
+  background-size: calc(var(--quote-depth, 1) * 16px - 14px) 100%;
 }
 input[type="checkbox"] {
   width: 15px;
@@ -221,7 +336,6 @@ input[type="checkbox"] {
   margin: 0.6em 0;
   padding-left: 16px;
   border-left: 2px solid var(--accent);
-  color: var(--muted);
 }
 .markdown-rendered pre {
   margin: 0.6em 0;
@@ -229,7 +343,7 @@ input[type="checkbox"] {
   border-radius: 6px;
   background: var(--code);
   overflow: auto;
-  font-size: 0.875em;
+  font-size: var(--code-size);
   line-height: 1.5;
 }
 .markdown-rendered pre code {

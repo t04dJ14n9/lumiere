@@ -25,6 +25,7 @@ disposal cancel pending work.
 - `host.ts`: per-panel RPC and source enablement checks.
 - `completion.ts`: code exclusion and insertion transaction.
 - `webview.ts`: source service, asynchronous completion and key priority.
+- `suggest.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

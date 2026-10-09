@@ -9,7 +9,12 @@ Inline toggling uses the shared dialect to locate enclosing syntax at the caret;
 otherwise it wraps the word or selection, or removes selected delimiters. Line
 commands edit each selected line, excluding a final column-zero line. Registered
 commands target the active projected editor (including table cells), and owned
-keymaps provide bold, italic and link shortcuts. Read-only views reject edits.
+keymaps provide bold, italic and link shortcuts. Those keymaps stop the
+keystroke there: VS Code forwards webview keystrokes that reach the window to
+its keybinding service, which would otherwise run the contributed binding a
+second time (Ctrl+B bolding then unbolding) or Cursor's own Ctrl+I. The
+contributed bindings still apply when focus is outside the editor text.
+Read-only views reject edits.
 
 ## Files
 

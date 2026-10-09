@@ -1,6 +1,6 @@
 import { syntaxTree } from "@codemirror/language";
 import type { SyntaxNodeRef } from "@lezer/common";
-import { StateEffect, type EditorState, type Range } from "@codemirror/state";
+import { StateEffect, type Range } from "@codemirror/state";
 import {
   Decoration,
   ViewPlugin,
@@ -9,6 +9,7 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import type { CodeTokenRange, tokenRanges } from "./code-highlight";
+import { FenceFlair, fenceInfo, fenceRevealed } from "./fence-flair";
 
 const ready = StateEffect.define<null>();
 interface CachedCode {
@@ -20,12 +21,14 @@ interface CachedCode {
 /** Use the same lazy highlighter in editable fences and rendered code. */
 class CodeSource {
   decorations: DecorationSet = Decoration.none;
+  private readonly copy: (text: string) => void;
   private tokenize?: typeof tokenRanges;
   private loading = false;
   private destroyed = false;
   private cache = new Map<number, CachedCode>();
 
-  constructor(view: EditorView) {
+  constructor(view: EditorView, copy: (text: string) => void) {
+    this.copy = copy;
     this.build(view);
   }
 
@@ -42,6 +45,7 @@ class CodeSource {
             return;
           }
           visited.add(node.from);
+          this.flair(view, node, marks);
           const highlighted = this.highlightFence(view, node);
           if (!highlighted) {
             return false;
@@ -65,14 +69,27 @@ class CodeSource {
     this.decorations = Decoration.set(marks, true);
   }
 
-  private highlightFence(view: EditorView, node: SyntaxNodeRef) {
-    if (!fenceSelected(view.state, node)) {
-      return undefined;
+  /** The label and copy button, in the opening fence line it hides. */
+  private flair(
+    view: EditorView,
+    node: SyntaxNodeRef,
+    marks: Range<Decoration>[],
+  ): void {
+    if (fenceRevealed(view.state, node)) {
+      return;
     }
-    const info = node.node.getChild("CodeInfo");
+    const { language, code } = fenceInfo(view.state, node);
+    marks.push(
+      Decoration.widget({
+        side: 1,
+        widget: new FenceFlair(language, code, this.copy),
+      }).range(view.state.doc.lineAt(node.from).to),
+    );
+  }
+
+  private highlightFence(view: EditorView, node: SyntaxNodeRef) {
     const code = node.node.getChild("CodeText");
-    const language =
-      info && /^[\w-]+/.exec(view.state.sliceDoc(info.from, info.to))?.[0];
+    const { language } = fenceInfo(view.state, node);
     if (!code || !language) {
       return undefined;
     }
@@ -127,27 +144,17 @@ class CodeSource {
   }
 }
 
-export const codeSource = ViewPlugin.fromClass(CodeSource, {
-  decorations: (plugin) => plugin.decorations,
-  eventHandlers: {
-    compositionend(_event, view) {
-      queueMicrotask(() => {
-        if (view.dom.isConnected) {
-          view.dispatch({ effects: ready.of(null) });
-        }
-      });
+/** Highlighted fences, with a copy button that writes through `copy`. */
+export const codeSource = (copy: (text: string) => void) =>
+  ViewPlugin.define((view) => new CodeSource(view, copy), {
+    decorations: (plugin) => plugin.decorations,
+    eventHandlers: {
+      compositionend(_event, view) {
+        queueMicrotask(() => {
+          if (view.dom.isConnected) {
+            view.dispatch({ effects: ready.of(null) });
+          }
+        });
+      },
     },
-  },
-});
-
-export function fenceSelected(
-  state: EditorState,
-  node: { from: number; to: number },
-): boolean {
-  return state.selection.ranges.some(
-    (range) =>
-      range.to >= node.from &&
-      (range.from < node.to ||
-        (range.from === node.to && state.doc.lineAt(node.to).from < node.to)),
-  );
-}
+  });

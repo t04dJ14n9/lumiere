@@ -1,0 +1,51 @@
+digraph G {
+ rankdir=TB; nodesep=0.25; ranksep=0.65; fontname="Helvetica"; newrank=true;
+ label="OKF plugin family + general plugins: arrows point to dependencies (solid = required, dashed = optional; bold = milestone 1; blue = existing layers, grey dashed = planned/external)"; labelloc=t; fontsize=16;
+ node[shape=box,style="rounded,filled",fontname="Helvetica",fontsize=11,margin="0.12,0.06"]; edge[color="#777777",arrowsize=0.6];
+ // existing layers
+  vault[label="vault",fillcolor="#dbe6ff"]; document[label="document",fillcolor="#dbe6ff"]; dialect[label="dialect",fillcolor="#dbe6ff"];
+  resources[label="resources",fillcolor="#dbe6ff"]; render[label="render",fillcolor="#dbe6ff"]; editor[label="editor",fillcolor="#c5d6ff"];
+  commands[label="commands",fillcolor="#c5d6ff"]; livePreview[label="livePreview\n+ markers",fillcolor="#c5d6ff"]; links[label="links",fillcolor="#c5d6ff"];
+  suggest[label="suggest",fillcolor="#c5d6ff"]; properties[label="properties\n(+ present bail event)",fillcolor="#c5d6ff"]; agent[label="copyForAgent\n(agent service)",fillcolor="#c5d6ff"];
+ {rank=sink; vault; document; dialect; resources; render; editor; commands; livePreview; links; suggest; properties; agent; gitext}
+ // planned neighbours
+ pdf[label="PDF viewer plugin\n(planned merge)",style="rounded,dashed,filled",fillcolor="#eeeeee"];
+ bridge[label="agent bridge\n(MCP, planned)",style="rounded,dashed,filled",fillcolor="#eeeeee"];
+ gitext[label="vscode.git API\n(built-in extension)",style="rounded,dashed,filled",fillcolor="#eeeeee"];
+ // general plugins
+ lint[label="lint\n(markdownlint rules, Problems,\nsquiggles, quick fixes)",fillcolor="#d9f2dc",penwidth=2.5];
+ gitDiff[label="gitDiff\n(gutter, compare, rendered diff,\ngitHistory + diffRenderers)",fillcolor="#d9f2dc"];
+ lint->vault; lint->document; lint->livePreview; lint->dialect; lint->commands; lint->editor; gitDiff->editor;
+ gitDiff->gitext[style=dashed]; gitDiff->livePreview; gitDiff->render; gitDiff->document; gitDiff->commands;
+ // core
+ okfCore[label="okfCore (library)\nbundle model, frontmatter, link index,\ntrust/stale, pure rules",fillcolor="#ffd8a8",penwidth=2.5];
+ okfCore->vault; okfCore->document; okfCore->resources; okfCore->dialect;
+ // OKF features
+ node[fillcolor="#fff3c4"];
+ okfDetect[label="okfDetect",penwidth=2.5]; okfHeaderCard[label="okfHeaderCard",penwidth=2.5]; okfTrust[label="okfTrust",penwidth=2.5];
+ okfDiagnostics[label="okfDiagnostics\n(okf/* rule pack)",penwidth=2.5];
+ okfLinks; okfTree; okfBacklinks; okfHover; okfSources; okfComputation; okfSuggest; okfSearch; okfGraph[label="okfGraph\n(webview)"];
+ okfHistory; okfReview; okfNewConcept; okfIndex; okfLog; okfCopyForAgent; okfPdfCapture; okfExport[label="okfExport\n(single HTML)"]; okfStats; okfAgentTools; okfExtraKeys;
+ // to core
+ edge[color="#c08030"];
+ okfDetect->okfCore; okfHeaderCard->okfCore; okfTrust->okfCore; okfDiagnostics->okfCore; okfLinks->okfCore; okfTree->okfCore; okfBacklinks->okfCore;
+ okfHover->okfCore; okfSources->okfCore; okfComputation->okfCore; okfSuggest->okfCore; okfSearch->okfCore; okfGraph->okfCore; okfHistory->okfCore;
+ okfReview->okfCore; okfNewConcept->okfCore; okfIndex->okfCore; okfLog->okfCore; okfCopyForAgent->okfCore; okfPdfCapture->okfCore; okfExport->okfCore;
+ okfStats->okfCore; okfAgentTools->okfCore; okfExtraKeys->okfCore;
+ // OKF -> OKF (services)
+ edge[color="#b03030"];
+ okfExtraKeys->okfHeaderCard; okfHover->okfTrust[style=dashed]; okfReview->okfLog[style=dashed]; okfNewConcept->okfIndex[style=dashed]; okfNewConcept->okfLog[style=dashed];
+ okfPdfCapture->okfNewConcept[style=dashed];
+ // OKF -> general
+ edge[color="#2a8a3a",penwidth=1.6];
+ okfDiagnostics->lint; okfHistory->gitDiff[style=dashed];
+ // OKF -> layers / neighbours
+ edge[color="#8899bb",penwidth=1];
+ okfHeaderCard->livePreview; okfHeaderCard->properties; okfTrust->livePreview; okfLinks->links; okfSources->links; okfHover->render; okfSuggest->suggest;
+ okfComputation->render; okfDetect->commands; okfExport->render; okfGraph->resources; okfStats->resources; okfNewConcept->document; okfReview->commands;
+ okfCopyForAgent->agent[style=dashed]; okfSources->pdf[style=dashed]; okfPdfCapture->pdf; okfAgentTools->bridge[style=dashed];
+ {rank=same; lint; gitDiff; okfCore}
+ edge[style=invis,penwidth=1];
+ okfDetect->okfLinks; okfHeaderCard->okfTree; okfTrust->okfSearch; okfDiagnostics->okfSuggest;
+ okfLinks->okfGraph; okfTree->okfExport; okfSearch->okfStats; okfSuggest->okfAgentTools; okfSources->okfCopyForAgent; okfComputation->okfBacklinks;
+}

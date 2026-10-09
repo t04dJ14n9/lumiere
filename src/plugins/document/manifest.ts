@@ -6,6 +6,7 @@ export default defineManifest({
   kind: "core",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
+  capabilities: ["documentModel"],
   contributes: {
     commands: [],
   },

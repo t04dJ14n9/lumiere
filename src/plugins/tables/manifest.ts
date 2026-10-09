@@ -23,6 +23,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["webview"],
+  capabilities: ["rendering", "editing", "commands"],
   contributes: {
     commands: [
       {

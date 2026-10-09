@@ -178,7 +178,7 @@ export class MemoryVaultIndex implements VaultIndex {
     } else {
       this.notes.delete(path);
       this.links.deleteSource(path);
-      this.tagCounts = undefined;
+      delete this.tagCounts;
     }
     this.emit({ type: "modify", path });
   }
@@ -199,13 +199,13 @@ export class MemoryVaultIndex implements VaultIndex {
   private setNote(path: string, metadata: NoteMetadata): void {
     this.notes.set(path, metadata);
     this.links.setLinks(path, outgoingLinkpaths(metadata));
-    this.tagCounts = undefined;
+    delete this.tagCounts;
   }
 
   private forgetFile(path: string): void {
     this.table.delete(path);
     if (this.notes.delete(path)) {
-      this.tagCounts = undefined;
+      delete this.tagCounts;
     }
     this.links.deleteSource(path);
   }

@@ -132,10 +132,11 @@
 }
 .unresolved-embed {
   display: block;
-  padding: 10px 12px;
-  border: 1px dashed var(--line);
+  padding: 16px 12px;
   border-radius: 4px;
   color: var(--muted);
+  background: var(--code);
+  text-align: center;
 }
 /* Files without a preview (PDFs and others) appear as a card that opens them. */
 .attachment-open {

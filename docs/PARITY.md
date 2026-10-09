@@ -28,8 +28,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `suggest` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `pagePreview` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `outline` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `backlinks` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `outgoingLinks` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `backlinks` | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
+| `outgoingLinks` | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | `search` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `folding` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `lineNumbers` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -40,7 +40,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `pasteHtml` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `spellcheck` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `formatting` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `copyForAgent` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `copyLinkForAgent` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `linkUpdates` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `quickSwitcher` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `wordCount` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -75,7 +75,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Readable line length | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Strict line breaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Properties in document | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Show inline title | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Show inline title | not observed | Off by default (owner decision, 2026-10-09; Obsidian shows it); when on, the file name above line 1 | Manual scenario pending; automated evidence is in phase records | not observed |
 | Fold heading, Fold indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Show line numbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Show indentation guides | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -108,7 +108,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Accepting   closes `]]` (reusing an auto-inserted one) and inserts `vault.linkText`. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | **outline**: a native Explorer tree view (like PDF Outline) of the active   editor's headings, with click to reveal and current-heading tracking, and a   `DocumentSymbolProvider` so VS Code's Outline and breadcrumbs also work in   the plain text editor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | This removes the in-webview outline panel and its   **Toggle Outline** title action. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **backlinks** and **outgoingLinks**: native views (an Explorer section, or a   view container per §25) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **backlinks** and **outgoingLinks**: native views (an Explorer section, or a   view container per §25) | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | Group by file, one trimmed context line per   reference, collapsed **Unlinked mentions** section (basename occurrences   outside links, computed on demand), and a status bar count for the active   note (inverting `resolvedLinks`). | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | **tags**: the **Tags** view is hierarchical (`a/b/c` counts toward `a/b` and   `a`), merges case and keeps the most frequent casing, and searches on click | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Tag search uses the index, not a full read of the workspace. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -131,7 +131,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.copyForAgent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkbench.copyLinkForAgent | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `copyLinkForAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-link-for-agent/chat.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
 | Command: markdownWorkbench.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.unfoldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -185,22 +185,23 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.backlinks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.copyForAgent.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.agentBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.onlineVideos.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.folding.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.inlineTitle.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.math.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.outgoingLinks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.outgoingLinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.outline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.pagePreview.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.pasteHtml.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -219,6 +220,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.autoPair.markdown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
 | Setting: markdownWorkbench.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -232,21 +234,29 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.files.newNoteFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.files.attachmentFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.properties.display | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.onlineVideos.bilibiliPlayer | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.tags.viewSort | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.tags.viewNested | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.vault.rootMarkers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.vault.excludedFiles | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.preset | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Selection-only Copy for Agent, Add File Property and Open as Text title actions | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Add File Property and Open as Text title actions | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native static context menu; contextual table/property menus | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim host-collision keys only while Vim is enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim :w, :q, :wq, :x, :u and :red | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Verify bindings left unbound | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | VS Code owns save, undo/redo, hot exit and settings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Note font and line height follow VS Code's editor settings for Markdown | not applicable (Obsidian's 1.5 line height) | Owner decision, 2026-10-09: at `editor.lineHeight` 0 the note uses the built-in editor's line height (1.35 × size rounded, 1.5 on macOS; 16/19/22/27px at 12/14/16/20px); set values are honoured | Manual scenario pending; `test/vscode/font.spec.ts` (VS Code and Cursor), `src/plugins/editor/font.test.ts` | not observed |
 | Theme follows VS Code colors | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Rename link updates prompt by default | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native outline/backlinks/tags views | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Webview CSP (DESIGN §19): `default-src 'none'`, nonce scripts, `connect-src ${cspSource} blob:`, no remote content in untrusted workspaces | not applicable | not manually observed | Manual scenario pending; `test/unit/editor/webview-html.test.ts` | not observed |
 | External application schemes prompt; own application scheme opens directly | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.copyLinkForAgent.target | no Obsidian equivalent | forces the agent Copy Link for Agent opens | Unit tests in test/unit/copy-link-for-agent/chat.test.ts | not observed |
+| Setting: markdownWorkbench.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |

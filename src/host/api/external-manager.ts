@@ -158,17 +158,23 @@ export class ExternalPlugins {
                 .some((panel) => this.enabled(entry, panel.id)));
           if (!enabled && entry.fiber) {
             await entry.fiber.dispose();
-            entry.fiber = undefined;
-            entry.services = undefined;
+            delete entry.fiber;
+            delete entry.services;
           }
           if (enabled && !entry.fiber) {
             this.start(entry);
           }
         }
-        await this.options.root.settled();
-        this.options.changed();
       });
-    return this.queue;
+    // Waiting for the kernel to settle stays outside the queue: dispose()
+    // (an effect, run while the kernel stops plugins) waits for the queue,
+    // and the kernel cannot settle until that effect is done.
+    return this.queue.then(async () => {
+      await this.options.root.settled();
+      if (this.live) {
+        this.options.changed();
+      }
+    });
   }
   async settled(): Promise<void> {
     await this.queue;

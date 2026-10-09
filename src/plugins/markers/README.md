@@ -22,8 +22,9 @@ looked up by owner and marker identity, never arbitrary command text from the UI
 - `store.ts`: panel/owner sets, action dispatch and snapshot publication.
 - `host.ts`: caller binding, panel handlers and document subscriptions.
 - `view-state.ts`: wire history, local mapping and marker state.
-- `decorations.ts`: plain-text badges, actions and theme.
+- `decorations.ts`: plain-text badges and actions.
 - `webview.ts`: initial/live snapshots, ordering and extension disposal.
+- `markers.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

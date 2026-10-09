@@ -38,7 +38,10 @@ export async function renderPreview(options: {
     return render.into(
       body,
       `<span${attr("data-resource", href)}>${escape(href)}</span>`,
-      { documentUri: source, taskLineCount: 0 },
+      {
+        ...(source === undefined ? {} : { documentUri: source }),
+        taskLineCount: 0,
+      },
     );
   }
   body.textContent = `${resource.kind.toUpperCase()} attachment — use Open to view it.`;

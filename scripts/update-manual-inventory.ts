@@ -35,7 +35,7 @@ async function main() {
     "<!-- command-setting-inventory:start -->",
     "## Complete command and setting acceptance inventory",
     "",
-    "Use a disposable copy of `test/fixtures/vault/Core.md`; add the note/table/properties described in each plugin scenario above. These rows enumerate every generated command and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.",
+    "Use the disposable fixture vault from Setup. These rows enumerate every generated command and setting. No Obsidian observation is implied. All verify shortcuts remain unbound.",
     "",
     "| Command | Default keys | Procedure and expected outcome |",
     "| --- | --- | --- |",
@@ -121,7 +121,7 @@ function writeParity(generated: Awaited<ReturnType<typeof contributions>>) {
     ),
   );
   actions.push(
-    "Selection-only Copy for Agent, Add File Property and Open as Text title actions",
+    "Add File Property and Open as Text title actions",
     "Native static context menu; contextual table/property menus",
     "Vim host-collision keys only while Vim is enabled",
     "Vim :w, :q, :wq, :x, :u and :red",

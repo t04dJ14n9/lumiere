@@ -49,10 +49,14 @@
   background: var(--accent);
   pointer-events: none;
 }
+/* Inline-size containment keeps a wide table from widening the note. */
+.table-scroll {
+  contain: inline-size;
+  overflow-x: auto;
+}
 .hybrid-table table {
   border-collapse: collapse;
   margin: 0;
-  max-width: 100%;
 }
 .hybrid-table th,
 .hybrid-table td {

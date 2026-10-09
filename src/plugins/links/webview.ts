@@ -87,7 +87,12 @@ function navigator(view: EditorView): Navigate {
 
 function linkOpener(ctx: Context, navigate: Navigate): OpenLink {
   return async (href: string, wiki: boolean, side = false, source?: string) => {
-    const request = { href, wiki, side, source };
+    const request = {
+      href,
+      wiki,
+      side,
+      ...(source === undefined ? {} : { source }),
+    };
     if (ctx.bail("link/click", request)) {
       return true;
     }

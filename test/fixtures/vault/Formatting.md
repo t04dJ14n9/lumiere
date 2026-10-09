@@ -39,7 +39,8 @@ Setext heading
 ***
 
 %%
-A block comment that should stay hidden in Live Preview.
+A block comment: shown faint in Live Preview, as in Obsidian, and left out
+when this note is embedded or previewed.
 %%
 
 Final paragraph with a URL https://example.com and an email <test@example.com>.

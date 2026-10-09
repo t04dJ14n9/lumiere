@@ -142,10 +142,11 @@ export class VaultRegistry implements Vaults {
 
   private async openVault(root: string): Promise<IndexedVault> {
     this.parser ??= this.system.createParser();
+    const store = this.system.store(root);
     const indexer = new VaultIndexer({
       root,
       fs: this.system,
-      store: this.system.store(root),
+      ...(store && { store }),
       parse: this.parser.parse,
       hash: (text) => this.system.hash(text),
       settings: () => this.system.settings(root),

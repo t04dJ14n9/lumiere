@@ -15,5 +15,6 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
+  capabilities: ["vaultIndex", "fileWrites"],
   config,
 } as const);

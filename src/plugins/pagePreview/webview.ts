@@ -30,7 +30,7 @@ function registerPreviewController(ctx: Context): void {
                   void ctx.rpc
                     .call(links, "open", {
                       href,
-                      source,
+                      ...(source === undefined ? {} : { source }),
                       wiki,
                       side: false,
                     })

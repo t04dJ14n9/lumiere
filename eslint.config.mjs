@@ -88,11 +88,14 @@ const size = {
 export default tseslint.config(
   {
     ignores: [
-      "dist/**",
+      // Build output, including the sample plugin's.
+      "**/dist/**",
       ".cache/**",
       "test-results/**",
       "playwright-report/**",
       "artifacts/**",
+      // The VS Code build that `pnpm test:vscode` downloads when none is installed.
+      ".vscode-test/**",
     ],
   },
   js.configs.recommended,
@@ -112,6 +115,38 @@ export default tseslint.config(
   },
   { files: ["**/*.ts", "**/*.mjs"], rules: style },
   { files: ["src/**/*.ts"], ignores: ["**/*.test.ts"], rules: size },
+  {
+    // Floating promises are lint errors: a promise is awaited, returned, or
+    // explicitly discarded with `void`. `void` only records the decision; it
+    // neither handles a rejection nor makes the work part of teardown.
+    // Conventions (lint cannot prove them; review does):
+    // - Detached work has an error sink: a `.catch` that logs or reports, or
+    //   a function documented as never rejecting (it catches inside).
+    // - Lifecycle work (stop, cleanup, dispose) is returned or awaited by its
+    //   owner, or tracked by something that awaits it; never `void`ed.
+    files: ["src/**/*.ts"],
+    ignores: ["**/*.test.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: [
+          "./tsconfig.json",
+          "./src/host/tsconfig.json",
+          "./src/webview/tsconfig.json",
+          "./src/plugins/tsconfig.host.json",
+          "./src/plugins/tsconfig.webview.json",
+          "./src/workers/tsconfig.json",
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        { checksVoidReturn: { arguments: false, attributes: false } },
+      ],
+    },
+  },
   {
     files: ["**/*.mjs"],
     languageOptions: {

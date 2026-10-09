@@ -7,8 +7,7 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../livePreview/api";
 import type { RenderPass } from "../render/api";
-import { FootnoteDefinition } from "./definition-widget";
-import { FootnoteReference } from "./reference-widget";
+import { footnoteInline } from "./inline";
 import { insertFootnote } from "./edit";
 import { RenderedReferences } from "./render-references";
 export const footnotesWebview: Plugin = {
@@ -24,7 +23,6 @@ export const footnotesWebview: Plugin = {
     );
     ctx.effect(() => () => references.dispose());
     registerInlineReferences(ctx);
-    registerDefinitions(ctx);
     ctx.on("render/preProcess", (pass) => references.prepare(pass));
     ctx.on("render/postProcess", (pass) => references.mount(pass));
     registerInsertFootnote(ctx);
@@ -59,49 +57,7 @@ function registerDefinitionInvalidation(ctx: Context): void {
 }
 
 function registerInlineReferences(ctx: Context): void {
-  ctx.effect(() =>
-    ctx.livePreview.inline({
-      nodes: ["FootnoteRef", "InlineFootnote"],
-      decorate(node, cx) {
-        const note = footnotes(cx.state.doc).references.get(node.from);
-        if (note && !cx.revealed(node.from, node.to)) {
-          cx.replace(
-            node.from,
-            node.to,
-            new FootnoteReference(note, ctx.render),
-          );
-        }
-      },
-    }),
-  );
-}
-
-function registerDefinitions(ctx: Context): void {
-  const view = ctx.editor.view;
-  ctx.effect(() =>
-    ctx.livePreview.block({
-      kind: "footnote",
-      editing: "reveal",
-      match: (node, state) =>
-        node.name !== "Document" &&
-        footnotes(state.doc).definitions.some(
-          (note) => note.label && note.marker === node.from,
-        ),
-      range: (node, state) =>
-        footnotes(state.doc).definitions.find(
-          (note) => note.marker === node.from,
-        ) ?? node,
-      widget(block) {
-        const note = footnotes(view.state.doc).definitions.find(
-          (note) => note.from === block.from,
-        );
-        if (!note) {
-          throw new Error("Footnote definition changed while rendering");
-        }
-        return new FootnoteDefinition(block, note, ctx.render);
-      },
-    }),
-  );
+  ctx.effect(() => ctx.livePreview.inline(footnoteInline(ctx.render)));
 }
 
 function registerInsertFootnote(ctx: Context): void {

@@ -9,23 +9,34 @@ export interface SettingsReader {
 export function pluginConfiguration(
   settings: SettingsReader,
   manifest: Manifest,
+  native?: SettingsReader,
 ): Record<string, unknown> {
   const properties = (manifest.config?.toJSONSchema().properties ??
     {}) as Record<string, unknown>;
   return (manifest.config?.parse(
     Object.fromEntries(
-      Object.keys(properties).map((key) => [
-        key,
-        settings.get(manifest.configKeys?.[key] ?? `${manifest.id}.${key}`),
-      ]),
+      Object.keys(properties).map((key) => {
+        const nativeKey = manifest.nativeConfigKeys?.[key];
+        if (nativeKey) {
+          return [key, native?.get(nativeKey)];
+        }
+        return [
+          key,
+          settings.get(manifest.configKeys?.[key] ?? `${manifest.id}.${key}`),
+        ];
+      }),
     ),
   ) ?? {}) as Record<string, unknown>;
 }
 export function readSettings(
   settings: SettingsReader,
+  native?: SettingsReader,
 ): ReturnType<Workbench["config"]> {
-  const options = editorConfig.parse(pluginConfiguration(settings, editor));
+  const options = editorConfig.parse(
+    pluginConfiguration(settings, editor, native),
+  );
   return {
+    debugLogging: settings.get("debug.logging", false) ?? false,
     editor: options,
     mode: options.defaultMode,
     preset: settings.get("preset", "obsidian") ?? "obsidian",
@@ -38,7 +49,7 @@ export function readSettings(
               `plugins.${manifest.id}.enabled`,
               manifest.defaultEnabled,
             ) ?? manifest.defaultEnabled,
-          config: pluginConfiguration(settings, manifest),
+          config: pluginConfiguration(settings, manifest, native),
         },
       ]),
     ),

@@ -124,7 +124,7 @@ export class TableToolbar {
 
   close(): void {
     this.closeMenu?.();
-    this.closeMenu = undefined;
+    delete this.closeMenu;
   }
 }
 

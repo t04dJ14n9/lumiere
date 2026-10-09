@@ -151,8 +151,12 @@ export class TableKeyboard {
       return true;
     }
     if (!this.selection.range) {
-      this.selection.gridCursor =
-        this.projection.inner?.state.selection.main.head;
+      const head = this.projection.inner?.state.selection.main.head;
+      if (head === undefined) {
+        delete this.selection.gridCursor;
+      } else {
+        this.selection.gridCursor = head;
+      }
     }
     this.selection.select({ anchor, head: target });
     this.grid.root.focus();
@@ -170,7 +174,7 @@ export class TableKeyboard {
       this.grid.start() + (direction > 0 ? this.grid.block.source.length : 0);
     const adjacent = doc.lineAt(edge).number + direction;
     this.projection.close();
-    this.selection.range = undefined;
+    delete this.selection.range;
     this.actions.deactivate();
     if (adjacent >= 1 && adjacent <= doc.lines) {
       outer.dispatch({

@@ -49,7 +49,10 @@ export function memoryVaults(notes: Record<string, string>) {
     },
     text: async (uri) => texts.get(vault.pathOf(uri) ?? "") ?? "",
     open: async (uri, options) => {
-      opened.push({ uri, offset: options?.offset });
+      opened.push({
+        uri,
+        ...(options?.offset === undefined ? {} : { offset: options.offset }),
+      });
     },
     all: () => [vault],
   };
@@ -60,9 +63,13 @@ export function memoryVaults(notes: Record<string, string>) {
 export function fakeViews(settings: Record<string, unknown> = {}) {
   const trees = new Map<
     string,
-    { source: TreeSource; message?: string; disposed: boolean }
+    // What setMessage and show/hide last set; undefined means none is shown.
+    { source: TreeSource; message: string | undefined; disposed: boolean }
   >();
-  const statuses = new Map<string, { text?: string; disposed: boolean }>();
+  const statuses = new Map<
+    string,
+    { text: string | undefined; disposed: boolean }
+  >();
   const commands = new Map<string, (...args: unknown[]) => unknown>();
   const activeListeners = new Set<() => void>();
   let active: string | undefined;

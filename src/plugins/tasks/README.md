@@ -5,7 +5,12 @@ like Obsidian. Commands toggle checklist status or cycle list/checklist form.
 
 ## How it works
 
-The inline renderer replaces task markers with widgets. A post-processor binds
+The inline renderer replaces task markers with widgets and gives each task
+line `md-task-line` with its status in `data-task`. Any status other than a
+space is checked, as in Obsidian: the checkbox shows a check and the line is
+muted and its text struck through, in Live Preview and in rendered blocks alike.
+Rendered list items and checkboxes carry `data-task` too, so a CSS snippet can
+style custom statuses (`[/]`, `[-]`) the way Obsidian themes do. A post-processor binds
 checkboxes inside rendered blocks to their exact source lines. Local edits use
 CodeMirror; embedded-note edits use validated RPC, and the host rechecks source
 authorization and expected text before changing the native document. Pass/plugin
@@ -20,8 +25,12 @@ cleanup disables controls and removes listeners.
 - `widget.ts`: inline checkbox widget and event lifetime.
 - `post-process.ts`: rendered checkbox binding, local and embedded edit routing.
 - `edits.ts`: pure expected-line edits and checklist commands.
+- `status.ts`: a task line's class and `data-task` attribute.
+- `../../../test/unit/tasks/status.test.ts`: checked styling for every status
+  and `data-task` output.
 - `tasks.test.ts`: pure edit and command units.
 - `host.test.ts`: authorization, stale-line and handler lifecycle units.
+- `tasks.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

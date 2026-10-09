@@ -30,7 +30,7 @@ export class SelectionSnapshots {
         protocol,
         "captureSelection",
         {},
-        { token },
+        token ? { token } : {},
       );
       if (this.panel(id) !== panel) {
         throw new RpcError(
@@ -61,7 +61,7 @@ export class SelectionSnapshots {
         documentId: panel.document.id,
         version,
         isDirty: panel.document.isDirty,
-        sourceSha256: panel.document.isDirty ? undefined : fingerprint,
+        ...(panel.document.isDirty ? {} : { sourceSha256: fingerprint }),
         ...sourceRange(coordinates, range),
         text: range.text,
       });

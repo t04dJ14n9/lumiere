@@ -37,6 +37,7 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 - `host.test.ts`: source identity, scheme policy, side opens and handler lifecycle.
 - `test/unit/links/unresolved.test.ts`: unresolved keys, styled decorations and
   the host's set updates.
+- `links.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

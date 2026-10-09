@@ -1,3 +1,5 @@
+import { window, workspace } from "vscode";
+import { outputLogger } from "./logging";
 import { createApi } from "./api/facade";
 import { nativePlatform } from "./api/native-platform";
 import type { MarkdownWorkbenchApi } from "./api/types";
@@ -6,6 +8,11 @@ import { createWorkbench } from "./workbench";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
+import { registerReclaim } from "./reclaim";
+import type { Context } from "../kernel";
+
+/** The window's kernel; `deactivate` awaits its teardown. */
+let root: Context | undefined;
 export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkbenchApi> {
@@ -14,13 +21,19 @@ export async function activate(
     context.workspaceState,
   );
   workbench.views = createHostViews();
-  const root = await bootstrap(workbench, createVaultSystem(context));
-  const api = await createApi(root, nativePlatform());
-  context.subscriptions.push({
-    dispose() {
-      void root.dispose();
-    },
+  const channel = window.createOutputChannel("Markdown Workbench", {
+    log: true,
   });
-  return api;
+  context.subscriptions.push(channel, registerReclaim());
+  const logger = outputLogger(channel, () =>
+    workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
+  );
+  root = await bootstrap(workbench, createVaultSystem(context), logger);
+  return createApi(root, nativePlatform());
 }
-export function deactivate(): void {}
+/** VS Code awaits this (subscriptions' disposals it does not), so teardown completes. */
+export async function deactivate(): Promise<void> {
+  const stopping = root;
+  root = undefined;
+  await stopping?.dispose();
+}

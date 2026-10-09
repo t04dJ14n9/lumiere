@@ -51,7 +51,8 @@ function registerEmbedRenderers(ctx: Context): void {
             state.sliceDoc(first.to, node.to).trim() === "",
         );
       },
-      widget: (block) => new MarkdownBlock(block, ctx.render),
+      // Embedded notes keep clicks for their content, as in Obsidian.
+      widget: (block) => new MarkdownBlock(block, ctx.render, false),
     }),
   );
   ctx.effect(() =>
@@ -85,7 +86,9 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
             href: target,
             wiki: true,
             side: false,
-            source: pass.documentUri,
+            ...(pass.documentUri === undefined
+              ? {}
+              : { source: pass.documentUri }),
           })
           .catch((error) => ctx.logger.warn("Open embed failed", error));
       },

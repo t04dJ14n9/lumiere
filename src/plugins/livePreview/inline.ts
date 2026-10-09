@@ -1,19 +1,19 @@
 import type { Range, EditorState } from "@codemirror/state";
-import { Decoration, ViewPlugin, WidgetType } from "@codemirror/view";
-import type { EditorView, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { Decoration, ViewPlugin } from "@codemirror/view";
+import type {
+  EditorView,
+  DecorationSet,
+  ViewUpdate,
+  WidgetType,
+} from "@codemirror/view";
 import { linkDestination } from "../../markdown/html";
 import { documentTree } from "./document-tree";
 import { inlineRenderers, revealed } from "./registry";
-class Bullet extends WidgetType {
-  override toDOM(): HTMLElement {
-    const bullet = document.createElement("span");
-    bullet.textContent = "•";
-    bullet.className = "list-bullet";
-    return bullet;
-  }
-}
-
-import type { SyntaxNodeRef } from "@lezer/common";
+import { decorateListItem } from "./lists";
+import { decorateInlineHtml } from "./inline-html";
+import { decorateBlockId } from "./block-id";
+import { decorateCodeLines } from "./code-lines";
+import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
 const inlineClasses: Readonly<Record<string, string>> = {
   Highlight: "md-highlight",
@@ -22,6 +22,17 @@ const inlineClasses: Readonly<Record<string, string>> = {
   Strikethrough: "md-strike",
   InlineCode: "md-inline-code",
 };
+
+/** The number of quotes around a node, counting the node itself. */
+export function quoteDepth(node: SyntaxNode | null): number {
+  let depth = 0;
+  for (let current = node; current; current = current.parent) {
+    if (current.name === "Blockquote") {
+      depth++;
+    }
+  }
+  return depth;
+}
 
 export function inlineDecorations(
   state: EditorState,
@@ -53,7 +64,10 @@ class InlineDecorations implements InlineContext {
   ): void => {
     if (from < to) {
       this.ranges.push(
-        Decoration.mark({ class: cls, attributes }).range(from, to),
+        Decoration.mark({
+          class: cls,
+          ...(attributes && { attributes }),
+        }).range(from, to),
       );
     }
   };
@@ -65,13 +79,21 @@ class InlineDecorations implements InlineContext {
   replace = (from: number, to: number, widget: WidgetType): void => {
     this.ranges.push(Decoration.replace({ widget }).range(from, to));
   };
-  line = (at: number, cls: string): void => {
+  line = (
+    at: number,
+    cls: string,
+    attributes?: Record<string, string>,
+  ): void => {
     const from = this.state.doc.lineAt(at).from;
     if (this.lines.has(`${from}:${cls}`)) {
       return;
     }
     this.lines.add(`${from}:${cls}`);
-    this.ranges.push(Decoration.line({ class: cls }).range(from));
+    this.ranges.push(
+      Decoration.line({ class: cls, ...(attributes && { attributes }) }).range(
+        from,
+      ),
+    );
   };
 
   decorate(
@@ -97,28 +119,36 @@ class InlineDecorations implements InlineContext {
     if (name === "Escape" && !this.revealed(from, to)) {
       this.hide(from, from + 1);
     }
-    this.decorateBullet(node);
+    decorateListItem(node, this);
+    decorateInlineHtml(node, this);
+    decorateBlockId(node, this);
     if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
       this.line(from, `md-heading md-h${name.at(-1)}`);
     }
     this.decorateBlockLines(node, visible);
+    decorateCodeLines(node, this);
+    this.decorateRule(node);
     this.decorateLink(node);
     this.decorateBareUrl(node);
     this.hideSyntax(node);
     return undefined;
   }
 
-  private decorateBullet(node: SyntaxNodeRef): void {
-    const { name, from, to } = node;
-    if (name !== "ListMark" || !/^[-+*]$/.test(this.state.sliceDoc(from, to))) {
+  /**
+   * A thematic break stays one line of the same height, as in Obsidian: the
+   * rule is drawn on the line, and the caret shows its source in its place.
+   */
+  private decorateRule(node: SyntaxNodeRef): void {
+    if (node.name !== "HorizontalRule") {
       return;
     }
-    const task = node.node.nextSibling?.getChild("TaskMarker");
-    if (task) {
-      this.hide(from, task.from);
-    } else if (!this.revealed(from, to)) {
-      this.replace(from, to, new Bullet());
+    if (this.revealed(node.from, node.to)) {
+      this.line(node.from, "md-hr-line is-revealed");
+      this.mark(node.from, node.to, "md-syntax-mark");
+      return;
     }
+    this.line(node.from, "md-hr-line");
+    this.hide(node.from, node.to);
   }
 
   private decorateBlockLines(
@@ -131,7 +161,8 @@ class InlineDecorations implements InlineContext {
       Table: "md-table-source",
     };
     const cls = classes[node.name];
-    if (!cls) {
+    // A nested quote's lines are decorated with the outermost quote.
+    if (!cls || (node.name === "Blockquote" && quoteDepth(node.node) > 1)) {
       return;
     }
     for (
@@ -140,9 +171,21 @@ class InlineDecorations implements InlineContext {
 
     ) {
       const current = this.state.doc.lineAt(pos);
-      this.line(pos, cls);
+      this.line(pos, cls, this.lineAttributes(node.name, current.to));
       pos = current.to + 1;
     }
+  }
+
+  /** Each quote level draws its own bar, as in Obsidian. */
+  private lineAttributes(
+    name: string,
+    lineEnd: number,
+  ): Record<string, string> | undefined {
+    if (name !== "Blockquote") {
+      return undefined;
+    }
+    const inner = this.state.field(documentTree).resolveInner(lineEnd, -1);
+    return { style: `--quote-depth: ${Math.max(1, quoteDepth(inner))}` };
   }
 
   private decorateLink(node: SyntaxNodeRef): void {
@@ -156,13 +199,11 @@ class InlineDecorations implements InlineContext {
     }
     const closingLabel = node.node.getChildren("LinkMark")[1];
     const isRendered = !this.revealed(from, to);
+    const href = linkDestination(this.state.sliceDoc(url.from, url.to));
     // Rendered labels open on plain click; source needs Cmd/Ctrl-click.
-    this.mark(
-      from + 1,
-      closingLabel?.from ?? to,
-      isRendered ? "md-link md-link-rendered" : "md-link",
-      { "data-href": linkDestination(this.state.sliceDoc(url.from, url.to)) },
-    );
+    this.mark(from + 1, closingLabel?.from ?? to, linkClass(isRendered, href), {
+      "data-href": href,
+    });
     if (isRendered) {
       if (closingLabel) {
         this.hide(closingLabel.from, to);
@@ -195,21 +236,20 @@ class InlineDecorations implements InlineContext {
   private hideSyntax(node: SyntaxNodeRef): void {
     const { name, from, to } = node;
     const parent = node.node.parent;
-    if (
-      ![
-        "EmphasisMark",
-        "StrikethroughMark",
-        "HeaderMark",
-        "CodeMark",
-        "QuoteMark",
-        "HighlightMark",
-      ].includes(name) ||
-      !parent ||
-      this.revealed(parent.from, parent.to)
-    ) {
+    if (!SYNTAX_MARKS.includes(name) || !parent) {
       return;
     }
     if (name === "CodeMark" && parent.name !== "InlineCode") {
+      return;
+    }
+    // Revealed syntax stays faint, as in Obsidian, so the text reads first.
+    if (this.revealed(parent.from, parent.to)) {
+      this.mark(from, to, "md-syntax-mark");
+      return;
+    }
+    // A setext underline is its own line; Obsidian keeps it, faint.
+    if (name === "HeaderMark" && parent.name.startsWith("SetextHeading")) {
+      this.mark(from, to, "md-setext-mark");
       return;
     }
     this.hide(
@@ -222,6 +262,15 @@ class InlineDecorations implements InlineContext {
     );
   }
 }
+
+const SYNTAX_MARKS = [
+  "EmphasisMark",
+  "StrikethroughMark",
+  "HeaderMark",
+  "CodeMark",
+  "QuoteMark",
+  "HighlightMark",
+];
 
 export const hybridInline = ViewPlugin.fromClass(
   class {
@@ -283,6 +332,19 @@ export const hybridInline = ViewPlugin.fromClass(
     },
   },
 );
+
+/**
+ * A Markdown link's classes. A rendered label pointing outside the vault
+ * (any `scheme:` address) carries Obsidian's external-link mark.
+ */
+export function linkClass(isRendered: boolean, href: string): string {
+  if (!isRendered) {
+    return "md-link";
+  }
+  return /^[a-z][a-z\d+.-]*:/i.test(href)
+    ? "md-link md-link-rendered md-link-external"
+    : "md-link md-link-rendered";
+}
 
 /** The address a bare URL opens: GFM links `www.` to https and plain addresses to mail. */
 export function bareUrlTarget(text: string): string {

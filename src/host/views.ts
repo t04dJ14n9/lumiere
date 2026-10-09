@@ -7,6 +7,7 @@ import type {
   TreeNode,
   TreeSource,
 } from "../shared/runtime";
+import { cleanEditedUris } from "./rename-save";
 
 /** The VS Code side of `workbench.views` (DESIGN §7.1). */
 export function createHostViews(): HostViews {
@@ -47,10 +48,39 @@ export function createHostViews(): HostViews {
             oldUri: oldUri.toString(),
             newUri: newUri.toString(),
           }));
-          event.waitUntil(listener(renames).then(workspaceEdit));
+          event.waitUntil(
+            listener(renames).then((files) => {
+              saveAfterRename(files);
+              return workspaceEdit(files);
+            }),
+          );
         }),
       ),
   };
+}
+
+/**
+ * Obsidian writes link updates straight to disk. Save the notes the update
+ * edited once the rename lands, unless they already had unsaved changes, so
+ * a closed editor's "Don't Save" can't leave a stale edited buffer behind.
+ */
+function saveAfterRename(files: readonly FileTextEdits[]): void {
+  const uris = cleanEditedUris(files, (uri) =>
+    vscode.workspace.textDocuments.some(
+      (document) => document.uri.toString() === uri && document.isDirty,
+    ),
+  );
+  if (uris.length === 0) {
+    return;
+  }
+  const done = vscode.workspace.onDidRenameFiles(() => {
+    done.dispose();
+    for (const document of vscode.workspace.textDocuments) {
+      if (uris.includes(document.uri.toString()) && document.isDirty) {
+        void document.save();
+      }
+    }
+  });
 }
 
 function toDisposer(disposable: vscode.Disposable): () => void {
@@ -97,7 +127,10 @@ function createTree(viewId: string, source: TreeSource): TreeHandle {
   return {
     refresh: () => changed.fire(undefined),
     setMessage: (message) => {
-      view.message = message;
+      // VS Code removes the message when it is set to undefined; its typing
+      // (`message?: string`) does not say so, and deleting the property
+      // would not reach the view.
+      (view as { message: string | undefined }).message = message;
     },
     reveal: (node) => {
       if (view.visible) {
@@ -130,8 +163,12 @@ function collapsibleState(node: TreeNode): vscode.TreeItemCollapsibleState {
 function treeItem(node: TreeNode): vscode.TreeItem {
   const item = new vscode.TreeItem(node.label, collapsibleState(node));
   item.id = node.id;
-  item.description = node.description;
-  item.tooltip = node.tooltip;
+  if (node.description !== undefined) {
+    item.description = node.description;
+  }
+  if (node.tooltip !== undefined) {
+    item.tooltip = node.tooltip;
+  }
   if (node.resourceUri) {
     item.resourceUri = vscode.Uri.parse(node.resourceUri);
   }
@@ -142,7 +179,7 @@ function treeItem(node: TreeNode): vscode.TreeItem {
     item.command = {
       title: node.label,
       command: node.command.id,
-      arguments: node.command.args,
+      ...(node.command.args && { arguments: node.command.args }),
     };
   }
   return item;
@@ -178,8 +215,10 @@ const pick: HostViews["pick"] = (options) => {
   const show = () => {
     quickPick.items = items.map((item, index) => ({
       label: item.label,
-      description: item.description,
-      detail: item.detail,
+      ...(item.description === undefined
+        ? {}
+        : { description: item.description }),
+      ...(item.detail === undefined ? {} : { detail: item.detail }),
       alwaysShow: true,
       index,
     }));
@@ -191,11 +230,8 @@ const pick: HostViews["pick"] = (options) => {
   });
   return new Promise((resolve) => {
     quickPick.onDidAccept(() => {
-      const chosen = quickPick.selectedItems[0];
-      resolve({
-        item: chosen ? items[chosen.index] : undefined,
-        query: quickPick.value,
-      });
+      const item = items[quickPick.selectedItems[0]?.index ?? -1];
+      resolve({ ...(item && { item }), query: quickPick.value });
       quickPick.hide();
     });
     quickPick.onDidHide(() => {

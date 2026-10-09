@@ -1,4 +1,4 @@
-import type { Schema } from "./schema";
+import type { Schema } from "../shared/schema";
 export interface Method<P = unknown, R = unknown> {
   params: Schema<P>;
   result: Schema<R>;

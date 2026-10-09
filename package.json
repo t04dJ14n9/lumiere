@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "t04dj14n9",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"
+  },
   "private": true,
   "engines": {
     "vscode": "^1.90.0"
@@ -34,6 +38,12 @@
       }
     ],
     "commands": [
+      {
+        "command": "markdownWorkbench.copyLinkForAgent",
+        "title": "Copy Link for Agent",
+        "category": "Markdown Workbench",
+        "icon": "$(comment-discussion)"
+      },
       {
         "command": "markdownWorkbench.insertCallout",
         "title": "Insert Callout",
@@ -71,12 +81,6 @@
         "icon": "$(go-to-file)"
       },
       {
-        "command": "markdownWorkbench.copyForAgent",
-        "title": "Copy for Agent",
-        "category": "Markdown Workbench",
-        "icon": "$(copy)"
-      },
-      {
         "command": "markdownWorkbench.titleActions",
         "title": "Note Actions",
         "category": "Markdown Workbench",
@@ -85,6 +89,11 @@
       {
         "command": "markdownWorkbench.selectionActions",
         "title": "Selection Actions",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.useForMarkdownInWorkspace",
+        "title": "Use Markdown Workbench for Markdown in This Workspace",
         "category": "Markdown Workbench"
       },
       {
@@ -249,6 +258,16 @@
         "icon": "$(symbol-property)"
       },
       {
+        "command": "markdownWorkbench.managePlugins",
+        "title": "Manage Plugins",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.showPluginStatus",
+        "title": "Show Plugin Status",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.quickSwitcher",
         "title": "Quick Switcher",
         "category": "Markdown Workbench"
@@ -350,12 +369,6 @@
       }
     ],
     "keybindings": [
-      {
-        "command": "markdownWorkbench.copyForAgent",
-        "key": "ctrl+alt+c",
-        "mac": "cmd+alt+c",
-        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
-      },
       {
         "command": "markdownWorkbench.toggleBold",
         "key": "ctrl+b",
@@ -492,6 +505,10 @@
     "menus": {
       "commandPalette": [
         {
+          "command": "markdownWorkbench.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.agentBridge"
+        },
+        {
           "command": "markdownWorkbench.insertCallout",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.callouts"
         },
@@ -520,16 +537,15 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
-          "command": "markdownWorkbench.copyForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent"
-        },
-        {
           "command": "markdownWorkbench.titleActions",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
         },
         {
           "command": "markdownWorkbench.selectionActions",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
+        },
+        {
+          "command": "markdownWorkbench.useForMarkdownInWorkspace"
         },
         {
           "command": "markdownWorkbench.insertEmbed",
@@ -660,6 +676,12 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
         },
         {
+          "command": "markdownWorkbench.managePlugins"
+        },
+        {
+          "command": "markdownWorkbench.showPluginStatus"
+        },
+        {
           "command": "markdownWorkbench.quickSwitcher",
           "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.quickSwitcher.enabled"
         },
@@ -742,8 +764,8 @@
       ],
       "webview/context": [
         {
-          "command": "markdownWorkbench.copyForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "command": "markdownWorkbench.copyLinkForAgent",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.agentBridge && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
           "group": "agent"
         },
         {
@@ -784,11 +806,6 @@
       ],
       "editor/title": [
         {
-          "command": "markdownWorkbench.copyForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.copyForAgent && markdownWorkbench.hasSelection",
-          "group": "navigation"
-        },
-        {
           "command": "markdownWorkbench.titleActions",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && markdownWorkbench.hasTitleActions",
           "group": "navigation"
@@ -808,6 +825,12 @@
     "configuration": {
       "title": "Markdown Workbench",
       "properties": {
+        "markdownWorkbench.plugins.agentBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Copy selected text with a link to its saved source lines, for an agent."
+        },
         "markdownWorkbench.plugins.autoPair.enabled": {
           "type": "boolean",
           "default": true,
@@ -831,12 +854,6 @@
           "default": true,
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
-        },
-        "markdownWorkbench.plugins.copyForAgent.enabled": {
-          "type": "boolean",
-          "default": true,
-          "scope": "resource",
-          "description": "Copy a saved source line reference or selected text for an agent."
         },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",
@@ -876,15 +893,15 @@
         },
         "markdownWorkbench.plugins.inlineTitle.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "resource",
           "description": "Show and rename the note title above its Markdown content."
         },
         "markdownWorkbench.plugins.lineNumbers.enabled": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "scope": "resource",
-          "description": "Line numbers in the Markdown editor."
+          "description": "Line numbers in the Markdown editor, laid out like VS Code's text editor and following editor.lineNumbers."
         },
         "markdownWorkbench.plugins.linkUpdates.enabled": {
           "type": "boolean",
@@ -903,6 +920,12 @@
           "default": true,
           "scope": "resource",
           "description": "Render TeX formulas with MathJax."
+        },
+        "markdownWorkbench.plugins.onlineVideos.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Show YouTube and Bilibili links embedded as images as video cards, with titles and covers in trusted workspaces."
         },
         "markdownWorkbench.plugins.outgoingLinks.enabled": {
           "type": "boolean",
@@ -1014,7 +1037,16 @@
         },
         "markdownWorkbench.editor.readableLineLength": {
           "type": "boolean",
-          "default": true,
+          "default": false,
+          "scope": "resource"
+        },
+        "markdownWorkbench.editor.reclaimTextEditor": {
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "default": "auto",
           "scope": "resource"
         },
         "markdownWorkbench.editor.strictLineBreaks": {
@@ -1090,6 +1122,12 @@
           "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
           "scope": "resource"
         },
+        "markdownWorkbench.onlineVideos.bilibiliPlayer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Offer **Play here** on Bilibili cards in trusted workspaces. Off by default: Bilibili's player does not play inside VS Code's webview.",
+          "scope": "resource"
+        },
         "markdownWorkbench.properties.display": {
           "enum": [
             "visible",
@@ -1134,6 +1172,34 @@
           "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
           "scope": "resource"
         },
+        "markdownWorkbench.copyLinkForAgent.target": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "cursor",
+            "chat",
+            "claudeCode",
+            "codex",
+            "clipboard"
+          ],
+          "enumDescriptions": [
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+            "Cursor's agent chat, with the passage on the clipboard to paste.",
+            "VS Code's chat, with the passage typed in.",
+            "Claude Code: a new conversation with the passage typed in.",
+            "Codex: the passage attached to the thread as a file.",
+            "Only copy the passage."
+          ],
+          "default": "auto",
+          "scope": "window",
+          "markdownDescription": "Which chat **Copy Link for Agent** opens after copying the link and passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when the editor's own chat is the only agent; pick one here to send the passage to it."
+        },
+        "markdownWorkbench.debug.logging": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Log plugin load/stop timings and debug messages in the Markdown Workbench output channel."
+        },
         "markdownWorkbench.plugins.external": {
           "type": "object",
           "default": {},
@@ -1175,9 +1241,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "contributions": "tsx scripts/generate-contributions.ts",
-    "package": "pnpm build && vsce package --no-dependencies --no-rewrite-relative-links",
+    "package": "pnpm build && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links",
+    "sample": "node scripts/build-sample.mjs",
     "ledger": "node scripts/test-ledger.mjs",
-    "measure:vault": "pnpm build && tsx scripts/measure-vault.ts"
+    "measure:vault": "pnpm build && tsx scripts/measure-vault.ts",
+    "notices": "node scripts/third-party-notices.mjs"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.2",

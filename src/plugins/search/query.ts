@@ -4,6 +4,7 @@ import { RpcError } from "../../shared/rpc/lifecycle";
 import { folderOf, nameOf, relativeVaultPath } from "../../shared/vault-path";
 import type { SearchEvaluator } from "./runner";
 import type { SearchResponse } from "./protocol";
+import type { SearchDocument } from "../../markdown/search/evaluate";
 export interface SearchInput {
   vault: VaultIndex;
   source: string;
@@ -68,7 +69,7 @@ function documentKind(extension: string): "markdown" | "canvas" | "file" {
 async function searchDocument(
   input: Pick<SearchInput, "vault" | "worker" | "read">,
   file: VaultFile,
-) {
+): Promise<SearchDocument> {
   const kind = documentKind(file.extension);
   const cached =
     input.worker.requiresMetadata && !input.worker.requiresText
@@ -87,6 +88,6 @@ async function searchDocument(
     path: file.path,
     kind,
     text: read ? await input.read(file.uri) : "",
-    metadata: read ? undefined : metadata,
+    ...(!read && metadata && { metadata }),
   };
 }

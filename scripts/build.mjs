@@ -2,7 +2,7 @@ import { prismPlugin } from "./prism.mjs";
 // Adapted from PDF Workbench's esbuild pipeline; source repositories stay read-only.
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { rm } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import * as esbuild from "esbuild";
 const require = createRequire(import.meta.url);
 const watch = process.argv.includes("--watch");
@@ -11,6 +11,7 @@ const shared = {
   sourcemap: true,
   minify: process.argv.includes("--production"),
   logLevel: "info",
+  metafile: true,
 };
 await rm("dist", { recursive: true, force: true });
 execFileSync(
@@ -48,10 +49,22 @@ const builds = [
     target: "node20",
   },
 ];
+const inputs = new Set();
 for (const options of builds) {
   if (watch) {
     await (await esbuild.context(options)).watch();
   } else {
-    await esbuild.build(options);
+    const result = await esbuild.build(options);
+    for (const input of Object.keys(result.metafile.inputs)) {
+      inputs.add(input);
+    }
   }
+}
+// Every bundled source file; scripts/third-party-notices.mjs reads it.
+if (!watch) {
+  await mkdir("artifacts", { recursive: true });
+  await writeFile(
+    "artifacts/bundle-inputs.json",
+    JSON.stringify([...inputs].sort(), null, 1),
+  );
 }

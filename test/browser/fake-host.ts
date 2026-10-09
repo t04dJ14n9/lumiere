@@ -13,6 +13,8 @@ import {
   viewState,
 } from "../../src/plugins/editor/protocol";
 import { protocol as commandProtocol } from "../../src/plugins/commands/protocol";
+import { protocol as linksProtocol } from "../../src/plugins/links/protocol";
+import { protocol as videoProtocol } from "../../src/plugins/onlineVideos/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 export class BrowserHost {
   text: string;
@@ -25,6 +27,18 @@ export class BrowserHost {
   readonly views: Context[] = [];
   readonly session: Session;
   clipboard = "";
+  /** Workspace trust sent to the editor; set before `open`. */
+  trusted = false;
+  /** Links the editor asked the host to open. */
+  readonly opened: string[] = [];
+  /** Per-plugin settings sent to the editor; set before `open`. */
+  features: Record<
+    string,
+    { enabled: boolean; config: Record<string, unknown> }
+  > = {};
+  /** Online video details by `provider:id`; others fail as if offline. */
+  videoDetails: Record<string, Record<string, unknown>> = {};
+  readonly videoRequests: string[] = [];
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
   constructor(source: string) {
@@ -102,7 +116,8 @@ export class BrowserHost {
       error(message) {
         throw new Error(message);
       },
-      registerEditor: (_open: (panel: PanelShell) => void) => () => {},
+      registerEditor:
+        (_provider, _open: (panel: PanelShell) => void) => () => {},
       config: () => ({ preset: "obsidian", mode: "livePreview" }),
     };
     this.session = new Session(this.document, workbench);
@@ -157,14 +172,28 @@ export class BrowserHost {
       return {
         text: this.session.text,
         version: this.session.version,
-        features: {},
+        debugLogging: false,
+        features: this.features,
         editor: editorConfig.parse({}),
-        trusted: false,
+        trusted: this.trusted,
         clientID: id,
         source: this.document.uri,
         preset,
         mode,
       };
+    });
+    host.handle(linksProtocol, "open", ({ href }) => {
+      this.opened.push(href);
+      return true;
+    });
+    host.handle(videoProtocol, "details", ({ provider, id }) => {
+      const key = `${provider}:${id}`;
+      this.videoRequests.push(key);
+      const details = this.videoDetails[key];
+      if (!details) {
+        throw new Error("offline");
+      }
+      return details;
     });
     host.handle(editorProtocol, "clipboardRead", () => this.clipboard);
     host.handle(editorProtocol, "clipboardWrite", ({ text }) => {
@@ -212,6 +241,14 @@ export class BrowserHost {
       to,
       focus: true,
     });
+  }
+  /** Sends editor settings as the host does when VS Code's change. */
+  configureEditor(settings: Record<string, unknown>, panel = 0) {
+    this.endpoints[panel]!.notify(
+      editorProtocol,
+      "configureEditor",
+      editorConfig.parse(settings),
+    );
   }
   async mode(panel = 0) {
     return this.endpoints[panel]!.call(commandProtocol, "run", {

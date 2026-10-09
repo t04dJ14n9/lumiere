@@ -8,6 +8,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: false,
   surfaces: ["webview"],
+  capabilities: ["editing", "commands", "keybindings"],
   config,
   contributes: {
     commands: [

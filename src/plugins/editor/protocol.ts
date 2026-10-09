@@ -2,6 +2,11 @@ import { runtimePluginStates } from "../../shared/plugin-state";
 import { config as editorConfig } from "./manifest";
 import { featureSettings } from "../../shared/features";
 import { Schema, defineProtocol } from "../../kernel";
+export const logRecord = Schema.object({
+  level: Schema.union(["debug", "warn", "error"]),
+  message: Schema.string().max(8000),
+  details: Schema.string().max(8000),
+});
 export const offset = new Schema<number>(
   (value) => {
     if (
@@ -52,6 +57,7 @@ export const protocol = defineProtocol("editor", {
     ready: {
       params: Schema.object({}),
       result: Schema.object({
+        debugLogging: Schema.boolean().default(false),
         text: Schema.string(),
         version: offset,
         clientID: Schema.string(),
@@ -81,6 +87,8 @@ export const protocol = defineProtocol("editor", {
     },
   },
   notifications: {
+    log: logRecord,
+    configureLogging: Schema.boolean(),
     pluginsChanged: runtimePluginStates,
     initialized: Schema.object({}),
     configure: featureSettings,

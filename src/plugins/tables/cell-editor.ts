@@ -97,7 +97,7 @@ export class CellEditor {
 
   private bindMode(): void {
     this.unbindMode?.();
-    this.unbindMode = undefined;
+    delete this.unbindMode;
     const inner = getCM(this.view);
     if (!inner?.state.vim) {
       return;
@@ -127,7 +127,7 @@ export class CellEditor {
       }
       if (this.vimEnabled !== vim) {
         this.unbindMode?.();
-        this.unbindMode = undefined;
+        delete this.unbindMode;
         this.vimEnabled = vim;
         this.view.dispatch({
           effects: this.vim.reconfigure(

@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
 import type { Manifest } from "../src/shared/manifest";
+import { MARKDOWN_EDITOR, whenActive } from "../src/shared/editor-provider";
 export async function contributions() {
   const manifests: Manifest[] = [];
   for (const directory of readdirSync("src/plugins", {
@@ -25,13 +26,14 @@ export async function contributions() {
     })),
   );
   const menus = manifests.flatMap((manifest) =>
-    (manifest.contributes?.commands ?? []).map((command) => ({
-      command: `markdownWorkbench.${command.id}`,
-      when:
+    (manifest.contributes?.commands ?? []).map((command) =>
+      withWhen(
+        { command: `markdownWorkbench.${command.id}` },
         command.palette === false
           ? "false"
           : whenEnabled(manifest, command.scope),
-    })),
+      ),
+    ),
   );
   const views = manifests.flatMap((manifest) =>
     (manifest.contributes?.views ?? []).map((view) => ({
@@ -45,13 +47,12 @@ export async function contributions() {
   return {
     customEditors: [
       {
-        viewType: "markdownWorkbench.editor",
-        displayName: "Markdown Workbench",
-        selector: [
-          { filenamePattern: "*.md" },
-          { filenamePattern: "*.markdown" },
-        ],
-        priority: "option",
+        viewType: MARKDOWN_EDITOR.viewType,
+        displayName: MARKDOWN_EDITOR.displayName,
+        selector: MARKDOWN_EDITOR.filenamePatterns.map((filenamePattern) => ({
+          filenamePattern,
+        })),
+        priority: MARKDOWN_EDITOR.priority,
       },
     ],
     commands,
@@ -61,12 +62,16 @@ export async function contributions() {
           (command) => command.key,
         ),
         ...(manifest.contributes?.keybindings ?? []),
-      ].map((command) => ({
-        command: `markdownWorkbench.${command.id}`,
-        key: command.key,
-        ...(command.mac ? { mac: command.mac } : {}),
-        when: whenEnabled(manifest, command.scope),
-      })),
+      ].map((command) =>
+        withWhen(
+          {
+            command: `markdownWorkbench.${command.id}`,
+            key: command.key,
+            ...(command.mac ? { mac: command.mac } : {}),
+          },
+          whenEnabled(manifest, command.scope),
+        ),
+      ),
     ),
     ...(views.length > 0 ? { views: { explorer: views } } : {}),
     menus: {
@@ -76,7 +81,7 @@ export async function contributions() {
         ...manifestMenus(manifests, "editor/title"),
         {
           command: "markdownWorkbench.openAsText",
-          when: "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands",
+          when: `${whenActive(MARKDOWN_EDITOR)} && markdownWorkbench.plugin.commands`,
           group: "navigation",
         },
       ],
@@ -104,12 +109,38 @@ export async function contributions() {
                 string,
                 Record<string, unknown>
               >) ?? {},
-            ).map(([key, value]) => [
-              `markdownWorkbench.${manifest.configKeys?.[key] ?? `${manifest.id}.${key}`}`,
-              { ...value, scope: "resource" },
-            ]),
+            )
+              // Fields backed by a native VS Code setting contribute nothing.
+              .filter(([key]) => !manifest.nativeConfigKeys?.[key])
+              .map(([key, value]) => [
+                `markdownWorkbench.${manifest.configKeys?.[key] ?? `${manifest.id}.${key}`}`,
+                { ...value, scope: "resource" },
+              ]),
           ),
         ),
+        "markdownWorkbench.copyLinkForAgent.target": {
+          type: "string",
+          enum: ["auto", "cursor", "chat", "claudeCode", "codex", "clipboard"],
+          enumDescriptions: [
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+            "Cursor's agent chat, with the passage on the clipboard to paste.",
+            "VS Code's chat, with the passage typed in.",
+            "Claude Code: a new conversation with the passage typed in.",
+            "Codex: the passage attached to the thread as a file.",
+            "Only copy the passage.",
+          ],
+          default: "auto",
+          scope: "window",
+          markdownDescription:
+            "Which chat **Copy Link for Agent** opens after copying the link and passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when the editor's own chat is the only agent; pick one here to send the passage to it.",
+        },
+        "markdownWorkbench.debug.logging": {
+          type: "boolean",
+          default: false,
+          scope: "window",
+          description:
+            "Log plugin load/stop timings and debug messages in the Markdown Workbench output channel.",
+        },
         "markdownWorkbench.plugins.external": {
           type: "object",
           default: {},
@@ -134,15 +165,26 @@ export async function contributions() {
  * host keeps `markdownWorkbench.plugin.<id>` current for the active panel.
  * Elsewhere, the plugin's setting decides.
  */
+/** Adds a `when` clause unless the contribution applies everywhere. */
+function withWhen<T extends object>(
+  item: T,
+  when: string,
+): T & { when?: string } {
+  return when ? { ...item, when } : item;
+}
+
 function whenEnabled(
   manifest: Manifest,
   scope: "editor" | "workbench" = "editor",
 ): string {
   if (scope === "editor") {
-    return `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`;
+    return `${whenActive(MARKDOWN_EDITOR)} && markdownWorkbench.plugin.${manifest.id}`;
   }
   if (manifest.kind === "core") {
-    return "config.markdownWorkbench.preset != 'minimal'";
+    // Core workbench commands (plugin management, the editor association)
+    // must work in the minimal preset too: it is the safe mode for
+    // diagnosing plugins.
+    return "";
   }
   return `config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.${manifest.id}.enabled`;
 }

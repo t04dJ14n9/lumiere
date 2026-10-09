@@ -22,6 +22,7 @@ import path from "node:path";
 import { downloadAndUnzipVSCode } from "@vscode/test-electron";
 import { createVSIX } from "@vscode/vsce";
 import { hostExecutable, paths, writeState } from "./state";
+import { hostCli } from "./host-cli";
 
 export default async function globalSetup(): Promise<void> {
   const host = await resolveVsCode();
@@ -176,20 +177,22 @@ async function resolveVsCode(): Promise<Host> {
     process.platform === "darwin"
       ? path.join(app, "Resources", "app")
       : path.join(app, "resources", "app");
-  const cli =
-    process.platform === "darwin"
-      ? path.join(resources, "bin", "code")
-      : path.join(
-          app,
-          "bin",
-          process.platform === "win32" ? "code.cmd" : "code",
-        );
   const product = JSON.parse(
     readFileSync(path.join(resources, "product.json"), "utf8"),
   ) as {
     nameShort: string;
     version: string;
+    applicationName?: string;
   };
+  const cli = hostCli({
+    app,
+    resources,
+    platform: process.platform,
+    ...(product.applicationName === undefined
+      ? {}
+      : { applicationName: product.applicationName }),
+    exists: existsSync,
+  });
   // The command-line options are declared in the main process bundle, which
   // newer builds split into main.js and mainImpl.js.
   const main = ["main.js", "mainImpl.js"]
@@ -209,6 +212,8 @@ async function resolveVsCode(): Promise<Host> {
     ...(supports("disable-updates") ? ["--disable-updates"] : []),
     // Chromium's own keychain access (cookies, safe storage) on macOS.
     ...(process.platform === "darwin" ? ["--use-mock-keychain"] : []),
+    // Never the desktop keyring on Linux (Cursor otherwise asks for it).
+    ...(process.platform === "linux" ? ["--password-store=basic"] : []),
   ];
   return {
     name: `${product.nameShort} ${product.version}`,

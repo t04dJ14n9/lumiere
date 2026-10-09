@@ -19,7 +19,11 @@ export function escapeBlock(state: EditorState): number | undefined {
   return block.from > 0 ? block.from - 1 : undefined;
 }
 
-/** Skip a rendered block on vertical entry, leaving revealed source to CodeMirror. */
+/**
+ * Vertical motion into a rendered block: a block that reveals its source
+ * (math, code, callouts, diagrams, embeds) is entered at its first or last
+ * line, revealing it, as in Obsidian; a widget block (a table) is skipped.
+ */
 export function verticalBlock(
   state: EditorState,
   direction: -1 | 1,
@@ -43,6 +47,11 @@ export function verticalBlock(
     );
   if (!block) {
     return undefined;
+  }
+  if (block.renderer.editing === "reveal") {
+    return direction > 0
+      ? state.doc.lineAt(block.from).from
+      : state.doc.lineAt(block.to).from;
   }
   return direction > 0
     ? Math.min(state.doc.length, state.doc.lineAt(block.to).to + 1)

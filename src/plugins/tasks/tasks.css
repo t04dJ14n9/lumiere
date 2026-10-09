@@ -9,3 +9,13 @@
   color: var(--muted);
   text-decoration: line-through;
 }
+/*
+ * Live Preview: a checked task's line (any status but a space) is muted and
+ * struck through, as in Obsidian's default theme. data-task holds the status.
+ */
+#app .cm-line.md-task-line.is-checked {
+  color: var(--muted);
+}
+#app .md-task-done {
+  text-decoration: line-through;
+}

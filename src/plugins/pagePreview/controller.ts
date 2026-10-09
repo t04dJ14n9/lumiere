@@ -47,13 +47,14 @@ class LinkPreviews {
     // A closed or replaced popup cannot acquire a late resource/render result.
     this.generation++;
     this.shown = null;
-    this.reload = undefined;
+    delete this.reload;
     if (this.body) {
       void this.renderedPass?.dispose();
-      this.renderedPass = undefined;
+      delete this.renderedPass;
     }
     this.popup?.remove();
-    this.popup = this.body = undefined;
+    delete this.popup;
+    delete this.body;
     if (focused && document.hasFocus()) {
       this.restoreFocus?.();
     }
@@ -106,7 +107,7 @@ class LinkPreviews {
     const request = ++this.generation;
     if (this.body) {
       void this.renderedPass?.dispose();
-      this.renderedPass = undefined;
+      delete this.renderedPass;
       this.body.textContent = "Loading…";
     }
     try {
@@ -121,13 +122,15 @@ class LinkPreviews {
         body: this.body,
         resource,
         href,
-        source,
+        ...(source === undefined ? {} : { source }),
         render: base.render,
       });
       if (request !== this.generation) {
         await next?.dispose();
-      } else {
+      } else if (next) {
         this.renderedPass = next;
+      } else {
+        delete this.renderedPass;
       }
     } catch (error) {
       if (this.body && request === this.generation) {

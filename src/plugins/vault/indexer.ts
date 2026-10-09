@@ -97,8 +97,8 @@ export class VaultIndexer {
 
   async dispose(): Promise<void> {
     this.disposed = true;
-    this.queue.stop();
-    this.stopWatching?.();
+    void this.queue.stop();
+    void this.stopWatching?.();
     for (const key of [...this.timers.keys()]) {
       this.cancel(key);
     }

@@ -246,12 +246,16 @@ export function apply(ctx: Context, config: BacklinksConfig): void {
 
 - `pending` lists what it waits for (`fiber.waitingFor`). The plugin status
   UI shows it as "Waiting for Tables".
-- Leaving `active` disposes the fiber's effects in reverse order, then its
-  child fibers, then withdraws services it provided. Dependents of a withdrawn
-  service go back to `pending`; they become `active` again when a provider
-  returns. This is how a service is replaced at runtime.
-- `failed` keeps the error. Effects registered before the throw are undone.
-  Other fibers are unaffected. `update(config)` retries.
+- `loading` is a transaction: services provided and child plugins started
+  during `apply` become visible only when `apply` returns (commit).
+- Leaving `active` mirrors activation: the fiber first withdraws the services
+  it provided and waits for the dependents that stop because of it, then
+  releases its effects and child fibers together, last acquired first.
+  Dependents of a withdrawn service go back to `pending`; they become `active`
+  again when a provider returns. This is how a service is replaced at runtime.
+- `failed` keeps the error. Everything acquired before the throw is released,
+  and held child plugins never start. Other fibers are unaffected.
+  `update(config)` retries.
 - `update(config)` calls `reconfigure` when the plugin defines it and it
   returns `true`; otherwise the fiber restarts.
 - Async `apply` is awaited. Required services are read only after `apply`
@@ -448,12 +452,23 @@ export default defineManifest({
   kind: 'feature',            // 'core' plugins cannot be turned off
   defaultEnabled: true,
   surfaces: ['webview'],
+  capabilities: ['rendering', 'editing', 'commands'],
   config,                     // Schema (§5.6), or omitted
   contributes: {              // merged into package.json by the generator (§6.4)
     commands: [{ id: 'insertTable', title: 'Insert Table', editorCommand: 'editor:insert-table' }],
   },
 });
 ```
+
+`capabilities` says what the plugin does in host-neutral terms (registers
+the editor, renders, edits, contributes commands or views, reads the vault
+index, writes other files, uses the network, hands selections to agents);
+the `Capability` type in `src/shared/manifest.ts` lists them. Precedence is
+`src/plugins/plugin-order.ts` and dependencies are derived from each
+plugin's `inject` (`src/plugins/plugin-graph.ts`); the manifest declares
+neither. A unit test keeps `commands`, `keybindings` and `views` in step
+with `contributes`, allows `editorProvider` only on `editor`, and requires
+`network` plugins to check workspace trust.
 
 ### 6.3 Enabling, disabling and presets
 
@@ -524,7 +539,6 @@ quick pick of states for the active editor. `setPluginEnabled` and
 | `suggest` | webview | `suggest` | EditorSuggest framework; plugins register sources |
 | `menu` | webview | `editor` | In-editor menus (tables, properties, chips) |
 | `markers` | both | `markers` | Source-bound badges from plugins and the API (§18.3) |
-| `agent` | host | `copyForAgent` | Agent references for selections (§17) |
 | `fold` | webview | `folding` | Heading and indent folds, persisted per view through a view-state contribution (§9.2) |
 
 `vault`, `resources` and `markers` are `replaceable`: an outside plugin (for
@@ -613,9 +627,19 @@ type Envelope =
   | { kind: 'response'; id: number; result: unknown }
   | { kind: 'error'; id: number; code: string; message: string }
   | { kind: 'notify'; channel: string; method: string; params: unknown }
-  | { kind: 'cancel'; id: number };
+  | { kind: 'cancel'; id: number }
+  | { kind: 'batch'; version: number; messages: NotifyEnvelope[] };
 ```
 
+- State notifications where only the latest value matters (the selection
+  flag, selection and title actions, a note's unresolved links) are sent with
+  `notify(..., { coalesce: true })`: they wait until the end of the task,
+  replace an unsent one of the same method, and leave together as one
+  `batch` whose `version` grows per endpoint. A receiver drops a batch whose
+  version is not above the last one it applied. Any other envelope sends
+  the pending batch first, so a request (Copy Link for Agent, a flush) never
+  overtakes the state it depends on. Document updates are not coalesced:
+  they carry their own document versions and every one must arrive.
 - Every method has a params schema and a result schema (§5.6). Invalid input is
   dropped and logged; an invalid result rejects the caller.
 - Requests have a default 10-second timeout and can be cancelled.
@@ -638,6 +662,13 @@ Split `vscode-extension/src/markdown/provider.ts` (752 lines) into:
 | `panel.ts` | One editor: its transport, RPC, plugin state for its document, selection flag, disposal |
 | `view-transfer.ts` | Capture and restore view state across rename and reopen (current `renamedViews` logic) |
 | `webview-html.ts` | HTML, CSP and nonce (§19) |
+
+The editor is described by an `EditorProvider` (`src/shared/editor-provider.ts`:
+view type, display name, file patterns, document kind, panel options);
+`Workbench.registerEditor(provider, open)` and `src/host/editor-panels.ts`
+register whatever provider they are given and know nothing about Markdown.
+`MARKDOWN_EDITOR` is the single source of the view type and patterns for
+associations, reclaiming, navigation, renames and generated contributions.
 
 Registration keeps `retainContextWhenHidden: true` and
 `supportsMultipleEditorsPerDocument: true`. Two panels of one note share a
@@ -967,7 +998,7 @@ corresponds to. "Source" names the module on the source branch.
 | ID | Obsidian | Default | Injects | Source |
 | --- | --- | --- | --- | --- |
 | `properties` | Properties view; *Properties in document* | on | render, livePreview, markdown | `editor/properties/*`, `markdown/properties.ts`, `property-order.ts`, `host/property-types.ts` |
-| `inlineTitle` | *Show inline title*; rename from title | on | editor, documents | `editor/file-title.ts`, `markdown/rename-note.ts` |
+| `inlineTitle` | *Show inline title*; rename from title | off (owner decision, 2026-10-09) | editor, documents | `editor/file-title.ts`, `markdown/rename-note.ts` |
 | `links` | internal links, link following, unresolved styling | on | vault, livePreview, editors | `hybrid-inline.ts` (links), `app.ts` `listenForLinks`, `session.openLink` |
 | `embeds` | `![[ ]]` transclusion, attachments, media | on | resources, render | `render/embeds.ts`, `media/*` |
 | `tables` | Live Preview table editor | on | livePreview, render, menu | `table/*` |
@@ -981,11 +1012,11 @@ corresponds to. "Source" names the module on the source branch.
 | `suggest` | EditorSuggest: `[[`, `[[#`, `[[^`, `#` | on | vault, editor | `editor/suggest.ts`, `host/suggestions.ts` |
 | `pagePreview` | Page preview (hover) | on | render, resources | `editor/link-preview.ts` |
 | `outline` | Outline view | on | editors, markdown, workbench | `markdownSymbols.ts` (rewritten); replaces the in-editor outline panel |
-| `backlinks` | Backlinks, unlinked mentions, count | on | vault, editors, workbench | `backlinksProvider.ts` (rewritten) |
-| `outgoingLinks` | Outgoing links | on | vault, editors, workbench | new |
+| `backlinks` | Backlinks, unlinked mentions, count | off | vault, editors, workbench | `backlinksProvider.ts` (rewritten) |
+| `outgoingLinks` | Outgoing links | off | vault, editors, workbench | new |
 | `search` | embedded `query` blocks | on | vault, render | `search/*`, `host/query-session.ts` |
 | `folding` | *Fold heading*, *Fold indent* | on | editor | `outline.ts` (folding parts), presentation folds |
-| `lineNumbers` | *Show line numbers* | off | editor | `lineNumbers()` |
+| `lineNumbers` | *Show line numbers* | on | editor | `lineNumbers()` |
 | `indentGuides` | *Show indentation guides* | on | editor | new |
 | `vim` | *Vim key bindings* | off | editor, commands | `editor/vim.ts` |
 | `autoPair` | *Auto pair brackets*, *Auto pair Markdown syntax* | on | editor | `editor/markdown.ts` `autoPairing` |
@@ -993,7 +1024,7 @@ corresponds to. "Source" names the module on the source branch.
 | `pasteHtml` | *Auto convert HTML* | on | editor | `markdown/paste.ts`, `editor/clipboard.ts` |
 | `spellcheck` | *Spellcheck* | on | editor | content attributes |
 | `formatting` | `editor:toggle-*`, `editor:set-heading-*` and similar | on | editor, commands | `editor/markdown.ts` `wrapSelection`, main branch `obsidianLikeCommands` |
-| `copyForAgent` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
+| `agentBridge` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
 | `linkUpdates` | *Automatically update internal links* | on (prompt) | vault, workbench | new |
 | `quickSwitcher` | Quick switcher | on | vault, workbench | new |
 | `wordCount` | Word count (status bar) | on | editors, workbench | new |
@@ -1021,7 +1052,8 @@ Short specifications, beyond the source's tested behaviour:
   view container per §25). Group by file, one trimmed context line per
   reference, collapsed **Unlinked mentions** section (basename occurrences
   outside links, computed on demand), and a status bar count for the active
-  note (inverting `resolvedLinks`).
+  note (inverting `resolvedLinks`). Both are off by default (owner decision);
+  turning a switch on shows its view.
 - **tags**: the **Tags** view is hierarchical (`a/b/c` counts toward `a/b` and
   `a`), merges case and keeps the most frequent casing, and searches on click.
   Tag search uses the index, not a full read of the workspace.
@@ -1081,7 +1113,7 @@ the active editor. They work in the command palette, keybindings and menus.
 | table commands (insert/move/delete row and column, align, sort) | `editor:table-*` | tables | — |
 | `toggleSourceMode` | `editor:toggle-source` | livePreview | — |
 | `openAsText` | none | editor | title action |
-| `copyForAgent` | none | copyForAgent | Mod+Alt+C |
+| `agentBridge` | none | copyLinkForAgent | none (context menu) |
 | `quickSwitcher` | `switcher:open` | quickSwitcher | none by default (Mod+O conflicts with VS Code's Open) |
 
 Rules:
@@ -1092,11 +1124,11 @@ Rules:
   (Vim's Ctrl-O, Ctrl-B and others) are consumed only while the `vim` plugin is
   active (`markdownWorkbench.plugin.vim` context key), as the source's
   `consumeVimHostShortcut` does. The list moves to the `vim` manifest.
-- The editor title bar keeps **Copy for Agent** (with a selection),
-  **Add File Property** and **Open as Text**. **Toggle Outline** goes away
+- The editor title bar keeps **Add File Property** and **Open as Text**
+  (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
   (§13 outline).
 - The right-click menu uses VS Code's `webview/context` menu with
-  `webviewSection` for static commands (formatting, Copy for Agent).
+  `webviewSection` for static commands (formatting, Copy Link for Agent).
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions
@@ -1106,19 +1138,20 @@ Rules:
 
 ### 15.1 Editor settings (Obsidian → Markdown Workbench)
 
-Defaults are Obsidian's application defaults. The owner's reference profile
-(Vim and line numbers on, readable line length off) is a test profile, not the
-product default (§25).
+Defaults are Obsidian's application defaults, except where the owner decided
+otherwise (2026-10-09): line numbers on, readable line length off, Mermaid on.
+Vim stays off; the owner's Vim profile is a test profile, not the product
+default (§25).
 
 | Obsidian setting | Setting or plugin | Default |
 | --- | --- | --- |
 | Default editing mode | `markdownWorkbench.editor.defaultMode` (`livePreview` \| `source`) | `livePreview` |
-| Readable line length | `markdownWorkbench.editor.readableLineLength` | `true` (700 px measure, like the default theme) |
+| Readable line length | `markdownWorkbench.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
 | Strict line breaks | `markdownWorkbench.editor.strictLineBreaks` | `false` |
 | Properties in document | `markdownWorkbench.properties.display` | `visible` |
-| Show inline title | plugin `inlineTitle` | on |
+| Show inline title | plugin `inlineTitle` | off (owner decision, 2026-10-09) |
 | Fold heading, Fold indent | `markdownWorkbench.folding.heading`, `.indent` | `true`, `true` |
-| Show line numbers | plugin `lineNumbers` | off |
+| Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |
 | Right-to-left | `markdownWorkbench.editor.rightToLeft` | `false` |
 | Spellcheck | plugin `spellcheck` | on |
@@ -1184,7 +1217,21 @@ The host `links` plugin owns one pipeline:
        (`markdownWorkbench.files.newNoteFolder`) and open it, as Obsidian
        does.
 
-## 17. Copy for Agent (`copyForAgent` plugin)
+## 17. Copy Link for Agent (`agentBridge` plugin)
+
+Owner decision (2026-10-09): the Copy for Agent command, Mod+Alt+C, its
+title button and menu items are removed; plain Ctrl/Cmd+C copies text.
+The single remaining action was then renamed **Copy Link for Agent** (it
+was Ask Agent about Selection); it keeps producing the text below, copies
+it, and opens a chat only when the editor's own chat is the only agent or
+`copyLinkForAgent.target` forces one. Nothing was published, so the
+command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
+`askAgentAboutSelection`, `askAgent.target`) with no migration, and the
+public API has no agent methods or service. Review fixes (round 1) settled the names
+shared with Agent PDF Viewer: plugin `agentBridge`, service class
+`AgentHandoff`, command `copyLinkForAgent`; the plugin setting is now
+`markdownWorkbench.plugins.agentBridge.enabled`. The text format is shared with
+Agent PDF Viewer and specified in `docs/agent-handoff-format.md`.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 
@@ -1196,14 +1243,14 @@ Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
   reference uses the full URI. Lines are 1-based, from source offsets (a
   selection ending at column 0 excludes that line, as now).
 - Line numbers must match the file on disk. With unsaved changes, interactive
-  Copy for Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
-  PDF Workbench does. The API refuses a dirty document with `DocumentDirty`.
+  Copy Link for Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
+  PDF Workbench does.
 - The selection is captured from the webview with `editor.captureSelection`
   after a flush, and is rejected if the document version moved (as
   `captureActiveSelectionContext` does). A table cell selection maps to its
   source range.
-- Available from the title bar (with a selection), the context menu, the
-  command palette and Mod+Alt+C.
+- Available from the editor context menu, the selection menu and the
+  command palette.
 
 ## 18. Public API v1 and outside extensions
 
@@ -1223,10 +1270,8 @@ export interface MarkdownWorkbenchApi {
   reveal(editorId: EditorId, target: SourceTarget, options?: { focus?: boolean }): Promise<void>;
   //   SourceTarget = { from: number; to: number } (source offsets) | { line: number } | { fragment: string }
 
-  // Selections and agent references
+  // Selections
   getSelection(editorId: EditorId, options?: OperationOptions): Promise<SelectionSnapshot | undefined>;
-  createAgentReference(selection: SelectionSnapshot): Promise<AgentReference>;
-  copyForAgent(editorId: EditorId): Promise<void>;
 
   // Vault (read-only)
   resolveLink(linktext: string, source: Uri): Uri | undefined;
@@ -1279,7 +1324,7 @@ context.subscriptions.push(wiki);
 ```
 
 - External plugins run in an isolated child context that can see only the
-  public services: `editors`, `vault` (read-only facade), `markers`, `agent`,
+  public services: `editors`, `vault` (read-only facade), `markers`,
   `commands` (IDs restricted to the owner's namespace), `links` events,
   `codeBlocks` (§18.4) and `logger`. Internal services stay hidden.
 - They follow the same lifecycle, gating and error isolation. Enablement
@@ -1345,7 +1390,8 @@ and `markdown.previewScripts`. Markdown Workbench v2 adds:
   from `cspSource` plus inline style attributes (needed by CodeMirror);
   images from `cspSource`, `https:`, `data:`, `blob:`; media from `cspSource`,
   `https:` and `blob:`; `frame-src https:`; fonts from `cspSource` and
-  `data:`. In untrusted workspaces, drop remote images, media and frames.
+  `data:`; `connect-src` from `cspSource` and `blob:` (resource and worker
+  fetches). In untrusted workspaces, drop remote images, media and frames.
 - DOMPurify sanitizes all rendered HTML. Iframes are sandboxed and lazy;
   graphics (MathJax, Mermaid) go through the graphics sanitizer. The
   LLM Wiki-specific source-link exception in `render/sanitize.ts` is replaced

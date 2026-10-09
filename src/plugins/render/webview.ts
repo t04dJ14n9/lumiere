@@ -1,5 +1,6 @@
 import type {} from "../editor/api";
 import createDOMPurify from "dompurify";
+import { sanitizerOptions } from "./sanitizer-options";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../dialect/api";
 import type { RenderPass, RenderService } from "./api";
@@ -38,11 +39,7 @@ function renderService({
 }): RenderService {
   const purifier = createDOMPurify(window);
   const sanitize = (html: string) =>
-    purifier.sanitize(html, {
-      ADD_TAGS: trusted ? ["iframe"] : [],
-      FORBID_TAGS: ["script", "style", "form", "object", "embed"],
-      FORBID_ATTR: ["srcdoc"],
-    });
+    purifier.sanitize(html, sanitizerOptions(trusted));
   return {
     trusted,
     async into(container, source, context = {}) {

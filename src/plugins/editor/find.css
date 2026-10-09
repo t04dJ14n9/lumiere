@@ -1,0 +1,94 @@
+/* In-note find and replace bar, docked at the top right like Obsidian's. */
+#app .mw-editor .cm-panels.cm-panels-top {
+  background: transparent;
+  border: none;
+}
+.mw-find {
+  position: absolute;
+  top: 6px;
+  right: 16px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid
+    var(
+      --vscode-widget-border,
+      var(--vscode-editorWidget-border, rgba(127, 127, 127, 0.35))
+    );
+  border-radius: 6px;
+  background: var(
+    --vscode-editorWidget-background,
+    var(--vscode-editor-background)
+  );
+  color: var(--vscode-editorWidget-foreground, inherit);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.2));
+  font-family: var(--vscode-font-family, sans-serif);
+  font-size: 13px;
+}
+.mw-find-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.mw-find-row[hidden] {
+  display: none;
+}
+.mw-find input {
+  width: 220px;
+  padding: 3px 6px;
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 3px;
+  background: var(--vscode-input-background, transparent);
+  color: var(--vscode-input-foreground, inherit);
+  font: inherit;
+  outline: none;
+}
+.mw-find input:focus {
+  border-color: var(--vscode-focusBorder, var(--accent));
+}
+.mw-find.is-empty input[name="search"] {
+  border-color: var(--vscode-inputValidation-errorBorder, #e51400);
+}
+.mw-find-count {
+  min-width: 70px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.mw-find button {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.mw-find button:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.15));
+}
+.mw-find button[aria-pressed="true"] {
+  background: var(
+    --vscode-inputOption-activeBackground,
+    rgba(127, 127, 127, 0.25)
+  );
+  color: var(--vscode-inputOption-activeForeground, inherit);
+}
+.mw-find-row:last-child button {
+  white-space: nowrap;
+}
+.mw-editor .cm-searchMatch {
+  background: var(
+    --vscode-editor-findMatchHighlightBackground,
+    rgba(255, 210, 0, 0.35)
+  );
+  outline: none;
+}
+.mw-editor .cm-searchMatch-selected {
+  background: var(--vscode-editor-findMatchBackground, rgba(255, 150, 0, 0.6));
+}

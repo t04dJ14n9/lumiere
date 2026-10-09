@@ -83,7 +83,11 @@ class OutlineSource implements TreeSource {
   }
 
   set(uri: string | undefined, text: string): void {
-    this.uri = uri;
+    if (uri === undefined) {
+      delete this.uri;
+    } else {
+      this.uri = uri;
+    }
     this.coordinates = new SourceCoordinates(text);
     this.outline = uri ? outlineOf(metadata(text).headings) : [];
     this.byId.clear();
@@ -118,7 +122,7 @@ class OutlineSource implements TreeSource {
     return {
       id: heading.id,
       label: heading.title,
-      expanded: heading.children.length > 0 ? true : undefined,
+      ...(heading.children.length > 0 && { expanded: true }),
       command: { id: OPEN_COMMAND, args: [this.uri, heading.offset] },
     };
   }

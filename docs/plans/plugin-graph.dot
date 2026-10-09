@@ -1,0 +1,27 @@
+digraph G {
+ rankdir=BT; nodesep=0.35; ranksep=0.7; fontname="Helvetica"; node[shape=box,style="rounded,filled",fontname="Helvetica",fontsize=12,margin="0.15,0.08"]; edge[color="#777777",arrowsize=0.7];
+ // kernel layers (bottom to top)
+ shared[label="shared types and runtime",fillcolor="#dbe6ff"];
+ vault[label="vault\n(files, links index)",fillcolor="#dbe6ff"];
+ document[label="document model",fillcolor="#dbe6ff"];
+ dialect[label="markdown dialect",fillcolor="#dbe6ff"];
+ render[label="render",fillcolor="#dbe6ff"];
+ editor[label="editor core\n(CodeMirror, custom editor host)",fillcolor="#c5d6ff"];
+ commands[label="commands and keymaps",fillcolor="#c5d6ff"];
+ livePreview[label="live preview\n(reveal raw text at caret)",fillcolor="#c5d6ff"];
+ links[label="links, resources, suggest",fillcolor="#c5d6ff"];
+ vault->shared; document->shared; dialect->shared; render->dialect; editor->document; editor->vault; editor->dialect; commands->editor; livePreview->editor; livePreview->render; livePreview->commands; links->livePreview; links->vault;
+ // feature groups
+ fmt[label="Text editing\nformatting, smart lists, auto-pair, tables,\nfolding, vim, spellcheck, paste HTML,\nline numbers, indent guides",fillcolor="#d9f2dc"];
+ rich[label="Rich rendering\nfootnotes, callouts, math, diagrams,\ncode blocks, tasks, markers, properties,\ninline title",fillcolor="#d9f2dc"];
+ nav[label="Navigation and vault tools\noutline, backlinks, outgoing links, search,\nquick switcher, tags, link updates,\npage preview, word count",fillcolor="#fff0cc"];
+ media[label="embeds\nimages, audio, local video, PDF, notes",fillcolor="#fbd9e5"];
+ agent[label="copy for agent + public API\n(@Note.md#a-b links)",fillcolor="#fbd9e5"];
+ fmt->commands; fmt->editor; rich->livePreview; rich->links; rich->commands; nav->vault; nav->editor; nav->links; media->links; media->livePreview; agent->commands; agent->vault; agent->editor;
+ // planned
+ node[style="rounded,dashed,filled",fillcolor="#eeeeee"]; edge[style=dashed];
+ video[label="online video embeds\n(YouTube, Bilibili)"]; marp[label="Marp slides"]; lint[label="Markdown lint"]; gitdiff[label="git diff view"]; bridge[label="agent bridge\n(MCP server, Ask Agent)"]; pdf[label="PDF viewer\n(separate extension first)"];
+ video->media; marp->render; marp->livePreview; lint->editor; gitdiff->vault; bridge->agent; pdf->bridge[label=" selection, citations"]; pdf->links[label=" @links"];
+ {rank=same; fmt; rich; nav; media; agent}
+ {rank=same; video; marp; lint; gitdiff; bridge; pdf}
+}

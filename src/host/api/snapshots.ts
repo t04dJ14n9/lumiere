@@ -21,7 +21,7 @@ export function editorSnapshot(
   return Object.freeze({
     ...documentSnapshot(panel.document, platform),
     editorId: panel.id,
-    viewColumn: panel.column,
+    ...(panel.column === undefined ? {} : { viewColumn: panel.column }),
     isActive: panel.active(),
   });
 }

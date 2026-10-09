@@ -11,5 +11,6 @@ export interface ApiPlatform {
     scope: ConfigurationScope,
     external: boolean,
   ): Promise<void>;
-  settings(resource?: Uri): Promise<void>;
+  /** Settings filtered to plugin switches, or to `query` (a setting ID). */
+  settings(resource?: Uri, query?: string): Promise<void>;
 }

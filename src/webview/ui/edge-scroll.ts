@@ -43,12 +43,12 @@ export class EdgeScroll {
     }
     // Use the animation clock consistently. Its first timestamp can precede
     // performance.now() sampled while handling the pointer event.
-    this.previous = undefined;
+    delete this.previous;
     this.frame = requestAnimationFrame((time) => this.tick(time));
   }
 
   private tick(time: number): void {
-    this.frame = undefined;
+    delete this.frame;
     const point = this.point;
     if (!point || !this.content.isConnected || !this.viewport.isConnected) {
       this.stop();
@@ -95,15 +95,15 @@ export class EdgeScroll {
   }
 
   stop(): void {
-    this.point = undefined;
+    delete this.point;
     this.remainder = { x: 0, y: 0 };
     this.events?.abort();
-    this.events = undefined;
+    delete this.events;
     this.resize?.disconnect();
-    this.resize = undefined;
+    delete this.resize;
     if (this.frame !== undefined) {
       cancelAnimationFrame(this.frame);
-      this.frame = undefined;
+      delete this.frame;
     }
   }
 

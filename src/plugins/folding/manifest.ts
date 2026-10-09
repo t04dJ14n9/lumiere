@@ -11,6 +11,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["webview"],
+  capabilities: ["editorChrome", "commands"],
   config,
   contributes: {
     commands: [

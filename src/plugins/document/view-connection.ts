@@ -51,7 +51,7 @@ export class ViewConnection implements ViewDocument {
     }
     return () => {
       this.dispose();
-      this.sync = undefined;
+      delete this.sync;
     };
   }
 

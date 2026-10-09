@@ -89,8 +89,10 @@ within this composition scope, not full feature acceptance.
   queue work is pass-owned. No additional violation beyond renderer ordering.
 - **math:** caller-owned renderers/commands and pass-owned lazy rendering cleanup.
   No additional violation.
-- **codeBlocks:** general fence renderer follows diagrams and precedes core
-  fallback; syntax extension and copy/highlight handlers are owned. No additional violation.
+- **codeBlocks:** plain code is decorated source lines (no widget); only
+  processor-accepted fences get a widget, re-registered when processors change,
+  after diagrams; syntax extension and copy/highlight handlers are owned. No
+  additional violation.
 - **links (host/webview):** owned renderer/listeners/commands and host handlers;
   configuration no longer reissues initial navigation by restarting the webview half.
 - **formatting:** unique command registrations, keymap slot and injected active

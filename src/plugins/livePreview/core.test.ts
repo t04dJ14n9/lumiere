@@ -4,11 +4,12 @@ import assert from "node:assert/strict";
 import { Compartment, EditorState, StateEffect } from "@codemirror/state";
 import type { Extension, TransactionSpec } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
+import { WidgetType } from "@codemirror/view";
 import { Context } from "../../kernel";
 import type { EditorService } from "../editor/api";
-import type { LivePreview } from "./api";
+import type { BlockRenderer, LivePreview } from "./api";
 import { livePreviewWebview } from "./webview";
-import { blockIndex } from "./blocks";
+import { blockIndex, editingDecorations } from "./blocks";
 import { blockRenderers, revealed } from "./registry";
 import { documentTree } from "./document-tree";
 import { escapeBlock, verticalBlock } from "./motion";
@@ -48,10 +49,14 @@ test("reveal includes both endpoints and every selection range", () => {
   assert.equal(revealed(state, block.from, block.to), false);
 });
 
-test("vertical navigation skips rendered blocks and Escape leaves final source", () => {
+test("vertical navigation enters revealing blocks and Escape leaves final source", () => {
   const doc = "before\n```\ncode\n```\nafter";
-  assert.equal(verticalBlock(sourceState(doc), 1), doc.indexOf("after"));
-  assert.equal(verticalBlock(sourceState(doc, doc.length), -1), 6);
+  // Obsidian reveals a code block's source when the caret arrows into it.
+  assert.equal(verticalBlock(sourceState(doc), 1), doc.indexOf("```"));
+  assert.equal(
+    verticalBlock(sourceState(doc, doc.length), -1),
+    doc.lastIndexOf("```"),
+  );
   assert.equal(
     escapeBlock(sourceState(doc, doc.indexOf("code"))),
     doc.indexOf("after"),
@@ -112,7 +117,7 @@ function livePreviewKernel(doc: string) {
 }
 
 test("kernel disposal and Source mode remove the engine; registry effects add and remove", async () => {
-  const kernel = livePreviewKernel("before\n\n---\n\nafter");
+  const kernel = livePreviewKernel("before\n\n<div>x</div>\n\nafter");
   const { root, fiber } = kernel;
   await root.settled();
   assert.equal(fiber.state, "active");
@@ -139,13 +144,16 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   await root.dispose();
 });
 
-test("an indented code block renders from the start of its line", async () => {
-  const kernel = livePreviewKernel("Text\n\n    indented code\n");
+test("an HTML block renders from the start of its line; code and rules stay source lines", async () => {
+  const kernel = livePreviewKernel(
+    "Text\n\n  <div>x</div>\n\n    indented code\n\n```js\nx\n```\n\n---\n",
+  );
   await kernel.root.settled();
-  const [block] = kernel.state().field(blockIndex);
-  assert.equal(block?.kind, "CodeBlock");
-  assert.equal(block?.from, 6);
-  assert.equal(block?.source, "    indented code");
+  const blocks = kernel.state().field(blockIndex);
+  assert.deepEqual(
+    blocks.map((block) => [block.kind, block.from, block.source]),
+    [["HTMLBlock", 6, "  <div>x</div>"]],
+  );
   await kernel.root.dispose();
 });
 
@@ -212,3 +220,83 @@ test("a renderer claiming the start of a node leaves its later children to match
     definitions,
   );
 });
+
+test("vertical motion enters a revealing block's source and still skips widget blocks", () => {
+  const doc = "before\n\n$$\nx\n$$\nafter";
+  const state = (anchor: number, editing: "reveal" | "widget") =>
+    EditorState.create({
+      doc,
+      selection: { anchor },
+      extensions: [
+        documentTree,
+        blockIndex,
+        blockRenderers.of({
+          kind: "math",
+          editing,
+          match: (node) => node.name === "MathBlock",
+          widget: () => {
+            throw new Error("Not mounted in a unit test");
+          },
+        }),
+      ],
+    });
+  assert.equal(verticalBlock(state(7, "reveal"), 1), doc.indexOf("$$"));
+  assert.equal(
+    verticalBlock(state(doc.length, "reveal"), -1),
+    doc.lastIndexOf("$$"),
+  );
+  assert.equal(verticalBlock(state(7, "widget"), 1), doc.indexOf("after"));
+});
+
+test("a revealed block with an editing preview marks its source and keeps the result below", () => {
+  const doc = "$$\nx\n$$\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: 3 },
+    extensions: [documentTree, blockIndex],
+  });
+  const block = {
+    from: 0,
+    to: doc.indexOf("\nafter"),
+    kind: "math",
+    source: "$$\nx\n$$",
+    renderer: {
+      kind: "math",
+      editing: "reveal" as const,
+      editingPreview: { sourceClass: "md-math-source" },
+      match: () => true,
+      widget: () => {
+        throw new Error("unused");
+      },
+    },
+  };
+  const ranges = editingDecorations(state, block, () => new TestWidget());
+  const lines = ranges.filter(
+    (range) => range.from === range.to && range.value.spec.class,
+  );
+  assert.deepEqual(
+    lines.map((range) => [range.from, range.value.spec.class]),
+    [
+      [0, "md-math-source"],
+      [3, "md-math-source"],
+      [5, "md-math-source"],
+    ],
+  );
+  const widget = ranges.at(-1)!;
+  assert.equal(widget.from, block.to);
+  assert.equal(widget.value.spec.block, true);
+  assert.equal(widget.value.spec.side, 1);
+  const renderer: BlockRenderer = { ...block.renderer };
+  delete renderer.editingPreview;
+  const plain = { ...block, renderer };
+  assert.deepEqual(
+    editingDecorations(state, plain, () => new TestWidget()),
+    [],
+  );
+});
+
+class TestWidget extends WidgetType {
+  override toDOM(): HTMLElement {
+    throw new Error("Not mounted in a unit test");
+  }
+}

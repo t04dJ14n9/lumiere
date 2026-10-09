@@ -35,9 +35,10 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `hit-test.ts`: cell and axis hit testing.
 - `commands.ts`: command IDs to table operations.
 - `state.ts`: active-table registry, source disclosure and selection/action facets.
-- `styles.ts`: grid, handles, selection and cell editor appearance.
 - `interactions.test.ts`: source projection, navigation, selection and menu unit tests.
 - `table.test.ts`: cell-source and operation unit tests.
+- `tables.css`: grid, handles, selection and cell editor appearance, bundled through
+  `src/webview/styles/index.css`.
 
 ## Services, events and settings
 

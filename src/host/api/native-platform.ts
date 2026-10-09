@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { ApiPlatform } from "./platform";
 import type { ConfigurationScope } from "./types";
 import { RpcError } from "../../shared/rpc/lifecycle";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 export function nativePlatform(): ApiPlatform {
   return {
     uri: (value) => vscode.Uri.parse(value, true),
@@ -9,7 +10,7 @@ export function nativePlatform(): ApiPlatform {
       await vscode.commands.executeCommand(
         "vscode.openWith",
         uri,
-        "markdownWorkbench.editor",
+        MARKDOWN_EDITOR.viewType,
         {
           viewColumn: options.viewColumn,
           preserveFocus: options.preserveFocus,
@@ -22,9 +23,9 @@ export function nativePlatform(): ApiPlatform {
         .getConfiguration("markdownWorkbench", resource)
         .get("plugins.external", {}),
     write: writeSetting,
-    async settings(resource) {
+    async settings(resource, query) {
       await vscode.commands.executeCommand("workbench.action.openSettings", {
-        query: "@ext:t04dj14n9.vscode-markdown-workbench plugins",
+        query: query ?? "@ext:t04dj14n9.vscode-markdown-workbench plugins",
         ...(resource ? { resource } : {}),
       });
     },

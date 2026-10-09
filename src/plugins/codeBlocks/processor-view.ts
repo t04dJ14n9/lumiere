@@ -4,19 +4,32 @@ import type {} from "../editor/api";
 import { CancelToken } from "../../shared/rpc/lifecycle";
 import { protocol } from "./protocol";
 import { ProcessorClient } from "./processor-client";
-export function registerProcessors(ctx: Context): void {
+/**
+ * Code processors (other extensions) render fences of the languages they
+ * accept. `blocks` registers the Live Preview widgets for those languages; it
+ * runs again whenever the set changes, so the block index is rebuilt.
+ */
+export function registerProcessors(
+  ctx: Context,
+  blocks: (accepts: (language: string) => boolean) => () => void,
+): void {
   const client = new ProcessorClient(ctx.rpc);
   const stops = new Set<() => void>();
   let live = true;
+  let unblock: (() => void) | undefined;
   const receive = (value: Parameters<ProcessorClient["configure"]>[0]) => {
     if (!live) {
       return;
     }
     client.configure(value);
+    unblock?.();
+    unblock = blocks((language) => client.accepts(language));
     ctx.emit("render/changed");
   };
   ctx.effect(() => () => {
     live = false;
+    unblock?.();
+    unblock = undefined;
     client.clear();
     for (const stop of stops) {
       stop();

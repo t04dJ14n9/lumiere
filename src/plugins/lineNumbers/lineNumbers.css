@@ -27,3 +27,42 @@
   padding-top: calc(0.4 * var(--h6-scale) * var(--text-size));
   line-height: calc(var(--h6-line-height) * var(--h6-scale) * var(--text-size));
 }
+/*
+ * Line numbers set like VS Code's gutter: the editor font and size, right
+ * aligned in a column at least five digits wide (the spacer marker), in the
+ * theme's line-number colours, and centred on each text line.
+ */
+#app .cm-lineNumbers .cm-gutterElement {
+  min-width: 0;
+  padding: 0 2px 0 0;
+  font-family: var(--code-font);
+  font-size: var(--text-size);
+  font-weight: var(--text-weight, normal);
+  font-feature-settings: var(--text-features, normal);
+  line-height: calc(var(--line-height, 1.5) * var(--text-size));
+  text-align: right;
+  white-space: nowrap;
+}
+#app .mw-editor.is-source-mode .cm-lineNumbers .cm-gutterElement {
+  line-height: var(--line-height, 1.5);
+}
+/* Without the folding area, keep VS Code's gap before the text. */
+#app .cm-gutter.cm-lineNumbers:last-child .cm-gutterElement {
+  padding-right: 26px;
+}
+#app .cm-lineNumbers .cm-activeLineGutter {
+  color: var(--vscode-editorLineNumber-activeForeground, var(--muted));
+  background: transparent;
+}
+/* A rendered block lists the numbers of all the source lines it covers. */
+#app .mw-line-number-stack {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+#app .mw-line-number-stack > div {
+  flex: 0 1 calc(var(--line-height, 1.5) * var(--text-size));
+  min-height: 0;
+  overflow: hidden;
+}

@@ -42,6 +42,7 @@ class EmbedPass {
         .catch((error) => {
           if (this.isActive) {
             node.classList.add("unresolved-embed");
+            node.textContent = missingEmbedText(target);
             node.title = String(error);
             pass.measure();
           }
@@ -215,8 +216,9 @@ class EmbedPass {
   ): Promise<void> {
     const { pass, render } = this.options;
     // apply admits note resources only after checking their text.
+    const text = resource.text!;
     const selection = embeddedNote(
-      resource.text!,
+      text,
       resource.source,
       target,
       pass.ancestry,
@@ -227,9 +229,9 @@ class EmbedPass {
     section.append(this.openButton(target, "↗", "open-embed"), content);
     node.replaceChildren(section);
     const nested = await render.into(content, selection.text, {
-      readOnly: pass.readOnly,
+      ...(pass.readOnly === undefined ? {} : { readOnly: pass.readOnly }),
       documentUri: resource.source,
-      documentText: resource.text,
+      documentText: text,
       ancestry: selection.ancestry,
       sourceLine: selection.sourceLine,
       taskLineCount: selection.text.split("\n").length,
@@ -243,4 +245,10 @@ class EmbedPass {
       await nested.dispose();
     }
   }
+}
+
+/** What an embed that can't be resolved says, as in Obsidian. */
+export function missingEmbedText(target: string): string {
+  const path = target.split("|")[0]!.trim();
+  return `"${path}" could not be found.`;
 }

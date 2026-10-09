@@ -1,3 +1,4 @@
+import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
@@ -24,6 +25,7 @@ function stalled(context: Context): string[] {
 function shell(uri: string): PanelShell {
   return {
     id: "panel",
+    column: undefined,
     document: fakeDocument({ uri }),
     cspSource: "test",
     trusted: false,
@@ -54,7 +56,7 @@ test("the real host wiring starts every window and panel plugin", async () => {
     let open: (panel: PanelShell) => void = () => {};
     const workbench = fakeWorkbench({
       config: () => ({ preset: "obsidian", mode: "source" }),
-      registerEditor: (callback) => {
+      registerEditor: (_provider, callback) => {
         open = callback;
         return () => {};
       },
@@ -92,8 +94,10 @@ test("the editor provider registers once, so an editor opened during activation 
   let disposed = false;
   const workbench = fakeWorkbench({
     config: () => ({ preset: "obsidian", mode: "source" }),
-    registerEditor: (open) => {
+    registerEditor: (provider, open) => {
       registrations++;
+      // The adapter learns everything about the editor from its provider.
+      assert.equal(provider, MARKDOWN_EDITOR);
       const opened = shell("memory:///vault/A.md");
       opened.dispose = () => {
         disposed = true;

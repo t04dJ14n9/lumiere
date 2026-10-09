@@ -36,6 +36,10 @@ export class TitleInput {
     this.input.setAttribute("aria-multiline", "false");
     this.input.enterKeyHint = "done";
     this.input.spellcheck = false;
+    // Out of the Tab order: a stray Tab or Shift+Tab must never land in the
+    // title, where the next keystrokes would rename the note. Click or
+    // ArrowUp from the first line still reach it, as in Obsidian.
+    this.input.tabIndex = -1;
     this.measure.className = "file-title-measure";
     this.measure.setAttribute("aria-hidden", "true");
     this.root.append(this.input, this.measure);
@@ -74,7 +78,11 @@ export class TitleInput {
     this.clearError();
     if (title && title !== this.confirmed) {
       this.isPending = true;
-      this.afterCommit = focusOnSuccess ? next : undefined;
+      if (focusOnSuccess && next !== undefined) {
+        this.afterCommit = next;
+      } else {
+        delete this.afterCommit;
+      }
       this.input.readOnly = true;
       this.input.setAttribute("aria-busy", "true");
       this.actions.rename(title, next);
@@ -89,7 +97,7 @@ export class TitleInput {
     this.input.readOnly = false;
     this.input.removeAttribute("aria-busy");
     const next = this.afterCommit;
-    this.afterCommit = undefined;
+    delete this.afterCommit;
     if (value.error) {
       this.reject(value.error);
       return;
@@ -181,7 +189,7 @@ export class TitleInput {
     } else if (event.key === "ArrowDown" && this.onLastLine()) {
       this.blurFocus = event.altKey ? "body" : "properties";
       this.actions.focus(this.blurFocus);
-      this.blurFocus = undefined;
+      delete this.blurFocus;
     } else {
       return;
     }

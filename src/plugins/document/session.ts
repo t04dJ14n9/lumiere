@@ -1,5 +1,6 @@
 import { saveDocument } from "./save";
 import { Authority } from "../../shared/document/authority";
+import { textDocument } from "../../shared/document/wire";
 import type { Prepared } from "../../shared/document/authority";
 import type { HostDocument, Workbench, TextEdit } from "../../shared/runtime";
 import type { Endpoint } from "../../shared/rpc/endpoint";
@@ -83,7 +84,7 @@ export class Session implements DocumentSession {
             params.group === undefined ? undefined : `${id}/${params.group}`,
           );
         } finally {
-          this.expected = undefined;
+          delete this.expected;
         }
         return true;
       });
@@ -96,11 +97,16 @@ export class Session implements DocumentSession {
     };
   }
   changed(): void {
+    // A change event with no new text (a dirty-state change; Cursor can send
+    // one before an edit lands) must not consume the expected panel edit.
+    if (textDocument(this.document.getText()).eq(this.authority.doc)) {
+      return;
+    }
     if (!this.expected && !this.historyAction) {
       this.groups.clear();
     }
     this.authority.record(this.document.getText(), this.expected);
-    this.expected = undefined;
+    delete this.expected;
     this.broadcast();
   }
   private broadcast(): void {

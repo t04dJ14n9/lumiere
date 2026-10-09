@@ -1,8 +1,8 @@
 import { KernelError } from "./errors";
-import { EventBus } from "./events";
 import { Fiber } from "./fiber";
 import { silentLogger, taggedLogger } from "./logger";
 import type { Logger } from "./logger";
+import { Runtime } from "./runtime";
 import { asPlugin, bindCaller } from "./services";
 import type { CallerBound, ServiceClass } from "./services";
 import type {
@@ -10,39 +10,21 @@ import type {
   EventFunction,
   Events,
   Plugin,
+  Resource,
   Services,
 } from "./types";
-type Provider = { ctx: Context; value: unknown };
-export class Runtime {
-  readonly events: EventBus;
-  readonly fibers = new Set<Fiber<unknown>>();
-  readonly providers = new Map<keyof Services, Provider[]>();
-  readonly jobs = new Set<Promise<unknown>>();
-  constructor(
-    readonly logger: Logger,
-    readonly replaceable: ReadonlySet<keyof Services>,
-    readonly rank: (owner: string) => number = () => 0,
-  ) {
-    this.events = new EventBus(rank);
-  }
-  value(name: keyof Services): unknown {
-    return this.providers.get(name)?.at(-1)?.value;
-  }
-  changed(): void {
-    for (const fiber of this.fibers) {
-      fiber.reconcile();
-    }
-  }
-  track(job: Promise<unknown>): void {
-    this.jobs.add(job);
-    void job.finally(() => this.jobs.delete(job));
-  }
-  async settled(): Promise<void> {
-    while (this.jobs.size) {
-      await Promise.all([...this.jobs]);
-    }
-  }
-}
+export { Runtime } from "./runtime";
+
+/** One thing a context holds: a resource or (with `fiber`) a child plugin. */
+type Held = { release: () => Promise<void>; fiber?: Fiber<unknown> };
+
+/**
+ * A plugin's view of the kernel. Invariants (kernel/README.md, "Lifecycle"):
+ * activation is a transaction (services publish and held children start on
+ * commit; a failed apply releases everything); teardown mirrors it (withdraw
+ * services and await the consumers that stop, then release LIFO); a disposed
+ * context refuses late work.
+ */
 // Declaration merging exposes typed injected services as properties.
 // The Proxy below implements each property from the open Services contract.
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging -- typed service properties (DESIGN §5.2)
@@ -50,20 +32,18 @@ export interface Context extends Services {}
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging -- the class half of the merge above
 export class Context {
   readonly logger: Logger;
-  readonly children: Fiber<unknown>[] = [];
-  private readonly effects: Disposer[] = [];
+  /** Everything held, in acquisition order; released in reverse. */
+  private readonly held: Held[] = [];
   private readonly offered = new Map<keyof Services, unknown>();
   private readonly bound = new Map<unknown, unknown>();
   private live = true;
+  private disposing?: Promise<void>;
   private published = false;
   constructor(
     readonly runtime = new Runtime(silentLogger, new Set()),
     readonly fiber?: Fiber<unknown>,
   ) {
-    this.logger = taggedLogger(
-      runtime.logger,
-      fiber?.definition.name ?? "root",
-    );
+    this.logger = taggedLogger(runtime.logger, this.owner);
     return new Proxy(this, {
       get: (target, key, receiver) => {
         // Promise resolution probes this property on returned contexts.
@@ -77,6 +57,14 @@ export class Context {
       },
     });
   }
+  /** The plugin this context belongs to, as the ledger and logs name it. */
+  get owner(): string {
+    return this.fiber?.definition.name ?? "root";
+  }
+  /** Child plugins still held, oldest first. */
+  get children(): readonly Fiber<unknown>[] {
+    return this.held.flatMap((item) => (item.fiber ? [item.fiber] : []));
+  }
   // Service reads need the actual consumer proxy for delegated ownership; cache
   // by provider identity so replacement never reuses the previous provider's facade.
   private readService(key: string, receiver: Context): unknown {
@@ -88,7 +76,7 @@ export class Context {
     ) {
       throw new KernelError(
         "UndeclaredService",
-        `${this.fiber?.definition.name ?? "root"} did not inject ${key}`,
+        `${this.owner} did not inject ${key}`,
       );
     }
     const value = this.runtime.value(name);
@@ -107,13 +95,8 @@ export class Context {
       rank?: (owner: string) => number;
     } = {},
   ): Context {
-    return new Context(
-      new Runtime(
-        options.logger ?? silentLogger,
-        new Set(options.replaceable),
-        options.rank,
-      ),
-    );
+    const { logger = silentLogger, replaceable, rank } = options;
+    return new Context(new Runtime(logger, new Set(replaceable), rank));
   }
   assertLive(): void {
     if (!this.live) {
@@ -124,16 +107,13 @@ export class Context {
   plugin<C>(definition: ServiceClass<C>, config?: C): Fiber<C>;
   plugin<C>(definition: Plugin<C> | ServiceClass<C>, config?: C): Fiber<C> {
     this.assertLive();
-    // Forget children disposed on their own (a feature turned off), so a
-    // long-lived context does not keep every fiber it ever started.
-    for (let i = this.children.length - 1; i >= 0; i--) {
-      if (this.children[i]!.state === "disposed") {
-        this.children.splice(i, 1);
-      }
-    }
-    const fiber = new Fiber(this.runtime, asPlugin(definition), config as C);
-    this.children.push(fiber as Fiber<unknown>);
-    fiber.reconcile();
+    const fiber = new Fiber(this.runtime, asPlugin(definition), config as C, {
+      // Started by a plugin that has not committed: wait for the commit.
+      heldUntilCommit: Boolean(this.fiber) && !this.published,
+    });
+    // A child disposed on its own (a feature turned off) leaves the list.
+    fiber.detach = this.hold("fiber", () => fiber.dispose(), fiber);
+    void fiber.reconcile();
     return fiber;
   }
   provide<K extends keyof Services>(name: K, value: Services[K]): void {
@@ -149,6 +129,7 @@ export class Context {
       this.publish();
     }
   }
+  /** Commit: publish the offered services, then start the held children. */
   publish(): void {
     this.assertLive();
     for (const name of this.offered.keys()) {
@@ -164,46 +145,82 @@ export class Context {
       const stack = this.runtime.providers.get(name) ?? [];
       if (!stack.some((p) => p.ctx === this)) {
         stack.push({ ctx: this, value });
+        this.runtime.ledger.add(this.owner, "service");
       }
       this.runtime.providers.set(name, stack);
     }
     this.published = true;
-    this.runtime.changed();
+    for (const child of this.children) {
+      child.startAfterCommit();
+    }
+    void this.runtime.changed();
   }
-  effect(setup: () => Disposer | { dispose(): unknown }): Disposer {
+  /** Run `setup` now and undo it when this context stops. */
+  effect(setup: () => Disposer | Resource, kind: string = "effect"): Disposer {
     this.assertLive();
-    const result = setup();
-    let active = true;
-    const dispose = async () => {
-      if (!active) {
-        return;
+    return this.acquire(kind, setup());
+  }
+  /** Hold a resource until this context stops (`kind` names it in the ledger). */
+  acquire(kind: string, resource: Disposer | Resource): Disposer {
+    const undo = () =>
+      typeof resource === "function" ? resource() : resource.dispose();
+    if (!this.live) {
+      // Undone at once; a failing undo is logged, never left unhandled.
+      const failed = (error: unknown) =>
+        this.logger.error("Disposal failed", error);
+      try {
+        void Promise.resolve(undo()).catch(failed);
+      } catch (error) {
+        failed(error);
       }
-      active = false;
-      // An effect undone early leaves the list; see dispose() for the rest.
-      const index = this.effects.indexOf(dispose);
-      if (index >= 0) {
-        this.effects.splice(index, 1);
-      }
-      if (typeof result === "function") {
-        await result();
-      } else {
-        await result.dispose();
+      throw new KernelError("Disposed", `${this.owner} acquired a ${kind}`);
+    }
+    return this.hold(kind, undo);
+  }
+  private hold(kind: string, undo: () => unknown, fiber?: Fiber<unknown>) {
+    const entry: Held = { release: async () => {}, ...(fiber && { fiber }) };
+    let releasing: Promise<void> | undefined;
+    // Released once, early or at dispose (a second call joins the first). It
+    // stays in the ledger until `undo` settles; a failed undo leaves a
+    // `failed <kind>` entry, so the ledger never reports a failed teardown
+    // as clean.
+    // `releasing` is set before `undo` runs: a fiber's undo re-enters here.
+    const run = async () => {
+      try {
+        await undo();
+      } catch (error) {
+        this.runtime.ledger.add(this.owner, `failed ${kind}`);
+        throw error;
+      } finally {
+        this.runtime.ledger.remove(this.owner, kind);
       }
     };
-    this.effects.push(dispose);
-    return dispose;
+    entry.release = () => {
+      if (!releasing) {
+        let adopt!: (work: Promise<void>) => void;
+        releasing = new Promise<void>((resolve) => (adopt = resolve));
+        this.held.splice(this.held.indexOf(entry), 1);
+        adopt(run());
+      }
+      return releasing;
+    };
+    this.held.push(entry);
+    this.runtime.ledger.add(this.owner, kind);
+    return entry.release;
   }
   on<K extends keyof Events>(
     name: K,
     listener: EventFunction<K>,
     options?: { prepend?: boolean },
   ): Disposer {
-    return this.effect(() =>
-      this.runtime.events.on(name, listener, {
-        logger: this.logger,
-        prepend: options?.prepend,
-        owner: this.fiber?.definition.name ?? "root",
-      }),
+    return this.effect(
+      () =>
+        this.runtime.events.on(name, listener, {
+          ...options,
+          logger: this.logger,
+          owner: this.owner,
+        }),
+      "listener",
     );
   }
   emit<K extends keyof Events>(
@@ -248,32 +265,39 @@ export class Context {
   settled(): Promise<void> {
     return this.runtime.settled();
   }
-  async dispose(): Promise<void> {
-    if (!this.live) {
-      return;
-    }
+  /** Stop; every caller, first or concurrent, waits for the same teardown. */
+  dispose(): Promise<void> {
+    return (this.disposing ??= this.teardown());
+  }
+  private async teardown(): Promise<void> {
     this.live = false;
-    for (const dispose of this.effects.splice(0).reverse()) {
-      try {
-        await dispose();
-      } catch (error) {
+    await this.withdrawServices();
+    for (const item of this.held.slice().reverse()) {
+      await item.release().catch((error: unknown) => {
         this.logger.error("Effect disposal failed", error);
-      }
+      });
     }
-    for (const child of [...this.children].reverse()) {
-      await child.dispose();
-    }
+    this.bound.clear();
+  }
+  // Consumers stop (and finish stopping, including those already stopping
+  // for another reason) while the resources backing these services still
+  // exist; only then are the resources released.
+  private async withdrawServices(): Promise<void> {
+    const withdrawn: (keyof Services)[] = [];
     for (const name of this.offered.keys()) {
-      const stack = this.runtime.providers.get(name);
-      if (stack) {
+      const stack = this.runtime.providers.get(name) ?? [];
+      if (stack.some((p) => p.ctx === this)) {
         this.runtime.providers.set(
           name,
           stack.filter((p) => p.ctx !== this),
         );
+        this.runtime.ledger.remove(this.owner, "service");
+        withdrawn.push(name);
       }
     }
-    this.bound.clear();
-    this.runtime.changed();
+    if (withdrawn.length) {
+      await this.runtime.changed(withdrawn, this.fiber);
+    }
   }
 }
 

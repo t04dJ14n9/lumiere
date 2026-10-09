@@ -1,4 +1,5 @@
 import { registerEditorActions } from "./actions-host";
+import { registerMarkdownAssociation } from "./associations";
 import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
@@ -9,6 +10,7 @@ import type {} from "../vault/api";
 import type { EditorPanel, Editors } from "./api";
 import { createPanel } from "./panel";
 import { protocol } from "./protocol";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 interface EditorHostConfig {
   features?: readonly Manifest[];
   configure: (context: Context, panel: PanelShell) => void;
@@ -22,8 +24,9 @@ export const editorHost: Plugin<EditorHostConfig> = {
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
     provideEditorServices(ctx, panels, active);
+    registerMarkdownAssociation(ctx);
     ctx.effect(() =>
-      ctx.workbench.registerEditor((shell) => {
+      ctx.workbench.registerEditor(MARKDOWN_EDITOR, (shell) => {
         const panel = createPanel(shell, ctx.documents, ctx.workbench, {
           onClose: () => {
             panels.delete(shell.id);
@@ -38,6 +41,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
             config.configure(context, panel);
           },
           rank: ctx.runtime.rank,
+          logger: ctx.logger,
         });
         panels.set(panel.id, panel);
         panel.rpc.on(protocol, "pluginsChanged", () =>
@@ -137,8 +141,10 @@ function registerSelectionContext(
   active: () => EditorPanel | undefined,
 ): void {
   const selections = new Map<string, boolean>();
+  // Captured while live: the cleanup below runs after the context is disposed.
+  const workbench = ctx.workbench;
   const refresh = () => {
-    void ctx.workbench.execute(
+    void workbench.execute(
       "setContext",
       "markdownWorkbench.hasSelection",
       selections.get(active()?.id ?? "") ?? false,
@@ -153,8 +159,8 @@ function registerSelectionContext(
     refresh();
   });
   ctx.on("editor/activeChanged", refresh);
-  ctx.effect(() => () => {
-    void ctx.workbench.execute(
+  ctx.effect(() => async () => {
+    await workbench.execute(
       "setContext",
       "markdownWorkbench.hasSelection",
       false,

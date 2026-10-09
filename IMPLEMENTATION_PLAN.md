@@ -2547,3 +2547,97 @@ and installed in an isolated /tmp profile. No lint exceptions or smoke expansion
 Ledger remains **91/22/2/333/0** (448 rows). Phase 7 documentation/completion and
 Phase 8 remain, along with the audit's logging and management-command gaps.
 Manual acceptance is unrun.
+
+### Phase 7 (completed) — API documentation and sample external plugin, 2026-10-09
+
+Closed the audit's missing requirements first: §5.7 logging (one
+`Markdown Workbench` log output channel, webview records forwarded over the
+editor protocol, `markdownWorkbench.debug.logging` gates debug lines on both
+sides), §6.5 `Manage Plugins` and `Show Plugin Status` (failed and pending
+plugins listed first; selecting one opens its settings), and §25.2 `Use
+Markdown Workbench for Markdown in This Workspace` (writes the workspace
+`workbench.editorAssociations` entry, keeps other associations). The Linux
+browser redo smoke now presses `ControlOrMeta+Shift+Z`; it failed on main for
+the same reason. Each requirement has unit tests.
+
+`API.md` documents every v1 member, the external-plugin rules, markers,
+actions, code block processors, the error table and a complete example.
+`test/fixtures/sample-plugin` is that example as a real extension: it sets
+`TODO` markers with a describe action, claims `ticket:` links over
+`links/open`, renders `tickets` code blocks and contributes a command; `pnpm
+sample` builds it. `sample-plugin.test.ts` runs it against the real facade;
+`declarations.test.ts` emits `dist/api` and type-checks a consumer against it.
+
+Fix: the render sanitizer dropped `obsidian:` and other custom-scheme links;
+`sanitizer-options.ts` now allows unknown protocols (the link plugin still
+decides what opens) with its own unit test.
+
+Checks: `pnpm check` **472/472**; browser smoke **14/14**; native smoke **1/1**.
+No lint exceptions; eslint now ignores build output and `.vscode-test`.
+Ledger unchanged **91/22/2/333/0**. Phase 8 remains.
+
+### Phase 8 — Packaging, documentation and hand-over, 2026-10-09
+
+`pnpm package` builds a 3.2 MB VSIX (84 files) from an allowlist
+`.vscodeignore` and checks `THIRD_PARTY_NOTICES.md`, which
+`scripts/third-party-notices.mjs` generates from the packages esbuild
+actually bundled. The native smoke ran once against that VSIX
+(`MARKDOWN_WORKBENCH_TEST_VSIX`, isolated /tmp profile, own xvfb display):
+**1/1**.
+
+README, CAPABILITIES.md (every plugin, default and difference from
+Obsidian) and CHANGELOG.md are new or rewritten; API.md and the sample
+plugin came with Phase 7. `docs/MANUAL_TEST_PLAN.md` is rewritten by plugin
+against the fixture vault, with no phase status sections, and starts with
+installing the VSIX and the sample plugin into an isolated profile. The
+generated command and setting inventory is kept. DESIGN §13 and §19,
+PARITY.md and the plugin READMEs were corrected (Backlinks/Outgoing Links
+off by default, CSP `connect-src`, CSS files instead of removed style
+objects).
+
+Fixes from a side-by-side with Obsidian on the fixture vault, each with a
+unit test: setext underlines stay visible, nested quotes draw a bar per
+level, checked tasks are muted and struck through in Live Preview (any
+status but a space, with `data-task` for snippets), and rendered blocks get
+line numbers. The fixture's claim that comments hide in Live Preview was
+wrong: Obsidian shows them faint, as the workbench does.
+
+Checks: `pnpm check` **483/483**; browser smoke **14/14**; native smoke
+**1/1** against the packaged VSIX. Ledger **91/22/2/333/0**, no `todo`
+rows (`scripts/test-ledger.mjs` needs the unavailable source checkout, so
+the ledger was not regenerated). Manual acceptance (Phase 9) is unrun.
+
+### Review fixes, round 1 — 2026-10-09
+
+From the external review of PR #1 (`/workspace/plans/chatgpt-pr-review.md`,
+findings A1–C4). Markdown Workbench and Agent PDF Viewer stay separate
+extensions (owner decision), so merge-only items were done only where they
+improve this extension on its own.
+
+- Kernel: plugin activation is transactional (a failed `apply` releases
+  everything it acquired, in reverse order) and teardown mirrors activation
+  (services withdrawn and consumers stopped first, then effects and
+  children LIFO). `ResourceLedger` records every held resource; invariants
+  in `src/kernel/README.md`.
+- Plugin precedence (`plugin-order.ts`) is separate from the dependency
+  graph (`plugin-graph.ts`, derived from each plugin's `inject`).
+- Every host plugin is started and stopped against tracking fakes and must
+  leave nothing registered (`test/unit/features/leave-no-trace.test.ts`).
+- Manifests declare capabilities; names are plugin `agentBridge`, service
+  `AgentHandoff`, command `copyLinkForAgent` (setting
+  `markdownWorkbench.plugins.agentBridge.enabled`, renamed with no
+  migration because nothing was published).
+- The handoff text is specified in `docs/agent-handoff-format.md`, kept
+  byte-identical with Agent PDF Viewer and pinned by a test.
+- RPC coalesces state notifications into versioned batches; Live Preview
+  re-indexes and redecorates only invalidated blocks
+  (`RenderInvalidation`), checked against full rebuilds by a randomised
+  test.
+- The editor is described by an `EditorProvider`; the VS Code panel code
+  (`src/host/editor-panels.ts`) is generic and split from `workbench.ts`.
+- ESLint rejects floating and misused promises in `src`.
+
+Not done here: an editor-session runtime for several editor kinds, the
+PDF subtree import and merged-bundle splitting (merge-only; the webview
+already lazy-loads Mermaid, MathJax and code highlighting), and
+`exactOptionalPropertyTypes` (129 errors in about 60 files, deferred).

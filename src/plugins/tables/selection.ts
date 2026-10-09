@@ -86,7 +86,7 @@ export class TableSelection {
 
   selectAxis(axis: Axis, index: number, focus = true): void {
     this.activate(axisRange(this.grid.model, axis, index));
-    this.gridCursor = undefined;
+    delete this.gridCursor;
     this.actions.setHandle(this.range!.anchor);
     this.highlight();
     if (focus) {
@@ -118,7 +118,7 @@ export class TableSelection {
       event.preventDefault();
       return;
     }
-    this.range = undefined;
+    delete this.range;
     const offset = insideCellEditor
       ? undefined
       : this.positionInText(

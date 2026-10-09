@@ -2,6 +2,7 @@ import type { Infer } from "../kernel";
 import type { featureSettings } from "./features";
 import type { Disposer } from "../kernel";
 import type { Endpoint, Transport } from "./rpc/endpoint";
+import type { EditorProvider } from "./editor-provider";
 export interface HostDocument {
   readonly id: string;
   readonly uri: string;
@@ -18,7 +19,8 @@ export interface TextEdit {
   insert: string;
 }
 export interface PanelPort {
-  readonly column?: number;
+  /** VS Code's view column; undefined while the panel is in no editor group. */
+  readonly column: number | undefined;
   readonly id: string;
   readonly document: HostDocument;
   readonly rpc: Endpoint;
@@ -47,10 +49,28 @@ export interface Workbench {
   execute(id: string, ...args: unknown[]): Promise<unknown>;
   clipboard: { read(): Promise<string>; write(text: string): Promise<void> };
   error(message: string): void;
+  inform?(message: string): void;
+  /** What Copy Link for Agent can reach: registered commands and VS Code's chat state. */
+  agentEnvironment?(): Promise<AgentEnvironment>;
+  /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */
+  writeScratchFile?(name: string, text: string): Promise<string>;
   // Editors and settings.
-  registerEditor(open: (panel: PanelShell) => void): Disposer;
+  /** Register an editor (see `EditorProvider`); its panels go to `open`. */
+  registerEditor(
+    provider: EditorProvider,
+    open: (panel: PanelShell) => void,
+  ): Disposer;
   onConfiguration?(listener: () => void): Disposer;
+  /**
+   * The workspace's own `workbench.editorAssociations`, not the user's or a
+   * folder's. `read()` is undefined when no workspace is open.
+   */
+  editorAssociations?: {
+    read(): unknown;
+    write(associations: Readonly<Record<string, string>>): Promise<void>;
+  };
   config(document: HostDocument): {
+    debugLogging?: boolean;
     features?: Infer<typeof featureSettings>;
     editor?: {
       useTabs: boolean;
@@ -59,6 +79,14 @@ export interface Workbench {
       strictLineBreaks?: boolean;
       rightToLeft?: boolean;
       defaultMode?: "livePreview" | "source";
+      /** VS Code's editor font settings as they apply to Markdown files. */
+      fontFamily?: string;
+      fontSize?: number;
+      fontWeight?: string;
+      lineHeight?: number;
+      letterSpacing?: number;
+      fontLigatures?: boolean | string;
+      fontVariations?: boolean | string;
     };
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
@@ -85,7 +113,8 @@ declare module "../kernel/types" {
 }
 /** One editor panel as the VS Code adapter hands it to the editor host. */
 export interface PanelShell {
-  readonly column?: number;
+  /** VS Code's view column; undefined while the panel is in no editor group. */
+  readonly column: number | undefined;
   readonly id: string;
   readonly document: HostDocument;
   readonly transport: Transport;
@@ -151,7 +180,7 @@ export interface TreeSource {
 }
 export interface TreeHandle {
   refresh(): void;
-  /** Text shown above the tree, such as "No note is open". */
+  /** Text shown above the tree, such as "No note is open"; undefined removes it. */
   setMessage(message: string | undefined): void;
   reveal(node: TreeNode): void;
   readonly visible: boolean;
@@ -212,4 +241,26 @@ export interface SourceEdit {
   from: number;
   to: number;
   insert: string;
+}
+/** The `markdownWorkbench.copyLinkForAgent.target` setting. */
+export type CopyLinkTarget =
+  | "auto"
+  | "cursor"
+  | "chat"
+  | "claudeCode"
+  | "codex"
+  | "clipboard";
+
+/** What the editor offers Copy Link for Agent. */
+export interface AgentEnvironment {
+  /** Where Copy Link for Agent sends the passage: `auto` or one agent. */
+  target: CopyLinkTarget;
+  /** Installed agent extensions (Claude Code, Codex), active or not. */
+  agentExtensions: ReadonlySet<string>;
+  /** Every registered command. */
+  commands: ReadonlySet<string>;
+  /** Whether an installed extension (e.g. Copilot Chat) answers in VS Code's chat. */
+  hasChatParticipant: boolean;
+  /** VS Code's `chat.disableAIFeatures`: the chat is hidden. */
+  chatDisabled: boolean;
 }
