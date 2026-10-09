@@ -169,6 +169,9 @@ export class PdfPanel implements vscode.Disposable {
       case 'askAgent':
         await this.askAgent();
         break;
+      case 'toggleOutline':
+        await vscode.commands.executeCommand('vscodeEmbedPdf.toggleOutline');
+        break;
       case 'openExternal':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));
         break;

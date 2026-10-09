@@ -82,7 +82,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   return (
     <div className={`viewer tool-${tool} toolbar-${toolbar.mode}`}>
       <CopyToClipboard />
-      {toolbar.mode === 'slim' && <Toolbar navigation={navigation} onSearch={openSearch} />}
+      {toolbar.mode === 'slim' && <Toolbar navigation={navigation} tool={tool} run={runAction} />}
       <div className="document" ref={documentArea}>
         {searching && <SearchBar navigation={navigation} focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">

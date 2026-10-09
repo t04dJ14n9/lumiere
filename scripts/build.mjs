@@ -41,6 +41,9 @@ const webview = {
   format: 'iife',
   target: 'chrome120',
   jsx: 'automatic',
+  // The codicon font, next to viewer.css, which refers to it relatively.
+  loader: { '.ttf': 'file' },
+  assetNames: '[name]',
   // EmbedPDF's engine loads its worker from an inline blob and its WASM from
   // the URL the host provides, so neither needs special handling here.
   define: { 'process.env.NODE_ENV': JSON.stringify(production ? 'production' : 'development') },

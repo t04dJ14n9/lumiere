@@ -1,42 +1,70 @@
-/* The toolbar above the pages and the search bar. */
+/* The slim bar along the top of the viewer, and the search bar. */
 .toolbar {
   display: flex;
-  /* In a narrow editor the controls wrap onto a second row, never off-screen. */
+  /* In a narrow editor the groups wrap onto a second row, never off-screen. */
   flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c);
-  background: var(--vscode-sideBar-background, #252526);
+  min-height: 30px;
+  box-sizing: border-box;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder, var(--vscode-panel-border, #2b2b2b));
+  color: var(--vscode-foreground, #ccc);
+  background: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background, #1f1f1f));
+  font-size: 12px;
 }
 
-.toolbar button,
+.toolbar-group {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 1px;
+}
+
+.icon-button,
 .search-bar button {
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 3px;
   border: 0;
-  border-radius: 4px;
-  color: var(--vscode-foreground, #ccc);
+  border-radius: 5px;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground, #ccc));
   background: transparent;
   cursor: pointer;
 }
 
-.toolbar button:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
 .search-bar button:hover {
   background: var(--vscode-toolbar-hoverBackground, #5a5d5e50);
 }
 
-.toolbar button:disabled {
+/* A toggle that is on, as VS Code shows its own (Match Case, …). */
+.icon-button.pressed {
+  color: var(--vscode-inputOption-activeForeground, inherit);
+  background: var(--vscode-inputOption-activeBackground, #2489db82);
+  outline: 1px solid var(--vscode-inputOption-activeBorder, transparent);
+  outline-offset: -1px;
+}
+
+.icon-button:focus-visible,
+.search-bar button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+  outline-offset: -1px;
+}
+
+.icon-button:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
 .toolbar .separator {
+  flex: none;
   width: 1px;
-  height: 18px;
-  margin: 0 6px;
-  background: var(--vscode-panel-border, #3c3c3c);
+  height: 16px;
+  margin: 0 4px;
+  background: var(--vscode-widget-border, var(--vscode-panel-border, #3c3c3c));
 }
 
 .toolbar .spacer {
@@ -56,8 +84,8 @@
 
 .number-field input {
   box-sizing: border-box;
-  width: 44px;
-  height: 24px;
+  width: 40px;
+  height: 22px;
   padding: 0 4px;
   border: 1px solid var(--vscode-input-border, transparent);
   border-radius: 2px;

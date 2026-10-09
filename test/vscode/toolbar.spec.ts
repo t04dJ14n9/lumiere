@@ -177,6 +177,14 @@ test('the toolbar setting moves the controls into the viewer and back, live', as
     await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 12');
     await expect(statusBarEntry(page, PAGE_STATUS)).toHaveCount(0);
     await expect(page.locator('.editor-actions').getByRole('button', { name: 'Zoom In' })).toHaveCount(0);
+    // The bar's outline button shows and hides the PDF Outline view.
+    const outline = page.locator('.pane-header', { hasText: 'PDF Outline' });
+    await expect(outline).toBeVisible();
+    const toggle = viewer.getByRole('button', { name: 'Toggle outline' });
+    await toggle.click();
+    await expect(outline).toBeHidden();
+    await toggle.click();
+    await expect(outline).toBeVisible();
 
     await setToolbarMode(page, /None/u);
     await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toHaveCount(0);

@@ -9,6 +9,7 @@
  *    │                                    region, again with its text and image
  *    │  ◄──────────── copyForAgent        the viewer's Copy for Agent button
  *    │  ◄──────────── askAgent            the viewer's Ask Agent button
+ *    │  ◄──────────── toggleOutline       the slim bar's outline button
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
  *    │  ◄──────────── view { view }       page and zoom, after each change
  *    │  goTo { location } ──────►         open a page (and box)
@@ -40,6 +41,8 @@ export type ViewerMessage =
   | { type: 'selection'; selection: PdfSelection | null; image?: string }
   | { type: 'copyForAgent' }
   | { type: 'askAgent' }
+  /** The viewer's outline button: show or hide the PDF Outline view. */
+  | { type: 'toggleOutline' }
   | { type: 'openExternal'; url: string }
   | { type: 'error'; message: string }
   | { type: 'view'; view: ViewState };
@@ -67,6 +70,7 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     case 'ready':
     case 'copyForAgent':
     case 'askAgent':
+    case 'toggleOutline':
       return { type: message.type };
     case 'selection': {
       const selection = parseSelection(message.selection) ?? null;
