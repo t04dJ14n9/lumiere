@@ -92,16 +92,21 @@ function editableList(value: unknown, key: string): string {
     .map((item, index) => {
       const raw = propertyInputText(item);
       const text = key.toLowerCase() === "tags" ? raw.replace(/^#/, "") : raw;
-      const label =
-        key.toLowerCase() === "tags" && validTag(text)
-          ? `<button type="button" tabindex="-1" class="md-tag"${attr("data-tag", text)}${attr("aria-label", `Search tag #${text}`)}>${escape(text)}</button>`
-          : /^\[\[[^\n]+\]\]$/.test(text)
-            ? `<span class="metadata-link">${renderInline(text)}</span>`
-            : `<span>${escape(text)}</span>`;
+      const label = pillLabel(text, key.toLowerCase() === "tags");
       return `<span class="property-chip multi-select-pill" tabindex="-1" data-property-chip="${index}"><span class="multi-select-pill-content">${label}</span><button type="button" tabindex="-1" class="multi-select-pill-remove-button" data-property-remove="${index}"${attr("aria-label", `Remove ${text} from ${key}`)}>×</button></span>`;
     })
     .join("");
   return `<div class="property-list multi-select-container"${attr("data-property-list", key)}>${chips}<div class="multi-select-input" contenteditable="true" role="textbox" tabindex="-1" data-property-list-input${attr("aria-label", `Add item to ${key}`)}${values.length ? "" : ' data-placeholder="Empty"'}></div></div>`;
+}
+
+function pillLabel(text: string, isTags: boolean): string {
+  if (isTags && validTag(text)) {
+    return `<button type="button" tabindex="-1" class="md-tag"${attr("data-tag", text)}${attr("aria-label", `Search tag #${text}`)}>${escape(text)}</button>`;
+  }
+  if (/^\[\[[^\n]+\]\]$/.test(text)) {
+    return `<span class="metadata-link">${renderInline(text)}</span>`;
+  }
+  return `<span>${escape(text)}</span>`;
 }
 
 function asList(value: unknown): unknown[] {
