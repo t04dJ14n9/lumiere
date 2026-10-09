@@ -148,6 +148,12 @@
             "Only copy the selection."
           ],
           "markdownDescription": "Where **Ask Agent** sends a PDF selection. It is always copied too."
+        },
+        "vscodeEmbedPdf.regionImageCache.maxSizeMB": {
+          "type": "number",
+          "default": 50,
+          "minimum": 1,
+          "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. When a new snapshot takes them past this, the least recently used ones are deleted (the new one is always kept). Values below 1 count as 1."
         }
       }
     }
