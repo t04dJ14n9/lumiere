@@ -17,6 +17,8 @@ test("editor settings have application defaults and reconfigure without changing
     defaultMode: "livePreview",
     // Off by default: text fills the editor like VS Code's text editor.
     readableLineLength: false,
+    // Auto: reclaims Cursor's text-editor switch only when running in Cursor.
+    reclaimTextEditor: "auto",
     strictLineBreaks: false,
     rightToLeft: false,
     useTabs: true,

@@ -8,6 +8,7 @@ import { createWorkbench } from "./workbench";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
+import { registerReclaim } from "./reclaim";
 export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkbenchApi> {
@@ -19,7 +20,7 @@ export async function activate(
   const channel = window.createOutputChannel("Markdown Workbench", {
     log: true,
   });
-  context.subscriptions.push(channel);
+  context.subscriptions.push(channel, registerReclaim());
   const logger = outputLogger(channel, () =>
     workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
   );

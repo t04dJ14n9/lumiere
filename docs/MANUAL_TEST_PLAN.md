@@ -622,6 +622,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.editor.reclaimTextEditor` | `"auto"` | auto/on/off; in Cursor click **Markdown** in the Preview \| Markdown switch and confirm the note returns to Markdown Workbench; **Open as Text** and a second switch within 10 s keep the text editor; set `off` and confirm the text editor stays. |
 | `markdownWorkbench.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

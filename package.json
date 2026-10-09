@@ -1045,6 +1045,15 @@
           "default": false,
           "scope": "resource"
         },
+        "markdownWorkbench.editor.reclaimTextEditor": {
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "default": "auto",
+          "scope": "resource"
+        },
         "markdownWorkbench.editor.strictLineBreaks": {
           "type": "boolean",
           "default": false,

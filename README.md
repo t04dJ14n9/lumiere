@@ -38,6 +38,26 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
 - `markdownWorkbench.debug.logging` writes debug lines to the **Markdown
   Workbench** output channel.
 
+### In Cursor
+
+Cursor opens `*.md` in its own **Markdown Editor**, with a **Preview |
+Markdown** switch in the editor's top-right corner. **Use Markdown Workbench
+for Markdown in This Workspace** writes a workspace editor association, which
+takes precedence over Cursor's editor for notes opened afterwards; reopen
+tabs that were already open.
+
+Cursor's **Markdown** button opens the note in the plain text editor and
+remembers that per file. `markdownWorkbench.editor.reclaimTextEditor`
+(`auto`, on only in Cursor) reopens such a note in Markdown Workbench and
+closes the text tab, for notes the workspace association routes here.
+It leaves diffs, Git views, untitled files and anything opened with **Open
+as Text** alone. Asking for the text editor a second time within 10 seconds
+keeps it, which is how **Reopen Editor With… › Text Editor** still works.
+Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
+
+The native smoke test runs against Cursor with
+`VSCODE_EXECUTABLE=<cursor install>/cursor pnpm test:vscode`.
+
 [CAPABILITIES.md](CAPABILITIES.md) lists every plugin, its default and how
 it differs from Obsidian. The extension's commands are under **Markdown
 Workbench** in the command palette.

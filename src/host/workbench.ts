@@ -3,6 +3,7 @@ import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
 import { panelIsActive } from "./active-panel";
 import * as vscode from "vscode";
+import { textBypass } from "./reclaim";
 import { randomUUID, createHash } from "node:crypto";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
@@ -142,6 +143,10 @@ function commandOperations(): Pick<
     },
     async execute(id, ...args) {
       if (id === "vscode.openWith" && typeof args[0] === "string") {
+        if (args[1] === "default") {
+          // Opened as text on purpose: the reclaim must not undo it.
+          textBypass.allow(args[0]);
+        }
         args[0] = vscode.Uri.parse(args[0]);
       }
       return vscode.commands.executeCommand(id, ...args);

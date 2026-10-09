@@ -73,6 +73,12 @@ other entries. The editor is otherwise only an option for Markdown (DESIGN
 §25.2), so it does not take over every README; this makes a workspace behave
 like an Obsidian vault, where notes always open in the editor.
 
+`editor.reclaimTextEditor` (`auto`/`on`/`off`, auto meaning on in Cursor
+only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
+here that shows up in the plain text editor, as Cursor's **Preview |
+Markdown** switch does, is reopened in this editor and the text tab closed.
+**Open as Text** and a just-reclaimed note keep the text editor for 10 s.
+
 ## Limits and differences from Obsidian
 
 VS Code owns text, saving and undo. The core editor cannot be disabled. Feature
