@@ -93,7 +93,7 @@ test("Show Plugin Status picks from the active editor's states and opens the cho
   const f = await fixture();
   const messages: string[] = [];
   f.workbench.inform = (message) => messages.push(message);
-  f.workbench.views = undefined;
+  delete f.workbench.views;
   // Without native views (a minimal host) the command explains itself.
   await f.commands.get("markdownWorkbench.showPluginStatus")?.();
   assert.equal(messages.length, 1);

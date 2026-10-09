@@ -19,7 +19,8 @@ export interface TextEdit {
   insert: string;
 }
 export interface PanelPort {
-  readonly column?: number;
+  /** VS Code's view column; undefined while the panel is in no editor group. */
+  readonly column: number | undefined;
   readonly id: string;
   readonly document: HostDocument;
   readonly rpc: Endpoint;
@@ -112,7 +113,8 @@ declare module "../kernel/types" {
 }
 /** One editor panel as the VS Code adapter hands it to the editor host. */
 export interface PanelShell {
-  readonly column?: number;
+  /** VS Code's view column; undefined while the panel is in no editor group. */
+  readonly column: number | undefined;
   readonly id: string;
   readonly document: HostDocument;
   readonly transport: Transport;
@@ -178,7 +180,7 @@ export interface TreeSource {
 }
 export interface TreeHandle {
   refresh(): void;
-  /** Text shown above the tree, such as "No note is open". */
+  /** Text shown above the tree, such as "No note is open"; undefined removes it. */
   setMessage(message: string | undefined): void;
   reveal(node: TreeNode): void;
   readonly visible: boolean;

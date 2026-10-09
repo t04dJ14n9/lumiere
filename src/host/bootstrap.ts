@@ -33,7 +33,7 @@ export async function bootstrap(
 ) {
   const root = Context.create({
     rank: pluginRank,
-    logger,
+    ...(logger && { logger }),
     replaceable: ["vault", "resources", "markers"],
   });
   root.provide("workbench", workbench);

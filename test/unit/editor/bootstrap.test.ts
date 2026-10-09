@@ -25,6 +25,7 @@ function stalled(context: Context): string[] {
 function shell(uri: string): PanelShell {
   return {
     id: "panel",
+    column: undefined,
     document: fakeDocument({ uri }),
     cspSource: "test",
     trusted: false,

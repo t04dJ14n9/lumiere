@@ -137,6 +137,7 @@ test("panel kernels log through the window logger, tagged by panel", async () =>
   };
   const shell: PanelShell = {
     id: "panel-7",
+    column: undefined,
     document: fakeDocument(),
     cspSource: "test",
     trusted: false,

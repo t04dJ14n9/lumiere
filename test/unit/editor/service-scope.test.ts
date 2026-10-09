@@ -41,6 +41,7 @@ test("independent panel kernels share the injected vault registry before feature
     let close = () => {};
     return {
       id,
+      column: undefined,
       document: fakeDocument(),
       cspSource: "test",
       trusted: false,

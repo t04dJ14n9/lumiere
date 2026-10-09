@@ -63,6 +63,7 @@ export function fixture() {
   const session = new Session(document, workbench);
   const panel: EditorPanel = {
     id: "panel",
+    column: undefined,
     document,
     session,
     rpc: pair.host,

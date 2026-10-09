@@ -158,8 +158,8 @@ export class ExternalPlugins {
                 .some((panel) => this.enabled(entry, panel.id)));
           if (!enabled && entry.fiber) {
             await entry.fiber.dispose();
-            entry.fiber = undefined;
-            entry.services = undefined;
+            delete entry.fiber;
+            delete entry.services;
           }
           if (enabled && !entry.fiber) {
             this.start(entry);

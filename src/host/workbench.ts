@@ -21,7 +21,7 @@ export function createWorkbench(
 ): Workbench {
   const documents = new NativeDocuments();
   return {
-    storage,
+    ...(storage && { storage }),
     isTrusted: () => vscode.workspace.isTrusted,
     workspaceFolders: () =>
       (vscode.workspace.workspaceFolders ?? []).map((folder) =>
