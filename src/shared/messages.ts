@@ -9,14 +9,21 @@
  *    │                                    region, again with its text and image
  *    │  ◄──────────── copyForAgent        the viewer's Copy for Agent button
  *    │  ◄──────────── askAgent            the viewer's Ask Agent button
+ *    │  ◄──────────── toggleOutline       the viewer bar's outline button
+ *    │  ◄──────────── floatingDock        the floating bar dragged to an edge
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
+ *    │  ◄──────────── view { view }       page and zoom, after each change
  *    │  goTo { location } ──────►         open a page (and box)
+ *    │  action { action } ──────►         page, zoom, find or tool, from a command
+ *    │  toolbar { toolbar } ────►         the toolbar setting changed
  *
  * The viewer runs untrusted PDF content, so the host validates what it
  * receives with `parseViewerMessage`.
  */
 import type { PdfLocation } from './pdf-location';
 import { parseSelection, type PdfSelection } from './selection';
+import { isFloatingDock, type FloatingDock, type ToolbarSettings } from './toolbar-settings';
+import { parseViewState, type ViewerAction, type ViewState } from './view-state';
 
 /** One entry of the PDF's outline (bookmarks), with the page it opens. */
 export interface OutlineItem {
@@ -35,13 +42,20 @@ export type ViewerMessage =
   | { type: 'selection'; selection: PdfSelection | null; image?: string }
   | { type: 'copyForAgent' }
   | { type: 'askAgent' }
+  /** The viewer's outline button: show or hide the PDF Outline view. */
+  | { type: 'toggleOutline' }
+  /** The floating bar was dragged to another edge. */
+  | { type: 'floatingDock'; dock: FloatingDock }
   | { type: 'openExternal'; url: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'view'; view: ViewState };
 
 export type HostMessage =
   | { type: 'load'; data: ArrayBuffer }
   /** `top`: with no box, show the page from this many points below its top. */
-  | { type: 'goTo'; location: PdfLocation; top?: number };
+  | { type: 'goTo'; location: PdfLocation; top?: number }
+  | { type: 'action'; action: ViewerAction }
+  | { type: 'toolbar'; toolbar: ToolbarSettings };
 
 const MAX_OUTLINE_ITEMS = 10_000;
 const MAX_OUTLINE_DEPTH = 32;
@@ -59,6 +73,7 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     case 'ready':
     case 'copyForAgent':
     case 'askAgent':
+    case 'toggleOutline':
       return { type: message.type };
     case 'selection': {
       const selection = parseSelection(message.selection) ?? null;
@@ -67,12 +82,18 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     }
     case 'outline':
       return { type: 'outline', items: parseOutline(message.items) };
+    case 'floatingDock':
+      return isFloatingDock(message.dock) ? { type: 'floatingDock', dock: message.dock } : undefined;
     case 'openExternal':
       return isWebUrl(message.url) ? { type: 'openExternal', url: message.url } : undefined;
     case 'error':
       return typeof message.message === 'string'
         ? { type: 'error', message: message.message.slice(0, 1_000) }
         : undefined;
+    case 'view': {
+      const view = parseViewState(message.view);
+      return view ? { type: 'view', view } : undefined;
+    }
     default:
       return undefined;
   }

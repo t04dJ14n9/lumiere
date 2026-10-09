@@ -10,6 +10,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { PdfEngine, Status } from './engine';
 import { connectToHost } from './host';
+import '@vscode/codicons/dist/codicon.css';
 import './styles/base.css';
 import './styles/toolbar.css';
 import './styles/page.css';

@@ -4,6 +4,7 @@ import { CopyToClipboard } from '@embedpdf/plugin-selection/react';
 import { Viewport } from '@embedpdf/plugin-viewport/react';
 import { ZoomGestureWrapper, useZoom } from '@embedpdf/plugin-zoom/react';
 import React, { useEffect, useRef, useState } from 'react';
+import { parseViewerAction } from '../shared/view-state';
 import { useEndDragsReleasedOutside } from './drag-release';
 import { listenToHost } from './host';
 import { useNavigation, type Navigation } from './navigation';
@@ -14,10 +15,17 @@ import { rememberPosition, rememberedPosition } from './reading-position';
 import { SearchBar } from './search-bar';
 import { useIgnoreSecondaryButtons } from './secondary-buttons';
 import { useSelectionReporting } from './selection';
+import { useToolMode } from './tool-mode';
+import { currentToolbarSettings, rememberToolbarSettings } from './toolbar-settings';
+import { FloatingToolbar } from './floating-toolbar';
 import { Toolbar } from './toolbar';
+import { useViewActions, useViewReporting } from './view-sync';
 import { useWheelZoom } from './wheel-zoom';
 
-/** The open PDF: toolbar, optional search bar, and the scrolling pages. */
+/**
+ * The open PDF: the slim or floating bar (unless the controls are in VS
+ * Code's own UI or hidden), an optional search bar, and the scrolling pages.
+ */
 export function Viewer({ document: pdf }: { document: PdfDocumentObject }): React.JSX.Element {
   const navigation = useNavigation(DOCUMENT_ID);
   const selection = useSelectionReporting(DOCUMENT_ID, pdf);
@@ -38,12 +46,22 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
 
+  const [toolbar, setToolbar] = useState(currentToolbarSettings);
+  const { tool, setTool } = useToolMode(DOCUMENT_ID);
+  useViewReporting(navigation, tool);
+  const runAction = useViewActions(navigation, openSearch, setTool);
   useEffect(() => listenToHost(message => {
     if (message.type === 'goTo') show(message.location, message.top);
-  }), [show]);
+    else if (message.type === 'action') {
+      const action = parseViewerAction(message.action);
+      if (action) runAction(action);
+    } else if (message.type === 'toolbar') {
+      setToolbar(rememberToolbarSettings(message.toolbar));
+    }
+  }), [show, runAction]);
 
-  const latest = useRef({ selection, searching });
-  latest.current = { selection, searching };
+  const latest = useRef({ selection, searching, tool, setTool });
+  latest.current = { selection, searching, tool, setTool };
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
@@ -51,8 +69,11 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
         setSearching(true);
         setFindRequest(request => request + 1);
       } else if (event.key === 'Escape') {
-        if (latest.current.searching) setSearching(false);
-        else latest.current.selection.clear();
+        const { searching, selection, tool, setTool } = latest.current;
+        if (searching) setSearching(false);
+        // With nothing selected, Escape puts down the Select Region tool.
+        else if (tool === 'region' && !selection.region) setTool('text');
+        else selection.clear();
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -60,10 +81,19 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   }, []);
 
   return (
-    <div className="viewer">
+    <div className={`viewer tool-${tool} toolbar-${toolbar.mode}`}>
       <CopyToClipboard />
-      <Toolbar navigation={navigation} onSearch={openSearch} />
+      {toolbar.mode === 'slim' && <Toolbar navigation={navigation} tool={tool} run={runAction} />}
       <div className="document" ref={documentArea}>
+        {toolbar.mode === 'floating' && (
+          <FloatingToolbar
+            navigation={navigation}
+            tool={tool}
+            run={runAction}
+            dock={toolbar.dock}
+            onDock={dock => setToolbar(current => rememberToolbarSettings({ ...current, dock }))}
+          />
+        )}
         {searching && <SearchBar navigation={navigation} focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">
           <ZoomGestureWrapper documentId={DOCUMENT_ID} enableWheel={false}>

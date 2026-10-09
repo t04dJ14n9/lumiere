@@ -14,6 +14,13 @@ of it. **Copy for Agent** copies the same for any other agent.
   page, Ctrl/⌘+wheel and pinch zoom, find in PDF (⌘F / Ctrl+F), internal links and web links.
   When the file changes on disk (a rebuilt paper), the viewer reloads at the
   same page and zoom.
+- **Controls in VS Code's own UI.** By default the viewer has no toolbar of
+  its own: find, zoom, fit and the selection tool are buttons in the editor
+  title bar, and the page and zoom are in the status bar. Click **Page 4 / 15**
+  to go to a page, or the zoom to pick one (or type one, such as `140`). See
+  [Toolbar and shortcuts](#toolbar-and-shortcuts) for the other layouts.
+- **Select Region tool.** Draws a region even over text (a paragraph with its
+  equation, a table with its caption); Escape puts the tool down.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
 - **Ask Agent and Copy for Agent.** Select text, or drag over empty page
@@ -39,6 +46,54 @@ of it. **Copy for Agent** copies the same for any other agent.
   **Configure Icon Visibility** and tick them.
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
+
+## Toolbar and shortcuts
+
+![The viewer with its controls in the editor title bar and the status bar](docs/images/toolbar-chrome-dark.png)
+
+`vscodeEmbedPdf.toolbar.mode` sets where the controls are. **PDF: Choose
+Toolbar Location…** (also in the editor's **…** menu) switches it, and every
+open PDF follows at once.
+
+| Mode | Controls |
+| --- | --- |
+| `chrome` (default) | Editor title buttons (find, zoom out and in, fit page or width, Select Region / Select Text) and status bar entries: the page and the zoom, which open Go to Page and a zoom picker. |
+| `slim` | A slim bar along the top of the viewer, with every control. |
+| `floating` | A bar over the pages, docked to the middle of an edge. Drag its grip to another edge, or focus the grip and press an arrow key; the edge is remembered for every PDF. It fades while the pointer rests. |
+| `none` | No controls: keyboard shortcuts, the right-click menu, the **…** menu and the command palette. |
+
+| Zoom picker (`chrome`) | Slim bar, light theme | Floating bar |
+| --- | --- | --- |
+| ![Zoom picker](docs/images/toolbar-zoom-picker.png) | ![Slim bar](docs/images/toolbar-slim-light.png) | ![Floating bar](docs/images/toolbar-floating-dark.png) |
+
+Every action is also a **PDF:** command with a shortcut, active while a PDF
+editor has focus (not in a text field, the side bar or the panel):
+
+| Action | Windows / Linux | macOS |
+| --- | --- | --- |
+| Previous / next page | Alt+PageUp / Alt+PageDown | ⌥PageUp / ⌥PageDown |
+| Go to page… | Ctrl+G | ⌃G |
+| Zoom in / out | Ctrl+= / Ctrl+- | ⌘= / ⌘- |
+| Pick a zoom… | click the status bar zoom | |
+| Fit width | Ctrl+0 | ⌘0 |
+| Fit page | Ctrl+Alt+0 | ⌥⌘0 |
+| Find in PDF | Ctrl+F | ⌘F |
+| Toggle the PDF Outline | Ctrl+Alt+O | ⌃⌘O |
+| Select Text tool | Ctrl+Alt+T | ⌃⌘T |
+| Select Region tool | Ctrl+Alt+R | ⌃⌘R |
+
+While a PDF has focus, these take over the editor-wide meanings of the same
+keys (Ctrl+G is Go to Line elsewhere, Ctrl+0 focuses the side bar). Some
+desktops keep Ctrl+Alt+T for opening a terminal; rebind it in **Keyboard
+Shortcuts** if so.
+
+**In Cursor**, the editor title bar keeps extension buttons in its **…**
+menu, so the viewer leaves its title buttons out (the menu lists every
+action, grouped) and the status bar also shows previous and next page, zoom
+out and in, and find buttons. `vscodeEmbedPdf.toolbar.statusBarButtons`
+(`auto`, `always`, `never`) changes that, in either editor.
+
+![Cursor: page, zoom and find in the status bar](docs/images/toolbar-cursor.png)
 
 ## What an agent receives
 
@@ -115,6 +170,8 @@ src/
 │   ├── agent-target.ts   which agent chat Ask Agent opens
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
+│   ├── view-state.ts     page and zoom reported by the viewer; view actions
+│   ├── toolbar-settings.ts  toolbar modes and the floating bar's edge
 │   └── geometry.ts       page rectangles
 ├── extension/   the VS Code side
 │   ├── extension.ts            activation
@@ -124,12 +181,18 @@ src/
 │   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
 │   ├── commands.ts             Copy for Agent, Ask Agent, Open Location
+│   ├── view-commands.ts        page, zoom, find and tool commands; Go to Page, zoom picker
+│   ├── toolbar.ts              the toolbar setting, status bar entries
 │   ├── agent-chat.ts           opening the agent chat with a selection
 │   └── webview-html.ts         the viewer page and its content security policy
 └── webview/     the viewer (React + EmbedPDF), one module per concern
     ├── main.tsx, host.ts       entry and messages to the extension
     ├── engine.tsx, plugins.ts  PDFium in a worker (main-thread fallback)
     ├── viewer.tsx              toolbar, search, pages
+    ├── toolbar.tsx             the slim bar's controls
+    ├── floating-toolbar.tsx    the floating bar: docking, dragging, fading
+    ├── view-sync.ts            page and zoom to the extension, its actions back
+    ├── tool-mode.ts            the Select Text and Select Region tools
     ├── page.tsx, page-links.tsx
     ├── navigation.ts           pages, locations, highlights
     ├── reading-position.ts     the place and zoom kept across reloads

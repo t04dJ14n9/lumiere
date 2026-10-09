@@ -53,6 +53,11 @@ input {
   height: 100%;
 }
 
+/* Without the slim bar, the pages take the whole viewer. */
+.viewer:not(.toolbar-slim) {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
 .document {
   position: relative;
   min-width: 0;

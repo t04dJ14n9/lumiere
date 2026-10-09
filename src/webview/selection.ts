@@ -37,6 +37,8 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
   useEffect(() => {
     if (!selection) return;
     const scope = selection.forDocument(documentId);
+    /** Whether the marquee that just ended drew a region (else it was a click). */
+    let marqueeEnded = false;
     const unsubscribe = [
       scope.onEndSelection(() => {
         if (!scope.getState().selection) return;
@@ -51,7 +53,15 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
         selectedText.current = undefined;
         if (!regionRef.current) postToHost({ type: 'selection', selection: null });
       }),
+      // A click with the Select Region tool, which has no empty-space clicks:
+      // the marquee is cancelled without ending.
+      scope.onMarqueeChange(({ rect }) => {
+        if (rect) return;
+        if (marqueeEnded) marqueeEnded = false;
+        else if (regionRef.current) changeRegion(undefined);
+      }),
       scope.onMarqueeEnd(({ pageIndex, rect }) => {
+        marqueeEnded = true;
         if (rect.size.width < MIN_REGION_SIZE || rect.size.height < MIN_REGION_SIZE) return;
         const region: RegionSelection = { kind: 'region', page: pageIndex + 1, rect: toPageRect(rect) };
         changeRegion(region);

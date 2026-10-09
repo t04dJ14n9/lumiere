@@ -84,9 +84,9 @@ export function SearchBar({ navigation, focusRequest, onClose }: {
         }}
       />
       <span className="search-count" aria-live="polite">{query.trim() ? count : ''}</span>
-      <button type="button" aria-label="Previous match" title="Previous match" onClick={() => step(-1)}>↑</button>
-      <button type="button" aria-label="Next match" title="Next match" onClick={() => step(1)}>↓</button>
-      <button type="button" aria-label="Close search" title="Close" onClick={onClose}>×</button>
+      <button type="button" aria-label="Previous match" title="Previous match (Shift+Enter)" onClick={() => step(-1)}><i className="codicon codicon-arrow-up" aria-hidden="true" /></button>
+      <button type="button" aria-label="Next match" title="Next match (Enter)" onClick={() => step(1)}><i className="codicon codicon-arrow-down" aria-hidden="true" /></button>
+      <button type="button" aria-label="Close search" title="Close (Escape)" onClick={onClose}><i className="codicon codicon-close" aria-hidden="true" /></button>
     </div>
   );
 }

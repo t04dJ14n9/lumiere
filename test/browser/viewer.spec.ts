@@ -383,7 +383,7 @@ test('a page typed in the field opens at its top, and leaving the field does not
   await expect.poll(() => pageOffset(page, 7)).toBeLessThanOrEqual(16);
   const before = await pageOffset(page, 7);
   const at = await pagePoint(page, 7);
-  await page.mouse.click(...at(20, 380));
+  await page.mouse.click(...at(20, 300));
   await page.waitForTimeout(300);
   expect(await pageOffset(page, 7)).toBe(before);
 });
@@ -543,4 +543,297 @@ test('each Ctrl+wheel notch zooms one step, and small trackpad movements add up 
   await page.mouse.wheel(0, -10);
   await page.keyboard.up('Control');
   await expect(zoom).toHaveValue('100');
+});
+
+async function lastView(page: Page): Promise<unknown> {
+  const all = await messages(page);
+  return all.filter(message => message.type === 'view').at(-1)?.view;
+}
+
+function sendAction(page: Page, action: Record<string, unknown>): Promise<void> {
+  return page.evaluate(action => (window as unknown as { hostSend: (message: unknown) => void })
+    .hostSend({ type: 'action', action }), action);
+}
+
+test('the viewer reports its page and zoom to the extension as they change', async ({ page }) => {
+  await open(page);
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 1, pageCount: 12, fit: 'width' });
+  const zoom = page.getByRole('textbox', { name: 'Zoom' });
+  await zoom.fill('150');
+  await zoom.press('Enter');
+  await expect.poll(() => lastView(page)).toEqual({ page: 1, pageCount: 12, zoomPercent: 150, fit: null, tool: 'text' });
+  const field = page.getByRole('textbox', { name: 'Page' });
+  await field.fill('6');
+  await field.press('Enter');
+  await expect.poll(() => lastView(page)).toEqual({ page: 6, pageCount: 12, zoomPercent: 150, fit: null, tool: 'text' });
+});
+
+test('actions from the extension page, zoom, fit and open find', async ({ page }) => {
+  await open(page);
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 1 });
+  await sendAction(page, { action: 'goToPage', page: 5 });
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 5 });
+  await expect.poll(() => pageOffset(page, 5)).toBeLessThanOrEqual(16);
+  await sendAction(page, { action: 'nextPage' });
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 6 });
+  await sendAction(page, { action: 'previousPage' });
+  await sendAction(page, { action: 'previousPage' });
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 4 });
+  // Out of range pages are clamped.
+  await sendAction(page, { action: 'goToPage', page: 99 });
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 12 });
+
+  await sendAction(page, { action: 'setZoom', percent: 100 });
+  await expect.poll(() => lastView(page)).toMatchObject({ zoomPercent: 100, fit: null });
+  await sendAction(page, { action: 'zoomIn' });
+  await expect.poll(() => lastView(page)).toMatchObject({ zoomPercent: 110 });
+  await sendAction(page, { action: 'zoomOut' });
+  await sendAction(page, { action: 'zoomOut' });
+  await expect.poll(() => lastView(page)).toMatchObject({ zoomPercent: 90 });
+  await sendAction(page, { action: 'setZoom', percent: 5000 });
+  await expect.poll(() => lastView(page)).toMatchObject({ zoomPercent: 400 });
+  await sendAction(page, { action: 'fitPage' });
+  await expect.poll(() => lastView(page)).toMatchObject({ fit: 'page' });
+  await sendAction(page, { action: 'fitWidth' });
+  await expect.poll(() => lastView(page)).toMatchObject({ fit: 'width' });
+
+  await sendAction(page, { action: 'find' });
+  await expect(page.getByRole('searchbox', { name: 'Find in PDF' })).toBeFocused();
+  // Malformed actions are ignored.
+  const before = await lastView(page);
+  await sendAction(page, { action: 'goToPage', page: 'two' });
+  await sendAction(page, { action: 'setZoom', percent: -1 });
+  await page.waitForTimeout(300);
+  expect(await lastView(page)).toEqual(before);
+});
+
+test('the Select Region tool selects a region even over text; Escape puts it down', async ({ page }) => {
+  await open(page);
+  await sendAction(page, { action: 'setTool', tool: 'region' });
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: 'region' });
+  const at = await pagePoint(page, 1);
+  // Over the text, the tool shows a crosshair rather than a text cursor.
+  await expect.poll(async () => {
+    await page.mouse.move(...at(100, TEXT_MIDLINE));
+    return page.evaluate(([x, y]) => getComputedStyle(document.elementFromPoint(x, y) as Element).cursor, at(100, TEXT_MIDLINE));
+  }).toBe('crosshair');
+  // The drag starts on the text, which would otherwise select text.
+  await drag(page, at(74, TEXT_MIDLINE), at(205, 140));
+  const menu = page.getByRole('toolbar', { name: 'PDF region actions' });
+  await expect(menu).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'PDF text selection actions' })).toHaveCount(0);
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'region', page: 1 });
+  const { rect } = await lastSelection(page) as { rect: number[] };
+  expect(rect[0]).toBeCloseTo(74, -1);
+  expect(rect[1]).toBeCloseTo(TEXT_MIDLINE, -1);
+
+  // The region's menu still asks the agent.
+  await menu.getByRole('button', { name: 'Ask Agent' }).click();
+  await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('askAgent');
+
+  // A click elsewhere (away from the page's links) clears the region, as it does without the tool.
+  await page.mouse.click(...at(20, 300));
+  await expect(menu).toHaveCount(0);
+  await expect.poll(() => lastSelection(page)).toBeNull();
+
+  // The first Escape clears the region, the second goes back to selecting text.
+  await drag(page, at(74, TEXT_MIDLINE), at(205, 140));
+  await expect(menu).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: 'region' });
+  await page.keyboard.press('Escape');
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: 'text' });
+  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'text', text: 'Synthetic page 1' });
+});
+
+test('switching to the Select Region tool clears a text selection', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
+  await expect(page.getByRole('toolbar', { name: 'PDF text selection actions' })).toBeVisible();
+  await sendAction(page, { action: 'setTool', tool: 'region' });
+  await expect(page.getByRole('toolbar', { name: 'PDF text selection actions' })).toHaveCount(0);
+  await expect.poll(() => lastSelection(page)).toBeNull();
+  await sendAction(page, { action: 'setTool', tool: 'text' });
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: 'text' });
+});
+
+test('with the controls in VS Code\'s own UI the viewer has no toolbar; the setting switches it live', async ({ page }) => {
+  await open(page, '?toolbar=chrome');
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toHaveCount(0);
+  // The pages take the whole height.
+  const viewport = (await page.locator('.viewport').boundingBox())!;
+  expect(viewport.y).toBe(0);
+  expect(viewport.height).toBe(page.viewportSize()!.height);
+  // Find still opens in the viewer.
+  await sendAction(page, { action: 'find' });
+  await expect(page.getByRole('searchbox', { name: 'Find in PDF' })).toBeFocused();
+  await page.keyboard.press('Escape');
+
+  const setToolbar = (mode: string) => page.evaluate(mode => (window as unknown as { hostSend: (message: unknown) => void })
+    .hostSend({ type: 'toolbar', toolbar: { mode } }), mode);
+  await setToolbar('slim');
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 12');
+  await setToolbar('none');
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toHaveCount(0);
+  // An unknown mode is the default one.
+  await setToolbar('sideways');
+  await expect(page.locator('.viewer')).toHaveClass(/toolbar-chrome/);
+
+  // A reloaded file keeps the latest setting.
+  await setToolbar('slim');
+  await page.evaluate(async () => {
+    document.querySelector('.viewer')!.classList.add('before-reload');
+    const data = await (await fetch('/fixtures/outline.pdf')).arrayBuffer();
+    (window as unknown as { hostSend: (message: unknown) => void }).hostSend({ type: 'load', data });
+  });
+  await expect(page.locator('.viewer:not(.before-reload) .page[data-page-index="0"] img')).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toBeVisible();
+});
+
+test('the slim bar\'s buttons page, fit, pick the tool and toggle the outline, and show which fit and tool are on', async ({ page }) => {
+  await open(page);
+  const toolbar = page.getByRole('toolbar', { name: 'PDF toolbar' });
+  const button = (name: string) => toolbar.getByRole('button', { name, exact: true });
+  await expect(button('Fit width')).toHaveAttribute('aria-pressed', 'true');
+  await expect(button('Fit page')).toHaveAttribute('aria-pressed', 'false');
+  await expect(button('Select text')).toHaveAttribute('aria-pressed', 'true');
+  await expect(button('Previous page')).toBeDisabled();
+  // Tooltips carry the shortcut.
+  await expect(button('Zoom in')).toHaveAttribute('title', /^Zoom in \((Ctrl\+=|⌘=)\)$/u);
+
+  await button('Next page').click();
+  await button('Next page').click();
+  await expect(toolbar.getByRole('textbox', { name: 'Page' })).toHaveValue('3');
+  await button('Previous page').click();
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 2 });
+
+  await button('Fit page').click();
+  await expect(button('Fit page')).toHaveAttribute('aria-pressed', 'true');
+  await expect(button('Fit width')).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(() => lastView(page)).toMatchObject({ fit: 'page' });
+  await button('Zoom out').click();
+  await expect(button('Fit page')).toHaveAttribute('aria-pressed', 'false');
+
+  await button('Select region').click();
+  await expect(button('Select region')).toHaveAttribute('aria-pressed', 'true');
+  await expect(button('Select text')).toHaveAttribute('aria-pressed', 'false');
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: 'region' });
+  await button('Select text').click();
+  await expect.poll(() => lastView(page)).toMatchObject({ tool: 'text' });
+
+  await button('Toggle outline').click();
+  await expect.poll(async () => (await messages(page)).filter(message => message.type === 'toggleOutline')).toHaveLength(1);
+  await button('Find in PDF').click();
+  await expect(page.getByRole('searchbox', { name: 'Find in PDF' })).toBeFocused();
+});
+
+test('the toolbar and search bar icons are the codicon font, loaded from the extension', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: 'Find in PDF' }).click();
+  // `load` resolves with the faces it loaded: none if the font were missing.
+  await expect.poll(() => page.evaluate(async () => (await document.fonts.load('16px codicon')).map(face => face.status)))
+    .toEqual(['loaded']);
+  // Each icon is drawn: a glyph of the icon font, not an empty box.
+  const icon = page.getByRole('button', { name: 'Close search' }).locator('.codicon');
+  const box = (await icon.boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(14);
+  expect(await icon.evaluate(element => getComputedStyle(element, '::before').content)).not.toBe('none');
+});
+
+test('the floating bar floats over the pages at its edge, and fades while the pointer rests', async ({ page }) => {
+  await open(page, '?toolbar=floating');
+  const bar = page.getByRole('toolbar', { name: 'PDF toolbar' });
+  await expect(bar).toContainText('/ 12');
+  await expect(bar).toHaveAttribute('aria-orientation', 'horizontal');
+  // The pages take the whole viewer; the bar is over them, centred at the bottom.
+  const viewport = (await page.locator('.viewport').boundingBox())!;
+  expect([viewport.y, viewport.height]).toEqual([0, page.viewportSize()!.height]);
+  const box = (await bar.boundingBox())!;
+  expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(12);
+  expect(viewport.height - (box.y + box.height)).toBeGreaterThan(0);
+  expect(viewport.height - (box.y + box.height)).toBeLessThan(40);
+
+  // Its buttons work as the slim bar's do.
+  await bar.getByRole('button', { name: 'Next page' }).click();
+  await expect.poll(() => lastView(page)).toMatchObject({ page: 2 });
+
+  // Resting, it fades out of the way, and is back once the pointer moves.
+  await page.mouse.move(500, 300);
+  await expect(bar).toHaveCSS('opacity', '0', { timeout: 5_000 });
+  await page.mouse.move(520, 320);
+  await expect(bar).toHaveCSS('opacity', '1');
+  // Not while the pointer is over it.
+  await bar.getByRole('button', { name: 'Zoom in' }).hover();
+  await page.waitForTimeout(2_500);
+  await expect(bar).toHaveCSS('opacity', '1');
+});
+
+test('dragging the floating bar\'s grip docks it to the nearest edge, and tells the extension', async ({ page }) => {
+  await open(page, '?toolbar=floating');
+  const bar = page.getByRole('toolbar', { name: 'PDF toolbar' });
+  const grip = bar.getByRole('button', { name: /^Move toolbar/u });
+  const viewport = (await page.locator('.viewport').boundingBox())!;
+  const docks = async () => (await messages(page)).filter(message => message.type === 'floatingDock').map(message => message.dock);
+
+  const dragGripTo = async (x: number, y: number): Promise<void> => {
+    const from = (await grip.boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(x, y, { steps: 10 });
+    // While dragging, the bar follows the pointer and the target edge shows.
+    await expect(page.locator('.dock-target')).toBeVisible();
+    await page.mouse.up();
+    await expect(page.locator('.dock-target')).toHaveCount(0);
+  };
+
+  await dragGripTo(viewport.width - 30, viewport.height * 0.4);
+  await expect(bar).toHaveAttribute('aria-orientation', 'vertical');
+  await expect.poll(docks).toEqual(['right']);
+  let box = (await bar.boundingBox())!;
+  expect(viewport.width - (box.x + box.width)).toBeLessThan(40);
+  expect(Math.abs(box.y + box.height / 2 - viewport.height / 2)).toBeLessThan(12);
+  // Upright, every control stays on screen.
+  for (const button of await bar.getByRole('button').all()) {
+    const { y, height } = (await button.boundingBox())!;
+    expect(y).toBeGreaterThanOrEqual(0);
+    expect(y + height).toBeLessThanOrEqual(viewport.height);
+  }
+  await bar.getByRole('button', { name: 'Fit page' }).click();
+  await expect.poll(() => lastView(page)).toMatchObject({ fit: 'page' });
+
+  await dragGripTo(viewport.width * 0.6, 20);
+  await expect(bar).toHaveAttribute('aria-orientation', 'horizontal');
+  box = (await bar.boundingBox())!;
+  expect(box.y).toBeLessThan(30);
+  await dragGripTo(15, viewport.height * 0.7);
+  box = (await bar.boundingBox())!;
+  expect(box.x).toBeLessThan(30);
+  await expect.poll(docks).toEqual(['right', 'top', 'left']);
+
+  // Dropped at its own edge, nothing changes; the arrow keys move it too.
+  await grip.focus();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowDown');
+  await expect(bar).toHaveAttribute('aria-orientation', 'horizontal');
+  await expect.poll(docks).toEqual(['right', 'top', 'left', 'bottom']);
+  // A drag does not select anything on the pages under it.
+  expect(await lastSelection(page) ?? null).toBeNull();
+});
+
+test('the floating bar starts at the remembered edge and follows the extension', async ({ page }) => {
+  await open(page, '?toolbar=floating&dock=left');
+  const bar = page.getByRole('toolbar', { name: 'PDF toolbar' });
+  await expect(bar).toHaveAttribute('aria-orientation', 'vertical');
+  expect((await bar.boundingBox())!.x).toBeLessThan(30);
+  await page.evaluate(() => (window as unknown as { hostSend: (message: unknown) => void })
+    .hostSend({ type: 'toolbar', toolbar: { mode: 'floating', dock: 'top' } }));
+  await expect(bar).toHaveAttribute('aria-orientation', 'horizontal');
+  expect((await bar.boundingBox())!.y).toBeLessThan(30);
+  // A malformed edge is the default one, the bottom.
+  await page.evaluate(() => (window as unknown as { hostSend: (message: unknown) => void })
+    .hostSend({ type: 'toolbar', toolbar: { mode: 'floating', dock: 'middle' } }));
+  await expect.poll(async () => (await bar.boundingBox())!.y).toBeGreaterThan(page.viewportSize()!.height - 80);
 });

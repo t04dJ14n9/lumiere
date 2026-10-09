@@ -140,7 +140,9 @@ function RegionMenu({ rect: [left, top, , bottom], scale, selection }: {
     ? { left: left * scale, top: top * scale - MENU_GAP, transform: 'translateY(-100%)' }
     : { left: left * scale, top: bottom * scale + MENU_GAP };
   return (
-    <div ref={menu} className="selection-menu" role="toolbar" aria-label="PDF region actions" style={style}>
+    // data-no-interaction: a press on the menu is not a click on the page,
+    // which would start a new region or clear this one.
+    <div ref={menu} className="selection-menu" role="toolbar" aria-label="PDF region actions" style={style} data-no-interaction>
       <AgentButtons selection={selection} />
     </div>
   );

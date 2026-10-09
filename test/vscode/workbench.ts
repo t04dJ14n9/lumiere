@@ -159,8 +159,8 @@ export function pointAtTop(viewer: Frame, number: number, top: number): Promise<
  * fit width already is fit page and the zoom does not change, so this waits
  * for the fitted state itself rather than for a change.
  */
-export async function fitPage(viewer: Frame): Promise<void> {
-  await viewer.getByRole('button', { name: 'Fit page' }).click();
+export async function fitPage(page: Page, viewer: Frame): Promise<void> {
+  await command(page, 'PDF: Fit Page');
   await expect.poll(() => pageFit(viewer), { message: 'The page did not fit the viewer' })
     .toEqual({ fitsWidth: true, fitsHeight: true, fills: true });
 }
@@ -182,12 +182,37 @@ function pageFit(viewer: Frame): Promise<{ fitsWidth: boolean; fitsHeight: boole
   }, FIT_MARGIN);
 }
 
-/** Show a page through the page field and wait until it is at the top. */
-export async function showPage(viewer: Frame, number: number): Promise<void> {
-  const field = viewer.getByRole('textbox', { name: 'Page' });
-  await field.fill('');
-  await field.fill(String(number));
-  await field.press('Enter');
+/**
+ * The text field of the quick input showing `title`. Waiting for the title
+ * rather than any quick input skips a command palette that is still closing.
+ */
+export function quickInputTitled(page: Page, title: RegExp) {
+  return page.locator('.quick-input-widget:visible')
+    .filter({ has: page.locator('.quick-input-title', { hasText: title }) })
+    .locator('input:visible');
+}
+
+/** A status bar entry of the PDF viewer, by its text. */
+export function statusBarEntry(page: Page, text: RegExp) {
+  return page.locator('.part.statusbar .statusbar-item').filter({ hasText: text });
+}
+
+/** The status bar's "Page N / M" and zoom ("Fit Width (164%)", "140%") entries. */
+export const PAGE_STATUS = /^Page \d+ \/ \d+$/u;
+export const ZOOM_STATUS = /^(Fit (Width|Page) \()?\d+%\)?$/u;
+
+/**
+ * Show a page by clicking the status bar's page entry and typing it, and
+ * wait until it is at the top.
+ */
+export async function showPage(page: Page, viewer: Frame, number: number): Promise<void> {
+  await statusBarEntry(page, PAGE_STATUS).click();
+  const input = quickInputTitled(page, /^Go to Page/u);
+  // The box opens first and gets its value (the current page) after: typing
+  // before then would be overwritten.
+  await expect(input).toHaveValue(/^\d+$/u);
+  await input.fill(String(number));
+  await input.press('Enter');
   await expect.poll(() => pageAtTop(viewer, number)).toBe(true);
   await expect(viewer.locator(`.page[data-page-index="${number - 1}"] img`)).toBeVisible();
 }

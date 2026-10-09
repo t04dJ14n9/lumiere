@@ -7,6 +7,9 @@ import { openAgentChat } from './agent-chat';
 import { parseViewerMessage, type HostMessage, type OutlineItem } from '../shared/messages';
 import type { PdfLocation } from '../shared/pdf-location';
 import type { PdfSelection, RegionSelection } from '../shared/selection';
+import type { ToolbarSettings } from '../shared/toolbar-settings';
+import type { ToolbarPreferences } from './toolbar';
+import type { ViewerAction, ViewState } from '../shared/view-state';
 import type { RegionImages } from './region-images';
 import { viewerHtml } from './webview-html';
 
@@ -23,17 +26,19 @@ const RELOAD_DELAY_MS = 150;
 /**
  * One open PDF editor. It sends the file to its viewer, reloads the viewer
  * when the file changes on disk, and keeps what the viewer reports: the
- * outline and the current selection.
+ * outline, the current selection, and the page and zoom.
  */
 export class PdfPanel implements vscode.Disposable {
   /** The outline, or `undefined` while the viewer is still reading it. */
   outline: OutlineItem[] | undefined;
   selection: PdfSelection | undefined;
+  /** Page and zoom as the viewer last reported them; `undefined` until it has the PDF. */
+  view: ViewState | undefined;
   /** The snapshot of a selected region (a PNG data URL), saved for agents. */
   private regionImage: string | undefined;
 
   private readonly changed = new vscode.EventEmitter<void>();
-  /** Fires when the outline or the selection changes. */
+  /** Fires when the outline, the selection or the view changes. */
   readonly onDidChange = this.changed.event;
 
   private sha256: string | undefined;
@@ -48,6 +53,7 @@ export class PdfPanel implements vscode.Disposable {
     readonly webviewPanel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
     private readonly regionImages: RegionImages,
+    private readonly toolbar: ToolbarPreferences,
   ) {
     const webview = webviewPanel.webview;
     webview.options = {
@@ -59,7 +65,7 @@ export class PdfPanel implements vscode.Disposable {
       webview.onDidReceiveMessage(message => this.receive(message)),
       this.reloadWhenFileChanges(),
     );
-    webview.html = viewerHtml(webview, extensionUri);
+    webview.html = viewerHtml(webview, extensionUri, toolbar.settings);
   }
 
   /**
@@ -69,6 +75,16 @@ export class PdfPanel implements vscode.Disposable {
   goTo(location: PdfLocation, top?: number): void {
     if (this.loaded) this.post({ type: 'goTo', location, top });
     else this.pending = { location, top };
+  }
+
+  /** Ask the viewer to page, zoom or find; ignored until it has the PDF. */
+  act(action: ViewerAction): void {
+    if (this.loaded) this.post({ type: 'action', action });
+  }
+
+  /** Show the viewer's controls where the changed setting says. */
+  setToolbar(toolbar: ToolbarSettings): void {
+    this.post({ type: 'toolbar', toolbar });
   }
 
   /** Put the selection on the clipboard in the form agents read. */
@@ -144,11 +160,21 @@ export class PdfPanel implements vscode.Disposable {
         this.changed.fire();
         break;
       }
+      case 'view':
+        this.view = message.view;
+        this.changed.fire();
+        break;
       case 'copyForAgent':
         await this.copyForAgent();
         break;
       case 'askAgent':
         await this.askAgent();
+        break;
+      case 'toggleOutline':
+        await vscode.commands.executeCommand('vscodeEmbedPdf.toggleOutline');
+        break;
+      case 'floatingDock':
+        await this.toolbar.setDock(message.dock);
         break;
       case 'openExternal':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));
@@ -165,6 +191,7 @@ export class PdfPanel implements vscode.Disposable {
     this.loaded = false;
     this.outline = undefined;
     this.selection = undefined;
+    this.view = undefined;
     this.regionImage = undefined;
     this.changed.fire();
     let bytes: Uint8Array;
