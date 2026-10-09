@@ -24,6 +24,9 @@
  *   stopping) before what they depend on; within a plugin, its services are
  *   withdrawn first and its resources are released last acquired first.
  *   When `disable` or `dispose` resolves, every release has completed.
+ * - A scope is released once: a failed activation's rollback, `disable` and
+ *   `dispose` all join the same release, so none resolves while another's
+ *   inverses still run. Its errors are logged once, by whoever started it.
  * - A plugin's activation order comes from the dependency graph
  *   (`requires`, and `optional` when present), never from where it sits in
  *   the catalog; the catalog order only breaks ties.
@@ -59,8 +62,10 @@ export class PluginScope<S> {
   readonly held: Held[] = [];
   readonly offered = new Map<keyof S, S[keyof S]>();
   private live = true;
-  /** Releases still running; a resource acquired late joins them. */
-  private releasing: Promise<unknown>[] = [];
+  /** Releases of late resources still running; `release()` joins them. */
+  private readonly releasing = new Set<Promise<unknown>>();
+  /** The one release of `held`, shared by every caller (R3-3). */
+  private releasingHeld?: Promise<unknown[]>;
 
   constructor(
     readonly id: string,
@@ -85,7 +90,9 @@ export class PluginScope<S> {
       } catch {
         // Nothing to report to: the plugin has stopped.
       }
-      this.releasing.push(Promise.resolve(result).catch(() => undefined));
+      const late = Promise.resolve(result).catch(() => undefined);
+      this.releasing.add(late);
+      void late.then(() => this.releasing.delete(late));
       throw new Error(`${this.id} acquired a ${kind} after it stopped`);
     }
     this.held.push({ kind, resource });
@@ -110,22 +117,32 @@ export class PluginScope<S> {
     return this.lookup(name);
   }
 
+  /** Whether `release()` has been called (by anyone). */
+  get released(): boolean {
+    return this.releasingHeld !== undefined;
+  }
+
   /**
    * Release everything, last acquired first, and wait for each release.
-   * Errors are collected, not thrown. Safe to call again: later calls
-   * release only what was acquired since (nothing, once stopped).
+   * Errors are collected, not thrown. Every caller joins the same release
+   * (a rollback and a disposal overlapping wait for the same inverses and
+   * get the same errors), and also waits for late resources released since.
    */
   async release(): Promise<unknown[]> {
     this.live = false;
-    const errors: unknown[] = [];
-    for (const { resource } of this.held.splice(0).reverse()) {
-      try {
-        await resource.dispose();
-      } catch (error) {
-        errors.push(error);
+    this.releasingHeld ??= (async () => {
+      const errors: unknown[] = [];
+      for (const { resource } of this.held.splice(0).reverse()) {
+        try {
+          await resource.dispose();
+        } catch (error) {
+          errors.push(error);
+        }
       }
-    }
-    await Promise.all(this.releasing.splice(0));
+      return errors;
+    })();
+    const errors = await this.releasingHeld;
+    await Promise.all([...this.releasing]);
     return errors;
   }
 }
@@ -263,6 +280,8 @@ export class PluginRuntime<S> {
 
   private async rollback(scope: PluginScope<S>, error: unknown): Promise<void> {
     const cancelled = !scope.isLive;
+    // A teardown that already started the release logs its errors.
+    const joined = scope.released;
     const errors = await scope.release();
     const current = this.starting.get(scope.id)?.scope === scope;
     if (cancelled) {
@@ -271,7 +290,7 @@ export class PluginRuntime<S> {
       if (current) this.states.set(scope.id, 'failed');
       this.log.error(`${scope.id} failed to start and was rolled back: ${describe(error)}`);
     }
-    for (const cleanup of errors) this.log.error(`${scope.id} rollback: ${describe(cleanup)}`);
+    if (!joined) for (const cleanup of errors) this.log.error(`${scope.id} rollback: ${describe(cleanup)}`);
   }
 
   /** Stop one plugin, committed or starting; joins a teardown already running. */
@@ -298,7 +317,11 @@ export class PluginRuntime<S> {
       }
       // A cancelled activation is no longer joinable; a new enable starts afresh.
       if (this.starting.get(id)?.scope === scope) this.starting.delete(id);
-      for (const error of await scope.release()) this.log.error(`${id} teardown: ${describe(error)}`);
+      // A release already running (a failed activation rolling back) is
+      // joined; its errors are logged by whoever started it.
+      const joined = scope.released;
+      const errors = await scope.release();
+      if (!joined) for (const error of errors) this.log.error(`${id} teardown: ${describe(error)}`);
       this.states.set(id, 'inactive');
     })().finally(() => this.stopping.delete(id));
     this.stopping.set(id, teardown);
