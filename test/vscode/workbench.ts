@@ -10,8 +10,21 @@ import { paths } from "./state";
  */
 export const QUICK_INPUT =
   ".quick-input-widget input:not([type='checkbox']):visible";
+/**
+ * Opens the command palette. A webview that is still taking focus (a new
+ * split, in Cursor) can swallow the shortcut, so press it until it opens.
+ */
+export async function openPalette(page: Page) {
+  const input = page.locator(QUICK_INPUT);
+  await expect(async () => {
+    if (!(await input.isVisible())) {
+      await page.keyboard.press("ControlOrMeta+Shift+p");
+    }
+    await expect(input).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+}
 export async function command(page: Page, title: string) {
-  await page.keyboard.press("ControlOrMeta+Shift+p");
+  await openPalette(page);
   const input = page.locator(QUICK_INPUT);
   await input.fill(">" + title);
   const item = page
@@ -103,7 +116,7 @@ export async function closeBrowser(browser: Browser) {
 
 /** Reopens the active editor with another editor type, e.g. "Text Editor". */
 export async function reopenWith(page: Page, editor: string) {
-  await page.keyboard.press("ControlOrMeta+Shift+p");
+  await openPalette(page);
   await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
   await page
     .locator(".quick-input-list .monaco-list-row")

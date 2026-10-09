@@ -300,6 +300,13 @@ test("note text follows the native editor font settings for Markdown files, whic
     "--text-features": '"liga" on, "calt" on',
     "--text-variations": "normal",
   });
+  // The default line height is VS Code's automatic one, not 1.5 (Linux).
+  assert.equal(
+    fontDeclarations(settingsExtensions({ ...editor, lineHeight: 0 }))[
+      "--line-height"
+    ],
+    "1.333333", // round(1.35 × 18) = 24px
+  );
   // A hand-edited settings.json with a wrong type does not break the editor.
   markdown["editor.fontSize"] = "big";
   markdown["editor.fontLigatures"] = 3;

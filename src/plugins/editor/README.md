@@ -26,10 +26,14 @@ Note text and code use VS Code's editor font settings as they apply to Markdown
 files, so `[markdown]` overrides count as in the built-in text editor:
 `editor.fontFamily` (with a monospace fallback), `fontSize`, `fontWeight`,
 `letterSpacing`, `fontLigatures` (off by default, as in VS Code) and
-`fontVariations`. `editor.lineHeight` applies when set; at its default (0) the
-note keeps Obsidian's 1.5. Code is the same size as the text. These are native
-settings (`nativeConfigKeys`), not contributed again; `font.ts` turns them into
-CSS variables on the editor.
+`fontVariations`, and `editor.lineHeight` with VS Code's own rule: at its
+default (0) a line is 1.35 times the size (1.5 on macOS) rounded to whole
+pixels, as in the built-in text editor (19px at 14px, not Obsidian's 1.5); a
+value below 8 is a multiplier and a larger one is pixels. Headings keep
+Obsidian's sizes and line heights. Code is the same size as the text. These
+are native settings (`nativeConfigKeys`), not contributed again; `font.ts`
+turns them into CSS variables, which `settings.ts` delivers as an editor theme
+so a change makes CodeMirror measure the lines again (line numbers follow).
 
 ## Files
 

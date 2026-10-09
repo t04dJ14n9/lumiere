@@ -81,13 +81,33 @@ function variationSettings(variations: boolean | string, weight: number) {
 }
 
 /**
+ * VS Code's line height in pixels (`BareFontInfo._create`): 0 is the golden
+ * ratio of the size (1.35, or 1.5 on macOS), below 8 is a multiplier, else
+ * pixels; rounded to a whole pixel and at least 8.
+ */
+export function lineHeightPixels(
+  lineHeight: number,
+  fontSize: number,
+  mac: boolean,
+): number {
+  let pixels = lineHeight;
+  if (lineHeight <= 0) {
+    pixels = (mac ? 1.5 : 1.35) * fontSize;
+  } else if (lineHeight < 8) {
+    pixels = lineHeight * fontSize;
+  }
+  return Math.max(Math.round(pixels), 8);
+}
+
+/**
  * CSS custom properties for the note, following the built-in text editor:
  * the font family (with a monospace fallback, as VS Code adds), size,
- * weight, letter spacing, ligatures and variations. A line height of 0 keeps
- * the note's own 1.5 (Obsidian's); a value below 8 is a multiplier and a
- * larger one is pixels, as in VS Code.
+ * weight, line height, letter spacing, ligatures and variations.
  */
-export function fontVariables(font: FontSettings): Record<string, string> {
+export function fontVariables(
+  font: FontSettings,
+  mac = false,
+): Record<string, string> {
   const vars: Record<string, string> = {};
   const family = cssValue(font.fontFamily);
   if (family) {
@@ -105,12 +125,14 @@ export function fontVariables(font: FontSettings): Record<string, string> {
   if (/^(normal|bold|\d{1,4})$/.test(weight)) {
     vars["--text-weight"] = weight;
   }
-  if (font.lineHeight > 0 && font.lineHeight < 8) {
-    vars["--line-height"] = String(font.lineHeight);
-  } else if (font.lineHeight >= 8 && size > 0) {
+  if (size > 0) {
+    // A unitless ratio, so the gutter can multiply it by the size.
+    const pixels = lineHeightPixels(font.lineHeight, Math.max(size, 6), mac);
     vars["--line-height"] = String(
-      Math.round((font.lineHeight / Math.max(size, 6)) * 10000) / 10000,
+      Math.round((pixels / Math.max(size, 6)) * 1e6) / 1e6,
     );
+  } else if (font.lineHeight > 0 && font.lineHeight < 8) {
+    vars["--line-height"] = String(font.lineHeight);
   }
   if (font.letterSpacing) {
     vars["--text-letter-spacing"] =

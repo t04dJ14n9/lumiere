@@ -246,6 +246,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Vim :w, :q, :wq, :x, :u and :red | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Verify bindings left unbound | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | VS Code owns save, undo/redo, hot exit and settings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Note font and line height follow VS Code's editor settings for Markdown | not applicable (Obsidian's 1.5 line height) | Owner decision, 2026-10-09: at `editor.lineHeight` 0 the note uses the built-in editor's line height (1.35 × size rounded, 1.5 on macOS; 16/19/22/27px at 12/14/16/20px); set values are honoured | Manual scenario pending; `test/vscode/font.spec.ts` (VS Code and Cursor), `src/plugins/editor/font.test.ts` | not observed |
 | Theme follows VS Code colors | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Rename link updates prompt by default | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native outline/backlinks/tags views | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fontVariables } from "./font";
+import { fontVariables, lineHeightPixels } from "./font";
 import type { FontSettings } from "./font";
 
 const base: FontSettings = {
@@ -41,23 +41,39 @@ test("the family gets a monospace fallback and the code font follows it", () => 
   );
 });
 
-test("line height follows VS Code: 0 keeps 1.5, below 8 multiplies, otherwise pixels", () => {
+test("line height follows VS Code: automatic at 0, a multiplier below 8, otherwise pixels, rounded", () => {
+  // VS Code's automatic line height: round(1.35 × size), 1.5 on macOS.
+  for (const [size, linux, mac] of [
+    [12, 16, 18],
+    [14, 19, 21],
+    [16, 22, 24],
+    [20, 27, 30],
+  ] as const) {
+    assert.equal(lineHeightPixels(0, size, false), linux, `${size}px`);
+    assert.equal(lineHeightPixels(0, size, true), mac, `${size}px on macOS`);
+    const ratio = Number(
+      fontVariables({ ...base, fontSize: size })["--line-height"],
+    );
+    assert.ok(Math.abs(ratio * size - linux) < 1e-4, `${size}px ratio`);
+  }
   assert.equal(
     fontVariables({ ...base, fontSize: 14 })["--line-height"],
-    undefined,
+    "1.357143",
   );
-  assert.equal(
-    fontVariables({ ...base, fontSize: 14, lineHeight: 1.6 })["--line-height"],
-    "1.6",
-  );
+  // Multipliers and pixels are rounded to whole pixels, at least 8.
+  assert.equal(lineHeightPixels(1.6, 14, false), 22);
+  assert.equal(lineHeightPixels(26, 16, false), 26);
+  assert.equal(lineHeightPixels(0, 5, false), 8);
+  assert.equal(lineHeightPixels(1, 6, false), 8);
   assert.equal(
     fontVariables({ ...base, fontSize: 16, lineHeight: 26 })["--line-height"],
     "1.625",
   );
-  // Pixels need a known size.
+  // Without a known size (no host), only a multiplier can apply.
+  assert.equal(fontVariables(base)["--line-height"], undefined);
   assert.equal(
-    fontVariables({ ...base, lineHeight: 26 })["--line-height"],
-    undefined,
+    fontVariables({ ...base, lineHeight: 1.6 })["--line-height"],
+    "1.6",
   );
 });
 
