@@ -5,7 +5,7 @@ import * as path from 'node:path';
 const PNG_DATA_URL = 'data:image/png;base64,';
 const MB = 1024 * 1024;
 /** `vscodeEmbedPdf.regionImageCache.maxSizeMB`: its default and its floor. */
-const DEFAULT_MAX_MB = 50;
+const DEFAULT_MAX_MB = 100;
 const MIN_MAX_MB = 1;
 
 /** The snapshot cap, in bytes, from the setting's value in megabytes. */

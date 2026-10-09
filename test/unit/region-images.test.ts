@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readdir, rm, stat, utimes, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
@@ -110,12 +110,22 @@ test('saves made together never delete each other', async () => {
   assert.deepEqual(await names(), [path.basename(files[2]!)]);
 });
 
+test('the setting\'s contributed default is the default used in code: 100 MB', async () => {
+  const manifest = JSON.parse(await readFile(path.join(import.meta.dirname, '../../package.json'), 'utf8')) as {
+    contributes: { configuration: { properties: Record<string, { default?: unknown; minimum?: unknown }> } };
+  };
+  const setting = manifest.contributes.configuration.properties['vscodeEmbedPdf.regionImageCache.maxSizeMB'];
+  assert.equal(setting?.default, 100);
+  assert.equal(setting?.minimum, 1);
+  assert.equal(regionCacheBytes(undefined), 100 * 1024 * 1024);
+});
+
 test('the cap setting is read in megabytes, with a default and a floor', () => {
   assert.equal(regionCacheBytes(50), 50 * 1024 * 1024);
   assert.equal(regionCacheBytes(2.5), 2.5 * 1024 * 1024);
-  assert.equal(regionCacheBytes(undefined), 50 * 1024 * 1024);
-  assert.equal(regionCacheBytes('10'), 50 * 1024 * 1024);
-  assert.equal(regionCacheBytes(Number.NaN), 50 * 1024 * 1024);
+  assert.equal(regionCacheBytes(undefined), 100 * 1024 * 1024);
+  assert.equal(regionCacheBytes('10'), 100 * 1024 * 1024);
+  assert.equal(regionCacheBytes(Number.NaN), 100 * 1024 * 1024);
   assert.equal(regionCacheBytes(0), 1024 * 1024);
   assert.equal(regionCacheBytes(-5), 1024 * 1024);
 });

@@ -71,7 +71,7 @@ big 6 1024 4096 16 0.3 300K 4.33 26.4 213
 Snapshots are saved in a `regions` folder in the extension's storage for the
 workspace (`workspaceStorage/<id>/t04dj14n9.vscode-embedpdf/regions`), not in
 the workspace itself (global storage when no folder is open). Together they
-use at most `vscodeEmbedPdf.regionImageCache.maxSizeMB` megabytes (default 50,
+use at most `vscodeEmbedPdf.regionImageCache.maxSizeMB` megabytes (default 100,
 at least 1; a change applies from the next snapshot): past that, the least
 recently used are deleted, never the one just saved. Copying or asking about a
 region again counts as a use. A selection across pages lists one link per
