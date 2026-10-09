@@ -88,11 +88,14 @@ const size = {
 export default tseslint.config(
   {
     ignores: [
-      "dist/**",
+      // Build output, including the sample plugin's.
+      "**/dist/**",
       ".cache/**",
       "test-results/**",
       "playwright-report/**",
       "artifacts/**",
+      // The VS Code build that `pnpm test:vscode` downloads when none is installed.
+      ".vscode-test/**",
     ],
   },
   js.configs.recommended,
