@@ -17,11 +17,11 @@ const stores = new WeakMap<Workbench, PropertyStores>();
 export const propertiesHost: Plugin<{ panel: PanelShell }> = {
   name: "properties",
   inject: { required: ["rpc", "workbench", "vault"] },
-  apply(ctx) {
+  apply(ctx, { panel }) {
     const preferences = sharedStores(ctx.workbench);
     registerTypes(ctx, preferences.types);
     registerPropertyNames(ctx, preferences.types);
-    registerDisclosure(ctx, preferences.collapse);
+    registerDisclosure(ctx, preferences.collapse, panel.document.uri);
   },
 };
 
@@ -83,19 +83,23 @@ function registerPropertyNames(
 function registerDisclosure(
   ctx: Context,
   disclosure: PropertyCollapseStore,
+  note: string,
 ): void {
   ctx.effect(() =>
-    ctx.rpc.handle(protocol, "collapsed", () => disclosure.read()),
+    ctx.rpc.handle(protocol, "collapsed", () => disclosure.read(note)),
   );
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "setCollapsed", async ({ collapsed }) => {
-      await disclosure.set(collapsed);
-      return disclosure.read();
+      await disclosure.set(note, collapsed);
+      return disclosure.read(note);
     }),
   );
+  // Other panels of the same note follow; other notes do not.
   ctx.effect(() =>
-    disclosure.subscribe((collapsed) =>
-      ctx.rpc.notify(protocol, "collapsed", collapsed),
-    ),
+    disclosure.subscribe((changed, collapsed) => {
+      if (changed === note) {
+        ctx.rpc.notify(protocol, "collapsed", collapsed);
+      }
+    }),
   );
 }

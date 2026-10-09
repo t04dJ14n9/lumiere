@@ -38,4 +38,4 @@ Obsidian 1.14.4 behaviour in `docs/properties-diff.md`.
   the existing name is rejected. Try a new name, then fill its value.
 - Use Enter, Tab, arrows, Delete and Escape on keys, values and rows. Use
   Backspace twice in an empty pill input to focus and then remove its last item.
-- Collapse the sheet and reopen either note: the collapse preference is shared.
+- Collapse the sheet: it stays collapsed for this note only (per-note, as in Obsidian).

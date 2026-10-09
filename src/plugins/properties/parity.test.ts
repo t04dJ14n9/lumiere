@@ -92,3 +92,13 @@ test("committing a new property writes an empty YAML value", () => {
   assert.match(result, /\nstatus:\s*\n---/);
   assert.equal(frontmatter(result)?.values?.status, null);
 });
+
+test("list items that are wikilinks render as links, as in Obsidian, and stay editable text", () => {
+  const html = renderProperties(
+    '---\nlinks:\n  - "[[Target]]"\n  - "[[notes/Plan|The plan]]"\n  - plain\n---\n',
+  );
+  const list = html.slice(html.indexOf('data-property-list="links"'));
+  assert.equal((list.match(/class="metadata-link"/g) ?? []).length, 2);
+  assert.doesNotMatch(list, /<span>\[\[Target\]\]<\/span>/);
+  assert.match(list, /<span>plain<\/span>/);
+});

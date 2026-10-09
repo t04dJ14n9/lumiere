@@ -230,7 +230,7 @@ Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
    owner's editor; these are not established by the DOM event unit fakes.
 
 Daily-note links are deferred because this editor has no daily-note plugin;
-workspace-global collapse and native picker appearance are deliberate limits.
+per-note collapse (as in Obsidian) and native picker appearance are deliberate limits.
 
 ### inlineTitle
 

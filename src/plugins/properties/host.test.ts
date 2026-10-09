@@ -54,7 +54,10 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
       },
     }),
   );
-  const enable = () => root.plugin(propertiesHost, { panel: {} as PanelShell });
+  const enable = () =>
+    root.plugin(propertiesHost, {
+      panel: { document: { uri: "file:///vault/One.md" } } as PanelShell,
+    });
   let fiber = enable();
   await root.settled();
   let broadcasts = 0;

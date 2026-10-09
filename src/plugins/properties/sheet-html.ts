@@ -95,7 +95,9 @@ function editableList(value: unknown, key: string): string {
       const label =
         key.toLowerCase() === "tags" && validTag(text)
           ? `<button type="button" tabindex="-1" class="md-tag"${attr("data-tag", text)}${attr("aria-label", `Search tag #${text}`)}>${escape(text)}</button>`
-          : `<span>${escape(text)}</span>`;
+          : /^\[\[[^\n]+\]\]$/.test(text)
+            ? `<span class="metadata-link">${renderInline(text)}</span>`
+            : `<span>${escape(text)}</span>`;
       return `<span class="property-chip multi-select-pill" tabindex="-1" data-property-chip="${index}"><span class="multi-select-pill-content">${label}</span><button type="button" tabindex="-1" class="multi-select-pill-remove-button" data-property-remove="${index}"${attr("aria-label", `Remove ${text} from ${key}`)}>×</button></span>`;
     })
     .join("");

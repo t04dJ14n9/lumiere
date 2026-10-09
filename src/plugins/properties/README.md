@@ -22,7 +22,7 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 - `protocol.ts`: validated type, vault-name and disclosure RPC.
 - `host.ts`: shared stores and per-panel RPC registrations.
 - `type-store.ts`: vault/name preferences and shared subscriptions.
-- `collapse-store.ts`: workspace disclosure persistence and shared subscriptions.
+- `collapse-store.ts`: per-note disclosure persistence (as in Obsidian) and same-note subscriptions.
 - `collapse-store.test.ts`: disclosure propagation, rendering and reopen checks.
 - `property-names.ts`: vault metadata and registered-name suggestions.
 - `name-suggestions.ts`: one pending row’s accessible filtered popup.

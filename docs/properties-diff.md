@@ -34,8 +34,8 @@ writable sandbox; this review is also copied to `/tmp/properties-diff.md`.
 | Names differing only by case, fuzzy suggestion ranking and uncommon modifier combinations | No empirical rules supplied for these cases | defer+why — preserve existing exact YAML key matching and simple case-insensitive substring filtering; avoid inventing unmeasured behaviour |
 | Enter adds pill and retains input focus; empty-input Backspace focuses last pill, then Backspace removes; Enter on pill edits; x removes | These behaviours already exist with native input; unchanged no-op add can refresh away focus | fix — preserve/pin pill actions while adapting contenteditable and repair focus across reconciliation |
 | Tags drop a leading # | Already trim and drop one leading #, then validate | fix — extract/pin shared normalization for additions and pill edits |
-| Collapse state global across notes and reopen | Native details defaults open; no shared persistence | fix — persist one workspace-wide disclosure preference through validated host RPC and broadcast across panels; scope independent of note/vault |
-| Global disclosure across unrelated VS Code workspaces | Storage adapter is workspace state | reject+why — use existing workspace storage rather than changing the extension-wide storage contract for this feature |
+| Collapse state: **per note** (measured in Obsidian 1.14.4 with `docs/obsidian-measurements/coll.mjs`: collapsing one note leaves another open, and a note keeps its state when reopened) | Native details defaults open; no persistence | fix — persist collapsed notes (by URI) in workspace state through validated host RPC; panels of the same note follow each other |
+| Collapse state shared across VS Code workspaces | Storage adapter is workspace state | reject+why — Obsidian's state is per vault; ours is per workspace, which is the same unit |
 | Text Enter writes quoted YAML when needed; checkbox click/Space writes boolean | YAML serializer and checkbox click already do this | fix — add regression tests that pin existing safe quoting/boolean behaviour |
 | Nested/anchored/recursive YAML beyond the measured scalar/list spec | Existing safe read-only rendering and guarded edits | defer+why — retain source-only support and recursion bounds; complex YAML editing is unmeasured and disproportionately costly |
 
@@ -56,3 +56,13 @@ pill actions, occurrence matching and guarded YAML edits.
 Final unit and browser results are in `IMPLEMENTATION_PLAN.md`. The single
 browser attempt failed at Chromium launch with sandbox EPERM, before assertions.
 No native editor or Obsidian was launched. Owner checks remain in the manual plan.
+
+## Real-browser parity check (B8-1)
+
+Side by side in real VS Code 1.141 (this extension, `test/fixtures/vault/property.md`) and Obsidian 1.14.4:
+`docs/screenshots/properties-side-sheet.png` (Obsidian left, ours right) and
+`docs/screenshots/properties-side-type-menu.png` (the Property type submenu).
+Structure, icons, value widgets, pills, the Property type submenu order and the checked
+"Automatic (Text)" entry match. Known remaining differences: menu items have no icons,
+Obsidian's date link flair and row tooltip are absent, and the theme colours follow the
+VS Code theme. Collapse state was re-measured and is per note (`obsidian-measurements/coll.mjs`).
