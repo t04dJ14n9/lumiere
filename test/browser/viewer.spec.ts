@@ -145,6 +145,31 @@ test('Copy for Agent right after a text drag reports the selection before the co
   expect(order.indexOf('text')).toBeLessThan(order.indexOf('copy'));
 });
 
+test('Ask Agent, from a text or region menu, comes after the full selection report', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
+  const textMenu = page.getByRole('toolbar', { name: 'PDF text selection actions' });
+  await expect(textMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy for Agent', 'Copy text']);
+  await textMenu.getByRole('button', { name: 'Ask Agent' }).click();
+  await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('askAgent');
+  const beforeAsk = (await messages(page)).filter(message => message.type === 'selection').at(-1);
+  expect(beforeAsk?.selection).toMatchObject({ kind: 'text', text: 'Synthetic page 1' });
+
+  // The ask follows the region's report with its text and snapshot.
+  await page.keyboard.press('Escape');
+  await drag(page, at(60, 70), at(230, 120));
+  const regionMenu = page.getByRole('toolbar', { name: 'PDF region actions' });
+  await expect(regionMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy for Agent']);
+  await regionMenu.getByRole('button', { name: 'Ask Agent' }).click();
+  await expect.poll(async () => (await messages(page)).filter(message => message.type === 'askAgent').length).toBe(2);
+  const all = await messages(page);
+  const ask = all.length - 1 - [...all].reverse().findIndex(message => message.type === 'askAgent');
+  const last = all.slice(0, ask).filter(message => message.type === 'selection').at(-1);
+  expect(last?.selection).toMatchObject({ kind: 'region', text: 'Synthetic page 1' });
+  expect(last?.image).toMatch(/^data:image\/png;base64,/);
+});
+
 test('Escape clears a text selection, in the viewer and for the extension', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);

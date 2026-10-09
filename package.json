@@ -61,6 +61,13 @@
     ],
     "commands": [
       {
+        "command": "vscodeEmbedPdf.askAgent",
+        "title": "Ask Agent",
+        "category": "PDF",
+        "icon": "$(comment-discussion)",
+        "enablement": "vscodeEmbedPdf.hasSelection"
+      },
+      {
         "command": "vscodeEmbedPdf.copyForAgent",
         "title": "Copy for Agent",
         "category": "PDF",
@@ -81,12 +88,21 @@
     "menus": {
       "editor/title": [
         {
+          "command": "vscodeEmbedPdf.askAgent",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
+          "group": "navigation@1"
+        },
+        {
           "command": "vscodeEmbedPdf.copyForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "commandPalette": [
+        {
+          "command": "vscodeEmbedPdf.askAgent",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
         {
           "command": "vscodeEmbedPdf.copyForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
@@ -95,7 +111,45 @@
           "command": "vscodeEmbedPdf.goToOutlineItem",
           "when": "false"
         }
+      ],
+      "webview/context": [
+        {
+          "command": "vscodeEmbedPdf.askAgent",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
+          "group": "0_agent@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.copyForAgent",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
+          "group": "0_agent@2"
+        }
       ]
+    },
+    "configuration": {
+      "title": "Agent PDF Viewer",
+      "properties": {
+        "vscodeEmbedPdf.askAgent.target": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "cursor",
+            "chat",
+            "claudeCode",
+            "codex",
+            "clipboard"
+          ],
+          "enumDescriptions": [
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat), else Claude Code, else Codex, else only copy.",
+            "Cursor's chat.",
+            "VS Code's chat.",
+            "Claude Code: opens it; paste the selection.",
+            "Codex: opens it; paste the selection.",
+            "Only copy the selection."
+          ],
+          "markdownDescription": "Where **Ask Agent** sends a PDF selection. It is always copied too."
+        }
+      }
     }
   },
   "scripts": {

@@ -61,7 +61,7 @@ export function Page({
       {region?.page === page && (
         <>
           <Box className="region-selection" rect={region.rect} scale={scale} />
-          <RegionMenu rect={region.rect} scale={scale} onCopy={() => void selection.copyForAgent()} />
+          <RegionMenu rect={region.rect} scale={scale} selection={selection} />
         </>
       )}
       <SelectionLayer
@@ -88,7 +88,7 @@ function TextSelectionMenu({ menuWrapperProps, rect, placement, selection }:
         aria-label="PDF text selection actions"
         style={{ top: placement.suggestTop ? -40 : rect.size.height + 6 }}
       >
-        <button type="button" onClick={() => void selection.copyForAgent()}>Copy for Agent</button>
+        <AgentButtons selection={selection} />
         <button type="button" onClick={selection.copyText}>Copy text</button>
       </div>
     </div>
@@ -112,10 +112,10 @@ const MENU_GAP = 6;
  * The menu of a selected region: below it, or above it when there is no
  * room below in the viewer (a region dragged at the bottom of the screen).
  */
-function RegionMenu({ rect: [left, top, , bottom], scale, onCopy }: {
+function RegionMenu({ rect: [left, top, , bottom], scale, selection }: {
   rect: PageRect;
   scale: number;
-  onCopy: () => void;
+  selection: SelectionReporting;
 }): React.JSX.Element {
   const menu = useRef<HTMLDivElement>(null);
   const [above, setAbove] = useState(false);
@@ -141,7 +141,20 @@ function RegionMenu({ rect: [left, top, , bottom], scale, onCopy }: {
     : { left: left * scale, top: bottom * scale + MENU_GAP };
   return (
     <div ref={menu} className="selection-menu" role="toolbar" aria-label="PDF region actions" style={style}>
-      <button type="button" onClick={onCopy}>Copy for Agent</button>
+      <AgentButtons selection={selection} />
     </div>
+  );
+}
+
+/**
+ * Ask Agent opens the agent chat with the selection typed in; Copy for Agent
+ * only copies it, for an agent elsewhere.
+ */
+function AgentButtons({ selection }: { selection: SelectionReporting }): React.JSX.Element {
+  return (
+    <>
+      <button type="button" onClick={() => void selection.askAgent()}>Ask Agent</button>
+      <button type="button" onClick={() => void selection.copyForAgent()}>Copy for Agent</button>
+    </>
   );
 }

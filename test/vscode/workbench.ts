@@ -83,6 +83,31 @@ export async function editorTitleAction(page: Page, label: string): Promise<void
   await item.click();
 }
 
+/**
+ * What the agent chat's input holds, its text and attached files, with all
+ * whitespace removed: editors wrap long lines at spaces. VS Code's chat input,
+ * or Cursor's agent chat input, where attached files are pills in the text.
+ */
+export async function agentChatInput(page: Page): Promise<string> {
+  const cursor = page.locator('.aislash-editor-input:visible');
+  if (await cursor.count()) return withoutSpaces(await cursor.last().innerText());
+  const input = page.locator('.interactive-input-part:visible').last();
+  const attachments = await input.locator('.chat-attached-context-attachment').allInnerTexts();
+  return withoutSpaces([await input.locator('.monaco-editor').first().innerText(), ...attachments].join(''));
+}
+
+export function withoutSpaces(text: string): string {
+  return text.replace(/\s+/gu, '');
+}
+
+/** Right-click at a point and choose an item of VS Code's context menu. */
+export async function contextMenu(page: Page, at: Point, label: string): Promise<void> {
+  await page.mouse.click(...at.screen, { button: 'right' });
+  const item = page.locator('.monaco-menu').getByRole('menuitem', { name: label });
+  await item.hover();
+  await item.click();
+}
+
 export async function closeAllEditors(page: Page): Promise<void> {
   if (await page.locator('.tabs-container .tab').count()) await command(page, 'View: Close All Editor Groups');
   await expect(page.locator('.tabs-container .tab')).toHaveCount(0);

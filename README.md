@@ -2,8 +2,9 @@
 
 A PDF viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
 and its PDFium engine. Select text or drag a box over a figure, press
-**Copy for Agent**, and paste into your coding agent: it gets the exact page
-and box, the file's hash, and the selected text.
+**Ask Agent**, and type your question: the agent chat opens with the exact
+page and box, the file's hash, the selected text, and for a box a snapshot
+of it. **Copy for Agent** copies the same for any other agent.
 
 ## Features
 
@@ -13,15 +14,27 @@ and box, the file's hash, and the selected text.
   same page and zoom.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
-- **Copy for Agent.** Select text, or drag over empty page space to select a
-  region (a figure, table or equation), then use the button next to the
-  selection, the editor title button, or **PDF: Copy for Agent**. ⌘C / Ctrl+C
+- **Ask Agent and Copy for Agent.** Select text, or drag over empty page
+  space to select a region (a figure, table or equation), then use the
+  buttons next to the selection, the right-click menu, the editor title
+  buttons, or **PDF: Ask Agent** / **PDF: Copy for Agent**. ⌘C / Ctrl+C
   copies just the text.
 
-  In Cursor, the editor title bar keeps only a few buttons, so **Copy for
-  Agent** sits in the **…** (More Actions) menu while something is selected.
-  To pin it to the title bar, open that menu, choose **Configure Icon
-  Visibility** and tick **Copy for Agent**.
+  **Ask Agent** copies the selection and opens the agent chat with it typed
+  in, ready for your question:
+  - in Cursor, a new agent chat, with a region's snapshot attached;
+  - in VS Code, the chat view when a chat extension such as Copilot Chat is
+    installed (and `chat.disableAIFeatures` is off), with the snapshot attached;
+  - otherwise Claude Code or Codex, if installed: their chat opens and you
+    paste the selection (they take no prefilled text);
+  - otherwise it only copies, and says so.
+
+  The `vscodeEmbedPdf.askAgent.target` setting picks one of these instead.
+
+  In Cursor, the editor title bar keeps only a few buttons, so **Ask Agent**
+  and **Copy for Agent** sit in the **…** (More Actions) menu while something
+  is selected. To pin them to the title bar, open that menu, choose
+  **Configure Icon Visibility** and tick them.
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
 
@@ -44,8 +57,10 @@ Selected PDF region. Read the text inside the view rectangle, or render that are
 Region image: `/…/workspaceStorage/…/regions/attention-p9-3f2a….png`
 
 Text in the region:
-N d_model d_ff h d_k d_v P_drop ε_ls train steps PPL (dev) BLEU (dev) params ×10⁶
+Table 3: Variations on the Transformer architecture. …
 base 6 512 2048 8 64 64 0.1 0.1 100K 4.92 25.8 65
+…
+big 6 1024 4096 16 0.3 300K 4.33 26.4 213
 ```
 
 Snapshots are kept in the extension's storage, not the workspace; only the
@@ -84,6 +99,7 @@ src/
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
 │   ├── agent-text.ts     the text Copy for Agent copies
+│   ├── agent-target.ts   which agent chat Ask Agent opens
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   └── geometry.ts       page rectangles
@@ -94,7 +110,8 @@ src/
 │   ├── pdf-panels.ts           all open editors and the active one
 │   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
-│   ├── commands.ts             Copy for Agent, Open Location
+│   ├── commands.ts             Copy for Agent, Ask Agent, Open Location
+│   ├── agent-chat.ts           opening the agent chat with a selection
 │   └── webview-html.ts         the viewer page and its content security policy
 └── webview/     the viewer (React + EmbedPDF), one module per concern
     ├── main.tsx, host.ts       entry and messages to the extension

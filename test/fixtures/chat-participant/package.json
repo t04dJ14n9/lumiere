@@ -1,0 +1,14 @@
+{
+  "name": "test-chat-participant",
+  "displayName": "Test chat participant",
+  "description": "Declares a chat participant, as Copilot Chat does, so VS Code's chat counts as served in the real-editor tests.",
+  "publisher": "vscode-embedpdf-tests",
+  "version": "0.0.1",
+  "private": true,
+  "engines": { "vscode": "^1.90.0" },
+  "contributes": {
+    "chatParticipants": [
+      { "id": "vscodeEmbedPdfTests.echo", "name": "echo", "fullName": "Echo", "description": "Test participant" }
+    ]
+  }
+}

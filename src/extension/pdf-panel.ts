@@ -2,11 +2,20 @@ import { createHash } from 'node:crypto';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { agentText } from '../shared/agent-text';
+import type { AgentTarget } from '../shared/agent-target';
+import { openAgentChat } from './agent-chat';
 import { parseViewerMessage, type HostMessage, type OutlineItem } from '../shared/messages';
 import type { PdfLocation } from '../shared/pdf-location';
 import type { PdfSelection } from '../shared/selection';
 import type { RegionImages } from './region-images';
 import { viewerHtml } from './webview-html';
+
+/** What to tell the user when the chat could not take the text itself. */
+const PASTE_HINTS: Partial<Record<AgentTarget, string>> = {
+  claudeCode: 'Paste it into Claude Code and ask your question.',
+  codex: 'Paste it into Codex and ask your question.',
+  clipboard: 'No agent chat found: paste it into your agent and ask your question.',
+};
 
 /** Let a file write settle before reloading the PDF. */
 const RELOAD_DELAY_MS = 150;
@@ -64,21 +73,36 @@ export class PdfPanel implements vscode.Disposable {
 
   /** Put the selection on the clipboard in the form agents read. */
   async copyForAgent(): Promise<boolean> {
-    if (!this.selection || !this.sha256) {
-      void vscode.window.showWarningMessage('Select text or a region in the PDF to copy it for an agent.');
-      return false;
-    }
-    await vscode.env.clipboard.writeText(await this.agentText());
+    if (!await this.copySelection()) return false;
     void vscode.window.showInformationMessage('Selection copied for agent.');
     return true;
   }
 
-  /** The selection in the form agents read, with its snapshot's path for a region. */
-  private async agentText(): Promise<string> {
-    const selection = this.selection!;
-    const image = await this.regionImage;
-    const source = { path: displayPath(this.uri), sha256: this.sha256! };
-    return agentText(selection, source, image ? { regionImage: image.fsPath } : {});
+  /**
+   * Copy the selection, then open the agent chat with it typed in (and a
+   * region's snapshot attached) so only the question is left to type.
+   */
+  async askAgent(): Promise<boolean> {
+    const copied = await this.copySelection();
+    if (!copied) return false;
+    const target = await openAgentChat(copied.text, copied.image);
+    const paste = PASTE_HINTS[target];
+    if (paste) void vscode.window.showInformationMessage(`Selection copied for agent. ${paste}`);
+    return true;
+  }
+
+  private async copySelection(): Promise<{ text: string; image?: vscode.Uri } | undefined> {
+    const selection = this.selection;
+    const sha256 = this.sha256;
+    if (!selection || !sha256) {
+      void vscode.window.showWarningMessage('Select text or a region in the PDF to copy it for an agent.');
+      return undefined;
+    }
+    const image = selection.kind === 'region' ? await this.regionImage : undefined;
+    const source = { path: displayPath(this.uri), sha256 };
+    const text = agentText(selection, source, image ? { regionImage: image.fsPath } : {});
+    await vscode.env.clipboard.writeText(text);
+    return { text, ...(image ? { image } : {}) };
   }
 
   dispose(): void {
@@ -109,6 +133,9 @@ export class PdfPanel implements vscode.Disposable {
       }
       case 'copyForAgent':
         await this.copyForAgent();
+        break;
+      case 'askAgent':
+        await this.askAgent();
         break;
       case 'openExternal':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));

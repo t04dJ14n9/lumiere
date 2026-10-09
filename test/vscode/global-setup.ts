@@ -38,10 +38,22 @@ export default async function globalSetup(): Promise<void> {
 
   const vsix = path.join(paths.root, 'extension.vsix');
   await createVSIX({ cwd: paths.repository, packagePath: vsix, dependencies: false });
-  execFileSync(cli, ['--user-data-dir', paths.userData, '--extensions-dir', paths.extensions, '--install-extension', vsix, '--force'], {
-    stdio: 'ignore',
-    env: cleanEnvironment(),
+  // A chat participant, as Copilot Chat declares, so VS Code's chat counts as
+  // served and Ask Agent opens it.
+  const participant = path.join(paths.root, 'chat-participant.vsix');
+  await createVSIX({
+    cwd: path.join(paths.repository, 'test', 'fixtures', 'chat-participant'),
+    packagePath: participant,
+    dependencies: false,
+    allowMissingRepository: true,
+    skipLicense: true,
   });
+  for (const extension of [vsix, participant]) {
+    execFileSync(cli, ['--user-data-dir', paths.userData, '--extensions-dir', paths.extensions, '--install-extension', extension, '--force'], {
+      stdio: 'ignore',
+      env: cleanEnvironment(),
+    });
+  }
 
   const port = await freePort();
   const vscode = spawn(executable, [

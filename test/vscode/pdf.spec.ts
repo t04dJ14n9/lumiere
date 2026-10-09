@@ -3,7 +3,9 @@ import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { paths } from './state';
 import {
+  agentChatInput,
   command,
+  contextMenu,
   drag,
   editorTitleAction,
   expect,
@@ -16,6 +18,7 @@ import {
   selectText,
   showPage,
   test,
+  withoutSpaces,
 } from './workbench';
 
 // The exact text Copy for Agent produces is covered by test/unit/agent-text.test.ts,
@@ -76,6 +79,22 @@ test('Copy for Agent works from the selection menu and the editor title button',
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
   await editorTitleAction(page, 'Copy for Agent');
   await expect(confirmation).toBeVisible();
+});
+
+test('Ask Agent from the context menu opens the agent chat with the region typed in and its snapshot attached', async ({ workbench: page }) => {
+  // VS Code's chat counts as served thanks to test/fixtures/chat-participant; Cursor has its own.
+  await openFile(page, PDF);
+  const viewer = await pdfViewer(page);
+  await fitPage(viewer);
+  await showPage(viewer, 3);
+  const at = await pagePoint(viewer, 3);
+  await drag(page, at(60, 70), at(230, 150));
+  await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
+  await contextMenu(page, at(100, TEXT_MIDLINE), 'Ask Agent');
+  await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
+    .toContain(withoutSpaces(`Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`));
+  // The snapshot: attached in VS Code's chat, a file pill in Cursor's.
+  expect(await agentChatInput(page)).toMatch(/outline-p3-[0-9a-f]{12}\.png/u);
 });
 
 test('PDF: Open Location opens a pasted link at its page and flashes its box', async ({ workbench: page }) => {
