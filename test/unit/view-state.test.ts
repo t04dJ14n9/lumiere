@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseViewerMessage } from '../../src/shared/messages';
+import { parseStateReport } from './state-report';
 import {
   pageLabel,
   parsePageInput,
@@ -11,7 +11,7 @@ import {
 } from '../../src/shared/view-state';
 
 test('view reports from the viewer are validated and the zoom rounded', () => {
-  assert.deepEqual(parseViewerMessage({ type: 'view', view: { page: 4, pageCount: 15, zoomPercent: 163.7, fit: 'width' } }), {
+  assert.deepEqual(parseStateReport({ type: 'view', view: { page: 4, pageCount: 15, zoomPercent: 163.7, fit: 'width' } }), {
     type: 'view',
     view: { page: 4, pageCount: 15, zoomPercent: 164, fit: 'width', tool: 'text' },
   });
@@ -31,7 +31,7 @@ test('view reports from the viewer are validated and the zoom rounded', () => {
     null,
     'page 1',
   ]) {
-    assert.equal(parseViewerMessage({ type: 'view', view }), undefined, JSON.stringify(view));
+    assert.equal(parseStateReport({ type: 'view', view }), undefined, JSON.stringify(view));
   }
 });
 

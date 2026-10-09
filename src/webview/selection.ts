@@ -5,7 +5,7 @@ import { useSelectionCapability } from '@embedpdf/plugin-selection/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PageRect } from '../shared/geometry';
 import type { RegionSelection } from '../shared/selection';
-import { postToHost } from './host';
+import { postToHost, reportToHost } from './host';
 import { readRegionDetails } from './region-details';
 
 /** Drags smaller than this (in points) are clicks, not regions. */
@@ -31,7 +31,7 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
   const changeRegion = useCallback((next: RegionSelection | undefined): void => {
     regionRef.current = next;
     setRegion(next);
-    postToHost({ type: 'selection', selection: next ?? null });
+    reportToHost({ selection: { selection: next ?? null } });
   }, []);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
       scope.onSelectionChange(range => {
         if (range) return;
         selectedText.current = undefined;
-        if (!regionRef.current) postToHost({ type: 'selection', selection: null });
+        if (!regionRef.current) reportToHost({ selection: { selection: null } });
       }),
       // A click with the Select Region tool, which has no empty-space clicks:
       // the marquee is cancelled without ending.
@@ -73,7 +73,7 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
           const detailed: RegionSelection = { ...region, ...(text ? { text } : {}) };
           regionRef.current = detailed;
           setRegion(detailed);
-          postToHost({ type: 'selection', selection: detailed, ...(image ? { image } : {}) });
+          reportToHost({ selection: { selection: detailed, ...(image ? { image } : {}) } });
         }, () => undefined);
       }),
       scope.onEmptySpaceClick(() => {
@@ -138,7 +138,7 @@ function reportText(scope: SelectionScope): Promise<string | undefined> {
         page: page.pageIndex + 1,
         rects: page.segmentRects.map(toPageRect),
       }));
-      if (text && pages.length > 0) postToHost({ type: 'selection', selection: { kind: 'text', text, pages } });
+      if (text && pages.length > 0) reportToHost({ selection: { selection: { kind: 'text', text, pages } } });
       resolve(text || undefined);
     }, () => resolve(undefined));
   });

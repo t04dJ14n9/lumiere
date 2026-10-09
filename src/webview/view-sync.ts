@@ -2,7 +2,7 @@ import { ZoomMode, useZoom } from '@embedpdf/plugin-zoom/react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { FitMode, ToolMode, ViewerAction } from '../shared/view-state';
 import { nextZoomStep } from '../shared/zoom-steps';
-import { postToHost } from './host';
+import { reportToHost } from './host';
 import type { Navigation } from './navigation';
 import { DOCUMENT_ID, ZOOM_RANGE } from './plugins';
 
@@ -18,7 +18,7 @@ export function useViewReporting(navigation: Navigation, tool: ToolMode): void {
   useEffect(() => {
     // Before the layout is ready there is no page yet.
     if (pageCount < 1 || page < 1 || zoomPercent <= 0) return;
-    postToHost({ type: 'view', view: { page, pageCount, zoomPercent, fit, tool } });
+    reportToHost({ view: { page, pageCount, zoomPercent, fit, tool } });
   }, [page, pageCount, zoomPercent, fit, tool]);
 }
 

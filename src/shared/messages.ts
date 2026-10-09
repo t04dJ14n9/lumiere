@@ -4,17 +4,32 @@
  *   host                              viewer
  *    │  ◄──────────── ready               the page has loaded
  *    │  load { data } ──────────►         the PDF bytes
- *    │  ◄──────────── outline { items }   bookmarks, once read
- *    │  ◄──────────── selection { … }     after each selection change; for a
- *    │                                    region, again with its text and image
+ *    │  ◄──────────── patch { version, load, patch }
+ *    │                                    what changed in the viewer's state:
+ *    │                                    outline, selection (for a region,
+ *    │                                    again with its text and image), view
+ *    │                                    (page and zoom)
  *    │  ◄──────────── copyLinkForAgent    the viewer's Copy Link for Agent button
  *    │  ◄──────────── toggleOutline       the viewer bar's outline button
  *    │  ◄──────────── floatingDock        the floating bar dragged to an edge
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
- *    │  ◄──────────── view { view }       page and zoom, after each change
  *    │  goTo { location } ──────►         open a page (and box)
  *    │  action { action } ──────►         page, zoom, find or tool, from a command
  *    │  toolbar { toolbar } ────►         the toolbar setting changed
+ *
+ * State reports are batched: the viewer collects what changed for a frame
+ * and sends one `patch` (only the latest of each part), so scrolling or a
+ * drag sends one message per frame, not one per event.
+ *
+ * Invariants:
+ *
+ * - Order: a pending patch is sent before any other viewer message, so the
+ *   host always has the selection before a Copy Link for Agent that follows.
+ * - Versions: patches are numbered 1, 2, 3… for the life of the page, and
+ *   the host applies a patch only if its version is newer than the last one
+ *   applied. `load` counts the `load` messages the viewer had received when
+ *   it sent the patch; the host drops a patch from an earlier load, so state
+ *   reported for the old bytes never lands on the new ones.
  *
  * The viewer runs untrusted PDF content, so the host validates what it
  * receives with `parseViewerMessage`.
@@ -34,19 +49,30 @@ export interface OutlineItem {
   children: OutlineItem[];
 }
 
+/** A selection as the viewer reports it. */
+export interface SelectionReport {
+  selection: PdfSelection | null;
+  /** For a region, a PNG of the box as a `data:image/png;base64,` URL. */
+  image?: string;
+}
+
+/** The parts of the viewer's state that changed; each is the latest value. */
+export interface ViewerPatch {
+  outline?: OutlineItem[];
+  selection?: SelectionReport;
+  view?: ViewState;
+}
+
 export type ViewerMessage =
   | { type: 'ready' }
-  | { type: 'outline'; items: OutlineItem[] }
-  /** `image`: for a region, a PNG of the box as a `data:image/png;base64,` URL. */
-  | { type: 'selection'; selection: PdfSelection | null; image?: string }
+  | { type: 'patch'; version: number; load: number; patch: ViewerPatch }
   | { type: 'copyLinkForAgent' }
   /** The viewer's outline button: show or hide the PDF Outline view. */
   | { type: 'toggleOutline' }
   /** The floating bar was dragged to another edge. */
   | { type: 'floatingDock'; dock: FloatingDock }
   | { type: 'openExternal'; url: string }
-  | { type: 'error'; message: string }
-  | { type: 'view'; view: ViewState };
+  | { type: 'error'; message: string };
 
 export type HostMessage =
   | { type: 'load'; data: ArrayBuffer }
@@ -72,13 +98,8 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     case 'copyLinkForAgent':
     case 'toggleOutline':
       return { type: message.type };
-    case 'selection': {
-      const selection = parseSelection(message.selection) ?? null;
-      const image = selection?.kind === 'region' && isPngDataUrl(message.image) ? message.image : undefined;
-      return { type: 'selection', selection, ...(image ? { image } : {}) };
-    }
-    case 'outline':
-      return { type: 'outline', items: parseOutline(message.items) };
+    case 'patch':
+      return parsePatchMessage(message);
     case 'floatingDock':
       return isFloatingDock(message.dock) ? { type: 'floatingDock', dock: message.dock } : undefined;
     case 'openExternal':
@@ -87,13 +108,47 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
       return typeof message.message === 'string'
         ? { type: 'error', message: message.message.slice(0, 1_000) }
         : undefined;
-    case 'view': {
-      const view = parseViewState(message.view);
-      return view ? { type: 'view', view } : undefined;
-    }
     default:
       return undefined;
   }
+}
+
+/**
+ * Whether the host should apply `patch`: newer than the last one it applied
+ * (`lastVersion`), and about the bytes it sent last (`loads` sent so far).
+ */
+export function isCurrentPatch(patch: { version: number; load: number }, lastVersion: number, loads: number): boolean {
+  return patch.version > lastVersion && patch.load === loads;
+}
+
+function parsePatchMessage(message: Record<string, unknown>): ViewerMessage | undefined {
+  const { version, load } = message;
+  if (!Number.isSafeInteger(version) || (version as number) < 1) return undefined;
+  if (!Number.isSafeInteger(load) || (load as number) < 0) return undefined;
+  const patch = parsePatch(message.patch);
+  return patch ? { type: 'patch', version: version as number, load: load as number, patch } : undefined;
+}
+
+/** A patch's parts; a malformed view rejects the patch, a malformed selection reads as none. */
+function parsePatch(value: unknown): ViewerPatch | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const { outline, selection, view } = value as Record<string, unknown>;
+  const patch: ViewerPatch = {};
+  if (outline !== undefined) patch.outline = parseOutline(outline);
+  if (selection !== undefined) patch.selection = parseSelectionReport(selection);
+  if (view !== undefined) {
+    const parsed = parseViewState(view);
+    if (!parsed) return undefined;
+    patch.view = parsed;
+  }
+  return patch;
+}
+
+function parseSelectionReport(value: unknown): SelectionReport {
+  const report = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+  const selection = parseSelection(report.selection) ?? null;
+  const image = selection?.kind === 'region' && isPngDataUrl(report.image) ? report.image : undefined;
+  return { selection, ...(image ? { image } : {}) };
 }
 
 /** A region snapshot: a PNG as a base64 data URL, of a sane size. */

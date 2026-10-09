@@ -12,8 +12,21 @@ async function open(page: Page, query = ''): Promise<void> {
   await expect(page.locator('.page[data-page-index="0"] img')).toBeVisible();
 }
 
-function messages(page: Page): Promise<Message[]> {
-  return page.evaluate(() => (window as unknown as { __messages: Message[] }).__messages);
+/**
+ * What the viewer sent, with each state `patch` spelled out as one message
+ * per part (outline, selection, view), in the order the host applies them.
+ */
+async function messages(page: Page): Promise<Message[]> {
+  const sent = await page.evaluate(() => (window as unknown as { __messages: Message[] }).__messages);
+  return sent.flatMap(message => {
+    if (message.type !== 'patch') return [message];
+    const { outline, selection, view } = message.patch as Record<string, unknown>;
+    return [
+      ...(outline ? [{ type: 'outline', items: outline }] : []),
+      ...(view ? [{ type: 'view', view }] : []),
+      ...(selection ? [{ type: 'selection', ...(selection as object) }] : []),
+    ];
+  });
 }
 
 async function lastSelection(page: Page): Promise<unknown> {

@@ -2,18 +2,26 @@
  * The viewer's side of the conversation with the extension. See
  * `shared/messages.ts` for the message flow.
  */
-import type { HostMessage, ViewerMessage } from '../shared/messages';
+import type { HostMessage, ViewerPatch } from '../shared/messages';
+import { createOutbox, type OutgoingMessage } from './outbox';
 
 declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
 
 type NavigationMessage = Exclude<HostMessage, { type: 'load' }>;
 
 const vscode = acquireVsCodeApi();
+const outbox = createOutbox(message => vscode.postMessage(message));
 const queued: NavigationMessage[] = [];
 let listener: ((message: NavigationMessage) => void) | undefined;
 
-export function postToHost(message: ViewerMessage): void {
-  vscode.postMessage(message);
+/** Send a message (after any pending state report). */
+export function postToHost(message: OutgoingMessage): void {
+  outbox.post(message);
+}
+
+/** Report a change in the viewer's state; changes are batched per frame. */
+export function reportToHost(patch: ViewerPatch): void {
+  outbox.report(patch);
 }
 
 /**
@@ -35,6 +43,7 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'load') {
       const data = asArrayBuffer(message.data);
+      outbox.loaded();
       if (data) onLoad(data);
       else postToHost({ type: 'error', message: 'The PDF data from the extension is not readable.' });
     } else if (listener) {

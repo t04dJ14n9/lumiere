@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { parseViewerMessage, type HostMessage, type OutlineItem, type ViewerMessage } from '../../../shared/messages';
+import { isCurrentPatch, parseViewerMessage, type HostMessage, type OutlineItem, type ViewerMessage, type ViewerPatch } from '../../../shared/messages';
 import type { PdfLocation } from '../../../shared/pdf-location';
 import type { PdfSelection } from '../../../shared/selection';
 import type { ToolbarSettings } from '../../../shared/toolbar-settings';
@@ -49,6 +49,9 @@ export class PdfPanel implements vscode.Disposable {
   private readonly selectionState = new PdfSelectionState();
   private readonly navigation: PdfNavigation;
   private readonly disposables: vscode.Disposable[] = [];
+  /** `load` messages sent to the current viewer page, and the last patch applied from it. */
+  private loads = 0;
+  private patchVersion = 0;
 
   constructor(
     readonly uri: vscode.Uri,
@@ -108,20 +111,16 @@ export class PdfPanel implements vscode.Disposable {
   private async apply(message: ViewerMessage): Promise<void> {
     switch (message.type) {
       case 'ready':
+        // A new viewer page: its loads and patch versions start again.
+        this.loads = 0;
+        this.patchVersion = 0;
         await this.load();
         break;
-      case 'outline':
-        this.outline = message.items;
-        this.changed.fire();
-        break;
-      case 'selection':
-        this.selectionState.set(message.selection ?? undefined, this.source.sha256, message.image);
-        this.changed.fire();
-        this.selected.fire(this.selectionState.snapshot());
-        break;
-      case 'view':
-        this.view = message.view;
-        this.changed.fire();
+      case 'patch':
+        // Stale (an older version) or about the previous bytes: see shared/messages.ts.
+        if (!isCurrentPatch(message, this.patchVersion, this.loads)) return;
+        this.patchVersion = message.version;
+        this.applyPatch(message.patch);
         break;
       case 'openExternal':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));
@@ -132,6 +131,14 @@ export class PdfPanel implements vscode.Disposable {
       default:
         await this.options.route(this, message);
     }
+  }
+
+  private applyPatch({ outline, selection, view }: ViewerPatch): void {
+    if (outline) this.outline = outline;
+    if (view) this.view = view;
+    if (selection) this.selectionState.set(selection.selection ?? undefined, this.source.sha256, selection.image);
+    this.changed.fire();
+    if (selection) this.selected.fire(this.selectionState.snapshot());
   }
 
   /** Send the file to the viewer, which (re)opens it. */
@@ -145,6 +152,7 @@ export class PdfPanel implements vscode.Disposable {
     const bytes = await this.source.read();
     if (!bytes) return;
     this.post({ type: 'load', data: bytes.data });
+    this.loads++;
     this.navigation.loadedNow();
   }
 
