@@ -14,6 +14,7 @@ import type { HostDocument } from "../../shared/runtime";
 import { editorOperations } from "./editors";
 import { vaultOperations } from "./vault";
 import { pluginOperations } from "./plugins";
+import { registerPluginManagement } from "./management";
 import { ExternalPlugins } from "./external-manager";
 import { ApiEvent } from "./event";
 import { documentSnapshot, editorSnapshot } from "./snapshots";
@@ -46,6 +47,7 @@ function buildApi(root: Context, platform: ApiPlatform): MarkdownWorkbenchApi {
     onDidResolveLinks: events.resolved.event,
   });
   bindEvents(root, platform, events, changed);
+  registerPluginManagement(root, api, platform);
   return api;
 }
 function createEvents(root: Context) {

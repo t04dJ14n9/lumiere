@@ -25,6 +25,7 @@ separate compartment so user state survives reconfiguration.
 - `host.ts`: panel registry, editor service and active-context registrations.
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
+- `associations.ts`: **Use Markdown Workbench for Markdown in This Workspace**.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `webview.ts`: view creation and named service/settings/RPC registrations.
 - `service.ts`: shared editor facade with caller-bound extension ownership.
@@ -55,6 +56,12 @@ to the **Markdown Workbench** output channel. The webview forwards its logs over
 the editor channel (`log`) at warn and above, and at debug too while
 `markdownWorkbench.debug.logging` (default false) is on; the host re-checks that
 setting before writing a forwarded debug line.
+
+**Use Markdown Workbench for Markdown in This Workspace** writes `*.md` and
+`*.markdown` into the workspace's `workbench.editorAssociations`, keeping its
+other entries. The editor is otherwise only an option for Markdown (DESIGN
+§25.2), so it does not take over every README; this makes a workspace behave
+like an Obsidian vault, where notes always open in the editor.
 
 ## Limits and differences from Obsidian
 

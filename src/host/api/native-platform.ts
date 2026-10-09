@@ -22,9 +22,9 @@ export function nativePlatform(): ApiPlatform {
         .getConfiguration("markdownWorkbench", resource)
         .get("plugins.external", {}),
     write: writeSetting,
-    async settings(resource) {
+    async settings(resource, query) {
       await vscode.commands.executeCommand("workbench.action.openSettings", {
-        query: "@ext:t04dj14n9.vscode-markdown-workbench plugins",
+        query: query ?? "@ext:t04dj14n9.vscode-markdown-workbench plugins",
         ...(resource ? { resource } : {}),
       });
     },

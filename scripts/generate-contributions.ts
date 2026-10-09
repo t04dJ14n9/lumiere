@@ -25,13 +25,14 @@ export async function contributions() {
     })),
   );
   const menus = manifests.flatMap((manifest) =>
-    (manifest.contributes?.commands ?? []).map((command) => ({
-      command: `markdownWorkbench.${command.id}`,
-      when:
+    (manifest.contributes?.commands ?? []).map((command) =>
+      withWhen(
+        { command: `markdownWorkbench.${command.id}` },
         command.palette === false
           ? "false"
           : whenEnabled(manifest, command.scope),
-    })),
+      ),
+    ),
   );
   const views = manifests.flatMap((manifest) =>
     (manifest.contributes?.views ?? []).map((view) => ({
@@ -61,12 +62,16 @@ export async function contributions() {
           (command) => command.key,
         ),
         ...(manifest.contributes?.keybindings ?? []),
-      ].map((command) => ({
-        command: `markdownWorkbench.${command.id}`,
-        key: command.key,
-        ...(command.mac ? { mac: command.mac } : {}),
-        when: whenEnabled(manifest, command.scope),
-      })),
+      ].map((command) =>
+        withWhen(
+          {
+            command: `markdownWorkbench.${command.id}`,
+            key: command.key,
+            ...(command.mac ? { mac: command.mac } : {}),
+          },
+          whenEnabled(manifest, command.scope),
+        ),
+      ),
     ),
     ...(views.length > 0 ? { views: { explorer: views } } : {}),
     menus: {
@@ -141,6 +146,14 @@ export async function contributions() {
  * host keeps `markdownWorkbench.plugin.<id>` current for the active panel.
  * Elsewhere, the plugin's setting decides.
  */
+/** Adds a `when` clause unless the contribution applies everywhere. */
+function withWhen<T extends object>(
+  item: T,
+  when: string,
+): T & { when?: string } {
+  return when ? { ...item, when } : item;
+}
+
 function whenEnabled(
   manifest: Manifest,
   scope: "editor" | "workbench" = "editor",
@@ -149,7 +162,10 @@ function whenEnabled(
     return `activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.${manifest.id}`;
   }
   if (manifest.kind === "core") {
-    return "config.markdownWorkbench.preset != 'minimal'";
+    // Core workbench commands (plugin management, the editor association)
+    // must work in the minimal preset too: it is the safe mode for
+    // diagnosing plugins.
+    return "";
   }
   return `config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.${manifest.id}.enabled`;
 }

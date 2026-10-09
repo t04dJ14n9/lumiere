@@ -1,4 +1,5 @@
 import { registerEditorActions } from "./actions-host";
+import { registerMarkdownAssociation } from "./associations";
 import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
@@ -22,6 +23,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
     provideEditorServices(ctx, panels, active);
+    registerMarkdownAssociation(ctx);
     ctx.effect(() =>
       ctx.workbench.registerEditor((shell) => {
         const panel = createPanel(shell, ctx.documents, ctx.workbench, {

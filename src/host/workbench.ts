@@ -30,6 +30,7 @@ export function createWorkbench(
     ...documentOperations(documents),
     ...commandOperations(),
     ...configurationOperations(),
+    editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
     registerEditor: (open) => registerEditor(extensionUri, documents, open),
   };
@@ -131,7 +132,7 @@ function documentOperations(
 }
 function commandOperations(): Pick<
   Workbench,
-  "command" | "execute" | "clipboard" | "error"
+  "command" | "execute" | "clipboard" | "error" | "inform"
 > {
   return {
     command(id, run) {
@@ -150,6 +151,29 @@ function commandOperations(): Pick<
     },
     error(message) {
       void vscode.window.showErrorMessage(message);
+    },
+    inform(message) {
+      void vscode.window.showInformationMessage(message);
+    },
+  };
+}
+function workspaceEditorAssociations(): NonNullable<
+  Workbench["editorAssociations"]
+> {
+  const settings = () => vscode.workspace.getConfiguration("workbench");
+  return {
+    read() {
+      if (!vscode.workspace.workspaceFolders?.length) {
+        return undefined;
+      }
+      return settings().inspect("editorAssociations")?.workspaceValue ?? {};
+    },
+    async write(associations) {
+      await settings().update(
+        "editorAssociations",
+        associations,
+        vscode.ConfigurationTarget.Workspace,
+      );
     },
   };
 }

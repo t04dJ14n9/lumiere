@@ -6,4 +6,14 @@ export default defineManifest({
   kind: "core",
   defaultEnabled: true,
   surfaces: ["host"],
-});
+  contributes: {
+    commands: [
+      { id: "managePlugins", title: "Manage Plugins", scope: "workbench" },
+      {
+        id: "showPluginStatus",
+        title: "Show Plugin Status",
+        scope: "workbench",
+      },
+    ],
+  },
+} as const);

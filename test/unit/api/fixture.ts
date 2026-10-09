@@ -188,6 +188,7 @@ export async function fixture() {
   const api = await createApi(root, platform);
   return {
     ...f,
+    workbench,
     root,
     api,
     platform,

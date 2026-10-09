@@ -47,9 +47,18 @@ export interface Workbench {
   execute(id: string, ...args: unknown[]): Promise<unknown>;
   clipboard: { read(): Promise<string>; write(text: string): Promise<void> };
   error(message: string): void;
+  inform?(message: string): void;
   // Editors and settings.
   registerEditor(open: (panel: PanelShell) => void): Disposer;
   onConfiguration?(listener: () => void): Disposer;
+  /**
+   * The workspace's own `workbench.editorAssociations`, not the user's or a
+   * folder's. `read()` is undefined when no workspace is open.
+   */
+  editorAssociations?: {
+    read(): unknown;
+    write(associations: Readonly<Record<string, string>>): Promise<void>;
+  };
   config(document: HostDocument): {
     debugLogging?: boolean;
     features?: Infer<typeof featureSettings>;

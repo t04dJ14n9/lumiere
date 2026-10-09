@@ -88,6 +88,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.useForMarkdownInWorkspace",
+        "title": "Use Markdown Workbench for Markdown in This Workspace",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.insertEmbed",
         "title": "Insert Embed",
         "category": "Markdown Workbench"
@@ -247,6 +252,16 @@
         "title": "Add File Property",
         "category": "Markdown Workbench",
         "icon": "$(symbol-property)"
+      },
+      {
+        "command": "markdownWorkbench.managePlugins",
+        "title": "Manage Plugins",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.showPluginStatus",
+        "title": "Show Plugin Status",
+        "category": "Markdown Workbench"
       },
       {
         "command": "markdownWorkbench.quickSwitcher",
@@ -532,6 +547,9 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
         },
         {
+          "command": "markdownWorkbench.useForMarkdownInWorkspace"
+        },
+        {
           "command": "markdownWorkbench.insertEmbed",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.embeds"
         },
@@ -658,6 +676,12 @@
         {
           "command": "markdownWorkbench.addProperty",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
+        },
+        {
+          "command": "markdownWorkbench.managePlugins"
+        },
+        {
+          "command": "markdownWorkbench.showPluginStatus"
         },
         {
           "command": "markdownWorkbench.quickSwitcher",

@@ -251,3 +251,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |

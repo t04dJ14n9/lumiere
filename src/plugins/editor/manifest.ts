@@ -33,6 +33,11 @@ export default defineManifest({
     commands: [
       { id: "titleActions", title: "Note Actions", icon: "$(zap)" },
       { id: "selectionActions", title: "Selection Actions" },
+      {
+        id: "useForMarkdownInWorkspace",
+        title: "Use Markdown Workbench for Markdown in This Workspace",
+        scope: "workbench",
+      },
     ],
     menus: [
       {
