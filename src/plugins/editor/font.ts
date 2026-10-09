@@ -28,6 +28,8 @@ const flag = new Schema<boolean | string>((value) => {
  */
 export const fontFields = {
   fontFamily: lenient(Schema.string(), ""),
+  /** The host's own default of `editor.fontFamily`, which VS Code appends. */
+  defaultFontFamily: lenient(Schema.string(), ""),
   fontSize: lenient(Schema.number(), 0),
   fontWeight: lenient(Schema.string(), "normal"),
   lineHeight: lenient(Schema.number(), 0),
@@ -36,12 +38,17 @@ export const fontFields = {
   fontVariations: lenient(flag, false),
 };
 
-export const fontNativeKeys = Object.fromEntries(
-  Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
-) as Record<keyof typeof fontFields, string>;
+/** `#default` asks the host for the setting's default value, not its value. */
+export const fontNativeKeys = {
+  ...Object.fromEntries(
+    Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
+  ),
+  defaultFontFamily: "editor.fontFamily#default",
+} as Record<keyof typeof fontFields, string>;
 
 export interface FontSettings {
   fontFamily: string;
+  defaultFontFamily: string;
   fontSize: number;
   fontWeight: string;
   lineHeight: number;
@@ -115,11 +122,11 @@ export const defaultFontFamily: Readonly<Record<Platform, string>> = {
 
 /**
  * The family as VS Code applies it (`BareFontInfo.getMassagedFontFamily`): a
- * single name with spaces is quoted, and the platform's default family list
- * always follows unless the setting is that list.
+ * single name with spaces is quoted, and the host's default family list always
+ * follows unless the setting is that list. The host reports its default;
+ * `defaultFontFamily` only stands in where it does not.
  */
-export function massagedFontFamily(family: string, platform: Platform): string {
-  const fallback = defaultFontFamily[platform];
+export function massagedFontFamily(family: string, fallback: string): string {
   const wrapped =
     /[,"']/.test(family) || !/[+ ]/.test(family) ? family : `"${family}"`;
   return family === fallback ? wrapped : `${wrapped}, ${fallback}`;
@@ -133,7 +140,10 @@ export function fontVariables(
   const vars: Record<string, string> = {};
   const family = cssValue(font.fontFamily);
   if (family) {
-    const stack = massagedFontFamily(family, platform);
+    const stack = massagedFontFamily(
+      family,
+      font.defaultFontFamily || defaultFontFamily[platform],
+    );
     vars["--text-font"] = stack;
     vars["--code-font"] = stack;
   }

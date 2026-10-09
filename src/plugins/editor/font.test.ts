@@ -5,6 +5,7 @@ import type { FontSettings } from "./font";
 
 const base: FontSettings = {
   fontFamily: "",
+  defaultFontFamily: "",
   fontSize: 0,
   fontWeight: "normal",
   lineHeight: 0,
@@ -64,6 +65,26 @@ test("the family is followed by the platform's default list, as VS Code's getMas
   assert.equal(
     fontVariables({ ...base, fontFamily: "A; color: red" })["--text-font"],
     `"A color: red", ${linux}`,
+  );
+});
+
+test("the host's own default list is used when it reports one", () => {
+  // VS Code 1.9x reports 'Droid Sans Mono', monospace on Linux.
+  const defaultFontFamily = "'Droid Sans Mono', monospace";
+  assert.equal(
+    fontVariables({ ...base, defaultFontFamily, fontFamily: "Fira Code" })[
+      "--text-font"
+    ],
+    `"Fira Code", ${defaultFontFamily}`,
+  );
+  // The unset setting reaches the note as the default itself: no repeat.
+  assert.equal(
+    fontVariables({
+      ...base,
+      defaultFontFamily,
+      fontFamily: defaultFontFamily,
+    })["--text-font"],
+    defaultFontFamily,
   );
 });
 
