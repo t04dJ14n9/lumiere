@@ -21,23 +21,49 @@ test("without host settings only VS Code's ligature and variation defaults apply
   });
 });
 
-test("the family gets a monospace fallback and the code font follows it", () => {
+test("the family is followed by the platform's default list, as VS Code's getMassagedFontFamily", () => {
+  const linux = "'Droid Sans Mono', 'monospace', monospace";
   const vars = fontVariables({
     ...base,
     fontFamily: "'JetBrains Mono', Menlo",
   });
-  assert.equal(vars["--text-font"], "'JetBrains Mono', Menlo, monospace");
+  assert.equal(vars["--text-font"], `'JetBrains Mono', Menlo, ${linux}`);
   assert.equal(vars["--code-font"], vars["--text-font"]);
+  // A single name with spaces is quoted; one without is left alone.
   assert.equal(
-    fontVariables({ ...base, fontFamily: "'Droid Sans Mono', monospace" })[
+    fontVariables({ ...base, fontFamily: "DejaVu Sans Mono" })["--text-font"],
+    `"DejaVu Sans Mono", ${linux}`,
+  );
+  assert.equal(
+    fontVariables({ ...base, fontFamily: "Menlo" })["--text-font"],
+    `Menlo, ${linux}`,
+  );
+  // The list ends in a generic family, and VS Code still appends its own.
+  assert.equal(
+    fontVariables({ ...base, fontFamily: "Fira Code, monospace" })[
       "--text-font"
     ],
-    "'Droid Sans Mono', monospace",
+    `Fira Code, monospace, ${linux}`,
+  );
+  // The default list itself is not repeated.
+  assert.equal(
+    fontVariables({ ...base, fontFamily: linux })["--text-font"],
+    linux,
+  );
+  assert.equal(
+    fontVariables({ ...base, fontFamily: "Fira Code" }, "mac")["--text-font"],
+    `"Fira Code", Menlo, Monaco, 'Courier New', monospace`,
+  );
+  assert.equal(
+    fontVariables({ ...base, fontFamily: "Fira Code" }, "windows")[
+      "--text-font"
+    ],
+    `"Fira Code", Consolas, 'Courier New', monospace`,
   );
   // A value cannot end the declaration and add others.
   assert.equal(
     fontVariables({ ...base, fontFamily: "A; color: red" })["--text-font"],
-    "A color: red, monospace",
+    `"A color: red", ${linux}`,
   );
 });
 
@@ -58,7 +84,7 @@ test("line height follows VS Code: automatic at 0, a multiplier below 8, otherwi
   }
   assert.equal(
     fontVariables({ ...base, fontSize: 14 })["--line-height"],
-    "1.357143",
+    String(19 / 14),
   );
   // Multipliers and pixels are rounded to whole pixels, at least 8.
   assert.equal(lineHeightPixels(1.6, 14, false), 22);
