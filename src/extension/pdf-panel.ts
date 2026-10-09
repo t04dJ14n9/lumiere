@@ -102,7 +102,7 @@ export class PdfPanel implements vscode.Disposable {
 
   /**
    * The selection as an agent should see it, without touching the clipboard:
-   * the same text Copy for Agent produces, plus the parts on their own.
+   * the same text Ask Agent produces, plus the parts on their own.
    * Used by the agent bridge (MCP).
    */
   async agentSnapshot(): Promise<AgentSnapshot | undefined> {
