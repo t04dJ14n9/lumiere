@@ -1,5 +1,7 @@
 import { EditorState } from "@codemirror/state";
-import { fenceSelected } from "./code-source";
+import { syntaxTree } from "@codemirror/language";
+import { markdown } from "@codemirror/lang-markdown";
+import { fenceInfo, fenceRevealed } from "./fence-flair";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { codeOffset } from "./code-selection";
@@ -46,15 +48,39 @@ test("highlighted clicks map indentation and UTF-16 back to fenced and indented 
   );
 });
 
-test("editable fence selection includes final characters but excludes a following line start", () => {
+test("a fence shows its source exactly when Live Preview reveals it, final characters included", () => {
   const doc = "```js\nx\n```\nafter";
-  for (const [position, to, expected] of [
-    [0, 11, true],
-    [10, 11, true],
-    [12, 12, false],
-    [11, 11, true],
+  for (const [position, expected] of [
+    [0, true],
+    [6, true],
+    [11, true],
+    [12, false],
   ] as const) {
     const state = EditorState.create({ doc, selection: { anchor: position } });
-    assert.equal(fenceSelected(state, { from: 0, to }), expected);
+    assert.equal(fenceRevealed(state, { from: 0, to: 11 }), expected);
   }
+});
+
+test("fence info reads the language word and the code, with or without a language", () => {
+  const info = (doc: string) => {
+    const state = EditorState.create({ doc, extensions: [markdown()] });
+    let found: ReturnType<typeof fenceInfo> | undefined;
+    syntaxTree(state).iterate({
+      enter: (node) => {
+        if (node.name === "FencedCode") {
+          found = fenceInfo(state, node);
+        }
+      },
+    });
+    return found;
+  };
+  assert.deepEqual(info("```python title\nprint(1)\n```"), {
+    language: "python",
+    code: "print(1)",
+  });
+  assert.deepEqual(info("~~~\nplain\n~~~"), {
+    language: undefined,
+    code: "plain",
+  });
+  assert.deepEqual(info("```ts\n```"), { language: "ts", code: "" });
 });

@@ -12,6 +12,7 @@ import { inlineRenderers, revealed } from "./registry";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
 import { decorateBlockId } from "./block-id";
+import { decorateCodeLines } from "./code-lines";
 import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
 const inlineClasses: Readonly<Record<string, string>> = {
@@ -118,6 +119,7 @@ class InlineDecorations implements InlineContext {
       this.line(from, `md-heading md-h${name.at(-1)}`);
     }
     this.decorateBlockLines(node, visible);
+    decorateCodeLines(node, this);
     this.decorateLink(node);
     this.decorateBareUrl(node);
     this.hideSyntax(node);

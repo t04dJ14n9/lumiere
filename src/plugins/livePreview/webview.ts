@@ -90,20 +90,16 @@ function registerRenderInvalidation(ctx: Context, service: LivePreview): void {
 }
 
 function registerFallbackBlocks(ctx: Context): void {
-  for (const kind of [
-    "HorizontalRule",
-    "HTMLBlock",
-    "CodeBlock",
-    "FencedCode",
-  ]) {
+  // Code blocks are decorated source lines instead (code-lines.ts), so
+  // revealing them never moves the text.
+  for (const kind of ["HorizontalRule", "HTMLBlock"]) {
     ctx.effect(() =>
       ctx.editor.extend(
         blockRenderers.of({
           kind,
           editing: "reveal",
           match: (node) => node.name === kind,
-          // An indented code block's node starts after its indentation, which
-          // is what makes it code; render (and replace) whole lines.
+          // Replace whole lines, including up to three spaces of indentation.
           range: (node, state) => ({
             from: state.doc.lineAt(node.from).from,
             to: node.to,

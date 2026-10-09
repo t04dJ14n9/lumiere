@@ -1,15 +1,22 @@
 # Code blocks
 
 Shows syntax-highlighted code fences and indented code in Live Preview, with a
-Copy button and caret-based source reveal, like Obsidian's code block editing.
+language label and Copy button, like Obsidian's code block editing.
 
 ## How it works
 
-The plugin registers generic code block renderers after more specific renderers.
-Prism loads lazily for rendered code and selected editable fences. Editable
+Code stays editable source lines in Live Preview, so the caret entering or
+leaving a block never moves a line (Live Preview's `code-lines.ts` gives every
+line its class and hides only the fence text). This plugin highlights fences
+whether or not the caret is in them, and puts the language label and Copy
+button (`fence-flair.ts`) in the hidden opening fence line, positioned so the
+line keeps the height of the text it replaces. Only fences of a language a code
+processor accepts are replaced by a rendered widget; that registration is
+renewed whenever the processors change. Prism loads lazily; editable
 highlighting caches token ranges by fence position, text and language and maps
-existing decorations during composition. Render passes own copy controls, click
-handlers, original text and late-result guards.
+existing decorations during composition. Rendered code (embeds, callouts,
+processor output) gets copy controls and labels from render passes, which own
+click handlers, original text and late-result guards.
 
 ## Files
 
@@ -17,10 +24,12 @@ handlers, original text and late-result guards.
 - `webview.ts`: editable-source, block and post-processor registrations.
 - `post-process.ts`: rendered highlighting, copy controls and source reveal.
 - `code-source.ts`: viewport highlighting, cache and lazy-load lifecycle.
+- `fence-flair.ts`: label and Copy button in the hidden opening fence line.
+- `processor-view.ts`: code processor rendering and its fence widgets.
 - `code-highlight.ts`: Prism HTML highlighting and UTF-16 token ranges.
 - `code-selection.ts`: highlighted DOM click to Markdown source coordinates.
 - `vendor.d.ts`: Prism bundle typing.
-- `code.test.ts`: source-offset and fence selection unit tests.
+- `code.test.ts`: source-offset, fence reveal and fence info unit tests.
 - `codeBlocks.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

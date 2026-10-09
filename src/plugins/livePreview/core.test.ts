@@ -117,7 +117,7 @@ function livePreviewKernel(doc: string) {
 }
 
 test("kernel disposal and Source mode remove the engine; registry effects add and remove", async () => {
-  const kernel = livePreviewKernel("before\n\n---\n\nafter");
+  const kernel = livePreviewKernel("before\n\n<div>x</div>\n\nafter");
   const { root, fiber } = kernel;
   await root.settled();
   assert.equal(fiber.state, "active");
@@ -144,13 +144,16 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   await root.dispose();
 });
 
-test("an indented code block renders from the start of its line", async () => {
-  const kernel = livePreviewKernel("Text\n\n    indented code\n");
+test("an HTML block renders from the start of its line; code stays source lines", async () => {
+  const kernel = livePreviewKernel(
+    "Text\n\n  <div>x</div>\n\n    indented code\n\n```js\nx\n```\n",
+  );
   await kernel.root.settled();
-  const [block] = kernel.state().field(blockIndex);
-  assert.equal(block?.kind, "CodeBlock");
-  assert.equal(block?.from, 6);
-  assert.equal(block?.source, "    indented code");
+  const blocks = kernel.state().field(blockIndex);
+  assert.deepEqual(
+    blocks.map((block) => [block.kind, block.from, block.source]),
+    [["HTMLBlock", 6, "  <div>x</div>"]],
+  );
   await kernel.root.dispose();
 });
 

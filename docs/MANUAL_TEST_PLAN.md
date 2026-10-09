@@ -326,10 +326,12 @@ Contained file access and the vault index (Obsidian's metadata cache).
 
 `Code.md`.
 
-1. Fences are highlighted with a Copy button; Copy yields the code without
-   fences. Clicking a token places the caret at that character.
-2. Typing in a revealed fence keeps highlighting; the unlabelled fence,
-   indented code and tilde fence stay readable.
+1. Fences are highlighted with a language label and, on hover, a Copy button
+   in the opening fence line; Copy yields the code without fences. Clicking a
+   token places the caret at that character.
+2. Moving the caret into and out of each block moves no line: only the fence
+   text appears and disappears. Typing in a fence keeps highlighting; the
+   unlabelled fence, indented code and tilde fence stay readable.
 
 ### footnotes
 

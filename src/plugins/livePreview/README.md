@@ -22,10 +22,13 @@ map visible text back to source before syntax is revealed.
 - `document-tree.ts`: incremental document syntax tree.
 - `blocks.ts`: block index, widget decorations and render revision.
 - `inline.ts`: basic inline decoration builder and composition/drag lifetime.
+- `code-lines.ts`: code block lines; only fence text hides, so reveals never
+  change the layout.
 - `rendered-position.ts`: visible-text projection and DOM-to-source mapping.
 - `motion.ts`: Escape and vertical motion around rendered blocks.
 - `core.test.ts`: reveal, motion, mode and lifecycle unit coverage.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
+- `code-lines.test.ts`: code line classes and hidden fence text.
 
 ## Services, events and settings
 

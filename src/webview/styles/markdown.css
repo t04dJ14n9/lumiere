@@ -227,6 +227,18 @@
   font-family: var(--code-font);
   font-size: 0.875em;
 }
+/*
+ * Code blocks are always these lines, so the caret never changes their size:
+ * only the fence text is hidden, and the empty fence lines (one line box
+ * each) round off the block and hold the language label (codeBlocks.css).
+ */
+#app .cm-line.md-code-fence-open {
+  position: relative;
+  border-radius: 4px 4px 0 0;
+}
+#app .cm-line.md-code-fence-close {
+  border-radius: 0 0 4px 4px;
+}
 #app .cm-line.md-table-source {
   font-family: var(--code-font);
   font-size: 0.875em;
