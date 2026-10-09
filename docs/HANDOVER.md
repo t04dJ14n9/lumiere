@@ -207,7 +207,7 @@ completion and Phase 8 records) first.
   | Text and code family | `editor.fontFamily` (`[markdown]` too) | `monospace` fallback added |
   | Text and code size | `editor.fontSize` | code no longer smaller |
   | Weight | `editor.fontWeight` | bold and headings stay bold |
-  | Line height | `editor.lineHeight` when set | default 0 keeps 1.5 (Obsidian), about 21px vs the text editor's 19px at 14px |
+  | Line height | `editor.lineHeight` | default 0 is the text editor's own line height (1a06f65); set values honoured |
   | Letter spacing | `editor.letterSpacing` | |
   | Ligatures | `editor.fontLigatures` | off by default, as in VS Code |
   | Variations | `editor.fontVariations` | |
@@ -222,6 +222,30 @@ completion and Phase 8 records) first.
     and passes in VS Code and Cursor.
   - Unit tests: `src/plugins/editor/font.test.ts` and
     `test/unit/settings/editor.test.ts`.
+
+### Line height follows the text editor (11afb18, 1a06f65)
+
+- Owner decision (2026-10-09): at `editor.lineHeight` 0 the note uses the
+  built-in text editor's line height, not Obsidian's 1.5. `font.ts`
+  `lineHeightPixels` copies VS Code's `BareFontInfo` rule: 0 is 1.35 x size
+  (1.5 on macOS), below 8 a multiplier, else pixels, rounded, at least 8.
+  On Linux 12/14/16/20px give 16/19/22/27px (before: 18/21/24/30). Headings
+  keep Obsidian's sizes and line heights; the browser harness (no host size)
+  keeps the stylesheet's 1.5.
+- Bug found on the way (11afb18): the font variables were an editor
+  attribute, and CodeMirror doesn't measure lines again on an attribute
+  change. After a live `editor.fontSize` change the line numbers drifted
+  (11.6px after 12 -> 20px). The variables are now an `EditorView.theme`,
+  which makes CodeMirror measure again. Browser test in
+  `stable-blocks.spec.ts`; the fake host has `configureEditor`.
+- Native test: `font.spec.ts` "at the default line height ..." splits the
+  note beside **Reopen Editor With > Text Editor** and compares text, code
+  and line-number heights at 12/14/16/20px (VS Code 1.141 and Cursor
+  3.24.9). It failed before the change (18px vs 16px at 12px). In Cursor
+  a new split's webview swallowed Ctrl+Shift+P, so `openPalette` in
+  `test/vscode/workbench.ts` presses it again until the palette opens.
+- Checks: `pnpm check` 582/582, browser 47/47, native 4/4 in VS Code and
+  Cursor.
 
 ## Remaining
 
