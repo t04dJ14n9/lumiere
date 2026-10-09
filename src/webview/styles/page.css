@@ -33,9 +33,9 @@
 .location-highlight {
   position: absolute;
   z-index: 3;
-  border: 2px solid var(--vscode-focusBorder, #007fd4);
+  border: 2px solid var(--paper-accent);
   border-radius: 2px;
-  background: var(--selection-soft);
+  background: var(--paper-accent-soft);
   pointer-events: none;
   animation: fade-highlight 2.5s ease-out forwards;
 }

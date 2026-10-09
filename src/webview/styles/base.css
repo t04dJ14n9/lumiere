@@ -32,11 +32,19 @@ input {
 }
 
 .viewer {
-  /* Selection colours, derived from the theme's editor selection. */
+  /*
+   * Colours drawn on pages. Pages are white paper in every theme, while
+   * theme colours are made for the editor background: Cursor Light's
+   * selection is 8% grey, Cursor Dark's focus border 15% white. So take the
+   * theme's hue but fix the strength, and keep it dark enough for white.
+   */
   --selection-source: var(--vscode-editor-selectionBackground, #264f78);
-  --selection-fill: color-mix(in srgb, var(--selection-source) 40%, transparent);
-  --selection-soft: color-mix(in srgb, var(--selection-source) 18%, transparent);
-  --selection-edge: color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 70%, transparent);
+  --selection-fill: oklch(from var(--selection-source) clamp(0.45, l, 0.7) c h / 0.4);
+  --selection-soft: oklch(from var(--selection-source) clamp(0.45, l, 0.7) c h / 0.2);
+  /* Outlines and flashes: the theme's link colour, dark enough for white. */
+  --paper-accent: oklch(from var(--vscode-textLink-foreground, #3794ff) min(l, 0.55) c h);
+  --paper-accent-soft: oklch(from var(--paper-accent) l c h / 0.15);
+  --selection-edge: var(--paper-accent);
 
   display: grid;
   /* minmax(0, …) keeps the pages from widening the column they fit to. */
