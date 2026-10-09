@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * A number the reader can type over, such as the page or zoom. An edited
- * value is committed on Enter or when the field loses focus; leaving the
- * field without editing commits nothing, so it never repeats a navigation.
+ * A number the reader can type over, such as the page or zoom. Enter always
+ * commits, even an unchanged value: typing the current page goes back to its
+ * top. Leaving the field commits only an edited value, so clicking away
+ * never repeats a navigation.
  */
 export function NumberField({ label, value, suffix, onCommit }: {
   label: string;
@@ -21,7 +22,6 @@ export function NumberField({ label, value, suffix, onCommit }: {
   useEffect(() => setDraft(String(value)), [value]);
 
   const commit = (): void => {
-    if (!edited.current) return;
     edited.current = false;
     const number = Number.parseFloat(draft);
     const used = Number.isFinite(number) ? onCommit(number) : false;
@@ -40,7 +40,9 @@ export function NumberField({ label, value, suffix, onCommit }: {
           edited.current = true;
           setDraft(event.currentTarget.value);
         }}
-        onBlur={commit}
+        onBlur={() => {
+          if (edited.current) commit();
+        }}
         onKeyDown={event => {
           if (event.key === 'Enter') commit();
         }}

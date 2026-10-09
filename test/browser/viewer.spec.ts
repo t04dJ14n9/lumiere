@@ -290,6 +290,22 @@ test('a page typed in the field opens at its top, and leaving the field does not
   expect(await pageOffset(page, 7)).toBe(before);
 });
 
+test('typing the current page again goes back to its top', async ({ page }) => {
+  await open(page);
+  const field = page.getByRole('textbox', { name: 'Page' });
+  await field.fill('7');
+  await field.press('Enter');
+  await expect.poll(() => pageOffset(page, 7)).toBeLessThanOrEqual(16);
+  const top = (await pageOffset(page, 7))!;
+  await page.locator('.viewport').evaluate(viewport => viewport.scrollBy(0, 150));
+  await expect.poll(() => pageOffset(page, 7)).toBeLessThan(top - 100);
+  await expect(field).toHaveValue('7');
+
+  await field.fill('7');
+  await field.press('Enter');
+  await expect.poll(() => pageOffset(page, 7)).toBe(top);
+});
+
 test('the page and zoom fields show the clamped value, even when it is the current one', async ({ page }) => {
   await open(page);
   const field = page.getByRole('textbox', { name: 'Page' });
