@@ -17,6 +17,11 @@ and box, the file's hash, and the selected text.
   region (a figure, table or equation), then use the button next to the
   selection, the editor title button, or **PDF: Copy for Agent**. ⌘C / Ctrl+C
   copies just the text.
+
+  In Cursor, the editor title bar keeps only a few buttons, so **Copy for
+  Agent** sits in the **…** (More Actions) menu while something is selected.
+  To pin it to the title bar, open that menu, choose **Configure Icon
+  Visibility** and tick **Copy for Agent**.
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
 
