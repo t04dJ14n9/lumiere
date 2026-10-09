@@ -98,9 +98,12 @@ function registerTableExtensions(ctx: Context): void {
           void ctx.commands.run(action);
         }),
         tableSelectionChanges.of((hasSelection) =>
-          ctx.rpc.notify(editorProtocol, "selectionChanged", {
-            hasSelection,
-          }),
+          ctx.rpc.notify(
+            editorProtocol,
+            "selectionChanged",
+            { hasSelection },
+            { coalesce: true },
+          ),
         ),
       ],
       { slot: "override" },

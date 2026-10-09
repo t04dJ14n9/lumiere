@@ -139,7 +139,9 @@ test("the links host sends the note's unresolved set, then only its changes", as
   index.setMetadata("A.md", metadata("[[B]] [[Missing]] [[D]]"));
   index.notifyResolved();
   await new Promise((resolve) => setTimeout(resolve, 10));
-  assert.deepEqual(updates, [["c"], ["d"]]);
+  // Both changes happened in one task: the set is state, so only the
+  // latest one is sent.
+  assert.deepEqual(updates, [["d"]]);
 
   await root.dispose();
   host.dispose();

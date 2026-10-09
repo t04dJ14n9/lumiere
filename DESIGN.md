@@ -627,9 +627,19 @@ type Envelope =
   | { kind: 'response'; id: number; result: unknown }
   | { kind: 'error'; id: number; code: string; message: string }
   | { kind: 'notify'; channel: string; method: string; params: unknown }
-  | { kind: 'cancel'; id: number };
+  | { kind: 'cancel'; id: number }
+  | { kind: 'batch'; version: number; messages: NotifyEnvelope[] };
 ```
 
+- State notifications where only the latest value matters (the selection
+  flag, selection and title actions, a note's unresolved links) are sent with
+  `notify(..., { coalesce: true })`: they wait until the end of the task,
+  replace an unsent one of the same method, and leave together as one
+  `batch` whose `version` grows per endpoint. A receiver drops a batch whose
+  version is not above the last one it applied. Any other envelope sends
+  the pending batch first, so a request (Copy Link for Agent, a flush) never
+  overtakes the state it depends on. Document updates are not coalesced:
+  they carry their own document versions and every one must arrive.
 - Every method has a params schema and a result schema (§5.6). Invalid input is
   dropped and logged; an invalid result rejects the caller.
 - Requests have a default 10-second timeout and can be cancelled.

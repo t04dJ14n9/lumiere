@@ -104,7 +104,9 @@ function publishActions(
 ): void {
   const values = registry.list(editors.active()?.id);
   for (const panel of editors.all()) {
-    panel.rpc.notify(protocol, "changed", registry.list(panel.id));
+    panel.rpc.notify(protocol, "changed", registry.list(panel.id), {
+      coalesce: true,
+    });
   }
   for (const scope of ["selection", "title"] as const) {
     void ctx.workbench.execute(

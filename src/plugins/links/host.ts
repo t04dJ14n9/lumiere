@@ -65,7 +65,9 @@ function registerUnresolvedLinks(ctx: Context, panel: PanelShell): void {
       const previous = sent;
       const paths = current();
       if (sent !== previous) {
-        ctx.rpc.notify(protocol, "unresolvedChanged", paths);
+        ctx.rpc.notify(protocol, "unresolvedChanged", paths, {
+          coalesce: true,
+        });
       }
     }),
   );

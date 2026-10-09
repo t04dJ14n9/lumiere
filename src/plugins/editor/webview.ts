@@ -129,9 +129,12 @@ function createEditorView(
         Prec.low(keymap.of([...indentationKeymap, ...defaultKeymap])),
         EditorView.updateListener.of((update) => {
           if (update.selectionSet || update.focusChanged) {
-            ctx.rpc.notify(protocol, "selectionChanged", {
-              hasSelection: !update.state.selection.main.empty,
-            });
+            ctx.rpc.notify(
+              protocol,
+              "selectionChanged",
+              { hasSelection: !update.state.selection.main.empty },
+              { coalesce: true },
+            );
           }
         }),
       ],

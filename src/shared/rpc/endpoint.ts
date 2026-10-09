@@ -4,7 +4,7 @@ import type { Disposer } from "../../kernel/types";
 import type { Logger } from "../../kernel/logger";
 import { silentLogger } from "../../kernel/logger";
 import { parseEnvelope } from "./envelope";
-import type { Envelope } from "./envelope";
+import type { Envelope, Message } from "./envelope";
 import type { Transport, Clock, Cancellation } from "./lifecycle";
 import { CancelToken, RpcError } from "./lifecycle";
 export { CancelToken, RpcError } from "./lifecycle";
@@ -26,8 +26,26 @@ interface OutgoingRequest {
   schema: Schema<unknown>;
   options: { timeout?: number; token?: Cancellation };
 }
+type Notify = Extract<Message, { kind: "notify" }>;
+/**
+ * Typed requests and notifications over one transport.
+ *
+ * Invariants:
+ * - Envelopes leave in the order they were produced, except that a
+ *   coalesced notification (`notify(..., { coalesce: true })`) replaces an
+ *   unsent one for the same channel and method, keeping the first one's place.
+ * - Coalesced notifications leave together as one versioned `batch`, at the
+ *   latest just before the next request, response, error, cancel or plain
+ *   notification, so a request never overtakes the state it depends on.
+ * - A received batch with a version not above the last applied one is
+ *   dropped whole; its notifications run in order.
+ */
 export class Endpoint {
   private next = 1;
+  private batchVersion = 0;
+  private receivedBatch = 0;
+  private queued: Notify[] = [];
+  private flushScheduled = false;
   private disposed = false;
   private readonly handlers = new Map<string, Handler>();
   private readonly notifications = new Map<string, Set<Handler>>();
@@ -56,7 +74,37 @@ export class Endpoint {
   }
   private send(value: Envelope): void {
     this.assertLive();
+    this.flush();
     this.transport.send(parseEnvelope(value));
+  }
+  /** Send the coalesced notifications now, as one batch. */
+  flush(): void {
+    if (this.disposed || this.queued.length === 0) {
+      return;
+    }
+    const messages = this.queued;
+    this.queued = [];
+    this.transport.send(
+      parseEnvelope({ kind: "batch", version: ++this.batchVersion, messages }),
+    );
+  }
+  private enqueue(message: Notify): void {
+    const index = this.queued.findIndex(
+      (item) =>
+        item.channel === message.channel && item.method === message.method,
+    );
+    if (index === -1) {
+      this.queued.push(message);
+    } else {
+      this.queued[index] = message;
+    }
+    if (!this.flushScheduled) {
+      this.flushScheduled = true;
+      void Promise.resolve().then(() => {
+        this.flushScheduled = false;
+        this.flush();
+      });
+    }
   }
   handle<P extends Protocol, M extends keyof P["requests"] & string>(
     protocol: P,
@@ -104,17 +152,29 @@ export class Endpoint {
       handlers.delete(handler);
     };
   }
+  /**
+   * Send a notification. With `coalesce`, it is state where only the latest
+   * value matters (a selection, a list of markers): it waits until the end
+   * of the current task and replaces an unsent one of the same method.
+   */
   notify<P extends Protocol, M extends keyof P["notifications"] & string>(
     protocol: P,
     method: M,
     params: Infer<P["notifications"][M]>,
+    options: { coalesce?: boolean } = {},
   ): void {
-    this.send({
+    const message: Notify = {
       kind: "notify",
       channel: protocol.id,
       method,
       params: protocol.notifications[method]!.parse(params),
-    });
+    };
+    if (options.coalesce) {
+      this.assertLive();
+      this.enqueue(message);
+    } else {
+      this.send(message);
+    }
   }
   call<P extends Protocol, M extends keyof P["requests"] & string>(
     protocol: P,
@@ -211,6 +271,9 @@ export class Endpoint {
       return;
     }
     switch (envelope.kind) {
+      case "batch":
+        await this.receiveBatch(envelope);
+        return;
       case "cancel":
         this.incoming.get(envelope.id)?.token.cancel();
         this.incoming.delete(envelope.id);
@@ -224,6 +287,19 @@ export class Endpoint {
         return;
       case "request":
         await this.receiveRequest(envelope);
+    }
+  }
+
+  private async receiveBatch(
+    batch: Extract<Envelope, { kind: "batch" }>,
+  ): Promise<void> {
+    if (batch.version <= this.receivedBatch) {
+      this.logger.warn("Dropped stale RPC batch");
+      return;
+    }
+    this.receivedBatch = batch.version;
+    for (const message of batch.messages) {
+      await this.receiveNotification(message);
     }
   }
 
@@ -324,6 +400,11 @@ export class Endpoint {
   async dispose(): Promise<void> {
     if (this.disposed) {
       return;
+    }
+    try {
+      this.flush();
+    } catch (error) {
+      this.logger.warn("Dropped RPC batch on dispose", error);
     }
     this.disposed = true;
     await this.unlisten();
