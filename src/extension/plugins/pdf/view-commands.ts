@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { parsePageInput, parseZoomInput, zoomLabel, type ViewerAction } from '../shared/view-state';
-import { ZOOM_STEPS } from '../shared/zoom-steps';
-import type { PdfPanels } from './pdf-panels';
+import { parsePageInput, parseZoomInput, zoomLabel, type ViewerAction } from '../../../shared/view-state';
+import { ZOOM_STEPS } from '../../../shared/zoom-steps';
+import type { PdfPanels } from './panels';
 
 /**
  * The commands behind the viewer's controls, wherever they are: the editor

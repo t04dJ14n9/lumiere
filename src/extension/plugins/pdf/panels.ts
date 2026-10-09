@@ -1,23 +1,39 @@
 import * as vscode from 'vscode';
-import type { PdfPanel } from './pdf-panel';
+import { DEFAULT_TOOLBAR_SETTINGS, type ToolbarSettings } from '../../../shared/toolbar-settings';
+import type { PdfPanel, PluginMessage } from './panel';
 
 export const VIEW_TYPE = 'vscodeEmbedPdf.viewer';
 
+type Handler<T extends PluginMessage['type']> = (panel: PdfPanel, message: Extract<PluginMessage, { type: T }>) => unknown;
+type AnyHandler = (panel: PdfPanel, message: PluginMessage) => unknown;
+
 /**
- * All open PDF editors, and the one in the active tab. Commands and the
- * outline view act on the active one.
+ * All open PDF editors, and the one in the active tab: the `panels` service
+ * the other plugins build on. Commands and the outline view act on the active
+ * one.
  *
- * Panels are tracked individually, so the same PDF open in two editor groups
- * keeps two independent selections.
+ * Invariants:
+ *
+ * - Panels are tracked individually, never by path, so the same PDF open in
+ *   two editor groups keeps two independent selections.
+ * - Each viewer message type a plugin handles has exactly one handler; with
+ *   its plugin stopped, the message is ignored.
  */
 export class PdfPanels implements vscode.Disposable {
   private readonly panels = new Set<PdfPanel>();
+  private readonly panelSubscriptions = new Map<PdfPanel, vscode.Disposable[]>();
   private current: PdfPanel | undefined;
   private readonly changed = new vscode.EventEmitter<void>();
   /** Fires when the active panel changes, or its outline, selection or view does. */
   readonly onDidChange = this.changed.event;
+  private readonly opened = new vscode.EventEmitter<PdfPanel>();
+  /** Fires when an editor opens. */
+  readonly onDidOpen = this.opened.event;
+  private readonly handlers = new Map<PluginMessage['type'], AnyHandler>();
+  private toolbar: () => ToolbarSettings = () => DEFAULT_TOOLBAR_SETTINGS;
   private readonly disposables: vscode.Disposable[] = [
     this.changed,
+    this.opened,
     vscode.window.tabGroups.onDidChangeTabs(() => this.update()),
     vscode.window.tabGroups.onDidChangeTabGroups(() => this.update()),
   ];
@@ -31,20 +47,45 @@ export class PdfPanels implements vscode.Disposable {
     return [...this.panels];
   }
 
+  /** Handle a viewer message type (for as long as the returned disposable lives). */
+  handle<T extends PluginMessage['type']>(type: T, handler: Handler<T>): vscode.Disposable {
+    if (this.handlers.has(type)) throw new Error(`A plugin already handles ${type} messages`);
+    const entry = handler as AnyHandler;
+    this.handlers.set(type, entry);
+    return new vscode.Disposable(() => {
+      if (this.handlers.get(type) === entry) this.handlers.delete(type);
+    });
+  }
+
+  async route(panel: PdfPanel, message: PluginMessage): Promise<void> {
+    await this.handlers.get(message.type)?.(panel, message);
+  }
+
+  /** Where the toolbar plugin says new viewers put their controls. */
+  provideViewerToolbar(settings: () => ToolbarSettings): vscode.Disposable {
+    this.toolbar = settings;
+    return new vscode.Disposable(() => {
+      if (this.toolbar === settings) this.toolbar = () => DEFAULT_TOOLBAR_SETTINGS;
+    });
+  }
+
+  viewerToolbar(): ToolbarSettings {
+    return this.toolbar();
+  }
+
   add(panel: PdfPanel): void {
     this.panels.add(panel);
-    const subscriptions = [
+    this.panelSubscriptions.set(panel, [
       panel.webviewPanel.onDidChangeViewState(() => this.update()),
       panel.onDidChange(() => {
         if (panel === this.current) this.publish();
       }),
-    ];
-    panel.webviewPanel.onDidDispose(() => {
-      for (const subscription of subscriptions) subscription.dispose();
-      this.panels.delete(panel);
-      panel.dispose();
-      this.update();
-    });
+      panel.webviewPanel.onDidDispose(() => {
+        this.forget(panel);
+        this.update();
+      }),
+    ]);
+    this.opened.fire(panel);
     this.update();
   }
 
@@ -61,8 +102,22 @@ export class PdfPanels implements vscode.Disposable {
     return undefined;
   }
 
+  /**
+   * Stop tracking every editor. The webviews themselves belong to VS Code
+   * and stay open; they no longer talk to this extension.
+   */
   dispose(): void {
+    for (const panel of [...this.panels]) this.forget(panel);
     for (const disposable of this.disposables) disposable.dispose();
+    this.handlers.clear();
+  }
+
+  private forget(panel: PdfPanel): void {
+    for (const subscription of this.panelSubscriptions.get(panel) ?? []) subscription.dispose();
+    this.panelSubscriptions.delete(panel);
+    this.panels.delete(panel);
+    panel.dispose();
+    if (this.current === panel) this.current = undefined;
   }
 
   /**

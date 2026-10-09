@@ -7,9 +7,10 @@ import { readFile } from 'node:fs/promises';
 import * as vscode from 'vscode';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { noteReference } from '../../shared/note-reference';
-import type { PdfPanel } from '../pdf-panel';
-import type { PdfPanels } from '../pdf-panels';
+import { noteReference } from '../../../../shared/note-reference';
+import type { PdfPanel } from '../../pdf/panel';
+import type { PdfPanels } from '../../pdf/panels';
+import type { AgentHandoff } from '../handoff';
 
 export const MARKDOWN_WORKBENCH_ID = 't04dj14n9.vscode-markdown-workbench';
 
@@ -43,7 +44,7 @@ type Content =
   | { type: 'image'; data: string; mimeType: string };
 
 /** A fresh server for one request (the bridge is stateless). */
-export function createBridgeServer(lastPdf: LastPdf): McpServer {
+export function createBridgeServer(lastPdf: LastPdf, handoff: AgentHandoff): McpServer {
   const server = new McpServer({ name: 'agent-pdf-viewer', version: '0.1.0' });
 
   server.registerTool('get_current_pdf_selection', {
@@ -59,7 +60,7 @@ export function createBridgeServer(lastPdf: LastPdf): McpServer {
     annotations: { readOnlyHint: true },
   }, async ({ includeImage }) => {
     const panel = lastPdf.panel;
-    const snapshot = await panel?.agentSnapshot();
+    const snapshot = panel && await handoff.snapshot(panel);
     if (!snapshot) {
       return {
         content: [{ type: 'text', text: panel

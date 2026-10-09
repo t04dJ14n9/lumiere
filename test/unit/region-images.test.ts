@@ -3,7 +3,7 @@ import { mkdtemp, readFile, readdir, rm, stat, utimes, writeFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
-import { RegionImages, regionCacheBytes } from '../../src/extension/region-images';
+import { RegionImages, regionCacheBytes } from '../../src/extension/plugins/pdfRegions/region-images';
 
 let folder: string;
 beforeEach(async () => { folder = path.join(await mkdtemp(path.join(tmpdir(), 'region-images-')), 'regions'); });

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import * as vscode from 'vscode';
-import type { ToolbarSettings } from '../shared/toolbar-settings';
+import type { ToolbarSettings } from '../../../shared/toolbar-settings';
 
 /**
  * The viewer page. Scripts load only from the extension, with a nonce; the

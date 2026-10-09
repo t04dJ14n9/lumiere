@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { AGENT_COMMANDS, AGENT_EXTENSIONS, agentTarget, type AgentTarget, type AgentTargetSetting } from '../shared/agent-target';
+import { AGENT_COMMANDS, AGENT_EXTENSIONS, agentTarget, type AgentTarget, type AgentTargetSetting } from '../../../shared/agent-target';
 
 /**
  * Codex drops a file added before its view has loaded and adds the same file

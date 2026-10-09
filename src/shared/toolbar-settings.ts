@@ -21,6 +21,8 @@ export interface ToolbarSettings {
   dock: FloatingDock;
 }
 
+export const DEFAULT_TOOLBAR_SETTINGS: ToolbarSettings = { mode: DEFAULT_TOOLBAR_MODE, dock: DEFAULT_FLOATING_DOCK };
+
 /** A setting's value as a mode; anything unknown is the default. */
 export function parseToolbarMode(value: unknown): ToolbarMode {
   return TOOLBAR_MODES.includes(value as ToolbarMode) ? value as ToolbarMode : DEFAULT_TOOLBAR_MODE;

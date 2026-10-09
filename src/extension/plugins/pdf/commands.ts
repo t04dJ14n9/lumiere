@@ -1,17 +1,12 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { extractPdfLink, parseLocationFragment, type PdfLocation } from '../shared/pdf-location';
-import { VIEW_TYPE, type PdfPanels } from './pdf-panels';
+import { extractPdfLink, parseLocationFragment, type PdfLocation } from '../../../shared/pdf-location';
+import { VIEW_TYPE, type PdfPanels } from './panels';
 
-export function registerCommands(panels: PdfPanels): vscode.Disposable {
-  return vscode.Disposable.from(
-    vscode.commands.registerCommand('vscodeEmbedPdf.copyLinkForAgent', () => panels.active?.copyLinkForAgent()),
-    vscode.commands.registerCommand('vscodeEmbedPdf.goToOutlineItem', (page: unknown, top?: unknown) => {
-      if (typeof page === 'number') panels.active?.goTo({ page }, typeof top === 'number' ? top : undefined);
-    }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.openLocation', (target?: unknown, location?: unknown) =>
-      openLocation(panels, target, location)),
-  );
+/** PDF: Open Location, which makes the viewer a navigation target for links and other extensions. */
+export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
+  return vscode.commands.registerCommand('vscodeEmbedPdf.openLocation', (target?: unknown, location?: unknown) =>
+    openLocation(panels, target, location));
 }
 
 /**

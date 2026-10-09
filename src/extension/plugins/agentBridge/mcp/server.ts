@@ -1,93 +1,60 @@
 /**
- * Agent bridge: a local MCP server (Streamable HTTP on 127.0.0.1, random
- * port, bearer token) that hands the live PDF / note selection to coding
- * agents. It is announced to:
+ * Agent bridge server: a local MCP server (Streamable HTTP on 127.0.0.1,
+ * random port, bearer token) that hands the live PDF / note selection to
+ * coding agents. It is announced to:
  *
  *   VS Code (Copilot Chat)  vscode.lm.registerMcpServerDefinitionProvider
  *   Cursor                  vscode.cursor.mcp.registerServer (Cursor ignores the VS Code API)
  *   Claude Code, Codex      a discovery file read by the stdio shim
  *                           (`claude mcp add` / `codex mcp add` -- node <shim>)
  *
- * It is off by default (`vscodeEmbedPdf.agentBridge.enabled`), because it
- * starts a local server; turning the setting on or off starts or stops it
- * without a reload.
+ * `controller.ts` decides when it runs.
+ *
+ * Invariant: everything `startAgentBridge` sets up (the HTTP server, the
+ * discovery file, the editor registrations) is undone by the returned
+ * disposable, and by nothing else; if it fails part way, what it set up so
+ * far is undone before the error propagates.
  */
 import { randomBytes } from 'node:crypto';
 import { mkdir, rm, writeFile, copyFile } from 'node:fs/promises';
 import * as http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import type { PdfPanels } from '../pdf-panels';
+import type { PdfPanels } from '../../pdf/panels';
+import type { AgentHandoff } from '../handoff';
+import { DISCOVERY_DIR, PROVIDER_ID, SERVER_NAME, type BridgeInfo } from './constants';
 import { createBridgeServer, LastPdf } from './tools';
 
-export const SERVER_NAME = 'agent-pdf-viewer';
-export const PROVIDER_ID = 'vscodeEmbedPdf.agentBridge';
-/** Where running bridges announce themselves for the stdio shim. */
-export const DISCOVERY_DIR = path.join(os.homedir(), '.agent-pdf-viewer', 'bridges');
-
-export interface BridgeInfo {
-  url: string;
-  token: string;
-  pid: number;
-  appName: string;
-  workspaceFolders: string[];
-  startedAt: string;
-}
-
-/** Whether the user has turned the bridge on. Off by default: it starts a local server. */
-export function agentBridgeEnabled(): boolean {
-  return vscode.workspace.getConfiguration('vscodeEmbedPdf').get<boolean>('agentBridge.enabled', false) === true;
-}
-
-/**
- * Runs the bridge while `vscodeEmbedPdf.agentBridge.enabled` is on, and
- * registers Copy MCP Setup, which offers to turn the bridge on when it is off.
- */
-export function registerAgentBridge(context: vscode.ExtensionContext, panels: PdfPanels, log: vscode.LogOutputChannel): vscode.Disposable {
-  const shim = vscode.Uri.joinPath(context.globalStorageUri, 'bridge-stdio.js').fsPath;
-  let running: RunningBridge | undefined;
-  let queue = Promise.resolve();
-  const sync = (): void => {
-    queue = queue.then(async () => {
-      const enabled = agentBridgeEnabled();
-      if (enabled && !running) running = await startAgentBridge(context, panels, log, shim);
-      else if (!enabled && running) {
-        running.dispose();
-        running = undefined;
-        log.info('Agent bridge stopped (vscodeEmbedPdf.agentBridge.enabled is off)');
-      }
-    }).catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
-  };
-  sync();
-  return vscode.Disposable.from(
-    vscode.workspace.onDidChangeConfiguration(event => {
-      if (event.affectsConfiguration('vscodeEmbedPdf.agentBridge.enabled')) sync();
-    }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.copyMcpSetup', async () => {
-      if (!agentBridgeEnabled()) {
-        const turnOn = 'Turn On';
-        const choice = await vscode.window.showInformationMessage(
-          'The agent bridge is off. It serves the PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected). Turn it on?',
-          turnOn,
-        );
-        if (choice !== turnOn) return;
-        await vscode.workspace.getConfiguration('vscodeEmbedPdf').update('agentBridge.enabled', true, vscode.ConfigurationTarget.Global);
-      }
-      await copyMcpSetup(shim);
-    }),
-    new vscode.Disposable(() => running?.dispose()),
-  );
-}
-
-interface RunningBridge extends vscode.Disposable {
+export interface RunningBridge extends vscode.Disposable {
   info: BridgeInfo;
 }
 
-async function startAgentBridge(context: vscode.ExtensionContext, panels: PdfPanels, log: vscode.LogOutputChannel, shim: string): Promise<RunningBridge> {
+export interface ServerOptions {
+  extensionUri: vscode.Uri;
+  /** Where the stable copy of the stdio shim goes. */
+  shim: string;
+  panels: PdfPanels;
+  handoff: AgentHandoff;
+  log: vscode.LogOutputChannel;
+}
+
+export async function startAgentBridge(options: ServerOptions): Promise<RunningBridge> {
+  // Undone in reverse if a later step fails; handed to the caller on success.
+  const undo: vscode.Disposable[] = [];
+  try {
+    return await listen(options, undo);
+  } catch (error) {
+    for (const step of undo.reverse()) step.dispose();
+    throw error;
+  }
+}
+
+async function listen(options: ServerOptions, undo: vscode.Disposable[]): Promise<RunningBridge> {
+  const { panels, handoff, log, shim } = options;
   const lastPdf = new LastPdf(panels);
+  undo.push(lastPdf);
   const token = randomBytes(24).toString('hex');
 
   const httpServer = http.createServer((req, res) => void handle(req, res));
@@ -112,7 +79,7 @@ async function startAgentBridge(context: vscode.ExtensionContext, panels: PdfPan
       return;
     }
     try {
-      const server = createBridgeServer(lastPdf);
+      const server = createBridgeServer(lastPdf, handoff);
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
       res.on('close', () => {
         void transport.close();
@@ -129,6 +96,7 @@ async function startAgentBridge(context: vscode.ExtensionContext, panels: PdfPan
     httpServer.once('error', reject);
     httpServer.listen(0, '127.0.0.1', () => resolve());
   });
+  undo.push(new vscode.Disposable(() => httpServer.close()));
   const { port } = httpServer.address() as AddressInfo;
   const info: BridgeInfo = {
     url: `http://127.0.0.1:${port}/mcp`,
@@ -143,11 +111,12 @@ async function startAgentBridge(context: vscode.ExtensionContext, panels: PdfPan
   // Discovery file for the stdio shim (Claude Code, Codex, any MCP client).
   const discoveryFile = path.join(DISCOVERY_DIR, `${port}.json`);
   await mkdir(DISCOVERY_DIR, { recursive: true, mode: 0o700 });
+  undo.push(new vscode.Disposable(() => void rm(discoveryFile, { force: true })));
   await writeFile(discoveryFile, JSON.stringify(info, null, 2), { mode: 0o600 });
 
   // A stable copy of the shim, so `claude mcp add` survives extension updates.
   await mkdir(path.dirname(shim), { recursive: true });
-  await copyFile(vscode.Uri.joinPath(context.extensionUri, 'dist', 'bridge-stdio.js').fsPath, shim).catch(error =>
+  await copyFile(vscode.Uri.joinPath(options.extensionUri, 'dist', 'bridge-stdio.js').fsPath, shim).catch(error =>
     log.warn(`Could not copy the stdio shim: ${String(error)}`));
 
   const headers = { Authorization: `Bearer ${token}` };
@@ -173,28 +142,7 @@ async function startAgentBridge(context: vscode.ExtensionContext, panels: PdfPan
     }
   }
 
-  const disposable = vscode.Disposable.from(
-    lastPdf,
-    ...registrations,
-    new vscode.Disposable(() => {
-      httpServer.close();
-      void rm(discoveryFile, { force: true });
-    }),
-  );
+  undo.push(...registrations);
+  const disposable = vscode.Disposable.from(...undo.splice(0).reverse());
   return { info, dispose: () => disposable.dispose() };
-}
-
-/** Let the user wire Claude Code / Codex (and any stdio MCP client) to the bridge. */
-async function copyMcpSetup(shim: string): Promise<void> {
-  const node = 'node';
-  const options = [
-    { label: 'Claude Code', detail: `claude mcp add --scope user ${SERVER_NAME} -- ${node} ${shim}` },
-    { label: 'Codex', detail: `codex mcp add ${SERVER_NAME} -- ${node} ${shim}` },
-    { label: 'Codex (config.toml)', detail: `[mcp_servers.${SERVER_NAME}]\ncommand = "${node}"\nargs = ["${shim}"]` },
-    { label: 'Project .mcp.json (Claude Code)', detail: JSON.stringify({ mcpServers: { [SERVER_NAME]: { command: node, args: [shim] } } }, null, 2) },
-  ];
-  const picked = await vscode.window.showQuickPick(options, { title: 'Copy MCP setup for…' });
-  if (!picked) return;
-  await vscode.env.clipboard.writeText(picked.detail);
-  void vscode.window.showInformationMessage(`Copied the ${picked.label} MCP setup. Run it in a terminal (or paste it into the config).`);
 }
