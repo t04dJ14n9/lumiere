@@ -16,6 +16,7 @@ export { wordCountHost } from "./wordCount/host";
 export { linkUpdatesHost } from "./linkUpdates/host";
 export { inlineTitleHost } from "./inlineTitle/host";
 export { tagsHost } from "./tags/host";
+export { onlineVideosHost } from "./onlineVideos/host";
 export { suggestHost } from "./suggest/host";
 export { searchHost } from "./search/host";
 export { tagsViewHost } from "./tags/view";

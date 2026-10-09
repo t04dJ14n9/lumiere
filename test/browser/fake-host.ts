@@ -14,6 +14,7 @@ import {
 } from "../../src/plugins/editor/protocol";
 import { protocol as commandProtocol } from "../../src/plugins/commands/protocol";
 import { protocol as linksProtocol } from "../../src/plugins/links/protocol";
+import { protocol as videoProtocol } from "../../src/plugins/onlineVideos/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 export class BrowserHost {
   text: string;
@@ -30,6 +31,14 @@ export class BrowserHost {
   trusted = false;
   /** Links the editor asked the host to open. */
   readonly opened: string[] = [];
+  /** Per-plugin settings sent to the editor; set before `open`. */
+  features: Record<
+    string,
+    { enabled: boolean; config: Record<string, unknown> }
+  > = {};
+  /** Online video details by `provider:id`; others fail as if offline. */
+  videoDetails: Record<string, Record<string, unknown>> = {};
+  readonly videoRequests: string[] = [];
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
   constructor(source: string) {
@@ -163,7 +172,7 @@ export class BrowserHost {
         text: this.session.text,
         version: this.session.version,
         debugLogging: false,
-        features: {},
+        features: this.features,
         editor: editorConfig.parse({}),
         trusted: this.trusted,
         clientID: id,
@@ -175,6 +184,15 @@ export class BrowserHost {
     host.handle(linksProtocol, "open", ({ href }) => {
       this.opened.push(href);
       return true;
+    });
+    host.handle(videoProtocol, "details", ({ provider, id }) => {
+      const key = `${provider}:${id}`;
+      this.videoRequests.push(key);
+      const details = this.videoDetails[key];
+      if (!details) {
+        throw new Error("offline");
+      }
+      return details;
     });
     host.handle(editorProtocol, "clipboardRead", () => this.clipboard);
     host.handle(editorProtocol, "clipboardWrite", ({ text }) => {

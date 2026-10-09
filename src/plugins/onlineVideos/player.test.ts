@@ -62,7 +62,7 @@ test("the allowlist accepts only the two player shapes", () => {
   }
 });
 
-test("only YouTube has a predictable thumbnail; it does not play in webviews", () => {
+test("only YouTube has a predictable thumbnail; only Bilibili may embed", () => {
   assert.equal(
     thumbnailUrl(video("https://youtu.be/dQw4w9WgXcQ")),
     "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
@@ -71,6 +71,6 @@ test("only YouTube has a predictable thumbnail; it does not play in webviews", (
     thumbnailUrl(video("https://www.bilibili.com/video/BV1DRHU6LELy")),
     undefined,
   );
-  assert.equal(providers.youtube.playsInWebview, false);
-  assert.equal(providers.bilibili.playsInWebview, true);
+  assert.equal(providers.youtube.embeddable, false);
+  assert.equal(providers.bilibili.embeddable, true);
 });

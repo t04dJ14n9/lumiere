@@ -6,6 +6,8 @@ Online video links written as images (Online Videos plugin).
 
 ![](https://youtu.be/dQw4w9WgXcQ?t=42)
 
-![2026 Worlds theme](https://www.bilibili.com/video/BV1DRHU6LELy)
+![](https://www.bilibili.com/video/BV1DRHU6LELy)
+
+![Alt text wins](https://www.bilibili.com/video/av170001)
 
 A YouTube link in text stays a link: [video](https://youtu.be/dQw4w9WgXcQ).

@@ -1,3 +1,5 @@
+import type { VideoDetails } from "./protocol";
+import { videoMeta } from "./meta";
 import type { OnlineVideo } from "./parse";
 import { playerAttributes, providers, thumbnailUrl } from "./player";
 
@@ -5,6 +7,10 @@ interface CardOptions {
   /** The image's alt text, if any. */
   label: string;
   trusted: boolean;
+  /** Offer "Play here" (a trusted workspace and the provider's setting). */
+  player: boolean;
+  /** Title, author, length and cover from the host, in a trusted workspace. */
+  details?: Promise<VideoDetails>;
   signal: AbortSignal;
   measure(): void;
   /** Open the video page in the external browser. */
@@ -12,10 +18,12 @@ interface CardOptions {
 }
 
 /**
- * A card for an online video: the title (alt text) or provider and ID, the
- * YouTube still in a trusted workspace, and a link the links plugin opens in
- * the external browser. Providers that play in a webview add "Play here",
- * which swaps in a player frame built from the validated ID.
+ * A card for an online video: the title (alt text, else the provider's
+ * title) with the provider, author and length or ID, a cover in a trusted
+ * workspace, and a button that opens the page in the external browser.
+ * Buttons, not anchors: VS Code's webview opens every clicked `<a href>`
+ * itself as well. "Play here" swaps in a player frame built from the
+ * validated ID.
  */
 export function videoCard(
   video: OnlineVideo,
@@ -24,18 +32,26 @@ export function videoCard(
   const provider = providers[video.provider];
   const card = element("span", "mw-video");
   card.dataset.provider = video.provider;
-  const title = options.label.trim() || `${provider.name} video`;
+  const label = options.label.trim();
+  const title = element(
+    "span",
+    "mw-video-title",
+    label || `${provider.name} video`,
+  );
+  const meta = element(
+    "span",
+    "mw-video-meta",
+    videoMeta(provider.name, video.id),
+  );
+  meta.title = video.id;
   const thumbnail = options.trusted ? thumbnailUrl(video) : undefined;
   if (thumbnail) {
-    card.append(thumbnailLink(video, thumbnail, title, options));
+    card.append(cover(video, thumbnail, title.textContent!, options));
   }
   const body = element("span", "mw-video-body");
-  body.append(
-    element("span", "mw-video-title", title),
-    element("span", "mw-video-meta", `${provider.name} · ${video.id}`),
-  );
+  body.append(title, meta);
   const actions = element("span", "mw-video-actions");
-  if (options.trusted && provider.playsInWebview) {
+  if (options.trusted && options.player && provider.embeddable) {
     actions.append(playButton(card, video, options));
   }
   const open = opener(video, "mw-video-open", options);
@@ -47,17 +63,60 @@ export function videoCard(
       element(
         "span",
         "mw-video-note",
-        "Players and thumbnails are off in an untrusted workspace.",
+        "Players, covers and titles are off in an untrusted workspace.",
       ),
     );
   }
   card.append(body);
+  void options.details?.then(
+    (details) =>
+      showDetails({ card, title, meta, video, label, details, options }),
+    () => undefined,
+  );
   return card;
 }
 
-function thumbnailLink(
+function showDetails({
+  card,
+  title,
+  meta,
+  video,
+  label,
+  details,
+  options,
+}: {
+  card: HTMLElement;
+  title: HTMLElement;
+  meta: HTMLElement;
+  video: OnlineVideo;
+  label: string;
+  details: VideoDetails;
+  options: CardOptions;
+}): void {
+  if (options.signal.aborted) {
+    return;
+  }
+  if (!label && details.title) {
+    title.textContent = details.title;
+  }
+  meta.textContent = videoMeta(
+    providers[video.provider].name,
+    video.id,
+    details,
+  );
+  if (
+    details.cover &&
+    !card.querySelector(".mw-video-thumb, .mw-video-frame")
+  ) {
+    card.prepend(cover(video, details.cover, title.textContent!, options));
+  }
+  card.classList.add("has-details");
+  options.measure();
+}
+
+function cover(
   video: OnlineVideo,
-  thumbnail: string,
+  src: string,
   title: string,
   options: CardOptions,
 ): HTMLElement {
@@ -67,7 +126,7 @@ function thumbnailLink(
     `Open ${title} on ${providers[video.provider].name}`,
   );
   const image = document.createElement("img");
-  image.src = thumbnail;
+  image.src = src;
   image.alt = "";
   image.loading = "lazy";
   image.addEventListener("load", options.measure, { signal: options.signal });

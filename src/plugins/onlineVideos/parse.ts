@@ -18,6 +18,7 @@ export interface OnlineVideo {
 
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const BVID = /^BV[0-9A-Za-z]{10}$/;
+const CANONICAL_AID = /^av[1-9][0-9]{0,15}$/;
 const AID = /^av([1-9][0-9]{0,15})$/i;
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
@@ -34,6 +35,13 @@ const BILIBILI_HOSTS = new Set([
 ]);
 const YOUTUBE_PATHS = /^\/(?:shorts|embed|live|v)\/([^/]+)\/?$/;
 const MAX_INTEGER = 10 ** 9;
+
+/** Whether `id` is an ID `parseVideoUrl` could have produced. */
+export function isVideoId(provider: VideoProvider, id: string): boolean {
+  return provider === "youtube"
+    ? YOUTUBE_ID.test(id)
+    : BVID.test(id) || CANONICAL_AID.test(id);
+}
 
 export function parseVideoUrl(raw: string): OnlineVideo | undefined {
   let url: URL;

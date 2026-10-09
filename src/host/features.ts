@@ -8,6 +8,7 @@ import {
   tagsHost,
   suggestHost,
   searchHost,
+  onlineVideosHost,
 } from "../plugins/host";
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
@@ -36,6 +37,7 @@ export function hostFeatures(
           tagsHost,
           suggestHost,
           searchHost,
+          onlineVideosHost,
         ]) {
           const enabled =
             config.preset === "obsidian" &&

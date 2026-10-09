@@ -72,8 +72,23 @@ test("the caret on a video link reveals its Markdown, like an image", async ({
 }) => {
   await stubProviders(page);
   const source = `Intro\n\n![](https://youtu.be/dQw4w9WgXcQ)\n\nAfter`;
-  await open(page, source, "obsidian", { trusted: true });
+  await open(page, source, "obsidian", {
+    trusted: true,
+    videoDetails: {
+      "youtube:dQw4w9WgXcQ": {
+        title: "Never Gonna Give You Up",
+        author: "Rick Astley",
+      },
+    },
+  });
   await expect(page.locator(".cm-content .mw-video")).toHaveCount(1);
+  // No alt text: the oEmbed title and channel fill in.
+  await expect(page.locator(".mw-video-title")).toHaveText(
+    "Never Gonna Give You Up",
+  );
+  await expect(page.locator(".mw-video-meta")).toHaveText(
+    "YouTube · Rick Astley",
+  );
   await page.evaluate((at) => window.harness.reveal(at), source.indexOf("!["));
   await expect(page.locator(".cm-content .mw-video")).toHaveCount(0);
   await expect(page.locator(".cm-content")).toContainText(
@@ -83,11 +98,82 @@ test("the caret on a video link reveals its Markdown, like an image", async ({
   await expect(page.locator(".cm-content .mw-video")).toHaveCount(1);
 });
 
-test("Play here swaps a Bilibili card for a sandboxed player", async ({
+const BILIBILI_DETAILS = {
+  "bilibili:BV1DRHU6LELy": {
+    title: "2026英雄联盟全球总决赛主题曲《KNOW MY NAME》",
+    author: "英雄联盟",
+    duration: 257,
+    cover: `data:image/png;base64,${PIXEL.toString("base64")}`,
+  },
+};
+
+test("a Bilibili card shows the host's cover, title, author and length", async ({
   page,
 }) => {
   const requests = await stubProviders(page);
+  await open(
+    page,
+    `Intro\n\n![](${BILIBILI})\n\n![Mine](${BILIBILI})`,
+    "obsidian",
+    {
+      trusted: true,
+      videoDetails: BILIBILI_DETAILS,
+    },
+  );
+  const cards = page.locator(".cm-content .mw-video");
+  const card = cards.first();
+  await expect(card.locator(".mw-video-title")).toHaveText(
+    "2026英雄联盟全球总决赛主题曲《KNOW MY NAME》",
+  );
+  await expect(card.locator(".mw-video-meta")).toHaveText(
+    "Bilibili · 英雄联盟 · 4:17",
+  );
+  await expect(card.locator(".mw-video-thumb img")).toHaveAttribute(
+    "src",
+    BILIBILI_DETAILS["bilibili:BV1DRHU6LELy"].cover,
+  );
+  // Alt text wins over the fetched title.
+  await expect(cards.nth(1).locator(".mw-video-title")).toHaveText("Mine");
+  // The player stays off unless the setting turns it on.
+  await expect(page.locator(".mw-video-play")).toHaveCount(0);
+  await card.locator(".mw-video-thumb").click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.opened))
+    .toEqual(["https://www.bilibili.com/video/BV1DRHU6LELy/?p=2"]);
+  // The webview itself fetches nothing; the same video is asked about once.
+  expect(requests).toEqual([]);
+  expect(await page.evaluate(() => window.harness.videoRequests)).toEqual([
+    "bilibili:BV1DRHU6LELy",
+  ]);
+});
+
+test("a card whose details fail stays as it was", async ({ page }) => {
+  await stubProviders(page);
   await open(page, `Intro\n\n![](${BILIBILI})`, "obsidian", { trusted: true });
+  const card = page.locator(".cm-content .mw-video");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.videoRequests))
+    .toEqual(["bilibili:BV1DRHU6LELy"]);
+  await expect(card.locator(".mw-video-title")).toHaveText("Bilibili video");
+  await expect(card.locator(".mw-video-meta")).toHaveText(
+    "Bilibili · BV1DRHU6LELy",
+  );
+  await expect(card.locator(".mw-video-thumb")).toHaveCount(0);
+  await expect(
+    card.getByRole("button", { name: "Open on Bilibili" }),
+  ).toBeVisible();
+});
+
+test("with bilibiliPlayer on, Play here swaps a Bilibili card for a sandboxed player", async ({
+  page,
+}) => {
+  const requests = await stubProviders(page);
+  await open(page, `Intro\n\n![](${BILIBILI})`, "obsidian", {
+    trusted: true,
+    features: {
+      onlineVideos: { enabled: true, config: { bilibiliPlayer: true } },
+    },
+  });
   const card = page.locator(".cm-content .mw-video");
   await expect(card.locator(".mw-video-title")).toHaveText("Bilibili video");
   await expect(card.locator(".mw-video-thumb")).toHaveCount(0);
@@ -132,6 +218,8 @@ test("an untrusted workspace shows a card with no player or remote image", async
   await open(
     page,
     `Intro\n\n![Talk](${YOUTUBE})\n\n![](${BILIBILI})\n\n![](https://example.com/photo.png)`,
+    "obsidian",
+    { videoDetails: BILIBILI_DETAILS },
   );
   const cards = page.locator(".cm-content .mw-video");
   await expect(cards).toHaveCount(2);
@@ -144,6 +232,7 @@ test("an untrusted workspace shows a card with no player or remote image", async
   await expect
     .poll(() => page.evaluate(() => window.harness.opened))
     .toEqual(["https://www.bilibili.com/video/BV1DRHU6LELy/?p=2"]);
+  expect(await page.evaluate(() => window.harness.videoRequests)).toEqual([]);
   // Other remote images still go through embeds.
   await expect(page.locator(".cm-content img.note-image")).toHaveCount(1);
   expect(requests).toEqual([]);

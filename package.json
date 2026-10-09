@@ -951,7 +951,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Show YouTube and Bilibili links embedded as images as video cards, with a player where the provider allows it."
+          "description": "Show YouTube and Bilibili links embedded as images as video cards, with titles and covers in trusted workspaces."
         },
         "markdownWorkbench.plugins.outgoingLinks.enabled": {
           "type": "boolean",
@@ -1146,6 +1146,12 @@
           "type": "string",
           "default": "",
           "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.onlineVideos.bilibiliPlayer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Offer **Play here** on Bilibili cards in trusted workspaces. Off by default: Bilibili's player does not play inside VS Code's webview.",
           "scope": "resource"
         },
         "markdownWorkbench.properties.display": {

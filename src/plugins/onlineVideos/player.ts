@@ -8,11 +8,12 @@ interface Provider {
   /** Paths a player frame may load under `origin`. */
   readonly pathPattern: RegExp;
   /**
-   * Whether the card offers "Play here". YouTube refuses every embed in a VS
-   * Code webview with error 153: the webview origin is not http(s), so the
-   * player gets no referrer to check.
+   * Whether the card may offer "Play here" (Bilibili, behind the
+   * `bilibiliPlayer` setting). YouTube refuses every embed in a VS Code
+   * webview with error 153: the webview origin is not http(s), so the player
+   * gets no referrer to check.
    */
-  readonly playsInWebview: boolean;
+  readonly embeddable: boolean;
 }
 
 export const providers: Readonly<Record<VideoProvider, Provider>> = {
@@ -21,14 +22,14 @@ export const providers: Readonly<Record<VideoProvider, Provider>> = {
     origin: "https://www.youtube-nocookie.com",
     path: "/embed/",
     pathPattern: /^\/embed\/[A-Za-z0-9_-]{11}$/,
-    playsInWebview: false,
+    embeddable: false,
   },
   bilibili: {
     name: "Bilibili",
     origin: "https://player.bilibili.com",
     path: "/player.html",
     pathPattern: /^\/player\.html$/,
-    playsInWebview: true,
+    embeddable: true,
   },
 };
 
