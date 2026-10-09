@@ -42,7 +42,7 @@ export class AgentHandoff {
    * to type. Returns whether there was a selection to copy.
    */
   async copyLinkForAgent(panel: PdfPanel): Promise<boolean> {
-    const snapshot = await this.snapshot(panel);
+    const snapshot = await this.snapshot(panel, { notify: true });
     if (!snapshot) {
       void vscode.window.showWarningMessage('Select text or a region in the PDF to copy a link for an agent.');
       return false;
@@ -58,11 +58,13 @@ export class AgentHandoff {
   /**
    * The selection as an agent should see it, without touching the
    * clipboard: the text Copy Link for Agent produces, plus its parts.
+   * With `notify`, the user hears why a region has no image (too large for
+   * the snapshot limit, or a failed save).
    */
-  async snapshot(panel: PdfPanel): Promise<AgentSnapshot | undefined> {
+  async snapshot(panel: PdfPanel, options: { notify?: boolean } = {}): Promise<AgentSnapshot | undefined> {
     const selected = panel.selectionSnapshot();
     if (!selected) return undefined;
-    const image = await this.regions()?.save(panel, selected);
+    const image = await this.regions()?.save(panel, selected, options);
     const source = { path: displayPath(panel.uri), sha256: selected.sha256 };
     return {
       file: source.path,

@@ -391,7 +391,7 @@
           "type": "number",
           "default": 100,
           "minimum": 1,
-          "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. When a new snapshot takes them past this, the least recently used ones are deleted (the new one is always kept). Values below 1 count as 1."
+          "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. This is a hard limit: when a new snapshot takes them past it, the least recently used ones are deleted, and a single snapshot larger than the limit is not saved (Copy Link for Agent then copies the link without the image). Values below 1 count as 1."
         },
         "vscodeEmbedPdf.toolbar.mode": {
           "type": "string",

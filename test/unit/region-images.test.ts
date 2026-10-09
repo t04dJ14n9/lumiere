@@ -3,7 +3,7 @@ import { mkdtemp, readFile, readdir, rm, stat, utimes, writeFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
-import { RegionImages, regionCacheBytes } from '../../src/extension/plugins/pdfRegions/region-images';
+import { RegionImages, RegionTooLargeError, regionCacheBytes } from '../../src/extension/plugins/pdfRegions/region-images';
 
 let folder: string;
 beforeEach(async () => { folder = path.join(await mkdtemp(path.join(tmpdir(), 'region-images-')), 'regions'); });
@@ -47,13 +47,6 @@ test('the folder never holds more than the cap', async () => {
   }
   // 300-byte files under a 2,000-byte cap: the newest six survive.
   assert.deepEqual(await names(), saved.slice(-6).map(file => path.basename(file)).sort());
-});
-
-test('the snapshot just saved is kept even when it alone is over the cap', async () => {
-  const images = new RegionImages(folder, () => 100);
-  await images.save('/p.pdf', 1, png(1));
-  const big = await images.save('/p.pdf', 2, png(2, 500));
-  assert.deepEqual(await names(), [path.basename(big)]);
 });
 
 test('saving the same region again makes it the most recently used', async () => {
@@ -104,7 +97,8 @@ test('only the PNG snapshots count toward the cap and are deleted', async () => 
 });
 
 test('saves made together never delete each other', async () => {
-  const images = new RegionImages(folder, () => 100);
+  // Room for exactly one 400-byte snapshot.
+  const images = new RegionImages(folder, () => 400);
   const files = await Promise.all([1, 2, 3].map(seed => images.save('/p.pdf', 1, png(seed))));
   // Each save keeps its own file; the last one's prune leaves only it.
   assert.deepEqual(await names(), [path.basename(files[2]!)]);
@@ -128,4 +122,22 @@ test('the cap setting is read in megabytes, with a default and a floor', () => {
   assert.equal(regionCacheBytes(Number.NaN), 100 * 1024 * 1024);
   assert.equal(regionCacheBytes(0), 1024 * 1024);
   assert.equal(regionCacheBytes(-5), 1024 * 1024);
+});
+
+test('a snapshot larger than the whole cap is rejected and nothing is written or evicted', async () => {
+  const images = new RegionImages(folder, () => 1_000);
+  const kept = await images.save('/p.pdf', 1, png(1));
+  await assert.rejects(images.save('/p.pdf', 2, png(2, 1_001)), (error: unknown) =>
+    error instanceof RegionTooLargeError && error.bytes === 1_001 && error.maxBytes === 1_000);
+  assert.deepEqual(await names(), [path.basename(kept)]);
+  // The queue goes on after a rejection.
+  const next = await images.save('/p.pdf', 3, png(3));
+  assert.deepEqual(await names(), [kept, next].map(file => path.basename(file)).sort());
+});
+
+test('a snapshot exactly the size of the cap is kept, alone', async () => {
+  const images = new RegionImages(folder, () => 1_000);
+  await images.save('/p.pdf', 1, png(1));
+  const whole = await images.save('/p.pdf', 2, png(2, 1_000));
+  assert.deepEqual(await names(), [path.basename(whole)]);
 });

@@ -14,14 +14,29 @@ export function regionCacheBytes(megabytes: unknown): number {
   return Math.max(value, MIN_MAX_MB) * MB;
 }
 
+/** A snapshot bigger than the whole cache: it is not saved at all. */
+export class RegionTooLargeError extends Error {
+  constructor(readonly bytes: number, readonly maxBytes: number) {
+    super(`The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (vscodeEmbedPdf.regionImageCache.maxSizeMB)`);
+    this.name = 'RegionTooLargeError';
+  }
+}
+
+function megabytes(bytes: number): string {
+  return `${(bytes / MB).toFixed(bytes < 10 * MB ? 1 : 0)} MB`;
+}
+
 /**
  * PNG snapshots of selected regions, saved as files so an agent can open
  * them (and VS Code's chat can attach them). They live in the extension's
  * storage, not the workspace. A snapshot's modification time is when it was
- * last used: saving it, or saving it again to hand it to an agent. When the
- * PNGs together pass the cap (`maxBytes`, read at every save so a changed
- * setting applies at once), the least recently used are deleted until they
- * fit; the snapshot just saved is always kept.
+ * last used: saving it, or saving it again to hand it to an agent.
+ *
+ * Invariant: the PNGs together never take more than the cap (`maxBytes`,
+ * read at every save so a changed setting applies at once). A snapshot
+ * larger than the cap on its own is rejected (RegionTooLargeError) before
+ * anything is written; otherwise it is saved and the least recently used
+ * others are deleted until everything fits.
  */
 export class RegionImages {
   /** Saves run one at a time, so one save's pruning never deletes another's file. */
@@ -45,6 +60,8 @@ export class RegionImages {
 
   private async write(pdfPath: string, page: number, image: string): Promise<string> {
     const bytes = Buffer.from(image.slice(PNG_DATA_URL.length), 'base64');
+    const cap = this.maxBytes();
+    if (bytes.length > cap) throw new RegionTooLargeError(bytes.length, cap);
     const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 12);
     const file = path.join(this.folder, `${path.basename(pdfPath, '.pdf')}-p${page}-${hash}.png`);
     await mkdir(this.folder, { recursive: true });
@@ -52,11 +69,11 @@ export class RegionImages {
     // A rewrite with the same bytes may leave the time alone on some systems.
     const now = new Date();
     await utimes(file, now, now);
-    await this.prune(path.basename(file));
+    await this.prune(path.basename(file), cap);
     return file;
   }
 
-  private async prune(keep: string): Promise<void> {
+  private async prune(keep: string, cap: number): Promise<void> {
     const names = (await readdir(this.folder, { withFileTypes: true }))
       .filter(entry => entry.isFile() && entry.name.endsWith('.png'))
       .map(entry => entry.name);
@@ -66,7 +83,6 @@ export class RegionImages {
       return info ? { name, file, size: info.size, used: info.mtimeMs } : undefined;
     }))).filter(image => image !== undefined);
     let total = images.reduce((sum, image) => sum + image.size, 0);
-    const cap = this.maxBytes();
     // Least recently used first.
     images.sort((a, b) => a.used - b.used);
     for (const image of images) {
