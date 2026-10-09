@@ -7,7 +7,7 @@ import type { EditorView } from "@codemirror/view";
 import { WidgetType } from "@codemirror/view";
 import { Context } from "../../kernel";
 import type { EditorService } from "../editor/api";
-import type { LivePreview } from "./api";
+import type { BlockRenderer, LivePreview } from "./api";
 import { livePreviewWebview } from "./webview";
 import { blockIndex, editingDecorations } from "./blocks";
 import { blockRenderers, revealed } from "./registry";
@@ -286,10 +286,9 @@ test("a revealed block with an editing preview marks its source and keeps the re
   assert.equal(widget.from, block.to);
   assert.equal(widget.value.spec.block, true);
   assert.equal(widget.value.spec.side, 1);
-  const plain = {
-    ...block,
-    renderer: { ...block.renderer, editingPreview: undefined },
-  };
+  const renderer: BlockRenderer = { ...block.renderer };
+  delete renderer.editingPreview;
+  const plain = { ...block, renderer };
   assert.deepEqual(
     editingDecorations(state, plain, () => new TestWidget()),
     [],

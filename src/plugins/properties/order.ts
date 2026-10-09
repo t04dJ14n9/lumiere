@@ -104,7 +104,7 @@ export class PropertyOrder {
   refresh(source: string): void {
     if (source !== this.source) {
       this.cancel(false);
-      this.displayed = undefined;
+      delete this.displayed;
       this.closeMenu?.();
       this.source = source;
     } else {
@@ -291,10 +291,10 @@ export class PropertyOrder {
 
   private cancel(restore = true): void {
     const drag = this.drag;
-    this.drag = undefined;
+    delete this.drag;
     this.scroll.stop();
     this.gesture?.abort();
-    this.gesture = undefined;
+    delete this.gesture;
     if (drag) {
       if (this.panel.hasPointerCapture(drag.pointer)) {
         this.panel.releasePointerCapture(drag.pointer);

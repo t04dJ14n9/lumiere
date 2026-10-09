@@ -49,7 +49,7 @@ export function bindPropertyLists(
         key,
         original,
         source,
-        editor,
+        ...(editor && { editor }),
         openMenu: context.openMenu,
         copy: context.copy,
       });

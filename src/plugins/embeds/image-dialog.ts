@@ -34,7 +34,7 @@ class ImageInspector {
     this.abort?.abort();
     this.dialog.close();
     this.dialog.remove();
-    this.dialog = undefined;
+    delete this.dialog;
     if (restoreFocus && this.options.trigger.isConnected) {
       this.options.trigger.focus();
     }

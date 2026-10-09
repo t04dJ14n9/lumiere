@@ -114,7 +114,7 @@ class MenuSession {
         buttons.push(button);
       }
     }
-    this.bindPanelKeys({ panel, buttons, depth, parent });
+    this.bindPanelKeys({ panel, buttons, depth, ...(parent && { parent }) });
     this.options.owner.append(panel);
     this.panels.push(panel);
     placePanel(panel, at, parent);

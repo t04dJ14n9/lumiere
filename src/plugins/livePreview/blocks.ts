@@ -96,8 +96,7 @@ function index(
   const blocks: IndexedBlock[] = [];
   let escaped = false;
   state.field(documentTree).iterate({
-    from: region?.from,
-    to: region?.to,
+    ...(region && { from: region.from, to: region.to }),
     enter(node) {
       if (
         region &&

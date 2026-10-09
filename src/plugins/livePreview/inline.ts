@@ -64,7 +64,10 @@ class InlineDecorations implements InlineContext {
   ): void => {
     if (from < to) {
       this.ranges.push(
-        Decoration.mark({ class: cls, attributes }).range(from, to),
+        Decoration.mark({
+          class: cls,
+          ...(attributes && { attributes }),
+        }).range(from, to),
       );
     }
   };
@@ -86,7 +89,11 @@ class InlineDecorations implements InlineContext {
       return;
     }
     this.lines.add(`${from}:${cls}`);
-    this.ranges.push(Decoration.line({ class: cls, attributes }).range(from));
+    this.ranges.push(
+      Decoration.line({ class: cls, ...(attributes && { attributes }) }).range(
+        from,
+      ),
+    );
   };
 
   decorate(

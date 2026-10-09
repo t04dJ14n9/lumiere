@@ -96,7 +96,7 @@ async function requestCompletions(
       {
         kind: trigger.kind,
         query: trigger.query,
-        note: trigger.note,
+        ...(trigger.note === undefined ? {} : { note: trigger.note }),
       },
       { token },
     );

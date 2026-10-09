@@ -152,11 +152,14 @@ export class VideoDetailsSource {
     const { details, cover } = parseBilibiliView(body);
     if (cover) {
       // A missing cover still leaves the title.
-      details.cover = await this.image(cover + COVER_SIZE, signal).catch(
+      const image = await this.image(cover + COVER_SIZE, signal).catch(
         () => undefined,
       );
+      if (image !== undefined) {
+        details.cover = image;
+      }
     }
-    return withoutUndefined(details);
+    return details;
   }
 
   private async json(url: string, signal: AbortSignal): Promise<unknown> {
@@ -285,7 +288,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function withoutUndefined(details: VideoDetails): VideoDetails {
+/** Parsing yields undefined for a missing or invalid field; drop those keys. */
+function withoutUndefined(details: {
+  [K in keyof VideoDetails]?: VideoDetails[K] | undefined;
+}): VideoDetails {
   return Object.fromEntries(
     Object.entries(details).filter(([, value]) => value !== undefined),
   ) as VideoDetails;

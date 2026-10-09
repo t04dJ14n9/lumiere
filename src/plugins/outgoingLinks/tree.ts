@@ -14,7 +14,12 @@ export class OutgoingLinksTree implements TreeSource {
   constructor(private readonly vaults: Vaults) {}
 
   async setNote(uri: string | undefined): Promise<void> {
-    this.note = uri ? await this.vaults.locate(uri) : undefined;
+    const located = uri ? await this.vaults.locate(uri) : undefined;
+    if (located) {
+      this.note = located;
+    } else {
+      delete this.note;
+    }
   }
 
   get hasNote(): boolean {

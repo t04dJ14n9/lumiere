@@ -75,7 +75,7 @@ export class FileTable {
     this.byLowerPath.set(file.path.toLowerCase(), file);
     const key = lookupKey(file.path);
     this.byKey.set(key, [...this.withKey(key), file]);
-    this.sorted = undefined;
+    delete this.sorted;
   }
 
   delete(path: string): VaultFile | undefined {
@@ -94,7 +94,7 @@ export class FileTable {
     } else {
       this.byKey.delete(key);
     }
-    this.sorted = undefined;
+    delete this.sorted;
     return file;
   }
 }

@@ -86,7 +86,9 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
             href: target,
             wiki: true,
             side: false,
-            source: pass.documentUri,
+            ...(pass.documentUri === undefined
+              ? {}
+              : { source: pass.documentUri }),
           })
           .catch((error) => ctx.logger.warn("Open embed failed", error));
       },

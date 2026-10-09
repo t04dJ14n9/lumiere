@@ -188,7 +188,9 @@ async function resolveVsCode(): Promise<Host> {
     app,
     resources,
     platform: process.platform,
-    applicationName: product.applicationName,
+    ...(product.applicationName === undefined
+      ? {}
+      : { applicationName: product.applicationName }),
     exists: existsSync,
   });
   // The command-line options are declared in the main process bundle, which

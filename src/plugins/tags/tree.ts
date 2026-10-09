@@ -39,7 +39,11 @@ export class TagsTree implements TreeSource {
 
   /** Rebuild from the index, or show nothing when no vault applies. */
   update(index: VaultIndex | undefined, options: TagsViewOptions): void {
-    this.root = index?.root;
+    if (index) {
+      this.root = index.root;
+    } else {
+      delete this.root;
+    }
     this.tree = index
       ? tagTree(
           taggedNotesOf(index),
@@ -73,7 +77,7 @@ export class TagsTree implements TreeSource {
       description: String(tag.count),
       tooltip: `#${tag.tag}`,
       icon: "tag",
-      expanded: tag.children.length > 0 ? false : undefined,
+      ...(tag.children.length > 0 && { expanded: false }),
       command: { id: SEARCH_COMMAND, args: [this.root, tag.tag] },
     };
   }

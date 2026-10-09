@@ -66,7 +66,7 @@ export class MemoryFileSystem implements VaultFileSystem {
   watch(_root: string, listener: (event: FileEvent) => void) {
     this.listener = listener;
     return () => {
-      this.listener = undefined;
+      delete this.listener;
     };
   }
 

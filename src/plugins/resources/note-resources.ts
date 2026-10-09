@@ -46,7 +46,7 @@ export class NoteResources implements Resources {
       kind,
       source: file.uri,
       url: resourceUrl(file.uri) + `?v=${stat.mtime}`,
-      text,
+      ...(text === undefined ? {} : { text }),
     };
   }
 

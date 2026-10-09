@@ -7,7 +7,10 @@ export const resourcesWebview: Plugin = {
   apply(ctx) {
     ctx.provide("resources", {
       load: (target, source) =>
-        ctx.rpc.call(protocol, "load", { target, source }),
+        ctx.rpc.call(protocol, "load", {
+          target,
+          ...(source === undefined ? {} : { source }),
+        }),
     });
   },
 };

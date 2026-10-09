@@ -33,7 +33,7 @@ export function outlineOf(
       title: heading.heading,
       level: heading.level,
       offset: heading.position.start.offset,
-      parent,
+      ...(parent && { parent }),
       children: [],
     };
     siblings.push(node);

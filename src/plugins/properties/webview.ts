@@ -116,7 +116,7 @@ function setPropertyType(
 ): void {
   const { key, kind, editing, signal } = options;
   void ctx.rpc
-    .call(protocol, "setType", { key, kind: kind ?? undefined })
+    .call(protocol, "setType", { key, ...(kind === null ? {} : { kind }) })
     .then((types) => {
       if (!signal.aborted) {
         editing.receiveTypes({ types });
