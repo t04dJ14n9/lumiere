@@ -9,17 +9,22 @@
  *     Selected text:
  *     Scaled dot-product attention
  *
+ *     When you answer, cite the Source link above so the reader can reopen this spot in the PDF.
+ *
+ * The last line is there because agents rarely cite the link unprompted;
+ * with it they do, and PDF: Open Location opens what they cite.
+ *
  * A region adds the text found inside its box and, when the extension saved
  * one, the path of a PNG snapshot of it:
  *
  *     Selected PDF region. Read the text inside the view rectangle, …
  *     Region image: `/…/region-p9-92-126-427-261.png`
  *
- *     Text in the region:
+ *     Text in the region, line by line (table columns are not kept; see the image):
  *     base 6 512 2048 …
  *
- * The wording matches LLM Wiki's agent clipboard so agents and skills that
- * read one also read the other.
+ * The lines up to the selected text match LLM Wiki's agent clipboard, so
+ * agents and skills that read one also read the other.
  */
 import { boundingRect, toViewRect } from './geometry';
 import { pdfLink } from './pdf-location';
@@ -34,6 +39,8 @@ export interface PdfSource {
 
 const REGION_INSTRUCTION =
   'Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.';
+
+const CITE_INSTRUCTION = 'When you answer, cite the Source link above so the reader can reopen this spot in the PDF.';
 
 /** Files saved alongside the selection. */
 export interface SelectionFiles {
@@ -57,8 +64,12 @@ export function agentText(selection: PdfSelection, source: PdfSource, files: Sel
       : [
         REGION_INSTRUCTION,
         ...(files.regionImage ? [`Region image: \`${files.regionImage}\``] : []),
-        ...(selection.text ? ['', 'Text in the region:', selection.text] : []),
+        ...(selection.text
+          ? ['', `Text in the region, line by line (table columns are not kept${files.regionImage ? '; see the image' : ''}):`, selection.text]
+          : []),
       ]),
+    '',
+    links.length === 1 ? CITE_INSTRUCTION : CITE_INSTRUCTION.replace('the Source link', 'the Source links'),
   ].join('\n');
 }
 

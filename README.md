@@ -46,9 +46,14 @@ PDF source SHA-256: `9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f
 
 Selected text:
 Scaled dot-product attention
+
+When you answer, cite the Source link above so the reader can reopen this spot in the PDF.
 ```
 
-For a region, the last lines ask the agent to read or render the area inside
+The last line is there because agents rarely cite the link unprompted; with
+it they do, and **PDF: Open Location** opens what they cite.
+
+For a region, the lines after the hash ask the agent to read or render the area inside
 the box, give the path of a PNG snapshot of it, and list the text inside it
 line by line (so a table reads row by row):
 
@@ -56,7 +61,7 @@ line by line (so a table reads row by row):
 Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.
 Region image: `/…/workspaceStorage/…/regions/attention-p9-3f2a….png`
 
-Text in the region:
+Text in the region, line by line (table columns are not kept; see the image):
 Table 3: Variations on the Transformer architecture. …
 base 6 512 2048 8 64 64 0.1 0.1 100K 4.92 25.8 65
 …

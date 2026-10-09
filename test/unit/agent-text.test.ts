@@ -16,6 +16,8 @@ test('a text selection copies its page link, file hash and text', () => {
     '',
     'Selected text:',
     'Scaled dot-product attention',
+    '',
+    'When you answer, cite the Source link above so the reader can reopen this spot in the PDF.',
   ].join('\n'));
 });
 
@@ -29,6 +31,7 @@ test('a selection across pages lists one link per page', () => {
     ],
   }, source);
   assert.match(text, /^Sources:\n- \[papers\/attention\\_v2\.pdf \(page 4\)\]\(<papers\/attention_v2\.pdf#page=4&viewrect=72,350,128,12>\)\n- \[papers\/attention\\_v2\.pdf \(page 5\)\]/);
+  assert.match(text, /\n\nWhen you answer, cite the Source links above so the reader can reopen this spot in the PDF\.$/);
 });
 
 test('a region copies its box and asks the agent to inspect it', () => {
@@ -47,8 +50,13 @@ test('a region adds its snapshot and the text inside it', () => {
     'Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.',
     'Region image: `/storage/regions/p9.png`',
     '',
-    'Text in the region:',
+    'Text in the region, line by line (table columns are not kept; see the image):',
     'N d_model',
     'base 6 512',
+    '',
+    'When you answer, cite the Source link above so the reader can reopen this spot in the PDF.',
   ].join('\n'));
+  // Without a snapshot there is no image to point to.
+  assert.match(agentText({ kind: 'region', page: 9, rect: [92, 126, 520, 387], text: 'x' }, source),
+    /\nText in the region, line by line \(table columns are not kept\):\nx\n/);
 });
