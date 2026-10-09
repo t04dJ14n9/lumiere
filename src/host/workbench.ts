@@ -187,11 +187,17 @@ function configurationOperations(): Pick<
       return () => subscription.dispose();
     },
     config(document) {
+      const uri = vscode.Uri.parse(document.uri);
       const config = vscode.workspace.getConfiguration(
         "markdownWorkbench",
-        vscode.Uri.parse(document.uri),
+        uri,
       );
-      return readSettings(config);
+      // Native editor settings as they apply to Markdown files.
+      const native = vscode.workspace.getConfiguration(undefined, {
+        uri,
+        languageId: "markdown",
+      });
+      return readSettings(config, native);
     },
   };
 }

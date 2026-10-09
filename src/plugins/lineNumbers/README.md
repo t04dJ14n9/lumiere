@@ -1,35 +1,47 @@
 # Line numbers
 
-Shows a source line-number gutter, corresponding to Obsidian's Show line numbers
-setting. It defaults to off.
+Shows a source line-number gutter laid out like VS Code's text editor, so a note
+looks the same in Markdown Workbench and in **Open With > Text Editor**. It is on
+by default and follows `editor.lineNumbers` for Markdown files.
 
 ## How it works
 
-The plugin registers CodeMirror's line-number extension through Editor. A
-rendered block replaces whole lines, which CodeMirror leaves unnumbered, so a
-widget marker gives it its first line's number. Catalog
-rank places line numbers before folding, so gutter order survives off/on cycles.
-Disposal removes only this registration.
+The plugin registers its own CodeMirror gutter through Editor. Numbers use the
+editor font family, size and weight, VS Code's `editorLineNumber.foreground`
+colour (`activeForeground` on the caret line), right-aligned in a column at least
+five digits wide, like VS Code's `lineNumbersMinChars`. Each number is centred on
+its text line; heading lines get the heading's padding and line height. The
+gutter sits at the editor's left edge on the editor background, with the folding
+area between numbers and text, as in VS Code.
+
+`editor.lineNumbers` is read on the host for Markdown files (`on`, `off`,
+`relative`, `interval`): relative shows distances from the caret line and
+interval every tenth number; the caret line always shows its own number. A
+rendered block (table, callout, embed, math, diagram, properties) hides several
+source lines; its gutter cell lists all of their numbers, so none go missing.
+Catalog rank places line numbers before folding.
 
 ## Files
 
-- `manifest.ts`: default-off enablement and empty configuration schema.
-- `webview.ts`: owned line-number extension registration.
+- `manifest.ts`: default-on enablement; `style` is read from `editor.lineNumbers`
+  (`nativeConfigKeys`), so no extra setting is contributed.
+- `webview.ts`: owned gutter registration and reconfiguration.
+- `gutter.ts`: labels per style, rendered-block number stacks, the gutter.
+- `gutter.test.ts`: labels, block stacks and marker equality.
 - `headings.ts`: gutter classes on heading lines, so numbers align with the
   larger heading text.
-- `widgets.ts`: numbers a rendered block with its first source line.
-- `widgets.test.ts`: which widgets get a number, and marker equality.
 - `lineNumbers.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
-`markdownWorkbench.plugins.lineNumbers.enabled` defaults to false. No commands
-or keybindings.
+`markdownWorkbench.plugins.lineNumbers.enabled` defaults to true;
+`editor.lineNumbers` (VS Code's setting) picks the style. No commands or
+keybindings.
 
-## Limits and differences from Obsidian
+## Limits and differences from VS Code
 
-Uses CodeMirror's gutter and VS Code colors. Counts source document lines, not
-visual rows: a rendered block (table, callout, embed, math, diagram) shows the
-number of its first source line, as in Obsidian, and the lines it hides are
-skipped.
+Rows follow the note's Live Preview line heights (headings are taller), so the
+gutter is as tall as the text it numbers rather than VS Code's fixed line
+height. A rendered block shorter than its source lines squeezes its numbers.
+Folded lines are not numbered, as in VS Code.

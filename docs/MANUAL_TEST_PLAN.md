@@ -421,11 +421,18 @@ Both are off by default (owner decision). Turn on
 
 ### lineNumbers
 
-Off by default.
+On by default.
 
-1. Turn it on: faint numbers sit level with each line, including headings.
-   A rendered block (table, callout, math, diagram) shows its first line's
-   number, as in Obsidian. Inserting and deleting lines renumbers.
+1. Open `Formatting.md` in the workbench and, beside it, with **Open With >
+   Text Editor**, in a light and a dark theme: the numbers use the same font,
+   size, colours (brighter on the caret line), right alignment and gutter
+   width, with fold chevrons between numbers and text on hover. Each number
+   sits level with its line, including headings.
+2. A rendered block (table, callout, math, diagram) lists the numbers of all
+   the source lines it covers; no number is skipped. Inserting and deleting
+   lines renumbers.
+3. Set `editor.lineNumbers` (or `[markdown]` `editor.lineNumbers`) to `off`,
+   `relative` and `interval`: the gutter follows without reopening.
 
 ### indentGuides
 
@@ -592,7 +599,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.formatting.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.inlineTitle.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.plugins.lineNumbers.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.linkUpdates.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.links.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.math.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -614,7 +621,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.editor.readableLineLength` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

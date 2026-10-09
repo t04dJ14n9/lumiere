@@ -109,10 +109,13 @@ export async function contributions() {
                 string,
                 Record<string, unknown>
               >) ?? {},
-            ).map(([key, value]) => [
-              `markdownWorkbench.${manifest.configKeys?.[key] ?? `${manifest.id}.${key}`}`,
-              { ...value, scope: "resource" },
-            ]),
+            )
+              // Fields backed by a native VS Code setting contribute nothing.
+              .filter(([key]) => !manifest.nativeConfigKeys?.[key])
+              .map(([key, value]) => [
+                `markdownWorkbench.${manifest.configKeys?.[key] ?? `${manifest.id}.${key}`}`,
+                { ...value, scope: "resource" },
+              ]),
           ),
         ),
         "markdownWorkbench.debug.logging": {

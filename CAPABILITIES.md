@@ -11,7 +11,7 @@ records it in `docs/PARITY.md`.
 | Plugin | What it does | Differences and limits |
 | --- | --- | --- |
 | document | One text shared by every panel and VS Code's text editor; VS Code owns save, EOL and undo | Typing groups for undo like Obsidian; history is VS Code's |
-| editor | The CodeMirror editor in a webview, view state per panel, settings for mode, readable line length (700 px), strict line breaks, right-to-left, tabs | Panels of one note keep separate selections, scroll and folds |
+| editor | The CodeMirror editor in a webview, view state per panel, settings for mode, readable line length (700 px, off by default), strict line breaks, right-to-left, tabs | Panels of one note keep separate selections, scroll and folds |
 | dialect | Obsidian-flavoured Markdown: wikilinks, embeds, tags, highlights, comments, callouts, footnotes, math, block IDs | Grammar is fixed; plugins cannot change parsing |
 | render | Sanitized HTML for rendered blocks | Scripts, forms, objects, embeds and `srcdoc` are removed; application links (`obsidian:`, `zotero:`) are kept and confirmed before opening |
 | livePreview | Syntax hidden except where the selection is; rendered blocks crossed as one unit | No Reading view (DESIGN §25.8); comments stay visible, faint, as in Obsidian |
@@ -45,7 +45,7 @@ records it in `docs/PARITY.md`.
 | wordCount | Words and characters in the status bar | Counting rules are this extension's reading of Obsidian's |
 | linkUpdates | Updates links when notes or folders are renamed in VS Code | Asks first by default (`prompt`); heading renames do not update links |
 | folding | Heading and list folding, restored on reload | — |
-| lineNumbers | Line numbers; rendered blocks show their first line's number | Off by default, as in Obsidian |
+| lineNumbers | Line numbers laid out like VS Code's gutter, following `editor.lineNumbers`; rendered blocks list all their source lines' numbers | On by default |
 | indentGuides | Indentation guides | No active-guide highlight |
 | spellcheck | The host's spellchecker | Dictionaries come from the OS |
 | autoPair | Brackets, quotes and Markdown markers | — |

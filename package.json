@@ -910,9 +910,9 @@
         },
         "markdownWorkbench.plugins.lineNumbers.enabled": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "scope": "resource",
-          "description": "Line numbers in the Markdown editor."
+          "description": "Line numbers in the Markdown editor, laid out like VS Code's text editor and following editor.lineNumbers."
         },
         "markdownWorkbench.plugins.linkUpdates.enabled": {
           "type": "boolean",
@@ -1042,7 +1042,7 @@
         },
         "markdownWorkbench.editor.readableLineLength": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "resource"
         },
         "markdownWorkbench.editor.strictLineBreaks": {

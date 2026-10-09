@@ -15,7 +15,8 @@ import { contributions } from "../../../scripts/generate-contributions";
 test("editor settings have application defaults and reconfigure without changing text or selection", () => {
   assert.deepEqual(config.parse({}), {
     defaultMode: "livePreview",
-    readableLineLength: true,
+    // Off by default: text fills the editor like VS Code's text editor.
+    readableLineLength: false,
     strictLineBreaks: false,
     rightToLeft: false,
     useTabs: true,
@@ -29,8 +30,15 @@ test("editor settings have application defaults and reconfigure without changing
   });
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "ltr",
-    class: "is-readable-line-width",
   });
+  assert.deepEqual(
+    EditorState.create({
+      extensions: settingsExtensions({ readableLineLength: true }),
+    })
+      .facet(EditorView.editorAttributes)
+      .at(-1),
+    { dir: "ltr", class: "is-readable-line-width" },
+  );
   const previous = state;
   state = state.update({
     effects: compartment.reconfigure(
@@ -66,6 +74,8 @@ test("resource settings use manifest aliases and validate all editor fields", ()
   assert.equal(result.features?.vim?.enabled, true);
   assert.equal(result.editor?.rightToLeft, true);
   assert.equal(result.mode, "source");
+  assert.equal(result.features?.lineNumbers?.enabled, true);
+  assert.equal(result.features?.lineNumbers?.config.style, "on");
   values["editor.rightToLeft"] = "yes";
   assert.throws(() => readSettings(reader));
 });
@@ -85,13 +95,14 @@ test("required settings, title actions, native context menus and unbound verify 
     { default: unknown; scope: string }
   >;
   for (const [key, value] of Object.entries({
-    "editor.readableLineLength": true,
+    "editor.readableLineLength": false,
     "editor.strictLineBreaks": false,
     "editor.rightToLeft": false,
     "files.attachmentFolder": "",
     "files.newNoteFolder": "",
     "links.useWikilinks": true,
-    "plugins.lineNumbers.enabled": false,
+    "plugins.lineNumbers.enabled": true,
+    "plugins.diagrams.enabled": true,
     "plugins.vim.enabled": false,
   })) {
     assert.deepEqual(
@@ -154,5 +165,26 @@ test("manual and parity inventories include every generated command and setting"
       (menu) => menu.command === "markdownWorkbench.consumeVimHostShortcut",
     )?.when,
     "false",
+  );
+});
+test("line numbers follow the native editor.lineNumbers setting, which is not contributed again", async () => {
+  const reader: SettingsReader = {
+    get: <T>(_key: string, fallback?: T) => fallback,
+  };
+  for (const style of ["on", "off", "relative", "interval"]) {
+    const native: SettingsReader = {
+      get: <T>(key: string) =>
+        (key === "editor.lineNumbers" ? style : undefined) as T,
+    };
+    assert.equal(
+      readSettings(reader, native).features?.lineNumbers?.config.style,
+      style,
+    );
+  }
+  const generated = await contributions();
+  assert.ok(
+    !Object.keys(generated.configuration.properties).some((key) =>
+      key.startsWith("markdownWorkbench.lineNumbers."),
+    ),
   );
 });

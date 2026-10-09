@@ -3,6 +3,11 @@ export interface Manifest {
   readonly config?: Schema<unknown>;
   /** Public setting paths for fields shared with the files namespace. */
   readonly configKeys?: Readonly<Record<string, string>>;
+  /**
+   * Fields read from a native VS Code setting (for Markdown files) instead of
+   * a contributed markdownWorkbench setting, e.g. `editor.lineNumbers`.
+   */
+  readonly nativeConfigKeys?: Readonly<Record<string, string>>;
   readonly id: string;
   readonly title: string;
   readonly description: string;
