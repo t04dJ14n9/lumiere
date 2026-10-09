@@ -17,7 +17,9 @@ Make editing Markdown in VS Code and Cursor feel like Obsidian's Live Preview, w
 | Shortcuts | **No custom shortcuts.** Ctrl/Cmd+A selects the whole note (1f6ece2) because this matches the editor. |
 | Outlines | Stay as they are. The workbench Outline covers the note, and VS Code's Outline covers the text editor. |
 | Footnotes | LaTeX paper style: superscript numbers numbered by first reference. Only a caret (an empty selection) inside a reference reveals the raw `[^label]`; selections keep it rendered (7ce645d). |
-| Ask Agent (since renamed Copy Link for Agent; setting `copyLinkForAgent.target`) | **Never guesses the agent.** `auto` opens a chat only when the editor's own chat is the only agent installed; otherwise it copies text and links. `markdownWorkbench.askAgent.target` forces a target: `auto`, `cursor`, `chat`, `claudeCode`, `codex` or `clipboard` (0fa88e0, 4147c0d). The PDF viewer behaves the same way (`vscodeEmbedPdf.askAgent.target`). |
+| Copy Link for Agent | **One agent action only.** Copy for Agent and Ask Agent are gone; the remaining action is **Copy Link for Agent** (`markdownWorkbench.copyLinkForAgent`, `vscodeEmbedPdf.copyLinkForAgent`), no migration. It **never guesses the agent**: `auto` opens a chat only when the editor's own chat is the only agent installed; otherwise it copies the link and text. `markdownWorkbench.copyLinkForAgent.target` / `vscodeEmbedPdf.copyLinkForAgent.target` force a target: `auto`, `cursor`, `chat`, `claudeCode`, `codex` or `clipboard` (0fa88e0, 4147c0d, 565b1e6; PDF: 3141d6f, ff83165). |
+| PDF agent bridge (MCP) | **Off by default** (`vscodeEmbedPdf.agentBridge.enabled = false`) because it starts a local server (127.0.0.1, random port, bearer token). The setting starts and stops it live; **PDF: Copy MCP Setup for Claude Code / Codex…** offers to turn it on (eba5c52 in vscode-embedPDF). |
+| PRs | **One PR per repo.** The stacked PRs were merged into each repo's PR #1 branch and closed; nothing is merged into `main`. |
 | Cursor Markdown button | `markdownWorkbench.editor.reclaimTextEditor` (`auto` means on in Cursor only). A note that Cursor's Markdown switch sends to the text editor reopens in the workbench (bf77ed1). |
 | PDF region images | The snapshot cache is capped at **100 MB** and evicts the least recently used files (`vscodeEmbedPdf.regionImageCache.maxSizeMB`, acabd72 and 75f7b21 in vscode-embedPDF). |
 | Online videos | YouTube and Bilibili links show as **video cards**, because the players don't run in VS Code webviews. A Bilibili **Play here** button exists behind `onlineVideos.bilibiliPlayer` (off) (c8ac25a, a621ec1). |
@@ -31,10 +33,22 @@ Head commits were checked with `git log` at hand-off time.
 
 | Repo | Branch | Head | PR | Pushed |
 | --- | --- | --- | --- | --- |
-| t04dJ14n9/vscode-markdown-workbench | `continue-handover` | this docs commit, on de7c0cd | [#1](https://github.com/t04dJ14n9/vscode-markdown-workbench/pull/1) → `main` (open) | yes |
-| t04dJ14n9/vscode-embedPDF | `test-and-fix-ui` | 75f7b21 | [#1](https://github.com/t04dJ14n9/vscode-embedPDF/pull/1) → `main` (open) | yes |
-| t04dJ14n9/vscode-embedPDF | `agent-handoff-native` | 3141d6f | [#2](https://github.com/t04dJ14n9/vscode-embedPDF/pull/2) **draft** → `test-and-fix-ui`: "Agent handoffs and MCP bridge (prototype)" | yes |
-| t04dJ14n9/vscode-embedPDF | `toolbar-research-prototype` | 4840485 | none (research branch on d4a5d8b: toolbar modes, status bar page and zoom, title bar actions) | yes |
+| t04dJ14n9/vscode-markdown-workbench | `continue-handover` | this docs commit, on 8e72f8e | [#1](https://github.com/t04dJ14n9/vscode-markdown-workbench/pull/1) → `main` (open, **the only PR**) | yes |
+| t04dJ14n9/vscode-embedPDF | `test-and-fix-ui` | efc5cb8 | [#1](https://github.com/t04dJ14n9/vscode-embedPDF/pull/1) → `main` (open, **the only PR**) | yes |
+| t04dJ14n9/vscode-embedPDF | `toolbar-research-prototype` | 4840485 | none (research branch on d4a5d8b; superseded by the toolbar now in PR #1) | yes |
+
+Folded into PR #1 and closed (2026-10-09):
+
+| Repo | Closed PR | Branch @ head | Merged into PR #1 as |
+| --- | --- | --- | --- |
+| markdown | #2 CI quality gates | `ci-quality-gates` @ d92a326 | fast-forward |
+| markdown | #3 Remove Copy for Agent, rename to Copy Link for Agent | `remove-copy-for-agent` @ 565b1e6 | merge 8e72f8e |
+| embedPDF | #3 CI quality gates | `ci-quality-gates` @ 2d23535 | fast-forward |
+| embedPDF | #5 Toolbar redesign | `toolbar-redesign` @ be3eec7 | merge 4d54307 |
+| embedPDF | #2 Agent handoffs and MCP bridge (draft) | `agent-handoff-native` @ 77156b1 | merge 627d0d8, then eba5c52 (bridge off by default) |
+| embedPDF | #4 Remove Copy for Agent, rename to Copy Link for Agent | `remove-copy-for-agent` @ ff83165 | merge 32f6ced |
+
+In vscode-embedPDF the four merged feature branches were deleted on GitHub once PR #1 contained them (each closed PR can restore its branch). The markdown repo keeps `ci-quality-gates` and `remove-copy-for-agent`. Local `backup/*` branches are kept.
 
 Local clones on the box:
 
@@ -46,6 +60,10 @@ Local clones on the box:
 | `/workspace/repos/agent-integration/vscode-markdown-workbench-agents` | `agent-handoff-deepseek`, merged into `continue-handover` |
 | `/workspace/repos/agent-integration/vscode-embedPDF` | `agent-handoff-native` |
 | `/workspace/repos/embedpdf-toolbar-research` | `toolbar-research-prototype` |
+| `/workspace/repos/ci-work/mdwb-single-pr` | `continue-handover`, the clone the single-PR merge was done in |
+| `/workspace/repos/ci-work/embedpdf-single-pr` | `test-and-fix-ui`, the clone the single-PR merge was done in |
+
+The older clones above may be behind their branch: `git pull` before working in them.
 
 The local branches `backup/*-pre-rebase` are safety copies taken before the rebases. They are not pushed.
 
@@ -77,6 +95,12 @@ Results on 2026-10-09:
 | --- | --- | --- | --- |
 | markdown `continue-handover` @ de7c0cd | pass, 572/572 unit tests | 26/26 | `test:vscode` 2/2 |
 | embedPDF `agent-handoff-native` @ 3141d6f | pass, 36/36 unit tests | 23/23 | VS Code 5/5, Cursor 3.24.9 5/5 |
+| markdown `continue-handover` @ 8e72f8e (single PR) | pass, 573/573 unit tests | 26/26 | `test:vscode` 2/2 |
+| embedPDF `test-and-fix-ui` @ efc5cb8 (single PR) | pass, 49/49 unit tests | 33/33 | VS Code 1.141 10/10, Cursor 3.24.9 10/10 |
+
+GitHub Actions CI (check, browser, VS Code stable, package, secret scan, audit) passed on both PR #1 heads: [markdown @ 8e72f8e](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/runs/37904047930), [embedPDF @ efc5cb8](https://github.com/t04dJ14n9/vscode-embedPDF/actions/runs/37906395620).
+
+The embedPDF browser suite's Playwright config reuses a server already on port 8990 (outside CI), which could be another clone's. A stray `node test/browser/server.mjs` from `/workspace/repos/vscode-embedPDF` was holding 8990, so the run above used a temporary copy of the config on port 8993.
 
 ## Visible comparison setup (display :7)
 
@@ -104,7 +128,8 @@ Results on 2026-10-09:
 - In Cursor, a second click on the Markdown button (the 10-second "keep text editor" rule) is unverified by hand.
 - Bilibili `?p=` part titles are not shown; the card shows the video title.
 - The active agent cannot be detected by an extension, so `auto` falls back to copying whenever more than one agent is installed. This is by design.
-- PDF draft PR #2: the MCP bridge is a prototype. It is on by default and has no end-to-end tests. The Claude Code, Codex and Cursor commands it uses are undocumented. See the PR's risks section.
+- PDF MCP bridge: still a prototype. It is now **off by default**. Only the on/off switch has an end-to-end test; the MCP tools themselves have none. The Cursor registration API (`vscode.cursor.mcp.registerServer`) and the Claude Code and Codex commands it uses are undocumented.
+- PDF real-editor tests: the region drag in "Copy Link for Agent from the context menu" once became a text selection (1 run in 4 in VS Code). It was not reproduced afterwards. The Go to Page flake in the keyboard shortcuts test is fixed (efc5cb8).
 
 ## Backlog (priority order)
 
@@ -112,7 +137,7 @@ Results on 2026-10-09:
 2. OKF plugin family, following `docs/plans/okf-plugins.md`.
 3. Markdown lint plugin (`okf-plugins.md` §6.1).
 4. Git diff plugin (`okf-plugins.md` §6.2).
-5. PDF toolbar redesign, with VS Code chrome as the default. See branch `toolbar-research-prototype` and `/workspace/embedpdf-toolbar-mockups`.
+5. ~~PDF toolbar redesign~~: done; it is in embedPDF PR #1 (VS Code chrome by default, slim, floating, none).
 6. Cloud demo for the GitHub showcase.
 7. Marp compatibility (`plugins-architecture.md` §4).
 
