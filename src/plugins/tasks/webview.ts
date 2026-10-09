@@ -1,10 +1,11 @@
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import type {} from "../livePreview/api";
+import type { InlineRenderer } from "../livePreview/api";
 import type {} from "../render/api";
 import { TaskBox } from "./widget";
 import { checklistEdit } from "./edits";
+import { taskLine } from "./status";
 import { bindRenderedTasks } from "./post-process";
 export const tasksWebview: Plugin = {
   name: "tasks",
@@ -31,24 +32,34 @@ export const tasksWebview: Plugin = {
   },
 };
 
+/** Task checkboxes in Live Preview, and the checked style of their lines. */
+export const inlineTasks: InlineRenderer = {
+  nodes: ["TaskMarker"],
+  decorate(node, cx) {
+    const status = cx.state.sliceDoc(node.from + 1, node.from + 2);
+    const line = taskLine(status);
+    cx.line(node.from, line.cls, line.attributes);
+    if (status !== " ") {
+      // Strike the task's text, not its indentation or checkbox.
+      const text = cx.state.doc.lineAt(node.from);
+      cx.mark(Math.min(node.to + 1, text.to), text.to, "md-task-done");
+    }
+    if (!cx.revealed(node.from, node.to)) {
+      cx.replace(
+        node.from,
+        node.to,
+        new TaskBox(
+          cx.state.doc.lineAt(node.from).text,
+          status !== " ",
+          status,
+        ),
+      );
+    }
+  },
+};
+
 function registerInlineTasks(ctx: Context): void {
-  ctx.effect(() =>
-    ctx.livePreview.inline({
-      nodes: ["TaskMarker"],
-      decorate(node, cx) {
-        if (!cx.revealed(node.from, node.to)) {
-          cx.replace(
-            node.from,
-            node.to,
-            new TaskBox(
-              cx.state.doc.lineAt(node.from).text,
-              cx.state.sliceDoc(node.from + 1, node.from + 2) !== " ",
-            ),
-          );
-        }
-      },
-    }),
-  );
+  ctx.effect(() => ctx.livePreview.inline(inlineTasks));
 }
 
 function registerChecklistCommands(ctx: Context): void {

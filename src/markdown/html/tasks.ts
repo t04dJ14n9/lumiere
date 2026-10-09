@@ -13,7 +13,7 @@ export function tasks(md: MarkdownIt): void {
           first?.type === "text" ? /^\[([^\]])\] /.exec(first.content) : null;
         if (task && first) {
           const checkbox = new state.Token("html_inline", "", 0);
-          checkbox.content = `<input type="checkbox" data-task${attr("data-line", token.map?.[0])} aria-label="Task"${task[1] === " " ? "" : " checked"}> `;
+          checkbox.content = `<input type="checkbox"${attr("data-task", task[1])}${attr("data-line", token.map?.[0])} aria-label="Task"${task[1] === " " ? "" : " checked"}> `;
           const label = new state.Token("html_inline", "", 0);
           const endLabel = new state.Token("html_inline", "", 0);
           label.content = '<span class="task-label">';
@@ -22,6 +22,7 @@ export function tasks(md: MarkdownIt): void {
           token.children!.unshift(checkbox, label);
           token.children!.push(endLabel);
           state.tokens[index - 2]!.attrJoin("class", "task-list-item");
+          state.tokens[index - 2]!.attrSet("data-task", task[1]!);
         }
       }
     }

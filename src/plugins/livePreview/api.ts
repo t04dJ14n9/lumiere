@@ -19,7 +19,7 @@ export interface InlineContext {
   ): void;
   hide(from: number, to: number): void;
   replace(from: number, to: number, widget: WidgetType): void;
-  line(at: number, cls: string): void;
+  line(at: number, cls: string, attributes?: Record<string, string>): void;
 }
 export interface InlineRenderer {
   nodes: readonly string[];

@@ -6,6 +6,7 @@ export class TaskBox extends WidgetType {
   constructor(
     readonly line: string,
     readonly checked: boolean,
+    readonly status = checked ? "x" : " ",
   ) {
     super();
   }
@@ -13,7 +14,8 @@ export class TaskBox extends WidgetType {
     return (
       other instanceof TaskBox &&
       this.line === other.line &&
-      this.checked === other.checked
+      this.checked === other.checked &&
+      this.status === other.status
     );
   }
   override toDOM(view: EditorView): HTMLElement {
@@ -21,6 +23,7 @@ export class TaskBox extends WidgetType {
     checkbox.type = "checkbox";
     checkbox.checked = this.checked;
     checkbox.setAttribute("aria-label", "Task");
+    checkbox.dataset.task = this.status;
     const events = new AbortController();
     this.events.set(checkbox, events);
     checkbox.addEventListener(
