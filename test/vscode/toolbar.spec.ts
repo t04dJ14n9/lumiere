@@ -105,6 +105,8 @@ test('the status bar shows the page and zoom, and opens a page or a zoom when cl
 });
 
 test('editor title actions zoom, fit and switch the selection tool', async ({ workbench: page }) => {
+  // Cursor keeps these actions in the "…" menu: each one first waits for its button, then opens the menu.
+  test.slow(inCursor);
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
   await expect(zoomStatus(page)).toHaveText(/^Fit Width/u);
