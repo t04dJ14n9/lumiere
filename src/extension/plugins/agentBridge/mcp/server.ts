@@ -69,11 +69,15 @@ type Undo = () => unknown;
 export async function startAgentBridge(options: ServerOptions): Promise<RunningBridge> {
   // Undone in reverse if a later step fails; handed to the caller on success.
   const undo: Undo[] = [];
+  const token = randomBytes(24).toString('hex');
+  // The whole startup boundary is scrubbed, rollback logs and the error the
+  // caller gets included: an adapter's error may quote the URL or header.
+  const scrub = (text: string): string => text.replaceAll(token, '<token>');
   try {
-    return await listen(options, undo);
+    return await listen(options, undo, token, scrub);
   } catch (error) {
-    for (const failure of await undoAll(undo)) options.log.error(`Agent bridge rollback: ${describe(failure)}`);
-    throw error;
+    for (const failure of await undoAll(undo)) options.log.error(scrub(`Agent bridge rollback: ${describe(failure)}`));
+    throw new Error(scrub(describe(error)));
   }
 }
 
@@ -101,11 +105,9 @@ export function routeLabel(url: string | undefined): string {
   return 'another path';
 }
 
-async function listen(options: ServerOptions, undo: Undo[]): Promise<RunningBridge> {
+async function listen(options: ServerOptions, undo: Undo[], token: string, scrub: (text: string) => string): Promise<RunningBridge> {
   const { panels, handoff, shim } = options;
   const discoveryDir = options.discoveryDir ?? DISCOVERY_DIR;
-  const token = randomBytes(24).toString('hex');
-  const scrub = (text: string): string => text.replaceAll(token, '<token>');
   const log: BridgeLog = {
     info: message => options.log.info(scrub(message)),
     warn: message => options.log.warn(scrub(message)),
