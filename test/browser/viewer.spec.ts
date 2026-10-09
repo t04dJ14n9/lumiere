@@ -89,6 +89,19 @@ test('VS Code\'s default webview styles neither shift the viewer nor outline cli
   expect(await link.evaluate(element => getComputedStyle(element).outlineStyle)).toBe('none');
 });
 
+test('in a narrow editor the toolbar wraps instead of hiding controls', async ({ page }) => {
+  await page.setViewportSize({ width: 300, height: 600 });
+  await open(page);
+  const toolbar = page.getByRole('toolbar', { name: 'PDF toolbar' });
+  for (const button of await toolbar.getByRole('button').all()) {
+    const box = (await button.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(300);
+  }
+  // "of 12" stays on one line.
+  const suffix = (await toolbar.getByText('of 12').boundingBox())!;
+  expect(suffix.height).toBeLessThan(20);
+});
+
 test('a text drag reports its text and line box, and the copy command copies the text', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);

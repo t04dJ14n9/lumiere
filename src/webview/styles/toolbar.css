@@ -1,6 +1,8 @@
 /* The toolbar above the pages and the search bar. */
 .toolbar {
   display: flex;
+  /* In a narrow editor the controls wrap onto a second row, never off-screen. */
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
   padding: 4px 8px;
@@ -46,6 +48,10 @@
   align-items: center;
   gap: 4px;
   color: var(--vscode-descriptionForeground, #999);
+}
+
+.number-field span {
+  white-space: nowrap;
 }
 
 .number-field input {
