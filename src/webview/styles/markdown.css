@@ -186,7 +186,6 @@
   );
   background-repeat: no-repeat;
   background-size: calc(var(--quote-depth, 1) * 16px - 14px) 100%;
-  color: var(--muted);
 }
 input[type="checkbox"] {
   width: 15px;
@@ -265,7 +264,6 @@ input[type="checkbox"] {
   margin: 0.6em 0;
   padding-left: 16px;
   border-left: 2px solid var(--accent);
-  color: var(--muted);
 }
 .markdown-rendered pre {
   margin: 0.6em 0;
