@@ -17,6 +17,11 @@ separate compartment so user state survives reconfiguration.
 Tab and Shift+Tab never leave the note, as in Obsidian: on a list item they
 indent or outdent the item with its nested lines, with a selection they indent
 the selected lines, and otherwise Tab inserts one indent unit.
+Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's: it
+shows "N / M" for the selected match (counting stops at 1000), Enter and
+Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,
+Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
+Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
 
 ## Files
 
@@ -31,6 +36,7 @@ the selected lines, and otherwise Tab inserts one indent unit.
 - `associations.ts`: **Use Markdown Workbench for Markdown in This Workspace**.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
+- `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
 - `webview.ts`: view creation and named service/settings/RPC registrations.
 - `service.ts`: shared editor facade with caller-bound extension ownership.
 - `extensions.ts`: deterministic ordered extension registry.

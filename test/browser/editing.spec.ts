@@ -39,3 +39,34 @@ test("Enter continues a list and an empty item leaves it", async ({ page }) => {
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("- one\n- two\nafter");
 });
+
+test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
+  page,
+}) => {
+  await open(page, "one two\nthree two\n");
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("ControlOrMeta+f");
+  const find = page.getByRole("textbox", { name: "Find..." });
+  await expect(find).toBeFocused();
+  await page.keyboard.insertText("two");
+  const count = page.locator(".mw-find-count");
+  await expect(count).toHaveText("1 / 2");
+  await page.keyboard.press("Enter");
+  await expect(count).toHaveText("2 / 2");
+  expect(await page.evaluate(() => window.harness.text)).toBe(
+    "one two\nthree two\n",
+  );
+  await page.keyboard.press("ControlOrMeta+h");
+  await page.keyboard.insertText("2");
+  await page.getByRole("button", { name: "Replace all" }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("one 2\nthree 2\n");
+  await expect(count).toHaveText("No results");
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".mw-find")).toHaveCount(0);
+  await page.keyboard.insertText("!");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("!");
+});

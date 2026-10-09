@@ -17,6 +17,7 @@ import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
 import { indentationKeymap } from "./indentation";
+import { findExtension } from "./find";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -113,6 +114,7 @@ function createEditorView(
         ctx.document.extension,
         ctx.markdown.language(),
         drawSelection(),
+        findExtension(),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({
           "aria-label": "Markdown content",

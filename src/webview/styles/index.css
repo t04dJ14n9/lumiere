@@ -6,6 +6,7 @@
 @import "./base.css";
 @import "./markdown.css";
 @import "../ui/menu.css";
+@import "../../plugins/editor/find.css";
 @import "../../plugins/markers/markers.css";
 @import "../../plugins/properties/properties.css";
 @import "../../plugins/inlineTitle/inlineTitle.css";
