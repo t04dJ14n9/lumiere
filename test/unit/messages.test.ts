@@ -22,6 +22,24 @@ test('selections from the viewer are validated, trimmed and sorted', () => {
   }
 });
 
+test('a region keeps its text and a PNG snapshot, if the snapshot is a real PNG data URL', () => {
+  const region = { kind: 'region', page: 2, rect: [10, 20, 30, 40] };
+  const png = 'data:image/png;base64,iVBORw0KGgo=';
+  assert.deepEqual(parseViewerMessage({ type: 'selection', selection: { ...region, text: '  a\nb ' }, image: png }), {
+    type: 'selection',
+    selection: { ...region, text: 'a\nb' },
+    image: png,
+  });
+  // No text, no text field.
+  assert.deepEqual(parseViewerMessage({ type: 'selection', selection: { ...region, text: ' ' } }), { type: 'selection', selection: region });
+  for (const image of ['data:image/svg+xml;base64,PHN2Zz4=', 'data:image/png;base64,<script>', 'https://example.com/a.png', 42, 'data:image/png;base64,' + 'A'.repeat(8_000_000)]) {
+    assert.deepEqual(parseViewerMessage({ type: 'selection', selection: region, image }), { type: 'selection', selection: region });
+  }
+  // Only regions carry a snapshot.
+  const text = { kind: 'text', text: 'x', pages: [{ page: 1, rects: [[0, 0, 1, 1]] }] };
+  assert.deepEqual(parseViewerMessage({ type: 'selection', selection: text, image: png }), { type: 'selection', selection: text });
+});
+
 test('outlines are cleaned: titles collapsed, bad pages dropped, nesting kept', () => {
   assert.deepEqual(parseViewerMessage({
     type: 'outline',

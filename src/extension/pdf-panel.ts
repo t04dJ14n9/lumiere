@@ -5,6 +5,7 @@ import { agentText } from '../shared/agent-text';
 import { parseViewerMessage, type HostMessage, type OutlineItem } from '../shared/messages';
 import type { PdfLocation } from '../shared/pdf-location';
 import type { PdfSelection } from '../shared/selection';
+import type { RegionImages } from './region-images';
 import { viewerHtml } from './webview-html';
 
 /** Let a file write settle before reloading the PDF. */
@@ -19,6 +20,8 @@ export class PdfPanel implements vscode.Disposable {
   /** The outline, or `undefined` while the viewer is still reading it. */
   outline: OutlineItem[] | undefined;
   selection: PdfSelection | undefined;
+  /** The saved snapshot of a selected region, while it is being written. */
+  private regionImage: Promise<vscode.Uri | undefined> | undefined;
 
   private readonly changed = new vscode.EventEmitter<void>();
   /** Fires when the outline or the selection changes. */
@@ -35,6 +38,7 @@ export class PdfPanel implements vscode.Disposable {
     readonly uri: vscode.Uri,
     readonly webviewPanel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
+    private readonly regionImages: RegionImages,
   ) {
     const webview = webviewPanel.webview;
     webview.options = {
@@ -64,10 +68,17 @@ export class PdfPanel implements vscode.Disposable {
       void vscode.window.showWarningMessage('Select text or a region in the PDF to copy it for an agent.');
       return false;
     }
-    const source = { path: displayPath(this.uri), sha256: this.sha256 };
-    await vscode.env.clipboard.writeText(agentText(this.selection, source));
+    await vscode.env.clipboard.writeText(await this.agentText());
     void vscode.window.showInformationMessage('Selection copied for agent.');
     return true;
+  }
+
+  /** The selection in the form agents read, with its snapshot's path for a region. */
+  private async agentText(): Promise<string> {
+    const selection = this.selection!;
+    const image = await this.regionImage;
+    const source = { path: displayPath(this.uri), sha256: this.sha256! };
+    return agentText(selection, source, image ? { regionImage: image.fsPath } : {});
   }
 
   dispose(): void {
@@ -84,10 +95,18 @@ export class PdfPanel implements vscode.Disposable {
         this.outline = message.items;
         this.changed.fire();
         break;
-      case 'selection':
-        this.selection = message.selection ?? undefined;
+      case 'selection': {
+        const selection = message.selection ?? undefined;
+        this.selection = selection;
+        this.regionImage = selection?.kind === 'region' && message.image
+          ? this.regionImages.save(this.uri, selection, message.image).then(undefined, (error: unknown) => {
+            void vscode.window.showWarningMessage(`Could not save the region snapshot: ${String(error)}`);
+            return undefined;
+          })
+          : undefined;
         this.changed.fire();
         break;
+      }
       case 'copyForAgent':
         await this.copyForAgent();
         break;
@@ -106,6 +125,7 @@ export class PdfPanel implements vscode.Disposable {
     this.loaded = false;
     this.outline = undefined;
     this.selection = undefined;
+    this.regionImage = undefined;
     this.changed.fire();
     let bytes: Uint8Array;
     try {

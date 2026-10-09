@@ -5,7 +5,8 @@
  *    │  ◄──────────── ready               the page has loaded
  *    │  load { data } ──────────►         the PDF bytes
  *    │  ◄──────────── outline { items }   bookmarks, once read
- *    │  ◄──────────── selection { … }     after each selection change
+ *    │  ◄──────────── selection { … }     after each selection change; for a
+ *    │                                    region, again with its text and image
  *    │  ◄──────────── copyForAgent        the viewer's Copy for Agent button
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
  *    │  goTo { location } ──────►         open a page (and box)
@@ -29,7 +30,8 @@ export interface OutlineItem {
 export type ViewerMessage =
   | { type: 'ready' }
   | { type: 'outline'; items: OutlineItem[] }
-  | { type: 'selection'; selection: PdfSelection | null }
+  /** `image`: for a region, a PNG of the box as a `data:image/png;base64,` URL. */
+  | { type: 'selection'; selection: PdfSelection | null; image?: string }
   | { type: 'copyForAgent' }
   | { type: 'openExternal'; url: string }
   | { type: 'error'; message: string };
@@ -44,6 +46,8 @@ const MAX_OUTLINE_DEPTH = 32;
 const MAX_TITLE_LENGTH = 500;
 /** Larger than any real page, in points (PDF pages are at most 14,400 points). */
 const MAX_PAGE_OFFSET = 1_000_000;
+/** About 6 MB of PNG; region snapshots are capped at 2,000 pixels a side. */
+const MAX_IMAGE_LENGTH = 8_000_000;
 
 /** Accept a message from the viewer only if it is well-formed. */
 export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
@@ -53,8 +57,11 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     case 'ready':
     case 'copyForAgent':
       return { type: message.type };
-    case 'selection':
-      return { type: 'selection', selection: parseSelection(message.selection) ?? null };
+    case 'selection': {
+      const selection = parseSelection(message.selection) ?? null;
+      const image = selection?.kind === 'region' && isPngDataUrl(message.image) ? message.image : undefined;
+      return { type: 'selection', selection, ...(image ? { image } : {}) };
+    }
     case 'outline':
       return { type: 'outline', items: parseOutline(message.items) };
     case 'openExternal':
@@ -66,6 +73,13 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     default:
       return undefined;
   }
+}
+
+/** A region snapshot: a PNG as a base64 data URL, of a sane size. */
+function isPngDataUrl(value: unknown): value is string {
+  const prefix = 'data:image/png;base64,';
+  return typeof value === 'string' && value.startsWith(prefix) && value.length <= MAX_IMAGE_LENGTH
+    && /^[A-Za-z0-9+/]+={0,2}$/u.test(value.slice(prefix.length));
 }
 
 /** Only web and mail links may leave the viewer; a PDF can contain any URI. */

@@ -19,7 +19,7 @@ import { useWheelZoom } from './wheel-zoom';
 /** The open PDF: toolbar, optional search bar, and the scrolling pages. */
 export function Viewer({ document: pdf }: { document: PdfDocumentObject }): React.JSX.Element {
   const navigation = useNavigation(DOCUMENT_ID);
-  const selection = useSelectionReporting(DOCUMENT_ID);
+  const selection = useSelectionReporting(DOCUMENT_ID, pdf);
   const devicePixelRatio = useDevicePixelRatio();
   const [searching, setSearching] = useState(false);
   /** Counts Find requests, so Find on an open search bar focuses it again. */

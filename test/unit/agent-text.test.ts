@@ -36,3 +36,19 @@ test('a region copies its box and asks the agent to inspect it', () => {
   assert.equal(text.split('\n')[0], 'Source: [papers/attention\\_v2.pdf (page 7 region)](<papers/attention_v2.pdf#page=7&viewrect=150,200,100,100>)');
   assert.match(text, /\n\nSelected PDF region\. Read the text inside the view rectangle/);
 });
+
+test('a region adds its snapshot and the text inside it', () => {
+  const text = agentText(
+    { kind: 'region', page: 9, rect: [92, 126, 520, 387], text: 'N d_model\nbase 6 512' },
+    source,
+    { regionImage: '/storage/regions/p9.png' },
+  );
+  assert.equal(text.split('\n').slice(3).join('\n'), [
+    'Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.',
+    'Region image: `/storage/regions/p9.png`',
+    '',
+    'Text in the region:',
+    'N d_model',
+    'base 6 512',
+  ].join('\n'));
+});

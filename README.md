@@ -36,7 +36,20 @@ Scaled dot-product attention
 ```
 
 For a region, the last lines ask the agent to read or render the area inside
-the box. A selection across pages lists one link per page.
+the box, give the path of a PNG snapshot of it, and list the text inside it
+line by line (so a table reads row by row):
+
+```text
+Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.
+Region image: `/…/workspaceStorage/…/regions/attention-p9-3f2a….png`
+
+Text in the region:
+N d_model d_ff h d_k d_v P_drop ε_ls train steps PPL (dev) BLEU (dev) params ×10⁶
+base 6 512 2048 8 64 64 0.1 0.1 100K 4.92 25.8 65
+```
+
+Snapshots are kept in the extension's storage, not the workspace; only the
+latest 20 are kept. A selection across pages lists one link per page.
 
 The location uses the `page` and `viewrect` parameters of
 [RFC 8118](https://www.rfc-editor.org/rfc/rfc8118): `viewrect=left,top,width,height`
@@ -71,6 +84,7 @@ src/
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
 │   ├── agent-text.ts     the text Copy for Agent copies
+│   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   └── geometry.ts       page rectangles
 ├── extension/   the VS Code side
@@ -78,6 +92,7 @@ src/
 │   ├── pdf-editor-provider.ts  opens *.pdf files
 │   ├── pdf-panel.ts            one open editor: loads the file, reloads on change
 │   ├── pdf-panels.ts           all open editors and the active one
+│   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
 │   ├── commands.ts             Copy for Agent, Open Location
 │   └── webview-html.ts         the viewer page and its content security policy
@@ -90,6 +105,8 @@ src/
     ├── reading-position.ts     the place and zoom kept across reloads
     ├── wheel-zoom.ts           Ctrl/⌘+wheel zoom, one step per notch
     ├── selection.ts            reporting text and region selections
+    ├── region-details.ts       a region's text and PNG snapshot
+    ├── drag-release.ts         ending drags released outside the viewer
     └── styles/                 CSS using VS Code theme colours
 ```
 

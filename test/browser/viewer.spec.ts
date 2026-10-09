@@ -174,6 +174,31 @@ test('a drag over empty space selects that region; Escape clears it', async ({ p
   await expect.poll(() => lastSelection(page)).toBeNull();
 });
 
+test('a region is reported again with the text inside it and a PNG snapshot', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  // Around "Synthetic page 1", from empty space above and left of it.
+  await drag(page, at(60, 70), at(230, 120));
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'region', page: 1, text: 'Synthetic page 1' });
+  const image = (await messages(page)).filter(message => message.type === 'selection').at(-1)?.image;
+  expect(image).toMatch(/^data:image\/png;base64,/);
+  // Twice the region's 170 x 50 points.
+  const size = await page.evaluate(async url => {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return [img.naturalWidth, img.naturalHeight];
+  }, image as string);
+  expect(Math.abs(size[0]! - 340)).toBeLessThanOrEqual(2);
+  expect(Math.abs(size[1]! - 100)).toBeLessThanOrEqual(2);
+
+  // A figure has no text: no text field, but still a snapshot.
+  await page.keyboard.press('Escape');
+  await drag(page, at(150, 150), at(250, 250));
+  await expect.poll(async () => (await messages(page)).filter(message => message.type === 'selection').at(-1)?.image).toMatch(/^data:image\/png/);
+  expect(await lastSelection(page)).not.toHaveProperty('text');
+});
+
 test('a region drag released outside the viewer ends when the pointer comes back', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);

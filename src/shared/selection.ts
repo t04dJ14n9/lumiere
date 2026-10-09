@@ -17,6 +17,8 @@ export interface RegionSelection {
   kind: 'region';
   page: number;
   rect: PageRect;
+  /** The text inside the box, line by line, once read; missing when it has none. */
+  text?: string;
 }
 
 export type PdfSelection = TextSelection | RegionSelection;
@@ -33,9 +35,9 @@ const MAX_RECTS_PER_PAGE = 2_000;
 export function parseSelection(value: unknown): PdfSelection | undefined {
   if (!isRecord(value)) return undefined;
   if (value.kind === 'region') {
-    return isPageNumber(value.page) && isPageRect(value.rect)
-      ? { kind: 'region', page: value.page, rect: value.rect }
-      : undefined;
+    if (!isPageNumber(value.page) || !isPageRect(value.rect)) return undefined;
+    const text = typeof value.text === 'string' ? value.text.trim().slice(0, MAX_TEXT_LENGTH) : '';
+    return { kind: 'region', page: value.page, rect: value.rect, ...(text ? { text } : {}) };
   }
   if (value.kind !== 'text') return undefined;
   const text = typeof value.text === 'string' ? value.text.trim() : '';
