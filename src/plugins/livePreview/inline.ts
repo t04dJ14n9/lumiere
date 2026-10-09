@@ -170,13 +170,11 @@ class InlineDecorations implements InlineContext {
     }
     const closingLabel = node.node.getChildren("LinkMark")[1];
     const isRendered = !this.revealed(from, to);
+    const href = linkDestination(this.state.sliceDoc(url.from, url.to));
     // Rendered labels open on plain click; source needs Cmd/Ctrl-click.
-    this.mark(
-      from + 1,
-      closingLabel?.from ?? to,
-      isRendered ? "md-link md-link-rendered" : "md-link",
-      { "data-href": linkDestination(this.state.sliceDoc(url.from, url.to)) },
-    );
+    this.mark(from + 1, closingLabel?.from ?? to, linkClass(isRendered, href), {
+      "data-href": href,
+    });
     if (isRendered) {
       if (closingLabel) {
         this.hide(closingLabel.from, to);
@@ -305,6 +303,19 @@ export const hybridInline = ViewPlugin.fromClass(
     },
   },
 );
+
+/**
+ * A Markdown link's classes. A rendered label pointing outside the vault
+ * (any `scheme:` address) carries Obsidian's external-link mark.
+ */
+export function linkClass(isRendered: boolean, href: string): string {
+  if (!isRendered) {
+    return "md-link";
+  }
+  return /^[a-z][a-z\d+.-]*:/i.test(href)
+    ? "md-link md-link-rendered md-link-external"
+    : "md-link md-link-rendered";
+}
 
 /** The address a bare URL opens: GFM links `www.` to https and plain addresses to mail. */
 export function bareUrlTarget(text: string): string {

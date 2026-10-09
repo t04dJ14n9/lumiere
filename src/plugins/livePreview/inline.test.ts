@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import { documentTree } from "./document-tree";
 import { inlineRenderers } from "./registry";
-import { bareUrlTarget, inlineDecorations } from "./inline";
+import { bareUrlTarget, inlineDecorations, linkClass } from "./inline";
 
 test("inline decorations retain basic marks, rendered links and deduplicated heading lines", () => {
   const doc = "# Title\n\n**bold** [label](target)\n\nafter";
@@ -164,4 +164,17 @@ test("syntax revealed at the caret is marked faint rather than shown as text", (
   assert.deepEqual(marked(doc.indexOf("bold")), ["##", "**", "**"]);
   assert.deepEqual(marked(doc.indexOf("quote")), [">"]);
   assert.deepEqual(marked(doc.length), []);
+});
+
+test("labelled links leaving the vault are marked external once rendered", () => {
+  assert.equal(
+    linkClass(true, "https://example.com"),
+    "md-link md-link-rendered md-link-external",
+  );
+  assert.equal(
+    linkClass(true, "mailto:a@b.test"),
+    "md-link md-link-rendered md-link-external",
+  );
+  assert.equal(linkClass(true, "Target.md"), "md-link md-link-rendered");
+  assert.equal(linkClass(false, "https://example.com"), "md-link");
 });
