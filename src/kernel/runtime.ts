@@ -78,7 +78,10 @@ export class Runtime {
   }
   track(job: Promise<unknown>): void {
     this.jobs.add(job);
-    void job.finally(() => this.jobs.delete(job));
+    // Not `finally`: its promise would reject with the job, unhandled. A
+    // rejection still reaches whoever awaits `settled()`.
+    const forget = () => void this.jobs.delete(job);
+    job.then(forget, forget);
   }
   async settled(): Promise<void> {
     while (this.jobs.size) {

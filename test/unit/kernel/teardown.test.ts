@@ -153,3 +153,18 @@ test("a resource stays in the ledger until its cleanup has finished", async () =
   assert.deepEqual(root.runtime.ledger.snapshot(), {});
   await root.dispose();
 });
+
+test("a rejected tracked job reaches settled() and is never an unhandled rejection", async () => {
+  const unhandled: unknown[] = [];
+  const record = (reason: unknown) => void unhandled.push(reason);
+  process.on("unhandledRejection", record);
+  try {
+    const root = Context.create();
+    root.runtime.track(Promise.reject(new Error("job failed")));
+    await assert.rejects(root.settled(), /job failed/);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.deepEqual(unhandled, []);
+  } finally {
+    process.off("unhandledRejection", record);
+  }
+});

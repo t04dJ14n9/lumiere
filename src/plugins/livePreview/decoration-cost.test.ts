@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EditorState } from "@codemirror/state";
+import { EditorState, type TransactionSpec } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
 import { blockDecorations, blockIndex, renderRevision } from "./blocks";
 import { documentTree } from "./document-tree";
@@ -57,7 +57,7 @@ const state = EditorState.create({ doc, extensions });
 const paragraph = (fraction: number) =>
   doc.indexOf("Plain paragraph", Math.floor(doc.length * fraction));
 
-function cost(spec: Parameters<EditorState["update"]>[0]) {
+function cost(spec: TransactionSpec) {
   matched = 0;
   built = 0;
   void state.update(spec).state;

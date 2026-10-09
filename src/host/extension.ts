@@ -9,6 +9,10 @@ import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
 import { registerReclaim } from "./reclaim";
+import type { Context } from "../kernel";
+
+/** The window's kernel; `deactivate` awaits its teardown. */
+let root: Context | undefined;
 export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkbenchApi> {
@@ -24,13 +28,12 @@ export async function activate(
   const logger = outputLogger(channel, () =>
     workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
   );
-  const root = await bootstrap(workbench, createVaultSystem(context), logger);
-  const api = await createApi(root, nativePlatform());
-  context.subscriptions.push({
-    dispose() {
-      void root.dispose();
-    },
-  });
-  return api;
+  root = await bootstrap(workbench, createVaultSystem(context), logger);
+  return createApi(root, nativePlatform());
 }
-export function deactivate(): void {}
+/** VS Code awaits this (subscriptions' disposals it does not), so teardown completes. */
+export async function deactivate(): Promise<void> {
+  const stopping = root;
+  root = undefined;
+  await stopping?.dispose();
+}
