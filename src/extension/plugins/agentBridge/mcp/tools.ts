@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 import * as vscode from 'vscode';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { noteReference } from '../../../../shared/note-reference';
+import { notePayload, noteReference } from '../../../../shared/note-reference';
 import type { PdfPanel } from '../../pdf/panel';
 import type { PdfPanels } from '../../pdf/panels';
 import type { AgentHandoff } from '../handoff';
@@ -123,7 +123,7 @@ async function noteSelection(): Promise<string> {
     const inWorkspace = editor.uri.scheme === 'file' && relative !== editor.uri.fsPath && (vscode.workspace.workspaceFolders?.length ?? 0) === 1;
     // Unsaved notes have no stable line reference.
     const reference = noteReference(inWorkspace ? relative : editor.uri.toString(), selection.startLine, selection.endLine, selection.isDirty);
-    return [`Source: ${reference}`, '', 'Selected text:', selection.text].join('\n');
+    return notePayload(reference, selection.text);
   }
   return editors.length ? 'No text is selected in the open Markdown Workbench notes.' : 'No note is open in Markdown Workbench.';
 }
