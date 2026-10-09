@@ -148,6 +148,37 @@ completion and Phase 8 records) first.
   can't quote the last row's cell values." With the payload: "The last row
   is "Cherry", "Red", "3.00", "yes"." (4/4 cells).
 
+### Stable layout when the caret enters a block (d382903, c93d102, 1feb9c8, 402accc)
+
+- Owner bug: a fenced code block changed height when the caret entered or
+  left it (rendered widget vs. source lines with other padding). Code
+  blocks (fenced, `~~~`, indented) are now always decorated source lines,
+  as in Obsidian: only the fence text hides, the empty fence lines keep
+  their line box and hold the language label and Copy button (hover). Prism
+  highlighting no longer waits for the caret. Only fences a code processor
+  accepts still become a widget (`codeBlocks/processor-view.ts`).
+- Horizontal rules are one decorated line too (the rule is drawn on the
+  line; the caret shows `---` in the same box). Before, everything below
+  moved by about 15px.
+- Audit (measured with the caret outside vs. inside): headings, quotes,
+  lists, task lists, tables and footnote definitions did not move and are
+  now locked by tests. Callouts and block math still change height on
+  reveal, as in Obsidian 1.14 (checked on :7: a callout box turns into its
+  raw lines; math adds its source lines above an unchanged preview). Math
+  is tested to keep its preview height and to move the text below by
+  exactly the source lines. Mermaid diagrams also swap to their source
+  lines (not compared with Obsidian yet). Keeping callouts or Mermaid in
+  place would depart from that behaviour; owner's call.
+- Tests: `test/browser/stable-blocks.spec.ts` compares every line's
+  offsetTop/height and the scrollHeight with the caret outside and at the
+  start, middle and end of each block (failed 9/9 code and rule cases
+  before the fix), plus the owner's repro on the vault's `Code.md`: caret on
+  the closing fence (line 7), then Down to the blank line 8, and a walk
+  with ArrowDown/ArrowUp over every line (both failed before; lines below
+  moved about 3px); unit tests `livePreview/code-lines.test.ts` and
+  `codeBlocks/code.test.ts`. Checks: `pnpm check` 577/577, browser 44/44,
+  native 2/2.
+
 ## Remaining
 
 1. Phase 9, owner acceptance: run `docs/MANUAL_TEST_PLAN.md` against the
