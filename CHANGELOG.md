@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- Review fixes (round 1), internal: the extension is a set of plugins
+  (`pdf`, `pdfToolbar`, `pdfOutline`, `pdfRegions`, `agentBridge`) started by
+  a runtime that rolls back a plugin that fails to start and stops plugins
+  in reverse order; tests check every plugin leaves nothing registered when
+  it stops.
+- The agent bridge starts only when it is enabled **and** used (a PDF is
+  open or Copy MCP Setup was run), and its MCP server is a separate bundle
+  loaded only then; `dist/extension.js` shrank from 1.6 MB to under 70 KB.
+  The extension now activates when a PDF opens. The stdio shim is now
+  included in the VSIX (it was missing).
+- Region snapshots have a hard size limit: a snapshot larger than
+  `vscodeEmbedPdf.regionImageCache.maxSizeMB` is not saved (the handoff goes
+  without the image and says why) instead of exceeding the cap.
+- The viewer batches its state reports (outline, selection, page and zoom)
+  into versioned patches, about one per frame; each reload disposes the
+  previous PDF's engine and workers.
+- `get_current_note_selection` returns the same text as Markdown
+  Workbench's Copy Link for Agent (`@path#lines` and the quoted lines); the
+  shared format is in `docs/agent-handoff-format.md`.
+
 - The viewer's controls move into VS Code's own UI by default: editor title
   buttons and the page and zoom in the status bar (Go to Page, a zoom
   picker). `vscodeEmbedPdf.toolbar.mode` picks a slim bar in the viewer, a

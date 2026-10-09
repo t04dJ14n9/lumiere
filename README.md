@@ -206,7 +206,8 @@ src/
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
 │   ├── agent-text.ts     the text Copy Link for Agent hands over
 │   ├── agent-target.ts   which agent chat Copy Link for Agent opens
-│   ├── note-reference.ts the @note#lines reference the agent bridge returns
+│   ├── note-reference.ts the @note#lines text the agent bridge returns
+│   │                     (shared format: docs/agent-handoff-format.md)
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   ├── view-state.ts     page and zoom reported by the viewer; view actions
@@ -214,20 +215,24 @@ src/
 │   └── geometry.ts       page rectangles
 ├── bridge-stdio/  the stdio shim Claude Code and Codex run to reach the bridge
 ├── extension/   the VS Code side
-│   ├── extension.ts            activation
-│   ├── pdf-editor-provider.ts  opens *.pdf files
-│   ├── pdf-panel.ts            one open editor: loads the file, reloads on change
-│   ├── pdf-panels.ts           all open editors and the active one
-│   ├── region-images.ts        region snapshots saved for agents
-│   ├── outline-view.ts         the PDF Outline tree
-│   ├── commands.ts             Copy Link for Agent, Open Location
-│   ├── view-commands.ts        page, zoom, find and tool commands; Go to Page, zoom picker
-│   ├── toolbar.ts              the toolbar setting, status bar entries
-│   ├── agent-chat.ts           opening the agent chat with a selection
-│   ├── agent-bridge/           the opt-in MCP server and its tools
-│   └── webview-html.ts         the viewer page and its content security policy
+│   ├── extension.ts            activation: builds the plugin runtime, nothing else
+│   ├── runtime/                plugin manifests and the runtime: dependency order,
+│   │                           transactional start (a failed plugin rolls back what
+│   │                           it registered), teardown in reverse order
+│   └── plugins/                one folder per plugin, each with a manifest
+│       ├── catalog.ts, services.ts   which plugins exist; the services they share
+│       ├── pdf/                the custom editor: panels, loading, reloads,
+│       │                       selections, navigation, view commands, page HTML
+│       ├── pdfToolbar/         where the controls go; status bar entries
+│       ├── pdfOutline/         the PDF Outline tree
+│       ├── pdfRegions/         region snapshots saved for agents (size-capped)
+│       └── agentBridge/        AgentHandoff (Copy Link for Agent), the agent
+│                               chat, and the opt-in MCP bridge (mcp/), whose
+│                               server is a separate lazily loaded bundle
 └── webview/     the viewer (React + EmbedPDF), one module per concern
     ├── main.tsx, host.ts       entry and messages to the extension
+    ├── outbox.ts               state reports batched into versioned patches
+    ├── render-session.ts       owns one PDF's engines; disposed on reload
     ├── engine.tsx, plugins.ts  PDFium in a worker (main-thread fallback)
     ├── viewer.tsx              toolbar, search, pages
     ├── toolbar.tsx             the slim bar's controls
