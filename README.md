@@ -144,6 +144,34 @@ The location uses the `page` and `viewrect` parameters of
 in PDF points (1/72 inch), measured from the page's top-left corner. Paths are
 relative to the workspace folder, or absolute for files outside it.
 
+## Agent bridge (MCP, experimental, off by default)
+
+Instead of pasting, an agent can ask the viewer for what you have selected.
+Turn on `vscodeEmbedPdf.agentBridge.enabled` (or run **PDF: Copy MCP Setup
+for Claude Code / Codex…**, which offers to) and the extension starts a local
+[MCP](https://modelcontextprotocol.io/) server with these tools:
+
+| Tool | What it does |
+| --- | --- |
+| `get_current_pdf_selection` | The text or region selected in the PDF you last looked at: the same text Copy Link for Agent copies, and for a region its PNG snapshot. |
+| `open_pdf_location` | Opens a `path#page=N&viewrect=…` link in the viewer. |
+| `get_current_note_selection` | The selection in Markdown Workbench, when it is installed. |
+
+The server is off by default because it opens a port. When on, it listens on
+`127.0.0.1` only, on a random port, requires a random bearer token, and
+refuses requests that carry a browser `Origin`. Turning the setting off stops
+it at once; no reload is needed.
+
+- **VS Code** (chat agent mode) and **Cursor** find it by themselves.
+- **Claude Code** and **Codex** connect through a small stdio shim: **PDF: Copy
+  MCP Setup for Claude Code / Codex…** copies the `claude mcp add …` or
+  `codex mcp add …` command (or a config snippet) to run once. The shim picks
+  the window whose workspace contains the agent's folder, from the files each
+  running bridge writes to `~/.agent-pdf-viewer/bridges/`.
+
+This is a prototype: the Cursor registration uses an undocumented API, and
+only the on/off switch has an end-to-end test.
+
 ## Opening a location from another extension
 
 ```ts
@@ -173,11 +201,13 @@ src/
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
 │   ├── agent-text.ts     the text Copy for Agent copies
 │   ├── agent-target.ts   which agent chat Copy Link for Agent opens
+│   ├── note-reference.ts the @note#lines reference the agent bridge returns
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   ├── view-state.ts     page and zoom reported by the viewer; view actions
 │   ├── toolbar-settings.ts  toolbar modes and the floating bar's edge
 │   └── geometry.ts       page rectangles
+├── bridge-stdio/  the stdio shim Claude Code and Codex run to reach the bridge
 ├── extension/   the VS Code side
 │   ├── extension.ts            activation
 │   ├── pdf-editor-provider.ts  opens *.pdf files
@@ -189,6 +219,7 @@ src/
 │   ├── view-commands.ts        page, zoom, find and tool commands; Go to Page, zoom picker
 │   ├── toolbar.ts              the toolbar setting, status bar entries
 │   ├── agent-chat.ts           opening the agent chat with a selection
+│   ├── agent-bridge/           the opt-in MCP server and its tools
 │   └── webview-html.ts         the viewer page and its content security policy
 └── webview/     the viewer (React + EmbedPDF), one module per concern
     ├── main.tsx, host.ts       entry and messages to the extension

@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises';
 import * as vscode from 'vscode';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { noteReference } from '../../shared/note-reference';
 import type { PdfPanel } from '../pdf-panel';
 import type { PdfPanels } from '../pdf-panels';
 
@@ -101,10 +102,10 @@ export function createBridgeServer(lastPdf: LastPdf): McpServer {
   return server;
 }
 
+/** The part of Markdown Workbench's public API the bridge reads. */
 interface WorkbenchApi {
   getEditors(): readonly { editorId: string; uri: vscode.Uri; isActive: boolean; isDirty: boolean }[];
   getSelection(editorId: string): Promise<{ text: string; startLine: number; endLine: number; isDirty: boolean } | undefined>;
-  createAgentReference(selection: unknown): Promise<{ text: string }>;
 }
 
 async function noteSelection(): Promise<string> {
@@ -117,14 +118,10 @@ async function noteSelection(): Promise<string> {
   for (const editor of ordered) {
     const selection = await api.getSelection(editor.editorId).catch(() => undefined);
     if (!selection || !selection.text) continue;
-    const path = vscode.workspace.asRelativePath(editor.uri, false);
-    let reference: string;
-    try {
-      reference = (await api.createAgentReference(selection)).text;
-    } catch {
-      // Unsaved notes have no stable line reference.
-      reference = `${path} (unsaved, lines ${selection.startLine}-${selection.endLine})`;
-    }
+    const relative = vscode.workspace.asRelativePath(editor.uri, false);
+    const inWorkspace = editor.uri.scheme === 'file' && relative !== editor.uri.fsPath && (vscode.workspace.workspaceFolders?.length ?? 0) === 1;
+    // Unsaved notes have no stable line reference.
+    const reference = noteReference(inWorkspace ? relative : editor.uri.toString(), selection.startLine, selection.endLine, selection.isDirty);
     return [`Source: ${reference}`, '', 'Selected text:', selection.text].join('\n');
   }
   return editors.length ? 'No text is selected in the open Markdown Workbench notes.' : 'No note is open in Markdown Workbench.';

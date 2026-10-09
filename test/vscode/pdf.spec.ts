@@ -1,4 +1,4 @@
-import { copyFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { paths } from './state';
@@ -121,4 +121,30 @@ test('the viewer reloads when the PDF changes on disk', async ({ workbench: page
   copyFileSync(path.join(paths.fixtures, 'short.pdf'), changing);
   await expect(statusBarEntry(page, /^Page 1 \/ 3$/u)).toBeVisible();
   await expect(outline.getByText('This PDF has no outline.')).toBeVisible();
+});
+
+test('the agent bridge is off by default, and its setting starts and stops it', async ({ workbench: page }) => {
+  // The bridge starts a local MCP server, so it is opt-in (vscodeEmbedPdf.agentBridge.enabled).
+  // A running bridge announces itself with a file in ~/.agent-pdf-viewer/bridges.
+  const bridges = path.join(paths.home, '.agent-pdf-viewer', 'bridges');
+  const announced = (): number => existsSync(bridges) ? readdirSync(bridges).filter(name => name.endsWith('.json')).length : 0;
+  await openFile(page, PDF);
+  await pdfViewer(page);
+  expect(announced()).toBe(0);
+
+  // Copy MCP Setup offers to turn it on.
+  await command(page, 'PDF: Copy MCP Setup for Claude Code / Codex…');
+  const offer = page.locator('.notification-toast').filter({ hasText: 'The agent bridge is off.' });
+  await expect(offer).toBeVisible();
+  await offer.getByRole('button', { name: 'Turn On' }).click();
+  await expect.poll(announced, { timeout: 15_000 }).toBe(1);
+  await expect(page.locator('.quick-input-widget')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // Turning the setting off stops the server, without a reload.
+  const settingsFile = path.join(paths.userData, 'User', 'settings.json');
+  const settings = JSON.parse(readFileSync(settingsFile, 'utf8')) as Record<string, unknown>;
+  expect(settings['vscodeEmbedPdf.agentBridge.enabled']).toBe(true);
+  writeFileSync(settingsFile, JSON.stringify({ ...settings, 'vscodeEmbedPdf.agentBridge.enabled': false }, null, 2));
+  await expect.poll(announced, { timeout: 15_000 }).toBe(0);
 });

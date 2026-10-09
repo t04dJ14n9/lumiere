@@ -11,9 +11,10 @@
  *   view-commands        page, zoom, find and tool commands for the active PDF
  *   toolbar              where the controls are: status bar entries, setting
  *   agent-chat           opening the agent chat with a selection
+ *   agent-bridge         the opt-in local MCP server (agentBridge.enabled)
  */
 import * as vscode from 'vscode';
-import { startAgentBridge } from './agent-bridge/bridge';
+import { registerAgentBridge } from './agent-bridge/bridge';
 import { registerCommands } from './commands';
 import { registerOutlineView } from './outline-view';
 import { PdfEditorProvider } from './pdf-editor-provider';
@@ -45,7 +46,8 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   const log = vscode.window.createOutputChannel('Agent PDF Viewer', { log: true });
   context.subscriptions.push(log);
-  void startAgentBridge(context, panels, log).catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
+  // Off by default: it starts a local MCP server only when the user turns it on.
+  context.subscriptions.push(registerAgentBridge(context, panels, log));
 }
 
 export function deactivate(): void {}

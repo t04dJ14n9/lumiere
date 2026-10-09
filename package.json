@@ -450,8 +450,8 @@
         },
         "vscodeEmbedPdf.agentBridge.enabled": {
           "type": "boolean",
-          "default": true,
-          "markdownDescription": "Serve the current PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected)."
+          "default": false,
+          "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
         }
       }
     },
