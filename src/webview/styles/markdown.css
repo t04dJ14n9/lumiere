@@ -113,6 +113,47 @@
 .md-syntax-mark {
   color: var(--faint);
 }
+/* Inline HTML drawn in place: <kbd>, <u>, <sub> and friends. */
+.md-html-kbd,
+.markdown-rendered kbd {
+  padding: 0.1em 0.35em;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--code);
+  font-family: var(--code-font);
+  font-size: 0.85em;
+}
+.md-html-u,
+.md-html-ins {
+  text-decoration: underline;
+}
+.md-html-s,
+.md-html-del {
+  text-decoration: line-through;
+}
+.md-html-mark {
+  background: var(--vscode-editor-findMatchHighlightBackground, #ffd54f66);
+}
+.md-html-sub {
+  vertical-align: sub;
+  font-size: 0.8em;
+}
+.md-html-sup {
+  vertical-align: super;
+  font-size: 0.8em;
+}
+.md-html-b,
+.md-html-strong {
+  font-weight: bold;
+}
+.md-html-i,
+.md-html-em {
+  font-style: italic;
+}
+.md-html-small {
+  font-size: 0.85em;
+}
 .md-comment {
   color: var(--muted);
   opacity: 0.6;
