@@ -520,7 +520,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/extension && tsc -p src/webview && tsc -p test",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/extension && tsc -p src/bridge-stdio && tsc -p src/webview && tsc -p test",
     "lint": "eslint . --max-warnings=0",
     "test": "tsx --test test/unit/*.test.ts",
     "fixtures": "node test/fixtures/make-fixtures.mjs",

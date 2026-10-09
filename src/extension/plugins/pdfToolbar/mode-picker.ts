@@ -13,7 +13,7 @@ const MODE_CHOICES: { mode: ToolbarMode; label: string; detail: string }[] = [
 export async function selectToolbarMode(): Promise<void> {
   const current = parseToolbarMode(vscode.workspace.getConfiguration(SECTION).get('mode'));
   const choice = await vscode.window.showQuickPick(
-    MODE_CHOICES.map(choice => ({ ...choice, description: choice.mode === current ? 'current' : undefined })),
+    MODE_CHOICES.map(choice => ({ ...choice, ...(choice.mode === current ? { description: 'current' } : {}) })),
     { title: 'PDF Viewer Controls', placeHolder: 'Where should the page, zoom and find controls be?' },
   );
   if (choice && choice.mode !== current) {

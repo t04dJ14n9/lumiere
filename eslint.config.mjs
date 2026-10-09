@@ -20,6 +20,16 @@ export default tseslint.config(
     },
   },
   {
+    // Promises must be awaited, returned, or explicitly discarded with
+    // `void`, so a failure is never silently dropped.
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+    },
+  },
+  {
     files: ['scripts/**/*.mjs', 'test/**/*.mjs'],
     languageOptions: { globals: { process: 'readonly', console: 'readonly', Buffer: 'readonly', URL: 'readonly' } },
   },

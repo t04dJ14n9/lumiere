@@ -12,7 +12,7 @@ import type { ViewerAction } from '../../../shared/view-state';
  */
 export class PdfNavigation {
   private loaded = false;
-  private pending: { location: PdfLocation; top?: number } | undefined;
+  private pending: { location: PdfLocation; top?: number | undefined } | undefined;
 
   constructor(private readonly post: (message: HostMessage) => void) {}
 

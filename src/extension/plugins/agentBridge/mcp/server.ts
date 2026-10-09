@@ -80,12 +80,14 @@ async function listen(options: ServerOptions, undo: vscode.Disposable[]): Promis
     }
     try {
       const server = createBridgeServer(lastPdf, handoff);
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+      const transport = new StreamableHTTPServerTransport({ enableJsonResponse: true }); // no session id: stateless
       res.on('close', () => {
         void transport.close();
         void server.close();
       });
-      await server.connect(transport);
+      // The SDK's own types disagree under exactOptionalPropertyTypes
+      // (its transport's optional callbacks); the object is the SDK's.
+      await server.connect(transport as unknown as Parameters<typeof server.connect>[0]);
       await transport.handleRequest(req, res);
     } catch (error) {
       log.error(`Agent bridge request failed: ${String(error)}`);

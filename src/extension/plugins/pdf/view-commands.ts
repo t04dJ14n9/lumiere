@@ -51,6 +51,9 @@ async function goToPage(panels: PdfPanels, page: unknown): Promise<void> {
 
 type ZoomItem = vscode.QuickPickItem & { action: ViewerAction };
 
+/** `current` beside the item that is in effect. */
+const current = (on: boolean): { description?: string } => (on ? { description: 'current' } : {});
+
 /** Zoom levels offered in the picker, in percent. */
 const PICKER_ZOOMS = ZOOM_STEPS.filter(step => step >= 0.5).map(step => Math.round(step * 100));
 
@@ -67,12 +70,12 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
     return;
   }
   const fixed: ZoomItem[] = [
-    { label: '$(arrow-both) Fit Width', description: view.fit === 'width' ? 'current' : undefined, action: { action: 'fitWidth' } },
-    { label: '$(screen-full) Fit Page', description: view.fit === 'page' ? 'current' : undefined, action: { action: 'fitPage' } },
+    { label: '$(arrow-both) Fit Width', ...current(view.fit === 'width'), action: { action: 'fitWidth' } },
+    { label: '$(screen-full) Fit Page', ...current(view.fit === 'page'), action: { action: 'fitPage' } },
     { label: '', kind: vscode.QuickPickItemKind.Separator, action: { action: 'fitPage' } },
     ...PICKER_ZOOMS.map((level): ZoomItem => ({
       label: `${level}%`,
-      description: !view.fit && level === view.zoomPercent ? 'current' : undefined,
+      ...current(!view.fit && level === view.zoomPercent),
       action: { action: 'setZoom', percent: level },
     })),
   ];

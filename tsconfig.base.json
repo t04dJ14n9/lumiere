@@ -7,7 +7,7 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false,
+    "exactOptionalPropertyTypes": true,
     "isolatedModules": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

@@ -77,7 +77,7 @@ export type ViewerMessage =
 export type HostMessage =
   | { type: 'load'; data: ArrayBuffer }
   /** `top`: with no box, show the page from this many points below its top. */
-  | { type: 'goTo'; location: PdfLocation; top?: number }
+  | { type: 'goTo'; location: PdfLocation; top?: number | undefined }
   | { type: 'action'; action: ViewerAction }
   | { type: 'toolbar'; toolbar: ToolbarSettings };
 

@@ -27,7 +27,7 @@ export function useNavigation(documentId: string) {
   const { provides: scrollPlugin } = useScrollCapability();
   const [highlight, setHighlight] = useState<Highlight>();
   const layoutReady = useRef(false);
-  const heldLocation = useRef<{ location: PdfLocation; top?: number } | undefined>(undefined);
+  const heldLocation = useRef<{ location: PdfLocation; top?: number | undefined } | undefined>(undefined);
 
   /**
    * Show a location: its box near the top of the viewer, flashed; without a

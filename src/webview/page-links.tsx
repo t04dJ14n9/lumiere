@@ -8,9 +8,9 @@ interface Link {
   id: string;
   rect: Rect;
   /** An internal link opens a page (from `top` points down); an external one a web address. */
-  page?: number;
-  top?: number;
-  url?: string;
+  page?: number | undefined;
+  top?: number | undefined;
+  url?: string | undefined;
 }
 
 /** Clickable links on a page: contents entries, citations, figure references, URLs. */
