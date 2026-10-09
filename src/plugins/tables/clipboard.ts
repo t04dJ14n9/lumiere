@@ -20,9 +20,13 @@ export class TableClipboard {
     private readonly selection: TableSelection,
     private readonly environment: Pick<
       TableEnvironment,
-      "copy" | "paste" | "wrap" | "clearFormatting"
+      "copy" | "paste" | "wrap" | "clearFormatting" | "canFormat"
     >,
   ) {}
+
+  get canFormat(): boolean {
+    return this.environment.canFormat;
+  }
   copy(event: ClipboardEvent, cut: boolean): void {
     if (!this.selection.range || !event.clipboardData) {
       return;
@@ -96,6 +100,9 @@ export class TableClipboard {
     if (!context.paste) {
       throw new Error("Use the keyboard paste shortcut in this view.");
     }
+    // Menus remove their focused DOM before awaiting clipboard RPC.
+    // Restore focus now so blur cleanup does not close a still-valid editor.
+    (editor ?? this.grid.root).focus();
     const text = await context.paste();
     if (!this.grid.root.isConnected) {
       return;

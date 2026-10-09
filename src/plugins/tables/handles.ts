@@ -13,24 +13,18 @@ interface Drag {
   axis: Axis;
   from: number;
   to: number;
+  button: HTMLButtonElement;
   pointer: number;
-  x: number;
-  y: number;
+  origin: PointerPoint;
   moved: boolean;
-  point: PointerPoint;
-  grab: number;
 }
 
-/** Row/column grips own pointer capture and feedback, never document changes. */
+/** Cell-attached grips own pointer capture and feedback, never document changes. */
 export class TableHandles {
-  private readonly row = document.createElement("button");
-  private readonly column = document.createElement("button");
   private readonly indicator = document.createElement("div");
   private readonly events = new AbortController();
-  private readonly resize: ResizeObserver;
   private active: CellPosition = { row: 0, column: 0 };
   private drag?: Drag;
-  private frame?: number;
   private readonly scrolling: EdgeScroll;
 
   constructor(
@@ -39,114 +33,162 @@ export class TableHandles {
     viewport: HTMLElement,
     actions: HandleActions,
   ) {
-    this.scrolling = new EdgeScroll(viewport, table, (point) => {
-      this.updateTarget(point);
-      this.refresh();
-    });
-    this.registerHandle("row", this.row, actions);
-    this.registerHandle("column", this.column, actions);
+    this.scrolling = new EdgeScroll(viewport, table, (point) =>
+      this.updateTarget(point),
+    );
     this.indicator.className = "table-drop-indicator";
     this.indicator.hidden = true;
     root.append(this.indicator);
-    this.registerHover();
+    this.registerHandleEvents(actions);
     this.registerDragEvents(actions);
-    this.resize = new ResizeObserver(() => this.refresh());
-    this.resize.observe(table);
+    this.refresh();
   }
 
-  private registerHandle(
-    axis: Axis,
+  refresh(): void {
+    Array.from(this.table.rows).forEach((row, index) => {
+      const wrapper = row.cells[0]?.querySelector<HTMLElement>(
+        ".table-cell-wrapper",
+      );
+      if (wrapper) {
+        this.appendHandle(wrapper, "row", index);
+      }
+    });
+    Array.from(this.table.rows[0]?.cells ?? []).forEach((cell, index) => {
+      const wrapper = cell.querySelector<HTMLElement>(".table-cell-wrapper");
+      if (wrapper) {
+        this.appendHandle(wrapper, "column", index);
+      }
+    });
+    this.setActive(this.active);
+  }
+
+  private appendHandle(wrapper: HTMLElement, axis: Axis, index: number): void {
+    if (wrapper.querySelector(`[data-axis="${axis}"]`)) {
+      return;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `table-handle table-${axis}-handle`;
+    button.dataset.axis = axis;
+    button.dataset.index = String(index);
+    button.title = `Drag to move ${axis}; press Enter for actions`;
+    button.setAttribute("aria-label", `Move ${axis} ${index + 1}`);
+    button.textContent = axis === "row" ? "⠿" : "⠶";
+    wrapper.append(button);
+  }
+
+  private registerHandleEvents(actions: HandleActions): void {
+    const options = { capture: true, signal: this.events.signal };
+    this.root.addEventListener(
+      "pointerdown",
+      (event) => {
+        const button = this.handle(event.target);
+        if (button) {
+          this.beginDrag(event, button, actions);
+        }
+      },
+      options,
+    );
+    this.root.addEventListener(
+      "lostpointercapture",
+      (event) => {
+        if (this.drag?.pointer === event.pointerId) {
+          this.cancel();
+        }
+      },
+      options,
+    );
+    this.root.addEventListener(
+      "contextmenu",
+      (event) => {
+        const button = this.handle(event.target);
+        if (button) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.openMenu(
+            button,
+            { x: event.clientX, y: event.clientY },
+            actions,
+          );
+        }
+      },
+      options,
+    );
+    this.root.addEventListener(
+      "keydown",
+      (event) => {
+        const button = this.handle(event.target);
+        const isMenuKey =
+          ["Enter", " ", "ContextMenu"].includes(event.key) ||
+          (event.key === "F10" && event.shiftKey);
+        if (button && isMenuKey) {
+          event.preventDefault();
+          event.stopPropagation();
+          const bounds = button.getBoundingClientRect();
+          this.openMenu(button, { x: bounds.left, y: bounds.bottom }, actions);
+        }
+      },
+      options,
+    );
+  }
+
+  private handle(target: EventTarget | null): HTMLButtonElement | undefined {
+    if (!(target instanceof Element)) {
+      return undefined;
+    }
+    const button = target.closest<HTMLButtonElement>(".table-handle");
+    return button && this.table.contains(button) ? button : undefined;
+  }
+
+  private openMenu(
+    button: HTMLButtonElement,
+    point: PointerPoint,
+    actions: HandleActions,
+  ): void {
+    button.focus();
+    actions.menu(
+      button.dataset.axis as Axis,
+      Number(button.dataset.index),
+      point,
+    );
+  }
+
+  private beginDrag(
+    event: PointerEvent,
     button: HTMLButtonElement,
     actions: HandleActions,
   ): void {
-    button.type = "button";
-    button.className = `table-handle table-${axis}-handle`;
-    button.title = `Drag to move ${axis}; press Enter for actions`;
-    button.textContent = axis === "row" ? "⠿" : "⠶";
-    button.addEventListener("pointerdown", (event) =>
-      this.beginDrag(event, { axis, button, actions }),
-    );
-    button.addEventListener("lostpointercapture", (event) => {
-      if (this.drag?.pointer === event.pointerId) {
-        this.cancel();
-      }
-    });
-    const menu = (point: { x: number; y: number }): void => {
-      button.focus();
-      actions.menu(axis, this.active[axis], point);
-    };
-    button.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      menu({ x: event.clientX, y: event.clientY });
-    });
-    button.addEventListener("keydown", (event) => {
-      if (
-        ["Enter", " ", "ContextMenu"].includes(event.key) ||
-        (event.key === "F10" && event.shiftKey)
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        const bounds = button.getBoundingClientRect();
-        menu({ x: bounds.left, y: bounds.bottom });
-      }
-    });
-    this.root.append(button);
-  }
-  private beginDrag(
-    event: PointerEvent,
-    options: { axis: Axis; button: HTMLButtonElement; actions: HandleActions },
-  ): void {
-    const { axis, button, actions } = options;
     if (event.button !== 0 || !event.isPrimary) {
       return;
     }
     event.preventDefault();
     event.stopPropagation();
-    const from = this.active[axis];
-    const bounds = button.getBoundingClientRect();
+    const axis = button.dataset.axis as Axis;
+    const from = Number(button.dataset.index);
     actions.select(axis, from);
-    this.refresh();
     this.drag = {
       axis,
       from,
       to: from,
+      button,
       pointer: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
+      origin: { x: event.clientX, y: event.clientY },
       moved: false,
-      point: { x: event.clientX, y: event.clientY },
-      grab:
-        axis === "row"
-          ? event.clientY - bounds.top
-          : event.clientX - bounds.left,
     };
     button.setPointerCapture(event.pointerId);
   }
-  private registerHover(): void {
-    this.root.addEventListener("pointermove", (event) => {
-      if (this.drag || !(event.target instanceof Element)) {
-        return;
-      }
-      const cell = event.target.closest<HTMLElement>(
-        "td[data-row], th[data-row]",
-      );
-      if (cell && this.table.contains(cell)) {
-        this.setActive({
-          row: Number(cell.dataset.row),
-          column: Number(cell.dataset.column),
-        });
-      }
-    });
-  }
+
   private registerDragEvents(actions: HandleActions): void {
-    window.addEventListener("pointermove", (event) => this.pointerMove(event), {
-      signal: this.events.signal,
-    });
+    const options = { signal: this.events.signal };
+    window.addEventListener(
+      "pointermove",
+      (event) => this.pointerMove(event),
+      options,
+    );
     window.addEventListener(
       "pointerup",
       (event) => this.finishDrag(event, actions),
-      { signal: this.events.signal },
+      options,
     );
     window.addEventListener(
       "pointercancel",
@@ -155,11 +197,9 @@ export class TableHandles {
           this.cancel();
         }
       },
-      { signal: this.events.signal },
+      options,
     );
-    window.addEventListener("blur", () => this.cancel(), {
-      signal: this.events.signal,
-    });
+    window.addEventListener("blur", () => this.cancel(), options);
     window.addEventListener(
       "keydown",
       (event) => {
@@ -169,90 +209,7 @@ export class TableHandles {
           this.cancel();
         }
       },
-      { capture: true, signal: this.events.signal },
-    );
-  }
-  private finishDrag(event: PointerEvent, actions: HandleActions): void {
-    const drag = this.drag;
-    if (!drag || event.pointerId !== drag.pointer) {
-      return;
-    }
-    if (drag.moved) {
-      this.updateTarget({ x: event.clientX, y: event.clientY });
-    }
-    this.cancel();
-    if (drag.moved && drag.to !== drag.from) {
-      actions.move(drag.axis, drag.from, drag.to);
-      this.setActive({ ...this.active, [drag.axis]: drag.to });
-    }
-  }
-
-  setActive(position: CellPosition): void {
-    if (!this.drag) {
-      this.active = { ...position };
-      this.refresh();
-    }
-  }
-
-  refresh(): void {
-    if (this.frame !== undefined) {
-      return;
-    }
-    this.frame = requestAnimationFrame(() => {
-      delete this.frame;
-      if (this.root.isConnected) {
-        this.measure();
-      }
-    });
-  }
-
-  private measure(): void {
-    const rows = this.table.rows;
-    this.active.row = Math.min(this.active.row, rows.length - 1);
-    this.active.column = Math.min(
-      this.active.column,
-      (rows[0]?.cells.length ?? 0) - 1,
-    );
-    const first = rows[this.active.row]?.cells[0];
-    const header = rows[0]?.cells[this.active.column];
-    if (!first || !header) {
-      this.row.hidden = this.column.hidden = true;
-      return;
-    }
-    this.row.hidden = this.column.hidden = false;
-    const origin = this.root.getBoundingClientRect();
-    const row = first.getBoundingClientRect();
-    const column = header.getBoundingClientRect();
-    Object.assign(this.row.style, {
-      left: `${row.left - origin.left - 15}px`,
-      top: `${row.top - origin.top}px`,
-      height: `${row.height}px`,
-    });
-    Object.assign(this.column.style, {
-      left: `${column.left - origin.left}px`,
-      top: `${column.top - origin.top - 15}px`,
-      width: `${column.width}px`,
-    });
-    const drag = this.drag;
-    if (drag?.moved) {
-      const bounds = this.table.getBoundingClientRect();
-      const button = drag.axis === "row" ? this.row : this.column;
-      const horizontal = drag.axis === "column";
-      const min = horizontal ? bounds.left : bounds.top;
-      const max = horizontal
-        ? bounds.right - column.width
-        : bounds.bottom - row.height;
-      const position = Math.max(
-        min,
-        Math.min(max, (horizontal ? drag.point.x : drag.point.y) - drag.grab),
-      );
-      button.style[horizontal ? "left" : "top"] =
-        `${position - (horizontal ? origin.left : origin.top)}px`;
-    }
-    this.row.setAttribute("aria-label", `Move row ${this.active.row + 1}`);
-    this.column.setAttribute(
-      "aria-label",
-      `Move column ${this.active.column + 1}`,
+      { ...options, capture: true },
     );
   }
 
@@ -263,15 +220,17 @@ export class TableHandles {
     }
     if (
       !drag.moved &&
-      Math.hypot(event.clientX - drag.x, event.clientY - drag.y) < 4
+      Math.hypot(event.clientX - drag.origin.x, event.clientY - drag.origin.y) <
+        4
     ) {
       return;
     }
     drag.moved = true;
     event.preventDefault();
     this.root.classList.add("table-dragging");
-    drag.point = { x: event.clientX, y: event.clientY };
-    this.scrolling.move(drag.point);
+    const point = { x: event.clientX, y: event.clientY };
+    this.updateTarget(point);
+    this.scrolling.move(point);
   }
 
   private updateTarget(point: PointerPoint): void {
@@ -279,11 +238,10 @@ export class TableHandles {
     if (!drag?.moved) {
       return;
     }
-    drag.point = point;
-    const horizontal = drag.axis === "column";
-    const entries = horizontal
-      ? Array.from(this.table.rows[0]!.cells)
-      : Array.from(this.table.rows);
+    const entries =
+      drag.axis === "column"
+        ? Array.from(this.table.rows[0]!.cells)
+        : Array.from(this.table.rows);
     const target = nearestEntry(entries, drag.axis, point);
     if (target < 0) {
       return;
@@ -300,7 +258,7 @@ export class TableHandles {
     const rtl = getComputedStyle(this.table).direction === "rtl";
     Object.assign(
       this.indicator.style,
-      horizontal
+      drag.axis === "column"
         ? {
             left: `${(before !== rtl ? bounds.left : bounds.right) - origin.left - 1}px`,
             top: `${table.top - origin.top}px`,
@@ -316,28 +274,50 @@ export class TableHandles {
     );
   }
 
+  private finishDrag(event: PointerEvent, actions: HandleActions): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointer) {
+      return;
+    }
+    if (drag.moved) {
+      this.updateTarget({ x: event.clientX, y: event.clientY });
+    }
+    this.cancel();
+    if (drag.moved && drag.to !== drag.from) {
+      actions.move(drag.axis, drag.from, drag.to);
+    }
+  }
+
+  setActive(position: CellPosition): void {
+    if (this.drag) {
+      return;
+    }
+    this.active = { ...position };
+    for (const button of this.table.querySelectorAll<HTMLElement>(
+      ".table-handle",
+    )) {
+      const axis = button.dataset.axis as Axis;
+      button.classList.toggle(
+        "table-handle-active",
+        Number(button.dataset.index) === position[axis],
+      );
+    }
+  }
+
   cancel(): void {
     this.scrolling.stop();
     const drag = this.drag;
     delete this.drag;
-    if (drag) {
-      const button = drag.axis === "row" ? this.row : this.column;
-      if (button.hasPointerCapture(drag.pointer)) {
-        button.releasePointerCapture(drag.pointer);
-      }
+    if (drag?.button.hasPointerCapture(drag.pointer)) {
+      drag.button.releasePointerCapture(drag.pointer);
     }
     this.indicator.hidden = true;
     this.root.classList.remove("table-dragging");
-    this.refresh();
   }
 
   destroy(): void {
     this.cancel();
     this.scrolling.destroy();
-    if (this.frame !== undefined) {
-      cancelAnimationFrame(this.frame);
-    }
     this.events.abort();
-    this.resize.disconnect();
   }
 }

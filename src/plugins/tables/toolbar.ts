@@ -7,7 +7,6 @@ import {
 } from "../../markdown/tables/model";
 import type { Axis, TableOperation } from "../../markdown/tables/operations";
 import { tableMenu, type TableMenuActions } from "./menu";
-import { revealTableSource } from "./state";
 import type { TableGrid } from "./grid";
 import type { TableClipboard } from "./clipboard";
 import type { TableEnvironment } from "./environment";
@@ -18,6 +17,7 @@ interface MenuSelection {
   open(position: CellPosition): void;
   request(position: CellPosition): void;
   execute(operation: TableOperation, focus: CellPosition): void;
+  selectAll(): void;
 }
 
 /** Toolbar and contextual menu lifetime, independent of cell-editor internals. */
@@ -33,20 +33,25 @@ export class TableToolbar {
   controls(): HTMLElement {
     const controls = document.createElement("div");
     controls.className = "table-controls";
-    const button = (label: string, run: () => void): void => {
+    const button = (label: string, axis: Axis, run: () => void): void => {
       const action = document.createElement("button");
       action.type = "button";
-      action.textContent = label;
+      action.textContent = "+";
+      action.className = axis === "row" ? "table-row-btn" : "table-col-btn";
+      action.setAttribute("aria-label", label);
+      action.title = label;
+      // Keep the focus in the cell, so the new cell opens in the same row.
+      action.addEventListener("mousedown", (event) => event.preventDefault());
       action.addEventListener("click", run);
       controls.append(action);
     };
-    button("Add row below", () => {
+    button("Add row below", "row", () => {
       this.selection.request({ row: this.grid.model.rows.length, column: 0 });
       this.grid.replace(
         insertRow(this.grid.model, this.grid.model.rows.length - 1),
       );
     });
-    button("Add column to the right", () => {
+    button("Add column to the right", "column", () => {
       this.selection.request({
         row: this.selection.active()?.row ?? 0,
         column: this.grid.model.alignments.length,
@@ -55,17 +60,7 @@ export class TableToolbar {
         insertColumn(this.grid.model, this.grid.model.alignments.length - 1),
       );
     });
-    button("Edit table source", () => this.revealSource());
     return controls;
-  }
-
-  revealSource(): void {
-    const from = this.grid.start();
-    this.grid.outer.dispatch({
-      effects: revealTableSource.of(from),
-      selection: { anchor: from },
-    });
-    this.grid.outer.focus();
   }
 
   contextMenu(event: MouseEvent): void {
@@ -104,10 +99,11 @@ export class TableToolbar {
     return {
       copy: (cut) => this.clipboard.copyFromMenu(range, cut),
       paste: () => this.clipboard.pasteFromMenu(range),
+      selectAll: () => this.selection.selectAll(),
+      canFormat: this.clipboard.canFormat,
       format: (marker) => this.clipboard.formatCells(range, marker),
       clear: () => this.clipboard.clearCells(range),
       execute: (operation, focus) => this.selection.execute(operation, focus),
-      source: () => this.revealSource(),
     };
   }
 

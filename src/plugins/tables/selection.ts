@@ -59,6 +59,25 @@ export class TableSelection {
     this.highlight();
   }
 
+  selectAll(): void {
+    const inner = this.projection.inner;
+    if (inner && !this.range) {
+      inner.dispatch({
+        selection: { anchor: 0, head: inner.state.doc.length },
+      });
+      inner.focus();
+      return;
+    }
+    this.select({
+      anchor: { row: 0, column: 0 },
+      head: {
+        row: this.grid.model.rows.length - 1,
+        column: this.grid.model.alignments.length - 1,
+      },
+    });
+    this.grid.root.focus();
+  }
+
   sourceRange(): { from: number; to: number } | undefined {
     const start = this.grid.start();
     if (this.range) {
@@ -76,7 +95,11 @@ export class TableSelection {
     if (!cell) {
       return undefined;
     }
-    const range = cellEditor.source.range(this.grid.block.source, cell);
+    const range = cellEditor.source.range(
+      this.grid.block.source,
+      cell,
+      this.grid.model.alignments[active.column] ?? null,
+    );
     const selection = cellEditor.view.state.selection.main;
     return {
       from: start + range.from + selection.from,
@@ -123,7 +146,7 @@ export class TableSelection {
       ? undefined
       : this.positionInText(
           this.grid.model.rows[position.row]![position.column]!.text,
-          this.grid.cells[position.row]![position.column]!,
+          this.grid.contentElement(position)!,
           event,
         );
     this.drag.begin(event, position, offset, !!insideCellEditor);

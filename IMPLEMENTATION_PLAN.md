@@ -2641,3 +2641,31 @@ Not done here: an editor-session runtime for several editor kinds, the
 PDF subtree import and merged-bundle splitting (merge-only; the webview
 already lazy-loads Mermaid, MathJax and code highlighting), and
 `exactOptionalPropertyTypes` (129 errors in about 60 files, deferred).
+
+### Table editing parity follow-up — 2026-10-10
+
+Implemented the measured Obsidian 1.14.4 table behavior from the owner's
+`obsidian-tables-behaviour.md`: persistent widgets with raw focused cells,
+aligned serialization on every cell edit, alignment-aware padding and stable
+anchors in unchanged cells, document arrow entry, cell-attached row/column grips,
+edge add buttons and expanded cell menus. Existing Tab/Enter append, boundary
+arrows, pipe escaping, operations and sorting have additional unit coverage.
+The decisions, starting differences and regression evidence are in
+`docs/tables-diff.md`; the table README and manual plan are updated.
+
+Checks, individually: changed-file Prettier, `pnpm lint`, `pnpm typecheck`,
+**82/82** relevant units and `pnpm build` pass. The usual `tsx --test` launcher
+cannot bind its IPC socket here; units ran through Node's `tsx` import hook.
+Three existing layer-test wrappers cannot spawn their compiler subprocess;
+direct negative-fixture compilation rejects DOM, Node and VS Code APIs as expected.
+The one targeted browser spec cannot launch Chromium (`shutdown: Operation not
+permitted`); no application interaction ran. No native tests or editor apps were
+launched, as requested. Kernel unchanged, 815 TypeScript lines; no lint exceptions
+or layer-rule changes. Changes remain uncommitted in the working tree.
+
+Deferred/rejected: generic link menu policy awaits a shared editor contribution;
+block insertion menus do not fit single table cells; private DOM/pixel copying
+is not behavioral parity. Shift+Enter keeps the existing `<br>` encoding, with
+reference verification deferred along with Obsidian add-button click effects.
+DOM focus, hover, button and drag interactions, native undo, IME and two-panel
+edits remain owner-run checks. The pinned human-learning checkout is absent.

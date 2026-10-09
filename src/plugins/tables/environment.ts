@@ -13,7 +13,6 @@ export type Action =
 /** Services captured by one table plugin instance, shared with its cell views. */
 export interface TableEnvironment {
   language: Extension;
-  inline: Extension;
   vim?: VimService;
   inputGroups(): InputGrouping;
   renderContent(element: HTMLElement, source: string, offset: number): void;
@@ -24,6 +23,7 @@ export interface TableEnvironment {
     point: { clientX: number; clientY: number },
   ): number | undefined;
   wrap(marker: string, view: EditorView): boolean;
+  canFormat: boolean;
   clearFormatting(source: string): string;
   openMenu(
     owner: HTMLElement,
