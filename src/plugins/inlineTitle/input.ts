@@ -36,6 +36,10 @@ export class TitleInput {
     this.input.setAttribute("aria-multiline", "false");
     this.input.enterKeyHint = "done";
     this.input.spellcheck = false;
+    // Out of the Tab order: a stray Tab or Shift+Tab must never land in the
+    // title, where the next keystrokes would rename the note. Click or
+    // ArrowUp from the first line still reach it, as in Obsidian.
+    this.input.tabIndex = -1;
     this.measure.className = "file-title-measure";
     this.measure.setAttribute("aria-hidden", "true");
     this.root.append(this.input, this.measure);

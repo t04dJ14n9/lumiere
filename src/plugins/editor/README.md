@@ -14,6 +14,9 @@ Extensions sort by slot, catalog rank, owner ID and owner-local order in one
 compartment. Persistence captures source identity and feature-owned contributions;
 transfers flush first and reject a moving document version. Settings update a
 separate compartment so user state survives reconfiguration.
+Tab and Shift+Tab never leave the note, as in Obsidian: on a list item they
+indent or outdent the item with its nested lines, with a selection they indent
+the selected lines, and otherwise Tab inserts one indent unit.
 
 ## Files
 
@@ -27,6 +30,7 @@ separate compartment so user state survives reconfiguration.
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
 - `associations.ts`: **Use Markdown Workbench for Markdown in This Workspace**.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
+- `indentation.ts`: Tab and Shift+Tab commands.
 - `webview.ts`: view creation and named service/settings/RPC registrations.
 - `service.ts`: shared editor facade with caller-bound extension ownership.
 - `extensions.ts`: deterministic ordered extension registry.

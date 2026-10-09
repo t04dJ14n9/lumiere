@@ -16,6 +16,7 @@ import type { Infer } from "../../kernel";
 import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
+import { indentationKeymap } from "./indentation";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -121,7 +122,7 @@ function createEditorView(
           }),
         }),
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
-        Prec.low(keymap.of(defaultKeymap)),
+        Prec.low(keymap.of([...indentationKeymap, ...defaultKeymap])),
         EditorView.updateListener.of((update) => {
           if (update.selectionSet || update.focusChanged) {
             ctx.rpc.notify(protocol, "selectionChanged", {

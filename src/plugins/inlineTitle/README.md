@@ -34,7 +34,9 @@ Webview injects `editor` and `rpc`; host injects `editors` and `workbench`.
 Provides no service. Listens to `editor/focusTitle`, `editor/opened`,
 `editor/closed` and `editor/ready`; queries `editor/focusProperties` with bail
 semantics. `markdownWorkbench.plugins.inlineTitle.enabled` defaults to true.
-Enter/Tab commit to body, Escape cancels, Down moves to Properties and Alt+Down
+The title is out of the Tab order, so a stray Tab or Shift+Tab in the note never
+lands in it; click it or press Up on the first line. Enter/Tab commit to body,
+Escape cancels, Down moves to Properties and Alt+Down
 to body. No palette command or default global binding.
 
 ## Limits and differences from Obsidian
