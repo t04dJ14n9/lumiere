@@ -13,6 +13,7 @@ export class PropertyWidget extends WidgetType {
     readonly source: string,
     readonly context: PropertyContext,
     readonly hidden: boolean,
+    readonly allowEmpty = false,
   ) {
     super();
   }
@@ -20,6 +21,7 @@ export class PropertyWidget extends WidgetType {
     return (
       this.source === other.source &&
       this.hidden === other.hidden &&
+      this.allowEmpty === other.allowEmpty &&
       this.context === other.context
     );
   }
@@ -32,11 +34,10 @@ export class PropertyWidget extends WidgetType {
     const container = document.createElement("div");
     wrapper.append(container);
     container.innerHTML = sanitize(
-      renderProperties(
-        this.source,
-        this.context.propertyEditor?.types?.(),
-        this.context.propertyEditor?.forcedTypes?.(),
-      ),
+      renderProperties(this.source, this.context.propertyEditor?.types?.(), {
+        collapsed: this.context.propertyEditor?.collapsed?.() ?? false,
+        allowEmpty: this.allowEmpty,
+      }),
     );
     rememberPropertyRows(container);
     bindPropertyFields(container, this.source, this.context);

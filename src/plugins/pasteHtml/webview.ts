@@ -76,7 +76,7 @@ function registerPasteCapture(ctx: Context): void {
     ),
   );
 }
-function pasteView(
+export function pasteView(
   event: ClipboardEvent,
   outer: EditorView,
 ): EditorView | undefined {
@@ -85,6 +85,10 @@ function pasteView(
     !(event.target instanceof HTMLElement) ||
     event.target.closest("input, textarea")
   ) {
+    return undefined;
+  }
+  const editable = event.target.closest("[contenteditable]");
+  if (editable && !editable.classList.contains("cm-content")) {
     return undefined;
   }
   const target = EditorView.findFromDOM(event.target);

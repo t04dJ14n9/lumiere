@@ -13,9 +13,12 @@ import {
   List,
   Quote,
   Calendar,
-  Hash,
-  Tag,
-  ListFilter,
+  Binary,
+  SquareCheck,
+  Clock,
+  Tags,
+  Forward,
+  ChevronRight,
   Text,
   type IconNode,
 } from "lucide";
@@ -57,15 +60,30 @@ export function propertyIcon(
   value: unknown,
   kind = inferPropertyKind(name, value),
 ): string {
-  const icons: Record<PropertyKind, IconNode> = {
-    text: Text,
-    list: ListFilter,
-    number: Hash,
-    checkbox: CircleCheck,
-    date: Calendar,
-    datetime: Calendar,
-    tags: Tag,
+  const icons: Record<PropertyKind, [IconNode, string]> = {
+    text: [Text, "text"],
+    list: [List, "list"],
+    number: [Binary, "binary"],
+    checkbox: [SquareCheck, "check-square"],
+    date: [Calendar, "calendar"],
+    datetime: [Clock, "clock"],
+    tags: [Tags, "tags"],
+    aliases: [Forward, "forward"],
   };
-  const icon = icons[kind];
-  return iconHTML(icon, "property-icon");
+  const [icon, label] = icons[kind];
+  return iconHTML(icon, "property-icon").replace(
+    "<svg",
+    `<svg data-lucide="${label}"`,
+  );
+}
+
+export function propertyFlairIcon(
+  kind: "pencil" | "warning" | "collapse",
+): string {
+  const icons = {
+    pencil: Pencil,
+    warning: TriangleAlert,
+    collapse: ChevronRight,
+  };
+  return iconHTML(icons[kind], "property-icon");
 }

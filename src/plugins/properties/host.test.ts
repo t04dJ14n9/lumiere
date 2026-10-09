@@ -34,7 +34,13 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
   const saved = new Map<string, unknown>();
   const root = Context.create();
   root.provide("rpc", host);
-  root.provide("vault", { root: "file:///vault" } as VaultIndex);
+  root.provide("vault", {
+    root: "file:///vault",
+    files: () => [{ path: "One.md" }, { path: "Two.md" }],
+    metadata: (path: string) => ({
+      frontmatter: path === "One.md" ? { status: "done" } : { list: ["a"] },
+    }),
+  } as unknown as VaultIndex);
   root.provide(
     "workbench",
     fakeWorkbench({
@@ -61,6 +67,25 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
     { due: "date" },
   );
   assert.equal(broadcasts, 1);
+  assert.deepEqual(await client.call(protocol, "names", {}), [
+    "aliases",
+    "cssclasses",
+    "due",
+    "list",
+    "status",
+    "tags",
+  ]);
+  assert.equal(await client.call(protocol, "collapsed", {}), false);
+  assert.equal(
+    await client.call(protocol, "setCollapsed", { collapsed: true }),
+    true,
+  );
+  for (const key of ["tags", "aliases", "cssclasses"]) {
+    await assert.rejects(
+      client.call(protocol, "setType", { key, kind: "text" }),
+    );
+    await assert.rejects(client.call(protocol, "setType", { key }));
+  }
   await assert.rejects(
     client.call(protocol, "setType", { key: " ", kind: "text" }),
   );
@@ -69,10 +94,13 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
   );
   await fiber.dispose();
   await assert.rejects(client.call(protocol, "types", {}));
+  await assert.rejects(client.call(protocol, "names", {}));
+  await assert.rejects(client.call(protocol, "collapsed", {}));
   fiber = enable();
   await root.settled();
   assert.equal(fiber.state, "active");
   assert.deepEqual(await client.call(protocol, "types", {}), { due: "date" });
+  assert.equal(await client.call(protocol, "collapsed", {}), true);
   await stop();
   await root.dispose();
   host.dispose();

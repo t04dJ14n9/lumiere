@@ -14,6 +14,9 @@ import {
 } from "../../src/plugins/editor/protocol";
 import { protocol as commandProtocol } from "../../src/plugins/commands/protocol";
 import { protocol as linksProtocol } from "../../src/plugins/links/protocol";
+import { protocol as propertiesProtocol } from "../../src/plugins/properties/protocol";
+import { frontmatter } from "../../src/markdown/properties";
+import type { PropertyTypes } from "../../src/markdown/properties/types";
 import { protocol as videoProtocol } from "../../src/plugins/onlineVideos/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 export class BrowserHost {
@@ -27,6 +30,9 @@ export class BrowserHost {
   readonly views: Context[] = [];
   readonly session: Session;
   clipboard = "";
+  propertyTypes: PropertyTypes = {};
+  propertyNames: string[] = ["status", "list"];
+  propertiesCollapsed = false;
   /** Workspace trust sent to the editor; set before `open`. */
   trusted = false;
   /** Links the editor asked the host to open. */
@@ -194,6 +200,39 @@ export class BrowserHost {
         throw new Error("offline");
       }
       return details;
+    });
+    host.handle(propertiesProtocol, "types", () => this.propertyTypes);
+    host.handle(propertiesProtocol, "names", () => [
+      ...new Set([
+        ...this.propertyNames,
+        ...Object.keys(frontmatter(this.text)?.values ?? {}),
+        ...Object.keys(this.propertyTypes),
+      ]),
+    ]);
+    host.handle(propertiesProtocol, "setType", ({ key, kind }) => {
+      const types = { ...this.propertyTypes };
+      if (kind) {
+        types[key.toLowerCase()] = kind;
+      } else {
+        delete types[key.toLowerCase()];
+      }
+      this.propertyTypes = types;
+      this.endpoints.forEach((endpoint) =>
+        endpoint.notify(propertiesProtocol, "types", types),
+      );
+      return types;
+    });
+    host.handle(
+      propertiesProtocol,
+      "collapsed",
+      () => this.propertiesCollapsed,
+    );
+    host.handle(propertiesProtocol, "setCollapsed", ({ collapsed }) => {
+      this.propertiesCollapsed = collapsed;
+      this.endpoints.forEach((endpoint) =>
+        endpoint.notify(propertiesProtocol, "collapsed", collapsed),
+      );
+      return collapsed;
     });
     host.handle(editorProtocol, "clipboardRead", () => this.clipboard);
     host.handle(editorProtocol, "clipboardWrite", ({ text }) => {

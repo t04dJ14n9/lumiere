@@ -1,4 +1,4 @@
-import { keymap } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import type { Context, Plugin, Infer } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../document/api";
@@ -52,10 +52,11 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     const editing = createEditing(ctx, lifetime.signal, {
       show: () => {
         ctx.emit("editor/clearProjection");
-        presentation.configure("visible");
+        presentation.show(ctx.editor.view);
       },
       pageHeading: (backward) =>
         ctx.editor.view.plugin(heading)?.page(backward),
+      refreshEmpty: () => presentation.reconcileEmpty(),
     });
     const presentation = new PropertyPresentation(
       ctx.livePreview,
@@ -63,6 +64,7 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
       settings.display,
     );
     registerConfiguration(ctx, presentation);
+    registerEmptySheet(ctx, presentation);
     registerEditorControls(ctx, { heading, editing });
     ctx.effect(() => {
       presentation.install();
@@ -70,6 +72,7 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     });
     registerAddProperty(ctx, editing);
     registerPreferences(ctx, editing, lifetime.signal);
+    registerDisclosure(ctx, editing, lifetime.signal);
     registerDraftFlush(ctx);
   },
 };
@@ -77,7 +80,11 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
 function createEditing(
   ctx: Context,
   signal: AbortSignal,
-  navigation: { show(): void; pageHeading(backward: boolean): void },
+  navigation: {
+    show(): void;
+    pageHeading(backward: boolean): void;
+    refreshEmpty(): void;
+  },
 ): PropertyEditing {
   const view = ctx.editor.view;
   const editing = new PropertyEditing({
@@ -91,6 +98,7 @@ function createEditing(
     refresh: () => {
       if (!signal.aborted) {
         ctx.emit("render/changed");
+        navigation.refreshEmpty();
       }
     },
     setType: (key, kind) =>
@@ -100,9 +108,32 @@ function createEditing(
       ctx.bail("editor/focusTitle");
     },
     pageHeading: (backward) => navigation.pageHeading(backward),
+    propertyNames: () => ctx.rpc.call(protocol, "names", {}),
+    setCollapsed: (collapsed) => {
+      void ctx.rpc
+        .call(protocol, "setCollapsed", { collapsed })
+        .catch((error) =>
+          ctx.logger.error("Property disclosure failed", error),
+        );
+    },
     signal,
   });
   return editing;
+}
+
+function registerEmptySheet(
+  ctx: Context,
+  presentation: PropertyPresentation,
+): void {
+  ctx.effect(() =>
+    ctx.editor.extend(
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          presentation.reconcileEmpty();
+        }
+      }),
+    ),
+  );
 }
 
 function setPropertyType(
@@ -132,6 +163,7 @@ function createSheetContext(
   return {
     source: "current",
     propertyEditor: editing.editor("current"),
+    readClipboard: () => ctx.editor.clipboard.read(),
     copy: (text) => {
       void ctx.editor.clipboard
         .write(text)
@@ -218,8 +250,8 @@ function registerDraftFlush(ctx: Context): void {
   }
   ctx.effect(() =>
     ctx.document.beforeFlush!(() => {
-      const inputs = view.dom.querySelectorAll<HTMLInputElement>(
-        ".hybrid-properties input",
+      const inputs = view.dom.querySelectorAll<HTMLElement>(
+        ".hybrid-properties input, .hybrid-properties [contenteditable]",
       );
       for (const input of inputs) {
         if (
@@ -235,4 +267,26 @@ function registerDraftFlush(ctx: Context): void {
       }
     }),
   );
+}
+
+function registerDisclosure(
+  ctx: Context,
+  editing: PropertyEditing,
+  signal: AbortSignal,
+): void {
+  ctx.effect(() =>
+    ctx.rpc.on(protocol, "collapsed", (collapsed) =>
+      editing.receiveCollapsed(collapsed),
+    ),
+  );
+  void ctx.rpc
+    .call(protocol, "collapsed", {})
+    .then((collapsed) => {
+      if (!signal.aborted) {
+        editing.receiveCollapsed(collapsed);
+      }
+    })
+    .catch((error) =>
+      ctx.logger.warn("Property disclosure unavailable", error),
+    );
 }

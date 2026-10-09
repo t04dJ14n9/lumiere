@@ -1,48 +1,101 @@
-import type { Plugin } from "../../kernel";
+import type { Context, Plugin } from "../../kernel";
 import type { PanelShell, Workbench } from "../../shared/runtime";
 import type {} from "../vault/api";
 import type {} from "./api";
-import { validPropertyName } from "../../markdown/properties/types";
+import { canSetPropertyType } from "../../markdown/properties/types";
 import { PropertyTypeStore } from "./type-store";
+import { PropertyCollapseStore } from "./collapse-store";
+import { vaultPropertyNames } from "./property-names";
 import { protocol } from "./protocol";
-const stores = new WeakMap<Workbench, PropertyTypeStore>();
+
+interface PropertyStores {
+  types: PropertyTypeStore;
+  collapse: PropertyCollapseStore;
+}
+const stores = new WeakMap<Workbench, PropertyStores>();
+
 export const propertiesHost: Plugin<{ panel: PanelShell }> = {
   name: "properties",
   inject: { required: ["rpc", "workbench", "vault"] },
   apply(ctx) {
-    const storage = ctx.workbench.storage;
-    if (!storage) {
-      throw new Error("Property preference storage is unavailable");
-    }
-    let store = stores.get(ctx.workbench);
-    if (!store) {
-      store = new PropertyTypeStore(storage);
-      stores.set(ctx.workbench, store);
-    }
-    const preferences = store;
-    const scope = ctx.vault.root;
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "types", () => preferences.read(scope)),
-    );
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "setType", async ({ key, kind }) => {
-        if (
-          !validPropertyName(key) ||
-          (kind === "tags" && key.toLowerCase() !== "tags")
-        ) {
-          throw new Error("Invalid property type preference");
-        }
-        await preferences.set(scope, key, kind ?? null);
-        const types = preferences.read(scope);
-        return types;
-      }),
-    );
-    ctx.effect(() =>
-      preferences.subscribe((root, types) => {
-        if (root === scope) {
-          ctx.rpc.notify(protocol, "types", types);
-        }
-      }),
-    );
+    const preferences = sharedStores(ctx.workbench);
+    registerTypes(ctx, preferences.types);
+    registerPropertyNames(ctx, preferences.types);
+    registerDisclosure(ctx, preferences.collapse);
   },
 };
+
+function sharedStores(workbench: Workbench): PropertyStores {
+  const storage = workbench.storage;
+  if (!storage) {
+    throw new Error("Property preference storage is unavailable");
+  }
+  let preferences = stores.get(workbench);
+  if (!preferences) {
+    preferences = {
+      types: new PropertyTypeStore(storage),
+      collapse: new PropertyCollapseStore(storage),
+    };
+    stores.set(workbench, preferences);
+  }
+  return preferences;
+}
+
+function registerTypes(ctx: Context, preferences: PropertyTypeStore): void {
+  const scope = ctx.vault.root;
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "types", () => preferences.read(scope)),
+  );
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "setType", async ({ key, kind }) => {
+      if (!canSetPropertyType(key, kind ?? null)) {
+        throw new Error("Invalid or reserved property type preference");
+      }
+      await preferences.set(scope, key, kind ?? null);
+      return preferences.read(scope);
+    }),
+  );
+  ctx.effect(() =>
+    preferences.subscribe((root, types) => {
+      if (root === scope) {
+        ctx.rpc.notify(protocol, "types", types);
+      }
+    }),
+  );
+}
+
+function registerPropertyNames(
+  ctx: Context,
+  preferences: PropertyTypeStore,
+): void {
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "names", () =>
+      vaultPropertyNames(
+        ctx.vault
+          .files()
+          .map((file) => ctx.vault.metadata(file.path)?.frontmatter),
+        preferences.read(ctx.vault.root),
+      ),
+    ),
+  );
+}
+
+function registerDisclosure(
+  ctx: Context,
+  disclosure: PropertyCollapseStore,
+): void {
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "collapsed", () => disclosure.read()),
+  );
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "setCollapsed", async ({ collapsed }) => {
+      await disclosure.set(collapsed);
+      return disclosure.read();
+    }),
+  );
+  ctx.effect(() =>
+    disclosure.subscribe((collapsed) =>
+      ctx.rpc.notify(protocol, "collapsed", collapsed),
+    ),
+  );
+}
