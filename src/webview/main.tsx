@@ -11,7 +11,7 @@
 import React from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { browserRenderEnvironment, type ViewerEngine } from './browser-render-environment';
+import { browserRenderEnvironment, warmWasm, type ViewerEngine } from './browser-render-environment';
 import { PdfEngine, Status } from './engine';
 import { connectToHost } from './host';
 import { PdfRenderSession } from './render-session';
@@ -37,6 +37,8 @@ const root = createRoot(container);
 if (!wasmUrl) {
   root.render(<Status text="The PDF engine is missing from this installation." />);
 } else {
+  // The engine's WASM downloads while the host sends the PDF.
+  warmWasm(wasmUrl).catch(() => undefined);
   let generation = 0;
   let session: PdfRenderSession<ViewerEngine> | undefined;
   root.render(<Status text="Loading the PDF…" />);
