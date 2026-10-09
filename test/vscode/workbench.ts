@@ -208,7 +208,9 @@ export const ZOOM_STATUS = /^(Fit (Width|Page) \()?\d+%\)?$/u;
 export async function showPage(page: Page, viewer: Frame, number: number): Promise<void> {
   await statusBarEntry(page, PAGE_STATUS).click();
   const input = quickInputTitled(page, /^Go to Page/u);
-  await expect(input).toBeVisible();
+  // The box opens first and gets its value (the current page) after: typing
+  // before then would be overwritten.
+  await expect(input).toHaveValue(/^\d+$/u);
   await input.fill(String(number));
   await input.press('Enter');
   await expect.poll(() => pageAtTop(viewer, number)).toBe(true);
