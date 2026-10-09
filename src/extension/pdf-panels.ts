@@ -26,6 +26,11 @@ export class PdfPanels implements vscode.Disposable {
     return this.current;
   }
 
+  /** Every open PDF editor. */
+  get all(): readonly PdfPanel[] {
+    return [...this.panels];
+  }
+
   add(panel: PdfPanel): void {
     this.panels.add(panel);
     const subscriptions = [

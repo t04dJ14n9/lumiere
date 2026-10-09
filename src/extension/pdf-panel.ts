@@ -17,6 +17,16 @@ const PASTE_HINTS: Partial<Record<AgentTarget, string>> = {
   clipboard: 'No agent chat found: paste it into your agent and ask your question.',
 };
 
+/** A PDF selection for an agent: see `PdfPanel.agentSnapshot`. */
+export interface AgentSnapshot {
+  file: string;
+  uri: string;
+  sha256: string;
+  selection: PdfSelection;
+  agentText: string;
+  regionImage?: string;
+}
+
 /** Let a file write settle before reloading the PDF. */
 const RELOAD_DELAY_MS = 150;
 
@@ -89,6 +99,27 @@ export class PdfPanel implements vscode.Disposable {
     const paste = PASTE_HINTS[target];
     if (paste) void vscode.window.showInformationMessage(`Selection copied for agent. ${paste}`);
     return true;
+  }
+
+  /**
+   * The selection as an agent should see it, without touching the clipboard:
+   * the same text Copy for Agent produces, plus the parts on their own.
+   * Used by the agent bridge (MCP).
+   */
+  async agentSnapshot(): Promise<AgentSnapshot | undefined> {
+    const selection = this.selection;
+    const sha256 = this.sha256;
+    if (!selection || !sha256) return undefined;
+    const image = selection.kind === 'region' ? await this.saveRegionImage(selection) : undefined;
+    const source = { path: displayPath(this.uri), sha256 };
+    return {
+      file: source.path,
+      uri: this.uri.toString(),
+      sha256,
+      selection,
+      agentText: agentText(selection, source, image ? { regionImage: image.fsPath } : {}),
+      ...(image ? { regionImage: image.fsPath } : {}),
+    };
   }
 
   private async copySelection(): Promise<{ text: string; image?: vscode.Uri } | undefined> {

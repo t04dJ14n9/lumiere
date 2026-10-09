@@ -11,6 +11,7 @@
  *   agent-chat           opening the agent chat with a selection
  */
 import * as vscode from 'vscode';
+import { startAgentBridge } from './agent-bridge/bridge';
 import { registerCommands } from './commands';
 import { registerOutlineView } from './outline-view';
 import { PdfEditorProvider } from './pdf-editor-provider';
@@ -34,6 +35,9 @@ export function activate(context: vscode.ExtensionContext): void {
     registerOutlineView(panels),
     registerCommands(panels),
   );
+  const log = vscode.window.createOutputChannel('Agent PDF Viewer', { log: true });
+  context.subscriptions.push(log);
+  void startAgentBridge(context, panels, log).catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
 }
 
 export function deactivate(): void {}

@@ -24,7 +24,9 @@
     "cursor"
   ],
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "customEditors": [
       {
@@ -50,7 +52,7 @@
     "viewsWelcome": [
       {
         "view": "vscodeEmbedPdf.outline",
-        "contents": "Reading the outline\u2026",
+        "contents": "Reading the outline…",
         "when": "vscodeEmbedPdf.outlineLoading"
       },
       {
@@ -76,12 +78,17 @@
       },
       {
         "command": "vscodeEmbedPdf.openLocation",
-        "title": "Open Location\u2026",
+        "title": "Open Location…",
         "category": "PDF"
       },
       {
         "command": "vscodeEmbedPdf.goToOutlineItem",
         "title": "Go to Outline Item",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.copyMcpSetup",
+        "title": "Copy MCP Setup for Claude Code / Codex…",
         "category": "PDF"
       }
     ],
@@ -154,9 +161,20 @@
           "default": 100,
           "minimum": 1,
           "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. When a new snapshot takes them past this, the least recently used ones are deleted (the new one is always kept). Values below 1 count as 1."
+        },
+        "vscodeEmbedPdf.agentBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Serve the current PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected)."
         }
       }
-    }
+    },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "vscodeEmbedPdf.agentBridge",
+        "label": "Agent PDF Viewer"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -184,8 +202,10 @@
     "@embedpdf/plugin-selection": "2.15.1",
     "@embedpdf/plugin-viewport": "2.15.1",
     "@embedpdf/plugin-zoom": "2.15.1",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
