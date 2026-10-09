@@ -128,7 +128,9 @@ export class Fiber<C = unknown> {
       .then(() => {
         ctx?.logger.debug("Stopped", { ms: Date.now() - started });
         delete this.stopping;
+        this.runtime.stopping.delete(this as Fiber<unknown>);
       });
+    this.runtime.stopping.set(this as Fiber<unknown>, this.stopping);
     return this.stopping;
   }
   async update(config: C): Promise<void> {

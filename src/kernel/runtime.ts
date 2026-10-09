@@ -39,6 +39,8 @@ export class ResourceLedger {
 export class Runtime {
   readonly events: EventBus;
   readonly fibers = new Set<Fiber<unknown>>();
+  /** Stops in progress, disposed fibers included (they leave `fibers`). */
+  readonly stopping = new Map<Fiber<unknown>, Promise<void>>();
   readonly providers = new Map<keyof Services, Provider[]>();
   readonly jobs = new Set<Promise<unknown>>();
   readonly ledger = new ResourceLedger();
@@ -53,12 +55,25 @@ export class Runtime {
     return this.providers.get(name)?.at(-1)?.value;
   }
   /**
-   * Re-gate every fiber after a service change. Resolves once the consumers
-   * this change stopped have finished stopping, so a provider can withdraw
+   * Re-gate every fiber after a service change. Resolves once every consumer
+   * of a `withdrawn` service has finished stopping: those this change
+   * stopped and those already stopping for another reason (a shared
+   * prerequisite lost at the same time, a disable). `owner` (the withdrawing
+   * fiber, itself stopping) is never waited for. So a provider can withdraw
    * its services and wait for its consumers before releasing what backs them.
    */
-  changed(): Promise<void> {
+  changed(
+    withdrawn: readonly (keyof Services)[] = [],
+    owner?: Fiber<unknown>,
+  ): Promise<void> {
     const stops = [...this.fibers].map((fiber) => fiber.reconcile());
+    for (const [fiber, stop] of this.stopping) {
+      const inject = fiber.definition.inject;
+      const uses = [...(inject?.required ?? []), ...(inject?.optional ?? [])];
+      if (fiber !== owner && uses.some((name) => withdrawn.includes(name))) {
+        stops.push(stop);
+      }
+    }
     return Promise.all(stops).then(() => undefined);
   }
   track(job: Promise<unknown>): void {

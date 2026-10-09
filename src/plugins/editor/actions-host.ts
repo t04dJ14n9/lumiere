@@ -14,13 +14,10 @@ export function registerEditorActions(
   editors: Editors,
   selections: Selections,
 ): void {
-  const publish = () => publishActions(ctx, editors, registry);
-  const registry = new ActionRegistry(
-    editors,
-    selections,
-    ctx.workbench,
-    publish,
-  );
+  // Captured while live: the last publish runs after the context is disposed.
+  const workbench = ctx.workbench;
+  const publish = () => publishActions(workbench, editors, registry);
+  const registry = new ActionRegistry(editors, selections, workbench, publish);
   const service: EditorActions & CallerBound<EditorActions> = {
     register: (action) => registry.register("editor", action),
     [bindCaller](caller) {
@@ -51,13 +48,13 @@ export function registerEditorActions(
   }
   ctx.effect(() => () => {
     registry.dispose();
-    publish();
+    return publish();
   });
   if (ctx.workbench.onConfiguration) {
-    ctx.effect(() => ctx.workbench.onConfiguration!(publish));
+    ctx.effect(() => ctx.workbench.onConfiguration!(() => void publish()));
   }
-  ctx.on("editor/activeChanged", publish);
-  publish();
+  ctx.on("editor/activeChanged", () => void publish());
+  void publish();
 }
 function registerActionPanels(
   ctx: Context,
@@ -97,22 +94,25 @@ function registerActionPanels(
   }
 }
 
-function publishActions(
-  ctx: Context,
+/** Settles once VS Code has the new context keys; never rejects. */
+async function publishActions(
+  workbench: Context["workbench"],
   editors: Editors,
   registry: ActionRegistry,
-): void {
+): Promise<void> {
   const values = registry.list(editors.active()?.id);
   for (const panel of editors.all()) {
     panel.rpc.notify(protocol, "changed", registry.list(panel.id), {
       coalesce: true,
     });
   }
-  for (const scope of ["selection", "title"] as const) {
-    void ctx.workbench.execute(
-      "setContext",
-      `markdownWorkbench.has${scope === "title" ? "Title" : "Selection"}Actions`,
-      values.some((value) => value.scope === scope),
-    );
-  }
+  await Promise.allSettled(
+    (["selection", "title"] as const).map((scope) =>
+      workbench.execute(
+        "setContext",
+        `markdownWorkbench.has${scope === "title" ? "Title" : "Selection"}Actions`,
+        values.some((value) => value.scope === scope),
+      ),
+    ),
+  );
 }

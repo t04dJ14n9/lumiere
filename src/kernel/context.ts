@@ -37,6 +37,7 @@ export class Context {
   private readonly offered = new Map<keyof Services, unknown>();
   private readonly bound = new Map<unknown, unknown>();
   private live = true;
+  private disposing?: Promise<void>;
   private published = false;
   constructor(
     readonly runtime = new Runtime(silentLogger, new Set()),
@@ -164,21 +165,44 @@ export class Context {
     const undo = () =>
       typeof resource === "function" ? resource() : resource.dispose();
     if (!this.live) {
-      void undo();
+      // Undone at once; a failing undo is logged, never left unhandled.
+      const failed = (error: unknown) =>
+        this.logger.error("Disposal failed", error);
+      try {
+        void Promise.resolve(undo()).catch(failed);
+      } catch (error) {
+        failed(error);
+      }
       throw new KernelError("Disposed", `${this.owner} acquired a ${kind}`);
     }
     return this.hold(kind, undo);
   }
   private hold(kind: string, undo: () => unknown, fiber?: Fiber<unknown>) {
     const entry: Held = { release: async () => {}, ...(fiber && { fiber }) };
-    entry.release = async () => {
-      // Released once, early or at dispose; either way it leaves the list.
-      const index = this.held.indexOf(entry);
-      if (index >= 0) {
-        this.held.splice(index, 1);
-        this.runtime.ledger.remove(this.owner, kind);
+    let releasing: Promise<void> | undefined;
+    // Released once, early or at dispose (a second call joins the first). It
+    // stays in the ledger until `undo` settles; a failed undo leaves a
+    // `failed <kind>` entry, so the ledger never reports a failed teardown
+    // as clean.
+    // `releasing` is set before `undo` runs: a fiber's undo re-enters here.
+    const run = async () => {
+      try {
         await undo();
+      } catch (error) {
+        this.runtime.ledger.add(this.owner, `failed ${kind}`);
+        throw error;
+      } finally {
+        this.runtime.ledger.remove(this.owner, kind);
       }
+    };
+    entry.release = () => {
+      if (!releasing) {
+        let adopt!: (work: Promise<void>) => void;
+        releasing = new Promise<void>((resolve) => (adopt = resolve));
+        this.held.splice(this.held.indexOf(entry), 1);
+        adopt(run());
+      }
+      return releasing;
     };
     this.held.push(entry);
     this.runtime.ledger.add(this.owner, kind);
@@ -241,10 +265,11 @@ export class Context {
   settled(): Promise<void> {
     return this.runtime.settled();
   }
-  async dispose(): Promise<void> {
-    if (!this.live) {
-      return;
-    }
+  /** Stop; every caller, first or concurrent, waits for the same teardown. */
+  dispose(): Promise<void> {
+    return (this.disposing ??= this.teardown());
+  }
+  private async teardown(): Promise<void> {
     this.live = false;
     await this.withdrawServices();
     for (const item of this.held.slice().reverse()) {
@@ -254,10 +279,11 @@ export class Context {
     }
     this.bound.clear();
   }
-  // Consumers stop (and finish stopping) while the resources backing these
-  // services still exist; only then are the resources released.
+  // Consumers stop (and finish stopping, including those already stopping
+  // for another reason) while the resources backing these services still
+  // exist; only then are the resources released.
   private async withdrawServices(): Promise<void> {
-    let withdrawn = false;
+    const withdrawn: (keyof Services)[] = [];
     for (const name of this.offered.keys()) {
       const stack = this.runtime.providers.get(name) ?? [];
       if (stack.some((p) => p.ctx === this)) {
@@ -266,11 +292,11 @@ export class Context {
           stack.filter((p) => p.ctx !== this),
         );
         this.runtime.ledger.remove(this.owner, "service");
-        withdrawn = true;
+        withdrawn.push(name);
       }
     }
-    if (withdrawn) {
-      await this.runtime.changed();
+    if (withdrawn.length) {
+      await this.runtime.changed(withdrawn, this.fiber);
     }
   }
 }

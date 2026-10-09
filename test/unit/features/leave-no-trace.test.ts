@@ -10,16 +10,9 @@ import {
 } from "../../../src/plugins/catalog";
 import { trackingFake } from "../../support/tracking-fake";
 
-// Core hosts started once per window by bootstrap, with their own tests:
-// the editor host owns VS Code's editor registration, the vault and
-// document hosts own the vault and documents for every panel.
-const covered = new Set([
-  "editor",
-  "vault",
-  "document",
-  "publicApi",
-  "dialect",
-]);
+// Every host plugin is covered, core hosts (editor, vault, document,
+// publicApi, dialect) included.
+const covered = new Set<string>();
 
 const idle = () => new Promise<void>((resolve) => setTimeout(resolve, 5));
 
@@ -29,8 +22,20 @@ const overrides: Record<string, Record<string, unknown>> = {
   outline: { "editors.active": () => undefined },
 };
 
+/** Context keys the plugin set through `workbench.execute("setContext", …)`. */
+const contextKeys = new Map<string, unknown>();
+const recordContextKeys = {
+  "workbench.execute": (command: string, key: string, value: unknown) => {
+    if (command === "setContext") {
+      contextKeys.set(key, value);
+    }
+    return Promise.resolve();
+  },
+};
+
 const configs: Record<string, unknown> = {
   commands: { features },
+  publicApi: { create() {} },
 };
 
 const definitions = Object.values(hostPlugins).filter(
@@ -39,17 +44,27 @@ const definitions = Object.values(hostPlugins).filter(
 
 for (const definition of definitions) {
   test(`${definition.name} (host): stopping it leaves no trace`, async () => {
-    const root = Context.create({ rank: pluginRank });
+    const errors: string[] = [];
+    const root = Context.create({
+      rank: pluginRank,
+      logger: {
+        debug() {},
+        warn() {},
+        error: (message: string, error?: unknown) =>
+          void errors.push(`${message}: ${String(error)}`),
+      },
+    });
+    contextKeys.clear();
     const trackers: [string, ReturnType<typeof trackingFake>["tracker"]][] = [];
     const services = [
       ...(definition.inject?.required ?? []),
       ...(definition.inject?.optional ?? []),
     ] as (keyof Services)[];
     for (const service of services) {
-      const { fake, tracker } = trackingFake<never>(
-        service,
-        overrides[definition.name],
-      );
+      const { fake, tracker } = trackingFake<never>(service, {
+        ...recordContextKeys,
+        ...overrides[definition.name],
+      });
       trackers.push([service, tracker]);
       root.provide(service, fake);
     }
@@ -64,6 +79,12 @@ for (const definition of definitions) {
     await root.settled();
     await idle();
     assert.deepEqual(root.runtime.ledger.snapshot(), baseline);
+    assert.deepEqual(errors, [], "teardown logged errors");
+    for (const [key, value] of contextKeys) {
+      if (key.startsWith("markdownWorkbench.has")) {
+        assert.equal(value, false, `${key} reset on stop`);
+      }
+    }
     for (const [service, tracker] of trackers) {
       assert.deepEqual(tracker.outstanding(), [], `${service} registrations`);
     }

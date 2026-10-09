@@ -141,8 +141,10 @@ function registerSelectionContext(
   active: () => EditorPanel | undefined,
 ): void {
   const selections = new Map<string, boolean>();
+  // Captured while live: the cleanup below runs after the context is disposed.
+  const workbench = ctx.workbench;
   const refresh = () => {
-    void ctx.workbench.execute(
+    void workbench.execute(
       "setContext",
       "markdownWorkbench.hasSelection",
       selections.get(active()?.id ?? "") ?? false,
@@ -157,8 +159,8 @@ function registerSelectionContext(
     refresh();
   });
   ctx.on("editor/activeChanged", refresh);
-  ctx.effect(() => () => {
-    void ctx.workbench.execute(
+  ctx.effect(() => async () => {
+    await workbench.execute(
       "setContext",
       "markdownWorkbench.hasSelection",
       false,
