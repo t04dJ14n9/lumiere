@@ -1,14 +1,16 @@
-# Ask Agent (plugin id `askAgent`)
+# Copy Link for Agent (plugin id `copyLinkForAgent`)
 
-**Ask Agent about Selection** hands an agent the selected saved Markdown: an
-LLM Wiki-compatible `@path#start-end` reference, a blank line and the passage
+**Copy Link for Agent** copies the selected saved Markdown for an agent: an
+LLM Wiki-compatible `@path#start-end` link, a blank line and the passage
 quoted with `> `, so the agent both reads the exact words and can open the
-note at that range. Obsidian has no built-in equivalent.
+note at that range. It opens a chat only when the editor's own chat is the
+only agent installed, or when `markdownWorkbench.copyLinkForAgent.target`
+forces one. Obsidian has no built-in equivalent.
 
 The separate Copy for Agent command (Mod+Alt+C, a title button and menu
 items) was removed by owner decision: plain Ctrl/Cmd+C copies text. Nothing
-was published, so the plugin was renamed from `copyForAgent` with no
-migration, and the public API offers no agent methods or service.
+was published, so the plugin was renamed from `copyForAgent` (and the
+command from Ask Agent about Selection) with no migration, and the public API offers no agent methods or service.
 
 ## How it works
 
@@ -23,11 +25,11 @@ only copies; each case ends in a notice saying where the passage went.
 
 ## Files
 
-- `manifest.ts`: the Ask Agent command and its editor context menu item.
-- `protocol.ts`: validated interactive ask request.
+- `manifest.ts`: the Copy Link for Agent command and its editor context menu item.
+- `protocol.ts`: validated interactive copy request.
 - `reference.ts`: path policy and LLM Wiki reference formatting.
-- `chat.ts`: picks the agent chat for Ask Agent about Selection.
-- `agent.ts`: `AskAgent`: snapshot validation, dirty prompt and chat hand-off
+- `chat.ts`: picks the agent chat for Copy Link for Agent.
+- `agent.ts`: `CopyLinkForAgent`: snapshot validation, dirty prompt and chat hand-off
   (with its clipboard fallback).
 - `host.ts`: resource-enabled panel handler lifetimes.
 - `webview.ts`: command and contextual-widget menu contribution.
@@ -38,9 +40,9 @@ Host provides no service, injecting `editors`, `selections` and `workbench`;
 webview injects `editor`, `commands`, `document`, `rpc` and `menu`. Host listens
 to editor open/close and configuration changes; saving awaits
 `document/willSave`. Webview contributes to `editor/selectionMenu`.
-`plugins.askAgent.enabled` defaults to true. Command: Ask Agent about Selection
+`plugins.copyLinkForAgent.enabled` defaults to true. Command: Copy Link for Agent
 (no shortcut; selection menu and editor context menu).
-`markdownWorkbench.askAgent.target` forces the agent.
+`markdownWorkbench.copyLinkForAgent.target` forces the agent.
 
 ## Limits and differences from Obsidian
 

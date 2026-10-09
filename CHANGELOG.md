@@ -11,7 +11,7 @@ First packaged build, for the owner's acceptance testing. Not published.
   tasks, tags, suggestions, search query blocks, outline, backlinks,
   outgoing links, quick switcher, word count, link updates on rename,
   folding, line numbers, indentation guides, spellcheck, auto-pairing,
-  smart lists, formatting commands, Vim, HTML paste and Ask Agent
+  smart lists, formatting commands, Vim, HTML paste and Copy Link for Agent
   about Selection.
 - Vault index that resolves links like Obsidian, with a saved snapshot for
   instant start-up.

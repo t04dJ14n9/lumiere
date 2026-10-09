@@ -992,7 +992,7 @@ corresponds to. "Source" names the module on the source branch.
 | `pasteHtml` | *Auto convert HTML* | on | editor | `markdown/paste.ts`, `editor/clipboard.ts` |
 | `spellcheck` | *Spellcheck* | on | editor | content attributes |
 | `formatting` | `editor:toggle-*`, `editor:set-heading-*` and similar | on | editor, commands | `editor/markdown.ts` `wrapSelection`, main branch `obsidianLikeCommands` |
-| `askAgent` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
+| `copyLinkForAgent` | none (from LLM Wiki) | on | editors, documents, workbench | `selectionHandoff.ts`, `agentClipboard.ts` (Markdown part) |
 | `linkUpdates` | *Automatically update internal links* | on (prompt) | vault, workbench | new |
 | `quickSwitcher` | Quick switcher | on | vault, workbench | new |
 | `wordCount` | Word count (status bar) | on | editors, workbench | new |
@@ -1081,7 +1081,7 @@ the active editor. They work in the command palette, keybindings and menus.
 | table commands (insert/move/delete row and column, align, sort) | `editor:table-*` | tables | — |
 | `toggleSourceMode` | `editor:toggle-source` | livePreview | — |
 | `openAsText` | none | editor | title action |
-| `askAgentAboutSelection` | none | askAgent | none (context menu) |
+| `copyLinkForAgent` | none | copyLinkForAgent | none (context menu) |
 | `quickSwitcher` | `switcher:open` | quickSwitcher | none by default (Mod+O conflicts with VS Code's Open) |
 
 Rules:
@@ -1096,7 +1096,7 @@ Rules:
   (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
   (§13 outline).
 - The right-click menu uses VS Code's `webview/context` menu with
-  `webviewSection` for static commands (formatting, Ask Agent about Selection).
+  `webviewSection` for static commands (formatting, Copy Link for Agent).
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions
@@ -1185,14 +1185,17 @@ The host `links` plugin owns one pipeline:
        (`markdownWorkbench.files.newNoteFolder`) and open it, as Obsidian
        does.
 
-## 17. Ask Agent (`askAgent` plugin)
+## 17. Copy Link for Agent (`copyLinkForAgent` plugin)
 
 Owner decision (2026-10-09): the Copy for Agent command, Mod+Alt+C, its
 title button and menu items are removed; plain Ctrl/Cmd+C copies text.
-**Ask Agent about Selection** keeps producing the text below and falls back
-to the clipboard. Nothing was published, so the plugin is `askAgent`
-(formerly `copyForAgent`) and the public API has no agent methods or
-service.
+The single remaining action was then renamed **Copy Link for Agent** (it
+was Ask Agent about Selection); it keeps producing the text below, copies
+it, and opens a chat only when the editor's own chat is the only agent or
+`copyLinkForAgent.target` forces one. Nothing was published, so the plugin,
+command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
+`askAgentAboutSelection`, `askAgent.target`) with no migration, and the
+public API has no agent methods or service.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 
@@ -1204,7 +1207,7 @@ Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
   reference uses the full URI. Lines are 1-based, from source offsets (a
   selection ending at column 0 excludes that line, as now).
 - Line numbers must match the file on disk. With unsaved changes, interactive
-  Ask Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
+  Copy Link for Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
   PDF Workbench does.
 - The selection is captured from the webview with `editor.captureSelection`
   after a flush, and is rejected if the document version moved (as

@@ -57,7 +57,7 @@ test("API selections are frozen snapshots; there is no agent API", async () => {
     [5, 8, 2, 2],
   );
   assert.equal(selection.text, "two");
-  // Ask Agent is an editor command only: nothing published uses it.
+  // Copy Link for Agent is an editor command only: nothing published uses it.
   assert.equal("createAgentReference" in f.api, false);
   assert.equal("copyForAgent" in f.api, false);
   await assert.rejects(f.api.getSelection("missing"), {

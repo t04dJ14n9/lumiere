@@ -15,8 +15,8 @@ export interface AgentReference {
   readonly startLine: number;
   readonly endLine: number;
 }
-/** Ask Agent about Selection: the reference and quoted passage, to the agent chat. */
-export class AskAgent {
+/** Copy Link for Agent: the reference and quoted passage, to the agent chat. */
+export class CopyLinkForAgent {
   private live = true;
   dispose(): void {
     this.live = false;
@@ -52,10 +52,12 @@ export class AskAgent {
     });
   }
   /**
-   * Ask about the editor's selection. An unsaved note asks first: save so
-   * the reference matches the file, send the text only, or cancel.
+   * Copy the editor's selection with its link, opening a chat only when the
+   * editor's own chat is the only agent or a target is forced. An unsaved
+   * note asks first: save so the link matches the file, copy the text only,
+   * or cancel.
    */
-  async ask(id: string, token?: Cancellation): Promise<boolean> {
+  async copy(id: string, token?: Cancellation): Promise<boolean> {
     const panel = this.options.editors.all().find((item) => item.id === id);
     if (!panel) {
       throw new RpcError("EditorNotFound", "Editor not found");
@@ -110,16 +112,16 @@ export class AskAgent {
       },
     );
     if (target === "chatWithClipboard") {
-      workbench.inform?.("The passage is copied: paste it into the chat.");
+      workbench.inform?.("Link and passage copied: paste them into the chat.");
     }
     if (target === "codex") {
       workbench.inform?.(
-        "The passage is attached in Codex (and copied): type your question.",
+        "Link and passage copied and attached in Codex: type your question.",
       );
     }
     if (target === "clipboard") {
       workbench.inform?.(
-        "The passage is copied: paste it into your agent's chat and ask your question.",
+        "Link and passage copied: paste them into your agent's chat.",
       );
     }
   }
@@ -142,15 +144,15 @@ export class AskAgent {
     if (
       !this.live ||
       config.preset !== "obsidian" ||
-      config.features?.askAgent?.enabled === false
+      config.features?.copyLinkForAgent?.enabled === false
     ) {
-      throw new RpcError("PluginDisabled", "Ask Agent is disabled");
+      throw new RpcError("PluginDisabled", "Copy Link for Agent is disabled");
     }
   }
   private assertActive(panel: EditorPanel, token?: Cancellation): void {
     this.assertEnabled(panel);
     if (token?.cancelled || !this.options.editors.all().includes(panel)) {
-      throw new RpcError("Cancelled", "Ask Agent cancelled");
+      throw new RpcError("Cancelled", "Copy Link for Agent cancelled");
     }
   }
 }

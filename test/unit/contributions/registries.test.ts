@@ -4,7 +4,7 @@ import type { ProcessorResult } from "../../../src/plugins/codeBlocks/api";
 import { ActionRegistry } from "../../../src/plugins/editor/actions";
 import { ProcessorRegistry } from "../../../src/plugins/codeBlocks/processors";
 import { CancelToken } from "../../../src/shared/rpc/lifecycle";
-import { fixture } from "../ask-agent/fixture";
+import { fixture } from "../copy-link-for-agent/fixture";
 
 test("actions keep callbacks host-side, capture authentic selections and remove only their owner", async () => {
   const f = fixture();

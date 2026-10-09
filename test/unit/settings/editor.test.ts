@@ -190,17 +190,29 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
   );
 });
 
-test("only Ask Agent about Selection remains of the agent commands", async () => {
+test("only Copy Link for Agent remains of the agent commands", async () => {
   const generated = await contributions();
   const settings = Object.keys(generated.configuration.properties);
-  assert.ok(settings.includes("markdownWorkbench.plugins.askAgent.enabled"));
+  assert.ok(
+    settings.includes("markdownWorkbench.plugins.copyLinkForAgent.enabled"),
+  );
   assert.equal(
     settings.some((key) => key.includes("copyForAgent")),
     false,
   );
   const commands = generated.commands.map((command) => command.command);
-  assert.ok(commands.includes("markdownWorkbench.askAgentAboutSelection"));
+  assert.ok(commands.includes("markdownWorkbench.copyLinkForAgent"));
   assert.equal(commands.includes("markdownWorkbench.copyForAgent"), false);
+  assert.deepEqual(
+    generated.commands
+      .filter((command) => /agent/i.test(command.command))
+      .map((command) => command.title),
+    ["Copy Link for Agent"],
+  );
+  assert.equal(
+    settings.some((key) => key.includes("askAgent")),
+    false,
+  );
   assert.equal(
     generated.keybindings.some((binding) =>
       binding.command.endsWith(".copyForAgent"),

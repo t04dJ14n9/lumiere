@@ -512,17 +512,17 @@ Off by default.
    Shift+Mod+V pastes plain text. Inside a table cell only that cell
    changes. No pasted script runs.
 
-### askAgent
+### copyLinkForAgent
 
-1. Select lines and run **Ask Agent about Selection** (palette, editor
-   context menu, selection menu): the agent chat receives, or the clipboard
-   holds, `@path#start-end` (`#N` for one line), a blank line and the
-   passage quoted with `> `, with a notice saying where it went.
+1. Select lines and run **Copy Link for Agent** (palette, editor
+   context menu, selection menu): the clipboard holds `@path#start-end`
+   (`#N` for one line), a blank line and the passage quoted with `> ` (or
+   the only agent chat receives it), with a notice saying where it went.
 2. With unsaved changes, a prompt offers Save and Copy, Copy Text Only and
    Cancel; each does only that.
-3. There is no Copy for Agent command, title button, context menu item or
-   Mod+Alt+C binding (removed by owner decision; Ctrl+C copies plain
-   text).
+3. There is no Copy for Agent or Ask Agent about Selection command, title
+   button, context menu item or Mod+Alt+C binding (removed or renamed by
+   owner decision; Ctrl+C copies plain text).
 
 ## External plugins
 
@@ -558,7 +558,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.close` — Close | unbound | On a disposable fixture, run Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.askAgentAboutSelection` — Ask Agent about Selection | none | Select two lines, right-click → Ask Agent about Selection. VS Code with only a chat extension (e.g. Copilot Chat): chat opens with `@Note.md#a-b` and the quoted passage prefilled, cursor after it. Cursor with no Claude Code/Codex extension: a new agent chat opens and a notice says the passage is copied; paste shows the same payload. With Claude Code or Codex installed (and `askAgent.target` = `auto`), nothing opens: a notice says the passage is copied to paste into your agent. With no chat installed, the same. |
+| `markdownWorkbench.copyLinkForAgent` — Copy Link for Agent | none | Select two lines, right-click → Copy Link for Agent. VS Code with only a chat extension (e.g. Copilot Chat): chat opens with `@Note.md#a-b` and the quoted passage prefilled, cursor after it. Cursor with no Claude Code/Codex extension: a new agent chat opens and a notice says the passage is copied; paste shows the same payload. With Claude Code or Codex installed (and `copyLinkForAgent.target` = `auto`), nothing opens: a notice says the passage is copied to paste into your agent. With no chat installed, the same. |
 | `markdownWorkbench.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workbench for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workbench for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -623,7 +623,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.callouts.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.codeBlocks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.plugins.askAgent.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.copyLinkForAgent.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.diagrams.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.embeds.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -674,7 +674,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.tags.viewNested` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.vault.rootMarkers` | `[".obsidian"]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.vault.excludedFiles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.askAgent.target` | `auto` | `claudeCode`: Ask Agent opens a new Claude Code conversation with the passage typed in. `codex`: the Codex sidebar opens with the passage attached as a file (and copied). `chat`/`cursor`: that chat even with other agents installed. `clipboard`: only copies. A target that is not installed only copies. |
+| `markdownWorkbench.copyLinkForAgent.target` | `auto` | `claudeCode`: Copy Link for Agent opens a new Claude Code conversation with the passage typed in. `codex`: the Codex sidebar opens with the passage attached as a file (and copied). `chat`/`cursor`: that chat even with other agents installed. `clipboard`: only copies. A target that is not installed only copies. |
 | `markdownWorkbench.debug.logging` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

@@ -1,6 +1,6 @@
-import type { AgentEnvironment, AskAgentTarget } from "../../shared/runtime";
+import type { AgentEnvironment, CopyLinkTarget } from "../../shared/runtime";
 
-/** Where Ask Agent about Selection put the passage. */
+/** Where Copy Link for Agent put the passage. */
 export type ChatTarget =
   | "chat"
   | "chatWithClipboard"
@@ -53,7 +53,7 @@ async function tryCommand(execute: Execute, id: string, ...args: unknown[]) {
  * clipboard) or VS Code's chat when an extension answers there (prefilled,
  * still editable). With Claude Code or Codex installed as well, it does not
  * guess: the passage is only copied, to paste into the user's agent. The
- * `askAgent.target` setting forces one agent: Claude Code, whose new
+ * `copyLinkForAgent.target` setting forces one agent: Claude Code, whose new
  * conversation takes the passage as its prompt (its `@path#a-b` mention
  * attaches those lines), or Codex, which gets the passage attached as a file.
  */
@@ -65,7 +65,7 @@ export async function openAgentChat(
 ): Promise<ChatTarget> {
   const { environment } = options;
   const target = environment?.target ?? "auto";
-  const routes: Record<AskAgentTarget, Route[]> = {
+  const routes: Record<CopyLinkTarget, Route[]> = {
     // Without an environment (other hosts), the editor's chats are tried blind.
     auto: hasOtherAgent(environment) ? [] : [openCursor, openChat],
     cursor: [openCursor],

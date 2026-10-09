@@ -77,8 +77,8 @@ has two editors with two IDs and the same `documentId`.
 | --- | --- |
 | `getSelection(editorId, { token? })` | Waits until the editor's pending edits reach the document, then returns its main selection as a frozen, host-held `SelectionSnapshot` (`from`, `to`, `startLine`, `endLine`, `text`, `version`, `isDirty`, `sourceSha256`), or `undefined` for an empty selection. |
 
-A selection ending at column 0 excludes that line, as Ask Agent about Selection does.
-There is no agent API: Ask Agent about Selection is an editor command only.
+A selection ending at column 0 excludes that line, as Copy Link for Agent does.
+There is no agent API: Copy Link for Agent is an editor command only.
 
 ## Vault
 

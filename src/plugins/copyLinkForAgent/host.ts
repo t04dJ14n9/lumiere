@@ -1,12 +1,12 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import type {} from "../document/api";
-import { AskAgent } from "./agent";
+import { CopyLinkForAgent } from "./agent";
 import { protocol } from "./protocol";
-export const askAgentHost: Plugin = {
-  name: "askAgent",
+export const copyLinkForAgentHost: Plugin = {
+  name: "copyLinkForAgent",
   inject: { required: ["editors", "selections", "workbench"] },
   apply(ctx) {
-    const agent = new AskAgent({
+    const agent = new CopyLinkForAgent({
       editors: ctx.editors,
       selections: ctx.selections,
       workbench: ctx.workbench,
@@ -16,7 +16,7 @@ export const askAgentHost: Plugin = {
     registerPanelHandlers(ctx, agent);
   },
 };
-function registerPanelHandlers(ctx: Context, agent: AskAgent): void {
+function registerPanelHandlers(ctx: Context, agent: CopyLinkForAgent): void {
   const handlers = new Map<string, Disposer>();
   const refresh = () => {
     const panels = ctx.editors.all();
@@ -26,7 +26,7 @@ function registerPanelHandlers(ctx: Context, agent: AskAgent): void {
       if (
         !config ||
         config.preset !== "obsidian" ||
-        config.features?.askAgent?.enabled === false
+        config.features?.copyLinkForAgent?.enabled === false
       ) {
         void stop();
         handlers.delete(id);
@@ -37,15 +37,15 @@ function registerPanelHandlers(ctx: Context, agent: AskAgent): void {
       if (
         handlers.has(panel.id) ||
         config.preset !== "obsidian" ||
-        config.features?.askAgent?.enabled === false
+        config.features?.copyLinkForAgent?.enabled === false
       ) {
         continue;
       }
-      const ask = panel.rpc.handle(protocol, "ask", (_request, token) =>
-        agent.ask(panel.id, token),
+      const copy = panel.rpc.handle(protocol, "copy", (_request, token) =>
+        agent.copy(panel.id, token),
       );
       handlers.set(panel.id, () => {
-        void ask();
+        void copy();
       });
     }
   };

@@ -1,6 +1,6 @@
 import type { Uri } from "vscode";
 import { Context } from "../../../src/kernel";
-import { fixture as selectionFixture } from "../ask-agent/fixture";
+import { fixture as selectionFixture } from "../copy-link-for-agent/fixture";
 import { rpcPair } from "../../support/rpc-pair";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import { SelectionSnapshots } from "../../../src/plugins/editor/selection";

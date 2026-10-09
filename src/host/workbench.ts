@@ -9,7 +9,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import type {
-  AskAgentTarget,
+  CopyLinkTarget,
   HostDocument,
   Workbench,
   PanelShell,
@@ -144,7 +144,7 @@ function documentOperations(
 /** Extensions that bring an agent chat of their own besides the editor's. */
 const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
 
-/** Ask Agent about Selection: which agent chats exist, and files to attach. */
+/** Copy Link for Agent: which agent chats exist, and files to attach. */
 function agentOperations(): Pick<
   Workbench,
   "agentEnvironment" | "writeScratchFile"
@@ -154,7 +154,7 @@ function agentOperations(): Pick<
       return {
         target: vscode.workspace
           .getConfiguration("markdownWorkbench")
-          .get<AskAgentTarget>("askAgent.target", "auto"),
+          .get<CopyLinkTarget>("copyLinkForAgent.target", "auto"),
         agentExtensions: new Set(
           AGENT_EXTENSIONS.filter((id) => vscode.extensions.getExtension(id)),
         ),

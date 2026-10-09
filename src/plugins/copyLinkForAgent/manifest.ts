@@ -1,16 +1,16 @@
 import { defineManifest } from "../../shared/manifest";
 export default defineManifest({
-  id: "askAgent",
-  title: "Ask Agent",
+  id: "copyLinkForAgent",
+  title: "Copy Link for Agent",
   description:
-    "Ask an agent about selected text, with a saved source line reference.",
+    "Copy selected text with a link to its saved source lines, for an agent.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   contributes: {
     menus: [
       {
-        command: "askAgentAboutSelection",
+        command: "copyLinkForAgent",
         location: "webview/context",
         when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
         group: "agent",
@@ -18,10 +18,10 @@ export default defineManifest({
     ],
     commands: [
       {
-        id: "askAgentAboutSelection",
-        title: "Ask Agent about Selection",
+        id: "copyLinkForAgent",
+        title: "Copy Link for Agent",
         icon: "$(comment-discussion)",
-        editorCommand: "askAgentAboutSelection",
+        editorCommand: "copyLinkForAgent",
       },
     ],
   },

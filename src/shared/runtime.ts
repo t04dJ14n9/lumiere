@@ -48,7 +48,7 @@ export interface Workbench {
   clipboard: { read(): Promise<string>; write(text: string): Promise<void> };
   error(message: string): void;
   inform?(message: string): void;
-  /** What Ask Agent can reach: registered commands and VS Code's chat state. */
+  /** What Copy Link for Agent can reach: registered commands and VS Code's chat state. */
   agentEnvironment?(): Promise<AgentEnvironment>;
   /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */
   writeScratchFile?(name: string, text: string): Promise<string>;
@@ -227,8 +227,8 @@ export interface SourceEdit {
   to: number;
   insert: string;
 }
-/** The `markdownWorkbench.askAgent.target` setting. */
-export type AskAgentTarget =
+/** The `markdownWorkbench.copyLinkForAgent.target` setting. */
+export type CopyLinkTarget =
   | "auto"
   | "cursor"
   | "chat"
@@ -236,10 +236,10 @@ export type AskAgentTarget =
   | "codex"
   | "clipboard";
 
-/** What the editor offers Ask Agent about Selection. */
+/** What the editor offers Copy Link for Agent. */
 export interface AgentEnvironment {
-  /** Where Ask Agent sends the passage: `auto` or one agent. */
-  target: AskAgentTarget;
+  /** Where Copy Link for Agent sends the passage: `auto` or one agent. */
+  target: CopyLinkTarget;
   /** Installed agent extensions (Claude Code, Codex), active or not. */
   agentExtensions: ReadonlySet<string>;
   /** Every registered command. */
