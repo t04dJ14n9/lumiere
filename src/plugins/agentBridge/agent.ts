@@ -96,19 +96,20 @@ export class AgentHandoff {
     reference: AgentReference,
   ): Promise<void> {
     const { workbench } = this.options;
+    const environment = await workbench.agentEnvironment?.();
     const target = await openAgentChat(
       (command, ...args) => workbench.execute(command, ...args),
       (text) => workbench.clipboard.write(text),
       payload,
       {
-        environment: await workbench.agentEnvironment?.(),
-        writeScratchFile: workbench.writeScratchFile
-          ? (text) =>
-              workbench.writeScratchFile!(
-                scratchName(reference.text),
-                scratchText(text, reference),
-              )
-          : undefined,
+        ...(environment && { environment }),
+        ...(workbench.writeScratchFile && {
+          writeScratchFile: (text: string) =>
+            workbench.writeScratchFile!(
+              scratchName(reference.text),
+              scratchText(text, reference),
+            ),
+        }),
       },
     );
     if (target === "chatWithClipboard") {

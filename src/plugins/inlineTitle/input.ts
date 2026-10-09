@@ -78,7 +78,11 @@ export class TitleInput {
     this.clearError();
     if (title && title !== this.confirmed) {
       this.isPending = true;
-      this.afterCommit = focusOnSuccess ? next : undefined;
+      if (focusOnSuccess && next !== undefined) {
+        this.afterCommit = next;
+      } else {
+        delete this.afterCommit;
+      }
       this.input.readOnly = true;
       this.input.setAttribute("aria-busy", "true");
       this.actions.rename(title, next);
@@ -93,7 +97,7 @@ export class TitleInput {
     this.input.readOnly = false;
     this.input.removeAttribute("aria-busy");
     const next = this.afterCommit;
-    this.afterCommit = undefined;
+    delete this.afterCommit;
     if (value.error) {
       this.reject(value.error);
       return;
@@ -185,7 +189,7 @@ export class TitleInput {
     } else if (event.key === "ArrowDown" && this.onLastLine()) {
       this.blurFocus = event.altKey ? "body" : "properties";
       this.actions.focus(this.blurFocus);
-      this.blurFocus = undefined;
+      delete this.blurFocus;
     } else {
       return;
     }

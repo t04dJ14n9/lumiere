@@ -84,7 +84,7 @@ export class Session implements DocumentSession {
             params.group === undefined ? undefined : `${id}/${params.group}`,
           );
         } finally {
-          this.expected = undefined;
+          delete this.expected;
         }
         return true;
       });
@@ -106,7 +106,7 @@ export class Session implements DocumentSession {
       this.groups.clear();
     }
     this.authority.record(this.document.getText(), this.expected);
-    this.expected = undefined;
+    delete this.expected;
     this.broadcast();
   }
   private broadcast(): void {

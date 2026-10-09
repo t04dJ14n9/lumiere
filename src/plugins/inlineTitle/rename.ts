@@ -43,11 +43,12 @@ export class TitleRenames {
       throw new Error("Rename cancelled.");
     }
     for (const view of views) {
+      const { column } = view.panel;
       this.transfers.set(view.panel.id, {
         target,
-        column: view.panel.column,
+        ...(column === undefined ? {} : { column }),
         snapshot: view.snapshot,
-        focus: view.active ? (focus ?? "body") : undefined,
+        ...(view.active && { focus: focus ?? "body" }),
       });
     }
     try {

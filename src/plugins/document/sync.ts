@@ -72,7 +72,7 @@ export class Synchronizer {
       .call(protocol, "push", {
         version: getSyncedVersion(this.view.state),
         changes: batch.map((update) => update.changes.toJSON() as unknown[]),
-        group,
+        ...(group === undefined ? {} : { group }),
       })
       .then(
         () => {

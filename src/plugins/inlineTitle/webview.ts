@@ -24,7 +24,10 @@ function registerTitle(ctx: Context): void {
     focus: (target) => focusAfterTitle(ctx, target),
     rename: (next, focus) => {
       void ctx.rpc
-        .call(protocol, "rename", { title: next, focus })
+        .call(protocol, "rename", {
+          title: next,
+          ...(focus === undefined ? {} : { focus }),
+        })
         .then((value) => {
           if (isLive) {
             ctx.editor.view.dispatch({ effects: setTitle.of(value) });

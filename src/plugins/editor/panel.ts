@@ -30,7 +30,9 @@ export function createPanel(
   const { onClose, onState, configure, rank = () => 0 } = options;
   const owned = Context.create({
     rank,
-    logger: options.logger && taggedLogger(options.logger, shell.id),
+    ...(options.logger && {
+      logger: taggedLogger(options.logger, shell.id),
+    }),
   });
   const session = documents.session(shell.document);
   const rpc = createPanelEndpoint(shell.transport, owned.logger);

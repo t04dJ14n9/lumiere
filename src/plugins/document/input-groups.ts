@@ -70,7 +70,7 @@ export class InputGroups {
 
   private boundary(): void {
     this.sequence++;
-    this.previous = undefined;
+    delete this.previous;
   }
 
   attach(view: EditorView): void {

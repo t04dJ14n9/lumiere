@@ -177,7 +177,7 @@ function provideMenu(ctx: Context): void {
         items,
         point,
         error: (message) => ctx.logger.error(message),
-        label,
+        ...(label === undefined ? {} : { label }),
       });
     },
   });
