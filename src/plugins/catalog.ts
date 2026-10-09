@@ -18,6 +18,11 @@ import codeBlocks from "./codeBlocks/manifest";
 import links from "./links/manifest";
 import formatting from "./formatting/manifest";
 import type { Manifest } from "../shared/manifest";
+import {
+  FEATURE_ORDER,
+  WORKBENCH_FEATURE_ORDER,
+  inPluginOrder,
+} from "./plugin-order";
 import folding from "./folding/manifest";
 import lineNumbers from "./lineNumbers/manifest";
 import indentGuides from "./indentGuides/manifest";
@@ -31,67 +36,50 @@ import outline from "./outline/manifest";
 import quickSwitcher from "./quickSwitcher/manifest";
 import wordCount from "./wordCount/manifest";
 import linkUpdates from "./linkUpdates/manifest";
-export const features: readonly Manifest[] = [
-  // Table navigation claims override keys before Vim.
-  tables,
-  properties,
-  inlineTitle,
-  pagePreview,
-  // Claims video links before embeds renders them as images.
-  onlineVideos,
-  embeds,
-  tasks,
-  footnotes,
-  callouts,
-  diagrams,
-  math,
-  search,
-  codeBlocks,
-  links,
-  tags,
-  suggest,
-  formatting,
-  pasteHtml,
-  copyLinkForAgent,
-  // Match VS Code: line numbers to the left of fold markers.
-  lineNumbers,
-  folding,
-  indentGuides,
-  spellcheck,
-  autoPair,
-  smartLists,
-  vim,
-];
+/**
+ * Which plugins exist; nothing else. Their precedence is plugin-order.ts,
+ * their dependencies plugin-graph.ts, and their lifecycle the kernel.
+ */
+export const features: readonly Manifest[] = inPluginOrder(
+  [
+    autoPair,
+    callouts,
+    codeBlocks,
+    copyLinkForAgent,
+    diagrams,
+    embeds,
+    folding,
+    footnotes,
+    formatting,
+    indentGuides,
+    inlineTitle,
+    lineNumbers,
+    links,
+    math,
+    onlineVideos,
+    pagePreview,
+    pasteHtml,
+    properties,
+    search,
+    smartLists,
+    spellcheck,
+    suggest,
+    tables,
+    tags,
+    tasks,
+    vim,
+  ],
+  FEATURE_ORDER,
+);
 
 /**
  * Window-level feature plugins: native views, the status bar and commands
  * that work without an open editor. They have no editor half, so the editor
  * feature switch and composition tests (which iterate `features`) skip them.
  */
-export const workbenchFeatures: readonly Manifest[] = [
-  backlinks,
-  outgoingLinks,
-  outline,
-  quickSwitcher,
-  wordCount,
-  linkUpdates,
-];
+export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
+  [backlinks, linkUpdates, outgoingLinks, outline, quickSwitcher, wordCount],
+  WORKBENCH_FEATURE_ORDER,
+);
 
-// Core rank is independent of activation order and shared by both runtimes.
-const owners = [
-  "document",
-  "editor",
-  "dialect",
-  "commands",
-  "vault",
-  "resources",
-  "render",
-  "livePreview",
-  "markers",
-  ...features.map((item) => item.id),
-  ...workbenchFeatures.map((item) => item.id),
-];
-export function pluginRank(owner: string): number {
-  const index = owners.indexOf(owner);
-  return index < 0 ? owners.length : index;
-}
+export { pluginRank } from "./plugin-order";
