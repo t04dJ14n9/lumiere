@@ -118,9 +118,10 @@ function defaultTitle(type: string): string {
 function calloutData(match: RegExpExecArray): Callout {
   const raw = match[1]!.toLowerCase();
   const canonical = calloutAliases[raw] ?? raw;
+  const fold = match[2];
   return {
     kind: calloutKinds.has(canonical) ? canonical : "note",
     title: match[3] || defaultTitle(raw),
-    fold: match[2],
+    ...(fold === undefined ? {} : { fold }),
   };
 }

@@ -126,8 +126,10 @@ class DocumentSearch {
   ) {
     this.kind = document.kind ?? documentKind(document.path);
     this.text = document.text;
-    this.tags = document.metadata?.tags;
-    this.metadata = document.metadata?.properties;
+    if (document.metadata) {
+      this.tags = document.metadata.tags;
+      this.metadata = document.metadata.properties;
+    }
     this.prepared = this.kind !== "canvas";
   }
 
@@ -198,7 +200,12 @@ class DocumentSearch {
     term: Extract<SearchQuery, { kind: "scope" }>,
     context: SearchContext,
   ): boolean {
-    const plain = { ...context, mode: undefined, values: undefined };
+    // The same context without a tag, property or name mode.
+    const plain: SearchContext = {
+      text: context.text,
+      sensitive: context.sensitive,
+      allowed: context.allowed,
+    };
     if (term.scope === "match-case" || term.scope === "ignore-case") {
       return this.evaluate(term.term, {
         ...context,

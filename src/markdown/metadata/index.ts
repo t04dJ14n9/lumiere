@@ -52,7 +52,7 @@ function extractMetadata(doc: Text): NoteMetadata {
     blocks: Object.create(null) as NoteMetadata["blocks"],
     footnotes: extractFootnotes(doc, tree),
     listItems: [],
-    frontmatter: header?.values,
+    ...(header && { frontmatter: header.values }),
     frontmatterLinks: [],
     aliases: [],
   };
