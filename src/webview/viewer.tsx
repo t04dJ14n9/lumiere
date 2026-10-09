@@ -42,7 +42,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
         setFindRequest(request => request + 1);
       } else if (event.key === 'Escape') {
         if (latest.current.searching) setSearching(false);
-        else latest.current.selection.clearRegion();
+        else latest.current.selection.clear();
       }
     };
     document.addEventListener('keydown', onKeyDown);

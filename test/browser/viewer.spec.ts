@@ -145,6 +145,19 @@ test('Copy for Agent right after a text drag reports the selection before the co
   expect(order.indexOf('text')).toBeLessThan(order.indexOf('copy'));
 });
 
+test('Escape clears a text selection, in the viewer and for the extension', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
+  const menu = page.getByRole('toolbar', { name: 'PDF text selection actions' });
+  await expect(menu).toBeVisible();
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: 'text' });
+
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect.poll(() => lastSelection(page)).toBeNull();
+});
+
 test('a drag over empty space selects that region; Escape clears it', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);

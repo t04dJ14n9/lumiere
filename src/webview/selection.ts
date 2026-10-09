@@ -84,7 +84,14 @@ export function useSelectionReporting(documentId: string) {
     return () => document.removeEventListener('copy', onCopy);
   }, []);
 
-  return { region, clearRegion: () => changeRegion(undefined), copyForAgent, copyText };
+  /** Clear whatever is selected, text or region (Escape). */
+  const clear = useCallback((): void => {
+    if (regionRef.current) changeRegion(undefined);
+    // Reported to the extension by the selection change handler above.
+    selection?.forDocument(documentId).clear();
+  }, [changeRegion, documentId, selection]);
+
+  return { region, clear, copyForAgent, copyText };
 }
 
 export type SelectionReporting = ReturnType<typeof useSelectionReporting>;
