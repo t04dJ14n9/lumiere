@@ -22,12 +22,21 @@ shows "N / M" for the selected match (counting stops at 1000), Enter and
 Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,
 Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
 Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
+Note text and code use VS Code's editor font settings as they apply to Markdown
+files, so `[markdown]` overrides count as in the built-in text editor:
+`editor.fontFamily` (with a monospace fallback), `fontSize`, `fontWeight`,
+`letterSpacing`, `fontLigatures` (off by default, as in VS Code) and
+`fontVariations`. `editor.lineHeight` applies when set; at its default (0) the
+note keeps Obsidian's 1.5. Code is the same size as the text. These are native
+settings (`nativeConfigKeys`), not contributed again; `font.ts` turns them into
+CSS variables on the editor.
 
 ## Files
 
 - `selection.ts`: host-held frozen selection snapshots, source coordinates and stale validation.
 
-- `manifest.ts`: core identity and indentation configuration schema.
+- `manifest.ts`: core identity, indentation and native font configuration schema.
+- `font.ts`: editor font settings to the note's CSS variables.
 - `api.ts`: editor, panel, menu, view-state and event contracts.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.

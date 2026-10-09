@@ -32,7 +32,9 @@ export function readSettings(
   settings: SettingsReader,
   native?: SettingsReader,
 ): ReturnType<Workbench["config"]> {
-  const options = editorConfig.parse(pluginConfiguration(settings, editor));
+  const options = editorConfig.parse(
+    pluginConfiguration(settings, editor, native),
+  );
   return {
     debugLogging: settings.get("debug.logging", false) ?? false,
     editor: options,

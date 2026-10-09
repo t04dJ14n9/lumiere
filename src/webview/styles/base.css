@@ -33,7 +33,10 @@
     color-mix(in srgb, var(--vscode-editor-foreground, #888) 10%, transparent)
   );
   --surface: var(--vscode-editorWidget-background, var(--code));
-  /* Note text follows VS Code's editor.fontFamily and editor.fontSize. */
+  /*
+   * Note text follows VS Code's editor font settings for Markdown files: the
+   * editor plugin sets these on the editor (font.ts); these are fallbacks.
+   */
   --text-font: var(
     --vscode-editor-font-family,
     -apple-system,
@@ -43,6 +46,11 @@
   );
   --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
   --text-size: var(--vscode-editor-font-size, 16px);
+  /*
+   * Code uses the same editor font as the text, so it keeps the text's size
+   * (as in the built-in editor) rather than Obsidian's smaller code.
+   */
+  --code-size: 1em;
   --file-line-width: 700px;
   --file-margins: 32px;
 }
@@ -84,7 +92,11 @@ button {
   overflow: auto;
   font-family: var(--text-font);
   font-size: var(--text-size);
-  line-height: 1.5;
+  font-weight: var(--text-weight, normal);
+  line-height: var(--line-height, 1.5);
+  letter-spacing: var(--text-letter-spacing, normal);
+  font-feature-settings: var(--text-features, normal);
+  font-variation-settings: var(--text-variations, normal);
 }
 #app .cm-content {
   padding: 32px var(--file-margins) 40vh;

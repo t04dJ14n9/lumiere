@@ -100,7 +100,7 @@
   color: var(--vscode-textPreformat-foreground, inherit);
   background: var(--code);
   font-family: var(--code-font);
-  font-size: 0.875em;
+  font-size: var(--code-size);
 }
 .md-highlight,
 .markdown-rendered mark {
@@ -225,7 +225,7 @@
   padding-inline: 16px;
   background: var(--code);
   font-family: var(--code-font);
-  font-size: 0.875em;
+  font-size: var(--code-size);
 }
 /*
  * Code blocks are always these lines, so the caret never changes their size:
@@ -246,7 +246,7 @@
 }
 #app .cm-line.md-table-source {
   font-family: var(--code-font);
-  font-size: 0.875em;
+  font-size: var(--code-size);
 }
 /* One bar per quote level (--quote-depth), each indented 16px further. */
 #app .cm-line.md-quote {
@@ -343,7 +343,7 @@ input[type="checkbox"] {
   border-radius: 6px;
   background: var(--code);
   overflow: auto;
-  font-size: 0.875em;
+  font-size: var(--code-size);
   line-height: 1.5;
 }
 .markdown-rendered pre code {

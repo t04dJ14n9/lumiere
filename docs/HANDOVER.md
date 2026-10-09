@@ -84,7 +84,8 @@ completion and Phase 8 records) first.
   wide tables scroll in their own box (52b6a3c); missing-embed text
   (0fdbf93); link hover card (48c2b65).
 - Line numbers laid out like VS Code's gutter, on by default (00f456f);
-  note text follows `editor.fontFamily`/`editor.fontSize` (3b78faf).
+  note text follows `editor.fontFamily`/`editor.fontSize` (3b78faf), now
+  as they apply to Markdown files (see "Editor font" below).
 - Link updates read offsets from the open document and save notes they
   edit after a rename (b335772).
 
@@ -178,6 +179,48 @@ completion and Phase 8 records) first.
   moved about 3px); unit tests `livePreview/code-lines.test.ts` and
   `codeBlocks/code.test.ts`. Checks: `pnpm check` 577/577, browser 44/44,
   native 2/2.
+
+### Editor font (FONTCOMMIT)
+
+- Owner question: why the note's font looks odd, and whether it follows
+  Cursor's or VS Code's font settings. Both apps work the same way (Cursor is
+  a VS Code fork). The note used VS Code's webview variables, which hold only
+  the global `editor.fontFamily`/`fontSize`. Measured against the built-in
+  text editor on the same note (native probe, VS Code 1.141 and Cursor
+  3.24.9 on Linux, defaults: Droid Sans Mono 14px in both):
+  - `[markdown]` font overrides were ignored (global 13px instead of the
+    Markdown 18px).
+  - `editor.fontWeight`, `letterSpacing`, `fontVariations` and
+    `lineHeight` were ignored.
+  - Ligatures were on in the note but off in the text editor, VS Code's
+    default. Fonts like Fira Code or Cascadia Code drew `=>` and `!=` as
+    ligatures only in the note.
+  - The configured family had no fallback, so a font that isn't installed
+    fell back to the browser's serif.
+  - Code was 0.875 of the text size in the same face.
+- Now the host reads those settings as they apply to Markdown files and the
+  editor sets them as CSS variables (`src/plugins/editor/font.ts`):
+
+  | Note property | Follows | Notes |
+  | --- | --- | --- |
+  | Text and code family | `editor.fontFamily` (`[markdown]` too) | `monospace` fallback added |
+  | Text and code size | `editor.fontSize` | code no longer smaller |
+  | Weight | `editor.fontWeight` | bold and headings stay bold |
+  | Line height | `editor.lineHeight` when set | default 0 keeps 1.5 (Obsidian), about 21px vs the text editor's 19px at 14px |
+  | Letter spacing | `editor.letterSpacing` | |
+  | Ligatures | `editor.fontLigatures` | off by default, as in VS Code |
+  | Variations | `editor.fontVariations` | |
+  | Heading sizes | none | Obsidian's scale (1.618em for H1 and so on) |
+  | Menus, popovers | VS Code's global editor font | outside the note |
+
+  `markdownWorkbench.*` has no font settings of its own. Note text in the
+  editor's monospace font is the owner's choice (3b78faf).
+- Tests:
+  - `test/vscode/font.spec.ts` compares the note with the built-in editor
+    under `[markdown]` overrides. It failed before the change (13px vs 18px)
+    and passes in VS Code and Cursor.
+  - Unit tests: `src/plugins/editor/font.test.ts` and
+    `test/unit/settings/editor.test.ts`.
 
 ## Remaining
 

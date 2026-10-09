@@ -23,7 +23,18 @@ test("editor settings have application defaults and reconfigure without changing
     rightToLeft: false,
     useTabs: true,
     tabSize: 4,
+    // Native editor font settings for Markdown; empty until the host reads them.
+    fontFamily: "",
+    fontSize: 0,
+    fontWeight: "normal",
+    lineHeight: 0,
+    letterSpacing: 0,
+    fontLigatures: false,
+    fontVariations: false,
   });
+  // VS Code's defaults: ligatures off, no variations.
+  const style =
+    '--text-weight: normal; --text-features: "liga" off, "calt" off; --text-variations: normal';
   const compartment = new Compartment();
   let state = EditorState.create({
     doc: "one\ntwo",
@@ -32,6 +43,7 @@ test("editor settings have application defaults and reconfigure without changing
   });
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "ltr",
+    style,
   });
   assert.deepEqual(
     EditorState.create({
@@ -39,7 +51,7 @@ test("editor settings have application defaults and reconfigure without changing
     })
       .facet(EditorView.editorAttributes)
       .at(-1),
-    { dir: "ltr", class: "is-readable-line-width" },
+    { dir: "ltr", class: "is-readable-line-width", style },
   );
   const previous = state;
   state = state.update({
@@ -56,6 +68,7 @@ test("editor settings have application defaults and reconfigure without changing
   assert.equal(state.facet(editorSettings).strictLineBreaks, true);
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "rtl",
+    style,
   });
 });
 test("resource settings use manifest aliases and validate all editor fields", () => {
@@ -224,5 +237,57 @@ test("only Copy Link for Agent remains of the agent commands", async () => {
       menus.some((menu) => menu.command.endsWith(".copyForAgent")),
       false,
     );
+  }
+});
+
+test("note text follows the native editor font settings for Markdown files, which are not contributed again", async () => {
+  const reader: SettingsReader = {
+    get: <T>(_key: string, fallback?: T) => fallback,
+  };
+  // What VS Code returns for a Markdown file, [markdown] overrides included.
+  const markdown: Record<string, unknown> = {
+    "editor.fontFamily": "Fira Code",
+    "editor.fontSize": 18,
+    "editor.fontWeight": "300",
+    "editor.lineHeight": 27,
+    "editor.letterSpacing": 0.5,
+    "editor.fontLigatures": true,
+    "editor.fontVariations": false,
+  };
+  const native: SettingsReader = {
+    get: <T>(key: string) => markdown[key] as T,
+  };
+  const editor = readSettings(reader, native).editor!;
+  assert.deepEqual(
+    [
+      editor.fontFamily,
+      editor.fontSize,
+      editor.fontWeight,
+      editor.lineHeight,
+      editor.letterSpacing,
+      editor.fontLigatures,
+      editor.fontVariations,
+    ],
+    ["Fira Code", 18, "300", 27, 0.5, true, false],
+  );
+  assert.deepEqual(
+    EditorState.create({ extensions: settingsExtensions(editor) })
+      .facet(EditorView.editorAttributes)
+      .at(-1),
+    {
+      dir: "ltr",
+      style:
+        '--text-font: Fira Code, monospace; --code-font: Fira Code, monospace; --text-size: 18px; --text-weight: 300; --line-height: 1.5; --text-letter-spacing: 0.5px; --text-features: "liga" on, "calt" on; --text-variations: normal',
+    },
+  );
+  // A hand-edited settings.json with a wrong type does not break the editor.
+  markdown["editor.fontSize"] = "big";
+  markdown["editor.fontLigatures"] = 3;
+  const fallback = readSettings(reader, native).editor!;
+  assert.equal(fallback.fontSize, 0);
+  assert.equal(fallback.fontLigatures, false);
+  const generated = await contributions();
+  for (const key of Object.keys(generated.configuration.properties)) {
+    assert.ok(!/\.(font|lineHeight|letterSpacing)/.test(key), key);
   }
 });

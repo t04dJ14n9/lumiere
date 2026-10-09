@@ -3,6 +3,7 @@ import { EditorState, Facet } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import type { Infer } from "../../kernel";
 import { config } from "./manifest";
+import { fontStyle } from "./font";
 const defaults = Object.freeze(config.parse({}));
 export const editorSettings = Facet.define<
   Infer<typeof config>,
@@ -19,6 +20,8 @@ export function settingsExtensions(options: Partial<Infer<typeof config>>) {
       dir: value.rightToLeft ? "rtl" : "ltr",
       // The stylesheet centres a 700 px measure when this class is present.
       ...(value.readableLineLength ? { class: "is-readable-line-width" } : {}),
+      // Note text follows the editor font settings for Markdown files.
+      style: fontStyle(value),
     }),
   ];
 }

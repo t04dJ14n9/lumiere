@@ -35,16 +35,16 @@
 #app .cm-lineNumbers .cm-gutterElement {
   min-width: 0;
   padding: 0 2px 0 0;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: var(--vscode-editor-font-size, 14px);
-  font-weight: var(--vscode-editor-font-weight, normal);
-  font-feature-settings: var(--vscode-editor-font-feature-settings, normal);
-  line-height: calc(1.5 * var(--text-size));
+  font-family: var(--code-font);
+  font-size: var(--text-size);
+  font-weight: var(--text-weight, normal);
+  font-feature-settings: var(--text-features, normal);
+  line-height: calc(var(--line-height, 1.5) * var(--text-size));
   text-align: right;
   white-space: nowrap;
 }
 #app .mw-editor.is-source-mode .cm-lineNumbers .cm-gutterElement {
-  line-height: 1.5;
+  line-height: var(--line-height, 1.5);
 }
 /* Without the folding area, keep VS Code's gap before the text. */
 #app .cm-gutter.cm-lineNumbers:last-child .cm-gutterElement {
@@ -62,7 +62,7 @@
   overflow: hidden;
 }
 #app .mw-line-number-stack > div {
-  flex: 0 1 calc(1.5 * var(--text-size));
+  flex: 0 1 calc(var(--line-height, 1.5) * var(--text-size));
   min-height: 0;
   overflow: hidden;
 }

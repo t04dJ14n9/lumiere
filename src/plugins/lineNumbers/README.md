@@ -7,7 +7,8 @@ by default and follows `editor.lineNumbers` for Markdown files.
 ## How it works
 
 The plugin registers its own CodeMirror gutter through Editor. Numbers use the
-editor font family, size and weight, VS Code's `editorLineNumber.foreground`
+note's editor font family, size, weight and line height (see the editor
+plugin's font settings), VS Code's `editorLineNumber.foreground`
 colour (`activeForeground` on the caret line), right-aligned in a column at least
 five digits wide, like VS Code's `lineNumbersMinChars`. Each number is centred on
 its text line; heading lines get the heading's padding and line height. The

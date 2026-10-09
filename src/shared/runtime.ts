@@ -73,6 +73,14 @@ export interface Workbench {
       strictLineBreaks?: boolean;
       rightToLeft?: boolean;
       defaultMode?: "livePreview" | "source";
+      /** VS Code's editor font settings as they apply to Markdown files. */
+      fontFamily?: string;
+      fontSize?: number;
+      fontWeight?: string;
+      lineHeight?: number;
+      letterSpacing?: number;
+      fontLigatures?: boolean | string;
+      fontVariations?: boolean | string;
     };
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";
