@@ -132,7 +132,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.askAgentAboutSelection | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `askAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-for-agent/ask.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
-| Command: markdownWorkbench.copyForAgent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.unfoldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -241,7 +240,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.vault.rootMarkers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.vault.excludedFiles | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.preset | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Selection-only Copy for Agent, Add File Property and Open as Text title actions | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Add File Property and Open as Text title actions | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native static context menu; contextual table/property menus | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim host-collision keys only while Vim is enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim :w, :q, :wq, :x, :u and :red | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

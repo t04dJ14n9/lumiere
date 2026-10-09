@@ -1082,7 +1082,7 @@ the active editor. They work in the command palette, keybindings and menus.
 | table commands (insert/move/delete row and column, align, sort) | `editor:table-*` | tables | — |
 | `toggleSourceMode` | `editor:toggle-source` | livePreview | — |
 | `openAsText` | none | editor | title action |
-| `copyForAgent` | none | copyForAgent | Mod+Alt+C |
+| `askAgentAboutSelection` | none | copyForAgent | none (context menu) |
 | `quickSwitcher` | `switcher:open` | quickSwitcher | none by default (Mod+O conflicts with VS Code's Open) |
 
 Rules:
@@ -1093,11 +1093,11 @@ Rules:
   (Vim's Ctrl-O, Ctrl-B and others) are consumed only while the `vim` plugin is
   active (`markdownWorkbench.plugin.vim` context key), as the source's
   `consumeVimHostShortcut` does. The list moves to the `vim` manifest.
-- The editor title bar keeps **Copy for Agent** (with a selection),
-  **Add File Property** and **Open as Text**. **Toggle Outline** goes away
+- The editor title bar keeps **Add File Property** and **Open as Text**
+  (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
   (§13 outline).
 - The right-click menu uses VS Code's `webview/context` menu with
-  `webviewSection` for static commands (formatting, Copy for Agent).
+  `webviewSection` for static commands (formatting, Ask Agent about Selection).
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions
@@ -1186,7 +1186,13 @@ The host `links` plugin owns one pipeline:
        (`markdownWorkbench.files.newNoteFolder`) and open it, as Obsidian
        does.
 
-## 17. Copy for Agent (`copyForAgent` plugin)
+## 17. Ask Agent (`copyForAgent` plugin)
+
+Owner decision (2026-10-09): the Copy for Agent command, Mod+Alt+C, its
+title button and menu items are removed; plain Ctrl/Cmd+C copies text.
+**Ask Agent about Selection** keeps producing the text below and falls back
+to the clipboard. The plugin id and the public API (`createAgentReference`,
+`copyForAgent`) stay for compatibility.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 
@@ -1198,14 +1204,14 @@ Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
   reference uses the full URI. Lines are 1-based, from source offsets (a
   selection ending at column 0 excludes that line, as now).
 - Line numbers must match the file on disk. With unsaved changes, interactive
-  Copy for Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
+  Ask Agent offers **Save and Copy**, **Copy Text Only** or **Cancel**, as
   PDF Workbench does. The API refuses a dirty document with `DocumentDirty`.
 - The selection is captured from the webview with `editor.captureSelection`
   after a flush, and is rejected if the document version moved (as
   `captureActiveSelectionContext` does). A table cell selection maps to its
   source range.
-- Available from the title bar (with a selection), the context menu, the
-  command palette and Mod+Alt+C.
+- Available from the editor context menu, the selection menu and the
+  command palette.
 
 ## 18. Public API v1 and outside extensions
 

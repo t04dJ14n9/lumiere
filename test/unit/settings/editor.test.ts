@@ -120,7 +120,6 @@ test("required settings, title actions, native context menus and unbound verify 
     generated.menus["editor/title"].map((menu) => menu.command).sort(),
     [
       "markdownWorkbench.addProperty",
-      "markdownWorkbench.copyForAgent",
       "markdownWorkbench.openAsText",
       "markdownWorkbench.titleActions",
     ],
@@ -189,4 +188,23 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
       key.startsWith("markdownWorkbench.lineNumbers."),
     ),
   );
+});
+
+test("only Ask Agent about Selection remains of the agent commands", async () => {
+  const generated = await contributions();
+  const commands = generated.commands.map((command) => command.command);
+  assert.ok(commands.includes("markdownWorkbench.askAgentAboutSelection"));
+  assert.equal(commands.includes("markdownWorkbench.copyForAgent"), false);
+  assert.equal(
+    generated.keybindings.some((binding) =>
+      binding.command.endsWith(".copyForAgent"),
+    ),
+    false,
+  );
+  for (const menus of Object.values(generated.menus)) {
+    assert.equal(
+      menus.some((menu) => menu.command.endsWith(".copyForAgent")),
+      false,
+    );
+  }
 });

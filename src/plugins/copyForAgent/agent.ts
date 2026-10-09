@@ -148,7 +148,7 @@ export class AgentReferences implements Agent {
       config.preset !== "obsidian" ||
       config.features?.copyForAgent?.enabled === false
     ) {
-      throw new RpcError("PluginDisabled", "Copy for Agent is disabled");
+      throw new RpcError("PluginDisabled", "Ask Agent is disabled");
     }
   }
   private assertActive(panel: EditorPanel, token?: Cancellation): void {

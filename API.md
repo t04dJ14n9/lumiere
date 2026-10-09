@@ -78,9 +78,9 @@ has two editors with two IDs and the same `documentId`.
 | --- | --- |
 | `getSelection(editorId, { token? })` | Waits until the editor's pending edits reach the document, then returns its main selection as a frozen, host-held `SelectionSnapshot` (`from`, `to`, `startLine`, `endLine`, `text`, `version`, `isDirty`, `sourceSha256`), or `undefined` for an empty selection. |
 | `createAgentReference(selection)` | The LLM Wiki-compatible reference, `@notes/a.md#12-18`. Accepts only the object `getSelection` returned: a copy is `InvalidArgument`, and the original is `StaleSelection` once the document has changed. `DocumentDirty` for unsaved notes, because the line numbers must match the file on disk. |
-| `copyForAgent(editorId)` | Copy for Agent without prompts. `DocumentDirty` for unsaved notes; `PluginDisabled` when the Copy for Agent plugin is off. |
+| `copyForAgent(editorId)` | Copies the selection's `@path#lines` reference and quoted passage (the text Ask Agent about Selection sends) without prompts. `DocumentDirty` for unsaved notes; `PluginDisabled` when the Ask Agent plugin (`copyForAgent`) is off. Kept for existing callers: the editor's own Copy for Agent command was removed, this method was not. |
 
-A selection ending at column 0 excludes that line, as Copy for Agent does.
+A selection ending at column 0 excludes that line, as Ask Agent about Selection does.
 
 ## Vault
 

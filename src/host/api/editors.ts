@@ -47,7 +47,7 @@ export function editorOperations(
       ),
     async createAgentReference(selection) {
       if (!root.agent) {
-        throw new RpcError("PluginDisabled", "Copy for Agent is unavailable");
+        throw new RpcError("PluginDisabled", "Ask Agent is unavailable");
       }
       const reference = root.agent.reference(selection);
       return Object.freeze({ ...reference, uri: platform.uri(reference.uri) });
@@ -55,7 +55,7 @@ export function editorOperations(
     async copyForAgent(id) {
       panelById(root, id);
       if (!root.agent) {
-        throw new RpcError("PluginDisabled", "Copy for Agent is unavailable");
+        throw new RpcError("PluginDisabled", "Ask Agent is unavailable");
       }
       await root.agent.copy(id);
     },

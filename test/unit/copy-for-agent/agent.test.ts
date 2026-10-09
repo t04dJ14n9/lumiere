@@ -114,7 +114,7 @@ test("API copy refuses dirty notes; interactive choices copy text, cancel or sav
   assert.equal(f.state.dirty, false);
   await f.pair.dispose();
 });
-test("Copy for Agent host removes disabled handlers and restores them on enable", async () => {
+test("Ask Agent host removes disabled handlers and restores them on enable", async () => {
   const f = fixture();
   const root = Context.create();
   root.provide("editors", f.editors);
@@ -122,17 +122,17 @@ test("Copy for Agent host removes disabled handlers and restores them on enable"
   root.provide("workbench", f.workbench);
   root.plugin(copyForAgentHost);
   await root.settled();
-  assert.equal(await f.pair.client.call(protocol, "copy", {}), true);
+  assert.equal(await f.pair.client.call(protocol, "ask", {}), true);
   f.state.enabled = false;
   f.changeConfig();
-  await assert.rejects(f.pair.client.call(protocol, "copy", {}), {
+  await assert.rejects(f.pair.client.call(protocol, "ask", {}), {
     code: "PluginDisabled",
   });
   f.state.enabled = true;
   f.changeConfig();
-  assert.equal(await f.pair.client.call(protocol, "copy", {}), true);
+  assert.equal(await f.pair.client.call(protocol, "ask", {}), true);
   await root.dispose();
-  await assert.rejects(f.pair.client.call(protocol, "copy", {}), {
+  await assert.rejects(f.pair.client.call(protocol, "ask", {}), {
     code: "PluginDisabled",
   });
   await f.pair.dispose();

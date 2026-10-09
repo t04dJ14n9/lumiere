@@ -1,9 +1,11 @@
 import { defineManifest } from "../../shared/manifest";
+// The id stays `copyForAgent` so `markdownWorkbench.plugins.copyForAgent.enabled`
+// and the public API's `copyForAgent` keep working for existing users.
 export default defineManifest({
   id: "copyForAgent",
-  title: "Copy for Agent",
+  title: "Ask Agent",
   description:
-    "Copy a saved source line reference or selected text for an agent.",
+    "Ask an agent about selected text, with a saved source line reference.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
@@ -15,18 +17,6 @@ export default defineManifest({
         when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
         group: "agent",
       },
-      {
-        command: "copyForAgent",
-        location: "webview/context",
-        when: "webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
-        group: "agent",
-      },
-      {
-        command: "copyForAgent",
-        location: "editor/title",
-        when: "markdownWorkbench.hasSelection",
-        group: "navigation",
-      },
     ],
     commands: [
       {
@@ -34,14 +24,6 @@ export default defineManifest({
         title: "Ask Agent about Selection",
         icon: "$(comment-discussion)",
         editorCommand: "askAgentAboutSelection",
-      },
-      {
-        id: "copyForAgent",
-        title: "Copy for Agent",
-        icon: "$(copy)",
-        editorCommand: "copyForAgent",
-        key: "ctrl+alt+c",
-        mac: "cmd+alt+c",
       },
     ],
   },

@@ -108,10 +108,15 @@ completion and Phase 8 records) first.
   instead of the note, which is Cursor's global undo routing; Edit: Undo
   and Ctrl+Z after clicking into the note work.
 
-### Copy for Agent and Ask Agent about Selection (0dd4d09, 86152c3)
+### Ask Agent about Selection (0dd4d09, 86152c3)
 
-- Copy for Agent (Ctrl/Cmd+Alt+C) copies `@Note.md#a-b`, a blank line and
-  the selected passage quoted with `> `.
+- Copy for Agent (its command, Ctrl/Cmd+Alt+C, title button and menu
+  items) was removed by owner decision on 2026-10-09 (branch
+  `remove-copy-for-agent`): plain Ctrl/Cmd+C covers copying. Ask Agent
+  about Selection keeps sending `@Note.md#a-b`, a blank line and the
+  selected passage quoted with `> `, and its clipboard fallback. The plugin
+  id `copyForAgent` (its enable setting) and the public API's
+  `createAgentReference`/`copyForAgent` are unchanged for existing callers.
 - **Ask Agent about Selection** (selection menu and editor context menu)
   opens Cursor's agent chat with that payload on the clipboard (Cursor
   offers no prefill) and a notice saying so; in VS Code it opens the chat

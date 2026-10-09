@@ -121,7 +121,7 @@ function writeParity(generated: Awaited<ReturnType<typeof contributions>>) {
     ),
   );
   actions.push(
-    "Selection-only Copy for Agent, Add File Property and Open as Text title actions",
+    "Add File Property and Open as Text title actions",
     "Native static context menu; contextual table/property menus",
     "Vim host-collision keys only while Vim is enabled",
     "Vim :w, :q, :wq, :x, :u and :red",

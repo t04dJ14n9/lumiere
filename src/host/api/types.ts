@@ -140,7 +140,12 @@ export interface MarkdownWorkbenchApi {
   ): Promise<SelectionSnapshot | undefined>;
   /** Rejects with `DocumentDirty` unless the note is saved. */
   createAgentReference(selection: SelectionSnapshot): Promise<AgentReference>;
-  /** Copy for Agent without prompts; rejects with `DocumentDirty` for unsaved notes. */
+  /**
+   * Copy the selection's reference and quoted passage without prompts (the
+   * text Ask Agent about Selection sends); rejects with `DocumentDirty` for
+   * unsaved notes. Kept for existing callers after the editor's Copy for
+   * Agent command was removed.
+   */
   copyForAgent(editorId: EditorId): Promise<void>;
 
   // Vault (read-only)

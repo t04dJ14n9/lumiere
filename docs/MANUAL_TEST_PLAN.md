@@ -512,12 +512,17 @@ Off by default.
    Shift+Mod+V pastes plain text. Inside a table cell only that cell
    changes. No pasted script runs.
 
-### copyForAgent
+### copyForAgent (Ask Agent)
 
-1. Select lines and run **Copy for Agent** (palette, menu, title action,
-   Mod+Alt+C): the clipboard holds `@path#start-end` (`#N` for one line).
+1. Select lines and run **Ask Agent about Selection** (palette, editor
+   context menu, selection menu): the agent chat receives, or the clipboard
+   holds, `@path#start-end` (`#N` for one line), a blank line and the
+   passage quoted with `> `, with a notice saying where it went.
 2. With unsaved changes, a prompt offers Save and Copy, Copy Text Only and
    Cancel; each does only that.
+3. There is no Copy for Agent command, title button, context menu item or
+   Mod+Alt+C binding (removed by owner decision; Ctrl+C copies plain
+   text).
 
 ## External plugins
 
@@ -554,7 +559,6 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.askAgentAboutSelection` — Ask Agent about Selection | none | Select two lines, right-click → Ask Agent about Selection. VS Code with only a chat extension (e.g. Copilot Chat): chat opens with `@Note.md#a-b` and the quoted passage prefilled, cursor after it. Cursor with no Claude Code/Codex extension: a new agent chat opens and a notice says the passage is copied; paste shows the same payload. With Claude Code or Codex installed (and `askAgent.target` = `auto`), nothing opens: a notice says the passage is copied to paste into your agent. With no chat installed, the same. |
-| `markdownWorkbench.copyForAgent` — Copy for Agent | ctrl+alt+c (Mac cmd+alt+c) | On a disposable fixture, run Copy for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workbench for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workbench for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |

@@ -43,14 +43,10 @@ function registerPanelHandlers(ctx: Context, agent: AgentReferences): void {
       ) {
         continue;
       }
-      const copy = panel.rpc.handle(protocol, "copy", (_request, token) =>
-        agent.copy(panel.id, { interactive: true, token }),
-      );
       const ask = panel.rpc.handle(protocol, "ask", (_request, token) =>
         agent.copy(panel.id, { interactive: true, token, ask: true }),
       );
       handlers.set(panel.id, () => {
-        void copy();
         void ask();
       });
     }
