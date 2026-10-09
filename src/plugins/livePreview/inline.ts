@@ -212,6 +212,11 @@ class InlineDecorations implements InlineContext {
     if (name === "CodeMark" && parent.name !== "InlineCode") {
       return;
     }
+    // A setext underline is its own line; Obsidian keeps it, faint.
+    if (name === "HeaderMark" && parent.name.startsWith("SetextHeading")) {
+      this.mark(from, to, "md-setext-mark");
+      return;
+    }
     this.hide(
       from,
       to +

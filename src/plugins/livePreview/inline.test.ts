@@ -92,3 +92,28 @@ test("a bare URL's target keeps its scheme and maps addresses to https or mail",
   assert.equal(bareUrlTarget("www.a.test"), "https://www.a.test");
   assert.equal(bareUrlTarget("me@a.test"), "mailto:me@a.test");
 });
+
+test("a setext heading keeps its underline visible and faint off the caret", () => {
+  const doc = "Setext heading\n--------------\n\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const underline = doc.indexOf("-");
+  const decorations = inlineDecorations(state, [{ from: 0, to: doc.length }]);
+  const found: { from: number; to: number; cls?: string }[] = [];
+  decorations.between(0, doc.length, (from, to, value) => {
+    found.push({ from, to, cls: value.spec.class });
+  });
+  assert.ok(
+    found.some(
+      (d) =>
+        d.from === underline &&
+        d.to === underline + 14 &&
+        d.cls === "md-setext-mark",
+    ),
+  );
+  assert.ok(!found.some((d) => d.from === underline && d.cls === undefined));
+  assert.ok(found.some((d) => d.cls === "md-heading md-h2" && d.from === 0));
+});
