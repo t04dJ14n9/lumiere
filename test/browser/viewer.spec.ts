@@ -520,6 +520,9 @@ test('a reloaded file reopens at the same place and zoom', async ({ page }) => {
   // Partway down page 7.
   await page.locator('.viewport').evaluate(viewport => viewport.scrollBy(0, 200));
   await expect(field).toHaveValue('7');
+  // The viewer remembers the place from its scroll events; let them arrive
+  // before the reload.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const before = (await pageOffset(page, 7))!;
 
   await page.evaluate(async () => {
