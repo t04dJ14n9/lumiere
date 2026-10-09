@@ -1,6 +1,9 @@
 import type { Infer } from "../../kernel";
 import type { request as requestSchema } from "./protocol";
-export type LinkRequest = Infer<typeof requestSchema> & { source: string };
+export type LinkRequest = Infer<typeof requestSchema> & {
+  source: string;
+  editorId?: string;
+};
 declare module "../../kernel/types" {
   interface Events {
     /** @mode bail */ "links/open": (

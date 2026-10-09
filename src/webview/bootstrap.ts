@@ -1,5 +1,5 @@
 import { pluginRank } from "../plugins/catalog";
-import { featureController } from "./features";
+import { pluginReporting } from "./plugin-reporting";
 import type { Infer } from "../kernel";
 import type { viewState } from "../plugins/editor/protocol";
 import { Context } from "../kernel";
@@ -52,14 +52,7 @@ export async function bootstrap(
         .catch((error) => root.logger.error("Editor settings failed", error));
     }),
   );
-  const configure = featureController(root);
-  root.effect(() =>
-    rpc.on(protocol, "configure", (settings) => {
-      void configure(settings).catch((error) =>
-        root.logger.error("Feature settings failed", error),
-      );
-    }),
-  );
+  const configure = pluginReporting(root, rpc);
   await configure(init.features, init.preset === "obsidian");
   await root.settled();
   const failed = [...root.runtime.fibers].find(

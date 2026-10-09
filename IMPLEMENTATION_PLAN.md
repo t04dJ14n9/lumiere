@@ -2516,3 +2516,34 @@ plugin state reporting/events, API-wide unit coverage, API.md and complete sampl
 plugin. Phase 8 packaging/notices/documentation/handover remains. Owner should test
 external action menus and slow/recursive/sanitized processor output after the API
 sample is available; earlier manual parity and performance limits remain open.
+
+### Claude audit and fixes, 2026-10-08
+
+Reviewed all 16 commits after 0a2fe64 through 74a6507. Claude added the
+feature-specific fixture vault (9a56c91), fixed initial editor registration
+(5507fb6) and outline startup (33b4a22), and made Backlinks/Outgoing Links
+default off (f9bd92d). The CSS restoration (cfac610) supplies plain bundled
+styles with #app specificity, callout icons, heading-aligned line numbers and
+title actions. WebM CSP (c15ae2b), indented code (f0efe7f), adjacent footnotes
+(53948c1), arbitrary task statuses (ef68330), escaped table pipes (cc91674),
+bare URL links (8e91790), error formatting/visible render errors (e587648),
+and Copy for Agent formatting (ae615ca) have regression coverage. Kernel
+cleanup (057ea39) releases ended effects/fibers; 38839c6 locks readability
+limits and reviewed lint exceptions; 74a6507 consolidates Workbench and removes
+dead canvas geometry. These are their committed changes, not a claim of owner
+visual acceptance.
+
+### Phase 7 — Public API facade and external plugins, 2026-10-08
+
+Committed the restored API with Claude's corrections: frozen API v1, documented
+public types, authentic/stale selection checks, per-panel snapshots and states,
+resource-scoped plugin overrides, isolated external services and revocation of
+retained contexts. Document events cover open Markdown Workbench notes only.
+Public declarations import only vscode and one another. All 10 API units pass.
+
+Checks: `pnpm check` **453/453**, including format/lint/types/contributions;
+existing browser smoke **14/14**; existing native smoke **1/1**, freshly packaged
+and installed in an isolated /tmp profile. No lint exceptions or smoke expansion.
+Ledger remains **91/22/2/333/0** (448 rows). Phase 7 documentation/completion and
+Phase 8 remain, along with the audit's logging and management-command gaps.
+Manual acceptance is unrun.

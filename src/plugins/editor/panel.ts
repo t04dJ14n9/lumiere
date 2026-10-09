@@ -1,3 +1,7 @@
+import {
+  runtimeStates,
+  type RuntimePluginState,
+} from "../../shared/plugin-state";
 import { Context } from "../../kernel";
 import type { Documents } from "../document/api";
 import type { EditorPanel } from "./api";
@@ -27,6 +31,7 @@ export function createPanel(
   owned.provide("rpc", rpc);
   configure(owned, shell);
   const panel: EditorPanel = {
+    ...panelReporting(owned, rpc, shell.document, workbench),
     id: shell.id,
     get column() {
       return shell.column;
@@ -98,17 +103,7 @@ function registerConfiguration(
   if (workbench.onConfiguration) {
     owned.effect(() =>
       workbench.onConfiguration!(() => {
-        const config = workbench.config(document);
-        rpc.notify(
-          protocol,
-          "configureEditor",
-          editorConfig.parse(config.editor ?? {}),
-        );
-        rpc.notify(
-          protocol,
-          "configure",
-          config.preset === "minimal" ? {} : (config.features ?? {}),
-        );
+        sendConfiguration(rpc, document, workbench);
       }),
     );
   }
@@ -121,4 +116,53 @@ function createPanelEndpoint(transport: PanelShell["transport"]): Endpoint {
       return () => clearTimeout(timer);
     },
   });
+}
+
+function panelReporting(
+  owned: Context,
+  rpc: Endpoint,
+  document: PanelShell["document"],
+  workbench: Workbench,
+) {
+  let initialized = () => {};
+  const ready = new Promise<void>((resolve) => {
+    initialized = resolve;
+  });
+  let remote: readonly RuntimePluginState[] = [];
+  owned.effect(() => rpc.on(protocol, "initialized", initialized));
+  owned.effect(() => initialized);
+  owned.effect(() =>
+    rpc.on(protocol, "pluginsChanged", (states) => {
+      remote = states;
+    }),
+  );
+  return {
+    ready,
+    webviewPluginStates: () => remote,
+    pluginStates: () => [...runtimeStates(owned), ...remote],
+    async refreshPlugins() {
+      await ready;
+      owned.emit("editor/configure");
+      sendConfiguration(rpc, document, workbench);
+      await owned.settled();
+      remote = await rpc.call(protocol, "plugins", {});
+    },
+  };
+}
+function sendConfiguration(
+  rpc: Endpoint,
+  document: PanelShell["document"],
+  workbench: Workbench,
+): void {
+  const config = workbench.config(document);
+  rpc.notify(
+    protocol,
+    "configureEditor",
+    editorConfig.parse(config.editor ?? {}),
+  );
+  rpc.notify(
+    protocol,
+    "configure",
+    config.preset === "minimal" ? {} : (config.features ?? {}),
+  );
 }

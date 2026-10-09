@@ -110,6 +110,14 @@ export async function contributions() {
             ]),
           ),
         ),
+        "markdownWorkbench.plugins.external": {
+          type: "object",
+          default: {},
+          additionalProperties: { type: "boolean" },
+          scope: "resource",
+          description:
+            "External host plugin enablement by registered plugin ID.",
+        },
         "markdownWorkbench.preset": {
           type: "string",
           enum: ["obsidian", "minimal"],

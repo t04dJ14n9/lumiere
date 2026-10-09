@@ -1,4 +1,4 @@
-import { features } from "../plugins/catalog";
+import { features, workbenchFeatures } from "../plugins/catalog";
 import editor, { config as editorConfig } from "../plugins/editor/manifest";
 import type { Manifest } from "../shared/manifest";
 import type { Workbench } from "../shared/runtime";
@@ -30,7 +30,7 @@ export function readSettings(
     mode: options.defaultMode,
     preset: settings.get("preset", "obsidian") ?? "obsidian",
     features: Object.fromEntries(
-      features.map((manifest) => [
+      [...features, ...workbenchFeatures].map((manifest) => [
         manifest.id,
         {
           enabled:

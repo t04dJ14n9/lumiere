@@ -57,9 +57,11 @@ export function hostFeatures(
       .catch((error) =>
         root.logger.error("Host feature configuration failed", error),
       );
+    root.runtime.track(queue);
   };
   if (workbench.onConfiguration) {
     root.effect(() => workbench.onConfiguration!(refresh));
   }
+  root.on("editor/configure", refresh);
   refresh();
 }

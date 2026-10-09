@@ -249,3 +249,4 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | External application schemes prompt; own application scheme opens directly | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
