@@ -985,7 +985,7 @@ corresponds to. "Source" names the module on the source branch.
 | `outgoingLinks` | Outgoing links | off | vault, editors, workbench | new |
 | `search` | embedded `query` blocks | on | vault, render | `search/*`, `host/query-session.ts` |
 | `folding` | *Fold heading*, *Fold indent* | on | editor | `outline.ts` (folding parts), presentation folds |
-| `lineNumbers` | *Show line numbers* | off | editor | `lineNumbers()` |
+| `lineNumbers` | *Show line numbers* | on | editor | `lineNumbers()` |
 | `indentGuides` | *Show indentation guides* | on | editor | new |
 | `vim` | *Vim key bindings* | off | editor, commands | `editor/vim.ts` |
 | `autoPair` | *Auto pair brackets*, *Auto pair Markdown syntax* | on | editor | `editor/markdown.ts` `autoPairing` |
@@ -1107,19 +1107,20 @@ Rules:
 
 ### 15.1 Editor settings (Obsidian → Markdown Workbench)
 
-Defaults are Obsidian's application defaults. The owner's reference profile
-(Vim and line numbers on, readable line length off) is a test profile, not the
-product default (§25).
+Defaults are Obsidian's application defaults, except where the owner decided
+otherwise (2026-10-09): line numbers on, readable line length off, Mermaid on.
+Vim stays off; the owner's Vim profile is a test profile, not the product
+default (§25).
 
 | Obsidian setting | Setting or plugin | Default |
 | --- | --- | --- |
 | Default editing mode | `markdownWorkbench.editor.defaultMode` (`livePreview` \| `source`) | `livePreview` |
-| Readable line length | `markdownWorkbench.editor.readableLineLength` | `true` (700 px measure, like the default theme) |
+| Readable line length | `markdownWorkbench.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
 | Strict line breaks | `markdownWorkbench.editor.strictLineBreaks` | `false` |
 | Properties in document | `markdownWorkbench.properties.display` | `visible` |
 | Show inline title | plugin `inlineTitle` | on |
 | Fold heading, Fold indent | `markdownWorkbench.folding.heading`, `.indent` | `true`, `true` |
-| Show line numbers | plugin `lineNumbers` | off |
+| Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |
 | Right-to-left | `markdownWorkbench.editor.rightToLeft` | `false` |
 | Spellcheck | plugin `spellcheck` | on |

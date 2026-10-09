@@ -7,8 +7,8 @@ completion and Phase 8 records) first.
 ## Done
 
 - Phases 0–8. Phase 7 and 8 records are in IMPLEMENTATION_PLAN.md. Checks:
-  `pnpm check` 483/483, browser smoke 14/14, native smoke 1/1 against the
-  packaged VSIX.
+  `pnpm check` 533/533, browser smoke 19/19, native smoke 1/1 against the
+  packaged VSIX in VS Code and in Cursor 3.24.9.
 - §5.7 logging (`src/host/logging.ts`, `src/plugins/editor/logging.ts`),
   §6.5 **Manage Plugins** and **Show Plugin Status**
   (`src/host/api/management.ts`), §25.2 **Use Markdown Workbench for
@@ -26,13 +26,78 @@ completion and Phase 8 records) first.
   setext underlines, nested quote bars, checked-task styling in Live Preview
   (`data-task` on lines, checkboxes and list items), line numbers beside
   rendered blocks. DESIGN §13/§19, PARITY.md and plugin READMEs corrected.
-- Footnotes redesigned after Obsidian's Live Preview: superscript numbers in
-  reading order, hover previews, click to the definition, definitions kept
-  as source with a muted marker (no definition widget or back-references).
+- Footnotes re-checked against Obsidian 1.14 (ac66543): a reference shows
+  as a small superscript of its own source (`[^1]`, `[^note]`,
+  `^[text]`) with faint brackets, numbers only inside rendered blocks; a
+  definition leads with its label in superscript, the faint `[^label]:`
+  source at the caret. Hover previews and click-to-definition kept.
 - The editor follows Obsidian's default look with plain CSS:
   `src/webview/styles/` plus one `<plugin>.css` per plugin. Do not
   reintroduce `EditorView.baseTheme` style objects.
 - Backlinks and Outgoing Links are off by default (owner decision).
+- Owner-decided defaults: line numbers on, Mermaid on, readable line length
+  off (DESIGN §15.1).
+
+### Obsidian 1.14 comparison follow-up (each fix with a unit test)
+
+- Editing: Tab/Shift+Tab indent in the note (9a3e55c); smart Enter and
+  Backspace in lists (50e7b47); find and replace bar with a match count on
+  Ctrl/Cmd+F (f7105ac); Ctrl/Cmd+B, I and K apply once (8a24c2e).
+- Rendering: block math reveals its source above the preview (281ade2);
+  indented code blocks (0ab6231); faint revealed markers (8689def); list
+  indent steps, guides, muted markers and hanging indents (8c8f26d); quote
+  text at normal colour (514fee8); inline HTML such as `<kbd>` and `<u>`
+  (40376cb); code language label (7175a63); external-link mark (67aa7d6);
+  faint block IDs (cc92832); callout titles and padding (aae7e8b, c121e62);
+  wide tables scroll in their own box (52b6a3c); missing-embed text
+  (0fdbf93); link hover card (48c2b65).
+- Line numbers laid out like VS Code's gutter, on by default (00f456f);
+  note text follows `editor.fontFamily`/`editor.fontSize` (3b78faf).
+- Link updates read offsets from the open document and save notes they
+  edit after a rename (b335772).
+
+### Cursor
+
+- `markdownWorkbench.editor.reclaimTextEditor` (`auto` = on in Cursor,
+  bf77ed1): when Cursor's own Markdown switch, or its remembered per-file
+  choice, sends a note to the text editor, the note reopens here. README
+  "In Cursor" explains the workspace association that wins over Cursor's
+  built-in Markdown editor for new opens.
+- Typing could insert twice in Cursor (b8a7dff): Cursor can send a change
+  event with no new text before an edit lands; the session took it for
+  the panel's edit and recorded the real one as a host edit, so the panel
+  resent it. Such events are now ignored. The native suite passed 6/6
+  against Cursor 3.24.9 afterwards (it failed about 1 in 3 before).
+- Native tests find Cursor's `bin/cursor` and its visible quick-input box
+  (2d5de13). Run against Cursor with
+  `VSCODE_EXECUTABLE=<cursor>/usr/share/cursor/cursor xvfb-run -a pnpm test:vscode`.
+- Ctrl+I in a Markdown Workbench note italicises in Cursor (checked by
+  hand). Ctrl+Z right after using the agent pane can go to the agent input
+  instead of the note, which is Cursor's global undo routing; Edit: Undo
+  and Ctrl+Z after clicking into the note work.
+
+### Copy for Agent and Ask Agent about Selection (0dd4d09, 86152c3)
+
+- Copy for Agent (Ctrl/Cmd+Alt+C) copies `@Note.md#a-b`, a blank line and
+  the selected passage quoted with `> `.
+- **Ask Agent about Selection** (selection menu and editor context menu)
+  opens Cursor's agent chat with that payload on the clipboard (Cursor
+  offers no prefill) and a notice saying so; in VS Code it opens the chat
+  view prefilled with the payload and the caret after it, ready for the
+  question; with no chat, it copies and says so.
+- Friction, VS Code: before, select, Ctrl+Alt+C, open chat, paste, type
+  the question, and the agent had to open the file to see the words (an
+  agent without file access answered "I can't see the contents"). After:
+  select, right-click, Ask Agent about Selection, type the question. In
+  Cursor, one paste remains.
+- Local round trip with DeepSeek (`deepseek-flash`, OpenAI-compatible
+  chat/completions; script kept outside the repo in
+  `/tmp/mdwb-tools/ask-deepseek.mts`, key read from `DEEPSEEK_API_KEY` and
+  never printed). Selection: the first table of `Tables.md`, question
+  "What is in the last row of this table?". Reference only
+  (`@Tables.md#3-7`): "I can't see the contents of `Tables.md#3-7`, so I
+  can't quote the last row's cell values." With the payload: "The last row
+  is "Cherry", "Red", "3.00", "yes"." (4/4 cells).
 
 ## Remaining
 
@@ -40,18 +105,23 @@ completion and Phase 8 records) first.
    VSIX and fill `docs/PARITY.md`. Nothing in it has been run by hand.
 2. Visual differences seen beside Obsidian but not yet changed (check them
    in the acceptance pass first):
-   - Quote text is muted; Obsidian's default theme keeps quote text at
-     normal colour.
-   - Nested list items indent less than in Obsidian.
    - Fold chevrons show whenever the pointer is over the editor; Obsidian
      shows them on the hovered line only.
-3. The new commands (Manage Plugins, Show Plugin Status, Use Markdown
+   - Line numbers beside tall block widgets (tables, callouts) sit close
+     together at the widget's top.
+   - A reference such as `@Note.md#30-32` that an agent links back opens
+     the note but not at that range: custom editors get no selection from
+     VS Code's open options.
+3. Cursor: switching a note to Markdown twice within 10 s is meant to keep
+   it as text (unit-tested); not confirmed by hand because the second click
+   on Cursor's switch did nothing in the isolated profile.
+4. The new commands (Manage Plugins, Show Plugin Status, Use Markdown
    Workbench for Markdown in This Workspace) and logging are unit-tested
    against the VS Code fake; the native smoke does not exercise them.
-4. `scripts/test-ledger.mjs` needs the source checkout
+5. `scripts/test-ledger.mjs` needs the source checkout
    (`~/Code/human-learning`), which was not available; the ledger was not
    regenerated (it has no `todo` rows).
-5. Deferred by design: performance measurement (DESIGN §20), webview-side
+6. Deferred by design: performance measurement (DESIGN §20), webview-side
    external plugins (§18.5), Reading view (§25.8), heading-rename link
    updates.
 
