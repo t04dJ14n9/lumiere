@@ -42,6 +42,7 @@ class EmbedPass {
         .catch((error) => {
           if (this.isActive) {
             node.classList.add("unresolved-embed");
+            node.textContent = missingEmbedText(target);
             node.title = String(error);
             pass.measure();
           }
@@ -243,4 +244,10 @@ class EmbedPass {
       await nested.dispose();
     }
   }
+}
+
+/** What an embed that can't be resolved says, as in Obsidian. */
+export function missingEmbedText(target: string): string {
+  const path = target.split("|")[0]!.trim();
+  return `"${path}" could not be found.`;
 }
