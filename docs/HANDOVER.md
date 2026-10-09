@@ -7,7 +7,7 @@ completion and Phase 8 records) first.
 ## Done
 
 - Phases 0–8. Phase 7 and 8 records are in IMPLEMENTATION_PLAN.md. Checks:
-  `pnpm check` 533/533, browser smoke 19/19, native smoke 1/1 against the
+  `pnpm check` 535/535, browser smoke 19/19, native smoke 1/1 against the
   packaged VSIX in VS Code and in Cursor 3.24.9.
 - §5.7 logging (`src/host/logging.ts`, `src/plugins/editor/logging.ts`),
   §6.5 **Manage Plugins** and **Show Plugin Status**
@@ -31,6 +31,11 @@ completion and Phase 8 records) first.
   `^[text]`) with faint brackets, numbers only inside rendered blocks; a
   definition leads with its label in superscript, the faint `[^label]:`
   source at the caret. Hover previews and click-to-definition kept.
+  21bde75: a reference stays that superscript under the caret and in any
+  selection (Ctrl+A, partial), as Obsidian's Live Preview does; before, a
+  selection turned it into full-size raw `[^1]`. A revealed definition
+  marker is faint and small; definition lines are a little smaller than
+  the note. Paired screenshots: `/workspace/obsidian-compare/4[01]-*`.
 - The editor follows Obsidian's default look with plain CSS:
   `src/webview/styles/` plus one `<plugin>.css` per plugin. Do not
   reintroduce `EditorView.baseTheme` style objects.
@@ -109,6 +114,13 @@ completion and Phase 8 records) first.
      shows them on the hovered line only.
    - Line numbers beside tall block widgets (tables, callouts) sit close
      together at the widget's top.
+   - Ctrl+A in VS Code: CodeMirror selects the note, then (probably) VS Code's own
+     Select All (sent to the webview as `execCommand("selectAll")`) replaces
+     it; the inline title shows natively selected and the caret lands at
+     the end. Seen on the box with xdotool (VS Code 1.141); Shift+Ctrl+End
+     from the top selects the note. Not yet fixed.
+   - The footnote hover preview opens to the right of the reference and is
+     cut off near the editor's right edge.
    - A reference such as `@Note.md#30-32` that an agent links back opens
      the note but not at that range: custom editors get no selection from
      VS Code's open options.
