@@ -112,7 +112,7 @@ export class Context {
     });
     // A child disposed on its own (a feature turned off) leaves the list.
     fiber.detach = this.hold("fiber", () => fiber.dispose(), fiber);
-    fiber.reconcile();
+    void fiber.reconcile();
     return fiber;
   }
   provide<K extends keyof Services>(name: K, value: Services[K]): void {

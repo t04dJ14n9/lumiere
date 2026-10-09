@@ -116,6 +116,32 @@ export default tseslint.config(
   { files: ["**/*.ts", "**/*.mjs"], rules: style },
   { files: ["src/**/*.ts"], ignores: ["**/*.test.ts"], rules: size },
   {
+    // Promises must be awaited, returned, or explicitly discarded with
+    // `void`, so a failure is never silently dropped.
+    files: ["src/**/*.ts"],
+    ignores: ["**/*.test.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: [
+          "./tsconfig.json",
+          "./src/host/tsconfig.json",
+          "./src/webview/tsconfig.json",
+          "./src/plugins/tsconfig.host.json",
+          "./src/plugins/tsconfig.webview.json",
+          "./src/workers/tsconfig.json",
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        { checksVoidReturn: { arguments: false, attributes: false } },
+      ],
+    },
+  },
+  {
     files: ["**/*.mjs"],
     languageOptions: {
       globals: {

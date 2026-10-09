@@ -1,5 +1,5 @@
 import { registerProcessors } from "./processor-view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Disposer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../render/api";
 import type {} from "../livePreview/api";
@@ -50,7 +50,7 @@ export const codeBlocksWebview: Plugin = {
 function registerProcessedBlocks(
   ctx: Context,
   accepts: (language: string) => boolean,
-): () => void {
+): Disposer {
   return ctx.livePreview.block({
     kind: "FencedCode",
     editing: "reveal",

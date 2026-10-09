@@ -41,7 +41,7 @@ export class Fiber<C = unknown> {
   startAfterCommit(): void {
     if (this.held) {
       this.held = false;
-      this.reconcile();
+      void this.reconcile();
     }
   }
   /** Start, stop or restart to match the services; returns a stop it began. */
@@ -153,7 +153,7 @@ export class Fiber<C = unknown> {
     await this.stop();
     this.config = parsed;
     this.error = undefined;
-    this.reconcile();
+    void this.reconcile();
   }
   async dispose(): Promise<void> {
     if (this.state === "disposed") {
