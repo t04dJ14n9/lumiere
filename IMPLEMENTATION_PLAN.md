@@ -2606,3 +2606,38 @@ Checks: `pnpm check` **483/483**; browser smoke **14/14**; native smoke
 **1/1** against the packaged VSIX. Ledger **91/22/2/333/0**, no `todo`
 rows (`scripts/test-ledger.mjs` needs the unavailable source checkout, so
 the ledger was not regenerated). Manual acceptance (Phase 9) is unrun.
+
+### Review fixes, round 1 — 2026-10-09
+
+From the external review of PR #1 (`/workspace/plans/chatgpt-pr-review.md`,
+findings A1–C4). Markdown Workbench and Agent PDF Viewer stay separate
+extensions (owner decision), so merge-only items were done only where they
+improve this extension on its own.
+
+- Kernel: plugin activation is transactional (a failed `apply` releases
+  everything it acquired, in reverse order) and teardown mirrors activation
+  (services withdrawn and consumers stopped first, then effects and
+  children LIFO). `ResourceLedger` records every held resource; invariants
+  in `src/kernel/README.md`.
+- Plugin precedence (`plugin-order.ts`) is separate from the dependency
+  graph (`plugin-graph.ts`, derived from each plugin's `inject`).
+- Every host plugin is started and stopped against tracking fakes and must
+  leave nothing registered (`test/unit/features/leave-no-trace.test.ts`).
+- Manifests declare capabilities; names are plugin `agentBridge`, service
+  `AgentHandoff`, command `copyLinkForAgent` (setting
+  `markdownWorkbench.plugins.agentBridge.enabled`, renamed with no
+  migration because nothing was published).
+- The handoff text is specified in `docs/agent-handoff-format.md`, kept
+  byte-identical with Agent PDF Viewer and pinned by a test.
+- RPC coalesces state notifications into versioned batches; Live Preview
+  re-indexes and redecorates only invalidated blocks
+  (`RenderInvalidation`), checked against full rebuilds by a randomised
+  test.
+- The editor is described by an `EditorProvider`; the VS Code panel code
+  (`src/host/editor-panels.ts`) is generic and split from `workbench.ts`.
+- ESLint rejects floating and misused promises in `src`.
+
+Not done here: an editor-session runtime for several editor kinds, the
+PDF subtree import and merged-bundle splitting (merge-only; the webview
+already lazy-loads Mermaid, MathJax and code highlighting), and
+`exactOptionalPropertyTypes` (129 errors in about 60 files, deferred).

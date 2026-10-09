@@ -4,6 +4,14 @@
 
 First packaged build, for the owner's acceptance testing. Not published.
 
+- Review fixes (round 1): the Copy Link for Agent plugin is now
+  `agentBridge` (`markdownWorkbench.plugins.agentBridge.enabled`; the command
+  and `markdownWorkbench.copyLinkForAgent.target` keep their names); plugin
+  start-up rolls back on failure and shutdown runs in reverse order; Live
+  Preview redraws only the blocks an edit or caret move affects; selection
+  state reaches the extension in batches. The handoff text format is shared
+  with Agent PDF Viewer (`docs/agent-handoff-format.md`).
+
 - Live Preview editor for Markdown, as a custom editor beside VS Code's
   text editor, sharing one document, save and undo.
 - Plugins, each with a switch: properties, inline title, links, embeds,
