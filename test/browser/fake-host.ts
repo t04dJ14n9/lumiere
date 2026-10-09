@@ -241,6 +241,14 @@ export class BrowserHost {
       focus: true,
     });
   }
+  /** Sends editor settings as the host does when VS Code's change. */
+  configureEditor(settings: Record<string, unknown>, panel = 0) {
+    this.endpoints[panel]!.notify(
+      editorProtocol,
+      "configureEditor",
+      editorConfig.parse(settings),
+    );
+  }
   async mode(panel = 0) {
     return this.endpoints[panel]!.call(commandProtocol, "run", {
       command: "editor:toggle-source",

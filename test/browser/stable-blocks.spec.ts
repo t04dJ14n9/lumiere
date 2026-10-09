@@ -240,3 +240,63 @@ test("walking the caret down and up through every line of the code note moves no
     expect(await layout(page), `caret on line ${line}`).toEqual(baseline);
   }
 });
+
+/** Each source line's top and height against its line number's. */
+async function gutterRows(page: Page) {
+  return page.evaluate(() => {
+    const lines = [
+      ...document.querySelectorAll<HTMLElement>(".cm-content > .cm-line"),
+    ];
+    const numbers = [
+      ...document.querySelectorAll<HTMLElement>(
+        ".cm-lineNumbers .cm-gutterElement",
+      ),
+    ].filter((element) => element.offsetHeight > 0);
+    return lines.map((line, index) => {
+      const number = numbers[index]!.getBoundingClientRect();
+      const box = line.getBoundingClientRect();
+      return {
+        number: numbers[index]!.textContent,
+        top: Math.round((number.top - box.top) * 10) / 10,
+        height: Math.round((number.height - box.height) * 10) / 10,
+      };
+    });
+  });
+}
+
+test("line numbers stay level with their lines when the editor font changes", async ({
+  page,
+}) => {
+  const doc = "# Title\n\nText line\n\n```js\nlet a = 1;\n```\n\n- item\n\nEnd";
+  await open(page, doc);
+  for (const settings of [
+    { fontSize: 12 },
+    { fontSize: 20 },
+    { fontSize: 16, lineHeight: 30 },
+    { fontSize: 14 },
+  ]) {
+    await page.evaluate(
+      (value) => window.harness.configureEditor(value),
+      settings,
+    );
+    await layout(page);
+    const rows = await gutterRows(page);
+    const label = JSON.stringify(settings);
+    // Every line has its own number, level and as tall, headings included.
+    expect(
+      rows.map((row) => row.number),
+      label,
+    ).toEqual(doc.split("\n").map((_, index) => String(index + 1)));
+    for (const row of rows) {
+      expect(Math.abs(row.top), `${label} line ${row.number} top`).toBeLessThan(
+        1,
+      );
+      if (row.number !== "1") {
+        expect(
+          Math.abs(row.height),
+          `${label} line ${row.number} height`,
+        ).toBeLessThan(1);
+      }
+    }
+  }
+});

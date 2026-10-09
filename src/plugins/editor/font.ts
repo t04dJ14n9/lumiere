@@ -123,10 +123,3 @@ export function fontVariables(font: FontSettings): Record<string, string> {
   );
   return vars;
 }
-
-/** The variables as one inline style. */
-export function fontStyle(font: FontSettings): string {
-  return Object.entries(fontVariables(font))
-    .map(([name, value]) => `${name}: ${value}`)
-    .join("; ");
-}

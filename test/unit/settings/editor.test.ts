@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState, Compartment } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { config } from "../../../src/plugins/editor/manifest";
 import {
@@ -11,6 +12,20 @@ import { readSettings } from "../../../src/host/settings";
 import type { SettingsReader } from "../../../src/host/settings";
 import { createRenderer } from "../../../src/markdown/html";
 import { contributions } from "../../../scripts/generate-contributions";
+
+/** The CSS custom properties the settings' editor theme declares. */
+function fontDeclarations(extensions: Extension): Record<string, string> {
+  const rules = EditorState.create({ extensions })
+    .facet(EditorView.styleModule)
+    .map((module) => module.getRules())
+    .join("\n");
+  return Object.fromEntries(
+    [...rules.matchAll(/(--[a-z-]+):\s*([^;}]+)/g)].map((match) => [
+      match[1]!,
+      match[2]!.trim(),
+    ]),
+  );
+}
 
 test("editor settings have application defaults and reconfigure without changing text or selection", () => {
   assert.deepEqual(config.parse({}), {
@@ -32,9 +47,12 @@ test("editor settings have application defaults and reconfigure without changing
     fontLigatures: false,
     fontVariations: false,
   });
-  // VS Code's defaults: ligatures off, no variations.
-  const style =
-    '--text-weight: normal; --text-features: "liga" off, "calt" off; --text-variations: normal';
+  // VS Code's defaults: ligatures off, no variations; no size without a host.
+  assert.deepEqual(fontDeclarations(settingsExtensions({})), {
+    "--text-weight": "normal",
+    "--text-features": '"liga" off, "calt" off',
+    "--text-variations": "normal",
+  });
   const compartment = new Compartment();
   let state = EditorState.create({
     doc: "one\ntwo",
@@ -43,7 +61,6 @@ test("editor settings have application defaults and reconfigure without changing
   });
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "ltr",
-    style,
   });
   assert.deepEqual(
     EditorState.create({
@@ -51,7 +68,7 @@ test("editor settings have application defaults and reconfigure without changing
     })
       .facet(EditorView.editorAttributes)
       .at(-1),
-    { dir: "ltr", class: "is-readable-line-width", style },
+    { dir: "ltr", class: "is-readable-line-width" },
   );
   const previous = state;
   state = state.update({
@@ -68,7 +85,6 @@ test("editor settings have application defaults and reconfigure without changing
   assert.equal(state.facet(editorSettings).strictLineBreaks, true);
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "rtl",
-    style,
   });
 });
 test("resource settings use manifest aliases and validate all editor fields", () => {
@@ -273,16 +289,17 @@ test("note text follows the native editor font settings for Markdown files, whic
     ],
     ["Fira Code", 18, "300", 27, 0.5, true, false],
   );
-  assert.deepEqual(
-    EditorState.create({ extensions: settingsExtensions(editor) })
-      .facet(EditorView.editorAttributes)
-      .at(-1),
-    {
-      dir: "ltr",
-      style:
-        '--text-font: Fira Code, monospace; --code-font: Fira Code, monospace; --text-size: 18px; --text-weight: 300; --line-height: 1.5; --text-letter-spacing: 0.5px; --text-features: "liga" on, "calt" on; --text-variations: normal',
-    },
-  );
+  // 27px at 18px is a ratio of 1.5 (whole pixels, as in VS Code).
+  assert.deepEqual(fontDeclarations(settingsExtensions(editor)), {
+    "--text-font": "Fira Code, monospace",
+    "--code-font": "Fira Code, monospace",
+    "--text-size": "18px",
+    "--text-weight": "300",
+    "--line-height": "1.5",
+    "--text-letter-spacing": "0.5px",
+    "--text-features": '"liga" on, "calt" on',
+    "--text-variations": "normal",
+  });
   // A hand-edited settings.json with a wrong type does not break the editor.
   markdown["editor.fontSize"] = "big";
   markdown["editor.fontLigatures"] = 3;
