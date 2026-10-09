@@ -1,6 +1,7 @@
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
+import { panelIsActive } from "./active-panel";
 import * as vscode from "vscode";
 import { randomUUID, createHash } from "node:crypto";
 import type { HostDocument, Workbench, PanelShell } from "../shared/runtime";
@@ -232,11 +233,15 @@ function isActivePanel(
 ): boolean {
   const group = vscode.window.tabGroups.activeTabGroup;
   const input = group.activeTab?.input;
-  return (
-    group.viewColumn === panel.viewColumn &&
-    input instanceof vscode.TabInputCustom &&
-    input.viewType === viewType &&
-    input.uri.toString() === document.uri.toString()
+  const custom = input instanceof vscode.TabInputCustom ? input : undefined;
+  return panelIsActive(
+    panel,
+    {
+      groupColumn: group.viewColumn,
+      viewType: custom?.viewType,
+      uri: custom?.uri.toString(),
+    },
+    { viewType, uri: document.uri.toString() },
   );
 }
 function panelState(
@@ -246,9 +251,13 @@ function panelState(
   const panelSubscription = panel.onDidChangeViewState(listener);
   const groupSubscription =
     vscode.window.tabGroups.onDidChangeTabGroups(listener);
+  // Closing a tab opened over the panel (Ctrl+N, then close) changes tabs,
+  // not groups; without this the plugin context keys stayed false.
+  const tabSubscription = vscode.window.tabGroups.onDidChangeTabs(listener);
   return () => {
     panelSubscription.dispose();
     groupSubscription.dispose();
+    tabSubscription.dispose();
   };
 }
 function createPanelShell(
