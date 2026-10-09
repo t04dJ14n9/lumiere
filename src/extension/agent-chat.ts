@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { AGENT_COMMANDS, agentTarget, type AgentTarget, type AgentTargetSetting } from '../shared/agent-target';
+import { AGENT_COMMANDS, AGENT_EXTENSIONS, agentTarget, type AgentTarget, type AgentTargetSetting } from '../shared/agent-target';
 
 /**
  * Codex drops a file added before its view has loaded and adds the same file
@@ -15,7 +15,9 @@ const CODEX_RETRY_DELAYS_MS = [1000, 2000, 4000];
  * Open the agent chat with the selection (already on the clipboard): typed
  * into Cursor's, VS Code's or Claude Code's chat, ready for a question, with a
  * region's snapshot attached (Claude Code reads it from the path in the
- * text); or attached to Codex as files. Returns where the selection went.
+ * text); or attached to Codex as files. With no agent known for sure (see
+ * `agentTarget`), nothing opens: the clipboard is the handoff. Returns where
+ * the selection went.
  */
 export async function openAgentChat(text: string, image: vscode.Uri | undefined, source?: vscode.Uri): Promise<AgentTarget> {
   const commands = new Set(await vscode.commands.getCommands(true));
@@ -25,6 +27,7 @@ export async function openAgentChat(text: string, image: vscode.Uri | undefined,
     commands,
     hasChatParticipant: vscode.extensions.all.some(extension => hasChatParticipants(extension.packageJSON)),
     chatDisabled: vscode.workspace.getConfiguration('chat').get<boolean>('disableAIFeatures', false),
+    agentExtensions: new Set(AGENT_EXTENSIONS.filter(id => vscode.extensions.getExtension(id))),
   });
   switch (target) {
     case 'cursor':

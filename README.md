@@ -20,16 +20,21 @@ of it. **Copy for Agent** copies the same for any other agent.
   buttons, or **PDF: Ask Agent** / **PDF: Copy for Agent**. ⌘C / Ctrl+C
   copies just the text.
 
-  **Ask Agent** copies the selection and opens the agent chat with it typed
-  in, ready for your question:
+  **Ask Agent** copies the selection and, when it knows which agent you use,
+  opens that agent's chat with it typed in, ready for your question:
   - in Cursor, a new agent chat, with a region's snapshot attached;
   - in VS Code, the chat view when a chat extension such as Copilot Chat is
-    installed (and `chat.disableAIFeatures` is off), with the snapshot attached;
-  - otherwise Claude Code or Codex, if installed: their chat opens and you
-    paste the selection (they take no prefilled text);
-  - otherwise it only copies, and says so.
+    installed (and `chat.disableAIFeatures` is off), with the snapshot attached.
 
-  The `vscodeEmbedPdf.askAgent.target` setting picks one of these instead.
+  Extensions cannot see which agent chat is focused, so this happens only when
+  the editor's chat is the only agent installed. With Claude Code or Codex
+  installed as well, Ask Agent does not guess: it copies the selection (with
+  the region snapshot's path) and asks you to paste it into your agent.
+
+  The `vscodeEmbedPdf.askAgent.target` setting sends it to one agent instead:
+  `claudeCode` (a new Claude Code conversation with the selection typed in),
+  `codex` (the selection and snapshot attached to the Codex thread), `cursor`,
+  `chat`, or `clipboard`.
 
   In Cursor, the editor title bar keeps only a few buttons, so **Ask Agent**
   and **Copy for Agent** sit in the **…** (More Actions) menu while something

@@ -13,7 +13,7 @@ import { viewerHtml } from './webview-html';
 /** What to tell the user when the chat could not take the text itself. */
 const PASTE_HINTS: Partial<Record<AgentTarget, string>> = {
   codex: 'It is attached in Codex: type your question.',
-  clipboard: 'No agent chat found: paste it into your agent and ask your question.',
+  clipboard: 'Paste it into your agent\'s chat and ask your question.',
 };
 
 /** A PDF selection for an agent: see `PdfPanel.agentSnapshot`. */

@@ -147,14 +147,14 @@
             "clipboard"
           ],
           "enumDescriptions": [
-            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat), else Claude Code, else Codex, else only copy.",
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
             "Cursor's chat.",
             "VS Code's chat.",
-            "Claude Code: opens it; paste the selection.",
-            "Codex: opens it; paste the selection.",
+            "Claude Code: a new conversation with the selection typed in.",
+            "Codex: the selection (and a region's snapshot) attached to the thread.",
             "Only copy the selection."
           ],
-          "markdownDescription": "Where **Ask Agent** sends a PDF selection. It is always copied too."
+          "markdownDescription": "Where **Ask Agent** sends a PDF selection. It is always copied too. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the selection to it."
         },
         "vscodeEmbedPdf.regionImageCache.maxSizeMB": {
           "type": "number",
