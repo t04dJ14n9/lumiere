@@ -14,19 +14,33 @@ export function createPreviewPopup(actions: PopupActions): {
   popup.className = "link-preview";
   popup.setAttribute("role", "dialog");
   popup.setAttribute("aria-label", "Link preview");
-  const open = document.createElement("button");
-  open.type = "button";
-  open.textContent = `Open ${previewLabel(actions.href)}`;
-  open.onclick = actions.open;
-  const dismiss = document.createElement("button");
-  dismiss.type = "button";
-  dismiss.textContent = "Close";
-  dismiss.setAttribute("aria-label", "Close link preview");
-  dismiss.onclick = actions.close;
+  const label = previewLabel(actions.href);
+  const open = iconButton("↗", `Open ${label}`, actions.open);
+  const dismiss = iconButton("×", "Close link preview", actions.close);
+  const toolbar = document.createElement("div");
+  toolbar.className = "link-preview-actions";
+  toolbar.append(open, dismiss);
   const body = document.createElement("div");
+  body.className = "link-preview-body";
   body.textContent = "Loading…";
-  popup.append(open, dismiss, body);
+  popup.append(toolbar, body);
   return { popup, body, open };
+}
+
+/** A small icon button in the card's corner, named for screen readers. */
+function iconButton(
+  icon: string,
+  label: string,
+  run: () => void,
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "link-preview-action";
+  button.textContent = icon;
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.onclick = run;
+  return button;
 }
 
 export function mountPreviewPopup(
