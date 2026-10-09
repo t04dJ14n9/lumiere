@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   PdfRenderSession,
   RenderSessionDisposedError,
+  replaceSession,
   type EngineMode,
   type RenderSessionEnvironment,
 } from '../../src/webview/render-session';
@@ -189,4 +190,47 @@ test('a failing engine stop does not skip the URL and buffer cleanup, and is rep
   assert.equal(urls.created.length, 1);
   assert.throws(() => session.buffer, RenderSessionDisposedError);
   assert.deepEqual(reported, ['Could not stop the PDF engine: Error: worker wedged']);
+});
+
+test('reloads never overlap engines: the next document starts only after the previous one stopped, and skipped loads start none', async () => {
+  const { env, finish, settle } = environment();
+  let live = 0;
+  let peak = 0;
+  const stops: (() => void)[] = [];
+  const counted: RenderSessionEnvironment<FakeEngine> = {
+    ...env,
+    createEngine: async (mode, wasmUrl) => {
+      const engine = await env.createEngine(mode, wasmUrl);
+      peak = Math.max(peak, ++live);
+      return engine;
+    },
+    // Stopping takes as long as the test says.
+    destroyEngine: engine => new Promise(resolve => stops.push(() => {
+      engine.destroyed = true;
+      live--;
+      resolve();
+    })),
+  };
+  const shown: PdfRenderSession<FakeEngine>[] = [];
+  const load = (previous: PdfRenderSession<FakeEngine> | undefined) =>
+    replaceSession(previous, after => new PdfRenderSession(bytes(), 'vscode-resource:/pdfium.wasm', counted, after), next => {
+      shown.push(next);
+      void next.engine('main-thread').catch(() => undefined);
+    });
+  let session = load(undefined);
+  await finish();
+  // Three reloads while the first engine is still stopping.
+  session = load(session);
+  session = load(session);
+  session = load(session);
+  await settle();
+  assert.equal(stops.length, 1, 'the first engine is stopping');
+  await assert.rejects(finish(), /no engine is starting/, 'an engine started while the first was stopping');
+  stops.shift()!();
+  await new Promise<void>(resolve => setImmediate(resolve));
+  await finish();
+  assert.equal(peak, 1, 'two engines were alive at once');
+  assert.equal(live, 1);
+  assert.equal(shown.length, 4);
+  void session;
 });
