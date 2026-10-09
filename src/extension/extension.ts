@@ -9,6 +9,7 @@
  *   outline-view         the "PDF Outline" tree in the Explorer
  *   commands             Copy for Agent, Ask Agent, Open PDF at Location
  *   view-commands        page, zoom, find and tool commands for the active PDF
+ *   toolbar              where the controls are: status bar entries, setting
  *   agent-chat           opening the agent chat with a selection
  */
 import * as vscode from 'vscode';
@@ -17,6 +18,7 @@ import { registerOutlineView } from './outline-view';
 import { PdfEditorProvider } from './pdf-editor-provider';
 import { PdfPanels, VIEW_TYPE } from './pdf-panels';
 import { RegionImages, regionCacheBytes } from './region-images';
+import { registerToolbar } from './toolbar';
 import { registerViewCommands } from './view-commands';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -36,6 +38,7 @@ export function activate(context: vscode.ExtensionContext): void {
     registerOutlineView(panels),
     registerCommands(panels),
     registerViewCommands(panels),
+    registerToolbar(panels),
   );
 }
 

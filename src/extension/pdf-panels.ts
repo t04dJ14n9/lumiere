@@ -14,7 +14,7 @@ export class PdfPanels implements vscode.Disposable {
   private readonly panels = new Set<PdfPanel>();
   private current: PdfPanel | undefined;
   private readonly changed = new vscode.EventEmitter<void>();
-  /** Fires when the active panel changes, or its outline or selection does. */
+  /** Fires when the active panel changes, or its outline, selection or view does. */
   readonly onDidChange = this.changed.event;
   private readonly disposables: vscode.Disposable[] = [
     this.changed,
@@ -24,6 +24,11 @@ export class PdfPanels implements vscode.Disposable {
 
   get active(): PdfPanel | undefined {
     return this.current;
+  }
+
+  /** Every open PDF editor. */
+  get all(): readonly PdfPanel[] {
+    return [...this.panels];
   }
 
   add(panel: PdfPanel): void {
@@ -84,6 +89,13 @@ export class PdfPanels implements vscode.Disposable {
     void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.pdfActive', Boolean(panel));
     void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.hasSelection', Boolean(panel?.selection));
     void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.outlineLoading', Boolean(panel && !panel.outline));
+    // For the editor title actions: which fit and tool buttons to show, and
+    // whether there is a page to go back or forward to.
+    const view = panel?.view;
+    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.fit', view?.fit ?? '');
+    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.tool', view?.tool ?? 'text');
+    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.canGoBack', Boolean(view && view.page > 1));
+    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.canGoForward', Boolean(view && view.page < view.pageCount));
     this.changed.fire();
   }
 }

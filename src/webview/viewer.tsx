@@ -16,11 +16,15 @@ import { SearchBar } from './search-bar';
 import { useIgnoreSecondaryButtons } from './secondary-buttons';
 import { useSelectionReporting } from './selection';
 import { useToolMode } from './tool-mode';
+import { currentToolbarSettings, rememberToolbarSettings } from './toolbar-settings';
 import { Toolbar } from './toolbar';
 import { useViewActions, useViewReporting } from './view-sync';
 import { useWheelZoom } from './wheel-zoom';
 
-/** The open PDF: toolbar, optional search bar, and the scrolling pages. */
+/**
+ * The open PDF: the toolbar (unless the controls are in VS Code's own UI or
+ * hidden), an optional search bar, and the scrolling pages.
+ */
 export function Viewer({ document: pdf }: { document: PdfDocumentObject }): React.JSX.Element {
   const navigation = useNavigation(DOCUMENT_ID);
   const selection = useSelectionReporting(DOCUMENT_ID, pdf);
@@ -41,6 +45,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
 
+  const [toolbar, setToolbar] = useState(currentToolbarSettings);
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   useViewReporting(navigation, tool);
   const runAction = useViewActions(navigation, openSearch, setTool);
@@ -49,6 +54,8 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
     else if (message.type === 'action') {
       const action = parseViewerAction(message.action);
       if (action) runAction(action);
+    } else if (message.type === 'toolbar') {
+      setToolbar(rememberToolbarSettings(message.toolbar));
     }
   }), [show, runAction]);
 
@@ -73,9 +80,9 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   }, []);
 
   return (
-    <div className={`viewer tool-${tool}`}>
+    <div className={`viewer tool-${tool} toolbar-${toolbar.mode}`}>
       <CopyToClipboard />
-      <Toolbar navigation={navigation} onSearch={openSearch} />
+      {toolbar.mode === 'slim' && <Toolbar navigation={navigation} onSearch={openSearch} />}
       <div className="document" ref={documentArea}>
         {searching && <SearchBar navigation={navigation} focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">

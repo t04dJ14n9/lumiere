@@ -12,13 +12,15 @@
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
  *    │  ◄──────────── view { view }       page and zoom, after each change
  *    │  goTo { location } ──────►         open a page (and box)
- *    │  action { action } ──────►         page, zoom or find, from a command
+ *    │  action { action } ──────►         page, zoom, find or tool, from a command
+ *    │  toolbar { toolbar } ────►         the toolbar setting changed
  *
  * The viewer runs untrusted PDF content, so the host validates what it
  * receives with `parseViewerMessage`.
  */
 import type { PdfLocation } from './pdf-location';
 import { parseSelection, type PdfSelection } from './selection';
+import type { ToolbarSettings } from './toolbar-settings';
 import { parseViewState, type ViewerAction, type ViewState } from './view-state';
 
 /** One entry of the PDF's outline (bookmarks), with the page it opens. */
@@ -46,7 +48,8 @@ export type HostMessage =
   | { type: 'load'; data: ArrayBuffer }
   /** `top`: with no box, show the page from this many points below its top. */
   | { type: 'goTo'; location: PdfLocation; top?: number }
-  | { type: 'action'; action: ViewerAction };
+  | { type: 'action'; action: ViewerAction }
+  | { type: 'toolbar'; toolbar: ToolbarSettings };
 
 const MAX_OUTLINE_ITEMS = 10_000;
 const MAX_OUTLINE_DEPTH = 32;

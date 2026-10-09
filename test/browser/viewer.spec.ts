@@ -659,3 +659,36 @@ test('switching to the Select Region tool clears a text selection', async ({ pag
   await sendAction(page, { action: 'setTool', tool: 'text' });
   await expect.poll(() => lastView(page)).toMatchObject({ tool: 'text' });
 });
+
+test('with the controls in VS Code\'s own UI the viewer has no toolbar; the setting switches it live', async ({ page }) => {
+  await open(page, '?toolbar=chrome');
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toHaveCount(0);
+  // The pages take the whole height.
+  const viewport = (await page.locator('.viewport').boundingBox())!;
+  expect(viewport.y).toBe(0);
+  expect(viewport.height).toBe(page.viewportSize()!.height);
+  // Find still opens in the viewer.
+  await sendAction(page, { action: 'find' });
+  await expect(page.getByRole('searchbox', { name: 'Find in PDF' })).toBeFocused();
+  await page.keyboard.press('Escape');
+
+  const setToolbar = (mode: string) => page.evaluate(mode => (window as unknown as { hostSend: (message: unknown) => void })
+    .hostSend({ type: 'toolbar', toolbar: { mode } }), mode);
+  await setToolbar('slim');
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 12');
+  await setToolbar('none');
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toHaveCount(0);
+  // An unknown mode is the default one.
+  await setToolbar('sideways');
+  await expect(page.locator('.viewer')).toHaveClass(/toolbar-chrome/);
+
+  // A reloaded file keeps the latest setting.
+  await setToolbar('slim');
+  await page.evaluate(async () => {
+    document.querySelector('.viewer')!.classList.add('before-reload');
+    const data = await (await fetch('/fixtures/outline.pdf')).arrayBuffer();
+    (window as unknown as { hostSend: (message: unknown) => void }).hostSend({ type: 'load', data });
+  });
+  await expect(page.locator('.viewer:not(.before-reload) .page[data-page-index="0"] img')).toBeVisible();
+  await expect(page.getByRole('toolbar', { name: 'PDF toolbar' })).toBeVisible();
+});

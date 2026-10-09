@@ -17,6 +17,7 @@ import {
   pointAtTop,
   selectText,
   showPage,
+  statusBarEntry,
   test,
   withoutSpaces,
 } from './workbench';
@@ -40,7 +41,7 @@ async function outlineView(page: Page) {
 test('a PDF opens with its outline in the Explorer, shown only while the PDF is active', async ({ workbench: page }) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
-  await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 12');
+  await expect(statusBarEntry(page, /^Page 1 \/ 12$/u)).toBeVisible();
 
   const outline = await outlineView(page);
   for (const title of ['Part One', 'Section 1.1', 'Section 1.2', 'Part Two']) {
@@ -62,8 +63,8 @@ test('a PDF opens with its outline in the Explorer, shown only while the PDF is 
 test('Copy for Agent works from the selection menu and the editor title button', async ({ workbench: page }) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
-  await fitPage(viewer);
-  await showPage(viewer, 3);
+  await fitPage(page, viewer);
+  await showPage(page, viewer, 3);
   // Exact text: VS Code repeats notifications in a screen-reader alert ("Info: …").
   const confirmation = page.getByText('Selection copied for agent.', { exact: true });
 
@@ -85,8 +86,8 @@ test('Ask Agent from the context menu opens the agent chat with the region typed
   // VS Code's chat counts as served thanks to test/fixtures/chat-participant; Cursor has its own.
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
-  await fitPage(viewer);
-  await showPage(viewer, 3);
+  await fitPage(page, viewer);
+  await showPage(page, viewer, 3);
   const at = await pagePoint(viewer, 3);
   await drag(page, at(60, 70), at(230, 150));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
@@ -105,19 +106,19 @@ test('PDF: Open Location opens a pasted link at its page and flashes its box', a
   await input.press('Enter');
   const viewer = await pdfViewer(page);
   await expect(viewer.locator('.page[data-page-index="4"] .location-highlight')).toBeVisible();
-  await expect(viewer.getByRole('textbox', { name: 'Page' })).toHaveValue('5');
+  await expect(statusBarEntry(page, /^Page 5 \/ 12$/u)).toBeVisible();
 });
 
 test('the viewer reloads when the PDF changes on disk', async ({ workbench: page }) => {
   const changing = path.join(paths.workspace, 'docs', 'changing.pdf');
   copyFileSync(path.join(paths.fixtures, 'outline.pdf'), changing);
   await openFile(page, 'docs/changing.pdf');
-  const viewer = await pdfViewer(page);
-  await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 12');
+  await pdfViewer(page);
+  await expect(statusBarEntry(page, /^Page 1 \/ 12$/u)).toBeVisible();
   const outline = await outlineView(page);
   await expect(outline.getByRole('treeitem', { name: /Part One/ })).toBeVisible();
 
   copyFileSync(path.join(paths.fixtures, 'short.pdf'), changing);
-  await expect(viewer.getByRole('toolbar', { name: 'PDF toolbar' })).toContainText('of 3');
+  await expect(statusBarEntry(page, /^Page 1 \/ 3$/u)).toBeVisible();
   await expect(outline.getByText('This PDF has no outline.')).toBeVisible();
 });
