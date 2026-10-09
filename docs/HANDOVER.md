@@ -7,7 +7,7 @@ completion and Phase 8 records) first.
 ## Done
 
 - Phases 0–8. Phase 7 and 8 records are in IMPLEMENTATION_PLAN.md. Checks:
-  `pnpm check` 535/535, browser smoke 19/19, native smoke 1/1 against the
+  `pnpm check` 542/542, browser smoke 20/20, native smoke 2/2 against the
   packaged VSIX in VS Code and in Cursor 3.24.9.
 - §5.7 logging (`src/host/logging.ts`, `src/plugins/editor/logging.ts`),
   §6.5 **Manage Plugins** and **Show Plugin Status**
@@ -36,6 +36,16 @@ completion and Phase 8 records) first.
   in a slightly smaller block, the faint `[^label]:` only with the caret on
   the marker. Hover previews and click-to-definition kept. Screenshots:
   `/workspace/obsidian-compare/41-*` (before) and `43-*` (after).
+- Ctrl/Cmd+A selects the whole note (1f6ece2). VS Code forwards every
+  webview keydown to the workbench, whose Select All then ran
+  `execCommand("selectAll")` in the page after CodeMirror had selected the
+  note, leaving the title selected and a caret at the end. A Select All the
+  editor handled now stops at the document, before VS Code's window
+  listener. Native test passes in VS Code 1.141 and Cursor 3.24.9 (and
+  fails without the fix).
+- The footnote hover preview stays inside the webview (dba6658): it moves
+  left at the right edge and opens above near the bottom. Browser test
+  `test/browser/footnotes.spec.ts`.
 - The editor follows Obsidian's default look with plain CSS:
   `src/webview/styles/` plus one `<plugin>.css` per plugin. Do not
   reintroduce `EditorView.baseTheme` style objects.
@@ -114,13 +124,6 @@ completion and Phase 8 records) first.
      shows them on the hovered line only.
    - Line numbers beside tall block widgets (tables, callouts) sit close
      together at the widget's top.
-   - Ctrl+A in VS Code: CodeMirror selects the note, then (probably) VS Code's own
-     Select All (sent to the webview as `execCommand("selectAll")`) replaces
-     it; the inline title shows natively selected and the caret lands at
-     the end. Seen on the box with xdotool (VS Code 1.141); Shift+Ctrl+End
-     from the top selects the note. Not yet fixed.
-   - The footnote hover preview opens to the right of the reference and is
-     cut off near the editor's right edge.
    - A reference such as `@Note.md#30-32` that an agent links back opens
      the note but not at that range: custom editors get no selection from
      VS Code's open options.
