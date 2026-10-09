@@ -71,3 +71,20 @@ Our rule was "an element is revealed when a selection range touches its own node
 - escapes were revealed per escape, not per line (rule 5);
 - quote marks were revealed for the whole quote, not per line (rule 5);
 - see the results section below for the rest.
+
+## Measured facts and our contract
+
+Everything above the table's "boundary" rows is a **measured fact** about
+Obsidian 1.14.4 (raw results and scripts: `obsidian-measurements/`). What our
+tests pin is the **compatibility contract** derived from those facts, and each
+exact-boundary rule (a caret touching an element's first or last character,
+task columns 0-5, the quote marker) has a measured case behind it in
+`inline-cases*.json` / `r*.json`. If Obsidian changes, re-measure with the
+scripts, update the facts, and then change the contract and its tests.
+
+## Intentional divergence: footnote references
+
+Obsidian shows a footnote reference as a small superscript widget. Ours renders
+LaTeX-style superscript and reveals the raw `[^id]` text when the caret is
+inside. This is a deliberate product decision, not a measurement gap, and the
+reveal tests for footnotes pin our rule, not Obsidian's.
