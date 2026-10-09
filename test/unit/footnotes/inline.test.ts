@@ -23,10 +23,10 @@ const source = [
   "after",
 ].join("\n");
 
-function decorate(anchor: number) {
+function decorate(anchor: number, head = anchor) {
   const state = EditorState.create({
     doc: source,
-    selection: { anchor },
+    selection: { anchor, head },
     extensions: [
       documentTree,
       inlineRenderers.of(footnoteInline({} as RenderService)),
@@ -39,6 +39,8 @@ function decorate(anchor: number) {
   const lines: { line: number; cls: string }[] = [];
   const markers: string[] = [];
   const faint: string[] = [];
+  const editing: string[] = [];
+  const brackets: string[] = [];
   inlineDecorations(state, [{ from: 0, to: source.length }]).between(
     0,
     source.length,
@@ -66,9 +68,25 @@ function decorate(anchor: number) {
       if (value.spec.class === "md-syntax-mark") {
         faint.push(state.sliceDoc(from, to));
       }
+      if (value.spec.class === "mw-footnote-ref is-source is-editing") {
+        editing.push(state.sliceDoc(from, to));
+      }
+      if (value.spec.class === "mw-footnote-bracket") {
+        brackets.push(state.sliceDoc(from, to));
+      }
     },
   );
-  return { references, shown, hidden, labels, lines, markers, faint };
+  return {
+    references,
+    shown,
+    hidden,
+    labels,
+    lines,
+    markers,
+    faint,
+    editing,
+    brackets,
+  };
 }
 
 test("references show their own source in superscript, as in Obsidian 1.14", () => {
@@ -83,10 +101,38 @@ test("references show their own source in superscript, as in Obsidian 1.14", () 
   assert.deepEqual(references, ["1", "2", "3", "1"]);
 });
 
-test("a reference shows its source while the caret is in it", () => {
-  const { references, faint } = decorate(source.indexOf("[^note]") + 2);
+test("a reference stays a superscript with faint brackets while the caret is in it", () => {
+  const { references, faint, editing, brackets } = decorate(
+    source.indexOf("[^note]") + 2,
+  );
   assert.deepEqual(references, ["1", "3", "1"]);
-  assert.deepEqual(faint, ["[^note]"]);
+  assert.deepEqual(editing, ["[^note]"]);
+  assert.deepEqual(brackets, ["[^", "]"]);
+  assert.deepEqual(faint, []);
+});
+
+test("a selection over the whole note keeps every reference a superscript", () => {
+  const { references, faint, editing, brackets, markers } = decorate(
+    0,
+    source.length,
+  );
+  assert.deepEqual(references, []);
+  assert.deepEqual(editing, ["[^1]", "[^note]", "^[Inline text.]", "[^1]"]);
+  assert.deepEqual(brackets, ["[^", "]", "[^", "]", "^[", "]", "[^", "]"]);
+  assert.deepEqual(faint, []);
+  // Definitions show their faint [^label]: source, as in Obsidian.
+  assert.deepEqual(markers, ["[^1]:", "[^note]:"]);
+});
+
+test("a selection over part of a line keeps its reference a superscript", () => {
+  const start = source.indexOf("A named");
+  const { editing, shown } = decorate(start, start + "A named one.[^no".length);
+  assert.deepEqual(editing, ["[^note]"]);
+  assert.deepEqual(shown, [
+    "source:[^1]",
+    "source:^[Inline text.]",
+    "source:[^1]",
+  ]);
 });
 
 test("definitions lead with a superscript label; the caret reveals the faint marker", () => {

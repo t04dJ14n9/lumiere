@@ -2,17 +2,21 @@
 
 Footnotes as in Obsidian's Live Preview: a reference (`[^1]`, `[^note]` or an
 inline `^[text]`) shows as a small superscript of its own source with faint
-brackets, as Obsidian 1.14 does, and as plain source at the caret; inside
-rendered blocks it is a number in reading order. Hovering or focusing it previews the footnote;
-clicking jumps to the definition (an inline footnote reveals its source).
-Definitions stay editable text led by their label in superscript; the caret
-on the marker shows the faint `[^label]:` source. Insert
-Footnote adds a reference and definition in one edit.
+brackets, as Obsidian 1.14 does, and keeps that look under the caret or a
+selection, where it is edited in place; inside rendered blocks it is a number
+in reading order. Hovering or focusing it previews the footnote; clicking
+jumps to the definition (an inline footnote puts the caret in itself).
+Definitions stay editable text, set a little smaller and led by their label
+in superscript; the caret or a selection on the marker shows the faint,
+small `[^label]:` source. Insert Footnote adds a reference and definition in
+one edit.
 
 ## How it works
 
 Shared metadata supplies numbering, definitions and reference ranges. The
-inline renderer replaces each reference off the caret with a widget and marks
+inline renderer replaces each reference off the caret with a widget; under the
+caret or a selection it marks the same source instead (`mw-footnote-ref
+is-source is-editing`, brackets `mw-footnote-bracket`). It marks
 definition lines (`mw-footnote-def`, `is-continued` for indented lines); off
 the caret it hides a definition's `[^` and `]:` and marks the label
 (`mw-footnote-label`), at the caret it marks the marker (`mw-footnote-marker`). Inline widgets and references inside rendered
@@ -34,8 +38,8 @@ remaining references, render passes, listeners and commands.
 - `edit.ts`: insertion with an unused definition label.
 - `footnotes.test.ts`: insertion unit coverage.
 - `preprocess.test.ts`: owning-note numbering, missing and repeated references.
-- `../../../test/unit/footnotes/inline.test.ts`: reference numbers, reveal at
-  the caret, definition lines and markers.
+- `../../../test/unit/footnotes/inline.test.ts`: reference numbers, references
+  under the caret and in selections, definition lines and markers.
 - `footnotes.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

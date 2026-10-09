@@ -1,9 +1,9 @@
 /*
  * Footnotes. In Live Preview a reference is a small superscript of its own
- * source with faint brackets; inside rendered blocks it is a number in the
- * accent colour. Hovering or focusing either shows the footnote. A
- * definition leads with its label in superscript; at the caret its
- * [^label]: marker is faint source.
+ * source with faint brackets, also under the caret or a selection; inside
+ * rendered blocks it is a number in the accent colour. Hovering or focusing
+ * either shows the footnote. A definition leads with its label in
+ * superscript; at the caret its [^label]: marker is faint, small source.
  */
 .mw-footnote-ref {
   position: relative;
@@ -66,17 +66,29 @@
 }
 .mw-footnote-marker {
   color: var(--faint);
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: super;
 }
+/*
+ * A source-style reference reads as text: normal colour, faint brackets,
+ * no button padding, so it sits against the word before it. At the caret
+ * or in a selection the same look comes from marks over the source.
+ */
 .mw-footnote-ref.is-source > button {
-  color: var(--muted);
+  margin: 0;
+  padding: 0;
+  color: inherit;
 }
 .mw-footnote-bracket {
   color: var(--faint);
 }
 .mw-footnote-label {
-  margin-right: 0.15em;
-  color: var(--muted);
   font-size: 0.75em;
-  vertical-align: super;
   line-height: 0;
+  vertical-align: super;
+}
+/* The definition block is set a little smaller than the note, as in Obsidian. */
+.cm-line.mw-footnote-def {
+  font-size: 0.875em;
 }

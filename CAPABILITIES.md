@@ -33,7 +33,7 @@ records it in `docs/PARITY.md`.
 | math | MathJax inline and block math | No user macros |
 | diagrams | Mermaid | Theme follows VS Code light or dark; HTML labels off |
 | codeBlocks | Prism highlighting and a Copy button | Languages without a loaded grammar stay plain |
-| footnotes | Superscript `[^label]` / `^[text]` references as in Obsidian 1.14 (numbers inside rendered blocks), hover previews, click to the definition, inline footnotes, Insert Footnote | Definitions stay editable text led by a superscript label, as in Obsidian's Live Preview; no Reading view footnotes section |
+| footnotes | Superscript `[^label]` / `^[text]` references as in Obsidian 1.14, also under the caret and in selections (numbers inside rendered blocks), hover previews, click to the definition, inline footnotes, Insert Footnote | Definitions stay editable text led by a superscript label, as in Obsidian's Live Preview; no Reading view footnotes section |
 | tasks | Clickable checkboxes in notes, embeds and callouts; checklist commands | Any status but a space is checked, like Obsidian's default theme; `data-task` attributes let a snippet style custom statuses |
 | tags | Tag rendering and search, Explorer **Tags** view | Search results are a quick pick, not a search pane |
 | suggest | `[[`, `[[#`, `[[^` and `#` completions | At most 50 results |

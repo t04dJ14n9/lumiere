@@ -316,12 +316,15 @@ Contained file access and the vault index (Obsidian's metadata cache).
 1. References show as a small superscript of their own source, as in
    Obsidian 1.14: `[^1]`, `[^note]` and `^[Inline text]` with faint brackets.
    Inside a rendered block (table, callout) they are numbers in reading
-   order. With the caret in a reference its plain source shows. Hovering or focusing one previews the
-   rendered footnote; Escape closes it. Clicking jumps to the definition (an
-   inline footnote reveals its source), as in Obsidian.
-2. Definitions stay editable text led by the label in superscript; with the
-   caret on the marker, the faint `[^label]:` source shows. The indented
-   continuation belongs to the same footnote.
+   order. With the caret in a reference, or a selection over it (Ctrl+A
+   included), it stays the same superscript and is edited in place, as in
+   Obsidian. Hovering or focusing one previews the rendered footnote; Escape
+   closes it. Clicking jumps to the definition (an inline footnote puts the
+   caret in itself).
+2. Definitions stay editable text, a little smaller than the note, led by
+   the label in superscript; with the caret or a selection on the marker,
+   the faint, small `[^label]:` source shows. The caret elsewhere on the line
+   leaves the label. The indented continuation belongs to the same footnote.
 3. **Insert Footnote** adds a fresh label at the caret and a definition at
    the end; undo removes both.
 4. With two panels, insert in one and undo there: both converge with no
