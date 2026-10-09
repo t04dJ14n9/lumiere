@@ -477,6 +477,23 @@ test('a new search starts at the current page', async ({ page }) => {
   await expect(page.getByRole('textbox', { name: 'Page' })).toHaveValue('7');
 });
 
+test('each reload stops the previous PDF\'s engine and its workers', async ({ page }) => {
+  await open(page);
+  // The PDFium worker and its image encoder.
+  await expect.poll(() => page.workers().length).toBeGreaterThan(0);
+  const workers = page.workers().length;
+  for (let reload = 1; reload <= 3; reload++) {
+    await page.evaluate(async reload => {
+      document.querySelector('.viewer')!.classList.add(`before-reload-${reload}`);
+      const data = await (await fetch('/fixtures/outline.pdf')).arrayBuffer();
+      (window as unknown as { hostSend: (message: unknown) => void }).hostSend({ type: 'load', data });
+    }, reload);
+    await expect(page.locator(`.viewer:not(.before-reload-${reload}) .page[data-page-index="0"] img`)).toBeVisible();
+  }
+  // PdfRenderSession.dispose() destroyed each old engine, ending its workers.
+  await expect.poll(() => page.workers().length).toBe(workers);
+});
+
 test('a reloaded file reopens at the same place and zoom', async ({ page }) => {
   await open(page);
   const field = page.getByRole('textbox', { name: 'Page' });

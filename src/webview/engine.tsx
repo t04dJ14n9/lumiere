@@ -1,93 +1,67 @@
 import { EmbedPDF } from '@embedpdf/core/react';
-import { usePdfiumEngine } from '@embedpdf/engines/react';
 import { DocumentContent } from '@embedpdf/plugin-document-manager/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ViewerEngine } from './browser-render-environment';
 import { postToHost } from './host';
 import { DOCUMENT_ID, viewerPlugins } from './plugins';
+import { RenderSessionDisposedError, type EngineMode, type PdfRenderSession } from './render-session';
 import { Viewer } from './viewer';
 
 /** A worker that has not opened the PDF within this time is given up. */
 const WORKER_TIMEOUT_MS = 15_000;
 
-type EngineMode = 'worker' | 'main-thread';
-
 /**
- * Start PDFium and show `buffer`.
+ * Start PDFium and show the session's PDF.
  *
  * PDFium normally runs in a web worker so rendering never blocks scrolling.
  * If the worker cannot start (a blocked blob URL, a failed WASM fetch, a
- * crash, or silence), the engine restarts on the main thread instead.
+ * crash, or silence), the engine restarts on the main thread instead. The
+ * engines belong to the session (render-session.ts), which main.tsx disposes
+ * when the next PDF arrives; this component only asks for them.
  */
-export function PdfEngine({ buffer, wasmUrl }: { buffer: ArrayBuffer; wasmUrl: string }): React.JSX.Element {
+export function PdfEngine({ session }: { session: PdfRenderSession<ViewerEngine> }): React.JSX.Element {
   const [mode, setMode] = useState<EngineMode>('worker');
-  const useMainThread = useCallback(() => setMode('main-thread'), []);
-  const workerWasmUrl = useWorkerWasmUrl(mode === 'worker' ? wasmUrl : undefined, useMainThread);
-
-  if (mode === 'worker' && !workerWasmUrl) return <Status text="Starting the PDF engine…" />;
-  return (
-    <EngineSession
-      key={mode}
-      buffer={buffer}
-      mode={mode}
-      wasmUrl={mode === 'worker' ? workerWasmUrl! : wasmUrl}
-      onWorkerFailure={useMainThread}
-    />
-  );
+  const useMainThread = useCallback(() => {
+    session.release('worker');
+    setMode('main-thread');
+  }, [session]);
+  return <EngineSession key={mode} session={session} mode={mode} onWorkerFailure={useMainThread} />;
 }
 
-/**
- * The worker cannot fetch the extension's resource URL itself, so the WASM is
- * fetched here and handed over as a blob URL.
- */
-function useWorkerWasmUrl(wasmUrl: string | undefined, onFailure: () => void): string | undefined {
-  const [blobUrl, setBlobUrl] = useState<string>();
+/** The session's engine for `mode`, or the error that kept it from starting. */
+function useSessionEngine(session: PdfRenderSession<ViewerEngine>, mode: EngineMode): { engine?: ViewerEngine; error?: unknown } {
+  const [state, setState] = useState<{ engine?: ViewerEngine; error?: unknown }>({});
   useEffect(() => {
-    if (!wasmUrl) return;
     let active = true;
-    let objectUrl: string | undefined;
-    fetch(wasmUrl)
-      .then(response => {
-        if (!response.ok) throw new Error(`PDFium request failed (${response.status})`);
-        return response.blob();
-      })
-      .then(blob => {
-        if (!active) return;
-        objectUrl = URL.createObjectURL(blob);
-        setBlobUrl(objectUrl);
-      })
-      .catch((error: unknown) => {
-        console.warn('Could not prepare PDFium for the worker; using the main thread.', error);
-        if (active) onFailure();
-      });
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [wasmUrl, onFailure]);
-  return blobUrl;
+    session.engine(mode).then(
+      engine => { if (active) setState({ engine }); },
+      (error: unknown) => {
+        if (active && !(error instanceof RenderSessionDisposedError)) setState({ error });
+      },
+    );
+    return () => { active = false; };
+  }, [session, mode]);
+  return state;
 }
 
-function EngineSession({ buffer, mode, wasmUrl, onWorkerFailure }: {
-  buffer: ArrayBuffer;
+function EngineSession({ session, mode, onWorkerFailure }: {
+  session: PdfRenderSession<ViewerEngine>;
   mode: EngineMode;
-  wasmUrl: string;
   onWorkerFailure: () => void;
 }): React.JSX.Element {
   const worker = mode === 'worker';
-  const { engine, error } = usePdfiumEngine({
-    worker,
-    wasmUrl,
-    encoderPoolSize: worker ? 1 : 0,
-    // Never fetch fallback fonts from the network; the viewer works offline.
-    fontFallback: null,
-  });
-  const plugins = useMemo(() => viewerPlugins(buffer), [buffer]);
+  const { engine, error } = useSessionEngine(session, mode);
+  const plugins = useMemo(() => viewerPlugins(session.buffer), [session]);
   const [opened, setOpened] = useState(false);
 
   useEffect(() => {
     if (!error) return;
-    if (worker) onWorkerFailure();
-    else postToHost({ type: 'error', message: `The PDF engine failed: ${String(error)}` });
+    if (worker) {
+      console.warn('The PDF engine could not start in a worker; using the main thread.', error);
+      onWorkerFailure();
+    } else {
+      postToHost({ type: 'error', message: `The PDF engine failed: ${String(error)}` });
+    }
   }, [error, onWorkerFailure, worker]);
 
   // Treat a worker that never answers like one that failed.
