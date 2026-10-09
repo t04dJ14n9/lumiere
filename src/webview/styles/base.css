@@ -28,15 +28,16 @@
     color-mix(in srgb, var(--vscode-editor-foreground, #888) 10%, transparent)
   );
   --surface: var(--vscode-editorWidget-background, var(--code));
+  /* Note text follows VS Code's editor.fontFamily and editor.fontSize. */
   --text-font: var(
-    --vscode-font-family,
+    --vscode-editor-font-family,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif
   );
   --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
-  --text-size: 16px;
+  --text-size: var(--vscode-editor-font-size, 16px);
   --file-line-width: 700px;
   --file-margins: 32px;
 }
@@ -100,7 +101,7 @@ button {
 /* Source mode shows Markdown as code. */
 #app .cm-editor.is-source-mode .cm-scroller {
   font-family: var(--code-font);
-  font-size: 14px;
+  font-size: var(--text-size);
 }
 #app .cm-cursor,
 #app .cm-dropCursor {
