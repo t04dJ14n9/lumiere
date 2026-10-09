@@ -8,10 +8,11 @@ import { SearchPluginPackage } from '@embedpdf/plugin-search/react';
 import { SelectionPluginPackage } from '@embedpdf/plugin-selection/react';
 import { ViewportPluginPackage } from '@embedpdf/plugin-viewport/react';
 import { ZoomMode, ZoomPluginPackage } from '@embedpdf/plugin-zoom/react';
+import { MAX_ZOOM, MIN_ZOOM } from '../shared/zoom-steps';
 
 /** The viewer shows one document under this id. */
 export const DOCUMENT_ID = 'pdf';
-export const ZOOM_RANGE = { min: 0.25, max: 4 } as const;
+export const ZOOM_RANGE = { min: MIN_ZOOM, max: MAX_ZOOM } as const;
 /** Pixels between pages (and around them). */
 export const PAGE_GAP = 12;
 

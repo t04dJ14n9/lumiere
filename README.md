@@ -8,7 +8,7 @@ and box, the file's hash, and the selected text.
 ## Features
 
 - **Viewer.** Continuous scrolling, page and zoom controls, fit width and fit
-  page, pinch zoom, find in PDF (⌘F / Ctrl+F), internal links and web links.
+  page, Ctrl/⌘+wheel and pinch zoom, find in PDF (⌘F / Ctrl+F), internal links and web links.
   When the file changes on disk (a rebuilt paper), the viewer reloads at the
   same page and zoom.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
@@ -66,6 +66,7 @@ src/
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
 │   ├── agent-text.ts     the text Copy for Agent copies
+│   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   └── geometry.ts       page rectangles
 ├── extension/   the VS Code side
 │   ├── extension.ts            activation
@@ -82,6 +83,7 @@ src/
     ├── page.tsx, page-links.tsx
     ├── navigation.ts           pages, locations, highlights
     ├── reading-position.ts     the place and zoom kept across reloads
+    ├── wheel-zoom.ts           Ctrl/⌘+wheel zoom, one step per notch
     ├── selection.ts            reporting text and region selections
     └── styles/                 CSS using VS Code theme colours
 ```

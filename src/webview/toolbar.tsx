@@ -1,5 +1,6 @@
 import { ZoomMode, useZoom } from '@embedpdf/plugin-zoom/react';
 import React from 'react';
+import { nextZoomStep } from '../shared/zoom-steps';
 import type { Navigation } from './navigation';
 import { NumberField } from './number-field';
 import { DOCUMENT_ID, ZOOM_RANGE } from './plugins';
@@ -24,7 +25,7 @@ export function Toolbar({ navigation, onSearch }: { navigation: Navigation; onSe
       />
       <button type="button" aria-label="Next page" title="Next page" disabled={currentPage >= pageCount} onClick={() => navigation.step(1)}>›</button>
       <span className="separator" />
-      <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoom?.zoomOut()}>−</button>
+      <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoom?.requestZoom(nextZoomStep(state.currentZoomLevel, -1))}>−</button>
       <NumberField
         label="Zoom"
         value={Math.round(state.currentZoomLevel * 100)}
@@ -35,7 +36,7 @@ export function Toolbar({ navigation, onSearch }: { navigation: Navigation; onSe
           return Math.round(level * 100);
         }}
       />
-      <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoom?.zoomIn()}>+</button>
+      <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoom?.requestZoom(nextZoomStep(state.currentZoomLevel, 1))}>+</button>
       <button type="button" aria-label="Fit width" title="Fit width" onClick={() => zoom?.requestZoom(ZoomMode.FitWidth)}>↔</button>
       <button type="button" aria-label="Fit page" title="Fit page" onClick={() => zoom?.requestZoom(ZoomMode.FitPage)}>⤢</button>
       <span className="spacer" />

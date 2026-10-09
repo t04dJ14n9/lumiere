@@ -401,3 +401,32 @@ test('zoom buttons and the zoom field change the zoom', async ({ page }) => {
   const width = (await page.locator('.page[data-page-index="0"]').boundingBox())!.width;
   expect(Math.round(width)).toBe(150);
 });
+
+test('each Ctrl+wheel notch zooms one step, and small trackpad movements add up to one', async ({ page }) => {
+  await open(page);
+  const zoom = page.getByRole('textbox', { name: 'Zoom' });
+  await zoom.fill('100');
+  await zoom.press('Enter');
+  await expect(zoom).toHaveValue('100');
+  const box = (await page.locator('.viewport').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const notch = async (deltaY: number, expected: string): Promise<void> => {
+    await page.keyboard.down('Control');
+    await page.mouse.wheel(0, deltaY);
+    await page.keyboard.up('Control');
+    await expect(zoom).toHaveValue(expected);
+  };
+  await notch(-100, '110');
+  await notch(-100, '125');
+  await notch(100, '110');
+  await notch(100, '100');
+  await notch(100, '90');
+
+  await page.keyboard.down('Control');
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -10);
+  await page.waitForTimeout(200);
+  await expect(zoom).toHaveValue('90');
+  await page.mouse.wheel(0, -10);
+  await page.keyboard.up('Control');
+  await expect(zoom).toHaveValue('100');
+});

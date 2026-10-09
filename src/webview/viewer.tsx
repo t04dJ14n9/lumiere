@@ -13,6 +13,7 @@ import { rememberPosition, rememberedPosition } from './reading-position';
 import { SearchBar } from './search-bar';
 import { useSelectionReporting } from './selection';
 import { Toolbar } from './toolbar';
+import { useWheelZoom } from './wheel-zoom';
 
 /** The open PDF: toolbar, optional search bar, and the scrolling pages. */
 export function Viewer({ document: pdf }: { document: PdfDocumentObject }): React.JSX.Element {
@@ -27,6 +28,8 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
     setFindRequest(request => request + 1);
   };
   useOutlinePublishing(DOCUMENT_ID, pdf);
+  const documentArea = useRef<HTMLDivElement>(null);
+  useWheelZoom(documentArea);
 
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
@@ -56,10 +59,10 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
     <div className="viewer">
       <CopyToClipboard />
       <Toolbar navigation={navigation} onSearch={openSearch} />
-      <div className="document">
+      <div className="document" ref={documentArea}>
         {searching && <SearchBar navigation={navigation} focusRequest={findRequest} onClose={() => setSearching(false)} />}
         <Viewport documentId={DOCUMENT_ID} className="viewport">
-          <ZoomGestureWrapper documentId={DOCUMENT_ID}>
+          <ZoomGestureWrapper documentId={DOCUMENT_ID} enableWheel={false}>
             <Scroller
               documentId={DOCUMENT_ID}
               renderPage={({ pageIndex, width, height }) => (
