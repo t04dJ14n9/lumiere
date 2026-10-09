@@ -29,6 +29,31 @@ map visible text back to source before syntax is revealed.
 - `core.test.ts`: reveal, motion, mode and lifecycle unit coverage.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
 - `code-lines.test.ts`: code and thematic break line classes and hidden text.
+- `invalidation.test.ts`: incremental index and decorations equal a full rebuild (randomised); invalidation reasons.
+
+## Incremental invalidation
+
+Each transaction yields `RenderInvalidation`s (`invalidation.ts`):
+`{ fromLine, toLine, reason }` with reason `text` (the lines whose blocks a
+text change may have altered: every top-level syntax node it touched, before
+and after, widened to whole lines), `selection` (lines the caret left or
+entered) or `metadata` (an effect, a reconfiguration or a renderer change:
+every line).
+
+- `blockIndex` indexes only the `text` region again. Blocks before it are
+  kept as the same objects; blocks after it are shifted copies. A region over
+  half the note, or a block found there that reaches outside it, falls back
+  to a full index.
+- `blockDecorations` rebuilds decorations only for blocks that are new to
+  the index or touched by an invalidation; `metadata` (or more than half the
+  blocks dirty) rebuilds all. Blocks after an edit get new widgets with
+  their new positions (widgets carry positions), but keep their DOM because
+  the source did not change.
+- Renderers' `match` and `range` may read only the node and the text around
+  it; anything else they depend on must reach them as a facet change or an
+  effect. `invalidation.test.ts` checks, over thousands of random edits and
+  caret moves, that the incremental index and decorations equal a full
+  rebuild.
 
 ## Services, events and settings
 
