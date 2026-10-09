@@ -68,13 +68,6 @@
         "enablement": "vscodeEmbedPdf.hasSelection"
       },
       {
-        "command": "vscodeEmbedPdf.copyForAgent",
-        "title": "Copy for Agent",
-        "category": "PDF",
-        "icon": "$(copy)",
-        "enablement": "vscodeEmbedPdf.hasSelection"
-      },
-      {
         "command": "vscodeEmbedPdf.openLocation",
         "title": "Open Location\u2026",
         "category": "PDF"
@@ -91,20 +84,11 @@
           "command": "vscodeEmbedPdf.askAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
           "group": "navigation@1"
-        },
-        {
-          "command": "vscodeEmbedPdf.copyForAgent",
-          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
-          "group": "navigation@2"
         }
       ],
       "commandPalette": [
         {
           "command": "vscodeEmbedPdf.askAgent",
-          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
-        },
-        {
-          "command": "vscodeEmbedPdf.copyForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
         {
@@ -117,11 +101,6 @@
           "command": "vscodeEmbedPdf.askAgent",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
           "group": "0_agent@1"
-        },
-        {
-          "command": "vscodeEmbedPdf.copyForAgent",
-          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
-          "group": "0_agent@2"
         }
       ]
     },

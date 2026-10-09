@@ -131,18 +131,18 @@ test('a text drag reports its text and line box, and the copy command copies the
   expect(copied).toBe('Synthetic page 1');
 });
 
-test('Copy for Agent right after a text drag reports the selection before the copy', async ({ page }) => {
+test('Ask Agent right after a text drag reports the selection before the ask', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);
   await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
   await page.getByRole('toolbar', { name: 'PDF text selection actions' })
-    .getByRole('button', { name: 'Copy for Agent' }).click();
-  await expect.poll(async () => (await messages(page)).some(message => message.type === 'copyForAgent')).toBe(true);
+    .getByRole('button', { name: 'Ask Agent' }).click();
+  await expect.poll(async () => (await messages(page)).some(message => message.type === 'askAgent')).toBe(true);
   const order = (await messages(page)).flatMap(message =>
-    message.type === 'copyForAgent' ? ['copy']
+    message.type === 'askAgent' ? ['ask']
       : message.type === 'selection' && (message.selection as { kind?: string } | null)?.kind === 'text' ? ['text'] : []);
   expect(order.indexOf('text')).toBeGreaterThanOrEqual(0);
-  expect(order.indexOf('text')).toBeLessThan(order.indexOf('copy'));
+  expect(order.indexOf('text')).toBeLessThan(order.indexOf('ask'));
 });
 
 test('Ask Agent, from a text or region menu, comes after the full selection report', async ({ page }) => {
@@ -150,7 +150,7 @@ test('Ask Agent, from a text or region menu, comes after the full selection repo
   const at = await pagePoint(page, 1);
   await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
   const textMenu = page.getByRole('toolbar', { name: 'PDF text selection actions' });
-  await expect(textMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy for Agent', 'Copy text']);
+  await expect(textMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy text']);
   await textMenu.getByRole('button', { name: 'Ask Agent' }).click();
   await expect.poll(async () => (await messages(page)).at(-1)?.type).toBe('askAgent');
   const beforeAsk = (await messages(page)).filter(message => message.type === 'selection').at(-1);
@@ -160,7 +160,7 @@ test('Ask Agent, from a text or region menu, comes after the full selection repo
   await page.keyboard.press('Escape');
   await drag(page, at(60, 70), at(230, 120));
   const regionMenu = page.getByRole('toolbar', { name: 'PDF region actions' });
-  await expect(regionMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy for Agent']);
+  await expect(regionMenu.getByRole('button')).toHaveText(['Ask Agent']);
   await regionMenu.getByRole('button', { name: 'Ask Agent' }).click();
   await expect.poll(async () => (await messages(page)).filter(message => message.type === 'askAgent').length).toBe(2);
   const all = await messages(page);

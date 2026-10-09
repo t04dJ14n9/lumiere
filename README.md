@@ -4,7 +4,7 @@ A PDF viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.co
 and its PDFium engine. Select text or drag a box over a figure, press
 **Ask Agent**, and type your question: the agent chat opens with the exact
 page and box, the file's hash, the selected text, and for a box a snapshot
-of it. **Copy for Agent** copies the same for any other agent.
+of it. It is copied too, so you can paste it into any other agent.
 
 ## Features
 
@@ -14,11 +14,11 @@ of it. **Copy for Agent** copies the same for any other agent.
   same page and zoom.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
-- **Ask Agent and Copy for Agent.** Select text, or drag over empty page
+- **Ask Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
-  buttons next to the selection, the right-click menu, the editor title
-  buttons, or **PDF: Ask Agent** / **PDF: Copy for Agent**. ⌘C / Ctrl+C
-  copies just the text.
+  button next to the selection, the right-click menu, the editor title
+  button, or **PDF: Ask Agent**. ⌘C / Ctrl+C (or **Copy text** next to a
+  text selection) copies just the text.
 
   **Ask Agent** copies the selection and opens the agent chat with it typed
   in, ready for your question:
@@ -29,12 +29,15 @@ of it. **Copy for Agent** copies the same for any other agent.
     paste the selection (they take no prefilled text);
   - otherwise it only copies, and says so.
 
+  Ask Agent always puts the same text on the clipboard as well (the Source
+  link, the file's hash, the selected text, and a region's snapshot path).
+
   The `vscodeEmbedPdf.askAgent.target` setting picks one of these instead.
 
   In Cursor, the editor title bar keeps only a few buttons, so **Ask Agent**
-  and **Copy for Agent** sit in the **…** (More Actions) menu while something
-  is selected. To pin them to the title bar, open that menu, choose
-  **Configure Icon Visibility** and tick them.
+  sits in the **…** (More Actions) menu while something is selected. To pin
+  it to the title bar, open that menu, choose **Configure Icon Visibility**
+  and tick it.
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
 
@@ -109,7 +112,7 @@ src/
 │   ├── messages.ts       every message between extension and viewer, validated
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
-│   ├── agent-text.ts     the text Copy for Agent copies
+│   ├── agent-text.ts     the text Ask Agent hands over
 │   ├── agent-target.ts   which agent chat Ask Agent opens
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
@@ -121,7 +124,7 @@ src/
 │   ├── pdf-panels.ts           all open editors and the active one
 │   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
-│   ├── commands.ts             Copy for Agent, Ask Agent, Open Location
+│   ├── commands.ts             Ask Agent, Open Location
 │   ├── agent-chat.ts           opening the agent chat with a selection
 │   └── webview-html.ts         the viewer page and its content security policy
 └── webview/     the viewer (React + EmbedPDF), one module per concern

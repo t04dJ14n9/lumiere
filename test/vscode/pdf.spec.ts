@@ -21,7 +21,7 @@ import {
   withoutSpaces,
 } from './workbench';
 
-// The exact text Copy for Agent produces is covered by test/unit/agent-text.test.ts,
+// The exact text Ask Agent produces is covered by test/unit/agent-text.test.ts,
 // and the selection geometry by the browser tests. These tests check the parts
 // only a real VS Code has: the editor, the Explorer view, commands and buttons.
 
@@ -59,26 +59,31 @@ test('a PDF opens with its outline in the Explorer, shown only while the PDF is 
   await expect(header).toBeVisible();
 });
 
-test('Copy for Agent works from the selection menu and the editor title button', async ({ workbench: page }) => {
+test('Ask Agent works from the selection menu and the editor title button, and Copy for Agent is gone', async ({ workbench: page }) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
   await fitPage(viewer);
   await showPage(viewer, 3);
-  // Exact text: VS Code repeats notifications in a screen-reader alert ("Info: …").
-  const confirmation = page.getByText('Selection copied for agent.', { exact: true });
 
   const at = await pagePoint(viewer, 3);
   await selectText(page, viewer, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
-  await viewer.getByRole('toolbar', { name: 'PDF text selection actions' })
-    .getByRole('button', { name: 'Copy for Agent' }).click();
-  await expect(confirmation).toBeVisible();
-  await command(page, 'Notifications: Clear All Notifications');
-  await expect(confirmation).toHaveCount(0);
+  const textMenu = viewer.getByRole('toolbar', { name: 'PDF text selection actions' });
+  await expect(textMenu.getByRole('button')).toHaveText(['Ask Agent', 'Copy text']);
+  await textMenu.getByRole('button', { name: 'Ask Agent' }).click();
+  await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
+    .toContain(withoutSpaces(`Source: [${PDF} (page 3)](<${PDF}#page=3&viewrect=`));
 
   await drag(page, at(150, 150), at(250, 250));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
-  await editorTitleAction(page, 'Copy for Agent');
-  await expect(confirmation).toBeVisible();
+  await expect(page.locator('.editor-actions').getByRole('button', { name: 'Copy for Agent' })).toHaveCount(0);
+  await editorTitleAction(page, 'Ask Agent');
+  await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
+    .toContain(withoutSpaces(`Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=150,150,100,100>)`));
+
+  await page.keyboard.press('F1');
+  await page.locator('.quick-input-widget input:visible').fill('>PDF: Copy for Agent');
+  await expect(page.locator('.quick-input-list .monaco-list-row', { hasText: 'Copy for Agent' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
 });
 
 test('Ask Agent from the context menu opens the agent chat with the region typed in and its snapshot attached', async ({ workbench: page }) => {
@@ -100,7 +105,7 @@ test('Ask Agent from the context menu opens the agent chat with the region typed
 test('PDF: Open Location opens a pasted link at its page and flashes its box', async ({ workbench: page }) => {
   await command(page, 'PDF: Open Location…');
   const input = page.locator('.quick-input-widget input:visible');
-  // The source line exactly as Copy for Agent writes it.
+  // The source line exactly as Ask Agent writes it.
   await input.fill(`Source: [${PDF} (page 5)](<${PDF}#page=5&viewrect=72,83,134,21>)`);
   await input.press('Enter');
   const viewer = await pdfViewer(page);

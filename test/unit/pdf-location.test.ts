@@ -21,7 +21,7 @@ test('an invalid page rejects the fragment and an invalid box is dropped', () =>
   assert.deepEqual(parseLocationFragment('page=2&viewrect=1,2,3'), { page: 2 });
 });
 
-test('a pasted link is found in a Copy for Agent source line or a Markdown link', () => {
+test('a pasted link is found in an Ask Agent source line or a Markdown link', () => {
   const link = 'papers/my paper.pdf#page=3&viewrect=72,83,134,21';
   const copied = agentText(
     { kind: 'text', text: 'x', pages: [{ page: 3, rects: [[72, 83, 206, 104]] }] },

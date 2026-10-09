@@ -52,7 +52,7 @@ export function pdfLink(path: string, location: PdfLocation): string {
 
 /**
  * The link in text a reader pasted: a bare link or path, `<link>`, or a
- * Markdown link `[label](<link>)` such as the `Source:` line Copy for Agent
+ * Markdown link `[label](<link>)` such as the `Source:` line Ask Agent
  * writes (the first link, if there are several).
  */
 export function extractPdfLink(text: string): string {

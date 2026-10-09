@@ -1,5 +1,5 @@
 /**
- * The text that "Copy for Agent" puts on the clipboard: where the selection
+ * The text that Ask Agent types into the agent chat and puts on the clipboard: where the selection
  * is (a link per page with its box), which file version it came from, and
  * what was selected. For example:
  *

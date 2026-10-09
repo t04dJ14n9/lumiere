@@ -7,7 +7,6 @@
  *    │  ◄──────────── outline { items }   bookmarks, once read
  *    │  ◄──────────── selection { … }     after each selection change; for a
  *    │                                    region, again with its text and image
- *    │  ◄──────────── copyForAgent        the viewer's Copy for Agent button
  *    │  ◄──────────── askAgent            the viewer's Ask Agent button
  *    │  ◄──────────── openExternal        a web link clicked in the PDF
  *    │  goTo { location } ──────►         open a page (and box)
@@ -33,7 +32,6 @@ export type ViewerMessage =
   | { type: 'outline'; items: OutlineItem[] }
   /** `image`: for a region, a PNG of the box as a `data:image/png;base64,` URL. */
   | { type: 'selection'; selection: PdfSelection | null; image?: string }
-  | { type: 'copyForAgent' }
   | { type: 'askAgent' }
   | { type: 'openExternal'; url: string }
   | { type: 'error'; message: string };
@@ -57,7 +55,6 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
   const message = value as Record<string, unknown>;
   switch (message.type) {
     case 'ready':
-    case 'copyForAgent':
     case 'askAgent':
       return { type: message.type };
     case 'selection': {

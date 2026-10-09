@@ -91,6 +91,7 @@ test('only web and mail links may be opened from a PDF', () => {
 test('unknown messages are ignored', () => {
   assert.equal(parseViewerMessage({ type: 'eval', code: '1' }), undefined);
   assert.equal(parseViewerMessage(null), undefined);
-  assert.deepEqual(parseViewerMessage({ type: 'copyForAgent', extra: 'ignored' }), { type: 'copyForAgent' });
+  // Copy for Agent was removed (Ask Agent copies too; Cmd/Ctrl+C copies plain text).
+  assert.equal(parseViewerMessage({ type: 'copyForAgent' }), undefined);
   assert.deepEqual(parseViewerMessage({ type: 'askAgent', query: 'ignored' }), { type: 'askAgent' });
 });

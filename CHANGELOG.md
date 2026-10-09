@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Removed Copy for Agent (command, title button, context and selection menu
+  items). Ask Agent copies the same text as well, and ⌘C / Ctrl+C or Copy
+  text copies plain text.
+
 ## 0.1.0
 
 First version, moved out of LLM Wiki for VS Code and rewritten:
