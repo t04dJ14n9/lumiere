@@ -509,6 +509,24 @@ Off by default.
    use VS Code's save, close and undo. IME in normal mode inserts nothing.
 2. With Vim on, Mod+O, B, I, K, Shift+X, Shift+T, Shift+H and Alt+0–6 reach
    Vim instead of VS Code; with Vim off they do not.
+3. In a plain paragraph in `Formatting.md`, compare with the built-in editor
+   using a Vim extension. Escape and `v` show a full block over one character,
+   with the glyph readable in `editorCursor.background` on
+   `editorCursor.foreground`. `i` shows a line; `R` and pending `r` show a
+   two-pixel underline. Type a replacement or cancel with Escape: the block
+   returns. Repeat with `3r`, visual-line/block selections, emoji, combining
+   characters, a blank line, line end, headings and an active table cell.
+4. Set native `editor.cursorWidth` to 3, then 5: insert-mode line width follows.
+   Cycle `editor.cursorBlinking` through blink, smooth, phase, expand and solid:
+   verify hard blinking, fading, soft blinking, vertical expansion and no blink.
+   Set `editor.cursorSmoothCaretAnimation` to off, explicit and on: movement is
+   immediate, animated for navigation, then animated for typing too. Verify in
+   light and dark themes, after scrolling, when focus leaves, and in two panels.
+5. With Vim off, cycle native `editor.cursorStyle` through line, block,
+   underline, line-thin, block-outline and underline-thin. Line follows the
+   native width, thin styles stay 1 px, underline is 2 px and blocks are one
+   character wide. Check `[markdown]` overrides, live settings changes, selection
+   backgrounds, and turning Vim off/on without changing the note or selection.
 
 ### pasteHtml
 

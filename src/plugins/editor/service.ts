@@ -5,6 +5,7 @@ import type { Endpoint } from "../../shared/rpc/endpoint";
 import type { ExtensionRegistry } from "./extensions";
 import type { ViewContributions } from "./contributions";
 import { createClipboard } from "./clipboard";
+import { caretFactory } from "./caret-view";
 
 /** Bind extension ownership to the consumer while preserving one shared editor. */
 export function createEditorService(options: {
@@ -38,6 +39,7 @@ export function createEditorService(options: {
       });
     },
     view,
+    caret: caretFactory(() => view.state.facet(editorSettings)),
     get settings() {
       return view.state.facet(editorSettings);
     },

@@ -10,6 +10,7 @@ import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "./api";
 import type {} from "../commands/api";
+import { vimCaretMode } from "./caret";
 
 /** Each webview has one editor; restore the library hooks when its fiber stops. */
 export const vimWebview: Plugin = {
@@ -27,7 +28,7 @@ export const vimWebview: Plugin = {
 function registerVimService(ctx: Context): void {
   ctx.provide("vim", {
     mode: (view) => getCM(view)?.state.vim ?? undefined,
-    extension: () => vim({ status: false }),
+    extension: () => vimExtensions(ctx, false),
     sync(from, to) {
       const source = getCM(from)?.state.vim;
       const target = getCM(to);
@@ -105,7 +106,7 @@ function registerVimExtension(ctx: Context): void {
   ctx.effect(() =>
     ctx.editor.extend(
       [
-        vim({ status: true }),
+        vimExtensions(ctx, true),
         EditorView.domEventHandlers({
           beforeinput(event, view) {
             const mode = getCM(view)?.state.vim;
@@ -127,4 +128,29 @@ function registerVimExtension(ctx: Context): void {
       { slot: "override" },
     ),
   );
+}
+
+function vimExtensions(ctx: Context, status: boolean) {
+  return [
+    vim({ status }),
+    ctx.editor.caret({
+      mode: (view) => vimCaretMode(getCM(view)?.state),
+      watch(view, refresh) {
+        const cm = getCM(view);
+        if (!cm) {
+          return () => {};
+        }
+        // Pending r emits a keypress without a selection or mode transaction.
+        const events = ["vim-mode-change", "vim-keypress", "vim-command-done"];
+        for (const event of events) {
+          cm.on(event, refresh);
+        }
+        return () => {
+          for (const event of events) {
+            cm.off(event, refresh);
+          }
+        };
+      },
+    }),
+  ];
 }

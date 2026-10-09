@@ -87,6 +87,17 @@ export interface Workbench {
       letterSpacing?: number;
       fontLigatures?: boolean | string;
       fontVariations?: boolean | string;
+      /** Native caret presentation settings, also resource-scoped to Markdown. */
+      cursorStyle?:
+        | "line"
+        | "block"
+        | "underline"
+        | "line-thin"
+        | "block-outline"
+        | "underline-thin";
+      cursorBlinking?: "blink" | "smooth" | "phase" | "expand" | "solid";
+      cursorSmoothCaretAnimation?: "off" | "explicit" | "on";
+      cursorWidth?: number;
     };
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";

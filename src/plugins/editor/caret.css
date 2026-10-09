@@ -1,0 +1,109 @@
+/* Selection backgrounds remain CodeMirror's; only the caret layers are replaced. */
+#app
+  .cm-editor[data-caret-style]
+  > .cm-scroller
+  > .cm-cursorLayer:not(.mw-caret-layer) {
+  display: none;
+}
+#app .cm-editor[data-caret-style] > .cm-scroller > .cm-content {
+  caret-color: transparent;
+}
+#app .cm-editor > .cm-scroller > .mw-caret-layer {
+  /* Vim hides other cm-cursorLayer elements, so our replacement opts back in. */
+  display: block;
+  z-index: 150;
+  animation: none;
+  --caret-foreground: var(
+    --vscode-editorCursor-foreground,
+    var(--vscode-editor-foreground, #222)
+  );
+  --caret-background: var(
+    --vscode-editorCursor-background,
+    var(--vscode-editor-background, #fff)
+  );
+}
+#app .mw-caret {
+  transition-property: transform, left, top;
+  transition-duration: var(--caret-move-duration, 0ms);
+  transition-timing-function: ease-out;
+}
+#app .mw-caret-shape {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  white-space: pre;
+  background: var(--caret-foreground);
+  color: var(--caret-background);
+  transform-origin: center bottom;
+}
+#app .cm-editor.cm-focused > .cm-scroller > .mw-caret-layer .mw-caret-shape {
+  animation-name: var(--caret-animation, mw-caret-blink);
+  animation-duration: 1.2s;
+  animation-timing-function: var(--caret-timing, steps(1, end));
+  animation-iteration-count: infinite;
+}
+#app
+  .cm-editor[data-caret-style="block-outline"]
+  > .cm-scroller
+  > .mw-caret-layer
+  .mw-caret-shape,
+#app
+  .cm-editor:not(.cm-focused)[data-caret-style="block"]
+  > .cm-scroller
+  > .mw-caret-layer
+  .mw-caret-shape {
+  background: transparent;
+  color: transparent;
+  box-shadow: inset 0 0 0 1px var(--caret-foreground);
+}
+#app
+  .cm-editor:not(.cm-focused):not([data-caret-style="block"]):not(
+    [data-caret-style="block-outline"]
+  )
+  > .cm-scroller
+  > .mw-caret-layer {
+  visibility: hidden;
+}
+@keyframes mw-caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes mw-caret-smooth {
+  0%,
+  20%,
+  100% {
+    opacity: 1;
+  }
+  50%,
+  70% {
+    opacity: 0;
+  }
+}
+@keyframes mw-caret-phase {
+  0%,
+  40%,
+  100% {
+    opacity: 1;
+  }
+  50%,
+  90% {
+    opacity: 0;
+  }
+}
+@keyframes mw-caret-expand {
+  0%,
+  40%,
+  100% {
+    transform: scaleY(1);
+  }
+  50%,
+  90% {
+    transform: scaleY(0);
+  }
+}

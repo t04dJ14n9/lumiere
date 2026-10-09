@@ -34,13 +34,27 @@ Obsidian's sizes and line heights. Code is the same size as the text. These
 are native settings (`nativeConfigKeys`), not contributed again; `font.ts`
 turns them into CSS variables, which `settings.ts` delivers as an editor theme
 so a change makes CodeMirror measure the lines again (line numbers follow).
+The native `editor.cursorStyle`, `cursorWidth`, `cursorBlinking` and
+`cursorSmoothCaretAnimation` settings use the same manifest/configuration path.
+A measured caret layer keeps block characters readable with VS Code's
+`editorCursor.foreground` and `editorCursor.background` theme colours, and
+keeps DOM elements in place so movement can animate. Modal plugins inject the
+caret's mode and change notifications through the editor service;
+`drawSelection` continues to draw selections. Explicit smooth animation applies
+to selection moves, while `on` also animates typing and deletion.
 
 ## Files
 
 - `selection.ts`: host-held frozen selection snapshots, source coordinates and stale validation.
 
-- `manifest.ts`: core identity, indentation and native font configuration schema.
+- `manifest.ts`: core identity, indentation and native font/caret configuration schema.
 - `font.ts`: editor font settings to the note's CSS variables.
+- `caret.ts`: pure mode/settings mapping to caret dimensions and CSS variables.
+- `caret-settings.ts`: validated native cursor fields and manifest keys.
+- `caret-view.ts`: persistent caret DOM, modal sources and their cleanup.
+- `caret-geometry.ts`: character/glyph/font measurements relative to the scroller.
+- `caret.css`: theme colours, cursor shapes, blinking and movement transitions.
+- `caret.test.ts`: native and modal cursor mapping units.
 - `api.ts`: editor, panel, menu, view-state and event contracts.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.
@@ -55,7 +69,7 @@ so a change makes CodeMirror measure the lines again (line numbers follow).
 - `webview.ts`: view creation and named service/settings/RPC registrations.
 - `service.ts`: shared editor facade with caller-bound extension ownership.
 - `extensions.ts`: deterministic ordered extension registry.
-- `settings.ts`: CodeMirror indentation extensions.
+- `settings.ts`: CodeMirror editor settings, indentation and font presentation.
 - `clipboard.ts`: validated clipboard RPC client.
 - `contributions.ts`: feature-owned view-state validation and restoration.
 - `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.

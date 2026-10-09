@@ -9,6 +9,12 @@ import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { Disposer } from "../../kernel";
 import type { PanelPort } from "../../shared/runtime";
+import type { CaretMode } from "./caret";
+export type { CaretMode } from "./caret";
+export interface CaretModeSource {
+  mode(view: EditorView): CaretMode;
+  watch?(view: EditorView, refresh: () => void): () => void;
+}
 export interface MenuItem {
   label: string;
   run?: () => void | Promise<void>;
@@ -25,6 +31,8 @@ export interface Menu {
 }
 export interface EditorService {
   readonly settings: Infer<typeof editorConfig>;
+  /** Own a modal caret source through the same extension registration as its keys. */
+  caret(source: CaretModeSource): Extension;
   readonly clipboard: {
     read(): Promise<string>;
     write(text: string): Promise<void>;
