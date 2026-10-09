@@ -1,10 +1,29 @@
 # Plugin kernel
 
 The root Context owns a tree of fibers. A fiber declares injected services,
-waits for its required providers, and applies with a fresh Context. Registrations
-are effects; stop undoes effects in reverse order, then children, then services.
+waits for its required providers, and applies with a fresh Context.
 `await root.settled()` waits for the current activation and re-gating work.
-A disposed context rejects late registrations from asynchronous callbacks.
+
+Lifecycle invariants (tested in `test/unit/kernel/transaction.test.ts` and
+`lifecycle.test.ts`):
+
+- **Activation is a transaction.** Everything `apply` acquires (effects,
+  listeners, resources passed to `ctx.acquire(kind, resource)`, child plugins)
+  belongs to the activation until it commits. Services are published only on
+  commit, and child plugins started during `apply` are held and start only on
+  commit. A failing `apply` releases everything and leaves no trace.
+- **Teardown mirrors activation.** Stopping first withdraws the plugin's
+  services and waits until the consumers that stop because of it have finished
+  stopping, so nothing backing a service disappears under a consumer still
+  using it. Then effects and child plugins are released together, last
+  acquired first. Disposal errors are logged and do not stop the rest.
+- **Late work is refused.** A disposed context rejects late registrations
+  from asynchronous callbacks; a resource handed to `acquire` afterwards is
+  released at once.
+- **Every resource is accounted for.** `runtime.ledger` counts live resources
+  by owner (plugin name) and kind (`effect`, `listener`, `fiber`, `service`,
+  or the kind given to `acquire`). A plugin that stopped cleanly owns nothing;
+  the per-plugin leave-no-trace tests compare ledger snapshots.
 
 Services are typed through declaration merging of `Services` in `types.ts`.
 The context Proxy enforces injection declarations. Non-replaceable names have

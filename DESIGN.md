@@ -246,12 +246,16 @@ export function apply(ctx: Context, config: BacklinksConfig): void {
 
 - `pending` lists what it waits for (`fiber.waitingFor`). The plugin status
   UI shows it as "Waiting for Tables".
-- Leaving `active` disposes the fiber's effects in reverse order, then its
-  child fibers, then withdraws services it provided. Dependents of a withdrawn
-  service go back to `pending`; they become `active` again when a provider
-  returns. This is how a service is replaced at runtime.
-- `failed` keeps the error. Effects registered before the throw are undone.
-  Other fibers are unaffected. `update(config)` retries.
+- `loading` is a transaction: services provided and child plugins started
+  during `apply` become visible only when `apply` returns (commit).
+- Leaving `active` mirrors activation: the fiber first withdraws the services
+  it provided and waits for the dependents that stop because of it, then
+  releases its effects and child fibers together, last acquired first.
+  Dependents of a withdrawn service go back to `pending`; they become `active`
+  again when a provider returns. This is how a service is replaced at runtime.
+- `failed` keeps the error. Everything acquired before the throw is released,
+  and held child plugins never start. Other fibers are unaffected.
+  `update(config)` retries.
 - `update(config)` calls `reconfigure` when the plugin defines it and it
   returns `true`; otherwise the fiber restarts.
 - Async `apply` is awaited. Required services are read only after `apply`

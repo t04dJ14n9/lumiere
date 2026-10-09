@@ -59,7 +59,7 @@ test("required services gate, withdraw, and resume independent of load order", a
   assert.deepEqual(seen, [1, 2]);
   await root.dispose();
 });
-test("effects are LIFO, then children, then provided services withdraw; disposal errors are isolated", async () => {
+test("teardown mirrors activation: services withdraw and consumers stop first, then effects and children LIFO; disposal errors are isolated", async () => {
   const order: string[] = [];
   const root = Context.create();
   const parent = root.plugin({
@@ -95,7 +95,7 @@ test("effects are LIFO, then children, then provided services withdraw; disposal
   await root.settled();
   await parent.dispose();
   await root.settled();
-  assert.deepEqual(order, ["second", "first", "child", "dependent"]);
+  assert.deepEqual(order, ["dependent", "child", "second", "first"]);
   assert.equal(dependent.state, "pending");
   await root.dispose();
 });
@@ -346,7 +346,7 @@ test("effects undone early and child fibers disposed on their own are forgotten"
     undone.push("last");
   });
   // White-box: the list a long-lived context keeps must not grow per effect.
-  assert.equal((ctx as unknown as { effects: unknown[] }).effects.length, 1);
+  assert.equal((ctx as unknown as { held: unknown[] }).held.length, 1);
   for (let i = 0; i < 100; i++) {
     await ctx.plugin({ name: `child${i}`, apply() {} }).dispose();
   }

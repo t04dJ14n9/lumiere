@@ -6,6 +6,10 @@ export interface Services {}
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- plugins add members by declaration merging
 export interface Events {}
 export type Disposer = () => void | Promise<void>;
+/** Anything that must be undone when its owner stops. */
+export interface Resource {
+  dispose(): unknown;
+}
 export interface Inject {
   readonly required?: readonly (keyof Services)[];
   readonly optional?: readonly (keyof Services)[];
