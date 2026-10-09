@@ -12,7 +12,15 @@ export function registerOutlineView(panels: PdfPanels): vscode.Disposable {
     treeDataProvider: provider,
     showCollapseAll: true,
   });
-  return vscode.Disposable.from(view, provider);
+  return vscode.Disposable.from(
+    view,
+    provider,
+    // Show the outline, or hide the side bar it is shown in.
+    vscode.commands.registerCommand('vscodeEmbedPdf.toggleOutline', async () => {
+      if (view.visible) await vscode.commands.executeCommand('workbench.action.closeSidebar');
+      else await vscode.commands.executeCommand('vscodeEmbedPdf.outline.focus');
+    }),
+  );
 }
 
 class OutlineProvider implements vscode.TreeDataProvider<OutlineItem>, vscode.Disposable {

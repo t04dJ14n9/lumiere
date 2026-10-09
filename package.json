@@ -83,6 +83,78 @@
         "command": "vscodeEmbedPdf.goToOutlineItem",
         "title": "Go to Outline Item",
         "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.previousPage",
+        "title": "Previous Page",
+        "category": "PDF",
+        "icon": "$(chevron-up)"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPage",
+        "title": "Next Page",
+        "category": "PDF",
+        "icon": "$(chevron-down)"
+      },
+      {
+        "command": "vscodeEmbedPdf.goToPage",
+        "title": "Go to Page\u2026",
+        "category": "PDF",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomOut",
+        "title": "Zoom Out",
+        "category": "PDF",
+        "icon": "$(zoom-out)"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomIn",
+        "title": "Zoom In",
+        "category": "PDF",
+        "icon": "$(zoom-in)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectZoom",
+        "title": "Zoom\u2026",
+        "category": "PDF",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitWidth",
+        "title": "Fit Width",
+        "category": "PDF",
+        "icon": "$(arrow-both)"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitPage",
+        "title": "Fit Page",
+        "category": "PDF",
+        "icon": "$(screen-full)"
+      },
+      {
+        "command": "vscodeEmbedPdf.find",
+        "title": "Find in PDF",
+        "category": "PDF",
+        "icon": "$(search)"
+      },
+      {
+        "command": "vscodeEmbedPdf.toggleOutline",
+        "title": "Toggle Outline",
+        "category": "PDF",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectTextTool",
+        "title": "Select Text Tool",
+        "category": "PDF",
+        "icon": "$(whole-word)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectRegionTool",
+        "title": "Select Region Tool",
+        "category": "PDF",
+        "icon": "$(inspect)"
       }
     ],
     "menus": {
@@ -110,6 +182,54 @@
         {
           "command": "vscodeEmbedPdf.goToOutlineItem",
           "when": "false"
+        },
+        {
+          "command": "vscodeEmbedPdf.previousPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.nextPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.goToPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomOut",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomIn",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectZoom",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitWidth",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.find",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.toggleOutline",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectTextTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         }
       ],
       "webview/context": [
@@ -156,7 +276,85 @@
           "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. When a new snapshot takes them past this, the least recently used ones are deleted (the new one is always kept). Values below 1 count as 1."
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "vscodeEmbedPdf.previousPage",
+        "key": "alt+pageup",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPage",
+        "key": "alt+pagedown",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.goToPage",
+        "key": "ctrl+g",
+        "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomIn",
+        "key": "ctrl+=",
+        "mac": "cmd+=",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomIn",
+        "key": "ctrl+numpad_add",
+        "mac": "cmd+numpad_add",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomOut",
+        "key": "ctrl+-",
+        "mac": "cmd+-",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomOut",
+        "key": "ctrl+numpad_subtract",
+        "mac": "cmd+numpad_subtract",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitWidth",
+        "key": "ctrl+0",
+        "mac": "cmd+0",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitPage",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.find",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.toggleOutline",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectTextTool",
+        "key": "ctrl+alt+t",
+        "mac": "ctrl+cmd+t",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectRegionTool",
+        "key": "ctrl+alt+r",
+        "mac": "ctrl+cmd+r",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/build.mjs",
