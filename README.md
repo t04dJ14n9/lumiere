@@ -4,9 +4,10 @@
 
 A PDF viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
 and its PDFium engine. Select text or drag a box over a figure and press
-**Copy Link for Agent**: it copies a link to the exact page and box, the
-file's hash, the selected text, and for a box a snapshot of it, and opens
-the agent chat with it when the editor's own chat is the only agent. **Copy for Agent** copies the same for any other agent.
+**Copy Link for Agent**: the clipboard gets a link to the exact page and
+box, the file's hash, the selected text, and for a box the path of a
+snapshot of it, ready to paste into your agent. When the editor's own chat
+is the only agent installed (or you pick one), that chat opens with it.
 
 ## Features
 
@@ -23,11 +24,13 @@ the agent chat with it when the editor's own chat is the only agent. **Copy for 
   equation, a table with its caption); Escape puts the tool down.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
-- **Copy Link for Agent and Copy for Agent.** Select text, or drag over empty page
+- **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
-  buttons next to the selection, the right-click menu, the editor title
-  buttons, or **PDF: Copy Link for Agent** / **PDF: Copy for Agent**. ⌘C / Ctrl+C
-  copies just the text.
+  button next to the selection, the right-click menu, the editor title
+  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C (or **Copy text** next
+  to a text selection) copies just the text. There is no separate Copy for
+  Agent or Ask Agent: this one action always copies, and opens a chat only
+  as described below.
 
   **Copy Link for Agent** copies the selection and, when it knows which agent you use,
   opens that agent's chat with it typed in, ready for your question:
@@ -46,9 +49,9 @@ the agent chat with it when the editor's own chat is the only agent. **Copy for 
   `chat`, or `clipboard`.
 
   In Cursor, the editor title bar keeps only a few buttons, so **Copy Link for Agent**
-  and **Copy for Agent** sit in the **…** (More Actions) menu while something
-  is selected. To pin them to the title bar, open that menu, choose
-  **Configure Icon Visibility** and tick them.
+  sits in the **…** (More Actions) menu while something is selected. To pin
+  it to the title bar, open that menu, choose **Configure Icon Visibility**
+  and tick it.
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
 
@@ -199,7 +202,7 @@ src/
 │   ├── messages.ts       every message between extension and viewer, validated
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
-│   ├── agent-text.ts     the text Copy for Agent copies
+│   ├── agent-text.ts     the text Copy Link for Agent hands over
 │   ├── agent-target.ts   which agent chat Copy Link for Agent opens
 │   ├── note-reference.ts the @note#lines reference the agent bridge returns
 │   ├── region-text.ts    the text inside a region, line by line
@@ -215,7 +218,7 @@ src/
 │   ├── pdf-panels.ts           all open editors and the active one
 │   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
-│   ├── commands.ts             Copy for Agent, Copy Link for Agent, Open Location
+│   ├── commands.ts             Copy Link for Agent, Open Location
 │   ├── view-commands.ts        page, zoom, find and tool commands; Go to Page, zoom picker
 │   ├── toolbar.ts              the toolbar setting, status bar entries
 │   ├── agent-chat.ts           opening the agent chat with a selection

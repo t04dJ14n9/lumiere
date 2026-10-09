@@ -7,7 +7,7 @@
  *   pdf-panels           all open editors and the active one
  *   region-images        PNG snapshots of selected regions, for agents
  *   outline-view         the "PDF Outline" tree in the Explorer
- *   commands             Copy for Agent, Copy Link for Agent, Open PDF at Location
+ *   commands             Copy Link for Agent, Open PDF at Location
  *   view-commands        page, zoom, find and tool commands for the active PDF
  *   toolbar              where the controls are: status bar entries, setting
  *   agent-chat           opening the agent chat with a selection

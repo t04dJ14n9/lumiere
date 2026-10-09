@@ -96,13 +96,6 @@ export class PdfPanel implements vscode.Disposable {
     this.post({ type: 'toolbar', toolbar });
   }
 
-  /** Put the selection on the clipboard in the form agents read. */
-  async copyForAgent(): Promise<boolean> {
-    if (!await this.copySelection()) return false;
-    void vscode.window.showInformationMessage('Selection copied for agent.');
-    return true;
-  }
-
   /**
    * Copy the selection, then open the agent chat with it typed in (and a
    * region's snapshot attached) so only the question is left to type.
@@ -141,7 +134,7 @@ export class PdfPanel implements vscode.Disposable {
     const selection = this.selection;
     const sha256 = this.sha256;
     if (!selection || !sha256) {
-      void vscode.window.showWarningMessage('Select text or a region in the PDF to copy it for an agent.');
+      void vscode.window.showWarningMessage('Select text or a region in the PDF to copy a link for an agent.');
       return undefined;
     }
     const image = selection.kind === 'region' ? await this.saveRegionImage(selection) : undefined;
@@ -193,9 +186,6 @@ export class PdfPanel implements vscode.Disposable {
       case 'view':
         this.view = message.view;
         this.changed.fire();
-        break;
-      case 'copyForAgent':
-        await this.copyForAgent();
         break;
       case 'copyLinkForAgent':
         await this.copyLinkForAgent();

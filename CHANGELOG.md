@@ -10,6 +10,21 @@
   zoom, fit width or page, find, the PDF Outline, and the selection tools.
 - A Select Region tool, for regions over text.
 - In Cursor, page, zoom and find buttons in the status bar.
+- Removed Copy for Agent (command, title button, context and selection menu
+  items) and renamed Ask Agent to **Copy Link for Agent**
+  (`vscodeEmbedPdf.copyLinkForAgent`, setting
+  `vscodeEmbedPdf.copyLinkForAgent.target`; no migration). It copies the
+  same text, and ⌘C / Ctrl+C or Copy text copies plain text.
+- Copy Link for Agent does not guess the agent: `auto` opens a chat only when
+  the editor's own chat is the only agent installed, otherwise it copies and
+  asks you to paste. `vscodeEmbedPdf.copyLinkForAgent.target` picks `cursor`,
+  `chat`, `claudeCode` (a new conversation with the selection typed in),
+  `codex` (selection and snapshot attached) or `clipboard`.
+- Experimental agent bridge, **off by default**
+  (`vscodeEmbedPdf.agentBridge.enabled`): a local MCP server (127.0.0.1,
+  random port, bearer token) that serves the current PDF selection to VS Code
+  chat, Cursor, Claude Code and Codex; **PDF: Copy MCP Setup for Claude Code /
+  Codex…** connects the last two.
 
 ## 0.1.0
 

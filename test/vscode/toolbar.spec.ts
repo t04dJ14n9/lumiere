@@ -2,6 +2,7 @@ import type { Frame, Page } from '@playwright/test';
 import {
   PAGE_STATUS,
   ZOOM_STATUS,
+  agentChatInput,
   command,
   drag,
   editorTitleAction,
@@ -14,6 +15,7 @@ import {
   showPage,
   statusBarEntry,
   test,
+  withoutSpaces,
 } from './workbench';
 
 // The viewer's controls in the editor's own UI (the default `chrome` mode):
@@ -124,7 +126,7 @@ test('editor title actions zoom, fit and switch the selection tool', async ({ wo
   await expect(viewer.getByRole('searchbox', { name: 'Find in PDF' })).toBeFocused();
   await page.keyboard.press('Escape');
 
-  // The Select Region tool draws a region over text, and Ask Agent still works on it.
+  // The Select Region tool draws a region over text, and Copy Link for Agent still works on it.
   await editorTitleAction(page, 'Fit Page');
   await showPage(page, viewer, 1);
   await editorTitleAction(page, 'Select Region Tool');
@@ -132,9 +134,9 @@ test('editor title actions zoom, fit and switch the selection tool', async ({ wo
   const at = await pagePoint(viewer, 1);
   await drag(page, at(74, 90), at(205, 140));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
-  await editorTitleAction(page, 'Copy for Agent');
-  await expect(page.getByText('Selection copied for agent.', { exact: true })).toBeVisible();
-  await command(page, 'Notifications: Clear All Notifications');
+  await editorTitleAction(page, 'Copy Link for Agent');
+  await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
+    .toContain(withoutSpaces(`Source: [${PDF} (page 1 region)](<${PDF}#page=1&viewrect=`));
   await editorTitleAction(page, 'Select Text Tool');
   await expect.poll(() => tool(viewer)).toBe('text');
 });

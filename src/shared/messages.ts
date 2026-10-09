@@ -7,7 +7,6 @@
  *    │  ◄──────────── outline { items }   bookmarks, once read
  *    │  ◄──────────── selection { … }     after each selection change; for a
  *    │                                    region, again with its text and image
- *    │  ◄──────────── copyForAgent        the viewer's Copy for Agent button
  *    │  ◄──────────── copyLinkForAgent    the viewer's Copy Link for Agent button
  *    │  ◄──────────── toggleOutline       the viewer bar's outline button
  *    │  ◄──────────── floatingDock        the floating bar dragged to an edge
@@ -40,7 +39,6 @@ export type ViewerMessage =
   | { type: 'outline'; items: OutlineItem[] }
   /** `image`: for a region, a PNG of the box as a `data:image/png;base64,` URL. */
   | { type: 'selection'; selection: PdfSelection | null; image?: string }
-  | { type: 'copyForAgent' }
   | { type: 'copyLinkForAgent' }
   /** The viewer's outline button: show or hide the PDF Outline view. */
   | { type: 'toggleOutline' }
@@ -71,7 +69,6 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
   const message = value as Record<string, unknown>;
   switch (message.type) {
     case 'ready':
-    case 'copyForAgent':
     case 'copyLinkForAgent':
     case 'toggleOutline':
       return { type: message.type };
