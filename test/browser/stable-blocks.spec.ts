@@ -113,3 +113,53 @@ test("a fenced block shows its language and copy button in the hidden opening fe
   await expect(fence.locator(".code-language")).toHaveCount(0);
   await expect(page.locator(".cm-line.md-code-fence-close")).toHaveText("```");
 });
+
+/** Reveals that show their source in place (audited; none may jump). */
+const inPlace: Record<string, string> = {
+  "a heading": "## A heading",
+  "a quote": "> A quote\n> on two lines",
+  "a list": "- one\n- two\n  - nested",
+  "a task list": "- [ ] open\n- [x] done",
+  "a table": "| a | b |\n| - | - |\n| 1 | 2 |",
+  "a footnote definition": "[^1]: The note text.",
+};
+
+for (const [name, block] of Object.entries(inPlace)) {
+  test(`${name} keeps every line in place when the caret enters or leaves`, async ({
+    page,
+  }) => {
+    const doc = `Before[^1]\n\n${block}\n\nAfter one\n\nAfter two`;
+    await expectStable(page, doc, block);
+  });
+}
+
+test("block math keeps its preview height while its source is shown above it", async ({
+  page,
+}) => {
+  // As in Obsidian, editing adds the source lines above the unchanged render.
+  await open(page, "Before\n\n$$\n\\frac{a}{b}\n$$\n\nAfter");
+  // Fractional line heights: measure rects, not rounded offsets.
+  const measure = () =>
+    page.evaluate(() => {
+      const height = (element: Element) =>
+        element.getBoundingClientRect().height;
+      const after = [...document.querySelectorAll(".cm-line")].find(
+        (line) => line.textContent === "After",
+      )!;
+      const source = [
+        ...document.querySelectorAll(".cm-line.md-math-source"),
+      ].reduce((sum, line) => sum + height(line), 0);
+      return {
+        after: after.getBoundingClientRect().top,
+        source,
+        math: height(document.querySelector(".hybrid-math")!),
+      };
+    });
+  const outside = await caretAt(page, 0).then(measure);
+  expect(outside.source).toBe(0);
+  await caretAt(page, 10);
+  const inside = await measure();
+  expect(inside.source).toBeGreaterThan(0);
+  expect(inside.math).toBeCloseTo(outside.math, 1);
+  expect(inside.after).toBeCloseTo(outside.after + inside.source, 0);
+});
