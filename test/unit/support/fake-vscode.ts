@@ -121,8 +121,8 @@ export const window = {
       reveal: async () => undefined,
     }),
   createOutputChannel: () => track('outputChannel', { info() {}, warn() {}, error() {}, appendLine() {} }),
-  showInformationMessage: async () => undefined,
-  showWarningMessage: async () => undefined,
+  showInformationMessage: async (_message: string) => undefined,
+  showWarningMessage: async (_message: string) => undefined,
   showErrorMessage: async () => undefined,
   showQuickPick: async () => undefined,
   showInputBox: async () => undefined,
@@ -149,11 +149,12 @@ export const workspace = {
 };
 
 export const env = {
-  clipboard: { readText: async () => '', writeText: async () => undefined },
+  appName: 'Visual Studio Code',
+  clipboard: { readText: async () => '', writeText: async (_text: string) => undefined },
   openExternal: async () => true,
 };
 
-export const extensions = { getExtension: () => undefined };
+export const extensions = { all: [] as { packageJSON: unknown }[], getExtension: (_id: string) => undefined };
 
 export const lm = {
   registerMcpServerDefinitionProvider: (id: string) => track(`mcpProvider:${id}`),
