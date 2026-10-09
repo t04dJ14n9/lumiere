@@ -8,7 +8,8 @@ import {
   type EditorView,
   type ViewUpdate,
 } from "@codemirror/view";
-import type { CodeTokenRange, tokenRanges } from "./code-highlight";
+import type { CodeTokenRange } from "./code-highlight";
+import type * as CodeHighlighter from "./code-highlight";
 import { FenceFlair, fenceInfo, fenceRevealed } from "./fence-flair";
 
 const ready = StateEffect.define<null>();
@@ -22,8 +23,8 @@ interface CachedCode {
 class CodeSource {
   decorations: DecorationSet = Decoration.none;
   private readonly copy: (text: string) => void;
-  private tokenize?: typeof tokenRanges;
-  private loading = false;
+  private highlighter?: typeof CodeHighlighter;
+  private readonly languageLoads = new Map<string, "loading" | "ready">();
   private destroyed = false;
   private cache = new Map<number, CachedCode>();
 
@@ -93,8 +94,8 @@ class CodeSource {
     if (!code || !language) {
       return undefined;
     }
-    if (!this.tokenize) {
-      this.loadHighlighter(view);
+    if (!this.highlighter || this.languageLoads.get(language) !== "ready") {
+      this.loadHighlighter(view, language);
       return undefined;
     }
     const text = view.state.sliceDoc(code.from, code.to);
@@ -102,24 +103,30 @@ class CodeSource {
     const cached =
       previous?.text === text && previous.language === language
         ? previous
-        : { text, language, tokens: this.tokenize(text, language) };
+        : {
+            text,
+            language,
+            tokens: this.highlighter.tokenRanges(text, language),
+          };
     return { code, cached };
   }
 
-  private loadHighlighter(view: EditorView): void {
-    if (this.loading) {
+  private loadHighlighter(view: EditorView, language: string): void {
+    if (this.languageLoads.has(language)) {
       return;
     }
-    this.loading = true;
+    this.languageLoads.set(language, "loading");
     void import("./code-highlight")
-      .then((module) => {
-        this.tokenize = module.tokenRanges;
+      .then(async (module) => {
+        await module.loadLanguage(language);
+        this.highlighter = module;
+        this.languageLoads.set(language, "ready");
         if (!this.destroyed && view.dom.isConnected) {
           view.dispatch({ effects: ready.of(null) });
         }
       })
       .catch(() => {
-        this.loading = false;
+        this.languageLoads.delete(language);
       });
   }
 

@@ -1,0 +1,113 @@
+{
+  "activation": "19 ms",
+  "bundles": {
+    "extensionJs": 1503200,
+    "webviewEntryJs": 2135061,
+    "webviewAllJs": 11047806,
+    "webviewCss": 43419
+  },
+  "results": {
+    "small, cold": {
+      "firstPaintMs": 878,
+      "scriptStartMs": 687,
+      "readyMs": 694,
+      "pluginsMs": 866,
+      "keyMs": 46,
+      "heapMb": 14,
+      "domNodes": 466,
+      "scripts": [
+        {
+          "name": "editor.js",
+          "kb": 2085,
+          "ms": 102
+        },
+        {
+          "name": "code-highlight-MOHIKCS5.js",
+          "kb": 66,
+          "ms": 81
+        },
+        {
+          "name": "chunk-BLJXQXP4.js",
+          "kb": 56,
+          "ms": 282
+        },
+        {
+          "name": "prism-javascript-VHKQT5R2.js",
+          "kb": 6,
+          "ms": 5
+        },
+        {
+          "name": "prism-markup-F52WHYLC.js",
+          "kb": 5,
+          "ms": 5
+        },
+        {
+          "name": "prism-sql-XAGCJO4P.js",
+          "kb": 4,
+          "ms": 7
+        },
+        {
+          "name": "prism-regex-STHHVY2J.js",
+          "kb": 3,
+          "ms": 7
+        },
+        {
+          "name": "prism-yaml-QMSFYJ5L.js",
+          "kb": 3,
+          "ms": 15
+        }
+      ]
+    },
+    "16000 blocks": {
+      "firstPaintMs": 1291,
+      "scriptStartMs": 738,
+      "readyMs": 757,
+      "pluginsMs": 1266,
+      "keyMs": 43,
+      "heapMb": 43,
+      "domNodes": 701,
+      "scripts": [
+        {
+          "name": "editor.js",
+          "kb": 2085,
+          "ms": 182
+        },
+        {
+          "name": "code-highlight-MOHIKCS5.js",
+          "kb": 66,
+          "ms": 158
+        },
+        {
+          "name": "chunk-BLJXQXP4.js",
+          "kb": 56,
+          "ms": 265
+        },
+        {
+          "name": "prism-markdown-HBA5G6TS.js",
+          "kb": 10,
+          "ms": 7
+        },
+        {
+          "name": "prism-javascript-VHKQT5R2.js",
+          "kb": 6,
+          "ms": 7
+        },
+        {
+          "name": "prism-markup-F52WHYLC.js",
+          "kb": 5,
+          "ms": 5
+        },
+        {
+          "name": "prism-css-extras-BVLE4D3I.js",
+          "kb": 5,
+          "ms": 9
+        },
+        {
+          "name": "prism-sql-XAGCJO4P.js",
+          "kb": 4,
+          "ms": 5
+        }
+      ]
+    }
+  }
+}

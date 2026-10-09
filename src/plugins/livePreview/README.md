@@ -8,6 +8,10 @@ Live Preview. Each panel can switch between Live Preview and Source mode.
 A shared document tree feeds block indexes and viewport inline decorations.
 Feature renderers are selected in catalog rank order; generic core blocks use
 the base slot. Caller-bound registrations retain the contributing plugin's owner.
+Built-in block renderers declare their eligible node names. Structural syntax
+is discovered once per tree and reused across registrations; unrelated inline
+syntax and match predicates are skipped. Undeclared or inline node renderers
+retain complete discovery.
 The engine compartment switches presentation without replacing the document.
 Inline decorations map through IME and mouse drags, then rebuild; rendered clicks
 map visible text back to source before syntax is revealed.
@@ -21,6 +25,8 @@ map visible text back to source before syntax is revealed.
 - `registry.ts`: renderer facets and reveal rules.
 - `document-tree.ts`: incremental document syntax tree.
 - `blocks.ts`: block index, widget decorations and render revision.
+- `block-discovery.ts`: structural syntax cache and renderer candidate selection.
+- `block-discovery.test.ts`: registration cost, discovery parity and unrestricted renderers.
 - `inline.ts`: basic inline decoration builder and composition/drag lifetime.
 - `code-lines.ts`: code block lines; only fence text hides, so reveals never
   change the layout. Thematic breaks are likewise one decorated line.
@@ -62,7 +68,8 @@ every line).
   it; anything else they depend on must reach them as a facet change or an
   effect. `invalidation.test.ts` checks, over thousands of random edits and
   caret moves, that the incremental index and decorations equal a full
-  rebuild.
+  rebuild. A renderer's optional `nodes` list must name every syntax node
+  its `match` can accept; omitting it retains the complete traversal.
 
 ## Services, events and settings
 

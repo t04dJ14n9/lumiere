@@ -38,6 +38,7 @@ function registerEmbedRenderers(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "embed",
+      nodes: ["Paragraph"],
       editing: "reveal",
       match(node, state) {
         if (node.name !== "Paragraph") {

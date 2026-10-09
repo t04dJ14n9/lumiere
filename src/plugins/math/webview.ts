@@ -23,6 +23,7 @@ function registerMathRenderers(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "math",
+      nodes: ["MathBlock"],
       editing: "reveal",
       match: (node) => node.name === "MathBlock",
       editingPreview: { sourceClass: "md-math-source" },

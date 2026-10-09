@@ -53,6 +53,7 @@ function registerProcessedBlocks(
 ): Disposer {
   return ctx.livePreview.block({
     kind: "FencedCode",
+    nodes: ["FencedCode"],
     editing: "reveal",
     match: (node, state) => {
       if (node.name !== "FencedCode") {

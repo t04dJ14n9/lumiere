@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths, readState } from "./state";
 import { closeBrowser, openWorkbench, workbenchPage } from "./workbench";
+import { note } from "../support/perf-note";
 
 interface Sample {
   /** Choosing the editor to its content on screen (first animation frame after the plugins are up). */
