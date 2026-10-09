@@ -27,13 +27,13 @@ export async function openAgentChat(
     await copy(payload);
     return "chatWithClipboard";
   }
-  const query = `${payload}\n\n`;
-  if (
-    await tryCommand(execute, "workbench.action.chat.open", {
+  // A chat view that is not open yet drops the query, so open it first.
+  if (await tryCommand(execute, "workbench.action.chat.open")) {
+    const query = `${payload}\n\n`;
+    await execute("workbench.action.chat.open", {
       query,
       isPartialQuery: true,
-    })
-  ) {
+    });
     return "chat";
   }
   await copy(payload);

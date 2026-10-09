@@ -28,13 +28,14 @@ function host(commands: string[]) {
   };
 }
 
-test("VS Code's chat opens with the passage prefilled and the question left to type", async () => {
+test("VS Code's chat opens first, then gets the passage prefilled with the question left to type", async () => {
   const h = host(["workbench.action.chat.open"]);
   assert.equal(
     await openAgentChat(h.execute, h.copy, "@A.md#1\n\n> a"),
     "chat",
   );
   assert.deepEqual(h.ran, [
+    { id: "workbench.action.chat.open", args: [] },
     {
       id: "workbench.action.chat.open",
       args: [{ query: "@A.md#1\n\n> a\n\n", isPartialQuery: true }],
