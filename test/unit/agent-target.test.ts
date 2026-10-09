@@ -5,7 +5,7 @@ import { agentTarget, type AgentEnvironment } from '../../src/shared/agent-targe
 const vscode = (commands: string[], hasChatParticipant = false): AgentEnvironment =>
   ({ appName: 'Visual Studio Code', commands: new Set(['workbench.action.chat.open', ...commands]), hasChatParticipant });
 
-test('Ask Agent prefers the editor\'s own chat, then Claude Code, then Codex', () => {
+test('Copy Link for Agent prefers the editor\'s own chat, then Claude Code, then Codex', () => {
   assert.equal(agentTarget('auto', { appName: 'Cursor', commands: new Set(['workbench.action.chat.open']), hasChatParticipant: false }), 'cursor');
   assert.equal(agentTarget('auto', vscode(['claude-vscode.editor.openLast'], true)), 'chat');
   assert.equal(agentTarget('auto', vscode(['claude-vscode.editor.openLast', 'chatgpt.openSidebar'])), 'claudeCode');

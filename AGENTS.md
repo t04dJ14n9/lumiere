@@ -11,7 +11,7 @@ with exact page-and-box locations. Read README.md for the layout.
   `parseViewerMessage`; add a validator when adding a message.
 - Track editors per panel (`PdfPanels`), never by file path: the same PDF can
   be open twice.
-- Keep the Ask Agent text wording compatible with LLM Wiki's agent clipboard.
+- Keep the Copy Link for Agent text wording compatible with LLM Wiki's agent clipboard.
 - Prefer EmbedPDF's components and events over re-implementing them.
 
 ## Checks

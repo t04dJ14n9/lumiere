@@ -147,9 +147,9 @@ function RegionMenu({ rect: [left, top, , bottom], scale, selection }: {
 }
 
 /**
- * Ask Agent opens the agent chat with the selection typed in (and copies it).
+ * Copy Link for Agent copies the selection with its link (and opens an agent chat with it when one is available).
  * Plain copying is Cmd/Ctrl+C, or Copy text for a text selection.
  */
 function AgentButtons({ selection }: { selection: SelectionReporting }): React.JSX.Element {
-  return <button type="button" onClick={() => void selection.askAgent()}>Ask Agent</button>;
+  return <button type="button" onClick={() => void selection.copyLinkForAgent()}>Copy Link for Agent</button>;
 }

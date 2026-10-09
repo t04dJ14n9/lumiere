@@ -9,7 +9,7 @@ import { AGENT_COMMANDS, agentTarget, type AgentTarget, type AgentTargetSetting 
  */
 export async function openAgentChat(text: string, image: vscode.Uri | undefined): Promise<AgentTarget> {
   const commands = new Set(await vscode.commands.getCommands(true));
-  const setting = vscode.workspace.getConfiguration('vscodeEmbedPdf').get<AgentTargetSetting>('askAgent.target', 'auto');
+  const setting = vscode.workspace.getConfiguration('vscodeEmbedPdf').get<AgentTargetSetting>('copyLinkForAgent.target', 'auto');
   const target = agentTarget(setting, {
     appName: vscode.env.appName,
     commands,

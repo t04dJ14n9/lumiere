@@ -7,7 +7,7 @@
  *   pdf-panels           all open editors and the active one
  *   region-images        PNG snapshots of selected regions, for agents
  *   outline-view         the "PDF Outline" tree in the Explorer
- *   commands             Ask Agent, Open PDF at Location
+ *   commands             Copy Link for Agent, Open PDF at Location
  *   agent-chat           opening the agent chat with a selection
  */
 import * as vscode from 'vscode';

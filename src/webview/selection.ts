@@ -15,7 +15,7 @@ const MIN_REGION_SIZE = 2;
  * Keep the extension informed of what is selected: text, selected with
  * EmbedPDF's text selection, or a region dragged over empty page space.
  * A region is reported at once, then again with the text inside it and a
- * PNG snapshot once they are read. Ask Agent then hands over whatever was
+ * PNG snapshot once they are read. Copy Link for Agent then hands over whatever was
  * reported last, waiting for a region's details if they are still coming.
  */
 export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject) {
@@ -85,9 +85,9 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
     else if (regionRef.current) await regionDetails.current;
   }, [documentId, selection]);
 
-  const askAgent = useCallback(async (): Promise<void> => {
+  const copyLinkForAgent = useCallback(async (): Promise<void> => {
     await reportSelection();
-    postToHost({ type: 'askAgent' });
+    postToHost({ type: 'copyLinkForAgent' });
   }, [reportSelection]);
 
   const copyText = useCallback((): void => {
@@ -114,7 +114,7 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
     selection?.forDocument(documentId).clear();
   }, [changeRegion, documentId, selection]);
 
-  return { region, clear, askAgent, copyText };
+  return { region, clear, copyLinkForAgent, copyText };
 }
 
 export type SelectionReporting = ReturnType<typeof useSelectionReporting>;

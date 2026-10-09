@@ -61,8 +61,8 @@
     ],
     "commands": [
       {
-        "command": "vscodeEmbedPdf.askAgent",
-        "title": "Ask Agent",
+        "command": "vscodeEmbedPdf.copyLinkForAgent",
+        "title": "Copy Link for Agent",
         "category": "PDF",
         "icon": "$(comment-discussion)",
         "enablement": "vscodeEmbedPdf.hasSelection"
@@ -81,14 +81,14 @@
     "menus": {
       "editor/title": [
         {
-          "command": "vscodeEmbedPdf.askAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
           "group": "navigation@1"
         }
       ],
       "commandPalette": [
         {
-          "command": "vscodeEmbedPdf.askAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
         {
@@ -98,7 +98,7 @@
       ],
       "webview/context": [
         {
-          "command": "vscodeEmbedPdf.askAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
           "group": "0_agent@1"
         }
@@ -107,7 +107,7 @@
     "configuration": {
       "title": "Agent PDF Viewer",
       "properties": {
-        "vscodeEmbedPdf.askAgent.target": {
+        "vscodeEmbedPdf.copyLinkForAgent.target": {
           "type": "string",
           "default": "auto",
           "enum": [
@@ -126,7 +126,7 @@
             "Codex: opens it; paste the selection.",
             "Only copy the selection."
           ],
-          "markdownDescription": "Where **Ask Agent** sends a PDF selection. It is always copied too."
+          "markdownDescription": "Which agent chat, if any, **Copy Link for Agent** opens with a PDF selection. The link and selection are always copied."
         },
         "vscodeEmbedPdf.regionImageCache.maxSizeMB": {
           "type": "number",

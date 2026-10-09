@@ -1,10 +1,11 @@
 # Agent PDF Viewer (EmbedPDF)
 
 A PDF viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
-and its PDFium engine. Select text or drag a box over a figure, press
-**Ask Agent**, and type your question: the agent chat opens with the exact
-page and box, the file's hash, the selected text, and for a box a snapshot
-of it. It is copied too, so you can paste it into any other agent.
+and its PDFium engine. Select text or drag a box over a figure and press
+**Copy Link for Agent**: the clipboard gets a link to the exact page and
+box, the file's hash, the selected text, and for a box the path of a
+snapshot of it, ready to paste into your agent (an agent chat opens with it
+when one is available).
 
 ## Features
 
@@ -14,14 +15,14 @@ of it. It is copied too, so you can paste it into any other agent.
   same page and zoom.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
   tree view; click an entry to open its page.
-- **Ask Agent.** Select text, or drag over empty page
+- **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   button next to the selection, the right-click menu, the editor title
-  button, or **PDF: Ask Agent**. ⌘C / Ctrl+C (or **Copy text** next to a
+  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C (or **Copy text** next to a
   text selection) copies just the text.
 
-  **Ask Agent** copies the selection and opens the agent chat with it typed
-  in, ready for your question:
+  **Copy Link for Agent** copies the selection and opens an agent chat with
+  it typed in, ready for your question:
   - in Cursor, a new agent chat, with a region's snapshot attached;
   - in VS Code, the chat view when a chat extension such as Copilot Chat is
     installed (and `chat.disableAIFeatures` is off), with the snapshot attached;
@@ -29,12 +30,13 @@ of it. It is copied too, so you can paste it into any other agent.
     paste the selection (they take no prefilled text);
   - otherwise it only copies, and says so.
 
-  Ask Agent always puts the same text on the clipboard as well (the Source
-  link, the file's hash, the selected text, and a region's snapshot path).
+  It always puts the same text on the clipboard as well (the Source link,
+  the file's hash, the selected text, and a region's snapshot path).
 
-  The `vscodeEmbedPdf.askAgent.target` setting picks one of these instead.
+  The `vscodeEmbedPdf.copyLinkForAgent.target` setting picks one of these
+  instead.
 
-  In Cursor, the editor title bar keeps only a few buttons, so **Ask Agent**
+  In Cursor, the editor title bar keeps only a few buttons, so **Copy Link for Agent**
   sits in the **…** (More Actions) menu while something is selected. To pin
   it to the title bar, open that menu, choose **Configure Icon Visibility**
   and tick it.
@@ -112,8 +114,8 @@ src/
 │   ├── messages.ts       every message between extension and viewer, validated
 │   ├── selection.ts      text and region selections
 │   ├── pdf-location.ts   page + viewrect links (RFC 8118)
-│   ├── agent-text.ts     the text Ask Agent hands over
-│   ├── agent-target.ts   which agent chat Ask Agent opens
+│   ├── agent-text.ts     the text Copy Link for Agent hands over
+│   ├── agent-target.ts   which agent chat Copy Link for Agent opens
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   └── geometry.ts       page rectangles
@@ -124,7 +126,7 @@ src/
 │   ├── pdf-panels.ts           all open editors and the active one
 │   ├── region-images.ts        region snapshots saved for agents
 │   ├── outline-view.ts         the PDF Outline tree
-│   ├── commands.ts             Ask Agent, Open Location
+│   ├── commands.ts             Copy Link for Agent, Open Location
 │   ├── agent-chat.ts           opening the agent chat with a selection
 │   └── webview-html.ts         the viewer page and its content security policy
 └── webview/     the viewer (React + EmbedPDF), one module per concern

@@ -1,5 +1,5 @@
 /**
- * Which agent chat Ask Agent opens. The editor's own chat comes first: Cursor's
+ * Which agent chat Copy Link for Agent opens. The editor's own chat comes first: Cursor's
  * (Cursor answers VS Code's chat command with a new chat) or VS Code's, when
  * an extension such as Copilot Chat serves it. Then the Claude Code and Codex
  * extensions, which take no prefilled text: their chat opens and the
@@ -7,7 +7,7 @@
  */
 export type AgentTarget = 'cursor' | 'chat' | 'claudeCode' | 'codex' | 'clipboard';
 
-/** The `vscodeEmbedPdf.askAgent.target` setting: `auto` or one target. */
+/** The `vscodeEmbedPdf.copyLinkForAgent.target` setting: `auto` or one target. */
 export type AgentTargetSetting = 'auto' | AgentTarget;
 
 export interface AgentEnvironment {

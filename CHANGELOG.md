@@ -3,8 +3,10 @@
 ## Unreleased
 
 - Removed Copy for Agent (command, title button, context and selection menu
-  items). Ask Agent copies the same text as well, and ⌘C / Ctrl+C or Copy
-  text copies plain text.
+  items) and renamed Ask Agent to **Copy Link for Agent**
+  (`vscodeEmbedPdf.copyLinkForAgent`, setting
+  `vscodeEmbedPdf.copyLinkForAgent.target`; no migration). It copies the
+  same text, and ⌘C / Ctrl+C or Copy text copies plain text.
 
 ## 0.1.0
 
