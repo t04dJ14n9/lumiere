@@ -20,9 +20,18 @@ import './styles/base.css';
 import './styles/toolbar.css';
 import './styles/page.css';
 
+performance.mark('pdf:main');
 const container = document.getElementById('root');
 if (!container) throw new Error('The viewer page has no #root element');
 const wasmUrl = container.dataset.pdfiumWasm;
+// Load-time marks (see test/vscode/perf.spec.ts): the first rendered page image.
+container.addEventListener(
+  'load',
+  event => {
+    if (event.target instanceof Element && event.target.classList.contains('page-image')) performance.mark('pdf:first-page');
+  },
+  { capture: true, once: false },
+);
 const root = createRoot(container);
 
 if (!wasmUrl) {
@@ -32,6 +41,7 @@ if (!wasmUrl) {
   let session: PdfRenderSession<ViewerEngine> | undefined;
   root.render(<Status text="Loading the PDF…" />);
   connectToHost(buffer => {
+    performance.mark('pdf:buffer');
     const previous = session;
     const next = new PdfRenderSession(buffer, wasmUrl, browserRenderEnvironment);
     session = next;

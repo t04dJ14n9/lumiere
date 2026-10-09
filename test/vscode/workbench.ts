@@ -57,10 +57,12 @@ export async function command(page: Page, label: string): Promise<void> {
 }
 
 /** Open a workspace file with Quick Open. */
-export async function openFile(page: Page, relativePath: string): Promise<void> {
+export async function openFile(page: Page, relativePath: string, timing: { start?: number } = {}): Promise<void> {
   await quickInput(page, `${modifier}+P`, relativePath);
   const name = relativePath.split('/').at(-1)!;
-  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: name }).first().click();
+  const row = page.locator('.quick-input-list .monaco-list-row').filter({ hasText: name }).first();
+  timing.start = Date.now();
+  await row.click();
   await expect(page.locator('.quick-input-widget')).toBeHidden();
   await page.mouse.move(0, 0);
 }
