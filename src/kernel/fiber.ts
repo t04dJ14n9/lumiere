@@ -25,6 +25,8 @@ export class Fiber<C = unknown> {
   private stopping?: Promise<void>;
   private dependencies: unknown[] = [];
   private held: boolean;
+  /** Set by the parent context: forget this fiber once it is disposed. */
+  detach?: () => unknown;
   constructor(
     readonly runtime: Runtime,
     readonly definition: Plugin<C>,
@@ -160,6 +162,7 @@ export class Fiber<C = unknown> {
     }
     this.state = "disposed";
     this.runtime.fibers.delete(this as Fiber<unknown>);
+    void this.detach?.();
     await this.stop();
   }
 }

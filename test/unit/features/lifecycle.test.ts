@@ -17,6 +17,7 @@ import {
 } from "../../../src/plugins/livePreview/registry";
 import type { RenderPass } from "../../../src/plugins/render/api";
 import { features } from "../../../src/plugins/catalog";
+import { SERVICE_PROVIDERS } from "../../../src/plugins/plugin-graph";
 import {
   foldRange,
   foldingChanged,
@@ -63,10 +64,11 @@ const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
   noEditorExtensions.has(id) ? f.extensions === 0 : f.extensions > 0;
 
 for (const manifest of features) {
-  test(`${manifest.id}: disabling and re-enabling disposes its extensions and commands`, async () => {
+  test(`${manifest.id}: disabling and re-enabling disposes its extensions and commands, leaving no trace`, async () => {
     const f = fixture();
     const config =
       (manifest.config?.parse({}) as Record<string, unknown>) ?? {};
+    const baseline = f.root.runtime.ledger.snapshot();
     await f.configure({ [manifest.id]: { enabled: true, config } });
     const fiber = [...f.root.runtime.fibers].find(
       (fiber) => fiber.definition.name === manifest.id,
@@ -112,14 +114,29 @@ for (const manifest of features) {
     assert.deepEqual(await f.root.waterfall("editor/selectionMenu", []), []);
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
+    // Every effect, listener, child plugin and service it held is gone.
+    assert.deepEqual(f.root.runtime.ledger.snapshot(), baseline);
     await f.configure({ [manifest.id]: { enabled: true, config } });
     assert.ok(hasExtensions(f, manifest.id));
     assert.deepEqual(await renderHooks(f.root), activeHooks);
     await f.root.dispose();
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
+    assert.deepEqual(f.root.runtime.ledger.snapshot(), {});
   });
 }
+
+test("plugin-graph's service providers are the plugins that really provide them", async () => {
+  const f = fixture();
+  await f.configure(settingsFor(new Set(features.map((item) => item.id))));
+  for (const [service, stack] of f.root.runtime.providers) {
+    const owner = (stack.at(-1)?.ctx as Context | undefined)?.owner;
+    if (owner && owner !== "root") {
+      assert.equal(SERVICE_PROVIDERS[service], owner, service);
+    }
+  }
+  await f.root.dispose();
+});
 
 test("queued setting updates settle on the latest configuration and recover after invalid input", async () => {
   const f = fixture();

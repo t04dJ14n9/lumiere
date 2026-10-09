@@ -106,25 +106,14 @@ export class Context {
   plugin<C>(definition: ServiceClass<C>, config?: C): Fiber<C>;
   plugin<C>(definition: Plugin<C> | ServiceClass<C>, config?: C): Fiber<C> {
     this.assertLive();
-    this.forgetDisposedChildren();
     const fiber = new Fiber(this.runtime, asPlugin(definition), config as C, {
       // Started by a plugin that has not committed: wait for the commit.
       heldUntilCommit: Boolean(this.fiber) && !this.published,
     });
-    this.hold("fiber", () => fiber.dispose(), fiber as Fiber<unknown>);
+    // A child disposed on its own (a feature turned off) leaves the list.
+    fiber.detach = this.hold("fiber", () => fiber.dispose(), fiber);
     fiber.reconcile();
     return fiber;
-  }
-  // Forget children disposed on their own (a feature turned off), so a
-  // long-lived context does not keep every fiber it ever started.
-  private forgetDisposedChildren(): void {
-    for (let i = this.held.length - 1; i >= 0; i--) {
-      const item = this.held[i]!;
-      if (item.fiber?.state === "disposed") {
-        this.held.splice(i, 1);
-        this.runtime.ledger.remove(this.owner, "fiber");
-      }
-    }
   }
   provide<K extends keyof Services>(name: K, value: Services[K]): void {
     this.assertLive();
