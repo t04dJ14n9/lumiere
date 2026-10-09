@@ -157,6 +157,7 @@ export class BrowserHost {
       return {
         text: this.session.text,
         version: this.session.version,
+        debugLogging: false,
         features: {},
         editor: editorConfig.parse({}),
         trusted: false,

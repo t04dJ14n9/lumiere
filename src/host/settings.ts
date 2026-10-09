@@ -26,6 +26,7 @@ export function readSettings(
 ): ReturnType<Workbench["config"]> {
   const options = editorConfig.parse(pluginConfiguration(settings, editor));
   return {
+    debugLogging: settings.get("debug.logging", false) ?? false,
     editor: options,
     mode: options.defaultMode,
     preset: settings.get("preset", "obsidian") ?? "obsidian",

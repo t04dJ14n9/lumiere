@@ -1134,6 +1134,12 @@
           "description": "Obsidian's Excluded files: path prefixes such as `Archive/`, or globs such as `**/*.excalidraw.md`. Excluded files stay linkable but are left out of the quick switcher, suggestions, search and unlinked mentions.",
           "scope": "resource"
         },
+        "markdownWorkbench.debug.logging": {
+          "type": "boolean",
+          "default": false,
+          "scope": "window",
+          "description": "Log plugin load/stop timings and debug messages in the Markdown Workbench output channel."
+        },
         "markdownWorkbench.plugins.external": {
           "type": "object",
           "default": {},

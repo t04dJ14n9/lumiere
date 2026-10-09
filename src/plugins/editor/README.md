@@ -24,6 +24,7 @@ separate compartment so user state survives reconfiguration.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
+- `logging.ts`: webview log forwarding over RPC and its host-side receiver.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `webview.ts`: view creation and named service/settings/RPC registrations.
 - `service.ts`: shared editor facade with caller-bound extension ownership.
@@ -48,6 +49,12 @@ Host injects `workbench` and `documents`, provides `editors`, and emits/listens 
 `editor/clearProjection` and `editor/modeRestored`. Selection changes notify the
 host through the editor channel. Core settings are `editor.useTabs` (true) and
 `editor.tabSize` (4, integer 1–16), under `markdownWorkbench`.
+
+Each panel kernel logs through the window's logger, tagged with the panel ID,
+to the **Markdown Workbench** output channel. The webview forwards its logs over
+the editor channel (`log`) at warn and above, and at debug too while
+`markdownWorkbench.debug.logging` (default false) is on; the host re-checks that
+setting before writing a forwarded debug line.
 
 ## Limits and differences from Obsidian
 
