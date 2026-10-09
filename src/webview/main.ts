@@ -1,3 +1,5 @@
+import { webviewLogging } from "../plugins/editor/logging";
+import { protocol } from "../plugins/editor/protocol";
 import { webviewTransport } from "./transport";
 import { Endpoint } from "../shared/rpc/endpoint";
 import { bootstrap } from "./bootstrap";
@@ -8,16 +10,27 @@ declare function acquireVsCodeApi(): {
   setState(state: unknown): void;
 };
 const vscode = acquireVsCodeApi();
-const rpc = new Endpoint(webviewTransport(vscode), {
-  after(ms, callback) {
-    const timer = setTimeout(callback, ms);
-    return () => clearTimeout(timer);
+const logging = webviewLogging((record) => rpc.notify(protocol, "log", record));
+const rpc: Endpoint = new Endpoint(
+  webviewTransport(vscode),
+  {
+    after(ms, callback) {
+      const timer = setTimeout(callback, ms);
+      return () => clearTimeout(timer);
+    },
   },
-});
-void bootstrap(rpc, document.getElementById("app")!, {
-  saved: vscode.getState(),
-  persist: (state) => vscode.setState(state),
-}).catch((error) => {
+  logging.logger,
+);
+void bootstrap(
+  rpc,
+  document.getElementById("app")!,
+  {
+    saved: vscode.getState(),
+    persist: (state) => vscode.setState(state),
+  },
+  logging,
+).catch((error) => {
+  logging.logger.error("Editor bootstrap failed", error);
   document.getElementById("app")!.textContent =
     `Markdown Workbench could not open: ${String(error)}`;
 });

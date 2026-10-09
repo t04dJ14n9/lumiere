@@ -1,3 +1,5 @@
+import { window, workspace } from "vscode";
+import { outputLogger } from "./logging";
 import { createApi } from "./api/facade";
 import { nativePlatform } from "./api/native-platform";
 import type { MarkdownWorkbenchApi } from "./api/types";
@@ -14,7 +16,14 @@ export async function activate(
     context.workspaceState,
   );
   workbench.views = createHostViews();
-  const root = await bootstrap(workbench, createVaultSystem(context));
+  const channel = window.createOutputChannel("Markdown Workbench", {
+    log: true,
+  });
+  context.subscriptions.push(channel);
+  const logger = outputLogger(channel, () =>
+    workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
+  );
+  const root = await bootstrap(workbench, createVaultSystem(context), logger);
   const api = await createApi(root, nativePlatform());
   context.subscriptions.push({
     dispose() {

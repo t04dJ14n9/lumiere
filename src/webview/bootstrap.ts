@@ -1,3 +1,4 @@
+import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
 import type { Infer } from "../kernel";
@@ -22,13 +23,17 @@ export async function bootstrap(
     saved?: unknown;
     persist?: (state: Infer<typeof viewState>) => void;
   } = {},
+  logging = webviewLogging((record) => rpc.notify(protocol, "log", record)),
 ) {
   const init = await rpc.call(protocol, "ready", {});
+  logging.configure(init.debugLogging);
   const root = Context.create({
+    logger: logging.logger,
     rank: pluginRank,
     replaceable: ["resources", "markers"],
   });
   root.provide("rpc", rpc);
+  root.effect(() => rpc.on(protocol, "configureLogging", logging.configure));
   root.plugin(documentWebview, init);
   root.plugin(dialectWebview);
   const editor = root.plugin(editorWebview, {

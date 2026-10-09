@@ -110,6 +110,13 @@ export async function contributions() {
             ]),
           ),
         ),
+        "markdownWorkbench.debug.logging": {
+          type: "boolean",
+          default: false,
+          scope: "window",
+          description:
+            "Log plugin load/stop timings and debug messages in the Markdown Workbench output channel.",
+        },
         "markdownWorkbench.plugins.external": {
           type: "object",
           default: {},

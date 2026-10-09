@@ -38,6 +38,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
             config.configure(context, panel);
           },
           rank: ctx.runtime.rank,
+          logger: ctx.logger,
         });
         panels.set(panel.id, panel);
         panel.rpc.on(protocol, "pluginsChanged", () =>

@@ -2,6 +2,9 @@ import {
   runtimeStates,
   type RuntimePluginState,
 } from "../../shared/plugin-state";
+import { registerPanelLogging } from "./logging";
+import { taggedLogger } from "../../kernel/logger";
+import type { Logger } from "../../kernel";
 import { Context } from "../../kernel";
 import type { Documents } from "../document/api";
 import type { EditorPanel } from "./api";
@@ -14,6 +17,7 @@ interface PanelOptions {
   onClose(): void;
   onState(): void;
   configure(context: Context, shell: PanelShell): void;
+  logger?: Logger;
   rank?: (owner: string) => number;
 }
 
@@ -24,11 +28,19 @@ export function createPanel(
   options: PanelOptions,
 ): EditorPanel {
   const { onClose, onState, configure, rank = () => 0 } = options;
-  const owned = Context.create({ rank });
+  const owned = Context.create({
+    rank,
+    logger: options.logger && taggedLogger(options.logger, shell.id),
+  });
   const session = documents.session(shell.document);
-  const rpc = createPanelEndpoint(shell.transport);
+  const rpc = createPanelEndpoint(shell.transport, owned.logger);
   owned.provide("workbench", workbench);
   owned.provide("rpc", rpc);
+  registerPanelLogging(
+    owned,
+    rpc,
+    () => workbench.config(shell.document).debugLogging ?? false,
+  );
   configure(owned, shell);
   const panel: EditorPanel = {
     ...panelReporting(owned, rpc, shell.document, workbench),
@@ -43,17 +55,27 @@ export function createPanel(
     reveal: () => shell.reveal(),
     dispose: () => shell.dispose(),
   };
-  let detach: (() => void | Promise<void>) | undefined;
   owned.effect(() => () => documents.release(shell.document));
   owned.effect(() => () => rpc.dispose());
-  owned.effect(() => () => detach?.());
-  owned.effect(() =>
-    shell.onDispose(() => {
-      onClose();
-      void owned.dispose();
-    }),
-  );
+  owned.effect(() => shell.onDispose(() => {
+    onClose();
+    void owned.dispose();
+  }));
   owned.effect(() => shell.onState(onState));
+  registerSessionHandshake(owned, { shell, session, rpc, workbench });
+  registerClipboard(owned, rpc, workbench.clipboard);
+  registerConfiguration(owned, rpc, shell.document, workbench);
+  shell.setHTML(webviewHTML(shell));
+  return panel;
+}
+
+function registerSessionHandshake(
+  owned: Context,
+  options: { shell: PanelShell; session: EditorPanel["session"]; rpc: Endpoint; workbench: Workbench },
+): void {
+  const { shell, session, rpc, workbench } = options;
+  let detach: (() => void | Promise<void>) | undefined;
+  owned.effect(() => () => detach?.());
   owned.effect(() =>
     rpc.handle(protocol, "ready", async () => {
       await owned.settled();
@@ -72,10 +94,6 @@ export function createPanel(
       };
     }),
   );
-  registerClipboard(owned, rpc, workbench.clipboard);
-  registerConfiguration(owned, rpc, shell.document, workbench);
-  shell.setHTML(webviewHTML(shell));
-  return panel;
 }
 
 function registerClipboard(
@@ -109,13 +127,20 @@ function registerConfiguration(
   }
 }
 
-function createPanelEndpoint(transport: PanelShell["transport"]): Endpoint {
-  return new Endpoint(transport, {
-    after(ms, callback) {
-      const timer = setTimeout(callback, ms);
-      return () => clearTimeout(timer);
+function createPanelEndpoint(
+  transport: PanelShell["transport"],
+  logger: Logger,
+): Endpoint {
+  return new Endpoint(
+    transport,
+    {
+      after(ms, callback) {
+        const timer = setTimeout(callback, ms);
+        return () => clearTimeout(timer);
+      },
     },
-  });
+    logger,
+  );
 }
 
 function panelReporting(
@@ -155,6 +180,7 @@ function sendConfiguration(
   workbench: Workbench,
 ): void {
   const config = workbench.config(document);
+  rpc.notify(protocol, "configureLogging", config.debugLogging ?? false);
   rpc.notify(
     protocol,
     "configureEditor",

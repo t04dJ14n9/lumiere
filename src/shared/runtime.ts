@@ -51,6 +51,7 @@ export interface Workbench {
   registerEditor(open: (panel: PanelShell) => void): Disposer;
   onConfiguration?(listener: () => void): Disposer;
   config(document: HostDocument): {
+    debugLogging?: boolean;
     features?: Infer<typeof featureSettings>;
     editor?: {
       useTabs: boolean;
