@@ -4,6 +4,7 @@ import { CopyToClipboard } from '@embedpdf/plugin-selection/react';
 import { Viewport } from '@embedpdf/plugin-viewport/react';
 import { ZoomGestureWrapper, useZoom } from '@embedpdf/plugin-zoom/react';
 import React, { useEffect, useRef, useState } from 'react';
+import { parseViewerAction } from '../shared/view-state';
 import { useEndDragsReleasedOutside } from './drag-release';
 import { listenToHost } from './host';
 import { useNavigation, type Navigation } from './navigation';
@@ -15,6 +16,7 @@ import { SearchBar } from './search-bar';
 import { useIgnoreSecondaryButtons } from './secondary-buttons';
 import { useSelectionReporting } from './selection';
 import { Toolbar } from './toolbar';
+import { useViewActions, useViewReporting } from './view-sync';
 import { useWheelZoom } from './wheel-zoom';
 
 /** The open PDF: toolbar, optional search bar, and the scrolling pages. */
@@ -38,9 +40,15 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
 
+  useViewReporting(navigation);
+  const runAction = useViewActions(navigation, openSearch);
   useEffect(() => listenToHost(message => {
     if (message.type === 'goTo') show(message.location, message.top);
-  }), [show]);
+    else if (message.type === 'action') {
+      const action = parseViewerAction(message.action);
+      if (action) runAction(action);
+    }
+  }), [show, runAction]);
 
   const latest = useRef({ selection, searching });
   latest.current = { selection, searching };
