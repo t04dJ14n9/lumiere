@@ -8,12 +8,17 @@
  * is on AND it has been used in this window: a PDF editor was opened, or the
  * user ran Copy MCP Setup. Turning the setting off stops it at once, without
  * a reload; starts and stops run one at a time, in order.
+ *
+ * Invariant: the returned `dispose()` resolves only after the bridge has
+ * fully stopped (see server.ts): a start still in progress is finished or
+ * abandoned and undone first, and a start that has not yet opened its
+ * listener never opens it.
  */
 import * as vscode from 'vscode';
 import type { PdfPanels } from '../../pdf/panels';
 import type { AgentHandoff } from '../handoff';
 import { SERVER_NAME } from './constants';
-import type { RunningBridge } from './server';
+import type { BridgeLog, RunningBridge } from './server';
 
 /** Whether the user has turned the bridge on. Off by default: it starts a local server. */
 export function agentBridgeEnabled(): boolean {
@@ -25,11 +30,19 @@ export interface BridgeOptions {
   globalStorageUri: vscode.Uri;
   panels: PdfPanels;
   handoff: AgentHandoff;
-  log: vscode.LogOutputChannel;
+  log: BridgeLog;
+  /** See ServerOptions.discoveryDir. */
+  discoveryDir?: string;
+  shutdownGraceMs?: number;
 }
 
-/** Runs the bridge (see the invariant above) and registers Copy MCP Setup. */
-export function registerAgentBridge(options: BridgeOptions): vscode.Disposable {
+/** The running controller; `dispose()` is awaited by the plugin runtime. */
+export interface AgentBridgeController {
+  dispose(): Promise<void>;
+}
+
+/** Runs the bridge (see the invariants above) and registers Copy MCP Setup. */
+export function registerAgentBridge(options: BridgeOptions): AgentBridgeController {
   const { panels, log } = options;
   const shim = vscode.Uri.joinPath(options.globalStorageUri, 'bridge-stdio.js').fsPath;
   let running: RunningBridge | undefined;
@@ -40,29 +53,39 @@ export function registerAgentBridge(options: BridgeOptions): vscode.Disposable {
   let stopped = false;
   let queue = Promise.resolve();
   const wanted = (): boolean => !stopped && used && agentBridgeEnabled();
-  const sync = (): void => {
+  const start = async (): Promise<void> => {
+    const { startAgentBridge } = await import('./server');
+    // Stopped, or turned off, while the server code loaded: do not listen.
+    if (!wanted()) return;
+    const bridge = await startAgentBridge({ ...options, shim });
+    // The setting may have changed, or the plugin stopped, while it started.
+    if (wanted()) running = bridge;
+    else await bridge.dispose();
+  };
+  const stop = async (bridge: RunningBridge): Promise<void> => {
+    running = undefined;
+    await bridge.dispose();
+    log.info('Agent bridge stopped');
+  };
+  /** Queue one step towards the wanted state; the queue never rejects. */
+  const sync = (): Promise<void> => {
     queue = queue.then(async () => {
       if (wanted() && !running) {
-        const { startAgentBridge } = await import('./server');
-        const bridge = await startAgentBridge({ ...options, shim });
-        // The setting may have changed, or the plugin stopped, while it started.
-        if (wanted()) running = bridge;
-        else bridge.dispose();
+        await start().catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
       } else if (!wanted() && running) {
-        running.dispose();
-        running = undefined;
-        log.info('Agent bridge stopped');
+        await stop(running).catch(error => log.error(`Agent bridge failed to stop: ${String(error)}`));
       }
-    }).catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
+    });
+    return queue;
   };
-  sync();
-  return vscode.Disposable.from(
+  void sync();
+  const subscriptions = vscode.Disposable.from(
     vscode.workspace.onDidChangeConfiguration(event => {
-      if (event.affectsConfiguration('vscodeEmbedPdf.agentBridge.enabled')) sync();
+      if (event.affectsConfiguration('vscodeEmbedPdf.agentBridge.enabled')) void sync();
     }),
     panels.onDidOpen(() => {
       used = true;
-      sync();
+      void sync();
     }),
     vscode.commands.registerCommand('vscodeEmbedPdf.copyMcpSetup', async () => {
       if (!agentBridgeEnabled()) {
@@ -75,15 +98,19 @@ export function registerAgentBridge(options: BridgeOptions): vscode.Disposable {
         await vscode.workspace.getConfiguration('vscodeEmbedPdf').update('agentBridge.enabled', true, vscode.ConfigurationTarget.Global);
       }
       used = true;
-      sync();
+      void sync();
       await copyMcpSetup(shim);
     }),
-    new vscode.Disposable(() => {
-      stopped = true;
-      running?.dispose();
-      running = undefined;
-    }),
   );
+  let disposing: Promise<void> | undefined;
+  return {
+    dispose: () => disposing ??= (async () => {
+      stopped = true;
+      subscriptions.dispose();
+      // Waits for a start in progress, then stops what it started.
+      await sync();
+    })(),
+  };
 }
 
 /** Let the user wire Claude Code / Codex (and any stdio MCP client) to the bridge. */

@@ -134,6 +134,7 @@ export const window = {
 };
 
 export const workspace = {
+  workspaceFolders: undefined as { uri: Uri }[] | undefined,
   getConfiguration: (section = '') => ({
     get: <T>(key: string, fallback?: T) =>
       (configuration.has(`${section}.${key}`) ? configuration.get(`${section}.${key}`) : fallback) as T,
