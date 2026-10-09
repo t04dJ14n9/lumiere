@@ -1,5 +1,6 @@
 // Writes THIRD_PARTY_NOTICES.md from the licenses of the code the extension
-// ships: EmbedPDF (and the PDFium engine it contains) and React.
+// ships: EmbedPDF (and the PDFium engine it contains), React, the codicons, and
+// the MCP SDK and zod that the agent bridge bundles.
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -11,6 +12,10 @@ const sections = [
   ['EmbedPDF PDFium build (@embedpdf/pdfium)', path.join(packageDirectory('@embedpdf/pdfium'), 'LICENSE')],
   ['PDFium (compiled into pdfium.wasm)', path.join(packageDirectory('@embedpdf/pdfium'), 'LICENSE.pdfium')],
   ['React and React DOM', path.join(packageDirectory('react'), 'LICENSE')],
+  ['Codicons font (@vscode/codicons)', path.join(packageDirectory('@vscode/codicons'), 'LICENSE')],
+  ['Codicons code (@vscode/codicons)', path.join(packageDirectory('@vscode/codicons'), 'LICENSE-CODE')],
+  ['MCP TypeScript SDK (@modelcontextprotocol/sdk), in the agent bridge', path.join(packageDirectory('@modelcontextprotocol/sdk'), 'LICENSE')],
+  ['Zod, in the agent bridge', path.join(packageDirectory('zod'), 'LICENSE')],
 ];
 
 const body = sections

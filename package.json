@@ -50,7 +50,7 @@
     "viewsWelcome": [
       {
         "view": "vscodeEmbedPdf.outline",
-        "contents": "Reading the outline\u2026",
+        "contents": "Reading the outline…",
         "when": "vscodeEmbedPdf.outlineLoading"
       },
       {
@@ -61,47 +61,466 @@
     ],
     "commands": [
       {
-        "command": "vscodeEmbedPdf.copyForAgent",
-        "title": "Copy for Agent",
+        "command": "vscodeEmbedPdf.copyLinkForAgent",
+        "title": "Copy Link for Agent",
         "category": "PDF",
-        "icon": "$(copy)",
+        "icon": "$(comment-discussion)",
         "enablement": "vscodeEmbedPdf.hasSelection"
       },
       {
         "command": "vscodeEmbedPdf.openLocation",
-        "title": "Open Location\u2026",
+        "title": "Open Location…",
         "category": "PDF"
       },
       {
         "command": "vscodeEmbedPdf.goToOutlineItem",
         "title": "Go to Outline Item",
         "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.copyMcpSetup",
+        "title": "Copy MCP Setup for Claude Code / Codex…",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.previousPage",
+        "title": "Previous Page",
+        "category": "PDF",
+        "icon": "$(chevron-up)"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPage",
+        "title": "Next Page",
+        "category": "PDF",
+        "icon": "$(chevron-down)"
+      },
+      {
+        "command": "vscodeEmbedPdf.goToPage",
+        "title": "Go to Page…",
+        "category": "PDF",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomOut",
+        "title": "Zoom Out",
+        "category": "PDF",
+        "icon": "$(zoom-out)"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomIn",
+        "title": "Zoom In",
+        "category": "PDF",
+        "icon": "$(zoom-in)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectZoom",
+        "title": "Zoom…",
+        "category": "PDF",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitWidth",
+        "title": "Fit Width",
+        "category": "PDF",
+        "icon": "$(arrow-both)"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitPage",
+        "title": "Fit Page",
+        "category": "PDF",
+        "icon": "$(screen-full)"
+      },
+      {
+        "command": "vscodeEmbedPdf.find",
+        "title": "Find in PDF",
+        "category": "PDF",
+        "icon": "$(search)"
+      },
+      {
+        "command": "vscodeEmbedPdf.toggleOutline",
+        "title": "Toggle Outline",
+        "category": "PDF",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectTextTool",
+        "title": "Select Text Tool",
+        "category": "PDF",
+        "icon": "$(whole-word)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectRegionTool",
+        "title": "Select Region Tool",
+        "category": "PDF",
+        "icon": "$(inspect)"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectToolbarMode",
+        "title": "Choose Toolbar Location…",
+        "category": "PDF",
+        "icon": "$(layout)"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "vscodeEmbedPdf.copyForAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
-          "group": "navigation"
+          "group": "navigation@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.find",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu",
+          "group": "navigation@10"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomOut",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu",
+          "group": "navigation@11"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomIn",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu",
+          "group": "navigation@12"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu && vscodeEmbedPdf.fit == 'width'",
+          "group": "navigation@13"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitWidth",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu && vscodeEmbedPdf.fit != 'width'",
+          "group": "navigation@13"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu && vscodeEmbedPdf.tool != 'region'",
+          "group": "navigation@14"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectTextTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu && vscodeEmbedPdf.tool == 'region'",
+          "group": "navigation@14"
+        },
+        {
+          "command": "vscodeEmbedPdf.find",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "0_pdfFind@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.previousPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "1_pdfPage@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.nextPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "1_pdfPage@2"
+        },
+        {
+          "command": "vscodeEmbedPdf.goToPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "1_pdfPage@3"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomIn",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "2_pdfZoom@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomOut",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "2_pdfZoom@2"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectZoom",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "2_pdfZoom@3"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitWidth",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "2_pdfZoom@4"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "2_pdfZoom@5"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectTextTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfTool@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfTool@2"
+        },
+        {
+          "command": "vscodeEmbedPdf.toggleOutline",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectToolbarMode",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@2"
         }
       ],
       "commandPalette": [
         {
-          "command": "vscodeEmbedPdf.copyForAgent",
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
         {
           "command": "vscodeEmbedPdf.goToOutlineItem",
           "when": "false"
+        },
+        {
+          "command": "vscodeEmbedPdf.previousPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.nextPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.goToPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomOut",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.zoomIn",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectZoom",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitWidth",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.find",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.toggleOutline",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectTextTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectRegionTool",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectToolbarMode"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "vscodeEmbedPdf.copyLinkForAgent",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
+          "group": "0_agent@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.goToPage",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "1_pdfView@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitWidth",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "1_pdfView@2"
+        },
+        {
+          "command": "vscodeEmbedPdf.fitPage",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "1_pdfView@3"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectRegionTool",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.tool != 'region'",
+          "group": "2_pdfTool@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectTextTool",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.tool == 'region'",
+          "group": "2_pdfTool@1"
         }
       ]
-    }
+    },
+    "configuration": {
+      "title": "Agent PDF Viewer",
+      "properties": {
+        "vscodeEmbedPdf.copyLinkForAgent.target": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "cursor",
+            "chat",
+            "claudeCode",
+            "codex",
+            "clipboard"
+          ],
+          "enumDescriptions": [
+            "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+            "Cursor's chat.",
+            "VS Code's chat.",
+            "Claude Code: a new conversation with the selection typed in.",
+            "Codex: the selection (and a region's snapshot) attached to the thread.",
+            "Only copy the selection."
+          ],
+          "markdownDescription": "Which agent chat, if any, **Copy Link for Agent** opens with a PDF selection. The link and selection are always copied. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the selection to it."
+        },
+        "vscodeEmbedPdf.regionImageCache.maxSizeMB": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. This is a hard limit: when a new snapshot takes them past it, the least recently used ones are deleted, and a single snapshot larger than the limit is not saved (Copy Link for Agent then copies the link without the image). Values below 1 count as 1."
+        },
+        "vscodeEmbedPdf.toolbar.mode": {
+          "type": "string",
+          "default": "chrome",
+          "enum": [
+            "chrome",
+            "slim",
+            "floating",
+            "none"
+          ],
+          "enumDescriptions": [
+            "VS Code's own: find, zoom, fit and tool buttons in the editor title bar, and the page and zoom in the status bar (click them to go to a page or pick a zoom).",
+            "A slim bar along the top of the viewer.",
+            "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
+            "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+          ],
+          "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+        },
+        "vscodeEmbedPdf.toolbar.statusBarButtons": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
+          "enumDescriptions": [
+            "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
+            "Always show the buttons.",
+            "Only the page and the zoom."
+          ],
+          "markdownDescription": "With `#vscodeEmbedPdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+        },
+        "vscodeEmbedPdf.agentBridge.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "vscodeEmbedPdf.previousPage",
+        "key": "alt+pageup",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPage",
+        "key": "alt+pagedown",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.goToPage",
+        "key": "ctrl+g",
+        "mac": "ctrl+g",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomIn",
+        "key": "ctrl+=",
+        "mac": "cmd+=",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomIn",
+        "key": "ctrl+numpad_add",
+        "mac": "cmd+numpad_add",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomOut",
+        "key": "ctrl+-",
+        "mac": "cmd+-",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.zoomOut",
+        "key": "ctrl+numpad_subtract",
+        "mac": "cmd+numpad_subtract",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitWidth",
+        "key": "ctrl+0",
+        "mac": "cmd+0",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.fitPage",
+        "key": "ctrl+alt+0",
+        "mac": "cmd+alt+0",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.find",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.toggleOutline",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectTextTool",
+        "key": "ctrl+alt+t",
+        "mac": "ctrl+cmd+t",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectRegionTool",
+        "key": "ctrl+alt+r",
+        "mac": "ctrl+cmd+r",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+      }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "vscodeEmbedPdf.agentBridge",
+        "label": "Agent PDF Viewer"
+      }
+    ]
   },
   "scripts": {
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/extension && tsc -p src/webview && tsc -p test",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/extension && tsc -p src/bridge-stdio && tsc -p src/webview && tsc -p test",
     "lint": "eslint . --max-warnings=0",
     "test": "tsx --test test/unit/*.test.ts",
     "fixtures": "node test/fixtures/make-fixtures.mjs",
@@ -124,8 +543,11 @@
     "@embedpdf/plugin-selection": "2.15.1",
     "@embedpdf/plugin-viewport": "2.15.1",
     "@embedpdf/plugin-zoom": "2.15.1",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@vscode/codicons": "0.0.36",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",

@@ -3,7 +3,7 @@ import { PagePointerProvider } from '@embedpdf/plugin-interaction-manager/react'
 import { RenderLayer } from '@embedpdf/plugin-render/react';
 import { SearchLayer } from '@embedpdf/plugin-search/react';
 import { SelectionLayer, type SelectionSelectionMenuProps } from '@embedpdf/plugin-selection/react';
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import type { PageRect } from '../shared/geometry';
 import type { RegionSelection } from '../shared/selection';
 import type { Highlight } from './navigation';
@@ -22,7 +22,8 @@ export interface PageProps {
   highlight: Highlight | undefined;
   region: RegionSelection | undefined;
   selection: SelectionReporting;
-  onOpenPage: (page: number) => void;
+  /** Open a page, from `top` points below its top when given. */
+  onOpenPage: (page: number, top?: number) => void;
 }
 
 /**
@@ -60,9 +61,7 @@ export function Page({
       {region?.page === page && (
         <>
           <Box className="region-selection" rect={region.rect} scale={scale} />
-          <div className="selection-menu" role="toolbar" aria-label="PDF region actions" style={menuBelow(region.rect, scale)}>
-            <button type="button" onClick={() => void selection.copyForAgent()}>Copy for Agent</button>
-          </div>
+          <RegionMenu rect={region.rect} scale={scale} selection={selection} />
         </>
       )}
       <SelectionLayer
@@ -89,7 +88,7 @@ function TextSelectionMenu({ menuWrapperProps, rect, placement, selection }:
         aria-label="PDF text selection actions"
         style={{ top: placement.suggestTop ? -40 : rect.size.height + 6 }}
       >
-        <button type="button" onClick={() => void selection.copyForAgent()}>Copy for Agent</button>
+        <AgentButtons selection={selection} />
         <button type="button" onClick={selection.copyText}>Copy text</button>
       </div>
     </div>
@@ -106,6 +105,53 @@ function Box({ rect, scale, className }: { rect: PageRect; scale: number; classN
   );
 }
 
-function menuBelow([left, , , bottom]: PageRect, scale: number): React.CSSProperties {
-  return { left: left * scale, top: bottom * scale + 6 };
+/** Space between a selected region and its menu, in pixels. */
+const MENU_GAP = 6;
+
+/**
+ * The menu of a selected region: below it, or above it when there is no
+ * room below in the viewer (a region dragged at the bottom of the screen).
+ */
+function RegionMenu({ rect: [left, top, , bottom], scale, selection }: {
+  rect: PageRect;
+  scale: number;
+  selection: SelectionReporting;
+}): React.JSX.Element {
+  const menu = useRef<HTMLDivElement>(null);
+  const [above, setAbove] = useState(false);
+  useLayoutEffect(() => {
+    const element = menu.current;
+    const page = element?.parentElement;
+    const viewport = element?.closest('.viewport');
+    if (!element || !page || !viewport) return;
+    const place = (): void => {
+      const pageTop = page.getBoundingClientRect().top;
+      const view = viewport.getBoundingClientRect();
+      const height = element.offsetHeight;
+      const fitsBelow = pageTop + bottom * scale + MENU_GAP + height <= view.bottom;
+      const fitsAbove = pageTop + top * scale - MENU_GAP - height >= view.top;
+      setAbove(!fitsBelow && fitsAbove);
+    };
+    place();
+    viewport.addEventListener('scroll', place, { passive: true });
+    return () => viewport.removeEventListener('scroll', place);
+  }, [bottom, scale, top]);
+  const style: React.CSSProperties = above
+    ? { left: left * scale, top: top * scale - MENU_GAP, transform: 'translateY(-100%)' }
+    : { left: left * scale, top: bottom * scale + MENU_GAP };
+  return (
+    // data-no-interaction: a press on the menu is not a click on the page,
+    // which would start a new region or clear this one.
+    <div ref={menu} className="selection-menu" role="toolbar" aria-label="PDF region actions" style={style} data-no-interaction>
+      <AgentButtons selection={selection} />
+    </div>
+  );
+}
+
+/**
+ * Copy Link for Agent copies the selection with its link (and opens an agent chat with it when one is available).
+ * Plain copying is Cmd/Ctrl+C, or Copy text for a text selection.
+ */
+function AgentButtons({ selection }: { selection: SelectionReporting }): React.JSX.Element {
+  return <button type="button" onClick={() => void selection.copyLinkForAgent()}>Copy Link for Agent</button>;
 }

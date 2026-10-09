@@ -1,0 +1,43 @@
+name: Release
+
+# Push a tag such as v0.2.0 (matching package.json's version) to build the
+# VSIX and attach it to a GitHub Release. Publishing to the Marketplace or
+# Open VSX is a manual step (see README, "CI and quality gates").
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: The tag matches package.json
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+      - name: pnpm check
+        run: pnpm check
+      - name: pnpm package
+        run: pnpm package
+      - name: Check the VSIX size and file list
+        run: bash .github/scripts/check-vsix.sh "$(ls *.vsix)" 8
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" *.vsix --title "${GITHUB_REF_NAME}" --generate-notes --verify-tag

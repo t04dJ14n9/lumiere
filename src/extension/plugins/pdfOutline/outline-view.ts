@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import type { OutlineItem } from '../shared/messages';
-import type { PdfPanels } from './pdf-panels';
+import type { OutlineItem } from '../../../shared/messages';
+import type { PdfPanels } from '../pdf/panels';
 
 /**
  * The "PDF Outline" view in the Explorer: the bookmarks of the PDF in the
- * active editor. Clicking an entry opens its page.
+ * active editor. Clicking an entry opens its page (Go to Outline Item).
  */
 export function registerOutlineView(panels: PdfPanels): vscode.Disposable {
   const provider = new OutlineProvider(panels);
@@ -12,7 +12,18 @@ export function registerOutlineView(panels: PdfPanels): vscode.Disposable {
     treeDataProvider: provider,
     showCollapseAll: true,
   });
-  return vscode.Disposable.from(view, provider);
+  return vscode.Disposable.from(
+    view,
+    provider,
+    // Show the outline, or hide the side bar it is shown in.
+    vscode.commands.registerCommand('vscodeEmbedPdf.toggleOutline', async () => {
+      if (view.visible) await vscode.commands.executeCommand('workbench.action.closeSidebar');
+      else await vscode.commands.executeCommand('vscodeEmbedPdf.outline.focus');
+    }),
+    vscode.commands.registerCommand('vscodeEmbedPdf.goToOutlineItem', (page: unknown, top?: unknown) => {
+      if (typeof page === 'number') panels.active?.goTo({ page }, typeof top === 'number' ? top : undefined);
+    }),
+  );
 }
 
 class OutlineProvider implements vscode.TreeDataProvider<OutlineItem>, vscode.Disposable {
@@ -42,7 +53,7 @@ class OutlineProvider implements vscode.TreeDataProvider<OutlineItem>, vscode.Di
       node.command = {
         command: 'vscodeEmbedPdf.goToOutlineItem',
         title: 'Go to page',
-        arguments: [item.page],
+        arguments: [item.page, item.top],
       };
     }
     return node;

@@ -1,26 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * A number the reader can type over, such as the page or zoom. An edited
- * value is committed on Enter or when the field loses focus; leaving the
- * field without editing commits nothing, so it never repeats a navigation.
+ * A number the reader can type over, such as the page or zoom. Enter always
+ * commits, even an unchanged value: typing the current page goes back to its
+ * top. Leaving the field commits only an edited value, so clicking away
+ * never repeats a navigation.
  */
 export function NumberField({ label, value, suffix, onCommit }: {
   label: string;
   value: number;
   suffix: string;
-  /** Returns false for input that cannot be used; the field then resets. */
-  onCommit: (value: number) => boolean;
+  /**
+   * Applies the typed value and returns the value actually used (after
+   * clamping, say), which the field then shows; or false for input that
+   * cannot be used, and the field resets.
+   */
+  onCommit: (value: number) => number | false;
 }): React.JSX.Element {
   const [draft, setDraft] = useState(String(value));
   const edited = useRef(false);
   useEffect(() => setDraft(String(value)), [value]);
 
   const commit = (): void => {
-    if (!edited.current) return;
     edited.current = false;
     const number = Number.parseFloat(draft);
-    if (!Number.isFinite(number) || !onCommit(number)) setDraft(String(value));
+    const used = Number.isFinite(number) ? onCommit(number) : false;
+    // Show what was used: a clamped value can equal the current one, and
+    // then no new value arrives to replace the draft.
+    setDraft(String(used === false ? value : used));
   };
 
   return (
@@ -33,7 +40,9 @@ export function NumberField({ label, value, suffix, onCommit }: {
           edited.current = true;
           setDraft(event.currentTarget.value);
         }}
-        onBlur={commit}
+        onBlur={() => {
+          if (edited.current) commit();
+        }}
         onKeyDown={event => {
           if (event.key === 'Enter') commit();
         }}

@@ -1,10 +1,12 @@
-import type { Rect } from '@embedpdf/models';
+import { useRegistry } from '@embedpdf/core/react';
+import type { PdfDocumentObject, Rect } from '@embedpdf/models';
 import type { SelectionScope } from '@embedpdf/plugin-selection';
 import { useSelectionCapability } from '@embedpdf/plugin-selection/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PageRect } from '../shared/geometry';
 import type { RegionSelection } from '../shared/selection';
-import { postToHost } from './host';
+import { postToHost, reportToHost } from './host';
+import { readRegionDetails } from './region-details';
 
 /** Drags smaller than this (in points) are clicks, not regions. */
 const MIN_REGION_SIZE = 2;
@@ -12,10 +14,15 @@ const MIN_REGION_SIZE = 2;
 /**
  * Keep the extension informed of what is selected: text, selected with
  * EmbedPDF's text selection, or a region dragged over empty page space.
- * Copy for Agent then copies whatever was reported last.
+ * A region is reported at once, then again with the text inside it and a
+ * PNG snapshot once they are read. Copy Link for Agent then hands over whatever was
+ * reported last, waiting for a region's details if they are still coming.
  */
-export function useSelectionReporting(documentId: string) {
+export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject) {
   const { provides: selection } = useSelectionCapability();
+  const { registry } = useRegistry();
+  /** The region's details being read, if any. */
+  const regionDetails = useRef<Promise<void> | undefined>(undefined);
   const [region, setRegion] = useState<RegionSelection>();
   const regionRef = useRef<RegionSelection | undefined>(undefined);
   /** The selected text, for Cmd/Ctrl+C. */
@@ -24,12 +31,14 @@ export function useSelectionReporting(documentId: string) {
   const changeRegion = useCallback((next: RegionSelection | undefined): void => {
     regionRef.current = next;
     setRegion(next);
-    postToHost({ type: 'selection', selection: next ?? null });
+    reportToHost({ selection: { selection: next ?? null } });
   }, []);
 
   useEffect(() => {
     if (!selection) return;
     const scope = selection.forDocument(documentId);
+    /** Whether the marquee that just ended drew a region (else it was a click). */
+    let marqueeEnded = false;
     const unsubscribe = [
       scope.onEndSelection(() => {
         if (!scope.getState().selection) return;
@@ -42,30 +51,54 @@ export function useSelectionReporting(documentId: string) {
       scope.onSelectionChange(range => {
         if (range) return;
         selectedText.current = undefined;
-        if (!regionRef.current) postToHost({ type: 'selection', selection: null });
+        if (!regionRef.current) reportToHost({ selection: { selection: null } });
+      }),
+      // A click with the Select Region tool, which has no empty-space clicks:
+      // the marquee is cancelled without ending.
+      scope.onMarqueeChange(({ rect }) => {
+        if (rect) return;
+        if (marqueeEnded) marqueeEnded = false;
+        else if (regionRef.current) changeRegion(undefined);
       }),
       scope.onMarqueeEnd(({ pageIndex, rect }) => {
+        marqueeEnded = true;
         if (rect.size.width < MIN_REGION_SIZE || rect.size.height < MIN_REGION_SIZE) return;
-        changeRegion({ kind: 'region', page: pageIndex + 1, rect: toPageRect(rect) });
+        const region: RegionSelection = { kind: 'region', page: pageIndex + 1, rect: toPageRect(rect) };
+        changeRegion(region);
+        const engine = registry?.getEngine();
+        if (!engine) return;
+        regionDetails.current = readRegionDetails(engine, pdf, region.page, region.rect).then(({ text, image }) => {
+          // Dropped if another region or a text selection replaced this one.
+          if (regionRef.current !== region) return;
+          const detailed: RegionSelection = { ...region, ...(text ? { text } : {}) };
+          regionRef.current = detailed;
+          setRegion(detailed);
+          reportToHost({ selection: { selection: detailed, ...(image ? { image } : {}) } });
+        }, () => undefined);
       }),
       scope.onEmptySpaceClick(() => {
         if (regionRef.current) changeRegion(undefined);
       }),
     ];
     return () => unsubscribe.forEach(stop => stop());
-  }, [changeRegion, documentId, selection]);
+  }, [changeRegion, documentId, pdf, registry, selection]);
 
   /**
    * Ask the extension to copy the selection. A text selection is reported
    * when the drag ends, after an asynchronous text read; a click right after
    * the drag could beat that report, so the text is re-read and reported
-   * first. Messages arrive in order.
+   * first. A region waits for its text and snapshot. Messages arrive in order.
    */
-  const copyForAgent = useCallback(async (): Promise<void> => {
+  const reportSelection = useCallback(async (): Promise<void> => {
     const scope = selection?.forDocument(documentId);
     if (scope?.getState().selection) await reportText(scope);
-    postToHost({ type: 'copyForAgent' });
+    else if (regionRef.current) await regionDetails.current;
   }, [documentId, selection]);
+
+  const copyLinkForAgent = useCallback(async (): Promise<void> => {
+    await reportSelection();
+    postToHost({ type: 'copyLinkForAgent' });
+  }, [reportSelection]);
 
   const copyText = useCallback((): void => {
     selection?.forDocument(documentId).copyToClipboard();
@@ -84,7 +117,14 @@ export function useSelectionReporting(documentId: string) {
     return () => document.removeEventListener('copy', onCopy);
   }, []);
 
-  return { region, clearRegion: () => changeRegion(undefined), copyForAgent, copyText };
+  /** Clear whatever is selected, text or region (Escape). */
+  const clear = useCallback((): void => {
+    if (regionRef.current) changeRegion(undefined);
+    // Reported to the extension by the selection change handler above.
+    selection?.forDocument(documentId).clear();
+  }, [changeRegion, documentId, selection]);
+
+  return { region, clear, copyLinkForAgent, copyText };
 }
 
 export type SelectionReporting = ReturnType<typeof useSelectionReporting>;
@@ -98,7 +138,7 @@ function reportText(scope: SelectionScope): Promise<string | undefined> {
         page: page.pageIndex + 1,
         rects: page.segmentRects.map(toPageRect),
       }));
-      if (text && pages.length > 0) postToHost({ type: 'selection', selection: { kind: 'text', text, pages } });
+      if (text && pages.length > 0) reportToHost({ selection: { selection: { kind: 'text', text, pages } } });
       resolve(text || undefined);
     }, () => resolve(undefined));
   });

@@ -20,6 +20,22 @@ export default tseslint.config(
     },
   },
   {
+    // Floating promises are lint errors: a promise is awaited, returned, or
+    // explicitly discarded with `void`. `void` only records the decision; it
+    // neither handles a rejection nor makes the work part of teardown.
+    // Conventions (lint cannot prove them; review does):
+    // - Detached work has an error sink: a `.catch` that logs or reports, or
+    //   a function documented as never rejecting (it catches inside).
+    // - Lifecycle work (stop, cleanup, dispose) is returned or awaited by its
+    //   owner, or tracked by something that awaits it; never `void`ed.
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: { attributes: false } }],
+    },
+  },
+  {
     files: ['scripts/**/*.mjs', 'test/**/*.mjs'],
     languageOptions: { globals: { process: 'readonly', console: 'readonly', Buffer: 'readonly', URL: 'readonly' } },
   },

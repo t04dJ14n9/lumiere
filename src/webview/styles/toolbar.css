@@ -1,45 +1,212 @@
-/* The toolbar above the pages and the search bar. */
+/* The slim bar along the top of the viewer, and the search bar. */
 .toolbar {
   display: flex;
+  /* In a narrow editor the groups wrap onto a second row, never off-screen. */
+  flex-wrap: wrap;
   align-items: center;
   gap: 2px;
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c);
-  background: var(--vscode-sideBar-background, #252526);
+  min-height: 30px;
+  box-sizing: border-box;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder, var(--vscode-panel-border, #2b2b2b));
+  color: var(--vscode-foreground, #ccc);
+  background: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background, #1f1f1f));
+  font-size: 12px;
 }
 
-.toolbar button,
+.toolbar-group {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 1px;
+}
+
+.icon-button,
 .search-bar button {
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 3px;
   border: 0;
-  border-radius: 4px;
-  color: var(--vscode-foreground, #ccc);
+  border-radius: 5px;
+  color: var(--vscode-icon-foreground, var(--vscode-foreground, #ccc));
   background: transparent;
   cursor: pointer;
 }
 
-.toolbar button:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
 .search-bar button:hover {
   background: var(--vscode-toolbar-hoverBackground, #5a5d5e50);
 }
 
-.toolbar button:disabled {
+/* A toggle that is on, as VS Code shows its own (Match Case, …). */
+.icon-button.pressed {
+  color: var(--vscode-inputOption-activeForeground, inherit);
+  background: var(--vscode-inputOption-activeBackground, #2489db82);
+  outline: 1px solid var(--vscode-inputOption-activeBorder, transparent);
+  outline-offset: -1px;
+}
+
+.icon-button:focus-visible,
+.search-bar button:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+  outline-offset: -1px;
+}
+
+.icon-button:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
 .toolbar .separator {
+  flex: none;
   width: 1px;
-  height: 18px;
-  margin: 0 6px;
-  background: var(--vscode-panel-border, #3c3c3c);
+  height: 16px;
+  margin: 0 4px;
+  background: var(--vscode-widget-border, var(--vscode-panel-border, #3c3c3c));
 }
 
 .toolbar .spacer {
   flex: 1;
 }
+
+/*
+ * The floating bar, docked to the middle of an edge of the pages. It stays
+ * clear of the scroll bars, and wraps rather than leave the viewer.
+ */
+.floating-toolbar {
+  --edge-gap: 12px;
+  --scrollbar: 14px;
+
+  position: absolute;
+  z-index: 9;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  padding: 3px 6px 3px 2px;
+  border: 1px solid var(--vscode-widget-border, #454545);
+  border-radius: 8px;
+  color: var(--vscode-editorWidget-foreground, #ccc);
+  background: var(--vscode-editorWidget-background, #252526);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, #0008);
+  font-size: 12px;
+  transition: opacity 200ms ease;
+}
+
+.floating-toolbar.horizontal {
+  left: 50%;
+  max-width: calc(100% - 2 * var(--edge-gap) - var(--scrollbar));
+  transform: translateX(-50%);
+}
+
+.floating-toolbar.dock-top { top: var(--edge-gap); }
+.floating-toolbar.dock-bottom { bottom: calc(var(--edge-gap) + var(--scrollbar)); }
+
+.floating-toolbar.vertical {
+  top: 50%;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  max-height: calc(100% - 2 * var(--edge-gap));
+  padding: 2px 3px 6px;
+  overflow-y: auto;
+  transform: translateY(-50%);
+}
+
+.floating-toolbar.dock-left { left: var(--edge-gap); }
+.floating-toolbar.dock-right { right: calc(var(--edge-gap) + var(--scrollbar)); }
+
+.floating-toolbar.vertical .toolbar-group {
+  flex-direction: column;
+}
+
+.floating-toolbar.vertical .separator {
+  width: 16px;
+  height: 1px;
+  margin: 4px 0;
+}
+
+/* Upright, the page and zoom fields put their suffix underneath. */
+.floating-toolbar.vertical .number-field {
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0;
+}
+
+.floating-toolbar .spacer {
+  display: none;
+}
+
+/* Resting: out of the way of the text, but back as soon as the pointer moves. */
+.floating-toolbar.asleep {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* While dragged, the bar follows the pointer, held by its grip. */
+.floating-toolbar.dragging {
+  right: auto;
+  bottom: auto;
+  max-width: none;
+  opacity: 0.85;
+  transform: translate(-10px, -50%);
+  transition: none;
+}
+
+.floating-toolbar.vertical.dragging {
+  transform: translate(-50%, -10px);
+}
+
+.floating-toolbar .grip {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground, #999);
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+}
+
+.floating-toolbar.vertical .grip {
+  width: 22px;
+  height: 16px;
+}
+
+.floating-toolbar.vertical .grip .codicon {
+  transform: rotate(90deg);
+}
+
+.floating-toolbar.dragging .grip {
+  cursor: grabbing;
+}
+
+.floating-toolbar .grip:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+  outline-offset: -1px;
+}
+
+/* Where a dragged bar would dock: a band along that edge. */
+.dock-target {
+  position: absolute;
+  z-index: 8;
+  border-radius: 6px;
+  background: var(--vscode-editor-dropBackground, #53595d80);
+  outline: 2px dashed var(--vscode-focusBorder, #007fd4);
+  outline-offset: -2px;
+  pointer-events: none;
+}
+
+.dock-target-top { top: 4px; left: 25%; width: 50%; height: 40px; }
+.dock-target-bottom { bottom: 4px; left: 25%; width: 50%; height: 40px; }
+.dock-target-left { top: 25%; left: 4px; width: 40px; height: 50%; }
+.dock-target-right { top: 25%; right: 4px; width: 40px; height: 50%; }
 
 .number-field {
   display: inline-flex;
@@ -48,10 +215,14 @@
   color: var(--vscode-descriptionForeground, #999);
 }
 
+.number-field span {
+  white-space: nowrap;
+}
+
 .number-field input {
   box-sizing: border-box;
-  width: 44px;
-  height: 24px;
+  width: 40px;
+  height: 22px;
   padding: 0 4px;
   border: 1px solid var(--vscode-input-border, transparent);
   border-radius: 2px;

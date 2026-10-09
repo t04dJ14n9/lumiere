@@ -1,5 +1,7 @@
 **
 !dist/extension.js
+!dist/agent-bridge-server.js
+!dist/bridge-stdio.js
 !dist/webview/**
 !package.json
 !README.md

@@ -1,17 +1,12 @@
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { parseLocationFragment, type PdfLocation } from '../shared/pdf-location';
-import { VIEW_TYPE, type PdfPanels } from './pdf-panels';
+import { extractPdfLink, parseLocationFragment, type PdfLocation } from '../../../shared/pdf-location';
+import { VIEW_TYPE, type PdfPanels } from './panels';
 
-export function registerCommands(panels: PdfPanels): vscode.Disposable {
-  return vscode.Disposable.from(
-    vscode.commands.registerCommand('vscodeEmbedPdf.copyForAgent', () => panels.active?.copyForAgent()),
-    vscode.commands.registerCommand('vscodeEmbedPdf.goToOutlineItem', (page: unknown) => {
-      if (typeof page === 'number') panels.active?.goTo({ page });
-    }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.openLocation', (target?: unknown, location?: unknown) =>
-      openLocation(panels, target, location)),
-  );
+/** PDF: Open Location, which makes the viewer a navigation target for links and other extensions. */
+export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
+  return vscode.commands.registerCommand('vscodeEmbedPdf.openLocation', (target?: unknown, location?: unknown) =>
+    openLocation(panels, target, location));
 }
 
 /**
@@ -24,7 +19,7 @@ export function registerCommands(panels: PdfPanels): vscode.Disposable {
 async function openLocation(panels: PdfPanels, target: unknown, location: unknown): Promise<boolean> {
   const link = target ?? await vscode.window.showInputBox({
     title: 'Open PDF at Location',
-    prompt: 'A PDF path or link, optionally with #page=… and &viewrect=…',
+    prompt: 'A PDF path or link, optionally with #page=… and &viewrect=…, or a Source line copied for an agent',
     placeHolder: 'papers/paper.pdf#page=3&viewrect=72,83,134,21',
   });
   const uri = await resolvePdfUri(link);
@@ -41,11 +36,14 @@ async function openLocation(panels: PdfPanels, target: unknown, location: unknow
   return true;
 }
 
-/** A URI, a `file:` URL, an absolute path, or a path inside a workspace folder. */
+/**
+ * A URI, a `file:` URL, an absolute path, or a path inside a workspace
+ * folder; given as text, it can also be wrapped in a Markdown link.
+ */
 async function resolvePdfUri(target: unknown): Promise<vscode.Uri | undefined> {
   if (target instanceof vscode.Uri) return target;
   if (typeof target !== 'string' || !target.trim()) return undefined;
-  const text = target.trim().replace(/^<(.*)>$/, '$1');
+  const text = extractPdfLink(target);
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) return vscode.Uri.parse(text);
   const hash = text.indexOf('#');
   const file = hash < 0 ? text : text.slice(0, hash);

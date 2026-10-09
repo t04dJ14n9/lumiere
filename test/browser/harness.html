@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <style>
+    /* VS Code adds these defaults to every webview (webview/browser/pre/index.html). */
+    @layer vscode-default {
+      body { margin: 0; padding: 0 20px; }
+      img, video { max-width: 100%; max-height: 100%; }
+      a:focus, input:focus { outline: 1px solid -webkit-focus-ring-color; outline-offset: -1px; }
+    }
+  </style>
   <link rel="stylesheet" href="/dist/webview/viewer.css">
   <title>PDF viewer test harness</title>
 </head>
@@ -10,7 +18,12 @@
   <script>
     // Stand in for VS Code: record what the viewer sends and answer `ready`
     // with the PDF named in ?pdf= (and, with ?goto=, a location right away).
+    // ?toolbar= is the toolbar setting; the tests default to the slim bar,
+    // whose fields and buttons most of them drive. ?dock= is the floating
+    // bar's edge.
     const parameters = new URLSearchParams(location.search);
+    document.getElementById('root').dataset.toolbar = parameters.get('toolbar') ?? 'slim';
+    document.getElementById('root').dataset.dock = parameters.get('dock') ?? 'bottom';
     window.__messages = [];
     window.hostSend = message => window.postMessage(message, '*');
     window.acquireVsCodeApi = () => ({

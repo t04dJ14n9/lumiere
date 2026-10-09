@@ -9,6 +9,8 @@ export { expect };
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 /** Fixture pages are 300 points wide (test/fixtures/make-fixtures.mjs). */
 export const PAGE_WIDTH = 300;
+/** The most room fit page leaves around a page, in CSS pixels (about 40 seen). */
+const FIT_MARGIN = 48;
 
 /** `workbench`: VS Code's main window, with every editor closed first. */
 export const test = base.extend<{ workbench: Page }>({
@@ -63,6 +65,51 @@ export async function openFile(page: Page, relativePath: string): Promise<void> 
   await page.mouse.move(0, 0);
 }
 
+/**
+ * Click an editor title action: its button, or, where the editor keeps it in
+ * the More Actions menu (Cursor does, for extension actions), that menu item.
+ */
+export async function editorTitleAction(page: Page, label: string): Promise<void> {
+  const actions = page.locator('.editor-actions');
+  const button = actions.getByRole('button', { name: label });
+  // The button appears once the editor reports the state that enables it.
+  if (await button.waitFor({ timeout: 5_000 }).then(() => true, () => false)) {
+    await button.click();
+    return;
+  }
+  // The overflow dropdown is a plain labelled link, without a button role.
+  await actions.locator('[aria-label^="More Actions"]').click();
+  // Menu items act on mouse up after the pointer has entered them.
+  const item = page.locator('.monaco-menu').getByRole('menuitem', { name: label });
+  await item.hover();
+  await item.click();
+}
+
+/**
+ * What the agent chat's input holds, its text and attached files, with all
+ * whitespace removed: editors wrap long lines at spaces. VS Code's chat input,
+ * or Cursor's agent chat input, where attached files are pills in the text.
+ */
+export async function agentChatInput(page: Page): Promise<string> {
+  const cursor = page.locator('.aislash-editor-input:visible');
+  if (await cursor.count()) return withoutSpaces(await cursor.last().innerText());
+  const input = page.locator('.interactive-input-part:visible').last();
+  const attachments = await input.locator('.chat-attached-context-attachment').allInnerTexts();
+  return withoutSpaces([await input.locator('.monaco-editor').first().innerText(), ...attachments].join(''));
+}
+
+export function withoutSpaces(text: string): string {
+  return text.replace(/\s+/gu, '');
+}
+
+/** Right-click at a point and choose an item of VS Code's context menu. */
+export async function contextMenu(page: Page, at: Point, label: string): Promise<void> {
+  await page.mouse.click(...at.screen, { button: 'right' });
+  const item = page.locator('.monaco-menu').getByRole('menuitem', { name: label });
+  await item.hover();
+  await item.click();
+}
+
 export async function closeAllEditors(page: Page): Promise<void> {
   if (await page.locator('.tabs-container .tab').count()) await command(page, 'View: Close All Editor Groups');
   await expect(page.locator('.tabs-container .tab')).toHaveCount(0);
@@ -96,24 +143,76 @@ export function pageAtTop(viewer: Frame, number: number): Promise<boolean> {
   }, number - 1);
 }
 
+/** Whether the point `top` PDF points down 1-based page `number` is at the top of the viewer. */
+export function pointAtTop(viewer: Frame, number: number, top: number): Promise<boolean> {
+  return viewer.evaluate(([index, top, pageWidth]) => {
+    const viewport = document.querySelector('.viewport')!.getBoundingClientRect();
+    const page = document.querySelector(`.page[data-page-index="${index}"]`)?.getBoundingClientRect();
+    return Boolean(page) && Math.abs(page!.top + top * (page!.width / pageWidth) - viewport.top) <= 2;
+  }, [number - 1, top, PAGE_WIDTH] as const);
+}
+
 /**
  * Fit whole pages in the viewer, so every point of a page is on screen. The
  * default fit-to-width zoom can make the narrow fixture pages taller than the
- * window.
+ * window. When the editor is narrow (Cursor's agent pane on a small screen),
+ * fit width already is fit page and the zoom does not change, so this waits
+ * for the fitted state itself rather than for a change.
  */
-export async function fitPage(viewer: Frame): Promise<void> {
-  const zoom = viewer.getByRole('textbox', { name: 'Zoom' });
-  const before = await zoom.inputValue();
-  await viewer.getByRole('button', { name: 'Fit page' }).click();
-  await expect(zoom).not.toHaveValue(before);
+export async function fitPage(page: Page, viewer: Frame): Promise<void> {
+  await command(page, 'PDF: Fit Page');
+  await expect.poll(() => pageFit(viewer), { message: 'The page did not fit the viewer' })
+    .toEqual({ fitsWidth: true, fitsHeight: true, fills: true });
 }
 
-/** Show a page through the page field and wait until it is at the top. */
-export async function showPage(viewer: Frame, number: number): Promise<void> {
-  const field = viewer.getByRole('textbox', { name: 'Page' });
-  await field.fill('');
-  await field.fill(String(number));
-  await field.press('Enter');
+/**
+ * Whether the first page fits inside the viewer at its current zoom, and fills
+ * it in one direction (less the page margins), as fit page leaves it.
+ */
+function pageFit(viewer: Frame): Promise<{ fitsWidth: boolean; fitsHeight: boolean; fills: boolean }> {
+  return viewer.evaluate(margin => {
+    const viewport = document.querySelector('.viewport')!;
+    const page = document.querySelector('.page[data-page-index="0"]')!.getBoundingClientRect();
+    const { clientWidth: width, clientHeight: height } = viewport;
+    return {
+      fitsWidth: page.width <= width,
+      fitsHeight: page.height <= height,
+      fills: page.width >= width - margin || page.height >= height - margin,
+    };
+  }, FIT_MARGIN);
+}
+
+/**
+ * The text field of the quick input showing `title`. Waiting for the title
+ * rather than any quick input skips a command palette that is still closing.
+ */
+export function quickInputTitled(page: Page, title: RegExp) {
+  return page.locator('.quick-input-widget:visible')
+    .filter({ has: page.locator('.quick-input-title', { hasText: title }) })
+    .locator('input:visible');
+}
+
+/** A status bar entry of the PDF viewer, by its text. */
+export function statusBarEntry(page: Page, text: RegExp) {
+  return page.locator('.part.statusbar .statusbar-item').filter({ hasText: text });
+}
+
+/** The status bar's "Page N / M" and zoom ("Fit Width (164%)", "140%") entries. */
+export const PAGE_STATUS = /^Page \d+ \/ \d+$/u;
+export const ZOOM_STATUS = /^(Fit (Width|Page) \()?\d+%\)?$/u;
+
+/**
+ * Show a page by clicking the status bar's page entry and typing it, and
+ * wait until it is at the top.
+ */
+export async function showPage(page: Page, viewer: Frame, number: number): Promise<void> {
+  await statusBarEntry(page, PAGE_STATUS).click();
+  const input = quickInputTitled(page, /^Go to Page/u);
+  // The box opens first and gets its value (the current page) after: typing
+  // before then would be overwritten.
+  await expect(input).toHaveValue(/^\d+$/u);
+  await input.fill(String(number));
+  await input.press('Enter');
   await expect.poll(() => pageAtTop(viewer, number)).toBe(true);
   await expect(viewer.locator(`.page[data-page-index="${number - 1}"] img`)).toBeVisible();
 }

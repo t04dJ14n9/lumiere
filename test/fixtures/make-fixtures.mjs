@@ -5,6 +5,8 @@
 // in 18 pt Helvetica on a baseline 100 points below the top (x 72 to about
 // 206), and "Second line N" on a baseline 130 points below the top. It has a
 // nested outline, page 1 links to page 5, and page 2 links to a web address.
+// "Section 2.1" and the link to page 5 open 130 points down their page, at
+// "Second line N"; the other entries open at the top of their page.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -16,10 +18,10 @@ export const OUTLINE = [
     { title: 'Section 1.2', page: 3, children: [] },
   ] },
   { title: 'Part Two', page: 6, children: [
-    { title: 'Section 2.1', page: 9, children: [] },
+    { title: 'Section 2.1', page: 9, top: 130, children: [] },
   ] },
 ];
-export const INTERNAL_LINK = { page: 1, target: 5, rect: [72, 300, 228, 330] };
+export const INTERNAL_LINK = { page: 1, target: 5, top: 130, rect: [72, 300, 228, 330] };
 export const WEB_LINK = { page: 2, url: 'https://example.com/paper', rect: [72, 300, 228, 330] };
 
 /** A PDF assembled object by object; `add` returns the object's number. */
@@ -79,7 +81,7 @@ export function outlinePdf() {
     const contents = pdf.add(stream(text));
     const annotations = [];
     if (number === INTERNAL_LINK.page) {
-      annotations.push(pdf.add(`<< /Type /Annot /Subtype /Link /Rect [${fromTop(INTERNAL_LINK.rect)}] /Border [0 0 0] /Dest [${pages[INTERNAL_LINK.target - 1]} 0 R /XYZ 0 ${PAGE_SIZE.height} 0] >>`));
+      annotations.push(pdf.add(`<< /Type /Annot /Subtype /Link /Rect [${fromTop(INTERNAL_LINK.rect)}] /Border [0 0 0] /Dest [${pages[INTERNAL_LINK.target - 1]} 0 R /XYZ 0 ${PAGE_SIZE.height - INTERNAL_LINK.top} 0] >>`));
     }
     if (number === WEB_LINK.page) {
       annotations.push(pdf.add(`<< /Type /Annot /Subtype /Link /Rect [${fromTop(WEB_LINK.rect)}] /Border [0 0 0] /A << /S /URI /URI (${WEB_LINK.url}) >> >>`));
@@ -96,7 +98,7 @@ export function outlinePdf() {
       const links = [
         `/Title (${item.title})`,
         `/Parent ${parent} 0 R`,
-        `/Dest [${pages[item.page - 1]} 0 R /XYZ 0 ${PAGE_SIZE.height} 0]`,
+        `/Dest [${pages[item.page - 1]} 0 R /XYZ 0 ${PAGE_SIZE.height - (item.top ?? 0)} 0]`,
         index > 0 ? `/Prev ${numbers[index - 1]} 0 R` : '',
         index < items.length - 1 ? `/Next ${numbers[index + 1]} 0 R` : '',
         children ? `/First ${children.first} 0 R /Last ${children.last} 0 R /Count ${item.children.length}` : '',
