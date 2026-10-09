@@ -8,6 +8,7 @@ import tables from "./tables/manifest";
 import properties from "./properties/manifest";
 import pagePreview from "./pagePreview/manifest";
 import embeds from "./embeds/manifest";
+import onlineVideos from "./onlineVideos/manifest";
 import tasks from "./tasks/manifest";
 import footnotes from "./footnotes/manifest";
 import callouts from "./callouts/manifest";
@@ -36,6 +37,8 @@ export const features: readonly Manifest[] = [
   properties,
   inlineTitle,
   pagePreview,
+  // Claims video links before embeds renders them as images.
+  onlineVideos,
   embeds,
   tasks,
   footnotes,

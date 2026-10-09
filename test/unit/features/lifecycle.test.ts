@@ -56,6 +56,11 @@ async function renderHooks(root: Context) {
   return { reads, prepared: pass.displaySource !== undefined, fence };
 }
 
+// Plugins that only post-process rendered HTML add no editor extensions.
+const renderOnly = new Set(["onlineVideos"]);
+const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
+  renderOnly.has(id) ? f.extensions === 0 : f.extensions > 0;
+
 for (const manifest of features) {
   test(`${manifest.id}: disabling and re-enabling disposes its extensions and commands`, async () => {
     const f = fixture();
@@ -66,7 +71,7 @@ for (const manifest of features) {
       (fiber) => fiber.definition.name === manifest.id,
     )!;
     assert.equal(fiber.state, "active", String(fiber.error));
-    assert.ok(f.extensions > 0);
+    assert.ok(hasExtensions(f, manifest.id));
     for (const command of manifest.contributes?.commands ?? []) {
       assert.equal(f.handlers.has(command.editorCommand!), true);
     }
@@ -79,9 +84,15 @@ for (const manifest of features) {
       );
     }
     if (
-      ["codeBlocks", "math", "callouts", "tasks", "embeds", "tags"].includes(
-        manifest.id,
-      )
+      [
+        "codeBlocks",
+        "math",
+        "callouts",
+        "tasks",
+        "embeds",
+        "tags",
+        "onlineVideos",
+      ].includes(manifest.id)
     ) {
       assert.ok(activeHooks.reads > 0);
     }
@@ -101,7 +112,7 @@ for (const manifest of features) {
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
     await f.configure({ [manifest.id]: { enabled: true, config } });
-    assert.ok(f.extensions > 0);
+    assert.ok(hasExtensions(f, manifest.id));
     assert.deepEqual(await renderHooks(f.root), activeHooks);
     await f.root.dispose();
     assert.equal(f.extensions, 0);

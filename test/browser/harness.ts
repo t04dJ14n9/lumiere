@@ -6,17 +6,19 @@ export async function open(
   page: Page,
   source: string,
   preset: "minimal" | "obsidian" = "obsidian",
+  { trusted = false }: { trusted?: boolean } = {},
 ) {
   await servePage(
     page,
     '<!doctype html><html><head><link rel="stylesheet" href="/dist/webview/editor.css"></head><body><main id="app"></main><script src="/artifacts/fake-host.js"></script></body></html>',
   );
   await page.evaluate(
-    async ({ source, preset }) => {
+    async ({ source, preset, trusted }) => {
       window.harness = new window.BrowserHost(source);
+      window.harness.trusted = trusted;
       await window.harness.open(preset);
     },
-    { source, preset },
+    { source, preset, trusted },
   );
   await expect(
     page.getByRole("textbox", { name: "Markdown content" }),

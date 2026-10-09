@@ -192,6 +192,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.plugins.copyForAgent.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.onlineVideos.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.folding.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

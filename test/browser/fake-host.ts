@@ -13,6 +13,7 @@ import {
   viewState,
 } from "../../src/plugins/editor/protocol";
 import { protocol as commandProtocol } from "../../src/plugins/commands/protocol";
+import { protocol as linksProtocol } from "../../src/plugins/links/protocol";
 import { bootstrap } from "../../src/webview/bootstrap";
 export class BrowserHost {
   text: string;
@@ -25,6 +26,10 @@ export class BrowserHost {
   readonly views: Context[] = [];
   readonly session: Session;
   clipboard = "";
+  /** Workspace trust sent to the editor; set before `open`. */
+  trusted = false;
+  /** Links the editor asked the host to open. */
+  readonly opened: string[] = [];
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
   constructor(source: string) {
@@ -160,12 +165,16 @@ export class BrowserHost {
         debugLogging: false,
         features: {},
         editor: editorConfig.parse({}),
-        trusted: false,
+        trusted: this.trusted,
         clientID: id,
         source: this.document.uri,
         preset,
         mode,
       };
+    });
+    host.handle(linksProtocol, "open", ({ href }) => {
+      this.opened.push(href);
+      return true;
     });
     host.handle(editorProtocol, "clipboardRead", () => this.clipboard);
     host.handle(editorProtocol, "clipboardWrite", ({ text }) => {

@@ -248,6 +248,22 @@ Contained file access and the vault index (Obsidian's metadata cache).
 4. In an untrusted workspace, remote images do not load.
 5. **Insert Embed** wraps the selection; undo restores it.
 
+### onlineVideos
+
+`Videos.md`.
+
+1. Each image-style YouTube and Bilibili link shows a card with its alt
+   text as title (else the provider), the provider and ID. YouTube cards
+   show the video's still. The link in text stays a link.
+2. **Open on YouTube** and **Open on Bilibili** open the video page in the
+   external browser (the second YouTube card at 42 s).
+3. **Play here** on the Bilibili card shows the player; note whether the
+   video plays (it did not buffer in VS Code 1.141 on Linux).
+4. Put the caret on a video line: the Markdown shows; move away: the card
+   returns.
+5. In an untrusted workspace the cards have no still, no Play here and a
+   note saying so.
+
 ### pagePreview
 
 1. Hold Mod over an internal link in `Links.md` for about 300 ms: a preview
@@ -600,6 +616,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.copyForAgent.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.diagrams.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.embeds.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.folding.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.footnotes.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.formatting.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

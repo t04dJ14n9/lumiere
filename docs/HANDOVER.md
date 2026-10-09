@@ -7,7 +7,7 @@ completion and Phase 8 records) first.
 ## Done
 
 - Phases 0–8. Phase 7 and 8 records are in IMPLEMENTATION_PLAN.md. Checks:
-  `pnpm check` 542/542, browser smoke 20/20, native smoke 2/2 against the
+  `pnpm check` 551/551, browser smoke 24/24, native smoke 2/2 against the
   packaged VSIX in VS Code and in Cursor 3.24.9.
 - §5.7 logging (`src/host/logging.ts`, `src/plugins/editor/logging.ts`),
   §6.5 **Manage Plugins** and **Show Plugin Status**
@@ -46,6 +46,19 @@ completion and Phase 8 records) first.
 - The footnote hover preview stays inside the webview (dba6658): it moves
   left at the right edge and opens above near the bottom. Browser test
   `test/browser/footnotes.spec.ts`.
+- Online Videos plugin (`src/plugins/onlineVideos/`, not in Obsidian):
+  image-style YouTube (watch, youtu.be, Shorts, embed, live, `t=`) and
+  Bilibili (BV, av, `?p=`) links show as cards with **Open on
+  YouTube/Bilibili** (buttons calling the links RPC, external browser); trusted
+  workspaces add the YouTube still and a Bilibili **Play here** that
+  swaps in a sandboxed `player.bilibili.com` frame built from the parsed
+  ID. Players are not the default because neither plays in a VS Code
+  1.141 webview: YouTube gives error 153 (no referrer from a non-http
+  origin), Bilibili's player never buffers (details in the plugin
+  README). The Render sanitizer is unchanged: it already admits https
+  iframes written in note HTML, sandboxed, in trusted workspaces only.
+  Browser tests `test/browser/online-videos.spec.ts`; fixture note
+  `Videos.md`.
 - The editor follows Obsidian's default look with plain CSS:
   `src/webview/styles/` plus one `<plugin>.css` per plugin. Do not
   reintroduce `EditorView.baseTheme` style objects.

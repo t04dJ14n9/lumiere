@@ -947,6 +947,12 @@
           "scope": "resource",
           "description": "Render TeX formulas with MathJax."
         },
+        "markdownWorkbench.plugins.onlineVideos.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Show YouTube and Bilibili links embedded as images as video cards, with a player where the provider allows it."
+        },
         "markdownWorkbench.plugins.outgoingLinks.enabled": {
           "type": "boolean",
           "default": false,
