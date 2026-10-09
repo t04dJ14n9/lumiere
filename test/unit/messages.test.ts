@@ -39,6 +39,25 @@ test('outlines are cleaned: titles collapsed, bad pages dropped, nesting kept', 
   });
 });
 
+test('an outline entry keeps how far down its page it opens, if that is a real offset', () => {
+  const item = (top: unknown, page: unknown = 9) => ({ title: 'Section', page, top, children: [] });
+  assert.deepEqual(parseViewerMessage({ type: 'outline', items: [item(130.5)] }), {
+    type: 'outline',
+    items: [{ title: 'Section', page: 9, top: 130.5, children: [] }],
+  });
+  for (const top of [0, -5, Number.NaN, Infinity, '130', 2e6]) {
+    assert.deepEqual(parseViewerMessage({ type: 'outline', items: [item(top)] }), {
+      type: 'outline',
+      items: [{ title: 'Section', page: 9, children: [] }],
+    });
+  }
+  // No page, no offset.
+  assert.deepEqual(parseViewerMessage({ type: 'outline', items: [item(130, 0)] }), {
+    type: 'outline',
+    items: [{ title: 'Section', children: [] }],
+  });
+});
+
 test('only web and mail links may be opened from a PDF', () => {
   assert.deepEqual(parseViewerMessage({ type: 'openExternal', url: 'https://example.com/a b' }), undefined);
   assert.deepEqual(parseViewerMessage({ type: 'openExternal', url: 'https://example.com/paper' }), {

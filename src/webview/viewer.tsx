@@ -25,11 +25,11 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
     setSearching(true);
     setFindRequest(request => request + 1);
   };
-  useOutlinePublishing(DOCUMENT_ID);
+  useOutlinePublishing(DOCUMENT_ID, pdf);
 
   const show = navigation.show;
   useEffect(() => listenToHost(message => {
-    if (message.type === 'goTo') show(message.location);
+    if (message.type === 'goTo') show(message.location, message.top);
   }), [show]);
 
   const latest = useRef({ selection, searching });
@@ -69,7 +69,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
                   highlight={navigation.highlight}
                   region={selection.region}
                   selection={selection}
-                  onOpenPage={page => navigation.goToPage(page)}
+                  onOpenPage={(page, top) => navigation.goToPage(page, top)}
                 />
               )}
             />

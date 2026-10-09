@@ -11,6 +11,7 @@ import {
   pageAtTop,
   pagePoint,
   pdfViewer,
+  pointAtTop,
   selectText,
   showPage,
   test,
@@ -43,6 +44,9 @@ test('a PDF opens with its outline in the Explorer, shown only while the PDF is 
   }
   await outline.getByRole('treeitem', { name: /Section 1\.2/ }).click();
   await expect.poll(() => pageAtTop(viewer, 3)).toBe(true);
+  // "Section 2.1" points 130 points down page 9 (test/fixtures/make-fixtures.mjs).
+  await outline.getByRole('treeitem', { name: /Section 2\.1/ }).click();
+  await expect.poll(() => pointAtTop(viewer, 9, 130)).toBe(true);
 
   const header = page.locator('.pane-header', { hasText: 'PDF Outline' });
   await openFile(page, 'notes.md');

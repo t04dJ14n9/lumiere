@@ -21,6 +21,8 @@ export interface OutlineItem {
   title: string;
   /** Missing for entries that only group others or point outside the PDF. */
   page?: number;
+  /** How far down the page the entry opens, in points from its top; missing for the top. */
+  top?: number;
   children: OutlineItem[];
 }
 
@@ -34,11 +36,14 @@ export type ViewerMessage =
 
 export type HostMessage =
   | { type: 'load'; data: ArrayBuffer }
-  | { type: 'goTo'; location: PdfLocation };
+  /** `top`: with no box, show the page from this many points below its top. */
+  | { type: 'goTo'; location: PdfLocation; top?: number };
 
 const MAX_OUTLINE_ITEMS = 10_000;
 const MAX_OUTLINE_DEPTH = 32;
 const MAX_TITLE_LENGTH = 500;
+/** Larger than any real page, in points (PDF pages are at most 14,400 points). */
+const MAX_PAGE_OFFSET = 1_000_000;
 
 /** Accept a message from the viewer only if it is well-formed. */
 export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
@@ -68,6 +73,10 @@ function isWebUrl(value: unknown): value is string {
   return typeof value === 'string' && value.length <= 8_192 && /^(https?:\/\/|mailto:)\S+$/i.test(value);
 }
 
+function isPageOffset(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 && value < MAX_PAGE_OFFSET;
+}
+
 function parseOutline(value: unknown): OutlineItem[] {
   let budget = MAX_OUTLINE_ITEMS;
   const visit = (items: unknown, depth: number): OutlineItem[] => {
@@ -75,11 +84,13 @@ function parseOutline(value: unknown): OutlineItem[] {
     const result: OutlineItem[] = [];
     for (const item of items as unknown[]) {
       if (budget-- <= 0 || typeof item !== 'object' || item === null) break;
-      const { title, page, children } = item as Record<string, unknown>;
+      const { title, page, top, children } = item as Record<string, unknown>;
       if (typeof title !== 'string') continue;
+      const hasPage = Number.isSafeInteger(page) && (page as number) >= 1;
       result.push({
         title: title.replace(/\s+/g, ' ').trim().slice(0, MAX_TITLE_LENGTH) || 'Untitled',
-        ...(Number.isSafeInteger(page) && (page as number) >= 1 ? { page: page as number } : {}),
+        ...(hasPage ? { page: page as number } : {}),
+        ...(hasPage && isPageOffset(top) ? { top } : {}),
         children: visit(children, depth + 1),
       });
     }

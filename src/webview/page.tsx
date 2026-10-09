@@ -22,7 +22,8 @@ export interface PageProps {
   highlight: Highlight | undefined;
   region: RegionSelection | undefined;
   selection: SelectionReporting;
-  onOpenPage: (page: number) => void;
+  /** Open a page, from `top` points below its top when given. */
+  onOpenPage: (page: number, top?: number) => void;
 }
 
 /**

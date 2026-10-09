@@ -27,18 +27,24 @@ export function useNavigation(documentId: string) {
   const { provides: scrollPlugin } = useScrollCapability();
   const [highlight, setHighlight] = useState<Highlight>();
   const layoutReady = useRef(false);
-  const heldLocation = useRef<PdfLocation | undefined>(undefined);
+  const heldLocation = useRef<{ location: PdfLocation; top?: number } | undefined>(undefined);
 
-  const show = useCallback((location: PdfLocation): void => {
+  /**
+   * Show a location: its box near the top of the viewer, flashed; without a
+   * box, the page from `top` points below its top (where a link or outline
+   * entry points), or from its top.
+   */
+  const show = useCallback((location: PdfLocation, top?: number): void => {
     if (!scroll || !layoutReady.current) {
-      heldLocation.current = location;
+      heldLocation.current = { location, top };
       return;
     }
     const box = location.viewRect;
     scroll.scrollToPage({
       pageNumber: location.page,
       behavior: 'instant',
-      ...(box ? { pageCoordinates: { x: box.left, y: box.top }, alignX: 0, alignY: BOX_POSITION_PERCENT } : {}),
+      ...(box ? { pageCoordinates: { x: box.left, y: box.top }, alignX: 0, alignY: BOX_POSITION_PERCENT }
+        : top ? { pageCoordinates: { x: 0, y: top }, alignX: 0, alignY: 0 } : {}),
     });
     if (box) setHighlight({ page: location.page, rect: fromViewRect(box), key: Date.now() });
   }, [scroll]);
@@ -48,17 +54,17 @@ export function useNavigation(documentId: string) {
   useEffect(() => scrollPlugin?.onLayoutReady(event => {
     if (event.documentId !== documentId) return;
     layoutReady.current = true;
-    const location = heldLocation.current;
+    const held = heldLocation.current;
     heldLocation.current = undefined;
-    if (location) showRef.current(location);
+    if (held) showRef.current(held.location, held.top);
   }), [documentId, scrollPlugin]);
 
   // The scroll capability can arrive after the layout; apply what was held.
   useEffect(() => {
-    const location = heldLocation.current;
-    if (scroll && layoutReady.current && location) {
+    const held = heldLocation.current;
+    if (scroll && layoutReady.current && held) {
       heldLocation.current = undefined;
-      show(location);
+      show(held.location, held.top);
     }
   }, [scroll, show]);
 
@@ -79,7 +85,7 @@ export function useNavigation(documentId: string) {
     highlight,
     show,
     reveal,
-    goToPage: (page: number) => show({ page: Math.min(Math.max(1, page), state.totalPages) }),
+    goToPage: (page: number, top?: number) => show({ page: Math.min(Math.max(1, page), state.totalPages) }, top),
     step: (delta: 1 | -1) => show({ page: Math.min(Math.max(1, state.currentPage + delta), state.totalPages) }),
   };
 }

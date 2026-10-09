@@ -42,7 +42,7 @@ class OutlineProvider implements vscode.TreeDataProvider<OutlineItem>, vscode.Di
       node.command = {
         command: 'vscodeEmbedPdf.goToOutlineItem',
         title: 'Go to page',
-        arguments: [item.page],
+        arguments: [item.page, item.top],
       };
     }
     return node;

@@ -28,7 +28,7 @@ export class PdfPanel implements vscode.Disposable {
   private loaded = false;
   /** Counts loads, so a slow read never replaces a newer file. */
   private loadGeneration = 0;
-  private pendingLocation: PdfLocation | undefined;
+  private pending: { location: PdfLocation; top?: number } | undefined;
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(
@@ -49,10 +49,13 @@ export class PdfPanel implements vscode.Disposable {
     webview.html = viewerHtml(webview, extensionUri);
   }
 
-  /** Show a page (and box). Held until the viewer has the PDF. */
-  goTo(location: PdfLocation): void {
-    if (this.loaded) this.post({ type: 'goTo', location });
-    else this.pendingLocation = location;
+  /**
+   * Show a page (and box), or with no box the page from `top` points below
+   * its top. Held until the viewer has the PDF.
+   */
+  goTo(location: PdfLocation, top?: number): void {
+    if (this.loaded) this.post({ type: 'goTo', location, top });
+    else this.pending = { location, top };
   }
 
   /** Put the selection on the clipboard in the form agents read. */
@@ -115,9 +118,9 @@ export class PdfPanel implements vscode.Disposable {
     this.sha256 = createHash('sha256').update(bytes).digest('hex');
     this.post({ type: 'load', data: standaloneBuffer(bytes) });
     this.loaded = true;
-    if (this.pendingLocation) {
-      this.post({ type: 'goTo', location: this.pendingLocation });
-      this.pendingLocation = undefined;
+    if (this.pending) {
+      this.post({ type: 'goTo', ...this.pending });
+      this.pending = undefined;
     }
   }
 

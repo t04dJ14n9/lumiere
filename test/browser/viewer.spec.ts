@@ -69,7 +69,7 @@ test('opens the PDF, shows the page count and reports the nested outline', async
       { title: 'Section 1.1', page: 2, children: [] },
       { title: 'Section 1.2', page: 3, children: [] },
     ] },
-    { title: 'Part Two', page: 6, children: [{ title: 'Section 2.1', page: 9, children: [] }] },
+    { title: 'Part Two', page: 6, children: [{ title: 'Section 2.1', page: 9, top: 130, children: [] }] },
   ]);
 });
 
@@ -238,6 +238,9 @@ test('links in the PDF open their page, or ask the extension to open a web addre
   await open(page);
   await page.getByRole('link', { name: 'Go to page 5' }).click();
   await expect(page.getByRole('textbox', { name: 'Page' })).toHaveValue('5');
+  // The link points 130 points down page 5, which is where the viewer opens.
+  const scale = (await page.locator('.page[data-page-index="4"]').boundingBox())!.width / PAGE_WIDTH;
+  await expect.poll(async () => Math.abs((await pageOffset(page, 5))! + 130 * scale)).toBeLessThan(2);
 
   await page.getByRole('textbox', { name: 'Page' }).fill('2');
   await page.getByRole('textbox', { name: 'Page' }).press('Enter');

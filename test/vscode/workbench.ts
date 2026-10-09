@@ -96,6 +96,15 @@ export function pageAtTop(viewer: Frame, number: number): Promise<boolean> {
   }, number - 1);
 }
 
+/** Whether the point `top` PDF points down 1-based page `number` is at the top of the viewer. */
+export function pointAtTop(viewer: Frame, number: number, top: number): Promise<boolean> {
+  return viewer.evaluate(([index, top, pageWidth]) => {
+    const viewport = document.querySelector('.viewport')!.getBoundingClientRect();
+    const page = document.querySelector(`.page[data-page-index="${index}"]`)?.getBoundingClientRect();
+    return Boolean(page) && Math.abs(page!.top + top * (page!.width / pageWidth) - viewport.top) <= 2;
+  }, [number - 1, top, PAGE_WIDTH] as const);
+}
+
 /**
  * Fit whole pages in the viewer, so every point of a page is on screen. The
  * default fit-to-width zoom can make the narrow fixture pages taller than the

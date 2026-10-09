@@ -6,8 +6,8 @@ import { VIEW_TYPE, type PdfPanels } from './pdf-panels';
 export function registerCommands(panels: PdfPanels): vscode.Disposable {
   return vscode.Disposable.from(
     vscode.commands.registerCommand('vscodeEmbedPdf.copyForAgent', () => panels.active?.copyForAgent()),
-    vscode.commands.registerCommand('vscodeEmbedPdf.goToOutlineItem', (page: unknown) => {
-      if (typeof page === 'number') panels.active?.goTo({ page });
+    vscode.commands.registerCommand('vscodeEmbedPdf.goToOutlineItem', (page: unknown, top?: unknown) => {
+      if (typeof page === 'number') panels.active?.goTo({ page }, typeof top === 'number' ? top : undefined);
     }),
     vscode.commands.registerCommand('vscodeEmbedPdf.openLocation', (target?: unknown, location?: unknown) =>
       openLocation(panels, target, location)),
