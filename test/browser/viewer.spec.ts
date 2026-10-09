@@ -174,6 +174,29 @@ test('a drag over empty space selects that region; Escape clears it', async ({ p
   await expect.poll(() => lastSelection(page)).toBeNull();
 });
 
+test('a region drag released outside the viewer ends when the pointer comes back', async ({ page }) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  await page.mouse.move(...at(150, 150));
+  await page.mouse.down();
+  await page.mouse.move(...at(250, 250), { steps: 8 });
+  await expect(page.locator('.region-marquee')).toBeVisible();
+  // In VS Code the viewer is an iframe: a release over the rest of the window never reaches it.
+  await page.evaluate(() => {
+    const swallow = (event: Event): void => event.stopImmediatePropagation();
+    for (const type of ['pointerup', 'mouseup']) window.addEventListener(type, swallow, { capture: true, once: true });
+  });
+  await page.mouse.up();
+  await expect(page.locator('.region-marquee')).toBeVisible();
+
+  await page.mouse.move(...at(200, 300), { steps: 4 });
+  await expect(page.locator('.region-marquee')).toHaveCount(0);
+  await expect(page.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
+  const { rect } = await lastSelection(page) as { rect: number[] };
+  // The region ends where the viewer last saw the pointer.
+  [150, 150, 250, 250].forEach((value, index) => expect(Math.abs(rect[index]! - value)).toBeLessThan(2));
+});
+
 test('a region at the bottom of the viewer gets its menu above it, on screen', async ({ page }) => {
   await open(page);
   const at = await pagePoint(page, 1);

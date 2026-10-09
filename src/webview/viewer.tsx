@@ -4,6 +4,7 @@ import { CopyToClipboard } from '@embedpdf/plugin-selection/react';
 import { Viewport } from '@embedpdf/plugin-viewport/react';
 import { ZoomGestureWrapper, useZoom } from '@embedpdf/plugin-zoom/react';
 import React, { useEffect, useRef, useState } from 'react';
+import { useEndDragsReleasedOutside } from './drag-release';
 import { listenToHost } from './host';
 import { useNavigation, type Navigation } from './navigation';
 import { useOutlinePublishing } from './outline';
@@ -30,6 +31,7 @@ export function Viewer({ document: pdf }: { document: PdfDocumentObject }): Reac
   useOutlinePublishing(DOCUMENT_ID, pdf);
   const documentArea = useRef<HTMLDivElement>(null);
   useWheelZoom(documentArea);
+  useEndDragsReleasedOutside();
 
   const show = navigation.show;
   useKeepReadingPosition(pdf, show);
