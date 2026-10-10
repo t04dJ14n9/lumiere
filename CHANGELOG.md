@@ -4,6 +4,11 @@
 
 First packaged build, for the owner's acceptance testing. Not published.
 
+- Clicking a heading in the Note Outline (or a Backlinks entry) scrolls the
+  heading to the vertical centre of the editor, as VS Code's Outline and
+  Obsidian's do, instead of to the nearest edge; near the start or end of a
+  note it stays as close to the centre as the note's scroll range allows.
+
 - Review fixes (round 1): the Copy Link for Agent plugin is now
   `agentBridge` (`markdownWorkbench.plugins.agentBridge.enabled`; the command
   and `markdownWorkbench.copyLinkForAgent.target` keep their names); plugin

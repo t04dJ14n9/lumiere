@@ -9,7 +9,12 @@ and breadcrumbs already list Markdown headings.
 
 The view parses the active panel's current text into nested headings
 (`headings.ts`) and refreshes after edits. When the caret moves, it asks the
-panel for the caret position and selects that section's heading.
+panel for the caret position and selects that section's heading. Clicking a
+heading opens the note at its offset; the links plugin's `navigate` then
+scrolls that offset to the vertical centre of the editor, as VS Code's Outline
+(`revealRange` with `InCenter`) and Obsidian's do. Near the start or end of a
+note the scroll range ends first, so the heading stays above or below the
+centre.
 
 ## Files
 
