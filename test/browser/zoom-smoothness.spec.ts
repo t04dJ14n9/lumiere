@@ -202,3 +202,17 @@ test("reduced motion removes the animation, not the zoom", async ({ page }) => {
   expect(frames.scales.at(-1)).toBeGreaterThan(frames.scales[0]!);
   expect(frames.drift).toBeLessThan(6);
 });
+
+test("a jump to a page right after a zoom step is not undone by the zoom's scroll settling", async ({ page }) => {
+  await page.setViewportSize({ width: 700, height: 600 });
+  await openView(page, { defaultZoom: 100 });
+  await page.waitForTimeout(400);
+  await act(page, { action: "zoomIn" });
+  await act(page, { action: "goToPage", page: 5 });
+  await page.waitForTimeout(900);
+  const offset = await page.evaluate(() => {
+    const top = document.querySelector(".viewport")!.getBoundingClientRect().top;
+    return document.querySelector('.page[data-page-index="4"]')!.getBoundingClientRect().top - top;
+  });
+  expect(Math.abs(offset)).toBeLessThan(16);
+});
