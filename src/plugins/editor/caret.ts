@@ -65,7 +65,6 @@ export function caretCharacterPosition(
 const vimStyles = {
   normal: "block",
   visual: "block",
-  insert: "line",
   replace: "underline",
   pending: "half-block",
   prompt: "underline-thin",
@@ -105,16 +104,14 @@ const blinkTimings = {
 } as const;
 
 /** Shape is modal in Vim; blinking and movement always follow native settings. */
-export function caretAppearance(
-  settings: CaretSettings,
-  mode: CaretMode,
-  isExplicitMove = true,
-): CaretAppearance {
-  const style = mode === "typing" ? settings.cursorStyle : vimStyles[mode];
+/** Width and height of the shape: lines are 2 px (or `editor.cursorWidth`) or 1 px, underlines 2 px or 1 px. */
+function dimensions(
+  style: CaretShape,
+  cursorWidth: number,
+): Pick<CaretAppearance, "width" | "height"> {
   let width: CaretAppearance["width"] = "character";
   if (style === "line") {
-    const requested = settings.cursorWidth;
-    width = Number.isFinite(requested) && requested > 0 ? requested : 2;
+    width = Number.isFinite(cursorWidth) && cursorWidth > 0 ? cursorWidth : 2;
   } else if (style === "line-thin") {
     width = 1;
   }
@@ -124,24 +121,44 @@ export function caretAppearance(
   } else if (style === "underline-thin") {
     height = 1;
   }
+  return { width, height };
+}
+
+/** The animation and movement variables the stylesheet reads. */
+function animationVariables(
+  settings: CaretSettings,
+  isExplicitMove: boolean,
+): Record<string, string> {
   const animation = settings.cursorSmoothCaretAnimation;
   const movesSmoothly =
     animation === "on" || (animation === "explicit" && isExplicitMove);
   const blinking = settings.cursorBlinking;
   const timing = blinking === "solid" ? undefined : blinkTimings[blinking];
   return {
+    "--caret-animation": blinking === "solid" ? "none" : `mw-caret-${blinking}`,
+    "--caret-duration": timing?.duration ?? "0s",
+    "--caret-timing": timing?.timing ?? "linear",
+    "--caret-count": timing?.count ?? "1",
+    "--caret-direction": timing?.direction ?? "normal",
+    "--caret-move-duration": movesSmoothly ? "80ms" : "0ms",
+  };
+}
+
+export function caretAppearance(
+  settings: CaretSettings,
+  mode: CaretMode,
+  isExplicitMove = true,
+): CaretAppearance {
+  // VSCodeVim leaves insert mode to the editor's own cursor (`editor.cursorStyle`
+  // and `editor.cursorWidth`, any of the six styles); its other modes are fixed.
+  const style =
+    mode === "typing" || mode === "insert"
+      ? settings.cursorStyle
+      : vimStyles[mode];
+  return {
     style,
     endCaret: mode === "visual",
-    width,
-    height,
-    variables: {
-      "--caret-animation":
-        blinking === "solid" ? "none" : `mw-caret-${blinking}`,
-      "--caret-duration": timing?.duration ?? "0s",
-      "--caret-timing": timing?.timing ?? "linear",
-      "--caret-count": timing?.count ?? "1",
-      "--caret-direction": timing?.direction ?? "normal",
-      "--caret-move-duration": movesSmoothly ? "80ms" : "0ms",
-    },
+    ...dimensions(style, settings.cursorWidth),
+    variables: animationVariables(settings, isExplicitMove),
   };
 }

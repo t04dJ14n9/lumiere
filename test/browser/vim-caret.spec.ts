@@ -70,9 +70,14 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
     .toBeLessThan(1);
   await expect(page.locator(".cm-vimCursorLayer")).toHaveCSS("display", "none");
 
+  // Insert mode is the editor's own caret: `editor.cursorStyle` decides.
   await page.keyboard.press("i");
   await expect(editor).toHaveAttribute("data-caret-mode", "insert");
-  await expect(editor).toHaveAttribute("data-caret-style", "line");
+  await expect(editor).toHaveAttribute("data-caret-style", "block-outline");
+  for (const cursorStyle of ["underline", "block", "line-thin", "line"]) {
+    await configure(page, { cursorStyle });
+    await expect(editor).toHaveAttribute("data-caret-style", cursorStyle);
+  }
   await expect(caret).toHaveCSS("width", "3px");
   await expect(caret).toBeVisible();
   await expect(shape).toHaveText("");
@@ -144,11 +149,10 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
   await expect(shape).toHaveText("b");
   await expect
     .poll(async () => {
-      const [block, line] = await Promise.all(
-        [caret, end].map((element) =>
-          element.evaluate((node) => node.getBoundingClientRect()),
-        ),
+      const block = await caret.evaluate((node) =>
+        node.getBoundingClientRect(),
       );
+      const line = await end.evaluate((node) => node.getBoundingClientRect());
       // The line caret sits on the block's right edge.
       return Math.abs(line.left - (block.left + block.width));
     })

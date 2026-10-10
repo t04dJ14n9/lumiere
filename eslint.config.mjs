@@ -96,6 +96,8 @@ export default tseslint.config(
       "artifacts/**",
       // The VS Code build that `pnpm test:vscode` downloads when none is installed.
       ".vscode-test/**",
+      // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
+      "docs/vim-caret-measurements/**",
     ],
   },
   js.configs.recommended,

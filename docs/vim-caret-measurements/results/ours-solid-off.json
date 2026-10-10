@@ -1,16 +1,20 @@
 {
  "blinking": "solid",
  "smooth": "off",
+ "offset": {
+  "x": 353,
+  "y": 91
+ },
  "modes": {
   "normal-line-start": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -18,8 +22,8 @@
      "shadow": "none",
      "text": "p",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -27,14 +31,14 @@
    "status": "normal"
   },
   "normal-word": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 133.96875,
+     "x": 134.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -42,8 +46,8 @@
      "shadow": "none",
      "text": "l",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -51,14 +55,14 @@
    "status": "normal"
   },
   "normal-line-end": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 201.390625,
+     "x": 201.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -66,8 +70,8 @@
      "shadow": "none",
      "text": "e",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -75,14 +79,14 @@
    "status": "normal"
   },
   "normal-empty-line": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 55.5,
-     "w": 9.625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -90,8 +94,8 @@
      "shadow": "none",
      "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -99,14 +103,14 @@
    "status": "normal"
   },
   "normal-short-line-end": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 114.703125,
+     "x": 115.171875,
      "y": 79.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -114,8 +118,8 @@
      "shadow": "none",
      "text": "t",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -123,14 +127,14 @@
    "status": "normal"
   },
   "normal-cjk": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 133.96875,
+     "x": 134.171875,
      "y": 103.5,
-     "w": 16.015625,
+     "w": 16,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -138,8 +142,8 @@
      "shadow": "none",
      "text": "中",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -147,14 +151,14 @@
    "status": "normal"
   },
   "normal-cjk-2nd": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 149.96875,
+     "x": 150.171875,
      "y": 103.5,
-     "w": 16.015625,
+     "w": 16,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -162,8 +166,8 @@
      "shadow": "none",
      "text": "文",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -171,14 +175,14 @@
    "status": "normal"
   },
   "normal-accent": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 246.125,
+     "x": 246.171875,
      "y": 103.5,
-     "w": 9.65625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -186,8 +190,8 @@
      "shadow": "none",
      "text": "é",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -195,14 +199,14 @@
    "status": "normal"
   },
   "normal-emoji": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 303.921875,
+     "x": 304.171875,
      "y": 103.5,
-     "w": 19.984375,
+     "w": 20,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -210,8 +214,8 @@
      "shadow": "none",
      "text": "😀",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -219,14 +223,14 @@
    "status": "normal"
   },
   "normal-after-emoji": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 323.890625,
+     "x": 324.171875,
      "y": 103.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -234,8 +238,8 @@
      "shadow": "none",
      "text": " ",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -243,14 +247,14 @@
    "status": "normal"
   },
   "normal-back-over-emoji": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 294.296875,
+     "x": 294.171875,
      "y": 103.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -258,8 +262,8 @@
      "shadow": "none",
      "text": " ",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -267,14 +271,14 @@
    "status": "normal"
   },
   "normal-wide-line-start": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 103.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -282,8 +286,8 @@
      "shadow": "none",
      "text": "w",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -291,14 +295,14 @@
    "status": "normal"
   },
   "normal-combining": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 127.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -306,8 +310,8 @@
      "shadow": "none",
      "text": "é",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -315,14 +319,14 @@
    "status": "normal"
   },
   "normal-before-insert": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 182.125,
+     "x": 182.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -330,8 +334,8 @@
      "shadow": "none",
      "text": "o",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -339,12 +343,12 @@
    "status": "normal"
   },
   "insert": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "insert",
    "style": "line",
    "cursors": [
     {
-     "x": 182.125,
+     "x": 181.171875,
      "y": 31.5,
      "w": 2,
      "h": 24,
@@ -354,8 +358,8 @@
      "shadow": "none",
      "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -363,14 +367,14 @@
    "status": "insert"
   },
   "normal-after-esc-from-insert": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 172.5,
+     "x": 172.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -378,8 +382,8 @@
      "shadow": "none",
      "text": " ",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -387,12 +391,12 @@
    "status": "normal"
   },
   "insert-after-a": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "insert",
    "style": "line",
    "cursors": [
     {
-     "x": 182.125,
+     "x": 181.171875,
      "y": 31.5,
      "w": 2,
      "h": 24,
@@ -402,8 +406,8 @@
      "shadow": "none",
      "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -411,14 +415,14 @@
    "status": "insert"
   },
   "normal-after-esc-from-a": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 172.5,
+     "x": 172.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -426,8 +430,8 @@
      "shadow": "none",
      "text": " ",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -435,12 +439,12 @@
    "status": "normal"
   },
   "insert-at-line-end": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "insert",
    "style": "line",
    "cursors": [
     {
-     "x": 211.03125,
+     "x": 210.171875,
      "y": 31.5,
      "w": 2,
      "h": 24,
@@ -450,8 +454,8 @@
      "shadow": "none",
      "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -459,14 +463,14 @@
    "status": "insert"
   },
   "normal-after-esc-from-A": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 201.390625,
+     "x": 201.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -474,8 +478,8 @@
      "shadow": "none",
      "text": "e",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -483,14 +487,14 @@
    "status": "normal"
   },
   "replace": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "replace",
    "style": "underline",
    "cursors": [
     {
-     "x": 201.390625,
+     "x": 201.171875,
      "y": 53.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 2,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -498,8 +502,8 @@
      "shadow": "none",
      "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -507,14 +511,14 @@
    "status": "replace"
   },
   "normal-after-esc-from-R": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
-     "x": 191.765625,
+     "x": 192.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -522,8 +526,8 @@
      "shadow": "none",
      "text": "n",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -531,38 +535,14 @@
    "status": "normal"
   },
   "pending-r": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
-   "mode": "replace",
-   "style": "underline",
-   "cursors": [
-    {
-     "x": 76.171875,
-     "y": 53.5,
-     "w": 9.640625,
-     "h": 2,
-     "cls": "mw-caret",
-     "bg": "rgb(174, 175, 173)",
-     "color": "rgb(31, 31, 31)",
-     "shadow": "none",
-     "text": "",
-     "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
-    }
-   ],
-   "decorations": [],
-   "selection": [],
-   "status": "replace"
-  },
-  "operator-pending": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -570,32 +550,70 @@
      "shadow": "none",
      "text": "p",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
    "selection": [],
    "status": "normal"
   },
+  "operator-pending": {
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "mode": "pending",
+   "style": "half-block",
+   "cursors": [
+    {
+     "x": 76.171875,
+     "y": 31.5,
+     "w": 10,
+     "h": 24,
+     "cls": "mw-caret",
+     "bg": "rgba(0, 0, 0, 0)",
+     "color": "rgba(0, 0, 0, 0)",
+     "shadow": "none",
+     "text": "p",
+     "visibility": "visible",
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
+    }
+   ],
+   "decorations": [],
+   "selection": [],
+   "status": "pending"
+  },
   "visual-empty": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
-     "color": "rgb(31, 31, 31)",
+     "color": "rgb(81, 80, 82)",
      "shadow": "none",
      "text": "p",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
+    },
+    {
+     "x": 86.171875,
+     "y": 31.5,
+     "w": 1,
+     "h": 24,
+     "cls": "mw-caret",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgba(0, 0, 0, 0)",
+     "shadow": "none",
+     "text": "",
+     "visibility": "visible",
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -611,23 +629,37 @@
    "status": "visual"
   },
   "visual-forward": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
     {
-     "x": 105.0625,
+     "x": 105.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
-     "color": "rgb(31, 31, 31)",
+     "color": "rgb(81, 80, 82)",
      "shadow": "none",
      "text": "i",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
+    },
+    {
+     "x": 115.171875,
+     "y": 31.5,
+     "w": 1,
+     "h": 24,
+     "cls": "mw-caret",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgba(0, 0, 0, 0)",
+     "shadow": "none",
+     "text": "",
+     "visibility": "visible",
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -643,23 +675,37 @@
    "status": "visual"
   },
   "visual-backward": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
-     "color": "rgb(31, 31, 31)",
+     "color": "rgb(81, 80, 82)",
      "shadow": "none",
      "text": "p",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
+    },
+    {
+     "x": 86.171875,
+     "y": 31.5,
+     "w": 1,
+     "h": 24,
+     "cls": "mw-caret",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgba(0, 0, 0, 0)",
+     "shadow": "none",
+     "text": "",
+     "visibility": "visible",
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -675,14 +721,14 @@
    "status": "visual"
   },
   "normal-after-visual": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 31.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
@@ -690,8 +736,8 @@
      "shadow": "none",
      "text": "p",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -699,23 +745,37 @@
    "status": "normal"
   },
   "visual-line": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 55.5,
-     "w": 9.625,
+     "w": 2,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
-     "color": "rgb(31, 31, 31)",
+     "color": "rgb(81, 80, 82)",
      "shadow": "none",
      "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
+    },
+    {
+     "x": 76.171875,
+     "y": 55.5,
+     "w": 1,
+     "h": 24,
+     "cls": "mw-caret",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgba(0, 0, 0, 0)",
+     "shadow": "none",
+     "text": "",
+     "visibility": "visible",
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -738,23 +798,37 @@
    "status": "visual"
   },
   "visual-block": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
     {
      "x": 76.171875,
      "y": 103.5,
-     "w": 9.640625,
+     "w": 10,
      "h": 24,
      "cls": "mw-caret",
      "bg": "rgb(174, 175, 173)",
-     "color": "rgb(31, 31, 31)",
+     "color": "rgb(81, 80, 82)",
      "shadow": "none",
      "text": "w",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 1.2s linear infinite normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
+    },
+    {
+     "x": 76.171875,
+     "y": 103.5,
+     "w": 1,
+     "h": 24,
+     "cls": "mw-caret",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgba(0, 0, 0, 0)",
+     "shadow": "none",
+     "text": "",
+     "visibility": "visible",
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
@@ -770,52 +844,52 @@
    "status": "visual"
   },
   "search-in-progress": {
-   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
-   "mode": "normal",
-   "style": "block",
+   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "mode": "prompt",
+   "style": "underline-thin",
    "cursors": [
     {
      "x": 76.171875,
-     "y": 31.5,
-     "w": 9.640625,
-     "h": 24,
+     "y": 54.5,
+     "w": 10,
+     "h": 1,
      "cls": "mw-caret",
-     "bg": "rgba(0, 0, 0, 0)",
-     "color": "rgba(0, 0, 0, 0)",
-     "shadow": "rgb(174, 175, 173) 0px 0px 0px 1px inset",
-     "text": "p",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgb(31, 31, 31)",
+     "shadow": "none",
+     "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 0s ease 1 normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
    "selection": [],
-   "status": "normal"
+   "status": "prompt"
   },
   "commandline": {
-   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼr  mw-editor",
-   "mode": "normal",
-   "style": "block",
+   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "mode": "prompt",
+   "style": "underline-thin",
    "cursors": [
     {
      "x": 76.171875,
-     "y": 31.5,
-     "w": 9.640625,
-     "h": 24,
+     "y": 54.5,
+     "w": 10,
+     "h": 1,
      "cls": "mw-caret",
-     "bg": "rgba(0, 0, 0, 0)",
-     "color": "rgba(0, 0, 0, 0)",
-     "shadow": "rgb(174, 175, 173) 0px 0px 0px 1px inset",
-     "text": "p",
+     "bg": "rgb(174, 175, 173)",
+     "color": "rgb(31, 31, 31)",
+     "shadow": "none",
+     "text": "",
      "visibility": "visible",
-     "transition": "transform, left, top 0s ease-out",
-     "animation": "none 0s ease 1 normal"
+     "transition": "left, top, width, height 0s ease",
+     "animation": "none 0s linear 1 normal"
     }
    ],
    "decorations": [],
    "selection": [],
-   "status": "normal"
+   "status": "prompt"
   }
  }
 }

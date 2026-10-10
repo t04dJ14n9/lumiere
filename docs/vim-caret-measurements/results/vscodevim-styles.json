@@ -1,0 +1,44 @@
+{
+ "line/0": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "2x24 cursor-line-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ },
+ "block/0": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ },
+ "underline/0": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ },
+ "line-thin/0": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ },
+ "block-outline/0": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "10x24 cursor-block-outline-style bg=rgba(0, 0, 0, 0) bt=1px bb=1px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ },
+ "underline-thin/0": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "10x2 cursor-underline-thin-style bg=rgba(0, 0, 0, 0) bt=0px bb=1px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ },
+ "line/4": {
+  "normal": "10x24 cursor-block-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "insert": "4x24 cursor-line-style bg=rgb(174, 175, 173) bt=0px bb=0px",
+  "replace": "10x2 cursor-underline-style bg=rgba(0, 0, 0, 0) bt=0px bb=2px",
+  "visual": "1x24 cursor-line-thin-style bg=rgb(174, 175, 173) bt=0px bb=0px"
+ }
+}

@@ -54,20 +54,7 @@ class CaretView {
       this.source = source;
       this.watchMode();
     }
-    if (update.selectionSet || update.docChanged) {
-      // Edits map the caret through text changes; that is not explicit navigation.
-      // Plain typing: arrows and clicks are explicit navigation, edits are
-      // not. A modal source moves the selection from code (VSCodeVim does the
-      // same, and `cursorSmoothCaretAnimation: explicit` skips it), so only a
-      // click counts.
-      const clicked = update.transactions.some((transaction) =>
-        transaction.isUserEvent("select.pointer"),
-      );
-      this.isExplicitMove =
-        update.selectionSet &&
-        !update.docChanged &&
-        (this.source.mode(this.view) === "typing" || clicked);
-    }
+    this.trackMove(update);
     this.appearance = this.applyAppearance();
     this.restartsBlink ||=
       sourceChanged ||
@@ -82,6 +69,25 @@ class CaretView {
     ) {
       this.view.requestMeasure(this.measurement);
     }
+  }
+
+  /**
+   * Edits map the caret through text changes; that is not explicit navigation.
+   * Plain typing: arrows and clicks are explicit navigation. A modal source
+   * moves the selection from code (VSCodeVim does the same, and
+   * `cursorSmoothCaretAnimation: explicit` skips it), so only a click counts.
+   */
+  private trackMove(update: ViewUpdate): void {
+    if (!update.selectionSet && !update.docChanged) {
+      return;
+    }
+    const clicked = update.transactions.some((transaction) =>
+      transaction.isUserEvent("select.pointer"),
+    );
+    this.isExplicitMove =
+      update.selectionSet &&
+      !update.docChanged &&
+      (this.source.mode(this.view) === "typing" || clicked);
   }
 
   private watchMode(): void {

@@ -18,7 +18,7 @@ const { page, stop } = await launch({
     "markdownWorkbench.plugins.vim.enabled": true,
   },
 });
-const results = { blinking, smooth, modes: {} };
+const results = { blinking, smooth, offset: { x: 0, y: 0 }, modes: {} };
 try {
   let frame;
   for (let i = 0; i < 80 && !frame; i++) {
@@ -28,6 +28,8 @@ try {
     }
   }
   if (!frame) throw new Error("no workbench webview");
+  const box = await (await frame.frameElement()).boundingBox();
+  results.offset = { x: box.x, y: box.y };
   await page.waitForTimeout(3000);
   await frame.locator(".cm-content").click({ position: { x: 300, y: 5 } });
   await page.keyboard.press("Escape");

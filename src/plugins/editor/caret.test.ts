@@ -79,11 +79,10 @@ test("visual and pending visual replace carets cover the active character, inclu
   );
 });
 
-test("Vim mode chooses block, line or underline regardless of the native cursorStyle", () => {
+test("Vim's normal, visual, replace, pending and prompt carets ignore the native cursorStyle; insert follows it", () => {
   const expected: Partial<Record<CaretMode, CaretAppearance["style"]>> = {
     normal: "block",
     visual: "block",
-    insert: "line",
     replace: "underline",
     pending: "half-block",
     prompt: "underline-thin",
@@ -99,7 +98,7 @@ test("Vim mode chooses block, line or underline regardless of the native cursorS
         style,
         `${mode} with native ${cursorStyle}`,
       );
-      assert.equal(appearance.width, mode === "insert" ? 3 : "character");
+      assert.equal(appearance.width, "character");
       assert.equal(
         appearance.height,
         { replace: 2, prompt: 1 }[mode as string] ?? "character",
@@ -107,6 +106,17 @@ test("Vim mode chooses block, line or underline regardless of the native cursorS
       assert.equal(appearance.endCaret, mode === "visual");
     }
   }
+});
+
+test("insert mode is the native caret in all six styles, as in VSCodeVim", () => {
+  for (const cursorStyle of styles) {
+    assert.deepEqual(
+      caretAppearance({ ...base, cursorStyle }, "insert"),
+      caretAppearance({ ...base, cursorStyle }, "typing"),
+    );
+  }
+  assert.equal(caretAppearance({ ...base, cursorWidth: 3 }, "insert").width, 3);
+  assert.equal(caretAppearance({ ...base, cursorWidth: 0 }, "insert").width, 2);
 });
 
 test("normal typing honours all six native styles and their thicknesses", () => {

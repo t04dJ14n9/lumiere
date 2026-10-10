@@ -34,16 +34,18 @@ try {
         animation: `${s.animationName} ${s.animationDuration} ${s.animationTimingFunction} ${s.animationIterationCount}` };
     });
     const layer = ed.querySelector(".cursors-layer");
-    const decorations = [];
-    for (const span of ed.querySelectorAll(".view-lines span")) {
-      const s = getComputedStyle(span);
-      if (s.backgroundColor !== "rgba(0, 0, 0, 0)" || (s.borderTopWidth !== "0px" && s.borderTopStyle !== "none")) {
-        decorations.push({ ...rect(span), text: span.textContent, cls: span.className, bg: s.backgroundColor, color: s.color, border: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}` });
-      }
-    }
+    // Inline decoration backgrounds are `.cdr` boxes in the overlay layer (VSCodeVim's visual block);
+    // the glyph colour is the decorated span's.
+    const decorations = [...ed.querySelectorAll(".view-overlays .cdr[class*='ced-']")].map((e) => {
+      const s = getComputedStyle(e);
+      const span = [...ed.querySelectorAll(".view-lines span[class*='ced-']")].find((x) => Math.abs(x.getBoundingClientRect().x - e.getBoundingClientRect().x) < 1.5 && Math.abs(x.getBoundingClientRect().y - e.getBoundingClientRect().y) < 2);
+      return { ...rect(e), bg: s.backgroundColor, border: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`, text: span?.textContent, color: span ? getComputedStyle(span).color : null };
+    });
+    // The pseudo-element blocks of the operator-pending decoration.
+    const pseudo = [...ed.querySelectorAll(".view-lines span[class*='ced-']")].map((x) => { const b = getComputedStyle(x, "::before"); return { text: x.textContent, bg: b.backgroundColor, w: b.width, h: b.height, bottom: b.bottom, ...rect(x) }; }).filter((p) => p.bg !== "rgba(0, 0, 0, 0)" && p.h !== "auto");
     const selection = [...ed.querySelectorAll(".selected-text")].map((e) => ({ ...rect(e), bg: getComputedStyle(e).backgroundColor }));
     const lines = [...ed.querySelectorAll(".view-line")].map((l) => ({ ...rect(l), text: l.textContent }));
-    return { editorClass: ed.className, layerClass: layer?.className, cursors, decorations, selection, lines,
+    return { editorClass: ed.className, layerClass: layer?.className, cursors, decorations, pseudo, selection, lines,
       status: document.querySelector(".statusbar")?.textContent?.match(/-- [A-Z ()-]+ --/)?.[0] ?? null };
   });
 
