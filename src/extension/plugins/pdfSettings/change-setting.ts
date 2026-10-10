@@ -3,22 +3,11 @@ import {
   formatValue,
   numberProblem,
   settingEntries,
-  type SchemaProperty,
   type SettingEntry,
 } from '../../../shared/setting-schema';
-import { updateSetting } from '../../settings';
+import { contributedProperties, updateSetting } from '../../settings';
 
 type Item = vscode.QuickPickItem & { entry?: SettingEntry };
-
-/** The extension's settings, from its own manifest. */
-export function contributedSettings(extensionId: string): SettingEntry[] {
-  const manifest = vscode.extensions.getExtension(extensionId)?.packageJSON as
-    | { contributes?: { configuration?: { properties?: Record<string, SchemaProperty> } | { properties?: Record<string, SchemaProperty> }[] } }
-    | undefined;
-  const configuration = manifest?.contributes?.configuration;
-  const sections = Array.isArray(configuration) ? configuration : configuration ? [configuration] : [];
-  return sections.flatMap(section => settingEntries(section.properties ?? {}));
-}
 
 /**
  * PDF: Change Setting…: every contributed setting in one list, grouped, with its
@@ -26,7 +15,7 @@ export function contributedSettings(extensionId: string): SettingEntry[] {
  * under the keys of the Settings editor (see `updateSetting`).
  */
 export async function changeSetting(extensionId: string): Promise<void> {
-  const entries = contributedSettings(extensionId);
+  const entries = settingEntries(contributedProperties(extensionId));
   const config = vscode.workspace.getConfiguration();
   const items: Item[] = [];
   let group: string | undefined;

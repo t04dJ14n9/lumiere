@@ -43,7 +43,9 @@ export interface SettingEntry {
   defaultValue: unknown;
 }
 
-const PREFIX = "vscodeEmbedPdf.";
+/** The prefix of every key this extension contributes. */
+export const SETTING_PREFIX = "vscodeEmbedPdf.";
+const PREFIX = SETTING_PREFIX;
 
 const words = (text: string): string =>
   text
@@ -111,4 +113,50 @@ export function numberProblem(text: string, entry: Pick<SettingEntry, "minimum" 
   if (entry.minimum !== undefined && value < entry.minimum) return `Enter a number of at least ${entry.minimum}`;
   if (entry.maximum !== undefined && value > entry.maximum) return `Enter a number of at most ${entry.maximum}`;
   return undefined;
+}
+
+/** Whether `value` is something the schema `property` allows; the reason when it is not. */
+export function schemaProblem(property: SchemaProperty, value: unknown): string | undefined {
+  if (property.anyOf) {
+    const branches = property.anyOf.filter((branch): branch is SchemaProperty => typeof branch === "object" && branch !== null);
+    const problems = branches.map((branch) => schemaProblem(branch, value));
+    return problems.some((problem) => problem === undefined) ? undefined : (problems[0] ?? "Not an allowed value.");
+  }
+  if (value === null) return ([] as string[]).concat(property.type ?? []).includes("null") ? undefined : "This setting cannot be null.";
+  if (property.enum && !property.enum.includes(value)) return "Not one of the setting's values.";
+  const types = ([] as string[]).concat(property.type ?? []).filter((type) => type !== "null");
+  const fits = (type: string): boolean => {
+    switch (type) {
+      case "boolean":
+        return typeof value === "boolean";
+      case "string":
+        return typeof value === "string";
+      case "number":
+        return typeof value === "number" && Number.isFinite(value);
+      case "integer":
+        return typeof value === "number" && Number.isInteger(value);
+      default:
+        return false;
+    }
+  };
+  if (types.length === 0 || !types.some(fits)) return "Not a value of the setting's type.";
+  if (typeof value === "number") {
+    if (property.minimum !== undefined && value < property.minimum) return `At least ${property.minimum}.`;
+    if (property.maximum !== undefined && value > property.maximum) return `At most ${property.maximum}.`;
+  }
+  return undefined;
+}
+
+/**
+ * The gate in front of every settings write. The schema comes from package.json
+ * but is not taken on trust for what is written: the key must be one this
+ * extension contributes (not another extension's, not VS Code's, not unknown),
+ * and the value must fit its schema. Returns the reason to refuse, or undefined.
+ */
+export function writeProblem(properties: Record<string, SchemaProperty>, key: unknown, value: unknown): string | undefined {
+  if (typeof key !== "string" || !key.startsWith(SETTING_PREFIX) || !Object.hasOwn(properties, key)) {
+    return `${String(key)} is not a setting of this extension.`;
+  }
+  const problem = schemaProblem(properties[key]!, value);
+  return problem ? `${key}: ${problem}` : undefined;
 }

@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
 import { PAGE_LAYOUTS, SCROLL_MODES } from '../../../shared/view-options';
 import { parseDefaultZoom, resolveSmoothScrolling } from '../../../shared/view-settings';
-import { updateSetting } from '../../settings';
+import { EXTENSION_ID, updateSetting } from '../../settings';
 import type { PluginDefinition, PdfServices } from '../services';
 import { changeSetting } from './change-setting';
 import manifest from './manifest';
 
-const EXTENSION_ID = 't04dj14n9.vscode-embedpdf';
 const VIEW = 'vscodeEmbedPdf.view';
 
 const read = <T>(key: string, fallback: T): T => vscode.workspace.getConfiguration().get<T>(key, fallback);
