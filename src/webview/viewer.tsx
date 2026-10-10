@@ -22,6 +22,8 @@ import { usePagedScroll } from "./paged-scroll";
 import { usePagedWheel, usePagingKeys } from "./paging-input";
 import { useSmoothMotion, useSmoothWheel } from "./smooth-scrolling";
 import { useZoomScrollSettle } from "./zoom-scroll";
+import { zenToolbarMode } from "../shared/zen";
+import { useZen } from "./zen";
 import { useZoomTransition } from "./zoom-transition";
 import { useViewLayout } from "./view-layout";
 import { PagedPadding } from "./paged-padding";
@@ -98,7 +100,9 @@ export function Viewer({
   const show = navigation.show;
   useRestorePosition(navigation, pdf.pages.length);
 
-  const [toolbar, setToolbar] = useState(currentToolbarSettings);
+  const [setting, setToolbar] = useState(currentToolbarSettings);
+  const [zen, setZen] = useZen();
+  const toolbar = { ...setting, mode: zenToolbarMode(setting.mode, zen) };
   const { tool, setTool } = useToolMode(DOCUMENT_ID);
   useViewReporting(navigation, tool, choices);
   const runAction = useViewActions(navigation, openSearch, setTool, (next) =>
@@ -122,6 +126,8 @@ export function Viewer({
             }));
         } else if (message.type === "lookUp") {
           setLookUp(message.enabled);
+        } else if (message.type === "zen") {
+          setZen(message.on);
         } else if (message.type === "toolbar") {
           setToolbar(rememberToolbarSettings(message.toolbar));
         }
@@ -180,6 +186,7 @@ export function Viewer({
                 rememberToolbarSettings({ ...current, dock }),
               )
             }
+            zen={zen}
           />
         )}
         {searching && (

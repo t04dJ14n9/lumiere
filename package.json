@@ -66,6 +66,18 @@
         "category": "PDF"
       },
       {
+        "command": "vscodeEmbedPdf.enterZen",
+        "title": "Enter Zen Mode",
+        "category": "PDF",
+        "icon": "$(screen-full)"
+      },
+      {
+        "command": "vscodeEmbedPdf.exitZen",
+        "title": "Exit Zen Mode",
+        "category": "PDF",
+        "icon": "$(screen-normal)"
+      },
+      {
         "command": "vscodeEmbedPdf.previousPageKeepingPlace",
         "title": "Previous Page, Keeping Place",
         "category": "PDF"
@@ -424,6 +436,14 @@
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
         {
+          "command": "vscodeEmbedPdf.enterZen",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inZenMode"
+        },
+        {
+          "command": "vscodeEmbedPdf.exitZen",
+          "when": "inZenMode"
+        },
+        {
           "command": "vscodeEmbedPdf.previousPageKeepingPlace",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
@@ -550,6 +570,16 @@
           "command": "vscodeEmbedPdf.selectTextTool",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.tool == 'region'",
           "group": "2_pdfTool@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.enterZen",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && !inZenMode",
+          "group": "4_pdfZen@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.exitZen",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && inZenMode",
+          "group": "4_pdfZen@1"
         },
         {
           "command": "vscodeEmbedPdf.actualSize",
@@ -774,6 +804,23 @@
         "key": "ctrl+alt+down",
         "mac": "alt+down",
         "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
+      },
+      {
+        "command": "vscodeEmbedPdf.enterZen",
+        "key": "ctrl+alt+z",
+        "mac": "ctrl+cmd+z",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts && !inZenMode"
+      },
+      {
+        "command": "vscodeEmbedPdf.exitZen",
+        "key": "ctrl+alt+z",
+        "mac": "ctrl+cmd+z",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts && inZenMode"
+      },
+      {
+        "command": "vscodeEmbedPdf.exitZen",
+        "key": "escape escape",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts && inZenMode"
       },
       {
         "command": "vscodeEmbedPdf.previousPage",

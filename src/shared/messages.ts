@@ -17,6 +17,8 @@
  *    │  action { action } ──────►         page, zoom, find or tool, from a command
  *    │  toolbar { toolbar } ────►         the toolbar setting changed
  *    │  lookUp { enabled } ─────►         macOS Look Up is on or off
+ *    │  zen { on } ─────────────►         zen mode is on or off (floating bar while it lasts)
+ *    │  ◄──────────── zen                 Exit zen pressed, or full-screen zen ended
  *    │  ◄──────────── lookUp              the word under a force click (open),
  *    │                                    or under a right click (to look up
  *    │                                    from the context menu)
@@ -89,6 +91,8 @@ export type ViewerMessage =
   | { type: "openExternal"; url: string }
   /** macOS Look Up: `open` looks the word up now (a force click), else when the context menu asks. */
   | { type: "lookUp"; word: string | null; open: boolean }
+  /** Zen mode: `exit` the reader pressed Exit zen; otherwise the window left full-screen zen by itself. */
+  | { type: "zen"; exit: boolean }
   | { type: "error"; message: string };
 
 export type HostMessage =
@@ -103,6 +107,8 @@ export type HostMessage =
   | { type: "action"; action: ViewerAction }
   | { type: "toolbar"; toolbar: ToolbarSettings }
   | { type: "lookUp"; enabled: boolean }
+  /** Zen mode is on or off: the viewer shows a floating bar while it lasts. */
+  | { type: "zen"; on: boolean }
   | { type: "viewSettings"; settings: ViewSettings };
 
 const MAX_OUTLINE_ITEMS = 10_000;
@@ -137,6 +143,8 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
         (message.word === null || isLookUpWord(message.word))
         ? { type: "lookUp", word: message.word, open: message.open }
         : undefined;
+    case "zen":
+      return typeof message.exit === "boolean" ? { type: "zen", exit: message.exit } : undefined;
     case "error":
       return typeof message.message === "string"
         ? { type: "error", message: message.message.slice(0, 1_000) }

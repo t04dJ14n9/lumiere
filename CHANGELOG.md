@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Zen mode: `PDF: Enter Zen Mode` / `Exit Zen Mode` (`Ctrl+Alt+Z`, `Ctrl+Cmd+Z` on macOS; `Escape Escape` exits)
+  runs VS Code's Zen Mode; the chrome and slim toolbars become a floating bar with an Exit zen button while it
+  lasts (never written to settings). Specs `zen.spec.ts` (browser and VS Code), docs/zen.md.
+
 - Zoom from the buttons, keys and menu keeps the centre of the viewer in place
   like Preview, also when the page grows wider than the viewer (the scroll the
   zoom asked for was lost to a page not yet laid out, and in page-by-page mode

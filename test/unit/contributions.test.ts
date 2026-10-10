@@ -6,7 +6,7 @@ interface Contributes {
   commands: { command: string; title: string }[];
   configuration: { properties: Record<string, unknown> };
   menus: Record<string, { command: string }[]>;
-  keybindings?: { command: string }[];
+  keybindings?: { command: string; key?: string; mac?: string; when?: string }[];
 }
 
 const { contributes } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { contributes: Contributes };
@@ -73,4 +73,20 @@ test('turning the page keeping the place: Option+Arrow on macOS, Ctrl+Alt+Arrow 
     ],
   );
   for (const entry of bindings) assert.ok(!/^alt\+(left|right)$/u.test(entry.key), `${entry.command}: ${entry.key} would take VS Code's Go Back/Forward`);
+});
+
+test('zen mode: Enter and Exit are chosen by inZenMode, bound to Ctrl+Alt+Z (Ctrl+Cmd+Z on macOS) and Esc Esc, only in the PDF editor and under the shortcuts setting', () => {
+  const commands = contributes.commands.map(entry => entry.command);
+  assert.ok(commands.includes('vscodeEmbedPdf.enterZen') && commands.includes('vscodeEmbedPdf.exitZen'));
+  const zen = (contributes.keybindings ?? []).filter(entry => /Zen$/u.test(entry.command));
+  assert.deepEqual(zen.map(entry => [entry.command.replace('vscodeEmbedPdf.', ''), entry.key, entry.mac]), [
+    ['enterZen', 'ctrl+alt+z', 'ctrl+cmd+z'],
+    ['exitZen', 'ctrl+alt+z', 'ctrl+cmd+z'],
+    ['exitZen', 'escape escape', undefined],
+  ]);
+  for (const entry of zen) {
+    assert.match(entry.when ?? '', /activeCustomEditorId == 'vscodeEmbedPdf\.viewer'/u);
+    assert.match(entry.when ?? '', /config\.vscodeEmbedPdf\.keyboardShortcuts/u);
+    assert.match(entry.when ?? '', entry.command.endsWith('enterZen') ? /!inZenMode/u : /(?<!!)inZenMode/u);
+  }
 });
