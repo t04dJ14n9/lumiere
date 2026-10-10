@@ -4,8 +4,11 @@ import { runtimeStates } from "../shared/plugin-state";
 import { protocol } from "../plugins/editor/protocol";
 import { featureController } from "./features";
 /** The RPC response waits for queued reconfiguration, so API writes report applied states. */
-export function pluginReporting(root: Context, rpc: Endpoint) {
-  const configure = featureController(root);
+export function pluginReporting(
+  root: Context,
+  rpc: Endpoint,
+  configure = featureController(root),
+) {
   let updates = Promise.resolve();
   const publish = () =>
     rpc.notify(protocol, "pluginsChanged", runtimeStates(root));
@@ -14,11 +17,13 @@ export function pluginReporting(root: Context, rpc: Endpoint) {
     return updates;
   };
   root.effect(() =>
-    rpc.on(protocol, "configure", (settings) => {
-      void update(settings).catch((error) =>
+    // Returned, so the endpoint counts the reconfiguration as part of
+    // applying the notification (R3-6). Never rejects; failures are logged.
+    rpc.on(protocol, "configure", (settings) =>
+      update(settings).catch((error: unknown) =>
         root.logger.error("Feature settings failed", error),
-      );
-    }),
+      ),
+    ),
   );
   root.effect(() =>
     rpc.handle(protocol, "plugins", async () => {

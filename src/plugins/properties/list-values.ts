@@ -1,4 +1,17 @@
 import type { PropertyScalar } from "../../markdown/properties";
+import { validTag } from "../../markdown/tags/grammar";
+
+export function normalizeListInput(
+  key: string,
+  text: string,
+): string | undefined {
+  const value = text.trim();
+  if (key.toLowerCase() !== "tags") {
+    return value;
+  }
+  const tag = value.replace(/^#/, "");
+  return !tag || validTag(tag) ? tag : undefined;
+}
 
 /** Scalar YAML values may be edited as a one-item list; objects remain source-only. */
 export function listValues(raw: unknown): PropertyScalar[] | undefined {

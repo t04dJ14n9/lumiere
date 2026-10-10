@@ -16,6 +16,10 @@
   cursor: grab;
   touch-action: none;
   opacity: 0;
+  /* fixed: the grip is a 14px strip, so its glyph is 14px at any note size */
+  font-size: 14px;
+  line-height: 1;
+  overflow: hidden;
 }
 .table-handle[hidden],
 .table-drop-indicator[hidden] {
@@ -23,9 +27,15 @@
 }
 .table-row-handle {
   width: 14px;
+  left: -25px;
+  top: -3px;
+  bottom: -3px;
 }
 .table-column-handle {
   height: 14px;
+  left: -10px;
+  right: -10px;
+  top: -18px;
 }
 .hybrid-table:hover .table-handle,
 .hybrid-table:focus-within .table-handle {
@@ -54,7 +64,23 @@
   contain: inline-size;
   overflow-x: auto;
 }
+.table-wrapper {
+  display: grid;
+  width: max-content;
+  grid-template-columns: max-content 16px;
+  grid-template-rows: auto 16px;
+  gap: 0;
+  padding: 16px 0 0 16px;
+}
+.table-cell-wrapper {
+  position: relative;
+  min-height: 1.5em;
+}
+.table-cell-content {
+  min-height: 1.5em;
+}
 .hybrid-table table {
+  grid-area: 1 / 1;
   border-collapse: collapse;
   margin: 0;
 }
@@ -73,21 +99,51 @@
   outline: 1px solid var(--accent);
 }
 .table-controls {
-  display: flex;
-  gap: 4px;
-  margin-top: 4px;
-  opacity: 0;
+  display: contents;
 }
-.hybrid-table:hover .table-controls,
-.hybrid-table:focus-within .table-controls {
+/* Measured in Obsidian 1.14.4 (docs/obsidian-measurements/tables/button-visibility*.mjs):
+   a 16px strip under the table (full width) and beside it (full height), both
+   invisible until the pointer is over the strip itself. Unlike Obsidian they
+   also show for keyboard focus. */
+.table-row-btn,
+.table-col-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.1s;
+  border: 1px solid var(--line);
+}
+.table-row-btn:hover,
+.table-col-btn:hover,
+.table-controls button:focus-visible {
   opacity: 1;
 }
+.table-row-btn {
+  grid-area: 2 / 1;
+  border-top: 0;
+}
+.table-col-btn {
+  grid-area: 1 / 2;
+  border-left: 0;
+}
 .table-controls button {
-  font-size: 0.6875em;
+  /* fixed: the add strips are 16px, so their glyph is 14px at any note size */
+  font-size: 14px;
+  line-height: 1;
+  overflow: hidden;
   color: var(--muted);
   background: transparent;
-  border: 0;
   cursor: pointer;
+  padding: 0;
+}
+.table-controls button:hover {
+  background: var(--vscode-list-hoverBackground, #ffffff12);
+  color: var(--accent);
+}
+.table-controls button:focus-visible {
+  outline: 1px solid var(--accent);
 }
 .table-message {
   color: var(--vscode-errorForeground, #e88);

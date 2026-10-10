@@ -2297,7 +2297,7 @@ Phase 5 is complete: after Phase 4, Codex may start Phase 6.
 ### Phase 4 progress — HTML paste, 2026-10-08
 
 Delivered: default-on HTML conversion with sanitizer, awaited typed
-`paste/transform` waterfall and focused CodeMirror routing, including projected
+`paste/transform` pipeline and focused CodeMirror routing, including projected
 table cells. Plain-text shortcuts, code and property inputs bypass conversion;
 rectangular table paste keeps TSV behavior. Delayed transforms cannot overwrite
 changed text/selections or closed views. Conversion preserves literal escaping,
@@ -2340,7 +2340,7 @@ Checks in order: `pnpm check` **402/402**; browser smoke **14/14**; native smoke
 `docs/checks/phase4-copy-agent-{check,browser,native}.txt`. Smoke suites unchanged.
 Ledger **91/22/2/333/0**, total 448. No lint exceptions.
 Deviations: reusable host selection snapshots belong to core `editor`, ahead of
-the API facade; `editor/selectionMenu` is an awaited shared menu waterfall.
+the API facade; `editor/selectionMenu` is an awaited shared menu pipeline.
 Snapshots use original source offsets/native document versions; the internal
 capture wire still uses normalized offsets/collaboration versions. Untitled
 notes must be saved/reopened before a disk reference is available; text-only copy
@@ -2641,3 +2641,138 @@ Not done here: an editor-session runtime for several editor kinds, the
 PDF subtree import and merged-bundle splitting (merge-only; the webview
 already lazy-loads Mermaid, MathJax and code highlighting), and
 `exactOptionalPropertyTypes` (129 errors in about 60 files, deferred).
+
+### Load-time follow-up — 2026-10-10
+
+Targeted the recorded 16,000-block open profile: lazy cached heading-fold queries
+replace gutter-triggered full metadata extraction; Live Preview caches structural
+discovery across renderer registrations and skips unrelated predicates; Prism
+loads requested language components in dependency order, preserving extensions,
+aliases and embedded syntax. Added unit regressions and reproducible Node state
+and Prism diagnostics. The kernel and plugin startup order are unchanged.
+
+Measurements, raw samples, validation and remaining owner re-measurements are in
+`docs/perf/after-notes.md`. Chromium aborts under this sandbox's permissions, so
+no browser after timing or native `after.json` is claimed. Changes stay in the
+working tree at the owner's request; no commit, push or branch command was run.
+
+Checks: formatting, `pnpm lint`, `pnpm typecheck` and `pnpm build` passed.
+Fallback unit runner: 170/171 files passed; the platform-layer unit's subprocess
+capture is blocked by `EPERM`, while its three compiler fixtures reject the
+forbidden APIs when run directly. Existing browser suite: 47 launch failures
+from Chromium's sandbox abort, so browser acceptance remains unverified.
+
+### Vim caret follow-up — 2026-10-10
+
+Delivered: a small pure caret-settings/mode mapper, native cursor fields through
+the existing `nativeConfigKeys` path, and one measured presentation layer shared
+by note and Vim table-cell editors. Normal/visual use a full character block with
+readable text in VS Code's cursor background colour; insert uses the native line
+width; `R` (insert + overwrite) and pending/counting `r` use an underline.
+Vim decides shape independently of native cursorStyle. Native typing supports all
+six styles, five blink settings and off/explicit/on movement animation. Selection
+backgrounds remain `drawSelection`'s; modal listeners and caret DOM are disposed
+with their extensions. `src/kernel` is unchanged.
+
+Added eleven pure mapping/mode/selection tests and a native-settings regression,
+plus the one Playwright spec explicitly requested by the owner (an exception to the usual
+unit-only expansion policy). Plugin READMEs, `docs/vim-caret.md` and manual caret
+scenarios are updated. The defaults/native-settings assertions fail against the
+original HEAD manifest, with all four cursor fields absent.
+
+Checks: formatting, lint, all TypeScript projects, build and 66 focused unit
+assertions passed. `pnpm exec tsx --test` hit the sandbox's IPC EPERM; the
+`node --import tsx` fallback passed. Playwright discovered and built the targeted
+spec, but Chromium aborted before executing it in that sandbox
+(`sandbox_host_linux.cc:41`, Operation not permitted). Runtime checks were run
+later on the box: `docs/vim-caret.md` "Verification" lists the real VS Code and
+Cursor comparison with the built-in caret and the Chromium geometry specs. The pinned human-learning checkout is unavailable here; the
+installed codemirror-vim 6.3.0 implementation was read directly. No commit, push,
+branch command or owner-profile installation was performed, as requested.
+
+### Table editing parity follow-up — 2026-10-10
+
+Implemented the measured Obsidian 1.14.4 table behavior from the owner's
+`obsidian-tables-behaviour.md`: persistent widgets with raw focused cells,
+aligned serialization on every cell edit, alignment-aware padding and stable
+anchors in unchanged cells, document arrow entry, cell-attached row/column grips,
+edge add buttons and expanded cell menus. Existing Tab/Enter append, boundary
+arrows, pipe escaping, operations and sorting have additional unit coverage.
+The decisions, starting differences and regression evidence are in
+`docs/tables-diff.md`; the table README and manual plan are updated.
+
+Checks, individually: changed-file Prettier, `pnpm lint`, `pnpm typecheck`,
+**82/82** relevant units and `pnpm build` pass. The usual `tsx --test` launcher
+cannot bind its IPC socket here; units ran through Node's `tsx` import hook.
+Three existing layer-test wrappers cannot spawn their compiler subprocess;
+direct negative-fixture compilation rejects DOM, Node and VS Code APIs as expected.
+The one targeted browser spec cannot launch Chromium (`shutdown: Operation not
+permitted`); no application interaction ran. No native tests or editor apps were
+launched, as requested. Kernel unchanged, 815 TypeScript lines; no lint exceptions
+or layer-rule changes. Changes remain uncommitted in the working tree.
+
+Deferred/rejected: generic link menu policy awaits a shared editor contribution;
+block insertion menus do not fit single table cells; private DOM/pixel copying
+is not behavioral parity. Shift+Enter keeps the existing `<br>` encoding, with
+reference verification deferred along with Obsidian add-button click effects.
+DOM focus, hover, button and drag interactions, native undo, IME and two-panel
+edits remain owner-run checks. The pinned human-learning checkout is absent.
+
+
+### Properties parity with Obsidian 1.14.4 — 2026-10-10 (working tree)
+
+Delivered: the supplied measured spec and probes were read; the existing sheet,
+YAML helpers, type store and comparison screenshot were reviewed. The difference
+and action table is `docs/properties-diff.md`, also copied to
+`/tmp/properties-diff.md`. `/workspace/plans/properties-diff.md` cannot be written
+under this session's sandbox roots. The pinned `~/Code/human-learning` checkout
+is unavailable; no source repository or worktree was changed.
+
+The sheet has the measured div hierarchy, icon spans, Lucide types, inline
+contenteditable text/pill inputs, native typed controls, link pencil and persistent
+non-mutating mismatch warnings. The existing vault/name type scope is retained
+and pinned. Reserved types cannot be changed; Automatic clears a registry entry;
+type changes no longer offer conversion or retain forced-value state, and renames
+do not copy preferences between names. Icon and heading menus follow the measured
+labels/submenus. Shared workspace collapse persists through validated RPC.
+
+Keyboard/event units cover name-to-value focus, scalar Enter-to-row, field Tab
+routing, row motion/Delete/Escape, quiet name rejection, pill addition/focus/edit/
+removal and tag normalization. Mod+; opens an inline pending row with indexed vault
+name suggestions. Empty rows survive Escape; notes without YAML get a temporary
+sheet without text/undo changes. Repeated Add/display calls retain pending rows.
+The Properties sanitizer permits only template-created contenteditables in its
+existing escaped/sanitized HTML policy. Rich-paste routing excludes non-CodeMirror
+contenteditables, preventing a property paste from also editing the body.
+
+Added `test/fixtures/vault/property.md`, updated the plugin README and manual plan,
+and added one targeted Playwright spec for the browser-only focus/widget paths
+(the owner's explicit exception to the existing smoke-suite policy). No source
+browser/native suite was ported; the retired ledger and kernel are untouched.
+The kernel remains 815 formatted production lines, under 1,000. No lint limits,
+layer rules or reviewed exceptions changed.
+
+Validation: Prettier on changed files, `pnpm lint`, `pnpm typecheck` and
+`pnpm build` pass. Selected unit tests pass **149/149**, including Properties,
+ported YAML behaviours, rich-paste routing/conversion, menu routing, bootstrap,
+host teardown, feature lifecycle/composition and lint/kernel constraints.
+`pnpm exec tsx --test` was attempted but its Unix socket creation is denied
+(EPERM); unit files were executed sequentially with `node --import tsx <file>`.
+The unit log is `docs/checks/properties-parity-units.txt`. Five baseline tests
+failed before the fixes, and the renderer-retention test fails on the original
+HEAD source; details and evidence are linked in the diff.
+
+Exactly one browser spec was attempted, one worker, no retries. Chromium failed
+at launch (`sandbox_host_linux.cc`, shutdown Operation not permitted), before
+any assertion; log `docs/checks/properties-parity-browser.txt`. No VS Code,
+Cursor or Obsidian was launched, as requested. Actual visual parity, native
+clipboard/picker behaviour, DOM reconciliation/focus and IME remain owner manual
+checks. Browser failure is an environment limit, not a passing result.
+
+Rejected/deferred: daily-note actions (no daily-note capability), identical
+native picker appearance (platform/locale dependent), collapse shared across
+unrelated workspaces (existing storage is workspace state), and unmeasured sort
+persistence/collation, case-only key rules, fuzzy-name ranking and complex YAML
+editing. Existing safe behaviour is retained for those cases. Every fix row is
+implemented or pinned by a unit; no commit, push, branch change or publication was
+performed, at the owner's instruction.

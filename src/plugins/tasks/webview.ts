@@ -44,7 +44,8 @@ export const inlineTasks: InlineRenderer = {
       const text = cx.state.doc.lineAt(node.from);
       cx.mark(Math.min(node.to + 1, text.to), text.to, "md-task-done");
     }
-    if (!cx.revealed(node.from, node.to)) {
+    const marker = node.node.parent?.parent?.getChild("ListMark");
+    if (!cx.revealed(marker?.from ?? node.from, node.to)) {
       cx.replace(
         node.from,
         node.to,

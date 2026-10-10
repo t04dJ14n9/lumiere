@@ -31,6 +31,7 @@ function registerCalloutRenderer(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "callout",
+      nodes: ["Blockquote"],
       editing: "reveal",
       match: (node, state) =>
         node.name === "Blockquote" &&

@@ -19,6 +19,7 @@ import { createViewState } from "./view-state";
 import { indentationKeymap } from "./indentation";
 import { findExtension } from "./find";
 import { keepSelectAllInEditor } from "./select-all";
+import { caretExtension } from "./caret-view";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -116,6 +117,7 @@ function createEditorView(
         ctx.document.extension,
         ctx.markdown.language(),
         drawSelection(),
+        caretExtension(),
         findExtension(),
         EditorView.lineWrapping,
         EditorView.contentAttributes.of({

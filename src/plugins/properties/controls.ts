@@ -2,7 +2,6 @@ import { bindPropertyForm } from "./form";
 import { PropertyOrder } from "./order";
 import { PropertySelection } from "./selection";
 import { frontmatter } from "../../markdown/properties";
-import { inferPropertyKind } from "../../markdown/properties/types";
 import type { PropertyContext } from "./context";
 import {
   createControlEdits,
@@ -14,8 +13,8 @@ import { bindRowNavigation } from "./row-navigation";
 import { bindRowMenu, type PropertyMenuState } from "./row-menu";
 
 const boundRows = new WeakSet<HTMLElement>();
-const boundWarnings = new WeakSet<HTMLButtonElement>();
 interface PanelControls extends PropertyMenuState {
+  source?: string;
   selection?: PropertySelection;
   order?: PropertyOrder;
 }
@@ -29,7 +28,7 @@ export function bindPropertyControls(
 ): () => void {
   const panel = container.querySelector<HTMLElement>(":scope > .properties");
   const header = frontmatter(source);
-  if (!panel || !header?.values) {
+  if (!panel || header?.error) {
     return () => {};
   }
   const editor =
@@ -39,7 +38,12 @@ export function bindPropertyControls(
   const existing = panels.get(panel);
   const state = existing ?? {};
   panels.set(panel, state);
-  state.closeMenu?.();
+  // A refresh that changes nothing (a blur committing an empty input) must
+  // not close the menu the click that caused the blur just opened.
+  if (state.source !== source) {
+    state.closeMenu?.();
+  }
+  state.source = source;
   const edits = createControlEdits({ container, panel, editor, source });
   const selection = (state.selection ??= createSelection(panel, edits));
   selection.sync();
@@ -51,6 +55,7 @@ export function bindPropertyControls(
     selection,
     state,
     openMenu: context.openMenu,
+    readClipboard: context.readClipboard,
   });
   registerOrder({
     container,
@@ -60,8 +65,9 @@ export function bindPropertyControls(
     selection,
     state,
     openMenu: context.openMenu,
+    readClipboard: context.readClipboard,
   });
-  state.order?.refresh(header.raw);
+  state.order?.refresh(header?.raw ?? "");
   if (existing) {
     return () => {};
   }
@@ -106,44 +112,40 @@ interface RowBindings {
   selection: PropertySelection;
   state: PanelControls;
   openMenu: PropertyContext["openMenu"];
+  readClipboard: PropertyContext["readClipboard"];
 }
 
 function bindRows(bindings: RowBindings): void {
-  const { container, panel, editor, edits, selection, state, openMenu } =
-    bindings;
+  const {
+    container,
+    panel,
+    editor,
+    edits,
+    selection,
+    state,
+    openMenu,
+    readClipboard,
+  } = bindings;
   panel.querySelectorAll<HTMLElement>("[data-property-row]").forEach((row) => {
     const key = row.dataset.propertyRow!;
-    bindTypeWarning(row, key, editor, edits.current);
     if (boundRows.has(row)) {
       return;
     }
     boundRows.add(row);
     bindRowName(row, key, editor, edits);
-    bindRowMenu({ panel, row, key, editor, edits, selection, state, openMenu });
+    bindRowMenu({
+      panel,
+      row,
+      key,
+      editor,
+      edits,
+      selection,
+      state,
+      openMenu,
+      readClipboard,
+    });
     bindRowNavigation({ row, container, panel, editor, apply: edits.apply });
   });
-}
-
-function bindTypeWarning(
-  row: HTMLElement,
-  key: string,
-  editor: PropertyEditor,
-  current: PropertyControlEdits["current"],
-): void {
-  const convert = row.querySelector<HTMLButtonElement>(
-    "[data-property-convert]",
-  );
-  if (!convert || boundWarnings.has(convert)) {
-    return;
-  }
-  boundWarnings.add(convert);
-  convert.disabled = !editor?.setType;
-  convert.addEventListener("click", () =>
-    editor?.setType?.(
-      key,
-      inferPropertyKind(key, current()?.values?.[key], editor.types?.()),
-    ),
-  );
 }
 
 function registerOrder(bindings: RowBindings): void {

@@ -24,6 +24,7 @@ interface KeyboardActions {
 
 /** Routes grid keys and cell-boundary movement; ordinary typing stays in the cell. */
 export class TableKeyboard {
+  private entryColumn = 0;
   constructor(
     private readonly grid: TableGrid,
     private readonly projection: CellProjection,
@@ -36,11 +37,7 @@ export class TableKeyboard {
       return;
     }
     const gridSelected = !!this.selection.range && !this.projection.inner;
-    if (gridSelected && isGridArrow(event)) {
-      const rtl = getComputedStyle(this.grid.root).direction === "rtl";
-      this.arrow(arrowStep(event.key as ArrowKey, rtl), event.shiftKey);
-      event.preventDefault();
-      event.stopPropagation();
+    if (this.routeGridKey(event, gridSelected)) {
       return;
     }
     if (
@@ -60,6 +57,26 @@ export class TableKeyboard {
         writeCells(this.grid.model, this.selection.range!, [[""]]),
       );
     }
+  }
+
+  private routeGridKey(event: KeyboardEvent, gridSelected: boolean): boolean {
+    if (!gridSelected) {
+      return false;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
+      this.selection.selectAll();
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    }
+    if (isGridArrow(event)) {
+      const rtl = getComputedStyle(this.grid.root).direction === "rtl";
+      this.arrow(arrowStep(event.key as ArrowKey, rtl), event.shiftKey);
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    }
+    return false;
   }
 
   private openMenu(event: KeyboardEvent): void {
@@ -173,6 +190,8 @@ export class TableKeyboard {
     const edge =
       this.grid.start() + (direction > 0 ? this.grid.block.source.length : 0);
     const adjacent = doc.lineAt(edge).number + direction;
+    this.entryColumn =
+      this.projection.active?.column ?? this.selection.range?.head.column ?? 0;
     this.projection.close();
     delete this.selection.range;
     this.actions.deactivate();
@@ -193,6 +212,19 @@ export class TableKeyboard {
     this.selection.highlight();
     outer.state.facet(tableSelectionChanges)(false);
     outer.focus();
+  }
+
+  enter(direction: -1 | 1): void {
+    this.projection.open(
+      {
+        row: direction < 0 ? this.grid.model.rows.length - 1 : 0,
+        column: Math.min(
+          this.entryColumn,
+          this.grid.model.alignments.length - 1,
+        ),
+      },
+      direction < 0 ? "all" : 0,
+    );
   }
 }
 

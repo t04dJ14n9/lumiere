@@ -8,6 +8,10 @@ Live Preview. Each panel can switch between Live Preview and Source mode.
 A shared document tree feeds block indexes and viewport inline decorations.
 Feature renderers are selected in catalog rank order; generic core blocks use
 the base slot. Caller-bound registrations retain the contributing plugin's owner.
+Built-in block renderers declare their eligible node names. Structural syntax
+is discovered once per tree and reused across registrations; unrelated inline
+syntax and match predicates are skipped. Undeclared or inline node renderers
+retain complete discovery.
 The engine compartment switches presentation without replacing the document.
 Inline decorations map through IME and mouse drags, then rebuild; rendered clicks
 map visible text back to source before syntax is revealed.
@@ -21,6 +25,8 @@ map visible text back to source before syntax is revealed.
 - `registry.ts`: renderer facets and reveal rules.
 - `document-tree.ts`: incremental document syntax tree.
 - `blocks.ts`: block index, widget decorations and render revision.
+- `block-discovery.ts`: structural syntax cache and renderer candidate selection.
+- `block-discovery.test.ts`: registration cost, discovery parity and unrestricted renderers.
 - `inline.ts`: basic inline decoration builder and composition/drag lifetime.
 - `code-lines.ts`: code block lines; only fence text hides, so reveals never
   change the layout. Thematic breaks are likewise one decorated line.
@@ -62,7 +68,8 @@ every line).
   it; anything else they depend on must reach them as a facet change or an
   effect. `invalidation.test.ts` checks, over thousands of random edits and
   caret moves, that the incremental index and decorations equal a full
-  rebuild.
+  rebuild. A renderer's optional `nodes` list must name every syntax node
+  its `match` can accept; omitting it retains the complete traversal.
 
 ## Services, events and settings
 
@@ -81,3 +88,21 @@ left to the owner's manual comparison.
 
 The `visiblePosition` service query places external badges after replacement
 blocks without exposing renderer internals to marker providers.
+
+
+### Reveal rules
+
+Follows the measured [Obsidian 1.14.4 rules](/workspace/plans/obsidian-reveal-rules.md).
+Any selection touching an inline element (inclusive endpoints) reveals its
+outermost ancestor and the transitive chain of directly abutting elements;
+one character or space breaks the chain. Escapes and heading/quote marks reveal
+on selected lines. Tasks reveal only through the checkbox end (columns 0–5
+for `- [ ]`). Both code fences reveal anywhere in the block. Callouts reveal
+source with quote marks per line and inline syntax per element. Definition
+markers reveal on their first line; math and HTML blocks reveal whole.
+Tables and Properties retain their widgets; bullets, numbers, tags and comment
+markers stay visible. Footnote references deliberately retain superscript
+rendering except when a caret touches the reference itself.
+
+`reveal-rules.test.ts` documents the inline and line rules as caret-offset tables;
+`test/unit/livePreview/reveal-plugins.test.ts` checks feature renderer composition.

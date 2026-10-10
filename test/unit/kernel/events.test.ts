@@ -7,7 +7,7 @@ declare module "../../../src/kernel/types" {
     /** @mode serial */ sequence: () => void | Promise<void>;
     /** @mode parallel */ concurrent: () => void | Promise<void>;
     /** @mode bail */ claim: () => string | undefined;
-    /** @mode waterfall */ transform: (
+    /** @mode pipeline */ transform: (
       value: string,
     ) => string | Promise<string>;
   }
@@ -68,7 +68,7 @@ test("serial awaits listeners; parallel starts all before awaiting", async () =>
   assert.deepEqual(order.slice(2), ["start", "parallel", "end"]);
   await root.dispose();
 });
-test("bail skips throwing listeners and stops at first non-undefined; waterfall awaits transformations", async () => {
+test("bail skips throwing listeners and stops at first non-undefined; pipeline awaits transformations", async () => {
   const root = Context.create();
   let late = false;
   root.on("claim", () => {
@@ -87,6 +87,6 @@ test("bail skips throwing listeners and stops at first non-undefined; waterfall 
     throw new Error("skip");
   });
   root.on("transform", (v) => v + "b");
-  assert.equal(await root.waterfall("transform", ""), "ab");
+  assert.equal(await root.pipeline("transform", ""), "ab");
   await root.dispose();
 });

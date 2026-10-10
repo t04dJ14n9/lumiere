@@ -79,7 +79,10 @@ function navigator(view: EditorView): Navigate {
     }
     view.dispatch({
       selection: { anchor: target.from },
-      effects: EditorView.scrollIntoView(target.from),
+      // Centre the target as VS Code's Outline and Obsidian's do. The browser
+      // clamps the scroll at both ends, so a heading near the start or end
+      // of the note lands as close to the centre as the note allows.
+      effects: EditorView.scrollIntoView(target.from, { y: "center" }),
     });
     view.focus();
   };

@@ -1,4 +1,5 @@
 import { stringify } from "yaml";
+import { clipboardProperties } from "./clipboard-values";
 
 interface PropertySelectionActions {
   values(): Record<string, unknown>;
@@ -172,6 +173,21 @@ export class PropertySelection {
     return this.panel.ownerDocument.execCommand("copy");
   }
 
+  cut(keys: string[]): boolean {
+    if (!this.copy(keys)) {
+      return false;
+    }
+    this.remove(keys);
+    return true;
+  }
+
+  paste(text: string): void {
+    const values = clipboardProperties(text);
+    if (values) {
+      this.actions.merge(values);
+    }
+  }
+
   remove(keys: string[]): void {
     if (this.actions.remove(keys)) {
       this.clear();
@@ -212,9 +228,7 @@ export class PropertySelection {
       );
     } else if (mod && event.key.toLowerCase() === "a") {
       rows.forEach((row) => this.toggle(row, true));
-    } else if (event.key === "Escape" && this.selected.size) {
-      this.clear();
-    } else if (event.key === "Delete" || (mod && event.key === "Backspace")) {
+    } else if (event.key === "Delete") {
       this.remove(this.keys(row));
     } else {
       this.handleUnselectedKey(event);
@@ -243,7 +257,9 @@ export class PropertySelection {
   }
 
   private handleUnselectedKey(event: KeyboardEvent): void {
-    if (["ArrowUp", "ArrowDown", "Tab", "j", "k"].includes(event.key)) {
+    if (
+      ["ArrowUp", "ArrowDown", "Tab", "j", "k", "Escape"].includes(event.key)
+    ) {
       this.clear();
     } else if (
       this.selected.size > 1 &&

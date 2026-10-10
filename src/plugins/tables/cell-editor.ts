@@ -2,7 +2,7 @@ import { defaultKeymap } from "@codemirror/commands";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
-import type { Cell, CellPosition } from "../../markdown/tables/model";
+import type { Cell, CellPosition, Table } from "../../markdown/tables/model";
 import { difference } from "../../shared/document/wire";
 import type { InputGrouping } from "../document/api";
 import { editGroup } from "../document/api";
@@ -72,7 +72,6 @@ export class CellEditor {
         },
         extensions: [
           options.environment.language,
-          options.environment.inline,
           cellSyntax,
           cellNavigation((step, extend) => options.arrow(step, extend)),
           this.groups.extension,
@@ -115,8 +114,13 @@ export class CellEditor {
     );
   }
 
-  update(source: string, cell: Cell, vim: boolean): void {
-    const { from, to } = this.source.range(source, cell);
+  update(
+    source: string,
+    cell: Cell,
+    vim: boolean,
+    alignment: Table["alignments"][number],
+  ): void {
+    const { from, to } = this.source.range(source, cell, alignment);
     const text = source.slice(from, to);
     this.reconciling = true;
     try {

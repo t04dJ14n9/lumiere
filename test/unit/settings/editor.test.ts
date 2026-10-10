@@ -44,10 +44,15 @@ test("editor settings have application defaults and reconfigure without changing
     lineHeight: 1.5,
     // Native editor font settings for Markdown; empty until the host reads them.
     fontFamily: "",
+    defaultFontFamily: "",
     fontWeight: "normal",
     letterSpacing: 0,
     fontLigatures: false,
     fontVariations: false,
+    cursorStyle: "line",
+    cursorBlinking: "blink",
+    cursorSmoothCaretAnimation: "off",
+    cursorWidth: 0,
   });
   // VS Code's defaults: ligatures off, no variations; Obsidian's body size.
   assert.deepEqual(fontDeclarations(settingsExtensions({})), {
@@ -90,6 +95,48 @@ test("editor settings have application defaults and reconfigure without changing
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "rtl",
   });
+});
+
+test("caret settings come from native Markdown configuration and survive settings reconfiguration", async () => {
+  const markdown: Record<string, unknown> = {
+    "editor.cursorStyle": "block-outline",
+    "editor.cursorBlinking": "expand",
+    "editor.cursorSmoothCaretAnimation": "explicit",
+    "editor.cursorWidth": 4,
+  };
+  const reader: SettingsReader = {
+    get: <T>(_key: string, fallback?: T) => fallback,
+  };
+  const native: SettingsReader = {
+    get: <T>(key: string) => markdown[key] as T,
+  };
+  const settings = readSettings(reader, native).editor!;
+  assert.deepEqual(
+    [
+      settings.cursorStyle,
+      settings.cursorBlinking,
+      settings.cursorSmoothCaretAnimation,
+      settings.cursorWidth,
+    ],
+    ["block-outline", "expand", "explicit", 4],
+  );
+  const compartment = new Compartment();
+  const state = EditorState.create({
+    doc: "abc",
+    selection: { anchor: 1 },
+    extensions: compartment.of(settingsExtensions({})),
+  });
+  const updated = state.update({
+    effects: compartment.reconfigure(settingsExtensions(settings)),
+  }).state;
+  assert.equal(updated.doc, state.doc);
+  assert.equal(updated.selection, state.selection);
+  assert.equal(updated.facet(editorSettings).cursorWidth, 4);
+  assert.equal(updated.facet(editorSettings).cursorBlinking, "expand");
+  const generated = await contributions();
+  for (const key of Object.keys(generated.configuration.properties)) {
+    assert.ok(!key.startsWith("markdownWorkbench.editor.cursor"), key);
+  }
 });
 test("resource settings use manifest aliases and validate all editor fields", () => {
   const values: Record<string, unknown> = {
@@ -273,6 +320,7 @@ test("note text follows the native editor font settings for Markdown files (not 
     "editor.letterSpacing": 0.5,
     "editor.fontLigatures": true,
     "editor.fontVariations": false,
+    "editor.fontFamily#default": "'Droid Sans Mono', monospace",
   };
   const native: SettingsReader = {
     get: <T>(key: string) => markdown[key] as T,
@@ -299,8 +347,8 @@ test("note text follows the native editor font settings for Markdown files (not 
     ["Fira Code", 18, "300", 1.8, 0.5, true, false],
   );
   assert.deepEqual(fontDeclarations(settingsExtensions(editor)), {
-    "--text-font": "Fira Code, monospace",
-    "--code-font": "Fira Code, monospace",
+    "--text-font": `"Fira Code", 'Droid Sans Mono', monospace`,
+    "--code-font": `"Fira Code", 'Droid Sans Mono', monospace`,
     "--text-size": "18px",
     "--text-weight": "300",
     "--line-height": "1.8",

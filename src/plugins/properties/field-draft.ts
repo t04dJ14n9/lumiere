@@ -1,125 +1,148 @@
 import { frontmatter, propertyInput } from "../../markdown/properties";
 import type { PropertyKind } from "../../markdown/properties/types";
 import type { PropertyEditor } from "./control-edits";
+import {
+  focusInput,
+  inputText,
+  isNativeInput,
+  reportInputValidity,
+  setInputText,
+  setInputValidity,
+} from "./value-input";
 
-/** A scalar input keeps its original value until a valid draft is committed. */
+/** Only an actual edit commits, so focusing a mismatched widget cannot erase YAML. */
 export class PropertyField {
-  private readonly edit: HTMLButtonElement;
-  private readonly display: HTMLElement;
-  private readonly original: string;
-  private readonly originalValue: unknown;
-  private active = false;
+  private original: string;
+  private isDirty = false;
+  private readonly key: string;
 
   constructor(
     private readonly container: HTMLElement,
-    private readonly input: HTMLInputElement,
+    private readonly input: HTMLElement,
     private readonly source: string,
     private readonly editor: PropertyEditor,
   ) {
-    this.edit = input.parentElement!.querySelector<HTMLButtonElement>(
-      "[data-property-edit]",
-    )!;
-    this.display = input.parentElement!.querySelector<HTMLElement>(
-      "[data-property-display]",
-    )!;
-    this.edit.hidden = !editor;
-    input.disabled = !editor;
-    this.original = input.value;
-    this.originalValue =
-      frontmatter(source)?.values?.[input.dataset.propertyInput!];
+    this.key = input.dataset.propertyInput!;
+    this.original = inputText(input);
+    if (isNativeInput(input)) {
+      input.disabled = !editor;
+    } else {
+      input.contentEditable = String(!!editor);
+    }
     this.registerEvents();
+    this.registerLink();
   }
 
-  private focusRow(): void {
-    this.container
-      .querySelector<HTMLElement>(
-        `[data-property-row="${CSS.escape(this.input.dataset.propertyInput!)}"]`,
-      )
-      ?.focus();
+  private row(): HTMLElement | null {
+    return this.container.querySelector(
+      `[data-property-row="${CSS.escape(this.key)}"]`,
+    );
   }
 
   private cancel(): void {
-    this.active = false;
+    this.isDirty = false;
+    delete this.input.dataset.propertyDirty;
     delete this.input.dataset.propertyEditing;
-    this.input.value = this.original;
-    this.input.setCustomValidity("");
-    this.input.hidden = true;
-    this.display.hidden = false;
-    this.edit.hidden = false;
+    setInputText(this.input, this.original);
+    setInputValidity(this.input, "");
     this.editor?.refresh?.();
   }
 
   private commit(): boolean {
-    if (!this.active) {
+    if (!this.isDirty || this.input.dataset.propertyCommitting) {
       return true;
     }
     const kind = (this.input.dataset.propertyKind ?? "text") as PropertyKind;
-    const value = propertyInput(kind, this.input.value);
-    if (value === undefined || !this.input.checkValidity()) {
-      this.input.setCustomValidity(
-        kind === "number"
-          ? "Enter a finite number."
-          : "Enter a valid date or date and time.",
-      );
-      this.input.reportValidity();
-      return false;
-    }
-    const changed = !Object.is(value, this.originalValue);
-    this.active = false;
-    delete this.input.dataset.propertyEditing;
+    const value = propertyInput(kind, inputText(this.input));
     if (
-      changed &&
-      this.editor &&
-      !this.editor.set(
-        frontmatter(this.editor.currentSource?.() ?? this.source)?.raw ?? "",
-        this.input.dataset.propertyInput!,
-        value,
-      )
+      value === undefined ||
+      (isNativeInput(this.input) && !this.input.checkValidity())
     ) {
-      this.active = true;
-      this.input.dataset.propertyEditing = "true";
-      this.input.setCustomValidity(
-        "Enter a value compatible with this property, or edit its source.",
+      setInputValidity(
+        this.input,
+        "Enter a valid value for this property type.",
       );
-      this.input.reportValidity();
+      reportInputValidity(this.input);
       return false;
     }
-    if (this.input.isConnected) {
-      this.cancel();
+    this.input.dataset.propertyCommitting = "true";
+    delete this.input.dataset.propertyEditing;
+    let applied = false;
+    try {
+      applied =
+        this.editor?.set(
+          frontmatter(this.editor.currentSource?.() ?? this.source)?.raw ?? "",
+          this.key,
+          value,
+        ) ?? false;
+    } finally {
+      delete this.input.dataset.propertyCommitting;
     }
+    if (!applied) {
+      this.input.dataset.propertyEditing = "true";
+      setInputValidity(
+        this.input,
+        "The property changed. Reopen it and try again.",
+      );
+      reportInputValidity(this.input);
+      return false;
+    }
+    this.isDirty = false;
+    delete this.input.dataset.propertyDirty;
+    this.original = inputText(this.input);
     return true;
   }
 
-  private begin(event: MouseEvent): void {
-    if (
-      !this.editor ||
-      (event.target instanceof Element && event.target.closest("a"))
-    ) {
+  private registerLink(): void {
+    const display = this.input.parentElement?.querySelector<HTMLElement>(
+      "[data-property-display]",
+    );
+    const edit = display?.querySelector<HTMLElement>("[data-property-edit]");
+    if (!edit || !display) {
       return;
     }
-    event.stopPropagation();
-    this.active = true;
-    this.input.dataset.propertyEditing = "true";
-    this.display.hidden = true;
-    this.edit.hidden = true;
-    this.input.hidden = false;
-    this.input.focus();
-    this.input.select();
+    edit.hidden = !this.editor;
+    edit.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      display.hidden = true;
+      this.input.hidden = false;
+      focusInput(this.input, "all");
+    });
   }
 
   private registerEvents(): void {
-    this.edit.addEventListener("click", (event) => this.begin(event));
-    this.display.addEventListener("click", (event) => this.begin(event));
-    this.input.addEventListener("input", () =>
-      this.input.setCustomValidity(""),
-    );
+    this.input.addEventListener("focus", () => {
+      this.input.dataset.propertyEditing = "true";
+    });
+    this.input.addEventListener("input", () => {
+      this.isDirty = true;
+      this.input.dataset.propertyDirty = "true";
+      setInputValidity(this.input, "");
+    });
     this.input.addEventListener("property-commit", (event) => {
       if (!this.commit()) {
         event.preventDefault();
       }
     });
     this.input.addEventListener("keydown", (event) => this.keyDown(event));
-    this.input.addEventListener("blur", () => this.commit());
+    this.input.addEventListener("blur", () => {
+      if (this.commit()) {
+        delete this.input.dataset.propertyEditing;
+        this.editor?.refresh?.();
+      }
+    });
+    this.input.addEventListener("paste", (event) => {
+      if (!isNativeInput(this.input)) {
+        event.preventDefault();
+        // Keep arbitrary clipboard markup out of the property DOM.
+        this.input.ownerDocument.execCommand(
+          "insertText",
+          false,
+          event.clipboardData?.getData("text/plain") ?? "",
+        );
+      }
+    });
   }
 
   private keyDown(event: KeyboardEvent): void {
@@ -134,18 +157,18 @@ export class PropertyField {
       }
       return;
     }
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       event.stopPropagation();
       if (this.commit()) {
-        this.focusRow();
+        this.row()?.focus();
       }
     }
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
       this.cancel();
-      this.focusRow();
+      this.editor?.focusBody?.();
     }
   }
 }

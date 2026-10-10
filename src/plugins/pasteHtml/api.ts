@@ -4,7 +4,7 @@ export interface PasteData {
 }
 declare module "../../kernel/types" {
   interface Events {
-    /** @mode waterfall */ "paste/transform": (
+    /** @mode pipeline */ "paste/transform": (
       data: PasteData,
     ) => PasteData | Promise<PasteData>;
   }

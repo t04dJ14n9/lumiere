@@ -26,7 +26,8 @@ export interface PanelPort {
   readonly rpc: Endpoint;
   active(): boolean;
   reveal(): void;
-  dispose(): void;
+  /** Close the panel; resolves once its kernel and resources have stopped. */
+  dispose(): Promise<void>;
 }
 /**
  * The VS Code adapter (DESIGN §7.1): every host capability plugins use, as
@@ -90,6 +91,17 @@ export interface Workbench {
       letterSpacing?: number;
       fontLigatures?: boolean | string;
       fontVariations?: boolean | string;
+      /** Native caret presentation settings, also resource-scoped to Markdown. */
+      cursorStyle?:
+        | "line"
+        | "block"
+        | "underline"
+        | "line-thin"
+        | "block-outline"
+        | "underline-thin";
+      cursorBlinking?: "blink" | "smooth" | "phase" | "expand" | "solid";
+      cursorSmoothCaretAnimation?: "off" | "explicit" | "on";
+      cursorWidth?: number;
     };
     preset: "minimal" | "obsidian";
     mode: "source" | "livePreview";

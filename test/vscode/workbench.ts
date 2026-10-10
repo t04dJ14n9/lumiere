@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import type { Browser, Page, Frame } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths } from "./state";
 /**
@@ -16,9 +16,13 @@ export const QUICK_INPUT =
  */
 export async function openPalette(page: Page) {
   const input = page.locator(QUICK_INPUT);
+  let attempt = 0;
   await expect(async () => {
     if (!(await input.isVisible())) {
-      await page.keyboard.press("ControlOrMeta+Shift+p");
+      // F1 opens the palette too, when the shortcut is swallowed.
+      await page.keyboard.press(
+        attempt++ % 2 === 0 ? "ControlOrMeta+Shift+p" : "F1",
+      );
     }
     await expect(input).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15000 });
@@ -35,24 +39,40 @@ export async function command(page: Page, title: string) {
   await item.click();
   await expect(input).not.toBeVisible();
 }
-/** Opens Note.md in Markdown Workbench and returns its editable content. */
-export async function openWorkbench(page: Page) {
+/**
+ * Opens a note (Note.md by default) in Markdown Workbench and returns its
+ * editable content. `timing` receives the clock at the choice of the editor
+ * and when its content is on screen, for load-time measurements.
+ */
+export async function openWorkbench(
+  page: Page,
+  file = "Note.md",
+  timing: { start?: number; end?: number } = {},
+) {
   await expect(page.locator(".monaco-workbench")).toBeVisible();
   console.log("Native: closing all editors");
   await command(page, "View: Close All Editor Groups");
   console.log("Native: opening fixture");
-  await page.keyboard.press("ControlOrMeta+p");
-  await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, "Note.md"));
+  // A focused webview can swallow the shortcut, so press it until it opens.
+  await expect(async () => {
+    if (!(await page.locator(QUICK_INPUT).isVisible())) {
+      // Take the focus out of a webview left from the previous note.
+      await page.locator(".part.statusbar").click({ position: { x: 5, y: 5 } });
+      await page.keyboard.press("ControlOrMeta+p");
+    }
+    await expect(page.locator(QUICK_INPUT)).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+  await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, file));
   // Enter before the result row exists does nothing on a busy machine.
   await expect(
     page
       .locator(".quick-input-list .monaco-list-row")
-      .filter({ hasText: "Note.md" })
+      .filter({ hasText: file })
       .first(),
   ).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(
-    page.locator(".tabs-container .tab").filter({ hasText: "Note.md" }),
+    page.locator(".tabs-container .tab").filter({ hasText: file }),
   ).toBeVisible();
   await page.keyboard.press("ControlOrMeta+Shift+p");
   await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
@@ -68,6 +88,7 @@ export async function openWorkbench(page: Page) {
     .filter({ hasText: "Markdown Workbench" })
     .first()
     .click();
+  timing.start = Date.now();
   console.log("Native: waiting for Markdown Workbench webview");
   let frame: Frame | undefined;
   await expect
@@ -96,6 +117,7 @@ export async function openWorkbench(page: Page) {
       return false;
     })
     .toBe(true);
+  timing.end = Date.now();
   return frame!.getByRole("textbox", { name: "Markdown content" });
 }
 export function workbenchPage(browser: Browser): Page {
@@ -116,16 +138,33 @@ export async function closeBrowser(browser: Browser) {
 
 /** Reopens the active editor with another editor type, e.g. "Text Editor". */
 export async function reopenWith(page: Page, editor: string) {
-  await openPalette(page);
-  await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
-  await page
+  const row = page
     .locator(".quick-input-list .monaco-list-row")
     .filter({ hasText: "View: Reopen Editor With..." })
-    .first()
-    .click();
+    .first();
+  // Right after an editor opens, the palette can lack the command for a
+  // moment (its context keys are not set yet): close it and ask again.
+  await expect(async () => {
+    await openPalette(page);
+    await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
+    try {
+      await expect(row).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      await page.keyboard.press("Escape");
+      throw error;
+    }
+  }).toPass({ timeout: 30000 });
+  await row.click();
   await page
     .locator(".quick-input-widget .monaco-list-row")
     .filter({ hasText: editor })
     .first()
     .click();
+}
+
+/** What global setup writes to Note.md; other specs may leave it changed. */
+export const ORIGINAL_NOTE = "# Native Markdown\n\nOriginal line";
+/** Puts Note.md back, so a spec does not depend on the ones that ran before. */
+export function resetNote() {
+  writeFileSync(path.join(paths.workspace, "Note.md"), ORIGINAL_NOTE);
 }

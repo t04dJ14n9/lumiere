@@ -1,10 +1,12 @@
-/** Bind the add-item input without committing halfway through an IME session. */
+import { inputText, setInputText, setInputValidity } from "./value-input";
+
+/** Bind the pill input without committing halfway through an IME session. */
 export function bindListInput(
   list: HTMLElement,
-  input: HTMLInputElement,
-  actions: { commit(refocus?: boolean): boolean; save(): void },
+  input: HTMLElement,
+  actions: { commit(refocus?: boolean): boolean; save(): void; leave(): void },
 ): void {
-  input.addEventListener("input", () => input.setCustomValidity(""));
+  input.addEventListener("input", () => setInputValidity(input, ""));
   input.addEventListener("compositionstart", () => {
     input.dataset.propertyEditing = "true";
   });
@@ -29,12 +31,20 @@ export function bindListInput(
   input.addEventListener("keydown", (event) =>
     listInputKey(event, input, actions),
   );
+  input.addEventListener("paste", (event) => {
+    event.preventDefault();
+    input.ownerDocument.execCommand(
+      "insertText",
+      false,
+      event.clipboardData?.getData("text/plain") ?? "",
+    );
+  });
 }
 
 function listInputKey(
   event: KeyboardEvent,
-  input: HTMLInputElement,
-  actions: { commit(refocus?: boolean): boolean; save(): void },
+  input: HTMLElement,
+  actions: { commit(refocus?: boolean): boolean; save(): void; leave(): void },
 ): void {
   if (event.isComposing) {
     return;
@@ -42,9 +52,9 @@ function listInputKey(
   if (event.key === "Escape") {
     event.preventDefault();
     event.stopPropagation();
-    input.value = "";
-    input.setCustomValidity("");
-    input.blur();
+    setInputText(input, "");
+    setInputValidity(input, "");
+    actions.leave();
     return;
   }
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
@@ -60,5 +70,7 @@ function listInputKey(
   }
   event.preventDefault();
   event.stopPropagation();
-  actions.commit(true);
+  if (inputText(input)) {
+    actions.commit(true);
+  }
 }

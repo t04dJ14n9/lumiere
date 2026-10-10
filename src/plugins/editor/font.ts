@@ -85,18 +85,25 @@ export const lineHeight = ownNumber(
  */
 export const fontFields = {
   fontFamily: lenient(Schema.string(), ""),
+  /** The host's own default of `editor.fontFamily`, which VS Code appends. */
+  defaultFontFamily: lenient(Schema.string(), ""),
   fontWeight: lenient(Schema.string(), "normal"),
   letterSpacing: lenient(Schema.number(), 0),
   fontLigatures: lenient(flag, false),
   fontVariations: lenient(flag, false),
 };
 
-export const fontNativeKeys = Object.fromEntries(
-  Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
-) as Record<keyof typeof fontFields, string>;
+/** `#default` asks the host for the setting's default value, not its value. */
+export const fontNativeKeys = {
+  ...Object.fromEntries(
+    Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
+  ),
+  defaultFontFamily: "editor.fontFamily#default",
+} as Record<keyof typeof fontFields, string>;
 
 export interface FontSettings {
   fontFamily: string;
+  defaultFontFamily: string;
   fontSize: number;
   fontWeight: string;
   lineHeight: number;
@@ -140,15 +147,45 @@ function variationSettings(variations: boolean | string, weight: number) {
  * following the built-in text editor the font family (with a monospace
  * fallback, as VS Code adds), weight, letter spacing, ligatures and variations.
  */
-export function fontVariables(font: FontSettings): Record<string, string> {
+/**
+ * CSS custom properties for the note: its own size and line height, and
+ * following the built-in text editor the font family (with VS Code's
+ * fallbacks), weight, letter spacing, ligatures and variations.
+ */
+export type Platform = "mac" | "windows" | "linux";
+
+/** VS Code's `EDITOR_FONT_DEFAULTS.fontFamily` for each platform. */
+export const defaultFontFamily: Readonly<Record<Platform, string>> = {
+  mac: "Menlo, Monaco, 'Courier New', monospace",
+  windows: "Consolas, 'Courier New', monospace",
+  linux: "'Droid Sans Mono', 'monospace', monospace",
+};
+
+/**
+ * The family as VS Code applies it (`BareFontInfo.getMassagedFontFamily`): a
+ * single name with spaces is quoted, and the host's default family list always
+ * follows unless the setting is that list. The host reports its default;
+ * `defaultFontFamily` only stands in where it does not.
+ */
+export function massagedFontFamily(family: string, fallback: string): string {
+  const wrapped =
+    /[,"']/.test(family) || !/[+ ]/.test(family) ? family : `"${family}"`;
+  return family === fallback ? wrapped : `${wrapped}, ${fallback}`;
+}
+
+export function fontVariables(
+  font: FontSettings,
+  platform: Platform = "linux",
+): Record<string, string> {
   const vars: Record<string, string> = {};
   const family = cssValue(font.fontFamily);
   if (family) {
-    // VS Code adds a fallback too; skip it when the list ends in a generic.
-    const generic = /(^|,)\s*(monospace|sans-serif|serif|system-ui)\s*$/;
-    const font = generic.test(family) ? family : `${family}, monospace`;
-    vars["--text-font"] = font;
-    vars["--code-font"] = font;
+    const stack = massagedFontFamily(
+      family,
+      font.defaultFontFamily || defaultFontFamily[platform],
+    );
+    vars["--text-font"] = stack;
+    vars["--code-font"] = stack;
   }
   const size = Math.min(Math.max(font.fontSize, MIN_FONT_SIZE), MAX_FONT_SIZE);
   vars["--text-size"] = `${size}px`;

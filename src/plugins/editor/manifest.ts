@@ -1,5 +1,6 @@
 import { Schema } from "../../kernel";
 import { fontFields, fontNativeKeys, fontSize, lineHeight } from "./font";
+import { caretFields, caretNativeKeys } from "./caret-settings";
 export const config = Schema.object({
   defaultMode: Schema.union(["livePreview", "source"]).default("livePreview"),
   readableLineLength: Schema.boolean().default(false),
@@ -24,8 +25,9 @@ export const config = Schema.object({
   ).default(4),
   fontSize,
   lineHeight,
-  // VS Code's editor font settings for Markdown files (native, not ours).
+  // VS Code's font and caret settings for Markdown files (native, not ours).
   ...fontFields,
+  ...caretFields,
 });
 import { defineManifest } from "../../shared/manifest";
 export default defineManifest({
@@ -34,7 +36,7 @@ export default defineManifest({
   description: "Editor core service.",
   kind: "core",
   config,
-  nativeConfigKeys: fontNativeKeys,
+  nativeConfigKeys: { ...fontNativeKeys, ...caretNativeKeys },
   defaultEnabled: true,
   surfaces: ["host", "webview"],
   capabilities: ["editorProvider", "commands"],

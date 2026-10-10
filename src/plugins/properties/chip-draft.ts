@@ -5,7 +5,7 @@ import { itemOccurrence } from "./chip-values";
 interface ChipDraftOptions {
   chip: HTMLElement;
   list: HTMLElement;
-  add: HTMLInputElement;
+  add: HTMLElement;
   key: string;
   index: number;
   original: readonly PropertyScalar[];
@@ -135,7 +135,9 @@ export class ChipDraft {
     if (at >= 0) {
       focus(at);
     } else if (target === add) {
-      currentList()?.querySelector<HTMLInputElement>("input")?.focus();
+      currentList()
+        ?.querySelector<HTMLElement>("[data-property-list-input]")
+        ?.focus();
     }
   }
 
