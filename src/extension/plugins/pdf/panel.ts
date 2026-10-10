@@ -78,6 +78,7 @@ export class PdfPanel implements vscode.Disposable {
   private loading = false;
   private position: ReadingPosition | undefined;
   private settings: ViewSettings;
+  private toolbar: ToolbarSettings;
   private historySequence = 0;
   private lastJump = 0;
   private readonly historyRequests = new Map<number, { kind: 'historyCaptured' | 'historyRestored'; finish(snapshot?: HistorySnapshot): void }>();
@@ -90,6 +91,7 @@ export class PdfPanel implements vscode.Disposable {
   ) {
     this.position = options.position;
     this.settings = options.settings;
+    this.toolbar = { ...options.toolbar };
     const webview = webviewPanel.webview;
     webview.options = {
       enableScripts: true,
@@ -182,7 +184,8 @@ export class PdfPanel implements vscode.Disposable {
 
   /** Show the viewer's controls where the changed setting says. */
   setToolbar(toolbar: ToolbarSettings): void {
-    this.post({ type: "toolbar", toolbar });
+    this.toolbar = { ...toolbar };
+    this.post({ type: "toolbar", toolbar: this.toolbar });
   }
 
   /** Turn macOS Look Up on or off in the viewer (it is off until the plugin says). */
@@ -293,6 +296,9 @@ export class PdfPanel implements vscode.Disposable {
     this.loads++;
     this.loading = false;
     this.navigation.loadedNow();
+    // A rebuilt webview starts from the original HTML attributes. Rehydrate
+    // changes made since the panel opened, after load retires its old inbox.
+    this.post({ type: 'toolbar', toolbar: this.toolbar });
     this.post({ type: 'historyState', ...this.historyState });
     if (this.lookUp) this.post({ type: "lookUp", enabled: true });
     if (this.zen) this.post({ type: "zen", on: true });
