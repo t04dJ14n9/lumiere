@@ -94,3 +94,17 @@ spec covers spread commands and reopening.
 Run lint, typechecking, the build and unit tests locally. Browser and real-editor
 specs require Chromium/VS Code and permission to open local listening sockets;
 they cannot run in sandboxes that deny those sockets.
+
+## Screenshots (real VS Code)
+
+Chrome mode: the status bar's **View** entry opens the picker.
+
+![PDF View picker](images/view-controls-chrome-picker.png)
+
+Two pages with cover (page 1 alone, then 2–3), fit page:
+
+![Two pages with cover](images/view-controls-two-pages.png)
+
+Slim bar: the **View** menu next to the zoom controls (floating bar: the same menu).
+
+![Slim bar View menu](images/view-controls-slim-menu.png)
