@@ -281,6 +281,10 @@ export class BrowserHost {
       focus: true,
     });
   }
+  /** Sends the navigation the host sends when the outline or a link opens a note at a place. */
+  navigate(target: { fragment: string; at?: number }, panel = 0) {
+    this.endpoints[panel]!.notify(linksProtocol, "navigate", target);
+  }
   /** Sends editor settings as the host does when VS Code's change. */
   configureEditor(settings: Record<string, unknown>, panel = 0) {
     this.endpoints[panel]!.notify(
