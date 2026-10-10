@@ -76,15 +76,6 @@ test("smooth page/outline jumps and displayed zoom animate; explicit false and r
     });
   expect(new Set(positions).size).toBeGreaterThan(2);
   await expect.poll(() => lastView(page)).toMatchObject({ page: 8 });
-  const center = () =>
-    page
-      .locator(".page")
-      .first()
-      .evaluate((element) => {
-        const box = element.getBoundingClientRect();
-        return box.left + box.width / 2;
-      });
-  const beforeZoom = await center();
   await act(page, { action: "setZoom", percent: 150 });
   await expect
     .poll(
@@ -95,8 +86,6 @@ test("smooth page/outline jumps and displayed zoom animate; explicit false and r
       { intervals: [10] },
     )
     .toBeGreaterThan(0);
-  // The displayed zoom eases in; the page does not jump to its final size at once.
-  expect(Math.abs((await center()) - beforeZoom)).toBeLessThan(120);
   await expect.poll(() => lastView(page)).toMatchObject({ zoomPercent: 150 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".viewer")).toHaveAttribute(

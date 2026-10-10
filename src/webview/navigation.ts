@@ -145,8 +145,8 @@ export function useNavigation(
     if (!scroll) return;
     // Native virtual items define both single-page and spread navigation.
     const items = scroll.getLayout().virtualItems;
-    const from =
-      scrollMode === "paged" ? requestedPage.current : scroll.getCurrentPage();
+    // Quick repeats add up: the page requested last, until scrolling reports another.
+    const from = requestedPage.current;
     const index = items.findIndex((item) => item.pageNumbers.includes(from));
     const item = items[Math.min(Math.max(0, index + delta), items.length - 1)];
     if (item) show({ page: item.pageNumbers[0]! });

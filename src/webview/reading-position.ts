@@ -82,15 +82,33 @@ export function useRestorePosition(
   const restore = navigation.restore;
   const { provides: zoom } = useZoom(DOCUMENT_ID);
   useEffect(() => {
-    const choice = restoring.current.zoom;
-    if (zoom && choice !== "fitWidth" && choice !== "fitPage") {
-      zoom.requestZoom(nativeZoom(choice));
-    }
-    restore({
+    const position = {
       ...restoring.current,
       page: Math.min(restoring.current.page, pageCount),
+    };
+    const choice = position.zoom;
+    if (!zoom || choice === "fitWidth" || choice === "fitPage") {
+      restore(position);
+      return;
+    }
+    // The zoom plugin may still be settling into its automatic zoom when the
+    // document appears: ask again if the request did not stick, then place the
+    // reader at the saved offsets.
+    const target = nativeZoom(choice) as number;
+    zoom.requestZoom(target);
+    let frames = 0;
+    let frame = requestAnimationFrame(function settle() {
+      if (frames++ < 2) {
+        frame = requestAnimationFrame(settle);
+        return;
+      }
+      if (Math.abs(zoom.getState().currentZoomLevel - target) > 0.01) {
+        zoom.requestZoom(target);
+      }
+      restore(position);
     });
-  // Restore once per document: later zoom or layout changes are the reader's.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => cancelAnimationFrame(frame);
+    // Restore once per document: later zoom or layout changes are the reader's.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restore, pageCount, Boolean(zoom)]);
 }
