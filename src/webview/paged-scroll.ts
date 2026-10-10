@@ -64,6 +64,13 @@ export function usePagedScroll(
     const viewport = container.current?.querySelector<HTMLElement>(".viewport");
     if (mode !== "paged" || !viewport || !item) return;
     const constrain = (): void => {
+      // A zoom step lays the pages out first and reports its scale to React a
+      // moment later: limits worked out for the old scale would pull the scroll
+      // that keeps the zoom's centre back. This runs again with the new scale.
+      const shown = Number(
+        viewport.querySelector<HTMLElement>(".page")?.dataset.scale,
+      );
+      if (shown > 0 && Math.abs(shown / scale - 1) > 0.001) return;
       const { x, y } = bounds(viewport);
       const left = Math.min(x.max, Math.max(x.min, viewport.scrollLeft));
       const top = Math.min(y.max, Math.max(y.min, viewport.scrollTop));
@@ -74,6 +81,6 @@ export function usePagedScroll(
     viewport.addEventListener("scroll", constrain, { capture: true });
     return () =>
       viewport.removeEventListener("scroll", constrain, { capture: true });
-  }, [container, mode, item, bounds]);
+  }, [container, mode, item, bounds, scale]);
   return bounds;
 }

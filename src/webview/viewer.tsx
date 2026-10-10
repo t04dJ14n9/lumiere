@@ -21,6 +21,7 @@ import type { ViewChoices } from "../shared/view-settings";
 import { usePagedScroll } from "./paged-scroll";
 import { usePagedWheel, usePagingKeys } from "./paging-input";
 import { useSmoothMotion, useSmoothWheel } from "./smooth-scrolling";
+import { useZoomScrollSettle } from "./zoom-scroll";
 import { useZoomTransition } from "./zoom-transition";
 import { useViewLayout } from "./view-layout";
 import { PagedPadding } from "./paged-padding";
@@ -89,6 +90,7 @@ export function Viewer({
   usePagingKeys(documentArea, paging);
   usePagedWheel(documentArea, paging);
   useZoomTransition(documentArea, smooth);
+  useZoomScrollSettle(documentArea);
   useViewLayout(choices, navigation);
   useEndDragsReleasedOutside();
   useIgnoreSecondaryButtons(documentArea);

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Zoom from the buttons, keys and menu keeps the centre of the viewer in place
+  like Preview, also when the page grows wider than the viewer (the scroll the
+  zoom asked for was lost to a page not yet laid out, and in page-by-page mode
+  clamped away); spec `zoom-anchor.spec.ts`.
+
 - ⌥←/↑/→/↓ (macOS) and Ctrl+Alt+←/↑/→/↓ (Windows, Linux) turn the page keeping the
   zoom and the place in the page, as Preview does; commands
   `PDF: Previous/Next Page, Keeping Place`. Scoped and opt-out like the other
