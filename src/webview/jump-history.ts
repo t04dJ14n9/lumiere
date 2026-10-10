@@ -17,6 +17,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
   const sequence = useRef(0);
   const frame = useRef<number | undefined>(undefined);
   const pending = useRef<{ from: ReadingPosition; id: number; requestId?: number } | undefined>(undefined);
+  const previewOrigin = useRef<{ position: ReadingPosition; readerRevision: number } | undefined>(undefined);
   const restoring = useRef<{ token: number; generation: number } | undefined>(undefined);
   const [state, setState] = useState({ back: false, forward: false });
 
@@ -60,12 +61,26 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     postToHost({ type: 'historyRestored', token: restore.token, position: snapshot(), intent: latest.current.navigation.intent.current(), ok: false });
   }, [clearFrame, snapshot]);
 
-  const jump = useCallback((run: () => void, requestId?: number) => {
+  const endPreview = useCallback(() => { previewOrigin.current = undefined; }, []);
+  const preview = useCallback((run: () => void) => {
     finishJump();
     cancelRestore();
     const intent = latest.current.navigation.intent;
+    if (previewOrigin.current?.readerRevision !== intent.readerRevision())
+      previewOrigin.current = { position: snapshot(), readerRevision: intent.readerRevision() };
+    intent.advance();
+    run();
+  }, [cancelRestore, finishJump, snapshot]);
+
+  const jump = useCallback((run: () => void, requestId?: number, acceptPreview = false) => {
+    finishJump();
+    cancelRestore();
+    const intent = latest.current.navigation.intent;
+    const from = acceptPreview && previewOrigin.current?.readerRevision === intent.readerRevision()
+      ? previewOrigin.current.position : snapshot();
+    previewOrigin.current = undefined;
     const generation = intent.advance();
-    pending.current = { from: snapshot(), id: ++sequence.current, ...(requestId === undefined ? {} : { requestId }) };
+    pending.current = { from, id: ++sequence.current, ...(requestId === undefined ? {} : { requestId }) };
     run();
     let previous = snapshot();
     let steady = 0;
@@ -92,12 +107,14 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     }
     if (message.type === 'historyCancel') {
       if (message.token !== undefined && restoring.current?.token !== message.token) return true;
+      previewOrigin.current = undefined;
       latest.current.navigation.intent.advance();
       cancelRestore();
       return true;
     }
     if (message.type === 'historyCapture') {
       finishJump();
+      previewOrigin.current = undefined;
       postToHost({ type: 'historyCaptured', token: message.token, position: snapshot(), intent: latest.current.navigation.intent.current(), ok: true });
       return true;
     }
@@ -110,6 +127,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     }
     finishJump();
     cancelRestore();
+    previewOrigin.current = undefined;
     const intent = latest.current.navigation.intent;
     let generation = intent.advance();
     restoring.current = { token: message.token, generation };
@@ -169,6 +187,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     latest.current.navigation.intent.advance();
     clearFrame();
     pending.current = undefined;
+    previewOrigin.current = undefined;
     restoring.current = undefined;
   }, [clearFrame]);
 
@@ -176,5 +195,5 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     finishJump();
     postToHost({ type: 'historyTraverse', direction });
   };
-  return { jump, handle, back: state.back, forward: state.forward, onBack: () => traverse('back'), onForward: () => traverse('forward') };
+  return { jump, preview, endPreview, handle, back: state.back, forward: state.forward, onBack: () => traverse('back'), onForward: () => traverse('forward') };
 }

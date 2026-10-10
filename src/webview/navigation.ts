@@ -128,7 +128,13 @@ export function useNavigation(
   useEffect(() => {
     const interrupt = (event: Event): void => {
       if (event instanceof KeyboardEvent && !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', 'Escape'].includes(event.key)) return;
-      intent.advance();
+      const target = event.target instanceof Element ? event.target : undefined;
+      const reading = event instanceof KeyboardEvent
+        ? event.key !== 'Escape' && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+          && !target?.closest('input, textarea, select, [contenteditable], [role="slider"], [role="spinbutton"], [role="listbox"], [role="menu"], [role="combobox"], .view-menu, .grip')
+        : Boolean(target?.closest('.viewport'));
+      if (reading) intent.interrupt();
+      else intent.advance();
       heldLocation.current = undefined;
     };
     for (const name of ['wheel', 'pointerdown', 'touchstart', 'keydown']) document.addEventListener(name, interrupt, { capture: true, passive: true });

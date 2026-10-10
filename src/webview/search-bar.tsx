@@ -15,10 +15,11 @@ const SEARCH_DELAY_MS = 150;
  * A new search starts at the first match on or after the current page, and
  * the viewer scrolls to each match it steps to.
  */
-export function SearchBar({ navigation, focusRequest, onClose }: {
+export function SearchBar({ navigation, focusRequest, onClose, onPreviewEnd }: {
   navigation: Navigation;
   focusRequest: number;
   onClose: () => void;
+  onPreviewEnd: () => void;
 }): React.JSX.Element {
   const { provides: search, state } = useSearch(DOCUMENT_ID);
   const [query, setQuery] = useState('');
@@ -73,6 +74,7 @@ export function SearchBar({ navigation, focusRequest, onClose }: {
   }, [search, query]);
 
   useEffect(() => () => search?.stopSearch(), [search]);
+  useEffect(() => onPreviewEnd, [onPreviewEnd]);
 
   const count = state.loading
     ? '…'
@@ -85,7 +87,11 @@ export function SearchBar({ navigation, focusRequest, onClose }: {
         placeholder="Find"
         ref={input}
         value={query}
-        onChange={event => setQuery(event.currentTarget.value)}
+        onChange={event => {
+          const value = event.currentTarget.value;
+          if (!value.trim()) onPreviewEnd();
+          setQuery(value);
+        }}
         onKeyDown={event => {
           if (event.key === 'Enter') step(event.shiftKey ? -1 : 1);
           else if (event.key === 'Escape') onClose();

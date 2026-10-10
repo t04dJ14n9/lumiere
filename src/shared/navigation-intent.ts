@@ -7,6 +7,7 @@
  */
 export class NavigationIntent {
   private generation = 0;
+  private reader = 0;
 
   current(): number {
     return this.generation;
@@ -15,6 +16,16 @@ export class NavigationIntent {
   /** Cancel older work and return the token for the new intent. */
   advance(): number {
     return ++this.generation;
+  }
+
+  /** Direct reading/navigation input also retires a passive search's origin. */
+  interrupt(): number {
+    this.reader++;
+    return this.advance();
+  }
+
+  readerRevision(): number {
+    return this.reader;
   }
 
   owns(token: number): boolean {

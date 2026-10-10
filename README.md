@@ -306,6 +306,8 @@ search-match actions record jumps. Live search previews, ordinary scrolling,
 page stepping and zoom changes do not add stops. Back/Forward refresh the place
 being left, suppress replay recording, and commit only after the viewer
 acknowledges restoration. A new jump drops the forward branch.
+Pressing Enter or a match-step button commits the first search preview with its
+pre-search origin, even when the sole match is already visible.
 
 Two panes of the same PDF have separate stacks. A stack survives webview
 recreation and file refresh while its pane remains open; closing the pane or

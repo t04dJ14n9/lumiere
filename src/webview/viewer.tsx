@@ -71,11 +71,8 @@ export function Viewer({
     ...rawNavigation,
     goToPage: (page: number, top?: number) => history.jump(() => rawNavigation.goToPage(page, top)),
     reveal: (page: number, rect: Parameters<typeof rawNavigation.reveal>[1], deliberate = true) => {
-      if (deliberate) history.jump(() => rawNavigation.reveal(page, rect));
-      else {
-        rawNavigation.intent.advance();
-        rawNavigation.reveal(page, rect);
-      }
+      if (deliberate) history.jump(() => rawNavigation.reveal(page, rect), undefined, true);
+      else history.preview(() => rawNavigation.reveal(page, rect));
     },
   };
   const selection = useSelectionReporting(DOCUMENT_ID, pdf);
@@ -212,6 +209,7 @@ export function Viewer({
           <SearchBar
             navigation={navigation}
             focusRequest={findRequest}
+            onPreviewEnd={history.endPreview}
             onClose={() => setSearching(false)}
           />
         )}

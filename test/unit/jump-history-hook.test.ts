@@ -43,7 +43,9 @@ function animationFrames() {
 
 interface Hook {
   handle(message: Record<string, unknown>): boolean;
-  jump(run: () => void): void;
+  jump(run: () => void, requestId?: number, acceptPreview?: boolean): void;
+  preview(run: () => void): void;
+  endPreview(): void;
 }
 
 function historyHarness() {
@@ -95,8 +97,154 @@ function historyHarness() {
   };
   const restore = (token: number, expectedIntent: number, zoom: ReadingPosition['zoom'] = 'fitWidth') =>
     hook.handle({ type: 'historyRestore', token, expectedIntent, position: { ...position, page: 1, zoom } });
-  return { hook, frames, intent, messages, mutations, capture, restore };
+  const setPosition = (next: Partial<ReadingPosition>): void => { position = { ...position, ...next }; };
+  return { hook, frames, intent, messages, mutations, capture, restore, setPosition };
 }
+
+function jumpPages(messages: Record<string, unknown>[]): number[][] {
+  return messages.filter(message => message.type === 'historyJump').map(message => [
+    (message.from as ReadingPosition).page,
+    (message.to as ReadingPosition).page,
+  ]);
+}
+
+test('accepting the same search result records the location before its passive preview', () => {
+  const harness = historyHarness();
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.frames.run();
+  assert.equal(jumpPages(harness.messages).length, 0);
+  harness.hook.jump(() => harness.setPosition({ page: 8 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[3, 8]]);
+});
+
+test('repeated passive previews retain the first origin without recording intermediate stops', () => {
+  const harness = historyHarness();
+  harness.setPosition({ page: 3, top: 70, left: 12 });
+  harness.hook.preview(() => harness.setPosition({ page: 5, top: 20 }));
+  harness.hook.preview(() => harness.setPosition({ page: 8, top: 140 }));
+  harness.frames.run();
+  assert.equal(jumpPages(harness.messages).length, 0);
+  harness.hook.jump(() => harness.setPosition({ page: 8, top: 140 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[3, 8]]);
+  const from = harness.messages.find(message => message.type === 'historyJump')!.from as ReadingPosition;
+  assert.equal(from.top, 70);
+  assert.equal(from.left, 12);
+});
+
+test('ending a preview prevents a later search action from reusing its old origin', () => {
+  const harness = historyHarness();
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.hook.endPreview();
+  harness.hook.jump(() => harness.setPosition({ page: 9 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[8, 9]]);
+});
+
+test('an unrelated jump leaves from the current preview and clears its original source', () => {
+  const harness = historyHarness();
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.hook.jump(() => harness.setPosition({ page: 6 }));
+  harness.frames.run();
+  harness.hook.preview(() => harness.setPosition({ page: 9 }));
+  harness.hook.jump(() => harness.setPosition({ page: 9 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[8, 6], [6, 9]]);
+});
+
+test('reader movement retires the preview origin before an explicit result is accepted', () => {
+  const harness = historyHarness();
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.intent.interrupt();
+  harness.setPosition({ page: 6, top: 75 });
+  harness.hook.jump(() => harness.setPosition({ page: 8, top: 0 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[6, 8]]);
+  const from = harness.messages.find(message => message.type === 'historyJump')!.from as ReadingPosition;
+  assert.equal(from.top, 75);
+});
+
+test('a new passive preview after reader movement captures the new reading location', () => {
+  const harness = historyHarness();
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.intent.interrupt();
+  harness.setPosition({ page: 6 });
+  harness.hook.preview(() => harness.setPosition({ page: 9 }));
+  harness.hook.jump(() => harness.setPosition({ page: 9 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[6, 9]]);
+});
+
+test('query cancellation tokens and search-control clicks preserve the session origin', () => {
+  const harness = historyHarness();
+  harness.hook.preview(() => harness.setPosition({ page: 5 }));
+  harness.intent.advance(); // Editing a query invalidates its earlier asynchronous results.
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.intent.advance(); // Pointer-down on Next match cancels older viewport work only.
+  harness.hook.jump(() => harness.setPosition({ page: 8 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(jumpPages(harness.messages), [[3, 8]]);
+});
+
+test('stale restore and timeout messages do not erase a newer search preview origin', () => {
+  const harness = historyHarness();
+  const stale = harness.intent.current();
+  harness.hook.preview(() => harness.setPosition({ page: 8 }));
+  harness.restore(99, stale);
+  harness.hook.handle({ type: 'historyCancel', token: 99 });
+  harness.hook.jump(() => harness.setPosition({ page: 8 }), undefined, true);
+  harness.frames.run();
+  assert.deepEqual(harness.mutations, []);
+  assert.deepEqual(jumpPages(harness.messages), [[3, 8]]);
+});
+
+test('real navigation input distinguishes reader movement from search controls', () => {
+  class Element {
+    private readonly region: 'viewport' | 'input' | 'button';
+    constructor(region: 'viewport' | 'input' | 'button') { this.region = region; }
+    closest(selector: string): Element | null {
+      return (selector === '.viewport' ? this.region === 'viewport' : this.region === 'input') ? this : null;
+    }
+  }
+  class KeyboardEvent {
+    readonly altKey = false;
+    readonly ctrlKey = false;
+    readonly metaKey = false;
+    readonly shiftKey = false;
+    readonly key: string;
+    readonly target: Element;
+    constructor(key: string, target: Element) { this.key = key; this.target = target; }
+  }
+  const listeners = new Map<string, (event: unknown) => void>();
+  const hooks = loadHook('navigation.ts', {
+    react: {
+      useCallback: (callback: unknown) => callback,
+      useRef: (current: unknown) => ({ current }),
+      useState: (initial?: unknown) => [typeof initial === 'function' ? initial() : initial, () => undefined],
+      useEffect: (effect: () => unknown) => effect(),
+    },
+    './scroll-state': { useScrollState: () => ({ state: { currentPage: 3, totalPages: 10, virtualItems: [] } }) },
+    '@embedpdf/plugin-scroll/react': { useScrollCapability: () => ({}) },
+    '../shared/geometry': { fromViewRect: (rect: unknown) => rect },
+    '../shared/navigation-intent': { NavigationIntent },
+    './reading-position': { rememberedPosition: () => ({ page: 3 }) },
+  }, { Element, KeyboardEvent, document: { addEventListener: (name: string, listener: (event: unknown) => void) => listeners.set(name, listener) } });
+  const use = hooks.useNavigation as (id: string, mode: string, smooth: boolean) => { intent: NavigationIntent };
+  const { intent } = use('pdf', 'continuous', false);
+  const emit = (name: string, event: unknown): void => { listeners.get(name)!(event); };
+  assert.equal(intent.readerRevision(), 0);
+  emit('pointerdown', { target: new Element('button') });
+  emit('keydown', new KeyboardEvent('ArrowRight', new Element('input')));
+  assert.equal(intent.current(), 2);
+  assert.equal(intent.readerRevision(), 0);
+  emit('wheel', { target: new Element('viewport') });
+  emit('pointerdown', { target: new Element('viewport') });
+  emit('touchstart', { target: new Element('viewport') });
+  emit('keydown', new KeyboardEvent('PageDown', new Element('button')));
+  assert.equal(intent.current(), 6);
+  assert.equal(intent.readerRevision(), 4);
+});
 
 test('history capture -> user input -> restore IPC rejects stale work before any mutation', () => {
   const harness = historyHarness();

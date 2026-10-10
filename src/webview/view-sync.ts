@@ -123,7 +123,7 @@ export function useViewActions(
   return useCallback((action: ViewerAction): void => {
     const { navigation, openSearch, setTool, setChoices, zoom, level } =
       latest.current;
-    const generation = navigation.intent.advance();
+    const generation = action.action === 'find' ? navigation.intent.advance() : navigation.intent.interrupt();
     const from =
       requested.current ?? zoom?.getState().currentZoomLevel ?? level;
     const zoomTo = (next: number): void => {
