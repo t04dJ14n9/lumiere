@@ -73,6 +73,7 @@ export class TableHandles {
     button.dataset.index = String(index);
     button.title = `Drag to move ${axis}; press Enter for actions`;
     button.setAttribute("aria-label", `Move ${axis} ${index + 1}`);
+    button.setAttribute("aria-haspopup", "menu");
     button.textContent = axis === "row" ? "⠿" : "⠶";
     wrapper.append(button);
   }
