@@ -8,7 +8,9 @@
       or VS Code tests for viewer behaviour)
 - [ ] `pnpm check` passes (lint, typecheck, unit tests)
 - [ ] `pnpm test:browser` passes (webview changes)
-- [ ] `pnpm test:vscode` passes (extension host, commands, packaging)
+- [ ] `pnpm test:vscode` passes locally before the push (extension host,
+      commands, packaging); CI does not run the real-VS Code specs. On a
+      headless Linux box: `xvfb-run -a pnpm check:full`
 - [ ] Screenshots or a short recording attached for UI changes
 - [ ] No secrets, API keys, tokens or personal files in the diff, fixtures or
       VSIX

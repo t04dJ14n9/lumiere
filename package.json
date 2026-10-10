@@ -957,6 +957,7 @@
     "test:browser": "pnpm build && pnpm fixtures && playwright test --config test/browser/playwright.config.ts",
     "test:vscode": "pnpm build && pnpm fixtures && playwright test --config test/vscode/playwright.config.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
     "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs && vsce package --no-dependencies"
   },
   "dependencies": {
