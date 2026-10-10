@@ -6,6 +6,7 @@ import { paths, readState } from "./state";
 import { closeBrowser, openWorkbench, workbenchPage } from "./workbench";
 import {
   FONT_NOTE,
+  HEADING_LINE_HEIGHTS,
   HEADING_SCALES,
   gutterOffsets,
   sizes,
@@ -37,7 +38,8 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
   // The global and [markdown] editor sizes are deliberately different.
   setSettings(settingsFile, original, {
     "editor.fontSize": 27,
-    "[markdown]": { "editor.fontSize": 31 },
+    "editor.lineHeight": 40,
+    "[markdown]": { "editor.fontSize": 31, "editor.lineHeight": 44 },
   });
   const browser = await chromium.connectOverCDP(readState().webSocket);
   try {
@@ -56,7 +58,8 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
     for (const size of [undefined, 12, 20, 32, 16]) {
       setSettings(settingsFile, original, {
         "editor.fontSize": 27,
-        "[markdown]": { "editor.fontSize": 31 },
+        "editor.lineHeight": 40,
+        "[markdown]": { "editor.fontSize": 31, "editor.lineHeight": 44 },
         ...(size === undefined
           ? {}
           : { "markdownWorkbench.editor.fontSize": size }),
@@ -84,6 +87,21 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
         `${label} footnote text`,
       ).toBeCloseTo(0.875, 2);
       expect(measured.lineNumber, `${label} line numbers`).toBe(expected);
+      // Obsidian's line heights, scaled with the size.
+      expect(measured.bodyLineHeight, `${label} line height`).toBeCloseTo(
+        expected * 1.5,
+        2,
+      );
+      expect(measured.codeLineHeight, `${label} code line`).toBeCloseTo(
+        expected * 1.5,
+        2,
+      );
+      measured.headingLineHeights.forEach((height, index) => {
+        expect(
+          height / measured.headings[index]!,
+          `${label} H${index + 1}`,
+        ).toBeCloseTo(HEADING_LINE_HEIGHTS[index]!, 2);
+      });
 
       // No block grows scrollbars of its own after the live change.
       await expect

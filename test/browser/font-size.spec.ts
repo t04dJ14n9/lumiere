@@ -3,16 +3,17 @@ import type { Page } from "@playwright/test";
 import { open } from "./harness";
 import {
   FONT_NOTE as NOTE,
+  HEADING_LINE_HEIGHTS,
   HEADING_SCALES,
   gutterOffsets,
   sizes,
 } from "../support/font-metrics";
 
-async function setSize(page: Page, fontSize: number) {
-  await page.evaluate(
-    (value) => window.harness.configureEditor({ fontSize: value }),
+async function setSize(page: Page, fontSize: number, lineHeight = 1.5) {
+  await page.evaluate((value) => window.harness.configureEditor(value), {
     fontSize,
-  );
+    lineHeight,
+  });
   // CodeMirror measures the lines again on the next frame.
   await page.evaluate(
     () =>
@@ -45,6 +46,15 @@ test("the default body size is Obsidian's 16px and everything else is relative t
   expect(measured.footnoteRef).toBeCloseTo(16 * 0.7, 2);
   expect(measured.footnoteDefinition).toBeCloseTo(16 * 0.875, 2);
   expect(measured.lineNumber).toBe(16);
+  // Obsidian's line heights: 1.5 for the body (24px) and code, each heading's own.
+  expect(measured.bodyLineHeight).toBe(24);
+  expect(measured.codeLineHeight).toBe(24);
+  measured.headingLineHeights.forEach((height, index) => {
+    expect(height, `H${index + 1} line height`).toBeCloseTo(
+      measured.headings[index]! * HEADING_LINE_HEIGHTS[index]!,
+      2,
+    );
+  });
 });
 
 for (const size of [8, 12, 20, 32, 48]) {
@@ -79,8 +89,43 @@ for (const size of [8, 12, 20, 32, 48]) {
     expect(measured.footnoteRef / size).toBeCloseTo(0.7, 2);
     expect(measured.footnoteDefinition / size).toBeCloseTo(0.875, 2);
     expect(measured.lineNumber).toBe(size);
+    // The lines scale with the size: 1.5 times it, and headings' own ratios.
+    expect(measured.bodyLineHeight).toBeCloseTo(size * 1.5, 2);
+    expect(measured.codeLineHeight).toBeCloseTo(size * 1.5, 2);
+    measured.headingLineHeights.forEach((height, index) => {
+      expect(height / measured.headings[index]!, `H${index + 1}`).toBeCloseTo(
+        HEADING_LINE_HEIGHTS[index]!,
+        2,
+      );
+    });
   });
 }
+
+test("lineHeight is a multiple of the size, live, and out-of-range values fall back to 1.5", async ({
+  page,
+}) => {
+  await openNote(page);
+  for (const [size, multiple] of [
+    [16, 2],
+    [20, 1.2],
+    [12, 3],
+    [16, 1],
+  ] as const) {
+    await setSize(page, size, multiple);
+    const measured = await sizes(page);
+    expect(measured.bodyLineHeight, `${size} x ${multiple}`).toBeCloseTo(
+      size * multiple,
+      2,
+    );
+    expect(measured.codeLineHeight, `${size} x ${multiple} code`).toBeCloseTo(
+      size * multiple,
+      2,
+    );
+  }
+  await setSize(page, 16, 2);
+  await setSize(page, 16, 30);
+  expect((await sizes(page)).bodyLineHeight).toBe(24);
+});
 
 test("a size outside 8 to 48 falls back to the default like any invalid setting", async ({
   page,
@@ -98,8 +143,17 @@ test("line numbers stay level with their lines, headings, code, table and proper
   page,
 }) => {
   await openNote(page);
-  for (const size of [12, 20, 16, 14, 48, 8, 16]) {
-    await setSize(page, size);
+  for (const [size, multiple] of [
+    [12, 1.5],
+    [20, 1.5],
+    [16, 1.5],
+    [14, 2],
+    [48, 1.2],
+    [8, 3],
+    [16, 1],
+    [16, 1.5],
+  ] as const) {
+    await setSize(page, size, multiple);
     const rows = await gutterOffsets(page);
     const numbers = await page.evaluate(() =>
       [
@@ -115,22 +169,26 @@ test("line numbers stay level with their lines, headings, code, table and proper
     // one number or stack its lines'); the note still starts at 1 and ends at
     // its last line.
     const lineCount = NOTE.split("\n").length;
-    expect(numbers.startsWith("1"), `${size}px first`).toBe(true);
-    expect(numbers.endsWith(String(lineCount)), `${size}px last`).toBe(true);
+    expect(numbers.startsWith("1"), `${size}px x ${multiple} first`).toBe(true);
+    expect(
+      numbers.endsWith(String(lineCount)),
+      `${size}px x ${multiple} last`,
+    ).toBe(true);
     for (const row of rows) {
       expect(
         Math.abs(row.top),
-        `${size}px line ${row.number} top`,
+        `${size}px x ${multiple} line ${row.number} top`,
       ).toBeLessThan(1);
       expect(
         Math.abs(row.height),
-        `${size}px line ${row.number} height`,
+        `${size}px x ${multiple} line ${row.number} height`,
       ).toBeLessThan(1);
-      // The digits sit level with the line's text (headings included).
+      // The digits sit level with the line's text (headings included); glyph
+      // boxes overflow a very tight line, so the tightest lines get leeway.
       expect(
         Math.abs(row.textOffset ?? 0),
-        `${size}px line ${row.number} text`,
-      ).toBeLessThan(1.5);
+        `${size}px x ${multiple} line ${row.number} text`,
+      ).toBeLessThan(multiple < 1.25 ? 2.5 : 1.5);
     }
   }
 });

@@ -6,6 +6,9 @@ export type Target = Page | Frame;
 /** Obsidian 1.14.4's heading sizes in ems, measured: docs/obsidian-measurements/font-size-results-16.json. */
 export const HEADING_SCALES = [1.618, 1.462, 1.318, 1.188, 1.076, 1];
 
+/** Obsidian's heading line heights, as multiples of each heading's own size. */
+export const HEADING_LINE_HEIGHTS = [1.2, 1.2, 1.3, 1.4, 1.5, 1.5];
+
 /** A note with every kind of text the font size must scale. */
 export const FONT_NOTE = [
   "---",
@@ -54,7 +57,16 @@ export async function sizes(page: Target) {
     const body = [...document.querySelectorAll<HTMLElement>(".cm-line")].find(
       (line) => line.textContent?.startsWith("Body text"),
     )!;
+    const lineHeight = (selector: string): number =>
+      parseFloat(
+        getComputedStyle(document.querySelector(selector)!).lineHeight,
+      );
     return {
+      bodyLineHeight: parseFloat(getComputedStyle(body).lineHeight),
+      headingLineHeights: [1, 2, 3, 4, 5, 6].map((level) =>
+        lineHeight(`.md-h${level}`),
+      ),
+      codeLineHeight: lineHeight(".md-code-line"),
       body: parseFloat(getComputedStyle(body).fontSize),
       headings: [1, 2, 3, 4, 5, 6].map((level) => px(`.md-h${level}`)),
       inlineCode: px(".md-inline-code"),
