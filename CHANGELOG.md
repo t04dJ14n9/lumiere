@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fix: pages stored with a `/Rotate` entry (slides saved sideways, scans) were
+  drawn sideways and in a box of the wrong shape: EmbedPDF opens documents with
+  rotation normalised and leaves the turn to the viewer, which never made it.
+  Such pages are now turned to the way the PDF says, with search hits, links
+  and the text selection on the page; spec `page-rotation.spec.ts`.
+
 - New plugin `pdfLookUp` (macOS only, `vscodeEmbedPdf.lookUp.enabled`): Look Up in
   the right-click menu, and a force click, open the word under the pointer in
   the Dictionary app. Native three-finger-tap Look Up is not possible on

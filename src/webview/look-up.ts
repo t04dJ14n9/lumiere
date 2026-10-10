@@ -125,7 +125,8 @@ function pageAt(
     .elementsFromPoint(x, y)
     .find((candidate) => candidate.hasAttribute("data-page-index"));
   const page = pdf.pages[Number(element?.getAttribute("data-page-index"))];
-  if (!element || !page) return undefined;
+  // Pages stored sideways (/Rotate) are not looked up: their boxes are turned.
+  if (!element || !page || page.rotation) return undefined;
   const rect = element.getBoundingClientRect();
   const scale = rect.width / Math.max(1, page.size.width);
   return { page, point: { x: (x - rect.left) / scale, y: (y - rect.top) / scale } };

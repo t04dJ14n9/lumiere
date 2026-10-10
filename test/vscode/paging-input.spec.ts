@@ -62,7 +62,12 @@ test("ArrowRight and ArrowLeft move between pages in the default view, right aft
   await page.keyboard.press("PageDown");
   await expect(pageEntry(page, 2)).toBeVisible();
   await page.keyboard.press("ArrowDown");
-  await page.keyboard.press("ArrowLeft");
+  // Left goes to the page before the one being read, which depends on the
+  // window's height: press on until the first page.
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press("ArrowLeft");
+    await page.waitForTimeout(300);
+  }
   await expect(pageEntry(page, 1)).toBeVisible();
 });
 

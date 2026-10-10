@@ -36,14 +36,14 @@ export function Page({
 }: PageProps): React.JSX.Element {
   const page = pageIndex + 1;
   const scale = width / Math.max(1, pdf.pages[pageIndex]?.size.width ?? width);
-  return (
+  const rotation = pageRotation(pdf, pageIndex);
+  const layers = (
     <PagePointerProvider
       documentId={DOCUMENT_ID}
       pageIndex={pageIndex}
       scale={scale}
-      className="page"
+      {...(rotation === 0 ? { className: 'page', 'data-page-index': pageIndex } : {})}
       style={{ width, height }}
-      data-page-index={pageIndex}
     >
       <RenderLayer
         documentId={DOCUMENT_ID}
@@ -75,7 +75,31 @@ export function Page({
       />
     </PagePointerProvider>
   );
+  if (rotation === 0) return layers;
+  // The page's own /Rotate: PDFium draws it, and every position EmbedPDF reports
+  // (text, search hits, links), unrotated; the layers are turned as one.
+  const [boxWidth, boxHeight] = rotation % 2 === 1 ? [height, width] : [width, height];
+  return (
+    <div className="page" data-page-index={pageIndex} style={{ width: boxWidth, height: boxHeight }}>
+      <div className="page-rotor" style={{ width, height, transform: ROTOR[rotation]?.(boxWidth, boxHeight) }}>
+        {layers}
+      </div>
+    </div>
+  );
 }
+
+/** The page's /Rotate in quarter turns clockwise (0 to 3). */
+function pageRotation(pdf: PdfDocumentObject, pageIndex: number): number {
+  const turns = pdf.pages[pageIndex]?.rotation ?? 0;
+  return Number.isInteger(turns) ? ((turns % 4) + 4) % 4 : 0;
+}
+
+/** Turn an unrotated page about its corner so it fills the rotated box. */
+const ROTOR: Record<number, (boxWidth: number, boxHeight: number) => string> = {
+  1: boxWidth => `translateX(${boxWidth}px) rotate(90deg)`,
+  2: (boxWidth, boxHeight) => `translate(${boxWidth}px, ${boxHeight}px) rotate(180deg)`,
+  3: (_, boxHeight) => `translateY(${boxHeight}px) rotate(270deg)`,
+};
 
 /** The toolbar EmbedPDF places next to a text selection. */
 function TextSelectionMenu({ menuWrapperProps, rect, placement, selection }:
