@@ -1,4 +1,5 @@
 import type { Context, Plugin } from "../../kernel";
+import { serializeTable } from "../../markdown/tables/model";
 import type {} from "../editor/api";
 import type {} from "../document/api";
 import type {} from "../dialect/api";
@@ -8,13 +9,13 @@ import type {} from "../commands/api";
 import type {} from "../formatting/api";
 import type {} from "../vim/api";
 import { protocol as editorProtocol } from "../editor/protocol";
-import { TableWidget } from "./widget";
+import { keymap } from "@codemirror/view";
+import { TableWidget, enterTable } from "./widget";
 import {
   activeTables,
   tableActions,
   tableSelection,
   tableSelectionChanges,
-  tableSource,
 } from "./state";
 import type { TableEnvironment } from "./environment";
 import { TableContent } from "./content";
@@ -49,7 +50,6 @@ function createEnvironment(ctx: Context): TableEnvironment {
   ctx.effect(() => () => content.dispose());
   return {
     language: ctx.markdown.language(),
-    inline: ctx.livePreview.inlineExtensions?.() ?? [],
     vim: ctx.vim,
     inputGroups: () => {
       const groups = ctx.document.inputGroups?.((target) =>
@@ -66,11 +66,12 @@ function createEnvironment(ctx: Context): TableEnvironment {
     position: (source, element, point) =>
       ctx.livePreview.position?.(source, element, point),
     wrap: (marker, target) => ctx.formatting?.wrap(marker, target) ?? false,
+    canFormat: ctx.formatting !== undefined,
     clearFormatting: (source) => ctx.formatting?.clear(source) ?? source,
     openMenu: (owner, items, point) => {
       let live = true;
       let stop: (() => void | Promise<void>) | undefined;
-      void ctx.waterfall("editor/selectionMenu", items).then((items) => {
+      void ctx.pipeline("editor/selectionMenu", items).then((items) => {
         if (live) {
           stop = ctx.menu.open(owner, items, point, "Table actions");
         }
@@ -93,7 +94,10 @@ function registerTableExtensions(ctx: Context): void {
   ctx.effect(() =>
     ctx.editor.extend(
       [
-        tableSource,
+        keymap.of([
+          { key: "ArrowUp", run: (view) => enterTable(view, -1) },
+          { key: "ArrowDown", run: (view) => enterTable(view, 1) },
+        ]),
         tableActions.of((action) => {
           void ctx.commands.run(action);
         }),
@@ -120,11 +124,6 @@ function registerTableRenderer(
       kind: "Table",
       editing: "widget",
       match: (node) => node.name === "Table",
-      showSource: (state, block) =>
-        state.field(tableSource, false) === block.from &&
-        state.selection.ranges.some(
-          (range) => range.from <= block.to && range.to >= block.from,
-        ),
       widget: (block) => new TableWidget(block, 0, environment),
     }),
   );
@@ -151,7 +150,15 @@ function registerTableCommands(ctx: Context): void {
     ctx.commands.register("editor:insert-table", () => {
       view.dispatch({
         ...view.state.replaceSelection(
-          "\n\n| Column 1 | Column 2 |\n| --- | --- |\n|  |  |\n\n",
+          "\n\n" +
+            serializeTable(
+              [
+                ["Column 1", "Column 2"],
+                ["", ""],
+              ],
+              [null, null],
+            ) +
+            "\n\n",
         ),
         userEvent: "input",
       });

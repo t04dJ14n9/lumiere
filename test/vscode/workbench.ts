@@ -40,23 +40,23 @@ export async function command(page: Page, title: string) {
   await expect(input).not.toBeVisible();
 }
 /** Opens Note.md in Markdown Workbench and returns its editable content. */
-export async function openWorkbench(page: Page) {
+export async function openWorkbench(page: Page, file = "Note.md") {
   await expect(page.locator(".monaco-workbench")).toBeVisible();
   console.log("Native: closing all editors");
   await command(page, "View: Close All Editor Groups");
   console.log("Native: opening fixture");
   await page.keyboard.press("ControlOrMeta+p");
-  await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, "Note.md"));
+  await page.locator(QUICK_INPUT).fill(path.join(paths.workspace, file));
   // Enter before the result row exists does nothing on a busy machine.
   await expect(
     page
       .locator(".quick-input-list .monaco-list-row")
-      .filter({ hasText: "Note.md" })
+      .filter({ hasText: file })
       .first(),
   ).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(
-    page.locator(".tabs-container .tab").filter({ hasText: "Note.md" }),
+    page.locator(".tabs-container .tab").filter({ hasText: file }),
   ).toBeVisible();
   await page.keyboard.press("ControlOrMeta+Shift+p");
   await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");

@@ -1,7 +1,7 @@
 # Properties
 
-Edit YAML properties in a typed sheet with scalar inputs, list chips, row
-selection and ordering, like Obsidian's Properties in document.
+Edit frontmatter in an inline sheet with typed values, pills, property menus and
+keyboard navigation, like Obsidian 1.14.4’s Properties in document.
 
 ## How it works
 
@@ -10,24 +10,32 @@ retaining focused draft inputs. Edits use the pure YAML operations and become on
 outer-document transaction. List and chip drafts resolve the selected occurrence
 against current values before committing, so a stale render cannot replace a
 concurrently edited list. Save participants commit drafts and reject invalid
-input. Type preferences are stored by the injected vault root.
+input. Types are a vault-wide registry keyed by property name, scoped by the
+injected vault root. Changing a type only changes that registry; a mismatched YAML value
+retains its warning until edited. Collapse is one persisted workspace preference
+shared by notes and panels. New rows remain drafts until their names are accepted.
 
 ## Files
 
 - `manifest.ts`: display configuration, feature identity and Add File Property.
-- `api.ts`: editing service and typed heading-focus events.
-- `protocol.ts`: validated property type requests and notifications.
-- `host.ts`: type store and per-panel RPC registrations.
-- `type-store.ts`: persisted preferences and shared subscriptions.
+- `api.ts`: editing and heading-focus event types.
+- `protocol.ts`: validated type, vault-name and disclosure RPC.
+- `host.ts`: shared stores and per-panel RPC registrations.
+- `type-store.ts`: vault/name preferences and shared subscriptions.
+- `collapse-store.ts`: per-note disclosure persistence (as in Obsidian) and same-note subscriptions.
+- `collapse-store.test.ts`: disclosure propagation, rendering and reopen checks.
+- `property-names.ts`: vault metadata and registered-name suggestions.
+- `name-suggestions.ts`: one pending row’s accessible filtered popup.
 - `webview.ts`: named display, controls, preferences and draft-flush registrations.
-- `presentation.ts`: renderer replacement without recreating the editing state.
+- `presentation.ts`: display changes and a sheet for notes without YAML.
+- `presentation.test.ts`: repeated Add/display calls retain pending rows.
 - `context.ts`: internal sheet adapter capabilities.
-- `editing.ts`: source edits, focus and type-conversion orchestration.
+- `editing.ts`: source edits, focus and registry/disclosure presentation state.
 - `edit-transaction.ts`: pure edit/order composition into one ChangeSet.
 - `edit-transaction.test.ts`: stale, no-op, rename, removal and order coverage.
 - `widget.ts`: Live Preview sheet widget lifetime and reuse.
 - `sheet.ts`: DOM reconciliation and draft preservation.
-- `sheet-html.ts`: row, scalar, list, nested-value and checkbox HTML.
+- `sheet-html.ts`: measured structure, inline widgets, warning and pending-row HTML.
 - `sheet-html.test.ts`: type, escaping, recursive alias and control-rendering units.
 - `sanitize.ts`: property-specific sanitized HTML policy.
 - `rows.ts`: row reconciliation and focused field retention.
@@ -35,22 +43,27 @@ input. Type preferences are stored by the injected vault root.
 - `field-draft.ts`: one scalar draft, validation and commit/cancel focus.
 - `controls.ts`: structural controls, retained panel bindings and ordering.
 - `control-edits.ts`: structural transactions and focus restoration.
-- `row-name.ts`: name validation, rename commit and chosen-type retention.
-- `row-menu.ts`: type and row selection menus.
+- `row-name.ts`: quiet name validation and rename-to-value focus.
+- `row-menu.ts`: checked type submenu and row clipboard/removal actions.
 - `row-navigation.ts`: row keyboard routing and focus movement.
 - `controls.test.ts`: removal focus and key-routing unit tests.
-- `form.ts`: add-property form and header controls.
+- `form.ts`: inline pending rows, suggestion acceptance and shared heading collapse.
+- `form.test.ts`: retained drafts, quiet rejection and deferred YAML creation.
 - `heading.ts`: sheet heading focus and paging.
 - `lists.ts`: list reconciliation and add/remove transactions.
 - `list-input.ts`: add-item input events, composition and save handling.
-- `list-values.ts`: supported YAML scalar/list normalization.
+- `list-values.ts`: supported YAML scalar/list values and tag normalization.
 - `chips.ts`: chip focus, menus and clipboard bindings.
 - `chip-actions.ts`: narrow actions available to chip bindings and drafts.
 - `chip-draft.ts`: one chip's commit/cancel and post-commit focus recovery.
 - `chip-values.ts`: occurrence matching against a concurrently changed list.
 - `selection.ts`: row selection and structured clipboard payloads.
 - `order.ts`: sorting, row drag ordering and cancellation.
-- `type-dialog.ts`: confirmation for incompatible type conversion.
+- `value-input.ts`: native/contenteditable text, validity and selection operations.
+- `clipboard-values.ts`: bounded, validated YAML clipboard mapping parsing.
+- `parity.test.ts`: regressions demonstrated failing on the starting implementation.
+- `rules.test.ts`: name/type/menu/tab/tag/clipboard pure rules.
+- `interaction.test.ts`: actual field/row/pill event and commit wiring with narrow fakes.
 - `editing.test.ts`: edit ordering, stale headers, chip identity and RPC checks.
 - `list-values.test.ts`: list normalization and scalar identity checks.
 - `host.test.ts`: preference RPC lifecycle.
@@ -64,7 +77,8 @@ The host injects `rpc`, `vault` and `workbench`; the webview injects `editor`,
 `document`, `livePreview`, `commands`, `rpc` and `menu`. Provides no service.
 Widgets bind sheet content; heading interactions call `editor/focusTitle`.
 Edits emit `render/changed` and `editor/clearProjection`; RPC receives type
-preferences. Settings are `markdownWorkbench.properties.display`
+preferences and shared disclosure; name suggestions use indexed vault metadata.
+Settings are `markdownWorkbench.properties.display`
 (`visible`, `hidden`, `source`) and `markdownWorkbench.plugins.properties.enabled`.
 
 ## Limits and differences from Obsidian
@@ -73,3 +87,18 @@ Native TextDocument save and undo are authoritative. Menus use the editor menu
 service; structured clipboard uses the `obsidian/properties` payload. Type
 preferences follow the root supplied by the vault service. Source mode shows YAML;
 Add File Property can temporarily show the sheet when properties are hidden.
+Disclosure is shared within the VS Code workspace, rather than across unrelated
+workspaces. Native picker appearance depends on Chromium, OS and locale. Daily
+note links are not provided because the editor has no daily-note capability.
+Nested/anchored/recursive YAML retains guarded source-only support.
+
+## The caret never enters the block
+
+As in Obsidian, the text caret cannot be inside the frontmatter while it is shown as a
+widget (`caret-guard.ts`): every selection endpoint in it moves to the start of the body
+(arrow keys, Home, Select All, Shift selections, reveals, undo, opening the note), and
+typing, deleting or moving lines never touches it (Backspace at the body start does
+nothing). Property edits are not user input events, so they pass. ArrowUp on the first
+body line focuses the Add property button (`heading.ts` `enter`), and the Add button
+walks back up the rows or down to the text. Measurements:
+`docs/obsidian-measurements/properties/`.

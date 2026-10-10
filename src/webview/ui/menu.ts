@@ -3,6 +3,7 @@ export interface MenuItem {
   run?: () => void | Promise<void>;
   children?: readonly MenuItem[];
   disabled?: boolean;
+  checked?: boolean;
 }
 interface MenuOptions {
   owner: HTMLElement;
@@ -221,6 +222,13 @@ function menuButton(item: MenuItem): HTMLButtonElement {
   button.setAttribute("aria-label", item.label);
   button.tabIndex = -1;
   button.disabled = item.disabled ?? false;
+  if (item.checked !== undefined) {
+    button.setAttribute("role", "menuitemradio");
+    button.setAttribute("aria-checked", String(item.checked));
+    if (item.checked) {
+      button.textContent = `${item.label} ✓`;
+    }
+  }
   if (item.children) {
     button.setAttribute("aria-haspopup", "menu");
     button.setAttribute("aria-expanded", "false");

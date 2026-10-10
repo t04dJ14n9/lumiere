@@ -6,9 +6,10 @@ import type {
   ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
+import { metadata } from "../../markdown/metadata";
 import { linkDestination } from "../../markdown/html";
 import { documentTree } from "./document-tree";
-import { inlineRenderers, revealed } from "./registry";
+import { inlineRenderers, inlineRevealRange, revealed } from "./registry";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
 import { decorateBlockId } from "./block-id";
@@ -54,8 +55,10 @@ class InlineDecorations implements InlineContext {
   private readonly lines = new Set<string>();
   constructor(readonly state: EditorState) {}
 
-  revealed = (from: number, to: number): boolean =>
-    revealed(this.state, from, to);
+  revealed = (from: number, to: number): boolean => {
+    const range = inlineRevealRange(this.state, from, to);
+    return revealed(this.state, range.from, range.to);
+  };
   mark = (
     from: number,
     to: number,
@@ -116,7 +119,7 @@ class InlineDecorations implements InlineContext {
       this.mark(from, to, "md-comment");
       return false;
     }
-    if (name === "Escape" && !this.revealed(from, to)) {
+    if (name === "Escape" && !this.lineRevealed(from)) {
       this.hide(from, from + 1);
     }
     decorateListItem(node, this);
@@ -142,7 +145,7 @@ class InlineDecorations implements InlineContext {
     if (node.name !== "HorizontalRule") {
       return;
     }
-    if (this.revealed(node.from, node.to)) {
+    if (this.lineRevealed(node.from)) {
       this.line(node.from, "md-hr-line is-revealed");
       this.mark(node.from, node.to, "md-syntax-mark");
       return;
@@ -194,16 +197,24 @@ class InlineDecorations implements InlineContext {
     }
     const { from, to } = node;
     const url = node.node.getChild("URL");
-    if (!url) {
+    if (!url && !node.node.getChild("LinkLabel")) {
       return;
     }
     const closingLabel = node.node.getChildren("LinkMark")[1];
     const isRendered = !this.revealed(from, to);
-    const href = linkDestination(this.state.sliceDoc(url.from, url.to));
+    const href = url
+      ? linkDestination(this.state.sliceDoc(url.from, url.to))
+      : metadata(this.state.doc).links.find(
+          (link) => link.position.start.offset === from,
+        )?.link;
+
     // Rendered labels open on plain click; source needs Cmd/Ctrl-click.
-    this.mark(from + 1, closingLabel?.from ?? to, linkClass(isRendered, href), {
-      "data-href": href,
-    });
+    this.mark(
+      from + 1,
+      closingLabel?.from ?? to,
+      linkClass(isRendered, href ?? ""),
+      href ? { "data-href": href } : undefined,
+    );
     if (isRendered) {
       if (closingLabel) {
         this.hide(closingLabel.from, to);
@@ -223,7 +234,8 @@ class InlineDecorations implements InlineContext {
       return;
     }
     const { from, to } = node;
-    const isRendered = !this.revealed(from, to);
+    const element = parent?.name === "Autolink" ? parent : node;
+    const isRendered = !this.revealed(element.from, element.to);
     this.mark(from, to, isRendered ? "md-link md-link-rendered" : "md-link", {
       "data-href": bareUrlTarget(this.state.sliceDoc(from, to)),
     });
@@ -231,6 +243,11 @@ class InlineDecorations implements InlineContext {
       this.hide(parent.from, from);
       this.hide(to, parent.to);
     }
+  }
+
+  private lineRevealed(at: number): boolean {
+    const line = this.state.doc.lineAt(at);
+    return revealed(this.state, line.from, line.to);
   }
 
   private hideSyntax(node: SyntaxNodeRef): void {
@@ -243,7 +260,11 @@ class InlineDecorations implements InlineContext {
       return;
     }
     // Revealed syntax stays faint, as in Obsidian, so the text reads first.
-    if (this.revealed(parent.from, parent.to)) {
+    if (
+      ["QuoteMark", "HeaderMark"].includes(name)
+        ? this.lineRevealed(from)
+        : this.revealed(parent.from, parent.to)
+    ) {
       this.mark(from, to, "md-syntax-mark");
       return;
     }

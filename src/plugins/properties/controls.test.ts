@@ -44,7 +44,7 @@ test("property row keys preserve motion priority and Vim-only actions", () => {
   assert.equal(rowKeyAction(key("S", { metaKey: true }), false), "save");
   assert.equal(
     rowKeyAction(key("Backspace", { ctrlKey: true }), true),
-    "remove",
+    undefined,
   );
   assert.equal(rowKeyAction(key("Backspace"), true), undefined);
 });

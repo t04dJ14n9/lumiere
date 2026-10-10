@@ -6,7 +6,7 @@ setting. It works in the note editor and focused table cell editors.
 ## How it works
 
 A capture listener finds the focused CodeMirror view, bypasses plain-text paste
-and literal code, then runs the awaited `paste/transform` waterfall. HTML is
+and literal code, then runs the awaited `paste/transform` pipeline. HTML is
 sanitized before conversion. Turndown handles ordinary blocks and literal escaping;
 custom rules preserve tables, tasks, wiki references, math and callouts. The paste
 applies only if the view, document and selection are still current.
@@ -24,7 +24,7 @@ applies only if the view, document and selection are still current.
 ## Services, events and settings
 
 Injects `editor`; provides no service. Emits and listens to the awaited
-`paste/transform` waterfall; queries `editor/projectSelection` to preserve grid
+`paste/transform` pipeline; queries `editor/projectSelection` to preserve grid
 paste. `markdownWorkbench.plugins.pasteHtml.enabled` defaults to true. No palette
 command or bound verify shortcut.
 

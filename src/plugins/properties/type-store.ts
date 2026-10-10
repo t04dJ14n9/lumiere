@@ -1,9 +1,10 @@
 import {
   propertyTypes,
+  canSetPropertyType,
   type PropertyKind,
   type PropertyTypes,
 } from "../../markdown/properties/types";
-interface PreferenceStorage {
+export interface PreferenceStorage {
   get<T>(key: string, fallback: T): T;
   update(key: string, value: unknown): PromiseLike<void>;
 }
@@ -42,6 +43,11 @@ export class PropertyTypeStore {
   }
 
   set(scope: string, key: string, kind: PropertyKind | null): Promise<void> {
+    if (!canSetPropertyType(key, kind)) {
+      return Promise.reject(
+        new Error("Invalid or reserved property type preference"),
+      );
+    }
     const update = this.pending.then(async () => {
       const all = this.storage.get<Record<string, unknown>>(this.key, {});
       let types = { ...this.read(scope) };

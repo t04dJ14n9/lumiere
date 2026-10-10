@@ -1,9 +1,10 @@
 import { editGroup } from "../document/api";
 import {
-  materializeCell,
+  parseTable,
+  writeCells,
   type CellPosition,
 } from "../../markdown/tables/model";
-import { difference } from "../../shared/document/wire";
+import { tableSourceChanges } from "./source-edits";
 import { CellEditor } from "./cell-editor";
 import type { Action, TableEnvironment } from "./environment";
 import { tableActions, tableSelectionChanges } from "./state";
@@ -33,7 +34,7 @@ export class CellProjection {
 
   open(position: CellPosition, selection?: number | "all"): void {
     const cell = this.grid.model.rows[position.row]?.[position.column];
-    const element = this.grid.cells[position.row]?.[position.column];
+    const element = this.grid.contentElement(position);
     if (!cell || !element) {
       return;
     }
@@ -74,24 +75,10 @@ export class CellProjection {
     text: string,
     group: string,
   ): void {
-    const current = this.grid.model.rows[position.row]![position.column]!;
-    const editor = this.cellEditor!;
-    if (current.missing) {
-      const change = materializeCell(this.grid.model, position, text);
-      editor.source.materialize();
-      this.grid.outer.dispatch({
-        changes: {
-          from: this.grid.start() + change.from,
-          insert: change.insert,
-        },
-        annotations: editGroup.of(group),
-      });
-      return;
-    }
-    const { from, to } = editor.source.range(this.grid.block.source, current);
+    this.cellEditor?.source.remember(text);
     const changes = projectedChanges(
       this.grid.block.source,
-      { from, to },
+      position,
       text,
       this.grid.start(),
     );
@@ -123,6 +110,7 @@ export class CellProjection {
     delete this.active;
     if (active) {
       this.grid.display(active);
+      this.grid.outer.state.facet(tableSelectionChanges)(false);
     }
   }
 
@@ -140,7 +128,7 @@ export class CellProjection {
     // Keep the position object captured by the cell's change callback alive.
     Object.assign(this.active, position);
     this.grid.render();
-    const element = this.grid.cells[position.row]![position.column]!;
+    const element = this.grid.contentElement(position)!;
     this.environment.disposeContent(element);
     element.replaceChildren(view.dom);
     this.cellEditor.label(position);
@@ -157,26 +145,27 @@ export class CellProjection {
       this.grid.block.source,
       this.grid.model.rows[this.active.row]![this.active.column]!,
       this.environment.vim !== undefined,
+      this.grid.model.alignments[this.active.column] ?? null,
     );
   }
 }
 
 export function projectedChanges(
   source: string,
-  range: { from: number; to: number },
+  position: CellPosition,
   text: string,
   start: number,
 ) {
-  const changes: { from: number; to: number; insert: string }[] = [];
-  difference(source.slice(range.from, range.to), text).iterChanges(
-    (...change) => {
-      const [from, to, , , insert] = change;
-      changes.push({
-        from: start + range.from + from,
-        to: start + range.from + to,
-        insert: insert.toString(),
-      });
-    },
-  );
-  return changes;
+  const table = parseTable(source);
+  if (!table) {
+    return [];
+  }
+  const next = writeCells(table, { anchor: position, head: position }, [
+    [text],
+  ]);
+  return tableSourceChanges(table, next).map((change) => ({
+    ...change,
+    from: start + change.from,
+    to: start + change.to,
+  }));
 }

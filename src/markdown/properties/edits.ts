@@ -142,7 +142,7 @@ function createHeader(
     {
       from: 0,
       to: 0,
-      insert: `---${eol}${yamlValue(edit.key)}: ${yamlValue(edit.value ?? null)}${eol}---${eol}${eol}`,
+      insert: `---${eol}${newPropertyLine(edit)}${eol}---${eol}${eol}`,
     },
   ];
 }
@@ -206,7 +206,7 @@ class PropertyMapEdits {
       {
         from: end,
         to: end,
-        insert: `${yamlValue(edit.key)}: ${yamlValue(edit.value ?? null)}${this.header.eol}`,
+        insert: `${newPropertyLine(edit)}${this.header.eol}`,
       },
     ];
   }
@@ -274,6 +274,12 @@ class PropertyMapEdits {
       ];
     });
   }
+}
+
+function newPropertyLine(edit: Extract<KeyEdit, { type: "add" }>): string {
+  return edit.value === undefined || edit.value === null
+    ? `${yamlValue(edit.key)}:`
+    : `${yamlValue(edit.key)}: ${yamlValue(edit.value)}`;
 }
 
 function verifyChanges(

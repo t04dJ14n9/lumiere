@@ -1,9 +1,14 @@
 import { bindPropertyChips, itemOccurrence } from "./chips";
 import { frontmatter, type PropertyScalar } from "../../markdown/properties";
-import { validTag } from "../../markdown/tags/grammar";
 import type { PropertyContext } from "./context";
 import { bindListInput } from "./list-input";
-import { listValues } from "./list-values";
+import { listValues, normalizeListInput } from "./list-values";
+import {
+  inputText,
+  setInputText,
+  setInputValidity,
+  reportInputValidity,
+} from "./value-input";
 
 const bound = new WeakSet<HTMLElement>();
 const lifetimes = new WeakMap<HTMLElement, Map<HTMLElement, () => void>>();
@@ -77,10 +82,12 @@ function retainedLists(container: HTMLElement): Map<HTMLElement, () => void> {
 
 /** One list reconciles every edit with the latest header rather than its rendered snapshot. */
 class PropertyList {
-  private readonly input: HTMLInputElement;
+  private readonly input: HTMLElement;
   private committing = false;
   constructor(private readonly options: ListOptions) {
-    this.input = options.list.querySelector<HTMLInputElement>("input")!;
+    this.input = options.list.querySelector<HTMLElement>(
+      "[data-property-list-input]",
+    )!;
     this.input.hidden = !options.editor;
   }
 
@@ -117,6 +124,7 @@ class PropertyList {
     bindListInput(list, this.input, {
       commit: (refocus) => this.commit(refocus),
       save: () => editor?.action?.("save"),
+      leave: () => editor?.focusBody?.(),
     });
     return close;
   }
@@ -132,33 +140,31 @@ class PropertyList {
       delete this.input.dataset.propertyCommitting;
     }
     if (!applied) {
-      this.input.setCustomValidity(
+      setInputValidity(
+        this.input,
         "The properties changed. Reopen this field and try again.",
       );
-      this.input.reportValidity();
+      reportInputValidity(this.input);
       return false;
     }
     if (refocus) {
       owner
-        ?.querySelector<HTMLInputElement>(
-          `[data-property-list="${CSS.escape(key)}"] input`,
+        ?.querySelector<HTMLElement>(
+          `[data-property-list="${CSS.escape(key)}"] [data-property-list-input]`,
         )
         ?.focus();
     }
     return true;
   }
 
-  private pendingValue(input: HTMLInputElement): string | undefined {
-    const isTag = this.options.key.toLowerCase() === "tags";
-    const value = isTag
-      ? input.value.trim().replace(/^#/, "")
-      : input.value.trim();
-    if (value && isTag && !validTag(value)) {
-      input.setCustomValidity(
+  private pendingValue(input: HTMLElement): string | undefined {
+    const value = normalizeListInput(this.options.key, inputText(input));
+    if (value === undefined) {
+      setInputValidity(
+        input,
         "Use a tag without spaces or punctuation other than -, _ and /.",
       );
-      input.reportValidity();
-      return undefined;
+      reportInputValidity(input);
     }
     return value;
   }
@@ -173,7 +179,7 @@ class PropertyList {
       return false;
     }
     if (!value || latest.includes(value)) {
-      this.input.value = "";
+      setInputText(this.input, "");
       this.options.editor.refresh?.();
       return true;
     }
@@ -194,10 +200,11 @@ class PropertyList {
     const at = itemOccurrence(this.options.original, latest, index);
     if (at < 0) {
       this.input.focus();
-      this.input.setCustomValidity(
+      setInputValidity(
+        this.input,
         "This item changed in another editor. Finish the pending entry or press Escape.",
       );
-      this.input.reportValidity();
+      reportInputValidity(this.input);
       return;
     }
     const next = latest.filter((_value, index) => index !== at);
@@ -216,7 +223,9 @@ class PropertyList {
     const chip = current?.querySelector<HTMLElement>(
       `[data-property-chip="${Math.max(0, index - 1)}"]`,
     );
-    (chip ?? current?.querySelector<HTMLInputElement>("input"))?.focus();
+    (
+      chip ?? current?.querySelector<HTMLElement>("[data-property-list-input]")
+    )?.focus();
   }
 
   private bindRemoveButtons(): void {

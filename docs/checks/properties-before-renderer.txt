@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: showing an already-visible sheet keeps its widget and unnamed draft rows
+not ok 1 - showing an already-visible sheet keeps its widget and unnamed draft rows
+  ---
+  duration_ms: 3.54622
+  location: '/tmp/properties-before-3db7bx6k/presentation-before.test.ts:2:1027'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/tmp/properties-before-3db7bx6k/presentation-before.test.ts:24:10)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    node:internal/test_runner/harness:255:12
+    node:internal/process/task_queues:140:7
+    AsyncResource.runInAsyncScope (node:async_hooks:206:9)
+    AsyncResource.runMicrotask (node:internal/process/task_queues:137:8)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 89.06778

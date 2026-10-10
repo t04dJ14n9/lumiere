@@ -20,6 +20,7 @@ export interface MenuItem {
   run?: () => void | Promise<void>;
   children?: readonly MenuItem[];
   disabled?: boolean;
+  checked?: boolean;
 }
 export interface Menu {
   open(
@@ -76,7 +77,7 @@ declare module "../../kernel/types" {
     editors: Editors;
   }
   interface Events {
-    /** @mode waterfall */ "editor/selectionMenu": (
+    /** @mode pipeline */ "editor/selectionMenu": (
       items: readonly MenuItem[],
     ) => readonly MenuItem[] | Promise<readonly MenuItem[]>;
     /** @mode emit */ "editor/clearProjection": () => void;

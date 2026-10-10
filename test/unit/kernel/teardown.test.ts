@@ -168,3 +168,34 @@ test("a rejected tracked job reaches settled() and is never an unhandled rejecti
     process.off("unhandledRejection", record);
   }
 });
+
+for (const outcome of ["resolves", "rejects"] as const) {
+  test(`dispose waits for a release started before it (the inverse ${outcome})`, async () => {
+    const { errors, logger } = errorsOf();
+    const root = Context.create({ logger });
+    const release = gate();
+    const stop = root.effect(() => async () => {
+      await release.opened;
+      if (outcome === "rejects") {
+        throw new Error("cleanup failed");
+      }
+    });
+    const early = Promise.resolve(stop()).then(
+      () => "released",
+      () => "failed",
+    );
+    let disposed = false;
+    const disposal = root.dispose().then(() => (disposed = true));
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(disposed, false, "dispose finished before an earlier release");
+    release.open();
+    await disposal;
+    assert.equal(await early, outcome === "resolves" ? "released" : "failed");
+    // The early caller got the error; teardown does not log it again.
+    assert.deepEqual(errors, []);
+    assert.deepEqual(
+      root.runtime.ledger.snapshot(),
+      outcome === "resolves" ? {} : { root: { "failed effect": 1 } },
+    );
+  });
+}

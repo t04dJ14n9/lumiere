@@ -81,3 +81,21 @@ left to the owner's manual comparison.
 
 The `visiblePosition` service query places external badges after replacement
 blocks without exposing renderer internals to marker providers.
+
+
+### Reveal rules
+
+Follows the measured [Obsidian 1.14.4 rules](/workspace/plans/obsidian-reveal-rules.md).
+Any selection touching an inline element (inclusive endpoints) reveals its
+outermost ancestor and the transitive chain of directly abutting elements;
+one character or space breaks the chain. Escapes and heading/quote marks reveal
+on selected lines. Tasks reveal only through the checkbox end (columns 0–5
+for `- [ ]`). Both code fences reveal anywhere in the block. Callouts reveal
+source with quote marks per line and inline syntax per element. Definition
+markers reveal on their first line; math and HTML blocks reveal whole.
+Tables and Properties retain their widgets; bullets, numbers, tags and comment
+markers stay visible. Footnote references deliberately retain superscript
+rendering except when a caret touches the reference itself.
+
+`reveal-rules.test.ts` documents the inline and line rules as caret-offset tables;
+`test/unit/livePreview/reveal-plugins.test.ts` checks feature renderer composition.

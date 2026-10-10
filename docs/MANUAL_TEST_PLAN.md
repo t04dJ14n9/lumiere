@@ -57,7 +57,7 @@ Unless the section says otherwise, also check:
   text, selection, undo history and other plugins' state stay. Turn it on:
   everything returns once, with no duplicates.
 - **Two panels.** Open the note in two editor groups: selections, scroll,
-  folds and disclosure states stay independent; edits appear in both.
+  folds and disclosure states stay independent (Properties collapse is shared); edits appear in both.
 - **Source mode.** Toggle Live Preview/Source: Source shows plain Markdown
   with no widgets.
 - **Undo.** Every edit the plugin makes is one step in VS Code's undo.
@@ -176,28 +176,61 @@ Contained file access and the vault index (Obsidian's metadata cache).
 
 ### properties
 
-`Properties.md` and two panels of it.
+`property.md`, `Properties.md`, a new note without YAML, and two panels.
+Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
 
-1. The sheet shows text, number, checkbox, date, date-time, list, tags,
-   aliases and link values, as in Obsidian.
-2. **Add File Property** (palette or Mod+;) adds a row and focuses its
-   name; duplicate names are refused. Rename and delete rows; the body and
-   YAML comments survive.
-3. Edit each type; Escape cancels, Enter, blur and Mod+S commit. Invalid
-   number/date drafts block saving. One undo restores each change.
-4. Keep a text draft focused (also during IME composition) while the other
-   panel changes another row: the draft stays.
-5. Add, remove and edit list chips, including duplicate values, while the
-   other panel edits the list: the intended item changes.
-6. Select rows with Shift/Alt, copy, cut and paste into another note;
-   malformed structured data never enters the text.
-7. Sort from the heading menu; drag a row through scrolling and drop once;
-   Escape cancels a drag.
-8. Change a property's type from its menu and accept or decline the
-   conversion; the type persists across reloads and panels of the vault.
-9. `markdownWorkbench.properties.display`: `visible`, `hidden` (sheet
-   hidden), `source` (YAML shown). Arrow keys and Tab move between title,
-   rows and body.
+1. Text and typed values are immediately editable; no generic Edit button.
+   Text has an Empty placeholder, numbers accept decimals, checkbox click/Space
+   writes a boolean, and native date/date-time controls are visible. Type icons
+   are text, binary, check-square, calendar, clock, list, tags and forward
+   (aliases). Exact wikilinks show an internal link and a pencil to edit it.
+   Confirm the layout in both light and dark themes and with a narrow panel.
+2. From a key input: Tab goes to value, another Tab to that row, then Tab to the
+   next row. Enter in a key commits the rename and focuses its value (the pill
+   input for lists); Enter in text/number commits and focuses the row. Focused
+   rows use Up/Down, Delete removes, Backspace does not, Escape returns to the
+   document. Check the last-row/document boundary and Shift+Tab too.
+3. **Add File Property** (palette or Mod+;) appends an inline draft and focuses
+   its key. Vault-wide name suggestions filter `st` to `status`/`list`; Enter
+   accepts the name and focuses the known-type widget. YAML gets `name:` only
+   after a valid name. On a note with no YAML, opening a draft and Escape make
+   no text/undo change. Escape retains the draft row. Empty or duplicate
+   additions/renames retain the typed key, leave YAML unchanged, and show no
+   notice. Rename between known names without changing either type preference.
+4. List/tag/alias input + Enter adds a pill and keeps focus there. Empty-input
+   Backspace focuses the last pill, then Backspace removes it. Enter on a pill
+   edits it; x removes it. Tags drop one leading #. Repeat with pending entries,
+   duplicate occurrences, IME, and a concurrent list edit from the other panel.
+5. Keep a text draft focused (including IME) while the other panel changes
+   another row: its element and draft stay. Enter/blur/Mod+S commit. Escape
+   cancels the scalar draft and returns to the document. Invalid typed values
+   block save; undo restores each actual YAML edit in one step. Rich paste in
+   a property inserts plain text into that field, never also into the body.
+6. Icon click and row context menu show Property type >, Cut, Copy, Paste,
+   Remove. Type submenu: Automatic (inferred), Checkbox, Date, Date & time,
+   List, Number, Text, with current preference checked. All choices for tags,
+   aliases and cssclasses are disabled. Heading menu: Add file property,
+   Sort > Name (A to Z)/Name (Z to A), Clear file properties. Select/copy/cut/
+   paste rows, including malformed clipboard input, and verify one undo per
+   structural edit. Sort/drag preserve comments and YAML anchors; drag through
+   scrolling and drop once, Escape cancels a drag.
+7. Set `status: draft` to Number: the widget and mismatch warning change,
+   YAML and undo history do not, and no conversion dialog appears. Focus/blur
+   the mismatched empty number widget and save: `draft` must remain intact.
+   Create `status` in the other note: Number applies there too. Automatic clears
+   the registry entry; reopen and check inference. Repeat with two panels and
+   a separate vault to verify vault type isolation.
+8. Click the heading to collapse. Both panels and other notes share that state,
+   including notes in a second vault in the same workspace. Reopen/reload the
+   workspace and check persistence. Expanding restores the values; Mod+;
+   expands the sheet and opens a draft. Other plugin disclosures remain per panel.
+9. `markdownWorkbench.properties.display`: visible, hidden, source. Off/on and
+   source/live-preview toggles keep the native document authoritative. Check
+   menu clipboard permissions, native pickers/locales and actual IME with the
+   owner's editor; these are not established by the DOM event unit fakes.
+
+Daily-note links are deferred because this editor has no daily-note plugin;
+per-note collapse (as in Obsidian) and native picker appearance are deliberate limits.
 
 ### inlineTitle
 
@@ -286,16 +319,35 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
 
 `Tables.md`.
 
-1. Click a cell and type; Tab/Shift+Tab move between cells, Enter moves
-   down, Shift+Enter inserts `<br>`, arrows at the edge leave the table.
-   Escaped pipes stay valid.
-2. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
+1. Click the cell with bold and italic text: all its inline Markdown stays
+   visible, even after moving the caret past the formatting. Only that cell
+   shows source; focus elsewhere restores its render. Live Preview never
+   reveals the entire table; Source mode does.
+2. Tab/Shift+Tab wrap between rows. Tab in the final cell appends one row;
+   Enter in the final row appends one row in the same column. ArrowDown at the
+   bottom leaves without adding a row; ArrowUp from the adjacent line returns
+   to the last row in the same column. Left/Right cross cells only at text edges.
+3. Type `x|y\z`, spaces and Markdown in differently aligned cells; each edit
+   rewrites aligned source, expands delimiters and stores the pipe as `\|`.
+   Native undo restores the edit and its padding together. Keep Shift+Enter's
+   existing `<br>` behavior; compare it separately because the probe did not
+   verify that behavior in Obsidian.
+4. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
    One undo restores each operation.
-3. Run **Insert Table** and every **Table:** command (insert, delete and
+5. Run **Insert Table** and every **Table:** command (insert, delete and
    move rows and columns, align, sort) from the palette and the menu.
-4. Drag a row and a column handle while scrolling; drop once: exactly one
+   The cell menu has all Row/Column actions, with impossible moves disabled,
+   both sort directions, plain-text Paste and Select all (cell text or grid).
+6. The add-row + is below the focused table; the add-column + appears beside
+   it on hover. Each adds one row/column and focuses its new cell. Compare the
+   clicks separately: the Obsidian probe did not verify their effect.
+7. Drag a row and a column handle while scrolling; drop once: exactly one
    move. Escape cancels a drag.
-5. With Vim on, move between note and cells in normal and insert mode.
+   Each header/first-column cell has its own grip. A plain grip click selects
+   the axis without opening a menu; Enter and right-click expose its actions.
+8. With Vim on, move between note and cells in normal and insert mode. Repeat
+   with two panels, IME and external cell edits; selection and typed whitespace
+   survive aligned rewrites without creating a second history.
 
 ### callouts
 

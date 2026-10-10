@@ -1,6 +1,7 @@
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
+import type { SettingsReader } from "./settings";
 import * as vscode from "vscode";
 import { textBypass } from "./reclaim";
 import { createHash } from "node:crypto";
@@ -250,10 +251,17 @@ function configurationOperations(): Pick<
         uri,
       );
       // Native editor settings as they apply to Markdown files.
-      const native = vscode.workspace.getConfiguration(undefined, {
+      const configuration = vscode.workspace.getConfiguration(undefined, {
         uri,
         languageId: "markdown",
       });
+      const native: SettingsReader = {
+        get: <T>(key: string, fallback?: T) =>
+          key.endsWith("#default")
+            ? (configuration.inspect(key.slice(0, -"#default".length))
+                ?.defaultValue as T | undefined)
+            : configuration.get<T>(key, fallback as T),
+      };
       return readSettings(config, native);
     },
   };
