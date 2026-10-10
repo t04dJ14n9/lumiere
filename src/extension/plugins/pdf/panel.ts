@@ -24,7 +24,7 @@ import { viewerHtml } from "./webview-html";
 /** Messages the panel leaves to plugins (see `PdfPanels.handle`). */
 export type PluginMessage = Extract<
   ViewerMessage,
-  { type: "copyLinkForAgent" | "toggleOutline" | "floatingDock" | "lookUp" }
+  { type: "copyLinkForAgent" | "toggleOutline" | "floatingDock" | "lookUp" | "zen" }
 >;
 
 export interface PanelOptions {
@@ -71,6 +71,7 @@ export class PdfPanel implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
   /** `load` messages sent to the current viewer page, and the last patch applied from it. */
   private lookUp = false;
+  private zen = false;
   private loads = 0;
   private patchVersion = 0;
   private position: ReadingPosition | undefined;
@@ -136,6 +137,12 @@ export class PdfPanel implements vscode.Disposable {
   setLookUp(enabled: boolean): void {
     this.lookUp = enabled;
     this.post({ type: "lookUp", enabled });
+  }
+
+  /** Zen mode is on or off: the viewer shows a floating bar for as long as it lasts. */
+  setZen(on: boolean): void {
+    this.zen = on;
+    this.post({ type: "zen", on });
   }
 
   setViewSettings(settings: ViewSettings): void {
@@ -214,6 +221,7 @@ export class PdfPanel implements vscode.Disposable {
     this.loads++;
     this.navigation.loadedNow();
     if (this.lookUp) this.post({ type: "lookUp", enabled: true });
+    if (this.zen) this.post({ type: "zen", on: true });
   }
 
   private post(message: HostMessage): void {

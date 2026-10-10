@@ -119,6 +119,10 @@ out and in, and find buttons. `vscodeEmbedPdf.toolbar.statusBarButtons`
 
 ![Cursor: page, zoom and find in the status bar](docs/images/toolbar-cursor.png)
 
+## Zen mode
+
+**PDF: Enter Zen Mode** (`Ctrl+Alt+Z`, `Ctrl+Cmd+Z` on macOS) is VS Code's Zen Mode with a floating toolbar and an Exit zen button for the PDF. See [docs/zen.md](docs/zen.md); unverified on macOS and in Cursor.
+
 ## macOS Look Up
 
 On macOS, right-click a word and choose **Look Up** to open it in the Dictionary

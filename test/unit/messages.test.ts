@@ -320,3 +320,10 @@ test('a Look Up message carries one plain word, or none, and whether to open it'
   assert.equal(parseViewerMessage({ type: 'lookUp', word: 'word' }), undefined);
   assert.equal(parseViewerMessage({ type: 'lookUp', word: 7, open: false }), undefined);
 });
+
+test('zen messages: the viewer says whether Exit zen was pressed', () => {
+  assert.deepEqual(parseViewerMessage({ type: 'zen', exit: true }), { type: 'zen', exit: true });
+  assert.deepEqual(parseViewerMessage({ type: 'zen', exit: false }), { type: 'zen', exit: false });
+  assert.equal(parseViewerMessage({ type: 'zen' }), undefined);
+  assert.equal(parseViewerMessage({ type: 'zen', exit: 'yes' }), undefined);
+});

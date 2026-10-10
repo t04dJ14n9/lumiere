@@ -22,7 +22,9 @@ const ARROW_DOCKS: Record<string, FloatingDock> = {
  * for every PDF. The bar fades while the pointer rests, and comes back when
  * it moves or a control has focus.
  */
-export function FloatingToolbar({ dock, onDock, ...controls }: ToolbarProps & {
+export function FloatingToolbar({ dock, onDock, zen, ...controls }: ToolbarProps & {
+  /** Zen mode is on: the bar is the only controls there are, with a way out. */
+  zen: boolean;
   dock: FloatingDock;
   /** The reader moved the bar to another edge. */
   onDock: (dock: FloatingDock) => void;
@@ -95,6 +97,20 @@ export function FloatingToolbar({ dock, onDock, ...controls }: ToolbarProps & {
           <i className="codicon codicon-gripper" aria-hidden="true" />
         </button>
         <ToolbarControls {...controls} compact />
+        {zen && (
+          <>
+            <span className="separator" />
+            <button
+              type="button"
+              className="icon-button exit-zen"
+              aria-label="Exit zen mode"
+              title="Exit zen mode (Esc Esc)"
+              onClick={() => postToHost({ type: 'zen', exit: true })}
+            >
+              <i className="codicon codicon-screen-normal" aria-hidden="true" />
+            </button>
+          </>
+        )}
       </div>
     </>
   );
