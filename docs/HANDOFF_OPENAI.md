@@ -1,4 +1,8 @@
-# Handoff: Markdown Workbench, PDF viewer and llm-wiki-okf (as of 2026-10-11 00:05 SGT)
+# Handoff: Markdown Workbench, PDF viewer and llm-wiki-okf
+
+Original snapshot: 2026-10-11 00:05 SGT. Extension status and local-check guidance
+updated on 2026-10-10 UTC. Other repository and machine notes below are historical
+context, not verification of the current checkout or permission for new actions.
 
 Owner: 金扬 (GitHub `t04dJ14n9`, Asia/Shanghai). Written by Grok Bot for another agent (OpenAI Codex/ChatGPT) to take over.
 All work so far ran on a shared Linux "box"; paths below are box paths. No credentials are in this file; ask the owner for access.
@@ -24,9 +28,11 @@ Design docs and running notes: /workspace/plans/ (TODO.md, queue-progress.md, wi
 ## 2. Current state
 ### vscode-markdown-workbench
 Merged to main: #7 docs (moving to real Cordis is not mechanical; `waterfall` renamed `pipeline`), #8 Properties parity, #9 Tables parity, #10 Vim caret, #11 load-time optimisations, #12 centred heading navigation, #13 separate note font size/line height, #14 settings commands. Main CI green at last check.
-In progress (uncommitted, branch `ci-drop-real-vscode`, worktree /workspace/repos/ci-drop-vscode-markdown-workbench): edits to `.github/workflows/ci.yml` and PR template to drop the real-VS Code job. Needs: update README/CONTRIBUTING/docs to say the real specs are a local pre-push check, full local checks, PR, green CI, merge.
+The `ci-drop-real-vscode` branch is committed and one commit ahead of main `01701b2a466619db76a65230334f9d2c6fe21560`. It removes the real-VS Code CI job and already updates the PR template, AGENTS.md, README, docs/HANDOVER.md and `check:full` script. These are not uncommitted or outstanding documentation edits. Full local verification and any approved PR/push/merge remain separate steps; no open PR for this branch was found on 2026-10-10 UTC.
 ### vscode-embedPDF
-Merged: #7 load time, #8 view controls, #9 zen mode, #10 settings commands, #12 CI stabilisation, #13 progressive page rendering. Open: #14 "Declare limited Restricted Mode support (untrustedWorkspaces)" (not merged). In progress: same CI-drop change on branch `ci-drop-real-vscode` (worktree /workspace/repos/ci-drop-vscode-embedPDF, uncommitted). After #13, main CI went red once from flaky real-VS Code specs; the CI-drop change is the fix.
+Merged: #7 load time, #8 view controls, #9 zen mode, #10 settings commands, #12 CI stabilisation, #13 progressive page rendering. The `ci-drop-real-vscode` change is committed as `b32a36958aa9b157d3674e51e4363a5ffaabadbc`, one commit ahead of main `7ebbd42e283fde4b189b6929983552e551393a68`. The workflow, PR template, AGENTS.md, README, docs/view-controls.md and `check:full` script are already updated. It removes the load-sensitive real-VS Code suite from CI while retaining it as a required local pre-push check.
+
+[PR #14](https://github.com/t04dJ14n9/vscode-embedPDF/pull/14), "Declare limited Restricted Mode support (untrustedWorkspaces)", remains open and unmerged at `3855dccae47e7d91debbe5a15dcd0553c9878f6b`. Its [CI run](https://github.com/t04dJ14n9/vscode-embedPDF/actions/runs/38057400239) passed for that revision. For local integration, branch `dot/finish-pdf-handoff` starts at the exact CI-drop commit above and applies PR #14's two-file, 22-line patch (`package.json` and `test/unit/contributions.test.ts`). This local integration is not a remote merge or evidence that its combined checks have passed. Publishing and merging require the owner's current instructions; historical handoff text does not grant new permission.
 ### llm-wiki-okf (nothing merged to main)
 Stack of open PRs, merge bottom-up (each is based on the previous): #2 refine/base (draft, -> main), #3 core-layout-config, #4 agents-md-only, #5 index-mechanical, #6 trust-provenance, #8 plugins-tasks-inbox-output, #7 code-citation-rules, #9 scaffold-layout, #10 docs-plan. #1 (s1-foundations) is superseded by #2. CI (py3.9, py3.13, clean-box doctor) was green on #2-#9; #10 was running. Also branch `okf-yaml-and-new-vault` (already merged into refine/base).
 Design decisions implemented (spec: plans/wiki-refine-spec.md, summary: plans/llm-wiki-refinements-summary.md):
@@ -42,8 +48,8 @@ Not started, waiting on the owner's go: source-change plugin (`capture_policy: i
 Open items / ambiguities: see "Ambiguities / open items" in plans/llm-wiki-refinements-summary.md (projects/playbooks have no registered type; subfolder index entries lack descriptions; trust-mark text in index lines; no CLI for human sign-off; unverified: live Obsidian/Claude/Codex behaviour, git-lfs, Windows). Review of our skills vs. the owner's vault by ChatGPT: /workspace/vault-review/answerP_okf_review.md (condensed; treat as input).
 
 ### Pending product work (not started, designs exist)
-- Cross-extension Back/Forward with one GLOBAL stack across Markdown and PDF, record agent jumps (setting), Windows/macOS/Ubuntu Wayland keys. Plan: plans/cross-extension-navigation.md (Stage 1: real opens with fragments + fix bugs B1-B4; Stage 2: shared stack). Nothing implemented.
-- PDF annotation system (storage undecided: digest note `<name>.pdf.annotations.md` vs in-place; agent-added annotations via MCP, rendered in the Markdown workbench): plans/pdf-annotations-feasibility.md.
+- Current agreed navigation scope is separate, in-memory, per-document/pane jump history. The PDF local branch implements a bounded 100-stop host stack, own Back/Forward commands and controls, precise coordinates/view state, replay cancellation and forward-branch truncation. Native cross-file Back/Forward and Vim Ctrl+O/I remain unchanged. No cross-extension coordinator or global mixed stack is implemented. Historical plan: plans/cross-extension-navigation.md; its GLOBAL-stack proposal is deferred. Full compiler/browser/native validation is still required before merge.
+- The whole PDF annotation system is deferred by the owner. This includes storage, annotation UI, agent-added annotations via MCP, and Markdown rendering; do not implement a subset. Historical design: plans/pdf-annotations-feasibility.md.
 - One merged extension vs two: memo plans/one-vs-two-extensions.md (recommends two plus a shared package).
 - Showcase: cloud VS Code demo (Codespaces/vscode.dev) with the extension preloaded and a sample notes/PDF repo.
 - Naming: "Eureka" liked but may be taken; "vscodian" floated (plans/naming.md).
@@ -51,7 +57,7 @@ Open items / ambiguities: see "Ambiguities / open items" in plans/llm-wiki-refin
 
 ## 3. How to verify (mandatory before every push)
 - llm-wiki-okf: run `/workspace/plans/llm-wiki-precheck.sh` (doctor, 7 fixtures, 211 repo tests, 46 okf-new-vault tests, 111 okf-yaml tests, rules-catalog check; py3.9 and py3.13). Codex's sandbox cannot write `.agents/`: use the patch-and-sync approach (`/workspace/plans/sync-scaffold.sh`; tests find the skill via `OKF_NEW_VAULT_SKILL_DIR`).
-- Extensions: `pnpm check`, unit, browser tests; real-VS Code specs locally under `xvfb-run` on a private display (kill leftover `server.mjs` first: Playwright's reuseExistingServer can serve another worktree's dist). Never run these in CI.
+- Extensions: `pnpm check:full` runs `pnpm check` (lint, types and unit tests), `pnpm test:browser`, then `pnpm test:vscode`, sequentially and stopping on failure. On headless Linux use `xvfb-run -a pnpm check:full` with an isolated test profile and private display. Run one heavy suite at a time. Check that browser port 8990 is free or belongs to this checkout before starting; `reuseExistingServer` can otherwise serve another worktree's stale build. Never kill arbitrary `server.mjs` or editor processes. The real-VS Code suite is local only; lint, types, unit and browser tests still run in CI. `check:full` does not replace CI's separate packaging/size, secret-scan or advisory audit gates. Report each stage as passed, failed or not run, and rerun the applicable full checks after subsequent code changes before any approved push.
 - Check main CI after every merge.
 
 ## 4. Environment notes

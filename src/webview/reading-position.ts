@@ -79,15 +79,19 @@ export function useRestorePosition(
   pageCount: number,
 ): void {
   const restoring = useRef(rememberedPosition());
+  const token = useRef(navigation.intent.current());
+  const intent = navigation.intent;
   const restore = navigation.restore;
   const { provides: zoom } = useZoom(DOCUMENT_ID);
   useEffect(() => {
+    if (!intent.owns(token.current)) return;
     const position = {
       ...restoring.current,
       page: Math.min(restoring.current.page, pageCount),
     };
     const choice = position.zoom;
-    if (!zoom || choice === "fitWidth" || choice === "fitPage") {
+    if (!zoom) return;
+    if (choice === "fitWidth" || choice === "fitPage") {
       restore(position);
       return;
     }
@@ -101,6 +105,7 @@ export function useRestorePosition(
     let frames = 0;
     let steady = 0;
     let frame = requestAnimationFrame(function settle() {
+      if (!intent.owns(token.current)) return;
       frames++;
       if (Math.abs(zoom.getState().currentZoomLevel - target) > 0.01) {
         steady = 0;
@@ -117,5 +122,5 @@ export function useRestorePosition(
     return () => cancelAnimationFrame(frame);
     // Restore once per document: later zoom or layout changes are the reader's.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restore, pageCount, Boolean(zoom)]);
+  }, [restore, pageCount, Boolean(zoom), intent]);
 }

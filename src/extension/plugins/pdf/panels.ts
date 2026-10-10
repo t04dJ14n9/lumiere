@@ -113,9 +113,7 @@ export class PdfPanels implements vscode.Disposable {
       const panel =
         this.active?.uri.toString() === uri.toString()
           ? this.active
-          : [...this.panels].find(
-              (candidate) => candidate.uri.toString() === uri.toString(),
-            );
+          : undefined;
       if (panel) return panel;
       await new Promise((resolve) => setTimeout(resolve, 50));
     }

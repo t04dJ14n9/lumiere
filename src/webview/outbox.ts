@@ -9,7 +9,9 @@
  */
 import type { ViewerMessage, ViewerPatch } from '../shared/messages';
 
-export type OutgoingMessage = Exclude<ViewerMessage, { type: 'patch' }>;
+type HistoryMessage = Extract<ViewerMessage, { type: 'historyJump' | 'historyTraverse' | 'historyCaptured' | 'historyRestored' }>;
+export type OutgoingMessage = Exclude<ViewerMessage, { type: 'patch' } | HistoryMessage>
+  | (HistoryMessage extends infer T ? T extends HistoryMessage ? Omit<T, 'load'> : never : never);
 
 export interface Outbox {
   report(patch: ViewerPatch): void;
@@ -43,7 +45,7 @@ export function createOutbox(
     },
     post(message) {
       flush();
-      send(message);
+      send(message.type.startsWith('history') ? { ...message, load } as ViewerMessage : message as ViewerMessage);
     },
     loaded() {
       flush();

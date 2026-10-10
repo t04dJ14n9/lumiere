@@ -27,17 +27,17 @@ export function SearchBar({ navigation, focusRequest, onClose }: {
   const latestNavigation = useRef(navigation);
   latestNavigation.current = navigation;
 
-  const reveal = (result: SearchResult | undefined): void => {
+  const reveal = (result: SearchResult | undefined, deliberate = false): void => {
     const box = result?.rects[0];
     if (!result || !box) return;
     latestNavigation.current.reveal(result.pageIndex + 1, [
       box.origin.x, box.origin.y, box.origin.x + box.size.width, box.origin.y + box.size.height,
-    ]);
+    ], deliberate);
   };
   const step = (direction: 1 | -1): void => {
     if (!search) return;
     const index = direction > 0 ? search.nextResult() : search.previousResult();
-    reveal(search.getState().results[index]);
+    reveal(search.getState().results[index], true);
   };
 
   useEffect(() => {
@@ -47,7 +47,11 @@ export function SearchBar({ navigation, focusRequest, onClose }: {
 
   useEffect(() => {
     if (!search) return;
+    let cancelled = false;
+    const intent = latestNavigation.current.intent;
+    const generation = intent.advance();
     const timer = window.setTimeout(() => {
+      if (cancelled || !intent.owns(generation)) return;
       const text = query.trim();
       if (!text) {
         search.stopSearch();
@@ -55,13 +59,17 @@ export function SearchBar({ navigation, focusRequest, onClose }: {
       }
       search.startSearch();
       search.searchAllPages(text).wait(({ results }) => {
+        if (cancelled || !intent.owns(generation)) return;
         const fromPage = latestNavigation.current.currentPage - 1;
         const index = Math.max(0, results.findIndex(result => result.pageIndex >= fromPage));
         search.goToResult(index);
         reveal(results[index]);
       }, () => undefined);
     }, SEARCH_DELAY_MS);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [search, query]);
 
   useEffect(() => () => search?.stopSearch(), [search]);

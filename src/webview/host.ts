@@ -5,6 +5,7 @@
 import type { HostMessage, ViewerPatch } from "../shared/messages";
 import { createOutbox, type OutgoingMessage } from "./outbox";
 import { prepareReadingPosition } from "./reading-position";
+import { HostInbox } from '../shared/host-inbox';
 
 declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
 
@@ -12,8 +13,11 @@ type NavigationMessage = Exclude<HostMessage, { type: "load" }>;
 
 const vscode = acquireVsCodeApi();
 const outbox = createOutbox((message) => vscode.postMessage(message));
-const queued: NavigationMessage[] = [];
-let listener: ((message: NavigationMessage) => void) | undefined;
+const inbox = new HostInbox<NavigationMessage>();
+
+export function currentHostGeneration(): number {
+  return inbox.generation;
+}
 
 /** Send a message (after any pending state report). */
 export function postToHost(message: OutgoingMessage): void {
@@ -31,12 +35,9 @@ export function reportToHost(patch: ViewerPatch): void {
  */
 export function listenToHost(
   next: (message: NavigationMessage) => void,
+  generation: number,
 ): () => void {
-  listener = next;
-  for (const message of queued.splice(0)) next(message);
-  return () => {
-    if (listener === next) listener = undefined;
-  };
+  return inbox.listen(next, generation);
 }
 
 /** Start the conversation. `onLoad` receives each PDF the host sends. */
@@ -47,6 +48,7 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
       const message = event.data;
       if (!message || typeof message !== "object") return;
       if (message.type === "load") {
+        inbox.beginLoad();
         const data = asArrayBuffer(message.data);
         outbox.loaded();
         prepareReadingPosition(message.settings, message.position);
@@ -56,10 +58,8 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
             type: "error",
             message: "The PDF data from the extension is not readable.",
           });
-      } else if (listener) {
-        listener(message);
       } else {
-        queued.push(message);
+        inbox.receive(message);
       }
     },
   );

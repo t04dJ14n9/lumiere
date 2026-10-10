@@ -31,7 +31,7 @@ export function targetTop(target: PdfLinkTarget | undefined, pdf: PdfDocumentObj
   const fromBottom = destinationHeight(destination);
   if (fromBottom === undefined) return undefined;
   const top = height - Math.min(height, fromBottom);
-  return top >= 1 ? top : undefined;
+  return top >= 0 ? top : undefined;
 }
 
 function targetDestination(target: PdfLinkTarget | undefined): PdfDestinationObject | undefined {

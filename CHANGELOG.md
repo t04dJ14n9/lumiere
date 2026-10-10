@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Memory-only, per-pane PDF location history: Back to Previous Location / Forward
+  to Next Location restore page coordinates, zoom and view mode after deliberate
+  jumps. Separate from page stepping and native file navigation; no keybindings changed.
+- New navigation and reader input cancel delayed restoration. Queued host
+  messages are tied to the current viewer load, and zero-offset destinations are preserved.
+- Open Location validates PDF files, asks about ambiguous workspace paths, and
+  rejects invalid page destinations. Cancelled or superseded queued requests are
+  skipped. An already dispatched native editor open may finish, then the newest
+  valid request opens last; stale requests never apply a page destination.
+- PDFs render in Restricted Mode. Workspace values for `vscodeEmbedPdf.agentBridge.enabled`
+  and `vscodeEmbedPdf.copyLinkForAgent.target` are ignored until the folder is trusted.
+- Open Location safely handles malformed percent escapes and drops invalid or non-finite
+  page rectangles supplied by links or other extensions.
 - Turning pages no longer shows blank pages. Like macOS Preview, the viewer renders the pages around the one being read
   as cheap low-resolution bitmaps (half size, one page at a time once the pages on screen are drawn), so a turn shows a
   picture at once; the full-resolution bitmap at the current zoom is swapped in when it has been decoded, with the low

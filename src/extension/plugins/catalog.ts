@@ -20,10 +20,12 @@ import { pdfOutlinePlugin } from './pdfOutline/plugin';
 import { pdfRegionsPlugin } from './pdfRegions/plugin';
 import { pdfToolbarPlugin } from './pdfToolbar/plugin';
 import { pdfZenPlugin } from './pdfZen/plugin';
+import { pdfHistoryPlugin } from './pdfHistory/plugin';
 import type { PluginDefinition, PdfServices } from './services';
 
 export const plugins: readonly PluginDefinition<PdfServices>[] = [
   pdfPlugin,
+  pdfHistoryPlugin,
   pdfToolbarPlugin,
   pdfOutlinePlugin,
   pdfRegionsPlugin,

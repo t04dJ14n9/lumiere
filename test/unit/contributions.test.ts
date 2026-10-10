@@ -100,3 +100,25 @@ test('settings commands: Open Settings and the common toggles are in the palette
   }
   assert.ok((contributes.menus['webview/context'] as { command: string }[]).some(entry => entry.command === 'vscodeEmbedPdf.openSettings'));
 });
+
+test('the viewer declares limited Restricted Mode support, so PDFs render instead of opening as raw bytes', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+    capabilities?: { untrustedWorkspaces?: { supported?: unknown; restrictedConfigurations?: string[] } };
+    contributes: Contributes;
+  };
+  const untrusted = manifest.capabilities?.untrustedWorkspaces;
+  assert.equal(untrusted?.supported, 'limited');
+  // The local MCP server must never be switched on by a workspace setting of an untrusted folder.
+  assert.ok(untrusted?.restrictedConfigurations?.includes('vscodeEmbedPdf.agentBridge.enabled'));
+  assert.ok(untrusted?.restrictedConfigurations?.includes('vscodeEmbedPdf.copyLinkForAgent.target'));
+  for (const key of untrusted?.restrictedConfigurations ?? []) assert.ok(key in manifest.contributes.configuration.properties, key);
+});
+
+test('PDF location history has distinct commands and does not claim native or Vim shortcuts', () => {
+  for (const name of ['historyBack', 'historyForward']) {
+    const command = `vscodeEmbedPdf.${name}`;
+    assert.ok(contributes.commands.some(entry => entry.command === command));
+    assert.ok(contributes.menus['editor/title']?.some(entry => entry.command === command));
+    assert.ok(!(contributes.keybindings ?? []).some(entry => entry.command === command));
+  }
+});

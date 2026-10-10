@@ -6,7 +6,7 @@ import { ZoomGestureWrapper } from "@embedpdf/plugin-zoom/react";
 import React, { useEffect, useRef, useState } from "react";
 import { parseViewerAction } from "../shared/view-state";
 import { useEndDragsReleasedOutside } from "./drag-release";
-import { listenToHost } from "./host";
+import { currentHostGeneration, listenToHost } from "./host";
 import { useNavigation } from "./navigation";
 import { useOutlinePublishing } from "./outline";
 import { Page } from "./page";
@@ -41,6 +41,7 @@ import { FloatingToolbar } from "./floating-toolbar";
 import { Toolbar } from "./toolbar";
 import { useViewActions, useViewReporting } from "./view-sync";
 import { useWheelZoom } from "./wheel-zoom";
+import { useJumpHistory } from './jump-history';
 
 /**
  * The open PDF: the slim or floating bar (unless the controls are in VS
@@ -51,6 +52,7 @@ export function Viewer({
 }: {
   document: PdfDocumentObject;
 }): React.JSX.Element {
+  const hostGeneration = useRef(currentHostGeneration()).current;
   const [choices, setChoices] = useState<ViewChoices>(() => {
     const position = rememberedPosition();
     return {
@@ -63,7 +65,19 @@ export function Viewer({
     () => currentViewSettings().smoothScrolling,
   );
   const smooth = useSmoothMotion(motionSetting);
-  const navigation = useNavigation(DOCUMENT_ID, choices.scrollMode, smooth);
+  const rawNavigation = useNavigation(DOCUMENT_ID, choices.scrollMode, smooth);
+  const history = useJumpHistory(rawNavigation, choices, setChoices);
+  const navigation = {
+    ...rawNavigation,
+    goToPage: (page: number, top?: number) => history.jump(() => rawNavigation.goToPage(page, top)),
+    reveal: (page: number, rect: Parameters<typeof rawNavigation.reveal>[1], deliberate = true) => {
+      if (deliberate) history.jump(() => rawNavigation.reveal(page, rect));
+      else {
+        rawNavigation.intent.advance();
+        rawNavigation.reveal(page, rect);
+      }
+    },
+  };
   const selection = useSelectionReporting(DOCUMENT_ID, pdf);
   const devicePixelRatio = useDevicePixelRatio();
   const [searching, setSearching] = useState(false);
@@ -93,7 +107,7 @@ export function Viewer({
   usePagingKeys(documentArea, paging);
   usePagedWheel(documentArea, paging);
   useZoomTransition(documentArea, smooth);
-  useZoomScrollSettle(documentArea);
+  useZoomScrollSettle(documentArea, navigation.intent);
   useViewLayout(choices, navigation);
   useEndDragsReleasedOutside();
   useIgnoreSecondaryButtons(documentArea);
@@ -112,7 +126,8 @@ export function Viewer({
   useEffect(
     () =>
       listenToHost((message) => {
-        if (message.type === "goTo") show(message.location, message.top);
+        if (history.handle(message)) return;
+        if (message.type === "goTo") history.jump(() => show(message.location, message.top), message.requestId);
         else if (message.type === "action") {
           const action = parseViewerAction(message.action);
           if (action) runAction(action);
@@ -132,8 +147,8 @@ export function Viewer({
         } else if (message.type === "toolbar") {
           setToolbar(rememberToolbarSettings(message.toolbar));
         }
-      }),
-    [show, runAction, setZen],
+      }, hostGeneration),
+    [show, runAction, setZen, history.handle, history.jump, hostGeneration],
   );
 
   const latest = useRef({ selection, searching, tool, setTool });
@@ -172,6 +187,7 @@ export function Viewer({
           tool={tool}
           choices={choices}
           run={runAction}
+          history={history}
         />
       )}
       <div className="document" ref={documentArea}>
@@ -181,6 +197,7 @@ export function Viewer({
             tool={tool}
             choices={choices}
             run={runAction}
+            history={history}
             dock={toolbar.dock}
             onDock={(dock) =>
               setToolbar((current) =>
