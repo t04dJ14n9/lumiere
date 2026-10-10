@@ -10,7 +10,7 @@ await page.evaluate(
     app.workspace.leftSplit.collapse();
     app.workspace.rightSplit.collapse();
     app.vault.setConfig("showLineNumber", true);
-    app.vault.setConfig("baseFontSize", size);
+    app.saveLocalStorage("base-font-size", size);
     app.updateFontSize();
     let note = app.vault.getAbstractFileByPath("font-size-shot.md");
     if (!note) note = await app.vault.create("font-size-shot.md", text);

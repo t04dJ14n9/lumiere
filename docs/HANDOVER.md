@@ -207,7 +207,7 @@ completion and Phase 8 records) first.
   | Text and code family | `editor.fontFamily` (`[markdown]` too) | `monospace` fallback added |
   | Text and code size | `markdownWorkbench.editor.fontSize` (default 16, Obsidian's body size); `editor.fontSize` no longer applies to notes | code keeps the text's size; headings, tables, properties, footnotes, line numbers are relative to it |
   | Weight | `editor.fontWeight` | bold and headings stay bold |
-  | Line height | `editor.lineHeight` | default 0 is the text editor's own line height (1a06f65); set values honoured |
+  | Line height | `markdownWorkbench.editor.lineHeight` (multiplier, default 1.5, Obsidian's); `editor.lineHeight` no longer applies | replaced the built-in rule on 2026-10-10 |
   | Letter spacing | `editor.letterSpacing` | |
   | Ligatures | `editor.fontLigatures` | off by default, as in VS Code |
   | Variations | `editor.fontVariations` | |
@@ -223,7 +223,11 @@ completion and Phase 8 records) first.
   - Unit tests: `src/plugins/editor/font.test.ts` and
     `test/unit/settings/editor.test.ts`.
 
-### Line height follows the text editor (11afb18, 1a06f65)
+### Line height (11afb18, 1a06f65; superseded 2026-10-10)
+
+- Superseded: the note's line height is now `markdownWorkbench.editor.lineHeight`
+  (default 1.5, Obsidian's), not VS Code's rule below, which was removed
+  with `lineHeightPixels`.
 
 - Owner decision (2026-10-09): at `editor.lineHeight` 0 the note uses the
   built-in text editor's line height, not Obsidian's 1.5. `font.ts`

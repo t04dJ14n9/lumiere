@@ -24,9 +24,13 @@ Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
 Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
 The note has its own size, `markdownWorkbench.editor.fontSize` (8 to 48, default
 16: Obsidian 1.14.4's body size, measured in
-`docs/obsidian-measurements/font-size.mjs`). It replaces `editor.fontSize` for
-notes, which has no effect on them. Headings are 1.618, 1.462, 1.318, 1.188,
-1.076 and 1 times the body (Obsidian's ratios, em-relative), and tables,
+`docs/obsidian-measurements/font-size.mjs`), and its own line height,
+`markdownWorkbench.editor.lineHeight` (a multiple of the size, 1 to 3, default
+1.5: Obsidian's 24px at 16px). They replace `editor.fontSize` and
+`editor.lineHeight` for notes, which have no effect on them. The line height is
+a unitless ratio, so every line scales with the size; headings keep Obsidian's
+own ratios (1.2, 1.2, 1.3, 1.4, 1.5 and 1.5). Headings are 1.618, 1.462, 1.318,
+1.188, 1.076 and 1 times the body (Obsidian's ratios, em-relative), and tables,
 properties, footnotes, code, the code-block and table buttons and the line
 numbers are all em- or `--text-size`-relative, so one change rescales the whole
 note live (the size is an editor theme: CodeMirror measures the lines again, so
@@ -34,14 +38,11 @@ the line numbers stay level). The rest of the note text follows VS Code's
 editor font settings as they apply to Markdown files, so `[markdown]`
 overrides count as in the built-in text editor: `editor.fontFamily` (with a
 monospace fallback), `fontWeight`, `letterSpacing`, `fontLigatures` (off by
-default, as in VS Code) and `fontVariations`, and `editor.lineHeight` with VS
-Code's own rule: at its default (0) a line is 1.35 times the size (1.5 on
-macOS) rounded to whole pixels (22px at 16px, not Obsidian's 24px); a value
-below 8 is a multiplier and a larger one is pixels. Code is the same size as
-the text. Those are native settings (`nativeConfigKeys`), not contributed
-again; `font.ts` turns all of them into CSS variables, which `settings.ts`
-delivers as an editor theme. The find bar, suggestion popup and sync toast keep
-fixed sizes: they are editor chrome, not note text.
+default, as in VS Code) and `fontVariations`. Code is the same size as the text.
+Those are native settings (`nativeConfigKeys`), not contributed again;
+`font.ts` turns all of them into CSS variables, which `settings.ts` delivers as
+an editor theme. The find bar, suggestion popup and sync toast keep fixed
+sizes: they are editor chrome, not note text.
 
 ## Files
 

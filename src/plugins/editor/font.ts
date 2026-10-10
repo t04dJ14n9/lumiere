@@ -21,42 +21,71 @@ const flag = new Schema<boolean | string>((value) => {
   return value;
 }, {});
 
-/** Obsidian 1.14.4's default body size, measured (docs/obsidian-measurements/font-size.mjs). */
+/**
+ * One of the note's own number settings: a hand-edited value out of range or
+ * of the wrong type falls back to the default, like any invalid setting.
+ */
+function ownNumber(
+  min: number,
+  max: number,
+  fallback: number,
+  description: string,
+): Schema<number> {
+  const strict = Schema.number()
+    .min(min)
+    .max(max)
+    .description(description)
+    .default(fallback);
+  return new Schema<number>((value) => {
+    try {
+      return strict.parse(value);
+    } catch {
+      return fallback;
+    }
+  }, strict.toJSONSchema());
+}
+
+/** Obsidian 1.14.4's default body size and line height, measured (docs/obsidian-measurements/font-size.mjs). */
 export const DEFAULT_FONT_SIZE = 16;
 export const MIN_FONT_SIZE = 8;
 export const MAX_FONT_SIZE = 48;
+export const DEFAULT_LINE_HEIGHT = 1.5;
+export const MIN_LINE_HEIGHT = 1;
+export const MAX_LINE_HEIGHT = 3;
 
 /**
  * `markdownWorkbench.editor.fontSize`: the note's own body size in pixels, the
  * default of Obsidian's Appearance setting. Headings, code, tables, line
- * numbers, properties and footnotes are all em- or variable-relative to it. A
- * hand-edited value out of range or of the wrong type falls back to the default.
+ * numbers, properties and footnotes are all em- or variable-relative to it.
  */
-const strictFontSize = Schema.number()
-  .min(MIN_FONT_SIZE)
-  .max(MAX_FONT_SIZE)
-  .description(
-    "Font size of the note text in pixels (Obsidian's default is 16). Headings, code, tables, line numbers, properties and footnotes scale with it. It replaces editor.fontSize for notes; the font family still follows editor.fontFamily.",
-  )
-  .default(DEFAULT_FONT_SIZE);
-export const fontSize = new Schema<number>((value) => {
-  try {
-    return strictFontSize.parse(value);
-  } catch {
-    return DEFAULT_FONT_SIZE;
-  }
-}, strictFontSize.toJSONSchema());
+export const fontSize = ownNumber(
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE,
+  DEFAULT_FONT_SIZE,
+  "Font size of the note text in pixels (Obsidian's default is 16). Headings, code, tables, line numbers, properties and footnotes scale with it. It replaces editor.fontSize for notes; the font family still follows editor.fontFamily.",
+);
+
+/**
+ * `markdownWorkbench.editor.lineHeight`: the body's line height as a multiple
+ * of the font size, so it scales with it. Obsidian's is 1.5 (24px at 16px).
+ * Headings keep their own measured line heights, which are multiples too.
+ */
+export const lineHeight = ownNumber(
+  MIN_LINE_HEIGHT,
+  MAX_LINE_HEIGHT,
+  DEFAULT_LINE_HEIGHT,
+  "Line height of the note text as a multiple of its font size (Obsidian's default is 1.5). It replaces editor.lineHeight for notes.",
+);
 
 /**
  * VS Code's editor font settings, as they apply to Markdown files (so
- * `[markdown]` overrides count, as in the built-in text editor). The size is
- * not among them: the note has its own (`fontSize` above). Empty defaults mean
+ * `[markdown]` overrides count, as in the built-in text editor). The size and
+ * line height are not among them: the note has its own (above). Empty defaults mean
  * "not given": the stylesheet's own fallbacks apply.
  */
 export const fontFields = {
   fontFamily: lenient(Schema.string(), ""),
   fontWeight: lenient(Schema.string(), "normal"),
-  lineHeight: lenient(Schema.number(), 0),
   letterSpacing: lenient(Schema.number(), 0),
   fontLigatures: lenient(flag, false),
   fontVariations: lenient(flag, false),
@@ -107,33 +136,11 @@ function variationSettings(variations: boolean | string, weight: number) {
 }
 
 /**
- * VS Code's line height in pixels (`BareFontInfo._create`): 0 is the golden
- * ratio of the size (1.35, or 1.5 on macOS), below 8 is a multiplier, else
- * pixels; rounded to a whole pixel and at least 8.
+ * CSS custom properties for the note: its own size and line height, and
+ * following the built-in text editor the font family (with a monospace
+ * fallback, as VS Code adds), weight, letter spacing, ligatures and variations.
  */
-export function lineHeightPixels(
-  lineHeight: number,
-  fontSize: number,
-  mac: boolean,
-): number {
-  let pixels = lineHeight;
-  if (lineHeight <= 0) {
-    pixels = (mac ? 1.5 : 1.35) * fontSize;
-  } else if (lineHeight < 8) {
-    pixels = lineHeight * fontSize;
-  }
-  return Math.max(Math.round(pixels), 8);
-}
-
-/**
- * CSS custom properties for the note: its own size, and following the
- * built-in text editor the font family (with a monospace fallback, as VS Code
- * adds), weight, line height, letter spacing, ligatures and variations.
- */
-export function fontVariables(
-  font: FontSettings,
-  mac = false,
-): Record<string, string> {
+export function fontVariables(font: FontSettings): Record<string, string> {
   const vars: Record<string, string> = {};
   const family = cssValue(font.fontFamily);
   if (family) {
@@ -149,9 +156,11 @@ export function fontVariables(
   if (/^(normal|bold|\d{1,4})$/.test(weight)) {
     vars["--text-weight"] = weight;
   }
-  // A unitless ratio, so the gutter can multiply it by the size.
-  const pixels = lineHeightPixels(font.lineHeight, size, mac);
-  vars["--line-height"] = String(Math.round((pixels / size) * 1e6) / 1e6);
+  // A unitless ratio, so every line scales with the size and the gutter can
+  // multiply it by the size.
+  vars["--line-height"] = String(
+    Math.min(Math.max(font.lineHeight, MIN_LINE_HEIGHT), MAX_LINE_HEIGHT),
+  );
   if (font.letterSpacing) {
     vars["--text-letter-spacing"] =
       `${Math.min(Math.max(font.letterSpacing, -5), 20)}px`;

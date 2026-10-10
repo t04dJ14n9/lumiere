@@ -79,12 +79,12 @@ export interface Workbench {
       strictLineBreaks?: boolean;
       rightToLeft?: boolean;
       defaultMode?: "livePreview" | "source";
-      /** The note's own body size in pixels. */
+      /** The note's own body size in pixels and line height multiplier. */
       fontSize?: number;
+      lineHeight?: number;
       /** VS Code's editor font settings as they apply to Markdown files. */
       fontFamily?: string;
       fontWeight?: string;
-      lineHeight?: number;
       letterSpacing?: number;
       fontLigatures?: boolean | string;
       fontVariations?: boolean | string;

@@ -44,8 +44,10 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
 - `markdownWorkbench.editor.fontSize` (8 to 48, default 16, Obsidian's body
   size) sets the note text size, replacing `editor.fontSize` for notes;
   headings, tables, code, properties, footnotes and line numbers scale with
-  it, live. The font family, weight, line height and ligatures still follow
-  `editor.*` for Markdown files.
+  it, live. `markdownWorkbench.editor.lineHeight` (1 to 3, default 1.5,
+  Obsidian's) is the line height as a multiple of that size, so lines scale
+  with it too. The font family, weight, letter spacing and ligatures still
+  follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
 - `markdownWorkbench.preset: "minimal"` loads only the core editor.
 - `markdownWorkbench.debug.logging` writes debug lines to the **Markdown
   Workbench** output channel.

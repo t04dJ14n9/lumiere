@@ -13,7 +13,7 @@ Make editing Markdown in VS Code and Cursor feel like Obsidian's Live Preview, w
 | Line numbers | **On by default**, laid out like VS Code's gutter and following `editor.lineNumbers` (00f456f). |
 | Mermaid | **On** (`plugins.diagrams.enabled = true`, strict mode). |
 | Readable line width | **Off** (`editor.readableLineLength = false`). |
-| Fonts | Family, weight, line height follow `editor.*` for Markdown; the size is `markdownWorkbench.editor.fontSize` (default 16, Obsidian's), not `editor.fontSize`. |
+| Fonts | Family, weight follow `editor.*` for Markdown; the size and line height are `markdownWorkbench.editor.fontSize` (default 16) and `lineHeight` (default 1.5), Obsidian's. |
 | Shortcuts | **No custom shortcuts.** Ctrl/Cmd+A selects the whole note (1f6ece2) because this matches the editor. |
 | Outlines | Stay as they are. The workbench Outline covers the note, and VS Code's Outline covers the text editor. |
 | Footnotes | LaTeX paper style: superscript numbers numbered by first reference. Only a caret (an empty selection) inside a reference reveals the raw `[^label]`; selections keep it rendered (7ce645d). |

@@ -1079,6 +1079,14 @@
           "default": 16,
           "scope": "resource"
         },
+        "markdownWorkbench.editor.lineHeight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "Line height of the note text as a multiple of its font size (Obsidian's default is 1.5). It replaces editor.lineHeight for notes.",
+          "default": 1.5,
+          "scope": "resource"
+        },
         "markdownWorkbench.folding.heading": {
           "type": "boolean",
           "default": true,

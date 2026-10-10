@@ -33,7 +33,7 @@ const result = await page.evaluate(
   async ({ text, size }) => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     app.vault.setConfig("showLineNumber", true);
-    app.vault.setConfig("baseFontSize", size);
+    app.saveLocalStorage("base-font-size", size);
     app.updateFontSize();
     let file = app.vault.getAbstractFileByPath("font-size.md");
     if (!file) file = await app.vault.create("font-size.md", text);

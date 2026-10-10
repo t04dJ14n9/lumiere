@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fontSize, fontVariables, lineHeightPixels } from "./font";
+import { fontSize, fontVariables, lineHeight } from "./font";
 import type { FontSettings } from "./font";
 
 const base: FontSettings = {
   fontFamily: "",
   fontSize: 16,
   fontWeight: "normal",
-  lineHeight: 0,
+  lineHeight: 1.5,
   letterSpacing: 0,
   fontLigatures: false,
   fontVariations: false,
@@ -17,7 +17,7 @@ test("without host settings the size is Obsidian's 16px and VS Code's ligature a
   assert.deepEqual(fontVariables(base), {
     "--text-size": "16px",
     "--text-weight": "normal",
-    "--line-height": "1.375",
+    "--line-height": "1.5",
     "--text-features": '"liga" off, "calt" off',
     "--text-variations": "normal",
   });
@@ -43,37 +43,41 @@ test("the family gets a monospace fallback and the code font follows it", () => 
   );
 });
 
-test("line height follows VS Code: automatic at 0, a multiplier below 8, otherwise pixels, rounded", () => {
-  // VS Code's automatic line height: round(1.35 × size), 1.5 on macOS.
-  for (const [size, linux, mac] of [
-    [12, 16, 18],
-    [14, 19, 21],
-    [16, 22, 24],
-    [20, 27, 30],
-  ] as const) {
-    assert.equal(lineHeightPixels(0, size, false), linux, `${size}px`);
-    assert.equal(lineHeightPixels(0, size, true), mac, `${size}px on macOS`);
-    const ratio = Number(
+test("line height is a multiple of the size, Obsidian's 1.5 by default", () => {
+  assert.equal(fontVariables(base)["--line-height"], "1.5");
+  assert.equal(
+    fontVariables({ ...base, lineHeight: 1.8 })["--line-height"],
+    "1.8",
+  );
+  // The ratio does not depend on the size, so the lines scale with it.
+  for (const size of [8, 12, 16, 24, 48]) {
+    assert.equal(
       fontVariables({ ...base, fontSize: size })["--line-height"],
+      "1.5",
+      `${size}px`,
     );
-    assert.ok(Math.abs(ratio * size - linux) < 1e-4, `${size}px ratio`);
   }
   assert.equal(
-    fontVariables({ ...base, fontSize: 14 })["--line-height"],
-    "1.357143",
+    fontVariables({ ...base, lineHeight: 0.2 })["--line-height"],
+    "1",
   );
-  // Multipliers and pixels are rounded to whole pixels, at least 8.
-  assert.equal(lineHeightPixels(1.6, 14, false), 22);
-  assert.equal(lineHeightPixels(26, 16, false), 26);
-  assert.equal(lineHeightPixels(0, 5, false), 8);
-  assert.equal(lineHeightPixels(1, 6, false), 8);
-  assert.equal(
-    fontVariables({ ...base, fontSize: 16, lineHeight: 26 })["--line-height"],
-    "1.625",
-  );
-  assert.equal(
-    fontVariables({ ...base, lineHeight: 1.6 })["--line-height"],
-    "1.625", // 1.6 × 16 = 25.6px, a whole 26px
+  assert.equal(fontVariables({ ...base, lineHeight: 9 })["--line-height"], "3");
+  assert.equal(lineHeight.parse(undefined), 1.5);
+  assert.equal(lineHeight.parse(1), 1);
+  assert.equal(lineHeight.parse(3), 3);
+  // A pixel value for editor.lineHeight is no multiplier: invalid, so the default.
+  for (const bad of [0, 0.9, 3.1, 24, "tall", null, Number.NaN]) {
+    assert.equal(lineHeight.parse(bad), 1.5, String(bad));
+  }
+  assert.deepEqual(
+    { ...lineHeight.toJSONSchema(), description: undefined },
+    {
+      type: "number",
+      minimum: 1,
+      maximum: 3,
+      default: 1.5,
+      description: undefined,
+    },
   );
 });
 
@@ -126,16 +130,4 @@ test("fontSize is the note's own setting: 16 by default, 8 to 48, wrong values f
       description: undefined,
     },
   );
-});
-
-test("the size scales the line height ratio's pixels, not the ratio", () => {
-  for (const size of [8, 12, 16, 24, 48]) {
-    const ratio = Number(
-      fontVariables({ ...base, fontSize: size })["--line-height"],
-    );
-    assert.ok(
-      Math.abs(ratio * size - lineHeightPixels(0, size, false)) < 1e-4,
-      `${size}px`,
-    );
-  }
 });

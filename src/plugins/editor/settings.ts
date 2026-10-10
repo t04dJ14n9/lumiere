@@ -5,13 +5,6 @@ import type { Infer } from "../../kernel";
 import { config } from "./manifest";
 import { fontVariables } from "./font";
 const defaults = Object.freeze(config.parse({}));
-/** VS Code's automatic line height is taller on macOS. */
-function isMac(): boolean {
-  return (
-    typeof navigator !== "undefined" &&
-    /Mac|iPhone|iPad/.test(navigator.platform ?? "")
-  );
-}
 export const editorSettings = Facet.define<
   Infer<typeof config>,
   Infer<typeof config>
@@ -31,6 +24,6 @@ export function settingsExtensions(options: Partial<Infer<typeof config>>) {
     // Note text follows the editor font settings for Markdown files. As a
     // theme, a change makes CodeMirror measure line heights again, so line
     // numbers and the height map follow (an attribute change does not).
-    EditorView.theme({ "&": fontVariables(value, isMac()) }),
+    EditorView.theme({ "&": fontVariables(value) }),
   ];
 }

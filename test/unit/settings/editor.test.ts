@@ -40,10 +40,11 @@ test("editor settings have application defaults and reconfigure without changing
     tabSize: 4,
     // The note's own size: Obsidian's default body size, not editor.fontSize.
     fontSize: 16,
+    // Its line height: Obsidian's 1.5, a multiple of the size.
+    lineHeight: 1.5,
     // Native editor font settings for Markdown; empty until the host reads them.
     fontFamily: "",
     fontWeight: "normal",
-    lineHeight: 0,
     letterSpacing: 0,
     fontLigatures: false,
     fontVariations: false,
@@ -52,7 +53,7 @@ test("editor settings have application defaults and reconfigure without changing
   assert.deepEqual(fontDeclarations(settingsExtensions({})), {
     "--text-size": "16px",
     "--text-weight": "normal",
-    "--line-height": "1.375",
+    "--line-height": "1.5",
     "--text-features": '"liga" off, "calt" off',
     "--text-variations": "normal",
   });
@@ -267,6 +268,7 @@ test("note text follows the native editor font settings for Markdown files (not 
     // Ignored: the note has its own size.
     "editor.fontSize": 30,
     "editor.fontWeight": "300",
+    // Ignored: the note has its own line height.
     "editor.lineHeight": 27,
     "editor.letterSpacing": 0.5,
     "editor.fontLigatures": true,
@@ -277,7 +279,11 @@ test("note text follows the native editor font settings for Markdown files (not 
   };
   const own: SettingsReader = {
     get: <T>(key: string, fallback?: T) =>
-      key === "editor.fontSize" ? (18 as T) : fallback,
+      key === "editor.fontSize"
+        ? (18 as T)
+        : key === "editor.lineHeight"
+          ? (1.8 as T)
+          : fallback,
   };
   const editor = readSettings(own, native).editor!;
   assert.deepEqual(
@@ -290,25 +296,23 @@ test("note text follows the native editor font settings for Markdown files (not 
       editor.fontLigatures,
       editor.fontVariations,
     ],
-    ["Fira Code", 18, "300", 27, 0.5, true, false],
+    ["Fira Code", 18, "300", 1.8, 0.5, true, false],
   );
-  // 27px at 18px is a ratio of 1.5 (whole pixels, as in VS Code).
   assert.deepEqual(fontDeclarations(settingsExtensions(editor)), {
     "--text-font": "Fira Code, monospace",
     "--code-font": "Fira Code, monospace",
     "--text-size": "18px",
     "--text-weight": "300",
-    "--line-height": "1.5",
+    "--line-height": "1.8",
     "--text-letter-spacing": "0.5px",
     "--text-features": '"liga" on, "calt" on',
     "--text-variations": "normal",
   });
-  // The default line height is VS Code's automatic one, not 1.5 (Linux).
+  // Without a setting it is Obsidian's 1.5, whatever editor.lineHeight is.
   assert.equal(
-    fontDeclarations(settingsExtensions({ ...editor, lineHeight: 0 }))[
-      "--line-height"
-    ],
-    "1.333333", // round(1.35 × 18) = 24px
+    readSettings({ get: <T>(_key: string, fallback?: T) => fallback }, native)
+      .editor!.lineHeight,
+    1.5,
   );
   // A hand-edited settings.json with a wrong type does not break the editor.
   markdown["editor.fontLigatures"] = 3;
@@ -321,12 +325,15 @@ test("note text follows the native editor font settings for Markdown files (not 
   assert.equal(fallback.fontLigatures, false);
   const generated: Record<string, unknown> = (await contributions())
     .configuration.properties;
-  // Only the size is contributed; the other font fields are native settings.
+  // Only the size and line height are contributed; the other font fields are native settings.
   assert.deepEqual(
     Object.keys(generated).filter((key) =>
       /\.(font|lineHeight|letterSpacing)/.test(key),
     ),
-    ["markdownWorkbench.editor.fontSize"],
+    [
+      "markdownWorkbench.editor.fontSize",
+      "markdownWorkbench.editor.lineHeight",
+    ],
   );
   assert.deepEqual(
     {
@@ -338,6 +345,20 @@ test("note text follows the native editor font settings for Markdown files (not 
       minimum: 8,
       maximum: 48,
       default: 16,
+      scope: "resource",
+      description: undefined,
+    },
+  );
+  assert.deepEqual(
+    {
+      ...(generated["markdownWorkbench.editor.lineHeight"] as object),
+      description: undefined,
+    },
+    {
+      type: "number",
+      minimum: 1,
+      maximum: 3,
+      default: 1.5,
       scope: "resource",
       description: undefined,
     },

@@ -16,7 +16,7 @@ Run (Linux, any display):
    answers: at 16px the body is 16px with a 24px line, headings are 1.618,
    1.462, 1.318, 1.188, 1.076 and 1 times the body with line heights 1.2, 1.2,
    1.3, 1.4, 1.5 and 1.5, inline code and code lines 0.875em, the footnote
-   reference 0.8em and its text 0.875em; at 24px every size and line height is
+   reference 0.8em and its text 0.875em; every line height is 1.5 times the font size (24px at 16px, 36px at 24px; headings 1.2, 1.2, 1.3, 1.4, 1.5, 1.5 times their size; code and footnotes 1.5; table cells 1.3); at 24px every size and line height is
    exactly 1.5 times larger, except the line-number font, which stays 12px.
    `font-size-shot.mjs note.md size out.png` screenshots a note at a size.
    `playwright-core` must be resolvable; `lib.mjs` connects to port 9333.
