@@ -18,7 +18,9 @@ import { paths, readState } from "./state";
 import {
   closeBrowser,
   openWorkbench,
+  ORIGINAL_NOTE,
   reopenWith,
+  resetNote,
   workbenchPage,
 } from "./workbench";
 
@@ -95,7 +97,8 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
-  const text = readFileSync(note, "utf8");
+  resetNote();
+  const text = ORIGINAL_NOTE;
   const base = {
     ...(JSON.parse(original) as object),
     "editor.fontFamily": "DejaVu Sans Mono",
