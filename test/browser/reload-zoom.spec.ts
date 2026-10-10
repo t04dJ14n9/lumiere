@@ -91,7 +91,7 @@ test("zoom buttons and the zoom field change the zoom", async ({ page }) => {
   expect(Math.round(width)).toBe(150);
 });
 
-test("each Ctrl+wheel notch zooms one step, and small trackpad movements add up to one", async ({
+test("each Ctrl+wheel notch zooms one step, and small trackpad movements zoom in proportion", async ({
   page,
 }) => {
   await open(page);
@@ -113,11 +113,12 @@ test("each Ctrl+wheel notch zooms one step, and small trackpad movements add up 
   await notch(100, "100");
   await notch(100, "90");
 
+  // Small deltas are a pinch: the zoom follows exp(total / 100), here 90% x e^0.4.
   await page.keyboard.down("Control");
   for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -10);
-  await page.waitForTimeout(200);
-  await expect(zoom).toHaveValue("90");
-  await page.mouse.wheel(0, -10);
   await page.keyboard.up("Control");
-  await expect(zoom).toHaveValue("100");
+  await expect
+    .poll(async () => Number(await zoom.inputValue()), { timeout: 10_000 })
+    .toBeGreaterThan(130);
+  expect(Number(await zoom.inputValue())).toBeLessThan(138);
 });
