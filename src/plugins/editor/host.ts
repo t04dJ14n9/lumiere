@@ -20,7 +20,17 @@ export const editorHost: Plugin<EditorHostConfig> = {
   inject: { required: ["workbench", "documents"], optional: ["vaults"] },
   apply(ctx, config) {
     const panels = new Map<string, EditorPanel>();
+    // Panels whose shutdown has not finished, closed ones included: the
+    // host's teardown joins them.
+    const unfinished = new Set<EditorPanel>();
     const active = () => [...panels.values()].find((panel) => panel.active());
+    // Panel notifications stop once the host is stopping: its context is
+    // dead and its listeners are going (R3-2).
+    const notify = (send: () => void) => {
+      if (ctx.isLive) {
+        send();
+      }
+    };
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
     provideEditorServices(ctx, panels, active);
@@ -30,9 +40,12 @@ export const editorHost: Plugin<EditorHostConfig> = {
         const panel = createPanel(shell, ctx.documents, ctx.workbench, {
           onClose: () => {
             panels.delete(shell.id);
-            ctx.emit("editor/closed", panel);
+            // Inside the panel's shutdown: this joins it. Never rejects.
+            void panel.dispose().then(() => unfinished.delete(panel));
+            notify(() => ctx.emit("editor/closed", panel));
           },
-          onState: () => ctx.emit("editor/activeChanged", active()),
+          onState: () =>
+            notify(() => ctx.emit("editor/activeChanged", active())),
           configure(context, panel) {
             // Panel kernels are isolated; share the window-level registry explicitly.
             if (ctx.vaults) {
@@ -44,24 +57,26 @@ export const editorHost: Plugin<EditorHostConfig> = {
           logger: ctx.logger,
         });
         panels.set(panel.id, panel);
+        unfinished.add(panel);
         panel.rpc.on(protocol, "pluginsChanged", () =>
-          ctx.emit("editor/pluginsChanged", panel),
+          notify(() => ctx.emit("editor/pluginsChanged", panel)),
         );
         // The endpoint is disposed with the panel, which removes this listener.
         panel.rpc.on(protocol, "selectionChanged", ({ hasSelection }) =>
-          ctx.emit("editor/selectionChanged", panel, hasSelection),
+          notify(() =>
+            ctx.emit("editor/selectionChanged", panel, hasSelection),
+          ),
         );
         panel.rpc.on(protocol, "initialized", () =>
-          ctx.emit("editor/ready", panel),
+          notify(() => ctx.emit("editor/ready", panel)),
         );
         ctx.emit("editor/opened", panel);
       }),
     );
-    ctx.effect(() => () => {
-      for (const panel of panels.values()) {
-        panel.dispose();
-      }
+    // Teardown waits for every open panel's own cleanup to finish.
+    ctx.effect(() => async () => {
       panels.clear();
+      await Promise.all([...unfinished].map((panel) => panel.dispose()));
     });
   },
 };

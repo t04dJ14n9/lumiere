@@ -1,0 +1,40 @@
+[
+  {
+    "name": "emphasis x5",
+    "line": "aa **bold** bb *ital* cc ~~strk~~ dd ==high== ee `code` ff",
+    "elements": ["**bold**", "*ital*", "~~strk~~", "==high==", "`code`"]
+  },
+  {
+    "name": "adjacent",
+    "line": "**one***two*~~three~~",
+    "elements": ["**one**", "*two*", "~~three~~"]
+  },
+  {
+    "name": "nested",
+    "line": "aa ***bi*** bb **b *i* b** cc",
+    "elements": ["***bi***", "**b *i* b**", "*i*"]
+  },
+  {
+    "name": "links",
+    "line": "aa [txt](https://x.io) bb [[Wiki]] cc [[Wiki|alias]] dd <https://y.io> ee https://z.io ff",
+    "elements": [
+      "[txt](https://x.io)",
+      "[[Wiki]]",
+      "[[Wiki|alias]]",
+      "<https://y.io>",
+      "https://z.io"
+    ]
+  },
+  {
+    "name": "misc",
+    "line": "aa [^1] bb #tag cc %%cmt%% dd $x^2$ ee <b>bo</b> ff <span>sp</span> gg",
+    "elements": [
+      "[^1]",
+      "#tag",
+      "%%cmt%%",
+      "$x^2$",
+      "<b>bo</b>",
+      "<span>sp</span>"
+    ]
+  }
+]

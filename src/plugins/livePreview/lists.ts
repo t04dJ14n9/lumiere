@@ -96,7 +96,9 @@ function decorateMarker(
   }
   const task = mark.nextSibling?.getChild("TaskMarker");
   if (isTask && task) {
-    cx.hide(mark.from, task.from);
+    if (!cx.revealed(mark.from, task.to)) {
+      cx.hide(mark.from, task.from);
+    }
     return;
   }
   if (!cx.revealed(mark.from, mark.to)) {
