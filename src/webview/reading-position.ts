@@ -92,18 +92,25 @@ export function useRestorePosition(
       return;
     }
     // The zoom plugin may still be settling into its automatic zoom when the
-    // document appears: ask again if the request did not stick, then place the
-    // reader at the saved offsets.
+    // document appears, and on a slow machine that can take many frames: ask
+    // again whenever the request did not stick, and place the reader at the
+    // saved offsets once the zoom has held for a few frames (or, if it never
+    // does, after about a second).
     const target = nativeZoom(choice) as number;
     zoom.requestZoom(target);
     let frames = 0;
+    let steady = 0;
     let frame = requestAnimationFrame(function settle() {
-      if (frames++ < 2) {
+      frames++;
+      if (Math.abs(zoom.getState().currentZoomLevel - target) > 0.01) {
+        steady = 0;
+        zoom.requestZoom(target);
+      } else {
+        steady++;
+      }
+      if (steady < 3 && frames < 60) {
         frame = requestAnimationFrame(settle);
         return;
-      }
-      if (Math.abs(zoom.getState().currentZoomLevel - target) > 0.01) {
-        zoom.requestZoom(target);
       }
       restore(position);
     });

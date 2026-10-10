@@ -106,7 +106,8 @@ test('Copy Link for Agent from the context menu opens the agent chat with the re
   await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
     .toContain(withoutSpaces(`Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`));
   // The snapshot: attached in VS Code's chat, a file pill in Cursor's.
-  expect(await agentChatInput(page)).toMatch(/outline-p3-[0-9a-f]{12}\.png/u);
+  // The attachment lands after the text, so wait for it.
+  await expect.poll(() => agentChatInput(page), { timeout: 15_000 }).toMatch(/outline-p3-[0-9a-f]{12}\.png/u);
 });
 
 test('PDF: Open Location opens a pasted link at its page and flashes its box', async ({ workbench: page }) => {
