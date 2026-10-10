@@ -10,6 +10,7 @@ import { listenToHost } from "./host";
 import { useNavigation } from "./navigation";
 import { useOutlinePublishing } from "./outline";
 import { Page } from "./page";
+import { PageBitmaps } from "./page-bitmaps";
 import { DOCUMENT_ID } from "./plugins";
 import {
   currentViewSettings,
@@ -196,6 +197,7 @@ export function Viewer({
             onClose={() => setSearching(false)}
           />
         )}
+        <PageBitmaps pdf={pdf} scroller={documentArea}>
         <Viewport
           documentId={DOCUMENT_ID}
           className={`viewport${choices.scrollMode === "paged" ? " paged" : ""}`}
@@ -238,6 +240,7 @@ export function Viewer({
             )}
           </ZoomGestureWrapper>
         </Viewport>
+        </PageBitmaps>
       </div>
     </div>
   );

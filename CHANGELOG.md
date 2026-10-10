@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Turning pages no longer shows blank pages. Like macOS Preview, the viewer renders the pages around the one being read
+  as cheap low-resolution bitmaps (half size, one page at a time once the pages on screen are drawn), so a turn shows a
+  picture at once; the full-resolution bitmap at the current zoom is swapped in when it has been decoded, with the low
+  one visible until then. A render nobody wants any more (the next turn, a zoom step) is cancelled. Memory is bounded:
+  four pages either side, one low bitmap per page, and six full bitmaps of pages not on screen. The picture cache is
+  `src/shared/bitmap-cache.ts`, wired in `src/webview/page-bitmaps.tsx`.
 - Settings from the Command Palette: `PDF: Open Settings`, `PDF: Change Setting…` (every contributed setting, edited by
   type, generated from package.json), toggles for smooth scrolling and keyboard shortcuts, default zoom / layout /
   scrolling pickers, and `Settings…` in the View picker. Same keys as the Settings editor, workspace if set there

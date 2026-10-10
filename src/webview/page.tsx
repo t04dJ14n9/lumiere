@@ -1,6 +1,5 @@
 import type { PdfDocumentObject } from '@embedpdf/models';
 import { PagePointerProvider } from '@embedpdf/plugin-interaction-manager/react';
-import { RenderLayer } from '@embedpdf/plugin-render/react';
 import { SearchLayer } from '@embedpdf/plugin-search/react';
 import { SelectionLayer, type SelectionSelectionMenuProps } from '@embedpdf/plugin-selection/react';
 import React, { useLayoutEffect, useRef, useState } from 'react';
@@ -9,6 +8,7 @@ import type { RegionSelection } from '../shared/selection';
 import type { Highlight } from './navigation';
 import { PageLinks } from './page-links';
 import { DOCUMENT_ID } from './plugins';
+import { PageImage } from './page-bitmaps';
 import { renderPixelRatio } from './render-resolution';
 import type { SelectionReporting } from './selection';
 
@@ -45,14 +45,7 @@ export function Page({
       {...(rotation === 0 ? { className: 'page', 'data-page-index': pageIndex, 'data-scale': scale } : {})}
       style={{ width, height }}
     >
-      <RenderLayer
-        documentId={DOCUMENT_ID}
-        pageIndex={pageIndex}
-        scale={scale}
-        dpr={renderPixelRatio(scale, devicePixelRatio, width, height)}
-        className="page-image"
-        draggable={false}
-      />
+      <PageImage pageIndex={pageIndex} scale={scale} dpr={renderPixelRatio(scale, devicePixelRatio, width, height)} />
       <SearchLayer documentId={DOCUMENT_ID} pageIndex={pageIndex} scale={scale} />
       <PageLinks pdf={pdf} pageIndex={pageIndex} scale={scale} onOpenPage={onOpenPage} />
       {highlight?.page === page && (
