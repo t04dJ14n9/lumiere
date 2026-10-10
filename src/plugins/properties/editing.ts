@@ -1,19 +1,12 @@
 import { propertyTransaction } from "./edit-transaction";
 import type { EditorView } from "@codemirror/view";
-import {
-  frontmatter,
-  matchesPropertyKind,
-  type PropertyEdit,
-} from "../../markdown/properties";
+import { frontmatter, type PropertyEdit } from "../../markdown/properties";
 import { editGroup } from "../document/api";
 import type { PropertyContext, Action } from "./context";
 import {
-  inferPropertyKind,
   type PropertyKind,
   type PropertyTypes,
 } from "../../markdown/properties/types";
-
-import { confirmPropertyType } from "./type-dialog";
 
 interface PropertyEditingOptions {
   view(): EditorView | undefined;
@@ -25,6 +18,8 @@ interface PropertyEditingOptions {
   focusTitle(): void;
   pageHeading(backward: boolean): void;
   signal: AbortSignal;
+  propertyNames?(): Promise<readonly string[]>;
+  setCollapsed?(collapsed: boolean): void;
 }
 
 type PropertyEditor = NonNullable<PropertyContext["propertyEditor"]>;
@@ -34,17 +29,11 @@ type PropertyEditor = NonNullable<PropertyContext["propertyEditor"]>;
  *
  * Every change is a source edit of the frontmatter, so it shares the note's
  * undo history. Type preferences (text, number, date, ...) are stored by the
- * host per vault; a type the user chooses for a value that does not match it
- * yet is "forced" until the value changes.
+ * host per vault and property name, independently of the note’s YAML value.
  */
 export class PropertyEditing {
   private preferences: PropertyTypes = {};
-  /** Property → chosen kind, valid while the value keeps the same JSON token. */
-  private readonly forced = new Map<
-    string,
-    { kind: PropertyKind; value: string }
-  >();
-  private requestedType: { key: string; kind: PropertyKind | null } | undefined;
+  private collapsed = false;
   private sequence = 0;
 
   constructor(private readonly options: PropertyEditingOptions) {}
@@ -66,11 +55,14 @@ export class PropertyEditing {
         this.edit(expected, { type: "set", key, value }),
       edit: (expected, operation) => this.edit(expected, operation),
       types: () => this.preferences,
-      forcedTypes: () => this.forcedTypes(),
       setType: (key, kind) => {
-        this.requestedType = { key, kind };
-        this.forced.delete(key);
         this.options.setType(key, kind);
+      },
+      names: () => this.options.propertyNames?.() ?? Promise.resolve([]),
+      collapsed: () => this.collapsed,
+      setCollapsed: (collapsed) => {
+        this.receiveCollapsed(collapsed);
+        this.options.setCollapsed?.(collapsed);
       },
       action: this.options.action,
       focusTitle: () => {
@@ -106,7 +98,7 @@ export class PropertyEditing {
     }
     const displayed = [
       ...view.dom.querySelectorAll<HTMLElement>(
-        ".hybrid-properties > div > .properties > dl > [data-property-row]",
+        ".hybrid-properties .metadata-properties > [data-property-row]",
       ),
     ].map((row) => row.dataset.propertyRow!);
     const changeSet = propertyTransaction({
@@ -142,15 +134,8 @@ export class PropertyEditing {
       return;
     }
     this.options.show();
-    const emptyHeader = "---\n---\n";
     view.dispatch({
-      ...(!header
-        ? {
-            changes: { from: 0, insert: emptyHeader + "\n" },
-            annotations: editGroup.of(`property-${++this.sequence}`),
-          }
-        : {}),
-      selection: { anchor: header?.end ?? emptyHeader.length },
+      selection: { anchor: header?.end ?? 0 },
     });
     queueMicrotask(() =>
       this.options
@@ -160,115 +145,15 @@ export class PropertyEditing {
     );
   }
 
-  /** New type preferences from the host; continue a pending type change. */
+  /** Registry updates only change presentation; values and undo remain untouched. */
   receiveTypes(message: { types: PropertyTypes }): void {
-    for (const key of this.forced.keys()) {
-      if (
-        this.preferences[key.toLowerCase()] !== message.types[key.toLowerCase()]
-      ) {
-        this.forced.delete(key);
-      }
-    }
     this.preferences = message.types;
     this.options.refresh();
-    const request = this.requestedType;
-    if (
-      request &&
-      (request.kind === null ||
-        message.types[request.key.toLowerCase()] === request.kind)
-    ) {
-      this.requestedType = undefined;
-      if (request.kind) {
-        void this.offerConversion(request.key, request.kind);
-      }
-    }
   }
 
-  private forcedTypes(): PropertyTypes {
-    const view = this.options.view();
-    const values = view && frontmatter(view.state.doc.toString())?.values;
-    for (const [key, entry] of this.forced) {
-      if (token(values?.[key]) !== entry.value) {
-        this.forced.delete(key);
-      }
-    }
-    return Object.fromEntries(
-      [...this.forced].map(([key, entry]) => [key, entry.kind]),
-    );
-  }
-
-  /**
-   * The user picked `kind` for a property whose value does not match it. Ask
-   * before showing the value as that type; never rewrite the value silently.
-   */
-  private async offerConversion(
-    key: string,
-    kind: PropertyKind,
-  ): Promise<void> {
-    const owner = this.options.view();
-    if (!owner) {
-      return;
-    }
-    const header = frontmatter(owner.state.doc.toString());
-    const value = header?.values?.[key];
-    if (!header || matchesPropertyKind(kind, value)) {
-      return;
-    }
-    if (isNestedPropertyValue(value)) {
-      this.options.setStatus("Edit nested property values in source.");
-      return;
-    }
-    const row = (): HTMLElement | null =>
-      owner.dom.querySelector(`[data-property-row="${CSS.escape(key)}"]`);
-    if (
-      !(await confirmPropertyType(
-        key,
-        inferPropertyKind(key, value),
-        kind,
-        this.options.signal,
-      ))
-    ) {
-      row()?.focus();
-      return;
-    }
-    this.finishConversion({ owner, header: header.raw, key, kind, value, row });
-  }
-
-  private finishConversion(options: {
-    owner: EditorView;
-    header: string;
-    key: string;
-    kind: PropertyKind;
-    value: unknown;
-    row(): HTMLElement | null;
-  }): void {
-    const { owner, header, key, kind, value, row } = options;
-    if (
-      this.options.view() !== owner ||
-      frontmatter(owner.state.doc.toString())?.raw !== header ||
-      inferPropertyKind(key, value, this.preferences) !== kind
-    ) {
-      this.options.setStatus(
-        "The properties changed. Choose the type again to update this value.",
-      );
-      return;
-    }
-    const valueToken = token(value);
-    if (valueToken === undefined) {
-      return;
-    }
-    this.forced.set(key, { kind, value: valueToken });
+  receiveCollapsed(collapsed: boolean): void {
+    this.collapsed = collapsed;
     this.options.refresh();
-    row()?.querySelector<HTMLButtonElement>("[data-property-edit]")?.click();
-    row()?.querySelector<HTMLInputElement>("dd input:not([hidden])")?.focus();
-  }
-}
-
-function token(value: unknown): string | undefined {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return undefined;
   }
 }
 

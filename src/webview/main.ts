@@ -9,6 +9,7 @@ declare function acquireVsCodeApi(): {
   getState(): unknown;
   setState(state: unknown): void;
 };
+performance.mark("mw:main");
 const vscode = acquireVsCodeApi();
 const logging = webviewLogging((record) => rpc.notify(protocol, "log", record));
 const rpc: Endpoint = new Endpoint(

@@ -15,7 +15,7 @@ import type { EditorState } from "@codemirror/state";
 import type { Infer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import { headings } from "../../markdown/metadata/headings";
+import { headingFold } from "./heading-fold";
 import { config } from "./manifest";
 
 export function foldRange(
@@ -25,11 +25,9 @@ export function foldRange(
   options: Infer<typeof config>,
 ) {
   if (options.heading) {
-    const heading = headings(state.doc).find(
-      (item) => item.from >= start && item.from <= end,
-    );
-    if (heading && heading.end > heading.to) {
-      return { from: heading.to, to: heading.end };
+    const range = headingFold(state.doc, start, end);
+    if (range) {
+      return range;
     }
   }
   if (!options.indent) {

@@ -47,6 +47,7 @@ export function matchesPropertyKind(
       return typeof value === "string";
     case "list":
     case "tags":
+    case "aliases":
       return typeof value === "string" || Array.isArray(value);
     case "number":
       return typeof value === "number" && Number.isFinite(value);

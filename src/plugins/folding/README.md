@@ -5,7 +5,9 @@ corresponding to Obsidian's Fold heading and Fold indent settings.
 
 ## How it works
 
-Heading ranges use metadata cached by immutable document identity; indentation
+Heading queries inspect only the requested lines in the shared syntax tree,
+then scan sibling headings for the section boundary. Results are cached by
+immutable document identity; no full metadata extraction is needed. Indentation
 uses the configured tab width. The plugin owns the fold state, gutter, service
 and `folded` view-state contribution. A private fold-service compartment updates
 configuration while retaining ranges. Gutter invalidation observes configuration
@@ -17,6 +19,8 @@ restores valid saved ranges.
 - `manifest.ts`: heading/indent settings and three command contributions.
 - `api.ts`: fold service contract.
 - `webview.ts`: range calculation, gutter, commands and reconfiguration.
+- `heading-fold.ts`: lazy heading ranges with per-document caching.
+- `heading-fold.test.ts`: range parity, bounded gutter traversal and edit invalidation.
 - `view-state.ts`: fold capture, validation, source mapping and restore.
 
 ## Services, events and settings

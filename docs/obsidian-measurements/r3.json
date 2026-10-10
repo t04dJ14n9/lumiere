@@ -1,0 +1,222 @@
+{
+  "gap1": {
+    "line": "aa **one**x~~two~~y==three== bb",
+    "rows": [
+      {
+        "e": "**one**",
+        "span": [3, 10],
+        "revealedAt": [3, 10],
+        "contiguous": true,
+        "nrev": 8
+      },
+      {
+        "e": "~~two~~",
+        "span": [11, 18],
+        "revealedAt": [11, 18],
+        "contiguous": true,
+        "nrev": 8
+      },
+      {
+        "e": "==three==",
+        "span": [19, 28],
+        "revealedAt": [19, 28],
+        "contiguous": true,
+        "nrev": 10
+      }
+    ],
+    "idle": "aa onextwoythree bb",
+    "allvisible": [
+      "aa onextwoythree bb",
+      "aa onextwoythree bb",
+      "aa onextwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa **one**xtwoythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onex~~two~~ythree bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoy==three== bb",
+      "aa onextwoythree bb",
+      "aa onextwoythree bb",
+      "aa onextwoythree bb"
+    ]
+  },
+  "gap-space": {
+    "line": "aa **one** ~~two~~ ==three== bb",
+    "rows": [
+      {
+        "e": "**one**",
+        "span": [3, 10],
+        "revealedAt": [3, 10],
+        "contiguous": true,
+        "nrev": 8
+      },
+      {
+        "e": "~~two~~",
+        "span": [11, 18],
+        "revealedAt": [11, 18],
+        "contiguous": true,
+        "nrev": 8
+      },
+      {
+        "e": "==three==",
+        "span": [19, 28],
+        "revealedAt": [19, 28],
+        "contiguous": true,
+        "nrev": 10
+      }
+    ],
+    "idle": "aa one two three bb",
+    "allvisible": [
+      "aa one two three bb",
+      "aa one two three bb",
+      "aa one two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa **one** two three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one ~~two~~ three bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two ==three== bb",
+      "aa one two three bb",
+      "aa one two three bb",
+      "aa one two three bb"
+    ]
+  },
+  "adj2": {
+    "line": "aa **one**~~two~~ bb",
+    "rows": [
+      {
+        "e": "**one**",
+        "span": [3, 10],
+        "revealedAt": [3, 17],
+        "contiguous": true,
+        "nrev": 15
+      },
+      {
+        "e": "~~two~~",
+        "span": [10, 17],
+        "revealedAt": [3, 17],
+        "contiguous": true,
+        "nrev": 15
+      }
+    ],
+    "idle": "aa onetwo bb",
+    "allvisible": [
+      "aa onetwo bb",
+      "aa onetwo bb",
+      "aa onetwo bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa **one**~~two~~ bb",
+      "aa onetwo bb",
+      "aa onetwo bb",
+      "aa onetwo bb"
+    ]
+  },
+  "adj-link": {
+    "line": "aa [a](x.md)[[B]]**c** bb",
+    "rows": [
+      {
+        "e": "[a](x.md)",
+        "span": [3, 12],
+        "revealedAt": [3, 22],
+        "contiguous": true,
+        "nrev": 20
+      },
+      {
+        "e": "[[B]]",
+        "span": [12, 17],
+        "revealedAt": [3, 22],
+        "contiguous": true,
+        "nrev": 20
+      },
+      {
+        "e": "**c**",
+        "span": [17, 22],
+        "revealedAt": [3, 22],
+        "contiguous": true,
+        "nrev": 20
+      }
+    ],
+    "idle": "aa aBc bb",
+    "allvisible": [
+      "aa aBc bb",
+      "aa aBc bb",
+      "aa aBc bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa [a](x.md)[[B]]**c** bb",
+      "aa aBc bb",
+      "aa aBc bb",
+      "aa aBc bb"
+    ]
+  }
+}

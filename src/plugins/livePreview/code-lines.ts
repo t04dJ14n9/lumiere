@@ -38,7 +38,7 @@ export function decorateCodeLines(
   if (closed) {
     context.line(close.from, "md-code-fence md-code-fence-close");
   }
-  if (context.revealed(node.from, node.to)) {
+  if (context.revealed(open.from, close.to)) {
     return;
   }
   context.hide(open.from, open.to);

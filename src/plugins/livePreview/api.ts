@@ -10,6 +10,7 @@ export interface RenderBlock {
 }
 export interface InlineContext {
   state: EditorState;
+  /** Inclusive selection touch, extended through inline ancestors and abutting elements. */
   revealed(from: number, to: number): boolean;
   mark(
     from: number,
@@ -27,6 +28,8 @@ export interface InlineRenderer {
 }
 export interface BlockRenderer {
   kind: string;
+  /** Optional complete list of node names that `match` may accept. */
+  nodes?: readonly string[];
   match(node: SyntaxNodeRef, state: EditorState): boolean;
   editing: "reveal" | "widget";
   showSource?(state: EditorState, block: RenderBlock): boolean;

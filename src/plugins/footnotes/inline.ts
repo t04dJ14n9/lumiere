@@ -9,9 +9,9 @@ import { FootnoteReference, referenceText } from "./reference-widget";
 /**
  * Footnotes in Live Preview, LaTeX paper style (a deliberate departure from
  * Obsidian): a reference shows as a superscript number in order of first
- * reference, and a definition as that number leading its text. Selections,
- * Ctrl+A included, keep both rendered; only a caret inside a reference, or
- * on a definition's `[^label]:` marker, shows the faint source for editing.
+ * reference, and a definition as that number leading its text. References
+ * stay rendered under selections (Ctrl+A included); only a caret reveals them.
+ * Definition markers reveal when a selection touches their first line.
  */
 export function footnoteInline(render: RenderService): InlineRenderer {
   return {
@@ -74,7 +74,8 @@ function markReferenceSource(
 function decorateDefinition(cx: InlineContext, note: Footnote): void {
   const doc = cx.state.doc;
   const markerEnd = Math.min(note.marker + note.label.length + 4, doc.length);
-  if (hasCaretWithin(cx.state, note.marker, markerEnd)) {
+  const first = doc.lineAt(note.marker);
+  if (cx.revealed(first.from, first.to)) {
     cx.mark(note.marker, markerEnd, "mw-footnote-marker");
   } else {
     // The space after `]:` goes with the marker; the number keeps its own gap.
@@ -85,7 +86,6 @@ function decorateDefinition(cx: InlineContext, note: Footnote): void {
       new DefinitionNumber(referenceText(note)),
     );
   }
-  const first = doc.lineAt(note.marker);
   const last = doc.lineAt(Math.min(note.to, doc.length));
   for (let line = first.number; line <= last.number; line++) {
     cx.line(

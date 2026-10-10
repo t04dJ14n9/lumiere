@@ -1,0 +1,73 @@
+{
+  "activation": "15 ms",
+  "bundles": {
+    "extensionJs": 1503200,
+    "webviewEntryJs": 2130937,
+    "webviewAllJs": 10883580,
+    "webviewCss": 43419
+  },
+  "results": {
+    "small, cold": {
+      "firstPaintMs": 524,
+      "scriptStartMs": 360,
+      "readyMs": 365,
+      "pluginsMs": 508,
+      "keyMs": 16,
+      "heapMb": 18,
+      "domNodes": 478,
+      "scripts": [
+        {
+          "name": "editor.js",
+          "kb": 2081,
+          "ms": 83
+        },
+        {
+          "name": "code-highlight-HUI6SHEH.js",
+          "kb": 863,
+          "ms": 106
+        },
+        {
+          "name": "chunk-BLJXQXP4.js",
+          "kb": 56,
+          "ms": 131
+        },
+        {
+          "name": "chunk-IKZWERSR.js",
+          "kb": 2,
+          "ms": 131
+        }
+      ]
+    },
+    "16000 blocks": {
+      "firstPaintMs": 2473,
+      "scriptStartMs": 300,
+      "readyMs": 1167,
+      "pluginsMs": 2455,
+      "keyMs": 39,
+      "heapMb": 67,
+      "domNodes": 717,
+      "scripts": [
+        {
+          "name": "editor.js",
+          "kb": 2081,
+          "ms": 89
+        },
+        {
+          "name": "code-highlight-HUI6SHEH.js",
+          "kb": 863,
+          "ms": 168
+        },
+        {
+          "name": "chunk-BLJXQXP4.js",
+          "kb": 56,
+          "ms": 12
+        },
+        {
+          "name": "chunk-IKZWERSR.js",
+          "kb": 2,
+          "ms": 13
+        }
+      ]
+    }
+  }
+}

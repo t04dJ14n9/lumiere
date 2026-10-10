@@ -1,0 +1,52 @@
+[
+  {
+    "name": "adjacent",
+    "line": "aa **one**~~two~~==three==`four`_five_ bb",
+    "elements": ["**one**", "~~two~~", "==three==", "`four`", "_five_"]
+  },
+  {
+    "name": "nested",
+    "line": "aa **b _i_ b** cc ==h `c` h== dd",
+    "elements": ["**b _i_ b**", "_i_", "==h `c` h==", "`c`"]
+  },
+  {
+    "name": "link-with-format",
+    "line": "aa [t **b** t](https://x.io) bb [[Wiki|**a**]] cc",
+    "elements": ["[t **b** t](https://x.io)", "**b**", "[[Wiki|**a**]]"]
+  },
+  {
+    "name": "embeds",
+    "line": "aa ![[pic.png]] bb ![alt](pic.png) cc ![[Note]] dd ![[pic.png|100]] ee",
+    "elements": [
+      "![[pic.png]]",
+      "![alt](pic.png)",
+      "![[Note]]",
+      "![[pic.png|100]]"
+    ]
+  },
+  {
+    "name": "link variants",
+    "line": "aa [[Wiki#Head]] bb [[Wiki^blk]] cc [txt][ref] dd [ref]: https://q.io ee [txt](<a b.md>) ff",
+    "elements": [
+      "[[Wiki#Head]]",
+      "[[Wiki^blk]]",
+      "[txt][ref]",
+      "[txt](<a b.md>)"
+    ]
+  },
+  {
+    "name": "escapes",
+    "line": "aa \\*not\\* bb \\[x\\] cc **b** dd",
+    "elements": ["\\*not\\*", "\\[x\\]", "**b**"]
+  },
+  {
+    "name": "math",
+    "line": "aa $x^2$ bb $$y^2$$ cc $a$ dd",
+    "elements": ["$x^2$", "$$y^2$$", "$a$"]
+  },
+  {
+    "name": "footnote-inline",
+    "line": "aa [^1] bb ^[inline note] cc [^note] dd",
+    "elements": ["[^1]", "^[inline note]", "[^note]"]
+  }
+]

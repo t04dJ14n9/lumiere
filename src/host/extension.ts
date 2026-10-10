@@ -16,6 +16,7 @@ let root: Context | undefined;
 export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkbenchApi> {
+  const started = performance.now();
   const workbench = createWorkbench(
     context.extensionUri,
     context.workspaceState,
@@ -29,6 +30,7 @@ export async function activate(
     workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
   );
   root = await bootstrap(workbench, createVaultSystem(context), logger);
+  channel.info(`Activated in ${Math.round(performance.now() - started)} ms`);
   return createApi(root, nativePlatform());
 }
 /** VS Code awaits this (subscriptions' disposals it does not), so teardown completes. */

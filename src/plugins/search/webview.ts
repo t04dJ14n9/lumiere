@@ -24,6 +24,7 @@ function registerQueryBlocks(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "query",
+      nodes: ["FencedCode"],
       editing: "reveal",
       match(node, state) {
         const info = node.node.getChild("CodeInfo");

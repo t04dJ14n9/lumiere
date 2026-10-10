@@ -1,4 +1,39 @@
-import Prism from "prism-all-languages";
+import Prism, { languageLoaders, languageAliases } from "prism-languages";
+import { createLanguageLoader } from "./language-loader";
+
+const ensureLanguage = createLanguageLoader(languageLoaders, languageAliases);
+
+/** Rendered Markdown code can itself contain fences in arbitrary languages. */
+export async function loadLanguage(
+  language: string,
+  source = "",
+): Promise<void> {
+  await ensureLanguage(language);
+  const id = languageAliases.get(language) ?? language;
+  const grammar = Prism.languages[language];
+  if (id === "markdown" && source && grammar) {
+    const embedded = embeddedLanguages(Prism.tokenize(source, grammar));
+    await Promise.all(embedded.map(ensureLanguage));
+  }
+}
+
+function embeddedLanguages(tokens: Prism.TokenStream): string[] {
+  if (typeof tokens === "string") {
+    return [];
+  }
+  if (Array.isArray(tokens)) {
+    return tokens.flatMap(embeddedLanguages);
+  }
+  if (tokens.type !== "code-language" || typeof tokens.content !== "string") {
+    return embeddedLanguages(tokens.content);
+  }
+  // Match Prism's Markdown language labels, including C++, C# and F#.
+  const label = tokens.content
+    .replace(/\b#/g, "sharp")
+    .replace(/\b\+\+/g, "pp");
+  const language = /[a-z][\w-]*/i.exec(label)?.[0].toLowerCase();
+  return language ? [language] : [];
+}
 export function highlight(element: HTMLElement): void {
   const language = /language-([\w-]+)/.exec(element.className)?.[1];
   const grammar = language ? Prism.languages[language] : undefined;
