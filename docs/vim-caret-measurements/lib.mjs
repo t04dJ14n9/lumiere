@@ -8,7 +8,14 @@ export const { chromium } = require("@playwright/test");
 export const DISPLAY = process.env.DISPLAY_FOR_CARET ?? ":7";
 
 /** Starts `code` with its own profile and extensions folder; returns the page and a stop() that closes it. */
-export async function launch({ root, extensions, workspace, port = 9333, settings = {}, file }) {
+export async function launch({
+  root,
+  extensions,
+  workspace,
+  port = 9333,
+  settings = {},
+  file,
+}) {
   rmSync(`${root}/ud`, { recursive: true, force: true });
   mkdirSync(`${root}/ud/User`, { recursive: true });
   writeFileSync(
@@ -41,10 +48,17 @@ export async function launch({ root, extensions, workspace, port = 9333, setting
   const child = spawn(
     "code",
     [
-      "--new-window", "--skip-welcome", "--skip-release-notes", "--disable-workspace-trust",
-      "--disable-telemetry", "--no-sandbox",
-      `--user-data-dir=${root}/ud`, `--extensions-dir=${extensions}`,
-      `--remote-debugging-port=${port}`, workspace, ...(file ? [file] : []),
+      "--new-window",
+      "--skip-welcome",
+      "--skip-release-notes",
+      "--disable-workspace-trust",
+      "--disable-telemetry",
+      "--no-sandbox",
+      `--user-data-dir=${root}/ud`,
+      `--extensions-dir=${extensions}`,
+      `--remote-debugging-port=${port}`,
+      workspace,
+      ...(file ? [file] : []),
     ],
     { detached: true, stdio: "ignore", env: { ...process.env, DISPLAY } },
   );
@@ -52,17 +66,28 @@ export async function launch({ root, extensions, workspace, port = 9333, setting
   let browser;
   for (let i = 0; i < 60 && !browser; i++) {
     await new Promise((r) => setTimeout(r, 1000));
-    try { browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`); } catch {}
+    try {
+      browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+    } catch {}
   }
   if (!browser) throw new Error("VS Code did not start");
   let page;
   for (let i = 0; i < 60 && !page; i++) {
-    page = browser.contexts().flatMap((c) => c.pages()).find((p) => !p.url().startsWith("devtools:") && p.url().includes("workbench"));
+    page = browser
+      .contexts()
+      .flatMap((c) => c.pages())
+      .find(
+        (p) =>
+          !p.url().startsWith("devtools:") && p.url().includes("workbench"),
+      );
     if (!page) await new Promise((r) => setTimeout(r, 500));
   }
   await page.locator(".monaco-workbench").waitFor();
   const stop = async () => {
-    await Promise.race([browser.close(), new Promise((r) => setTimeout(r, 1500))]);
+    await Promise.race([
+      browser.close(),
+      new Promise((r) => setTimeout(r, 1500)),
+    ]);
     // Only the window this script started: its own profile folder names it.
     spawn("pkill", ["-9", "-f", `user-data-dir=${root}/ud`]);
     await new Promise((r) => setTimeout(r, 1500));

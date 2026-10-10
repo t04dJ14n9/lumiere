@@ -10,8 +10,14 @@ const OUT = new URL("./results/", import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
 const root = "/tmp/vsvim";
 const { page, stop } = await launch({
-  root, extensions: `${root}/ext`, workspace: `${root}/ws`, file: `${root}/ws/sample.txt`,
-  settings: { "editor.cursorBlinking": blinking, "editor.cursorSmoothCaretAnimation": smooth },
+  root,
+  extensions: `${root}/ext`,
+  workspace: `${root}/ws`,
+  file: `${root}/ws/sample.txt`,
+  settings: {
+    "editor.cursorBlinking": blinking,
+    "editor.cursorSmoothCaretAnimation": smooth,
+  },
 });
 const results = { blinking, smooth, modes: {} };
 try {
@@ -23,43 +29,129 @@ try {
   await page.keyboard.type("gg0");
   await page.waitForTimeout(400);
 
-  const snapshot = () => page.evaluate(() => {
-    const ed = document.querySelector(".part.editor .monaco-editor");
-    const rect = (e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
-    const cursors = [...ed.querySelectorAll(".cursors-layer .cursor")].map((c) => {
-      const s = getComputedStyle(c);
-      return { ...rect(c), cls: c.className.trim(), bg: s.backgroundColor, color: s.color,
-        border: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`, visibility: s.visibility,
-        opacity: s.opacity, text: c.textContent, transition: `${s.transitionProperty} ${s.transitionDuration} ${s.transitionTimingFunction}`,
-        animation: `${s.animationName} ${s.animationDuration} ${s.animationTimingFunction} ${s.animationIterationCount}` };
+  const snapshot = () =>
+    page.evaluate(() => {
+      const ed = document.querySelector(".part.editor .monaco-editor");
+      const rect = (e) => {
+        const r = e.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      };
+      const cursors = [...ed.querySelectorAll(".cursors-layer .cursor")].map(
+        (c) => {
+          const s = getComputedStyle(c);
+          return {
+            ...rect(c),
+            cls: c.className.trim(),
+            bg: s.backgroundColor,
+            color: s.color,
+            border: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`,
+            visibility: s.visibility,
+            opacity: s.opacity,
+            text: c.textContent,
+            transition: `${s.transitionProperty} ${s.transitionDuration} ${s.transitionTimingFunction}`,
+            animation: `${s.animationName} ${s.animationDuration} ${s.animationTimingFunction} ${s.animationIterationCount}`,
+          };
+        },
+      );
+      const layer = ed.querySelector(".cursors-layer");
+      // Inline decoration backgrounds are `.cdr` boxes in the overlay layer (VSCodeVim's visual block);
+      // the glyph colour is the decorated span's.
+      const decorations = [
+        ...ed.querySelectorAll(".view-overlays .cdr[class*='ced-']"),
+      ].map((e) => {
+        const s = getComputedStyle(e);
+        const span = [
+          ...ed.querySelectorAll(".view-lines span[class*='ced-']"),
+        ].find(
+          (x) =>
+            Math.abs(
+              x.getBoundingClientRect().x - e.getBoundingClientRect().x,
+            ) < 1.5 &&
+            Math.abs(
+              x.getBoundingClientRect().y - e.getBoundingClientRect().y,
+            ) < 2,
+        );
+        return {
+          ...rect(e),
+          bg: s.backgroundColor,
+          border: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`,
+          text: span?.textContent,
+          color: span ? getComputedStyle(span).color : null,
+        };
+      });
+      // The pseudo-element blocks of the operator-pending decoration.
+      const pseudo = [...ed.querySelectorAll(".view-lines span[class*='ced-']")]
+        .map((x) => {
+          const b = getComputedStyle(x, "::before");
+          return {
+            text: x.textContent,
+            bg: b.backgroundColor,
+            w: b.width,
+            h: b.height,
+            bottom: b.bottom,
+            ...rect(x),
+          };
+        })
+        .filter((p) => p.bg !== "rgba(0, 0, 0, 0)" && p.h !== "auto");
+      const selection = [...ed.querySelectorAll(".selected-text")].map((e) => ({
+        ...rect(e),
+        bg: getComputedStyle(e).backgroundColor,
+      }));
+      const lines = [...ed.querySelectorAll(".view-line")].map((l) => ({
+        ...rect(l),
+        text: l.textContent,
+      }));
+      return {
+        editorClass: ed.className,
+        layerClass: layer?.className,
+        cursors,
+        decorations,
+        pseudo,
+        selection,
+        lines,
+        status:
+          document
+            .querySelector(".statusbar")
+            ?.textContent?.match(/-- [A-Z ()-]+ --/)?.[0] ?? null,
+      };
     });
-    const layer = ed.querySelector(".cursors-layer");
-    // Inline decoration backgrounds are `.cdr` boxes in the overlay layer (VSCodeVim's visual block);
-    // the glyph colour is the decorated span's.
-    const decorations = [...ed.querySelectorAll(".view-overlays .cdr[class*='ced-']")].map((e) => {
-      const s = getComputedStyle(e);
-      const span = [...ed.querySelectorAll(".view-lines span[class*='ced-']")].find((x) => Math.abs(x.getBoundingClientRect().x - e.getBoundingClientRect().x) < 1.5 && Math.abs(x.getBoundingClientRect().y - e.getBoundingClientRect().y) < 2);
-      return { ...rect(e), bg: s.backgroundColor, border: `${s.borderTopWidth} ${s.borderTopStyle} ${s.borderTopColor}`, text: span?.textContent, color: span ? getComputedStyle(span).color : null };
-    });
-    // The pseudo-element blocks of the operator-pending decoration.
-    const pseudo = [...ed.querySelectorAll(".view-lines span[class*='ced-']")].map((x) => { const b = getComputedStyle(x, "::before"); return { text: x.textContent, bg: b.backgroundColor, w: b.width, h: b.height, bottom: b.bottom, ...rect(x) }; }).filter((p) => p.bg !== "rgba(0, 0, 0, 0)" && p.h !== "auto");
-    const selection = [...ed.querySelectorAll(".selected-text")].map((e) => ({ ...rect(e), bg: getComputedStyle(e).backgroundColor }));
-    const lines = [...ed.querySelectorAll(".view-line")].map((l) => ({ ...rect(l), text: l.textContent }));
-    return { editorClass: ed.className, layerClass: layer?.className, cursors, decorations, pseudo, selection, lines,
-      status: document.querySelector(".statusbar")?.textContent?.match(/-- [A-Z ()-]+ --/)?.[0] ?? null };
-  });
 
   const shot = async (name) => {
     await page.waitForTimeout(350);
     const s = await snapshot();
     results.modes[name] = s;
     await page.screenshot({ path: `${OUT}vscodevim-${blinking}-${name}.png` });
-    console.log(name, s.status, JSON.stringify(s.cursors.filter(c => c.h > 0).map(({x,y,w,h,bg,cls,visibility}) => ({x,y,w,h,bg,cls,visibility}))), "deco:", s.decorations.map(d => `${d.text}@${d.x},${d.y} ${d.w}x${d.h} ${d.bg} ${d.color}`).join(" | "));
+    console.log(
+      name,
+      s.status,
+      JSON.stringify(
+        s.cursors
+          .filter((c) => c.h > 0)
+          .map(({ x, y, w, h, bg, cls, visibility }) => ({
+            x,
+            y,
+            w,
+            h,
+            bg,
+            cls,
+            visibility,
+          })),
+      ),
+      "deco:",
+      s.decorations
+        .map((d) => `${d.text}@${d.x},${d.y} ${d.w}x${d.h} ${d.bg} ${d.color}`)
+        .join(" | "),
+    );
   };
-  const keys = async (k) => { await page.keyboard.type(k); };
+  const keys = async (k) => {
+    await page.keyboard.type(k);
+  };
 
   await scenario({ page, shot, keys });
 } finally {
-  writeFileSync(`${OUT}vscodevim-${blinking}-${smooth}.json`, JSON.stringify(results, null, 1));
+  writeFileSync(
+    `${OUT}vscodevim-${blinking}-${smooth}.json`,
+    JSON.stringify(results, null, 1),
+  );
   await stop();
 }
