@@ -262,12 +262,12 @@ export class Context {
       | ReturnType<EventFunction<K>>
       | undefined;
   }
-  waterfall<K extends keyof Events>(
+  pipeline<K extends keyof Events>(
     name: K,
     value: Parameters<EventFunction<K>>[0],
   ): Promise<Parameters<EventFunction<K>>[0]> {
     this.assertLive();
-    return this.runtime.events.waterfall(name, value) as Promise<
+    return this.runtime.events.pipeline(name, value) as Promise<
       Parameters<EventFunction<K>>[0]
     >;
   }

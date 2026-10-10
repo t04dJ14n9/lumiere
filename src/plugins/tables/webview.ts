@@ -70,7 +70,7 @@ function createEnvironment(ctx: Context): TableEnvironment {
     openMenu: (owner, items, point) => {
       let live = true;
       let stop: (() => void | Promise<void>) | undefined;
-      void ctx.waterfall("editor/selectionMenu", items).then((items) => {
+      void ctx.pipeline("editor/selectionMenu", items).then((items) => {
         if (live) {
           stop = ctx.menu.open(owner, items, point, "Table actions");
         }
