@@ -335,10 +335,16 @@ test("Vim carets match the built-in editor's block, line and underline in the re
       await ours(frame, page, "visual", builtins.block!.colour),
     ];
     await page.keyboard.press("Escape");
+    // Insert mode is the editor's own caret, like VSCodeVim's: editor.cursorStyle decides.
+    style("line");
     await page.keyboard.press("i");
     await expect(frame.locator(".mw-editor")).toHaveAttribute(
       "data-caret-mode",
       "insert",
+    );
+    await expect(frame.locator(".mw-editor")).toHaveAttribute(
+      "data-caret-style",
+      "line",
     );
     results.insert = [
       builtins.line!,
