@@ -16,18 +16,23 @@ export type ViewerEngine = PdfEngine<Blob>;
  * The WASM blob, fetched once. `warmWasm` starts the fetch while the host is
  * still sending the PDF, so the engine need not wait for it; a failed fetch
  * is forgotten so the next attempt tries again.
+ *
+ * Lifetime: a webview has one PDFium URL, so only the latest URL is kept (a
+ * different URL replaces the old blob, nothing accumulates), and the cache is
+ * module state that goes with the webview when its panel closes.
  */
-const wasmBlobs = new Map<string, Promise<Blob>>();
+let warmed: { url: string; blob: Promise<Blob> } | undefined;
 export function warmWasm(url: string): Promise<Blob> {
-  let blob = wasmBlobs.get(url);
-  if (!blob) {
-    blob = fetch(url).then(response => {
-      if (!response.ok) throw new Error(`PDFium request failed (${response.status})`);
-      return response.blob();
-    });
-    wasmBlobs.set(url, blob);
-    blob.catch(() => wasmBlobs.delete(url));
-  }
+  if (warmed?.url === url) return warmed.blob;
+  const blob = fetch(url).then(response => {
+    if (!response.ok) throw new Error(`PDFium request failed (${response.status})`);
+    return response.blob();
+  });
+  const entry = { url, blob };
+  warmed = entry;
+  blob.catch(() => {
+    if (warmed === entry) warmed = undefined;
+  });
   return blob;
 }
 
