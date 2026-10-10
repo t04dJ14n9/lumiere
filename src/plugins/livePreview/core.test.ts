@@ -9,7 +9,7 @@ import { Context } from "../../kernel";
 import type { EditorService } from "../editor/api";
 import type { BlockRenderer, LivePreview } from "./api";
 import { livePreviewWebview } from "./webview";
-import { blockIndex, editingDecorations } from "./blocks";
+import { blockIndex, blockDecorations, editingDecorations } from "./blocks";
 import { blockRenderers, revealed } from "./registry";
 import { documentTree } from "./document-tree";
 import { escapeBlock, verticalBlock } from "./motion";
@@ -300,3 +300,27 @@ class TestWidget extends WidgetType {
     throw new Error("Not mounted in a unit test");
   }
 }
+
+test("HTML blocks reveal whole source at every offset, including leading indentation", async () => {
+  const doc = "before\n\n  <div>\ntext\n</div>\n\nafter";
+  const kernel = livePreviewKernel(doc);
+  try {
+    await kernel.root.settled();
+    const decorations = blockDecorations((error) => {
+      throw error;
+    });
+    let state = kernel
+      .state()
+      .update({ effects: StateEffect.appendConfig.of(decorations) }).state;
+    const block = state.field(blockIndex)[0]!;
+    assert.equal(state.field(decorations).size, 1);
+    for (let at = block.from; at <= block.to; at++) {
+      state = state.update({ selection: { anchor: at } }).state;
+      assert.equal(state.field(decorations).size, 0, `caret ${at}`);
+    }
+    state = state.update({ selection: { anchor: doc.length } }).state;
+    assert.equal(state.field(decorations).size, 1);
+  } finally {
+    await kernel.root.dispose();
+  }
+});

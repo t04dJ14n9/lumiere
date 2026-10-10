@@ -89,6 +89,8 @@ export default tseslint.config(
   {
     ignores: [
       // Build output, including the sample plugin's.
+      // Throw-away measurement scripts (not part of the product).
+      "docs/obsidian-measurements/**",
       "**/dist/**",
       ".cache/**",
       "test-results/**",

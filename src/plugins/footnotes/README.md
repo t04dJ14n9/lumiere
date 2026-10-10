@@ -8,8 +8,8 @@ and inside rendered blocks. Selections, Ctrl+A included, keep it rendered;
 only a caret inside its source shows the faint `[^label]` for editing.
 Hovering or focusing it previews the footnote; clicking jumps to the
 definition (an inline footnote puts the caret in itself). A definition shows
-the same number before its text, set a little smaller; the caret on its
-marker shows the faint `[^label]:` source. Insert Footnote adds a reference
+the same number before its text, set a little smaller; a selection touching its
+first line shows the faint `[^label]:` source. Insert Footnote adds a reference
 and definition in one edit.
 
 ## How it works
@@ -20,7 +20,7 @@ inline renderer replaces each reference with a numbered widget unless a caret
 (`md-syntax-mark`). It marks definition lines (`mw-footnote-def`,
 `is-continued` for indented lines) and replaces a definition's `[^label]: `
 with its number (`mw-footnote-number`), or marks the marker
-(`mw-footnote-marker`) while the caret is on it. Inline widgets and
+(`mw-footnote-marker`) while a selection touches the first line. Inline widgets and
 references inside rendered blocks mount the same accessible control.
 Render preprocessing resolves references against the owning note and substitutes
 opaque placeholders; postprocessing mounts controls with pass-owned cleanup.
