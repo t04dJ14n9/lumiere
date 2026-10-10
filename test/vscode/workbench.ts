@@ -89,13 +89,24 @@ export async function openWorkbench(
   await expect(
     page.locator(".tabs-container .tab").filter({ hasText: file }),
   ).toBeVisible();
-  await page.keyboard.press("ControlOrMeta+Shift+p");
-  await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
-  await page
+  const reopen = page
     .locator(".quick-input-list .monaco-list-row")
     .filter({ hasText: "View: Reopen Editor With..." })
-    .first()
-    .click();
+    .first();
+  // The shortcut can be swallowed while the new tab takes the focus: ask again.
+  await expect(async () => {
+    await page.keyboard.press("ControlOrMeta+Shift+p");
+    await page
+      .locator(QUICK_INPUT)
+      .fill(">View: Reopen Editor With", { timeout: 3000 });
+    try {
+      await expect(reopen).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      await page.keyboard.press("Escape");
+      throw error;
+    }
+  }).toPass({ timeout: 30000 });
+  await reopen.click();
 
   await page
     .locator(".quick-input-widget")
