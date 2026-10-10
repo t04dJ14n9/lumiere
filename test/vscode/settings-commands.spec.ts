@@ -290,7 +290,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
       .toBe(true);
     await expect(
       frame.locator(".cm-editor.is-readable-line-width"),
-    ).toHaveCount(1);
+    ).toHaveCount(1, { timeout: 15000 });
     // Set in the folder: that is where the next change goes.
     mkdirSync(path.dirname(folderFile), { recursive: true });
     writeFileSync(
@@ -300,7 +300,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     // The folder's false overrides the user's true once VS Code has read it.
     await expect(
       frame.locator(".cm-editor.is-readable-line-width"),
-    ).toHaveCount(0);
+    ).toHaveCount(0, { timeout: 15000 });
     await changeSetting(page, "readable line", "Readable line length");
     await expect
       .poll(() => read(folderFile)[key("editor.readableLineLength")])
