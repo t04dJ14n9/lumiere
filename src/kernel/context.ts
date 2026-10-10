@@ -38,6 +38,8 @@ export class Context {
   private readonly bound = new Map<unknown, unknown>();
   private live = true;
   private disposing?: Promise<void>;
+  /** Releases started and not yet settled, early ones included. */
+  private readonly releasing = new Set<Promise<void>>();
   private published = false;
   constructor(
     readonly runtime = new Runtime(silentLogger, new Set()),
@@ -97,6 +99,10 @@ export class Context {
   ): Context {
     const { logger = silentLogger, replaceable, rank } = options;
     return new Context(new Runtime(logger, new Set(replaceable), rank));
+  }
+  /** False from the moment `dispose()` starts. */
+  get isLive(): boolean {
+    return this.live;
   }
   assertLive(): void {
     if (!this.live) {
@@ -169,7 +175,8 @@ export class Context {
       const failed = (error: unknown) =>
         this.logger.error("Disposal failed", error);
       try {
-        void Promise.resolve(undo()).catch(failed);
+        // Joined by a teardown still in progress.
+        this.inFlight(Promise.resolve(undo()).then(() => undefined, failed));
       } catch (error) {
         failed(error);
       }
@@ -200,6 +207,8 @@ export class Context {
         let adopt!: (work: Promise<void>) => void;
         releasing = new Promise<void>((resolve) => (adopt = resolve));
         this.held.splice(this.held.indexOf(entry), 1);
+        // Out of `held` but still owned: teardown joins it (R3-1).
+        this.inFlight(releasing);
         adopt(run());
       }
       return releasing;
@@ -253,12 +262,12 @@ export class Context {
       | ReturnType<EventFunction<K>>
       | undefined;
   }
-  waterfall<K extends keyof Events>(
+  pipeline<K extends keyof Events>(
     name: K,
     value: Parameters<EventFunction<K>>[0],
   ): Promise<Parameters<EventFunction<K>>[0]> {
     this.assertLive();
-    return this.runtime.events.waterfall(name, value) as Promise<
+    return this.runtime.events.pipeline(name, value) as Promise<
       Parameters<EventFunction<K>>[0]
     >;
   }
@@ -277,7 +286,18 @@ export class Context {
         this.logger.error("Effect disposal failed", error);
       });
     }
+    // Releases started before this teardown (their callers see their
+    // errors) and late resources undone at once.
+    while (this.releasing.size) {
+      await Promise.allSettled([...this.releasing]);
+    }
     this.bound.clear();
+  }
+  /** Track a release until it settles, so `teardown` can join it. */
+  private inFlight(release: Promise<void>): void {
+    this.releasing.add(release);
+    const forget = () => void this.releasing.delete(release);
+    release.then(forget, forget);
   }
   // Consumers stop (and finish stopping, including those already stopping
   // for another reason) while the resources backing these services still

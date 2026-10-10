@@ -2297,7 +2297,7 @@ Phase 5 is complete: after Phase 4, Codex may start Phase 6.
 ### Phase 4 progress — HTML paste, 2026-10-08
 
 Delivered: default-on HTML conversion with sanitizer, awaited typed
-`paste/transform` waterfall and focused CodeMirror routing, including projected
+`paste/transform` pipeline and focused CodeMirror routing, including projected
 table cells. Plain-text shortcuts, code and property inputs bypass conversion;
 rectangular table paste keeps TSV behavior. Delayed transforms cannot overwrite
 changed text/selections or closed views. Conversion preserves literal escaping,
@@ -2340,7 +2340,7 @@ Checks in order: `pnpm check` **402/402**; browser smoke **14/14**; native smoke
 `docs/checks/phase4-copy-agent-{check,browser,native}.txt`. Smoke suites unchanged.
 Ledger **91/22/2/333/0**, total 448. No lint exceptions.
 Deviations: reusable host selection snapshots belong to core `editor`, ahead of
-the API facade; `editor/selectionMenu` is an awaited shared menu waterfall.
+the API facade; `editor/selectionMenu` is an awaited shared menu pipeline.
 Snapshots use original source offsets/native document versions; the internal
 capture wire still uses normalized offsets/collaboration versions. Untitled
 notes must be saved/reopened before a disk reference is available; text-only copy
