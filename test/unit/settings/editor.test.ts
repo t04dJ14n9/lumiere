@@ -38,18 +38,21 @@ test("editor settings have application defaults and reconfigure without changing
     rightToLeft: false,
     useTabs: true,
     tabSize: 4,
+    // The note's own size: Obsidian's default body size, not editor.fontSize.
+    fontSize: 16,
     // Native editor font settings for Markdown; empty until the host reads them.
     fontFamily: "",
-    fontSize: 0,
     fontWeight: "normal",
     lineHeight: 0,
     letterSpacing: 0,
     fontLigatures: false,
     fontVariations: false,
   });
-  // VS Code's defaults: ligatures off, no variations; no size without a host.
+  // VS Code's defaults: ligatures off, no variations; Obsidian's body size.
   assert.deepEqual(fontDeclarations(settingsExtensions({})), {
+    "--text-size": "16px",
     "--text-weight": "normal",
+    "--line-height": "1.375",
     "--text-features": '"liga" off, "calt" off',
     "--text-variations": "normal",
   });
@@ -257,14 +260,12 @@ test("only Copy Link for Agent remains of the agent commands", async () => {
   }
 });
 
-test("note text follows the native editor font settings for Markdown files, which are not contributed again", async () => {
-  const reader: SettingsReader = {
-    get: <T>(_key: string, fallback?: T) => fallback,
-  };
+test("note text follows the native editor font settings for Markdown files (not its size, which is markdownWorkbench.editor.fontSize)", async () => {
   // What VS Code returns for a Markdown file, [markdown] overrides included.
   const markdown: Record<string, unknown> = {
     "editor.fontFamily": "Fira Code",
-    "editor.fontSize": 18,
+    // Ignored: the note has its own size.
+    "editor.fontSize": 30,
     "editor.fontWeight": "300",
     "editor.lineHeight": 27,
     "editor.letterSpacing": 0.5,
@@ -274,7 +275,11 @@ test("note text follows the native editor font settings for Markdown files, whic
   const native: SettingsReader = {
     get: <T>(key: string) => markdown[key] as T,
   };
-  const editor = readSettings(reader, native).editor!;
+  const own: SettingsReader = {
+    get: <T>(key: string, fallback?: T) =>
+      key === "editor.fontSize" ? (18 as T) : fallback,
+  };
+  const editor = readSettings(own, native).editor!;
   assert.deepEqual(
     [
       editor.fontFamily,
@@ -306,13 +311,35 @@ test("note text follows the native editor font settings for Markdown files, whic
     "1.333333", // round(1.35 × 18) = 24px
   );
   // A hand-edited settings.json with a wrong type does not break the editor.
-  markdown["editor.fontSize"] = "big";
   markdown["editor.fontLigatures"] = 3;
-  const fallback = readSettings(reader, native).editor!;
-  assert.equal(fallback.fontSize, 0);
+  const wrongSize: SettingsReader = {
+    get: <T>(key: string, fallback?: T) =>
+      key === "editor.fontSize" ? ("big" as T) : fallback,
+  };
+  const fallback = readSettings(wrongSize, native).editor!;
+  assert.equal(fallback.fontSize, 16);
   assert.equal(fallback.fontLigatures, false);
-  const generated = await contributions();
-  for (const key of Object.keys(generated.configuration.properties)) {
-    assert.ok(!/\.(font|lineHeight|letterSpacing)/.test(key), key);
-  }
+  const generated: Record<string, unknown> = (await contributions())
+    .configuration.properties;
+  // Only the size is contributed; the other font fields are native settings.
+  assert.deepEqual(
+    Object.keys(generated).filter((key) =>
+      /\.(font|lineHeight|letterSpacing)/.test(key),
+    ),
+    ["markdownWorkbench.editor.fontSize"],
+  );
+  assert.deepEqual(
+    {
+      ...(generated["markdownWorkbench.editor.fontSize"] as object),
+      description: undefined,
+    },
+    {
+      type: "number",
+      minimum: 8,
+      maximum: 48,
+      default: 16,
+      scope: "resource",
+      description: undefined,
+    },
+  );
 });

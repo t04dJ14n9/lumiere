@@ -456,8 +456,8 @@ Both are off by default (owner decision). Turn on
 On by default.
 
 1. Open `Formatting.md` in the workbench and, beside it, with **Open With >
-   Text Editor**, in a light and a dark theme: the numbers use the same font,
-   size, colours (brighter on the caret line), right alignment and gutter
+   Text Editor**, in a light and a dark theme: the numbers use the same font
+   family, the note's own size (`markdownWorkbench.editor.fontSize`), colours (brighter on the caret line), right alignment and gutter
    width, with fold chevrons between numbers and text on hover. Each number
    sits level with its line, including headings.
 2. A rendered block (table, callout, math, diagram) lists the numbers of all
@@ -665,6 +665,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.tabSize` | `4` | integer; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.editor.fontSize` | `16` | number, 8 to 48; with a note open, change it in Settings and confirm the body, headings (1.618, 1.462, 1.318, 1.188, 1.076 and 1 times the body), tables, code, properties, footnotes and line numbers all rescale at once without reloading, line numbers stay level with their lines, and `editor.fontSize` has no effect on the note; then reset. |
 | `markdownWorkbench.folding.heading` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.folding.indent` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.linkUpdates.mode` | `"prompt"` | prompt / always / never; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

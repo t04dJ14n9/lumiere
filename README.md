@@ -41,6 +41,11 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   when the editor's own chat is the only agent, or when
   `markdownWorkbench.copyLinkForAgent.target` picks one. Plain Ctrl/Cmd+C
   copies text.
+- `markdownWorkbench.editor.fontSize` (8 to 48, default 16, Obsidian's body
+  size) sets the note text size, replacing `editor.fontSize` for notes;
+  headings, tables, code, properties, footnotes and line numbers scale with
+  it, live. The font family, weight, line height and ligatures still follow
+  `editor.*` for Markdown files.
 - `markdownWorkbench.preset: "minimal"` loads only the core editor.
 - `markdownWorkbench.debug.logging` writes debug lines to the **Markdown
   Workbench** output channel.

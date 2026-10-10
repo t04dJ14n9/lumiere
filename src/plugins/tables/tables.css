@@ -83,7 +83,7 @@
   opacity: 1;
 }
 .table-controls button {
-  font-size: 11px;
+  font-size: 0.6875em;
   color: var(--muted);
   background: transparent;
   border: 0;
@@ -91,7 +91,7 @@
 }
 .table-message {
   color: var(--vscode-errorForeground, #e88);
-  font-size: 13px;
+  font-size: 0.8125em;
 }
 #app .hybrid-table .cm-editor {
   height: auto;

@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fontVariables, lineHeightPixels } from "./font";
+import { fontSize, fontVariables, lineHeightPixels } from "./font";
 import type { FontSettings } from "./font";
 
 const base: FontSettings = {
   fontFamily: "",
-  fontSize: 0,
+  fontSize: 16,
   fontWeight: "normal",
   lineHeight: 0,
   letterSpacing: 0,
@@ -13,9 +13,11 @@ const base: FontSettings = {
   fontVariations: false,
 };
 
-test("without host settings only VS Code's ligature and variation defaults apply", () => {
+test("without host settings the size is Obsidian's 16px and VS Code's ligature and variation defaults apply", () => {
   assert.deepEqual(fontVariables(base), {
+    "--text-size": "16px",
     "--text-weight": "normal",
+    "--line-height": "1.375",
     "--text-features": '"liga" off, "calt" off',
     "--text-variations": "normal",
   });
@@ -69,11 +71,9 @@ test("line height follows VS Code: automatic at 0, a multiplier below 8, otherwi
     fontVariables({ ...base, fontSize: 16, lineHeight: 26 })["--line-height"],
     "1.625",
   );
-  // Without a known size (no host), only a multiplier can apply.
-  assert.equal(fontVariables(base)["--line-height"], undefined);
   assert.equal(
     fontVariables({ ...base, lineHeight: 1.6 })["--line-height"],
-    "1.6",
+    "1.625", // 1.6 × 16 = 25.6px, a whole 26px
   );
 });
 
@@ -86,12 +86,12 @@ test("size, weight, spacing, ligatures and variations map like the text editor",
     fontLigatures: "'ss01', 'cv02'",
     fontVariations: true,
   });
-  assert.equal(vars["--text-size"], "100px");
+  assert.equal(vars["--text-size"], "48px");
   assert.equal(vars["--text-weight"], "bold");
   assert.equal(vars["--text-letter-spacing"], "20px");
   assert.equal(vars["--text-features"], "'ss01', 'cv02'");
   assert.equal(vars["--text-variations"], '"wght" 700');
-  assert.equal(fontVariables({ ...base, fontSize: 3 })["--text-size"], "6px");
+  assert.equal(fontVariables({ ...base, fontSize: 3 })["--text-size"], "8px");
   assert.equal(
     fontVariables({ ...base, fontLigatures: true })["--text-features"],
     '"liga" on, "calt" on',
@@ -106,4 +106,36 @@ test("size, weight, spacing, ligatures and variations map like the text editor",
     fontVariables({ ...base, fontWeight: "heavy" })["--text-weight"],
     undefined,
   );
+});
+
+test("fontSize is the note's own setting: 16 by default, 8 to 48, wrong values fall back", () => {
+  assert.equal(fontSize.parse(undefined), 16);
+  assert.equal(fontSize.parse(20), 20);
+  assert.equal(fontSize.parse(8), 8);
+  assert.equal(fontSize.parse(48), 48);
+  for (const bad of [7, 49, -1, "big", null, Number.NaN]) {
+    assert.equal(fontSize.parse(bad), 16, String(bad));
+  }
+  assert.deepEqual(
+    { ...fontSize.toJSONSchema(), description: undefined },
+    {
+      type: "number",
+      minimum: 8,
+      maximum: 48,
+      default: 16,
+      description: undefined,
+    },
+  );
+});
+
+test("the size scales the line height ratio's pixels, not the ratio", () => {
+  for (const size of [8, 12, 16, 24, 48]) {
+    const ratio = Number(
+      fontVariables({ ...base, fontSize: size })["--line-height"],
+    );
+    assert.ok(
+      Math.abs(ratio * size - lineHeightPixels(0, size, false)) < 1e-4,
+      `${size}px`,
+    );
+  }
 });

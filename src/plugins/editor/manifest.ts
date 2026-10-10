@@ -1,5 +1,5 @@
 import { Schema } from "../../kernel";
-import { fontFields, fontNativeKeys } from "./font";
+import { fontFields, fontNativeKeys, fontSize } from "./font";
 export const config = Schema.object({
   defaultMode: Schema.union(["livePreview", "source"]).default("livePreview"),
   readableLineLength: Schema.boolean().default(false),
@@ -22,6 +22,7 @@ export const config = Schema.object({
     },
     { type: "integer", minimum: 1, maximum: 16 },
   ).default(4),
+  fontSize,
   // VS Code's editor font settings for Markdown files (native, not ours).
   ...fontFields,
 });

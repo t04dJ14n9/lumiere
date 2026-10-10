@@ -225,6 +225,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.tabSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.editor.fontSize | Obsidian 1.14.4 default body 16px; H1-H6 1.618/1.462/1.318/1.188/1.076/1em (docs/obsidian-measurements/font-size-results-16.json) | not manually observed | Browser and real VS Code specs: body size equals the setting, heading ratios, line-number alignment | matches at the default |
 | Setting: markdownWorkbench.folding.heading | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.folding.indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.linkUpdates.mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

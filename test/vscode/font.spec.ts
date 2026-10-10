@@ -5,7 +5,6 @@ import path from "node:path";
 import { paths, readState } from "./state";
 import {
   closeBrowser,
-  command,
   openWorkbench,
   reopenWith,
   workbenchPage,
@@ -80,9 +79,9 @@ async function editorFrame(page: Page): Promise<Frame> {
   throw new Error("No Markdown Workbench frame");
 }
 
-// The built-in text editor honours [markdown] font overrides; the note used
-// to keep VS Code's global editor font, line height and ligatures instead.
-test("note text uses the same font settings as the built-in text editor for Markdown", async () => {
+// The built-in text editor honours [markdown] font overrides; the note follows
+// them for everything but the size, which is its own setting.
+test("note text uses the same font settings as the built-in text editor for Markdown, except the size", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
@@ -93,9 +92,11 @@ test("note text uses the same font settings as the built-in text editor for Mark
     JSON.stringify({
       ...(JSON.parse(original) as object),
       "editor.fontSize": 13,
+      "markdownWorkbench.editor.fontSize": 18,
       "[markdown]": {
         "editor.fontFamily": "DejaVu Sans Mono",
-        "editor.fontSize": 18,
+        // The built-in editor uses this; the note ignores it.
+        "editor.fontSize": 30,
         "editor.fontWeight": "300",
         "editor.lineHeight": 30,
         "editor.letterSpacing": 0.5,
@@ -120,7 +121,8 @@ test("note text uses the same font settings as the built-in text editor for Mark
     const builtIn = await textEditorFont(page);
     expect(firstFamily(workbench.family)).toBe(firstFamily(builtIn.family));
     expect(firstFamily(builtIn.family)).toBe("DejaVu Sans Mono");
-    expect(workbench.size).toBe(builtIn.size);
+    expect(builtIn.size).toBe("30px");
+    expect(workbench.size).toBe("18px");
     expect(workbench.weight).toBe(builtIn.weight);
     expect(workbench.lineHeight).toBeCloseTo(builtIn.lineHeight, 1);
     expect(workbench.letterSpacing).toBe(builtIn.letterSpacing);
@@ -168,8 +170,9 @@ async function workbenchLines(frame: Frame) {
 }
 
 // With editor.lineHeight at its default (0) the note uses VS Code's own
-// automatic line height (round(1.35 × size), 1.5 on macOS), not 1.5.
-test("at the default line height the note's lines are as tall as the built-in editor's", async () => {
+// automatic line height rule (round(1.35 × size), 1.5 on macOS), applied to
+// the note's own size, not 1.5.
+test("at the default line height the note's lines follow VS Code's rule at the note's size, and line numbers stay level", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
@@ -179,44 +182,26 @@ test("at the default line height the note's lines are as tall as the built-in ed
   try {
     const page = workbenchPage(browser);
     await openWorkbench(page);
-    // The same note beside it in the built-in text editor.
-    await command(page, "View: Split Editor");
-    await reopenWith(page, "Text Editor");
-    await expect(
-      page.locator(".monaco-editor .view-line").first(),
-    ).toBeVisible();
-    // Splitting moves the webview into a new frame.
-    let frame: Frame | undefined;
-    await expect
-      .poll(async () => {
-        frame = await editorFrame(page).catch(() => undefined);
-        return Boolean(frame);
-      })
-      .toBe(true);
+    const frame = await editorFrame(page);
     for (const size of [12, 14, 16, 20]) {
       writeFileSync(
         settingsFile,
         JSON.stringify({
           ...(JSON.parse(original) as object),
-          "editor.fontSize": size,
+          "markdownWorkbench.editor.fontSize": size,
         }),
       );
       await expect
-        .poll(async () => (await workbenchLines(frame!)).size)
+        .poll(async () => (await workbenchLines(frame)).size)
         .toBe(`${size}px`);
-      await expect
-        .poll(async () => (await textEditorFont(page)).size)
-        .toBe(`${size}px`);
-      const builtIn = (await textEditorFont(page)).lineHeight;
-      const lines = await workbenchLines(frame!);
-
-      expect(builtIn, `${size}px built-in`).toBe(
-        Math.round((process.platform === "darwin" ? 1.5 : 1.35) * size),
+      const expected = Math.round(
+        (process.platform === "darwin" ? 1.5 : 1.35) * size,
       );
-      expect(lines.text, `${size}px text`).toBeCloseTo(builtIn, 1);
-      expect(lines.code, `${size}px code`).toBeCloseTo(builtIn, 1);
+      const lines = await workbenchLines(frame);
+      expect(lines.text, `${size}px text`).toBeCloseTo(expected, 1);
+      expect(lines.code, `${size}px code`).toBeCloseTo(expected, 1);
       // The line number is level with its line and as tall.
-      expect(lines.number, `${size}px number`).toBeCloseTo(builtIn, 1);
+      expect(lines.number, `${size}px number`).toBeCloseTo(expected, 1);
       expect(lines.numberTop, `${size}px number top`).toBeCloseTo(0, 1);
     }
   } finally {

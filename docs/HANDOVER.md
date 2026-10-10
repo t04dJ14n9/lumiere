@@ -205,7 +205,7 @@ completion and Phase 8 records) first.
   | Note property | Follows | Notes |
   | --- | --- | --- |
   | Text and code family | `editor.fontFamily` (`[markdown]` too) | `monospace` fallback added |
-  | Text and code size | `editor.fontSize` | code no longer smaller |
+  | Text and code size | `markdownWorkbench.editor.fontSize` (default 16, Obsidian's body size); `editor.fontSize` no longer applies to notes | code keeps the text's size; headings, tables, properties, footnotes, line numbers are relative to it |
   | Weight | `editor.fontWeight` | bold and headings stay bold |
   | Line height | `editor.lineHeight` | default 0 is the text editor's own line height (1a06f65); set values honoured |
   | Letter spacing | `editor.letterSpacing` | |

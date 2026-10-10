@@ -22,7 +22,7 @@
   border-radius: 3px;
 }
 .property-count {
-  font-size: 11px;
+  font-size: 0.6875em;
   font-weight: normal;
   margin-left: 8px;
 }
@@ -133,7 +133,7 @@
 .property-message,
 .property-type-warning {
   color: var(--vscode-errorForeground, #e88);
-  font-size: 13px;
+  font-size: 0.8125em;
 }
 .property-message:empty {
   display: none;
