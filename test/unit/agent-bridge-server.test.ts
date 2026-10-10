@@ -204,3 +204,24 @@ test('the controller disposed while the bridge runs waits for it to stop', async
   assert.deepEqual(vscode.outstanding(), []);
   assert.ok(lines.includes('info Agent bridge stopped'), lines.join('\n'));
 });
+
+test('a registration error quoting the token is scrubbed from the startup error and every log line', async () => {
+  const register = vscode.lm.registerMcpServerDefinitionProvider;
+  let token = '';
+  vscode.lm.registerMcpServerDefinitionProvider = ((_id: string, provider: { provideMcpServerDefinitions(): vscode.McpHttpServerDefinition[] }) => {
+    const [definition] = provider.provideMcpServerDefinitions();
+    token = definition!.headers.Authorization!.replace('Bearer ', '');
+    // An adapter that quotes what it was given.
+    throw new Error(`rejected ${definition!.headers.Authorization}`);
+  }) as never;
+  try {
+    const error = await startAgentBridge(options()).then(() => undefined, (failure: unknown) => failure);
+    assert.ok(token.length === 48, 'the adapter saw the token');
+    assert.ok(error instanceof Error);
+    assert.ok(!error.message.includes(token), error.message);
+    assert.match(error.message, /rejected Bearer <token>/);
+    assert.ok(lines.every(line => !line.includes(token)), lines.join('\n'));
+  } finally {
+    vscode.lm.registerMcpServerDefinitionProvider = register;
+  }
+});

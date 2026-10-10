@@ -143,6 +143,23 @@ export const landscapePdf = () => plainPdf(4, { width: 400, height: 300 }, 'Land
 export const ROTATIONS = [0, 90, 180, 270];
 export const rotatedPdf = () => plainPdf(4, { width: 300, height: 400 }, 'Rotated', ROTATIONS);
 
+/** A long PDF of text pages, for load-time measurements. */
+export function largePdf(pageCount = 600) {
+  const pdf = new PdfWriter();
+  const catalog = pdf.reserve();
+  const pagesNode = pdf.reserve();
+  const font = pdf.add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const pages = Array.from({ length: pageCount }, (_, index) => {
+    const lines = Array.from({ length: 30 }, (_, line) =>
+      `BT /F1 11 Tf 40 ${PAGE_SIZE.height - 40 - line * 11} Td (Page ${index + 1} line ${line + 1}: the quick brown fox jumps over the lazy dog) Tj ET`);
+    const contents = pdf.add(stream(lines.join('\n')));
+    return pdf.add(`<< /Type /Page /Parent ${pagesNode} 0 R /MediaBox [0 0 ${PAGE_SIZE.width} ${PAGE_SIZE.height}] /Resources << /Font << /F1 ${font} 0 R >> >> /Contents ${contents} 0 R >>`);
+  });
+  pdf.set(pagesNode, `<< /Type /Pages /Kids [${pages.map(n => `${n} 0 R`).join(' ')}] /Count ${pages.length} >>`);
+  pdf.set(catalog, `<< /Type /Catalog /Pages ${pagesNode} 0 R >>`);
+  return pdf.toBuffer(catalog);
+}
+
 export const GENERATED = path.join(path.dirname(new URL(import.meta.url).pathname), 'generated');
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
@@ -153,5 +170,6 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   writeFileSync(path.join(GENERATED, 'five.pdf'), fivePagePdf());
   writeFileSync(path.join(GENERATED, 'landscape.pdf'), landscapePdf());
   writeFileSync(path.join(GENERATED, 'rotated.pdf'), rotatedPdf());
+  writeFileSync(path.join(GENERATED, 'large.pdf'), largePdf());
   console.log(`Wrote test PDFs to ${GENERATED}`);
 }
