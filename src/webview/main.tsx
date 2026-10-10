@@ -19,6 +19,7 @@ import '@vscode/codicons/dist/codicon.css';
 import './styles/base.css';
 import './styles/toolbar.css';
 import './styles/page.css';
+import './styles/view-controls.css';
 
 performance.mark('pdf:main');
 const container = document.getElementById('root');

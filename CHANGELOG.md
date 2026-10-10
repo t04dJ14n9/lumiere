@@ -2,8 +2,33 @@
 
 ## Unreleased
 
+- Zoom from the buttons, keys and menu keeps the centre of the viewer in place
+  like Preview, also when the page grows wider than the viewer (the scroll the
+  zoom asked for was lost to a page not yet laid out, and in page-by-page mode
+  clamped away); spec `zoom-anchor.spec.ts`.
+
+- ⌥←/↑/→/↓ (macOS) and Ctrl+Alt+←/↑/→/↓ (Windows, Linux) turn the page keeping the
+  zoom and the place in the page, as Preview does; commands
+  `PDF: Previous/Next Page, Keeping Place`. Scoped and opt-out like the other
+  shortcuts (`vscodeEmbedPdf.keyboardShortcuts`).
+
+- Fix: pages stored with a `/Rotate` entry (slides saved sideways, scans) were
+  drawn sideways and in a box of the wrong shape: EmbedPDF opens documents with
+  rotation normalised and leaves the turn to the viewer, which never made it.
+  Such pages are now turned to the way the PDF says, with search hits, links
+  and the text selection on the page; spec `page-rotation.spec.ts`.
+
+- New plugin `pdfLookUp` (macOS only, `vscodeEmbedPdf.lookUp.enabled`): Look Up in
+  the right-click menu, and a force click, open the word under the pointer in
+  the Dictionary app. Native three-finger-tap Look Up is not possible on
+  image-drawn pages; see docs/look-up.md.
+- Smooth zoom: a trackpad pinch (Ctrl+wheel with small deltas) scales
+  continuously about the pointer with a live preview and one crisp render when
+  it settles; zoom buttons, keys and wheel notches animate from the first frame
+  and carry on from the picture on screen when pressed again mid-animation.
+
 - Review fixes (round 1), internal: the extension is a set of plugins
-  (`pdf`, `pdfToolbar`, `pdfOutline`, `pdfRegions`, `agentBridge`) started by
+  (`pdf`, `pdfToolbar`, `pdfOutline`, `pdfRegions`, `pdfLookUp`, `agentBridge`) started by
   a runtime that rolls back a plugin that fails to start and stops plugins
   in reverse order; tests check every plugin leaves nothing registered when
   it stops.
@@ -34,7 +59,7 @@
   items) and renamed Ask Agent to **Copy Link for Agent**
   (`vscodeEmbedPdf.copyLinkForAgent`, setting
   `vscodeEmbedPdf.copyLinkForAgent.target`; no migration). It copies the
-  same text, and ⌘C / Ctrl+C or Copy text copies plain text.
+  same text, and ⌘C / Ctrl+C copies the selected text as plain text (the Copy text button is removed).
 - Copy Link for Agent does not guess the agent: `auto` opens a chat only when
   the editor's own chat is the only agent installed, otherwise it copies and
   asks you to paste. `vscodeEmbedPdf.copyLinkForAgent.target` picks `cursor`,

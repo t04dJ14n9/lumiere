@@ -90,3 +90,11 @@
 .selection-menu button:hover {
   filter: brightness(1.15);
 }
+
+/* A page with its own /Rotate: the layers (unrotated) are turned inside the box. */
+.page-rotor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}

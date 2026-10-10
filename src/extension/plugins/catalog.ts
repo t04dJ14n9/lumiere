@@ -6,11 +6,13 @@
  *   pdf          the viewer: custom editor, open editors, page/zoom/find, Open Location
  *   pdfToolbar   where the controls are: status bar entries, the mode setting
  *   pdfOutline   the PDF Outline view in the Explorer
+ *   pdfLookUp    macOS Look Up: a force click or the context menu opens the Dictionary
  *   pdfRegions   PNG snapshots of selected regions, for agents
  *   agentBridge  Copy Link for Agent, the AgentHandoff service, the opt-in MCP server
  */
 import { agentBridgePlugin } from './agentBridge/plugin';
 import { pdfPlugin } from './pdf/plugin';
+import { pdfLookUpPlugin } from './pdfLookUp/plugin';
 import { pdfOutlinePlugin } from './pdfOutline/plugin';
 import { pdfRegionsPlugin } from './pdfRegions/plugin';
 import { pdfToolbarPlugin } from './pdfToolbar/plugin';
@@ -21,5 +23,6 @@ export const plugins: readonly PluginDefinition<PdfServices>[] = [
   pdfToolbarPlugin,
   pdfOutlinePlugin,
   pdfRegionsPlugin,
+  pdfLookUpPlugin,
   agentBridgePlugin,
 ];

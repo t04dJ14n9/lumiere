@@ -189,6 +189,8 @@ test('keyboard shortcuts page, zoom, fit, find and pick the tool while the PDF h
   await focusViewer(page, viewer, 9);
   await page.keyboard.press(`${modifier}+Alt+r`);
   await expect.poll(() => tool(viewer)).toBe('region');
+  // The command returns the focus to the viewer; Escape goes there once it has it.
+  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
   await page.keyboard.press('Escape');
   await expect.poll(() => tool(viewer)).toBe('text');
 

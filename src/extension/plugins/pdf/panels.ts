@@ -1,10 +1,16 @@
-import * as vscode from 'vscode';
-import { DEFAULT_TOOLBAR_SETTINGS, type ToolbarSettings } from '../../../shared/toolbar-settings';
-import type { PdfPanel, PluginMessage } from './panel';
+import * as vscode from "vscode";
+import {
+  DEFAULT_TOOLBAR_SETTINGS,
+  type ToolbarSettings,
+} from "../../../shared/toolbar-settings";
+import type { PdfPanel, PluginMessage } from "./panel";
 
-export const VIEW_TYPE = 'vscodeEmbedPdf.viewer';
+export const VIEW_TYPE = "vscodeEmbedPdf.viewer";
 
-type Handler<T extends PluginMessage['type']> = (panel: PdfPanel, message: Extract<PluginMessage, { type: T }>) => unknown;
+type Handler<T extends PluginMessage["type"]> = (
+  panel: PdfPanel,
+  message: Extract<PluginMessage, { type: T }>,
+) => unknown;
 type AnyHandler = (panel: PdfPanel, message: PluginMessage) => unknown;
 
 /**
@@ -21,7 +27,10 @@ type AnyHandler = (panel: PdfPanel, message: PluginMessage) => unknown;
  */
 export class PdfPanels implements vscode.Disposable {
   private readonly panels = new Set<PdfPanel>();
-  private readonly panelSubscriptions = new Map<PdfPanel, vscode.Disposable[]>();
+  private readonly panelSubscriptions = new Map<
+    PdfPanel,
+    vscode.Disposable[]
+  >();
   private current: PdfPanel | undefined;
   private readonly changed = new vscode.EventEmitter<void>();
   /** Fires when the active panel changes, or its outline, selection or view does. */
@@ -29,7 +38,7 @@ export class PdfPanels implements vscode.Disposable {
   private readonly opened = new vscode.EventEmitter<PdfPanel>();
   /** Fires when an editor opens. */
   readonly onDidOpen = this.opened.event;
-  private readonly handlers = new Map<PluginMessage['type'], AnyHandler>();
+  private readonly handlers = new Map<PluginMessage["type"], AnyHandler>();
   private toolbar: () => ToolbarSettings = () => DEFAULT_TOOLBAR_SETTINGS;
   private readonly disposables: vscode.Disposable[] = [
     this.changed,
@@ -48,8 +57,12 @@ export class PdfPanels implements vscode.Disposable {
   }
 
   /** Handle a viewer message type (for as long as the returned disposable lives). */
-  handle<T extends PluginMessage['type']>(type: T, handler: Handler<T>): vscode.Disposable {
-    if (this.handlers.has(type)) throw new Error(`A plugin already handles ${type} messages`);
+  handle<T extends PluginMessage["type"]>(
+    type: T,
+    handler: Handler<T>,
+  ): vscode.Disposable {
+    if (this.handlers.has(type))
+      throw new Error(`A plugin already handles ${type} messages`);
     const entry = handler as AnyHandler;
     this.handlers.set(type, entry);
     return new vscode.Disposable(() => {
@@ -65,7 +78,8 @@ export class PdfPanels implements vscode.Disposable {
   provideViewerToolbar(settings: () => ToolbarSettings): vscode.Disposable {
     this.toolbar = settings;
     return new vscode.Disposable(() => {
-      if (this.toolbar === settings) this.toolbar = () => DEFAULT_TOOLBAR_SETTINGS;
+      if (this.toolbar === settings)
+        this.toolbar = () => DEFAULT_TOOLBAR_SETTINGS;
     });
   }
 
@@ -90,14 +104,20 @@ export class PdfPanels implements vscode.Disposable {
   }
 
   /** Wait (briefly) for the editor opened for `uri` to register. */
-  async waitFor(uri: vscode.Uri, timeoutMs = 5_000): Promise<PdfPanel | undefined> {
+  async waitFor(
+    uri: vscode.Uri,
+    timeoutMs = 5_000,
+  ): Promise<PdfPanel | undefined> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      const panel = this.active?.uri.toString() === uri.toString()
-        ? this.active
-        : [...this.panels].find(candidate => candidate.uri.toString() === uri.toString());
+      const panel =
+        this.active?.uri.toString() === uri.toString()
+          ? this.active
+          : [...this.panels].find(
+              (candidate) => candidate.uri.toString() === uri.toString(),
+            );
       if (panel) return panel;
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
     return undefined;
   }
@@ -113,7 +133,8 @@ export class PdfPanels implements vscode.Disposable {
   }
 
   private forget(panel: PdfPanel): void {
-    for (const subscription of this.panelSubscriptions.get(panel) ?? []) subscription.dispose();
+    for (const subscription of this.panelSubscriptions.get(panel) ?? [])
+      subscription.dispose();
     this.panelSubscriptions.delete(panel);
     this.panels.delete(panel);
     panel.dispose();
@@ -129,10 +150,17 @@ export class PdfPanels implements vscode.Disposable {
     const group = vscode.window.tabGroups.activeTabGroup;
     const input = group.activeTab?.input;
     let next: PdfPanel | undefined;
-    if (input instanceof vscode.TabInputCustom && input.viewType === VIEW_TYPE) {
-      const candidates = [...this.panels].filter(panel =>
-        panel.uri.toString() === input.uri.toString() && panel.webviewPanel.viewColumn === group.viewColumn);
-      next = candidates.find(panel => panel.webviewPanel.active) ?? candidates[0];
+    if (
+      input instanceof vscode.TabInputCustom &&
+      input.viewType === VIEW_TYPE
+    ) {
+      const candidates = [...this.panels].filter(
+        (panel) =>
+          panel.uri.toString() === input.uri.toString() &&
+          panel.webviewPanel.viewColumn === group.viewColumn,
+      );
+      next =
+        candidates.find((panel) => panel.webviewPanel.active) ?? candidates[0];
     }
     if (next === this.current) return;
     this.current = next;
@@ -141,16 +169,59 @@ export class PdfPanels implements vscode.Disposable {
 
   private publish(): void {
     const panel = this.current;
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.pdfActive', Boolean(panel));
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.hasSelection', Boolean(panel?.selection));
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.outlineLoading', Boolean(panel && !panel.outline));
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.pdfActive",
+      Boolean(panel),
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.hasSelection",
+      Boolean(panel?.selection),
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.outlineLoading",
+      Boolean(panel && !panel.outline),
+    );
     // For the editor title actions: which fit and tool buttons to show, and
     // whether there is a page to go back or forward to.
     const view = panel?.view;
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.fit', view?.fit ?? '');
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.tool', view?.tool ?? 'text');
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.canGoBack', Boolean(view && view.page > 1));
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.canGoForward', Boolean(view && view.page < view.pageCount));
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.fit",
+      view?.fit ?? "",
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.tool",
+      view?.tool ?? "text",
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.pageLayout",
+      view?.pageLayout ?? "single",
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.scrollMode",
+      view?.scrollMode ?? "continuous",
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.scrollDirection",
+      view?.scrollDirection ?? "vertical",
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.canGoBack",
+      view?.canGoBack ?? false,
+    );
+    void vscode.commands.executeCommand(
+      "setContext",
+      "vscodeEmbedPdf.canGoForward",
+      view?.canGoForward ?? false,
+    );
     this.changed.fire();
   }
 }

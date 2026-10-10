@@ -11,13 +11,24 @@ is the only agent installed (or you pick one), that chat opens with it.
 
 ## Features
 
-- **Viewer.** Continuous scrolling, page and zoom controls, fit width and fit
-  page, Ctrl/⌘+wheel and pinch zoom, find in PDF (⌘F / Ctrl+F), internal links and web links.
+- **Viewer.** Single pages or two-page spreads (1–2, 3–4, or a cover alone
+  followed by 2–3, 4–5), continuous or page-by-page scrolling, vertical and
+  horizontal reading, page and zoom controls, fit width, fit page and actual size (100%),
+  Ctrl/⌘+wheel and pinch zoom, find in PDF (⌘F / Ctrl+F), internal links and web links.
   When the file changes on disk (a rebuilt paper), the viewer reloads at the
   same page and zoom.
+- **View controls.** A compact **View** menu in slim and floating toolbars,
+  and a View picker in the editor title/status bar, selects zoom, layout,
+  scrolling mode and direction. Saved choices and reading position return
+  when a PDF reopens. Next/previous moves by spreads in two-page layouts;
+  go to page opens its containing spread, and fit modes measure the whole spread.
+  Smooth scrolling follows `editor.smoothScrolling`,
+  with a PDF setting to override it, and respects reduced motion. See
+  [View controls](docs/view-controls.md) for settings, commands and native
+  EmbedPDF support.
 - **Controls in VS Code's own UI.** By default the viewer has no toolbar of
   its own: find, zoom, fit and the selection tool are buttons in the editor
-  title bar, and the page and zoom are in the status bar. Click **Page 4 / 15**
+  title bar, and the page, zoom and **View** are in the status bar. Click **Page 4 / 15**
   to go to a page, or the zoom to pick one (or type one, such as `140`). See
   [Toolbar and shortcuts](#toolbar-and-shortcuts) for the other layouts.
 - **Select Region tool.** Draws a region even over text (a paragraph with its
@@ -27,8 +38,8 @@ is the only agent installed (or you pick one), that chat opens with it.
 - **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   button next to the selection, the right-click menu, the editor title
-  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C (or **Copy text** next
-  to a text selection) copies just the text. There is no separate Copy for
+  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C copies just the selected
+  text (there is no Copy text button). There is no separate Copy for
   Agent or Ask Agent: this one action always copies, and opens a chat only
   as described below.
 
@@ -52,6 +63,7 @@ is the only agent installed (or you pick one), that chat opens with it.
   sits in the **…** (More Actions) menu while something is selected. To pin
   it to the title bar, open that menu, choose **Configure Icon Visibility**
   and tick it.
+
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
 
@@ -63,37 +75,41 @@ is the only agent installed (or you pick one), that chat opens with it.
 Toolbar Location…** (also in the editor's **…** menu) switches it, and every
 open PDF follows at once.
 
-| Mode | Controls |
-| --- | --- |
-| `chrome` (default) | Editor title buttons (find, zoom out and in, fit page or width, Select Region / Select Text) and status bar entries: the page and the zoom, which open Go to Page and a zoom picker. |
-| `slim` | A slim bar along the top of the viewer, with every control. |
-| `floating` | A bar over the pages, docked to the middle of an edge. Drag its grip to another edge, or focus the grip and press an arrow key; the edge is remembered for every PDF. It fades while the pointer rests. |
-| `none` | No controls: keyboard shortcuts, the right-click menu, the **…** menu and the command palette. |
+| Mode               | Controls                                                                                                                                                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chrome` (default) | Editor title buttons (find, zoom out and in, fit page or width, Select Region / Select Text, View) and status bar entries for the page, zoom and View. Click them to open Go to Page, the zoom picker or view choices. |
+| `slim`             | A slim bar along the top of the viewer, with every control.                                                                                                                                                            |
+| `floating`         | A bar over the pages, docked to the middle of an edge. Drag its grip to another edge, or focus the grip and press an arrow key; the edge is remembered for every PDF. It fades while the pointer rests.                |
+| `none`             | No controls: keyboard shortcuts, the right-click menu, the **…** menu and the command palette.                                                                                                                         |
 
-| Zoom picker (`chrome`) | Slim bar, light theme | Floating bar |
-| --- | --- | --- |
+| Zoom picker (`chrome`)                              | Slim bar, light theme                           | Floating bar                                           |
+| --------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------ |
 | ![Zoom picker](docs/images/toolbar-zoom-picker.png) | ![Slim bar](docs/images/toolbar-slim-light.png) | ![Floating bar](docs/images/toolbar-floating-dark.png) |
 
 Every action is also a **PDF:** command with a shortcut, active while a PDF
 editor has focus (not in a text field, the side bar or the panel):
 
-| Action | Windows / Linux | macOS |
-| --- | --- | --- |
-| Previous / next page | Alt+PageUp / Alt+PageDown | ⌥PageUp / ⌥PageDown |
-| Go to page… | Ctrl+G | ⌃G |
-| Zoom in / out | Ctrl+= / Ctrl+- | ⌘= / ⌘- |
-| Pick a zoom… | click the status bar zoom | |
-| Fit width | Ctrl+0 | ⌘0 |
-| Fit page | Ctrl+Alt+0 | ⌥⌘0 |
-| Find in PDF | Ctrl+F | ⌘F |
-| Toggle the PDF Outline | Ctrl+Alt+O | ⌃⌘O |
-| Select Text tool | Ctrl+Alt+T | ⌃⌘T |
-| Select Region tool | Ctrl+Alt+R | ⌃⌘R |
+| Action                 | Windows / Linux           | macOS               |
+| ---------------------- | ------------------------- | ------------------- |
+| Previous / next page   | Alt+PageUp / Alt+PageDown | ⌥PageUp / ⌥PageDown |
+| Previous / next page, keeping the zoom and the place in the page | Ctrl+Alt+←/↑ and Ctrl+Alt+→/↓ | ⌥←/↑ and ⌥→/↓ |
+| Go to page…            | Ctrl+G                    | ⌃G                  |
+| Zoom in / out          | Ctrl+= / Ctrl+-           | ⌘= / ⌘-             |
+| Pick a zoom…           | click the status bar zoom |                     |
+| Fit width              | Ctrl+0                    | ⌘0                  |
+| Fit page               | Ctrl+Alt+0                | ⌥⌘0                 |
+| Find in PDF            | Ctrl+F                    | ⌘F                  |
+| Toggle the PDF Outline | Ctrl+Alt+O                | ⌃⌘O                 |
+| Select Text tool       | Ctrl+Alt+T                | ⌃⌘T                 |
+| Select Region tool     | Ctrl+Alt+R                | ⌃⌘R                 |
+
+⌥Arrow on macOS is what Preview does to turn pages keeping the zoom (confirmed by the user, not by Apple documentation). Plain Alt+←/→ stay VS Code's Go Back / Forward, which is why Windows and Linux use Ctrl+Alt+Arrow. The plain arrow keys pan a zoomed page and turn it at its edge; they go to the top of the next page.
 
 While a PDF has focus, these take over the editor-wide meanings of the same
-keys (Ctrl+G is Go to Line elsewhere, Ctrl+0 focuses the side bar). Some
-desktops keep Ctrl+Alt+T for opening a terminal; rebind it in **Keyboard
-Shortcuts** if so.
+keys (Ctrl+G is Go to Line elsewhere, Ctrl+0 focuses the side bar, Ctrl+= zooms
+the window). Set `vscodeEmbedPdf.keyboardShortcuts` to `false` to leave every key
+to VS Code (the **PDF:** commands remain, unbound, for **Keyboard Shortcuts**).
+Some desktops keep Ctrl+Alt+T for opening a terminal; rebind it there if so.
 
 **In Cursor**, the editor title bar keeps extension buttons in its **…**
 menu, so the viewer leaves its title buttons out (the menu lists every
@@ -102,6 +118,14 @@ out and in, and find buttons. `vscodeEmbedPdf.toolbar.statusBarButtons`
 (`auto`, `always`, `never`) changes that, in either editor.
 
 ![Cursor: page, zoom and find in the status bar](docs/images/toolbar-cursor.png)
+
+## macOS Look Up
+
+On macOS, right-click a word and choose **Look Up** to open it in the Dictionary
+app (a force click does the same where the engine reports it). Turn it off with
+`vscodeEmbedPdf.lookUp.enabled`. The system's own three-finger-tap popup cannot
+see text drawn by the viewer; see [docs/look-up.md](docs/look-up.md) for what is
+native, what is a fallback, and what needs a Mac to verify.
 
 ## What an agent receives
 
@@ -156,10 +180,10 @@ Turn on `vscodeEmbedPdf.agentBridge.enabled` (or run **PDF: Copy MCP Setup
 for Claude Code / Codex…**, which offers to) and the extension starts a local
 [MCP](https://modelcontextprotocol.io/) server with these tools:
 
-| Tool | What it does |
-| --- | --- |
-| `get_current_pdf_selection` | The text or region selected in the PDF you last looked at: the same text Copy Link for Agent copies, and for a region its PNG snapshot. |
-| `open_pdf_location` | Opens a `path#page=N&viewrect=…` link in the viewer. |
+| Tool                         | What it does                                                                                                                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_current_pdf_selection`  | The text or region selected in the PDF you last looked at: the same text Copy Link for Agent copies, and for a region its PNG snapshot.                                         |
+| `open_pdf_location`          | Opens a `path#page=N&viewrect=…` link in the viewer.                                                                                                                            |
 | `get_current_note_selection` | The selection in Markdown Workbench, when it is installed, as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `docs/agent-handoff-format.md`). |
 
 The server is off by default because it opens a port. When on, it listens on
@@ -184,8 +208,8 @@ only the on/off switch has an end-to-end test.
 
 ```ts
 await vscode.commands.executeCommand(
-  'vscodeEmbedPdf.openLocation',
-  vscode.Uri.file('/path/to/paper.pdf'),
+  "vscodeEmbedPdf.openLocation",
+  vscode.Uri.file("/path/to/paper.pdf"),
   { page: 3, viewRect: { left: 72, top: 83, width: 134, height: 21 } },
 );
 ```
@@ -284,14 +308,14 @@ coordinate in the tests is known.
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every pull
 request and on pushes to `main`. Each job, and how to run it locally:
 
-| Job | What it proves | Locally |
-| --- | --- | --- |
-| `check` | Lint, typecheck and unit tests pass | `pnpm check` |
-| `browser` | The webview suite in Chromium; on failure, `test-results/` is uploaded | `pnpm test:browser` |
-| `vscode (VS Code stable)` | The packaged extension in the latest VS Code stable, under `xvfb-run` | `xvfb-run -a pnpm test:vscode` |
-| `package` | `pnpm package` builds the VSIX, leaves committed files unchanged, and the VSIX is under 8 MB with no tests, sources, source maps or secret-shaped strings; the VSIX is uploaded as the `vsix` artifact | `pnpm package && bash .github/scripts/check-vsix.sh *.vsix 8` |
-| `secret-scan` | gitleaks finds no secrets in the git history | `gitleaks git --redact .` |
-| `audit (advisory)` | `pnpm audit --prod`; a warning, never a failure | `pnpm audit --prod` |
+| Job                       | What it proves                                                                                                                                                                                         | Locally                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `check`                   | Lint, typecheck and unit tests pass                                                                                                                                                                    | `pnpm check`                                                  |
+| `browser`                 | The webview suite in Chromium; on failure, `test-results/` is uploaded                                                                                                                                 | `pnpm test:browser`                                           |
+| `vscode (VS Code stable)` | The packaged extension in the latest VS Code stable, under `xvfb-run`                                                                                                                                  | `xvfb-run -a pnpm test:vscode`                                |
+| `package`                 | `pnpm package` builds the VSIX, leaves committed files unchanged, and the VSIX is under 8 MB with no tests, sources, source maps or secret-shaped strings; the VSIX is uploaded as the `vsix` artifact | `pnpm package && bash .github/scripts/check-vsix.sh *.vsix 8` |
+| `secret-scan`             | gitleaks finds no secrets in the git history                                                                                                                                                           | `gitleaks git --redact .`                                     |
+| `audit (advisory)`        | `pnpm audit --prod`; a warning, never a failure                                                                                                                                                        | `pnpm audit --prod`                                           |
 
 Cursor cannot run in CI, so test it by hand with
 `VSCODE_EXECUTABLE=<cursor executable> xvfb-run -a pnpm test:vscode`. CI never

@@ -16,6 +16,10 @@
  *    │  goTo { location } ──────►         open a page (and box)
  *    │  action { action } ──────►         page, zoom, find or tool, from a command
  *    │  toolbar { toolbar } ────►         the toolbar setting changed
+ *    │  lookUp { enabled } ─────►         macOS Look Up is on or off
+ *    │  ◄──────────── lookUp              the word under a force click (open),
+ *    │                                    or under a right click (to look up
+ *    │                                    from the context menu)
  *
  * State reports are batched: the viewer collects what changed for a frame
  * and sends one `patch` (only the latest of each part), so scrolling or a
@@ -34,10 +38,21 @@
  * The viewer runs untrusted PDF content, so the host validates what it
  * receives with `parseViewerMessage`.
  */
-import type { PdfLocation } from './pdf-location';
-import { parseSelection, type PdfSelection } from './selection';
-import { isFloatingDock, type FloatingDock, type ToolbarSettings } from './toolbar-settings';
-import { parseViewState, type ViewerAction, type ViewState } from './view-state';
+import { isLookUpWord } from "./look-up";
+import type { PdfLocation } from "./pdf-location";
+import { parseSelection, type PdfSelection } from "./selection";
+import {
+  isFloatingDock,
+  type FloatingDock,
+  type ToolbarSettings,
+} from "./toolbar-settings";
+import {
+  parseViewState,
+  type ViewerAction,
+  type ViewState,
+} from "./view-state";
+import type { ReadingPosition } from "./reading-position";
+import type { ViewSettings } from "./view-settings";
 
 /** One entry of the PDF's outline (bookmarks), with the page it opens. */
 export interface OutlineItem {
@@ -64,22 +79,31 @@ export interface ViewerPatch {
 }
 
 export type ViewerMessage =
-  | { type: 'ready' }
-  | { type: 'patch'; version: number; load: number; patch: ViewerPatch }
-  | { type: 'copyLinkForAgent' }
+  | { type: "ready" }
+  | { type: "patch"; version: number; load: number; patch: ViewerPatch }
+  | { type: "copyLinkForAgent" }
   /** The viewer's outline button: show or hide the PDF Outline view. */
-  | { type: 'toggleOutline' }
+  | { type: "toggleOutline" }
   /** The floating bar was dragged to another edge. */
-  | { type: 'floatingDock'; dock: FloatingDock }
-  | { type: 'openExternal'; url: string }
-  | { type: 'error'; message: string };
+  | { type: "floatingDock"; dock: FloatingDock }
+  | { type: "openExternal"; url: string }
+  /** macOS Look Up: `open` looks the word up now (a force click), else when the context menu asks. */
+  | { type: "lookUp"; word: string | null; open: boolean }
+  | { type: "error"; message: string };
 
 export type HostMessage =
-  | { type: 'load'; data: ArrayBuffer }
+  | {
+      type: "load";
+      data: ArrayBuffer;
+      settings: ViewSettings;
+      position?: ReadingPosition;
+    }
   /** `top`: with no box, show the page from this many points below its top. */
-  | { type: 'goTo'; location: PdfLocation; top?: number | undefined }
-  | { type: 'action'; action: ViewerAction }
-  | { type: 'toolbar'; toolbar: ToolbarSettings };
+  | { type: "goTo"; location: PdfLocation; top?: number | undefined }
+  | { type: "action"; action: ViewerAction }
+  | { type: "toolbar"; toolbar: ToolbarSettings }
+  | { type: "lookUp"; enabled: boolean }
+  | { type: "viewSettings"; settings: ViewSettings };
 
 const MAX_OUTLINE_ITEMS = 10_000;
 const MAX_OUTLINE_DEPTH = 32;
@@ -91,22 +115,31 @@ const MAX_IMAGE_LENGTH = 8_000_000;
 
 /** Accept a message from the viewer only if it is well-formed. */
 export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
+  if (typeof value !== "object" || value === null) return undefined;
   const message = value as Record<string, unknown>;
   switch (message.type) {
-    case 'ready':
-    case 'copyLinkForAgent':
-    case 'toggleOutline':
+    case "ready":
+    case "copyLinkForAgent":
+    case "toggleOutline":
       return { type: message.type };
-    case 'patch':
+    case "patch":
       return parsePatchMessage(message);
-    case 'floatingDock':
-      return isFloatingDock(message.dock) ? { type: 'floatingDock', dock: message.dock } : undefined;
-    case 'openExternal':
-      return isWebUrl(message.url) ? { type: 'openExternal', url: message.url } : undefined;
-    case 'error':
-      return typeof message.message === 'string'
-        ? { type: 'error', message: message.message.slice(0, 1_000) }
+    case "floatingDock":
+      return isFloatingDock(message.dock)
+        ? { type: "floatingDock", dock: message.dock }
+        : undefined;
+    case "openExternal":
+      return isWebUrl(message.url)
+        ? { type: "openExternal", url: message.url }
+        : undefined;
+    case "lookUp":
+      return typeof message.open === "boolean" &&
+        (message.word === null || isLookUpWord(message.word))
+        ? { type: "lookUp", word: message.word, open: message.open }
+        : undefined;
+    case "error":
+      return typeof message.message === "string"
+        ? { type: "error", message: message.message.slice(0, 1_000) }
         : undefined;
     default:
       return undefined;
@@ -117,25 +150,35 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
  * Whether the host should apply `patch`: newer than the last one it applied
  * (`lastVersion`), and about the bytes it sent last (`loads` sent so far).
  */
-export function isCurrentPatch(patch: { version: number; load: number }, lastVersion: number, loads: number): boolean {
+export function isCurrentPatch(
+  patch: { version: number; load: number },
+  lastVersion: number,
+  loads: number,
+): boolean {
   return patch.version > lastVersion && patch.load === loads;
 }
 
-function parsePatchMessage(message: Record<string, unknown>): ViewerMessage | undefined {
+function parsePatchMessage(
+  message: Record<string, unknown>,
+): ViewerMessage | undefined {
   const { version, load } = message;
-  if (!Number.isSafeInteger(version) || (version as number) < 1) return undefined;
+  if (!Number.isSafeInteger(version) || (version as number) < 1)
+    return undefined;
   if (!Number.isSafeInteger(load) || (load as number) < 0) return undefined;
   const patch = parsePatch(message.patch);
-  return patch ? { type: 'patch', version: version as number, load: load as number, patch } : undefined;
+  return patch
+    ? { type: "patch", version: version as number, load: load as number, patch }
+    : undefined;
 }
 
 /** A patch's parts; a malformed view rejects the patch, a malformed selection reads as none. */
 function parsePatch(value: unknown): ViewerPatch | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
+  if (typeof value !== "object" || value === null) return undefined;
   const { outline, selection, view } = value as Record<string, unknown>;
   const patch: ViewerPatch = {};
   if (outline !== undefined) patch.outline = parseOutline(outline);
-  if (selection !== undefined) patch.selection = parseSelectionReport(selection);
+  if (selection !== undefined)
+    patch.selection = parseSelectionReport(selection);
   if (view !== undefined) {
     const parsed = parseViewState(view);
     if (!parsed) return undefined;
@@ -145,26 +188,45 @@ function parsePatch(value: unknown): ViewerPatch | undefined {
 }
 
 function parseSelectionReport(value: unknown): SelectionReport {
-  const report = typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+  const report =
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : {};
   const selection = parseSelection(report.selection) ?? null;
-  const image = selection?.kind === 'region' && isPngDataUrl(report.image) ? report.image : undefined;
+  const image =
+    selection?.kind === "region" && isPngDataUrl(report.image)
+      ? report.image
+      : undefined;
   return { selection, ...(image ? { image } : {}) };
 }
 
 /** A region snapshot: a PNG as a base64 data URL, of a sane size. */
 function isPngDataUrl(value: unknown): value is string {
-  const prefix = 'data:image/png;base64,';
-  return typeof value === 'string' && value.startsWith(prefix) && value.length <= MAX_IMAGE_LENGTH
-    && /^[A-Za-z0-9+/]+={0,2}$/u.test(value.slice(prefix.length));
+  const prefix = "data:image/png;base64,";
+  return (
+    typeof value === "string" &&
+    value.startsWith(prefix) &&
+    value.length <= MAX_IMAGE_LENGTH &&
+    /^[A-Za-z0-9+/]+={0,2}$/u.test(value.slice(prefix.length))
+  );
 }
 
 /** Only web and mail links may leave the viewer; a PDF can contain any URI. */
 function isWebUrl(value: unknown): value is string {
-  return typeof value === 'string' && value.length <= 8_192 && /^(https?:\/\/|mailto:)\S+$/i.test(value);
+  return (
+    typeof value === "string" &&
+    value.length <= 8_192 &&
+    /^(https?:\/\/|mailto:)\S+$/i.test(value)
+  );
 }
 
 function isPageOffset(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 && value < MAX_PAGE_OFFSET;
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value > 0 &&
+    value < MAX_PAGE_OFFSET
+  );
 }
 
 function parseOutline(value: unknown): OutlineItem[] {
@@ -173,12 +235,14 @@ function parseOutline(value: unknown): OutlineItem[] {
     if (!Array.isArray(items) || depth > MAX_OUTLINE_DEPTH) return [];
     const result: OutlineItem[] = [];
     for (const item of items as unknown[]) {
-      if (budget-- <= 0 || typeof item !== 'object' || item === null) break;
+      if (budget-- <= 0 || typeof item !== "object" || item === null) break;
       const { title, page, top, children } = item as Record<string, unknown>;
-      if (typeof title !== 'string') continue;
+      if (typeof title !== "string") continue;
       const hasPage = Number.isSafeInteger(page) && (page as number) >= 1;
       result.push({
-        title: title.replace(/\s+/g, ' ').trim().slice(0, MAX_TITLE_LENGTH) || 'Untitled',
+        title:
+          title.replace(/\s+/g, " ").trim().slice(0, MAX_TITLE_LENGTH) ||
+          "Untitled",
         ...(hasPage ? { page: page as number } : {}),
         ...(hasPage && isPageOffset(top) ? { top } : {}),
         children: visit(children, depth + 1),

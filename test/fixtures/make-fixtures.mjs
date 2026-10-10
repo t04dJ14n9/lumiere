@@ -1,6 +1,6 @@
 // Writes the PDFs the tests open into test/fixtures/generated/.
 //
-// short.pdf: 3 pages, no outline.
+// short.pdf: 3 pages, no outline. one.pdf, five.pdf and landscape.pdf: 1, 5 and 4 (400 x 300) pages.
 // outline.pdf: 12 pages of 300 x 400 points. Every page says "Synthetic page N"
 // in 18 pt Helvetica on a baseline 100 points below the top (x 72 to about
 // 206), and "Second line N" on a baseline 130 points below the top. It has a
@@ -114,20 +114,34 @@ export function outlinePdf() {
   return pdf.toBuffer(catalog);
 }
 
-/** A 3-page PDF without an outline; the reload test swaps it in. */
-export function shortPdf() {
+/** A PDF of `count` pages of `size` without an outline; each page says "<label> page N". */
+function plainPdf(count, size, label, rotations = []) {
   const pdf = new PdfWriter();
   const catalog = pdf.reserve();
   const pagesNode = pdf.reserve();
   const font = pdf.add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
-  const pages = [1, 2, 3].map(number => {
-    const contents = pdf.add(stream(`BT /F1 18 Tf 72 ${PAGE_SIZE.height - 100} Td (Short page ${number}) Tj ET`));
-    return pdf.add(`<< /Type /Page /Parent ${pagesNode} 0 R /MediaBox [0 0 ${PAGE_SIZE.width} ${PAGE_SIZE.height}] /Resources << /Font << /F1 ${font} 0 R >> >> /Contents ${contents} 0 R >>`);
+  const pages = Array.from({ length: count }, (_, index) => {
+    const contents = pdf.add(stream(`BT /F1 18 Tf 72 ${size.height - 100} Td (${label} page ${index + 1}) Tj ET`));
+    return pdf.add(`<< /Type /Page /Parent ${pagesNode} 0 R /MediaBox [0 0 ${size.width} ${size.height}]${rotations[index] ? ` /Rotate ${rotations[index]}` : ''} /Resources << /Font << /F1 ${font} 0 R >> >> /Contents ${contents} 0 R >>`);
   });
   pdf.set(pagesNode, `<< /Type /Pages /Kids [${pages.map(n => `${n} 0 R`).join(' ')}] /Count ${pages.length} >>`);
   pdf.set(catalog, `<< /Type /Catalog /Pages ${pagesNode} 0 R >>`);
   return pdf.toBuffer(catalog);
 }
+
+/** A 3-page PDF without an outline; the reload test swaps it in. */
+export function shortPdf() {
+  return plainPdf(3, PAGE_SIZE, 'Short');
+}
+
+/** One, five and four landscape pages: the page counts and shapes the spread layouts must handle. */
+export const onePagePdf = () => plainPdf(1, PAGE_SIZE, 'Only');
+export const fivePagePdf = () => plainPdf(5, PAGE_SIZE, 'Five');
+export const landscapePdf = () => plainPdf(4, { width: 400, height: 300 }, 'Landscape');
+
+/** Portrait 300 x 400 pages with /Rotate 0, 90, 180 and 270: pages 2 and 4 are shown landscape. */
+export const ROTATIONS = [0, 90, 180, 270];
+export const rotatedPdf = () => plainPdf(4, { width: 300, height: 400 }, 'Rotated', ROTATIONS);
 
 /** A long PDF of text pages, for load-time measurements. */
 export function largePdf(pageCount = 600) {
@@ -152,6 +166,10 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   mkdirSync(GENERATED, { recursive: true });
   writeFileSync(path.join(GENERATED, 'outline.pdf'), outlinePdf());
   writeFileSync(path.join(GENERATED, 'short.pdf'), shortPdf());
+  writeFileSync(path.join(GENERATED, 'one.pdf'), onePagePdf());
+  writeFileSync(path.join(GENERATED, 'five.pdf'), fivePagePdf());
+  writeFileSync(path.join(GENERATED, 'landscape.pdf'), landscapePdf());
+  writeFileSync(path.join(GENERATED, 'rotated.pdf'), rotatedPdf());
   writeFileSync(path.join(GENERATED, 'large.pdf'), largePdf());
   console.log(`Wrote test PDFs to ${GENERATED}`);
 }
