@@ -45,6 +45,7 @@ async function openFresh(page: Page): Promise<Frame> {
 async function focusViewer(page: Page, viewer: Frame): Promise<void> {
   const box = (await viewer.locator(".viewport").boundingBox())!;
   await page.mouse.click(box.x + 6, box.y + box.height / 2);
+  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
 }
 
 test("ArrowRight and ArrowLeft move between pages in the default view, right after opening and after a click", async ({
