@@ -36,8 +36,11 @@ const PAGE_PX = 400; // actual size: a 400 pt page, plus gaps
 
 const maxTop = (page: Page) =>
   page.locator(".viewport").evaluate((v) => v.scrollHeight - v.clientHeight);
-const toTop = (page: Page, top: number) =>
-  page.locator(".viewport").evaluate((v, top) => v.scrollTo({ top, behavior: "instant" }), top);
+// Let a smooth wheel animation that has just arrived stop before the test moves the viewport under it.
+const toTop = async (page: Page, top: number) => {
+  await page.waitForTimeout(400);
+  await page.locator(".viewport").evaluate((v, top) => v.scrollTo({ top, behavior: "instant" }), top);
+};
 
 for (const pageLayout of ["single", "spread"] as const) {
   for (const smoothScrolling of [true, false]) {
