@@ -1,0 +1,233 @@
+import { test, expect, chromium } from "@playwright/test";
+import type { Frame, Page } from "@playwright/test";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import path from "node:path";
+import { paths, readState } from "./state";
+import {
+  QUICK_INPUT,
+  closeBrowser,
+  command,
+  openPalette,
+  openWorkbench,
+  workbenchPage,
+} from "./workbench";
+
+const userFile = path.join(paths.userData, "User", "settings.json");
+const folderFile = path.join(paths.workspace, ".vscode", "settings.json");
+const notePath = path.join(paths.workspace, "Note.md");
+const key = (name: string) => `markdownWorkbench.${name}`;
+
+/** Runs the font size command, which leaves its own input box open. */
+async function askFontSize(page: Page) {
+  await expect(page.locator(".quick-input-widget")).toBeHidden();
+  await openPalette(page);
+  const input = page.locator(QUICK_INPUT);
+  await input.fill(">Markdown Workbench: Set Note Font Size");
+  await page
+    .locator(".quick-input-list .monaco-list-row")
+    .filter({ hasText: "Set Note Font Size" })
+    .first()
+    .click();
+  await expect(page.locator(".quick-input-widget")).toContainText(
+    "Note font size in pixels",
+  );
+}
+
+const read = (file: string): Record<string, unknown> =>
+  existsSync(file)
+    ? (JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>)
+    : {};
+
+async function editorFrame(page: Page): Promise<Frame> {
+  for (const frame of page.frames()) {
+    if (await frame.locator(".cm-line").count()) {
+      return frame;
+    }
+  }
+  throw new Error("No Markdown Workbench frame");
+}
+
+test("Open Settings, and the commands for common settings read and write the Settings UI's own keys, live", async () => {
+  const originalUser = readFileSync(userFile, "utf8");
+  const originalNote = readFileSync(notePath, "utf8");
+  const userKeys = () => read(userFile);
+  const folderKeys = () => read(folderFile);
+  writeFileSync(
+    notePath,
+    "# Title\n\nBody text\n\n```mermaid\ngraph TD\n  A-->B\n```\n\nLast line\n",
+  );
+  const browser = await chromium.connectOverCDP(readState().webSocket);
+  try {
+    const page = workbenchPage(browser);
+    await openWorkbench(page);
+    let frame = await editorFrame(page);
+    // Marks the page: no command may reload the editor.
+    await frame.evaluate(() => {
+      (window as unknown as { marker: number }).marker = 1;
+    });
+    const stillSame = async () =>
+      expect(
+        await (
+          await editorFrame(page)
+        ).evaluate(() => (window as unknown as { marker?: number }).marker),
+      ).toBe(1);
+
+    // Open Settings: the Settings UI, searching for this extension.
+    await command(page, "Markdown Workbench: Open Settings");
+    const search = page.locator(".settings-editor .suggest-input-container");
+    await expect(search).toBeVisible();
+    await expect(search).toContainText(
+      "@ext:t04dj14n9.vscode-markdown-workbench",
+    );
+    await expect(
+      page
+        .locator(".settings-editor .settings-tree-container .monaco-list-row")
+        .first(),
+    ).toBeVisible();
+    await page.keyboard.press("ControlOrMeta+w");
+    await expect(page.locator(".settings-editor")).toHaveCount(0);
+
+    // Back on the note.
+    await page
+      .locator(".tabs-container .tab")
+      .filter({ hasText: "Note.md" })
+      .click();
+    frame = await editorFrame(page);
+
+    // Readable line width: the user's settings, then the folder's once it sets it.
+    const readable = () =>
+      frame.locator(".cm-editor.is-readable-line-width").count();
+    expect(await readable()).toBe(0);
+    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await expect
+      .poll(() => userKeys()[key("editor.readableLineLength")])
+      .toBe(true);
+    await expect.poll(readable).toBe(1);
+    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await expect
+      .poll(() => userKeys()[key("editor.readableLineLength")])
+      .toBe(false);
+    await expect.poll(readable).toBe(0);
+    // A value set in the folder is the one changed, and the user's stays.
+    mkdirSync(path.dirname(folderFile), { recursive: true });
+    writeFileSync(
+      folderFile,
+      JSON.stringify({ [key("editor.readableLineLength")]: true }),
+    );
+    await expect.poll(readable).toBe(1);
+    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await expect
+      .poll(() => folderKeys()[key("editor.readableLineLength")])
+      .toBe(false);
+    expect(userKeys()[key("editor.readableLineLength")]).toBe(false);
+    await expect.poll(readable).toBe(0);
+    // An edit in settings.json is what the next run reads (no state of its own).
+    writeFileSync(
+      folderFile,
+      JSON.stringify({ [key("editor.readableLineLength")]: true }),
+    );
+    await expect.poll(readable).toBe(1);
+    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await expect
+      .poll(() => folderKeys()[key("editor.readableLineLength")])
+      .toBe(false);
+    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+
+    // Line numbers.
+    const gutter = () => frame.locator(".cm-lineNumbers").count();
+    await expect.poll(gutter).toBeGreaterThan(0);
+    await command(page, "Markdown Workbench: Toggle Line Numbers");
+    await expect
+      .poll(() => userKeys()[key("plugins.lineNumbers.enabled")])
+      .toBe(false);
+    await expect.poll(gutter).toBe(0);
+    await command(page, "Markdown Workbench: Toggle Line Numbers");
+    await expect
+      .poll(() => userKeys()[key("plugins.lineNumbers.enabled")])
+      .toBe(true);
+    await expect.poll(gutter).toBeGreaterThan(0);
+
+    // Inline title.
+    const title = () => frame.locator(".file-title").count();
+    expect(await title()).toBe(0);
+    await command(page, "Markdown Workbench: Toggle Inline Title");
+    await expect
+      .poll(() => userKeys()[key("plugins.inlineTitle.enabled")])
+      .toBe(true);
+    await expect.poll(title).toBeGreaterThan(0);
+    await command(page, "Markdown Workbench: Toggle Inline Title");
+    await expect
+      .poll(() => userKeys()[key("plugins.inlineTitle.enabled")])
+      .toBe(false);
+    await expect.poll(title).toBe(0);
+
+    // Mermaid: the block renders as a diagram, and as source when off.
+    const diagram = () => frame.locator(".cm-content svg").count();
+    await frame.getByRole("textbox", { name: "Markdown content" }).click();
+    await page.keyboard.press("ControlOrMeta+End");
+    await expect.poll(diagram, { timeout: 20000 }).toBeGreaterThan(0);
+    await command(page, "Markdown Workbench: Toggle Mermaid Diagrams");
+    await expect
+      .poll(() => userKeys()[key("plugins.diagrams.enabled")])
+      .toBe(false);
+    await expect.poll(diagram).toBe(0);
+    await command(page, "Markdown Workbench: Toggle Mermaid Diagrams");
+    await expect
+      .poll(() => userKeys()[key("plugins.diagrams.enabled")])
+      .toBe(true);
+    await expect.poll(diagram, { timeout: 20000 }).toBeGreaterThan(0);
+
+    // Vim.
+    const vim = () => frame.locator(".cm-vim-panel, .cm-fat-cursor").count();
+    expect(await vim()).toBe(0);
+    await command(page, "Markdown Workbench: Toggle Vim Mode");
+    await expect.poll(() => userKeys()[key("plugins.vim.enabled")]).toBe(true);
+    await expect.poll(vim).toBeGreaterThan(0);
+    await command(page, "Markdown Workbench: Toggle Vim Mode");
+    await expect.poll(() => userKeys()[key("plugins.vim.enabled")]).toBe(false);
+    await expect.poll(vim).toBe(0);
+
+    // Note font size: a prompt with the current size, validated.
+    const body = () =>
+      frame.evaluate(() =>
+        parseFloat(
+          getComputedStyle(
+            document.querySelector(".cm-line:not([class*='md-h'])")!,
+          ).fontSize,
+        ),
+      );
+    await expect.poll(body).toBe(16);
+    await askFontSize(page);
+    const input = page.locator(QUICK_INPUT);
+    await expect(input).toHaveValue("16");
+    await input.fill("7");
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".quick-input-message")).toContainText(
+      "from 8 to 48",
+    );
+    expect(userKeys()[key("editor.fontSize")]).toBeUndefined();
+    await input.fill("20");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => userKeys()[key("editor.fontSize")]).toBe(20);
+    await expect.poll(body).toBe(20);
+    // Escape changes nothing.
+    await askFontSize(page);
+    await expect(input).toHaveValue("20");
+    await input.fill("30");
+    await page.keyboard.press("Escape");
+    await expect.poll(() => userKeys()[key("editor.fontSize")]).toBe(20);
+    await expect.poll(body).toBe(20);
+    await stillSame();
+  } finally {
+    writeFileSync(userFile, originalUser);
+    writeFileSync(notePath, originalNote);
+    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    await closeBrowser(browser);
+  }
+});

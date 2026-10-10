@@ -273,6 +273,41 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.openSettings",
+        "title": "Open Settings",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.setNoteFontSize",
+        "title": "Set Note Font Size",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleLineNumbers",
+        "title": "Toggle Line Numbers",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleReadableLineWidth",
+        "title": "Toggle Readable Line Width",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleMermaid",
+        "title": "Toggle Mermaid Diagrams",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleInlineTitle",
+        "title": "Toggle Inline Title",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.toggleVim",
+        "title": "Toggle Vim Mode",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.insertTable",
         "title": "Insert Table",
         "category": "Markdown Workbench"
@@ -684,6 +719,27 @@
         {
           "command": "markdownWorkbench.quickSwitcher",
           "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.quickSwitcher.enabled"
+        },
+        {
+          "command": "markdownWorkbench.openSettings"
+        },
+        {
+          "command": "markdownWorkbench.setNoteFontSize"
+        },
+        {
+          "command": "markdownWorkbench.toggleLineNumbers"
+        },
+        {
+          "command": "markdownWorkbench.toggleReadableLineWidth"
+        },
+        {
+          "command": "markdownWorkbench.toggleMermaid"
+        },
+        {
+          "command": "markdownWorkbench.toggleInlineTitle"
+        },
+        {
+          "command": "markdownWorkbench.toggleVim"
         },
         {
           "command": "markdownWorkbench.insertTable",

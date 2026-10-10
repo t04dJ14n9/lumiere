@@ -1,6 +1,7 @@
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
+import { createSettingsAccess } from "./settings-access";
 import * as vscode from "vscode";
 import { textBypass } from "./reclaim";
 import { createHash } from "node:crypto";
@@ -39,6 +40,7 @@ export function createWorkbench(
     ...commandOperations(),
     ...agentOperations(),
     ...configurationOperations(),
+    settings: createSettingsAccess(),
     editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
     registerEditor: (provider, open) =>

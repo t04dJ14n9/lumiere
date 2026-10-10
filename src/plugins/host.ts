@@ -25,3 +25,4 @@ export { markersHost } from "./markers/host";
 export { codeBlocksHost } from "./codeBlocks/host";
 
 export { publicApiHost } from "./publicApi/host";
+export { settingsHost } from "./settings/host";

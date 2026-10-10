@@ -61,6 +61,8 @@ export interface Workbench {
     open: (panel: PanelShell) => void,
   ): Disposer;
   onConfiguration?(listener: () => void): Disposer;
+  /** Reading and writing `markdownWorkbench.*` settings like the Settings UI. */
+  settings?: SettingsAccess;
   /**
    * The workspace's own `workbench.editorAssociations`, not the user's or a
    * folder's. `read()` is undefined when no workspace is open.
@@ -208,6 +210,26 @@ export interface FileTextEdits {
     text: string;
   }[];
 }
+/** Where a setting is stored: the folder, the workspace or the user's settings. */
+export type SettingTarget = "workspaceFolder" | "workspace" | "user";
+
+/** The Settings UI's own keys and scopes, for commands that change settings. */
+export interface SettingsAccess {
+  /** A `markdownWorkbench.` key as it is now, and where a write to it goes. */
+  inspect(
+    key: string,
+    resource?: string,
+  ): { value: unknown; target: SettingTarget };
+  /** Writes the key where `inspect` says (the workspace if it sets it, else the user's settings). */
+  update(
+    key: string,
+    value: unknown,
+    resource?: string,
+  ): Promise<SettingTarget>;
+  /** Opens the Settings UI with a search such as `@ext:publisher.name`. */
+  openUi(query: string): Promise<void>;
+}
+
 /** Native views, status bar and prompts for host plugins (DESIGN §7.1). */
 export interface HostViews {
   tree(viewId: string, source: TreeSource): TreeHandle;
@@ -217,6 +239,12 @@ export interface HostViews {
     placeholder: string;
     items(query: string): readonly PickItem<T>[];
   }): Promise<{ item?: PickItem<T>; query: string } | undefined>;
+  /** A text prompt with the text preselected; undefined when dismissed. */
+  input(options: {
+    prompt: string;
+    value: string;
+    validate(value: string): string | undefined;
+  }): Promise<string | undefined>;
   /** Ask with buttons; resolves to the chosen button, or undefined. */
   ask(message: string, actions: readonly string[]): Promise<string | undefined>;
   command(id: string, run: (...args: unknown[]) => unknown): Disposer;

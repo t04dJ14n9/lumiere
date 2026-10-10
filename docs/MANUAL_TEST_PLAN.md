@@ -422,6 +422,16 @@ Both are off by default (owner decision). Turn on
 4. Edit a note to add a link without saving: both views update; closing
    without saving reverts them. Turning the switches off hides the views.
 
+### settings commands
+
+1. **Open Settings**: Run Open Settings from the palette with no editor open: the Settings UI shows with the search `@ext:t04dj14n9.vscode-markdown-workbench`.
+2. **Set Note Font Size**: Run it: the box shows the current `markdownWorkbench.editor.fontSize`; type 20 and Enter, the open note's text, headings and line numbers grow at once and the Settings UI shows 20; 7 or `abc` is refused; Escape changes nothing.
+3. **Toggle Line Numbers**: Run it twice: the gutter hides and shows, and `markdownWorkbench.plugins.lineNumbers.enabled` in the Settings UI follows each run.
+4. **Toggle Readable Line Width**: Run it twice: the note's width limit switches, and `markdownWorkbench.editor.readableLineLength` follows.
+5. **Toggle Mermaid Diagrams**: With a mermaid block open, run it twice: the diagram turns to source and back, and `markdownWorkbench.plugins.diagrams.enabled` follows.
+6. **Toggle Inline Title**: Run it twice: the title above the note shows and hides, and `markdownWorkbench.plugins.inlineTitle.enabled` follows.
+7. **Toggle Vim Mode**: Run it twice: Vim mode and its caret turn on and off, and `markdownWorkbench.plugins.vim.enabled` follows.
+
 ### quickSwitcher
 
 1. **Quick Switcher** with an empty query lists recent notes. `Dest`
@@ -601,6 +611,13 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.showPluginStatus` — Show Plugin Status | unbound | On a disposable fixture, run Show Plugin Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.openSettings` — Open Settings | unbound | Run Open Settings from the palette with no editor open: the Settings UI shows with the search `@ext:t04dj14n9.vscode-markdown-workbench`. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
+| `markdownWorkbench.setNoteFontSize` — Set Note Font Size | unbound | Run it: the box shows the current `markdownWorkbench.editor.fontSize`; type 20 and Enter, the open note's text, headings and line numbers grow at once and the Settings UI shows 20; 7 or `abc` is refused; Escape changes nothing. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
+| `markdownWorkbench.toggleLineNumbers` — Toggle Line Numbers | unbound | Run it twice: the gutter hides and shows, and `markdownWorkbench.plugins.lineNumbers.enabled` in the Settings UI follows each run. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
+| `markdownWorkbench.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | Run it twice: the note's width limit switches, and `markdownWorkbench.editor.readableLineLength` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
+| `markdownWorkbench.toggleMermaid` — Toggle Mermaid Diagrams | unbound | With a mermaid block open, run it twice: the diagram turns to source and back, and `markdownWorkbench.plugins.diagrams.enabled` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
+| `markdownWorkbench.toggleInlineTitle` — Toggle Inline Title | unbound | Run it twice: the title above the note shows and hides, and `markdownWorkbench.plugins.inlineTitle.enabled` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
+| `markdownWorkbench.toggleVim` — Toggle Vim Mode | unbound | Run it twice: Vim mode and its caret turn on and off, and `markdownWorkbench.plugins.vim.enabled` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
 | `markdownWorkbench.quickSwitcher` — Quick Switcher | unbound | On a disposable fixture, run Quick Switcher; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertTable` — Insert Table | unbound | On a disposable fixture, run Insert Table; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.tableInsertRowAbove` — Table: Insert Row Above | unbound | On a disposable fixture, run Table: Insert Row Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |

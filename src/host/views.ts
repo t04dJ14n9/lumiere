@@ -15,6 +15,12 @@ export function createHostViews(): HostViews {
     tree: createTree,
     status: createStatus,
     pick,
+    input: async (options) =>
+      vscode.window.showInputBox({
+        prompt: options.prompt,
+        value: options.value,
+        validateInput: options.validate,
+      }),
     ask: async (message, actions) =>
       vscode.window.showInformationMessage(
         message,

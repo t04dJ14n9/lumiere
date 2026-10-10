@@ -28,6 +28,7 @@ export const CORE_ORDER = [
   "render",
   "livePreview",
   "markers",
+  "settings",
 ] as const;
 
 /** Editor features (they have an editor half), in precedence order. */

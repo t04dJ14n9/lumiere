@@ -24,6 +24,7 @@ import {
   wordCountHost,
   linkUpdatesHost,
   tagsViewHost,
+  settingsHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
 export async function bootstrap(
@@ -65,6 +66,7 @@ export async function bootstrap(
   root.plugin(agentBridgeHost);
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
+  root.plugin(settingsHost);
   root.plugin(livePreviewHost);
   const windowPlugins = [
     backlinksHost,
