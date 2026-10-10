@@ -10,7 +10,7 @@
 .properties {
   padding: 6px 0 24px;
   font-family: var(--text-font);
-  font-size: var(--vscode-font-size, 14px);
+  font-size: var(--text-size);
   line-height: 1.5;
 }
 .property-pending-sheet {
@@ -147,7 +147,7 @@
 .property-message,
 .property-type-warning {
   color: var(--vscode-errorForeground, #e88);
-  font-size: 13px;
+  font-size: 0.8125em;
 }
 .property-message:empty {
   display: none;
