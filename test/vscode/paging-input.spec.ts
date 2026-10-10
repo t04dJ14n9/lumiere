@@ -48,6 +48,19 @@ async function openFresh(page: Page): Promise<Frame> {
  */
 async function press(page: Page, viewer: Frame, key: string): Promise<void> {
   await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  // And the viewer is at rest: a key pressed while the last page turn is still
+  // being animated starts from a place the page turn has not reached yet.
+  const position = () =>
+    viewer.locator(".viewport").evaluate((v) => `${v.scrollLeft},${v.scrollTop}`);
+  let last = await position();
+  await expect
+    .poll(async () => {
+      const now = await position();
+      const still = now === last;
+      last = now;
+      return still;
+    }, { intervals: [250] })
+    .toBe(true);
   await page.keyboard.press(key);
 }
 
@@ -65,20 +78,20 @@ test("ArrowRight and ArrowLeft move between pages in the default view, right aft
   // Right after the commands, with no click on the page: they return the focus
   // to the viewer, which takes a moment.
   await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
-  await page.keyboard.press("ArrowLeft");
+  await press(page, viewer, "ArrowLeft");
   await expect(pageEntry(page, 1)).toBeVisible();
   await focusViewer(page, viewer);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
-  await page.keyboard.press("PageDown");
+  await press(page, viewer, "PageDown");
   await expect(pageEntry(page, 2)).toBeVisible();
-  await page.keyboard.press("ArrowDown");
+  await press(page, viewer, "ArrowDown");
   // Left goes to the page before the one being read, which depends on the
   // window's height: press on until the first page.
   for (let i = 0; i < 4; i++) {
-    await page.keyboard.press("ArrowLeft");
+    await press(page, viewer, "ArrowLeft");
     await page.waitForTimeout(300);
   }
   await expect(pageEntry(page, 1)).toBeVisible();

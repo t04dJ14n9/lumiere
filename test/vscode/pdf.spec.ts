@@ -77,8 +77,15 @@ test('Copy Link for Agent works from the selection menu and the editor title but
   await drag(page, at(150, 150), at(250, 250));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
   await expect(page.locator('.editor-actions').getByRole('button', { name: /^(Copy for Agent|Ask Agent)/u })).toHaveCount(0);
-  await editorTitleAction(page, 'Copy Link for Agent');
-  await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
+  // The title button acts on the selection the extension has: the region only
+  // once the viewer's report of it has arrived, so a click right after the drag
+  // may still copy the text selection from before. Click until the region's
+  // link is in the chat.
+  await expect.poll(async () => {
+    await editorTitleAction(page, 'Copy Link for Agent');
+    await page.waitForTimeout(500);
+    return agentChatInput(page);
+  }, { timeout: 30_000, intervals: [250] })
     .toContain(withoutSpaces(`Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=150,150,100,100>)`));
 
   await page.keyboard.press('F1');
