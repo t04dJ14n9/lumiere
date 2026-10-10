@@ -4,6 +4,8 @@ import type { CaretAppearance, CaretMode } from "./caret";
 import { caretCharacterPosition } from "./caret";
 
 export interface CaretGeometry {
+  /** `end` is the one-pixel caret at the active end of a Vim visual selection. */
+  part: "main" | "end";
   left: number;
   top: number;
   width: number;
@@ -59,6 +61,31 @@ function clusterStart(document: Text, position: number): number {
   return line.from + findClusterBreak(line.text, end, false);
 }
 
+/**
+ * The built-in editor places every caret on whole pixels counted from the start
+ * of the line's text, a block as wide as the rounded character (9.64 px
+ * becomes 10), a line two or more pixels wide half a pixel to the left of the
+ * character's edge (it straddles the boundary) unless the character starts
+ * the line. Measured in VS Code 1.141 (docs/vim-caret.md).
+ */
+function snapToPixels(
+  view: EditorView,
+  position: { left: number },
+  width: number,
+  line: { from: number },
+): { left: number; width: number } {
+  const lineStart = view.coordsAtPos(line.from, 1)?.left;
+  if (view.textDirection !== Direction.LTR || lineStart === undefined) {
+    return { left: position.left, width };
+  }
+  const offset = Math.round((position.left - lineStart) / view.scaleX);
+  const shift = width >= 2 && offset >= 1 ? 1 : 0;
+  return {
+    left: lineStart + (offset - shift) * view.scaleX,
+    width: Number.isInteger(width) ? width : Math.max(1, Math.round(width)),
+  };
+}
+
 /** Screen coordinates become scroller-relative CSS pixels, including zoom/scroll. */
 export function measureCarets(
   view: EditorView,
@@ -98,8 +125,10 @@ export function measureCarets(
     const characterWidth = character
       ? (character.right - character.left) / view.scaleX
       : view.defaultCharacterWidth;
-    const width =
+    const requested =
       appearance.width === "character" ? characterWidth : appearance.width;
+    const snapped = snapToPixels(view, position, requested, line);
+    const width = snapped.width;
     // The built-in editor's caret fills the whole line box; CodeMirror's
     // character rectangle is only the glyph box, so add the line's half-leading.
     const leading = halfLeading(view, head, position.bottom - position.top);
@@ -107,20 +136,46 @@ export function measureCarets(
       (position.bottom - position.top + 2 * leading) / view.scaleY;
     const height =
       appearance.height === "character" ? fullHeight : appearance.height;
+    const top =
+      (position.top - leading - base.top) / view.scaleY +
+      view.scrollDOM.scrollTop +
+      fullHeight -
+      height;
     geometries.push({
-      left:
-        (position.left - baseLeft) / view.scaleX + view.scrollDOM.scrollLeft,
-      top:
-        (position.top - leading - base.top) / view.scaleY +
-        view.scrollDOM.scrollTop +
-        fullHeight -
-        height,
+      part: "main",
+      left: (snapped.left - baseLeft) / view.scaleX + view.scrollDOM.scrollLeft,
+      top,
       width,
       height,
       text:
-        appearance.style === "block" && character && text !== "\t" ? text : "",
+        (appearance.style === "block" || appearance.style === "half-block") &&
+        character &&
+        text !== "\t"
+          ? text
+          : "",
       font: characterFont(view, head),
     });
+    if (appearance.endCaret) {
+      // Vim's visual selection includes its active character, so the native
+      // caret sits at the selection's end: after that character, but never
+      // past the end of its line (linewise selections run on to the next).
+      const endPosition = Math.min(range.head, line.to);
+      const end = view.coordsAtPos(endPosition, -1);
+      if (end) {
+        const placedEnd = snapToPixels(view, end, 1, line);
+        geometries.push({
+          part: "end",
+          left:
+            (placedEnd.left - baseLeft) / view.scaleX +
+            view.scrollDOM.scrollLeft,
+          top,
+          width: 1,
+          height: fullHeight,
+          text: "",
+          font: {},
+        });
+      }
+    }
   }
   return geometries;
 }

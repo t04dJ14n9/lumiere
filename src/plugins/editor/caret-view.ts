@@ -118,6 +118,8 @@ class CaretView {
         lineHeight: `${geometry.height}px`,
       });
       shape.textContent = geometry.text;
+      shape.dataset.char = geometry.text;
+      cursor.dataset.part = geometry.part;
       if (this.restartsBlink) {
         for (const animation of shape.getAnimations()) {
           animation.currentTime = 0;

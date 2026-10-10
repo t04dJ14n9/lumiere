@@ -134,14 +134,23 @@ function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
     ctx.editor.caret({
-      mode: (view) => vimCaretMode(getCM(view)?.state),
+      mode: (view) => {
+        const cm = getCM(view);
+        return vimCaretMode(cm?.state, Boolean(cm?.state.dialog));
+      },
       watch(view, refresh) {
         const cm = getCM(view);
         if (!cm) {
           return () => {};
         }
-        // Pending r emits a keypress without a selection or mode transaction.
-        const events = ["vim-mode-change", "vim-keypress", "vim-command-done"];
+        // A pending operator emits a keypress without a selection or mode
+        // transaction; the search and ex prompts signal `dialog`.
+        const events = [
+          "vim-mode-change",
+          "vim-keypress",
+          "vim-command-done",
+          "dialog",
+        ];
         for (const event of events) {
           cm.on(event, refresh);
         }

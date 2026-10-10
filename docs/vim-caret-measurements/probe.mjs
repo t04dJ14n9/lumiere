@@ -1,0 +1,11 @@
+import { launch } from "./lib.mjs";
+const { page, stop } = await launch({ root: "/tmp/vsvim", extensions: "/tmp/vsvim/ext", workspace: "/tmp/vsvim/ws", file: "/tmp/vsvim/ws/sample.txt" });
+await page.locator(".monaco-editor .view-lines").first().waitFor({ timeout: 30000 });
+await page.waitForTimeout(4000);
+await page.locator(".monaco-editor .view-lines").first().click();
+await page.keyboard.press("Escape");
+await page.waitForTimeout(500);
+console.log(await page.evaluate(() => [...document.querySelectorAll(".monaco-editor .cursors-layer .cursor")].map(c => { const r=c.getBoundingClientRect(); const s=getComputedStyle(c); return {cls:c.className,x:r.x,y:r.y,w:r.width,h:r.height,bg:s.backgroundColor,border:s.borderTopWidth+" "+s.borderTopColor,anim:s.animationName+" "+s.animationDuration+" "+s.animationTimingFunction,vis:s.visibility,op:s.opacity}; })));
+console.log(await page.evaluate(() => document.querySelector(".monaco-editor")?.className));
+await page.screenshot({ path: "/tmp/vsvim/probe.png" });
+await stop();

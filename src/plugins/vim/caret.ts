@@ -5,13 +5,20 @@ interface VimCaretState {
   vim?: {
     insertMode?: boolean;
     visualMode?: boolean;
-    expectLiteralNext?: boolean;
-    inputState?: { keyBuffer?: readonly string[] };
+    inputState?: { operator?: string | null | undefined };
   } | null;
 }
 
-/** R is insert+overwrite; r waits for a literal without entering insert mode. */
-export function vimCaretMode(state?: VimCaretState): CaretMode {
+/**
+ * The caret VSCodeVim shows for the library's state. R is insert plus
+ * overwrite. A search or ex prompt (`prompt`) and an operator waiting for its
+ * motion (`pending`) have their own carets; a pending `r` (or `f`, a count, a
+ * register) keeps the normal block, as VSCodeVim does.
+ */
+export function vimCaretMode(
+  state?: VimCaretState,
+  promptOpen = false,
+): CaretMode {
   const vim = state?.vim;
   if (!vim) {
     return "typing";
@@ -19,9 +26,11 @@ export function vimCaretMode(state?: VimCaretState): CaretMode {
   if (vim.insertMode) {
     return state?.overwrite ? "replace" : "insert";
   }
-  const keys = vim.inputState?.keyBuffer?.join("") ?? "";
-  if (vim.expectLiteralNext && /^\d*r$/.test(keys)) {
-    return "replace";
+  if (promptOpen) {
+    return "prompt";
   }
-  return vim.visualMode ? "visual" : "normal";
+  if (vim.visualMode) {
+    return "visual";
+  }
+  return vim.inputState?.operator ? "pending" : "normal";
 }

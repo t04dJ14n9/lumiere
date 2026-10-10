@@ -29,38 +29,47 @@ test("R and insert-mode overwrite are replace; ordinary insert uses a line", () 
   );
 });
 
-test("pending r, counted r and visual r use an underline until completion or cancellation", () => {
-  for (const keyBuffer of [["r"], ["3", "r"], ["1", "2", "r"]]) {
-    for (const visualMode of [false, true]) {
-      const vim = {
-        visualMode,
-        expectLiteralNext: true,
-        inputState: { keyBuffer },
-      };
-      assert.equal(vimCaretMode({ vim }), "replace");
-      vim.expectLiteralNext = false;
-      vim.inputState.keyBuffer = [];
-      assert.equal(vimCaretMode({ vim }), visualMode ? "visual" : "normal");
-    }
+test("a pending r, f, count or register keeps the normal block, as VSCodeVim does", () => {
+  for (const visualMode of [false, true]) {
+    const vim = {
+      visualMode,
+      expectLiteralNext: true,
+      inputState: { keyBuffer: ["3", "r"] },
+    };
+    assert.equal(
+      vimCaretMode({ vim } as never),
+      visualMode ? "visual" : "normal",
+    );
   }
 });
 
-test("literal motion commands and insert-mode text containing r do not select replace", () => {
-  for (const keyBuffer of [["f"], ["t"], ["g", "r"], ["d", "r"], []]) {
+test("an operator waiting for its motion is pending; the search and ex prompts are prompts", () => {
+  for (const operator of ["delete", "yank", "change", "indent"]) {
     assert.equal(
-      vimCaretMode({
-        vim: { expectLiteralNext: true, inputState: { keyBuffer } },
-      }),
-      "normal",
+      vimCaretMode({ vim: { inputState: { operator } } }),
+      "pending",
     );
   }
   assert.equal(
+    vimCaretMode({ vim: { inputState: { operator: null } } }),
+    "normal",
+  );
+  assert.equal(vimCaretMode({ vim: {} }, true), "prompt");
+  assert.equal(vimCaretMode({ vim: { visualMode: true } }, true), "prompt");
+  assert.equal(vimCaretMode({ vim: { insertMode: true } }, true), "insert");
+  assert.equal(vimCaretMode(undefined, true), "typing");
+  assert.equal(
     vimCaretMode({
-      vim: {
-        insertMode: true,
-        expectLiteralNext: true,
-        inputState: { keyBuffer: ["r"] },
-      },
+      vim: { visualMode: true, inputState: { operator: "delete" } },
+    }),
+    "visual",
+  );
+});
+
+test("insert-mode text containing r is still insert", () => {
+  assert.equal(
+    vimCaretMode({
+      vim: { insertMode: true, expectLiteralNext: true } as never,
     }),
     "insert",
   );

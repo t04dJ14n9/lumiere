@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Text } from "@codemirror/state";
 import { caretAppearance, caretCharacterPosition } from "./caret";
-import type { CaretMode, CaretSettings, CursorStyle } from "./caret";
+import type {
+  CaretAppearance,
+  CaretMode,
+  CaretSettings,
+  CursorStyle,
+} from "./caret";
 import { config } from "./manifest";
 
 const base: CaretSettings = {
@@ -11,6 +16,15 @@ const base: CaretSettings = {
   cursorSmoothCaretAnimation: "off",
   cursorWidth: 3,
 };
+const modes = [
+  "typing",
+  "normal",
+  "visual",
+  "insert",
+  "replace",
+  "pending",
+  "prompt",
+] as const satisfies readonly CaretMode[];
 const styles: CursorStyle[] = [
   "line",
   "block",
@@ -66,11 +80,13 @@ test("visual and pending visual replace carets cover the active character, inclu
 });
 
 test("Vim mode chooses block, line or underline regardless of the native cursorStyle", () => {
-  const expected: Partial<Record<CaretMode, CursorStyle>> = {
+  const expected: Partial<Record<CaretMode, CaretAppearance["style"]>> = {
     normal: "block",
     visual: "block",
     insert: "line",
     replace: "underline",
+    pending: "half-block",
+    prompt: "underline-thin",
   };
   for (const cursorStyle of styles) {
     for (const [mode, style] of Object.entries(expected)) {
@@ -84,7 +100,11 @@ test("Vim mode chooses block, line or underline regardless of the native cursorS
         `${mode} with native ${cursorStyle}`,
       );
       assert.equal(appearance.width, mode === "insert" ? 3 : "character");
-      assert.equal(appearance.height, mode === "replace" ? 2 : "character");
+      assert.equal(
+        appearance.height,
+        { replace: 2, prompt: 1 }[mode as string] ?? "character",
+      );
+      assert.equal(appearance.endCaret, mode === "visual");
     }
   }
 });
@@ -121,34 +141,34 @@ test("native blinking selects distinct hard, smooth, phase, expand or solid anim
     "expand",
     "solid",
   ] as const) {
-    for (const mode of [
-      "typing",
-      "normal",
-      "visual",
-      "insert",
-      "replace",
-    ] as const) {
+    for (const mode of modes) {
       const { variables } = caretAppearance({ ...base, cursorBlinking }, mode);
       assert.equal(
         variables["--caret-animation"],
         cursorBlinking === "solid" ? "none" : `mw-caret-${cursorBlinking}`,
       );
-      assert.equal(
-        variables["--caret-timing"],
-        cursorBlinking === "blink" ? "steps(1, end)" : "linear",
+      // Measured in VS Code 1.141: hard blink 500 ms on and 500 ms off, forever;
+      // the others 0.5 s ease-in-out, alternating, 20 half cycles.
+      const hard = cursorBlinking === "blink";
+      assert.deepEqual(
+        [
+          variables["--caret-duration"],
+          variables["--caret-timing"],
+          variables["--caret-count"],
+          variables["--caret-direction"],
+        ],
+        cursorBlinking === "solid"
+          ? ["0s", "linear", "1", "normal"]
+          : hard
+            ? ["1s", "step-end", "infinite", "normal"]
+            : ["0.5s", "ease-in-out", "20", "alternate"],
       );
     }
   }
 });
 
 test("smooth movement respects off, explicit navigation and all movement", () => {
-  for (const mode of [
-    "typing",
-    "normal",
-    "visual",
-    "insert",
-    "replace",
-  ] as const) {
+  for (const mode of modes) {
     for (const cursorSmoothCaretAnimation of [
       "off",
       "explicit",
@@ -181,11 +201,15 @@ test("native caret settings validate at the host/webview schema and fall back fo
   });
   assert.deepEqual(caretAppearance(settings, "typing"), {
     style: "block-outline",
+    endCaret: false,
     width: "character",
     height: "character",
     variables: {
       "--caret-animation": "mw-caret-phase",
-      "--caret-timing": "linear",
+      "--caret-duration": "0.5s",
+      "--caret-timing": "ease-in-out",
+      "--caret-count": "20",
+      "--caret-direction": "alternate",
       "--caret-move-duration": "80ms",
     },
   });
