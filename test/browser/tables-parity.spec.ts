@@ -46,12 +46,16 @@ test("table DOM preserves raw focused cells, document entry, edge buttons, menus
   );
   await expect(rowButton).toHaveCSS("opacity", "0");
   await table.hover();
+  // Obsidian 1.14.4 shows each button only under the pointer (tables-add-buttons.spec.ts).
+  await expect(columnButton).toHaveCSS("opacity", "0");
+  await columnButton.hover();
   await expect(columnButton).toHaveCSS("opacity", "1");
   await expect(rowButton).toHaveCSS("opacity", "0");
   await cells.nth(3).click({ position: { x: 2, y: 8 } });
   await expect(editor).toHaveText("**bold** and *italic*");
   await page.keyboard.press("End");
   await expect(editor).toHaveText("**bold** and *italic*");
+  await rowButton.hover();
   await expect(rowButton).toHaveCSS("opacity", "1");
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.type("x|y\\z");

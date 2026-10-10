@@ -35,3 +35,11 @@ These scripts close the gaps that the first pass listed as "not verified".
   native `table`; ours are asserted against Chromium's accessibility tree in
   `test/browser/tables-a11y.spec.ts`, but no screen reader was run.
 - Exact pixel metrics: independent theme, by design.
+
+## Add-row / add-column button visibility
+
+`button-visibility.mjs` and `button-visibility2.mjs` (Obsidian 1.14.4, desktop): the buttons are `div.table-row-btn` /
+`div.table-col-btn` (`tabindex -1`, not keyboard reachable). Row: `dx 0, dy = table height, 166 x 16` (full table width);
+column: `dx = table width, dy 0, 16 x 90` (full height). `opacity: 0` with `transition: opacity .1s`, and only
+`:hover` on the button itself sets `opacity: 1`; table hover and `has-focus` change nothing on desktop (`has-focus` shows
+them on mobile only). Ours matches this and adds keyboard-focus visibility.

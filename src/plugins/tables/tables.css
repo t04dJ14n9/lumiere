@@ -63,9 +63,9 @@
 .table-wrapper {
   display: grid;
   width: max-content;
-  grid-template-columns: max-content 22px;
-  grid-template-rows: auto 22px;
-  gap: 4px;
+  grid-template-columns: max-content 16px;
+  grid-template-rows: auto 16px;
+  gap: 0;
   padding: 16px 0 0 16px;
 }
 .table-cell-wrapper {
@@ -97,30 +97,40 @@
 .table-controls {
   display: contents;
 }
+/* Measured in Obsidian 1.14.4 (docs/obsidian-measurements/tables/button-visibility*.mjs):
+   a 16px strip under the table (full width) and beside it (full height), both
+   invisible until the pointer is over the strip itself. Unlike Obsidian they
+   also show for keyboard focus. */
 .table-row-btn,
 .table-col-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   opacity: 0;
-  pointer-events: none;
+  transition: opacity 0.1s;
+  border: 1px solid var(--line);
 }
-.hybrid-table.has-focus .table-row-btn,
-.hybrid-table:hover .table-col-btn,
+.table-row-btn:hover,
+.table-col-btn:hover,
 .table-controls button:focus-visible {
   opacity: 1;
-  pointer-events: auto;
 }
 .table-row-btn {
   grid-area: 2 / 1;
+  border-top: 0;
 }
 .table-col-btn {
   grid-area: 1 / 2;
+  border-left: 0;
 }
 .table-controls button {
-  font-size: 16px;
+  font-size: 14px;
+  line-height: 1;
   color: var(--muted);
   background: transparent;
-  border: 0;
   cursor: pointer;
-  border-radius: 3px;
+  padding: 0;
 }
 .table-controls button:hover {
   background: var(--vscode-list-hoverBackground, #ffffff12);

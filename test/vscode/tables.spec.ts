@@ -119,3 +119,79 @@ test("tables in the real editor: typing, Tab, edge buttons, native undo and exte
     await closeBrowser(browser);
   }
 });
+
+test("tables in the real editor: the add-row strip below and the add-column strip beside both exist, show under the pointer and work", async () => {
+  const browser = await chromium.connectOverCDP(readState().webSocket);
+  try {
+    const page = workbenchPage(browser);
+    const editor = await openWorkbench(page);
+    await editor.click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.insertText(TABLE);
+    await page.keyboard.press("ControlOrMeta+s");
+    await expect.poll(readNote).toBe(TABLE);
+    const frame = await tableFrame(() => page.frames());
+    const table = frame.locator(".hybrid-table");
+    const rowButton = table.getByRole("button", { name: "Add row below" });
+    const columnButton = table.getByRole("button", {
+      name: "Add column to the right",
+    });
+    const opacity = (button: typeof rowButton) =>
+      button.evaluate((element) => getComputedStyle(element).opacity);
+    const centre = async (button: typeof rowButton) => {
+      const box = (await button.boundingBox())!;
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2, box };
+    };
+
+    // Obsidian 1.14.4: a 16px strip under the table, its full width, and one
+    // beside it, its full height; each invisible until the pointer is on it.
+    const grid = (await table.locator("table").boundingBox())!;
+    const below = await centre(rowButton);
+    const beside = await centre(columnButton);
+    expect(Math.abs(below.box.y - (grid.y + grid.height))).toBeLessThanOrEqual(
+      2,
+    );
+    expect(Math.abs(below.box.width - grid.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(below.box.height - 16)).toBeLessThanOrEqual(1);
+    expect(Math.abs(beside.box.x - (grid.x + grid.width))).toBeLessThanOrEqual(
+      2,
+    );
+    expect(Math.abs(beside.box.height - grid.height)).toBeLessThanOrEqual(1);
+    expect(Math.abs(beside.box.width - 16)).toBeLessThanOrEqual(1);
+    await page.mouse.move(grid.x + grid.width / 2, grid.y + 5);
+    expect(await opacity(rowButton)).toBe("0");
+    expect(await opacity(columnButton)).toBe("0");
+
+    const shots = path.resolve("docs/screenshots");
+    await page.mouse.move(below.x, below.y);
+    await expect.poll(() => opacity(rowButton)).toBe("1");
+    expect(await opacity(columnButton)).toBe("0");
+    await page.screenshot({
+      path: path.join(shots, "tables-add-row-vscode.png"),
+    });
+    await page.mouse.move(beside.x, beside.y);
+    await expect.poll(() => opacity(columnButton)).toBe("1");
+    await expect.poll(() => opacity(rowButton)).toBe("0");
+    await page.screenshot({
+      path: path.join(shots, "tables-add-column-vscode.png"),
+    });
+
+    // Real pointer clicks: the row goes in below with its first cell focused,
+    // the column to the right with its header focused.
+    await page.mouse.move(below.x, below.y);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.keyboard.type("n", { delay: 40 });
+    await page.keyboard.press("ControlOrMeta+s");
+    await expect.poll(() => row(6)).toBe("| n   |     |     |");
+    const next = await centre(columnButton);
+    await page.mouse.move(next.x, next.y);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.keyboard.type("h", { delay: 40 });
+    await page.keyboard.press("ControlOrMeta+s");
+    await expect.poll(() => row(2)).toMatch(/^\| a +\| +b +\| +c +\| h +\|$/);
+  } finally {
+    await closeBrowser(browser);
+  }
+});
