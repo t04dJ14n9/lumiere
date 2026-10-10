@@ -40,6 +40,7 @@ test("editor settings have application defaults and reconfigure without changing
     tabSize: 4,
     // Native editor font settings for Markdown; empty until the host reads them.
     fontFamily: "",
+    defaultFontFamily: "",
     fontSize: 0,
     fontWeight: "normal",
     lineHeight: 0,
@@ -270,6 +271,7 @@ test("note text follows the native editor font settings for Markdown files, whic
     "editor.letterSpacing": 0.5,
     "editor.fontLigatures": true,
     "editor.fontVariations": false,
+    "editor.fontFamily#default": "'Droid Sans Mono', monospace",
   };
   const native: SettingsReader = {
     get: <T>(key: string) => markdown[key] as T,
@@ -289,8 +291,8 @@ test("note text follows the native editor font settings for Markdown files, whic
   );
   // 27px at 18px is a ratio of 1.5 (whole pixels, as in VS Code).
   assert.deepEqual(fontDeclarations(settingsExtensions(editor)), {
-    "--text-font": "Fira Code, monospace",
-    "--code-font": "Fira Code, monospace",
+    "--text-font": `"Fira Code", 'Droid Sans Mono', monospace`,
+    "--code-font": `"Fira Code", 'Droid Sans Mono', monospace`,
     "--text-size": "18px",
     "--text-weight": "300",
     "--line-height": "1.5",
@@ -303,7 +305,7 @@ test("note text follows the native editor font settings for Markdown files, whic
     fontDeclarations(settingsExtensions({ ...editor, lineHeight: 0 }))[
       "--line-height"
     ],
-    "1.333333", // round(1.35 × 18) = 24px
+    String(24 / 18), // round(1.35 × 18) = 24px
   );
   // A hand-edited settings.json with a wrong type does not break the editor.
   markdown["editor.fontSize"] = "big";
