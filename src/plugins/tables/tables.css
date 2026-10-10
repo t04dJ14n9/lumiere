@@ -16,6 +16,10 @@
   cursor: grab;
   touch-action: none;
   opacity: 0;
+  /* fixed: the grip is a 14px strip, so its glyph is 14px at any note size */
+  font-size: 14px;
+  line-height: 1;
+  overflow: hidden;
 }
 .table-handle[hidden],
 .table-drop-indicator[hidden] {
@@ -125,8 +129,10 @@
   border-left: 0;
 }
 .table-controls button {
+  /* fixed: the add strips are 16px, so their glyph is 14px at any note size */
   font-size: 14px;
   line-height: 1;
+  overflow: hidden;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -141,7 +147,7 @@
 }
 .table-message {
   color: var(--vscode-errorForeground, #e88);
-  font-size: 13px;
+  font-size: 0.8125em;
 }
 #app .hybrid-table .cm-editor {
   height: auto;

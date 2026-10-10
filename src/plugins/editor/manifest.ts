@@ -1,5 +1,5 @@
 import { Schema } from "../../kernel";
-import { fontFields, fontNativeKeys } from "./font";
+import { fontFields, fontNativeKeys, fontSize, lineHeight } from "./font";
 import { caretFields, caretNativeKeys } from "./caret-settings";
 export const config = Schema.object({
   defaultMode: Schema.union(["livePreview", "source"]).default("livePreview"),
@@ -23,6 +23,8 @@ export const config = Schema.object({
     },
     { type: "integer", minimum: 1, maximum: 16 },
   ).default(4),
+  fontSize,
+  lineHeight,
   // VS Code's font and caret settings for Markdown files (native, not ours).
   ...fontFields,
   ...caretFields,

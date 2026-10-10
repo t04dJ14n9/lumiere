@@ -11,7 +11,7 @@
   color: var(--vscode-editorHoverWidget-foreground, inherit);
   background: var(--vscode-editorHoverWidget-background, var(--surface));
   box-shadow: 0 5px 20px #0005;
-  font-size: var(--text-size, 16px);
+  font-size: var(--text-size);
   white-space: normal;
 }
 /* Open and close sit in the top-right corner, as Obsidian's expand icon. */
@@ -33,8 +33,8 @@
   color: var(--muted);
   background: transparent;
   font: inherit;
-  font-size: 15px;
-  line-height: 24px;
+  font-size: 0.9375em;
+  line-height: 1.6;
   cursor: pointer;
 }
 .link-preview-action:hover,

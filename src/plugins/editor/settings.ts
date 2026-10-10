@@ -6,7 +6,7 @@ import { config } from "./manifest";
 import { fontVariables } from "./font";
 import type { Platform } from "./font";
 const defaults = Object.freeze(config.parse({}));
-/** VS Code's automatic line height is taller on macOS. */
+/** The platform, for VS Code's default font family list. */
 function platform(): Platform {
   const name = typeof navigator === "undefined" ? "" : navigator.platform;
   if (/Mac|iPhone|iPad/.test(name ?? "")) {

@@ -4,7 +4,7 @@ export async function connect() {
   const page = browser
     .contexts()[0]
     .pages()
-    .find((p) => p.url().includes("app://"));
+    .find((p) => p.url().includes("app://obsidian.md/index.html"));
   return { browser, page };
 }
 // Observe: for each probe (selection), return visible text of editor.

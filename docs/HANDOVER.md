@@ -205,9 +205,9 @@ completion and Phase 8 records) first.
   | Note property | Follows | Notes |
   | --- | --- | --- |
   | Text and code family | `editor.fontFamily` (`[markdown]` too) | `monospace` fallback added |
-  | Text and code size | `editor.fontSize` | code no longer smaller |
+  | Text and code size | `markdownWorkbench.editor.fontSize` (default 16, Obsidian's body size); `editor.fontSize` no longer applies to notes | code keeps the text's size; headings, tables, properties, footnotes, line numbers are relative to it |
   | Weight | `editor.fontWeight` | bold and headings stay bold |
-  | Line height | `editor.lineHeight` | default 0 is the text editor's own line height (1a06f65); set values honoured |
+  | Line height | `markdownWorkbench.editor.lineHeight` (multiplier, default 1.5, Obsidian's); `editor.lineHeight` no longer applies | replaced the built-in rule on 2026-10-10 |
   | Letter spacing | `editor.letterSpacing` | |
   | Ligatures | `editor.fontLigatures` | off by default, as in VS Code |
   | Variations | `editor.fontVariations` | |
@@ -223,9 +223,13 @@ completion and Phase 8 records) first.
   - Unit tests: `src/plugins/editor/font.test.ts` and
     `test/unit/settings/editor.test.ts`.
 
-### Line height follows the text editor (11afb18, 1a06f65)
+### Line height (11afb18, 1a06f65; superseded 2026-10-10)
 
-- Owner decision (2026-10-09): at `editor.lineHeight` 0 the note uses the
+- Superseded: the note's line height is now `markdownWorkbench.editor.lineHeight`
+  (default 1.5, Obsidian's), not VS Code's rule below, which was removed
+  with `lineHeightPixels`.
+
+- Historical (replaced, no longer the behaviour): owner decision (2026-10-09), at `editor.lineHeight` 0 the note used the
   built-in text editor's line height, not Obsidian's 1.5. `font.ts`
   `lineHeightPixels` copies VS Code's `BareFontInfo` rule: 0 is 1.35 x size
   (1.5 on macOS), below 8 a multiplier, else pixels, rounded, at least 8.
@@ -238,7 +242,7 @@ completion and Phase 8 records) first.
   (11.6px after 12 -> 20px). The variables are now an `EditorView.theme`,
   which makes CodeMirror measure again. Browser test in
   `stable-blocks.spec.ts`; the fake host has `configureEditor`.
-- Native test: `font.spec.ts` "at the default line height ..." splits the
+- Historical native test (replaced by the 1.5 multiple spec): `font.spec.ts` "at the default line height ..." split the
   note beside **Reopen Editor With > Text Editor** and compares text, code
   and line-number heights at 12/14/16/20px (VS Code 1.141 and Cursor
   3.24.9). It failed before the change (18px vs 16px at 12px). In Cursor

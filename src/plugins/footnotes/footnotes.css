@@ -46,7 +46,7 @@
   color: var(--vscode-editorHoverWidget-foreground, inherit);
   background: var(--vscode-editorHoverWidget-background, var(--surface));
   box-shadow: 0 4px 16px #0003;
-  font-size: var(--text-size, 16px);
+  font-size: var(--text-size);
   font-weight: normal;
   line-height: 1.5;
   text-align: start;

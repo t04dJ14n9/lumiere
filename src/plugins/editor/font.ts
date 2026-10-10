@@ -22,17 +22,72 @@ const flag = new Schema<boolean | string>((value) => {
 }, {});
 
 /**
+ * One of the note's own number settings: a hand-edited value out of range or
+ * of the wrong type falls back to the default, like any invalid setting.
+ */
+function ownNumber(
+  min: number,
+  max: number,
+  fallback: number,
+  description: string,
+): Schema<number> {
+  const strict = Schema.number()
+    .min(min)
+    .max(max)
+    .description(description)
+    .default(fallback);
+  return new Schema<number>((value) => {
+    try {
+      return strict.parse(value);
+    } catch {
+      return fallback;
+    }
+  }, strict.toJSONSchema());
+}
+
+/** Obsidian 1.14.4's default body size and line height, measured (docs/obsidian-measurements/font-size.mjs). */
+export const DEFAULT_FONT_SIZE = 16;
+export const MIN_FONT_SIZE = 8;
+export const MAX_FONT_SIZE = 48;
+export const DEFAULT_LINE_HEIGHT = 1.5;
+export const MIN_LINE_HEIGHT = 1;
+export const MAX_LINE_HEIGHT = 3;
+
+/**
+ * `markdownWorkbench.editor.fontSize`: the note's own body size in pixels, the
+ * default of Obsidian's Appearance setting. Headings, code, tables, line
+ * numbers, properties and footnotes are all em- or variable-relative to it.
+ */
+export const fontSize = ownNumber(
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE,
+  DEFAULT_FONT_SIZE,
+  "Font size of the note text in pixels (Obsidian's default is 16). Headings, code, tables, line numbers, properties and footnotes scale with it. It replaces editor.fontSize for notes; the font family still follows editor.fontFamily.",
+);
+
+/**
+ * `markdownWorkbench.editor.lineHeight`: the body's line height as a multiple
+ * of the font size, so it scales with it. Obsidian's is 1.5 (24px at 16px).
+ * Headings keep their own measured line heights, which are multiples too.
+ */
+export const lineHeight = ownNumber(
+  MIN_LINE_HEIGHT,
+  MAX_LINE_HEIGHT,
+  DEFAULT_LINE_HEIGHT,
+  "Line height of the note text as a multiple of its font size (Obsidian's default is 1.5). It replaces editor.lineHeight for notes.",
+);
+
+/**
  * VS Code's editor font settings, as they apply to Markdown files (so
- * `[markdown]` overrides count, as in the built-in text editor). Empty
- * defaults mean "not given": the stylesheet's own fallbacks apply.
+ * `[markdown]` overrides count, as in the built-in text editor). The size and
+ * line height are not among them: the note has its own (above). Empty defaults mean
+ * "not given": the stylesheet's own fallbacks apply.
  */
 export const fontFields = {
   fontFamily: lenient(Schema.string(), ""),
   /** The host's own default of `editor.fontFamily`, which VS Code appends. */
   defaultFontFamily: lenient(Schema.string(), ""),
-  fontSize: lenient(Schema.number(), 0),
   fontWeight: lenient(Schema.string(), "normal"),
-  lineHeight: lenient(Schema.number(), 0),
   letterSpacing: lenient(Schema.number(), 0),
   fontLigatures: lenient(flag, false),
   fontVariations: lenient(flag, false),
@@ -88,28 +143,14 @@ function variationSettings(variations: boolean | string, weight: number) {
 }
 
 /**
- * VS Code's line height in pixels (`BareFontInfo._create`): 0 is the golden
- * ratio of the size (1.35, or 1.5 on macOS), below 8 is a multiplier, else
- * pixels; rounded to a whole pixel and at least 8.
+ * CSS custom properties for the note: its own size and line height, and
+ * following the built-in text editor the font family (with a monospace
+ * fallback, as VS Code adds), weight, letter spacing, ligatures and variations.
  */
-export function lineHeightPixels(
-  lineHeight: number,
-  fontSize: number,
-  mac: boolean,
-): number {
-  let pixels = lineHeight;
-  if (lineHeight <= 0) {
-    pixels = (mac ? 1.5 : 1.35) * fontSize;
-  } else if (lineHeight < 8) {
-    pixels = lineHeight * fontSize;
-  }
-  return Math.max(Math.round(pixels), 8);
-}
-
 /**
- * CSS custom properties for the note, following the built-in text editor:
- * the font family (with a monospace fallback, as VS Code adds), size,
- * weight, line height, letter spacing, ligatures and variations.
+ * CSS custom properties for the note: its own size and line height, and
+ * following the built-in text editor the font family (with VS Code's
+ * fallbacks), weight, letter spacing, ligatures and variations.
  */
 export type Platform = "mac" | "windows" | "linux";
 
@@ -136,7 +177,6 @@ export function fontVariables(
   font: FontSettings,
   platform: Platform = "linux",
 ): Record<string, string> {
-  const mac = platform === "mac";
   const vars: Record<string, string> = {};
   const family = cssValue(font.fontFamily);
   if (family) {
@@ -147,22 +187,17 @@ export function fontVariables(
     vars["--text-font"] = stack;
     vars["--code-font"] = stack;
   }
-  const size = Math.min(Math.max(font.fontSize, 0), 100);
-  if (size > 0) {
-    vars["--text-size"] = `${Math.max(size, 6)}px`;
-  }
+  const size = Math.min(Math.max(font.fontSize, MIN_FONT_SIZE), MAX_FONT_SIZE);
+  vars["--text-size"] = `${size}px`;
   const weight = cssValue(font.fontWeight);
   if (/^(normal|bold|\d{1,4})$/.test(weight)) {
     vars["--text-weight"] = weight;
   }
-  if (size > 0) {
-    // A unitless ratio, so the gutter can multiply it by the size.
-    const pixels = lineHeightPixels(font.lineHeight, Math.max(size, 6), mac);
-    // Exact, so that ratio × size is the whole pixel count VS Code uses.
-    vars["--line-height"] = String(pixels / Math.max(size, 6));
-  } else if (font.lineHeight > 0 && font.lineHeight < 8) {
-    vars["--line-height"] = String(font.lineHeight);
-  }
+  // A unitless ratio, so every line scales with the size and the gutter can
+  // multiply it by the size.
+  vars["--line-height"] = String(
+    Math.min(Math.max(font.lineHeight, MIN_LINE_HEIGHT), MAX_LINE_HEIGHT),
+  );
   if (font.letterSpacing) {
     vars["--text-letter-spacing"] =
       `${Math.min(Math.max(font.letterSpacing, -5), 20)}px`;

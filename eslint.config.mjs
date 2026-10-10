@@ -98,10 +98,10 @@ export default tseslint.config(
       "artifacts/**",
       // The VS Code build that `pnpm test:vscode` downloads when none is installed.
       ".vscode-test/**",
-      // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
-      "docs/vim-caret-measurements/**",
       // Probe scripts for real Obsidian: they run page code via the DevTools protocol.
       "docs/obsidian-measurements/**",
+      // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
+      "docs/vim-caret-measurements/**",
     ],
   },
   js.configs.recommended,

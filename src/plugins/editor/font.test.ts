@@ -1,22 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { fontVariables, lineHeightPixels } from "./font";
+import { fontSize, fontVariables, lineHeight } from "./font";
 import type { FontSettings } from "./font";
 
 const base: FontSettings = {
   fontFamily: "",
   defaultFontFamily: "",
-  fontSize: 0,
+  fontSize: 16,
   fontWeight: "normal",
-  lineHeight: 0,
+  lineHeight: 1.5,
   letterSpacing: 0,
   fontLigatures: false,
   fontVariations: false,
 };
 
-test("without host settings only VS Code's ligature and variation defaults apply", () => {
+test("without host settings the size is Obsidian's 16px and VS Code's ligature and variation defaults apply", () => {
   assert.deepEqual(fontVariables(base), {
+    "--text-size": "16px",
     "--text-weight": "normal",
+    "--line-height": "1.5",
     "--text-features": '"liga" off, "calt" off',
     "--text-variations": "normal",
   });
@@ -88,39 +90,41 @@ test("the host's own default list is used when it reports one", () => {
   );
 });
 
-test("line height follows VS Code: automatic at 0, a multiplier below 8, otherwise pixels, rounded", () => {
-  // VS Code's automatic line height: round(1.35 × size), 1.5 on macOS.
-  for (const [size, linux, mac] of [
-    [12, 16, 18],
-    [14, 19, 21],
-    [16, 22, 24],
-    [20, 27, 30],
-  ] as const) {
-    assert.equal(lineHeightPixels(0, size, false), linux, `${size}px`);
-    assert.equal(lineHeightPixels(0, size, true), mac, `${size}px on macOS`);
-    const ratio = Number(
+test("line height is a multiple of the size, Obsidian's 1.5 by default", () => {
+  assert.equal(fontVariables(base)["--line-height"], "1.5");
+  assert.equal(
+    fontVariables({ ...base, lineHeight: 1.8 })["--line-height"],
+    "1.8",
+  );
+  // The ratio does not depend on the size, so the lines scale with it.
+  for (const size of [8, 12, 16, 24, 48]) {
+    assert.equal(
       fontVariables({ ...base, fontSize: size })["--line-height"],
+      "1.5",
+      `${size}px`,
     );
-    assert.ok(Math.abs(ratio * size - linux) < 1e-4, `${size}px ratio`);
   }
   assert.equal(
-    fontVariables({ ...base, fontSize: 14 })["--line-height"],
-    String(19 / 14),
+    fontVariables({ ...base, lineHeight: 0.2 })["--line-height"],
+    "1",
   );
-  // Multipliers and pixels are rounded to whole pixels, at least 8.
-  assert.equal(lineHeightPixels(1.6, 14, false), 22);
-  assert.equal(lineHeightPixels(26, 16, false), 26);
-  assert.equal(lineHeightPixels(0, 5, false), 8);
-  assert.equal(lineHeightPixels(1, 6, false), 8);
-  assert.equal(
-    fontVariables({ ...base, fontSize: 16, lineHeight: 26 })["--line-height"],
-    "1.625",
-  );
-  // Without a known size (no host), only a multiplier can apply.
-  assert.equal(fontVariables(base)["--line-height"], undefined);
-  assert.equal(
-    fontVariables({ ...base, lineHeight: 1.6 })["--line-height"],
-    "1.6",
+  assert.equal(fontVariables({ ...base, lineHeight: 9 })["--line-height"], "3");
+  assert.equal(lineHeight.parse(undefined), 1.5);
+  assert.equal(lineHeight.parse(1), 1);
+  assert.equal(lineHeight.parse(3), 3);
+  // A pixel value for editor.lineHeight is no multiplier: invalid, so the default.
+  for (const bad of [0, 0.9, 3.1, 24, "tall", null, Number.NaN]) {
+    assert.equal(lineHeight.parse(bad), 1.5, String(bad));
+  }
+  assert.deepEqual(
+    { ...lineHeight.toJSONSchema(), description: undefined },
+    {
+      type: "number",
+      minimum: 1,
+      maximum: 3,
+      default: 1.5,
+      description: undefined,
+    },
   );
 });
 
@@ -133,12 +137,12 @@ test("size, weight, spacing, ligatures and variations map like the text editor",
     fontLigatures: "'ss01', 'cv02'",
     fontVariations: true,
   });
-  assert.equal(vars["--text-size"], "100px");
+  assert.equal(vars["--text-size"], "48px");
   assert.equal(vars["--text-weight"], "bold");
   assert.equal(vars["--text-letter-spacing"], "20px");
   assert.equal(vars["--text-features"], "'ss01', 'cv02'");
   assert.equal(vars["--text-variations"], '"wght" 700');
-  assert.equal(fontVariables({ ...base, fontSize: 3 })["--text-size"], "6px");
+  assert.equal(fontVariables({ ...base, fontSize: 3 })["--text-size"], "8px");
   assert.equal(
     fontVariables({ ...base, fontLigatures: true })["--text-features"],
     '"liga" on, "calt" on',
@@ -152,5 +156,25 @@ test("size, weight, spacing, ligatures and variations map like the text editor",
   assert.equal(
     fontVariables({ ...base, fontWeight: "heavy" })["--text-weight"],
     undefined,
+  );
+});
+
+test("fontSize is the note's own setting: 16 by default, 8 to 48, wrong values fall back", () => {
+  assert.equal(fontSize.parse(undefined), 16);
+  assert.equal(fontSize.parse(20), 20);
+  assert.equal(fontSize.parse(8), 8);
+  assert.equal(fontSize.parse(48), 48);
+  for (const bad of [7, 49, -1, "big", null, Number.NaN]) {
+    assert.equal(fontSize.parse(bad), 16, String(bad));
+  }
+  assert.deepEqual(
+    { ...fontSize.toJSONSchema(), description: undefined },
+    {
+      type: "number",
+      minimum: 8,
+      maximum: 48,
+      default: 16,
+      description: undefined,
+    },
   );
 });

@@ -5,7 +5,6 @@ import path from "node:path";
 import { paths, readState } from "./state";
 import {
   closeBrowser,
-  command,
   openWorkbench,
   reopenWith,
   workbenchPage,
@@ -80,9 +79,9 @@ async function editorFrame(page: Page): Promise<Frame> {
   throw new Error("No Markdown Workbench frame");
 }
 
-// The built-in text editor honours [markdown] font overrides; the note used
-// to keep VS Code's global editor font, line height and ligatures instead.
-test("note text uses the same font settings as the built-in text editor for Markdown", async () => {
+// The built-in text editor honours [markdown] font overrides; the note follows
+// them for everything but the size, which is its own setting.
+test("note text uses the same font settings as the built-in text editor for Markdown, except the size and line height", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
@@ -93,10 +92,14 @@ test("note text uses the same font settings as the built-in text editor for Mark
     JSON.stringify({
       ...(JSON.parse(original) as object),
       "editor.fontSize": 13,
+      "markdownWorkbench.editor.fontSize": 18,
+      "markdownWorkbench.editor.lineHeight": 1.8,
       "[markdown]": {
         "editor.fontFamily": "DejaVu Sans Mono",
-        "editor.fontSize": 18,
+        // The built-in editor uses this; the note ignores it.
+        "editor.fontSize": 30,
         "editor.fontWeight": "300",
+        // The built-in editor uses this; the note ignores it.
         "editor.lineHeight": 30,
         "editor.letterSpacing": 0.5,
         "editor.fontLigatures": true,
@@ -120,9 +123,12 @@ test("note text uses the same font settings as the built-in text editor for Mark
     const builtIn = await textEditorFont(page);
     expect(firstFamily(workbench.family)).toBe(firstFamily(builtIn.family));
     expect(firstFamily(builtIn.family)).toBe("DejaVu Sans Mono");
-    expect(workbench.size).toBe(builtIn.size);
+    expect(builtIn.size).toBe("30px");
+    expect(workbench.size).toBe("18px");
     expect(workbench.weight).toBe(builtIn.weight);
-    expect(workbench.lineHeight).toBeCloseTo(builtIn.lineHeight, 1);
+    // The note's line height is its own: 1.8 times its 18px, not the built-in 30px.
+    expect(builtIn.lineHeight).toBeCloseTo(30, 1);
+    expect(workbench.lineHeight).toBeCloseTo(18 * 1.8, 1);
     expect(workbench.letterSpacing).toBe(builtIn.letterSpacing);
     expect(workbench.features).toBe(builtIn.features);
     // Code uses the same face and size as the text.
@@ -167,9 +173,9 @@ async function workbenchLines(frame: Frame) {
   });
 }
 
-// With editor.lineHeight at its default (0) the note uses VS Code's own
-// automatic line height (round(1.35 × size), 1.5 on macOS), not 1.5.
-test("at the default line height the note's lines are as tall as the built-in editor's", async () => {
+// The note's line height is markdownWorkbench.editor.lineHeight times its own
+// font size (Obsidian's 1.5 by default), whatever editor.lineHeight says.
+test("the note's lines are the line height setting times the size (1.5 by default), and line numbers stay level", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
@@ -179,45 +185,38 @@ test("at the default line height the note's lines are as tall as the built-in ed
   try {
     const page = workbenchPage(browser);
     await openWorkbench(page);
-    // The same note beside it in the built-in text editor.
-    await command(page, "View: Split Editor");
-    await reopenWith(page, "Text Editor");
-    await expect(
-      page.locator(".monaco-editor .view-line").first(),
-    ).toBeVisible();
-    // Splitting moves the webview into a new frame.
-    let frame: Frame | undefined;
-    await expect
-      .poll(async () => {
-        frame = await editorFrame(page).catch(() => undefined);
-        return Boolean(frame);
-      })
-      .toBe(true);
-    for (const size of [12, 14, 16, 20]) {
+    const frame = await editorFrame(page);
+    for (const [size, multiple] of [
+      [12, undefined],
+      [14, undefined],
+      [16, undefined],
+      [20, undefined],
+      [16, 2],
+      [20, 1.2],
+    ] as const) {
       writeFileSync(
         settingsFile,
         JSON.stringify({
           ...(JSON.parse(original) as object),
-          "editor.fontSize": size,
+          // Ignored: the note has its own line height.
+          "editor.lineHeight": 40,
+          "markdownWorkbench.editor.fontSize": size,
+          ...(multiple
+            ? { "markdownWorkbench.editor.lineHeight": multiple }
+            : {}),
         }),
       );
+      const expected = size * (multiple ?? 1.5);
+      const label = `${size}px x ${multiple ?? 1.5}`;
       await expect
-        .poll(async () => (await workbenchLines(frame!)).size)
-        .toBe(`${size}px`);
-      await expect
-        .poll(async () => (await textEditorFont(page)).size)
-        .toBe(`${size}px`);
-      const builtIn = (await textEditorFont(page)).lineHeight;
-      const lines = await workbenchLines(frame!);
-
-      expect(builtIn, `${size}px built-in`).toBe(
-        Math.round((process.platform === "darwin" ? 1.5 : 1.35) * size),
-      );
-      expect(lines.text, `${size}px text`).toBeCloseTo(builtIn, 1);
-      expect(lines.code, `${size}px code`).toBeCloseTo(builtIn, 1);
+        .poll(async () => (await workbenchLines(frame)).text)
+        .toBeCloseTo(expected, 1);
+      const lines = await workbenchLines(frame);
+      expect(lines.size, label).toBe(`${size}px`);
+      expect(lines.code, `${label} code`).toBeCloseTo(expected, 1);
       // The line number is level with its line and as tall.
-      expect(lines.number, `${size}px number`).toBeCloseTo(builtIn, 1);
-      expect(lines.numberTop, `${size}px number top`).toBeCloseTo(0, 1);
+      expect(lines.number, `${label} number`).toBeCloseTo(expected, 1);
+      expect(lines.numberTop, `${label} number top`).toBeCloseTo(0, 1);
     }
   } finally {
     writeFileSync(settingsFile, original);

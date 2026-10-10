@@ -1071,6 +1071,22 @@
           "default": 4,
           "scope": "resource"
         },
+        "markdownWorkbench.editor.fontSize": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 48,
+          "description": "Font size of the note text in pixels (Obsidian's default is 16). Headings, code, tables, line numbers, properties and footnotes scale with it. It replaces editor.fontSize for notes; the font family still follows editor.fontFamily.",
+          "default": 16,
+          "scope": "resource"
+        },
+        "markdownWorkbench.editor.lineHeight": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "Line height of the note text as a multiple of its font size (Obsidian's default is 1.5). It replaces editor.lineHeight for notes.",
+          "default": 1.5,
+          "scope": "resource"
+        },
         "markdownWorkbench.folding.heading": {
           "type": "boolean",
           "default": true,

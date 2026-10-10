@@ -272,7 +272,8 @@ test("line numbers stay level with their lines when the editor font changes", as
   for (const settings of [
     { fontSize: 12 },
     { fontSize: 20 },
-    { fontSize: 16, lineHeight: 30 },
+    { fontSize: 16, lineHeight: 2 },
+    { fontSize: 20, lineHeight: 1.2 },
     { fontSize: 14 },
   ]) {
     await page.evaluate(
