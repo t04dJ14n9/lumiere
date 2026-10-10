@@ -5,6 +5,7 @@ import type { DecorationSet } from "@codemirror/view";
 import { blockRenderers, revealed } from "./registry";
 import { documentTree } from "./document-tree";
 import type { BlockRenderer, RenderBlock } from "./api";
+import { rendererMatcher, visitRendererNodes } from "./block-discovery";
 import {
   changedRegion,
   changesMetadata,
@@ -94,9 +95,15 @@ function index(
   region?: Region,
 ): IndexedBlock[] | undefined {
   const blocks: IndexedBlock[] = [];
+  const renderers = state.facet(blockRenderers);
+  if (!renderers.length) {
+    return blocks;
+  }
+  const matchRenderer = rendererMatcher(renderers);
   let escaped = false;
-  state.field(documentTree).iterate({
-    ...(region && { from: region.from, to: region.to }),
+  visitRendererNodes(state.field(documentTree), {
+    renderers,
+    ...(region && { region }),
     enter(node) {
       if (
         region &&
@@ -108,9 +115,7 @@ function index(
       if (blocks.length && node.from < blocks[blocks.length - 1]!.to) {
         return false;
       }
-      const renderer = state
-        .facet(blockRenderers)
-        .find((r) => r.match(node, state));
+      const renderer = matchRenderer(node, state);
       if (renderer) {
         const range = renderer.range?.(node, state) ?? node;
         if (region && (range.from < region.from || range.to > region.to)) {

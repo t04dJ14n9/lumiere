@@ -39,6 +39,7 @@ export class PropertyPresentation {
     void this.removeRenderer?.();
     this.removeRenderer = this.preview.block({
       kind: "properties",
+      nodes: ["Frontmatter"],
       editing: this.display === "hidden" ? "reveal" : "widget",
       match: (node) => this.display !== "source" && node.name === "Frontmatter",
       widget: (block) =>

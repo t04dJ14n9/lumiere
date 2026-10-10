@@ -2642,6 +2642,26 @@ PDF subtree import and merged-bundle splitting (merge-only; the webview
 already lazy-loads Mermaid, MathJax and code highlighting), and
 `exactOptionalPropertyTypes` (129 errors in about 60 files, deferred).
 
+### Load-time follow-up — 2026-10-10
+
+Targeted the recorded 16,000-block open profile: lazy cached heading-fold queries
+replace gutter-triggered full metadata extraction; Live Preview caches structural
+discovery across renderer registrations and skips unrelated predicates; Prism
+loads requested language components in dependency order, preserving extensions,
+aliases and embedded syntax. Added unit regressions and reproducible Node state
+and Prism diagnostics. The kernel and plugin startup order are unchanged.
+
+Measurements, raw samples, validation and remaining owner re-measurements are in
+`docs/perf/after-notes.md`. Chromium aborts under this sandbox's permissions, so
+no browser after timing or native `after.json` is claimed. Changes stay in the
+working tree at the owner's request; no commit, push or branch command was run.
+
+Checks: formatting, `pnpm lint`, `pnpm typecheck` and `pnpm build` passed.
+Fallback unit runner: 170/171 files passed; the platform-layer unit's subprocess
+capture is blocked by `EPERM`, while its three compiler fixtures reject the
+forbidden APIs when run directly. Existing browser suite: 47 launch failures
+from Chromium's sandbox abort, so browser acceptance remains unverified.
+
 ### Vim caret follow-up — 2026-10-10
 
 Delivered: a small pure caret-settings/mode mapper, native cursor fields through

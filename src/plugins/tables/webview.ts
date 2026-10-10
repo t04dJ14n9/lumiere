@@ -122,6 +122,7 @@ function registerTableRenderer(
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "Table",
+      nodes: ["Table"],
       editing: "widget",
       match: (node) => node.name === "Table",
       widget: (block) => new TableWidget(block, 0, environment),

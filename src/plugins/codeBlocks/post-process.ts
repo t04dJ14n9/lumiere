@@ -58,15 +58,31 @@ export function bindCodePass(options: CodePassOptions): void {
       },
       { signal: events.signal },
     );
-    void import("./code-highlight")
-      .then(({ highlight }) => {
-        if (options.isLive() && isActive) {
-          highlight(code);
-          pass.measure();
-        }
-      })
-      .catch((error) => options.logger.warn("Code highlighting failed", error));
+    highlightCode(code, {
+      isActive: () => options.isLive() && isActive,
+      measure: () => pass.measure(),
+      logger: options.logger,
+    });
   }
+}
+
+function highlightCode(
+  code: HTMLElement,
+  options: { isActive(): boolean; measure(): void; logger: Logger },
+): void {
+  const language = /language-([\w-]+)/.exec(code.className)?.[1];
+  if (!language) {
+    return;
+  }
+  void import("./code-highlight")
+    .then(async ({ highlight, loadLanguage }) => {
+      await loadLanguage(language, code.textContent ?? "");
+      if (options.isActive()) {
+        highlight(code);
+        options.measure();
+      }
+    })
+    .catch((error) => options.logger.warn("Code highlighting failed", error));
 }
 
 function labelFor(code: HTMLElement, copy: HTMLElement): HTMLElement | null {

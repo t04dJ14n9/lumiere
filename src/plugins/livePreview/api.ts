@@ -28,6 +28,8 @@ export interface InlineRenderer {
 }
 export interface BlockRenderer {
   kind: string;
+  /** Optional complete list of node names that `match` may accept. */
+  nodes?: readonly string[];
   match(node: SyntaxNodeRef, state: EditorState): boolean;
   editing: "reveal" | "widget";
   showSource?(state: EditorState, block: RenderBlock): boolean;

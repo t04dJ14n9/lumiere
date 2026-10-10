@@ -96,6 +96,7 @@ function registerFallbackBlocks(ctx: Context): void {
     ctx.editor.extend(
       blockRenderers.of({
         kind: "HTMLBlock",
+        nodes: ["HTMLBlock"],
         editing: "reveal",
         match: (node) => node.name === "HTMLBlock",
         // Replace whole lines, including up to three spaces of indentation.
