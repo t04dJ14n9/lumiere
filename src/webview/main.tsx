@@ -11,7 +11,7 @@
 import React from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { browserRenderEnvironment, type ViewerEngine } from './browser-render-environment';
+import { browserRenderEnvironment, warmWasm, type ViewerEngine } from './browser-render-environment';
 import { PdfEngine, Status } from './engine';
 import { connectToHost } from './host';
 import { PdfRenderSession, replaceSession } from './render-session';
@@ -20,18 +20,30 @@ import './styles/base.css';
 import './styles/toolbar.css';
 import './styles/page.css';
 
+performance.mark('pdf:main');
 const container = document.getElementById('root');
 if (!container) throw new Error('The viewer page has no #root element');
 const wasmUrl = container.dataset.pdfiumWasm;
+// Load-time marks (see test/vscode/perf.spec.ts): the first rendered page image.
+container.addEventListener(
+  'load',
+  event => {
+    if (event.target instanceof Element && event.target.classList.contains('page-image')) performance.mark('pdf:first-page');
+  },
+  { capture: true, once: false },
+);
 const root = createRoot(container);
 
 if (!wasmUrl) {
   root.render(<Status text="The PDF engine is missing from this installation." />);
 } else {
+  // The engine's WASM downloads while the host sends the PDF.
+  warmWasm(wasmUrl).catch(() => undefined);
   let generation = 0;
   let session: PdfRenderSession<ViewerEngine> | undefined;
   root.render(<Status text="Loading the PDF…" />);
   connectToHost(buffer => {
+    performance.mark('pdf:buffer');
     session = replaceSession(
       session,
       after => new PdfRenderSession(buffer, wasmUrl, browserRenderEnvironment, after),
