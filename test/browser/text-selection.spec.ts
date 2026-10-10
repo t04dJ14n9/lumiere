@@ -9,6 +9,35 @@ import {
   TEXT_MIDLINE,
 } from "./viewer-support";
 
+test("pressing Ctrl+C copies the selected text, and there is no Copy text button", async ({
+  page,
+}) => {
+  await open(page);
+  const at = await pagePoint(page, 1);
+  await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
+  await expect
+    .poll(() => lastSelection(page))
+    .toMatchObject({ kind: "text", text: "Synthetic page 1" });
+  await expect(page.getByRole("button", { name: "Copy text" })).toHaveCount(0);
+  await page.evaluate(() => {
+    const target = window as unknown as { __copied?: string[] };
+    target.__copied = [];
+    document.addEventListener("copy", (event) => {
+      target.__copied!.push(
+        event.clipboardData?.getData("text/plain") ?? "",
+      );
+    });
+  });
+  await page.keyboard.press("ControlOrMeta+c");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { __copied: string[] }).__copied,
+      ),
+    )
+    .toEqual(["Synthetic page 1"]);
+});
+
 test("a text drag reports its text and line box, and the copy command copies the text", async ({
   page,
 }) => {
@@ -86,9 +115,9 @@ test("Copy Link for Agent, from a text or region menu, comes after the full sele
   const textMenu = page.getByRole("toolbar", {
     name: "PDF text selection actions",
   });
+  // No Copy text button: Ctrl/Cmd+C copies the selected text.
   await expect(textMenu.getByRole("button")).toHaveText([
     "Copy Link for Agent",
-    "Copy text",
   ]);
   await textMenu.getByRole("button", { name: "Copy Link for Agent" }).click();
   await expect

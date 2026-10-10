@@ -34,7 +34,7 @@
   items) and renamed Ask Agent to **Copy Link for Agent**
   (`vscodeEmbedPdf.copyLinkForAgent`, setting
   `vscodeEmbedPdf.copyLinkForAgent.target`; no migration). It copies the
-  same text, and ⌘C / Ctrl+C or Copy text copies plain text.
+  same text, and ⌘C / Ctrl+C copies the selected text as plain text (the Copy text button is removed).
 - Copy Link for Agent does not guess the agent: `auto` opens a chat only when
   the editor's own chat is the only agent installed, otherwise it copies and
   asks you to paste. `vscodeEmbedPdf.copyLinkForAgent.target` picks `cursor`,

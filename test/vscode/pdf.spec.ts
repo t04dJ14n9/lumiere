@@ -69,7 +69,7 @@ test('Copy Link for Agent works from the selection menu and the editor title but
   const at = await pagePoint(viewer, 3);
   await selectText(page, viewer, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
   const textMenu = viewer.getByRole('toolbar', { name: 'PDF text selection actions' });
-  await expect(textMenu.getByRole('button')).toHaveText(['Copy Link for Agent', 'Copy text']);
+  await expect(textMenu.getByRole('button')).toHaveText(['Copy Link for Agent']);
   await textMenu.getByRole('button', { name: 'Copy Link for Agent' }).click();
   await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
     .toContain(withoutSpaces(`Source: [${PDF} (page 3)](<${PDF}#page=3&viewrect=`));

@@ -89,7 +89,6 @@ function TextSelectionMenu({ menuWrapperProps, rect, placement, selection }:
         style={{ top: placement.suggestTop ? -40 : rect.size.height + 6 }}
       >
         <AgentButtons selection={selection} />
-        <button type="button" onClick={selection.copyText}>Copy text</button>
       </div>
     </div>
   );
@@ -150,7 +149,7 @@ function RegionMenu({ rect: [left, top, , bottom], scale, selection }: {
 
 /**
  * Copy Link for Agent copies the selection with its link (and opens an agent chat with it when one is available).
- * Plain copying is Cmd/Ctrl+C, or Copy text for a text selection.
+ * Plain copying of selected text is Cmd/Ctrl+C (see `useSelectionReporting`).
  */
 function AgentButtons({ selection }: { selection: SelectionReporting }): React.JSX.Element {
   return <button type="button" onClick={() => void selection.copyLinkForAgent()}>Copy Link for Agent</button>;

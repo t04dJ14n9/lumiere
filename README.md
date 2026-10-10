@@ -38,8 +38,8 @@ is the only agent installed (or you pick one), that chat opens with it.
 - **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   button next to the selection, the right-click menu, the editor title
-  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C (or **Copy text** next
-  to a text selection) copies just the text. There is no separate Copy for
+  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C copies just the selected
+  text (there is no Copy text button). There is no separate Copy for
   Agent or Ask Agent: this one action always copies, and opens a chat only
   as described below.
 

@@ -100,10 +100,6 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
     postToHost({ type: 'copyLinkForAgent' });
   }, [reportSelection]);
 
-  const copyText = useCallback((): void => {
-    selection?.forDocument(documentId).copyToClipboard();
-  }, [documentId, selection]);
-
   // The text selection is drawn by EmbedPDF, not the browser, so answer the
   // copy command (Cmd/Ctrl+C) with the selected text ourselves.
   useEffect(() => {
@@ -124,7 +120,7 @@ export function useSelectionReporting(documentId: string, pdf: PdfDocumentObject
     selection?.forDocument(documentId).clear();
   }, [changeRegion, documentId, selection]);
 
-  return { region, clear, copyLinkForAgent, copyText };
+  return { region, clear, copyLinkForAgent };
 }
 
 export type SelectionReporting = ReturnType<typeof useSelectionReporting>;
