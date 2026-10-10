@@ -123,11 +123,12 @@ export function Viewer({
   const runAction = useViewActions(navigation, openSearch, setTool, (next) =>
     setChoices((current) => ({ ...current, ...next })),
   );
+  const { handle: handleHistory, jump: jumpHistory } = history;
   useEffect(
     () =>
       listenToHost((message) => {
-        if (history.handle(message)) return;
-        if (message.type === "goTo") history.jump(() => show(message.location, message.top), message.requestId);
+        if (handleHistory(message)) return;
+        if (message.type === "goTo") jumpHistory(() => show(message.location, message.top), message.requestId);
         else if (message.type === "action") {
           const action = parseViewerAction(message.action);
           if (action) runAction(action);
@@ -148,7 +149,7 @@ export function Viewer({
           setToolbar(rememberToolbarSettings(message.toolbar));
         }
       }, hostGeneration),
-    [show, runAction, setZen, history.handle, history.jump, hostGeneration],
+    [show, runAction, setZen, handleHistory, jumpHistory, hostGeneration],
   );
 
   const latest = useRef({ selection, searching, tool, setTool });
