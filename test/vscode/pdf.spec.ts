@@ -98,6 +98,10 @@ test('Copy Link for Agent from the context menu opens the agent chat with the re
   const at = await pagePoint(viewer, 3);
   await drag(page, at(60, 70), at(230, 150));
   await expect(viewer.getByRole('toolbar', { name: 'PDF region actions' })).toBeVisible();
+  // The context menu offers the selection's items only once the extension has
+  // the selection (the editor title action shows then); a right-click before
+  // that gets the plain menu and clears the selection.
+  await expect(page.locator('.editor-actions').getByRole('button', { name: /^Copy Link for Agent/u })).toBeVisible();
   await contextMenu(page, at(100, TEXT_MIDLINE), 'Copy Link for Agent');
   await expect.poll(() => agentChatInput(page), { timeout: 15_000 })
     .toContain(withoutSpaces(`Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`));
