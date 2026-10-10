@@ -2663,8 +2663,9 @@ original HEAD manifest, with all four cursor fields absent.
 Checks: formatting, lint, all TypeScript projects, build and 66 focused unit
 assertions passed. `pnpm exec tsx --test` hit the sandbox's IPC EPERM; the
 `node --import tsx` fallback passed. Playwright discovered and built the targeted
-spec, but Chromium aborted before executing it (`sandbox_host_linux.cc:41`,
-Operation not permitted). Runtime geometry, colours and native visual comparison
-remain owner-run. The pinned human-learning checkout is unavailable here; the
+spec, but Chromium aborted before executing it in that sandbox
+(`sandbox_host_linux.cc:41`, Operation not permitted). Runtime checks were run
+later on the box: `docs/vim-caret.md` "Verification" lists the real VS Code and
+Cursor comparison with the built-in caret and the Chromium geometry specs. The pinned human-learning checkout is unavailable here; the
 installed codemirror-vim 6.3.0 implementation was read directly. No commit, push,
 branch command or owner-profile installation was performed, as requested.

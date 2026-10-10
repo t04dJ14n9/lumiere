@@ -55,6 +55,7 @@ to selection moves, while `on` also animates typing and deletion.
 - `caret-geometry.ts`: character/glyph/font measurements relative to the scroller.
 - `caret.css`: theme colours, cursor shapes, blinking and movement transitions.
 - `caret.test.ts`: native and modal cursor mapping units.
+- Browser and real-editor specs: `test/browser/vim-caret.spec.ts` (settings), `test/browser/vim-caret-geometry.spec.ts` (graphemes, ligatures, lifecycle), `test/vscode/vim-caret.spec.ts` (against the built-in caret).
 - `api.ts`: editor, panel, menu, view-state and event contracts.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.
