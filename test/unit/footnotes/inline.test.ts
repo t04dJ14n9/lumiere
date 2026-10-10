@@ -95,14 +95,14 @@ test("a caret inside an inline footnote fades only its brackets", () => {
   assert.deepEqual(faint, ["^[", "]"]);
 });
 
-test("a selection over the whole note keeps every reference and definition rendered", () => {
+test("a selection over the whole note keeps references rendered and reveals definitions", () => {
   const { references, numbers, faint, markers } = decorate(
     range(0, source.length),
   );
   assert.deepEqual(references, ["1", "2", "3", "1"]);
-  assert.deepEqual(numbers, ["1", "2"]);
+  assert.deepEqual(numbers, []);
   assert.deepEqual(faint, []);
-  assert.deepEqual(markers, []);
+  assert.deepEqual(markers, ["[^1]:", "[^note]:"]);
 });
 
 test("a selection ending inside a reference keeps it rendered", () => {
@@ -127,8 +127,12 @@ test("definitions lead with their number; the caret on the marker shows its fain
   const atNote = decorate(caret(source.indexOf("[^note]:") + 3));
   assert.deepEqual(atNote.markers, ["[^note]:"]);
   assert.deepEqual(atNote.numbers, ["1"]);
-  // The caret at the start of the definition's text leaves the number.
+  // The whole first line reveals its marker; continuation lines do not.
   const atText = decorate(caret(source.indexOf("A named footnote")));
-  assert.deepEqual(atText.markers, []);
-  assert.deepEqual(atText.numbers, ["1", "2"]);
+  assert.deepEqual(atText.markers, ["[^note]:"]);
+  assert.deepEqual(atText.numbers, ["1"]);
+  assert.deepEqual(decorate(caret(source.indexOf("continues"))).numbers, [
+    "1",
+    "2",
+  ]);
 });

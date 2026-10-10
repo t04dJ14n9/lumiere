@@ -79,7 +79,7 @@ for (const manifest of features) {
       assert.equal(f.handlers.has(command.editorCommand!), true);
     }
     const activeHooks = await renderHooks(f.root);
-    const activeMenu = await f.root.waterfall("editor/selectionMenu", []);
+    const activeMenu = await f.root.pipeline("editor/selectionMenu", []);
     if (manifest.id === "agentBridge") {
       assert.deepEqual(
         activeMenu.map((item) => item.label),
@@ -111,7 +111,7 @@ for (const manifest of features) {
       prepared: false,
       fence: undefined,
     });
-    assert.deepEqual(await f.root.waterfall("editor/selectionMenu", []), []);
+    assert.deepEqual(await f.root.pipeline("editor/selectionMenu", []), []);
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
     // Every effect, listener, child plugin and service it held is gone.

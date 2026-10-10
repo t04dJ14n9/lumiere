@@ -55,6 +55,27 @@ class PropertyHeadingFocus {
     view.dom.append(this.proxy);
   }
 
+  /**
+   * ArrowUp from the first line of the body: Obsidian moves focus to the last
+   * control of the Properties block (its "Add property" button, or the heading
+   * when collapsed). An offscreen block is scrolled back into view first.
+   */
+  enter(): void {
+    const target = (heading: HTMLElement): HTMLElement => {
+      const add = heading
+        .closest(".hybrid-properties")
+        ?.querySelector<HTMLElement>("[data-property-add]");
+      return add?.getClientRects().length ? add : heading;
+    };
+    const heading = this.view.dom.querySelector<HTMLElement>(headingSelector);
+    if (heading?.getClientRects().length) {
+      target(heading).focus();
+      return;
+    }
+    this.proxy.focus({ preventScroll: true });
+    this.reveal((revealed) => target(revealed).focus());
+  }
+
   page(backward: boolean): void {
     this.proxy.focus({ preventScroll: true });
     this.view.scrollDOM.scrollBy({

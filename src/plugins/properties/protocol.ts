@@ -5,6 +5,15 @@ export const types = Schema.record(kind);
 export const protocol = defineProtocol("properties", {
   requests: {
     types: { params: Schema.object({}), result: types },
+    names: {
+      params: Schema.object({}),
+      result: Schema.array(Schema.string().max(255)).max(50_000),
+    },
+    collapsed: { params: Schema.object({}), result: Schema.boolean() },
+    setCollapsed: {
+      params: Schema.object({ collapsed: Schema.boolean() }),
+      result: Schema.boolean(),
+    },
     setType: {
       params: Schema.object({
         key: Schema.string().max(255),
@@ -13,5 +22,5 @@ export const protocol = defineProtocol("properties", {
       result: types,
     },
   },
-  notifications: { types: types },
+  notifications: { types: types, collapsed: Schema.boolean() },
 });

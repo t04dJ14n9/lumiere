@@ -2,6 +2,11 @@ import type { PropertyContext } from "./context";
 import type { PropertyScalar } from "../../markdown/properties";
 import type { ChipActions } from "./chip-actions";
 import { ChipDraft } from "./chip-draft";
+import {
+  inputText,
+  setInputValidity,
+  reportInputValidity,
+} from "./value-input";
 export { itemOccurrence } from "./chip-values";
 
 export interface PropertyChipsOptions {
@@ -21,11 +26,13 @@ export function bindPropertyChips(options: PropertyChipsOptions): () => void {
 
 class PropertyChips {
   private closeMenu?: () => void;
-  private readonly add: HTMLInputElement;
+  private readonly add: HTMLElement;
   private readonly chips: HTMLElement[];
 
   constructor(private readonly options: PropertyChipsOptions) {
-    this.add = options.list.querySelector<HTMLInputElement>("input")!;
+    this.add = options.list.querySelector<HTMLElement>(
+      "[data-property-list-input]",
+    )!;
     this.chips = [
       ...options.list.querySelectorAll<HTMLElement>("[data-property-chip]"),
     ];
@@ -33,7 +40,7 @@ class PropertyChips {
     this.add.addEventListener("keydown", (event) => {
       if (
         !event.isComposing &&
-        !this.add.value &&
+        !inputText(this.add) &&
         ["ArrowLeft", "Backspace"].includes(event.key) &&
         this.chips.length
       ) {
@@ -55,7 +62,9 @@ class PropertyChips {
     const chip = current?.querySelector<HTMLElement>(
       `[data-property-chip="${Math.max(0, index)}"]`,
     );
-    (chip ?? current?.querySelector<HTMLInputElement>("input"))?.focus();
+    (
+      chip ?? current?.querySelector<HTMLElement>("[data-property-list-input]")
+    )?.focus();
   }
 
   private edit(index: number): void {
@@ -139,8 +148,8 @@ class PropertyChips {
       ],
       point,
       (message) => {
-        this.add.setCustomValidity(message);
-        this.add.reportValidity();
+        setInputValidity(this.add, message);
+        reportInputValidity(this.add);
       },
       "List item actions",
     );

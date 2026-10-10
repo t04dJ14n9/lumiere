@@ -14,7 +14,13 @@ interface RowNavigation {
 
 export function bindRowNavigation(options: RowNavigation): void {
   options.row.addEventListener("keydown", (event) => {
-    if (event.target !== options.row || event.isComposing) {
+    if (event.isComposing) {
+      return;
+    }
+    if (event.target !== options.row) {
+      if (event.key === "Tab") {
+        routeFieldTab(event, options.row);
+      }
       return;
     }
     if (navigateRow(event, options)) {
@@ -32,7 +38,7 @@ function navigateRow(event: KeyboardEvent, options: RowNavigation): boolean {
   const index = rows.indexOf(row);
   const add = panel.querySelector<HTMLButtonElement>("[data-property-add]")!;
   const heading = panel.querySelector<HTMLElement>(
-    ":scope > summary [data-properties-heading]",
+    "[data-properties-heading]",
   )!;
   const input = row.querySelector<HTMLInputElement>("[data-property-name]")!;
   const action = rowKeyAction(event, vim);
@@ -97,9 +103,6 @@ export function rowKeyAction(
   if (!(event.metaKey || event.ctrlKey)) {
     return undefined;
   }
-  if (event.key === "Backspace") {
-    return "remove";
-  }
   if (event.key.toLowerCase() === "z") {
     return event.shiftKey ? "redo" : "undo";
   }
@@ -119,6 +122,8 @@ function rowMotion(event: RowKey, vim: boolean): RowAction | undefined {
     ArrowLeft: "name",
     ArrowRight: "value",
     Enter: "value",
+    Delete: "remove",
+    Escape: "body",
   };
   const motion = standard[event.key];
   if (motion || !vim) {
@@ -135,9 +140,73 @@ function rowMotion(event: RowKey, vim: boolean): RowAction | undefined {
   return vimMotions[event.key];
 }
 
+export function propertyTabDestination(
+  from: "name" | "value" | "row",
+  backward: boolean,
+): "name" | "value" | "row" | "next" | "previous" {
+  if (from === "row") {
+    return backward ? "previous" : "next";
+  }
+  if (from === "name") {
+    return backward ? "previous" : "value";
+  }
+  return backward ? "name" : "row";
+}
+
+function routeFieldTab(event: KeyboardEvent, row: HTMLElement): void {
+  if (!(event.target instanceof HTMLElement)) {
+    return;
+  }
+  const panel = row.closest(".properties");
+  const fromName = event.target.hasAttribute("data-property-name");
+  const key = fromName
+    ? (event.target as HTMLInputElement).value.trim()
+    : row.dataset.propertyRow;
+  // Committing can replace the row before this Tab's focus movement.
+  if (
+    !event.target.dispatchEvent(
+      new Event("property-commit", { cancelable: true }),
+    )
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  const current =
+    panel?.querySelector<HTMLElement>(
+      `[data-property-row="${CSS.escape(key ?? "")}"]`,
+    ) ?? row;
+  const destination = propertyTabDestination(
+    fromName ? "name" : "value",
+    event.shiftKey,
+  );
+  focusTabDestination(current, panel, destination);
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 function valueSelection(key: string): "start" | "end" | "all" {
   if (key === "A") {
     return "end";
   }
   return key === "Enter" ? "all" : "start";
+}
+
+function focusTabDestination(
+  row: HTMLElement,
+  panel: Element | null,
+  destination: ReturnType<typeof propertyTabDestination>,
+): void {
+  if (destination === "value") {
+    focusValue(row);
+  } else if (destination === "name") {
+    row.querySelector<HTMLElement>("[data-property-name]")?.focus();
+  } else if (destination === "previous") {
+    const previous = row.previousElementSibling as HTMLElement | null;
+    (
+      previous ?? panel?.querySelector<HTMLElement>("[data-properties-heading]")
+    )?.focus();
+  } else if (row.isConnected) {
+    row.focus();
+  }
 }

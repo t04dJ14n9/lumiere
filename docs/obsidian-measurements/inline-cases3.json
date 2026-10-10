@@ -1,0 +1,22 @@
+[
+  {
+    "name": "gap1",
+    "line": "aa **one**x~~two~~y==three== bb",
+    "elements": ["**one**", "~~two~~", "==three=="]
+  },
+  {
+    "name": "gap-space",
+    "line": "aa **one** ~~two~~ ==three== bb",
+    "elements": ["**one**", "~~two~~", "==three=="]
+  },
+  {
+    "name": "adj2",
+    "line": "aa **one**~~two~~ bb",
+    "elements": ["**one**", "~~two~~"]
+  },
+  {
+    "name": "adj-link",
+    "line": "aa [a](x.md)[[B]]**c** bb",
+    "elements": ["[a](x.md)", "[[B]]", "**c**"]
+  }
+]

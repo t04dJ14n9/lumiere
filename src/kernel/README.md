@@ -42,8 +42,22 @@ Intentional differences from Cordis:
 
 - This is a dependency-free, in-house subset with an explicit pure runtime;
   it does not implement Cordis's full API or depend on its implementation.
-- `waterfall` is asynchronous. `bail` remains synchronous and may return a
-  promise representing claimed work.
+- Moving to the real `cordis` package is **not** a mechanical change; see
+  DESIGN.md §5.9. Event semantics differ: our `pipeline` is awaited and
+  ranked, `bail` is synchronous and may return a promise representing claimed
+  work, and a throwing listener is logged and skipped. Cordis's `waterfall`,
+  `bail` and exception propagation behave differently.
+- Cleanup completion is joined: `dispose()` waits for releases already
+  running, every resource is released in reverse order even after a failure,
+  and a provider waits for consumers that are already stopping. Cordis calls a
+  disposer at most once without joining it, chains the disposers of one effect
+  without per-disposer recovery, and finds consumers only among registered
+  fibers.
+- Unloading does not wait for initialization to finish where a runtime cancels
+  a starting scope; Cordis's unload waits, and its HMR does not roll back a
+  failed replacement.
+- Required and optional injection, replaceable provider stacks, staged
+  publication and plugin manifests have no Cordis equivalent.
 - Services are published atomically after `apply` succeeds, avoiding consumers
   seeing a partly initialized async provider. Service subclasses publish after
   `start`. Optional injection changes restart consumers as required injection

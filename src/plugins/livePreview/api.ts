@@ -10,6 +10,7 @@ export interface RenderBlock {
 }
 export interface InlineContext {
   state: EditorState;
+  /** Inclusive selection touch, extended through inline ancestors and abutting elements. */
   revealed(from: number, to: number): boolean;
   mark(
     from: number,
