@@ -184,7 +184,7 @@ test("horizontal strategy arranges native layout items across the viewport", asy
   await expect(page.locator('.page[data-page-index="6"] img')).toBeVisible();
   await expect
     .poll(() => lastView(page))
-    .toMatchObject({ page: 7, scrollDirection: "horizontal" });
+    .toMatchObject({ readingPage: 7, scrollDirection: "horizontal" });
 });
 
 test("saved view choices override defaults on reopen and survive a file rebuild", async ({

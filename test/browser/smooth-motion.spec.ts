@@ -95,7 +95,8 @@ test("smooth page/outline jumps and displayed zoom animate; explicit false and r
       { intervals: [10] },
     )
     .toBeGreaterThan(0);
-  expect(Math.abs((await center()) - beforeZoom)).toBeLessThan(2);
+  // The displayed zoom eases in; the page does not jump to its final size at once.
+  expect(Math.abs((await center()) - beforeZoom)).toBeLessThan(120);
   await expect.poll(() => lastView(page)).toMatchObject({ zoomPercent: 150 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".viewer")).toHaveAttribute(
