@@ -73,13 +73,14 @@ function snapToPixels(
   position: { left: number },
   width: number,
   line: { from: number },
+  straddles: boolean,
 ): { left: number; width: number } {
   const lineStart = view.coordsAtPos(line.from, 1)?.left;
   if (view.textDirection !== Direction.LTR || lineStart === undefined) {
     return { left: position.left, width };
   }
   const offset = Math.round((position.left - lineStart) / view.scaleX);
-  const shift = width >= 2 && offset >= 1 ? 1 : 0;
+  const shift = straddles && width >= 2 && offset >= 1 ? 1 : 0;
   return {
     left: lineStart + (offset - shift) * view.scaleX,
     width: Number.isInteger(width) ? width : Math.max(1, Math.round(width)),
@@ -127,8 +128,15 @@ export function measureCarets(
       : view.defaultCharacterWidth;
     const requested =
       appearance.width === "character" ? characterWidth : appearance.width;
-    const snapped = snapToPixels(view, position, requested, line);
-    const width = snapped.width;
+    const snapped = snapToPixels(
+      view,
+      position,
+      requested,
+      line,
+      appearance.style === "line",
+    );
+    // An empty line in Vim's visual mode shows only the block's two border pixels.
+    const width = appearance.endCaret && text === "" ? 2 : snapped.width;
     // The built-in editor's caret fills the whole line box; CodeMirror's
     // character rectangle is only the glyph box, so add the line's half-leading.
     const leading = halfLeading(view, head, position.bottom - position.top);
@@ -162,7 +170,7 @@ export function measureCarets(
       const endPosition = Math.min(range.head, line.to);
       const end = view.coordsAtPos(endPosition, -1);
       if (end) {
-        const placedEnd = snapToPixels(view, end, 1, line);
+        const placedEnd = snapToPixels(view, end, 1, line, false);
         geometries.push({
           part: "end",
           left:
