@@ -1,7 +1,7 @@
 import { useViewportPlugin } from "@embedpdf/plugin-viewport/react";
 import { useEffect, useState, type RefObject } from "react";
 import {
-  isDiscreteWheel,
+  WheelGesture,
   motionProgress,
   wheelPixels,
   wheelTarget,
@@ -38,6 +38,7 @@ export function useSmoothWheel(
     const element = container.current;
     const viewport = element?.querySelector<HTMLElement>(".viewport");
     if (!element || !viewport) return;
+    const gesture = new WheelGesture();
     let frame = 0;
     let target = 0;
     let axis: "scrollTop" | "scrollLeft" = "scrollTop";
@@ -59,7 +60,11 @@ export function useSmoothWheel(
         !event.target.closest(".viewport")
       )
         return;
-      if (event.ctrlKey || event.metaKey || !isDiscreteWheel(event)) {
+      if (
+        !gesture.discrete(event, event.timeStamp) ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
         interrupt();
         return;
       }

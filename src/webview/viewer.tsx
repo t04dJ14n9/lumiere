@@ -19,6 +19,7 @@ import {
 } from "./reading-position";
 import type { ViewChoices } from "../shared/view-settings";
 import { usePagedScroll } from "./paged-scroll";
+import { usePagedWheel, usePagingKeys } from "./paging-input";
 import { useSmoothMotion, useSmoothWheel } from "./smooth-scrolling";
 import { useZoomTransition } from "./zoom-transition";
 import { useViewLayout } from "./view-layout";
@@ -76,6 +77,14 @@ export function Viewer({
     choices.scrollMode,
   );
   useSmoothWheel(documentArea, smooth, choices.scrollDirection, bounds);
+  const paging = {
+    mode: choices.scrollMode,
+    direction: choices.scrollDirection,
+    bounds,
+    step: navigation.step,
+  };
+  usePagingKeys(documentArea, paging);
+  usePagedWheel(documentArea, paging);
   useZoomTransition(documentArea, smooth);
   useViewLayout(choices, navigation);
   useEndDragsReleasedOutside();
