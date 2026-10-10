@@ -51,6 +51,9 @@ export type ViewerAction =
       action:
         | "previousPage"
         | "nextPage"
+        /** Turn the page keeping the zoom and the place in the page (Preview's Option+Arrow). */
+        | "previousPageKeepingPlace"
+        | "nextPageKeepingPlace"
         | "zoomIn"
         | "zoomOut"
         | "fitWidth"
@@ -68,6 +71,8 @@ export type ViewerAction =
 const SIMPLE_ACTIONS = new Set([
   "previousPage",
   "nextPage",
+  "previousPageKeepingPlace",
+  "nextPageKeepingPlace",
   "zoomIn",
   "zoomOut",
   "fitWidth",

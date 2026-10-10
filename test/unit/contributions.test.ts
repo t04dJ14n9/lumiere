@@ -59,3 +59,18 @@ test('Look Up is a setting, hidden from the palette and offered in the viewer me
   const menu = (contributes.menus['webview/context'] as { command: string; when?: string }[]).find(entry => entry.command === 'vscodeEmbedPdf.lookUp');
   assert.match(menu?.when ?? '', /vscodeEmbedPdf\.lookUp\.hasWord/u);
 });
+
+test('turning the page keeping the place: Option+Arrow on macOS, Ctrl+Alt+Arrow elsewhere, never plain Alt+Arrow (VS Code Go Back/Forward)', () => {
+  const bindings = (contributes.keybindings ?? []) as { key: string; mac?: string; command: string }[];
+  const keep = bindings.filter(entry => /KeepingPlace$/u.test(entry.command));
+  assert.deepEqual(
+    keep.map(entry => [entry.command.replace('vscodeEmbedPdf.', ''), entry.key, entry.mac]).sort(),
+    [
+      ['nextPageKeepingPlace', 'ctrl+alt+down', 'alt+down'],
+      ['nextPageKeepingPlace', 'ctrl+alt+right', 'alt+right'],
+      ['previousPageKeepingPlace', 'ctrl+alt+left', 'alt+left'],
+      ['previousPageKeepingPlace', 'ctrl+alt+up', 'alt+up'],
+    ],
+  );
+  for (const entry of bindings) assert.ok(!/^alt\+(left|right)$/u.test(entry.key), `${entry.command}: ${entry.key} would take VS Code's Go Back/Forward`);
+});

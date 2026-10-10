@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- ⌥←/↑/→/↓ (macOS) and Ctrl+Alt+←/↑/→/↓ (Windows, Linux) turn the page keeping the
+  zoom and the place in the page, as Preview does; commands
+  `PDF: Previous/Next Page, Keeping Place`. Scoped and opt-out like the other
+  shortcuts (`vscodeEmbedPdf.keyboardShortcuts`).
+
 - Fix: pages stored with a `/Rotate` entry (slides saved sideways, scans) were
   drawn sideways and in a box of the wrong shape: EmbedPDF opens documents with
   rotation normalised and leaves the turn to the viewer, which never made it.

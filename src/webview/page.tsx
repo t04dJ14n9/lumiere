@@ -42,7 +42,7 @@ export function Page({
       documentId={DOCUMENT_ID}
       pageIndex={pageIndex}
       scale={scale}
-      {...(rotation === 0 ? { className: 'page', 'data-page-index': pageIndex } : {})}
+      {...(rotation === 0 ? { className: 'page', 'data-page-index': pageIndex, 'data-scale': scale } : {})}
       style={{ width, height }}
     >
       <RenderLayer
@@ -80,7 +80,7 @@ export function Page({
   // (text, search hits, links), unrotated; the layers are turned as one.
   const [boxWidth, boxHeight] = rotation % 2 === 1 ? [height, width] : [width, height];
   return (
-    <div className="page" data-page-index={pageIndex} style={{ width: boxWidth, height: boxHeight }}>
+    <div className="page" data-page-index={pageIndex} data-scale={scale} style={{ width: boxWidth, height: boxHeight }}>
       <div className="page-rotor" style={{ width, height, transform: ROTOR[rotation]?.(boxWidth, boxHeight) }}>
         {layers}
       </div>

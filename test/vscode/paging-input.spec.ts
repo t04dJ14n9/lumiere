@@ -51,7 +51,9 @@ test("ArrowRight and ArrowLeft move between pages in the default view, right aft
   workbench: page,
 }) => {
   const viewer = await openFresh(page);
-  // Right after the commands, with no click on the page.
+  // Right after the commands, with no click on the page: they return the focus
+  // to the viewer, which takes a moment.
+  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
   await page.keyboard.press("ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
   await page.keyboard.press("ArrowLeft");

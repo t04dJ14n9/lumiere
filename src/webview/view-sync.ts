@@ -139,6 +139,12 @@ export function useViewActions(
       case "nextPage":
         navigation.step(1);
         break;
+      case "previousPageKeepingPlace":
+        navigation.step(-1, true);
+        break;
+      case "nextPageKeepingPlace":
+        navigation.step(1, true);
+        break;
       case "goToPage":
         navigation.goToPage(action.page);
         break;

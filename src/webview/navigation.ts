@@ -141,7 +141,7 @@ export function useNavigation(
   const restore = useCallback((position: ReadingPosition): void => {
     showRef.current({ page: position.page }, position.top, position.left, true);
   }, []);
-  const step = (delta: 1 | -1): void => {
+  const step = (delta: 1 | -1, keepPlace = false): void => {
     if (!scroll) return;
     // Native virtual items define both single-page and spread navigation.
     const items = scroll.getLayout().virtualItems;
@@ -149,7 +149,10 @@ export function useNavigation(
     const from = requestedPage.current;
     const index = items.findIndex((item) => item.pageNumbers.includes(from));
     const item = items[Math.min(Math.max(0, index + delta), items.length - 1)];
-    if (item) show({ page: item.pageNumbers[0]! });
+    if (!item) return;
+    const place = keepPlace ? placeInPage(items[index]?.pageNumbers[0]) : undefined;
+    if (place) show({ page: item.pageNumbers[0]! }, place.top, place.left);
+    else show({ page: item.pageNumbers[0]! });
   };
   const currentPage = scrollMode === "paged" ? pagedPage : state.currentPage;
   const item = state.virtualItems.find((item) =>
@@ -169,6 +172,27 @@ export function useNavigation(
     goToPage: (page: number, top?: number) => show({ page }, top),
     step,
   };
+}
+
+/**
+ * How far into a page the viewer's top-left corner is, in points: turning
+ * the page with this keeps the zoom and the place in the page, as Preview's
+ * Option+Arrow does. Nothing when the page's top is still below the corner.
+ */
+function placeInPage(
+  page: number | undefined,
+): { top: number; left: number } | undefined {
+  const viewport = document.querySelector(".viewport");
+  const element = document.querySelector<HTMLElement>(
+    `.page[data-page-index="${(page ?? 1) - 1}"]`,
+  );
+  const scale = Number(element?.dataset.scale);
+  if (!viewport || !element || !(scale > 0)) return undefined;
+  const view = viewport.getBoundingClientRect();
+  const box = element.getBoundingClientRect();
+  const top = Math.max(0, view.top - box.top) / scale;
+  const left = Math.max(0, view.left - box.left) / scale;
+  return top || left ? { top, left } : undefined;
 }
 
 export type Navigation = ReturnType<typeof useNavigation>;

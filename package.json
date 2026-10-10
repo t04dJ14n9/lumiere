@@ -66,6 +66,16 @@
         "category": "PDF"
       },
       {
+        "command": "vscodeEmbedPdf.previousPageKeepingPlace",
+        "title": "Previous Page, Keeping Place",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPageKeepingPlace",
+        "title": "Next Page, Keeping Place",
+        "category": "PDF"
+      },
+      {
         "command": "vscodeEmbedPdf.copyLinkForAgent",
         "title": "Copy Link for Agent",
         "category": "PDF",
@@ -414,6 +424,14 @@
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
         {
+          "command": "vscodeEmbedPdf.previousPageKeepingPlace",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.nextPageKeepingPlace",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
           "command": "vscodeEmbedPdf.nextPage",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
@@ -733,6 +751,30 @@
       }
     },
     "keybindings": [
+      {
+        "command": "vscodeEmbedPdf.previousPageKeepingPlace",
+        "key": "ctrl+alt+left",
+        "mac": "alt+left",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
+      },
+      {
+        "command": "vscodeEmbedPdf.previousPageKeepingPlace",
+        "key": "ctrl+alt+up",
+        "mac": "alt+up",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPageKeepingPlace",
+        "key": "ctrl+alt+right",
+        "mac": "alt+right",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
+      },
+      {
+        "command": "vscodeEmbedPdf.nextPageKeepingPlace",
+        "key": "ctrl+alt+down",
+        "mac": "alt+down",
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
+      },
       {
         "command": "vscodeEmbedPdf.previousPage",
         "key": "alt+pageup",

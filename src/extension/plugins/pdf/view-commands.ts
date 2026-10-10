@@ -25,6 +25,14 @@ export function registerViewCommands(panels: PdfPanels): vscode.Disposable {
       act({ action: "nextPage" }),
     ),
     vscode.commands.registerCommand(
+      "vscodeEmbedPdf.previousPageKeepingPlace",
+      act({ action: "previousPageKeepingPlace" }),
+    ),
+    vscode.commands.registerCommand(
+      "vscodeEmbedPdf.nextPageKeepingPlace",
+      act({ action: "nextPageKeepingPlace" }),
+    ),
+    vscode.commands.registerCommand(
       "vscodeEmbedPdf.zoomIn",
       act({ action: "zoomIn" }),
     ),
