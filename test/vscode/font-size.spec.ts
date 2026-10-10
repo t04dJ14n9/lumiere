@@ -78,6 +78,14 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
       expect(measured.codeLine, `${label} code block`).toBe(expected);
       expect(measured.tableCell, `${label} table`).toBe(expected);
       expect(measured.properties, `${label} properties`).toBe(expected);
+      expect(measured.copyCode / expected, `${label} copy button`).toBeCloseTo(
+        0.6875,
+        2,
+      );
+      expect(
+        measured.codeLanguage / expected,
+        `${label} code language`,
+      ).toBeCloseTo(0.6875, 2);
       expect(measured.footnoteRef / expected, `${label} footnote`).toBeCloseTo(
         0.7,
         2,

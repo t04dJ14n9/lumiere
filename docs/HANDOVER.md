@@ -229,7 +229,7 @@ completion and Phase 8 records) first.
   (default 1.5, Obsidian's), not VS Code's rule below, which was removed
   with `lineHeightPixels`.
 
-- Owner decision (2026-10-09): at `editor.lineHeight` 0 the note uses the
+- Historical (replaced, no longer the behaviour): owner decision (2026-10-09), at `editor.lineHeight` 0 the note used the
   built-in text editor's line height, not Obsidian's 1.5. `font.ts`
   `lineHeightPixels` copies VS Code's `BareFontInfo` rule: 0 is 1.35 x size
   (1.5 on macOS), below 8 a multiplier, else pixels, rounded, at least 8.
@@ -242,7 +242,7 @@ completion and Phase 8 records) first.
   (11.6px after 12 -> 20px). The variables are now an `EditorView.theme`,
   which makes CodeMirror measure again. Browser test in
   `stable-blocks.spec.ts`; the fake host has `configureEditor`.
-- Native test: `font.spec.ts` "at the default line height ..." splits the
+- Historical native test (replaced by the 1.5 multiple spec): `font.spec.ts` "at the default line height ..." split the
   note beside **Reopen Editor With > Text Editor** and compares text, code
   and line-number heights at 12/14/16/20px (VS Code 1.141 and Cursor
   3.24.9). It failed before the change (18px vs 16px at 12px). In Cursor

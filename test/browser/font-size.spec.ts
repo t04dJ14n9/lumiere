@@ -44,6 +44,9 @@ test("the default body size is Obsidian's 16px and everything else is relative t
   expect(measured.tableCell).toBe(16);
   expect(measured.properties).toBe(16);
   expect(measured.footnoteRef).toBeCloseTo(16 * 0.7, 2);
+  // The small code-block controls were fixed px sizes before they became em.
+  expect(measured.copyCode).toBeCloseTo(16 * 0.6875, 2);
+  expect(measured.codeLanguage).toBeCloseTo(16 * 0.6875, 2);
   expect(measured.footnoteDefinition).toBeCloseTo(16 * 0.875, 2);
   expect(measured.lineNumber).toBe(16);
   // Obsidian's line heights: 1.5 for the body (24px) and code, each heading's own.
@@ -87,6 +90,8 @@ for (const size of [8, 12, 20, 32, 48]) {
     expect(measured.tableCell).toBe(size);
     expect(measured.properties).toBe(size);
     expect(measured.footnoteRef / size).toBeCloseTo(0.7, 2);
+    expect(measured.copyCode / size).toBeCloseTo(0.6875, 2);
+    expect(measured.codeLanguage / size).toBeCloseTo(0.6875, 2);
     expect(measured.footnoteDefinition / size).toBeCloseTo(0.875, 2);
     expect(measured.lineNumber).toBe(size);
     // The lines scale with the size: 1.5 times it, and headings' own ratios.

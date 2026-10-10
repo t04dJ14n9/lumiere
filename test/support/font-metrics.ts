@@ -73,6 +73,8 @@ export async function sizes(page: Target) {
       codeLine: px(".md-code-line"),
       tableCell: px(".hybrid-table td, .hybrid-table th"),
       properties: px(".properties"),
+      copyCode: px(".copy-code"),
+      codeLanguage: px(".code-language"),
       footnoteRef: px(".mw-footnote-ref"),
       footnoteDefinition: px(".mw-footnote-def"),
       lineNumber: parseFloat(getComputedStyle(gutter).fontSize),
