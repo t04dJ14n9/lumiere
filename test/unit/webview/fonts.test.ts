@@ -39,21 +39,24 @@ test("the note's size is one variable, markdownWorkbench.editor.fontSize, not ed
 });
 
 test("every size in the note is em- or variable-relative, so it scales with the setting", () => {
+  // A control whose box is a fixed number of pixels keeps a fixed glyph, with
+  // a "/* fixed: … */" comment on its line or just above saying why.
+  const fixedSize = /(?:font-size|line-height):\s*[\d.]+px/;
   for (const file of stylesheets("src")) {
     if (CHROME.includes(file)) {
       continue;
     }
-    const text = css(file).replace(/\/\*[\s\S]*?\*\//g, "");
-    assert.doesNotMatch(
-      text,
-      /font-size:\s*[\d.]+px/,
-      `${file} sets a px size`,
-    );
-    assert.doesNotMatch(
-      text,
-      /line-height:\s*[\d.]+px/,
-      `${file} sets a px line height`,
-    );
+    const lines = css(file).split("\n");
+    lines.forEach((line, index) => {
+      if (!fixedSize.test(line) || /^\s*(\/)?\*/.test(line)) {
+        return;
+      }
+      const near = lines.slice(Math.max(index - 3, 0), index + 1);
+      assert.ok(
+        near.some((candidate) => candidate.includes("/* fixed")),
+        `${file}:${index + 1} sets a px size: ${line.trim()}`,
+      );
+    });
   }
   // The only px size in the base stylesheet is chrome (the sync toast).
   const base = css("src/webview/styles/base.css").replace(

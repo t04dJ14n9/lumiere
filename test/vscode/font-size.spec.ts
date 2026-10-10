@@ -86,17 +86,24 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
       expect(measured.lineNumber, `${label} line numbers`).toBe(expected);
 
       // No block grows scrollbars of its own after the live change.
-      expect(
-        await frame.evaluate(
+      await expect
+        .poll(
           () =>
-            [...document.querySelectorAll<HTMLElement>(".cm-content *")].filter(
-              (element) =>
-                /auto|scroll/.test(getComputedStyle(element).overflowY) &&
-                element.scrollHeight > element.clientHeight + 1,
-            ).length,
-        ),
-        `${label} scrolling blocks`,
-      ).toBe(0);
+            frame.evaluate(() =>
+              [...document.querySelectorAll<HTMLElement>(".cm-content *")]
+                .filter(
+                  (element) =>
+                    /auto|scroll/.test(getComputedStyle(element).overflowY) &&
+                    element.scrollHeight > element.clientHeight + 1,
+                )
+                .map(
+                  (element) =>
+                    `${element.className} ${element.clientHeight}/${element.scrollHeight}`,
+                ),
+            ),
+          `${label} scrolling blocks`,
+        )
+        .toEqual([]);
 
       // Every number sits level with its line, after the live change.
       await expect
