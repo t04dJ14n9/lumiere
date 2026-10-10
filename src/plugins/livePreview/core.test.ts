@@ -80,6 +80,7 @@ function livePreviewKernel(doc: string) {
   const root = Context.create();
   root.provide("editor", {
     view,
+    caret: () => [],
     settings: editorConfig.parse({}),
     mode: "livePreview",
     source: "note.md",

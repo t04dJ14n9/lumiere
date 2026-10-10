@@ -2642,6 +2642,34 @@ PDF subtree import and merged-bundle splitting (merge-only; the webview
 already lazy-loads Mermaid, MathJax and code highlighting), and
 `exactOptionalPropertyTypes` (129 errors in about 60 files, deferred).
 
+### Vim caret follow-up — 2026-10-10
+
+Delivered: a small pure caret-settings/mode mapper, native cursor fields through
+the existing `nativeConfigKeys` path, and one measured presentation layer shared
+by note and Vim table-cell editors. Normal/visual use a full character block with
+readable text in VS Code's cursor background colour; insert uses the native line
+width; `R` (insert + overwrite) and pending/counting `r` use an underline.
+Vim decides shape independently of native cursorStyle. Native typing supports all
+six styles, five blink settings and off/explicit/on movement animation. Selection
+backgrounds remain `drawSelection`'s; modal listeners and caret DOM are disposed
+with their extensions. `src/kernel` is unchanged.
+
+Added eleven pure mapping/mode/selection tests and a native-settings regression,
+plus the one Playwright spec explicitly requested by the owner (an exception to the usual
+unit-only expansion policy). Plugin READMEs, `docs/vim-caret.md` and manual caret
+scenarios are updated. The defaults/native-settings assertions fail against the
+original HEAD manifest, with all four cursor fields absent.
+
+Checks: formatting, lint, all TypeScript projects, build and 66 focused unit
+assertions passed. `pnpm exec tsx --test` hit the sandbox's IPC EPERM; the
+`node --import tsx` fallback passed. Playwright discovered and built the targeted
+spec, but Chromium aborted before executing it in that sandbox
+(`sandbox_host_linux.cc:41`, Operation not permitted). Runtime checks were run
+later on the box: `docs/vim-caret.md` "Verification" lists the real VS Code and
+Cursor comparison with the built-in caret and the Chromium geometry specs. The pinned human-learning checkout is unavailable here; the
+installed codemirror-vim 6.3.0 implementation was read directly. No commit, push,
+branch command or owner-profile installation was performed, as requested.
+
 ### Table editing parity follow-up — 2026-10-10
 
 Implemented the measured Obsidian 1.14.4 table behavior from the owner's

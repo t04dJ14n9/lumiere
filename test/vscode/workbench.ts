@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import type { Browser, Page, Frame } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths } from "./state";
 /**
@@ -16,9 +16,13 @@ export const QUICK_INPUT =
  */
 export async function openPalette(page: Page) {
   const input = page.locator(QUICK_INPUT);
+  let attempt = 0;
   await expect(async () => {
     if (!(await input.isVisible())) {
-      await page.keyboard.press("ControlOrMeta+Shift+p");
+      // F1 opens the palette too, when the shortcut is swallowed.
+      await page.keyboard.press(
+        attempt++ % 2 === 0 ? "ControlOrMeta+Shift+p" : "F1",
+      );
     }
     await expect(input).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15000 });
@@ -116,16 +120,33 @@ export async function closeBrowser(browser: Browser) {
 
 /** Reopens the active editor with another editor type, e.g. "Text Editor". */
 export async function reopenWith(page: Page, editor: string) {
-  await openPalette(page);
-  await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
-  await page
+  const row = page
     .locator(".quick-input-list .monaco-list-row")
     .filter({ hasText: "View: Reopen Editor With..." })
-    .first()
-    .click();
+    .first();
+  // Right after an editor opens, the palette can lack the command for a
+  // moment (its context keys are not set yet): close it and ask again.
+  await expect(async () => {
+    await openPalette(page);
+    await page.locator(QUICK_INPUT).fill(">View: Reopen Editor With");
+    try {
+      await expect(row).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      await page.keyboard.press("Escape");
+      throw error;
+    }
+  }).toPass({ timeout: 30000 });
+  await row.click();
   await page
     .locator(".quick-input-widget .monaco-list-row")
     .filter({ hasText: editor })
     .first()
     .click();
+}
+
+/** What global setup writes to Note.md; other specs may leave it changed. */
+export const ORIGINAL_NOTE = "# Native Markdown\n\nOriginal line";
+/** Puts Note.md back, so a spec does not depend on the ones that ran before. */
+export function resetNote() {
+  writeFileSync(path.join(paths.workspace, "Note.md"), ORIGINAL_NOTE);
 }
