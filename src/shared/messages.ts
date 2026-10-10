@@ -16,6 +16,10 @@
  *    │  goTo { location } ──────►         open a page (and box)
  *    │  action { action } ──────►         page, zoom, find or tool, from a command
  *    │  toolbar { toolbar } ────►         the toolbar setting changed
+ *    │  lookUp { enabled } ─────►         macOS Look Up is on or off
+ *    │  ◄──────────── lookUp              the word under a force click (open),
+ *    │                                    or under a right click (to look up
+ *    │                                    from the context menu)
  *
  * State reports are batched: the viewer collects what changed for a frame
  * and sends one `patch` (only the latest of each part), so scrolling or a
@@ -34,6 +38,7 @@
  * The viewer runs untrusted PDF content, so the host validates what it
  * receives with `parseViewerMessage`.
  */
+import { isLookUpWord } from "./look-up";
 import type { PdfLocation } from "./pdf-location";
 import { parseSelection, type PdfSelection } from "./selection";
 import {
@@ -82,6 +87,8 @@ export type ViewerMessage =
   /** The floating bar was dragged to another edge. */
   | { type: "floatingDock"; dock: FloatingDock }
   | { type: "openExternal"; url: string }
+  /** macOS Look Up: `open` looks the word up now (a force click), else when the context menu asks. */
+  | { type: "lookUp"; word: string | null; open: boolean }
   | { type: "error"; message: string };
 
 export type HostMessage =
@@ -95,6 +102,7 @@ export type HostMessage =
   | { type: "goTo"; location: PdfLocation; top?: number | undefined }
   | { type: "action"; action: ViewerAction }
   | { type: "toolbar"; toolbar: ToolbarSettings }
+  | { type: "lookUp"; enabled: boolean }
   | { type: "viewSettings"; settings: ViewSettings };
 
 const MAX_OUTLINE_ITEMS = 10_000;
@@ -123,6 +131,11 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     case "openExternal":
       return isWebUrl(message.url)
         ? { type: "openExternal", url: message.url }
+        : undefined;
+    case "lookUp":
+      return typeof message.open === "boolean" &&
+        (message.word === null || isLookUpWord(message.word))
+        ? { type: "lookUp", word: message.word, open: message.open }
         : undefined;
     case "error":
       return typeof message.message === "string"

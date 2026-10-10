@@ -24,7 +24,7 @@ import { viewerHtml } from "./webview-html";
 /** Messages the panel leaves to plugins (see `PdfPanels.handle`). */
 export type PluginMessage = Extract<
   ViewerMessage,
-  { type: "copyLinkForAgent" | "toggleOutline" | "floatingDock" }
+  { type: "copyLinkForAgent" | "toggleOutline" | "floatingDock" | "lookUp" }
 >;
 
 export interface PanelOptions {
@@ -70,6 +70,7 @@ export class PdfPanel implements vscode.Disposable {
   private readonly navigation: PdfNavigation;
   private readonly disposables: vscode.Disposable[] = [];
   /** `load` messages sent to the current viewer page, and the last patch applied from it. */
+  private lookUp = false;
   private loads = 0;
   private patchVersion = 0;
   private position: ReadingPosition | undefined;
@@ -129,6 +130,12 @@ export class PdfPanel implements vscode.Disposable {
   /** Show the viewer's controls where the changed setting says. */
   setToolbar(toolbar: ToolbarSettings): void {
     this.post({ type: "toolbar", toolbar });
+  }
+
+  /** Turn macOS Look Up on or off in the viewer (it is off until the plugin says). */
+  setLookUp(enabled: boolean): void {
+    this.lookUp = enabled;
+    this.post({ type: "lookUp", enabled });
   }
 
   setViewSettings(settings: ViewSettings): void {
@@ -206,6 +213,7 @@ export class PdfPanel implements vscode.Disposable {
     });
     this.loads++;
     this.navigation.loadedNow();
+    if (this.lookUp) this.post({ type: "lookUp", enabled: true });
   }
 
   private post(message: HostMessage): void {

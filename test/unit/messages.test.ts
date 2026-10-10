@@ -311,3 +311,12 @@ test("the host applies only newer patches about the bytes it sent last", () => {
   // Reported before the viewer had the latest bytes.
   assert.equal(isCurrentPatch({ version: 5, load: 1 }, 4, 2), false);
 });
+
+test('a Look Up message carries one plain word, or none, and whether to open it', () => {
+  assert.deepEqual(parseViewerMessage({ type: 'lookUp', word: 'attention', open: true }), { type: 'lookUp', word: 'attention', open: true });
+  assert.deepEqual(parseViewerMessage({ type: 'lookUp', word: null, open: false }), { type: 'lookUp', word: null, open: false });
+  assert.equal(parseViewerMessage({ type: 'lookUp', word: 'two\nlines', open: true }), undefined);
+  assert.equal(parseViewerMessage({ type: 'lookUp', word: 'x'.repeat(200), open: true }), undefined);
+  assert.equal(parseViewerMessage({ type: 'lookUp', word: 'word' }), undefined);
+  assert.equal(parseViewerMessage({ type: 'lookUp', word: 7, open: false }), undefined);
+});

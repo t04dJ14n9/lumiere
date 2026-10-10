@@ -116,6 +116,14 @@ out and in, and find buttons. `vscodeEmbedPdf.toolbar.statusBarButtons`
 
 ![Cursor: page, zoom and find in the status bar](docs/images/toolbar-cursor.png)
 
+## macOS Look Up
+
+On macOS, right-click a word and choose **Look Up** to open it in the Dictionary
+app (a force click does the same where the engine reports it). Turn it off with
+`vscodeEmbedPdf.lookUp.enabled`. The system's own three-finger-tap popup cannot
+see text drawn by the viewer; see [docs/look-up.md](docs/look-up.md) for what is
+native, what is a fallback, and what needs a Mac to verify.
+
 ## What an agent receives
 
 ```text

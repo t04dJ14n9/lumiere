@@ -26,6 +26,7 @@ import { useViewLayout } from "./view-layout";
 import { PagedPadding } from "./paged-padding";
 import { SearchBar } from "./search-bar";
 import { useIgnoreSecondaryButtons } from "./secondary-buttons";
+import { useLookUp } from "./look-up";
 import { useSelectionReporting } from "./selection";
 import { useToolMode } from "./tool-mode";
 import {
@@ -83,6 +84,8 @@ export function Viewer({
     bounds,
     step: navigation.step,
   };
+  const [lookUp, setLookUp] = useState(false);
+  useLookUp(pdf, lookUp);
   usePagingKeys(documentArea, paging);
   usePagedWheel(documentArea, paging);
   useZoomTransition(documentArea, smooth);
@@ -115,6 +118,8 @@ export function Viewer({
               ...current,
               pageLayout: settings.pageLayout,
             }));
+        } else if (message.type === "lookUp") {
+          setLookUp(message.enabled);
         } else if (message.type === "toolbar") {
           setToolbar(rememberToolbarSettings(message.toolbar));
         }

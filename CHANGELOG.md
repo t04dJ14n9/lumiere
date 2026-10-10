@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+- New plugin `pdfLookUp` (macOS only, `vscodeEmbedPdf.lookUp.enabled`): Look Up in
+  the right-click menu, and a force click, open the word under the pointer in
+  the Dictionary app. Native three-finger-tap Look Up is not possible on
+  image-drawn pages; see docs/look-up.md.
+- Smooth zoom: a trackpad pinch (Ctrl+wheel with small deltas) scales
+  continuously about the pointer with a live preview and one crisp render when
+  it settles; zoom buttons, keys and wheel notches animate from the first frame
+  and carry on from the picture on screen when pressed again mid-animation.
+
 - Review fixes (round 1), internal: the extension is a set of plugins
-  (`pdf`, `pdfToolbar`, `pdfOutline`, `pdfRegions`, `agentBridge`) started by
+  (`pdf`, `pdfToolbar`, `pdfOutline`, `pdfRegions`, `pdfLookUp`, `agentBridge`) started by
   a runtime that rolls back a plugin that fails to start and stops plugins
   in reverse order; tests check every plugin leaves nothing registered when
   it stops.

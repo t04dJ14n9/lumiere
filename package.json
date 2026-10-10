@@ -61,6 +61,11 @@
     ],
     "commands": [
       {
+        "command": "vscodeEmbedPdf.lookUp",
+        "title": "Look Up",
+        "category": "PDF"
+      },
+      {
         "command": "vscodeEmbedPdf.copyLinkForAgent",
         "title": "Copy Link for Agent",
         "category": "PDF",
@@ -393,6 +398,10 @@
       ],
       "commandPalette": [
         {
+          "command": "vscodeEmbedPdf.lookUp",
+          "when": "false"
+        },
+        {
           "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         },
@@ -489,6 +498,11 @@
         }
       ],
       "webview/context": [
+        {
+          "command": "vscodeEmbedPdf.lookUp",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.lookUp.hasWord",
+          "group": "0_agent@2"
+        },
         {
           "command": "vscodeEmbedPdf.copyLinkForAgent",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.hasSelection",
@@ -692,6 +706,11 @@
             "horizontal"
           ],
           "markdownDescription": "Reading direction for PDFs without a saved view."
+        },
+        "vscodeEmbedPdf.lookUp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "macOS only: look up the word under the pointer in the Dictionary app with a force click (hard press on the trackpad), or with **Look Up** in the right-click menu of a PDF. Has no effect on other systems."
         },
         "vscodeEmbedPdf.keyboardShortcuts": {
           "type": "boolean",
