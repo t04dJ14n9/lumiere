@@ -30,9 +30,21 @@ function resetUser(...keys: string[]): void {
 
 const settingsEditor = (page: Page) => page.locator(".settings-editor");
 
-test.afterEach(() => {
+/** The rows of the open quick pick, as text. */
+const rows = (page: Page) => page.locator(".quick-input-list .monaco-list-row");
+
+test.afterEach(async ({ workbench: page }) => {
   rmSync(path.join(paths.workspace, ".vscode"), { recursive: true, force: true });
   resetUser("vscodeEmbedPdf.keyboardShortcuts", "vscodeEmbedPdf.view.smoothScrolling", "vscodeEmbedPdf.view.pageLayout", "vscodeEmbedPdf.view.scrollMode", "vscodeEmbedPdf.view.defaultZoom", "vscodeEmbedPdf.regionImageCache.maxSizeMB", "vscodeEmbedPdf.toolbar.mode");
+  // The next spec file must start from the defaults: wait until VS Code has
+  // read the files again (its file watcher can take a while on a loaded runner).
+  await command(page, "PDF: Change Setting…");
+  const input = page.locator(".quick-input-widget input:visible");
+  for (const [filter, row, value] of [["Keyboard", "Keyboard Shortcuts", "on"], ["Mode", "Mode", "chrome"], ["Smooth", "Smooth Scrolling", "follows the editor"], ["Layout", "Page Layout", "single"]] as const) {
+    await input.fill(filter);
+    await expect(rows(page).filter({ has: page.getByText(row, { exact: true }) }).first()).toContainText(value, { timeout: 30_000 });
+  }
+  await page.keyboard.press("Escape");
 });
 
 test("PDF: Open Settings opens the Settings editor on this extension's settings", async ({ workbench: page }) => {
@@ -83,9 +95,6 @@ test("the View picker has a Settings… entry that opens the Settings editor", a
   await expect(settingsEditor(page)).toBeVisible();
   await expect(settingsEditor(page).locator(".setting-item").filter({ hasText: "Keyboard Shortcuts" }).first()).toBeVisible();
 });
-
-/** The rows of the open quick pick, as text. */
-const rows = (page: Page) => page.locator(".quick-input-list .monaco-list-row");
 
 test("PDF: Change Setting… lists every setting, grouped with its value, and edits each by its type", async ({ workbench: page }) => {
   await command(page, "PDF: Change Setting…");
