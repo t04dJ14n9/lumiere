@@ -132,7 +132,7 @@ export function Viewer({
           setToolbar(rememberToolbarSettings(message.toolbar));
         }
       }),
-    [show, runAction],
+    [show, runAction, setZen],
   );
 
   const latest = useRef({ selection, searching, tool, setTool });
