@@ -43,3 +43,13 @@ These scripts close the gaps that the first pass listed as "not verified".
 column: `dx = table width, dy 0, 16 x 90` (full height). `opacity: 0` with `transition: opacity .1s`, and only
 `:hover` on the button itself sets `opacity: 1`; table hover and `has-focus` change nothing on desktop (`has-focus` shows
 them on mobile only). Ours matches this and adds keyboard-focus visibility.
+
+## Line numbers beside a rendered table
+
+`line-numbers.mjs` and `line-numbers-blocks.mjs` (Obsidian 1.14.4, "Show line number" on). A table on source
+lines 3-6 gets a single gutter cell, `3`, as tall as the widget and starting at its top; the next number is `7`, starting
+exactly where the widget ends (no gap, no numbers for 4-6, the same with the caret in the table). Callouts and math blocks
+behave the same (`8` then `11`; `12` then `15`). Properties (frontmatter) get no number at all, and the first
+number is `6`. Ours: one number per rendered block at its top, lowered to the header row for tables; a properties
+block shows `1` (not measured as a deliberate difference). Spec: `test/browser/tables-line-numbers.spec.ts`, real
+VS Code in `test/vscode/tables.spec.ts`.

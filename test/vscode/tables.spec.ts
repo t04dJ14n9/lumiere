@@ -8,6 +8,7 @@ import {
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { readState, paths } from "./state";
+import { geometry } from "../support/gutter-geometry";
 import {
   closeBrowser,
   openWorkbench,
@@ -191,6 +192,35 @@ test("tables in the real editor: the add-row strip below and the add-column stri
     await page.keyboard.type("h", { delay: 40 });
     await page.keyboard.press("ControlOrMeta+s");
     await expect.poll(() => row(2)).toMatch(/^\| a +\| +b +\| +c +\| h +\|$/);
+  } finally {
+    await closeBrowser(browser);
+  }
+});
+
+test("line numbers in the real editor: a table gets one number level with its header, and the next number follows it directly", async () => {
+  const browser = await chromium.connectOverCDP(readState().webSocket);
+  try {
+    const page = workbenchPage(browser);
+    const editor = await openWorkbench(page);
+    await editor.click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.insertText(
+      "# Wider\n\n| Col A | Col B | Col C |\n| --- | --- | --- |\n| pipe | code | bold |\n| row 2 | more | cells |\n\nClick a cell.\nLast line\n",
+    );
+    await page.keyboard.press("ControlOrMeta+s");
+    const frame = await tableFrame(() => page.frames());
+    await expect
+      .poll(async () => (await geometry(frame)).numbers.map((n) => n.n))
+      .toEqual(["1", "2", "3", "7", "8", "9", "10"]);
+    const g = await geometry(frame);
+    const three = g.numbers.find((n) => n.n === "3")!;
+    const seven = g.numbers.find((n) => n.n === "7")!;
+    expect(Math.abs(three.top - g.table.top)).toBeLessThanOrEqual(2);
+    expect(Math.abs(seven.top - g.table.bottom)).toBeLessThanOrEqual(2);
+    expect(Math.abs(three.textCentre - g.headerCentre)).toBeLessThanOrEqual(3);
+    await page.screenshot({
+      path: path.resolve("docs/screenshots/tables-line-numbers-vscode.png"),
+    });
   } finally {
     await closeBrowser(browser);
   }

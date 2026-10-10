@@ -1,3 +1,5 @@
+import { syntaxTree } from "@codemirror/language";
+import type { SyntaxNode } from "@lezer/common";
 import type { EditorState, Extension } from "@codemirror/state";
 import {
   BlockType,
@@ -35,31 +37,26 @@ export function lineLabel(
   return String(n);
 }
 
-/** One gutter cell: a single line's label, or a rendered block's stack. */
+/** One gutter cell: a single line's label. */
 export class LineNumberMarker extends GutterMarker {
-  constructor(readonly labels: readonly string[]) {
+  /** Set on the cell of a rendered table, whose first row sits below the grips. */
+  override elementClass: string;
+  constructor(
+    readonly label: string,
+    kind: "line" | "table" = "line",
+  ) {
     super();
+    this.elementClass = kind === "table" ? "mw-table-line-number" : "";
   }
   override eq(other: GutterMarker): boolean {
     return (
       other instanceof LineNumberMarker &&
-      other.labels.length === this.labels.length &&
-      other.labels.every((label, index) => label === this.labels[index])
+      other.label === this.label &&
+      other.elementClass === this.elementClass
     );
   }
   override toDOM(): Node {
-    if (this.labels.length === 1) {
-      return document.createTextNode(this.labels[0] ?? "");
-    }
-    const stack = document.createElement("div");
-    stack.className = "mw-line-number-stack";
-    stack.style.setProperty("--lines", String(this.labels.length));
-    for (const label of this.labels) {
-      const row = document.createElement("div");
-      row.textContent = label;
-      stack.append(row);
-    }
-    return stack;
+    return document.createTextNode(this.label);
   }
 }
 
@@ -67,43 +64,62 @@ function cursorLine(state: EditorState): number {
   return state.doc.lineAt(state.selection.main.head).number;
 }
 
-/** Labels for source lines `first`..`last` (a rendered block covers several). */
-export function blockLabels(
+/**
+ * The number beside a block, or null for a widget that replaces nothing. As in
+ * Obsidian 1.14.4 (docs/obsidian-measurements/tables/line-numbers.mjs), a
+ * rendered block (table, callout, math, embed) gets ONE number, that of its
+ * first source line, at its top; the source lines it hides are not numbered.
+ */
+export function blockLabel(
   state: EditorState,
-  block: Pick<BlockInfo, "from" | "to"> & { type: BlockInfo["type"] },
+  block: Pick<BlockInfo, "from"> & { type: BlockInfo["type"] },
   style: LineNumberStyle,
-): string[] | null {
+): string | null {
   if (block.type !== BlockType.WidgetRange && block.type !== BlockType.Text) {
     return null;
   }
   const first = state.doc.lineAt(block.from).number;
-  const last =
-    block.type === BlockType.Text ? first : state.doc.lineAt(block.to).number;
-  const cursor = cursorLine(state);
-  const labels: string[] = [];
-  for (let n = first; n <= last; n++) {
-    labels.push(lineLabel(n, cursor, style));
+  return lineLabel(first, cursorLine(state), style);
+}
+
+function isTable(state: EditorState, block: Pick<BlockInfo, "from" | "type">) {
+  if (block.type !== BlockType.WidgetRange) {
+    return false;
   }
-  return labels;
+  // The innermost node at the start is the header row; the table is its parent.
+  for (
+    let node: SyntaxNode | null = syntaxTree(state).resolveInner(block.from, 1);
+    node;
+    node = node.parent
+  ) {
+    if (node.name === "Table") {
+      return true;
+    }
+  }
+  return false;
 }
 
 function spacer(view: EditorView): LineNumberMarker {
   const digits = Math.max(minDigits, String(view.state.doc.lines).length);
-  return new LineNumberMarker(["9".repeat(digits)]);
+  return new LineNumberMarker("9".repeat(digits));
 }
 
 /**
- * A line-number gutter laid out like VS Code's: every source line has a
- * number, including the lines a rendered block (table, callout, math, embed)
- * hides, which stack beside the block.
+ * A line-number gutter: VS Code's look, with Obsidian's numbering of rendered
+ * blocks (one number at the top of a table, callout, math or embed block).
  */
 export function lineNumberGutter(style: LineNumberStyle): Extension {
   if (style === "off") {
     return [];
   }
   const marker = (view: EditorView, block: BlockInfo) => {
-    const labels = blockLabels(view.state, block, style);
-    return labels ? new LineNumberMarker(labels) : null;
+    const label = blockLabel(view.state, block, style);
+    return label === null
+      ? null
+      : new LineNumberMarker(
+          label,
+          isTable(view.state, block) ? "table" : "line",
+        );
   };
   return [
     gutter({
