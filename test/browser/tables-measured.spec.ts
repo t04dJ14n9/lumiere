@@ -255,6 +255,9 @@ test.describe("interactions measured in Obsidian 1.14.4", () => {
       );
     });
     await expect.poll(() => text(page)).toContain("five");
+    // Wait until the caret is back in the edited cell; an external edit that
+    // inserts a row above can briefly move it while the table remounts.
+    await expect.poll(() => label(page)).toBe("Table cell 2, 1");
     await page.keyboard.type("B", { delay: 20 });
     await expect.poll(() => text(page)).toContain("| 1AB ");
     const final = await text(page);
