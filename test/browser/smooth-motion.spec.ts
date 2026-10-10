@@ -117,3 +117,66 @@ test("smooth page/outline jumps and displayed zoom animate; explicit false and r
   );
   expect((await wheel(page, 100)).prevented).toBe(false);
 });
+
+/** Distinct scroll positions seen over the frames while `run` triggers a page jump. */
+async function positionsDuring(
+  page: Page,
+  run: () => Promise<unknown>,
+): Promise<number[]> {
+  const sampling = page.locator(".viewport").evaluate(async (viewport) => {
+    const samples: number[] = [];
+    for (let i = 0; i < 25; i++) {
+      await new Promise(requestAnimationFrame);
+      samples.push(viewport.scrollTop);
+    }
+    return samples;
+  });
+  await run();
+  return [...new Set(await sampling)];
+}
+
+for (const [name, setup] of [
+  [
+    "prefers-reduced-motion",
+    async (page: Page) => page.emulateMedia({ reducedMotion: "reduce" }),
+  ],
+  [
+    "smoothScrolling false",
+    async (page: Page) =>
+      send(page, {
+        type: "viewSettings",
+        settings: {
+          defaultZoom: "actual",
+          pageLayout: "single",
+          scrollMode: "continuous",
+          scrollDirection: "vertical",
+          smoothScrolling: false,
+        },
+      }),
+  ],
+] as const) {
+  test(`keyboard and command page jumps do not animate with ${name}`, async ({
+    page,
+  }) => {
+    await openView(page, { defaultZoom: "actual", smoothScrolling: true });
+    await setup(page);
+    await expect(page.locator(".viewer")).toHaveAttribute(
+      "data-smooth-scrolling",
+      "false",
+    );
+    for (const action of [
+      { action: "nextPage" },
+      { action: "goToPage", page: 8 },
+      { action: "previousPage" },
+    ] as const) {
+      const positions = await positionsDuring(page, () => act(page, action));
+      // A jump lands at once: the position before and the position after, no frames between.
+      expect(positions.length, JSON.stringify(action)).toBeLessThanOrEqual(2);
+    }
+    expect(
+      await page
+        .locator("[data-pdf-scroller]")
+        .evaluate((element) => element.getAnimations().length),
+    ).toBe(0);
+  });
+}
