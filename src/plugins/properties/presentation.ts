@@ -21,6 +21,11 @@ export class PropertyPresentation {
     private display: Display,
   ) {}
 
+  /** The properties block is a widget (not source text, not hidden). */
+  get isWidget(): boolean {
+    return this.display === "visible";
+  }
+
   configure(display: Display): void {
     // Replacing an unchanged renderer would discard unnamed draft rows.
     if (display === this.display && this.removeRenderer) {

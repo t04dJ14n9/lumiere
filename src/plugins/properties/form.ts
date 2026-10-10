@@ -28,11 +28,57 @@ export function bindPropertyForm(
   bindHeadingNavigation(panel, editor);
   const add = panel.querySelector<HTMLButtonElement>("[data-property-add]")!;
   add.hidden = !editor?.edit;
+  add.addEventListener("keydown", (event) =>
+    navigateAddButton(event, panel, editor),
+  );
   add.addEventListener("click", () => {
     applyPropertyCollapse(panel, false);
     editor?.setCollapsed?.(false);
     appendPendingRow(panel, editor, apply);
   });
+}
+
+/**
+ * Measured in Obsidian 1.14.4: Up and Shift+Tab go to the last row (the
+ * heading when there are none); Down, Tab and Escape return to the text.
+ */
+function addButtonDirection(
+  event: KeyboardEvent,
+): "forward" | "backward" | undefined {
+  if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) {
+    return undefined;
+  }
+  if (event.key === "Tab") {
+    return event.shiftKey ? "backward" : "forward";
+  }
+  if (event.key === "ArrowUp") {
+    return "backward";
+  }
+  return ["ArrowDown", "Escape"].includes(event.key) ? "forward" : undefined;
+}
+
+function navigateAddButton(
+  event: KeyboardEvent,
+  panel: HTMLElement,
+  editor: PropertyEditor,
+): void {
+  const direction = addButtonDirection(event);
+  if (!direction) {
+    return;
+  }
+  const forward = direction === "forward";
+  event.preventDefault();
+  event.stopPropagation();
+  if (forward) {
+    editor?.focusBody?.();
+    return;
+  }
+  const rows = [
+    ...panel.querySelectorAll<HTMLElement>("[data-property-row]"),
+  ].filter((row) => !row.hidden);
+  (
+    rows.at(-1) ?? panel.querySelector<HTMLElement>("[data-properties-heading]")
+  )?.focus();
 }
 
 function appendPendingRow(

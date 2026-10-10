@@ -91,3 +91,14 @@ Disclosure is shared within the VS Code workspace, rather than across unrelated
 workspaces. Native picker appearance depends on Chromium, OS and locale. Daily
 note links are not provided because the editor has no daily-note capability.
 Nested/anchored/recursive YAML retains guarded source-only support.
+
+## The caret never enters the block
+
+As in Obsidian, the text caret cannot be inside the frontmatter while it is shown as a
+widget (`caret-guard.ts`): every selection endpoint in it moves to the start of the body
+(arrow keys, Home, Select All, Shift selections, reveals, undo, opening the note), and
+typing, deleting or moving lines never touches it (Backspace at the body start does
+nothing). Property edits are not user input events, so they pass. ArrowUp on the first
+body line focuses the Add property button (`heading.ts` `enter`), and the Add button
+walks back up the rows or down to the text. Measurements:
+`docs/obsidian-measurements/properties/`.
