@@ -103,6 +103,7 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
       };
     },
     pick: async () => undefined,
+    input: async () => undefined,
     ask: async (message) => {
       prompts.push(message);
       return answer;

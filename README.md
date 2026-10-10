@@ -48,6 +48,14 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   Obsidian's) is the line height as a multiple of that size, so lines scale
   with it too. The font family, weight, letter spacing and ligatures still
   follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
+- **Markdown Workbench: Open Settings** opens the Settings UI filtered to this
+  extension. **Change Setting…** lists every setting of the extension (by
+  plugin, with its value) and edits the one you pick by its type. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle
+  Readable Line Width**, **Toggle Mermaid Diagrams**, **Toggle Inline Title**
+  and **Toggle Vim Mode** change the same `markdownWorkbench.*` settings the
+  Settings UI shows, in the workspace settings when the workspace sets them
+  and in the user settings otherwise. They keep no state of their own, so
+  edits in the Settings UI or `settings.json` and the commands always agree.
 - `markdownWorkbench.preset: "minimal"` loads only the core editor.
 - `markdownWorkbench.debug.logging` writes debug lines to the **Markdown
   Workbench** output channel.

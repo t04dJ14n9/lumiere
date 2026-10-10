@@ -15,6 +15,12 @@ export function createHostViews(): HostViews {
     tree: createTree,
     status: createStatus,
     pick,
+    input: async (options) =>
+      vscode.window.showInputBox({
+        prompt: options.prompt,
+        value: options.value,
+        validateInput: options.validate,
+      }),
     ask: async (message, actions) =>
       vscode.window.showInformationMessage(
         message,
@@ -213,15 +219,28 @@ const pick: HostViews["pick"] = (options) => {
   (quickPick as { sortByLabel?: boolean }).sortByLabel = false;
   let items = options.items("");
   const show = () => {
-    quickPick.items = items.map((item, index) => ({
-      label: item.label,
-      ...(item.description === undefined
-        ? {}
-        : { description: item.description }),
-      ...(item.detail === undefined ? {} : { detail: item.detail }),
-      alwaysShow: true,
-      index,
-    }));
+    const shown: (vscode.QuickPickItem & { index: number })[] = [];
+    let group: string | undefined;
+    items.forEach((item, index) => {
+      if (item.group !== undefined && item.group !== group) {
+        shown.push({
+          label: item.group,
+          kind: vscode.QuickPickItemKind.Separator,
+          index: -1,
+        });
+      }
+      group = item.group;
+      shown.push({
+        label: item.label,
+        ...(item.description === undefined
+          ? {}
+          : { description: item.description }),
+        ...(item.detail === undefined ? {} : { detail: item.detail }),
+        alwaysShow: true,
+        index,
+      });
+    });
+    quickPick.items = shown;
   };
   show();
   quickPick.onDidChangeValue((query) => {
