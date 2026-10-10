@@ -4,6 +4,7 @@ import "./support/install-fake-vscode";
 import * as vscode from "./support/fake-vscode";
 import { PdfPanel } from "../../src/extension/plugins/pdf/panel";
 import { ViewPreferences } from "../../src/extension/plugins/pdf/view-preferences";
+import { SAVED_POSITION_VERSION } from "../../src/shared/reading-position";
 import { DEFAULT_VIEW_CHOICES } from "../../src/shared/view-settings";
 import type { ViewState } from "../../src/shared/view-state";
 import type { HostMessage } from "../../src/shared/messages";
@@ -130,4 +131,36 @@ test("view defaults inherit editor smoothScrolling and explicit PDF false overri
   assert.equal(preferences.settings(uri).smoothScrolling, false);
   preferences.dispose();
   vscode.configuration.clear();
+});
+
+test("saved positions carry a schema version; other versions and malformed values are ignored", async () => {
+  const state = memory();
+  const preferences = new ViewPreferences(state as never, { all: [] } as never);
+  const uri = vscode.Uri.parse("memory://versioned.pdf") as never;
+  const position = {
+    page: 4,
+    top: 1,
+    left: 2,
+    zoom: "fitWidth" as const,
+    pageLayout: "spread" as const,
+    scrollMode: "continuous" as const,
+    scrollDirection: "vertical" as const,
+  };
+  preferences.save(uri, position);
+  await new Promise((resolve) => setImmediate(resolve));
+  const key = state.keys()[0]!;
+  assert.equal((state.get(key) as { version?: number }).version, SAVED_POSITION_VERSION);
+  assert.deepEqual(preferences.position(uri), position);
+  for (const stored of [
+    position, // saved by an older build, without a version
+    { ...position, version: SAVED_POSITION_VERSION + 1 },
+    { ...position, version: "1" },
+    { version: SAVED_POSITION_VERSION, page: "4" },
+    null,
+    "garbage",
+  ]) {
+    await state.update(key, stored);
+    assert.equal(preferences.position(uri), undefined, JSON.stringify(stored));
+  }
+  preferences.dispose();
 });

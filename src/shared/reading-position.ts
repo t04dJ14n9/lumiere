@@ -26,6 +26,30 @@ export function isPageOffset(value: unknown): value is number {
   );
 }
 
+/**
+ * The schema of a saved position. Saved state of any other version (older or
+ * newer, as after a downgrade) is ignored and the PDF opens with the defaults;
+ * there is no migration, so bump this when the shape or the meaning of a field
+ * changes.
+ */
+export const SAVED_POSITION_VERSION = 1;
+
+/** What is stored for a position: the position and the schema it follows. */
+export function savedPosition(position: ReadingPosition): object {
+  return { version: SAVED_POSITION_VERSION, ...position };
+}
+
+/** Reads what `savedPosition` stored; anything else is not a position. */
+export function parseSavedPosition(value: unknown): ReadingPosition | undefined {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    (value as { version?: unknown }).version !== SAVED_POSITION_VERSION
+  )
+    return undefined;
+  return parseReadingPosition(value);
+}
+
 export function parseReadingPosition(
   value: unknown,
 ): ReadingPosition | undefined {

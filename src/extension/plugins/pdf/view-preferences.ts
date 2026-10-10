@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import {
-  parseReadingPosition,
+  parseSavedPosition,
+  savedPosition,
   type ReadingPosition,
 } from "../../../shared/reading-position";
 import {
@@ -55,13 +56,13 @@ export class ViewPreferences implements vscode.Disposable {
         .get<boolean>("restoreOnReopen", true)
     )
       return undefined;
-    return parseReadingPosition(this.state.get(this.key(uri)));
+    return parseSavedPosition(this.state.get(this.key(uri)));
   }
 
   save(uri: vscode.Uri, position: ReadingPosition): void {
     // Detached storage work has an error sink; open panels never follow this saved value.
     void this.state
-      .update(this.key(uri), position)
+      .update(this.key(uri), savedPosition(position))
       .then(undefined, (error) =>
         console.error("Could not save PDF view", error),
       );
