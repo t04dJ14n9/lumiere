@@ -39,6 +39,8 @@ async function askFontSize(page: Page) {
   );
 }
 
+const settle = () => new Promise((resolve) => setTimeout(resolve, 2000));
+
 const read = (file: string): Record<string, unknown> =>
   existsSync(file)
     ? (JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>)
@@ -228,6 +230,8 @@ test("Open Settings, and the commands for common settings read and write the Set
     writeFileSync(userFile, originalUser);
     writeFileSync(notePath, originalNote);
     rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    // VS Code reads the restored settings files before the next test starts.
+    await settle();
     await closeBrowser(browser);
   }
 });
@@ -365,6 +369,8 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     writeFileSync(userFile, originalUser);
     writeFileSync(notePath, originalNote);
     rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    // VS Code reads the restored settings files before the next test starts.
+    await settle();
     await closeBrowser(browser);
   }
 });
