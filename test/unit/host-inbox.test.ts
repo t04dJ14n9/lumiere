@@ -18,7 +18,7 @@ test("messages queue FIFO until a matching viewer attaches, then deliver once", 
   const generation = inbox.beginLoad();
   inbox.receive("first");
   inbox.receive("second");
-  assert.deepEqual(seen, []);
+  assert.equal(seen.length, 0);
   inbox.listen(message => seen.push(message), generation);
   assert.deepEqual(seen, ["first", "second"]);
   inbox.receive("third");
