@@ -70,23 +70,43 @@ test("the last page reaches the same page-by-page position, and Escape dismisses
 });
 
 for (const scrollDirection of ["vertical", "horizontal"] as const) {
-  test(`${scrollDirection}: zoomed page-by-page spreads bound panning and retain coordinate destinations`, async ({ page }) => {
-    await openView(page, { defaultZoom: 400, pageLayout: "spread", scrollMode: "paged", scrollDirection });
+  test(`${scrollDirection}: zoomed page-by-page spreads bound panning and retain coordinate destinations`, async ({
+    page,
+  }) => {
+    await openView(page, {
+      defaultZoom: 400,
+      pageLayout: "spread",
+      scrollMode: "paged",
+      scrollDirection,
+    });
     await expect.poll(() => pageIndexes(page)).toEqual([0, 1]);
     await page.locator(".viewport").evaluate((viewport) => {
       viewport.scrollTo({ left: 1_000_000, top: 1_000_000 });
     });
     await expect.poll(() => pageIndexes(page)).toEqual([0, 1]);
     await expect.poll(() => lastView(page)).toMatchObject({ page: 1 });
-    await expect.poll(() => page.locator(".viewport").evaluate((viewport) => viewport.scrollTop)).toBeLessThan(500);
-    await expect.poll(() => page.locator(".viewport").evaluate((viewport) => viewport.scrollLeft)).toBeLessThan(1500);
+    await expect
+      .poll(() =>
+        page.locator(".viewport").evaluate((viewport) => viewport.scrollTop),
+      )
+      .toBeLessThan(500);
+    await expect
+      .poll(() =>
+        page.locator(".viewport").evaluate((viewport) => viewport.scrollLeft),
+      )
+      .toBeLessThan(1500);
     await send(page, {
       type: "goTo",
-      location: { page: 4, viewRect: { left: 72, top: 100, width: 134, height: 21 } },
+      location: {
+        page: 4,
+        viewRect: { left: 72, top: 100, width: 134, height: 21 },
+      },
     });
     await expect.poll(() => pageIndexes(page)).toEqual([2, 3]);
     await expect.poll(() => lastView(page)).toMatchObject({ page: 4 });
-    await expect(page.locator('.page[data-page-index="3"] .location-highlight')).toBeVisible();
+    await expect(
+      page.locator('.page[data-page-index="3"] .location-highlight'),
+    ).toBeVisible();
     await act(page, { action: "nextPage" });
     await expect.poll(() => pageIndexes(page)).toEqual([4, 5]);
     await act(page, { action: "previousPage" });

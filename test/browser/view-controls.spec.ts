@@ -69,79 +69,99 @@ test("chrome receives the same view actions without a webview toolbar", async ({
 });
 
 for (const scrollDirection of ["vertical", "horizontal"] as const) {
-test(`${scrollDirection}: native odd/even layouts pair pages and navigate and fit whole spreads`, async ({
-  page,
-}) => {
-  await openView(page, { defaultZoom: "fitPage", scrollDirection });
-  await viewMenu(page);
-  await page
-    .getByRole("combobox", { name: "Page layout", exact: true })
-    .selectOption("spread");
-  const second = page.locator('.page[data-page-index="1"]');
-  await expect(second).toBeVisible();
-  await expect
-    .poll(() => spreadGeometry(page, [0, 1]))
-    .toMatchObject({ paired: true, fitsWidth: true, fitsHeight: true });
-  await page
-    .getByRole("combobox", { name: "Scroll mode", exact: true })
-    .selectOption("paged");
-  await expect.poll(() => pageIndexes(page)).toEqual([0, 1]);
-  await act(page, { action: "nextPage" });
-  await expect.poll(() => pageIndexes(page)).toEqual([2, 3]);
-  // Go to the right page without clipping the left half of the spread.
-  await act(page, { action: "goToPage", page: 4 });
-  await expect.poll(() => lastView(page)).toMatchObject({ page: 4 });
-  await expect.poll(() => pageIndexes(page)).toEqual([2, 3]);
-  await expect.poll(() => spreadGeometry(page, [2, 3]))
-    .toMatchObject({ paired: true, fitsWidth: true, fitsHeight: true });
-  await act(page, { action: "fitWidth" });
-  await expect.poll(() => lastView(page)).toMatchObject({ fit: "width" });
-  await expect.poll(() => spreadGeometry(page, [2, 3]))
-    .toMatchObject({ paired: true, fitsWidth: true, fillsWidth: true });
-  await act(page, { action: "fitPage" });
-  await expect.poll(() => spreadGeometry(page, [2, 3]))
-    .toMatchObject({ paired: true, fitsWidth: true, fitsHeight: true });
-  await act(page, { action: "previousPage" });
-  await expect.poll(() => pageIndexes(page)).toEqual([0, 1]);
-  await page
-    .getByRole("combobox", { name: "Page layout", exact: true })
-    .selectOption("spreadCover");
-  await expect.poll(() => pageIndexes(page)).toEqual([0]);
-  await act(page, { action: "nextPage" });
-  await expect.poll(() => pageIndexes(page)).toEqual([1, 2]);
-  await act(page, { action: "goToPage", page: 3 });
-  await expect.poll(() => lastView(page)).toMatchObject({ page: 3 });
-  await expect.poll(() => pageIndexes(page)).toEqual([1, 2]);
-  await act(page, { action: "previousPage" });
-  await expect.poll(() => pageIndexes(page)).toEqual([0]);
-  // The final pair has no next spread, even when its first page is below pageCount.
-  await act(page, { action: "setPageLayout", pageLayout: "spread" });
-  await act(page, { action: "goToPage", page: 11 });
-  await expect.poll(() => pageIndexes(page)).toEqual([10, 11]);
-  await expect(
-    page.getByRole("button", { name: "Next page", exact: true }),
-  ).toBeDisabled();
-  await act(page, { action: "setPageLayout", pageLayout: "spreadCover" });
-  await expect.poll(() => pageIndexes(page)).toEqual([9, 10]);
-  await act(page, { action: "nextPage" });
-  await expect.poll(() => pageIndexes(page)).toEqual([11]);
-  await expect.poll(() => lastView(page)).toMatchObject({ canGoForward: false });
-  await act(page, { action: "previousPage" });
-  await expect.poll(() => pageIndexes(page)).toEqual([9, 10]);
-});
+  test(`${scrollDirection}: native odd/even layouts pair pages and navigate and fit whole spreads`, async ({
+    page,
+  }) => {
+    await openView(page, { defaultZoom: "fitPage", scrollDirection });
+    await viewMenu(page);
+    await page
+      .getByRole("combobox", { name: "Page layout", exact: true })
+      .selectOption("spread");
+    const second = page.locator('.page[data-page-index="1"]');
+    await expect(second).toBeVisible();
+    await expect
+      .poll(() => spreadGeometry(page, [0, 1]))
+      .toMatchObject({ paired: true, fitsWidth: true, fitsHeight: true });
+    await page
+      .getByRole("combobox", { name: "Scroll mode", exact: true })
+      .selectOption("paged");
+    await expect.poll(() => pageIndexes(page)).toEqual([0, 1]);
+    await act(page, { action: "nextPage" });
+    await expect.poll(() => pageIndexes(page)).toEqual([2, 3]);
+    // Go to the right page without clipping the left half of the spread.
+    await act(page, { action: "goToPage", page: 4 });
+    await expect.poll(() => lastView(page)).toMatchObject({ page: 4 });
+    await expect.poll(() => pageIndexes(page)).toEqual([2, 3]);
+    await expect
+      .poll(() => spreadGeometry(page, [2, 3]))
+      .toMatchObject({ paired: true, fitsWidth: true, fitsHeight: true });
+    await act(page, { action: "fitWidth" });
+    await expect.poll(() => lastView(page)).toMatchObject({ fit: "width" });
+    await expect
+      .poll(() => spreadGeometry(page, [2, 3]))
+      .toMatchObject({ paired: true, fitsWidth: true, fillsWidth: true });
+    await act(page, { action: "fitPage" });
+    await expect
+      .poll(() => spreadGeometry(page, [2, 3]))
+      .toMatchObject({ paired: true, fitsWidth: true, fitsHeight: true });
+    await act(page, { action: "previousPage" });
+    await expect.poll(() => pageIndexes(page)).toEqual([0, 1]);
+    await page
+      .getByRole("combobox", { name: "Page layout", exact: true })
+      .selectOption("spreadCover");
+    await expect.poll(() => pageIndexes(page)).toEqual([0]);
+    await act(page, { action: "nextPage" });
+    await expect.poll(() => pageIndexes(page)).toEqual([1, 2]);
+    await act(page, { action: "goToPage", page: 3 });
+    await expect.poll(() => lastView(page)).toMatchObject({ page: 3 });
+    await expect.poll(() => pageIndexes(page)).toEqual([1, 2]);
+    await act(page, { action: "previousPage" });
+    await expect.poll(() => pageIndexes(page)).toEqual([0]);
+    // The final pair has no next spread, even when its first page is below pageCount.
+    await act(page, { action: "setPageLayout", pageLayout: "spread" });
+    await act(page, { action: "goToPage", page: 11 });
+    await expect.poll(() => pageIndexes(page)).toEqual([10, 11]);
+    await expect(
+      page.getByRole("button", { name: "Next page", exact: true }),
+    ).toBeDisabled();
+    await act(page, { action: "setPageLayout", pageLayout: "spreadCover" });
+    await expect.poll(() => pageIndexes(page)).toEqual([9, 10]);
+    await act(page, { action: "nextPage" });
+    await expect
+      .poll(() => pageIndexes(page))
+      .toEqual([11]);
+    await expect
+      .poll(() => lastView(page))
+      .toMatchObject({ canGoForward: false });
+    await act(page, { action: "previousPage" });
+    await expect.poll(() => pageIndexes(page)).toEqual([9, 10]);
+  });
 }
 
-test("layout settings update native pairing while unrelated updates preserve the chosen layout", async ({ page }) => {
+test("layout settings update native pairing while unrelated updates preserve the chosen layout", async ({
+  page,
+}) => {
   await openView(page, { defaultZoom: "fitPage", scrollMode: "paged" });
   await act(page, { action: "goToPage", page: 4 });
-  const settings = parseViewSettings({ defaultZoom: "fitPage", scrollMode: "paged", pageLayout: "spread" });
+  const settings = parseViewSettings({
+    defaultZoom: "fitPage",
+    scrollMode: "paged",
+    pageLayout: "spread",
+  });
   await send(page, { type: "viewSettings", settings });
-  await expect.poll(() => lastView(page)).toMatchObject({ page: 4, pageLayout: "spread" });
+  await expect
+    .poll(() => lastView(page))
+    .toMatchObject({ page: 4, pageLayout: "spread" });
   await expect.poll(() => pageIndexes(page)).toEqual([2, 3]);
   await act(page, { action: "setPageLayout", pageLayout: "spreadCover" });
   await expect.poll(() => pageIndexes(page)).toEqual([3, 4]);
-  await send(page, { type: "viewSettings", settings: { ...settings, smoothScrolling: false } });
-  await expect.poll(() => lastView(page)).toMatchObject({ page: 4, pageLayout: "spreadCover" });
+  await send(page, {
+    type: "viewSettings",
+    settings: { ...settings, smoothScrolling: false },
+  });
+  await expect
+    .poll(() => lastView(page))
+    .toMatchObject({ page: 4, pageLayout: "spreadCover" });
   await expect.poll(() => pageIndexes(page)).toEqual([3, 4]);
 });
 
@@ -221,6 +241,8 @@ test("saved view choices override defaults on reopen and survive a file rebuild"
       scrollMode: "paged",
       scrollDirection: "horizontal",
     });
-  await expect(page.locator('.viewer:not(.before-reload) .page[data-page-index="5"] img')).toBeVisible();
+  await expect(
+    page.locator('.viewer:not(.before-reload) .page[data-page-index="5"] img'),
+  ).toBeVisible();
   await expect.poll(() => pageIndexes(page)).toEqual([5, 6]);
 });
