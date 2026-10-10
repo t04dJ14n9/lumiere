@@ -2,12 +2,15 @@ import type { Frame, Page } from "@playwright/test";
 import {
   PAGE_STATUS,
   command,
-  expect,
+  expect as baseExpect,
   openFile,
   pdfViewer,
   statusBarEntry,
   test,
 } from "./workbench";
+
+// Zen resizes the whole window, which takes a while on a busy runner.
+const expect = baseExpect.configure({ timeout: 30_000 });
 
 // PDF zen mode: core Zen Mode plus the viewer's floating bar with Exit zen.
 // Whether the window goes full screen is VS Code's business (and needs a window
@@ -35,6 +38,7 @@ async function leaveZen(page: Page): Promise<void> {
 test("Enter and Exit Zen Mode from the palette: the status bar goes, the floating bar with Exit zen comes, and both go back", async ({ workbench: page }) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
+  await expect(viewer.locator(".page img").first()).toBeVisible();
   try {
     await expect(statusBarEntry(page, PAGE_STATUS)).toBeVisible();
     await expect(floating(viewer)).toHaveCount(0);
@@ -68,6 +72,8 @@ test("Enter and Exit Zen Mode from the palette: the status bar goes, the floatin
 test("Ctrl+Alt+Z (Ctrl+Cmd+Z on macOS) enters zen from the PDF and leaves it; so does Escape Escape", async ({ workbench: page }) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
+  await expect(viewer.locator(".page img").first()).toBeVisible();
+  await expect(statusBarEntry(page, PAGE_STATUS)).toBeVisible();
   try {
     await focusViewer(viewer);
     await page.keyboard.press(`${modifier}+z`);

@@ -48,6 +48,19 @@ async function openFresh(page: Page): Promise<Frame> {
  */
 async function press(page: Page, viewer: Frame, key: string): Promise<void> {
   await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  // And the viewer is at rest: a key pressed while the last page turn is still
+  // being animated starts from a place the page turn has not reached yet.
+  const position = () =>
+    viewer.locator(".viewport").evaluate((v) => `${v.scrollLeft},${v.scrollTop}`);
+  let last = await position();
+  await expect
+    .poll(async () => {
+      const now = await position();
+      const still = now === last;
+      last = now;
+      return still;
+    }, { intervals: [250] })
+    .toBe(true);
   await page.keyboard.press(key);
 }
 
