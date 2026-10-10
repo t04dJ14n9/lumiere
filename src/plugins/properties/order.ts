@@ -1,6 +1,7 @@
 import type { PropertyContext } from "./context";
 import { EdgeScroll, type PointerPoint } from "../../webview/ui/edge-scroll";
 import { placePropertyRows, propertyRows } from "./rows";
+import type { MenuItem } from "../editor/api";
 
 interface OrderActions {
   commit(keys: string[]): boolean;
@@ -37,7 +38,7 @@ export class PropertyOrder {
     private readonly openMenu: PropertyContext["openMenu"],
     private readonly actions: OrderActions,
   ) {
-    this.list = panel.querySelector("dl")!;
+    this.list = panel.querySelector(".metadata-properties")!;
     this.scroll = new EdgeScroll(viewport, this.list, (point) =>
       this.preview(point),
     );
@@ -59,17 +60,18 @@ export class PropertyOrder {
   }
 
   private registerHeadingMenu(): void {
-    const heading = this.panel.querySelector<HTMLElement>("summary")!;
+    const heading = this.panel.querySelector<HTMLElement>(
+      "[data-properties-heading]",
+    )!;
     const menu = (point: PointerPoint): void => {
       this.closeMenu?.();
       this.closeMenu = this.openMenu(
         this.panel,
-        [
-          { label: "Add property", run: () => this.actions.add() },
-          { label: "Sort properties A to Z", run: () => this.sort(false) },
-          { label: "Sort properties Z to A", run: () => this.sort(true) },
-          { label: "Remove all properties", run: () => this.actions.clear() },
-        ],
+        propertyHeadingMenu({
+          add: () => this.actions.add(),
+          sort: (reverse) => this.sort(reverse),
+          clear: () => this.actions.clear(),
+        }),
         point,
         (message) => this.actions.report(message),
         "Properties",
@@ -129,7 +131,17 @@ export class PropertyOrder {
       return;
     }
     const focused = rows.find((row) => row.contains(document.activeElement));
-    placePropertyRows(this.list, ordered, focused);
+    const pending = [
+      ...this.list.querySelectorAll<HTMLElement>("[data-property-new]"),
+    ];
+    const activePending = pending.find((row) =>
+      row.contains(document.activeElement),
+    );
+    placePropertyRows(
+      this.list,
+      [...ordered, ...pending],
+      focused ?? activePending,
+    );
   }
 
   private sort(reverse: boolean): void {
@@ -143,7 +155,7 @@ export class PropertyOrder {
     );
     this.place(this.displayed);
     this.panel
-      .querySelector<HTMLElement>("summary")!
+      .querySelector<HTMLElement>("[data-properties-heading]")!
       .focus({ preventScroll: true });
   }
 
@@ -321,4 +333,22 @@ export class PropertyOrder {
     this.closeMenu?.();
     this.events.abort();
   }
+}
+
+export function propertyHeadingMenu(actions: {
+  add(): void;
+  sort(reverse: boolean): void;
+  clear(): void;
+}): MenuItem[] {
+  return [
+    { label: "Add file property", run: () => actions.add() },
+    {
+      label: "Sort",
+      children: [
+        { label: "Name (A to Z)", run: () => actions.sort(false) },
+        { label: "Name (Z to A)", run: () => actions.sort(true) },
+      ],
+    },
+    { label: "Clear file properties", run: () => actions.clear() },
+  ];
 }

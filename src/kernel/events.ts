@@ -83,7 +83,7 @@ export class EventBus {
     }
     return undefined;
   }
-  async waterfall(name: keyof Events, value: unknown): Promise<unknown> {
+  async pipeline(name: keyof Events, value: unknown): Promise<unknown> {
     for (const l of [...(this.listeners.get(name) ?? [])]) {
       const next = await this.awaited(l, [value]);
       if (next !== undefined) {

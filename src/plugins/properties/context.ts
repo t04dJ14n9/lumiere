@@ -15,6 +15,7 @@ export type Action =
 export interface PropertyContext {
   source: string;
   copy(text: string): void;
+  readClipboard?(): Promise<string>;
   openMenu(
     owner: HTMLElement,
     items: readonly MenuItem[],
@@ -29,7 +30,9 @@ export interface PropertyContext {
     set(header: string, key: string, value: PropertyValue): boolean;
     edit?(header: string, operation: PropertyEdit): boolean;
     types?(): PropertyTypes;
-    forcedTypes?(): PropertyTypes;
+    names?(): Promise<readonly string[]>;
+    collapsed?(): boolean;
+    setCollapsed?(collapsed: boolean): void;
     setType?(key: string, kind: PropertyKind | null): void;
     focusBody?(): void;
     focusTitle?(): void;

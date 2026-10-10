@@ -6,6 +6,8 @@ import { sanitize } from "./sanitize";
 import { bindPropertyFields } from "./fields";
 import { bindPropertyLists } from "./lists";
 import { bindPropertyControls } from "./controls";
+import { applyPropertyCollapse } from "./form";
+import { inputText } from "./value-input";
 
 const renderedRows = new WeakMap<HTMLElement, string>();
 
@@ -23,25 +25,13 @@ export function reconcileProperties(
   source: string,
   context: PropertyContext,
 ): boolean {
-  const panel = container.querySelector<HTMLDetailsElement>(
-    ":scope > .properties",
-  );
+  const panel = container.querySelector<HTMLElement>(":scope > .properties");
   const header = frontmatter(source);
-  if (!panel || !header?.values) {
+  if (!panel || header?.error) {
     return false;
   }
-  const fresh = document.createElement("div");
-  fresh.innerHTML = sanitize(
-    renderProperties(
-      source,
-      context.propertyEditor?.types?.(),
-      context.propertyEditor?.forcedTypes?.(),
-    ),
-  );
-  const nextRows = [
-    ...fresh.querySelectorAll<HTMLElement>("[data-property-row]"),
-  ];
-  const list = panel.querySelector("dl")!;
+  const nextRows = nextPropertyRows(source, context.propertyEditor);
+  const list = panel.querySelector<HTMLElement>(".metadata-properties")!;
   const active = panel.contains(document.activeElement)
     ? document.activeElement
     : null;
@@ -55,8 +45,12 @@ export function reconcileProperties(
       : undefined;
 
   const rows = reconcileRows({ list, nextRows, keep, active });
-  placePropertyRows(list, rows, keep);
-  panel.querySelector(".property-count")!.textContent = String(nextRows.length);
+  const pending = [
+    ...list.querySelectorAll<HTMLElement>("[data-property-new]"),
+  ];
+  const focusedPending = pending.find((row) => row.contains(active));
+  placePropertyRows(list, [...rows, ...pending], keep ?? focusedPending);
+  applyPropertyCollapse(panel, context.propertyEditor?.collapsed?.() ?? false);
   bindPropertyFields(container, source, context);
   bindPropertyLists(container, source, context);
   bindPropertyControls(container, source, context);
@@ -65,11 +59,22 @@ export function reconcileProperties(
   return true;
 }
 
+function nextPropertyRows(
+  source: string,
+  editor: PropertyContext["propertyEditor"],
+): HTMLElement[] {
+  const fresh = document.createElement("div");
+  fresh.innerHTML = sanitize(
+    renderProperties(source, editor?.types?.(), {
+      collapsed: editor?.collapsed?.() ?? false,
+      allowEmpty: true,
+    }),
+  );
+  return [...fresh.querySelectorAll<HTMLElement>("[data-property-row]")];
+}
+
 function keepInput(active: Element | null, row: HTMLElement): boolean {
-  if (
-    !(active instanceof HTMLInputElement) ||
-    active.dataset.propertyCommitting
-  ) {
+  if (!(active instanceof HTMLElement) || active.dataset.propertyCommitting) {
     return false;
   }
   if (active.hasAttribute("data-property-name")) {
@@ -79,17 +84,17 @@ function keepInput(active: Element | null, row: HTMLElement): boolean {
     if (!active.dataset.propertyEditing) {
       return false;
     }
-    const replacement = row.querySelector<HTMLInputElement>(
-      "[data-property-input]",
-    );
+    const replacement = row.querySelector<HTMLElement>("[data-property-input]");
     return (
       replacement?.dataset.propertyKind === active.dataset.propertyKind ||
-      active.value !== active.defaultValue
+      !!active.dataset.propertyDirty
     );
   }
+  // A focused pill is not text being typed: it re-renders with the list.
   return (
     !!active.closest("[data-property-list]") &&
-    (!!active.value || !!active.dataset.propertyEditing)
+    !active.hasAttribute("data-property-chip") &&
+    (!!inputText(active) || !!active.dataset.propertyEditing)
   );
 }
 
@@ -104,7 +109,7 @@ function replacementFocus(active: Element, row: HTMLElement): HTMLElement {
       ) ?? row
     );
   }
-  if (active instanceof HTMLInputElement) {
+  if (active instanceof HTMLElement) {
     if (active.hasAttribute("data-property-chip-edit")) {
       return (
         row.querySelector<HTMLElement>(
@@ -117,7 +122,7 @@ function replacementFocus(active: Element, row: HTMLElement): HTMLElement {
     }
     if (active.closest("[data-property-list]")) {
       return (
-        row.querySelector<HTMLInputElement>("[data-property-list] input") ?? row
+        row.querySelector<HTMLElement>("[data-property-list-input]") ?? row
       );
     }
   }
@@ -146,7 +151,14 @@ function reconcileRows(options: {
         active.hasAttribute("data-property-name") &&
         renderedRows.get(keep) !== html
       ) {
-        keep.querySelector("dd")!.replaceWith(row.querySelector("dd")!);
+        keep
+          .querySelector(".metadata-property-value")!
+          .replaceWith(row.querySelector(".metadata-property-value")!);
+        keep.querySelector(".metadata-property-warning-icon")?.remove();
+        const warning = row.querySelector(".metadata-property-warning-icon");
+        if (warning) {
+          keep.append(warning);
+        }
         const type = keep.querySelector<HTMLButtonElement>(
           "[data-property-type]",
         )!;

@@ -1,8 +1,4 @@
-import {
-  frontmatter,
-  propertyInput,
-  matchesPropertyKind,
-} from "../../markdown/properties";
+import { frontmatter, matchesPropertyKind } from "../../markdown/properties";
 import {
   inferPropertyKind,
   propertyKindLabels,
@@ -11,85 +7,135 @@ import type {
   PropertyKind,
   PropertyTypes,
 } from "../../markdown/properties/types";
-import { propertyIcon } from "../../webview/ui/icons";
+import { propertyIcon, propertyFlairIcon } from "../../webview/ui/icons";
 import { validTag } from "../../markdown/tags/grammar";
 import { attr, escape } from "../../markdown/html/helpers";
 import { createRenderer } from "../../markdown/html";
 const { renderInline } = createRenderer();
-const tagButton = (tag: string) =>
-  `<button type="button" class="md-tag"${attr("data-tag", tag)}${attr("aria-label", `Search tag #${tag}`)}>#${escape(tag)}</button>`;
+
+export function renderProperties(
+  source: string,
+  types: PropertyTypes = {},
+  options: { collapsed?: boolean; allowEmpty?: boolean } = {},
+): string {
+  const properties = frontmatter(source);
+  if (!properties && !options.allowEmpty) {
+    return "";
+  }
+  if (properties?.error) {
+    return `<div class="render-error">${escape(properties.error)}</div><pre>${escape(properties.raw)}</pre>`;
+  }
+  const values = properties?.values ?? {};
+  const rows = Object.entries(values)
+    .map(([key, value]) =>
+      propertyRow(key, value, {
+        kind: inferPropertyKind(key, value, types),
+        editable: !!(
+          properties?.editableKeys?.includes(key) ||
+          properties?.editableLists?.includes(key)
+        ),
+      }),
+    )
+    .join("");
+  return `<div class="properties metadata-container${options.collapsed ? " is-collapsed" : ""}"><div class="metadata-properties-heading" data-properties-heading tabindex="0" role="button" aria-expanded="${!options.collapsed}"><span class="metadata-collapse-indicator">${propertyFlairIcon("collapse")}</span><span>Properties</span></div><div class="metadata-content"${options.collapsed ? " hidden" : ""}><div class="metadata-properties">${rows}</div><button type="button" data-property-add><span aria-hidden="true">＋</span> Add property</button></div><p class="property-message" aria-live="polite"></p></div>`;
+}
+
+function propertyRow(
+  key: string,
+  value: unknown,
+  options: { kind: PropertyKind; editable: boolean },
+): string {
+  const { kind, editable } = options;
+  const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
+  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${editable ? editableValue(key, value, kind) : propertyValue(value)}</div>${warning}</div>`;
+}
+
+export function pendingPropertyRow(): string {
+  return `<div class="property-row metadata-property" data-property-new tabindex="0"><div class="metadata-property-key"><span class="metadata-property-icon">${propertyIcon("", null)}</span><input class="property-key metadata-property-key-input" aria-label="New property name" placeholder="Property name" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"></div><div class="metadata-property-value"><span class="property-empty">Empty</span></div></div>`;
+}
+
+function mismatchWarning(kind: PropertyKind, hasMismatch: boolean): string {
+  const label = `Type mismatch, expected ${propertyKindLabels[kind]}`;
+  return `<span class="property-type-warning metadata-property-warning-icon"${hasMismatch ? "" : " hidden"} role="img"${attr("aria-label", label)}${attr("title", label)}>${propertyFlairIcon("warning")}</span>`;
+}
+
+function editableValue(
+  key: string,
+  value: unknown,
+  kind: PropertyKind,
+): string {
+  if (kind === "list" || kind === "tags" || kind === "aliases") {
+    return editableList(value, key);
+  }
+  if (kind === "checkbox") {
+    return `<input type="checkbox" data-property="${escape(key)}" class="metadata-input-checkbox" tabindex="-1"${value === true ? " checked" : ""}${attr("aria-label", key)}>`;
+  }
+  const text = propertyInputText(value);
+  if (kind === "text") {
+    const input = `<div class="metadata-input-longtext" contenteditable="true" role="textbox" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="text">${escape(text)}</div>`;
+    if (/^\[\[[^\n]+\]\]$/.test(text)) {
+      return `<span class="metadata-link" data-property-display>${renderInline(text)}<button type="button" tabindex="-1" class="metadata-property-link-flair" data-property-edit${attr("aria-label", `Edit ${key}`)}>${propertyFlairIcon("pencil")}</button></span>${input.replace("<div ", "<div hidden ")}`;
+    }
+    return input;
+  }
+  const inputType = {
+    number: "number",
+    date: "date",
+    datetime: "datetime-local",
+  }[kind];
+  return `<input${attr("type", inputType)}${attr("data-property-input", key)}${attr("data-property-kind", kind)}${attr("aria-label", key)}${attr("value", matchesPropertyKind(kind, value) ? text : "")} class="metadata-input-${kind}" tabindex="-1"${kind === "number" ? ' inputmode="decimal" step="any"' : ""}>`;
+}
+
+function editableList(value: unknown, key: string): string {
+  const values = value === null || value === undefined ? [] : asList(value);
+  const chips = values
+    .map((item, index) => {
+      const raw = propertyInputText(item);
+      const text = key.toLowerCase() === "tags" ? raw.replace(/^#/, "") : raw;
+      const label = pillLabel(text, key.toLowerCase() === "tags");
+      return `<span class="property-chip multi-select-pill" tabindex="-1" data-property-chip="${index}"><span class="multi-select-pill-content">${label}</span><button type="button" tabindex="-1" class="multi-select-pill-remove-button" data-property-remove="${index}"${attr("aria-label", `Remove ${text} from ${key}`)}>×</button></span>`;
+    })
+    .join("");
+  return `<div class="property-list multi-select-container"${attr("data-property-list", key)}>${chips}<div class="multi-select-input" contenteditable="true" role="textbox" tabindex="-1" data-property-list-input${attr("aria-label", `Add item to ${key}`)}${values.length ? "" : ' data-placeholder="Empty"'}></div></div>`;
+}
+
+function pillLabel(text: string, isTags: boolean): string {
+  if (isTags && validTag(text)) {
+    return `<button type="button" tabindex="-1" class="md-tag"${attr("data-tag", text)}${attr("aria-label", `Search tag #${text}`)}>${escape(text)}</button>`;
+  }
+  if (/^\[\[[^\n]+\]\]$/.test(text)) {
+    return `<span class="metadata-link">${renderInline(text)}</span>`;
+  }
+  return `<span>${escape(text)}</span>`;
+}
+
+function asList(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [value];
+}
+
 function propertyInputText(value: unknown): string {
   if (value === null || value === undefined) {
     return "";
   }
-  if (typeof value === "string") {
-    return value;
+  if (typeof value === "object") {
+    return Array.isArray(value)
+      ? value.map(propertyInputText).join(",")
+      : (JSON.stringify(value) ?? "");
   }
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-  if (Array.isArray(value)) {
-    return value.map((item: unknown) => propertyInputText(item)).join(",");
-  }
-  return JSON.stringify(value) ?? "";
+  return String(value);
 }
 
-function propertyValue(
-  value: unknown,
-  key?: string,
-  ancestors = new Set<object>(),
-): string {
-  if (typeof value === "boolean") {
-    return checkboxValue(value, key);
-  }
-  if (
-    key !== undefined &&
-    (typeof value === "string" || typeof value === "number")
-  ) {
-    return `<span data-property-display>${propertyValue(value)}</span><button type="button" data-property-edit${attr("aria-label", `Edit ${key}`)}>Edit</button><input hidden${attr("type", typeof value === "number" ? "number" : "text")}${attr("data-property-input", key)}${attr("aria-label", key)}${attr("value", String(value))} step="any">`;
-  }
+function propertyValue(value: unknown, ancestors = new Set<object>()): string {
   if (typeof value === "object" && value !== null) {
     return propertyObject(value, ancestors);
   }
   if (value === null || value === undefined || value === "") {
     return '<span class="property-empty">Empty</span>';
   }
-  const text = scalarText(value);
+  const text = String(value);
   return /^\[\[[^\n]+\]\]$/.test(text) || /^https?:\/\/[^\s<>]+$/.test(text)
     ? renderInline(text)
     : `<span class="property-text">${escape(text)}</span>`;
-}
-export function renderProperties(
-  source: string,
-  types: PropertyTypes = {},
-  forced: PropertyTypes = {},
-): string {
-  const properties = frontmatter(source);
-  if (!properties) {
-    return "";
-  }
-  if (properties.error) {
-    return `<div class="render-error">${escape(properties.error)}</div><pre>${escape(properties.raw)}</pre>`;
-  }
-  return `<details class="properties" open><summary tabindex="-1"><span data-properties-heading tabindex="0">Properties</span> <span class="property-count">${Object.keys(properties.values!).length}</span></summary><dl>${Object.entries(
-    properties.values!,
-  )
-    .map(([key, value]) =>
-      propertyRow(key, value, { properties, types, forced }),
-    )
-    .join(
-      "",
-    )}</dl><button type="button" data-property-add>Add property</button><div data-property-new hidden><input aria-label="New property name" placeholder="Property name"><button type="button" data-property-confirm>Add</button><button type="button" data-property-cancel>Cancel</button></div><p class="property-message" aria-live="polite"></p></details>`;
-}
-
-function scalarText(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-  return "";
 }
 
 function propertyObject(value: object, ancestors: Set<object>): string {
@@ -105,135 +151,11 @@ function propertyObject(value: object, ancestors: Set<object>): string {
       ? value
           .map(
             (item) =>
-              `<span class="property-chip">${propertyValue(item, undefined, path)}</span>`,
+              `<span class="property-chip">${propertyValue(item, path)}</span>`,
           )
           .join(" ")
       : '<span class="property-empty">Empty list</span>';
   }
   const entries = Object.entries(value);
-  return `<details class="property-object"><summary>${entries.length} ${entries.length === 1 ? "field" : "fields"}</summary><dl>${entries.map(([name, item]) => `<div><dt>${escape(name)}</dt><dd>${propertyValue(item, undefined, path)}</dd></div>`).join("")}</dl></details>`;
-}
-
-interface PropertyDisplay {
-  properties: NonNullable<ReturnType<typeof frontmatter>>;
-  types: PropertyTypes;
-  forced: PropertyTypes;
-}
-
-function propertyRow(
-  key: string,
-  value: unknown,
-  options: PropertyDisplay,
-): string {
-  const { properties, types, forced } = options;
-  const kind = inferPropertyKind(key, value, types);
-  const warning =
-    !matchesPropertyKind(kind, value) && forced[key] !== kind
-      ? `<button type="button" class="property-type-warning" data-property-convert${attr("aria-label", `Update ${key} to ${propertyKindLabels[kind]}`)} title="The stored value has a different type">!</button>`
-      : "";
-  return `<div class="property-row" tabindex="0"${attr("data-property-row", key)}><dt><button type="button" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}>${propertyIcon(key, value, kind)}</button><input class="property-key"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></dt><dd>${warning}${displayProperty(key, value, { properties, types, forced })}</dd></div>`;
-}
-
-function displayProperty(
-  key: string,
-  value: unknown,
-  options: PropertyDisplay,
-): string {
-  const { properties, types, forced } = options;
-  const expected = inferPropertyKind(key, value, types);
-  const force = forced[key] === expected;
-  const kind =
-    force || matchesPropertyKind(expected, value)
-      ? expected
-      : inferPropertyKind(key, value);
-  const editable = isEditableProperty(properties, key);
-  if ((kind === "list" || kind === "tags") && editable) {
-    return editableList(value, key);
-  }
-  if (key.toLowerCase() === "tags" && Array.isArray(value) && value.length) {
-    return tagValues(value);
-  }
-  if (editable && kind === "checkbox") {
-    return editableCheckbox(value, key, force);
-  }
-  if (editable && !["list", "tags", "checkbox"].includes(kind)) {
-    return editableScalar(value, key, kind, force);
-  }
-  return propertyValue(value);
-}
-
-function editableList(value: unknown, key: string): string {
-  const values = asList(value);
-  const chips = values
-    .map((item, index) => {
-      const raw = propertyInputText(item);
-      const text = key.toLowerCase() === "tags" ? raw.replace(/^#/, "") : raw;
-      const label =
-        key.toLowerCase() === "tags" && validTag(text)
-          ? `<button type="button" class="md-tag"${attr("data-tag", text)}${attr("aria-label", `Search tag #${text}`)}>${escape(text)}</button>`
-          : `<span>${escape(text)}</span>`;
-      return `<span class="property-chip" tabindex="0" data-property-chip="${index}">${label}<button type="button" data-property-remove="${index}"${attr("aria-label", `Remove ${text} from ${key}`)}>×</button></span>`;
-    })
-    .join("");
-  return `<span class="property-list"${attr("data-property-list", key)}>${chips}<input type="text"${attr("aria-label", `Add item to ${key}`)}></span>`;
-}
-
-function tagValues(value: unknown[]): string {
-  return value
-    .map((item) => {
-      const tag = typeof item === "string" ? item.replace(/^#/, "") : undefined;
-      return validTag(tag) ? tagButton(tag) : propertyValue(item);
-    })
-    .join(" ");
-}
-
-function editableScalar(
-  value: unknown,
-  key: string,
-  kind: PropertyKind,
-  force: boolean,
-): string {
-  const text = propertyInputText(value);
-  const valid = propertyInput(kind, text) !== undefined;
-  const inputType =
-    valid || force
-      ? ((
-          {
-            number: "number",
-            date: "date",
-            datetime: "datetime-local",
-          } as Record<string, string>
-        )[kind] ?? "text")
-      : "text";
-  return `<span data-property-display>${propertyValue(value)}</span><button type="button" data-property-edit${attr("aria-label", `Edit ${key}`)}>Edit</button><input hidden${attr("type", inputType)}${attr("data-property-input", key)}${attr("data-property-kind", kind)}${attr("aria-label", key)}${attr("value", text)} step="any">`;
-}
-
-function asList(value: unknown): unknown[] {
-  if (value === null || value === undefined) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
-
-function checkboxValue(value: boolean, key?: string): string {
-  return `<input type="checkbox"${key === undefined ? " disabled" : attr("data-property", key)}${value ? " checked" : ""}${attr("aria-label", key ?? "Property value")}>`;
-}
-
-function editableCheckbox(value: unknown, key: string, force: boolean): string {
-  return (
-    propertyValue(force ? Boolean(value) : value === true, key) +
-    (typeof value !== "boolean" && value !== null
-      ? `<span class="property-type-warning">${propertyValue(value)}</span>`
-      : "")
-  );
-}
-
-function isEditableProperty(
-  properties: PropertyDisplay["properties"],
-  key: string,
-): boolean {
-  return !!(
-    properties.editableKeys?.includes(key) ||
-    properties.editableLists?.includes(key)
-  );
+  return `<details class="property-object"><summary>${entries.length} ${entries.length === 1 ? "field" : "fields"}</summary><dl>${entries.map(([name, item]) => `<div><dt>${escape(name)}</dt><dd>${propertyValue(item, path)}</dd></div>`).join("")}</dl></details>`;
 }

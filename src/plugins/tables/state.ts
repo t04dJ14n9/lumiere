@@ -1,21 +1,7 @@
-import { Facet, StateEffect, StateField } from "@codemirror/state";
+import { Facet } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { TableController } from "./controller";
 import type { Action } from "./environment";
-
-export const revealTableSource = StateEffect.define<number | null>();
-export const tableSource = StateField.define<number | null>({
-  create: () => null,
-  update(value, transaction) {
-    const effect = transaction.effects.find((effect) =>
-      effect.is(revealTableSource),
-    );
-    if (effect) {
-      return effect.value;
-    }
-    return value === null ? null : transaction.changes.mapPos(value, 1);
-  },
-});
 
 export const activeTables = new WeakMap<EditorView, TableController>();
 export const tableActions = Facet.define<

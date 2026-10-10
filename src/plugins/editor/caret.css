@@ -1,0 +1,156 @@
+/* Selection backgrounds remain CodeMirror's; only the caret layers are replaced. */
+#app
+  .cm-editor[data-caret-style]
+  > .cm-scroller
+  > .cm-cursorLayer:not(.mw-caret-layer) {
+  display: none;
+}
+#app .cm-editor[data-caret-style] > .cm-scroller > .cm-content {
+  caret-color: transparent;
+}
+#app .cm-editor > .cm-scroller > .mw-caret-layer {
+  /* Vim hides other cm-cursorLayer elements, so our replacement opts back in. */
+  display: block;
+  z-index: 150;
+  animation: none;
+  --caret-foreground: var(
+    --vscode-editorCursor-foreground,
+    var(--vscode-editor-foreground, #222)
+  );
+  --caret-background: var(
+    --vscode-editorCursor-background,
+    var(--vscode-editor-background, #fff)
+  );
+}
+#app .mw-caret {
+  /* VS Code's own: `transition: 80ms` on every property, default easing. */
+  transition-property: left, top, width, height;
+  transition-duration: var(--caret-move-duration, 0ms);
+  transition-timing-function: ease;
+}
+#app .mw-caret-shape {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  white-space: pre;
+  background: var(--caret-foreground);
+  color: var(--caret-background);
+}
+#app .cm-editor.cm-focused > .cm-scroller > .mw-caret-layer .mw-caret-shape,
+/* The search and ex prompt holds focus; VSCodeVim's caret stays and blinks. */
+#app
+  .cm-editor[data-caret-mode="prompt"]
+  > .cm-scroller
+  > .mw-caret-layer
+  .mw-caret-shape {
+  animation-name: var(--caret-animation, mw-caret-blink);
+  animation-duration: var(--caret-duration, 1s);
+  animation-timing-function: var(--caret-timing, step-end);
+  animation-iteration-count: var(--caret-count, infinite);
+  animation-direction: var(--caret-direction, normal);
+}
+#app
+  .cm-editor[data-caret-style="block-outline"]
+  > .cm-scroller
+  > .mw-caret-layer
+  .mw-caret-shape,
+#app
+  .cm-editor:not(.cm-focused)[data-caret-style="block"]
+  > .cm-scroller
+  > .mw-caret-layer
+  .mw-caret-shape {
+  background: transparent;
+  color: transparent;
+  box-shadow: inset 0 0 0 1px var(--caret-foreground);
+}
+#app
+  .cm-editor:not(.cm-focused):not([data-caret-mode="prompt"]):not(
+    [data-caret-style="block"]
+  ):not([data-caret-style="block-outline"])
+  > .cm-scroller
+  > .mw-caret-layer {
+  visibility: hidden;
+}
+/* The same keyframes as VS Code's monaco-cursor-smooth, -phase and -expand. */
+@keyframes mw-caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes mw-caret-smooth {
+  0%,
+  20% {
+    opacity: 1;
+  }
+  60%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mw-caret-phase {
+  0%,
+  20% {
+    opacity: 1;
+  }
+  90%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes mw-caret-expand {
+  0%,
+  20% {
+    transform: scaleY(1);
+  }
+  80%,
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+/*
+ * Vim visual mode, as VSCodeVim draws it: the active character in a block of
+ * the cursor colour with its own fixed text colour (not the theme's cursor
+ * background), and the editor's one-pixel line caret at the selection's end.
+ */
+#app .cm-editor[data-caret-mode="visual"] .mw-caret-shape {
+  color: rgb(81, 80, 82);
+}
+.vscode-light #app .cm-editor[data-caret-mode="visual"] .mw-caret-shape,
+.vscode-high-contrast-light
+  #app
+  .cm-editor[data-caret-mode="visual"]
+  .mw-caret-shape {
+  color: rgb(255, 255, 255);
+}
+#app .mw-caret[data-part="end"] .mw-caret-shape {
+  color: transparent;
+}
+
+/*
+ * Vim operator pending (after `d`, `y`, `c`): VSCodeVim shows the lower
+ * half of the character in a block, the character still drawn over it.
+ */
+#app .cm-editor[data-caret-style="half-block"] .mw-caret-shape {
+  position: relative;
+  background: transparent;
+  color: transparent;
+}
+#app .cm-editor[data-caret-style="half-block"] .mw-caret-shape::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 0;
+  background: var(--caret-foreground);
+}
+#app .cm-editor[data-caret-style="half-block"] .mw-caret-shape::after {
+  content: attr(data-char);
+  position: absolute;
+  inset: 0;
+  color: var(--caret-background);
+  clip-path: inset(50% 0 0);
+}

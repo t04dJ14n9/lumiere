@@ -12,6 +12,7 @@ import type { MarkdownService } from "../../../src/plugins/dialect/api";
 import type { LivePreview } from "../../../src/plugins/livePreview/api";
 import { ViewContributions } from "../../../src/plugins/editor/contributions";
 import { ExtensionRegistry } from "../../../src/plugins/editor/extensions";
+import { caretExtension } from "../../../src/plugins/editor/caret-view";
 import {
   settingsExtensions,
   editorSettings,
@@ -146,6 +147,12 @@ export function fixture() {
       };
     },
     view,
+    caret(source) {
+      return caretExtension({
+        ...source,
+        settings: () => view.state.facet(editorSettings),
+      });
+    },
     get settings() {
       return view.state.facet(editorSettings);
     },

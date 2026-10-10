@@ -19,7 +19,7 @@ import { TableKeyboard } from "./keyboard";
 import { TableClipboard } from "./clipboard";
 import { TableToolbar } from "./toolbar";
 import { TableHandles } from "./handles";
-import { activeTables } from "./state";
+import { activeTables, tableSelectionChanges } from "./state";
 
 /** Wires table interactions and reconciles snapshots from the outer document. */
 export class TableController {
@@ -66,6 +66,7 @@ export class TableController {
           this.requested = position;
         },
         execute: (operation, focus) => this.execute(operation, focus),
+        selectAll: () => this.selected.selectAll(),
       },
       this.clipboard,
       environment.openMenu,
@@ -83,7 +84,8 @@ export class TableController {
       },
     );
     this.registerEvents();
-    root.append(this.toolbar.controls());
+    this.registerFocus();
+    this.grid.wrapper.append(this.toolbar.controls());
     this.grid.render();
     this.handles = this.createHandles();
     this.handles.refresh();
@@ -121,6 +123,15 @@ export class TableController {
   close(): void {
     this.projection.close();
   }
+
+  bounds(): { from: number; to: number } {
+    const from = this.grid.start();
+    return { from, to: from + this.grid.block.source.length };
+  }
+
+  enter(direction: -1 | 1): void {
+    this.keyboard.enter(direction);
+  }
   highlight(): void {
     this.selected.highlight();
   }
@@ -142,6 +153,7 @@ export class TableController {
           this.close();
           delete this.selected.range;
           this.highlight();
+          outer.state.facet(tableSelectionChanges)(false);
         }
       },
       { capture: true, signal: this.events.signal },
@@ -156,6 +168,36 @@ export class TableController {
       this.toolbar.contextMenu(event),
     );
     root.addEventListener("keydown", (event) => this.keyboard.keyDown(event));
+  }
+
+  private registerFocus(): void {
+    const root = this.grid.root;
+    root.addEventListener("focusin", () => root.classList.add("has-focus"), {
+      signal: this.events.signal,
+    });
+    root.addEventListener(
+      "focusout",
+      () => {
+        // Menu invocation removes its DOM before queuing the command. Give
+        // that command a turn to restore cell focus before closing the editor.
+        queueMicrotask(() =>
+          queueMicrotask(() => {
+            if (root.contains(document.activeElement)) {
+              return;
+            }
+            root.classList.remove("has-focus");
+            if (activeTables.get(this.grid.outer) === this) {
+              activeTables.delete(this.grid.outer);
+              this.close();
+              delete this.selected.range;
+              this.highlight();
+              this.grid.outer.state.facet(tableSelectionChanges)(false);
+            }
+          }),
+        );
+      },
+      { signal: this.events.signal },
+    );
   }
 
   private createHandles(): TableHandles {
@@ -203,13 +245,22 @@ export class TableController {
     if (shapeChanged && this.active && !this.requested) {
       const previous =
         this.grid.model.rows[this.active.row]![this.active.column]!;
-      moved = cellAtOffset(
-        model,
-        difference(this.grid.block.source, block.source).mapPos(
-          previous.from,
-          1,
-        ),
-      );
+      // When the cell itself is gone (undo removed its row or column), the
+      // caret stays in the table, in the nearest remaining cell.
+      moved =
+        cellAtOffset(
+          model,
+          difference(this.grid.block.source, block.source).mapPos(
+            previous.from,
+            1,
+          ),
+        ) ??
+        (this.editor
+          ? {
+              row: Math.min(this.active.row, model.rows.length - 1),
+              column: Math.min(this.active.column, model.alignments.length - 1),
+            }
+          : undefined);
     }
     this.grid.block = block;
     this.grid.model = model;

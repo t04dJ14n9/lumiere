@@ -9,11 +9,12 @@ import type { MenuItem } from "../editor/api";
 
 export interface TableMenuActions {
   copy(cut: boolean): void;
-  paste(): Promise<void>;
+  paste(plainText: boolean): Promise<void>;
+  selectAll(): void;
   format(marker: string | null): void;
   clear(): void;
   execute(operation: TableOperation, focus: CellPosition): void;
-  source(): void;
+  canFormat?: boolean;
 }
 
 export function tableMenu(
@@ -32,8 +33,14 @@ export function tableMenu(
   return [
     { label: "Cut", run: () => actions.copy(true) },
     { label: "Copy", run: () => actions.copy(false) },
-    { label: "Paste", run: () => actions.paste() },
-    { label: "Format", children: formatItems(actions) },
+    { label: "Paste", run: () => actions.paste(false) },
+    { label: "Paste as plain text", run: () => actions.paste(true) },
+    { label: "Select all", run: () => actions.selectAll() },
+    {
+      label: "Format",
+      children: formatItems(actions),
+      disabled: actions.canFormat === false,
+    },
     {
       label: "Row",
       children: axisItems({ table, range, actions, axis: "row" }),
@@ -44,7 +51,6 @@ export function tableMenu(
     },
     ...sorting,
     { label: "Clear selected cells", run: () => actions.clear() },
-    { label: "Edit table source", run: () => actions.source() },
   ];
 }
 
@@ -68,9 +74,11 @@ function axisItems(options: AxisMenuOptions): MenuItem[] {
     label: string,
     operation: TableOperation,
     index: number,
+    disabled = false,
   ): MenuItem => ({
     label,
     run: () => actions.execute(operation, focus(index)),
+    disabled,
   });
   const items = [
     item(
@@ -84,24 +92,20 @@ function axisItems(options: AxisMenuOptions): MenuItem[] {
       to + 1,
     ),
   ];
-  if (from > 0) {
-    items.push(
-      item(
-        `Move ${axis} ${row ? "up" : "left"}`,
-        { type: "move", axis, from, to, destination: from - 1 },
-        from - 1,
-      ),
-    );
-  }
-  if (to < size - 1) {
-    items.push(
-      item(
-        `Move ${axis} ${row ? "down" : "right"}`,
-        { type: "move", axis, from, to, destination: from + 1 },
-        from + 1,
-      ),
-    );
-  }
+  items.push(
+    item(
+      `Move ${axis} ${row ? "up" : "left"}`,
+      { type: "move", axis, from, to, destination: from - 1 },
+      from - 1,
+      from === 0,
+    ),
+    item(
+      `Move ${axis} ${row ? "down" : "right"}`,
+      { type: "move", axis, from, to, destination: from + 1 },
+      from + 1,
+      to === size - 1,
+    ),
+  );
   if (!row) {
     items.push(...alignmentItems(range, actions));
   }

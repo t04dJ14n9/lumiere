@@ -157,6 +157,22 @@ export function cellText(text: string): string {
   return result;
 }
 
+/** Padding belongs to the column; whitespace typed in a cell belongs to its text. */
+export function cellPadding(
+  text: string,
+  width: number,
+  alignment: Table["alignments"][number],
+): { before: number; after: number } {
+  const extra = Math.max(0, width - text.length);
+  let before = 0;
+  if (alignment === "right") {
+    before = extra;
+  } else if (alignment === "center") {
+    before = Math.floor(extra / 2);
+  }
+  return { before, after: extra - before };
+}
+
 /** Structural edits normalize table layout in one outer-document transaction. */
 export function serializeTable(
   rows: readonly (readonly string[])[],
@@ -170,7 +186,16 @@ export function serializeTable(
     Math.max(3, ...normalized.map((row) => row[column]!.length)),
   );
   const rowText = (row: readonly string[]) =>
-    `| ${row.map((text, column) => text.padEnd(lengths[column]!)).join(" | ")} |`;
+    `| ${row
+      .map((text, column) => {
+        const padding = cellPadding(
+          text,
+          lengths[column]!,
+          alignments[column]!,
+        );
+        return " ".repeat(padding.before) + text + " ".repeat(padding.after);
+      })
+      .join(" | ")} |`;
   const divider = alignments.map((alignment, column) => {
     const length = lengths[column]!;
     if (alignment === "center") {

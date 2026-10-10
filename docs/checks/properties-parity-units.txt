@@ -1,0 +1,1047 @@
+
+src/plugins/properties/collapse-store.test.ts
+TAP version 13
+# Subtest: collapse preference is shared by notes/panels and survives reopening without a vault key
+ok 1 - collapse preference is shared by notes/panels and survives reopening without a vault key
+  ---
+  duration_ms: 11.266755
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83.33803
+
+src/plugins/properties/controls.test.ts
+TAP version 13
+# Subtest: property removal focuses the next surviving row, then the previous row
+ok 1 - property removal focuses the next surviving row, then the previous row
+  ---
+  duration_ms: 1.27475
+  ...
+# Subtest: property row keys preserve motion priority and Vim-only actions
+ok 2 - property row keys preserve motion priority and Vim-only actions
+  ---
+  duration_ms: 0.72133
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15.57965
+
+src/plugins/properties/edit-transaction.test.ts
+TAP version 13
+# Subtest: property transactions combine a rename or removal with current displayed order
+ok 1 - property transactions combine a rename or removal with current displayed order
+  ---
+  duration_ms: 16.67105
+  ...
+# Subtest: property transactions reject stale input and preserve empty or explicit-order changes
+ok 2 - property transactions reject stale input and preserve empty or explicit-order changes
+  ---
+  duration_ms: 5.519963
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38.595133
+
+src/plugins/properties/editing.test.ts
+TAP version 13
+# Subtest: property edits reject stale headers and combine displayed ordering with one source transaction
+ok 1 - property edits reject stale headers and combine displayed ordering with one source transaction
+  ---
+  duration_ms: 18.801902
+  ...
+# Subtest: chip editing tracks duplicate occurrences through concurrent list additions and removals
+ok 2 - chip editing tracks duplicate occurrences through concurrent list additions and removals
+  ---
+  duration_ms: 0.315685
+  ...
+# Subtest: property RPC rejects arbitrary preference types and oversized keys
+ok 3 - property RPC rejects arbitrary preference types and oversized keys
+  ---
+  duration_ms: 0.529791
+  ...
+# Subtest: type conversion leaves nested objects in source but permits scalar lists
+ok 4 - type conversion leaves nested objects in source but permits scalar lists
+  ---
+  duration_ms: 0.212993
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36.6461
+
+src/plugins/properties/form.test.ts
+TAP version 13
+# Subtest: pending rows survive Escape, reject duplicates quietly, and accept a vault name before any YAML write
+ok 1 - pending rows survive Escape, reject duplicates quietly, and accept a vault name before any YAML write
+  ---
+  duration_ms: 28.266057
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 94.876846
+
+src/plugins/properties/host.test.ts
+TAP version 13
+# Subtest: property RPC shares preferences, validates keys and disposes handlers on disable
+ok 1 - property RPC shares preferences, validates keys and disposes handlers on disable
+  ---
+  duration_ms: 24.302333
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 35.989751
+
+src/plugins/properties/interaction.test.ts
+TAP version 13
+# Subtest: scalar Enter commits quoted text and focuses its row; untouched mismatches never write
+ok 1 - scalar Enter commits quoted text and focuses its row; untouched mismatches never write
+  ---
+  duration_ms: 16.702121
+  ...
+# Subtest: name Enter focuses value, rename uses the new name without copying registry types, rejects duplicates quietly
+ok 2 - name Enter focuses value, rename uses the new name without copying registry types, rejects duplicates quietly
+  ---
+  duration_ms: 9.814782
+  ...
+# Subtest: row and field keyboard events follow measured tab stops, row motion, Delete and Escape
+ok 3 - row and field keyboard events follow measured tab stops, row motion, Delete and Escape
+  ---
+  duration_ms: 4.630183
+  ...
+# Subtest: list input Backspace focuses the last pill, another removes it, Enter on a pill edits it
+ok 4 - list input Backspace focuses the last pill, another removes it, Enter on a pill edits it
+  ---
+  duration_ms: 4.356528
+  ...
+# Subtest: Enter adds a normalized tag, keeps pill input focus, and x removes the selected occurrence
+ok 5 - Enter adds a normalized tag, keeps pill input focus, and x removes the selected occurrence
+  ---
+  duration_ms: 13.310916
+  ...
+# Subtest: Mod+; begins a pending row without YAML or undo changes, including notes without frontmatter
+ok 6 - Mod+; begins a pending row without YAML or undo changes, including notes without frontmatter
+  ---
+  duration_ms: 3.240226
+  ...
+# Subtest: type notifications change presentation only, with no forced conversion capability
+ok 7 - type notifications change presentation only, with no forced conversion capability
+  ---
+  duration_ms: 0.646801
+  ...
+# Subtest: the native checkbox activation handler writes true and false without altering neighbouring YAML
+ok 8 - the native checkbox activation handler writes true and false without altering neighbouring YAML
+  ---
+  duration_ms: 3.703018
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 74.848893
+
+src/plugins/properties/list-values.test.ts
+TAP version 13
+# Subtest: property lists accept YAML scalars without coercing values
+ok 1 - property lists accept YAML scalars without coercing values
+  ---
+  duration_ms: 1.876268
+  ...
+# Subtest: chip occurrence matching distinguishes scalar identity after concurrent changes
+ok 2 - chip occurrence matching distinguishes scalar identity after concurrent changes
+  ---
+  duration_ms: 0.333341
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12.311319
+
+src/plugins/properties/parity.test.ts
+TAP version 13
+# Subtest: measured sheet structure and inline value widgets replace display/Edit controls
+ok 1 - measured sheet structure and inline value widgets replace display/Edit controls
+  ---
+  duration_ms: 18.493323
+  ...
+# Subtest: selected type always renders its widget and a non-mutating mismatch warning
+ok 2 - selected type always renders its widget and a non-mutating mismatch warning
+  ---
+  duration_ms: 1.345049
+  ...
+# Subtest: reserved aliases and cssclasses types cannot be overridden by preferences
+ok 3 - reserved aliases and cssclasses types cannot be overridden by preferences
+  ---
+  duration_ms: 0.25237
+  ...
+# Subtest: row Delete removes, Escape returns to the document, and Backspace does not remove
+ok 4 - row Delete removes, Escape returns to the document, and Backspace does not remove
+  ---
+  duration_ms: 0.429881
+  ...
+# Subtest: committing a new property writes an empty YAML value
+ok 5 - committing a new property writes an empty YAML value
+  ---
+  duration_ms: 5.835091
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 91.971918
+
+src/plugins/properties/presentation.test.ts
+TAP version 13
+# Subtest: showing an already-visible sheet keeps its widget and unnamed draft rows
+ok 1 - showing an already-visible sheet keeps its widget and unnamed draft rows
+  ---
+  duration_ms: 1.372854
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 77.722
+
+src/plugins/properties/rules.test.ts
+TAP version 13
+# Subtest: registry inference covers every scalar/list kind and reserved names before overrides
+ok 1 - registry inference covers every scalar/list kind and reserved names before overrides
+  ---
+  duration_ms: 1.298306
+  ...
+# Subtest: type submenu order, Automatic and checked state follow the registry
+ok 2 - type submenu order, Automatic and checked state follow the registry
+  ---
+  duration_ms: 1.907164
+  ...
+# Subtest: icon and heading menus expose the measured action labels and submenus
+ok 3 - icon and heading menus expose the measured action labels and submenus
+  ---
+  duration_ms: 0.632325
+  ...
+# Subtest: field tab routing is key -> value -> same row -> next row
+ok 4 - field tab routing is key -> value -> same row -> next row
+  ---
+  duration_ms: 0.211554
+  ...
+# Subtest: vault name suggestions combine registered and inferred names, filter and favour a prefix
+ok 5 - vault name suggestions combine registered and inferred names, filter and favour a prefix
+  ---
+  duration_ms: 7.942733
+  ...
+# Subtest: add/rename rules reject empty or duplicate names without changing YAML
+ok 6 - add/rename rules reject empty or duplicate names without changing YAML
+  ---
+  duration_ms: 7.742499
+  ...
+# Subtest: tags remove one leading hash for additions and edited pills; lists preserve it
+ok 7 - tags remove one leading hash for additions and edited pills; lists preserve it
+  ---
+  duration_ms: 1.910186
+  ...
+# Subtest: menu clipboard paste accepts property mappings and rejects unsafe or invalid YAML
+ok 8 - menu clipboard paste accepts property mappings and rejects unsafe or invalid YAML
+  ---
+  duration_ms: 4.004783
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 43.578
+
+src/plugins/properties/sheet-html.test.ts
+TAP version 13
+# Subtest: property sheet distinguishes editable scalars, list chips and escaped nested values
+ok 1 - property sheet distinguishes editable scalars, list chips and escaped nested values
+  ---
+  duration_ms: 17.248261
+  ...
+# Subtest: registry property types retain mismatch warnings and choose the expected control
+ok 2 - registry property types retain mismatch warnings and choose the expected control
+  ---
+  duration_ms: 2.030014
+  ...
+# Subtest: property rendering bounds recursive aliases and leaves absent frontmatter alone
+ok 3 - property rendering bounds recursive aliases and leaves absent frontmatter alone
+  ---
+  duration_ms: 3.455338
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38.598135
+
+src/plugins/properties/type-store.test.ts
+TAP version 13
+# Subtest: property type preferences serialize concurrent writes and stay within their vault
+ok 1 - property type preferences serialize concurrent writes and stay within their vault
+  ---
+  duration_ms: 2.589516
+  ...
+# Subtest: the name registry survives reopening and Automatic restores value inference in every note
+ok 2 - the name registry survives reopening and Automatic restores value inference in every note
+  ---
+  duration_ms: 1.347053
+  ...
+# Subtest: preference subscriptions notify separate panel consumers only until disposed
+ok 3 - preference subscriptions notify separate panel consumers only until disposed
+  ---
+  duration_ms: 0.600755
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19.168839
+
+test/unit/ported/properties.test.ts
+TAP version 13
+# Subtest: recursive YAML properties render without throwing or mistaking shared aliases for cycles
+ok 1 - recursive YAML properties render without throwing or mistaking shared aliases for cycles
+  ---
+  duration_ms: 12.686377
+  ...
+# Subtest: nested property values preserve links, empty lists and multiline text
+ok 2 - nested property values preserve links, empty lists and multiline text
+  ---
+  duration_ms: 6.218276
+  ...
+# Subtest: boolean property edits preserve anchors, comments, flow syntax and CRLF
+ok 3 - boolean property edits preserve anchors, comments, flow syntax and CRLF
+  ---
+  duration_ms: 2.772639
+  ...
+# Subtest: property strings cannot introduce extra interactive property controls
+ok 4 - property strings cannot introduce extra interactive property controls
+  ---
+  duration_ms: 1.53254
+  ...
+# Subtest: text property edits preserve quote style and string types
+ok 5 - text property edits preserve quote style and string types
+  ---
+  duration_ms: 4.623431
+  ...
+# Subtest: numeric property edits preserve neighboring text and reject non-finite values
+ok 6 - numeric property edits preserve neighboring text and reject non-finite values
+  ---
+  duration_ms: 2.124075
+  ...
+# Subtest: boolean property edits reject aliases, strings and duplicate keys
+ok 7 - boolean property edits reject aliases, strings and duplicate keys
+  ---
+  duration_ms: 2.768297
+  ...
+# Subtest: list edits preserve neighboring YAML, string types and line endings
+ok 8 - list edits preserve neighboring YAML, string types and line endings
+  ---
+  duration_ms: 5.931452
+  ...
+# Subtest: scalar serialization preserves negative zero and quotes multiline replacements
+ok 9 - scalar serialization preserves negative zero and quotes multiline replacements
+  ---
+  duration_ms: 1.405793
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 54.805182
+
+test/unit/ported/property-editing.test.ts
+TAP version 13
+# Subtest: empty headers and new properties preserve the note body and line endings
+ok 1 - empty headers and new properties preserve the note body and line endings
+  ---
+  duration_ms: 13.666197
+  ...
+# Subtest: rename and removal preserve unrelated comments, multiline values and formatting
+ok 2 - rename and removal preserve unrelated comments, multiline values and formatting
+  ---
+  duration_ms: 6.889257
+  ...
+# Subtest: property edits retain flow mappings and reject removal of a referenced anchor
+ok 3 - property edits retain flow mappings and reject removal of a referenced anchor
+  ---
+  duration_ms: 7.690132
+  ...
+# Subtest: explicit value editing changes scalar types and retains unrelated inline comments
+ok 4 - explicit value editing changes scalar types and retains unrelated inline comments
+  ---
+  duration_ms: 2.817365
+  ...
+# Subtest: adding properties distinguishes an unfinished header from ordinary Markdown
+ok 5 - adding properties distinguishes an unfinished header from ordinary Markdown
+  ---
+  duration_ms: 0.729766
+  ...
+# Subtest: new properties reject non-finite scalar and list values
+ok 6 - new properties reject non-finite scalar and list values
+  ---
+  duration_ms: 0.312175
+  ...
+# Subtest: structured property paste merges nested values and unions lists without touching other YAML
+ok 7 - structured property paste merges nested values and unions lists without touching other YAML
+  ---
+  duration_ms: 12.037016
+  ...
+# Subtest: structured property paste handles flow maps, empty values and null merge rules
+ok 8 - structured property paste handles flow maps, empty values and null merge rules
+  ---
+  duration_ms: 4.618578
+  ...
+# Subtest: an invalid property in a paste rejects the whole batch
+ok 9 - an invalid property in a paste rejects the whole batch
+  ---
+  duration_ms: 0.770051
+  ...
+# Subtest: structured paste treats inherited-looking names as ordinary own properties
+ok 10 - structured paste treats inherited-looking names as ordinary own properties
+  ---
+  duration_ms: 1.123059
+  ...
+# Subtest: key edits reject missing and duplicate keys without partial removal
+ok 11 - key edits reject missing and duplicate keys without partial removal
+  ---
+  duration_ms: 1.23306
+  ...
+# Subtest: structured merge retains truthy values on null and replaces falsy values
+ok 12 - structured merge retains truthy values on null and replaces falsy values
+  ---
+  duration_ms: 1.578464
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 66.545789
+
+test/unit/ported/property-order.test.ts
+TAP version 13
+# Subtest: property order moves complete entries with comments and multiline values
+ok 1 - property order moves complete entries with comments and multiline values
+  ---
+  duration_ms: 18.735447
+  ...
+# Subtest: flow property maps retain values, quotes and comments through a reorder
+ok 2 - flow property maps retain values, quotes and comments through a reorder
+  ---
+  duration_ms: 6.074613
+  ...
+# Subtest: invalid key permutations cannot remove or duplicate a property
+ok 3 - invalid key permutations cannot remove or duplicate a property
+  ---
+  duration_ms: 1.33782
+  ...
+# Subtest: alias dependencies remain valid and forward-alias reorders are rejected
+ok 4 - alias dependencies remain valid and forward-alias reorders are rejected
+  ---
+  duration_ms: 3.514123
+  ...
+# Subtest: empty values, empty headers and punctuation in keys keep their source meaning
+ok 5 - empty values, empty headers and punctuation in keys keep their source meaning
+  ---
+  duration_ms: 2.350886
+  ...
+# Subtest: flow reordering retains CRLF and rejects non-string YAML keys
+ok 6 - flow reordering retains CRLF and rejects non-string YAML keys
+  ---
+  duration_ms: 1.244917
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50.973181
+
+src/plugins/pasteHtml/routing.test.ts
+TAP version 13
+# Subtest: rich paste in a Properties contenteditable cannot also insert into the Markdown document
+ok 1 - rich paste in a Properties contenteditable cannot also insert into the Markdown document
+  ---
+  duration_ms: 2.437715
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.723272
+
+test/unit/paste-html/conversion.test.ts
+TAP version 13
+# Subtest: rich HTML converts headings, literal text, formatting, lists and tables
+ok 1 - rich HTML converts headings, literal text, formatting, lists and tables
+  ---
+  duration_ms: 15.909382
+  ...
+# Subtest: HTML conversion preserves wiki aliases, embeds, math and folded callouts
+ok 2 - HTML conversion preserves wiki aliases, embeds, math and folded callouts
+  ---
+  duration_ms: 4.712021
+  ...
+# Subtest: conversion drops active containers and script destinations
+ok 3 - conversion drops active containers and script destinations
+  ---
+  duration_ms: 2.18517
+  ...
+# Subtest: async paste applies once and rejects changed documents, selections and closed views
+ok 4 - async paste applies once and rejects changed documents, selections and closed views
+  ---
+  duration_ms: 2.79597
+  ...
+# Subtest: HTML conversion is suppressed inside literal code
+ok 5 - HTML conversion is suppressed inside literal code
+  ---
+  duration_ms: 5.234393
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 41.088807
+
+test/unit/webview/menu.test.ts
+TAP version 13
+# Subtest: menu navigation wraps enabled choices and reserves submenu/dismissal keys
+ok 1 - menu navigation wraps enabled choices and reserves submenu/dismissal keys
+  ---
+  duration_ms: 0.965828
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21.387726
+
+test/unit/editor/bootstrap.test.ts
+TAP version 13
+# Subtest: the real host wiring starts every window and panel plugin
+ok 1 - the real host wiring starts every window and panel plugin
+  ---
+  duration_ms: 56.05514
+  ...
+# Subtest: the editor provider registers once, so an editor opened during activation stays open
+ok 2 - the editor provider registers once, so an editor opened during activation stays open
+  ---
+  duration_ms: 19.31771
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 81.836845
+
+test/unit/features/leave-no-trace.test.ts
+TAP version 13
+# Subtest: agentBridge (host): stopping it leaves no trace
+ok 1 - agentBridge (host): stopping it leaves no trace
+  ---
+  duration_ms: 16.018593
+  ...
+# Subtest: backlinks (host): stopping it leaves no trace
+ok 2 - backlinks (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.928466
+  ...
+# Subtest: codeBlocks (host): stopping it leaves no trace
+ok 3 - codeBlocks (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.726519
+  ...
+# Subtest: commands (host): stopping it leaves no trace
+ok 4 - commands (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.791531
+  ...
+# Subtest: dialect (host): stopping it leaves no trace
+ok 5 - dialect (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.890936
+  ...
+# Subtest: document (host): stopping it leaves no trace
+ok 6 - document (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.253906
+  ...
+# Subtest: editor (host): stopping it leaves no trace
+ok 7 - editor (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.411131
+  ...
+# Subtest: inlineTitle (host): stopping it leaves no trace
+ok 8 - inlineTitle (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.404503
+  ...
+# Subtest: linkUpdates (host): stopping it leaves no trace
+ok 9 - linkUpdates (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.25008
+  ...
+# Subtest: links (host): stopping it leaves no trace
+ok 10 - links (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.191479
+  ...
+# Subtest: livePreview (host): stopping it leaves no trace
+ok 11 - livePreview (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.812863
+  ...
+# Subtest: markers (host): stopping it leaves no trace
+ok 12 - markers (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.373892
+  ...
+# Subtest: onlineVideos (host): stopping it leaves no trace
+ok 13 - onlineVideos (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.108081
+  ...
+# Subtest: outgoingLinks (host): stopping it leaves no trace
+ok 14 - outgoingLinks (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.604236
+  ...
+# Subtest: outline (host): stopping it leaves no trace
+ok 15 - outline (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.15323
+  ...
+# Subtest: properties (host): stopping it leaves no trace
+ok 16 - properties (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.556432
+  ...
+# Subtest: publicApi (host): stopping it leaves no trace
+ok 17 - publicApi (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.439743
+  ...
+# Subtest: quickSwitcher (host): stopping it leaves no trace
+ok 18 - quickSwitcher (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.993268
+  ...
+# Subtest: resources (host): stopping it leaves no trace
+ok 19 - resources (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.132295
+  ...
+# Subtest: search (host): stopping it leaves no trace
+ok 20 - search (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.153123
+  ...
+# Subtest: suggest (host): stopping it leaves no trace
+ok 21 - suggest (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.158892
+  ...
+# Subtest: tags (host): stopping it leaves no trace
+ok 22 - tags (host): stopping it leaves no trace
+  ---
+  duration_ms: 10.578388
+  ...
+# Subtest: tags (host): stopping it leaves no trace
+ok 23 - tags (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.714134
+  ...
+# Subtest: tasks (host): stopping it leaves no trace
+ok 24 - tasks (host): stopping it leaves no trace
+  ---
+  duration_ms: 11.535686
+  ...
+# Subtest: vault (host): stopping it leaves no trace
+ok 25 - vault (host): stopping it leaves no trace
+  ---
+  duration_ms: 10.49255
+  ...
+# Subtest: vault (host): stopping it leaves no trace
+ok 26 - vault (host): stopping it leaves no trace
+  ---
+  duration_ms: 12.03131
+  ...
+# Subtest: wordCount (host): stopping it leaves no trace
+ok 27 - wordCount (host): stopping it leaves no trace
+  ---
+  duration_ms: 17.548346
+  ...
+# Subtest: every host plugin of a catalog feature is covered
+ok 28 - every host plugin of a catalog feature is covered
+  ---
+  duration_ms: 0.873278
+  ...
+# Subtest: the check catches a registration made outside the plugin's context
+ok 29 - the check catches a registration made outside the plugin's context
+  ---
+  duration_ms: 0.663063
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 344.499703
+
+test/unit/features/composition-policy.test.ts
+TAP version 13
+# Subtest: feature modules never supply editor-wide singleton settings
+ok 1 - feature modules never supply editor-wide singleton settings
+  ---
+  duration_ms: 253.275185
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 265.075266
+
+test/unit/features/lifecycle.test.ts
+TAP version 13
+# Subtest: tables: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 1 - tables: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 12.870966
+  ...
+# Subtest: properties: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 2 - properties: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 5.502058
+  ...
+# Subtest: inlineTitle: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 3 - inlineTitle: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 4.140702
+  ...
+# Subtest: pagePreview: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 4 - pagePreview: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.278366
+  ...
+# Subtest: onlineVideos: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 5 - onlineVideos: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.092907
+  ...
+# Subtest: embeds: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 6 - embeds: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.772682
+  ...
+# Subtest: tasks: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 7 - tasks: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.832218
+  ...
+# Subtest: footnotes: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 8 - footnotes: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 11.535253
+  ...
+# Subtest: callouts: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 9 - callouts: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 3.06762
+  ...
+# Subtest: diagrams: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 10 - diagrams: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.601065
+  ...
+# Subtest: math: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 11 - math: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.989779
+  ...
+# Subtest: search: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 12 - search: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.885592
+  ...
+# Subtest: codeBlocks: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 13 - codeBlocks: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.944954
+  ...
+# Subtest: links: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 14 - links: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 3.270189
+  ...
+# Subtest: tags: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 15 - tags: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.255083
+  ...
+# Subtest: suggest: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 16 - suggest: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.579349
+  ...
+# Subtest: formatting: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 17 - formatting: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.160129
+  ...
+# Subtest: pasteHtml: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 18 - pasteHtml: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.502086
+  ...
+# Subtest: agentBridge: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 19 - agentBridge: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.342363
+  ...
+# Subtest: lineNumbers: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 20 - lineNumbers: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.137654
+  ...
+# Subtest: folding: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 21 - folding: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.417485
+  ...
+# Subtest: indentGuides: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 22 - indentGuides: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.164555
+  ...
+# Subtest: spellcheck: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 23 - spellcheck: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.157879
+  ...
+# Subtest: autoPair: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 24 - autoPair: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.365737
+  ...
+# Subtest: smartLists: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 25 - smartLists: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 1.341037
+  ...
+# Subtest: vim: disabling and re-enabling disposes its extensions and commands, leaving no trace
+ok 26 - vim: disabling and re-enabling disposes its extensions and commands, leaving no trace
+  ---
+  duration_ms: 2.193598
+  ...
+# Subtest: plugin-graph's service providers are the plugins that really provide them
+ok 27 - plugin-graph's service providers are the plugins that really provide them
+  ---
+  duration_ms: 22.537346
+  ...
+# Subtest: queued setting updates settle on the latest configuration and recover after invalid input
+ok 28 - queued setting updates settle on the latest configuration and recover after invalid input
+  ---
+  duration_ms: 1.616602
+  ...
+# Subtest: heading and indent folding respect independent settings and section boundaries
+ok 29 - heading and indent folding respect independent settings and section boundaries
+  ---
+  duration_ms: 1.976437
+  ...
+# Subtest: pair settings separate Markdown from brackets and indentation uses tab stops
+ok 30 - pair settings separate Markdown from brackets and indentation uses tab stops
+  ---
+  duration_ms: 0.21766
+  ...
+# Subtest: catalog composition has the same ordered owners after every toggle as a fresh editor
+ok 31 - catalog composition has the same ordered owners after every toggle as a fresh editor
+  ---
+  duration_ms: 94.293722
+  ...
+# Subtest: seeded catalog toggle sequence ends with fresh-start owner order
+ok 32 - seeded catalog toggle sequence ends with fresh-start owner order
+  ---
+  duration_ms: 29.268289
+  ...
+# Subtest: folding owns ranges, restores late and preserves folds across configuration update
+ok 33 - folding owns ranges, restores late and preserves folds across configuration update
+  ---
+  duration_ms: 3.652751
+  ...
+# Subtest: catalog configuration changes preserve fresh-start ordered owners
+ok 34 - catalog configuration changes preserve fresh-start ordered owners
+  ---
+  duration_ms: 363.479747
+  ...
+# Subtest: heading folding queries share metadata by Text identity and invalidate after edits
+ok 35 - heading folding queries share metadata by Text identity and invalidate after edits
+  ---
+  duration_ms: 1.414994
+  ...
+# Subtest: each feature leaves core settings and other plugin folds intact when toggled
+ok 36 - each feature leaves core settings and other plugin folds intact when toggled
+  ---
+  duration_ms: 30.636784
+  ...
+# Subtest: fold gutter refreshes on configuration and tab width without requiring an edit
+ok 37 - fold gutter refreshes on configuration and tab width without requiring an edit
+  ---
+  duration_ms: 1.172784
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 651.590204
+
+test/unit/lint-rules.test.ts
+TAP version 13
+# Subtest: the readability backlog stays deleted
+ok 1 - the readability backlog stays deleted
+  ---
+  duration_ms: 1.117982
+  ...
+# Subtest: the readability limits apply to all source, unchanged
+ok 2 - the readability limits apply to all source, unchanged
+  ---
+  duration_ms: 1416.420703
+  ...
+# Subtest: inline lint exceptions are the reviewed ones, each with a reason
+ok 3 - inline lint exceptions are the reviewed ones, each with a reason
+  ---
+  duration_ms: 38.618815
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1465.18002
+
+test/unit/kernel/structure.test.ts
+TAP version 13
+# Subtest: kernel stays under 1,000 formatted production lines
+ok 1 - kernel stays under 1,000 formatted production lines
+  ---
+  duration_ms: 1.400114
+  ...
+# Subtest: typed event call sites use the declared dispatch mode
+ok 2 - typed event call sites use the declared dispatch mode
+  ---
+  duration_ms: 789.240624
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 800.636188
+
+Total: 149; failed files: []

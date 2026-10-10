@@ -1,6 +1,7 @@
 import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
+import { registerEditorSettings } from "./editor-settings";
 import type { Infer } from "../kernel";
 import type { viewState } from "../plugins/editor/protocol";
 import { Context } from "../kernel";
@@ -50,14 +51,7 @@ export async function bootstrap(
     root.plugin(renderWebview, { trusted: init.trusted });
     root.plugin(livePreviewWebview, { mode: init.mode });
   }
-  let editorUpdates = Promise.resolve();
-  root.effect(() =>
-    rpc.on(protocol, "configureEditor", (settings) => {
-      editorUpdates = editorUpdates
-        .then(() => editor.update({ ...editor.config, editor: settings }))
-        .catch((error) => root.logger.error("Editor settings failed", error));
-    }),
-  );
+  registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
   await configure(init.features, init.preset === "obsidian");
   await root.settled();

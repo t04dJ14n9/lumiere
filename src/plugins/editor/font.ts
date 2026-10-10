@@ -28,6 +28,8 @@ const flag = new Schema<boolean | string>((value) => {
  */
 export const fontFields = {
   fontFamily: lenient(Schema.string(), ""),
+  /** The host's own default of `editor.fontFamily`, which VS Code appends. */
+  defaultFontFamily: lenient(Schema.string(), ""),
   fontSize: lenient(Schema.number(), 0),
   fontWeight: lenient(Schema.string(), "normal"),
   lineHeight: lenient(Schema.number(), 0),
@@ -36,12 +38,17 @@ export const fontFields = {
   fontVariations: lenient(flag, false),
 };
 
-export const fontNativeKeys = Object.fromEntries(
-  Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
-) as Record<keyof typeof fontFields, string>;
+/** `#default` asks the host for the setting's default value, not its value. */
+export const fontNativeKeys = {
+  ...Object.fromEntries(
+    Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
+  ),
+  defaultFontFamily: "editor.fontFamily#default",
+} as Record<keyof typeof fontFields, string>;
 
 export interface FontSettings {
   fontFamily: string;
+  defaultFontFamily: string;
   fontSize: number;
   fontWeight: string;
   lineHeight: number;
@@ -104,18 +111,41 @@ export function lineHeightPixels(
  * the font family (with a monospace fallback, as VS Code adds), size,
  * weight, line height, letter spacing, ligatures and variations.
  */
+export type Platform = "mac" | "windows" | "linux";
+
+/** VS Code's `EDITOR_FONT_DEFAULTS.fontFamily` for each platform. */
+export const defaultFontFamily: Readonly<Record<Platform, string>> = {
+  mac: "Menlo, Monaco, 'Courier New', monospace",
+  windows: "Consolas, 'Courier New', monospace",
+  linux: "'Droid Sans Mono', 'monospace', monospace",
+};
+
+/**
+ * The family as VS Code applies it (`BareFontInfo.getMassagedFontFamily`): a
+ * single name with spaces is quoted, and the host's default family list always
+ * follows unless the setting is that list. The host reports its default;
+ * `defaultFontFamily` only stands in where it does not.
+ */
+export function massagedFontFamily(family: string, fallback: string): string {
+  const wrapped =
+    /[,"']/.test(family) || !/[+ ]/.test(family) ? family : `"${family}"`;
+  return family === fallback ? wrapped : `${wrapped}, ${fallback}`;
+}
+
 export function fontVariables(
   font: FontSettings,
-  mac = false,
+  platform: Platform = "linux",
 ): Record<string, string> {
+  const mac = platform === "mac";
   const vars: Record<string, string> = {};
   const family = cssValue(font.fontFamily);
   if (family) {
-    // VS Code adds a fallback too; skip it when the list ends in a generic.
-    const generic = /(^|,)\s*(monospace|sans-serif|serif|system-ui)\s*$/;
-    const font = generic.test(family) ? family : `${family}, monospace`;
-    vars["--text-font"] = font;
-    vars["--code-font"] = font;
+    const stack = massagedFontFamily(
+      family,
+      font.defaultFontFamily || defaultFontFamily[platform],
+    );
+    vars["--text-font"] = stack;
+    vars["--code-font"] = stack;
   }
   const size = Math.min(Math.max(font.fontSize, 0), 100);
   if (size > 0) {
@@ -128,9 +158,8 @@ export function fontVariables(
   if (size > 0) {
     // A unitless ratio, so the gutter can multiply it by the size.
     const pixels = lineHeightPixels(font.lineHeight, Math.max(size, 6), mac);
-    vars["--line-height"] = String(
-      Math.round((pixels / Math.max(size, 6)) * 1e6) / 1e6,
-    );
+    // Exact, so that ratio × size is the whole pixel count VS Code uses.
+    vars["--line-height"] = String(pixels / Math.max(size, 6));
   } else if (font.lineHeight > 0 && font.lineHeight < 8) {
     vars["--line-height"] = String(font.lineHeight);
   }

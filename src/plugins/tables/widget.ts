@@ -2,18 +2,32 @@ import { WidgetType, type EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../livePreview/api";
 import { TableController } from "./controller";
 import type { TableEnvironment } from "./environment";
+import { entersTable } from "./navigation";
 
 export {
   activeEditor,
   clearTableSelection,
-  revealTableSource,
   tableActions,
   tableSelection,
   tableSelectionChanges,
-  tableSource,
 } from "./state";
 
 const controllers = new WeakMap<HTMLElement, TableController>();
+
+/** Widget DOM identifies the table in this panel, even after source positions shift. */
+export function enterTable(view: EditorView, direction: -1 | 1): boolean {
+  if (view.composing) {
+    return false;
+  }
+  for (const root of view.dom.querySelectorAll<HTMLElement>(".hybrid-table")) {
+    const controller = controllers.get(root);
+    if (controller && entersTable(view.state, controller.bounds(), direction)) {
+      controller.enter(direction);
+      return true;
+    }
+  }
+  return false;
+}
 
 export class TableWidget extends WidgetType {
   constructor(
@@ -31,7 +45,7 @@ export class TableWidget extends WidgetType {
   }
   override toDOM(view: EditorView): HTMLElement {
     const root = document.createElement("section");
-    root.className = "hybrid-block hybrid-table";
+    root.className = "hybrid-block hybrid-table cm-table-widget";
     root.tabIndex = 0;
     const controller = new TableController(
       root,
