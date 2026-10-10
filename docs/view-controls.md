@@ -70,6 +70,7 @@ An unrelated settings update preserves a panel's chosen or saved layout.
 | `vscodeEmbedPdf.view.pageLayout`      | `single` (default, native `none`), `spread` (native `odd`), `spreadCover` (native `even`)                     |
 | `vscodeEmbedPdf.view.scrollMode`      | `continuous` (default), `paged`                                                                            |
 | `vscodeEmbedPdf.view.scrollDirection` | `vertical` (default), `horizontal`                                                                         |
+| `vscodeEmbedPdf.view.restoreOnReopen` | `true` (default): reopen a PDF at its last page, scroll position, zoom and view choices; `false`: always start from the defaults |
 | `vscodeEmbedPdf.view.smoothScrolling` | `null` (default: follows `editor.smoothScrolling`), `true`, `false`; reduced motion overrides all settings |
 
 ## Commands

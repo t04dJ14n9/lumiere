@@ -693,6 +693,11 @@
           ],
           "markdownDescription": "Reading direction for PDFs without a saved view."
         },
+        "vscodeEmbedPdf.view.restoreOnReopen": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Reopen each PDF at its last page, scroll position, zoom and view choices (layout, scrolling, direction). When off, every PDF opens with the defaults above."
+        },
         "vscodeEmbedPdf.view.smoothScrolling": {
           "type": [
             "boolean",

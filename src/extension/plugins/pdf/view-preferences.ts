@@ -49,6 +49,12 @@ export class ViewPreferences implements vscode.Disposable {
   }
 
   position(uri: vscode.Uri): ReadingPosition | undefined {
+    if (
+      !vscode.workspace
+        .getConfiguration(SECTION, uri)
+        .get<boolean>("restoreOnReopen", true)
+    )
+      return undefined;
     return parseReadingPosition(this.state.get(this.key(uri)));
   }
 

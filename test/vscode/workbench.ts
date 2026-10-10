@@ -81,11 +81,10 @@ export async function command(page: Page, label: string): Promise<void> {
   await page.mouse.move(0, 0);
 }
 
-/** Open a workspace file. Most specs start fresh; reopen tests explicitly keep the saved view. */
+/** Open a workspace file with Quick Open. */
 export async function openFile(
   page: Page,
   relativePath: string,
-  keepSavedView = false,
 ): Promise<void> {
   await quickInput(page, `${modifier}+P`, relativePath);
   const name = relativePath.split("/").at(-1)!;
@@ -96,16 +95,6 @@ export async function openFile(
     .click();
   await expect(page.locator(".quick-input-widget")).toBeHidden();
   await page.mouse.move(0, 0);
-  if (relativePath.endsWith(".pdf") && !keepSavedView) {
-    const viewer = await pdfViewer(page);
-    await command(page, "PDF: Go to Page…");
-    const input = quickInputTitled(page, /^Go to Page/u);
-    await expect(input).toHaveValue(/^\d+$/u);
-    await input.fill("1");
-    await input.press("Enter");
-    await command(page, "PDF: Fit Width");
-    await expect.poll(() => pageAtTop(viewer, 1)).toBe(true);
-  }
 }
 
 /**

@@ -1,3 +1,6 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { paths } from "./state";
 import {
   closeAllEditors,
   command,
@@ -9,11 +12,29 @@ import {
   statusBarEntry,
   test,
 } from "./workbench";
+import type { Page } from "@playwright/test";
 
 /** One real-editor spec covers native commands, the chrome picker and durable reopening. */
 test("PDF view commands change the active panel and its choices survive closing and reopening", async ({
   workbench: page,
 }) => {
+  const settingsFile = path.join(paths.userData, "User", "settings.json");
+  const original = readFileSync(settingsFile, "utf8");
+  writeFileSync(
+    settingsFile,
+    JSON.stringify({
+      ...(JSON.parse(original) as object),
+      "vscodeEmbedPdf.view.restoreOnReopen": true,
+    }),
+  );
+  try {
+    await body(page);
+  } finally {
+    writeFileSync(settingsFile, original);
+  }
+});
+
+async function body(page: Page): Promise<void> {
   await openFile(page, "docs/outline.pdf");
   let viewer = await pdfViewer(page);
   await command(page, "PDF: Single Page");
@@ -68,7 +89,7 @@ test("PDF view commands change the active panel and its choices survive closing 
   await command(page, "PDF: Actual Size (100%)");
   await expect(statusBarEntry(page, /^100%$/u)).toBeVisible();
   await closeAllEditors(page);
-  await openFile(page, "docs/outline.pdf", true);
+  await openFile(page, "docs/outline.pdf");
   viewer = await pdfViewer(page);
   await expect(viewer.locator(".viewer")).toHaveAttribute(
     "data-page-layout",
@@ -92,4 +113,4 @@ test("PDF view commands change the active panel and its choices survive closing 
   await command(page, "PDF: Vertical Scrolling");
   await command(page, "PDF: Fit Width");
   await showPage(page, viewer, 1);
-});
+}

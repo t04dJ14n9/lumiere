@@ -30,6 +30,8 @@ export default async function globalSetup(): Promise<void> {
     'telemetry.telemetryLevel': 'off',
     'update.mode': 'none',
     'extensions.autoUpdate': false,
+    // Specs start every PDF from the defaults; view-controls.spec.ts turns this on.
+    'vscodeEmbedPdf.view.restoreOnReopen': false,
   }, null, 2));
 
   mkdirSync(path.join(paths.workspace, 'docs'), { recursive: true });
