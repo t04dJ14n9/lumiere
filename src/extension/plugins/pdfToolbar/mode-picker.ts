@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { parseToolbarMode, type ToolbarMode } from '../../../shared/toolbar-settings';
+import { updateSetting } from '../../settings';
 import { SECTION } from './preferences';
 
 const MODE_CHOICES: { mode: ToolbarMode; label: string; detail: string }[] = [
@@ -9,7 +10,7 @@ const MODE_CHOICES: { mode: ToolbarMode; label: string; detail: string }[] = [
   { mode: 'none', label: '$(eye-closed) None', detail: 'Keyboard shortcuts, the right-click menu and the command palette only' },
 ];
 
-/** Ask where the controls go, and save the answer in the user settings. */
+/** Ask where the controls go, and save the answer in the setting the Settings editor shows. */
 export async function selectToolbarMode(): Promise<void> {
   const current = parseToolbarMode(vscode.workspace.getConfiguration(SECTION).get('mode'));
   const choice = await vscode.window.showQuickPick(
@@ -17,6 +18,6 @@ export async function selectToolbarMode(): Promise<void> {
     { title: 'PDF Viewer Controls', placeHolder: 'Where should the page, zoom and find controls be?' },
   );
   if (choice && choice.mode !== current) {
-    await vscode.workspace.getConfiguration(SECTION).update('mode', choice.mode, vscode.ConfigurationTarget.Global);
+    await updateSetting(`${SECTION}.mode`, choice.mode);
   }
 }

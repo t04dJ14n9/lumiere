@@ -7,7 +7,7 @@ import {
 import type { ViewerAction } from "../../../shared/view-state";
 import type { PdfPanels } from "./panels";
 
-type Choice = vscode.QuickPickItem & { action?: ViewerAction };
+type Choice = vscode.QuickPickItem & { action?: ViewerAction; command?: string };
 
 /** Layout and scrolling commands use exactly the same actions as the viewer's View group. */
 export function registerViewControls(panels: PdfPanels): vscode.Disposable {
@@ -92,6 +92,11 @@ export function registerViewControls(panels: PdfPanels): vscode.Disposable {
             scrollDirection: item.value,
           } as ViewerAction,
         })),
+        section("More"),
+        {
+          label: "$(settings-gear) Settings…",
+          command: "vscodeEmbedPdf.openSettings",
+        },
       ];
       const choice = await vscode.window.showQuickPick(choices, {
         title: "PDF View",
@@ -99,6 +104,8 @@ export function registerViewControls(panels: PdfPanels): vscode.Disposable {
       });
       if (!choice || panels.active !== panel) return;
       if (choice.action) panel.act(choice.action);
+      else if (choice.command)
+        await vscode.commands.executeCommand(choice.command);
       else await vscode.commands.executeCommand("vscodeEmbedPdf.selectZoom");
     }),
   );

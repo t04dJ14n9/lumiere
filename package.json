@@ -66,6 +66,42 @@
         "category": "PDF"
       },
       {
+        "command": "vscodeEmbedPdf.openSettings",
+        "title": "Open Settings",
+        "category": "PDF",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "vscodeEmbedPdf.changeSetting",
+        "title": "Change Setting…",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.toggleSmoothScrolling",
+        "title": "Toggle Smooth Scrolling",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.toggleKeyboardShortcuts",
+        "title": "Toggle Keyboard Shortcuts",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.setDefaultZoom",
+        "title": "Set Default Zoom…",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.setDefaultPageLayout",
+        "title": "Set Default Page Layout…",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.setDefaultScrollMode",
+        "title": "Set Default Scrolling…",
+        "category": "PDF"
+      },
+      {
         "command": "vscodeEmbedPdf.enterZen",
         "title": "Enter Zen Mode",
         "category": "PDF",
@@ -575,6 +611,11 @@
           "command": "vscodeEmbedPdf.enterZen",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && !inZenMode",
           "group": "4_pdfZen@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.openSettings",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "5_pdfSettings@1"
         },
         {
           "command": "vscodeEmbedPdf.exitZen",
