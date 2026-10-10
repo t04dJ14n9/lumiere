@@ -281,3 +281,39 @@ test('two concurrent dispose calls both resolve only after cleanup has finished'
   await Promise.all([first, second]);
   assert.deepEqual(log, ['released']);
 });
+
+for (const stop of ['dispose', 'disable'] as const) {
+  for (const outcome of ['finishes', 'fails'] as const) {
+    test(`${stop} during a failed activation's rollback waits for the rollback's release (the inverse ${outcome})`, async () => {
+      const rollbackStarted = gate();
+      const finish = gate();
+      const errors: string[] = [];
+      let released = false;
+      const runtime = new PluginRuntime<Services>([
+        plugin('a', [], scope => {
+          scope.acquire({
+            dispose: async () => {
+              rollbackStarted.open();
+              await finish.opened;
+              released = true;
+              if (outcome === 'fails') throw new Error('close failed');
+            },
+          });
+          throw new Error('socket refused');
+        }),
+      ], { info: () => undefined, error: message => void errors.push(message) });
+      const starting = runtime.start();
+      await rollbackStarted.opened;
+      let stopped = false;
+      const stopping = (stop === 'dispose' ? runtime.dispose() : runtime.disable('a')).then(() => (stopped = true));
+      await new Promise<void>(resolve => setImmediate(resolve));
+      assert.equal(stopped, false, `${stop} resolved while the rollback was still releasing`);
+      finish.open();
+      await Promise.all([starting, stopping]);
+      assert.equal(released, true);
+      assert.deepEqual(runtime.resources(), {});
+      // The cleanup error is reported once, not once per caller.
+      assert.equal(errors.filter(error => /close failed/.test(error)).length, outcome === 'fails' ? 1 : 0);
+    });
+  }
+}

@@ -34,7 +34,7 @@ function useSessionEngine(session: PdfRenderSession<ViewerEngine>, mode: EngineM
   useEffect(() => {
     let active = true;
     session.engine(mode).then(
-      engine => { if (active) setState({ engine }); },
+      engine => { performance.mark('pdf:engine'); if (active) setState({ engine }); },
       (error: unknown) => {
         if (active && !(error instanceof RenderSessionDisposedError)) setState({ error });
       },
@@ -79,7 +79,7 @@ function EngineSession({ session, mode, onWorkerFailure }: {
           if (isError) return <Status text="This PDF could not be opened." />;
           if (!isLoaded || !documentState.document) return <Status text="Opening the PDF…" />;
           return (
-            <OnMount callback={() => setOpened(true)}>
+            <OnMount callback={() => { performance.mark('pdf:opened'); setOpened(true); }}>
               <Viewer document={documentState.document} />
             </OnMount>
           );
