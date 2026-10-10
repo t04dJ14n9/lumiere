@@ -278,6 +278,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.changeSetting",
+        "title": "Change Setting…",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.setNoteFontSize",
         "title": "Set Note Font Size",
         "category": "Markdown Workbench"
@@ -722,6 +727,9 @@
         },
         {
           "command": "markdownWorkbench.openSettings"
+        },
+        {
+          "command": "markdownWorkbench.changeSetting"
         },
         {
           "command": "markdownWorkbench.setNoteFontSize"

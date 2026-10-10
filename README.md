@@ -49,7 +49,8 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   with it too. The font family, weight, letter spacing and ligatures still
   follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
 - **Markdown Workbench: Open Settings** opens the Settings UI filtered to this
-  extension. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle
+  extension. **Change Setting…** lists every setting of the extension (by
+  plugin, with its value) and edits the one you pick by its type. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle
   Readable Line Width**, **Toggle Mermaid Diagrams**, **Toggle Inline Title**
   and **Toggle Vim Mode** change the same `markdownWorkbench.*` settings the
   Settings UI shows, in the workspace settings when the workspace sets them

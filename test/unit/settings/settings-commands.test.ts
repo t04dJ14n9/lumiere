@@ -36,6 +36,7 @@ function layered(defaults: Record<string, unknown>) {
       (target === "workspace" ? workspace : user).set(key, value);
       return target;
     },
+    contributed: () => [],
     async openUi(query) {
       opened.push(query);
     },

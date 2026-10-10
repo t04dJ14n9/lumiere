@@ -5,6 +5,14 @@ who do not want to dig through the Settings UI.
 
 - **Markdown Workbench: Open Settings** opens the Settings UI filtered to this
   extension (`@ext:t04dj14n9.vscode-markdown-workbench`).
+- **Change Setting…** lists every setting this extension contributes, read
+  from the installed package.json (so it cannot drift), grouped by plugin with
+  the current value and description, filtered as you type. Picking one edits
+  it by its type: a boolean flips, an enum opens a pick list of its values, a
+  number or integer opens an input box checked against the schema's minimum,
+  maximum and integer type, a string opens an input box, and an array or
+  object opens the Settings UI on that key (`@id:markdownWorkbench.<key>`).
+  Run with a key as its argument it skips the list.
 - **Set Note Font Size** asks for `markdownWorkbench.editor.fontSize` (8 to
   48). Run with a number argument it sets that size without asking.
 - **Toggle Line Numbers** flips `markdownWorkbench.plugins.lineNumbers.enabled`.
@@ -29,6 +37,7 @@ is what the next command run reads.
 ## Files
 
 - `manifest.ts`: the commands (window-level, so they work without an editor open).
+- `change.ts`: the settings list, grouping, type handling and number checks (pure).
 - `commands.ts`: the toggled keys, the font size check, the settings filter.
 - `host.ts`: command registration.
 - `../../host/settings-access.ts`: the VS Code side (`inspect`, `update`, `openUi`).

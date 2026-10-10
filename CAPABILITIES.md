@@ -56,7 +56,7 @@ records it in `docs/PARITY.md`.
 | pasteHtml | Rich paste as Markdown | Images are not downloaded |
 | agentBridge | **Copy Link for Agent** copies `@path#lines` and the quoted passage, opening a chat only when the editor's own chat is the only agent or a target is set | Not an Obsidian feature. The separate Copy for Agent command was removed (plain Ctrl+C copies text). No public API |
 | markers | Badges and actions that other extensions place on source ranges | Plain text only; at most 1,000 per plugin per editor |
-| settings | Open Settings, and commands to set the note font size and toggle line numbers, readable line width, Mermaid, inline title and Vim | Same keys as the Settings UI, no state of its own; Obsidian has no such commands |
+| settings | Open Settings, Change Setting… (any contributed setting, edited by type), and commands to set the note font size and toggle line numbers, readable line width, Mermaid, inline title and Vim | Same keys as the Settings UI, no state of its own; Obsidian has no such commands |
 
 ## Workbench
 

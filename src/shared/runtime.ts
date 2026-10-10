@@ -199,6 +199,8 @@ export interface PickItem<T> {
   label: string;
   description?: string;
   detail?: string;
+  /** Rows with the same group sit under one separator, in the order given. */
+  group?: string;
   value: T;
 }
 /** Text edits for one file, by line and column (UTF-16 code units). */
@@ -213,6 +215,22 @@ export interface FileTextEdits {
 /** Where a setting is stored: the folder, the workspace or the user's settings. */
 export type SettingTarget = "workspaceFolder" | "workspace" | "user";
 
+/** One setting of the extension's `contributes.configuration`, as VS Code lists it. */
+export interface ContributedSetting {
+  /** The full key, such as `markdownWorkbench.editor.fontSize`. */
+  key: string;
+  schema: {
+    type?: string | readonly string[];
+    enum?: readonly unknown[];
+    enumDescriptions?: readonly string[];
+    minimum?: number;
+    maximum?: number;
+    default?: unknown;
+    description?: string;
+    markdownDescription?: string;
+  };
+}
+
 /** The Settings UI's own keys and scopes, for commands that change settings. */
 export interface SettingsAccess {
   /** A `markdownWorkbench.` key as it is now, and where a write to it goes. */
@@ -226,6 +244,8 @@ export interface SettingsAccess {
     value: unknown,
     resource?: string,
   ): Promise<SettingTarget>;
+  /** The extension's contributed settings, straight from its package.json. */
+  contributed(): readonly ContributedSetting[];
   /** Opens the Settings UI with a search such as `@ext:publisher.name`. */
   openUi(query: string): Promise<void>;
 }

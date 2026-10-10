@@ -231,3 +231,145 @@ test("Open Settings, and the commands for common settings read and write the Set
     await closeBrowser(browser);
   }
 });
+
+/** Runs Change Setting…, filters the list and picks the first row. */
+async function changeSetting(page: Page, query: string, row: string) {
+  await expect(page.locator(".quick-input-widget")).toBeHidden();
+  await openPalette(page);
+  const input = page.locator(QUICK_INPUT);
+  await input.fill(">Markdown Workbench: Change Setting");
+  await page
+    .locator(".quick-input-list .monaco-list-row")
+    .filter({ hasText: "Change Setting" })
+    .first()
+    .click();
+  await expect(input).toHaveAttribute(
+    "placeholder",
+    /Change a Markdown Workbench setting/,
+  );
+  await input.fill(query);
+  const first = page.locator(".quick-input-list .monaco-list-row").first();
+  await expect(first).toContainText(row);
+  await page.keyboard.press("Enter");
+}
+
+test("Change Setting… lists every setting by plugin and edits the picked one by its type, with the Settings UI's keys", async () => {
+  const originalUser = readFileSync(userFile, "utf8");
+  const originalNote = readFileSync(notePath, "utf8");
+  const userKeys = () => read(userFile);
+  const manifest = JSON.parse(
+    readFileSync(path.join(__dirname, "../../package.json"), "utf8"),
+  ) as { contributes: { configuration: { properties: object } } };
+  const total = Object.keys(
+    manifest.contributes.configuration.properties,
+  ).length;
+  const browser = await chromium.connectOverCDP(readState().webSocket);
+  try {
+    const page = workbenchPage(browser);
+    await openWorkbench(page);
+    const frame = await editorFrame(page);
+
+    // The whole list, grouped by plugin, each row with its value and description.
+    await expect(page.locator(".quick-input-widget")).toBeHidden();
+    await openPalette(page);
+    await page.locator(QUICK_INPUT).fill(">Markdown Workbench: Change Setting");
+    await page
+      .locator(".quick-input-list .monaco-list-row")
+      .filter({ hasText: "Change Setting" })
+      .first()
+      .click();
+    const rows = page.locator(
+      ".quick-input-list .monaco-list-row:not(.quick-input-list-separator-border)",
+    );
+    await expect(page.locator(".quick-input-list")).toContainText("Font size");
+    await expect(page.locator(".quick-input-list")).toContainText("Auto pair");
+    // Virtualised list: count through the accessible total instead of rows on screen.
+    await expect(page.locator(".quick-input-count")).toContainText(
+      String(total),
+    );
+    expect(await rows.count()).toBeGreaterThan(5);
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".quick-input-widget")).toBeHidden();
+
+    // Boolean: toggles in the user settings.
+    await changeSetting(page, "readable line", "Readable line length");
+    await expect
+      .poll(() => userKeys()[key("editor.readableLineLength")])
+      .toBe(true);
+    await expect(
+      frame.locator(".cm-editor.is-readable-line-width"),
+    ).toHaveCount(1);
+    // Set in the folder: that is where the next change goes.
+    mkdirSync(path.dirname(folderFile), { recursive: true });
+    writeFileSync(
+      folderFile,
+      JSON.stringify({ [key("editor.readableLineLength")]: true }),
+    );
+    await expect(page.locator(".quick-input-widget")).toBeHidden();
+    await changeSetting(page, "readable line", "Readable line length");
+    await expect
+      .poll(() => read(folderFile)[key("editor.readableLineLength")])
+      .toBe(false);
+    expect(userKeys()[key("editor.readableLineLength")]).toBe(true);
+    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+
+    // Enum: a pick list of the values, the current one marked.
+    await changeSetting(page, "default mode", "Default mode");
+    const choices = page.locator(".quick-input-list .monaco-list-row");
+    await expect(choices.filter({ hasText: "livePreview" })).toContainText(
+      "current",
+    );
+    await choices
+      .filter({ hasText: /^source/ })
+      .first()
+      .click();
+    await expect
+      .poll(() => userKeys()[key("editor.defaultMode")])
+      .toBe("source");
+
+    // Number: an input box that refuses values outside the range.
+    const body = () =>
+      frame.evaluate(() =>
+        parseFloat(
+          getComputedStyle(
+            document.querySelector(".cm-line:not([class*='md-h'])")!,
+          ).fontSize,
+        ),
+      );
+    await expect(page.locator(".quick-input-widget")).toBeHidden();
+    await changeSetting(page, "font size", "Font size");
+    const input = page.locator(QUICK_INPUT);
+    await expect(input).toHaveValue("16");
+    await input.fill("7");
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".quick-input-message")).toContainText(
+      "from 8 to 48",
+    );
+    await input.fill("24");
+    await page.keyboard.press("Enter");
+    await expect.poll(() => userKeys()[key("editor.fontSize")]).toBe(24);
+    await expect.poll(body).toBe(24);
+
+    // String: any text.
+    await expect(page.locator(".quick-input-widget")).toBeHidden();
+    await changeSetting(page, "new note folder", "New note folder");
+    await input.fill("Inbox");
+    await page.keyboard.press("Enter");
+    await expect
+      .poll(() => userKeys()[key("files.newNoteFolder")])
+      .toBe("Inbox");
+
+    // A list opens the Settings UI on that key; nothing is written.
+    await expect(page.locator(".quick-input-widget")).toBeHidden();
+    await changeSetting(page, "excluded files", "Excluded files");
+    await expect(
+      page.locator(".settings-editor .suggest-input-container"),
+    ).toContainText("@id:markdownWorkbench.vault.excludedFiles");
+    expect(userKeys()[key("vault.excludedFiles")]).toBeUndefined();
+  } finally {
+    writeFileSync(userFile, originalUser);
+    writeFileSync(notePath, originalNote);
+    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    await closeBrowser(browser);
+  }
+});

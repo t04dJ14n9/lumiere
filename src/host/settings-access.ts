@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
-import type { SettingsAccess, SettingTarget } from "../shared/runtime";
+import type {
+  ContributedSetting,
+  SettingsAccess,
+  SettingTarget,
+} from "../shared/runtime";
+
+const EXTENSION_ID = "t04dj14n9.vscode-markdown-workbench";
 
 /**
  * The Settings UI's own storage rule for commands that change a setting: the
@@ -37,6 +43,21 @@ export function createSettingsAccess(): SettingsAccess {
       const { config, target } = locate(key, resource);
       await config.update(key, value, targets[target]);
       return target;
+    },
+    contributed() {
+      const packageJson = vscode.extensions.getExtension(EXTENSION_ID)
+        ?.packageJSON as
+        | {
+            contributes?: {
+              configuration?: {
+                properties?: Record<string, ContributedSetting["schema"]>;
+              };
+            };
+          }
+        | undefined;
+      return Object.entries(
+        packageJson?.contributes?.configuration?.properties ?? {},
+      ).map(([key, schema]) => ({ key, schema }));
     },
     async openUi(query) {
       await vscode.commands.executeCommand(

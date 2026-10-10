@@ -11,6 +11,7 @@ export default defineManifest({
   contributes: {
     commands: [
       { id: "openSettings", title: "Open Settings", scope: "workbench" },
+      { id: "changeSetting", title: "Change Setting…", scope: "workbench" },
       {
         id: "setNoteFontSize",
         title: "Set Note Font Size",
