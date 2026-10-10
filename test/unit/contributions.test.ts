@@ -45,7 +45,7 @@ test('every default shortcut is scoped to the PDF viewer, to non-input focus and
       assert.ok(when?.includes(clause), `${command} (${key}) lacks ${clause}`);
     }
     // No two of our own bindings share a key under the same condition.
-    for (const chord of [key, mac ?? key]) { assert.ok(!seen.has(`${chord}|${when}`), `duplicate ${chord}`); seen.add(`${chord}|${when}`); }
+    for (const chord of new Set([key, mac ?? key])) { assert.ok(!seen.has(`${chord}|${when}`), `duplicate ${chord}`); seen.add(`${chord}|${when}`); }
   }
   const setting = contributes.configuration.properties['vscodeEmbedPdf.keyboardShortcuts'] as { default: boolean };
   assert.equal(setting.default, true);
