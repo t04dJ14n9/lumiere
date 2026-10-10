@@ -162,5 +162,5 @@ export const lm = {
 };
 
 export class McpHttpServerDefinition {
-  constructor(readonly label: string, readonly uri: Uri) {}
+  constructor(readonly label: string, readonly uri: Uri, readonly headers: Record<string, string> = {}) {}
 }
