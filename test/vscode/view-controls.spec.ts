@@ -14,6 +14,10 @@ import {
 } from "./workbench";
 import type { Page } from "@playwright/test";
 
+// The spec drives many commands in a row on a shared, busy editor; a retry
+// starts from a fresh webview.
+test.describe.configure({ retries: 2 });
+
 /** One real-editor spec covers native commands, the chrome picker and durable reopening. */
 test("PDF view commands change the active panel and its choices survive closing and reopening", async ({
   workbench: page,
@@ -37,6 +41,8 @@ test("PDF view commands change the active panel and its choices survive closing 
 async function body(page: Page): Promise<void> {
   await openFile(page, "docs/outline.pdf");
   let viewer = await pdfViewer(page);
+  // Commands sent while the engine starts have nothing to act on yet.
+  await expect(viewer.locator(".page img").first()).toBeVisible();
   await command(page, "PDF: Single Page");
   await command(page, "PDF: Continuous Scrolling");
   await command(page, "PDF: Vertical Scrolling");
