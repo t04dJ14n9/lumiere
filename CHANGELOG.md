@@ -4,8 +4,8 @@
 
 First packaged build, for the owner's acceptance testing. Not published.
 
-- Clicking a heading in the Note Outline (or a Backlinks entry) scrolls the
-  heading to the vertical centre of the editor, as VS Code's Outline and
+- Opening a target in a note (a Note Outline click, a Backlinks entry, a
+  same-note `#heading` link or a link from another note) scrolls it to the vertical centre of the editor, as VS Code's Outline and
   Obsidian's do, instead of to the nearest edge; near the start or end of a
   note it stays as close to the centre as the note's scroll range allows.
 
