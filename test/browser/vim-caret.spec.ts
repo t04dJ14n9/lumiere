@@ -97,9 +97,36 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
   await page.keyboard.press("Escape");
   await expect(editor).toHaveAttribute("data-caret-mode", "normal");
 
+  // VSCodeVim keeps the normal block while `r` waits for its character.
   await page.keyboard.press("r");
-  await expect(editor).toHaveAttribute("data-caret-mode", "replace");
-  await expect(caret).toHaveCSS("height", "2px");
+  await expect(editor).toHaveAttribute("data-caret-mode", "normal");
+  await expect(editor).toHaveAttribute("data-caret-style", "block");
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveAttribute("data-caret-mode", "normal");
+
+  // An operator waiting for its motion: the lower half of the character.
+  await page.keyboard.press("d");
+  await expect(editor).toHaveAttribute("data-caret-mode", "pending");
+  await expect(editor).toHaveAttribute("data-caret-style", "half-block");
+  await expect(shape).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const half = await shape.evaluate((element) => {
+    const before = getComputedStyle(element, "::before");
+    return [
+      before.backgroundColor,
+      parseFloat(before.height) / element.getBoundingClientRect().height,
+    ];
+  });
+  expect(half[0]).toBe("rgb(18, 52, 86)");
+  expect(half[1]).toBeCloseTo(0.5, 2);
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveAttribute("data-caret-mode", "normal");
+
+  // The search prompt holds focus, but the caret stays: a one-pixel underline.
+  await page.keyboard.press("/");
+  await expect(editor).toHaveAttribute("data-caret-mode", "prompt");
+  await expect(editor).toHaveAttribute("data-caret-style", "underline-thin");
+  await expect(caret).toBeVisible();
+  await expect(caret).toHaveCSS("height", "1px");
   await page.keyboard.press("Escape");
   await expect(editor).toHaveAttribute("data-caret-mode", "normal");
 
@@ -107,8 +134,25 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
   await expect(editor).toHaveAttribute("data-caret-mode", "visual");
   await expect(editor).toHaveAttribute("data-caret-style", "block");
   await expect(shape).toHaveText("x");
+  // VSCodeVim: the active character in the cursor colour with its own dark
+  // text, and the editor's one-pixel line caret at the selection's end.
+  await expect(shape).toHaveCSS("color", "rgb(81, 80, 82)");
+  await expect(editor.locator(".mw-caret")).toHaveCount(2);
+  const end = editor.locator('.mw-caret[data-part="end"]');
+  await expect(end).toHaveCSS("width", "1px");
   await page.keyboard.press("l");
   await expect(shape).toHaveText("b");
+  await expect
+    .poll(async () => {
+      const [block, line] = await Promise.all(
+        [caret, end].map((element) =>
+          element.evaluate((node) => node.getBoundingClientRect()),
+        ),
+      );
+      // The line caret sits on the block's right edge.
+      return Math.abs(line.left - (block.left + block.width));
+    })
+    .toBeLessThan(1);
   await expect
     .poll(async () =>
       Math.abs(
@@ -161,17 +205,36 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
       "animation-name",
       cursorBlinking === "solid" ? "none" : `mw-caret-${cursorBlinking}`,
     );
-    await expect(shape).toHaveCSS(
-      "animation-timing-function",
-      cursorBlinking === "blink" ? "steps(1)" : "linear",
-    );
+    // Measured in VS Code 1.141: hard blink 500 ms on, 500 ms off, for as
+    // long as the editor has focus; the others 0.5 s ease-in-out alternating
+    // for 20 half cycles (10 s), then solid.
+    const hard = cursorBlinking === "blink";
+    if (cursorBlinking !== "solid") {
+      await expect(shape).toHaveCSS("animation-duration", hard ? "1s" : "0.5s");
+      await expect(shape).toHaveCSS(
+        "animation-timing-function",
+        hard ? "steps(1)" : "ease-in-out",
+      );
+      await expect(shape).toHaveCSS(
+        "animation-iteration-count",
+        hard ? "infinite" : "20",
+      );
+      await expect(shape).toHaveCSS(
+        "animation-direction",
+        hard ? "normal" : "alternate",
+      );
+    }
   }
   await configure(page, {
     cursorStyle: "line",
     cursorSmoothCaretAnimation: "on",
   });
   await expect(caret).toHaveCSS("transition-duration", "0.08s");
-  await expect(caret).toHaveCSS("transition-property", "transform, left, top");
+  await expect(caret).toHaveCSS(
+    "transition-property",
+    "left, top, width, height",
+  );
+  await expect(caret).toHaveCSS("transition-timing-function", "ease");
   await configure(page, {
     cursorStyle: "line",
     cursorSmoothCaretAnimation: "explicit",
