@@ -1,6 +1,7 @@
 import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
+import { registerEditorSettings } from "./editor-settings";
 import type { Infer } from "../kernel";
 import type { viewState } from "../plugins/editor/protocol";
 import { Context } from "../kernel";
@@ -26,6 +27,7 @@ export async function bootstrap(
   logging = webviewLogging((record) => rpc.notify(protocol, "log", record)),
 ) {
   const init = await rpc.call(protocol, "ready", {});
+  performance.mark("mw:ready");
   logging.configure(init.debugLogging);
   const root = Context.create({
     logger: logging.logger,
@@ -49,14 +51,7 @@ export async function bootstrap(
     root.plugin(renderWebview, { trusted: init.trusted });
     root.plugin(livePreviewWebview, { mode: init.mode });
   }
-  let editorUpdates = Promise.resolve();
-  root.effect(() =>
-    rpc.on(protocol, "configureEditor", (settings) => {
-      editorUpdates = editorUpdates
-        .then(() => editor.update({ ...editor.config, editor: settings }))
-        .catch((error) => root.logger.error("Editor settings failed", error));
-    }),
-  );
+  registerEditorSettings(root, rpc, editor);
   const configure = pluginReporting(root, rpc);
   await configure(init.features, init.preset === "obsidian");
   await root.settled();
@@ -66,6 +61,8 @@ export async function bootstrap(
   if (failed) {
     throw failed.error;
   }
+  performance.mark("mw:plugins");
+  requestAnimationFrame(() => performance.mark("mw:first-paint"));
   rpc.notify(protocol, "initialized", {});
   return root;
 }

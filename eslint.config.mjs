@@ -89,6 +89,8 @@ export default tseslint.config(
   {
     ignores: [
       // Build output, including the sample plugin's.
+      // Throw-away measurement scripts (not part of the product).
+      "docs/obsidian-measurements/**",
       "**/dist/**",
       ".cache/**",
       "test-results/**",
@@ -98,6 +100,8 @@ export default tseslint.config(
       ".vscode-test/**",
       // Probe scripts for real Obsidian: they run page code via the DevTools protocol.
       "docs/obsidian-measurements/**",
+      // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
+      "docs/vim-caret-measurements/**",
     ],
   },
   js.configs.recommended,

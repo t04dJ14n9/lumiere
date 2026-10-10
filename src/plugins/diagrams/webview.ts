@@ -21,6 +21,7 @@ function registerDiagramBlocks(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "diagram",
+      nodes: ["FencedCode"],
       editing: "reveal",
       match(node, state) {
         const info = node.node.getChild("CodeInfo");

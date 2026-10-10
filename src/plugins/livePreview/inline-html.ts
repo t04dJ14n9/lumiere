@@ -1,4 +1,5 @@
-import type { SyntaxNodeRef } from "@lezer/common";
+import type { EditorState } from "@codemirror/state";
+import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
 
 /** Inline HTML elements Live Preview draws in place, as Obsidian does. */
@@ -16,6 +17,7 @@ const STYLED_TAGS = new Set([
   "i",
   "em",
   "small",
+  "span",
 ]);
 
 /** The element name of a plain opening tag such as `<kbd>`. */
@@ -35,26 +37,45 @@ export function decorateInlineHtml(
   if (node.name !== "HTMLTag") {
     return;
   }
-  const name = openingName(cx.state.sliceDoc(node.from, node.to));
-  if (!name) {
+  const end = inlineHtmlEnd(node.node, cx.state);
+  if (end === undefined) {
     return;
   }
-  const closing = `</${name}>`;
-  for (let next = node.node.nextSibling; next; next = next.nextSibling) {
+  const name = openingName(cx.state.sliceDoc(node.from, node.to))!;
+  const closingFrom = end - name.length - 3;
+  cx.mark(node.to, closingFrom, `md-html md-html-${name}`);
+  if (!cx.revealed(node.from, end)) {
+    cx.hide(node.from, node.to);
+    cx.hide(closingFrom, end);
+  }
+}
+
+/** Lezer exposes HTML tags as siblings; pair them for decoration and reveal. */
+export function inlineHtmlEnd(
+  node: SyntaxNode,
+  state: EditorState,
+): number | undefined {
+  if (node.name !== "HTMLTag") {
+    return undefined;
+  }
+  const name = openingName(state.sliceDoc(node.from, node.to));
+  if (!name) {
+    return undefined;
+  }
+  let depth = 1;
+  for (let next = node.nextSibling; next; next = next.nextSibling) {
     if (next.name !== "HTMLTag") {
       continue;
     }
-    const tag = cx.state.sliceDoc(next.from, next.to).toLowerCase();
-    if (tag === closing) {
-      cx.mark(node.to, next.from, `md-html md-html-${name}`);
-      if (!cx.revealed(node.from, next.to)) {
-        cx.hide(node.from, node.to);
-        cx.hide(next.from, next.to);
-      }
-      return;
-    }
+    const tag = state.sliceDoc(next.from, next.to).toLowerCase();
     if (openingName(tag) === name) {
-      return;
+      depth++;
+    } else if (tag === `</${name}>`) {
+      depth--;
+      if (depth === 0) {
+        return next.to;
+      }
     }
   }
+  return undefined;
 }

@@ -69,7 +69,7 @@ export function fixture() {
     rpc: pair.host,
     active: () => true,
     reveal() {},
-    dispose() {},
+    async dispose() {},
   };
   const editors: Editors = {
     all: () => (state.closed ? [] : [panel]),

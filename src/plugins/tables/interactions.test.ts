@@ -1,8 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ChangeSet, Text } from "@codemirror/state";
+import { ChangeSet, EditorState, Text } from "@codemirror/state";
 import { parseTable } from "../../markdown/tables/model";
-import { projectedChanges } from "./projection";
+import { CellProjection, projectedChanges } from "./projection";
+import { tableSelectionChanges } from "./state";
+import type { TableGrid } from "./grid";
+import type { CellEditor } from "./cell-editor";
+import type { TableEnvironment } from "./environment";
 import { axisRange } from "./selection";
 import { wrapCell } from "./keyboard";
 import { containsCell } from "./toolbar";
@@ -13,23 +17,42 @@ const source = "| first | second |\n| --- | --- |\n| alpha | beta |";
 const table = parseTable(source)!;
 
 test("cell projection preserves table syntax and the surrounding document", () => {
-  const cell = table.rows[1]![0]!;
   const prefix = "# Heading\n\n";
   const outer = prefix + source + "\n\nTail";
   for (const text of ["a changed cell", "", "😀字"]) {
-    const changes = projectedChanges(source, cell, text, prefix.length);
+    const changes = projectedChanges(
+      source,
+      { row: 1, column: 0 },
+      text,
+      prefix.length,
+    );
     const result = ChangeSet.of(changes, outer.length)
       .apply(Text.of(outer.split("\n")))
       .toString();
-    assert.equal(
-      result,
-      prefix +
-        source.slice(0, cell.from) +
-        text +
-        source.slice(cell.to) +
-        "\n\nTail",
-    );
+    assert.ok(result.startsWith(prefix));
+    assert.ok(result.endsWith("\n\nTail"));
+    const next = parseTable(result.slice(prefix.length, -6))!;
+    assert.equal(next.rows[1]![0]!.text, text);
+    assert.equal(next.rows[1]![1]!.text, "beta");
+    assert.deepEqual(next.alignments, table.alignments);
   }
+});
+
+test("typing in a cell realigns every row in the same outer edit", () => {
+  const source = "| a | b | c |\n|---|:-:|--:|\n| 1 | 2 | 3 |";
+  const prefix = "Before\n\n";
+  const outer = prefix + source + "\n\nAfter";
+  const result = ChangeSet.of(
+    projectedChanges(source, { row: 1, column: 0 }, "long", prefix.length),
+    outer.length,
+  )
+    .apply(Text.of(outer.split("\n")))
+    .toString();
+  assert.equal(
+    result,
+    prefix +
+      "| a    |  b  |   c |\n| ---- | :-: | --: |\n| long |  2  |   3 |\n\nAfter",
+  );
 });
 
 test("axis selections and reverse rectangles use inclusive cell bounds", () => {
@@ -48,10 +71,77 @@ test("axis selections and reverse rectangles use inclusive cell bounds", () => {
   assert.equal(containsCell(undefined, range.head), false);
 });
 
+test("aligned rewrites preserve source anchors in other cells and materialize omitted cells", () => {
+  for (const source of [
+    "a | b | c\n--- | :-: | --:\n1 | keep | 3\n4 | 5 | 6",
+    "| a | b | c |\n|---|:-:|--:|\n| 1 | keep | 3 |\n| 4 |",
+  ]) {
+    const table = parseTable(source)!;
+    const untouched = table.rows[1]![1]!;
+    const changes = ChangeSet.of(
+      projectedChanges(source, { row: 2, column: 2 }, "a longer cell", 0),
+      source.length,
+    );
+    const result = changes.apply(Text.of(source.split("\n"))).toString();
+    const next = parseTable(result)!;
+    assert.equal(next.rows[2]![2]!.text, "a longer cell");
+    assert.equal(next.rows[2]![2]!.missing, undefined);
+    assert.equal(
+      changes.mapPos(untouched.from + 1),
+      next.rows[1]![1]!.from + 1,
+    );
+    assert.equal(
+      result.slice(
+        changes.mapPos(untouched.from),
+        changes.mapPos(untouched.to, -1),
+      ),
+      "keep",
+    );
+  }
+});
+
 test("cell movement wraps columns while retaining exit and append-row targets", () => {
   assert.deepEqual(wrapCell({ row: 1, column: 2 }, 2), { row: 2, column: 0 });
   assert.deepEqual(wrapCell({ row: 0, column: -1 }, 2), { row: -1, column: 1 });
   assert.deepEqual(wrapCell({ row: 1, column: 0 }, 2), { row: 1, column: 0 });
+});
+
+test("closing a cell restores its render and clears the projected selection notification", () => {
+  const selected: boolean[] = [];
+  const rendered: unknown[] = [];
+  const state = EditorState.create({
+    extensions: tableSelectionChanges.of((value) => {
+      selected.push(value);
+    }),
+  });
+  const projection = new CellProjection(
+    {
+      outer: { state },
+      display(position: unknown) {
+        rendered.push(position);
+      },
+    } as unknown as TableGrid,
+    {} as TableEnvironment,
+    {
+      activate() {},
+      highlight() {},
+      move: () => false,
+      arrow: () => false,
+    },
+  );
+  projection.active = { row: 1, column: 1 };
+  let destroyed = false;
+  projection.cellEditor = {
+    destroy() {
+      destroyed = true;
+    },
+  } as CellEditor;
+  projection.close();
+  assert.equal(destroyed, true);
+  assert.equal(projection.active, undefined);
+  assert.equal(projection.inner, undefined);
+  assert.deepEqual(rendered, [{ row: 1, column: 1 }]);
+  assert.deepEqual(selected, [false]);
 });
 
 test("table menus preserve axis bounds, command focus and action order", () => {
@@ -61,11 +151,11 @@ test("table menus preserve axis bounds, command focus and action order", () => {
       calls.push(cut);
     },
     paste: async () => {},
+    selectAll: () => {},
     format: (marker) => {
       calls.push(marker);
     },
     clear: () => {},
-    source: () => {},
     execute: (operation, focus) => {
       calls.push({ operation, focus });
     },
@@ -77,6 +167,7 @@ test("table menus preserve axis bounds, command focus and action order", () => {
     [
       "Add column to the left",
       "Add column to the right",
+      "Move column left",
       "Move column right",
       "Align left",
       "Align center",
@@ -87,21 +178,85 @@ test("table menus preserve axis bounds, command focus and action order", () => {
       "Sort by column (Z to A)",
     ],
   );
-  menu[2]!.run!();
+  assert.equal(menu[2]!.disabled, true);
+  assert.equal(menu[3]!.disabled, false);
+  menu[3]!.run!();
   assert.deepEqual(calls.pop(), {
     operation: { type: "move", axis: "column", from: 0, to: 0, destination: 1 },
     focus: { row: 0, column: 1 },
   });
-  menu[4]!.run!();
+  menu[5]!.run!();
   assert.deepEqual(calls.pop(), {
     operation: { type: "align", from: 0, to: 0, alignment: "center" },
     focus: range.head,
   });
   const general = tableMenu(table, range, actions);
   assert.deepEqual(
-    general.slice(0, 6).map((item) => item.label),
-    ["Cut", "Copy", "Paste", "Format", "Row", "Column"],
+    general.slice(0, 8).map((item) => item.label),
+    [
+      "Cut",
+      "Copy",
+      "Paste",
+      "Paste as plain text",
+      "Select all",
+      "Format",
+      "Row",
+      "Column",
+    ],
   );
+  assert.equal(
+    general.some((item) => item.label === "Edit table source"),
+    false,
+  );
+});
+
+test("cell menu includes all row operations, disabled boundary moves and working clipboard callbacks", async () => {
+  const calls: unknown[] = [];
+  const actions: TableMenuActions = {
+    copy: (cut) => {
+      calls.push(cut ? "cut" : "copy");
+    },
+    paste: async (plainText) => {
+      calls.push(plainText ? "plain" : "paste");
+    },
+    selectAll: () => {
+      calls.push("all");
+    },
+    format: (marker) => {
+      calls.push(marker);
+    },
+    clear: () => {},
+    execute: (operation, focus) => {
+      calls.push({ operation, focus });
+    },
+    canFormat: false,
+  };
+  const position = { row: 1, column: 1 };
+  const menu = tableMenu(table, { anchor: position, head: position }, actions);
+  for (const item of menu.slice(0, 5)) {
+    await item.run!();
+  }
+  assert.deepEqual(calls, ["cut", "copy", "paste", "plain", "all"]);
+  assert.equal(menu.find((item) => item.label === "Format")!.disabled, true);
+  const rows = menu.find((item) => item.label === "Row")!.children!;
+  assert.deepEqual(
+    rows.map((item) => item.label),
+    [
+      "Add row above",
+      "Add row below",
+      "Move row up",
+      "Move row down",
+      "Duplicate row",
+      "Delete row",
+    ],
+  );
+  assert.equal(rows[2]!.disabled, false);
+  assert.equal(rows[3]!.disabled, true);
+  rows[4]!.run!();
+  assert.deepEqual(calls.at(-1), {
+    operation: { type: "duplicate", axis: "row", from: 1, to: 1 },
+    focus: { row: 2, column: 1 },
+  });
 });
 
 test("table command parsing keeps alignment validation and movement boundaries", () => {

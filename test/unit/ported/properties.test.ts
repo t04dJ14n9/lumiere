@@ -48,7 +48,7 @@ test("property strings cannot introduce extra interactive property controls", ()
   const html = renderProperties(
     '---\nflag: true\nurl: "https://example.com <input data-property=flag>"\n---',
   );
-  assert.equal((html.match(/type="checkbox"/g) ?? []).length, 1);
+  assert.equal((html.match(/<input type="checkbox"/g) ?? []).length, 1);
   assert.match(html, /&lt;input data-property=flag&gt;/);
 });
 test("text property edits preserve quote style and string types", () => {

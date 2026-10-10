@@ -1,4 +1,4 @@
-import { findClusterBreak, Prec } from "@codemirror/state";
+import { findClusterBreak, Prec, type EditorState } from "@codemirror/state";
 import { Direction, EditorView } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
 
@@ -14,6 +14,31 @@ export const arrowKeys = [
   "ArrowDown",
 ] as const;
 export type ArrowKey = (typeof arrowKeys)[number];
+
+/** Enter from an adjacent line, including the blank prose space created at EOF. */
+export function entersTable(
+  state: EditorState,
+  bounds: { from: number; to: number },
+  direction: -1 | 1,
+): boolean {
+  if (!state.selection.main.empty || state.selection.ranges.length !== 1) {
+    return false;
+  }
+  const line = state.doc.lineAt(state.selection.main.head).number;
+  const edge = direction < 0 ? bounds.to : bounds.from;
+  const edgeLine = state.doc.lineAt(edge).number;
+  if (line + direction === edgeLine) {
+    return true;
+  }
+  // Leaving an EOF table creates a separator and a new empty prose line.
+  return (
+    direction < 0 &&
+    line === edgeLine + 2 &&
+    state.selection.main.head === state.doc.length &&
+    !state.doc.line(line - 1).text &&
+    !state.doc.sliceString(bounds.to).trim()
+  );
+}
 
 /** Handle table boundaries before Vim's DOM handler consumes navigation keys. */
 export function cellNavigation(
