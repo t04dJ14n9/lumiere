@@ -1,11 +1,13 @@
-import { useZoom } from '@embedpdf/plugin-zoom/react';
-import React from 'react';
-import type { ToolMode, ViewerAction } from '../shared/view-state';
-import { postToHost } from './host';
-import type { Navigation } from './navigation';
-import { NumberField } from './number-field';
-import { DOCUMENT_ID, ZOOM_RANGE } from './plugins';
-import { fitMode } from './view-sync';
+import { useZoom } from "@embedpdf/plugin-zoom/react";
+import React from "react";
+import type { ToolMode, ViewerAction } from "../shared/view-state";
+import { postToHost } from "./host";
+import type { Navigation } from "./navigation";
+import { NumberField } from "./number-field";
+import { DOCUMENT_ID, ZOOM_RANGE } from "./plugins";
+import { fitMode } from "./view-sync";
+import type { ViewChoices } from "../shared/view-settings";
+import { ViewControls } from "./view-controls";
 
 const MAC = /Mac|iPhone|iPad/u.test(navigator.userAgent);
 
@@ -18,10 +20,18 @@ function shortcut(mac: string, other: string): string {
 export interface ToolbarProps {
   navigation: Navigation;
   tool: ToolMode;
+  choices: ViewChoices;
   run: (action: ViewerAction) => void;
 }
 
-function IconButton({ icon, label, keys, disabled, pressed, onClick }: {
+function IconButton({
+  icon,
+  label,
+  keys,
+  disabled,
+  pressed,
+  onClick,
+}: {
   icon: string;
   /** The accessible name; the tooltip adds the shortcut. */
   label: string;
@@ -34,7 +44,7 @@ function IconButton({ icon, label, keys, disabled, pressed, onClick }: {
   return (
     <button
       type="button"
-      className={`icon-button${pressed ? ' pressed' : ''}`}
+      className={`icon-button${pressed ? " pressed" : ""}`}
       aria-label={label}
       title={keys ? `${label} (${keys})` : label}
       aria-pressed={pressed}
@@ -50,7 +60,13 @@ function IconButton({ icon, label, keys, disabled, pressed, onClick }: {
  * The page, zoom, fit, tool, outline and find controls, in groups. The
  * buttons run the same actions as the extension's commands.
  */
-export function ToolbarControls({ navigation, tool, run, compact = false }: ToolbarProps & {
+export function ToolbarControls({
+  navigation,
+  tool,
+  choices,
+  run,
+  compact = false,
+}: ToolbarProps & {
   /** Shorter page suffix ("/ 12"), for the floating bar. */
   compact?: boolean;
 }): React.JSX.Element {
@@ -60,46 +76,107 @@ export function ToolbarControls({ navigation, tool, run, compact = false }: Tool
   return (
     <>
       <span className="toolbar-group">
-        <IconButton icon="chevron-up" label="Previous page" keys="Alt+PageUp" disabled={currentPage <= 1} onClick={() => run({ action: 'previousPage' })} />
+        <IconButton
+          icon="chevron-up"
+          label="Previous page"
+          keys="Alt+PageUp"
+          disabled={!navigation.canGoBack}
+          onClick={() => run({ action: "previousPage" })}
+        />
         <NumberField
           label="Page"
           value={currentPage}
           suffix={compact ? `/ ${pageCount}` : `of ${pageCount}`}
-          onCommit={page => {
+          onCommit={(page) => {
             if (!Number.isInteger(page)) return false;
             const target = Math.min(Math.max(1, page), pageCount);
-            run({ action: 'goToPage', page: target });
+            run({ action: "goToPage", page: target });
             return target;
           }}
         />
-        <IconButton icon="chevron-down" label="Next page" keys="Alt+PageDown" disabled={currentPage >= pageCount} onClick={() => run({ action: 'nextPage' })} />
+        <IconButton
+          icon="chevron-down"
+          label="Next page"
+          keys="Alt+PageDown"
+          disabled={!navigation.canGoForward}
+          onClick={() => run({ action: "nextPage" })}
+        />
       </span>
       <span className="separator" />
       <span className="toolbar-group">
-        <IconButton icon="zoom-out" label="Zoom out" keys={shortcut('⌘-', 'Ctrl+-')} onClick={() => run({ action: 'zoomOut' })} />
+        <IconButton
+          icon="zoom-out"
+          label="Zoom out"
+          keys={shortcut("⌘-", "Ctrl+-")}
+          onClick={() => run({ action: "zoomOut" })}
+        />
         <NumberField
           label="Zoom"
           value={Math.round(state.currentZoomLevel * 100)}
           suffix="%"
-          onCommit={percent => {
-            const level = Math.min(ZOOM_RANGE.max, Math.max(ZOOM_RANGE.min, percent / 100));
-            run({ action: 'setZoom', percent: level * 100 });
+          onCommit={(percent) => {
+            const level = Math.min(
+              ZOOM_RANGE.max,
+              Math.max(ZOOM_RANGE.min, percent / 100),
+            );
+            run({ action: "setZoom", percent: level * 100 });
             return Math.round(level * 100);
           }}
         />
-        <IconButton icon="zoom-in" label="Zoom in" keys={shortcut('⌘=', 'Ctrl+=')} onClick={() => run({ action: 'zoomIn' })} />
-        <IconButton icon="arrow-both" label="Fit width" keys={shortcut('⌘0', 'Ctrl+0')} pressed={fit === 'width'} onClick={() => run({ action: 'fitWidth' })} />
-        <IconButton icon="screen-full" label="Fit page" keys={shortcut('⌥⌘0', 'Ctrl+Alt+0')} pressed={fit === 'page'} onClick={() => run({ action: 'fitPage' })} />
+        <IconButton
+          icon="zoom-in"
+          label="Zoom in"
+          keys={shortcut("⌘=", "Ctrl+=")}
+          onClick={() => run({ action: "zoomIn" })}
+        />
+        <IconButton
+          icon="arrow-both"
+          label="Fit width"
+          keys={shortcut("⌘0", "Ctrl+0")}
+          pressed={fit === "width"}
+          onClick={() => run({ action: "fitWidth" })}
+        />
+        <IconButton
+          icon="screen-full"
+          label="Fit page"
+          keys={shortcut("⌥⌘0", "Ctrl+Alt+0")}
+          pressed={fit === "page"}
+          onClick={() => run({ action: "fitPage" })}
+        />
       </span>
       <span className="separator" />
+      <ViewControls choices={choices} run={run} />
+      <span className="separator" />
       <span className="toolbar-group">
-        <IconButton icon="whole-word" label="Select text" keys={shortcut('⌃⌘T', 'Ctrl+Alt+T')} pressed={tool === 'text'} onClick={() => run({ action: 'setTool', tool: 'text' })} />
-        <IconButton icon="inspect" label="Select region" keys={shortcut('⌃⌘R', 'Ctrl+Alt+R')} pressed={tool === 'region'} onClick={() => run({ action: 'setTool', tool: 'region' })} />
+        <IconButton
+          icon="whole-word"
+          label="Select text"
+          keys={shortcut("⌃⌘T", "Ctrl+Alt+T")}
+          pressed={tool === "text"}
+          onClick={() => run({ action: "setTool", tool: "text" })}
+        />
+        <IconButton
+          icon="inspect"
+          label="Select region"
+          keys={shortcut("⌃⌘R", "Ctrl+Alt+R")}
+          pressed={tool === "region"}
+          onClick={() => run({ action: "setTool", tool: "region" })}
+        />
       </span>
       <span className="spacer" />
       <span className="toolbar-group">
-        <IconButton icon="list-tree" label="Toggle outline" keys={shortcut('⌃⌘O', 'Ctrl+Alt+O')} onClick={() => postToHost({ type: 'toggleOutline' })} />
-        <IconButton icon="search" label="Find in PDF" keys={shortcut('⌘F', 'Ctrl+F')} onClick={() => run({ action: 'find' })} />
+        <IconButton
+          icon="list-tree"
+          label="Toggle outline"
+          keys={shortcut("⌃⌘O", "Ctrl+Alt+O")}
+          onClick={() => postToHost({ type: "toggleOutline" })}
+        />
+        <IconButton
+          icon="search"
+          label="Find in PDF"
+          keys={shortcut("⌘F", "Ctrl+F")}
+          onClick={() => run({ action: "find" })}
+        />
       </span>
     </>
   );

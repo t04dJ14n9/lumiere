@@ -86,13 +86,15 @@
         "command": "vscodeEmbedPdf.previousPage",
         "title": "Previous Page",
         "category": "PDF",
-        "icon": "$(chevron-up)"
+        "icon": "$(chevron-up)",
+        "enablement": "vscodeEmbedPdf.pdfActive && vscodeEmbedPdf.canGoBack"
       },
       {
         "command": "vscodeEmbedPdf.nextPage",
         "title": "Next Page",
         "category": "PDF",
-        "icon": "$(chevron-down)"
+        "icon": "$(chevron-down)",
+        "enablement": "vscodeEmbedPdf.pdfActive && vscodeEmbedPdf.canGoForward"
       },
       {
         "command": "vscodeEmbedPdf.goToPage",
@@ -159,6 +161,76 @@
         "title": "Choose Toolbar Location…",
         "category": "PDF",
         "icon": "$(layout)"
+      },
+      {
+        "command": "vscodeEmbedPdf.actualSize",
+        "title": "Actual Size (100%)",
+        "category": "PDF",
+        "icon": "$(symbol-numeric)",
+        "enablement": "vscodeEmbedPdf.pdfActive"
+      },
+      {
+        "command": "vscodeEmbedPdf.selectView",
+        "title": "View…",
+        "category": "PDF",
+        "icon": "$(layout)",
+        "enablement": "vscodeEmbedPdf.pdfActive"
+      },
+      {
+        "command": "vscodeEmbedPdf.singlePage",
+        "title": "Single Page",
+        "category": "PDF",
+        "icon": "$(file)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.pageLayout == 'single'"
+      },
+      {
+        "command": "vscodeEmbedPdf.twoPageSpread",
+        "title": "Two Pages (1–2, 3–4)",
+        "category": "PDF",
+        "icon": "$(book)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.pageLayout == 'spread'"
+      },
+      {
+        "command": "vscodeEmbedPdf.twoPageCover",
+        "title": "Two Pages with Cover (1, 2–3)",
+        "category": "PDF",
+        "icon": "$(book)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.pageLayout == 'spreadCover'"
+      },
+      {
+        "command": "vscodeEmbedPdf.continuousScroll",
+        "title": "Continuous Scrolling",
+        "category": "PDF",
+        "icon": "$(list-ordered)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.scrollMode == 'continuous'"
+      },
+      {
+        "command": "vscodeEmbedPdf.pageByPage",
+        "title": "Page-by-page Scrolling",
+        "category": "PDF",
+        "icon": "$(file)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.scrollMode == 'paged'"
+      },
+      {
+        "command": "vscodeEmbedPdf.verticalScroll",
+        "title": "Vertical Scrolling",
+        "category": "PDF",
+        "icon": "$(arrow-down)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.scrollDirection == 'vertical'"
+      },
+      {
+        "command": "vscodeEmbedPdf.horizontalScroll",
+        "title": "Horizontal Scrolling",
+        "category": "PDF",
+        "icon": "$(arrow-right)",
+        "enablement": "vscodeEmbedPdf.pdfActive",
+        "toggled": "vscodeEmbedPdf.scrollDirection == 'horizontal'"
       }
     ],
     "menus": {
@@ -267,6 +339,56 @@
           "command": "vscodeEmbedPdf.selectToolbarMode",
           "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
           "group": "4_pdfView@2"
+        },
+        {
+          "command": "vscodeEmbedPdf.actualSize",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@3"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectView",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@4"
+        },
+        {
+          "command": "vscodeEmbedPdf.singlePage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@5"
+        },
+        {
+          "command": "vscodeEmbedPdf.twoPageSpread",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@6"
+        },
+        {
+          "command": "vscodeEmbedPdf.twoPageCover",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@7"
+        },
+        {
+          "command": "vscodeEmbedPdf.continuousScroll",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@8"
+        },
+        {
+          "command": "vscodeEmbedPdf.pageByPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@9"
+        },
+        {
+          "command": "vscodeEmbedPdf.verticalScroll",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@10"
+        },
+        {
+          "command": "vscodeEmbedPdf.horizontalScroll",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+          "group": "4_pdfView@11"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectView",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && config.vscodeEmbedPdf.toolbar.mode == 'chrome' && !vscodeEmbedPdf.titleActionsInMenu",
+          "group": "navigation@15"
         }
       ],
       "commandPalette": [
@@ -328,6 +450,42 @@
         },
         {
           "command": "vscodeEmbedPdf.selectToolbarMode"
+        },
+        {
+          "command": "vscodeEmbedPdf.actualSize",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectView",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.singlePage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.twoPageSpread",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.twoPageCover",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.continuousScroll",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.pageByPage",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.verticalScroll",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
+        },
+        {
+          "command": "vscodeEmbedPdf.horizontalScroll",
+          "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer'"
         }
       ],
       "webview/context": [
@@ -360,6 +518,51 @@
           "command": "vscodeEmbedPdf.selectTextTool",
           "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.tool == 'region'",
           "group": "2_pdfTool@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.actualSize",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.selectView",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@2"
+        },
+        {
+          "command": "vscodeEmbedPdf.singlePage",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@3"
+        },
+        {
+          "command": "vscodeEmbedPdf.twoPageSpread",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@4"
+        },
+        {
+          "command": "vscodeEmbedPdf.twoPageCover",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@5"
+        },
+        {
+          "command": "vscodeEmbedPdf.continuousScroll",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@6"
+        },
+        {
+          "command": "vscodeEmbedPdf.pageByPage",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@7"
+        },
+        {
+          "command": "vscodeEmbedPdf.verticalScroll",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@8"
+        },
+        {
+          "command": "vscodeEmbedPdf.horizontalScroll",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer'",
+          "group": "3_pdfView@9"
         }
       ]
     },
@@ -403,7 +606,7 @@
             "none"
           ],
           "enumDescriptions": [
-            "VS Code's own: find, zoom, fit and tool buttons in the editor title bar, and the page and zoom in the status bar (click them to go to a page or pick a zoom).",
+            "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
             "A slim bar along the top of the viewer.",
             "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
             "No controls: keyboard shortcuts, the right-click menu and the command palette only."
@@ -421,7 +624,7 @@
           "enumDescriptions": [
             "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
             "Always show the buttons.",
-            "Only the page and the zoom."
+            "Only the page, zoom and View."
           ],
           "markdownDescription": "With `#vscodeEmbedPdf.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
         },
@@ -429,6 +632,74 @@
           "type": "boolean",
           "default": false,
           "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
+        },
+        "vscodeEmbedPdf.view.defaultZoom": {
+          "type": [
+            "string",
+            "number"
+          ],
+          "default": "fitWidth",
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "fitWidth",
+                "fitPage",
+                "actual"
+              ]
+            },
+            {
+              "type": "number",
+              "minimum": 25,
+              "maximum": 400
+            }
+          ],
+          "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25–400)."
+        },
+        "vscodeEmbedPdf.view.pageLayout": {
+          "type": "string",
+          "default": "single",
+          "enum": [
+            "single",
+            "spread",
+            "spreadCover"
+          ],
+          "enumDescriptions": [
+            "One page per row.",
+            "Pair pages 1–2, 3–4, and so on.",
+            "Cover page alone, then pair pages 2–3, 4–5, and so on."
+          ],
+          "markdownDescription": "Page layout for PDFs without a saved view."
+        },
+        "vscodeEmbedPdf.view.scrollMode": {
+          "type": "string",
+          "default": "continuous",
+          "enum": [
+            "continuous",
+            "paged"
+          ],
+          "enumDescriptions": [
+            "Scroll through the document.",
+            "Show one page or spread at a time; use next/previous to change it."
+          ],
+          "markdownDescription": "Scrolling mode for PDFs without a saved view."
+        },
+        "vscodeEmbedPdf.view.scrollDirection": {
+          "type": "string",
+          "default": "vertical",
+          "enum": [
+            "vertical",
+            "horizontal"
+          ],
+          "markdownDescription": "Reading direction for PDFs without a saved view."
+        },
+        "vscodeEmbedPdf.view.smoothScrolling": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "default": null,
+          "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
         }
       }
     },
@@ -541,6 +812,7 @@
     "@embedpdf/plugin-scroll": "2.15.1",
     "@embedpdf/plugin-search": "2.15.1",
     "@embedpdf/plugin-selection": "2.15.1",
+    "@embedpdf/plugin-spread": "2.15.1",
     "@embedpdf/plugin-viewport": "2.15.1",
     "@embedpdf/plugin-zoom": "2.15.1",
     "@modelcontextprotocol/sdk": "1.32.1",

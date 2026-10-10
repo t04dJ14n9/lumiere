@@ -1,0 +1,133 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import "./support/install-fake-vscode";
+import * as vscode from "./support/fake-vscode";
+import { PdfPanel } from "../../src/extension/plugins/pdf/panel";
+import { ViewPreferences } from "../../src/extension/plugins/pdf/view-preferences";
+import { DEFAULT_VIEW_CHOICES } from "../../src/shared/view-settings";
+import type { ViewState } from "../../src/shared/view-state";
+import type { HostMessage } from "../../src/shared/messages";
+
+function memory() {
+  const values = new Map<string, unknown>();
+  return {
+    get: (key: string) => values.get(key),
+    update: async (key: string, value: unknown) => {
+      values.set(key, value);
+    },
+    keys: () => [...values.keys()],
+  };
+}
+
+function open(preferences: ViewPreferences) {
+  // A memory URI avoids real disk watchers; the fake filesystem supplies bytes on ready.
+  const uri = vscode.Uri.parse("memory://same.pdf") as never;
+  const messages: HostMessage[] = [];
+  let receive: ((value: unknown) => Promise<void>) | undefined;
+  const panel = new PdfPanel(
+    uri,
+    {
+      webview: {
+        onDidReceiveMessage: (listener: typeof receive) => {
+          receive = listener;
+          return new vscode.Disposable(() => {
+            receive = undefined;
+          });
+        },
+        postMessage: async (message: HostMessage) => {
+          messages.push(message);
+          return true;
+        },
+        asWebviewUri: (uri: unknown) => uri,
+      },
+    } as never,
+    {
+      extensionUri: vscode.Uri.file("/extension") as never,
+      toolbar: { mode: "chrome", dock: "bottom" },
+      settings: preferences.settings(uri),
+      position: preferences.position(uri),
+      savePosition: (position) => preferences.save(uri, position),
+      route: async () => undefined,
+    },
+  );
+  return {
+    panel,
+    messages,
+    receive: (message: unknown) => receive!(message),
+    uri,
+  };
+}
+
+const report = (page: number, zoom: number): ViewState => ({
+  ...DEFAULT_VIEW_CHOICES,
+  page,
+  readingPage: page,
+  pageCount: 12,
+  zoomPercent: Math.round(zoom),
+  zoom,
+  fit: null,
+  tool: "text",
+  top: 20,
+  left: 8,
+  canGoBack: page > 1,
+  canGoForward: page < 12,
+});
+
+test("same-file panels keep independent views; closing and reopening restores exact zoom and offsets", async () => {
+  const preferences = new ViewPreferences(
+    memory() as never,
+    { all: [] } as never,
+  );
+  const first = open(preferences);
+  const second = open(preferences);
+  await first.receive({ type: "ready" });
+  await second.receive({ type: "ready" });
+  await first.receive({
+    type: "patch",
+    version: 1,
+    load: 1,
+    patch: { view: report(3, 125) },
+  });
+  const view = {
+    ...report(6, 62.5),
+    pageLayout: "spreadCover",
+    scrollMode: "paged",
+    scrollDirection: "horizontal",
+  } as const;
+  await second.receive({ type: "patch", version: 1, load: 1, patch: { view } });
+  first.panel.dispose();
+  assert.deepEqual(second.panel.view, view);
+  assert.equal(preferences.position(first.uri)?.page, 3);
+  second.panel.dispose();
+  const reopened = open(preferences);
+  await reopened.receive({ type: "ready" });
+  assert.deepEqual(
+    reopened.messages.find((message) => message.type === "load")?.position,
+    {
+      page: 6,
+      top: 20,
+      left: 8,
+      zoom: 62.5,
+      pageLayout: "spreadCover",
+      scrollMode: "paged",
+      scrollDirection: "horizontal",
+    },
+  );
+  reopened.panel.dispose();
+  preferences.dispose();
+  assert.deepEqual(vscode.outstanding(), []);
+});
+
+test("view defaults inherit editor smoothScrolling and explicit PDF false overrides it", () => {
+  vscode.configuration.set("editor.smoothScrolling", true);
+  const preferences = new ViewPreferences(
+    memory() as never,
+    { all: [] } as never,
+  );
+  const uri = vscode.Uri.parse("memory://same.pdf") as never;
+  assert.equal(preferences.settings(uri).smoothScrolling, true);
+  vscode.configuration.set("vscodeEmbedPdf.view.smoothScrolling", false);
+  assert.equal(preferences.settings(uri).smoothScrolling, false);
+  preferences.dispose();
+  vscode.configuration.clear();
+});
