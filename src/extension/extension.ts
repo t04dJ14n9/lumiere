@@ -15,10 +15,12 @@ import { PluginRuntime } from './runtime/plugin-runtime';
 let runtime: PluginRuntime<PdfServices> | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const started = performance.now();
   const log = vscode.window.createOutputChannel('Agent PDF Viewer', { log: true });
   context.subscriptions.push(log);
   runtime = new PluginRuntime<PdfServices>(plugins, log, { context, log });
   await runtime.start();
+  log.info(`Activated in ${Math.round(performance.now() - started)} ms`);
 }
 
 /** Tear the plugins down, last activated first, before the output channel goes. */
