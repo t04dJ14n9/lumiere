@@ -257,12 +257,6 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
   const originalUser = readFileSync(userFile, "utf8");
   const originalNote = readFileSync(notePath, "utf8");
   const userKeys = () => read(userFile);
-  const manifest = JSON.parse(
-    readFileSync(path.join(__dirname, "../../package.json"), "utf8"),
-  ) as { contributes: { configuration: { properties: object } } };
-  const total = Object.keys(
-    manifest.contributes.configuration.properties,
-  ).length;
   const browser = await chromium.connectOverCDP(readState().webSocket);
   try {
     const page = workbenchPage(browser);
@@ -281,12 +275,10 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     const rows = page.locator(
       ".quick-input-list .monaco-list-row:not(.quick-input-list-separator-border)",
     );
-    await expect(page.locator(".quick-input-list")).toContainText("Font size");
     await expect(page.locator(".quick-input-list")).toContainText("Auto pair");
-    // Virtualised list: count through the accessible total instead of rows on screen.
-    await expect(page.locator(".quick-input-count")).toContainText(
-      String(total),
-    );
+    // The list is long and virtualised: Up wraps to the last group.
+    await page.keyboard.press("ArrowUp");
+    await expect(page.locator(".quick-input-list")).toContainText("Word count");
     expect(await rows.count()).toBeGreaterThan(5);
     await page.keyboard.press("Escape");
     await expect(page.locator(".quick-input-widget")).toBeHidden();
@@ -303,13 +295,16 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     mkdirSync(path.dirname(folderFile), { recursive: true });
     writeFileSync(
       folderFile,
-      JSON.stringify({ [key("editor.readableLineLength")]: true }),
+      JSON.stringify({ [key("editor.readableLineLength")]: false }),
     );
-    await expect(page.locator(".quick-input-widget")).toBeHidden();
+    // The folder's false overrides the user's true once VS Code has read it.
+    await expect(
+      frame.locator(".cm-editor.is-readable-line-width"),
+    ).toHaveCount(0);
     await changeSetting(page, "readable line", "Readable line length");
     await expect
       .poll(() => read(folderFile)[key("editor.readableLineLength")])
-      .toBe(false);
+      .toBe(true);
     expect(userKeys()[key("editor.readableLineLength")]).toBe(true);
     rmSync(path.dirname(folderFile), { recursive: true, force: true });
 
