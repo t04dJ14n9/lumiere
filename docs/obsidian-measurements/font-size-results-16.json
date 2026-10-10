@@ -1,216 +1,160 @@
 {
- "vars": {
-  "--font-text-size": "16px",
-  "--font-small": "0.933em",
-  "--font-smaller": "0.875em",
-  "--font-smallest": "0.8em",
-  "--font-ui-small": "13px",
-  "--line-height-normal": "1.5",
-  "--line-height-tight": "1.3",
-  "--code-size": "0.875em",
-  "--font-monospace-default": "ui-monospace, SFMono-Regular, \"Cascadia Mono\", \"Roboto Mono\", \"DejaVu Sans Mono\", \"Liberation Mono\", Menlo, Monaco, \"Consolas\", \"Source Code Pro\", monospace",
-  "--h1-size": "1.618em",
-  "--h2-size": "1.462em",
-  "--h3-size": "1.318em",
-  "--h4-size": "1.188em",
-  "--h5-size": "1.076em",
-  "--h6-size": "1em",
-  "--h1-line-height": "1.2",
-  "--h2-line-height": "1.2",
-  "--h3-line-height": "1.3",
-  "--h4-line-height": "1.4",
-  "--h5-line-height": "1.5",
-  "--h6-line-height": "1.5",
-  "--h1-weight": "700",
-  "--h6-weight": "600",
-  "--table-text-size": "16px",
-  "--metadata-label-font-size": "0.875em",
-  "--metadata-input-font-size": "0.875em",
-  "--footnote-size": "0.875em",
-  "--file-line-width": "700px"
- },
- "body": {
-  "fontSize": "16px",
-  "lineHeight": "24px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 24
- },
- "content": {
-  "fontSize": "16px",
-  "lineHeight": "24px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 996.953125
- },
- "h1": {
-  "fontSize": "25.888px",
-  "lineHeight": "31.0656px",
-  "fontWeight": "700",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 50.0625
- },
- "h2": {
-  "fontSize": "23.392px",
-  "lineHeight": "28.0704px",
-  "fontWeight": "680",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 46.0625
- },
- "h3": {
-  "fontSize": "21.088px",
-  "lineHeight": "27.4144px",
-  "fontWeight": "660",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 44.421875
- },
- "h4": {
-  "fontSize": "19.008px",
-  "lineHeight": "26.6112px",
-  "fontWeight": "640",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 42.609375
- },
- "h5": {
-  "fontSize": "17.216px",
-  "lineHeight": "25.824px",
-  "fontWeight": "620",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 41.828125
- },
- "h6": {
-  "fontSize": "16px",
-  "lineHeight": "24px",
-  "fontWeight": "600",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 40
- },
- "inlineCode": {
-  "fontSize": "14px",
-  "lineHeight": "21px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-monospace, SFMono-Regular, \"Cascadia Mono\", \"",
-  "height": 23.1875
- },
- "codeLine": {
-  "fontSize": "14px",
-  "lineHeight": "21px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-monospace, SFMono-Regular, \"Cascadia Mono\", \"",
-  "height": 21
- },
- "tableCell": {
-  "fontSize": "16px",
-  "lineHeight": "20.8px",
-  "fontWeight": "600",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 28.796875
- },
- "propertyLabel": {
-  "fontSize": "16px",
-  "lineHeight": "24px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSyst",
-  "height": 29
- },
- "propertyValue": {
-  "fontSize": "16px",
-  "lineHeight": "24px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSyst",
-  "height": 29
- },
- "footnoteRef": {
-  "fontSize": "12.8px",
-  "lineHeight": "19.2px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 18
- },
- "footnoteLine": {
-  "fontSize": "14px",
-  "lineHeight": "21px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 21
- },
- "gutter": {
-  "fontSize": "12px",
-  "lineHeight": "31.0656px",
-  "fontWeight": "400",
-  "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
-  "height": 50.0625
- },
- "gutterElements": [
-  [
-   "99",
-   0,
-   160.234375
-  ],
-  [
-   "5",
-   50.0625,
-   160.234375
-  ],
-  [
-   "6",
-   46.0625,
-   210.296875
-  ],
-  [
-   "7",
-   44.421875,
-   256.359375
-  ],
-  [
-   "8",
-   42.609375,
-   300.78125
-  ],
-  [
-   "9",
-   41.828125,
-   343.390625
-  ],
-  [
-   "10",
-   40,
-   385.21875
-  ],
-  [
-   "11",
-   24,
-   425.21875
-  ],
-  [
-   "12",
-   24,
-   449.21875
-  ],
-  [
-   "13",
-   24,
-   473.21875
-  ],
-  [
-   "14",
-   26.375,
-   497.21875
-  ],
-  [
-   "15",
-   24,
-   523.59375
-  ],
-  [
-   "16",
-   92.59375,
-   547.59375
-  ],
-  [
-   "19",
-   24,
-   640.1875
+  "vars": {
+    "--font-text-size": "16px",
+    "--font-small": "0.933em",
+    "--font-smaller": "0.875em",
+    "--font-smallest": "0.8em",
+    "--font-ui-small": "13px",
+    "--line-height-normal": "1.5",
+    "--line-height-tight": "1.3",
+    "--code-size": "0.875em",
+    "--font-monospace-default": "ui-monospace, SFMono-Regular, \"Cascadia Mono\", \"Roboto Mono\", \"DejaVu Sans Mono\", \"Liberation Mono\", Menlo, Monaco, \"Consolas\", \"Source Code Pro\", monospace",
+    "--h1-size": "1.618em",
+    "--h2-size": "1.462em",
+    "--h3-size": "1.318em",
+    "--h4-size": "1.188em",
+    "--h5-size": "1.076em",
+    "--h6-size": "1em",
+    "--h1-line-height": "1.2",
+    "--h2-line-height": "1.2",
+    "--h3-line-height": "1.3",
+    "--h4-line-height": "1.4",
+    "--h5-line-height": "1.5",
+    "--h6-line-height": "1.5",
+    "--h1-weight": "700",
+    "--h6-weight": "600",
+    "--table-text-size": "16px",
+    "--metadata-label-font-size": "0.875em",
+    "--metadata-input-font-size": "0.875em",
+    "--footnote-size": "0.875em",
+    "--file-line-width": "700px"
+  },
+  "body": {
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 24
+  },
+  "content": {
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 996.953125
+  },
+  "h1": {
+    "fontSize": "25.888px",
+    "lineHeight": "31.0656px",
+    "fontWeight": "700",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 50.0625
+  },
+  "h2": {
+    "fontSize": "23.392px",
+    "lineHeight": "28.0704px",
+    "fontWeight": "680",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 46.0625
+  },
+  "h3": {
+    "fontSize": "21.088px",
+    "lineHeight": "27.4144px",
+    "fontWeight": "660",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 44.421875
+  },
+  "h4": {
+    "fontSize": "19.008px",
+    "lineHeight": "26.6112px",
+    "fontWeight": "640",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 42.609375
+  },
+  "h5": {
+    "fontSize": "17.216px",
+    "lineHeight": "25.824px",
+    "fontWeight": "620",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 41.828125
+  },
+  "h6": {
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "600",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 40
+  },
+  "inlineCode": {
+    "fontSize": "14px",
+    "lineHeight": "21px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-monospace, SFMono-Regular, \"Cascadia Mono\", \"",
+    "height": 23.1875
+  },
+  "codeLine": {
+    "fontSize": "14px",
+    "lineHeight": "21px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-monospace, SFMono-Regular, \"Cascadia Mono\", \"",
+    "height": 21
+  },
+  "tableCell": {
+    "fontSize": "16px",
+    "lineHeight": "20.8px",
+    "fontWeight": "600",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 28.796875
+  },
+  "propertyLabel": {
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSyst",
+    "height": 29
+  },
+  "propertyValue": {
+    "fontSize": "16px",
+    "lineHeight": "24px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSyst",
+    "height": 29
+  },
+  "footnoteRef": {
+    "fontSize": "12.8px",
+    "lineHeight": "19.2px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 18
+  },
+  "footnoteLine": {
+    "fontSize": "14px",
+    "lineHeight": "21px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 21
+  },
+  "gutter": {
+    "fontSize": "12px",
+    "lineHeight": "31.0656px",
+    "fontWeight": "400",
+    "fontFamily": "\"??\", \"??\", ui-sans-serif, -apple-system, BlinkMacSystemFont",
+    "height": 50.0625
+  },
+  "gutterElements": [
+    ["99", 0, 160.234375],
+    ["5", 50.0625, 160.234375],
+    ["6", 46.0625, 210.296875],
+    ["7", 44.421875, 256.359375],
+    ["8", 42.609375, 300.78125],
+    ["9", 41.828125, 343.390625],
+    ["10", 40, 385.21875],
+    ["11", 24, 425.21875],
+    ["12", 24, 449.21875],
+    ["13", 24, 473.21875],
+    ["14", 26.375, 497.21875],
+    ["15", 24, 523.59375],
+    ["16", 92.59375, 547.59375],
+    ["19", 24, 640.1875]
   ]
- ]
 }
