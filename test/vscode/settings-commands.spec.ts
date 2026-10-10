@@ -1,12 +1,6 @@
 import { test, expect, chromium } from "@playwright/test";
 import type { Frame, Page } from "@playwright/test";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths, readState } from "./state";
 import {
@@ -39,6 +33,16 @@ async function askFontSize(page: Page) {
   );
 }
 
+/**
+ * The workspace's settings file stays in place and is only rewritten: VS Code's
+ * file watcher follows edits to a file reliably, but can miss a file that was
+ * deleted and created again.
+ */
+function resetFolder() {
+  mkdirSync(path.dirname(folderFile), { recursive: true });
+  writeFileSync(folderFile, "{}");
+}
+
 const settle = () => new Promise((resolve) => setTimeout(resolve, 2000));
 
 const read = (file: string): Record<string, unknown> =>
@@ -64,6 +68,7 @@ test("Open Settings, and the commands for common settings read and write the Set
     notePath,
     "# Title\n\nBody text\n\n```mermaid\ngraph TD\n  A-->B\n```\n\nLast line\n",
   );
+  resetFolder();
   const browser = await chromium.connectOverCDP(readState().webSocket);
   try {
     const page = workbenchPage(browser);
@@ -139,7 +144,7 @@ test("Open Settings, and the commands for common settings read and write the Set
     await expect
       .poll(() => folderKeys()[key("editor.readableLineLength")])
       .toBe(false);
-    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    resetFolder();
 
     // Line numbers.
     const gutter = () => frame.locator(".cm-lineNumbers").count();
@@ -229,7 +234,7 @@ test("Open Settings, and the commands for common settings read and write the Set
   } finally {
     writeFileSync(userFile, originalUser);
     writeFileSync(notePath, originalNote);
-    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    resetFolder();
     // VS Code reads the restored settings files before the next test starts.
     await settle();
     await closeBrowser(browser);
@@ -261,6 +266,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
   const originalUser = readFileSync(userFile, "utf8");
   const originalNote = readFileSync(notePath, "utf8");
   const userKeys = () => read(userFile);
+  resetFolder();
   const browser = await chromium.connectOverCDP(readState().webSocket);
   try {
     const page = workbenchPage(browser);
@@ -310,7 +316,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
       .poll(() => read(folderFile)[key("editor.readableLineLength")])
       .toBe(true);
     expect(userKeys()[key("editor.readableLineLength")]).toBe(true);
-    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    resetFolder();
 
     // Enum: a pick list of the values, the current one marked.
     await changeSetting(page, "default mode", "Default mode");
@@ -368,7 +374,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
   } finally {
     writeFileSync(userFile, originalUser);
     writeFileSync(notePath, originalNote);
-    rmSync(path.dirname(folderFile), { recursive: true, force: true });
+    resetFolder();
     // VS Code reads the restored settings files before the next test starts.
     await settle();
     await closeBrowser(browser);
