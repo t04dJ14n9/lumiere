@@ -45,8 +45,9 @@ test("Enter and Exit Zen Mode from the palette: the status bar goes, the floatin
     await expect(exitButton(viewer)).toBeVisible();
     await page.screenshot({ path: "test-results/zen-on.png" });
     // The floating bar is the controls: the page field works.
-    await floating(viewer).getByRole("textbox", { name: "Page" }).fill("3");
-    await page.keyboard.press("Enter");
+    const field = floating(viewer).getByRole("textbox", { name: "Page" });
+    await field.fill("3");
+    await field.press("Enter");
     await expect.poll(() => viewer.evaluate(() => document.querySelector<HTMLInputElement>('[aria-label="Page"]')?.value)).toBe("3");
     // Exit zen from the bar.
     await exitButton(viewer).click();

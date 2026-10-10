@@ -105,7 +105,7 @@ test('the status bar shows the page and zoom, and opens a page or a zoom when cl
 
   await zoomStatus(page).click();
   await expect(quickInputTitled(page, /^Zoom \(now 140%\)/u)).toBeVisible();
-  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'Fit Page' }).click();
+  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'Fit Page' }).first().click();
   await expect(zoomStatus(page)).toHaveText(/^Fit Page \(\d+%\)$/u);
   // Scrolling the viewer updates the page.
   await viewer.locator('.viewport').evaluate(viewport => viewport.scrollBy(0, viewport.clientHeight * 3));
