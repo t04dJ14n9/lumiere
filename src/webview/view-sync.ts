@@ -155,10 +155,15 @@ export function useViewActions(
         requested.current = undefined;
         zoom?.requestZoom(ZoomMode.FitWidth);
         break;
-      case "fitPage":
+      case "fitPage": {
         requested.current = undefined;
+        // Fitting a page keeps the reader on it: the zoom change alone would
+        // keep the old vertical centre, which can land on a later page.
+        const page = navigation.currentPage;
         zoom?.requestZoom(ZoomMode.FitPage);
+        requestAnimationFrame(() => latest.current.navigation.goToPage(page));
         break;
+      }
       case "actualSize":
         zoomTo(1);
         break;

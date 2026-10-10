@@ -62,7 +62,7 @@ test("PDF view commands change the active panel and its choices survive closing 
   await expect(quickInputTitled(page, /^PDF View$/u)).toBeVisible();
   await page
     .locator(".quick-input-list .monaco-list-row")
-    .filter({ hasText: /^Fit page$/iu })
+    .filter({ hasText: /^Fit page/iu })
     .click();
   await expect(statusBarEntry(page, /^Fit Page/u)).toBeVisible();
   await command(page, "PDF: Actual Size (100%)");
