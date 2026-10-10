@@ -72,6 +72,11 @@
         "icon": "$(settings-gear)"
       },
       {
+        "command": "vscodeEmbedPdf.changeSetting",
+        "title": "Change Setting…",
+        "category": "PDF"
+      },
+      {
         "command": "vscodeEmbedPdf.toggleSmoothScrolling",
         "title": "Toggle Smooth Scrolling",
         "category": "PDF"

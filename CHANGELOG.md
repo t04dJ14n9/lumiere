@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Settings from the Command Palette: `PDF: Open Settings`, `PDF: Change Setting…` (every contributed setting, edited by
+  type, generated from package.json), toggles for smooth scrolling and keyboard shortcuts, default zoom / layout /
+  scrolling pickers, and `Settings…` in the View picker. Same keys as the Settings editor, workspace if set there
+  else user. Docs: docs/settings.md.
+
 - Zen mode: `PDF: Enter Zen Mode` / `Exit Zen Mode` (`Ctrl+Alt+Z`, `Ctrl+Cmd+Z` on macOS; `Escape Escape` exits)
   runs VS Code's Zen Mode; the chrome and slim toolbars become a floating bar with an Exit zen button while it
   lasts (never written to settings). Specs `zen.spec.ts` (browser and VS Code), docs/zen.md.

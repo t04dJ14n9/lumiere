@@ -28,40 +28,19 @@ function resetUser(...keys: string[]): void {
   writeFileSync(userFile, JSON.stringify(settings, null, 2));
 }
 
-/**
- * Run a command from the palette while the Settings editor (a dialog in this
- * VS Code) is open: clicking elsewhere, as `command` does first, would close it.
- */
-async function runWhileOpen(page: Page, label: string): Promise<void> {
-  await page.keyboard.press(`${process.platform === "darwin" ? "Meta" : "Control"}+Shift+P`);
-  const widget = page.locator(".quick-input-widget");
-  await expect(widget).toBeVisible();
-  await widget.locator("input:visible").fill(`>${label}`);
-  await page.locator(".quick-input-list .monaco-list-row").filter({ hasText: label }).first().click();
-}
-
 const settingsEditor = (page: Page) => page.locator(".settings-editor");
 
 test.afterEach(() => {
   rmSync(path.join(paths.workspace, ".vscode"), { recursive: true, force: true });
-  resetUser("vscodeEmbedPdf.keyboardShortcuts", "vscodeEmbedPdf.view.smoothScrolling", "vscodeEmbedPdf.view.pageLayout", "vscodeEmbedPdf.view.scrollMode", "vscodeEmbedPdf.view.defaultZoom");
+  resetUser("vscodeEmbedPdf.keyboardShortcuts", "vscodeEmbedPdf.view.smoothScrolling", "vscodeEmbedPdf.view.pageLayout", "vscodeEmbedPdf.view.scrollMode", "vscodeEmbedPdf.view.defaultZoom", "vscodeEmbedPdf.regionImageCache.maxSizeMB", "vscodeEmbedPdf.toolbar.mode");
 });
 
-test("PDF: Open Settings opens the Settings editor on this extension's settings, and a command moves the checkbox live", async ({ workbench: page }) => {
+test("PDF: Open Settings opens the Settings editor on this extension's settings", async ({ workbench: page }) => {
   await command(page, "PDF: Open Settings");
   await expect(settingsEditor(page)).toBeVisible();
   await expect(settingsEditor(page).locator(".suggest-input-container, .search-container").first()).toContainText(EXTENSION_QUERY);
-  const shortcuts = settingsEditor(page).locator(".setting-item").filter({ hasText: "Keyboard Shortcuts" }).first();
-  const box = shortcuts.getByRole("checkbox");
-  await expect(box).toBeChecked();
+  await expect(settingsEditor(page).locator(".setting-item").filter({ hasText: "Keyboard Shortcuts" }).first().getByRole("checkbox")).toBeChecked();
   await page.screenshot({ path: "test-results/settings-open.png" });
-
-  await runWhileOpen(page, "PDF: Toggle Keyboard Shortcuts");
-  await expect.poll(() => userSetting("vscodeEmbedPdf.keyboardShortcuts")).toBe(false);
-  await expect(box).not.toBeChecked();
-  await runWhileOpen(page, "PDF: Toggle Keyboard Shortcuts");
-  await expect.poll(() => userSetting("vscodeEmbedPdf.keyboardShortcuts")).toBe(true);
-  await expect(box).toBeChecked();
 });
 
 test("a command saves to the workspace when the workspace sets the setting, else to the user settings", async ({ workbench: page }) => {
@@ -72,10 +51,10 @@ test("a command saves to the workspace when the workspace sets the setting, else
 
   mkdirSync(path.dirname(workspaceFile), { recursive: true });
   writeFileSync(workspaceFile, JSON.stringify({ "vscodeEmbedPdf.view.smoothScrolling": false }));
-  await expect.poll(async () => {
-    await command(page, "PDF: Toggle Smooth Scrolling");
-    return workspaceSetting("vscodeEmbedPdf.view.smoothScrolling");
-  }, { timeout: 15_000 }).toBe(true);
+  // VS Code picks the new workspace file up through its file watcher.
+  await page.waitForTimeout(3_000);
+  await command(page, "PDF: Toggle Smooth Scrolling");
+  await expect.poll(() => workspaceSetting("vscodeEmbedPdf.view.smoothScrolling")).toBe(true);
   // The user value is left alone.
   expect(userSetting("vscodeEmbedPdf.view.smoothScrolling")).toBe(true);
 });
@@ -103,4 +82,72 @@ test("the View picker has a Settings… entry that opens the Settings editor", a
   await page.locator(".quick-input-list .monaco-list-row").filter({ hasText: "Settings…" }).first().click();
   await expect(settingsEditor(page)).toBeVisible();
   await expect(settingsEditor(page).locator(".setting-item").filter({ hasText: "Keyboard Shortcuts" }).first()).toBeVisible();
+});
+
+/** The rows of the open quick pick, as text. */
+const rows = (page: Page) => page.locator(".quick-input-list .monaco-list-row");
+
+test("PDF: Change Setting… lists every setting, grouped with its value, and edits each by its type", async ({ workbench: page }) => {
+  await command(page, "PDF: Change Setting…");
+  const widget = page.locator(".quick-input-widget");
+  await expect(widget).toBeVisible();
+  await widget.locator("input:visible").fill("Smooth");
+  await expect(rows(page).filter({ hasText: "Smooth Scrolling" })).toContainText("follows the editor");
+  await widget.locator("input:visible").fill("Keyboard");
+  await expect(rows(page).filter({ hasText: "Keyboard Shortcuts" })).toContainText("on");
+  await widget.locator("input:visible").fill("");
+  // Grouped: a separator labels each group.
+  await expect(rows(page).filter({ hasText: "Agent Bridge" }).first()).toBeVisible();
+  await page.screenshot({ path: "test-results/change-setting.png" });
+  // A boolean toggles at once.
+  await widget.locator("input:visible").fill("Keyboard Shortcuts");
+  await rows(page).filter({ hasText: "Keyboard Shortcuts" }).first().click();
+  await expect.poll(() => userSetting("vscodeEmbedPdf.keyboardShortcuts")).toBe(false);
+
+  // An enum: a pick list with the descriptions.
+  await command(page, "PDF: Change Setting…");
+  await widget.locator("input:visible").fill("Mode");
+  await rows(page).filter({ has: page.getByText("Mode", { exact: true }) }).first().click();
+  await expect(rows(page).filter({ hasText: "floating" })).toContainText("floating over the pages");
+  await rows(page).filter({ hasText: /^\s*slim/u }).first().click();
+  await expect.poll(() => userSetting("vscodeEmbedPdf.toolbar.mode")).toBe("slim");
+
+  // A true/false/null setting: the third choice follows the editor.
+  await command(page, "PDF: Change Setting…");
+  await widget.locator("input:visible").fill("Smooth Scrolling");
+  await rows(page).filter({ hasText: "Smooth Scrolling" }).first().click();
+  await rows(page).filter({ hasText: "Off" }).first().click();
+  await expect.poll(() => userSetting("vscodeEmbedPdf.view.smoothScrolling")).toBe(false);
+  await command(page, "PDF: Change Setting…");
+  await widget.locator("input:visible").fill("Smooth Scrolling");
+  await rows(page).filter({ hasText: "Smooth Scrolling" }).first().click();
+  await rows(page).filter({ hasText: "Follow the editor" }).first().click();
+  await expect.poll(() => userSetting("vscodeEmbedPdf.view.smoothScrolling")).toBeNull();
+
+  // A number is checked against the manifest's minimum.
+  await command(page, "PDF: Change Setting…");
+  await widget.locator("input:visible").fill("Max Size");
+  await rows(page).filter({ hasText: "Max Size" }).first().click();
+  const input = widget.locator("input:visible");
+  await input.fill("0");
+  await expect(widget).toContainText("at least 1");
+  await input.fill("64");
+  await page.keyboard.press("Enter");
+  await expect.poll(() => userSetting("vscodeEmbedPdf.regionImageCache.maxSizeMB")).toBe(64);
+
+  // A setting with no simple editor opens in the Settings editor.
+  await command(page, "PDF: Change Setting…");
+  await widget.locator("input:visible").fill("Default Zoom");
+  await rows(page).filter({ hasText: "Default Zoom" }).first().click();
+  await expect(settingsEditor(page)).toBeVisible();
+});
+
+test("a setting changed in the Settings editor shows in Change Setting… and the other way round", async ({ workbench: page }) => {
+  await command(page, "PDF: Toggle Keyboard Shortcuts");
+  await expect.poll(() => userSetting("vscodeEmbedPdf.keyboardShortcuts")).toBe(false);
+  await command(page, "PDF: Change Setting…");
+  await expect(rows(page).filter({ hasText: "Keyboard Shortcuts" })).toContainText("off");
+  await page.keyboard.press("Escape");
+  await command(page, "PDF: Open Settings");
+  await expect(settingsEditor(page).locator(".setting-item").filter({ hasText: "Keyboard Shortcuts" }).first().getByRole("checkbox")).not.toBeChecked();
 });

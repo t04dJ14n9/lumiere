@@ -119,6 +119,10 @@ out and in, and find buttons. `vscodeEmbedPdf.toolbar.statusBarButtons`
 
 ![Cursor: page, zoom and find in the status bar](docs/images/toolbar-cursor.png)
 
+## Settings
+
+**PDF: Open Settings** opens the Settings editor on this extension; **PDF: Change Setting…** lists every setting and edits it by type; there are also toggles for smooth scrolling and keyboard shortcuts. See [docs/settings.md](docs/settings.md).
+
 ## Zen mode
 
 **PDF: Enter Zen Mode** (`Ctrl+Alt+Z`, `Ctrl+Cmd+Z` on macOS) is VS Code's Zen Mode with a floating toolbar and an Exit zen button for the PDF. See [docs/zen.md](docs/zen.md); unverified on macOS and in Cursor.

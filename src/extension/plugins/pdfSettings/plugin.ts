@@ -3,6 +3,7 @@ import { PAGE_LAYOUTS, SCROLL_MODES } from '../../../shared/view-options';
 import { parseDefaultZoom, resolveSmoothScrolling } from '../../../shared/view-settings';
 import { updateSetting } from '../../settings';
 import type { PluginDefinition, PdfServices } from '../services';
+import { changeSetting } from './change-setting';
 import manifest from './manifest';
 
 const EXTENSION_ID = 't04dj14n9.vscode-embedpdf';
@@ -32,6 +33,8 @@ export const pdfSettingsPlugin: PluginDefinition<PdfServices> = {
       void scope.acquire(vscode.commands.registerCommand(`vscodeEmbedPdf.${id}`, run), 'command');
 
     command('openSettings', () => vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${EXTENSION_ID}`));
+
+    command('changeSetting', () => changeSetting(EXTENSION_ID));
 
     command('toggleSmoothScrolling', async () => {
       const on = resolveSmoothScrolling(read(`${VIEW}.smoothScrolling`, null), read('editor.smoothScrolling', false), false);
