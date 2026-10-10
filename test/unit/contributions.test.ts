@@ -27,3 +27,26 @@ test('Copy Link for Agent is the only agent command; Copy for Agent and Ask Agen
   assert.ok(!JSON.stringify(contributes).includes('askAgent'));
   assert.ok('vscodeEmbedPdf.copyLinkForAgent.target' in contributes.configuration.properties);
 });
+
+test('every default shortcut is scoped to the PDF viewer, to non-input focus and to the opt-out setting', () => {
+  const bindings = (contributes.keybindings ?? []) as { key: string; mac?: string; command: string; when?: string }[];
+  assert.ok(bindings.length > 0);
+  const seen = new Set<string>();
+  for (const { key, mac, command, when } of bindings) {
+    assert.ok(command.startsWith('vscodeEmbedPdf.'), command);
+    for (const clause of [
+      "activeCustomEditorId == 'vscodeEmbedPdf.viewer'",
+      '!inputFocus',
+      '!sideBarFocus',
+      '!panelFocus',
+      '!auxiliaryBarFocus',
+      'config.vscodeEmbedPdf.keyboardShortcuts',
+    ]) {
+      assert.ok(when?.includes(clause), `${command} (${key}) lacks ${clause}`);
+    }
+    // No two of our own bindings share a key under the same condition.
+    for (const chord of [key, mac ?? key]) { assert.ok(!seen.has(`${chord}|${when}`), `duplicate ${chord}`); seen.add(`${chord}|${when}`); }
+  }
+  const setting = contributes.configuration.properties['vscodeEmbedPdf.keyboardShortcuts'] as { default: boolean };
+  assert.equal(setting.default, true);
+});

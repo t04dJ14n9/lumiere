@@ -693,6 +693,11 @@
           ],
           "markdownDescription": "Reading direction for PDFs without a saved view."
         },
+        "vscodeEmbedPdf.keyboardShortcuts": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/⌘+G (Go to Line elsewhere), Ctrl/⌘+0 (focus the side bar), Ctrl/⌘+= and Ctrl/⌘+- (zoom the window) and Ctrl/⌘+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+        },
         "vscodeEmbedPdf.view.restoreOnReopen": {
           "type": "boolean",
           "default": true,
@@ -712,78 +717,78 @@
       {
         "command": "vscodeEmbedPdf.previousPage",
         "key": "alt+pageup",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.nextPage",
         "key": "alt+pagedown",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.goToPage",
         "key": "ctrl+g",
         "mac": "ctrl+g",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.zoomIn",
         "key": "ctrl+=",
         "mac": "cmd+=",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.zoomIn",
         "key": "ctrl+numpad_add",
         "mac": "cmd+numpad_add",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.zoomOut",
         "key": "ctrl+-",
         "mac": "cmd+-",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.zoomOut",
         "key": "ctrl+numpad_subtract",
         "mac": "cmd+numpad_subtract",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.fitWidth",
         "key": "ctrl+0",
         "mac": "cmd+0",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.fitPage",
         "key": "ctrl+alt+0",
         "mac": "cmd+alt+0",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.find",
         "key": "ctrl+f",
         "mac": "cmd+f",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.toggleOutline",
         "key": "ctrl+alt+o",
         "mac": "ctrl+cmd+o",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.selectTextTool",
         "key": "ctrl+alt+t",
         "mac": "ctrl+cmd+t",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       },
       {
         "command": "vscodeEmbedPdf.selectRegionTool",
         "key": "ctrl+alt+r",
         "mac": "ctrl+cmd+r",
-        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus"
+        "when": "activeCustomEditorId == 'vscodeEmbedPdf.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.vscodeEmbedPdf.keyboardShortcuts"
       }
     ],
     "mcpServerDefinitionProviders": [

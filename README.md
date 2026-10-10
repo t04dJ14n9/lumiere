@@ -103,9 +103,10 @@ editor has focus (not in a text field, the side bar or the panel):
 | Select Region tool     | Ctrl+Alt+R                | ⌃⌘R                 |
 
 While a PDF has focus, these take over the editor-wide meanings of the same
-keys (Ctrl+G is Go to Line elsewhere, Ctrl+0 focuses the side bar). Some
-desktops keep Ctrl+Alt+T for opening a terminal; rebind it in **Keyboard
-Shortcuts** if so.
+keys (Ctrl+G is Go to Line elsewhere, Ctrl+0 focuses the side bar, Ctrl+= zooms
+the window). Set `vscodeEmbedPdf.keyboardShortcuts` to `false` to leave every key
+to VS Code (the **PDF:** commands remain, unbound, for **Keyboard Shortcuts**).
+Some desktops keep Ctrl+Alt+T for opening a terminal; rebind it there if so.
 
 **In Cursor**, the editor title bar keeps extension buttons in its **…**
 menu, so the viewer leaves its title buttons out (the menu lists every
