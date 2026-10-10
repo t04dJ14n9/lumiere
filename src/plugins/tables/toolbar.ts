@@ -40,7 +40,7 @@ export class TableToolbar {
       action.className = axis === "row" ? "table-row-btn" : "table-col-btn";
       action.setAttribute("aria-label", label);
       action.title = label;
-      // Keep the focus in the cell, so the new cell opens in the same row.
+      // Keep the focus in the cell until the new one opens.
       action.addEventListener("mousedown", (event) => event.preventDefault());
       action.addEventListener("click", run);
       controls.append(action);
@@ -52,8 +52,10 @@ export class TableToolbar {
       );
     });
     button("Add column to the right", "column", () => {
+      // Measured in Obsidian 1.14.4: the caret lands in the new header cell,
+      // whichever row it was in.
       this.selection.request({
-        row: this.selection.active()?.row ?? 0,
+        row: 0,
         column: this.grid.model.alignments.length,
       });
       this.grid.replace(

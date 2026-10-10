@@ -73,7 +73,7 @@ test("table DOM preserves raw focused cells, document entry, edge buttons, menus
   await table.hover();
   await columnButton.click();
   await expect(table.locator("thead th")).toHaveCount(4);
-  await expect(editor).toHaveAttribute("aria-label", "Table cell 4, 4");
+  await expect(editor).toHaveAttribute("aria-label", "Table cell 1, 4");
   await cells.nth(4).click({ button: "right" });
   await expect(
     table.getByRole("menuitem", { name: "Paste as plain text", exact: true }),

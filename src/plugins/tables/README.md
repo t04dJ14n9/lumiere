@@ -44,6 +44,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `navigation.test.ts`: keyboard routing, append, exit and re-entry unit tests.
 - `clipboard.test.ts`: cell/grid clipboard, selection and stale-paste unit tests.
 - `webview.test.ts`: persistent widget, entry registrations and insertion unit tests.
+- `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables.css`: grid, handles, selection and cell editor appearance, bundled through
   `src/webview/styles/index.css`.
 
@@ -65,7 +66,6 @@ to the paste pipeline rather than implemented by the table widget.
 
 HTML paste in a focused cell uses the outer editor capture pipeline; the table
 clipboard ignores already-handled events. Rectangular paste keeps TSV semantics.
-Menu paste reads plain text through the host. Shift+Enter retains the existing
-`<br>` encoding; its Obsidian parity is not verified. Rectangular selections and
+Menu paste reads plain text through the host. Shift+Enter stores `<br>`, as measured in Obsidian. Rectangular selections and
 keyboard menus on grips are additional capabilities. Generic block insertion and
 link-creation submenus are outside this cell menu; editor commands still work.

@@ -245,13 +245,22 @@ export class TableController {
     if (shapeChanged && this.active && !this.requested) {
       const previous =
         this.grid.model.rows[this.active.row]![this.active.column]!;
-      moved = cellAtOffset(
-        model,
-        difference(this.grid.block.source, block.source).mapPos(
-          previous.from,
-          1,
-        ),
-      );
+      // When the cell itself is gone (undo removed its row or column), the
+      // caret stays in the table, in the nearest remaining cell.
+      moved =
+        cellAtOffset(
+          model,
+          difference(this.grid.block.source, block.source).mapPos(
+            previous.from,
+            1,
+          ),
+        ) ??
+        (this.editor
+          ? {
+              row: Math.min(this.active.row, model.rows.length - 1),
+              column: Math.min(this.active.column, model.alignments.length - 1),
+            }
+          : undefined);
     }
     this.grid.block = block;
     this.grid.model = model;

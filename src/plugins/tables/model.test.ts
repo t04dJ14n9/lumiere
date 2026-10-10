@@ -82,3 +82,31 @@ test("pipe escaping is idempotent, retains typed backslashes and keeps code pipe
   assert.equal(cellText("**b** `c|d`\r\ntwo"), "**b** `c\\|d`<br>two");
   assert.equal(cellText("\\"), "\\");
 });
+
+test("padding counts UTF-16 code units, as Obsidian 1.14.4 does (measured), for CJK, emoji, combining marks and ZWJ sequences", () => {
+  // Obsidian 1.14.4: `| 中文  |` (2 + 1 pad), `| 😀  |` (2 + 1 pad), `| é  |`
+  // (2 + 1 pad) and a 8-unit family emoji widening the whole column to 8.
+  assert.equal(
+    serializeTable([["h"], ["中文"]], [null]),
+    "| h   |\n| --- |\n| 中文  |",
+  );
+  assert.equal(
+    serializeTable([["h"], ["😀"]], [null]),
+    "| h   |\n| --- |\n| 😀  |",
+  );
+  assert.equal(
+    serializeTable([["h"], ["e\u0301"]], [null]),
+    "| h   |\n| --- |\n| e\u0301  |",
+  );
+  const family = "👨‍👩‍👧";
+  assert.equal(family.length, 8);
+  assert.equal(
+    serializeTable([["h"], [family]], [null]),
+    `| h        |\n| -------- |\n| ${family} |`,
+  );
+  // Aligned cells pad on the side the alignment asks for, by the same measure.
+  assert.equal(
+    serializeTable([["h"], ["中文"]], ["right"]),
+    "|   h |\n| --: |\n|  中文 |",
+  );
+});

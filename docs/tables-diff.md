@@ -31,9 +31,9 @@ the starting code on `tables-parity`; actions below describe this change.
 | Generic Paragraph and Insert menus. | Not in the table menu. | Reject: block-level paragraph/headings/list insertion is incompatible with a single Markdown table cell; inline formatting remains available. |
 | Drag grips reorder rows/columns; plain click does not open a menu. | Already reorders and plain click selects an axis without opening a menu. | Fix: preserve and pin drag/drop plus row/column model results; keep keyboard/context-menu actions on grips for accessibility. |
 | Add row button sits below, visible when focused; add column button sits beside, visible on hover. | Both are text toolbar actions below, visible on either hover or focus. | Fix: place labelled + buttons on the respective edges, with the measured visibility rules and keyboard focus support. |
-| Clicking add buttons was not verified by the probe. | Both already append and focus the new row/column. | Fix: retain the requested append behavior and test our buttons; defer the claim of measured Obsidian click parity. |
-| Shift+Enter storing `<br>` was not verified. | Already inserts `<br>`; pasted line breaks are normalized similarly. | Defer: retain and unit-test the existing safe single-line encoding; do not claim a new empirical observation. |
-| Exact private Obsidian DOM names, theme metrics and grip-click selection semantics. | Independent DOM and VS Code theme. | Reject: private identifiers and pixel values are not editing behavior; use independent styles and semantic accessible controls. Grip-click selection was not measured. |
+| Clicking add buttons was not verified by the first probe. | Both append and focus the new row/column; the column button kept the caret's row. | Fix: measured later (`docs/obsidian-measurements/tables/`): both buttons append an aligned empty row/column; the row button focuses its first cell and the column button the new **header** cell. Ours now matches, with `tables-measured.spec.ts`. |
+| Shift+Enter storing `<br>` was not verified by the first probe. | Inserts `<br>`; pasted line breaks are normalized similarly. | Fix: measured later (`1<br>x`, caret stays in the cell); pinned in `tables-measured.spec.ts`. |
+| Exact private Obsidian DOM names, theme metrics and grip-click selection semantics. | Independent DOM and VS Code theme. | Reject: private identifiers and pixel values are not editing behavior; use independent styles and semantic accessible controls. Grip-click selection was measured later: it selects the axis and opens no menu; ours does the same. |
 | Our rectangular selection/drag, TSV paste, clear-cells action and keyboard grip menus. | Extra features beyond the measured spec. | Fix: retain because they do not conflict with normal cell navigation or the cell context menu; remove only whole-table disclosure. |
 
 The kernel and host authority remain unchanged. No source code, CSS or assets
@@ -49,20 +49,41 @@ other rows remained unaligned. Baseline checks for pipes, backslashes, navigatio
 row/column operations and sort preserve behavior that already worked. The new
 unchanged-cell anchor check guards the aligned rewrite itself.
 
-Verification: Prettier, lint, typecheck and build pass; **82/82** table, ported
-table, lint-rule and plugin lifecycle/composition units pass. Checks were run
-separately. The normal `pnpm exec tsx --test` launcher cannot bind
-its IPC socket in this sandbox (`EPERM`); Node's `tsx` import hook runs the same
-unit files. The existing three layer test wrappers cannot spawn their compiler
-subprocess (`spawnSync EPERM`); direct compilation of their negative DOM/Node/
-VS Code fixtures rejects the platform APIs as expected. The kernel is unchanged
-at 815 TypeScript lines.
+## Claim and evidence
 
-The sole targeted browser spec, `test/browser/tables-parity.spec.ts`, cannot
-execute here: Chromium aborts at startup with `sandbox_host_linux.cc`,
-`shutdown: Operation not permitted`. DOM focus/raw reveal, grip placement,
-hover, button clicks, menu focus transfer and pointer dragging therefore remain
-unverified in a running browser. No VS Code, Cursor or Obsidian was launched.
-The manual plan covers IME, drag/scroll, native undo and two-panel edits; the
-owner should run these against the disposable fixture vault. Shift+Enter and
-Obsidian add-button click parity remain unmeasured reference behavior.
+"Parity with Obsidian 1.14" means: every behaviour in the table above was
+**measured in a real Obsidian 1.14.4** (scripts and raw output in
+`docs/obsidian-measurements/tables/`; first pass in the plan file
+`obsidian-tables-behaviour.md`) and is reproduced by a test that runs in a real
+Chromium (`test/browser/tables-measured.spec.ts`, `tables-parity.spec.ts`,
+`tables-a11y.spec.ts`) or in the real VS Code (`test/vscode/tables.spec.ts`).
+
+Deliberate differences, all measured:
+
+- Obsidian rewrites the table aligned as soon as a cell is *clicked*, as an
+  undo step of its own, so a click modifies the note. We align on the first
+  edit, inside that edit's undo step; a click never dirties a note.
+- Undoing a structural change in Obsidian drops the focus. We keep the caret in
+  the nearest remaining cell, so the next undo still works.
+- No generic Paragraph/Insert/Add link submenus (see the rows above).
+
+Known limit, general to the workbench and not specific to tables: in real VS Code
+the native undo stack merges consecutive host edits into coarser steps than the
+webview's own history (typing `abc`, moving the caret and typing `X` undoes in
+one step). `test/vscode/tables.spec.ts` therefore asserts that every undo lands
+on a whole table and ends at the original source, not step granularity; the
+step-by-step expectations run in Chromium (`tables-measured.spec.ts`). Not
+fixed here.
+
+Not measured in Obsidian, so not claimed: real IME software (only synthetic
+composition through the DevTools protocol), touch/pen input, drag autoscroll at
+the viewport edge, screen readers, pixel metrics. See
+`docs/obsidian-measurements/tables/README.md`.
+
+Regression coverage for the whole-table rewrite (B9-2): the rewrite is applied
+as per-cell edits that leave unchanged cells' text, and so every anchor inside
+them, untouched (`source-edits.ts`). Tests: 20 edits across cells then undone one
+step at a time (each undo lands on a state already seen), an external edit to
+another cell while a cell is focused, IME composition, and CJK/emoji/combining/
+ZWJ cells, in `tables-measured.spec.ts`; the same sequences against real
+VS Code native undo in `test/vscode/tables.spec.ts`.
