@@ -9,7 +9,9 @@
 - [ ] `pnpm check` passes (format, lint, typecheck, unit tests,
       contributions)
 - [ ] `pnpm test:browser` passes (webview changes)
-- [ ] `pnpm test:vscode` passes (native wiring and packaging)
+- [ ] `pnpm test:vscode` passes locally before the push (native wiring and
+      packaging); CI does not run the real-VS Code specs. On a headless Linux
+      box: `xvfb-run -a pnpm check:full`
 - [ ] No limit raised, no lint exception added and no test weakened
       (`test/unit/lint-rules.test.ts`)
 - [ ] AGENTS.md code norms followed; every capability stays a plugin, the

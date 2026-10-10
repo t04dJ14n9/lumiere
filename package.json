@@ -1318,6 +1318,7 @@
     "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
     "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
+    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "contributions": "tsx scripts/generate-contributions.ts",

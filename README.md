@@ -96,9 +96,16 @@ renderers) through API v1: see [API.md](API.md) and the sample plugin in
 pnpm install
 pnpm check          # format, lint, types, unit tests, generated contributions
 pnpm test:browser   # webview smoke tests in Chromium
-pnpm test:vscode    # native smoke test in an isolated VS Code profile
+pnpm test:vscode    # native smoke test in an isolated VS Code profile (local only, not in CI)
+pnpm check:full       # check, test:browser and test:vscode: run before every push
 pnpm package        # VSIX; checks THIRD_PARTY_NOTICES.md is current
 ```
+
+**Before every push run the full local check, `pnpm check:full`** (on headless
+Linux: `xvfb-run -a pnpm check:full`). It runs `pnpm check`, `pnpm test:browser`
+and `pnpm test:vscode`. GitHub Actions does not run the real-VS Code specs
+(`test/vscode`): they were flaky under load, so they are a required local
+pre-push check instead.
 
 Read [AGENTS.md](AGENTS.md) before changing code. [DESIGN.md](DESIGN.md)
 describes the architecture, [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)
@@ -115,12 +122,13 @@ request and on pushes to `main`. Each job, and how to run it locally:
 | --- | --- | --- |
 | `check` | Prettier, lint (with the code-norm limits), typecheck, unit tests and generated contributions pass | `pnpm check` |
 | `browser` | The webview suite in Chromium; on failure, `test-results/` is uploaded | `pnpm test:browser` |
-| `vscode (VS Code stable)` | The packaged extension in the latest VS Code stable, under `xvfb-run` | `xvfb-run -a pnpm test:vscode` |
 | `package` | `pnpm package` builds the VSIX, leaves committed files unchanged, and the VSIX is under 10 MB with no tests, sources, source maps or secret-shaped strings; the VSIX is uploaded as the `vsix` artifact | `pnpm package && bash .github/scripts/check-vsix.sh *.vsix 10` |
 | `secret-scan` | gitleaks finds no secrets in the git history | `gitleaks git --redact .` |
 | `audit (advisory)` | `pnpm audit --prod`; a warning, never a failure | `pnpm audit --prod` |
 
-Cursor cannot run in CI, so test it by hand with
+The real-VS Code specs (`pnpm test:vscode`) are not a CI job: run them locally
+before every push (see Develop). Cursor cannot run in CI either, so test it by
+hand with
 `VSCODE_EXECUTABLE=<cursor executable> xvfb-run -a pnpm test:vscode`. CI never
 uses API keys or other secrets. Dependabot proposes grouped npm and
 GitHub Actions updates weekly.

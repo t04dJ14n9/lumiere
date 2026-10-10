@@ -89,5 +89,11 @@ pnpm test:browser  # small smoke suite
 pnpm test:vscode   # one native smoke test; opens a VS Code window; Phase 8 or when native wiring changes
 ```
 
+`pnpm check:full` runs all three in that order. The real-VS Code specs
+(`test/vscode`, `pnpm test:vscode`) do **not** run in GitHub Actions: they were
+flaky under load. They are a required local pre-push check, so run the full
+`pnpm check:full` before every push, on a headless Linux box as
+`xvfb-run -a pnpm check:full`.
+
 Commit at the end of each phase with its record in IMPLEMENTATION_PLAN.md.
 Do not push or publish to the Marketplace without the owner's approval.
