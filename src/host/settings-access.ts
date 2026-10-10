@@ -5,13 +5,57 @@ import type {
   SettingTarget,
 } from "../shared/runtime";
 
+import { SETTING_PREFIX, checkWrite } from "../shared/setting-schema";
+
 const EXTENSION_ID = "t04dj14n9.vscode-markdown-workbench";
+const PREFIX = SETTING_PREFIX;
 
 /**
  * The Settings UI's own storage rule for commands that change a setting: the
  * workspace folder when it sets the key, the workspace when it does, else the
  * user's settings. Nothing is remembered between calls.
  */
+/**
+ * This extension's contributed settings, read from its package.json. Only
+ * `markdownWorkbench.` keys with an object schema are listed; anything else
+ * in a damaged or unexpected manifest is dropped.
+ */
+function contributed(): readonly ContributedSetting[] {
+  const packageJson = vscode.extensions.getExtension(EXTENSION_ID)
+    ?.packageJSON as
+    | {
+        contributes?: {
+          configuration?: { properties?: Record<string, unknown> };
+        };
+      }
+    | undefined;
+  const properties = packageJson?.contributes?.configuration?.properties;
+  if (!properties || typeof properties !== "object") {
+    return [];
+  }
+  return Object.entries(properties)
+    .filter(
+      ([key, schema]) =>
+        key.startsWith(PREFIX) &&
+        key.length > PREFIX.length &&
+        typeof schema === "object" &&
+        schema !== null,
+    )
+    .map(([key, schema]) => ({
+      key,
+      schema: schema as ContributedSetting["schema"],
+    }));
+}
+
+/** The contributed setting for a relative key; anything else is refused. */
+function own(key: string): ContributedSetting {
+  const setting = contributed().find((item) => item.key === `${PREFIX}${key}`);
+  if (!setting) {
+    throw new Error(`${PREFIX}${key} is not a Markdown Workbench setting.`);
+  }
+  return setting;
+}
+
 export function createSettingsAccess(): SettingsAccess {
   const configuration = (resource?: string) =>
     vscode.workspace.getConfiguration(
@@ -36,29 +80,22 @@ export function createSettingsAccess(): SettingsAccess {
   };
   return {
     inspect(key, resource) {
+      own(key);
       const { target, value } = locate(key, resource);
       return { target, value };
     },
     async update(key, value, resource) {
+      const checked = checkWrite(contributed(), key, value);
+      if ("problem" in checked) {
+        throw new Error(
+          `Not writing ${PREFIX}${String(key)}: ${checked.problem}`,
+        );
+      }
       const { config, target } = locate(key, resource);
       await config.update(key, value, targets[target]);
       return target;
     },
-    contributed() {
-      const packageJson = vscode.extensions.getExtension(EXTENSION_ID)
-        ?.packageJSON as
-        | {
-            contributes?: {
-              configuration?: {
-                properties?: Record<string, ContributedSetting["schema"]>;
-              };
-            };
-          }
-        | undefined;
-      return Object.entries(
-        packageJson?.contributes?.configuration?.properties ?? {},
-      ).map(([key, schema]) => ({ key, schema }));
-    },
+    contributed,
     async openUi(query) {
       await vscode.commands.executeCommand(
         "workbench.action.openSettings",

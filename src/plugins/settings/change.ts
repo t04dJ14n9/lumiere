@@ -1,47 +1,9 @@
 import { fuzzyMatch } from "../../shared/fuzzy";
 import type { ContributedSetting, PickItem } from "../../shared/runtime";
+import { SETTING_PREFIX, type Schema } from "../../shared/setting-schema";
 
 /** The `markdownWorkbench.` prefix of every key this extension contributes. */
-export const PREFIX = "markdownWorkbench.";
-
-/** How a setting is edited, by its schema. */
-export type EditKind =
-  | "boolean"
-  | "enum"
-  | "number"
-  | "integer"
-  | "string"
-  /** Arrays and objects: edited in the Settings UI / settings.json. */
-  | "external";
-
-type Schema = ContributedSetting["schema"];
-
-/** The schema's own type, the first when it lists several (`["string", "null"]`). */
-function typeOf(schema: Schema): string | undefined {
-  const types = (Array.isArray(schema.type) ? schema.type : [schema.type]) as (
-    | string
-    | undefined
-  )[];
-  return types.find((type) => type !== "null") ?? undefined;
-}
-
-export function editKind(schema: Schema): EditKind {
-  if (schema.enum && schema.enum.length > 0) {
-    return "enum";
-  }
-  switch (typeOf(schema) ?? typeof schema.default) {
-    case "boolean":
-      return "boolean";
-    case "number":
-      return "number";
-    case "integer":
-      return "integer";
-    case "string":
-      return "string";
-    default:
-      return "external";
-  }
-}
+export const PREFIX = SETTING_PREFIX;
 
 /** The key without the extension prefix, as `getConfiguration("markdownWorkbench")` takes it. */
 export function relativeKey(key: string): string {
@@ -74,7 +36,8 @@ export function placement(key: string): { group: string; name: string } {
 
 /** The description as one plain line, without Markdown code ticks and bold. */
 export function plainDescription(schema: Schema): string {
-  const text = schema.markdownDescription ?? schema.description ?? "";
+  const raw = schema.markdownDescription ?? schema.description;
+  const text = typeof raw === "string" ? raw : "";
   return text.replace(/[`*_]/g, "").replace(/\s+/g, " ").trim();
 }
 
@@ -85,30 +48,6 @@ export function formatValue(value: unknown): string {
   }
   const text = typeof value === "string" ? `"${value}"` : JSON.stringify(value);
   return text.length > 40 ? `${text.slice(0, 39)}…` : text;
-}
-
-/** Why a typed number is not allowed by the schema's range, or undefined. */
-export function checkNumber(text: string, schema: Schema): string | undefined {
-  const value = Number(text.trim());
-  if (text.trim() === "" || !Number.isFinite(value)) {
-    return "Enter a number.";
-  }
-  if (editKind(schema) === "integer" && !Number.isInteger(value)) {
-    return "Enter a whole number.";
-  }
-  const { minimum, maximum } = schema;
-  if (
-    (minimum !== undefined && value < minimum) ||
-    (maximum !== undefined && value > maximum)
-  ) {
-    if (minimum !== undefined && maximum !== undefined) {
-      return `Use a value from ${minimum} to ${maximum}.`;
-    }
-    return minimum !== undefined
-      ? `Use a value of at least ${minimum}.`
-      : `Use a value of at most ${maximum}.`;
-  }
-  return undefined;
 }
 
 /** The list for a query: every setting grouped by plugin, or the matches best first. */

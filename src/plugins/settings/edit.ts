@@ -4,7 +4,12 @@ import type {
   SettingsAccess,
   SettingTarget,
 } from "../../shared/runtime";
-import { checkNumber, editKind, relativeKey } from "./change";
+import {
+  checkNumberText,
+  editKind,
+  validateValue,
+} from "../../shared/setting-schema";
+import { PREFIX, relativeKey } from "./change";
 
 export const where: Record<SettingTarget, string> = {
   workspaceFolder: "folder settings",
@@ -19,6 +24,48 @@ export interface Editing {
   /** The note whose folder scope applies, if one is open. */
   resource(): string | undefined;
   inform(message: string): void;
+  error(message: string): void;
+}
+
+/**
+ * The extension's own setting for a key, from its contributed schema, or
+ * undefined: unknown keys, other extensions' keys and keys outside the
+ * namespace never match, whatever a caller passes.
+ */
+export function ownSetting(
+  editing: Editing,
+  key: unknown,
+): ContributedSetting | undefined {
+  if (typeof key !== "string" || !key.startsWith(PREFIX)) {
+    return undefined;
+  }
+  return editing.settings.contributed().find((setting) => setting.key === key);
+}
+
+/**
+ * The only way a command changes a setting: the key must be one of ours, the
+ * value must pass the schema, and it goes where the Settings UI would put it.
+ * Returns whether it was written.
+ */
+export async function writeSetting(
+  editing: Editing,
+  setting: ContributedSetting,
+  value: unknown,
+  describe?: string,
+): Promise<boolean> {
+  const key = relativeKey(setting.key);
+  const problem = validateValue(setting.schema, value);
+  if (problem) {
+    editing.error(`Not changed: ${key}. ${problem}`);
+    return false;
+  }
+  const target = await editing.settings.update(key, value, editing.resource());
+  editing.inform(
+    describe
+      ? `${describe} (${where[target]})`
+      : `${key} set to ${JSON.stringify(value)} (${where[target]})`,
+  );
+  return true;
 }
 
 /** Edits one setting by its type; the value goes where the Settings UI would put it. */
@@ -28,17 +75,11 @@ export async function editSetting(
 ): Promise<void> {
   const key = relativeKey(setting.key);
   const current = editing.settings.inspect(key, editing.resource()).value;
-  const write = async (value: unknown) => {
-    const target = await editing.settings.update(
-      key,
-      value,
-      editing.resource(),
-    );
-    editing.inform(`${key} set to ${JSON.stringify(value)} (${where[target]})`);
-  };
+  const write = (value: unknown) => writeSetting(editing, setting, value);
   switch (editKind(setting.schema)) {
     case "boolean":
-      return write(!(typeof current === "boolean" ? current : false));
+      await write(!(typeof current === "boolean" ? current : false));
+      return;
     case "enum":
       return editChoice(editing, setting, current, write);
     case "number":
@@ -52,7 +93,7 @@ export async function editSetting(
   }
 }
 
-type Write = (value: unknown) => Promise<void>;
+type Write = (value: unknown) => Promise<boolean>;
 
 async function editChoice(
   editing: Editing,
@@ -81,6 +122,20 @@ async function editChoice(
   }
 }
 
+/** The prompt for a number setting, filled with its current value when that is a number. */
+export function askNumber(
+  editing: Editing,
+  setting: ContributedSetting,
+  current: unknown,
+  prompt: string,
+): Promise<string | undefined> {
+  return editing.views.input({
+    prompt,
+    value: typeof current === "number" ? String(current) : "",
+    validate: (text) => checkNumberText(text, setting.schema),
+  });
+}
+
 async function editNumber(
   editing: Editing,
   setting: ContributedSetting,
@@ -89,14 +144,15 @@ async function editNumber(
 ): Promise<void> {
   const { schema } = setting;
   const range =
-    schema.minimum !== undefined && schema.maximum !== undefined
+    typeof schema.minimum === "number" && typeof schema.maximum === "number"
       ? ` (${schema.minimum} to ${schema.maximum})`
       : "";
-  const typed = await editing.views.input({
-    prompt: `${relativeKey(setting.key)}${range}`,
-    value: typeof current === "number" ? String(current) : "",
-    validate: (text) => checkNumber(text, schema),
-  });
+  const typed = await askNumber(
+    editing,
+    setting,
+    current,
+    `${relativeKey(setting.key)}${range}`,
+  );
   if (typed !== undefined) {
     await write(Number(typed.trim()));
   }

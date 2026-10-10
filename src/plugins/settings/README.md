@@ -34,11 +34,31 @@ write, editors and views follow it through `onDidChangeConfiguration` exactly
 as for an edit in the Settings UI or `settings.json`, and a change made there
 is what the next command run reads.
 
+## What the commands trust
+
+Nothing they are given. The list comes from the installed package.json, but a
+write passes `checkWrite` (`src/shared/setting-schema.ts`) twice, once in the
+command and once where the setting is written (`src/host/settings-access.ts`):
+the key must be one of this extension's own contributed `markdownWorkbench.*`
+settings (a key from another extension, a VS Code key or an unknown key is
+refused, whoever passes it, including a key argument from a keybinding or
+another extension), and the value must pass that setting's schema: type,
+`enum`, `minimum`, `maximum` and integer-ness. Lists, objects and settings the
+schema does not describe are never written by a command; they open in the
+Settings UI. Current values read from settings files are shown but never
+trusted (a hand-edited text value for a number prompts from the schema
+default; a non-boolean toggle starts from the schema's default). If
+package.json cannot be read, the commands report that and write nothing. The
+toggles take their default from the schema, and a unit test checks that every
+dedicated command's key exists in package.json with the right type.
+
 ## Files
 
 - `manifest.ts`: the commands (window-level, so they work without an editor open).
-- `change.ts`: the settings list, grouping, type handling and number checks (pure).
-- `commands.ts`: the toggled keys, the font size check, the settings filter.
+- `change.ts`: the settings list, grouping and display (pure).
+- `commands.ts`: the toggled keys and the settings filter.
+- `edit.ts`: editing by type and `writeSetting`, the single write path.
+- `../../shared/setting-schema.ts`: schema kinds, value checks and the write gate.
 - `host.ts`: command registration.
 - `../../host/settings-access.ts`: the VS Code side (`inspect`, `update`, `openUi`).
 
