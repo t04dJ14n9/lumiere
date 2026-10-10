@@ -1,5 +1,5 @@
 import { test, expect, chromium } from "@playwright/test";
-import type { Frame, Page } from "@playwright/test";
+import type { Browser, Frame, Page } from "@playwright/test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths, readState } from "./state";
@@ -16,6 +16,21 @@ const userFile = path.join(paths.userData, "User", "settings.json");
 const folderFile = path.join(paths.workspace, ".vscode", "settings.json");
 const notePath = path.join(paths.workspace, "Note.md");
 const key = (name: string) => `markdownWorkbench.${name}`;
+
+/**
+ * Closes the Settings editor and any input box this spec left open, so the
+ * next spec starts from a workbench whose palette opens (a focused Settings
+ * search swallows the shortcut).
+ */
+async function leaveClean(browser: Browser) {
+  try {
+    const page = workbenchPage(browser);
+    await page.keyboard.press("Escape");
+    await command(page, "View: Close All Editor Groups");
+  } catch {
+    // Best effort: the next spec's own setup reports a workbench that is stuck.
+  }
+}
 
 /** Runs the font size command, which leaves its own input box open. */
 async function askFontSize(page: Page) {
@@ -237,6 +252,7 @@ test("Open Settings, and the commands for common settings read and write the Set
     resetFolder();
     // VS Code reads the restored settings files before the next test starts.
     await settle();
+    await leaveClean(browser);
     await closeBrowser(browser);
   }
 });
@@ -377,6 +393,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     resetFolder();
     // VS Code reads the restored settings files before the next test starts.
     await settle();
+    await leaveClean(browser);
     await closeBrowser(browser);
   }
 });

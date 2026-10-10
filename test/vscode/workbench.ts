@@ -28,14 +28,23 @@ export async function openPalette(page: Page) {
   }).toPass({ timeout: 15000 });
 }
 export async function command(page: Page, title: string) {
-  await openPalette(page);
   const input = page.locator(QUICK_INPUT);
-  await input.fill(">" + title);
   const item = page
     .locator(".quick-input-list .monaco-list-row")
     .filter({ hasText: title })
     .first();
-  await expect(item).toBeVisible();
+  // Right after the previous spec restored the settings, the palette can open
+  // without the command listed yet: close it and ask again.
+  await expect(async () => {
+    await openPalette(page);
+    await input.fill(">" + title, { timeout: 3000 });
+    try {
+      await expect(item).toBeVisible({ timeout: 3000 });
+    } catch (error) {
+      await page.keyboard.press("Escape");
+      throw error;
+    }
+  }).toPass({ timeout: 30000 });
   await item.click();
   await expect(input).not.toBeVisible();
 }
@@ -52,6 +61,12 @@ export async function openWorkbench(
   await expect(page.locator(".monaco-workbench")).toBeVisible();
   console.log("Native: closing all editors");
   await command(page, "View: Close All Editor Groups");
+  // A spec that typed into the note and then restored the file leaves the
+  // editor dirty: discard its buffer when VS Code asks.
+  const dialog = page.locator(".monaco-dialog-box");
+  if (await dialog.isVisible()) {
+    await dialog.getByRole("button", { name: /Don.t Save/ }).click();
+  }
   console.log("Native: opening fixture");
   // A focused webview can swallow the shortcut, so press it until it opens.
   await expect(async () => {
