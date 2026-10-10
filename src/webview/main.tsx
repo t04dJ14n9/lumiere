@@ -14,7 +14,7 @@ import { createRoot } from 'react-dom/client';
 import { browserRenderEnvironment, type ViewerEngine } from './browser-render-environment';
 import { PdfEngine, Status } from './engine';
 import { connectToHost } from './host';
-import { PdfRenderSession } from './render-session';
+import { PdfRenderSession, replaceSession } from './render-session';
 import '@vscode/codicons/dist/codicon.css';
 import './styles/base.css';
 import './styles/toolbar.css';
@@ -32,13 +32,13 @@ if (!wasmUrl) {
   let session: PdfRenderSession<ViewerEngine> | undefined;
   root.render(<Status text="Loading the PDF…" />);
   connectToHost(buffer => {
-    const previous = session;
-    const next = new PdfRenderSession(buffer, wasmUrl, browserRenderEnvironment);
-    session = next;
-    // Replace the old viewer first (flushSync unmounts it now), so nothing
-    // still on screen uses the engines the old session is about to stop.
-    flushSync(() => root.render(<PdfEngine key={++generation} session={next} />));
-    void previous?.dispose(); // never rejects: failures go to reportError
+    session = replaceSession(
+      session,
+      after => new PdfRenderSession(buffer, wasmUrl, browserRenderEnvironment, after),
+      // Replace the old viewer first (flushSync unmounts it now), so nothing
+      // still on screen uses the engines the old session is about to stop.
+      next => flushSync(() => root.render(<PdfEngine key={++generation} session={next} />)),
+    );
   });
   window.addEventListener('pagehide', () => {
     void session?.dispose();
