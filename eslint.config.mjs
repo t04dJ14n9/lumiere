@@ -98,6 +98,8 @@ export default tseslint.config(
       "artifacts/**",
       // The VS Code build that `pnpm test:vscode` downloads when none is installed.
       ".vscode-test/**",
+      // Probe scripts for real Obsidian: they run page code via the DevTools protocol.
+      "docs/obsidian-measurements/**",
     ],
   },
   js.configs.recommended,

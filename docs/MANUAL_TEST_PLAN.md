@@ -319,16 +319,35 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
 
 `Tables.md`.
 
-1. Click a cell and type; Tab/Shift+Tab move between cells, Enter moves
-   down, Shift+Enter inserts `<br>`, arrows at the edge leave the table.
-   Escaped pipes stay valid.
-2. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
+1. Click the cell with bold and italic text: all its inline Markdown stays
+   visible, even after moving the caret past the formatting. Only that cell
+   shows source; focus elsewhere restores its render. Live Preview never
+   reveals the entire table; Source mode does.
+2. Tab/Shift+Tab wrap between rows. Tab in the final cell appends one row;
+   Enter in the final row appends one row in the same column. ArrowDown at the
+   bottom leaves without adding a row; ArrowUp from the adjacent line returns
+   to the last row in the same column. Left/Right cross cells only at text edges.
+3. Type `x|y\z`, spaces and Markdown in differently aligned cells; each edit
+   rewrites aligned source, expands delimiters and stores the pipe as `\|`.
+   Native undo restores the edit and its padding together. Keep Shift+Enter's
+   existing `<br>` behavior; compare it separately because the probe did not
+   verify that behavior in Obsidian.
+4. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
    One undo restores each operation.
-3. Run **Insert Table** and every **Table:** command (insert, delete and
+5. Run **Insert Table** and every **Table:** command (insert, delete and
    move rows and columns, align, sort) from the palette and the menu.
-4. Drag a row and a column handle while scrolling; drop once: exactly one
+   The cell menu has all Row/Column actions, with impossible moves disabled,
+   both sort directions, plain-text Paste and Select all (cell text or grid).
+6. The add-row + is below the focused table; the add-column + appears beside
+   it on hover. Each adds one row/column and focuses its new cell. Compare the
+   clicks separately: the Obsidian probe did not verify their effect.
+7. Drag a row and a column handle while scrolling; drop once: exactly one
    move. Escape cancels a drag.
-5. With Vim on, move between note and cells in normal and insert mode.
+   Each header/first-column cell has its own grip. A plain grip click selects
+   the axis without opening a menu; Enter and right-click expose its actions.
+8. With Vim on, move between note and cells in normal and insert mode. Repeat
+   with two panels, IME and external cell edits; selection and typed whitespace
+   survive aligned rewrites without creating a second history.
 
 ### callouts
 

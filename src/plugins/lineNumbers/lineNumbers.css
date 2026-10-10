@@ -54,15 +54,11 @@
   color: var(--vscode-editorLineNumber-activeForeground, var(--muted));
   background: transparent;
 }
-/* A rendered block lists the numbers of all the source lines it covers. */
-#app .mw-line-number-stack {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-#app .mw-line-number-stack > div {
-  flex: 0 1 calc(var(--line-height, 1.5) * var(--text-size));
-  min-height: 0;
-  overflow: hidden;
+/*
+ * A rendered table starts below its 16px grip padding (tables.css) and its
+ * rows are taller than text lines; lower the number to centre it on the header
+ * row (pinned by test/browser/tables-line-numbers.spec.ts).
+ */
+#app .cm-lineNumbers .cm-gutterElement.mw-table-line-number {
+  padding-top: 24px;
 }

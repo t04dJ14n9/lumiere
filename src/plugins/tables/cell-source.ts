@@ -1,40 +1,47 @@
 import { EditorState } from "@codemirror/state";
-import { cellText, type Cell } from "../../markdown/tables/model";
+import {
+  cellPadding,
+  cellText,
+  type Cell,
+  type Table,
+} from "../../markdown/tables/model";
 import { difference } from "../../shared/document/wire";
 
 /** Keep table padding separate from whitespace entered during a cell session. */
 export class CellSource {
-  private leading: number;
-  private trailing: number;
-  private missing: boolean;
+  private text: string;
 
   constructor(cell: Cell) {
-    this.leading = cell.from - cell.rawFrom;
-    this.trailing = cell.rawTo - cell.to;
-    this.missing = cell.missing ?? false;
+    this.text = cell.text;
   }
 
-  materialize(): void {
-    // materializeCell adds one padding space at either end of the new cell.
-    this.leading = this.trailing = 1;
-    this.missing = false;
+  remember(text: string): void {
+    this.text = text;
   }
 
-  range(source: string, cell: Cell): { from: number; to: number } {
-    if (cell.missing || this.missing) {
-      this.leading = cell.from - cell.rawFrom;
-      this.trailing = cell.rawTo - cell.to;
-      this.missing = cell.missing ?? false;
+  range(
+    source: string,
+    cell: Cell,
+    alignment: Table["alignments"][number] = null,
+  ): { from: number; to: number } {
+    if (cell.text !== this.text.trim() || cell.missing) {
+      this.text = cell.text;
+      return { from: cell.from, to: cell.to };
     }
-    const from = Math.min(cell.rawTo, cell.rawFrom + this.leading);
-    const to = Math.max(from, cell.rawTo - this.trailing);
-    // An external edit may replace the padding as well as the content.
+    let from = cell.from - (this.text.length - this.text.trimStart().length);
+    let to = cell.to + (this.text.length - this.text.trimEnd().length);
+    if (!cell.text) {
+      const width = Math.max(0, cell.rawTo - cell.rawFrom - 2);
+      from = cell.rawFrom + 1 + cellPadding(this.text, width, alignment).before;
+      to = from + this.text.length;
+    }
+    // External source edits can replace content or consume session whitespace.
     if (
-      source.slice(cell.rawFrom, from).trim() ||
-      source.slice(to, cell.rawTo).trim()
+      from < cell.rawFrom ||
+      to > cell.rawTo ||
+      source.slice(from, to) !== this.text
     ) {
-      this.leading = cell.from - cell.rawFrom;
-      this.trailing = cell.rawTo - cell.to;
+      this.text = cell.text;
       return { from: cell.from, to: cell.to };
     }
     return { from, to };

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { EditorState } from "@codemirror/state";
 import { BlockType } from "@codemirror/view";
-import { LineNumberMarker, blockLabels, lineLabel } from "./gutter";
+import { LineNumberMarker, blockLabel, lineLabel } from "./gutter";
 
 test("labels follow VS Code's editor.lineNumbers styles", () => {
   const labels = (style: Parameters<typeof lineLabel>[2]) =>
@@ -18,35 +18,27 @@ const state = EditorState.create({
   selection: { anchor: 0 },
 });
 
-test("a rendered block lists every source line it hides, so none go missing", () => {
+test("a rendered block gets one number, that of its first source line (as in Obsidian)", () => {
   const table = { from: state.doc.line(3).from, to: state.doc.line(5).to };
-  assert.deepEqual(
-    blockLabels(state, { ...table, type: BlockType.WidgetRange }, "on"),
-    ["3", "4", "5"],
-  );
-  assert.deepEqual(
-    blockLabels(state, { ...table, type: BlockType.WidgetRange }, "relative"),
-    ["2", "3", "4"],
-  );
+  const block = { ...table, type: BlockType.WidgetRange };
+  assert.equal(blockLabel(state, block, "on"), "3");
+  assert.equal(blockLabel(state, block, "relative"), "2");
+  assert.equal(blockLabel(state, block, "off"), "");
 });
 
 test("text lines get one number and widgets that replace nothing get none", () => {
   const line = state.doc.line(6);
-  assert.deepEqual(
-    blockLabels(
-      state,
-      { from: line.from, to: line.to, type: BlockType.Text },
-      "on",
-    ),
-    ["6"],
+  assert.equal(
+    blockLabel(state, { from: line.from, type: BlockType.Text }, "on"),
+    "6",
   );
   for (const type of [BlockType.WidgetBefore, BlockType.WidgetAfter]) {
-    assert.equal(blockLabels(state, { from: 0, to: 0, type }, "on"), null);
+    assert.equal(blockLabel(state, { from: 0, type }, "on"), null);
   }
 });
 
-test("markers with the same labels compare equal, so the gutter keeps its cell", () => {
-  assert.ok(new LineNumberMarker(["3"]).eq(new LineNumberMarker(["3"])));
-  assert.ok(!new LineNumberMarker(["3"]).eq(new LineNumberMarker(["4"])));
-  assert.ok(!new LineNumberMarker(["3"]).eq(new LineNumberMarker(["3", "4"])));
+test("markers with the same label compare equal, so the gutter keeps its cell", () => {
+  assert.ok(new LineNumberMarker("3").eq(new LineNumberMarker("3")));
+  assert.ok(!new LineNumberMarker("3").eq(new LineNumberMarker("4")));
+  assert.ok(!new LineNumberMarker("3").eq(new LineNumberMarker("3", "table")));
 });

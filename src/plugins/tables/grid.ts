@@ -11,6 +11,7 @@ import type { TableEnvironment } from "./environment";
 /** Rendered cells and their current source snapshot. It owns no selection. */
 export class TableGrid {
   readonly table = document.createElement("table");
+  readonly wrapper = document.createElement("div");
   cells: HTMLElement[][] = [];
   model: Table;
   private operationSequence = 0;
@@ -25,12 +26,14 @@ export class TableGrid {
     >,
   ) {
     this.model = parseTable(block.source)!;
-    this.table.className = "markdown-rendered";
+    this.table.className = "markdown-rendered table-editor";
     this.table.setAttribute("aria-label", "Markdown table");
     // A wide table scrolls by itself, as in Obsidian, not the whole note.
     const scroll = document.createElement("div");
     scroll.className = "table-scroll";
-    scroll.append(this.table);
+    this.wrapper.className = "table-wrapper";
+    this.wrapper.append(this.table);
+    scroll.append(this.wrapper);
     root.append(scroll);
   }
 
@@ -57,6 +60,8 @@ export class TableGrid {
     this.disposeContent();
     this.table.replaceChildren();
     this.cells = [];
+    const header = this.table.createTHead();
+    const body = this.table.createTBody();
     this.model.rows.forEach((row, rowIndex) => {
       const element = document.createElement("tr");
       const cells = row.map((_cell, column) => {
@@ -67,11 +72,17 @@ export class TableGrid {
           "aria-label",
           `Row ${rowIndex + 1}, column ${column + 1}`,
         );
+        const wrapper = document.createElement("div");
+        wrapper.className = "table-cell-wrapper";
+        const content = document.createElement("div");
+        content.className = "table-cell-content";
+        wrapper.append(content);
+        cell.append(wrapper);
         element.append(cell);
         return cell;
       });
       this.cells.push(cells);
-      this.table.append(element);
+      (rowIndex === 0 ? header : body).append(element);
       cells.forEach((_cell, column) => this.display({ row: rowIndex, column }));
     });
   }
@@ -80,6 +91,7 @@ export class TableGrid {
     this.cells.forEach((row, rowIndex) =>
       row.forEach((_cell, column) => {
         const position = { row: rowIndex, column };
+        this.align(position);
         if (!sameCell(active, position)) {
           this.display(position);
         }
@@ -89,20 +101,37 @@ export class TableGrid {
 
   display(position: CellPosition): void {
     const cell = this.model.rows[position.row]?.[position.column];
-    const element = this.cells[position.row]?.[position.column];
+    const element = this.contentElement(position);
     if (!cell || !element) {
       return;
     }
     this.content.disposeContent(element);
-    element.style.textAlign = this.model.alignments[position.column] ?? "left";
+    this.align(position);
     this.content.renderContent(element, cell.text, this.block.from + cell.from);
   }
 
   disposeContent(): void {
-    for (const row of this.cells) {
-      for (const cell of row) {
-        this.content.disposeContent(cell);
-      }
+    for (const cell of this.table.querySelectorAll<HTMLElement>(
+      ".table-cell-content",
+    )) {
+      this.content.disposeContent(cell);
+    }
+  }
+
+  contentElement(position: CellPosition): HTMLElement | undefined {
+    return (
+      this.cells[position.row]?.[position.column]?.querySelector<HTMLElement>(
+        ".table-cell-content",
+      ) ?? undefined
+    );
+  }
+
+  private align(position: CellPosition): void {
+    const cell = this.cells[position.row]?.[position.column];
+    if (cell) {
+      const alignment = this.model.alignments[position.column] ?? "left";
+      cell.style.textAlign = alignment;
+      cell.setAttribute("align", alignment);
     }
   }
 

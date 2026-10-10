@@ -1,0 +1,42 @@
+{
+ "gutter": [
+  "99@321+0",
+  "5@321+24",
+  "6@345+50",
+  "7@395+24",
+  "8@419+30",
+  "9@449+24",
+  "10@473+152",
+  "15@625+24",
+  "16@649+46",
+  "17@695+24",
+  "18@719+152",
+  "23@871+24",
+  "24@895+46",
+  "25@941+24",
+  "26@965+122",
+  "30@1088+24",
+  "31@1112+24",
+  "32@1136+24"
+ ],
+ "blocks": [
+  "|@321+0",
+  "|cm-line@321+24",
+  "Tables par|cm-line HyperMD-header H@345+50",
+  "|cm-line@395+24",
+  "Simple|cm-line HyperMD-header H@419+30",
+  "|cm-line@449+24",
+  " Feature|cm-embed-block cm-table-@473+152",
+  "|cm-line@625+24",
+  "Alignment|cm-line HyperMD-header H@649+46",
+  "|cm-line@695+24",
+  " Left Ce|cm-embed-block cm-table-@719+152",
+  "|cm-line@871+24",
+  "Wider|cm-line HyperMD-header H@895+46",
+  "|cm-line@941+24",
+  " Col A C|cm-embed-block cm-table-@965+122",
+  "|cm-line@1088+24",
+  "Click a ce|cm-line cm-active@1112+24",
+  "|cm-line@1136+24"
+ ]
+}
