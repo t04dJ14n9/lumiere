@@ -90,3 +90,13 @@ test('zen mode: Enter and Exit are chosen by inZenMode, bound to Ctrl+Alt+Z (Ctr
     assert.match(entry.when ?? '', entry.command.endsWith('enterZen') ? /!inZenMode/u : /(?<!!)inZenMode/u);
   }
 });
+
+test('settings commands: Open Settings and the common toggles are in the palette, with a Settings… entry in the viewer menu', () => {
+  const commands = contributes.commands.map(entry => entry.command);
+  for (const id of ['openSettings', 'toggleSmoothScrolling', 'toggleKeyboardShortcuts', 'setDefaultZoom', 'setDefaultPageLayout', 'setDefaultScrollMode']) {
+    assert.ok(commands.includes(`vscodeEmbedPdf.${id}`), id);
+    const hidden = (contributes.menus.commandPalette as { command: string; when?: string }[]).find(entry => entry.command === `vscodeEmbedPdf.${id}`);
+    assert.equal(hidden, undefined, `${id} must be available whatever the active editor is`);
+  }
+  assert.ok((contributes.menus['webview/context'] as { command: string }[]).some(entry => entry.command === 'vscodeEmbedPdf.openSettings'));
+});
