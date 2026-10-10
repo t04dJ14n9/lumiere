@@ -13,7 +13,7 @@ import { SpreadPluginPackage } from "@embedpdf/plugin-spread/react";
 import { ViewportPluginPackage } from "@embedpdf/plugin-viewport/react";
 import { ZoomPluginPackage } from "@embedpdf/plugin-zoom/react";
 import { MAX_ZOOM, MIN_ZOOM } from "../shared/zoom-steps";
-import { nativeZoom, rememberedPosition } from "./reading-position";
+import { autoZoom, rememberedPosition } from "./reading-position";
 import { nativeSpread } from "./spread-mode";
 
 /** The viewer shows one document under this id. */
@@ -47,7 +47,9 @@ export function viewerPlugins(buffer: ArrayBuffer) {
     createPluginRegistration(InteractionManagerPluginPackage),
     createPluginRegistration(SelectionPluginPackage),
     createPluginRegistration(ZoomPluginPackage, {
-      defaultZoomLevel: nativeZoom(position.zoom),
+      // A number would leave the viewport gated until a zoom request; the restored
+      // number is requested once the document is shown (useRestorePosition).
+      defaultZoomLevel: autoZoom(position.zoom),
       minZoom: ZOOM_RANGE.min,
       maxZoom: ZOOM_RANGE.max,
       zoomStep: 0.1,

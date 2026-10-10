@@ -1,4 +1,4 @@
-import { ZoomMode, type ZoomLevel } from "@embedpdf/plugin-zoom/react";
+import { ZoomMode, useZoom, type ZoomLevel } from "@embedpdf/plugin-zoom/react";
 import { useEffect, useRef } from "react";
 import {
   parseReadingPosition,
@@ -10,6 +10,7 @@ import {
   type ZoomChoice,
 } from "../shared/view-settings";
 import type { Navigation } from "./navigation";
+import { DOCUMENT_ID } from "./plugins";
 
 let settings = parseViewSettings(undefined);
 let last: ReadingPosition | undefined;
@@ -67,6 +68,11 @@ export function nativeZoom(choice: ZoomChoice): ZoomLevel {
         : choice / 100;
 }
 
+/** The automatic zoom the plugin starts in: the restored fit mode, else fit width. */
+export function autoZoom(choice: ZoomChoice): ZoomLevel {
+  return choice === "fitPage" ? ZoomMode.FitPage : ZoomMode.FitWidth;
+}
+
 /** Initial restoration uses native coordinates and bypasses motion. Later reports retain changes. */
 export function useRestorePosition(
   navigation: Navigation,
@@ -74,10 +80,17 @@ export function useRestorePosition(
 ): void {
   const restoring = useRef(rememberedPosition());
   const restore = navigation.restore;
+  const { provides: zoom } = useZoom(DOCUMENT_ID);
   useEffect(() => {
+    const choice = restoring.current.zoom;
+    if (zoom && choice !== "fitWidth" && choice !== "fitPage") {
+      zoom.requestZoom(nativeZoom(choice));
+    }
     restore({
       ...restoring.current,
       page: Math.min(restoring.current.page, pageCount),
     });
-  }, [restore, pageCount]);
+  // Restore once per document: later zoom or layout changes are the reader's.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restore, pageCount, Boolean(zoom)]);
 }
