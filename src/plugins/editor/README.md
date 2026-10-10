@@ -41,7 +41,11 @@ A measured caret layer keeps block characters readable with VS Code's
 keeps DOM elements in place so movement can animate. Modal plugins inject the
 caret's mode and change notifications through the editor service;
 `drawSelection` continues to draw selections. Explicit smooth animation applies
-to selection moves, while `on` also animates typing and deletion.
+to arrow-key and pointer moves (in a modal editor only to pointer moves), while
+`on` also animates typing and deletion. Carets sit on whole pixels counted from
+the line's text start and blink with VS Code's own timings (a hard 500 ms
+blink; 0.5 s smooth/phase/expand for 20 half cycles), measured in the built-in
+editor and VSCodeVim (`docs/vim-caret.md`).
 
 ## Files
 
@@ -55,7 +59,7 @@ to selection moves, while `on` also animates typing and deletion.
 - `caret-geometry.ts`: character/glyph/font measurements relative to the scroller.
 - `caret.css`: theme colours, cursor shapes, blinking and movement transitions.
 - `caret.test.ts`: native and modal cursor mapping units.
-- Browser and real-editor specs: `test/browser/vim-caret.spec.ts` (settings), `test/browser/vim-caret-geometry.spec.ts` (graphemes, ligatures, lifecycle), `test/vscode/vim-caret.spec.ts` (against the built-in caret).
+- Browser and real-editor specs: `test/browser/vim-caret.spec.ts` (settings), `test/browser/vim-caret-geometry.spec.ts` (graphemes, ligatures, lifecycle), `test/browser/vim-caret-vscodevim.spec.ts` (VSCodeVim's pixel rules and timings), `test/vscode/vim-caret.spec.ts` and `test/vscode/vim-caret-vscodevim.spec.ts` (against the built-in caret).
 - `api.ts`: editor, panel, menu, view-state and event contracts.
 - `protocol.ts`: schemas for handshake, selection, view state and clipboard RPC.
 - `host.ts`: panel registry, editor service and active-context registrations.

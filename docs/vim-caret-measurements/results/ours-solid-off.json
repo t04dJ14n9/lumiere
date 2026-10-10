@@ -7,7 +7,7 @@
  },
  "modes": {
   "normal-line-start": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -31,7 +31,7 @@
    "status": "normal"
   },
   "normal-word": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -55,7 +55,7 @@
    "status": "normal"
   },
   "normal-line-end": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -79,7 +79,7 @@
    "status": "normal"
   },
   "normal-empty-line": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -103,7 +103,7 @@
    "status": "normal"
   },
   "normal-short-line-end": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -127,7 +127,7 @@
    "status": "normal"
   },
   "normal-cjk": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -151,7 +151,7 @@
    "status": "normal"
   },
   "normal-cjk-2nd": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -175,7 +175,7 @@
    "status": "normal"
   },
   "normal-accent": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -199,7 +199,7 @@
    "status": "normal"
   },
   "normal-emoji": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -223,7 +223,7 @@
    "status": "normal"
   },
   "normal-after-emoji": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -247,7 +247,7 @@
    "status": "normal"
   },
   "normal-back-over-emoji": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -271,7 +271,7 @@
    "status": "normal"
   },
   "normal-wide-line-start": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -295,7 +295,7 @@
    "status": "normal"
   },
   "normal-combining": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -319,7 +319,7 @@
    "status": "normal"
   },
   "normal-before-insert": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -343,7 +343,7 @@
    "status": "normal"
   },
   "insert": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "insert",
    "style": "line",
    "cursors": [
@@ -367,7 +367,7 @@
    "status": "insert"
   },
   "normal-after-esc-from-insert": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -391,7 +391,7 @@
    "status": "normal"
   },
   "insert-after-a": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "insert",
    "style": "line",
    "cursors": [
@@ -415,7 +415,7 @@
    "status": "insert"
   },
   "normal-after-esc-from-a": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -439,7 +439,7 @@
    "status": "normal"
   },
   "insert-at-line-end": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "insert",
    "style": "line",
    "cursors": [
@@ -463,7 +463,7 @@
    "status": "insert"
   },
   "normal-after-esc-from-A": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -487,7 +487,7 @@
    "status": "normal"
   },
   "replace": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "replace",
    "style": "underline",
    "cursors": [
@@ -511,7 +511,7 @@
    "status": "replace"
   },
   "normal-after-esc-from-R": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -535,7 +535,7 @@
    "status": "normal"
   },
   "pending-r": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -559,7 +559,7 @@
    "status": "normal"
   },
   "operator-pending": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "pending",
    "style": "half-block",
    "cursors": [
@@ -583,7 +583,7 @@
    "status": "pending"
   },
   "visual-empty": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
@@ -629,7 +629,7 @@
    "status": "visual"
   },
   "visual-forward": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
@@ -675,7 +675,7 @@
    "status": "visual"
   },
   "visual-backward": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
@@ -721,7 +721,7 @@
    "status": "visual"
   },
   "normal-after-visual": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "normal",
    "style": "block",
    "cursors": [
@@ -745,7 +745,7 @@
    "status": "normal"
   },
   "visual-line": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
@@ -798,7 +798,7 @@
    "status": "visual"
   },
   "visual-block": {
-   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor cm-focused ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "visual",
    "style": "block",
    "cursors": [
@@ -844,7 +844,7 @@
    "status": "visual"
   },
   "search-in-progress": {
-   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "prompt",
    "style": "underline-thin",
    "cursors": [
@@ -868,7 +868,7 @@
    "status": "prompt"
   },
   "commandline": {
-   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼu  mw-editor",
+   "editorClass": "cm-editor ͼ1 ͼ2 ͼo ͼ4 ͼs  mw-editor",
    "mode": "prompt",
    "style": "underline-thin",
    "cursors": [
