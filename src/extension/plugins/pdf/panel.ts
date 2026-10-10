@@ -117,6 +117,13 @@ export class PdfPanel implements vscode.Disposable {
   /** Ask the viewer to page, zoom or find; ignored until it has the PDF. */
   act(action: ViewerAction): void {
     this.navigation.act(action);
+    // A status bar entry, title button or picker leaves the keyboard focus
+    // outside the viewer, where the arrow keys would do nothing: give it back.
+    // Find puts the focus in its own box.
+    if (action.action !== "find")
+      void vscode.commands
+        .executeCommand("workbench.action.focusActiveEditorGroup")
+        .then(undefined, () => undefined);
   }
 
   /** Show the viewer's controls where the changed setting says. */
