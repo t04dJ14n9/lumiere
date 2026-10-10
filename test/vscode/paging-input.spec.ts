@@ -41,6 +41,16 @@ async function openFresh(page: Page): Promise<Frame> {
   return viewer;
 }
 
+/**
+ * Press a key once the webview has the keyboard: a command from the palette
+ * gives the focus back to the editor a moment after it ran, and a key pressed
+ * in that gap goes nowhere.
+ */
+async function press(page: Page, viewer: Frame, key: string): Promise<void> {
+  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  await page.keyboard.press(key);
+}
+
 /** The webview has the keyboard: a click on empty space beside the pages. */
 async function focusViewer(page: Page, viewer: Frame): Promise<void> {
   const box = (await viewer.locator(".viewport").boundingBox())!;
@@ -81,21 +91,21 @@ test("the arrows turn pages in page-by-page single, two-page and cover layouts, 
   await command(page, "PDF: Fit Page");
   await command(page, "PDF: Page-by-page Scrolling");
   await expect.poll(() => shown(viewer)).toEqual([0]);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect.poll(() => shown(viewer)).toEqual([1]);
-  await page.keyboard.press("ArrowLeft");
+  await press(page, viewer, "ArrowLeft");
   await expect.poll(() => shown(viewer)).toEqual([0]);
 
   await command(page, "PDF: Two Pages (1–2, 3–4)");
   await expect.poll(() => shown(viewer)).toEqual([0, 1]);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect.poll(() => shown(viewer)).toEqual([2, 3]);
-  await page.keyboard.press("PageUp");
+  await press(page, viewer, "PageUp");
   await expect.poll(() => shown(viewer)).toEqual([0, 1]);
 
   await command(page, "PDF: Two Pages with Cover (1, 2–3)");
   await expect.poll(() => shown(viewer)).toEqual([0]);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect.poll(() => shown(viewer)).toEqual([1, 2]);
 
   // The status bar's View picker takes the focus; the keys work once it closes.
@@ -108,16 +118,16 @@ test("the arrows turn pages in page-by-page single, two-page and cover layouts, 
   await expect(statusBarEntry(page, /^Fit Page/u)).toBeVisible();
   // The extension gives the keyboard back to the viewer, not the status bar.
   await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect.poll(() => shown(viewer)).toEqual([3, 4]);
-  await page.keyboard.press("ArrowLeft");
+  await press(page, viewer, "ArrowLeft");
   await expect.poll(() => shown(viewer)).toEqual([1, 2]);
 
   await command(page, "PDF: Single Page");
   await command(page, "PDF: Horizontal Scrolling");
   await focusViewer(page, viewer);
   const start = (await shown(viewer))[0]!;
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect.poll(async () => (await shown(viewer))[0]).toBeGreaterThan(start);
   await command(page, "PDF: Vertical Scrolling");
   await command(page, "PDF: Continuous Scrolling");
@@ -143,10 +153,21 @@ test("zoomed in, the arrows pan; wheel and two-finger flicks travel across pages
       viewer.locator(".viewport").evaluate((v) => v.scrollWidth - v.clientWidth),
     )
     .toBeGreaterThan(100);
+  // The last zoom step has settled: the scrollable width no longer changes.
+  const width = () => viewer.locator(".viewport").evaluate((v) => v.scrollWidth);
+  let settled = await width();
+  await expect
+    .poll(async () => {
+      const now = await width();
+      const same = now === settled;
+      settled = now;
+      return same;
+    }, { intervals: [400] })
+    .toBe(true);
   await viewer.locator(".viewport").evaluate((v) => v.scrollTo({ left: 0 }));
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect.poll(left).toBe(40);
-  await page.keyboard.press("ArrowLeft");
+  await press(page, viewer, "ArrowLeft");
   await expect.poll(left).toBe(0);
 
   await command(page, "PDF: Single Page");
