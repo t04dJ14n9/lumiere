@@ -246,3 +246,69 @@ test("saved view choices override defaults on reopen and survive a file rebuild"
   ).toBeVisible();
   await expect.poll(() => pageIndexes(page)).toEqual([5, 6]);
 });
+
+/** What each page layout shows, spread by spread, for page counts and shapes the main fixture lacks. */
+const SPREADS = [
+  { pdf: "one.pdf", spread: [[0]], spreadCover: [[0]] },
+  { pdf: "short.pdf", spread: [[0, 1], [2]], spreadCover: [[0], [1, 2]] },
+  {
+    pdf: "five.pdf",
+    spread: [[0, 1], [2, 3], [4]],
+    spreadCover: [[0], [1, 2], [3, 4]],
+  },
+  {
+    pdf: "landscape.pdf",
+    spread: [[0, 1], [2, 3]],
+    spreadCover: [[0], [1, 2], [3]],
+  },
+] as const;
+
+for (const fixture of SPREADS) {
+  for (const pageLayout of ["spread", "spreadCover"] as const) {
+    test(`${fixture.pdf}: ${pageLayout} steps through ${JSON.stringify(fixture[pageLayout])} and back`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      const expected = fixture[pageLayout];
+      await openView(
+        page,
+        { defaultZoom: "fitPage", pageLayout, scrollMode: "paged" },
+        "slim",
+        `&pdf=${fixture.pdf}`,
+      );
+      const last = expected.at(-1)!.at(-1)! + 1;
+      await expect.poll(() => pageIndexes(page)).toEqual(expected[0]);
+      await expect
+        .poll(() => lastView(page))
+        .toMatchObject({ canGoBack: false, canGoForward: expected.length > 1 });
+      for (const spread of expected.slice(1)) {
+        await act(page, { action: "nextPage" });
+        await expect.poll(() => pageIndexes(page)).toEqual(spread);
+      }
+      await expect
+        .poll(() => lastView(page))
+        .toMatchObject({ canGoForward: false });
+      // Next at the end and previous at the start stay put.
+      await act(page, { action: "nextPage" });
+      await expect.poll(() => pageIndexes(page)).toEqual(expected.at(-1));
+      for (const spread of expected.slice(0, -1).reverse()) {
+        await act(page, { action: "previousPage" });
+        await expect.poll(() => pageIndexes(page)).toEqual(spread);
+      }
+      await act(page, { action: "previousPage" });
+      await expect.poll(() => pageIndexes(page)).toEqual(expected[0]);
+      await expect
+        .poll(() => lastView(page))
+        .toMatchObject({ canGoBack: false });
+      // Jumping to the last page shows the spread it belongs to; out of range clamps to it.
+      await act(page, { action: "goToPage", page: last });
+      await expect.poll(() => pageIndexes(page)).toEqual(expected.at(-1));
+      await act(page, { action: "goToPage", page: 1 });
+      await expect.poll(() => pageIndexes(page)).toEqual(expected[0]);
+      await act(page, { action: "goToPage", page: 99 });
+      await expect.poll(() => pageIndexes(page)).toEqual(expected.at(-1));
+      expect(errors).toEqual([]);
+    });
+  }
+}
