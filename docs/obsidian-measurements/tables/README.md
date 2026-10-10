@@ -53,3 +53,8 @@ behave the same (`8` then `11`; `12` then `15`). Properties (frontmatter) get no
 number is `6`. Ours: one number per rendered block at its top, lowered to the header row for tables; a properties
 block shows `1` (not measured as a deliberate difference). Spec: `test/browser/tables-line-numbers.spec.ts`, real
 VS Code in `test/vscode/tables.spec.ts`.
+
+`line-numbers-simple.mjs` / `-results.md` run the real `02-tables.md` through Obsidian: the blank source line before a
+table keeps its own number on its own 24px row (`8` heading, `9` blank, `10` table, `15` the blank after it), the table
+follows directly with no extra margin, and `line-numbers-centre.mjs` shows the table's number centred on its header row
+(498.4 vs 497.3px). Ours gives the same sequence and the same row structure (blank 24px rows around the table).
