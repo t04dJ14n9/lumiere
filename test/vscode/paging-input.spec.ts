@@ -65,20 +65,20 @@ test("ArrowRight and ArrowLeft move between pages in the default view, right aft
   // Right after the commands, with no click on the page: they return the focus
   // to the viewer, which takes a moment.
   await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
-  await page.keyboard.press("ArrowLeft");
+  await press(page, viewer, "ArrowLeft");
   await expect(pageEntry(page, 1)).toBeVisible();
   await focusViewer(page, viewer);
-  await page.keyboard.press("ArrowRight");
+  await press(page, viewer, "ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
-  await page.keyboard.press("PageDown");
+  await press(page, viewer, "PageDown");
   await expect(pageEntry(page, 2)).toBeVisible();
-  await page.keyboard.press("ArrowDown");
+  await press(page, viewer, "ArrowDown");
   // Left goes to the page before the one being read, which depends on the
   // window's height: press on until the first page.
   for (let i = 0; i < 4; i++) {
-    await page.keyboard.press("ArrowLeft");
+    await press(page, viewer, "ArrowLeft");
     await page.waitForTimeout(300);
   }
   await expect(pageEntry(page, 1)).toBeVisible();
