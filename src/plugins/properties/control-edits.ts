@@ -1,5 +1,6 @@
 import { frontmatter, type PropertyEdit } from "../../markdown/properties";
 import type { PropertyContext } from "./context";
+import { focusInput } from "./value-input";
 
 export type PropertyEditor = PropertyContext["propertyEditor"];
 export interface PropertyControlEdits {
@@ -40,9 +41,11 @@ export function createControlEdits(options: {
         }
       }
       if (!applied) {
-        report(
-          "This change could not be applied. Check for duplicate names or YAML aliases, then try again.",
-        );
+        if (operation.type !== "add" && operation.type !== "rename") {
+          report(
+            "This change could not be applied. Check for duplicate names or YAML aliases, then try again.",
+          );
+        }
         return false;
       }
       focusAfterEdit(owner, focusKey, value);
@@ -77,12 +80,10 @@ export function focusValue(
   selection: "start" | "end" | "all" = "start",
 ): void {
   row.querySelector<HTMLButtonElement>("[data-property-edit]")?.click();
-  const input = row.querySelector<HTMLInputElement>("dd input:not([hidden])");
-  input?.focus();
-  if (input && ["text", "search"].includes(input.type)) {
-    input.setSelectionRange(
-      selection === "end" ? input.value.length : 0,
-      selection === "start" ? 0 : input.value.length,
-    );
+  const input = row.querySelector<HTMLElement>(
+    ".metadata-property-value input:not([hidden]), .metadata-property-value [contenteditable]:not([hidden])",
+  );
+  if (input) {
+    focusInput(input, selection);
   }
 }

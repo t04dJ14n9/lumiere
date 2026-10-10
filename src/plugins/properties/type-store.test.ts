@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PropertyTypeStore } from "./type-store";
+import { inferPropertyKind } from "../../markdown/properties/types";
 test("property type preferences serialize concurrent writes and stay within their vault", async () => {
   const saved = new Map<string, unknown>();
   const store = new PropertyTypeStore({
@@ -20,6 +21,36 @@ test("property type preferences serialize concurrent writes and stay within thei
   assert.deepEqual(store.read("vault-b"), { status: "text" });
   await store.set("vault-a", "status", null);
   assert.deepEqual(store.read("vault-a"), { due: "date" });
+});
+
+test("the name registry survives reopening and Automatic restores value inference in every note", async () => {
+  const saved = new Map<string, unknown>();
+  const storage = {
+    get<T>(key: string, fallback: T): T {
+      return (saved.get(key) as T) ?? fallback;
+    },
+    async update(key: string, value: unknown) {
+      saved.set(key, value);
+    },
+  };
+  const store = new PropertyTypeStore(storage);
+  await store.set("vault-a", "Status", "text");
+  const reopened = new PropertyTypeStore(storage);
+  assert.deepEqual(reopened.read("vault-a"), { status: "text" });
+  for (const noteValue of [3, true, ["done"]]) {
+    assert.equal(
+      inferPropertyKind("status", noteValue, reopened.read("vault-a")),
+      "text",
+    );
+  }
+  assert.deepEqual(reopened.read("vault-b"), {});
+  await reopened.set("vault-a", "STATUS", null);
+  assert.deepEqual(store.read("vault-a"), {});
+  for (const key of ["tags", "Aliases", "cssclasses"]) {
+    await assert.rejects(store.set("vault-a", key, "number"));
+    await assert.rejects(store.set("vault-a", key, null));
+  }
+  assert.deepEqual(store.read("vault-a"), {});
 });
 
 test("preference subscriptions notify separate panel consumers only until disposed", async () => {

@@ -1,16 +1,20 @@
-import { validPropertyName } from "../../markdown/properties/types";
-import type { PropertyControlEdits, PropertyEditor } from "./control-edits";
+import { propertyNameAvailable } from "../../markdown/properties/types";
+import {
+  focusValue,
+  type PropertyControlEdits,
+  type PropertyEditor,
+} from "./control-edits";
 
-/** Rename commits before save and retains an explicitly chosen property type. */
+/** A rename does not change either name's vault-wide type preference. */
 export function bindRowName(
   row: HTMLElement,
   key: string,
   editor: PropertyEditor,
-  edits: Pick<PropertyControlEdits, "apply">,
+  edits: Pick<PropertyControlEdits, "apply" | "current">,
 ): void {
   const input = row.querySelector<HTMLInputElement>("[data-property-name]")!;
   input.disabled = !editor?.edit;
-  const rename = () => renameProperty({ input, key, editor, edits });
+  const rename = () => renameProperty({ input, key, edits });
   input.addEventListener("input", () => input.setCustomValidity(""));
   input.addEventListener("blur", rename);
   input.addEventListener("property-commit", (event) => {
@@ -26,7 +30,9 @@ export function bindRowName(
       event.preventDefault();
       event.stopPropagation();
       if (rename()) {
-        row.focus();
+        if (row.isConnected) {
+          focusValue(row);
+        }
       }
     }
     if (event.key === "Escape") {
@@ -34,7 +40,7 @@ export function bindRowName(
       event.stopPropagation();
       input.value = key;
       input.setCustomValidity("");
-      row.focus();
+      editor?.focusBody?.();
     }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
@@ -49,30 +55,25 @@ export function bindRowName(
 function renameProperty(options: {
   input: HTMLInputElement;
   key: string;
-  editor: PropertyEditor;
-  edits: Pick<PropertyControlEdits, "apply">;
+  edits: Pick<PropertyControlEdits, "apply" | "current">;
 }): boolean {
-  const { input, key, editor, edits } = options;
+  const { input, key, edits } = options;
+  if (input.dataset.propertyCommitting) {
+    return true;
+  }
   const next = input.value.trim();
   if (next === key) {
     input.value = key;
     return true;
   }
-  if (!validPropertyName(next)) {
-    input.setCustomValidity("Enter a non-empty property name on one line.");
-    input.reportValidity();
+  if (
+    !propertyNameAvailable(
+      next,
+      Object.keys(edits.current()?.values ?? {}),
+      key,
+    )
+  ) {
     return false;
   }
-  const kind = editor?.types?.()[key.toLowerCase()];
-  if (!edits.apply({ type: "rename", key, name: next }, next)) {
-    input.setCustomValidity(
-      "This property name is already used, or the properties changed.",
-    );
-    input.reportValidity();
-    return false;
-  }
-  if (kind && !Object.hasOwn(editor?.types?.() ?? {}, next.toLowerCase())) {
-    editor?.setType?.(next, kind);
-  }
-  return true;
+  return edits.apply({ type: "rename", key, name: next }, next, true);
 }

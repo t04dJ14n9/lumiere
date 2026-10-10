@@ -2,7 +2,7 @@ import { frontmatter } from "../../markdown/properties";
 import type { PropertyContext } from "./context";
 import { PropertyField } from "./field-draft";
 
-const bound = new WeakSet<HTMLInputElement>();
+const bound = new WeakSet<HTMLElement>();
 
 export function bindPropertyFields(
   container: HTMLElement,
@@ -15,8 +15,8 @@ export function bindPropertyFields(
       ? context.propertyEditor
       : undefined;
   container
-    .querySelector(":scope > details.properties")
-    ?.querySelectorAll<HTMLInputElement>("input[data-property-input]")
+    .querySelector(":scope > .properties")
+    ?.querySelectorAll<HTMLElement>("[data-property-input]")
     .forEach((input) => {
       if (bound.has(input)) {
         return;
@@ -32,7 +32,7 @@ function bindCheckboxes(
   context: PropertyContext,
 ): void {
   container
-    .querySelector(":scope > details.properties")
+    .querySelector(":scope > .properties")
     ?.querySelectorAll<HTMLInputElement>("input[data-property]")
     .forEach((checkbox) => {
       if (bound.has(checkbox)) {

@@ -14,6 +14,7 @@ export interface MenuItem {
   run?: () => void | Promise<void>;
   children?: readonly MenuItem[];
   disabled?: boolean;
+  checked?: boolean;
 }
 export interface Menu {
   open(

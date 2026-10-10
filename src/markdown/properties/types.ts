@@ -6,6 +6,7 @@ export const propertyKinds = [
   "date",
   "datetime",
   "tags",
+  "aliases",
 ] as const;
 export type PropertyKind = (typeof propertyKinds)[number];
 export type PropertyTypes = Readonly<Record<string, PropertyKind>>;
@@ -17,6 +18,7 @@ export const propertyKindLabels: Record<PropertyKind, string> = {
   date: "Date",
   datetime: "Date & time",
   tags: "Tags",
+  aliases: "Aliases",
 };
 
 export function propertyKind(value: unknown): value is PropertyKind {
@@ -43,7 +45,8 @@ export function propertyTypes(value: unknown): value is PropertyTypes {
       ([key, kind]) =>
         validPropertyName(key) &&
         propertyKind(kind) &&
-        (kind !== "tags" || key.toLowerCase() === "tags"),
+        (kind !== "tags" || key.toLowerCase() === "tags") &&
+        (kind !== "aliases" || key.toLowerCase() === "aliases"),
     )
   );
 }
@@ -54,17 +57,14 @@ export function inferPropertyKind(
   types: PropertyTypes = {},
 ): PropertyKind {
   const normalized = key.toLowerCase();
-  if (normalized === "tags") {
-    return "tags";
+  const reserved = reservedPropertyKind(key);
+  if (reserved) {
+    return reserved;
   }
   if (Object.hasOwn(types, normalized)) {
     return types[normalized]!;
   }
-  if (
-    Array.isArray(value) ||
-    normalized === "aliases" ||
-    normalized === "cssclasses"
-  ) {
+  if (Array.isArray(value)) {
     return "list";
   }
   if (typeof value === "boolean") {
@@ -83,4 +83,35 @@ export function inferPropertyKind(
     return "datetime";
   }
   return "text";
+}
+
+export function reservedPropertyKind(key: string): PropertyKind | undefined {
+  const reserved: Readonly<Record<string, PropertyKind>> = {
+    tags: "tags",
+    aliases: "aliases",
+    cssclasses: "list",
+  };
+  const name = key.toLowerCase();
+  return Object.hasOwn(reserved, name) ? reserved[name] : undefined;
+}
+
+export function canSetPropertyType(
+  key: string,
+  kind: PropertyKind | null,
+): boolean {
+  return (
+    validPropertyName(key) &&
+    !reservedPropertyKind(key) &&
+    kind !== "tags" &&
+    kind !== "aliases"
+  );
+}
+
+/** YAML keys keep their spelling; the type registry separately folds case. */
+export function propertyNameAvailable(
+  name: string,
+  keys: readonly string[],
+  current?: string,
+): boolean {
+  return validPropertyName(name) && (name === current || !keys.includes(name));
 }

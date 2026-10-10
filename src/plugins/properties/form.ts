@@ -1,82 +1,187 @@
-import {
-  inferPropertyKind,
-  validPropertyName,
-  type PropertyKind,
-} from "../../markdown/properties/types";
-import type { PropertyEdit } from "../../markdown/properties";
+import { frontmatter } from "../../markdown/properties";
+import { propertyNameAvailable } from "../../markdown/properties/types";
 import type { PropertyContext } from "./context";
+import type { PropertyControlEdits } from "./control-edits";
+import { pendingPropertyRow } from "./sheet-html";
+import { PropertyNameSuggestions } from "./name-suggestions";
+
+type PropertyEditor = PropertyContext["propertyEditor"];
+
+export function applyPropertyCollapse(
+  panel: HTMLElement,
+  collapsed: boolean,
+): void {
+  panel.classList.toggle("is-collapsed", collapsed);
+  const heading = panel.querySelector<HTMLElement>("[data-properties-heading]");
+  heading?.setAttribute("aria-expanded", String(!collapsed));
+  const content = panel.querySelector<HTMLElement>(".metadata-content");
+  if (content) {
+    content.hidden = collapsed;
+  }
+}
+
 export function bindPropertyForm(
   panel: HTMLElement,
-  editor: PropertyContext["propertyEditor"],
-  apply: (
-    operation: PropertyEdit,
-    focusKey?: string,
-    value?: boolean,
-  ) => boolean,
+  editor: PropertyEditor,
+  apply: PropertyControlEdits["apply"],
 ): void {
   bindHeadingNavigation(panel, editor);
   const add = panel.querySelector<HTMLButtonElement>("[data-property-add]")!;
-  const form = panel.querySelector<HTMLElement>("[data-property-new]")!;
-  const name = form.querySelector<HTMLInputElement>("input")!;
   add.hidden = !editor?.edit;
+  add.addEventListener("keydown", (event) =>
+    navigateAddButton(event, panel, editor),
+  );
   add.addEventListener("click", () => {
-    form.hidden = false;
-    name.focus();
+    applyPropertyCollapse(panel, false);
+    editor?.setCollapsed?.(false);
+    appendPendingRow(panel, editor, apply);
   });
-  const cancel = (): void => {
-    form.hidden = true;
-    name.value = "";
-    name.setCustomValidity("");
-    add.focus();
+}
+
+/**
+ * Measured in Obsidian 1.14.4: Up and Shift+Tab go to the last row (the
+ * heading when there are none); Down, Tab and Escape return to the text.
+ */
+function addButtonDirection(
+  event: KeyboardEvent,
+): "forward" | "backward" | undefined {
+  if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) {
+    return undefined;
+  }
+  if (event.key === "Tab") {
+    return event.shiftKey ? "backward" : "forward";
+  }
+  if (event.key === "ArrowUp") {
+    return "backward";
+  }
+  return ["ArrowDown", "Escape"].includes(event.key) ? "forward" : undefined;
+}
+
+function navigateAddButton(
+  event: KeyboardEvent,
+  panel: HTMLElement,
+  editor: PropertyEditor,
+): void {
+  const direction = addButtonDirection(event);
+  if (!direction) {
+    return;
+  }
+  const forward = direction === "forward";
+  event.preventDefault();
+  event.stopPropagation();
+  if (forward) {
+    editor?.focusBody?.();
+    return;
+  }
+  const rows = [
+    ...panel.querySelectorAll<HTMLElement>("[data-property-row]"),
+  ].filter((row) => !row.hidden);
+  (
+    rows.at(-1) ?? panel.querySelector<HTMLElement>("[data-properties-heading]")
+  )?.focus();
+}
+
+function appendPendingRow(
+  panel: HTMLElement,
+  editor: PropertyEditor,
+  apply: PropertyControlEdits["apply"],
+): void {
+  const wrapper = panel.ownerDocument.createElement("div");
+  wrapper.innerHTML = pendingPropertyRow();
+  const row = wrapper.firstElementChild as HTMLElement;
+  panel.querySelector(".metadata-properties")!.append(row);
+  const input = row.querySelector<HTMLInputElement>("input")!;
+  const suggestions = new PropertyNameSuggestions(input, () => create());
+  const create = (): boolean => {
+    const key = suggestions.name();
+    const values = frontmatter(editor?.currentSource?.() ?? "")?.values ?? {};
+    if (!propertyNameAvailable(key, Object.keys(values))) {
+      return false;
+    }
+    // Reconciliation may run synchronously; hide this draft before writing its key.
+    row.hidden = true;
+    if (!apply({ type: "add", key }, key, true)) {
+      row.hidden = false;
+      return false;
+    }
+    row.remove();
+    return true;
   };
-  const create = () => createProperty({ name, form, editor, apply });
-  name.addEventListener("input", () => name.setCustomValidity(""));
-  name.addEventListener("property-commit", (event) => {
-    if (name.value.trim() && !create()) {
+  input.addEventListener("property-commit", (event) => {
+    if (input.value.trim() && !create()) {
       event.preventDefault();
     }
   });
-  name.addEventListener("keydown", (event) => {
-    if (event.isComposing) {
-      return;
-    }
-    if (event.key === "Enter" || event.key === "Escape") {
+  input.addEventListener("keydown", (event) =>
+    pendingKeyDown(event, { input, editor, suggestions, create }),
+  );
+  row.addEventListener("keydown", (event) => {
+    if (event.target === row && event.key === "Escape") {
       event.preventDefault();
-      event.stopPropagation();
-      if (event.key === "Enter") {
-        create();
-      } else {
-        cancel();
-      }
+      editor?.focusBody?.();
+    }
+    if (event.target === row && event.key === "Delete") {
+      event.preventDefault();
+      row.remove();
     }
   });
-  form
-    .querySelector("[data-property-confirm]")!
-    .addEventListener("click", create);
-  form
-    .querySelector("[data-property-cancel]")!
-    .addEventListener("click", cancel);
+  input.focus();
+  void editor
+    ?.names?.()
+    .then((names) => suggestions.receive(names))
+    .catch(() => {});
+}
+
+function pendingKeyDown(
+  event: KeyboardEvent,
+  options: {
+    input: HTMLInputElement;
+    editor: PropertyEditor;
+    suggestions: PropertyNameSuggestions;
+    create(): boolean;
+  },
+): void {
+  if (event.isComposing) {
+    return;
+  }
+  const { editor, suggestions, create } = options;
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    suggestions.move(event.key === "ArrowDown" ? 1 : -1);
+  } else if (
+    event.key === "Enter" ||
+    (event.key === "Tab" && !event.shiftKey)
+  ) {
+    create();
+  } else if (event.key === "Escape") {
+    suggestions.hide();
+    editor?.focusBody?.();
+  } else {
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 function bindHeadingNavigation(
   panel: HTMLElement,
-  editor: PropertyContext["propertyEditor"],
+  editor: PropertyEditor,
 ): void {
-  const summary = panel.querySelector<HTMLElement>(":scope > summary")!;
-  const heading = summary.querySelector<HTMLElement>(
+  const heading = panel.querySelector<HTMLElement>(
     "[data-properties-heading]",
   )!;
+  const collapse = (collapsed: boolean): void => {
+    applyPropertyCollapse(panel, collapsed);
+    editor?.setCollapsed?.(collapsed);
+  };
+  heading.addEventListener("click", () =>
+    collapse(!panel.classList.contains("is-collapsed")),
+  );
   heading.addEventListener("keydown", (event) => {
-    if (event.isComposing) {
-      return;
-    }
-    if (event.key === " ") {
-      if (event.altKey || event.ctrlKey || event.metaKey) {
-        return;
-      }
-      editor?.pageHeading?.(event.shiftKey);
-    } else if (
-      !navigateHeading(event.key, event.altKey, { panel, summary, editor })
+    if (
+      event.isComposing ||
+      event.ctrlKey ||
+      event.metaKey ||
+      !navigateHeading(event, { panel, editor, collapse })
     ) {
       return;
     }
@@ -85,79 +190,50 @@ function bindHeadingNavigation(
   });
 }
 
-function createProperty(options: {
-  name: HTMLInputElement;
-  form: HTMLElement;
-  editor: PropertyContext["propertyEditor"];
-  apply: (
-    operation: PropertyEdit,
-    focusKey?: string,
-    value?: boolean,
-  ) => boolean;
-}): boolean {
-  const { name, form, editor, apply } = options;
-  const key = name.value.trim();
-  if (!validPropertyName(key)) {
-    name.setCustomValidity("Enter a property name.");
-    name.reportValidity();
+function navigateHeading(
+  event: KeyboardEvent,
+  options: {
+    panel: HTMLElement;
+    editor: PropertyEditor;
+    collapse(value: boolean): void;
+  },
+): boolean {
+  const { panel, editor, collapse } = options;
+  const key = event.key === "Tab" ? tabHeadingKey(event.shiftKey) : event.key;
+  const actions: Readonly<Record<string, () => void>> = {
+    ArrowDown: () => focusFirstProperty(panel, editor, event.altKey),
+    ArrowUp: () => editor?.focusTitle?.(),
+    ArrowLeft: () => collapse(true),
+    ArrowRight: () => collapse(false),
+    Enter: () => collapse(!panel.classList.contains("is-collapsed")),
+    " ": () => editor?.pageHeading?.(event.shiftKey),
+    Escape: () => editor?.focusBody?.(),
+  };
+  if (!Object.hasOwn(actions, key)) {
     return false;
   }
-  const kind: PropertyKind = inferPropertyKind(key, null, editor?.types?.());
-  const pendingName = name.value;
-  name.value = "";
-  form.hidden = true;
-  if (
-    !apply(
-      {
-        type: "add",
-        key,
-        value: kind === "list" || kind === "tags" ? [] : null,
-      },
-      key,
-      true,
-    )
-  ) {
-    name.value = pendingName;
-    form.hidden = false;
-    name.setCustomValidity(
-      "This property already exists, or the properties changed.",
-    );
-    name.reportValidity();
-    return false;
-  }
+  actions[key]?.();
   return true;
 }
 
-function navigateHeading(
-  key: string,
-  altKey: boolean,
-  options: {
-    panel: HTMLElement;
-    summary: HTMLElement;
-    editor: PropertyContext["propertyEditor"];
-  },
-): boolean {
-  const { panel, summary, editor } = options;
-  if (key === "ArrowDown") {
-    const first =
-      panel.hasAttribute("open") && !altKey
-        ? panel.querySelector<HTMLElement>(
-            "[data-property-row], [data-property-add]",
-          )
-        : null;
-    if (first) {
-      first.focus();
-    } else {
-      editor?.focusBody?.();
-    }
-  } else if (key === "ArrowUp") {
-    editor?.focusTitle?.();
-  } else if (key === "ArrowLeft" || key === "ArrowRight") {
-    if (panel.hasAttribute("open") !== (key === "ArrowRight")) {
-      summary.click();
-    }
-  } else if (key !== "Enter") {
-    return false;
+function tabHeadingKey(backward: boolean): string {
+  return backward ? "ArrowUp" : "ArrowDown";
+}
+
+function focusFirstProperty(
+  panel: HTMLElement,
+  editor: PropertyEditor,
+  skipRows: boolean,
+): void {
+  const first =
+    !panel.classList.contains("is-collapsed") && !skipRows
+      ? panel.querySelector<HTMLElement>(
+          "[data-property-row], [data-property-add]",
+        )
+      : null;
+  if (first) {
+    first.focus();
+  } else {
+    editor?.focusBody?.();
   }
-  return true;
 }
