@@ -16,9 +16,13 @@ export const QUICK_INPUT =
  */
 export async function openPalette(page: Page) {
   const input = page.locator(QUICK_INPUT);
+  let attempt = 0;
   await expect(async () => {
     if (!(await input.isVisible())) {
-      await page.keyboard.press("ControlOrMeta+Shift+p");
+      // F1 opens the palette too, when the shortcut is swallowed.
+      await page.keyboard.press(
+        attempt++ % 2 === 0 ? "ControlOrMeta+Shift+p" : "F1",
+      );
     }
     await expect(input).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15000 });

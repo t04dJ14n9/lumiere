@@ -104,7 +104,8 @@ test.describe("VSCodeVim caret parity", () => {
   }) => {
     await page.keyboard.press("l");
     await page.keyboard.press("l");
-    const [block] = await carets(page);
+    // The block is read only once it has reached the third character.
+    const [block] = await settled(page, (caret) => caret.left > 15);
     await page.keyboard.press("i");
     const [line] = await settled(page, (caret) => caret.width === 2);
     expect(line!.width).toBe(2);
