@@ -1,5 +1,7 @@
+import { afterLayout } from "./layout";
+import { observeNavigation, runNavigation } from "./navigation";
 import { editorSettings } from "./settings";
-import { bindCaller, type CallerBound } from "../../kernel";
+import { bindCaller, type CallerBound, type Context } from "../../kernel";
 import type { EditorService } from "./api";
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import type { ExtensionRegistry } from "./extensions";
@@ -21,22 +23,7 @@ export function createEditorService(options: {
   let mode = options.mode;
   const editor: EditorService & CallerBound<EditorService> = {
     [bindCaller](caller) {
-      return new Proxy(editor, {
-        get(target, key, receiver) {
-          if (key === "extend") {
-            return (
-              extension: Parameters<EditorService["extend"]>[0],
-              options?: Parameters<EditorService["extend"]>[1],
-            ) =>
-              registry.register(
-                options?.owner ?? caller.fiber!.definition.name,
-                extension,
-                options?.slot,
-              );
-          }
-          return Reflect.get(target, key, receiver);
-        },
-      });
+      return bindEditorExtensions(editor, registry, caller);
     },
     view,
     caret: caretFactory(() => view.state.facet(editorSettings)),
@@ -53,6 +40,9 @@ export function createEditorService(options: {
       mode = value;
       options.onModeChanged(value);
     },
+    settled: () => afterLayout(view),
+    navigate: (jump) => runNavigation(view, jump),
+    onNavigate: (capture) => observeNavigation(view, capture),
     focus() {
       view.focus();
     },
@@ -65,4 +55,27 @@ export function createEditorService(options: {
     },
   };
   return editor;
+}
+
+function bindEditorExtensions(
+  editor: EditorService,
+  registry: ExtensionRegistry,
+  caller: Context,
+): EditorService {
+  return new Proxy(editor, {
+    get(target, key, receiver) {
+      if (key === "extend") {
+        return (
+          extension: Parameters<EditorService["extend"]>[0],
+          options?: Parameters<EditorService["extend"]>[1],
+        ) =>
+          registry.register(
+            options?.owner ?? caller.fiber!.definition.name,
+            extension,
+            options?.slot,
+          );
+      }
+      return Reflect.get(target, key, receiver);
+    },
+  });
 }

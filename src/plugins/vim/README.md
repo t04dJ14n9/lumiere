@@ -48,5 +48,5 @@ rather than removed. Text, save and undo remain VS Code's. Mode transfer preserv
 selection; exact Vim/IME interaction parity awaits the owner's manual testing.
 
 The host-shortcut consumer is hidden from the command palette. Its collision
-bindings remain those of the pinned source and still need owner comparison on
-each platform; no verify shortcut is assigned.
+bindings use Control on macOS as well as other platforms, leaving Command
+shortcuts to the editor. No verify shortcut is assigned.

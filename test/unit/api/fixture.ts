@@ -7,6 +7,7 @@ import { SelectionSnapshots } from "../../../src/plugins/editor/selection";
 import { registerEditorActions } from "../../../src/plugins/editor/actions-host";
 import { markersHost } from "../../../src/plugins/markers/host";
 import { codeBlocksHost } from "../../../src/plugins/codeBlocks/host";
+import { protocol as jumps } from "../../../src/plugins/editor/jump-protocol";
 import { protocol } from "../../../src/plugins/editor/protocol";
 import { createApi } from "../../../src/host/api/facade";
 import type { ApiPlatform } from "../../../src/host/api/platform";
@@ -39,9 +40,16 @@ export async function fixture() {
   ];
   panels[0] = { ...f.panel, column: 1, active: () => active === "panel" };
   const reveals: unknown[] = [];
+  const reader = { session: "test", generation: 0 };
   for (const pair of [f.pair, second]) {
+    pair.client.handle(jumps, "navigationState", () => ({ ...reader }));
     pair.client.handle(protocol, "reveal", (request) => {
-      reveals.push(request);
+      reveals.push({
+        from: request.from,
+        to: request.to,
+        focus: request.focus,
+        version: request.version,
+      });
       return true;
     });
   }
@@ -144,6 +152,12 @@ export async function fixture() {
   const settings: unknown[] = [];
   const platform: ApiPlatform = {
     uri,
+    assertContained: async () => {},
+    joinPath(base, path) {
+      const url = new URL(base.toString());
+      url.pathname = `${url.pathname.replace(/\/$/, "")}/${path.split("/").map(encodeURIComponent).join("/")}`;
+      return uri(url.toString());
+    },
     installed: (id) => id === "sample.provider",
     external: (resource) => ({
       ...externalOverrides.get("global"),
@@ -185,6 +199,10 @@ export async function fixture() {
     panels,
     second,
     reveals,
+    reader,
+    setActive: (id: string) => {
+      active = id;
+    },
     index,
     commands,
     settings,

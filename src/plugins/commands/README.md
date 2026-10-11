@@ -19,6 +19,9 @@ fresh enablement check when invoked. Registrations stop with their owning contex
 - `host.ts`: per-panel host actions and native palette routing.
 - `features.ts`: feature command ownership, reconciliation and invocation guards.
 - `webview.ts`: registry, host actions, RPC and keyboard registrations.
+- `history-keys.ts`: keeps handled undo/redo shortcuts from running a second
+  native action through VS Code's webview key forwarding.
+- `history-keys.test.ts`: handled/unhandled platform shortcuts and listener disposal.
 - `registry.ts`: per-editor unique-ID command map.
 - `registry.test.ts`: command results, duplicate rejection, removal and failures.
 

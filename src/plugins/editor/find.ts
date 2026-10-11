@@ -1,3 +1,4 @@
+import { runNavigation } from "./navigation";
 import type { Extension } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import type { Command, KeyBinding } from "@codemirror/view";
@@ -21,12 +22,28 @@ function open(replace: boolean): Command {
   };
 }
 
+function step(reverse = false): Command {
+  return (view) =>
+    FindPanel.of(view)?.next(reverse) ??
+    runNavigation(view, () => (reverse ? findPrevious : findNext)(view));
+}
+
 /** Find and replace bindings; Escape is handled by the bar itself. */
 export const findKeymap: readonly KeyBinding[] = [
   { key: "Mod-f", run: open(false), preventDefault: true },
   { key: "Mod-h", run: open(true), preventDefault: true },
-  { key: "Mod-g", run: findNext, shift: findPrevious, preventDefault: true },
-  { key: "F3", run: findNext, shift: findPrevious, preventDefault: true },
+  {
+    key: "Mod-g",
+    run: step(),
+    shift: step(true),
+    preventDefault: true,
+  },
+  {
+    key: "F3",
+    run: step(),
+    shift: step(true),
+    preventDefault: true,
+  },
 ];
 
 export function findExtension(): Extension {

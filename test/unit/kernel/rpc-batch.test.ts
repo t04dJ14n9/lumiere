@@ -293,3 +293,126 @@ test("disposing while a batch is suspended applies nothing more, and dispose doe
   await tick();
   assert.deepEqual(applied, ["selection 1"]);
 });
+
+test("replacement peer batches restart without accepting retired traffic", async () => {
+  let receive: (value: unknown) => void = () => {};
+  let clientReceive: (value: unknown) => void = () => {};
+  const oldMessages: unknown[] = [];
+  const host = new Endpoint(
+    {
+      listen: (handler) => {
+        receive = handler;
+        return () => {};
+      },
+      send: (message) => clientReceive(message),
+    },
+    clock,
+    undefined,
+    { session: "host", restartOn: "batching/read" },
+  );
+  host.handle(protocol, "read", () => "ready");
+  const seen: number[] = [];
+  host.on(protocol, "selection", (value) => {
+    seen.push(value);
+  });
+  const make = () =>
+    new Endpoint(
+      {
+        listen: (handler) => {
+          clientReceive = handler;
+          return () => {};
+        },
+        send: (message) => {
+          oldMessages.push(message);
+          receive(message);
+        },
+      },
+      clock,
+      undefined,
+      { session: crypto.randomUUID() },
+    );
+  const first = make();
+  await first.call(protocol, "read", 0);
+  for (const value of [1, 2, 3]) {
+    first.notify(protocol, "selection", value, { coalesce: true });
+    first.flush();
+    await tick();
+  }
+  const delayed = oldMessages.at(-1);
+  const retiredHandshake = oldMessages[0];
+  await first.dispose();
+  const second = make();
+  await second.call(protocol, "read", 0);
+  second.notify(protocol, "selection", 4, { coalesce: true });
+  second.flush();
+  await tick();
+  receive(delayed);
+  receive(retiredHandshake);
+  await tick();
+  assert.deepEqual(seen, [1, 2, 3, 4]);
+  await second.dispose();
+  await host.dispose();
+});
+
+test("a replacement renderer rejects already-sent replies and state addressed to its predecessor", async () => {
+  let hostIn: (message: unknown) => void = () => {};
+  let clientIn: (message: unknown) => void = () => {};
+  const outbound: unknown[] = [];
+  const host = new Endpoint(
+    {
+      listen: (handler) => {
+        hostIn = handler;
+        return () => {};
+      },
+      send: (message) => {
+        outbound.push(message);
+      },
+    },
+    clock,
+    undefined,
+    { session: "host", restartOn: "batching/read" },
+  );
+  host.handle(protocol, "read", (value) => String(value));
+  const make = (session: string) =>
+    new Endpoint(
+      {
+        listen: (handler) => {
+          clientIn = handler;
+          return () => {};
+        },
+        send: (message) => hostIn(message),
+      },
+      clock,
+      undefined,
+      { session },
+    );
+  const old = make("old");
+  const first = old.call(protocol, "read", 1);
+  await tick();
+  const oldReply = outbound.shift();
+  clientIn(oldReply);
+  assert.equal(await first, "1");
+  host.notify(protocol, "selection", 7);
+  const oldState = outbound.shift();
+  await old.dispose();
+  const fresh = make("fresh");
+  const seen: number[] = [];
+  fresh.on(protocol, "selection", (value) => {
+    seen.push(value);
+  });
+  let completed = false;
+  const ready = fresh.call(protocol, "read", 2).then((value) => {
+    completed = true;
+    return value;
+  });
+  await tick();
+  clientIn(oldReply);
+  clientIn(oldState);
+  await tick();
+  assert.equal(completed, false);
+  assert.deepEqual(seen, []);
+  clientIn(outbound.shift());
+  assert.equal(await ready, "2");
+  await fresh.dispose();
+  await host.dispose();
+});

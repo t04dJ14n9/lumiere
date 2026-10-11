@@ -56,8 +56,11 @@ The returned object and everything it returns are frozen.
   LF-normalized text and 0-based lines and columns, as Obsidian's
   `CachedMetadata` does.
 
-A `SourceTarget` is `{ from, to }` (source offsets), `{ line }` (1-based) or
-`{ fragment }` (a heading, or a block as `^block-id`).
+A `SourceTarget` is `{ from, to }` (source offsets), `{ line }` (1-based),
+`{ startLine, endLine }` (1-based, inclusive) or `{ fragment }` (a heading,
+or a block as `^block-id`). A line range selects from the beginning of the
+first line through the end of the last line, excluding its line ending.
+Readiness and pending edits are awaited before line ranges are resolved.
 
 ## Editors and documents
 
@@ -78,7 +81,13 @@ has two editors with two IDs and the same `documentId`.
 | `getSelection(editorId, { token? })` | Waits until the editor's pending edits reach the document, then returns its main selection as a frozen, host-held `SelectionSnapshot` (`from`, `to`, `startLine`, `endLine`, `text`, `version`, `isDirty`, `sourceSha256`), or `undefined` for an empty selection. |
 
 A selection ending at column 0 excludes that line, as Copy Link for Agent does.
-There is no agent API: Copy Link for Agent is an editor command only.
+There is no agent API: Copy Link for Agent and Open Copied Agent Reference are
+commands. The latter accepts the emitted `@path#start-end` reference or a full
+note URI, asks when relative paths match more than one workspace folder, and
+uses `open` with an inclusive line-range target. It does not replace native
+chat-link handling or add a shared navigation-history stack. Deliberate API
+reveals participate in the target pane's local jump history. Source-version and
+layout acknowledgment failures reject instead of claiming a completed reveal.
 
 ## Vault
 

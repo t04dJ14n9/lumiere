@@ -103,7 +103,12 @@ export function fixture() {
         return () => {};
       },
       send(value) {
-        const message = value as { kind: string; id: number; channel: string };
+        const message = value as {
+          kind: string;
+          id: number;
+          channel: string;
+          method: string;
+        };
         if (message.kind === "request") {
           queueMicrotask(() =>
             receive({
@@ -114,6 +119,7 @@ export function fixture() {
                   markers: { version: 0, revision: 0, owners: {} },
                   codeBlocks: { epoch: 0, revision: 0, languages: [] },
                   editorActions: [],
+                  links: message.method === "unresolved" ? [] : true,
                 } as Record<string, unknown>
               )[message.channel] ?? { fragment: "" },
             }),
@@ -147,6 +153,9 @@ export function fixture() {
       };
     },
     view,
+    navigate: (jump) => jump(),
+    onNavigate: () => () => {},
+    settled: async () => true,
     caret(source) {
       return caretExtension({
         ...source,

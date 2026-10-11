@@ -1,3 +1,4 @@
+import { FindNavigation, findNavigationStep } from "./find-navigation";
 import { EditorSelection } from "@codemirror/state";
 import type { EditorView, Panel, ViewUpdate } from "@codemirror/view";
 import {
@@ -47,12 +48,15 @@ export class FindPanel implements Panel {
   private readonly count = document.createElement("span");
   private readonly replaceRow = document.createElement("div");
   private readonly caseToggle: HTMLButtonElement;
+  private readonly navigation: FindNavigation;
+  private readonly inputLifetime = new AbortController();
 
   static of(view: EditorView): FindPanel | undefined {
     return panels.get(view);
   }
 
   constructor(private readonly view: EditorView) {
+    this.navigation = new FindNavigation(view);
     panels.set(view, this);
     const query = getSearchQuery(view.state);
     this.find.value = query.search;
@@ -62,6 +66,21 @@ export class FindPanel implements Panel {
     this.caseToggle.setAttribute("aria-pressed", String(query.caseSensitive));
     this.build();
     this.refresh();
+    for (const type of ["pointerdown", "keydown", "wheel", "touchstart"]) {
+      view.dom.addEventListener(
+        type,
+        (event) => {
+          if (
+            event.target instanceof Node &&
+            !this.dom.contains(event.target) &&
+            !(event instanceof KeyboardEvent && findNavigationStep(event))
+          ) {
+            this.navigation.cancel();
+          }
+        },
+        { capture: true, signal: this.inputLifetime.signal },
+      );
+    }
   }
 
   private build(): void {
@@ -75,10 +94,8 @@ export class FindPanel implements Panel {
       this.find,
       this.count,
       this.caseToggle,
-      button("↑", "Previous match (Shift+Enter)", () =>
-        findPrevious(this.view),
-      ),
-      button("↓", "Next match (Enter)", () => findNext(this.view)),
+      button("↑", "Previous match (Shift+Enter)", () => this.next(true)),
+      button("↓", "Next match (Enter)", () => this.next()),
       button("⇄", "Toggle replace", () =>
         this.show(this.replaceRow.hidden, false),
       ),
@@ -130,9 +147,11 @@ export class FindPanel implements Panel {
     if (jump && query.valid) {
       // Search from where the current match starts, so typing more of the
       // query keeps the match it is extending, as in Obsidian.
-      const from = this.view.state.selection.main.from;
-      this.view.dispatch({ selection: EditorSelection.cursor(from) });
-      findNext(this.view);
+      this.navigation.preview(() => {
+        const from = this.view.state.selection.main.from;
+        this.view.dispatch({ selection: EditorSelection.cursor(from) });
+        findNext(this.view);
+      });
     }
   }
 
@@ -150,7 +169,9 @@ export class FindPanel implements Panel {
     } else if (event.key === "Escape") {
       this.close();
     } else if (event.key === "Enter" && event.target === this.find) {
-      (event.shiftKey ? findPrevious : findNext)(this.view);
+      this.next(event.shiftKey);
+    } else if (findNavigationStep(event)) {
+      this.next(findNavigationStep(event) === "previous");
     } else if (event.key === "Enter" && event.target === this.replace) {
       (mod ? replaceAll : replaceNext)(this.view);
     } else {
@@ -163,6 +184,12 @@ export class FindPanel implements Panel {
   private close(): void {
     closeSearchPanel(this.view);
     this.view.focus();
+  }
+
+  next(reverse = false): boolean {
+    return this.navigation.accept(() =>
+      (reverse ? findPrevious : findNext)(this.view),
+    );
   }
 
   private refresh(): void {
@@ -178,6 +205,12 @@ export class FindPanel implements Panel {
   }
 
   update(update: ViewUpdate): void {
+    if (
+      update.docChanged ||
+      (update.selectionSet && !this.navigation.running)
+    ) {
+      this.navigation.cancel();
+    }
     const changed = update.transactions.some((tr) =>
       tr.effects.some((effect) => effect.is(setSearchQuery)),
     );
@@ -196,6 +229,8 @@ export class FindPanel implements Panel {
   }
 
   destroy(): void {
+    this.inputLifetime.abort();
+    this.navigation.cancel();
     panels.delete(this.view);
   }
 }

@@ -7,6 +7,8 @@ export interface DocumentSession {
   readonly document: HostDocument;
   readonly text: string;
   readonly version: number;
+  /** Rebase LF editor offsets from a confirmed synchronization revision. */
+  mapOffsets?(version: number, offsets: readonly number[]): readonly number[];
   attach(id: string, rpc: Endpoint): Disposer;
   flush(): Promise<void>;
   changed(): void;

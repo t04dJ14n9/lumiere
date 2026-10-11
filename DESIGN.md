@@ -1483,16 +1483,19 @@ comparison with Obsidian. Record raw samples with each result.
   mode.
 - Host plugins run against `test/support/vscode-fake.ts`.
 
-Unit tests are the only automated suite that grows. Pure editing commands
-and CodeMirror state logic are tested on `EditorState` without a browser.
+Unit tests are the default new automated coverage. Browser/native additions
+require explicit owner approval. Pure editing commands and CodeMirror state
+logic are tested on `EditorState` without a browser.
 
 ### 21.2 Smoke suites
 
 `pnpm test:browser` (the webview against `test/browser/fake-host.ts`) and
 `pnpm test:vscode` (the VSIX in an isolated `/tmp` profile) are small sanity
-checks that the editor boots, edits, saves and undoes. They are kept passing
-but not expanded. The source branch's browser suites, fuzzers and native
-scenarios are not ported.
+checks that the editor boots, edits, saves and undoes, with later owner-approved
+targeted regressions. They are kept passing; new cases need explicit owner
+approval. The source branch's browser suites, fuzzers and native scenarios are
+not ported. Run the existing suites after `pnpm check`, in that order, before
+every push (`pnpm check:full`). Native tests are local only, not GitHub Actions.
 
 ### 21.3 Computer-use acceptance
 

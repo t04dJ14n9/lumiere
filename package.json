@@ -81,6 +81,18 @@
         "icon": "$(go-to-file)"
       },
       {
+        "command": "markdownWorkbench.jumpBack",
+        "title": "Go Back in Note",
+        "category": "Markdown Workbench",
+        "icon": "$(arrow-left)"
+      },
+      {
+        "command": "markdownWorkbench.jumpForward",
+        "title": "Go Forward in Note",
+        "category": "Markdown Workbench",
+        "icon": "$(arrow-right)"
+      },
+      {
         "command": "markdownWorkbench.titleActions",
         "title": "Note Actions",
         "category": "Markdown Workbench",
@@ -263,6 +275,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.openCopiedAgentReference",
+        "title": "Open Copied Agent Reference",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.showPluginStatus",
         "title": "Show Plugin Status",
         "category": "Markdown Workbench"
@@ -436,85 +453,85 @@
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+o",
-        "mac": "cmd+o",
+        "mac": "ctrl+o",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+b",
-        "mac": "cmd+b",
+        "mac": "ctrl+b",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+i",
-        "mac": "cmd+i",
+        "mac": "ctrl+i",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+shift+x",
-        "mac": "cmd+shift+x",
+        "mac": "ctrl+shift+x",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+k",
-        "mac": "cmd+k",
+        "mac": "ctrl+k",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+0",
-        "mac": "cmd+alt+0",
+        "mac": "ctrl+alt+0",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+1",
-        "mac": "cmd+alt+1",
+        "mac": "ctrl+alt+1",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+2",
-        "mac": "cmd+alt+2",
+        "mac": "ctrl+alt+2",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+3",
-        "mac": "cmd+alt+3",
+        "mac": "ctrl+alt+3",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+4",
-        "mac": "cmd+alt+4",
+        "mac": "ctrl+alt+4",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+5",
-        "mac": "cmd+alt+5",
+        "mac": "ctrl+alt+5",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+alt+6",
-        "mac": "cmd+alt+6",
+        "mac": "ctrl+alt+6",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+shift+t",
-        "mac": "cmd+shift+t",
+        "mac": "ctrl+shift+t",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       },
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "key": "ctrl+shift+h",
-        "mac": "cmd+shift+h",
+        "mac": "ctrl+shift+h",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.vim"
       }
     ],
@@ -575,6 +592,14 @@
         {
           "command": "markdownWorkbench.openAsText",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
+        },
+        {
+          "command": "markdownWorkbench.jumpBack",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
+        },
+        {
+          "command": "markdownWorkbench.jumpForward",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
         },
         {
           "command": "markdownWorkbench.titleActions",
@@ -717,6 +742,9 @@
         },
         {
           "command": "markdownWorkbench.managePlugins"
+        },
+        {
+          "command": "markdownWorkbench.openCopiedAgentReference"
         },
         {
           "command": "markdownWorkbench.showPluginStatus"
@@ -869,6 +897,16 @@
         }
       ],
       "editor/title": [
+        {
+          "command": "markdownWorkbench.jumpBack",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && markdownWorkbench.canJumpBack",
+          "group": "navigation@1"
+        },
+        {
+          "command": "markdownWorkbench.jumpForward",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && markdownWorkbench.canJumpForward",
+          "group": "navigation@2"
+        },
         {
           "command": "markdownWorkbench.titleActions",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor && markdownWorkbench.hasTitleActions",
@@ -1318,6 +1356,7 @@
     "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
     "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
+    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "contributions": "tsx scripts/generate-contributions.ts",

@@ -39,9 +39,15 @@ export default defineManifest({
   nativeConfigKeys: { ...fontNativeKeys, ...caretNativeKeys },
   defaultEnabled: true,
   surfaces: ["host", "webview"],
-  capabilities: ["editorProvider", "commands"],
+  capabilities: ["editorProvider", "commands", "navigation"],
   contributes: {
     commands: [
+      { id: "jumpBack", title: "Go Back in Note", icon: "$(arrow-left)" },
+      {
+        id: "jumpForward",
+        title: "Go Forward in Note",
+        icon: "$(arrow-right)",
+      },
       { id: "titleActions", title: "Note Actions", icon: "$(zap)" },
       { id: "selectionActions", title: "Selection Actions" },
       {
@@ -51,6 +57,18 @@ export default defineManifest({
       },
     ],
     menus: [
+      {
+        command: "jumpBack",
+        location: "editor/title",
+        when: "markdownWorkbench.canJumpBack",
+        group: "navigation@1",
+      },
+      {
+        command: "jumpForward",
+        location: "editor/title",
+        when: "markdownWorkbench.canJumpForward",
+        group: "navigation@2",
+      },
       {
         command: "titleActions",
         location: "editor/title",

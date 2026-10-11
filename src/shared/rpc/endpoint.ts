@@ -1,9 +1,17 @@
+import { receiveResponse } from "./response";
+import { PeerSession, cancelPeer } from "./peer-session";
+import { deliverNotification } from "./notification";
 import type { Protocol } from "../../kernel/protocol";
 import type { Infer, Schema } from "../schema";
 import type { Disposer } from "../../kernel/types";
 import { silentLogger, type Logger } from "../../kernel/logger";
 import { ApplyQueue, CoalescingQueue } from "./queues";
-import { parseEnvelope, type Envelope } from "./envelope";
+import {
+  addressEnvelope,
+  parseEnvelope,
+  resultEnvelope,
+  type Envelope,
+} from "./envelope";
 import type {
   Handler,
   Notify,
@@ -37,7 +45,9 @@ export class Endpoint {
   private batchVersion = 0;
   private receivedBatch = 0;
   /** Received state still applying (see the invariants). */
-  private readonly applying = new ApplyQueue();
+  private applying = new ApplyQueue();
+  private epoch = 0;
+  private readonly peer: PeerSession | undefined;
   private readonly outgoing = new CoalescingQueue<Notify>(() => this.flush());
   private disposed = false;
   private readonly handlers = new Map<string, Handler>();
@@ -52,7 +62,11 @@ export class Endpoint {
     private readonly transport: Transport,
     private readonly clock: Clock,
     private readonly logger: Logger = silentLogger,
+    private readonly incarnation?: { session: string; restartOn?: string },
   ) {
+    this.peer = incarnation
+      ? new PeerSession(incarnation.session, incarnation.restartOn)
+      : undefined;
     this.unlisten = transport.listen((value) => {
       // Never rejects: every failure is logged inside.
       void this.receive(value);
@@ -69,8 +83,11 @@ export class Endpoint {
   private send(value: Envelope): void {
     this.assertLive();
     this.flush();
-    this.transport.send(parseEnvelope(value));
+    this.transport.send(
+      addressEnvelope(value, this.incarnation?.session, this.peer?.session),
+    );
   }
+
   /** Send the coalesced notifications now, as one batch. */
   flush(): void {
     const messages = this.disposed ? [] : this.outgoing.take();
@@ -78,9 +95,14 @@ export class Endpoint {
       return;
     }
     this.transport.send(
-      parseEnvelope({ kind: "batch", version: ++this.batchVersion, messages }),
+      addressEnvelope(
+        { kind: "batch", version: ++this.batchVersion, messages },
+        this.incarnation?.session,
+        this.peer?.session,
+      ),
     );
   }
+
   handle<P extends Protocol, M extends keyof P["requests"] & string>(
     protocol: P,
     method: M,
@@ -245,6 +267,17 @@ export class Endpoint {
       this.logger.warn("Dropped invalid RPC envelope", error);
       return;
     }
+    const acceptance = this.peer?.accept(envelope);
+    if (acceptance === "drop") {
+      return;
+    }
+    if (acceptance === "replace") {
+      this.epoch++;
+      this.receivedBatch = 0;
+      this.applying = new ApplyQueue();
+      this.outgoing.take();
+      cancelPeer(this.pending, this.incoming);
+    }
     switch (envelope.kind) {
       case "batch":
         await this.apply(() => this.receiveBatch(envelope));
@@ -255,7 +288,7 @@ export class Endpoint {
         return;
       case "response":
       case "error":
-        this.receiveResponse(envelope);
+        receiveResponse(envelope, this.pending);
         return;
       case "notify":
         await this.apply(() => this.receiveNotification(envelope));
@@ -267,8 +300,9 @@ export class Endpoint {
 
   /** Run `work` after the state received before it has applied. */
   private apply(work: () => Promise<void>): Promise<void> {
+    const epoch = this.epoch;
     return this.applying.run(async () => {
-      if (!this.disposed) {
+      if (!this.disposed && epoch === this.epoch) {
         await work();
       }
     });
@@ -282,53 +316,25 @@ export class Endpoint {
       return;
     }
     this.receivedBatch = batch.version;
+    const epoch = this.epoch;
     for (const message of batch.messages) {
-      if (this.disposed) {
+      if (this.disposed || epoch !== this.epoch) {
         return;
       }
       await this.receiveNotification(message);
     }
   }
 
-  private receiveResponse(
-    envelope: Extract<Envelope, { kind: "response" | "error" }>,
-  ): void {
-    const pending = this.pending.get(envelope.id);
-    if (!pending) {
-      return;
-    }
-    this.pending.delete(envelope.id);
-    pending.cleanup();
-    if (envelope.kind === "error") {
-      pending.reject(new RpcError(envelope.code, envelope.message));
-      return;
-    }
-    try {
-      pending.resolve(pending.schema.parse(envelope.result));
-    } catch (error) {
-      pending.reject(new RpcError("InvalidResult", String(error)));
-    }
-  }
-
   private async receiveNotification(
     envelope: Extract<Envelope, { kind: "notify" }>,
   ): Promise<void> {
-    const key = `${envelope.channel}/${envelope.method}`;
-    for (const handler of [...(this.notifications.get(key) ?? [])]) {
-      if (this.disposed) {
-        return;
-      }
-      try {
-        await handler.run(
-          handler.protocol.notifications[envelope.method]!.parse(
-            envelope.params,
-          ),
-          new CancelToken(),
-        );
-      } catch (error) {
-        this.logger.warn("Dropped notification or failed listener", error);
-      }
-    }
+    const epoch = this.epoch;
+    await deliverNotification(
+      envelope,
+      this.notifications.get(`${envelope.channel}/${envelope.method}`) ?? [],
+      () => !this.disposed && epoch === this.epoch,
+      this.logger,
+    );
   }
 
   /** Runs once `applied` (the state received before it) has applied. */
@@ -403,15 +409,9 @@ export class Endpoint {
     schema: Schema<unknown>,
     result: unknown,
   ): void {
-    let parsed: unknown;
-    try {
-      parsed = schema.parse(result);
-    } catch (error) {
-      this.sendError(id, "InvalidResult", String(error));
-      return;
-    }
-    this.send({ kind: "response", id, result: parsed });
+    this.send(resultEnvelope(id, schema, result));
   }
+
   async dispose(): Promise<void> {
     if (this.disposed) {
       return;

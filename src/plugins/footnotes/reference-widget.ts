@@ -154,6 +154,7 @@ export class FootnoteReference extends WidgetType {
   constructor(
     readonly note: Footnote,
     private readonly render: RenderService,
+    private readonly navigate: (jump: () => void) => void = (jump) => jump(),
   ) {
     super();
   }
@@ -173,10 +174,12 @@ export class FootnoteReference extends WidgetType {
       mountReference(sup, this.note, {
         render: this.render,
         navigate: () => {
-          view.dispatch({
-            selection: { anchor: this.note.from },
-            effects: EditorView.scrollIntoView(this.note.from),
-          });
+          this.navigate(() =>
+            view.dispatch({
+              selection: { anchor: this.note.from },
+              effects: EditorView.scrollIntoView(this.note.from),
+            }),
+          );
           view.focus();
         },
         measure: () => view.requestMeasure(),

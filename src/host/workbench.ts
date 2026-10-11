@@ -1,3 +1,4 @@
+import { registerNativeLinks } from "./native-links";
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
@@ -12,6 +13,7 @@ import * as path from "node:path";
 import type {
   CopyLinkTarget,
   HostDocument,
+  PanelShell,
   Workbench,
 } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
@@ -22,7 +24,13 @@ export function createWorkbench(
   storage?: vscode.Memento,
 ): Workbench {
   const documents = new NativeDocuments();
+  const panels = new Map<string, PanelShell>();
+  const navigation = createNavigation(() => [...panels.values()]);
   return {
+    registerNativeLinks: () => {
+      const links = registerNativeLinks(navigation);
+      return () => links.dispose();
+    },
     ...(storage && { storage }),
     isTrusted: () => vscode.workspace.isTrusted,
     workspaceFolders: () =>
@@ -33,7 +41,7 @@ export function createWorkbench(
       vscode.Uri.joinPath(extensionUri, "dist", "workers", `${name}.cjs`)
         .fsPath,
     renameFile,
-    navigation: createNavigation(),
+    navigation,
     fingerprint(text) {
       return createHash("sha256").update(text).digest("hex");
     },
@@ -45,7 +53,13 @@ export function createWorkbench(
     editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
     registerEditor: (provider, open) =>
-      registerEditor(provider, { extensionUri, documents }, open),
+      registerEditor(provider, { extensionUri, documents }, (panel) => {
+        panels.set(panel.id, panel);
+        panel.onDispose(() => {
+          panels.delete(panel.id);
+        });
+        open(panel);
+      }),
   };
 }
 

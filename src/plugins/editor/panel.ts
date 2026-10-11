@@ -9,7 +9,7 @@ import { Context } from "../../kernel";
 import type { Documents } from "../document/api";
 import type { EditorPanel } from "./api";
 import type { PanelShell, Workbench } from "../../shared/runtime";
-import { Endpoint } from "../../shared/rpc/endpoint";
+import { Endpoint, RpcError } from "../../shared/rpc/endpoint";
 import { config as editorConfig } from "./manifest";
 import { protocol } from "./protocol";
 import { webviewHTML } from "./webview-html";
@@ -44,8 +44,15 @@ export function createPanel(
     () => workbench.config(shell.document).debugLogging ?? false,
   );
   configure(owned, shell);
+  const reporting = panelReporting(owned, rpc, shell.document, workbench);
   const panel: EditorPanel = {
-    ...panelReporting(owned, rpc, shell.document, workbench),
+    ...reporting,
+    get ready() {
+      return reporting.ready;
+    },
+    get webviewGeneration() {
+      return reporting.webviewGeneration;
+    },
     id: shell.id,
     get column() {
       return shell.column;
@@ -81,9 +88,16 @@ function registerSessionHandshake(
   let detach: (() => void | Promise<void>) | undefined;
   owned.effect(() => () => detach?.());
   owned.effect(() =>
-    rpc.handle(protocol, "ready", async () => {
+    rpc.handle(protocol, "ready", async (_request, token) => {
+      owned.emit("editor/loading");
       await owned.settled();
+      if (token.cancelled || !owned.isLive) {
+        throw new RpcError("Cancelled", "Renderer replaced");
+      }
       await detach?.();
+      if (token.cancelled || !owned.isLive) {
+        throw new RpcError("Cancelled", "Renderer replaced");
+      }
       detach = session.attach(shell.id, rpc);
       const config = workbench.config(shell.document);
       return {
@@ -145,6 +159,10 @@ function createPanelEndpoint(
       },
     },
     logger,
+    {
+      session: crypto.getRandomValues(new Uint32Array(4)).join("-"),
+      restartOn: "editor/ready",
+    },
   );
 }
 
@@ -155,19 +173,37 @@ function panelReporting(
   workbench: Workbench,
 ) {
   let initialized = () => {};
-  const ready = new Promise<void>((resolve) => {
+  let ready = new Promise<void>((resolve) => {
     initialized = resolve;
   });
   let remote: readonly RuntimePluginState[] = [];
-  owned.effect(() => rpc.on(protocol, "initialized", initialized));
-  owned.effect(() => initialized);
+  let seenLoading = false;
+  let webviewGeneration = 0;
+  owned.on("editor/loading", () => {
+    if (seenLoading) {
+      webviewGeneration++;
+      initialized();
+      ready = new Promise<void>((resolve) => {
+        initialized = resolve;
+      });
+      remote = [];
+    }
+    seenLoading = true;
+  });
+  owned.effect(() => rpc.on(protocol, "initialized", () => initialized()));
+  owned.effect(() => () => initialized());
   owned.effect(() =>
     rpc.on(protocol, "pluginsChanged", (states) => {
       remote = states;
     }),
   );
   return {
-    ready,
+    get ready() {
+      return ready;
+    },
+    get webviewGeneration() {
+      return webviewGeneration;
+    },
     webviewPluginStates: () => remote,
     pluginStates: () => [...runtimeStates(owned), ...remote],
     async refreshPlugins() {

@@ -80,6 +80,9 @@ function livePreviewKernel(doc: string) {
   const root = Context.create();
   root.provide("editor", {
     view,
+    navigate: (jump) => jump(),
+    onNavigate: () => () => {},
+    settled: async () => true,
     caret: () => [],
     settings: editorConfig.parse({}),
     mode: "livePreview",

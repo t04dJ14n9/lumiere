@@ -283,6 +283,10 @@ completion and Phase 8 records) first.
   webview code changes, and `pnpm test:vscode` for native wiring and
   packaging. Never run two at once. On a shared machine run the native
   suite under `xvfb-run -a`.
+- Before every push run the full local check, `pnpm check:full` (`pnpm check`,
+  `pnpm test:browser`, `pnpm test:vscode`; on headless Linux
+  `xvfb-run -a pnpm check:full`). GitHub Actions does not run the real-VS Code
+  specs (`test/vscode`: flaky under load), so this local run is required.
 - Follow AGENTS.md's code norms. Never raise a limit, add a lint exception
   or weaken a test: `test/unit/lint-rules.test.ts` enforces this. A bug fix
   gets its own commit and a unit test.

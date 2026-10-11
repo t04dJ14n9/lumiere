@@ -21,6 +21,7 @@ const rpc: Endpoint = new Endpoint(
     },
   },
   logging.logger,
+  { session: crypto.getRandomValues(new Uint32Array(4)).join("-") },
 );
 void bootstrap(
   rpc,

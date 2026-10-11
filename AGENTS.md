@@ -22,10 +22,12 @@ that everything is a plugin. Read [DESIGN.md](DESIGN.md) and
   Compare in a disposable vault, never the owner's.
 - Read the source from `~/Code/human-learning` at commit `ff3a902e`; never
   modify that repository or its worktrees.
-- Automated tests are unit tests only. Do not port the source's browser or
-  native suites; record them as retired in `docs/TEST_LEDGER.md` and cover
-  their behaviour in `docs/MANUAL_TEST_PLAN.md`, which the owner runs with
-  computer use. See "Testing policy" in IMPLEMENTATION_PLAN.md.
+- New automated coverage is unit tests unless the owner explicitly approves
+  a browser/native regression. Keep the existing browser and native suites
+  passing, including later owner-approved additions. Do not port the source's
+  browser or native suites; record them as retired in `docs/TEST_LEDGER.md`
+  and cover their behaviour in `docs/MANUAL_TEST_PLAN.md`, which the owner
+  runs with computer use. See "Testing policy" in IMPLEMENTATION_PLAN.md.
 
 ## Code norms
 
@@ -85,9 +87,20 @@ Run before committing, in this order:
 
 ```sh
 pnpm check
-pnpm test:browser  # small smoke suite
-pnpm test:vscode   # one native smoke test; opens a VS Code window; Phase 8 or when native wiring changes
+pnpm test:browser  # existing Chromium suite
+pnpm test:vscode   # existing native suite; opens an isolated VS Code window
 ```
+
+`pnpm check:full` runs all three in that order. The real-VS Code specs
+(`test/vscode`, `pnpm test:vscode`) do **not** run in GitHub Actions: they were
+flaky under load. They are a required local pre-push check, so run the full
+`pnpm check:full` before every push, on a headless Linux box as
+`xvfb-run -a pnpm check:full`.
+
+Run suites sequentially, including across shared worktrees. Use a private
+display and the test harness's isolated profile, never the owner's or a demo
+profile. If a test port is occupied, identify its owner before proceeding;
+do not kill unrelated processes or reuse another checkout's server.
 
 Commit at the end of each phase with its record in IMPLEMENTATION_PLAN.md.
 Do not push or publish to the Marketplace without the owner's approval.

@@ -11,7 +11,20 @@ and selection gestures, and routes commands through a shared opener. Local
 fragments navigate with metadata; other requests cross a validated RPC channel.
 The host authorizes embedded source identities, offers links to host plugins,
 then applies scheme policy or resolves through the vault/native adapter.
-Registrations and initial-navigation replies belong to the plugin lifetime.
+Native opening binds a panel ID before waiting for the links plugin. Each
+webview registers a fresh session; requests are acknowledged after layout and
+cancelled on newer navigation, reload or disposal. No URI-keyed pending reveal
+survives successful delivery. Missing fragments show a message without moving
+the caret or treating the existing note as missing.
+
+The window half also supplies exact href ranges for precise local inline links
+in VS Code's built-in Markdown editor. A signed source/version ticket checks the
+clicked text, workspace containment and source group before native `openWith`.
+The normal document-link provider takes precedence over overlapping built-in
+links. VS Code's separate definition gesture may open the same target first;
+that matching transition is allowed while unrelated departures, source edits and
+caret movement away from the href cancel delivery. Native cross-file Back keeps
+the source location; the destination's precise-jump history remains per pane.
 
 For unresolved styling the host reads the note's `unresolvedLinks` from the
 vault index. The webview asks for that set once when it starts, and the host
@@ -24,12 +37,14 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 
 - `suggestions.ts`: plugin-owned completion trigger through `suggest/trigger`.
 
+- `native-host.ts`: window-scoped native link registration through `workbench`.
 - `manifest.ts`: link settings and insert/follow/side command contributions.
 - `api.ts`: typed link claim events.
-- `protocol.ts`: initial/open/unresolved request and navigation/unresolved
-  notification schemas.
+- `protocol.ts`: session readiness, acknowledged navigation, missing-fragment,
+  open and unresolved-link schemas.
 - `target.ts`: scheme detection, link path/fragment parsing and unresolved keys.
-- `host.ts`: initial navigation, unresolved sets, source authorization and
+- `navigation-host.ts`: per-panel readiness, session identity and cancellation.
+- `host.ts`: unresolved sets, source authorization and
   default opening policy.
 - `webview.ts`: caret lookup, decoration (including unresolved styling), click
   handling, navigation and commands.
@@ -63,3 +78,14 @@ File-location fields are validated by this plugin's schema and exposed as
 pipeline consumes the former; attachment importing is outside this release.
 `useWikilinks` controls suggestion acceptance; explicit Insert Wikilink retains
 wiki syntax. New-link format still controls vault link text.
+
+A reused side-open destination must be unambiguous among same-note panes;
+otherwise navigation fails clearly rather than choosing another pane. Ordinary
+local jumps also participate in the editor's per-pane precise-jump history.
+
+Native integration currently covers inline `.md`/`.markdown` links with heading
+or block fragments in local workspace Markdown files. Reference-style links,
+remote files, external links and native line/column fragments keep the built-in
+route. Command links do not receive VS Code's side-open modifier context; this
+route uses the source group. A manual switch to the exact expected target cannot
+be distinguished from the built-in definition gesture through the public API.

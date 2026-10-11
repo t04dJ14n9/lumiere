@@ -11,11 +11,12 @@ records it in `docs/PARITY.md`.
 | Plugin | What it does | Differences and limits |
 | --- | --- | --- |
 | document | One text shared by every panel and VS Code's text editor; VS Code owns save, EOL and undo | Typing groups for undo like Obsidian; history is VS Code's |
-| editor | The CodeMirror editor in a webview, view state per panel, settings for mode, readable line length (700 px, off by default), strict line breaks, right-to-left, tabs; note text follows VS Code's `editor.font*`, `letterSpacing` and `lineHeight` for Markdown files | Panels of one note keep separate selections, scroll and folds. At the default `editor.lineHeight` (0) lines are as tall as in the built-in text editor (19px at 14px on Linux and Windows), not Obsidian's 1.5; headings keep Obsidian's sizes |
+| editor | Per-pane precise-jump Back/Forward (100 locations, in memory), geometric restoration, and the CodeMirror editor in a webview, view state per panel, settings for mode, readable line length (700 px, off by default), strict line breaks, right-to-left, tabs; note text follows VS Code's `editor.font*`, `letterSpacing` and `lineHeight` for Markdown files | Panels of one note keep separate selections, scroll and folds. At the default `editor.lineHeight` (0) lines are as tall as in the built-in text editor (19px at 14px on Linux and Windows), not Obsidian's 1.5; headings keep Obsidian's sizes |
 | dialect | Obsidian-flavoured Markdown: wikilinks, embeds, tags, highlights, comments, callouts, footnotes, math, block IDs | Grammar is fixed; plugins cannot change parsing |
 | render | Sanitized HTML for rendered blocks | Scripts, forms, objects, embeds and `srcdoc` are removed; application links (`obsidian:`, `zotero:`) are kept and confirmed before opening |
 | livePreview | Syntax hidden except where the selection is; rendered blocks crossed as one unit | No Reading view (DESIGN §25.8); comments stay visible, faint, as in Obsidian |
 | commands | Obsidian editor command IDs, save/undo/redo/close, Open as Text | Commands act on the active panel |
+| publicApi | Versioned extension API, plugin management, and **Open Copied Agent Reference** | Explicit `@path#lines`/full-URI navigation; native chat clicks and global cross-extension history are unchanged |
 | vault | Index of every note: link resolution like Obsidian's, resolved and unresolved links, tags, aliases, headings, blocks | `.obsidian` marks a vault; without it the workspace folder is the vault. 50,000-file cap; hidden folders and `node_modules` skipped |
 | resources | Contained file access for embeds and previews | Files outside the vault and escaping symlinks are refused |
 

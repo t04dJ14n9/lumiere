@@ -1,3 +1,12 @@
+import { registerJumpRecorder } from "./jump-webview";
+import { afterLayout } from "./layout";
+import {
+  runNavigation,
+  isCurrentReveal,
+  revealUnchanged,
+  readerStamp,
+  sameReader,
+} from "./navigation";
 import { registerActionMenus } from "./actions-webview";
 import { settingsExtensions, editorSettings } from "./settings";
 import { config as editorConfig } from "./manifest";
@@ -7,7 +16,7 @@ import { createMenu } from "../../webview/ui/menu";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
-import { getSyncedVersion } from "@codemirror/collab";
+import { getSyncedVersion, sendableUpdates } from "@codemirror/collab";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../document/api";
 import type {} from "../dialect/api";
@@ -83,6 +92,7 @@ export const editorWebview: Plugin<EditorConfig> = {
       { presentation, contributions },
       config,
     );
+    registerJumpRecorder(ctx, editor, presentation);
     registerReveal(ctx, view);
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
     view.focus();
@@ -214,19 +224,44 @@ function registerSelectionCapture(ctx: Context, view: EditorView): void {
 
 function registerReveal(ctx: Context, view: EditorView): void {
   ctx.effect(() =>
-    ctx.rpc.handle(protocol, "reveal", ({ from, to, focus }) => {
-      ctx.emit("editor/clearProjection");
-      if (from > to || to > view.state.doc.length) {
-        throw new Error("Invalid selection");
-      }
-      view.dispatch({
-        selection: { anchor: from, head: to },
-        scrollIntoView: true,
-      });
-      if (focus) {
-        view.focus();
-      }
-      return true;
-    }),
+    ctx.rpc.handle(
+      protocol,
+      "reveal",
+      async ({ from, to, focus, version, navigation }, token) => {
+        if (
+          token.cancelled ||
+          (navigation !== undefined &&
+            !sameReader(navigation, readerStamp(view))) ||
+          !isCurrentReveal(
+            version,
+            getSyncedVersion(view.state),
+            sendableUpdates(view.state).length > 0,
+          )
+        ) {
+          return false;
+        }
+        ctx.emit("editor/clearProjection");
+        if (from > to || to > view.state.doc.length) {
+          throw new Error("Invalid selection");
+        }
+        runNavigation(view, () => {
+          if (focus) {
+            view.focus();
+          }
+          view.dispatch({
+            selection: { anchor: from, head: to },
+            scrollIntoView: true,
+          });
+        });
+        const applied = view.state;
+        const stamp = readerStamp(view);
+        return (
+          (await afterLayout(view)) &&
+          !token.cancelled &&
+          sameReader(stamp, readerStamp(view)) &&
+          revealUnchanged(applied, view.state)
+        );
+      },
+    ),
   );
 }

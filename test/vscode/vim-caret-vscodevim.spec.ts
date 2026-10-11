@@ -221,21 +221,27 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
       // Insert: the editor's own line caret, straddling the character's edge.
       await page.keyboard.press("i");
       await expect(editor).toHaveAttribute("data-caret-mode", "insert");
-      near(
-        await ourCaret(frame, "main"),
-        native.line![index]!,
-        `insert ${column}`,
-      );
+      // Mode attributes update before the next measured caret geometry.
+      await expect(async () => {
+        near(
+          await ourCaret(frame, "main"),
+          native.line![index]!,
+          `insert ${column}`,
+        );
+      }).toPass();
       await page.keyboard.press("Escape");
       // Replace: the underline.
       await goTo(column);
       await page.keyboard.press("Shift+R");
       await expect(editor).toHaveAttribute("data-caret-mode", "replace");
-      near(
-        await ourCaret(frame, "main"),
-        native.underline![index]!,
-        `replace ${column}`,
-      );
+      // Mode attributes update before the next measured caret geometry.
+      await expect(async () => {
+        near(
+          await ourCaret(frame, "main"),
+          native.underline![index]!,
+          `replace ${column}`,
+        );
+      }).toPass();
       await page.keyboard.press("Escape");
       await goTo(column);
     }

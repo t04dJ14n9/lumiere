@@ -3,6 +3,7 @@ import type { Context, Plugin } from "../../kernel";
 import { protocol } from "./protocol";
 import type { Commands } from "./api";
 import { createCommands } from "./registry";
+import { keepHistoryKeysInEditor } from "./history-keys";
 import type {} from "../document/api";
 import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
@@ -17,6 +18,9 @@ export const commandsWebview: Plugin = {
       ctx.rpc.handle(protocol, "run", ({ command }) => commands.run(command)),
     );
     registerHostKeys(ctx, host);
+    ctx.effect(() =>
+      keepHistoryKeysInEditor(ctx.editor.view.dom.ownerDocument),
+    );
   },
 };
 

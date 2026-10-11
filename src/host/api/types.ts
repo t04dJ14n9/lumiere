@@ -38,12 +38,13 @@ export interface EditorSnapshot extends DocumentState {
 }
 /**
  * A place in a note: source offsets (UTF-16, counting CR characters, in the
- * current document version), a 1-based line, or a heading or block fragment
+ * current document version), a 1-based line or inclusive line range, or a heading or block fragment
  * such as `Heading` or `^block-id`.
  */
 export type SourceTarget =
   | { readonly from: number; readonly to: number }
   | { readonly line: number }
+  | { readonly startLine: number; readonly endLine: number }
   | { readonly fragment: string };
 export interface OperationOptions {
   readonly token?: CancellationToken;

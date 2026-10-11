@@ -38,6 +38,9 @@ export class Session implements DocumentSession {
   get version(): number {
     return this.authority.version;
   }
+  mapOffsets(version: number, offsets: readonly number[]): readonly number[] {
+    return this.authority.mapOffsets(version, offsets);
+  }
   attach(id: string, rpc: Endpoint) {
     if (this.clients.has(id)) {
       throw new Error("Duplicate panel");

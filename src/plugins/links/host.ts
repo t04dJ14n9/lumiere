@@ -1,5 +1,11 @@
+import type { Cancellation } from "../../shared/rpc/lifecycle";
+import { registerNavigation } from "./navigation-host";
 import type { Context, Infer, Plugin } from "../../kernel";
-import type { Navigation, PanelShell } from "../../shared/runtime";
+import type {
+  Navigation,
+  NavigationIntent,
+  PanelShell,
+} from "../../shared/runtime";
 import type { VaultIndex } from "../vault/api";
 import type {} from "./api";
 import type {} from "../resources/api";
@@ -13,37 +19,15 @@ export const linksHost: Plugin<{ panel: PanelShell }> = {
   name: "links",
   inject: { required: ["rpc", "workbench", "vault", "resources"] },
   apply(ctx, { panel }) {
-    registerInitialNavigation(ctx, panel);
+    registerNavigation(ctx, panel);
     registerUnresolvedLinks(ctx, panel);
     ctx.effect(() =>
-      ctx.rpc.handle(protocol, "open", (request) =>
-        openLink(ctx, panel, request),
+      ctx.rpc.handle(protocol, "open", (request, token) =>
+        openLink(ctx, panel, request, token),
       ),
     );
   },
 };
-
-function registerInitialNavigation(ctx: Context, panel: PanelShell): void {
-  ctx.effect(() =>
-    ctx.rpc.handle(
-      protocol,
-      "initial",
-      () =>
-        ctx.workbench.navigation?.takeReveal(panel.document.uri) ?? {
-          fragment: "",
-        },
-    ),
-  );
-  if (ctx.workbench.navigation) {
-    ctx.effect(() =>
-      ctx.workbench.navigation!.onReveal((uri, fragment) => {
-        if (uri === panel.document.uri && panel.active()) {
-          ctx.rpc.notify(protocol, "navigate", fragment);
-        }
-      }),
-    );
-  }
-}
 
 /**
  * Keep the webview's set of unresolved link paths current: it asks once when
@@ -94,36 +78,52 @@ async function openLink(
   ctx: Context,
   panel: PanelShell,
   request: Infer<typeof requestSchema>,
+  token: Cancellation,
 ): Promise<boolean> {
-  const sourceUri = request.source ?? panel.document.uri;
-  if (sourceUri !== panel.document.uri) {
-    if (!ctx.resources.authorize) {
-      throw new Error("Resource authorization unavailable");
-    }
-    await ctx.resources.authorize(sourceUri);
-  }
-  const claimed = ctx.bail("links/open", {
-    ...request,
-    source: sourceUri,
-  });
-  if (claimed) {
-    return claimed;
-  }
   const navigation = ctx.workbench.navigation;
   if (!navigation) {
     throw new Error("Navigation unavailable");
   }
-  const scheme = externalScheme(request.href);
-  if (scheme) {
-    return openExternal(navigation, scheme, request.href);
+  const intent = navigation.begin?.();
+  const stop = token.onCancel(() => intent?.token.cancel());
+  try {
+    const sourceUri = request.source ?? panel.document.uri;
+    if (sourceUri !== panel.document.uri) {
+      if (!ctx.resources.authorize) {
+        throw new Error("Resource authorization unavailable");
+      }
+      await ctx.resources.authorize(sourceUri);
+    }
+    if (intent?.token.cancelled || !ctx.isLive) {
+      return false;
+    }
+    const claimed = ctx.bail("links/open", {
+      ...request,
+      source: sourceUri,
+    });
+    if (claimed) {
+      return claimed;
+    }
+    const scheme = externalScheme(request.href);
+    if (scheme) {
+      return await openExternal(navigation, scheme, request.href, intent);
+    }
+    return await openInternal(
+      ctx,
+      panel,
+      { ...request, source: sourceUri },
+      intent,
+    );
+  } finally {
+    void stop();
   }
-  return openInternal(ctx, panel, { ...request, source: sourceUri });
 }
 
 async function openInternal(
   ctx: Context,
   panel: PanelShell,
   request: Infer<typeof requestSchema> & { source: string },
+  intent?: NavigationIntent,
 ): Promise<boolean> {
   const navigation = ctx.workbench.navigation;
   if (!navigation) {
@@ -138,6 +138,7 @@ async function openInternal(
   if (!uri) {
     uri = await navigation.resolve({
       root,
+      ...(intent ? { intent } : {}),
       source: sourceUri,
       path,
       create: request.wiki,
@@ -151,10 +152,10 @@ async function openInternal(
       ),
     });
   }
-  if (!uri) {
+  if (!uri || !liveIntent(ctx, intent)) {
     return false;
   }
-  await navigation.open(root, uri, fragment, request.side, request.at);
+  await navigation.open(root, uri, fragment, request.side, request.at, intent);
   return true;
 }
 
@@ -162,6 +163,7 @@ async function openExternal(
   navigation: Navigation,
   scheme: string,
   href: string,
+  intent?: NavigationIntent,
 ): Promise<boolean> {
   if (["javascript", "data", "command", "file"].includes(scheme)) {
     throw new Error("Unsafe link scheme");
@@ -172,5 +174,12 @@ async function openExternal(
   ) {
     return false;
   }
+  if (intent?.token.cancelled) {
+    return false;
+  }
   return navigation.external(href);
+}
+
+function liveIntent(ctx: Context, intent?: NavigationIntent): boolean {
+  return ctx.isLive && !intent?.token.cancelled;
 }

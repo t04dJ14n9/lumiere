@@ -28,6 +28,24 @@ export class Authority {
     }));
   }
 
+  /** Map delayed navigation against the same revision log used for edits. */
+  mapOffsets(version: number, offsets: readonly number[]): readonly number[] {
+    this.validateVersion(version);
+    const length = this.history[version]?.changes.length ?? this.doc.length;
+    if (
+      offsets.some((at) => !Number.isSafeInteger(at) || at < 0 || at > length)
+    ) {
+      throw new Error("Position does not match its document revision.");
+    }
+    return offsets.map((offset) => {
+      let at = offset;
+      for (const update of this.history.slice(version)) {
+        at = update.changes.mapPos(at, 1);
+      }
+      return at;
+    });
+  }
+
   prepare(
     version: number,
     changes: unknown[],

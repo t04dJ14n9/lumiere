@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# The real-VS Code specs (test/vscode, `pnpm test:vscode`) do not run here: they
+# are flaky under load. They are a required local pre-push check, see README.
+
 jobs:
   check:
     name: check
@@ -56,43 +59,6 @@ jobs:
           path: |
             test-results/
             playwright-report/
-          retention-days: 7
-          if-no-files-found: ignore
-
-  vscode:
-    # The real-editor suite against the latest VS Code stable. Cursor cannot be
-    # downloaded or run headless in CI, so its runs stay manual (see README).
-    name: vscode (VS Code stable)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - name: Resolve the VS Code stable version
-        id: vscode
-        run: echo "version=$(curl -fsSL https://update.code.visualstudio.com/api/releases/stable | jq -r '.[0]')" >> "$GITHUB_OUTPUT"
-      - name: Cache the VS Code download
-        uses: actions/cache@v6
-        with:
-          path: .vscode-test
-          key: vscode-test-${{ runner.os }}-${{ steps.vscode.outputs.version }}
-      - name: Let Electron's sandbox start
-        # Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor,
-        # so VS Code's Chromium sandbox aborts at launch. Lift the restriction
-        # instead of running VS Code with --no-sandbox.
-        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - name: pnpm test:vscode under xvfb
-        run: xvfb-run -a --server-args="-screen 0 1920x1080x24" pnpm test:vscode
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: vscode-test-results
-          path: |
-            test-results/
-            playwright-report/
-            /tmp/*-e2e-*/startup.log
-            /tmp/*-e2e-*/user-data/logs/
           retention-days: 7
           if-no-files-found: ignore
 

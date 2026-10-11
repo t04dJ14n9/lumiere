@@ -15,8 +15,12 @@ declared public services. Their host wrappers own registrations and event handle
 - `manifest.ts`: locked core identity and host surface.
 - `host.ts`: declared dependencies and facade lifetime boundary.
 
-The facade lives in `src/host/api/`; `management.ts` there implements this
-plugin's two commands over the facade's plugin catalog and states.
+The facade lives in `src/host/api/`; `management.ts` implements plugin
+management commands, and `open-reference.ts` implements explicit source
+reference navigation through the same facade. `reference-target.ts` resolves
+workspace-relative references with the native containment guard and asks
+when several workspace folders match. The parser is shared pure logic in
+`src/shared/agent-reference-input.ts`.
 
 ## Services, events and settings
 
@@ -32,8 +36,16 @@ switches; **Show Plugin Status** lists every plugin of the active editor
 choosing one opens its switch. Obsidian shows the same information under
 Settings → Core plugins and Community plugins.
 
+**Open Copied Agent Reference** confirms or edits the clipboard's first-line
+reference and opens the selected source range, including in remote notes.
+It also works with no editor open. Full URI authority, query and escaping are
+preserved; relative references cannot escape workspace roots through `..`
+or symlinks. Dismissing the input or ambiguity picker opens nothing.
+
 ## Limits and differences from Obsidian
 
 Host-only v1; webview modules remain deferred. Processors require workspace trust.
 Public selections are host-held snapshots and reject stale or forged references.
 See API.md for the complete contract and lifetime/error rules.
+Native chat links do not reliably pass their selection into custom editors;
+the explicit command is a fallback, not an interception of those clicks.

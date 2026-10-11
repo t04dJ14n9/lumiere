@@ -51,3 +51,28 @@ test("manifest surfaces match the host and webview registries", async () => {
     }
   }
 });
+
+test("macOS Vim consumes Control keys while preserving Command editor shortcuts", async () => {
+  const { keybindings } = await contributions();
+  const vim = keybindings.filter(
+    (binding) => binding.command === "markdownWorkbench.consumeVimHostShortcut",
+  );
+  assert.ok(vim.some((binding) => binding.mac === "ctrl+o"));
+  assert.ok(vim.some((binding) => binding.mac === "ctrl+i"));
+  for (const binding of vim) {
+    assert.equal(binding.mac, binding.key);
+    assert.match(binding.when ?? "", /markdownWorkbench\.plugin\.vim/);
+    assert.match(
+      binding.when ?? "",
+      /activeCustomEditorId == 'markdownWorkbench\.editor'/,
+    );
+    assert.ok(!binding.mac?.includes("cmd"));
+  }
+  assert.ok(
+    keybindings.some(
+      (binding) =>
+        binding.command === "markdownWorkbench.toggleItalics" &&
+        binding.mac === "cmd+i",
+    ),
+  );
+});

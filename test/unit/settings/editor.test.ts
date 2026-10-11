@@ -203,6 +203,8 @@ test("required settings, title actions, native context menus and unbound verify 
     generated.menus["editor/title"].map((menu) => menu.command).sort(),
     [
       "markdownWorkbench.addProperty",
+      "markdownWorkbench.jumpBack",
+      "markdownWorkbench.jumpForward",
       "markdownWorkbench.openAsText",
       "markdownWorkbench.titleActions",
     ],
@@ -273,7 +275,7 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
   );
 });
 
-test("only Copy Link for Agent remains of the agent commands", async () => {
+test("agent commands are Copy Link for Agent and explicit copied-reference navigation", async () => {
   const generated = await contributions();
   const settings = Object.keys(generated.configuration.properties);
   assert.ok(settings.includes("markdownWorkbench.plugins.agentBridge.enabled"));
@@ -288,7 +290,7 @@ test("only Copy Link for Agent remains of the agent commands", async () => {
     generated.commands
       .filter((command) => /agent/i.test(command.command))
       .map((command) => command.title),
-    ["Copy Link for Agent"],
+    ["Copy Link for Agent", "Open Copied Agent Reference"],
   );
   assert.equal(
     settings.some((key) => key.includes("askAgent")),

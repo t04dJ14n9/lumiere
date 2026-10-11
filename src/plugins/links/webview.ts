@@ -43,14 +43,13 @@ export const linksWebview: Plugin = {
   name: "links",
   inject: { required: ["editor", "livePreview", "commands", "rpc"] },
   // Link options are consumed by the host on each request. Keep this view's
-  // listeners and initial-navigation lifetime when only those options change.
+  // listeners and navigation-session lifetime when only those options change.
   reconfigure() {
     return true;
   },
   apply(ctx) {
     ctx.on("suggest/trigger", linkSuggestion);
-    const view = ctx.editor.view;
-    const navigate = navigator(view);
+    const navigate = navigator(ctx);
     const open = linkOpener(ctx, navigate);
     registerNavigation(ctx, navigate);
     registerUnresolvedLinks(ctx);
@@ -60,7 +59,7 @@ export const linksWebview: Plugin = {
   },
 };
 
-type Navigate = (target: { fragment: string; at?: number }) => void;
+type Navigate = (target: { fragment: string; at?: number }) => boolean;
 type OpenLink = (
   href: string,
   wiki: boolean,
@@ -68,23 +67,33 @@ type OpenLink = (
   source?: string,
 ) => Promise<boolean>;
 
-function navigator(view: EditorView): Navigate {
+function navigator(ctx: Context): Navigate {
+  const view = ctx.editor.view;
   return ({ fragment, at }: { fragment: string; at?: number }) => {
     const target =
       at === undefined
         ? noteFragment(view.state.doc.toString(), fragment)
         : { from: Math.min(at, view.state.doc.length) };
     if (!target) {
-      return;
+      void ctx.rpc
+        .call(protocol, "missing", { fragment })
+        .catch((error) =>
+          ctx.logger.warn("Missing-fragment message failed", error),
+        );
+      return false;
     }
-    view.dispatch({
-      selection: { anchor: target.from },
-      // Centre the target as VS Code's Outline and Obsidian's do. The browser
-      // clamps the scroll at both ends, so a heading near the start or end
-      // of the note lands as close to the centre as the note allows.
-      effects: EditorView.scrollIntoView(target.from, { y: "center" }),
+    ctx.editor.navigate(() => {
+      // Focusing after measured scrolling can restore the previous viewport.
+      view.focus();
+      view.dispatch({
+        selection: { anchor: target.from },
+        // Centre the target as VS Code's Outline and Obsidian's do. The browser
+        // clamps the scroll at both ends, so a heading near the start or end
+        // of the note lands as close to the centre as the note allows.
+        effects: EditorView.scrollIntoView(target.from, { y: "center" }),
+      });
     });
-    view.focus();
+    return true;
   };
 }
 
@@ -100,27 +109,49 @@ function linkOpener(ctx: Context, navigate: Navigate): OpenLink {
       return true;
     }
     if (href.startsWith("#") && !side && !source) {
-      navigate({ fragment: href.slice(1) });
-      return true;
+      return navigate({ fragment: href.slice(1) });
     }
     return ctx.rpc.call(protocol, "open", request);
   };
 }
 
 function registerNavigation(ctx: Context, navigate: Navigate): void {
+  const session = crypto.getRandomValues(new Uint32Array(4)).join("-");
   let live = true;
+  let latest = 0;
   ctx.effect(() => () => {
     live = false;
   });
-  ctx.effect(() => ctx.rpc.on(protocol, "navigate", navigate));
-  void ctx.rpc
-    .call(protocol, "initial", {})
-    .then((target) => {
-      if (live && (target.fragment || target.at !== undefined)) {
-        navigate(target);
+  ctx.effect(() =>
+    ctx.rpc.handle(protocol, "navigate", async (target, token) => {
+      if (
+        token.cancelled ||
+        target.session !== session ||
+        !live ||
+        target.requestId <= latest
+      ) {
+        return false;
       }
-    })
-    .catch((error) => ctx.logger.warn("Initial link navigation failed", error));
+      latest = target.requestId;
+      if (!navigate(target)) {
+        return false;
+      }
+      const state = ctx.editor.view.state;
+      return (
+        (await ctx.editor.settled()) &&
+        !token.cancelled &&
+        live &&
+        latest === target.requestId &&
+        state.selection.eq(ctx.editor.view.state.selection) &&
+        state.doc.eq(ctx.editor.view.state.doc)
+      );
+    }),
+  );
+  void ctx.rpc
+    .call(protocol, "ready", { session })
+    .catch((error) =>
+      ctx.logger.warn("Link navigation readiness failed", error),
+    );
 }
 
 const setUnresolved = StateEffect.define<ReadonlySet<string>>();

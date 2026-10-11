@@ -68,13 +68,20 @@ Deliberate differences, all measured:
   the nearest remaining cell, so the next undo still works.
 - No generic Paragraph/Insert/Add link submenus (see the rows above).
 
-Known limit, general to the workbench and not specific to tables: in real VS Code
-the native undo stack merges consecutive host edits into coarser steps than the
-webview's own history (typing `abc`, moving the caret and typing `X` undoes in
-one step). `test/vscode/tables.spec.ts` therefore asserts that every undo lands
-on a whole table and ends at the original source, not step granularity; the
-step-by-step expectations run in Chromium (`tables-measured.spec.ts`). Not
-fixed here.
+Open acceptance issue, general to the workbench: the earlier real-VS Code run
+observed that typing `abc`, moving the caret and typing `X` could undo together.
+That observation was attributed to native WorkspaceEdit coalescing, but did not
+isolate its cause. `test/vscode/tables.spec.ts` only checks whole-table integrity
+and eventual restoration; it does not prove the required step granularity.
+
+Follow-up code inspection found that handled undo/redo shortcuts also reached
+VS Code's webview key-forwarding listener, which can trigger a second native
+action. The new `commands/history-keys.ts` guard stops only handled history
+chords before that listener, including projected cells and non-Latin keyboard
+fallbacks. Its pure predicate/disposal units pass; a native before/after probe
+and the full local checks are still required before calling this fixed. The
+one-logical-edit undo expectations in `MANUAL_TEST_PLAN.md` remain acceptance
+requirements, not a claim that the current native suite has verified them.
 
 Not measured in Obsidian, so not claimed: real IME software (only synthetic
 composition through the DevTools protocol), touch/pen input, drag autoscroll at

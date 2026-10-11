@@ -26,9 +26,19 @@ test("frozen facade keeps two panels of one document distinct and targets native
     ).editorId,
     "second",
   );
-  assert.deepEqual(f.reveals.pop(), { from: 4, to: 7, focus: true });
+  assert.deepEqual(f.reveals.pop(), {
+    from: 4,
+    to: 7,
+    focus: true,
+    version: f.panel.session.version,
+  });
   await f.api.reveal("panel", { line: 2 }, { focus: false });
-  assert.deepEqual(f.reveals.pop(), { from: 4, to: 4, focus: false });
+  assert.deepEqual(f.reveals.pop(), {
+    from: 4,
+    to: 4,
+    focus: false,
+    version: f.panel.session.version,
+  });
   assert.deepEqual(
     targetRange(new SourceCoordinates("# Heading\r\nbody"), {
       fragment: "Heading",
@@ -200,4 +210,53 @@ test("public declarations import only vscode and each other", () => {
       );
     }
   }
+});
+
+test("API reveal waiting for document flush yields to reader input and focus changes", async () => {
+  const f = await fixture();
+  let release!: () => void;
+  let entered!: () => void;
+  const waiting = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  f.panel.session.flush = async () => {
+    entered();
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+  };
+  const first = f.api.reveal("panel", { line: 2 });
+  await waiting;
+  f.reader.generation++;
+  release();
+  await assert.rejects(first, { code: "Cancelled" });
+  assert.equal(f.reveals.length, 0);
+  const second = f.api.reveal("panel", { line: 2 });
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  f.setActive("second");
+  release();
+  await assert.rejects(second, { code: "Cancelled" });
+  assert.equal(f.reveals.length, 0);
+  await f.dispose();
+});
+
+test("reference open reserves focus before waiting for its renderer to become ready", async () => {
+  const f = await fixture();
+  let ready!: () => void;
+  Object.defineProperty(f.panels[1]!, "ready", {
+    value: new Promise<void>((resolve) => {
+      ready = resolve;
+    }),
+  });
+  const opened = f.api.open(uri(f.panel.document.uri), {
+    viewColumn: 2,
+    reveal: { line: 2 },
+  });
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  f.setActive("panel");
+  f.root.emit("editor/activeChanged", f.panels[0]);
+  ready();
+  await assert.rejects(opened, { code: "Cancelled" });
+  assert.equal(f.reveals.length, 0);
+  await f.dispose();
 });

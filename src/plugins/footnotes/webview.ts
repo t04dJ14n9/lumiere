@@ -57,7 +57,11 @@ function registerDefinitionInvalidation(ctx: Context): void {
 }
 
 function registerInlineReferences(ctx: Context): void {
-  ctx.effect(() => ctx.livePreview.inline(footnoteInline(ctx.render)));
+  ctx.effect(() =>
+    ctx.livePreview.inline(
+      footnoteInline(ctx.render, (jump) => ctx.editor.navigate(jump)),
+    ),
+  );
 }
 
 function registerInsertFootnote(ctx: Context): void {
@@ -89,9 +93,11 @@ function navigateReference(
     return;
   }
   const at = Math.min(view.state.doc.length, note.from);
-  view.dispatch({
-    selection: { anchor: at },
-    effects: EditorView.scrollIntoView(at),
-  });
+  ctx.editor.navigate(() =>
+    view.dispatch({
+      selection: { anchor: at },
+      effects: EditorView.scrollIntoView(at),
+    }),
+  );
   view.focus();
 }

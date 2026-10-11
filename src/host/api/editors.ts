@@ -1,9 +1,10 @@
 import type { Context } from "../../kernel";
 import type { EditorPanel } from "../../plugins/editor/api";
+import { protocol as jumps } from "../../plugins/editor/jump-protocol";
 import { protocol } from "../../plugins/editor/protocol";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import { noteFragment } from "../../markdown/metadata/fragments";
-import { RpcError } from "../../shared/rpc/lifecycle";
+import { RpcError, CancelToken } from "../../shared/rpc/lifecycle";
 import type { ApiPlatform } from "./platform";
 import type { MarkdownWorkbenchApi, SourceTarget, OpenOptions } from "./types";
 import { editorSnapshot } from "./snapshots";
@@ -16,6 +17,7 @@ export function panelById(root: Context, id: string): EditorPanel {
   }
   return panel;
 }
+const activeRevisions = new WeakMap<Context, number>();
 export function editorOperations(
   root: Context,
   platform: ApiPlatform,
@@ -23,6 +25,16 @@ export function editorOperations(
   MarkdownWorkbenchApi,
   "getEditors" | "getActiveEditor" | "open" | "reveal" | "getSelection"
 > {
+  if (!activeRevisions.has(root)) {
+    activeRevisions.set(root, 0);
+    let active = root.editors.active()?.id;
+    root.on("editor/activeChanged", (panel) => {
+      if (panel?.id !== active) {
+        active = panel?.id;
+        activeRevisions.set(root, (activeRevisions.get(root) ?? 0) + 1);
+      }
+    });
+  }
   return {
     getEditors: () =>
       Object.freeze(
@@ -77,10 +89,11 @@ async function openEditor(
       "Opening did not create or reveal an editor",
     );
   }
-  await waitForReady(panel);
-  panelById(root, panel.id);
   if (options.reveal) {
     await reveal(root, panel.id, options.reveal, !options.preserveFocus);
+  } else {
+    await waitForReady(panel);
+    panelById(root, panel.id);
   }
   return editorSnapshot(panel, platform);
 }
@@ -106,6 +119,7 @@ export async function waitForReady(panel: EditorPanel): Promise<void> {
     clearTimeout(timer);
   }
 }
+const reveals = new WeakMap<EditorPanel, CancelToken>();
 async function reveal(
   root: Context,
   id: string,
@@ -113,16 +127,75 @@ async function reveal(
   focus: boolean,
 ): Promise<void> {
   const panel = panelById(root, id);
-  await waitForReady(panel);
-  await panel.session.flush();
-  panelById(root, id);
-  const coordinates = new SourceCoordinates(panel.document.getText());
-  const range = targetRange(coordinates, target);
-  if (focus) {
-    panel.reveal();
+  reveals.get(panel)?.cancel();
+  const token = new CancelToken();
+  reveals.set(panel, token);
+  const check = revealGuard(root, panel, token);
+  try {
+    await waitForReady(panel);
+    check();
+    const navigation = await panel.rpc.call(
+      jumps,
+      "navigationState",
+      {},
+      { token },
+    );
+    check();
+    await panel.session.flush();
+    check();
+    const current = await panel.rpc.call(
+      jumps,
+      "navigationState",
+      {},
+      { token },
+    );
+    check();
+    assertReader(navigation, current);
+    const coordinates = new SourceCoordinates(panel.document.getText());
+    const range = targetRange(coordinates, target);
+    if (focus) {
+      panel.reveal();
+    }
+    const applied = await panel.rpc.call(
+      protocol,
+      "reveal",
+      {
+        ...range,
+        focus,
+        version: panel.session.version,
+        navigation,
+      },
+      { token },
+    );
+    if (!applied) {
+      throw new RpcError(
+        "Cancelled",
+        "The target changed before navigation completed",
+      );
+    }
+  } finally {
+    if (reveals.get(panel) === token) {
+      reveals.delete(panel);
+    }
   }
-  await panel.rpc.call(protocol, "reveal", { ...range, focus });
 }
+function revealGuard(root: Context, panel: EditorPanel, token: CancelToken) {
+  const active = root.editors.active();
+  const revision = activeRevisions.get(root);
+  const generation = panel.webviewGeneration;
+  return () => {
+    if (
+      token.cancelled ||
+      activeRevisions.get(root) !== revision ||
+      panelById(root, panel.id) !== panel ||
+      panel.webviewGeneration !== generation ||
+      root.editors.active() !== active
+    ) {
+      throw new RpcError("Cancelled", "Navigation was superseded");
+    }
+  };
+}
+
 export function targetRange(
   coordinates: SourceCoordinates,
   target: SourceTarget,
@@ -130,15 +203,15 @@ export function targetRange(
   if (!target || typeof target !== "object") {
     throw new RpcError("InvalidArgument", "A source target is required");
   }
+  if (
+    "startLine" in target &&
+    "endLine" in target &&
+    Object.keys(target).length === 2
+  ) {
+    return lineRange(coordinates, target.startLine, target.endLine);
+  }
   if ("line" in target && Object.keys(target).length === 1) {
-    if (
-      !Number.isInteger(target.line) ||
-      target.line < 1 ||
-      target.line > coordinates.editor.lines
-    ) {
-      throw new RpcError("InvalidArgument", "Line is outside the document");
-    }
-    const from = coordinates.editor.line(target.line).from;
+    const { from } = lineRange(coordinates, target.line, target.line);
     return { from, to: from };
   }
   if (
@@ -163,6 +236,22 @@ export function targetRange(
   }
 
   throw new RpcError("InvalidArgument", "Invalid source range");
+}
+
+function lineRange(coordinates: SourceCoordinates, start: number, end: number) {
+  if (
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(end) ||
+    start < 1 ||
+    end < start ||
+    end > coordinates.editor.lines
+  ) {
+    throw new RpcError("InvalidArgument", "Line range is outside the document");
+  }
+  return {
+    from: coordinates.editor.line(start).from,
+    to: coordinates.editor.line(end).to,
+  };
 }
 export function validateUri(uri: Uri): void {
   if (
@@ -189,4 +278,16 @@ function isOffsetRange(
     target.to >= target.from &&
     target.to <= length
   );
+}
+
+function assertReader(
+  before: { session: string; generation: number },
+  after: { session: string; generation: number },
+): void {
+  if (
+    before.session !== after.session ||
+    before.generation !== after.generation
+  ) {
+    throw new RpcError("Cancelled", "The reader moved before navigation");
+  }
 }

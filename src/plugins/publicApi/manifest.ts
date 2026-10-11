@@ -6,10 +6,15 @@ export default defineManifest({
   kind: "core",
   defaultEnabled: true,
   surfaces: ["host"],
-  capabilities: ["publicApi", "commands"],
+  capabilities: ["publicApi", "commands", "clipboard", "navigation"],
   contributes: {
     commands: [
       { id: "managePlugins", title: "Manage Plugins", scope: "workbench" },
+      {
+        id: "openCopiedAgentReference",
+        title: "Open Copied Agent Reference",
+        scope: "workbench",
+      },
       {
         id: "showPluginStatus",
         title: "Show Plugin Status",

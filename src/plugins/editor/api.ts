@@ -49,11 +49,16 @@ export interface EditorService {
       owner?: string;
     },
   ): Disposer;
+  /** Record a deliberate jump, excluding ordinary editing and cursor motion. */
+  navigate<T>(jump: () => T): T;
+  onNavigate(capture: () => () => void): Disposer;
+  settled(): Promise<boolean>;
   focus(): void;
 }
 export interface EditorPanel extends PanelPort {
   readonly session: DocumentSession;
   readonly ready?: Promise<void>;
+  readonly webviewGeneration?: number;
   webviewPluginStates?(): readonly RuntimePluginState[];
   pluginStates?(): readonly RuntimePluginState[];
   refreshPlugins?(): Promise<void>;
@@ -90,6 +95,7 @@ declare module "../../kernel/types" {
     ) => void;
     /** @mode emit */ "editor/configure": () => void;
     /** @mode emit */ "editor/pluginsChanged": (panel: PanelPort) => void;
+    /** @mode emit */ "editor/loading": () => void;
     /** @mode emit */ "editor/ready": (panel: PanelPort) => void;
     /** @mode emit */ "editor/opened": (panel: PanelPort) => void;
     /** @mode emit */ "editor/closed": (panel: PanelPort) => void;
