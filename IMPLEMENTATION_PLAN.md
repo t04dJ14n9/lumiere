@@ -2933,3 +2933,23 @@ browser/native regressions cover the integration. Full local checks and final
 installed-VSIX desktop acceptance must complete before publication; this section
 does not claim those new gates have passed yet. The previous verified snapshot is
 preserved separately.
+
+
+## Mermaid Vim source entry (2026-10-11)
+
+Normal-mode single-step j/k/gj/gk now reuse Live Preview's reveal-aware block
+entry through its injected service. The per-editor Vim adapter preserves Vim
+command bookkeeping and leaves counts greater than one, operators and visual
+selections with the dependency's existing behavior. It removes its listeners
+and restores the adapter method on disposal. No Obsidian implementation was
+copied; a disposable Obsidian 1.12.7 vault confirmed source-entry behavior.
+
+Focused regressions cover both directions for Mermaid and HTML, source reveal,
+ordinary counts/operators/visual selections/source mode, and existing caret
+behavior. The installed isolated VS Code VSIX was checked with actual j/k/gj/gk
+input: line 9 enters fence line 10, and line 15 enters fence line 14.
+
+The required local pnpm check:full passed once: formatting, lint, types,
+887 unit tests, 125 browser tests and 19 native VS Code tests. Evidence is in
+the Mac task's mermaid-diagnosis-2026-10-11/check-full.log. Publication remains
+a manual handoff; no remote branch was written by this task.

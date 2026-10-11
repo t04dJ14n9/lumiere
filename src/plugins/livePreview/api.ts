@@ -44,6 +44,7 @@ export interface BlockRenderer {
   estimatedHeight?: number;
 }
 export interface LivePreview {
+  verticalPosition?(state: EditorState, direction: -1 | 1): number | undefined;
   visiblePosition?(
     state: EditorState,
     position: number,

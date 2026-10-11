@@ -11,11 +11,13 @@ import type {} from "../editor/api";
 import type {} from "./api";
 import type {} from "../commands/api";
 import { vimCaretMode } from "./caret";
+import { revealBlockMotion } from "./motion";
+import type {} from "../livePreview/api";
 
 /** Each webview has one editor; restore the library hooks when its fiber stops. */
 export const vimWebview: Plugin = {
   name: "vim",
-  inject: { required: ["editor", "commands"] },
+  inject: { required: ["editor", "commands"], optional: ["livePreview"] },
   apply(ctx) {
     registerVimService(ctx);
     registerShortcutConsumer(ctx);
@@ -133,6 +135,7 @@ function registerVimExtension(ctx: Context): void {
 function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
+    revealBlockMotion(() => ctx.livePreview),
     ctx.editor.caret({
       mode: (view) => {
         const cm = getCM(view);

@@ -26,12 +26,13 @@ share this mode source and remove its listeners when they stop.
 - `manifest.ts`: default enablement and host shortcut contributions.
 - `api.ts`: mode, extension and mode-transfer contract.
 - `webview.ts`: service, host action, Ex and editor extension registrations.
+- `motion.ts`: per-editor single-step Vim entry into revealable Live Preview blocks.
 - `caret.ts`: pure detection of the normal, visual, insert, replace, operator-pending and prompt states.
 - `caret.test.ts`: mode, pending-operator, prompt and stale-state regression units.
 
 ## Services, events and settings
 
-Injects `editor` and `commands`; provides `vim`. No kernel event listeners or
+Injects `editor` and `commands`, optionally `livePreview`; provides `vim`. No kernel event listeners or
 emissions. `markdownWorkbench.plugins.vim.enabled` defaults to false. Ex commands
 `:w`, `:q`, `:wq`, `:x`, `:u` and `:red` route to save, close, save-and-close, undo
 and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
@@ -50,3 +51,7 @@ selection; exact Vim/IME interaction parity awaits the owner's manual testing.
 The host-shortcut consumer is hidden from the command palette. Its collision
 bindings use Control on macOS as well as other platforms, leaving Command
 shortcuts to the editor. No verify shortcut is assigned.
+
+Normal-mode single-step `j`, `k`, `gj` and `gk` enter revealable rendered blocks
+and reveal their source. Counted motions greater than one, operators and visual
+selections keep the Vim dependency's existing behavior.
