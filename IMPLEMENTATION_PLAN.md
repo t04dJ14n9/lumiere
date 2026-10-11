@@ -2953,3 +2953,17 @@ The required local pnpm check:full passed once: formatting, lint, types,
 887 unit tests, 125 browser tests and 19 native VS Code tests. Evidence is in
 the Mac task's mermaid-diagnosis-2026-10-11/check-full.log. Publication remains
 a manual handoff; no remote branch was written by this task.
+
+## Grokbot checkpoint (2026-10-11)
+
+The owner stopped implementation and broad testing to hand over the current
+`codex/editor-polish-links-tables` branch. Proportional reading defaults,
+explicit-font preservation, compact properties/tags, caret-link Mod+Enter and
+visible code selections are implemented. Nineteen focused unit tests and
+eighteen focused browser tests passed, as did lint and typecheck. Table behavior
+is still pending measured Obsidian findings. The final full gate and desktop
+acceptance have not run for these changes; they are not installed in Cursor.
+See `docs/HANDOFF_GROKBOT.md` for exact bases, evidence, capability limitations,
+publication restrictions and the bounded successor checklist. The immediate
+checkpoint follows the owner's explicit instruction to commit with lightweight
+sanity checks instead of running the normally required full pre-commit gate.

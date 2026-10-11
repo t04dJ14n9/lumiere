@@ -94,7 +94,10 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
         measured.footnoteDefinition / expected,
         `${label} footnote text`,
       ).toBeCloseTo(0.875, 2);
-      expect(measured.lineNumber, `${label} line numbers`).toBe(expected);
+      expect(measured.lineNumber, `${label} line numbers`).toBeCloseTo(
+        expected * 0.8125,
+        2,
+      );
       // Obsidian's line heights, scaled with the size.
       expect(measured.bodyLineHeight, `${label} line height`).toBeCloseTo(
         expected * 1.5,

@@ -1,7 +1,7 @@
 import { linkSuggestion } from "./suggestions";
-import { StateEffect, StateField } from "@codemirror/state";
+import { Prec, StateEffect, StateField } from "@codemirror/state";
 import type { EditorState } from "@codemirror/state";
-import { EditorView, ViewPlugin } from "@codemirror/view";
+import { EditorView, ViewPlugin, keymap } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
@@ -22,11 +22,17 @@ export function linkAt(
       if (node.from > at || node.to < at) {
         return false;
       }
+      if (node.name === "Image") {
+        return false;
+      }
       if (node.name === "WikiLink") {
         found = {
           href: text.slice(node.from + 2, node.to - 2).split("|")[0]!,
           wiki: true,
         };
+      }
+      if (node.name === "URL" && !found) {
+        found = { href: text.slice(node.from, node.to), wiki: false };
       }
       if (node.name === "Link") {
         const url = node.node.getChild("URL");
@@ -56,6 +62,7 @@ export const linksWebview: Plugin = {
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
+    registerLinkKeyboard(ctx, open);
   },
 };
 
@@ -348,5 +355,38 @@ function allowsLinkClick(event: MouseEvent, link: HTMLElement): boolean {
     (!event.altKey &&
       !event.shiftKey &&
       link.classList.contains("md-link-rendered"))
+  );
+}
+
+function registerLinkKeyboard(ctx: Context, open: OpenLink): void {
+  ctx.effect(() =>
+    ctx.editor.extend(
+      Prec.highest(
+        keymap.of([
+          {
+            key: "Mod-Enter",
+            run(view) {
+              if (
+                view.dom.ownerDocument.activeElement !== view.contentDOM ||
+                !view.state.selection.main.empty
+              ) {
+                return false;
+              }
+              const link = linkAt(
+                view.state.doc.toString(),
+                view.state.selection.main.head,
+              );
+              if (!link) {
+                return false;
+              }
+              void open(link.href, link.wiki).catch((error) =>
+                ctx.logger.warn("Follow link failed", error),
+              );
+              return true;
+            },
+          },
+        ]),
+      ),
+    ),
   );
 }

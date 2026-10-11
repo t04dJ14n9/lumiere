@@ -35,7 +35,10 @@ own ratios (1.2, 1.2, 1.3, 1.4, 1.5 and 1.5). Headings are 1.618, 1.462, 1.318,
 properties, footnotes, code, the code-block and table buttons and the line
 numbers are all em- or `--text-size`-relative, so one change rescales the whole
 note live (the size is an editor theme: CodeMirror measures the lines again, so
-the line numbers stay level). The rest of the note text follows VS Code's
+the line numbers stay level). By default prose uses the system proportional font, while code keeps the
+host's monospace font and property controls use the system UI font. Explicit
+font-family choices (including an explicitly selected host default) are preserved.
+The rest of the note text follows VS Code's
 editor font settings as they apply to Markdown files, so `[markdown]`
 overrides count as in the built-in text editor: `editor.fontFamily` (with a
 monospace fallback), `fontWeight`, `letterSpacing`, `fontLigatures` (off by

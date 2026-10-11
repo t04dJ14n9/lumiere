@@ -62,7 +62,7 @@ Webview injects `editor`, `livePreview`, `commands` and `rpc`; host injects `rpc
 `workbench`, `vault` and `resources`. Provides no service. Queries `link/click`
 and `links/open` with bail semantics. Settings: plugin enabled (true),
 `links.newLinkFormat` (shortest), `links.useWikilinks` (true), `links.folderNote`
-(empty), and native `files.newNoteFolder` for creation. No default command keys.
+(empty), and native `files.newNoteFolder` for creation. The editor binds Mod+Enter to follow the caret link.
 
 ## Limits and differences from Obsidian
 
@@ -89,3 +89,8 @@ remote files, external links and native line/column fragments keep the built-in
 route. Command links do not receive VS Code's side-open modifier context; this
 route uses the source group. A manual switch to the exact expected target cannot
 be distinguished from the built-in definition gesture through the public API.
+
+Command+Enter on macOS (Ctrl+Enter elsewhere) follows a link at the caret
+through the same navigation and trust checks as clicking it. It only handles
+a collapsed caret in the Markdown editor, leaving property inputs, dialogs
+and unlinked text to their existing handlers. Bare URLs and autolinks work too.

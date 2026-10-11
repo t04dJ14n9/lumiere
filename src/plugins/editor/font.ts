@@ -85,6 +85,7 @@ export const lineHeight = ownNumber(
  */
 export const fontFields = {
   fontFamily: lenient(Schema.string(), ""),
+  fontFamilyExplicit: lenient(Schema.boolean(), false),
   /** The host's own default of `editor.fontFamily`, which VS Code appends. */
   defaultFontFamily: lenient(Schema.string(), ""),
   fontWeight: lenient(Schema.string(), "normal"),
@@ -99,10 +100,12 @@ export const fontNativeKeys = {
     Object.keys(fontFields).map((key) => [key, `editor.${key}`]),
   ),
   defaultFontFamily: "editor.fontFamily#default",
+  fontFamilyExplicit: "editor.fontFamily#explicit",
 } as Record<keyof typeof fontFields, string>;
 
 export interface FontSettings {
   fontFamily: string;
+  fontFamilyExplicit?: boolean;
   defaultFontFamily: string;
   fontSize: number;
   fontWeight: string;
@@ -184,7 +187,9 @@ export function fontVariables(
       family,
       font.defaultFontFamily || defaultFontFamily[platform],
     );
-    vars["--text-font"] = stack;
+    const fallback = font.defaultFontFamily || defaultFontFamily[platform];
+    vars["--text-font"] =
+      font.fontFamilyExplicit || family !== fallback ? stack : "var(--ui-font)";
     vars["--code-font"] = stack;
   }
   const size = Math.min(Math.max(font.fontSize, MIN_FONT_SIZE), MAX_FONT_SIZE);

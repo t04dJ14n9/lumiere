@@ -28,3 +28,17 @@ test("link requests reject malformed values and ambiguous paths", () => {
     protocol.requests.open.params.parse({ href: "x", side: "yes" }),
   );
 });
+
+test("caret following supports bare URLs and autolinks without following images or code", () => {
+  for (const text of [
+    "https://example.com/path",
+    "<https://example.com/path>",
+  ]) {
+    assert.deepEqual(linkAt(text, 8), {
+      href: "https://example.com/path",
+      wiki: false,
+    });
+  }
+  assert.equal(linkAt("![image](https://example.com)", 15), undefined);
+  assert.equal(linkAt("`https://example.com`", 8), undefined);
+});

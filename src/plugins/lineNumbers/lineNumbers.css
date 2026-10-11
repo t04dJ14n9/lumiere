@@ -36,7 +36,7 @@
   min-width: 0;
   padding: 0 2px 0 0;
   font-family: var(--code-font);
-  font-size: var(--text-size);
+  font-size: calc(var(--text-size) * 0.8125);
   font-weight: var(--text-weight, normal);
   font-feature-settings: var(--text-features, normal);
   line-height: calc(var(--line-height, 1.5) * var(--text-size));
