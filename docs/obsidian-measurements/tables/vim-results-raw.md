@@ -948,13 +948,15 @@ doc after: "\n| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |\n\nprose a
 start: `4:3`
 
 ```
-start         normal  src=4:3 | IN-CELL r1c0 "gamma" head=0 cellMode=normal
+start         normal  src=4:3 | outer active=DIV.cm-content
+k            normal  src=3:0 | outer active=DIV.cm-content
+k            normal  src=2:3 | IN-CELL r1c0 "gamma" head=1 cellMode=normal
 k            normal  src=0:2 | IN-CELL r0c0 "alpha" head=0 cellMode=normal
-k            normal  src=0:0 | outer active=DIV.cm-content [doc rewritten]
-k            normal  src=0:0 | outer active=DIV.cm-content [doc rewritten]
 k            normal  src=0:0 | outer active=DIV.cm-content [doc rewritten]
 doc after: "\n| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |\n\nprose after\n"
 ```
+
+(Re-run on a clean state: an earlier run of this case started with a cell left open by the previous case; the probe's blank-note reset does not always clear it, so a `start` line reporting IN-CELL for a prose caret is a probe artifact.)
 
 ### O-only-table-j-k
 the note is only a table
@@ -967,4 +969,191 @@ j            normal  src=3:0 | outer active=DIV.cm-content [doc rewritten]
 j            normal  src=3:0 | outer active=DIV.cm-content [doc rewritten]
 k            normal  src=2:2 | IN-CELL r1c0 "gamma" head=0 cellMode=normal [doc rewritten]
 doc after: "| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |\n"
+```
+
+### P-down-into-header-goalcol-1
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:1`
+
+```
+start         normal  src=1:1 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:1 | IN-CELL r0c0 "alpha" head=0 cellMode=normal
+```
+
+### P-down-into-header-goalcol-6
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:6`
+
+```
+start         normal  src=1:6 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:6 | IN-CELL r0c0 "alpha" head=4 cellMode=normal
+```
+
+### P-down-into-header-goalcol-7
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:7`
+
+```
+start         normal  src=1:7 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:7 | IN-CELL r0c0 "alpha" head=5 cellMode=normal
+```
+
+### P-down-into-header-goalcol-9
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:9`
+
+```
+start         normal  src=1:9 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:9 | IN-CELL r0c1 "beta" head=0 cellMode=normal
+```
+
+### P-down-into-header-goalcol-10
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:10`
+
+```
+start         normal  src=1:10 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:10 | IN-CELL r0c1 "beta" head=0 cellMode=normal
+```
+
+### P-down-into-header-goalcol-12
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:12`
+
+```
+start         normal  src=1:12 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:12 | IN-CELL r0c1 "beta" head=2 cellMode=normal
+```
+
+### P-down-into-header-goalcol-15
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:15`
+
+```
+start         normal  src=1:15 | outer active=DIV.cm-content
+j            normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:15 | IN-CELL r0c1 "beta" head=4 cellMode=normal
+```
+
+### P-down-into-header-goalcol-16
+which cell and offset a source column maps to (header line `| alpha | beta  |`)
+start: `1:16`
+
+```
+start         normal  src=2:0 | outer active=DIV.cm-content
+j            normal  src=3:2 | IN-CELL r0c0 "alpha" head=0 cellMode=normal
+j            normal  src=5:2 | IN-CELL r1c0 "gamma" head=0 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-1
+last row line `| eps   | zeta  |`
+start: `9:1`
+
+```
+start         normal  src=9:1 | outer active=DIV.cm-content
+k            normal  src=8:1 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+k            normal  src=6:1 | IN-CELL r2c0 "eps" head=0 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-6
+last row line `| eps   | zeta  |`
+start: `9:6`
+
+```
+start         normal  src=9:6 | outer active=DIV.cm-content
+k            normal  src=8:6 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+k            normal  src=6:6 | IN-CELL r2c0 "eps" head=3 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-7
+last row line `| eps   | zeta  |`
+start: `9:7`
+
+```
+start         normal  src=9:7 | outer active=DIV.cm-content
+k            normal  src=8:7 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+k            normal  src=6:7 | IN-CELL r2c0 "eps" head=3 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-9
+last row line `| eps   | zeta  |`
+start: `9:9`
+
+```
+start         normal  src=9:9 | outer active=DIV.cm-content
+k            normal  src=8:9 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+k            normal  src=6:9 | IN-CELL r2c1 "zeta" head=0 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-10
+last row line `| eps   | zeta  |`
+start: `9:10`
+
+```
+start         normal  src=9:10 | outer active=DIV.cm-content
+k            normal  src=8:10 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+k            normal  src=6:10 | IN-CELL r2c1 "zeta" head=0 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-15
+last row line `| eps   | zeta  |`
+start: `9:15`
+
+```
+start         normal  src=9:15 | outer active=DIV.cm-content
+k            normal  src=8:15 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+k            normal  src=6:15 | IN-CELL r2c1 "zeta" head=4 cellMode=normal
+```
+
+### P-up-into-last-row-goalcol-16
+last row line `| eps   | zeta  |`
+start: `9:16`
+
+```
+start         normal  src=10:0 | outer active=DIV.cm-content
+k            normal  src=9:0 | outer active=DIV.cm-content
+k            normal  src=8:0 | outer active=DIV.cm-content
+k            normal  src=7:0 | outer active=DIV.cm-content
+```
+
+### P-delimiter-down-goal14
+count lands on the delimiter line, goal column 14
+start: `0:14`
+
+```
+start         normal  src=0:14 | outer active=DIV.cm-content
+4            normal  src=0:14 | outer active=DIV.cm-content
+j            normal  src=6:2 | IN-CELL r2c0 "eps" head=0 cellMode=normal
+```
+
+### P-delimiter-up-goal14
+
+start: `8:14`
+
+```
+start         normal  src=8:14 | outer active=DIV.cm-content
+4            normal  src=8:14 | outer active=DIV.cm-content
+k            normal  src=6:2 | IN-CELL r2c0 "eps" head=0 cellMode=normal
+```
+
+### P-delimiter-down-goal3-row
+
+start: `0:3`
+
+```
+start         normal  src=0:3 | outer active=DIV.cm-content
+4            normal  src=0:3 | outer active=DIV.cm-content
+j            normal  src=6:2 | IN-CELL r2c0 "eps" head=0 cellMode=normal
 ```

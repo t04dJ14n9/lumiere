@@ -112,9 +112,13 @@ and g-prefixed normal-mode hops inside cells move one row. Unit regressions cove
 the overshoot decision and navigation routing. `tables-vim.spec.ts` covers A/B/G/H/I/J/K/L behaviour,
 including header/last-row goal columns, delimiter entry, deletes, visual traversal and search focus.
 
-Browser execution and a fresh `vim-compare.py` result are pending the parent's run: Chromium cannot
-launch in the implementation sandbox. The raw log in this checkout ends with O cases; P source-column
-cases are listed in `vim-cases.json`, and the mapping units cover every column documented above.
+Fresh `vim-compare.py` run (96 browser cases, `vim-ours-after.md`): 20 of 78 cases still differ, down from
+45. The remaining differences are all one of: probe artifacts (our probe cannot tell visual-line/block from
+visual, prints selection direction differently, and cannot place a caret *after* the last character of a cell
+for the `start` line); the deliberate "not matched" items (operators, visual and `Tab` in a cell, EOF and
+start-of-note separators, `o`/`O`/`p` showing the raw `<br>` in our focused cell); `ArrowUp` re-entry selecting
+the whole cell (existing, non-Vim, measured earlier); `.` repeating at a cell end; and `Ctrl-d`.
+Raw per-case output: `vim-ours-after.md` (`vim-ours-before` was 45/78).
 Cell-internal editing (`i a A I s S cc x r u .`, `h`/`l` hops, `Escape`, `ArrowDown` exits) is preserved.
 EOF/start-of-note separators and operator/visual hops inside cells remain deliberately different.
 
