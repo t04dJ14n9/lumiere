@@ -274,3 +274,25 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
 | Command: markdownWorkbench.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
 | Command: markdownWorkbench.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |
+| Command: markdownWorkbench.assets.import | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.bridge.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.bridge.envelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.marp.preview | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.marp.export | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.marp.toggle | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.marp.moveOutside | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.marp.keepInWorkbench | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.scratch.new | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.scratch.promote | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.wiki.copyForAgent | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.wiki.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.wiki.showLayout | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.wiki.refresh | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.assets.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.bridge.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.marp.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.scratch.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.wiki.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |

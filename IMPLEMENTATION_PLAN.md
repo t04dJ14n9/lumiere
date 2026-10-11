@@ -2933,3 +2933,26 @@ browser/native regressions cover the integration. Full local checks and final
 installed-VSIX desktop acceptance must complete before publication; this section
 does not claim those new gates have passed yet. The previous verified snapshot is
 preserved separately.
+
+## Wiki suite on the workbench (2026-10-11)
+
+Markdown Workbench now speaks the version-1 bridge envelope in
+`docs/bridge-envelope.md` and adds five window plugins: bridge, wiki, assets,
+scratch and marp. Agent PDF Viewer stays a second extension. The workbench
+calls `vscodeEmbedPdf.bridge.envelope` only when that command is registered,
+and it publishes `markdownWorkbench.bridge.envelope` without opening a chat.
+Copy Link for Agent is unchanged. Wiki copy, asset import, scratch promotion
+and Marp export never start an agent and never write the owner's vault.
+
+A missing `.wiki/layout.json` is the legacy preset. A file that does not parse
+is a diagnostic and is not guessed. Assets and scratch directories are created
+only on the explicit command. A Marp deck inside the bundle is reported when
+it lacks `type` and `generated` provenance; nothing adds that frontmatter.
+
+`pnpm check` passed: format, lint, typecheck, 937 unit tests and contributions.
+`pnpm test:browser` on this machine: 113 passed, 3 failed. The failures are
+1–3px caret and line-number geometry in `font-size.spec.ts` and
+`stable-blocks.spec.ts`. This change does not touch the webview renderer.
+GitHub Actions browser on main is green, so those three are this VM's font
+metrics, not a suite regression. Real VS Code specs stay a local pre-push
+gate and are not in CI.

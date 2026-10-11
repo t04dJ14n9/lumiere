@@ -656,6 +656,43 @@ install it into the same isolated profile, and lists what it does.
    without touching built-in plugins. **Show Plugin Status** lists it as
    external.
 
+### wiki, assets, scratch and Marp
+
+Use a disposable folder, never a personal vault. Add the slim
+`.wiki/layout.json` from `docs/bridge-envelope.md` if you want collection
+paths; a missing layout is the legacy preset.
+
+1. **Copy Bridge Envelope** on a saved selection: the clipboard is JSON with
+   `version: 1`, a durable `@path#lines` locator, a different `view.id`,
+   `capturedAt`, and distinct `selection.sha256` and `revision.sourceSha256`.
+   No chat opens. Repeat while the note is dirty: the durable path remains,
+   `revision.isDirty` is true, and `revision.sourceSha256` is absent.
+2. **Copy Wiki Reference for Agent** copies `@path#lines` and the quoted
+   passage and says that no agent was started. With the Bridge plugin off,
+   it tells you to turn Bridge on.
+3. Put `[[Other]]` in a page under the bundle: the Problems panel reports a
+   portable Markdown link. The same text in a fence, in frontmatter, or
+   outside the bundle does not. A bundle page with no `type` is reported.
+   `knowledge/index.md` and `knowledge/log.md` are not.
+4. **Import Asset** of a new png creates the assets folder and inserts
+   `![…](…)` relative to the note. Import the same name again and choose
+   Keep both: the file is `name-2` and the folder is not recreated. Point
+   assets at a folder inside the bundle: the import is refused.
+5. **New Scratch Note** writes under `scratch/` (or the layout's scratch
+   path) with `title` and `captured` and no `type`. **Promote Scratch Note**
+   to Concept writes `## Definition` and the other fixed sections, replaces
+   the scratch note with a Markdown link, and does not change `index.md`.
+   A scratch note with `marp: true` is refused and left in place.
+6. A note with `marp: true` offers **Open Marp Preview to the Side**.
+   **Export Marp Slide Deck** in an untrusted workspace is refused. With
+   Marp for VS Code installed and the workspace trusted, the text editor
+   opens and Marp's export follows. **Toggle Marp** flips only the `marp`
+   flag. Set `markdownWorkbench.marp.open` to `textEditor`: the deck opens
+   in the text editor; **Keep Marp Deck in Workbench** brings it back.
+   A deck saved inside the bundle without `type` and `generated` is
+   reported and is not rewritten. **Move Marp Deck Outside Bundle** moves
+   it under `exports/` and copies a Markdown link; the deck text is unchanged.
+
 <!-- command-setting-inventory:start -->
 ## Complete command and setting acceptance inventory
 
@@ -663,6 +700,10 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
+| `markdownWorkbench.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertCallout` — Insert Callout | unbound | On a disposable fixture, run Insert Callout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.save` — Save | unbound | On a disposable fixture, run Save; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.undo` — Undo | unbound | On a disposable fixture, run Undo; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -670,7 +711,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.close` — Close | unbound | On a disposable fixture, run Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.copyLinkForAgent` — Copy Link for Agent | none | Select two lines, right-click → Copy Link for Agent. VS Code with only a chat extension (e.g. Copilot Chat): chat opens with `@Note.md#a-b` and the quoted passage prefilled, cursor after it. Cursor with no Claude Code/Codex extension: a new agent chat opens and a notice says the passage is copied; paste shows the same payload. With Claude Code or Codex installed (and `copyLinkForAgent.target` = `auto`), nothing opens: a notice says the passage is copied to paste into your agent. With no chat installed, the same. |
+| `markdownWorkbench.jumpBack` — Go Back in Note | unbound | On a disposable fixture, run Go Back in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.jumpForward` — Go Forward in Note | unbound | On a disposable fixture, run Go Forward in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workbench for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workbench for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -703,21 +745,28 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.followLink` — Follow Link | unbound | On a disposable fixture, run Follow Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openLinkToSide` — Open Link to Side | unbound | On a disposable fixture, run Open Link to Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleSourceMode` — Toggle Live Preview/Source Mode | unbound | On a disposable fixture, run Toggle Live Preview/Source Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.preview` — Open Marp Preview to the Side | unbound | On a disposable fixture, run Open Marp Preview to the Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.toggle` — Toggle Marp | unbound | On a disposable fixture, run Toggle Marp; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.moveOutside` — Move Marp Deck Outside Bundle | unbound | On a disposable fixture, run Move Marp Deck Outside Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.keepInWorkbench` — Keep Marp Deck in Workbench | unbound | On a disposable fixture, run Keep Marp Deck in Workbench; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.openCopiedAgentReference` — Open Copied Agent Reference | unbound | Confirm a copied source reference, verify source-line selection, then exercise prompt cancellation, malformed/out-of-range references, CRLF and multi-root ambiguity as above. |
+| `markdownWorkbench.openCopiedAgentReference` — Open Copied Agent Reference | unbound | On a disposable fixture, run Open Copied Agent Reference; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.showPluginStatus` — Show Plugin Status | unbound | On a disposable fixture, run Show Plugin Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.openSettings` — Open Settings | unbound | Run Open Settings from the palette with no editor open: the Settings UI shows with the search `@ext:t04dj14n9.vscode-markdown-workbench`. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
-| `markdownWorkbench.setNoteFontSize` — Set Note Font Size | unbound | Run it: the box shows the current `markdownWorkbench.editor.fontSize`; type 20 and Enter, the open note's text, headings and line numbers grow at once and the Settings UI shows 20; 7 or `abc` is refused; Escape changes nothing. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
-| `markdownWorkbench.changeSetting` — Change Setting… | unbound | Run it: every Markdown Workbench setting is listed under its plugin with its current value and description. Pick a boolean (it flips), an enum (a pick list opens), a number such as Font Size (an input box refuses values outside the range) and a string (an input box); pick a list such as Excluded Files: the Settings UI opens on that key. Where the value is written: workspace settings if the workspace sets it, else user settings. |
-| `markdownWorkbench.toggleLineNumbers` — Toggle Line Numbers | unbound | Run it twice: the gutter hides and shows, and `markdownWorkbench.plugins.lineNumbers.enabled` in the Settings UI follows each run. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
-| `markdownWorkbench.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | Run it twice: the note's width limit switches, and `markdownWorkbench.editor.readableLineLength` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
-| `markdownWorkbench.toggleMermaid` — Toggle Mermaid Diagrams | unbound | With a mermaid block open, run it twice: the diagram turns to source and back, and `markdownWorkbench.plugins.diagrams.enabled` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
-| `markdownWorkbench.toggleInlineTitle` — Toggle Inline Title | unbound | Run it twice: the title above the note shows and hides, and `markdownWorkbench.plugins.inlineTitle.enabled` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
-| `markdownWorkbench.toggleVim` — Toggle Vim Mode | unbound | Run it twice: Vim mode and its caret turn on and off, and `markdownWorkbench.plugins.vim.enabled` follows. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
 | `markdownWorkbench.quickSwitcher` — Quick Switcher | unbound | On a disposable fixture, run Quick Switcher; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.scratch.new` — New Scratch Note | unbound | On a disposable fixture, run New Scratch Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.scratch.promote` — Promote Scratch Note | unbound | On a disposable fixture, run Promote Scratch Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.openSettings` — Open Settings | unbound | On a disposable fixture, run Open Settings; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.changeSetting` — Change Setting… | unbound | On a disposable fixture, run Change Setting…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.setNoteFontSize` — Set Note Font Size | unbound | On a disposable fixture, run Set Note Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.toggleLineNumbers` — Toggle Line Numbers | unbound | On a disposable fixture, run Toggle Line Numbers; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | On a disposable fixture, run Toggle Readable Line Width; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.toggleMermaid` — Toggle Mermaid Diagrams | unbound | On a disposable fixture, run Toggle Mermaid Diagrams; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.toggleInlineTitle` — Toggle Inline Title | unbound | On a disposable fixture, run Toggle Inline Title; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.toggleVim` — Toggle Vim Mode | unbound | On a disposable fixture, run Toggle Vim Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertTable` — Insert Table | unbound | On a disposable fixture, run Insert Table; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.tableInsertRowAbove` — Table: Insert Row Above | unbound | On a disposable fixture, run Table: Insert Row Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.tableInsertRowBelow` — Table: Insert Row Below | unbound | On a disposable fixture, run Table: Insert Row Below; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -736,18 +785,23 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.tableSortDescending` — Table: Sort Descending | unbound | On a disposable fixture, run Table: Sort Descending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleChecklist` — Toggle Checklist Status | unbound | On a disposable fixture, run Toggle Checklist Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.cycleListChecklist` — Cycle List Checklist | unbound | On a disposable fixture, run Cycle List Checklist; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (also on Mac); ctrl+b (also on Mac); ctrl+i (also on Mac); ctrl+shift+x (also on Mac); ctrl+k (also on Mac); ctrl+alt+0 (also on Mac); ctrl+alt+1 (also on Mac); ctrl+alt+2 (also on Mac); ctrl+alt+3 (also on Mac); ctrl+alt+4 (also on Mac); ctrl+alt+5 (also on Mac); ctrl+alt+6 (also on Mac); ctrl+shift+t (also on Mac); ctrl+shift+h (also on Mac) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
+| `markdownWorkbench.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (Mac ctrl+o); ctrl+b (Mac ctrl+b); ctrl+i (Mac ctrl+i); ctrl+shift+x (Mac ctrl+shift+x); ctrl+k (Mac ctrl+k); ctrl+alt+0 (Mac ctrl+alt+0); ctrl+alt+1 (Mac ctrl+alt+1); ctrl+alt+2 (Mac ctrl+alt+2); ctrl+alt+3 (Mac ctrl+alt+3); ctrl+alt+4 (Mac ctrl+alt+4); ctrl+alt+5 (Mac ctrl+alt+5); ctrl+alt+6 (Mac ctrl+alt+6); ctrl+shift+t (Mac ctrl+shift+t); ctrl+shift+h (Mac ctrl+shift+h) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
+| `markdownWorkbench.wiki.copyForAgent` — Copy Wiki Reference for Agent | unbound | On a disposable fixture, run Copy Wiki Reference for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.wiki.copyEnvelope` — Copy Wiki Bridge Envelope | unbound | On a disposable fixture, run Copy Wiki Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.wiki.showLayout` — Show Wiki Layout | unbound | On a disposable fixture, run Show Wiki Layout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.wiki.refresh` — Refresh Wiki Diagnostics | unbound | On a disposable fixture, run Refresh Wiki Diagnostics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 
 | Setting | Default | Procedure |
 | --- | --- | --- |
+| `markdownWorkbench.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.callouts.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.codeBlocks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.diagrams.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.embeds.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.folding.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.footnotes.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.formatting.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -756,13 +810,16 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.linkUpdates.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.links.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.marp.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.math.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.outgoingLinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.outline.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.pagePreview.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.pasteHtml.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.properties.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.quickSwitcher.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.scratch.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.search.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -771,18 +828,20 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.tags.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.tasks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.editor.reclaimTextEditor` | `"auto"` | auto/on/off; in Cursor click **Markdown** in the Preview \| Markdown switch and confirm the note returns to Markdown Workbench; **Open as Text** and a second switch within 10 s keep the text editor; set `off` and confirm the text editor stays. |
+| `markdownWorkbench.editor.reclaimTextEditor` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.tabSize` | `4` | integer; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.editor.fontSize` | `16` | number, 8 to 48; with a note open, change it in Settings and confirm the body, headings (1.618, 1.462, 1.318, 1.188, 1.076 and 1 times the body), tables, code, properties, footnotes and line numbers all rescale at once without reloading, line numbers stay level with their lines, and `editor.fontSize` has no effect on the note; then reset. |
-| `markdownWorkbench.editor.lineHeight` | `1.5` | number, 1 to 3, a multiple of the font size; with a note open, change it in Settings and confirm every line, heading, code line and table, and the line numbers, follow at once without reloading, that numbers stay level with their lines, and that `editor.lineHeight` has no effect on the note; then reset. |
+| `markdownWorkbench.editor.fontSize` | `16` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.editor.lineHeight` | `1.5` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.folding.heading` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.folding.indent` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.linkUpdates.mode` | `"prompt"` | prompt / always / never; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -791,13 +850,15 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.links.folderNote` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.files.newNoteFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.files.attachmentFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.marp.open` | `"workbench"` | workbench / textEditor; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.scratch.folder` | `"scratch"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.tags.viewSort` | `"name"` | name / frequency; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.tags.viewNested` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.vault.rootMarkers` | `[".obsidian"]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.vault.excludedFiles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkbench.copyLinkForAgent.target` | `auto` | `claudeCode`: Copy Link for Agent opens a new Claude Code conversation with the passage typed in. `codex`: the Codex sidebar opens with the passage attached as a file (and copied). `chat`/`cursor`: that chat even with other agents installed. `clipboard`: only copies. A target that is not installed only copies. |
+| `markdownWorkbench.copyLinkForAgent.target` | `"auto"` | auto / cursor / chat / claudeCode / codex / clipboard; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.debug.logging` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

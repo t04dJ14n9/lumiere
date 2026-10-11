@@ -24,6 +24,11 @@ import {
   quickSwitcherHost,
   wordCountHost,
   linkUpdatesHost,
+  bridgeHost,
+  wikiHost,
+  assetsHost,
+  scratchHost,
+  marpHost,
   tagsViewHost,
   settingsHost,
 } from "../plugins/host";
@@ -69,7 +74,14 @@ export async function bootstrap(
   root.plugin(commandsHost, { features });
   root.plugin(settingsHost);
   root.plugin(livePreviewHost);
-  const windowPlugins = [
+  startWindowFeatures(root, workbench);
+  await root.settled();
+  return root;
+}
+
+/** Window plugins, including the Tags view, which shares an editor-feature manifest. */
+function startWindowFeatures(root: Context, workbench: Workbench): void {
+  const plugins = [
     nativeLinksHost,
     backlinksHost,
     outgoingLinksHost,
@@ -77,18 +89,20 @@ export async function bootstrap(
     quickSwitcherHost,
     wordCountHost,
     linkUpdatesHost,
+    bridgeHost,
+    wikiHost,
+    assetsHost,
+    scratchHost,
+    marpHost,
     tagsViewHost,
   ];
-  // Window halves of editor features (the Tags view) share their manifest.
   const manifests = [...workbenchFeatures, ...features];
   startWorkbenchFeatures(
     root,
     workbench,
-    windowPlugins.map((plugin) => ({
+    plugins.map((plugin) => ({
       manifest: manifests.find((item) => item.id === plugin.name)!,
       plugin,
     })),
   );
-  await root.settled();
-  return root;
 }

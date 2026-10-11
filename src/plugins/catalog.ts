@@ -36,6 +36,11 @@ import outline from "./outline/manifest";
 import quickSwitcher from "./quickSwitcher/manifest";
 import wordCount from "./wordCount/manifest";
 import linkUpdates from "./linkUpdates/manifest";
+import bridge from "./bridge/manifest";
+import wiki from "./wiki/manifest";
+import assets from "./assets/manifest";
+import scratch from "./scratch/manifest";
+import marp from "./marp/manifest";
 /**
  * Which plugins exist; nothing else. Their precedence is plugin-order.ts,
  * their dependencies plugin-graph.ts, and their lifecycle the kernel.
@@ -78,7 +83,19 @@ export const features: readonly Manifest[] = inPluginOrder(
  * feature switch and composition tests (which iterate `features`) skip them.
  */
 export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
-  [backlinks, linkUpdates, outgoingLinks, outline, quickSwitcher, wordCount],
+  [
+    assets,
+    backlinks,
+    bridge,
+    linkUpdates,
+    marp,
+    outgoingLinks,
+    outline,
+    quickSwitcher,
+    scratch,
+    wiki,
+    wordCount,
+  ],
   WORKBENCH_FEATURE_ORDER,
 );
 

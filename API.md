@@ -429,6 +429,16 @@ export function ticketsPlugin(code: VSCode): ExternalPlugin {
 In the fixture the type imports point at `src/host/api/types` instead of a
 copied `markdown-workbench/types`.
 
+## Bridge envelope
+
+`markdownWorkbench.bridge.envelope` returns the versioned selection envelope
+described in [docs/bridge-envelope.md](docs/bridge-envelope.md). It is a VS
+Code command, not a method on API v1. Pass an optional wiki context
+(`preset`, `bundle`, `collection`, `type`); a malformed argument is ignored.
+The command does not open a chat. Agent PDF Viewer may call it. This
+extension calls `vscodeEmbedPdf.bridge.envelope` only when that command is
+registered.
+
 ## Not in version 1
 
 - Webview modules (scripts or styles from other extensions inside the

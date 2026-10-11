@@ -56,6 +56,11 @@ records it in `docs/PARITY.md`.
 | vim | Vim mode with `:w`, `:q`, `:u`, `:red` mapped to VS Code | Off by default |
 | pasteHtml | Rich paste as Markdown | Images are not downloaded |
 | agentBridge | **Copy Link for Agent** copies `@path#lines` and the quoted passage, opening a chat only when the editor's own chat is the only agent or a target is set | Not an Obsidian feature. The separate Copy for Agent command was removed (plain Ctrl+C copies text). No public API |
+| bridge | **Copy Bridge Envelope** copies a versioned JSON selection. The hidden `bridge.envelope` command returns the same object. Agent PDF Viewer is called only when `vscodeEmbedPdf.bridge.envelope` is registered | Does not open a chat. The envelope is not wiki metadata. See `docs/bridge-envelope.md` |
+| wiki | Reads `.wiki/layout.json` and the registry, reports pages inside the bundle, and copies a wiki reference or envelope | Does not run an agent, scaffold folders, or ingest inbox. A broken layout is not treated as legacy. Wikilinks are reported, not rewritten |
+| assets | **Import Asset** copies a chosen file into the configured assets folder and inserts a portable Markdown link | The folder is created on import. No Obsidian attachment graph. A path inside the bundle is refused |
+| scratch | **New Scratch Note** writes a temporary note outside the bundle. **Promote Scratch Note** files it as a Concept, Source Summary, Entity or Raw Source | No automatic ingest. Marp decks are not promoted. Collection indexes are not rewritten |
+| marp | Detects `marp: true` and bridges to VS Code preview and Marp export. **Move Marp Deck Outside Bundle** keeps the deck's frontmatter | Slide widgets and Marp themes are not drawn here. A deck inside the bundle is not given a page contract |
 | markers | Badges and actions that other extensions place on source ranges | Plain text only; at most 1,000 per plugin per editor |
 | settings | Open Settings, Change Setting… (any contributed setting, edited by type), and commands to set the note font size and toggle line numbers, readable line width, Mermaid, inline title and Vim | Same keys as the Settings UI, no state of its own; Obsidian has no such commands |
 

@@ -4,6 +4,7 @@ import type { Disposer } from "../kernel";
 import type { Cancellation } from "./rpc/lifecycle";
 import type { Endpoint, Transport } from "./rpc/endpoint";
 import type { EditorProvider } from "./editor-provider";
+import type { DiagnosticSink, WorkspaceFiles } from "./workspace-files";
 export interface HostDocument {
   readonly id: string;
   readonly uri: string;
@@ -110,6 +111,14 @@ export interface Workbench {
   // Files, workspace and storage.
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
+  /** Create, copy and list workspace files. Plugins pass URIs; the host checks them. */
+  files?: WorkspaceFiles;
+  /** Problems panel entries, one owner at a time (a plugin id). */
+  diagnostics?: DiagnosticSink;
+  /** Show a file in a text editor beside the current one. Marp export needs this. */
+  revealTextEditor?(uri: string): Promise<void>;
+  /** Whether another extension, such as Marp or Agent PDF Viewer, is installed. */
+  hasExtension?(id: string): boolean;
   workspaceFolders?(): readonly string[];
   isTrusted?(): boolean;
   storage?: {

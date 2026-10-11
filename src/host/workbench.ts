@@ -3,6 +3,8 @@ import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
 import { createSettingsAccess } from "./settings-access";
+import { createDiagnostics } from "./diagnostics";
+import { createWorkspaceFiles } from "./workspace-files";
 import type { SettingsReader } from "./settings";
 import * as vscode from "vscode";
 import { textBypass } from "./reclaim";
@@ -52,6 +54,10 @@ export function createWorkbench(
     settings: createSettingsAccess(),
     editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
+    files: createWorkspaceFiles(),
+    diagnostics: createDiagnostics(),
+    revealTextEditor,
+    hasExtension: (id) => Boolean(vscode.extensions.getExtension(id)),
     registerEditor: (provider, open) =>
       registerEditor(provider, { extensionUri, documents }, (panel) => {
         panels.set(panel.id, panel);
@@ -197,6 +203,38 @@ function agentOperations(): Pick<
     },
   };
 }
+const URI_COMMANDS = new Set([
+  "vscode.open",
+  "vscode.openWith",
+  "markdown.showPreview",
+  "markdown.showPreviewToSide",
+  "chatgpt.addFileToThread",
+]);
+
+function commandArguments(id: string, args: unknown[]): unknown[] {
+  if (!URI_COMMANDS.has(id) || typeof args[0] !== "string") {
+    return args;
+  }
+  if (id === "vscode.openWith" && args[1] === "default") {
+    // Opened as text on purpose: the reclaim must not undo it.
+    textBypass.allow(args[0]);
+  }
+  const next = [...args];
+  next[0] = vscode.Uri.parse(args[0]);
+  return next;
+}
+
+async function revealTextEditor(uri: string): Promise<void> {
+  const document = await vscode.workspace.openTextDocument(
+    vscode.Uri.parse(uri),
+  );
+  await vscode.window.showTextDocument(document, {
+    viewColumn: vscode.ViewColumn.Beside,
+    preview: true,
+    preserveFocus: false,
+  });
+}
+
 function commandOperations(): Pick<
   Workbench,
   "command" | "execute" | "clipboard" | "error" | "inform"
@@ -207,17 +245,7 @@ function commandOperations(): Pick<
       return () => stop.dispose();
     },
     async execute(id, ...args) {
-      if (id === "vscode.openWith" && typeof args[0] === "string") {
-        if (args[1] === "default") {
-          // Opened as text on purpose: the reclaim must not undo it.
-          textBypass.allow(args[0]);
-        }
-        args[0] = vscode.Uri.parse(args[0]);
-      }
-      if (id === "chatgpt.addFileToThread" && typeof args[0] === "string") {
-        args[0] = vscode.Uri.parse(args[0]);
-      }
-      return vscode.commands.executeCommand(id, ...args);
+      return vscode.commands.executeCommand(id, ...commandArguments(id, args));
     },
     clipboard: {
       read: async () => vscode.env.clipboard.readText(),

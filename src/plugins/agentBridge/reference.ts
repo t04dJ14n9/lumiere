@@ -2,6 +2,7 @@ import {
   formatMarkdownAgentReference,
   formatUriAgentReference,
 } from "../../shared/agent-reference";
+import { markdownHandoffText } from "../../shared/bridge/text";
 
 /**
  * The LLM Wiki reference for lines of a note: `@notes/a.md#12-18`. The path
@@ -47,7 +48,5 @@ export function workspaceRelativePath(
  * reads the exact words without opening anything.
  */
 export function agentPayload(reference: string, text: string): string {
-  const lines = text.replace(/\r\n?/g, "\n").replace(/\n+$/, "").split("\n");
-  const quoted = lines.map((line) => (line ? `> ${line}` : ">")).join("\n");
-  return `${reference}\n\n${quoted}`;
+  return markdownHandoffText(reference, text);
 }
