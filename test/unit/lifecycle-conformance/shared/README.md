@@ -1,14 +1,16 @@
 # Lifecycle conformance, Stage 1
 
-These 18 scenarios specify lifecycle completion independently of the runtime
+These 23 scenarios specify lifecycle completion independently of the runtime
 under test. Native expectations are identical in both repositories. The only
 native N/A is PDF early release: `PluginScope.acquire` returns the acquired
 resource and has no supported early-release handle.
 
 The contracts cover joined activation and release, dependency barriers during
 restart and already-running teardown, cancellation without waiting for an
-uncooperative initializer, rollback/disposal overlap (including failed inverses),
-cleanup continuation, transitive dependency order and LIFO, early release,
+uncooperative initializer, two-wave late acquisition during disable/dispose
+drainage (including a rejecting final inverse), rollback/disposal overlap
+(including failed inverses), cleanup continuation, transitive provider-disable
+barriers, dependency order and LIFO, early release,
 generation safety, provider replacement during initialization, permanent
 shutdown, and rejected late inverses. Process `unhandledRejection` listeners
 surround every executed scenario, through fixture teardown and an event-loop
@@ -16,8 +18,19 @@ checkpoint; every scenario asserts zero unhandled rejections.
 
 `harness.ts` has no runtime or platform imports. The scenarios and Node unit-test
 runner import no application runtime. A new adapter can run these same scenarios
-without modifying their assertions. No browser/native tests or production code
-are added or removed.
+without modifying their assertions. No browser/native tests are added or removed.
+Stage 1 includes baseline completion fixes in Markdown's `Fiber.dispose` and
+PDF's `PluginScope.release`; production remains on the existing native runtimes.
+
+The review additions keep the original cancellation and dependency/LIFO cases:
+
+| Scenario | Additional completion barrier |
+| --- | --- |
+| `late-drain-disable-success` | Both disable callers wait for late B after the ordinary inverse and late A finish. |
+| `late-drain-disable-error` | The same barrier when B rejects; its rejection stays handled. |
+| `late-drain-dispose-success` | Both dispose callers join both waves of late inverses. |
+| `late-drain-dispose-error` | The same barrier when B rejects; its rejection stays handled. |
+| `transitive-provider-disable` | Provider disable alone starts and joins gated leaf cleanup before consumer/provider backing releases, with non-topological catalog order. |
 
 ## Files and synchronization
 
@@ -77,7 +90,7 @@ including when an assertion fails.
 The intended comparison version is exactly `cordis@4.0.0-rc.10`. This Stage 1
 skeleton does not import or emulate Cordis: invoking its activation endpoint
 rejects with a clear unsupported-adapter error, tested by an executable smoke
-test. All 18 conformance scenarios are registered with explicit pending-adapter
+test. All 23 conformance scenarios are registered with explicit pending-adapter
 skip reasons. A skip is neither a measured Cordis failure nor evidence of
 conformance. No native assertion is weakened, and no package dependency is
 needed for this skeleton.
@@ -91,5 +104,6 @@ continuation, already-stopping dependents and permanent application shutdown as
 explicit gates. The decision memo's A–G findings are source-audit hypotheses;
 do not label them executed failures without running a concrete adapter.
 
-No Stage 2 work is authorized: do not change production kernels or plugins,
-remove legacy runtimes, merge, push or publish as part of this suite.
+Only the reviewed Stage 1 baseline hardening and conformance additions are
+authorized. Stage 2 remains blocked: do not wire real Cordis, remove legacy
+runtimes, merge, push or publish as part of this suite.

@@ -273,6 +273,116 @@ function cancellation(stop: "disable" | "dispose"): LifecycleScenario {
   };
 }
 
+function lateDrain(
+  stop: "disable" | "dispose",
+  fails: boolean,
+): LifecycleScenario {
+  return {
+    id: `late-drain-${stop}-${fails ? "error" : "success"}`,
+    expectation: `${stop} joins two waves of late inverses until the final inverse ${fails ? "rejects" : "succeeds"}`,
+    async run(fixture) {
+      if (fails) {
+        fixture.expectErrors("late drain B failed");
+      }
+      const activated = fixture.gate();
+      const activationFinish = fixture.gate();
+      const ordinaryEntered = fixture.gate();
+      const ordinaryFinish = fixture.gate();
+      const ordinaryCompleted = fixture.gate();
+      const lateAEntered = fixture.gate();
+      const lateAFinish = fixture.gate();
+      const lateBEntered = fixture.gate();
+      const lateBFinish = fixture.gate();
+      const log: string[] = [];
+      const releasing = new Set<string>();
+      let scope: ActivationScope | undefined;
+      const runtime = fixture.create([
+        provider(async (active) => {
+          scope = active;
+          active.acquire(async () => {
+            ordinaryEntered.open();
+            await ordinaryFinish.opened;
+            log.push("ordinary");
+            ordinaryCompleted.open();
+          });
+          active.provide("lifecycleBacking", backing());
+          activated.open();
+          await activationFinish.opened;
+        }),
+      ]);
+      const enabling = fixture.watch(runtime.enable("provider"));
+      await activated.opened;
+      const stoppedScope = scope;
+      assert.ok(stoppedScope);
+      assert.equal(runtime.service("lifecycleBacking"), undefined);
+      const stopProvider = () =>
+        stop === "dispose" ? runtime.dispose() : runtime.disable("provider");
+      const stops = [fixture.watch(stopProvider())];
+      await ordinaryEntered.opened;
+      stops.push(fixture.watch(stopProvider()));
+      assert.throws(() =>
+        stoppedScope.acquire(async () => {
+          releasing.add("A");
+          lateAEntered.open();
+          await lateAFinish.opened;
+          releasing.delete("A");
+          log.push("A");
+        }),
+      );
+      await lateAEntered.opened;
+      await checkpoint();
+      assert.deepEqual(
+        stops.map((operation) => operation.settled),
+        [false, false],
+      );
+      assert.deepEqual([...log], []);
+      ordinaryFinish.open();
+      await ordinaryCompleted.opened;
+      // Let release resume past the ordinary inverse and wait on A before B
+      // arrives. A single-snapshot drain cannot join that second wave.
+      await checkpoint();
+      assert.deepEqual(log, ["ordinary"]);
+      assert.deepEqual([...releasing], ["A"]);
+      assert.deepEqual(
+        stops.map((operation) => operation.settled),
+        [false, false],
+      );
+      assert.throws(() =>
+        stoppedScope.acquire(async () => {
+          releasing.add("B");
+          lateBEntered.open();
+          await lateBFinish.opened;
+          releasing.delete("B");
+          log.push("B");
+          if (fails) {
+            throw new Error("late drain B failed");
+          }
+        }),
+      );
+      await lateBEntered.opened;
+      lateAFinish.open();
+      await checkpoint();
+      assert.deepEqual(log, ["ordinary", "A"]);
+      assert.deepEqual([...releasing], ["B"], "B is still releasing");
+      assert.deepEqual(
+        stops.map((operation) => operation.settled),
+        [false, false],
+        "every stop caller must join B before provider teardown finishes",
+      );
+      lateBFinish.open();
+      await Promise.all(stops.map((operation) => operation.done));
+      assert.deepEqual(log, ["ordinary", "A", "B"]);
+      assert.equal(releasing.size, 0);
+      assert.equal(runtime.state("provider"), "inactive");
+      assert.equal(enabling.settled, false, "stop must not await activation");
+      activationFinish.open();
+      await enabling.done;
+      assert.equal(runtime.state("provider"), "inactive");
+      assert.equal(runtime.service("lifecycleBacking"), undefined);
+    },
+  };
+}
+
 function rollbackOverlap(
   stop: "disable" | "dispose",
   fails: boolean,
@@ -418,6 +528,114 @@ const ordering: LifecycleScenario = {
       "provider second",
       "provider first",
     ]);
+  },
+};
+
+const transitiveProviderDisable: LifecycleScenario = {
+  id: "transitive-provider-disable",
+  expectation:
+    "disabling a provider joins its transitive leaf before releasing either service backing",
+  async run(fixture) {
+    const leafEntered = fixture.gate();
+    const leafFinish = fixture.gate();
+    const log: string[] = [];
+    let isBackingLive = true;
+    let isDerivedLive = true;
+    let isLeafStopping = false;
+    const runtime = fixture.create([
+      // Declaration order deliberately differs from dependency order.
+      {
+        id: "leaf",
+        requires: ["consumer"],
+        activate(scope) {
+          const derived = scope.get("lifecycleDerived");
+          scope.acquire(async () => {
+            isLeafStopping = true;
+            leafEntered.open();
+            await leafFinish.opened;
+            assert.equal(derived.read(), 1);
+            log.push("leaf");
+            isLeafStopping = false;
+          });
+        },
+      },
+      provider((scope) => {
+        scope.acquire(() => {
+          assert.equal(isLeafStopping, false);
+          assert.equal(isDerivedLive, false);
+          isBackingLive = false;
+          log.push("provider");
+        });
+        scope.provide("lifecycleBacking", {
+          generation: 1,
+          read() {
+            assert.equal(
+              isBackingLive,
+              true,
+              "provider backing released early",
+            );
+            return 1;
+          },
+        });
+      }),
+      {
+        ...consumer((scope) => {
+          const service = scope.get("lifecycleBacking");
+          scope.acquire(() => {
+            assert.equal(isLeafStopping, false);
+            assert.equal(service.read(), 1);
+            isDerivedLive = false;
+            log.push("consumer");
+          });
+          scope.provide("lifecycleDerived", {
+            generation: service.generation,
+            read() {
+              assert.equal(
+                isDerivedLive,
+                true,
+                "derived backing released early",
+              );
+              return service.read();
+            },
+          });
+        }),
+        provides: "lifecycleDerived",
+      },
+    ]);
+    await runtime.enable("provider");
+    await runtime.enable("consumer");
+    await runtime.enable("leaf");
+    for (const id of ["provider", "consumer", "leaf"]) {
+      assert.equal(runtime.state(id), "active");
+    }
+    const service = runtime.service("lifecycleBacking");
+    const derived = runtime.service("lifecycleDerived");
+    assert.ok(service);
+    assert.ok(derived);
+    const stopping = fixture.watch(runtime.disable("provider"));
+    await checkpoint();
+    // Check initiation before awaiting the gate so missing recursive traversal
+    // fails here, before fixture disposal could start the omitted leaf cleanup.
+    assert.equal(
+      isLeafStopping,
+      true,
+      "provider disable must start leaf cleanup",
+    );
+    await leafEntered.opened;
+    assert.equal(stopping.settled, false);
+    assert.deepEqual(log, []);
+    // Capture service identities before withdrawal: publication visibility
+    // differs by runtime, but both backing resources must still be usable.
+    assert.equal(service.read(), 1);
+    assert.equal(derived.read(), 1);
+    leafFinish.open();
+    await stopping.done;
+    assert.deepEqual(log, ["leaf", "consumer", "provider"]);
+    for (const id of ["provider", "consumer", "leaf"]) {
+      assert.equal(runtime.state(id), "inactive");
+    }
+    assert.equal(runtime.service("lifecycleBacking"), undefined);
+    assert.equal(runtime.service("lifecycleDerived"), undefined);
   },
 };
 
@@ -607,12 +825,17 @@ export const lifecycleScenarios: readonly LifecycleScenario[] = [
   alreadyStopping,
   cancellation("disable"),
   cancellation("dispose"),
+  lateDrain("disable", false),
+  lateDrain("disable", true),
+  lateDrain("dispose", false),
+  lateDrain("dispose", true),
   rollbackOverlap("disable", false),
   rollbackOverlap("disable", true),
   rollbackOverlap("dispose", false),
   rollbackOverlap("dispose", true),
   cleanupContinuation,
   ordering,
+  transitiveProviderDisable,
   earlyRelease,
   staleActivation,
   replacedProvider,

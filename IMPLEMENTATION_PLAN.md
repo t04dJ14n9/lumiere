@@ -4326,3 +4326,24 @@ Native setup packages a VSIX, so it was excluded by the task's explicit no-VSIX
 constraint. No cursorBridge code, PDF bridge defaults, VSIX, merge or Marketplace
 publication is part of this phase. PDF check results and final pushed tips are
 recorded in `/workspace/plans/chatgpt-ide-adapters-code/PR-STATUS.md`.
+
+### Cordis Stage 1 — Blocking review fixes F1/F2, 2026-10-12
+
+- Added canonical `late-drain-disable-success`, `late-drain-disable-error`,
+  `late-drain-dispose-success`, and `late-drain-dispose-error` scenarios. Each
+  introduces A during ordinary cleanup and B after cleanup begins waiting on A;
+  both stop callers stay pending until B completes, including when B rejects.
+- Added `transitive-provider-disable` with leaf/provider/consumer declaration
+  order and an independently gated leaf inverse. Provider disable alone must
+  start and join leaf cleanup while both backing services remain usable; these
+  assertions run before fixture disposal. The original dependency/LIFO and
+  cancellation cases remain.
+- Synced all six shared files with the canonical suite and PDF snapshot. The
+  matrix is now 23 scenarios. The Markdown native adapter passes all 23; the
+  Cordis stub skips all 23 and still refuses activation in its smoke test.
+  Markdown's existing `Fiber.dispose()` barrier is unchanged. No Stage 2 work,
+  dependency installation, merge, push, or publication was performed.
+- Verification (unrestricted local): focused conformance green (24 pass / 23
+  Cordis skips); full `pnpm check` green (911 pass / 23 skip). Markdown runtime
+  needed no code change for F1/F2; existing `Fiber.dispose()` barrier kept.
+  Browser/native gates unchanged by this patch and not re-asserted here.
