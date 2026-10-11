@@ -17,6 +17,40 @@ function deferred() {
   });
   return { promise, resolve };
 }
+
+test("parent disposal joins a child that detached while its cleanup is still running", async () => {
+  const root = Context.create();
+  const entered = deferred();
+  const finish = deferred();
+  let released = 0;
+  const child = root.plugin({
+    name: "detaching-child",
+    apply(ctx) {
+      ctx.acquire("gated resource", async () => {
+        entered.resolve();
+        await finish.promise;
+        released++;
+      });
+    },
+  });
+  await root.settled();
+  const childStop = child.dispose();
+  await entered.promise;
+  let parentStopped = false;
+  const parentStop = root.dispose().then(() => {
+    parentStopped = true;
+  });
+  try {
+    await tick();
+    assert.equal(parentStopped, false);
+    assert.equal(released, 0);
+  } finally {
+    finish.resolve();
+    await Promise.all([childStop, parentStop]);
+  }
+  assert.equal(released, 1);
+  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+});
 class AsyncService extends Service {
   constructor(ctx: Context) {
     super(ctx, "asynchronous", undefined);
