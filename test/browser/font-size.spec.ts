@@ -48,7 +48,8 @@ test("the default body size is Obsidian's 16px and everything else is relative t
   expect(measured.copyCode).toBeCloseTo(16 * 0.6875, 2);
   expect(measured.codeLanguage).toBeCloseTo(16 * 0.6875, 2);
   expect(measured.footnoteDefinition).toBeCloseTo(16 * 0.875, 2);
-  expect(measured.lineNumber).toBe(13);
+  // Obsidian keeps the gutter at its 12px UI size at every note size.
+  expect(measured.lineNumber).toBe(12);
   // Obsidian's line heights: 1.5 for the body (24px) and code, each heading's own.
   expect(measured.bodyLineHeight).toBe(24);
   expect(measured.codeLineHeight).toBe(24);
