@@ -1,6 +1,6 @@
 import { useRegistry } from "@embedpdf/core/react";
 import type { PdfDocumentObject, PdfEngine, PdfGlyphObject } from "@embedpdf/models";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { coreWord, wordGlyphRange, type WordGlyph } from "../shared/look-up";
 import { postToHost } from "./host";
 
@@ -19,22 +19,29 @@ const HOVER_MS = 120;
  *
  * Off until the extension says it is on (`lookUp` host message).
  */
-export function useLookUp(pdf: PdfDocumentObject, enabled: boolean): void {
+export function useLookUp(pdf: PdfDocumentObject, enabled: boolean): () => void {
   const { registry } = useRegistry();
   const engine = useRef<PdfEngine | null>(null);
   engine.current = registry?.getEngine() ?? null;
-  useEffect(
-    () => (enabled ? attach(() => engine.current, pdf) : undefined),
-    [enabled, pdf],
-  );
+  const command = useRef<(() => void) | undefined>(undefined);
+  useEffect(() => {
+    if (!enabled) return;
+    const binding = attach(() => engine.current, pdf);
+    command.current = binding.open;
+    return () => { command.current = undefined; binding.dispose(); };
+  }, [enabled, pdf]);
+  return useCallback(() => command.current?.(), []);
 }
 
 function attach(
   engine: () => PdfEngine | null,
   pdf: PdfDocumentObject,
-): () => void {
+): { dispose(): void; open(): void } {
   const glyphCache = new Map<number, Promise<readonly (WordGlyph | undefined)[] | undefined>>();
-  let hovered: { word: string; at: [number, number] } | undefined;
+  let generation = 0;
+  let live = true;
+  let menuTarget = false;
+  let clicked: { x: number; y: number } | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   const wordAt = async (x: number, y: number): Promise<string | undefined> => {
@@ -69,49 +76,74 @@ function attach(
       ])
       .toPromise()
       .catch(() => undefined);
+    const current = pageAt(pdf, x, y);
+    if (!current || current.page.index !== page.index
+      || Math.abs(current.point.x - point.x) > 0.1
+      || Math.abs(current.point.y - point.y) > 0.1) return undefined;
     return coreWord(texts?.[0] ?? "") || undefined;
   };
 
+  const reportAt = (x: number, y: number, open: boolean): void => {
+    const request = ++generation;
+    void wordAt(x, y).then(word => {
+      if (live && request === generation) {
+        postToHost({ type: "lookUp", word: word ?? null, open });
+      }
+    });
+  };
   const onMove = (event: PointerEvent): void => {
-    if (timer) return;
+    if (menuTarget) return;
+    clearTimeout(timer);
     const { clientX, clientY } = event;
+    generation++;
     timer = setTimeout(() => {
       timer = undefined;
-      void wordAt(clientX, clientY).then((word) => {
-        hovered = word ? { word, at: [clientX, clientY] } : undefined;
-      });
+      reportAt(clientX, clientY, false);
     }, HOVER_MS);
   };
-  // The menu opens now; the word was found a moment ago, under the pointer.
+  const clearTarget = (): void => {
+    menuTarget = false;
+    clicked = undefined;
+    generation++;
+    clearTimeout(timer);
+    postToHost({ type: "lookUp", word: null, open: false });
+  };
+  // Always resolve the clicked point. A nearby pointer or cached pre-scroll
+  // word is not evidence for the word under this context menu.
   const onContextMenu = (event: MouseEvent): void => {
-    const near =
-      hovered !== undefined &&
-      Math.hypot(hovered.at[0] - event.clientX, hovered.at[1] - event.clientY) < 24;
-    const known = near ? hovered?.word : undefined;
-    postToHost({ type: "lookUp", word: known ?? null, open: false });
-    if (known) return;
-    // Not found yet (a right click without moving first): look now, report soon.
-    void wordAt(event.clientX, event.clientY).then((word) => {
-      if (word) postToHost({ type: "lookUp", word, open: false });
-    });
+    clearTarget();
+    menuTarget = true;
+    clicked = { x: event.clientX, y: event.clientY };
+    reportAt(event.clientX, event.clientY, false);
   };
   const onForceWillBegin = (event: Event): void => event.preventDefault();
   const onForceDown = (event: Event): void => {
     const { clientX, clientY } = event as MouseEvent;
-    void wordAt(clientX, clientY).then((word) => {
-      if (word) postToHost({ type: "lookUp", word, open: true });
-    });
+    clearTarget();
+    reportAt(clientX, clientY, true);
   };
+  const onKey = (event: KeyboardEvent): void => { if (event.key === "Escape") clearTarget(); };
+  document.addEventListener("pointerdown", clearTarget, true);
+  document.addEventListener("keydown", onKey, true);
+  document.addEventListener("scroll", clearTarget, true);
   document.addEventListener("pointermove", onMove, { passive: true });
   document.addEventListener("contextmenu", onContextMenu, true);
   document.addEventListener("webkitmouseforcewillbegin", onForceWillBegin, true);
   document.addEventListener("webkitmouseforcedown", onForceDown, true);
-  return () => {
+  return {
+    open: () => { if (clicked && live) reportAt(clicked.x, clicked.y, true); },
+    dispose: () => {
+    live = false;
+    generation++;
     clearTimeout(timer);
+    document.removeEventListener("pointerdown", clearTarget, true);
+    document.removeEventListener("keydown", onKey, true);
+    document.removeEventListener("scroll", clearTarget, true);
     document.removeEventListener("pointermove", onMove);
     document.removeEventListener("contextmenu", onContextMenu, true);
     document.removeEventListener("webkitmouseforcewillbegin", onForceWillBegin, true);
     document.removeEventListener("webkitmouseforcedown", onForceDown, true);
+    },
   };
 }
 

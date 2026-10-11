@@ -124,7 +124,9 @@ export async function editorTitleAction(
   // Menu items act on mouse up after the pointer has entered them.
   const item = page
     .locator(".monaco-menu")
-    .getByRole("menuitem", { name: label });
+    .getByRole("menuitem", { name: label })
+    // Overflow can repeat the same command from toolbar and menu groups.
+    .first();
   await item.hover();
   await item.click();
 }
@@ -184,7 +186,7 @@ export async function pdfViewer(page: Page): Promise<Frame> {
           try {
             if (
               (await frame.locator(".viewer .page").count()) &&
-              (await (await frame.frameElement()).isVisible())
+              (await visibleFrameAncestors(frame))
             ) {
               viewer = frame;
               return true;
@@ -199,6 +201,14 @@ export async function pdfViewer(page: Page): Promise<Frame> {
     )
     .toBe(true);
   return viewer!;
+}
+
+/** Retained custom editors can contain visible inner frames inside hidden webviews. */
+async function visibleFrameAncestors(frame: Frame): Promise<boolean> {
+  for (let current: Frame | null = frame; current?.parentFrame(); current = current.parentFrame()) {
+    if (!(await (await current.frameElement()).isVisible())) return false;
+  }
+  return true;
 }
 
 /**

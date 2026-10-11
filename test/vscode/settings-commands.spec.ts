@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { command, expect, openFile, pdfViewer, test } from "./workbench";
@@ -34,15 +34,22 @@ const settingsEditor = (page: Page) => page.locator(".settings-editor");
 const rows = (page: Page) => page.locator(".quick-input-list .monaco-list-row");
 
 test.afterEach(async ({ workbench: page }) => {
-  rmSync(path.join(paths.workspace, ".vscode"), { recursive: true, force: true });
+  // Keep the watched directory alive: macOS can coalesce its deletion and
+  // leave the configuration cache stale. An empty file removes the same keys.
+  mkdirSync(path.dirname(workspaceFile), { recursive: true });
+  writeFileSync(workspaceFile, "{}");
   resetUser("vscodeEmbedPdf.keyboardShortcuts", "vscodeEmbedPdf.view.smoothScrolling", "vscodeEmbedPdf.view.pageLayout", "vscodeEmbedPdf.view.scrollMode", "vscodeEmbedPdf.view.defaultZoom", "vscodeEmbedPdf.regionImageCache.maxSizeMB", "vscodeEmbedPdf.toolbar.mode");
   // The next spec file must start from the defaults: wait until VS Code has
   // read the files again (its file watcher can take a while on a loaded runner).
-  await command(page, "PDF: Change Setting…");
   const input = page.locator(".quick-input-widget input:visible");
   for (const [filter, row, value] of [["Keyboard", "Keyboard Shortcuts", "on"], ["Mode", "Mode", "chrome"], ["Smooth", "Smooth Scrolling", "follows the editor"], ["Layout", "Page Layout", "single"]] as const) {
-    await input.fill(filter);
-    await expect(rows(page).filter({ has: page.getByText(row, { exact: true }) }).first()).toContainText(value, { timeout: 30_000 });
+    // Each picker snapshots values at open time; reopen while waiting for
+    // the file watcher instead of polling an old rendered snapshot.
+    await expect.poll(async () => {
+      await command(page, "PDF: Change Setting…");
+      await input.fill(filter);
+      return rows(page).filter({ has: page.getByText(row, { exact: true }) }).first().innerText();
+    }, { timeout: 30_000 }).toContain(value);
   }
   await page.keyboard.press("Escape");
 });

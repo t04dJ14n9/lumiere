@@ -15,9 +15,11 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 import { downloadAndUnzipVSCode } from '@vscode/test-electron';
 import { createVSIX } from '@vscode/vsce';
+import type { FullConfig } from '@playwright/test';
 import { paths, writeState } from './state';
 
-export default async function globalSetup(): Promise<void> {
+export default async function globalSetup(config: FullConfig): Promise<void> {
+  const restrictedMode = config.metadata.restrictedMode === true;
   const { executable, cli } = await resolveVsCode();
   rmSync(paths.root, { recursive: true, force: true });
   mkdirSync(path.join(paths.userData, 'User'), { recursive: true });
@@ -26,7 +28,15 @@ export default async function globalSetup(): Promise<void> {
   writeFileSync(path.join(paths.userData, 'User', 'settings.json'), JSON.stringify({
     'window.newWindowDimensions': 'maximized',
     'workbench.startupEditor': 'none',
-    'security.workspace.trust.enabled': false,
+    // DOM-driven tests need VS Code-rendered menus, including on macOS.
+    'window.menuStyle': 'custom',
+    'security.workspace.trust.enabled': restrictedMode,
+    ...(restrictedMode ? {
+      'security.workspace.trust.startupPrompt': 'never',
+      'security.workspace.trust.emptyWindow': false,
+      'vscodeEmbedPdf.agentBridge.enabled': false,
+      'vscodeEmbedPdf.copyLinkForAgent.target': 'clipboard',
+    } : {}),
     'telemetry.telemetryLevel': 'off',
     'update.mode': 'none',
     'extensions.autoUpdate': false,
@@ -37,6 +47,13 @@ export default async function globalSetup(): Promise<void> {
   mkdirSync(path.join(paths.workspace, 'docs'), { recursive: true });
   copyFileSync(path.join(paths.fixtures, 'outline.pdf'), path.join(paths.workspace, 'docs', 'outline.pdf'));
   writeFileSync(path.join(paths.workspace, 'notes.md'), '# Notes\n');
+  if (restrictedMode) {
+    mkdirSync(path.join(paths.workspace, '.vscode'));
+    writeFileSync(path.join(paths.workspace, '.vscode', 'settings.json'), JSON.stringify({
+      'vscodeEmbedPdf.agentBridge.enabled': true,
+      'vscodeEmbedPdf.copyLinkForAgent.target': 'claudeCode',
+    }, null, 2));
+  }
 
   const vsix = path.join(paths.root, 'extension.vsix');
   await createVSIX({ cwd: paths.repository, packagePath: vsix, dependencies: false });
@@ -50,7 +67,19 @@ export default async function globalSetup(): Promise<void> {
     allowMissingRepository: true,
     skipLicense: true,
   });
-  for (const extension of [vsix, participant]) {
+  const extensions = [vsix, participant];
+  if (restrictedMode) {
+    const probe = path.join(paths.root, 'restricted-probe.vsix');
+    await createVSIX({
+      cwd: path.join(paths.repository, 'test', 'fixtures', 'restricted-probe'),
+      packagePath: probe,
+      dependencies: false,
+      allowMissingRepository: true,
+      skipLicense: true,
+    });
+    extensions.push(probe);
+  }
+  for (const extension of extensions) {
     execFileSync(cli, ['--user-data-dir', paths.userData, '--extensions-dir', paths.extensions, '--install-extension', extension, '--force'], {
       stdio: 'ignore',
       env: cleanEnvironment(),
@@ -60,9 +89,11 @@ export default async function globalSetup(): Promise<void> {
   const port = await freePort();
   const vscode = spawn(executable, [
     '--new-window',
+    // Opt-in only for credential-free, disposable macOS test profiles.
+    ...(process.platform === 'darwin' && process.env.VSCODE_TEST_MOCK_KEYCHAIN === '1' ? ['--use-mock-keychain'] : []),
     '--skip-welcome',
     '--skip-release-notes',
-    '--disable-workspace-trust',
+    ...(restrictedMode ? [] : ['--disable-workspace-trust']),
     '--disable-telemetry',
     // Cursor opens a sign-in screen over the window unless told not to.
     '--skip-onboarding',

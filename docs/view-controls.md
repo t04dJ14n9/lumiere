@@ -93,7 +93,9 @@ spec covers spread commands and reopening.
 
 Run lint, typechecking, the build and unit tests locally. Browser and real-editor
 specs require Chromium/VS Code and permission to open local listening sockets;
-they cannot run in sandboxes that deny those sockets.
+they cannot run in sandboxes that deny those sockets. The real-editor specs
+(`pnpm test:vscode`) do not run in CI; run them locally before every push
+(`xvfb-run -a pnpm check:full` on headless Linux).
 
 ## Screenshots (real VS Code)
 

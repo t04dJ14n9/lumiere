@@ -1,5 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { keyMove } from "../shared/paging-keys";
+import { pageAxisState } from "../shared/page-window";
 import { EdgeTurn } from "../shared/smooth-motion";
 import type { ScrollDirection, ScrollMode } from "../shared/view-settings";
 import type { ScrollBounds } from "./paged-scroll";
@@ -42,24 +43,29 @@ export function usePagingKeys(
       const viewport = container.current?.querySelector<HTMLElement>(".viewport");
       if (!viewport) return;
       const { mode, direction, bounds, step } = latest.current;
-      const { x, y } = bounds(viewport);
+      const limits = bounds(viewport);
+      // Native page requests run in rAF; their padding offset can briefly be
+      // outside these bounds until the scroll event constrains it. A rapid
+      // reverse key must not mistake that transient offset for room to pan.
+      const x = pageAxisState(viewport.scrollLeft, limits.x);
+      const y = pageAxisState(viewport.scrollTop, limits.y);
       const move = keyMove(event.key, {
         mode,
         direction,
         width: viewport.clientWidth,
         height: viewport.clientHeight,
         room: {
-          left: viewport.scrollLeft - x.min,
-          right: x.max - viewport.scrollLeft,
-          up: viewport.scrollTop - y.min,
-          down: y.max - viewport.scrollTop,
+          left: x.before,
+          right: x.after,
+          up: y.before,
+          down: y.after,
         },
         overflowsX: viewport.scrollWidth > viewport.clientWidth + 1,
       });
       if (!move) return;
       event.preventDefault();
       if (move.type === "page") step(move.delta);
-      else viewport.scrollBy({ left: move.x, top: move.y, behavior: "instant" });
+      else viewport.scrollTo({ left: x.position + move.x, top: y.position + move.y, behavior: "instant" });
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);

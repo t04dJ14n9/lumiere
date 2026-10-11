@@ -22,6 +22,7 @@ export interface ToolbarProps {
   tool: ToolMode;
   choices: ViewChoices;
   run: (action: ViewerAction) => void;
+  history: { back: boolean; forward: boolean; onBack(): void; onForward(): void };
 }
 
 function IconButton({
@@ -65,6 +66,7 @@ export function ToolbarControls({
   tool,
   choices,
   run,
+  history,
   compact = false,
 }: ToolbarProps & {
   /** Shorter page suffix ("/ 12"), for the floating bar. */
@@ -75,6 +77,11 @@ export function ToolbarControls({
   const fit = fitMode(state.zoomLevel);
   return (
     <>
+      <span className="toolbar-group">
+        <IconButton icon="arrow-left" label="Back to previous location" disabled={!history.back} onClick={history.onBack} />
+        <IconButton icon="arrow-right" label="Forward to next location" disabled={!history.forward} onClick={history.onForward} />
+      </span>
+      <span className="separator" />
       <span className="toolbar-group">
         <IconButton
           icon="chevron-up"

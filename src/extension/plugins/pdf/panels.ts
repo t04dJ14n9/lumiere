@@ -107,15 +107,16 @@ export class PdfPanels implements vscode.Disposable {
   async waitFor(
     uri: vscode.Uri,
     timeoutMs = 5_000,
+    column?: number,
+    current: () => boolean = () => true,
   ): Promise<PdfPanel | undefined> {
     const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
+    while (Date.now() < deadline && current()) {
       const panel =
-        this.active?.uri.toString() === uri.toString()
+        this.active?.uri.toString() === uri.toString() &&
+        (column === undefined || this.active.webviewPanel.viewColumn === column)
           ? this.active
-          : [...this.panels].find(
-              (candidate) => candidate.uri.toString() === uri.toString(),
-            );
+          : undefined;
       if (panel) return panel;
       await new Promise((resolve) => setTimeout(resolve, 50));
     }

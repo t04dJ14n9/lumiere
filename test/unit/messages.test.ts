@@ -140,7 +140,7 @@ test("an outline entry keeps how far down its page it opens, if that is a real o
       items: [{ title: "Section", page: 9, top: 130.5, children: [] }],
     },
   );
-  for (const top of [0, -5, Number.NaN, Infinity, "130", 2e6]) {
+  for (const top of [-5, Number.NaN, Infinity, "130", 2e6]) {
     assert.deepEqual(
       parseStateReport({ type: "outline", items: [item(top)] }),
       {
@@ -326,4 +326,35 @@ test('zen messages: the viewer says whether Exit zen was pressed', () => {
   assert.deepEqual(parseViewerMessage({ type: 'zen', exit: false }), { type: 'zen', exit: false });
   assert.equal(parseViewerMessage({ type: 'zen' }), undefined);
   assert.equal(parseViewerMessage({ type: 'zen', exit: 'yes' }), undefined);
+});
+
+test('history jumps require valid origins, destinations, load generations and request ids', () => {
+  const position = { ...DEFAULT_VIEW_CHOICES, page: 2, top: 0, left: 12, zoom: 125 };
+  const message = { type: 'historyJump', load: 1, id: 1, from: position, to: { ...position, page: 4 }, requestId: 7 };
+  assert.deepEqual(parseViewerMessage(message), message);
+  for (const bad of [
+    { load: -1 }, { load: 1.2 }, { id: 0 }, { id: Infinity }, { requestId: '7' },
+    { from: { ...position, top: Infinity } }, { to: { ...position, page: 0 } },
+    { to: { ...position, zoom: 'arbitrary' } }, { from: null },
+  ]) assert.equal(parseViewerMessage({ ...message, ...bad }), undefined);
+  // Do not accept a forged URI from the webview; the host supplies the document.
+  assert.deepEqual(parseViewerMessage({ ...message, uri: 'file:///other.pdf' }), message);
+});
+
+test('history replay acknowledgements and toolbar requests are bounded and typed', () => {
+  const position = { ...DEFAULT_VIEW_CHOICES, page: 2, top: 0, left: 0, zoom: 100 };
+  for (const type of ['historyCaptured', 'historyRestored']) {
+    const message = { type, load: 2, token: 3, position, intent: 4, ok: true };
+    assert.deepEqual(parseViewerMessage(message), message);
+    for (const bad of [{ token: 0 }, { token: '3' }, { load: NaN }, { intent: -1 }, { intent: undefined }, { position: {} }, { ok: 'yes' }]) {
+      assert.equal(parseViewerMessage({ ...message, ...bad }), undefined);
+    }
+  }
+  assert.deepEqual(parseViewerMessage({ type: 'historyTraverse', load: 1, direction: 'back' }), { type: 'historyTraverse', load: 1, direction: 'back' });
+  assert.equal(parseViewerMessage({ type: 'historyTraverse', load: 1, direction: 'sideways' }), undefined);
+});
+
+test('an outline destination at exactly the top of its page keeps its coordinate', () => {
+  const result = parseViewerMessage({ type: 'patch', load: 1, version: 1, patch: { outline: [{ title: 'Top', page: 2, top: 0 }] } });
+  assert.deepEqual(result, { type: 'patch', load: 1, version: 1, patch: { outline: [{ title: 'Top', page: 2, top: 0, children: [] }] } });
 });

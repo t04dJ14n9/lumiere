@@ -12,14 +12,19 @@ import type { ViewerAction } from '../../../shared/view-state';
  */
 export class PdfNavigation {
   private loaded = false;
-  private pending: { location: PdfLocation; top?: number | undefined } | undefined;
+  private pending: { location: PdfLocation; top?: number | undefined; requestId?: number } | undefined;
 
   constructor(private readonly post: (message: HostMessage) => void) {}
 
   /** Show a page (and box), or with no box the page from `top` points below its top. */
-  goTo(location: PdfLocation, top?: number): void {
-    if (this.loaded) this.post({ type: 'goTo', location, top });
-    else this.pending = { location, top };
+  goTo(location: PdfLocation, top?: number, requestId?: number): void {
+    const target = { location, top, ...(requestId === undefined ? {} : { requestId }) };
+    if (this.loaded) this.post({ type: 'goTo', ...target });
+    else this.pending = target;
+  }
+
+  cancel(): void {
+    this.pending = undefined;
   }
 
   act(action: ViewerAction): void {

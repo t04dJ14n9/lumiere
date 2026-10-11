@@ -32,4 +32,10 @@ pnpm test:browser
 pnpm test:vscode   # opens a VS Code window
 ```
 
+`pnpm check:full` runs all three in that order. The real-VS Code specs
+(`test/vscode`, `pnpm test:vscode`) do **not** run in GitHub Actions: they were
+flaky under load. They are a required local pre-push check, so run the full
+`pnpm check:full` before every push, on a headless Linux box as
+`xvfb-run -a pnpm check:full`.
+
 Do not publish to the Marketplace or push without the owner's approval.

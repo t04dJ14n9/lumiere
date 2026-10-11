@@ -123,6 +123,7 @@ export function useViewActions(
   return useCallback((action: ViewerAction): void => {
     const { navigation, openSearch, setTool, setChoices, zoom, level } =
       latest.current;
+    const generation = action.action === 'find' ? navigation.intent.advance() : navigation.intent.interrupt();
     const from =
       requested.current ?? zoom?.getState().currentZoomLevel ?? level;
     const zoomTo = (next: number): void => {
@@ -167,7 +168,9 @@ export function useViewActions(
         // keep the old vertical centre, which can land on a later page.
         const page = navigation.currentPage;
         zoom?.requestZoom(ZoomMode.FitPage);
-        requestAnimationFrame(() => latest.current.navigation.goToPage(page));
+        requestAnimationFrame(() => {
+          if (navigation.intent.owns(generation)) latest.current.navigation.show({ page });
+        });
         break;
       }
       case "actualSize":
@@ -177,7 +180,7 @@ export function useViewActions(
         setChoices({ pageLayout: action.pageLayout });
         break;
       case "setScrollMode":
-        navigation.goToPage(navigation.currentPage);
+        navigation.show({ page: navigation.currentPage });
         setChoices({ scrollMode: action.scrollMode });
         break;
       case "setScrollDirection":

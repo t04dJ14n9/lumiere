@@ -1,6 +1,7 @@
 import { useZoomCapability } from "@embedpdf/plugin-zoom/react";
 import { useEffect, type RefObject } from "react";
 import { DOCUMENT_ID } from "./plugins";
+import type { NavigationIntent } from '../shared/navigation-intent';
 
 /** Frames a zoom step waits for the pages to be laid out at the new scale. */
 const SETTLE_FRAMES = 20;
@@ -16,7 +17,7 @@ const SETTLE_FRAMES = 20;
  * scrolled the viewer (a jump to a page, the wheel, a key), it stops, or it
  * would drag the viewer back to where the zoom step wanted it.
  */
-export function useZoomScrollSettle(container: RefObject<HTMLElement | null>): void {
+export function useZoomScrollSettle(container: RefObject<HTMLElement | null>, intent: NavigationIntent): void {
   const { provides } = useZoomCapability();
   useEffect(() => {
     const zoom = provides?.forDocument(DOCUMENT_ID);
@@ -24,10 +25,12 @@ export function useZoomScrollSettle(container: RefObject<HTMLElement | null>): v
     let frame = 0;
     const unsubscribe = zoom.onZoomChange(event => {
       cancelAnimationFrame(frame);
+      const generation = intent.current();
       let frames = 0;
       /** Where this settle last left the viewer; elsewhere means someone else scrolled it. */
       let placed: { left: number; top: number } | undefined;
       const settle = (): void => {
+        if (!intent.owns(generation)) return;
         const viewport = container.current?.querySelector<HTMLElement>('.viewport');
         if (!viewport) return;
         if (placed && (Math.abs(viewport.scrollLeft - placed.left) > 1 || Math.abs(viewport.scrollTop - placed.top) > 1)) return;
@@ -46,5 +49,5 @@ export function useZoomScrollSettle(container: RefObject<HTMLElement | null>): v
       cancelAnimationFrame(frame);
       unsubscribe();
     };
-  }, [container, provides]);
+  }, [container, provides, intent]);
 }

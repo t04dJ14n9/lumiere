@@ -19,14 +19,16 @@ test("opens the PDF, shows the page count and reports the nested outline", async
       {
         title: "Part One",
         page: 1,
+        top: 0,
         children: [
-          { title: "Section 1.1", page: 2, children: [] },
-          { title: "Section 1.2", page: 3, children: [] },
+          { title: "Section 1.1", page: 2, top: 0, children: [] },
+          { title: "Section 1.2", page: 3, top: 0, children: [] },
         ],
       },
       {
         title: "Part Two",
         page: 6,
+        top: 0,
         children: [{ title: "Section 2.1", page: 9, top: 130, children: [] }],
       },
     ]);

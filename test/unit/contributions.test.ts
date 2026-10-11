@@ -51,13 +51,14 @@ test('every default shortcut is scoped to the PDF viewer, to non-input focus and
   assert.equal(setting.default, true);
 });
 
-test('Look Up is a setting, hidden from the palette and offered in the viewer menu only with a word', () => {
+test('Look Up is a setting, hidden from the palette and offered on macOS when enabled, with the clicked word resolved by its command', () => {
   const setting = contributes.configuration.properties['vscodeEmbedPdf.lookUp.enabled'] as { default: boolean };
   assert.equal(setting.default, true);
   const palette = (contributes.menus.commandPalette as { command: string; when?: string }[]).find(entry => entry.command === 'vscodeEmbedPdf.lookUp');
   assert.equal(palette?.when, 'false');
   const menu = (contributes.menus['webview/context'] as { command: string; when?: string }[]).find(entry => entry.command === 'vscodeEmbedPdf.lookUp');
-  assert.match(menu?.when ?? '', /vscodeEmbedPdf\.lookUp\.hasWord/u);
+  assert.match(menu?.when ?? '', /isMac/u);
+  assert.match(menu?.when ?? '', /config\.vscodeEmbedPdf\.lookUp\.enabled/u);
 });
 
 test('turning the page keeping the place: Option+Arrow on macOS, Ctrl+Alt+Arrow elsewhere, never plain Alt+Arrow (VS Code Go Back/Forward)', () => {
@@ -99,4 +100,26 @@ test('settings commands: Open Settings and the common toggles are in the palette
     assert.equal(hidden, undefined, `${id} must be available whatever the active editor is`);
   }
   assert.ok((contributes.menus['webview/context'] as { command: string }[]).some(entry => entry.command === 'vscodeEmbedPdf.openSettings'));
+});
+
+test('the viewer declares limited Restricted Mode support, so PDFs render instead of opening as raw bytes', () => {
+  const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+    capabilities?: { untrustedWorkspaces?: { supported?: unknown; restrictedConfigurations?: string[] } };
+    contributes: Contributes;
+  };
+  const untrusted = manifest.capabilities?.untrustedWorkspaces;
+  assert.equal(untrusted?.supported, 'limited');
+  // The local MCP server must never be switched on by a workspace setting of an untrusted folder.
+  assert.ok(untrusted?.restrictedConfigurations?.includes('vscodeEmbedPdf.agentBridge.enabled'));
+  assert.ok(untrusted?.restrictedConfigurations?.includes('vscodeEmbedPdf.copyLinkForAgent.target'));
+  for (const key of untrusted?.restrictedConfigurations ?? []) assert.ok(key in manifest.contributes.configuration.properties, key);
+});
+
+test('PDF location history has distinct commands and does not claim native or Vim shortcuts', () => {
+  for (const name of ['historyBack', 'historyForward']) {
+    const command = `vscodeEmbedPdf.${name}`;
+    assert.ok(contributes.commands.some(entry => entry.command === command));
+    assert.ok(contributes.menus['editor/title']?.some(entry => entry.command === command));
+    assert.ok(!(contributes.keybindings ?? []).some(entry => entry.command === command));
+  }
 });

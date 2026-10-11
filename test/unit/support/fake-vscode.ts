@@ -164,3 +164,5 @@ export const lm = {
 export class McpHttpServerDefinition {
   constructor(readonly label: string, readonly uri: Uri, readonly headers: Record<string, string> = {}) {}
 }
+
+export const languages = { registerDocumentLinkProvider: () => track("documentLinkProvider") };

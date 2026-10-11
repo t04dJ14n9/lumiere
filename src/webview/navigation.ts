@@ -6,6 +6,7 @@ import type { PdfLocation } from "../shared/pdf-location";
 import type { ReadingPosition } from "../shared/reading-position";
 import type { ScrollMode } from "../shared/view-settings";
 import { rememberedPosition } from "./reading-position";
+import { NavigationIntent } from '../shared/navigation-intent';
 
 /** A box flashed on a page after opening a location. */
 export interface Highlight {
@@ -31,6 +32,7 @@ export function useNavigation(
   scrollMode: ScrollMode,
   smooth: boolean,
 ) {
+  const intent = useRef(new NavigationIntent()).current;
   const { provides: scroll, state } = useScrollState();
   const { provides: scrollPlugin } = useScrollCapability();
   const [highlight, setHighlight] = useState<Highlight>();
@@ -49,6 +51,7 @@ export function useNavigation(
         top?: number | undefined;
         left: number;
         instant: boolean;
+        generation: number;
       }
     | undefined
   >(undefined);
@@ -61,7 +64,7 @@ export function useNavigation(
   const show = useCallback(
     (location: PdfLocation, top?: number, left = 0, instant = false): void => {
       if (!scroll || !layoutReady.current) {
-        heldLocation.current = { location, top, left, instant };
+        heldLocation.current = { location, top, left, instant, generation: intent.current() };
         return;
       }
       const page = Math.min(Math.max(1, location.page), scroll.getTotalPages());
@@ -74,7 +77,7 @@ export function useNavigation(
         .getLayout()
         .virtualItems.find((item) => item.pageNumbers.includes(page));
       scroll.scrollToPage({
-        pageNumber: box || top || left ? page : (item?.pageNumbers[0] ?? page),
+        pageNumber: box || top !== undefined || left !== 0 ? page : (item?.pageNumbers[0] ?? page),
         behavior:
           smooth && !instant && scrollMode === "continuous"
             ? "smooth"
@@ -85,7 +88,7 @@ export function useNavigation(
               alignX: 0,
               alignY: BOX_POSITION_PERCENT,
             }
-          : top || left
+          : top !== undefined || left !== 0
             ? {
                 pageCoordinates: { x: left, y: top ?? 0 },
                 alignX: 0,
@@ -95,7 +98,7 @@ export function useNavigation(
       });
       if (box) setHighlight({ page, rect: fromViewRect(box), key: Date.now() });
     },
-    [scroll, scrollMode, smooth],
+    [scroll, scrollMode, smooth, intent],
   );
 
   const showRef = useRef(show);
@@ -107,10 +110,10 @@ export function useNavigation(
         layoutReady.current = true;
         const held = heldLocation.current;
         heldLocation.current = undefined;
-        if (held)
+        if (held && intent.owns(held.generation))
           showRef.current(held.location, held.top, held.left, held.instant);
       }),
-    [documentId, scrollPlugin],
+    [documentId, scrollPlugin, intent],
   );
 
   // The scroll capability can arrive after the layout; apply what was held.
@@ -118,13 +121,32 @@ export function useNavigation(
     const held = heldLocation.current;
     if (scroll && layoutReady.current && held) {
       heldLocation.current = undefined;
-      show(held.location, held.top, held.left, held.instant);
+      if (intent.owns(held.generation)) show(held.location, held.top, held.left, held.instant);
     }
-  }, [scroll, show]);
+  }, [scroll, show, intent]);
+
+  useEffect(() => {
+    const interrupt = (event: Event): void => {
+      if (event instanceof KeyboardEvent && !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', 'Escape'].includes(event.key)) return;
+      const target = event.target instanceof Element ? event.target : undefined;
+      const reading = event instanceof KeyboardEvent
+        ? event.key !== 'Escape' && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey
+          && !target?.closest('input, textarea, select, [contenteditable], [role="slider"], [role="spinbutton"], [role="listbox"], [role="menu"], [role="combobox"], .view-menu, .grip')
+        : Boolean(target?.closest('.viewport'));
+      if (reading) intent.interrupt();
+      else intent.advance();
+      heldLocation.current = undefined;
+    };
+    for (const name of ['wheel', 'pointerdown', 'touchstart', 'keydown']) document.addEventListener(name, interrupt, { capture: true, passive: true });
+    return () => {
+      intent.advance();
+      for (const name of ['wheel', 'pointerdown', 'touchstart', 'keydown']) document.removeEventListener(name, interrupt, true);
+    };
+  }, [intent]);
 
   /** Scroll a box (a search match) to the middle of the viewer, without flashing it. */
   const reveal = useCallback(
-    (page: number, [left, top, right, bottom]: PageRect): void => {
+    (page: number, [left, top, right, bottom]: PageRect, _deliberate = true): void => {
       requestedPage.current = page;
       setPagedPage(page);
       scroll?.scrollToPage({
@@ -139,8 +161,9 @@ export function useNavigation(
   );
 
   const restore = useCallback((position: ReadingPosition): void => {
+    intent.advance();
     showRef.current({ page: position.page }, position.top, position.left, true);
-  }, []);
+  }, [intent]);
   const step = (delta: 1 | -1, keepPlace = false): void => {
     if (!scroll) return;
     // Native virtual items define both single-page and spread navigation.
@@ -159,6 +182,8 @@ export function useNavigation(
     item.pageNumbers.includes(currentPage),
   );
   return {
+    intent,
+    isReady: () => layoutReady.current && Boolean(scroll),
     currentPage,
     pageCount: state.totalPages,
     canGoBack: Boolean(item && item !== state.virtualItems[0]),

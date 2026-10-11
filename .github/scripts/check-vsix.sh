@@ -6,7 +6,7 @@ set -euo pipefail
 vsix=$1
 max_mb=$2
 
-size=$(stat -c %s "$vsix")
+size=$(wc -c < "$vsix" | tr -d '[:space:]')
 echo "VSIX: $vsix, $((size / 1024)) KB (limit ${max_mb} MB)"
 if (( size > max_mb * 1024 * 1024 )); then
   echo "::error file=$vsix::VSIX is $((size / 1024 / 1024)) MB, over the ${max_mb} MB limit"

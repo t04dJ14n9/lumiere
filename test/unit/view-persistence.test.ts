@@ -133,6 +133,27 @@ test("view defaults inherit editor smoothScrolling and explicit PDF false overri
   vscode.configuration.clear();
 });
 
+test("recreated webviews receive the current toolbar mode and dock after loading bytes", async () => {
+  const preferences = new ViewPreferences(memory() as never, { all: [] } as never);
+  const viewer = open(preferences);
+  await viewer.receive({ type: "ready" });
+  for (const toolbar of [
+    { mode: "slim", dock: "bottom" },
+    { mode: "floating", dock: "right" },
+  ] as const) {
+    viewer.panel.setToolbar(toolbar);
+    viewer.messages.length = 0;
+    await viewer.receive({ type: "ready" });
+    const loadIndex = viewer.messages.findIndex(message => message.type === "load");
+    const toolbarIndex = viewer.messages.findIndex(message => message.type === "toolbar");
+    assert.ok(loadIndex >= 0 && toolbarIndex > loadIndex);
+    assert.deepEqual(viewer.messages[toolbarIndex], { type: "toolbar", toolbar });
+  }
+  viewer.panel.dispose();
+  preferences.dispose();
+  assert.deepEqual(vscode.outstanding(), []);
+});
+
 test("saved positions carry a schema version; other versions and malformed values are ignored", async () => {
   const state = memory();
   const preferences = new ViewPreferences(state as never, { all: [] } as never);

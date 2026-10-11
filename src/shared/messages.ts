@@ -53,7 +53,7 @@ import {
   type ViewerAction,
   type ViewState,
 } from "./view-state";
-import type { ReadingPosition } from "./reading-position";
+import { parseReadingPosition, type ReadingPosition } from "./reading-position";
 import type { ViewSettings } from "./view-settings";
 
 /** One entry of the PDF's outline (bookmarks), with the page it opens. */
@@ -82,6 +82,10 @@ export interface ViewerPatch {
 
 export type ViewerMessage =
   | { type: "ready" }
+  | { type: "historyJump"; load: number; id: number; from: ReadingPosition; to: ReadingPosition; requestId?: number }
+  | { type: "historyTraverse"; load: number; direction: 'back' | 'forward' }
+  | { type: "historyCaptured"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean; startedToken?: number }
+  | { type: "historyRestored"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean; startedToken?: number }
   | { type: "patch"; version: number; load: number; patch: ViewerPatch }
   | { type: "copyLinkForAgent" }
   /** The viewer's outline button: show or hide the PDF Outline view. */
@@ -103,10 +107,15 @@ export type HostMessage =
       position?: ReadingPosition;
     }
   /** `top`: with no box, show the page from this many points below its top. */
-  | { type: "goTo"; location: PdfLocation; top?: number | undefined }
+  | { type: "goTo"; location: PdfLocation; top?: number | undefined; requestId?: number; expectedIntent?: number }
+  | { type: 'historyState'; back: boolean; forward: boolean }
+  | { type: 'historyCapture'; token: number }
+  | { type: 'historyCancel'; token?: number }
+  | { type: 'historyRestore'; token: number; position: ReadingPosition; expectedIntent: number }
   | { type: "action"; action: ViewerAction }
   | { type: "toolbar"; toolbar: ToolbarSettings }
   | { type: "lookUp"; enabled: boolean }
+  | { type: "lookUpRequest" }
   /** Zen mode is on or off: the viewer shows a floating bar while it lasts. */
   | { type: "zen"; on: boolean }
   | { type: "viewSettings"; settings: ViewSettings };
@@ -124,6 +133,23 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const message = value as Record<string, unknown>;
   switch (message.type) {
+    case 'historyJump': {
+      const from = parseReadingPosition(message.from);
+      const to = parseReadingPosition(message.to);
+      if (!validHistoryNumber(message.load, 0) || !validHistoryNumber(message.id, 1) || !from || !to) return undefined;
+      if (message.requestId !== undefined && !validHistoryNumber(message.requestId, 1)) return undefined;
+      return { type: 'historyJump', load: message.load, id: message.id, from, to,
+        ...(message.requestId === undefined ? {} : { requestId: message.requestId as number }) };
+    }
+    case 'historyTraverse':
+      return validHistoryNumber(message.load, 0) && (message.direction === 'back' || message.direction === 'forward')
+        ? { type: 'historyTraverse', load: message.load, direction: message.direction } : undefined;
+    case 'historyCaptured':
+    case 'historyRestored': {
+      const position = parseReadingPosition(message.position);
+      return validHistoryNumber(message.load, 0) && validHistoryNumber(message.token, 1) && validHistoryNumber(message.intent, 0) && position && typeof message.ok === 'boolean' && (message.startedToken === undefined || validHistoryNumber(message.startedToken, 0))
+        ? { type: message.type, load: message.load, token: message.token, position, intent: message.intent, ok: message.ok, ...(message.startedToken === undefined ? {} : { startedToken: message.startedToken as number }) } : undefined;
+    }
     case "ready":
     case "copyLinkForAgent":
     case "toggleOutline":
@@ -152,6 +178,10 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     default:
       return undefined;
   }
+}
+
+function validHistoryNumber(value: unknown, minimum: number): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum;
 }
 
 /**
@@ -232,7 +262,7 @@ function isPageOffset(value: unknown): value is number {
   return (
     typeof value === "number" &&
     Number.isFinite(value) &&
-    value > 0 &&
+    value >= 0 &&
     value < MAX_PAGE_OFFSET
   );
 }
