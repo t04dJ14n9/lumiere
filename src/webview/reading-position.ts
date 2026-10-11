@@ -11,6 +11,7 @@ import {
 } from "../shared/view-settings";
 import type { Navigation } from "./navigation";
 import { DOCUMENT_ID } from "./plugins";
+import { restoredZoomReady, restoreWhenZoomReady } from "../shared/restored-zoom";
 
 let settings = parseViewSettings(undefined);
 let last: ReadingPosition | undefined;
@@ -82,6 +83,8 @@ export function useRestorePosition(
   const token = useRef(navigation.intent.current());
   const intent = navigation.intent;
   const restore = navigation.restore;
+  const latestNavigation = useRef(navigation);
+  latestNavigation.current = navigation;
   const { provides: zoom } = useZoom(DOCUMENT_ID);
   useEffect(() => {
     if (!intent.owns(token.current)) return;
@@ -98,28 +101,25 @@ export function useRestorePosition(
     // The zoom plugin may still be settling into its automatic zoom when the
     // document appears, and on a slow machine that can take many frames: ask
     // again whenever the request did not stick, and place the reader at the
-    // saved offsets once the zoom has held for a few frames (or, if it never
-    // does, after about a second).
+    // saved offsets once the numeric request has held after layout is ready.
+    // The plugin starts at scale 1 even in FitWidth mode, and ignores requests
+    // while viewport metrics are zero. That default must not count as success.
     const target = nativeZoom(choice) as number;
     zoom.requestZoom(target);
-    let frames = 0;
-    let steady = 0;
-    let frame = requestAnimationFrame(function settle() {
-      if (!intent.owns(token.current)) return;
-      frames++;
-      if (Math.abs(zoom.getState().currentZoomLevel - target) > 0.01) {
-        steady = 0;
-        zoom.requestZoom(target);
-      } else {
-        steady++;
-      }
-      if (steady < 3 && frames < 60) {
-        frame = requestAnimationFrame(settle);
-        return;
-      }
-      restore(position);
+    return restoreWhenZoomReady({
+      ownsIntent: () => intent.owns(token.current),
+      ready: () => {
+        const state = zoom.getState();
+        return restoredZoomReady(latestNavigation.current.isReady(), state.zoomLevel, state.currentZoomLevel, target);
+      },
+      requestZoom: () => {
+        const state = zoom.getState();
+        if (latestNavigation.current.isReady() && (typeof state.zoomLevel !== "number" || Math.abs(state.zoomLevel - target) > 0.001)) zoom.requestZoom(target);
+      },
+      restore: () => restore(position),
+      requestFrame: callback => requestAnimationFrame(callback),
+      cancelFrame: frame => cancelAnimationFrame(frame),
     });
-    return () => cancelAnimationFrame(frame);
     // Restore once per document: later zoom or layout changes are the reader's.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restore, pageCount, Boolean(zoom), intent]);

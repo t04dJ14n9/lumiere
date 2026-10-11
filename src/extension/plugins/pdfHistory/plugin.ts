@@ -10,6 +10,7 @@ interface PanelHistory {
   history: JumpHistory<PdfHistoryEntry>;
   busy: boolean;
   generation: number;
+  inheritedDeparture?: boolean;
 }
 
 /** A separate memory-only stack for each editor, including split views of one PDF. */
@@ -50,6 +51,8 @@ export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
         // The capture flushes any deliberate jump still settling in the viewer.
         const current = await panel.capturePosition();
         if (!current || panels.active !== panel || !states.has(panel)) return false;
+        if (current.previousRestoreStarted === false && !state.inheritedDeparture) state.history.releaseDeparture();
+        state.inheritedDeparture = state.history.hasDeparture;
         const generation = ++state.generation;
         const transition = direction === 'back'
           ? state.history.prepareBack(entry(panel, current.position))
@@ -69,6 +72,7 @@ export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
     scope.acquire(panels.handle('historyJump', (panel, message) => {
       const state = stateFor(panel);
       state.generation++;
+      delete state.inheritedDeparture;
       state.history.record(entry(panel, message.from), entry(panel, message.to));
       publish();
     }), 'jump handler');

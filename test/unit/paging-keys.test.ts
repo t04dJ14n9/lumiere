@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { keyMove, type KeyContext } from "../../src/shared/paging-keys";
+import { pageAxisState } from "../../src/shared/page-window";
 
 const view = (patch: Omit<Partial<KeyContext>, "room"> & { room?: Partial<KeyContext["room"]> } = {}): KeyContext => ({
   mode: "continuous",
@@ -44,4 +45,33 @@ test("PageDown/PageUp pan a screen along the reading direction, then turn the pa
   assert.deepEqual(keyMove("PageUp", view({ mode: "paged" })), { type: "page", delta: -1 });
   assert.equal(keyMove("PageDown", view()), undefined);
   assert.equal(keyMove("Home", view()), undefined);
+});
+
+
+test("rapid page reversal ignores native padding before the scroll event clamps it", () => {
+  // Fit-page navigation briefly lands twelve pixels beyond its sole allowed
+  // offset: native scrollTo runs in rAF, constraint handling on scroll follows.
+  const vertical = pageAxisState(1012, { min: 1000, max: 1000 });
+  assert.deepEqual(keyMove("PageUp", view({
+    mode: "paged", room: { up: vertical.before, down: vertical.after },
+  })), { type: "page", delta: -1 });
+  const horizontal = pageAxisState(988, { min: 1000, max: 1000 });
+  assert.deepEqual(keyMove("PageDown", view({
+    mode: "paged", direction: "horizontal",
+    room: { left: horizontal.before, right: horizontal.after },
+  })), { type: "page", delta: 1 });
+});
+
+test("zoomed page panning retains real room and starts inside its bounds", () => {
+  const bounds = { min: 1000, max: 1600 };
+  const inside = pageAxisState(1300, bounds);
+  assert.deepEqual(inside, { position: 1300, before: 300, after: 300 });
+  assert.deepEqual(keyMove("PageUp", view({ mode: "paged", room: { up: inside.before } })),
+    { type: "pan", x: 0, y: -300 });
+  const overshoot = pageAxisState(1612, bounds);
+  const move = keyMove("ArrowUp", view({ mode: "paged", room: { up: overshoot.before } }));
+  assert.deepEqual(move, { type: "pan", x: 0, y: -40 });
+  assert.equal(overshoot.position + (move?.type === "pan" ? move.y : 0), 1560);
+  const undershoot = pageAxisState(988, bounds);
+  assert.deepEqual(undershoot, { position: 1000, before: 0, after: 600 });
 });

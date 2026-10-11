@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { NavigationIntent } from '../../src/shared/navigation-intent';
+import { restoredZoomReady } from '../../src/shared/restored-zoom';
 import { samePosition } from '../../src/shared/pdf-history';
 import type { ReadingPosition } from '../../src/shared/reading-position';
 
@@ -43,18 +44,18 @@ function animationFrames() {
 
 interface Hook {
   handle(message: Record<string, unknown>): boolean;
-  jump(run: () => void, requestId?: number, acceptPreview?: boolean): void;
+  jump(run: () => void, requestId?: number, acceptPreview?: boolean, expectedIntent?: number): void;
   preview(run: () => void): void;
   endPreview(): void;
 }
 
-function historyHarness() {
+function historyHarness(initialZoom: 'fitWidth' | 'fitPage' = 'fitWidth', initialFactor = 1) {
   const frames = animationFrames();
   const intent = new NavigationIntent();
   const choices = { pageLayout: 'single', scrollMode: 'continuous', scrollDirection: 'vertical' } as const;
-  let position: ReadingPosition = { ...choices, page: 3, top: 0, left: 0, zoom: 'fitWidth' };
-  let zoomLevel: string | number = 'fitWidth';
-  let zoomFactor = 1;
+  let position: ReadingPosition = { ...choices, page: 3, top: 0, left: 0, zoom: initialZoom };
+  let zoomLevel: string | number = initialZoom;
+  let zoomFactor = initialFactor;
   const messages: Record<string, unknown>[] = [];
   const mutations: string[] = [];
   const zoom = {
@@ -74,6 +75,7 @@ function historyHarness() {
     },
     '@embedpdf/plugin-zoom/react': { useZoom: () => ({ provides: zoom }), ZoomMode: { FitWidth: 'fitWidth', FitPage: 'fitPage' } },
     '../shared/pdf-history': { samePosition },
+    '../shared/restored-zoom': { restoredZoomReady },
     './host': { postToHost: (message: Record<string, unknown>) => messages.push(message) },
     './plugins': { DOCUMENT_ID: 'pdf' },
     './reading-position': {
@@ -98,7 +100,7 @@ function historyHarness() {
   const restore = (token: number, expectedIntent: number, zoom: ReadingPosition['zoom'] = 'fitWidth') =>
     hook.handle({ type: 'historyRestore', token, expectedIntent, position: { ...position, page: 1, zoom } });
   const setPosition = (next: Partial<ReadingPosition>): void => { position = { ...position, ...next }; };
-  return { hook, frames, intent, messages, mutations, capture, restore, setPosition };
+  return { hook, frames, intent, messages, mutations, capture, restore, setPosition, zoomState: zoom.getState };
 }
 
 function jumpPages(messages: Record<string, unknown>[]): number[][] {
@@ -254,6 +256,8 @@ test('history capture -> user input -> restore IPC rejects stale work before any
   harness.frames.run();
   assert.deepEqual(harness.mutations, []);
   assert.equal(harness.messages.at(-1)?.ok, false);
+  harness.capture();
+  assert.equal(harness.messages.at(-1)?.startedToken, 0);
 });
 
 test('an uninterrupted replay owns its final restore and acknowledges the actual arrival', () => {
@@ -265,6 +269,24 @@ test('an uninterrupted replay owns its final restore and acknowledges the actual
   assert.equal((harness.messages.at(-1)?.position as ReadingPosition).page, 1);
 });
 
+for (const [mode, scale, percent] of [['fitWidth', 1, 100], ['fitPage', 2, 200]] as const) {
+  test(`history replay changes ${mode} at scale ${scale} to numeric ${percent} before acknowledging arrival`, () => {
+    const harness = historyHarness(mode, scale);
+    harness.restore(2, harness.capture(), percent);
+    harness.frames.run(1);
+    assert.deepEqual(harness.mutations, ['choices', 'zoom']);
+    assert.deepEqual(harness.zoomState(), { zoomLevel: scale, currentZoomLevel: scale });
+    assert.equal(harness.messages.some(message => message.type === 'historyRestored'), false);
+    harness.frames.run();
+    assert.deepEqual(harness.mutations, ['choices', 'zoom', 'restore:1']);
+    const arrival = harness.messages.at(-1)!;
+    assert.equal(arrival.type, 'historyRestored');
+    assert.equal(arrival.ok, true);
+    assert.equal((arrival.position as ReadingPosition).page, 1);
+    assert.equal((arrival.position as ReadingPosition).zoom, percent);
+  });
+}
+
 test('new input while replay zoom settles prevents its deferred position mutation', () => {
   const harness = historyHarness();
   harness.restore(2, harness.capture(), 200);
@@ -274,6 +296,8 @@ test('new input while replay zoom settles prevents its deferred position mutatio
   harness.frames.run();
   assert.deepEqual(harness.mutations, ['choices', 'zoom']);
   assert.equal(harness.messages.at(-1)?.ok, false);
+  harness.capture();
+  assert.equal(harness.messages.at(-1)?.startedToken, 2);
 });
 
 test('a token-scoped timeout cancels a replay whose animation frames were paused', () => {
@@ -322,4 +346,28 @@ test('zoom anchor correction checks navigation ownership even before its first f
   intent.advance(); // A newer link or wheel action already owns scrollTop=900.
   frames.run();
   assert.deepEqual(scrolls, []);
+});
+
+test('native precise delivery rejects reader input between capture and delivery', () => {
+  const harness = historyHarness();
+  const captured = harness.intent.current();
+  harness.intent.advance();
+  harness.hook.jump(() => harness.mutations.push('stale native jump'), 801, false, captured);
+  assert.deepEqual(harness.mutations, []);
+  assert.equal(harness.messages.at(-1)?.type, 'historyRestored');
+  assert.equal(harness.messages.at(-1)?.token, 801);
+  assert.equal(harness.messages.at(-1)?.ok, false);
+});
+test('native precise delivery acknowledges settlement and rejects interrupted settlement', () => {
+  const harness = historyHarness();
+  harness.hook.jump(() => harness.setPosition({page: 9}), 802, false, harness.intent.current());
+  assert.equal(harness.messages.some(message => message.type === 'historyRestored'), false);
+  harness.frames.run();
+  assert.equal(harness.messages.at(-1)?.token, 802);
+  assert.equal(harness.messages.at(-1)?.ok, true);
+  harness.hook.jump(() => harness.setPosition({page: 3}), 803, false, harness.intent.current());
+  harness.intent.advance();
+  harness.frames.run();
+  assert.equal(harness.messages.at(-1)?.token, 803);
+  assert.equal(harness.messages.at(-1)?.ok, false);
 });

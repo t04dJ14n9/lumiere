@@ -24,7 +24,7 @@
     "cursor"
   ],
   "main": "./dist/extension.js",
-  "activationEvents": [],
+  "activationEvents": ["onLanguage:markdown"],
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
@@ -616,7 +616,7 @@
       "webview/context": [
         {
           "command": "vscodeEmbedPdf.lookUp",
-          "when": "webviewId == 'vscodeEmbedPdf.viewer' && vscodeEmbedPdf.lookUp.hasWord",
+          "when": "webviewId == 'vscodeEmbedPdf.viewer' && isMac && config.vscodeEmbedPdf.lookUp.enabled",
           "group": "0_agent@2"
         },
         {

@@ -23,6 +23,10 @@ export class PdfNavigation {
     else this.pending = target;
   }
 
+  cancel(): void {
+    this.pending = undefined;
+  }
+
   act(action: ViewerAction): void {
     if (this.loaded) this.post({ type: 'action', action });
   }

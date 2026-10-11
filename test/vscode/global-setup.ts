@@ -28,6 +28,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   writeFileSync(path.join(paths.userData, 'User', 'settings.json'), JSON.stringify({
     'window.newWindowDimensions': 'maximized',
     'workbench.startupEditor': 'none',
+    // DOM-driven tests need VS Code-rendered menus, including on macOS.
+    'window.menuStyle': 'custom',
     'security.workspace.trust.enabled': restrictedMode,
     ...(restrictedMode ? {
       'security.workspace.trust.startupPrompt': 'never',
@@ -87,6 +89,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   const port = await freePort();
   const vscode = spawn(executable, [
     '--new-window',
+    // Opt-in only for credential-free, disposable macOS test profiles.
+    ...(process.platform === 'darwin' && process.env.VSCODE_TEST_MOCK_KEYCHAIN === '1' ? ['--use-mock-keychain'] : []),
     '--skip-welcome',
     '--skip-release-notes',
     ...(restrictedMode ? [] : ['--disable-workspace-trust']),

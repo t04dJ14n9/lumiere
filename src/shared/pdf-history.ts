@@ -11,6 +11,7 @@ export interface PdfHistoryEntry {
 export interface HistorySnapshot {
   position: ReadingPosition;
   intent: number;
+  previousRestoreStarted?: boolean;
 }
 
 export function samePosition(a: ReadingPosition, b: ReadingPosition): boolean {

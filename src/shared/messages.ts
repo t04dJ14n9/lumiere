@@ -84,8 +84,8 @@ export type ViewerMessage =
   | { type: "ready" }
   | { type: "historyJump"; load: number; id: number; from: ReadingPosition; to: ReadingPosition; requestId?: number }
   | { type: "historyTraverse"; load: number; direction: 'back' | 'forward' }
-  | { type: "historyCaptured"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean }
-  | { type: "historyRestored"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean }
+  | { type: "historyCaptured"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean; startedToken?: number }
+  | { type: "historyRestored"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean; startedToken?: number }
   | { type: "patch"; version: number; load: number; patch: ViewerPatch }
   | { type: "copyLinkForAgent" }
   /** The viewer's outline button: show or hide the PDF Outline view. */
@@ -107,7 +107,7 @@ export type HostMessage =
       position?: ReadingPosition;
     }
   /** `top`: with no box, show the page from this many points below its top. */
-  | { type: "goTo"; location: PdfLocation; top?: number | undefined; requestId?: number }
+  | { type: "goTo"; location: PdfLocation; top?: number | undefined; requestId?: number; expectedIntent?: number }
   | { type: 'historyState'; back: boolean; forward: boolean }
   | { type: 'historyCapture'; token: number }
   | { type: 'historyCancel'; token?: number }
@@ -115,6 +115,7 @@ export type HostMessage =
   | { type: "action"; action: ViewerAction }
   | { type: "toolbar"; toolbar: ToolbarSettings }
   | { type: "lookUp"; enabled: boolean }
+  | { type: "lookUpRequest" }
   /** Zen mode is on or off: the viewer shows a floating bar while it lasts. */
   | { type: "zen"; on: boolean }
   | { type: "viewSettings"; settings: ViewSettings };
@@ -146,8 +147,8 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     case 'historyCaptured':
     case 'historyRestored': {
       const position = parseReadingPosition(message.position);
-      return validHistoryNumber(message.load, 0) && validHistoryNumber(message.token, 1) && validHistoryNumber(message.intent, 0) && position && typeof message.ok === 'boolean'
-        ? { type: message.type, load: message.load, token: message.token, position, intent: message.intent, ok: message.ok } : undefined;
+      return validHistoryNumber(message.load, 0) && validHistoryNumber(message.token, 1) && validHistoryNumber(message.intent, 0) && position && typeof message.ok === 'boolean' && (message.startedToken === undefined || validHistoryNumber(message.startedToken, 0))
+        ? { type: message.type, load: message.load, token: message.token, position, intent: message.intent, ok: message.ok, ...(message.startedToken === undefined ? {} : { startedToken: message.startedToken as number }) } : undefined;
     }
     case "ready":
     case "copyLinkForAgent":

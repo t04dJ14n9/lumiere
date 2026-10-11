@@ -365,3 +365,22 @@ test("the model works with non-PDF primitive entries and caller-defined equality
   h.commit(replay.token);
   assert.equal(h.current, "one");
 });
+
+test("a replay cancelled after movement retains the original Forward destination", () => {
+  const h = history();
+  h.record(stop(1), stop(8));
+  const interrupted = h.prepareBack(stop(8))!;
+  h.cancel(interrupted.token);
+  // The viewer moved to page 1 before cancellation reached the host.
+  const retried = h.prepareBack(stop(1))!;
+  h.commit(retried.token);
+  assert.deepEqual(h.prepareForward(stop(1))!.target, stop(8));
+});
+
+test("a proven unstarted replay can release its departure for later ordinary reading", () => {
+  const h = history(); h.record(stop(1), stop(8));
+  const rejected = h.prepareBack(stop(8))!; h.cancel(rejected.token);
+  h.releaseDeparture();
+  const retry = h.prepareBack(stop(10))!; h.commit(retry.token);
+  assert.deepEqual(h.prepareForward(stop(1))!.target, stop(10));
+});

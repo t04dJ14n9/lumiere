@@ -98,7 +98,26 @@ test("keys work after clicking a page, after a toolbar button and after the View
   await viewMenu(page);
   const layout = page.getByRole("combobox", { name: "Page layout", exact: true });
   await layout.focus();
+  await expect(layout).toBeFocused();
+  const beforeSelectKey = await where(page);
+  const beforeLayout = await layout.inputValue();
+  await layout.evaluate((element) => {
+    document.addEventListener("keydown", (event) => {
+      element.setAttribute("data-key-prevented", String(event.defaultPrevented));
+      element.setAttribute("data-key-target", String(event.target === element));
+    }, { once: true });
+  });
   await page.keyboard.press("ArrowDown");
+  await expect(layout).toHaveAttribute("data-key-prevented", "false");
+  await expect(layout).toHaveAttribute("data-key-target", "true");
+  await settled(page);
+  if (await layout.inputValue() === beforeLayout) {
+    expect(await where(page)).toEqual(beforeSelectKey);
+  }
+  // ArrowDown alone does not commit a native select option on every platform.
+  // Keep the key-ownership assertion above and explicitly choose the layout.
+  await layout.selectOption("spread");
+  await expect(layout).toHaveValue("spread");
   await expect.poll(() => pageIndexes(page)).not.toEqual([1]);
   await page.keyboard.press("Escape");
   await expect(page.getByRole("group", { name: "PDF view controls" })).toBeHidden();

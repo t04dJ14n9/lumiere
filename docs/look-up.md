@@ -10,7 +10,7 @@ plugin `pdfLookUp`, on by default on macOS only
 | --- | --- | --- |
 | Three-finger tap, or a force click when the system Look Up gesture is "Force Click" | **No**, not natively | The system asks the web page for text under the pointer. This viewer draws the page as images (PDFium), and its selection is painted by EmbedPDF, so there is no text in the page for the system to find. Making the text selectable DOM text would need an invisible text layer over every page, which would intercept the clicks and drags of the text selection; it was left out. |
 | Force click (hard press) | **Fallback**, unverified | The viewer listens for Safari's `webkitmouseforcedown` event, finds the word under the pointer from the PDF's glyph boxes, and the extension opens `dict://<word>` in the Dictionary app. Chromium (VS Code's engine) does not fire this event today, so it only helps in engines that do. |
-| Right-click → **Look Up** | **Fallback**, works wherever the menu does | The viewer reports the word under the pointer when the context menu opens (`webview/context` entry, shown only when there is a word); the command opens the Dictionary app at the entry. |
+| Right-click → **Look Up** | **Fallback**, works wherever the menu does | The menu is available when Look Up is enabled on macOS. Its command resolves the saved right-click point, then opens Dictionary for that word. Blank space does nothing. A later hover cannot replace the clicked word, and scrolling or new reader input cancels the old target. |
 
 The Dictionary app opens at the word (`dict://`); the small system popover of
 Preview is not reachable from an extension (Electron's

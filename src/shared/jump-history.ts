@@ -34,6 +34,7 @@ export class JumpHistory<T> {
   private readonly capacity: number;
   private readonly entries: T[] = [];
   private cursor = -1;
+  private preserveDeparture = false;
   private pending: { token: JumpHistoryToken; index: number } | undefined;
 
   constructor(options: JumpHistoryOptions<T>) {
@@ -45,6 +46,9 @@ export class JumpHistory<T> {
     this.clone = options.clone;
     this.capacity = capacity;
   }
+
+  get hasDeparture(): boolean { return this.preserveDeparture; }
+  releaseDeparture(): void { this.preserveDeparture = false; }
 
   get current(): T | undefined {
     return this.cursor < 0 ? undefined : this.clone(this.entries[this.cursor]!);
@@ -70,6 +74,7 @@ export class JumpHistory<T> {
    * preserves the forward branch and does not add a redundant stop.
    */
   record(origin: T | undefined, destination: T): boolean {
+    this.preserveDeparture = false;
     const departing = origin === undefined ? undefined : this.clone(origin);
     const arriving = this.clone(destination);
     this.pending = undefined;
@@ -92,6 +97,7 @@ export class JumpHistory<T> {
 
   /** Update the departure point at a navigation boundary, without adding a stop. */
   refresh(current: T): void {
+    this.preserveDeparture = false;
     const entry = this.clone(current);
     this.pending = undefined;
     if (this.cursor >= 0) this.entries[this.cursor] = entry;
@@ -113,6 +119,7 @@ export class JumpHistory<T> {
     if (this.pending?.token !== token) return false;
     if (actualDestination !== undefined) this.entries[this.pending.index] = this.clone(actualDestination);
     this.cursor = this.pending.index;
+    this.preserveDeparture = false;
     this.pending = undefined;
     return true;
   }
@@ -126,11 +133,14 @@ export class JumpHistory<T> {
 
   private prepare(direction: -1 | 1, current: T | undefined): JumpHistoryTransition<T> | undefined {
     this.pending = undefined;
-    if (current !== undefined) this.refresh(current);
+    if (current !== undefined && !this.preserveDeparture) this.refresh(current);
     const index = this.cursor + direction;
     if (this.cursor < 0 || index < 0 || index >= this.entries.length) return undefined;
     const target = this.clone(this.entries[index]!);
     const token = Symbol("jump-history-replay");
+    // A cancelled restore may already have moved the viewer. Keep its origin
+    // until a replay commits or an explicit jump/refresh replaces the branch.
+    this.preserveDeparture = true;
     this.pending = { token, index };
     return { token, target };
   }

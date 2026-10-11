@@ -51,13 +51,14 @@ test('every default shortcut is scoped to the PDF viewer, to non-input focus and
   assert.equal(setting.default, true);
 });
 
-test('Look Up is a setting, hidden from the palette and offered in the viewer menu only with a word', () => {
+test('Look Up is a setting, hidden from the palette and offered on macOS when enabled, with the clicked word resolved by its command', () => {
   const setting = contributes.configuration.properties['vscodeEmbedPdf.lookUp.enabled'] as { default: boolean };
   assert.equal(setting.default, true);
   const palette = (contributes.menus.commandPalette as { command: string; when?: string }[]).find(entry => entry.command === 'vscodeEmbedPdf.lookUp');
   assert.equal(palette?.when, 'false');
   const menu = (contributes.menus['webview/context'] as { command: string; when?: string }[]).find(entry => entry.command === 'vscodeEmbedPdf.lookUp');
-  assert.match(menu?.when ?? '', /vscodeEmbedPdf\.lookUp\.hasWord/u);
+  assert.match(menu?.when ?? '', /isMac/u);
+  assert.match(menu?.when ?? '', /config\.vscodeEmbedPdf\.lookUp\.enabled/u);
 });
 
 test('turning the page keeping the place: Option+Arrow on macOS, Ctrl+Alt+Arrow elsewhere, never plain Alt+Arrow (VS Code Go Back/Forward)', () => {

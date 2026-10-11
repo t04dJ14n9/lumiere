@@ -30,7 +30,7 @@ test("with Look Up on, a force click on a word asks the host to look it up", asy
   const at = await pagePoint(page, 1);
   const [x, y] = at(SYNTHETIC, TEXT_MIDLINE);
   await forceClick(page, x, y);
-  await expect.poll(() => lookUps(page)).toEqual([{ type: "lookUp", word: "Synthetic", open: true }]);
+  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "Synthetic", open: true });
   const [x2, y2] = at(PAGE, TEXT_MIDLINE);
   await forceClick(page, x2, y2);
   await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "page", open: true });
@@ -44,7 +44,9 @@ test("the context menu reports the word under the pointer, and nothing when ther
   await page.mouse.move(x, y);
   await page.waitForTimeout(400);
   await page.mouse.click(x, y, { button: "right" });
-  await expect.poll(() => lookUps(page)).toEqual([{ type: "lookUp", word: "Synthetic", open: false }]);
+  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "Synthetic", open: false });
+  await send(page, { type: "lookUpRequest" });
+  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "Synthetic", open: true });
   // On empty page space the menu has no word to offer.
   const [ex, ey] = at(300, 500);
   await page.mouse.move(ex, ey);

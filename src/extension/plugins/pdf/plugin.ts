@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { PluginDefinition, PdfServices } from "../services";
+import { registerNativeLinks } from "./native-links";
 import { registerOpenLocation } from "./commands";
 import { PdfEditorProvider } from "./editor-provider";
 import manifest from "./manifest";
@@ -34,6 +35,7 @@ export const pdfPlugin: PluginDefinition<PdfServices> = {
       "customEditor",
     );
     scope.acquire(registerOpenLocation(panels), "command");
+    scope.acquire(registerNativeLinks(panels), "native links");
     scope.acquire(registerViewCommands(panels), "commands");
     scope.acquire(registerViewControls(panels), "view controls");
     scope.provide("panels", panels);

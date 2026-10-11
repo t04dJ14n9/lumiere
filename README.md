@@ -335,6 +335,13 @@ with Playwright. It never touches your own VS Code settings or extensions. Set
 for example `…/usr/share/cursor/cursor` in an extracted AppImage). On Linux
 without a display, run it under `xvfb-run -a`.
 
+On macOS, an empty test home can prompt for Keychain access. For credential-free
+synthetic runs, `VSCODE_TEST_MOCK_KEYCHAIN=1` opts into Chromium's mock Keychain.
+It is off by default; never use it with real accounts or personal profiles.
+The native harness requests custom rendered menus for its DOM driver. Some forks
+(including Cursor 3.23 on macOS) still use native menus; verify those paths with
+native computer-use rather than replacing menu assertions with palette commands.
+
 `pnpm test:vscode:restricted` is an additional focused local check for changes
 to Restricted Mode support. It starts a fresh isolated profile with workspace
 trust enabled and proves that the viewer renders while workspace settings cannot
@@ -391,3 +398,20 @@ these tokens in the repository.
 
 MIT. Third-party licenses (EmbedPDF, PDFium, React) are in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Precise links from the built-in Markdown editor
+
+Cmd-click (Ctrl-click on Windows/Linux) on an inline local link such as
+`[Excerpt](docs/paper.pdf#page=9&viewrect=72,130,100,30)` opens the PDF in the source
+editor group and delivers the page/region to that exact pane, including a reused
+pane. Native Back returns to the Markdown source location. Each PDF pane retains
+its separate precise-jump history.
+
+The document-link provider handles only valid PDF location fragments in local
+workspace Markdown files. It verifies signed source/version tickets and real-path
+workspace containment, including in Restricted Mode. External links, ordinary
+files and unsupported Markdown link syntax stay with VS Code. A newer click,
+unrelated editor departure or source edit cancels pending delivery. The public
+command-link callback has no side-open modifier context, so this route uses the
+source group. A manual switch to the exact expected target is indistinguishable
+from VS Code's concurrent built-in definition gesture.

@@ -1,3 +1,4 @@
+import { restoredZoomReady } from "../shared/restored-zoom";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useZoom, ZoomMode } from '@embedpdf/plugin-zoom/react';
 import type { HostMessage } from '../shared/messages';
@@ -15,8 +16,9 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
   const latest = useRef({ navigation, choices, setChoices, zoom });
   latest.current = { navigation, choices, setChoices, zoom };
   const sequence = useRef(0);
+  const startedToken = useRef(0);
   const frame = useRef<number | undefined>(undefined);
-  const pending = useRef<{ from: ReadingPosition; id: number; requestId?: number } | undefined>(undefined);
+  const pending = useRef<{ from: ReadingPosition; id: number; requestId?: number; acknowledge?: boolean; generation?: number } | undefined>(undefined);
   const previewOrigin = useRef<{ position: ReadingPosition; readerRevision: number } | undefined>(undefined);
   const restoring = useRef<{ token: number; generation: number } | undefined>(undefined);
   const [state, setState] = useState({ back: false, forward: false });
@@ -46,12 +48,17 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     if (frame.current !== undefined) cancelAnimationFrame(frame.current);
     frame.current = undefined;
   }, []);
-  const finishJump = useCallback(() => {
+  const finishJump = useCallback((applied = false) => {
     const jump = pending.current;
     if (!jump) return;
     pending.current = undefined;
     clearFrame();
-    postToHost({ type: 'historyJump', ...jump, to: snapshot() });
+    const { acknowledge, generation, ...entry } = jump;
+    postToHost({ type: 'historyJump', ...entry, to: snapshot() });
+    if (acknowledge && entry.requestId !== undefined) {
+      const intent = latest.current.navigation.intent;
+      postToHost({ type: 'historyRestored', token: entry.requestId, position: snapshot(), intent: intent.current(), ok: applied && generation !== undefined && intent.owns(generation) });
+    }
   }, [clearFrame, snapshot]);
   const cancelRestore = useCallback(() => {
     const restore = restoring.current;
@@ -72,7 +79,12 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     run();
   }, [cancelRestore, finishJump, snapshot]);
 
-  const jump = useCallback((run: () => void, requestId?: number, acceptPreview = false) => {
+  const jump = useCallback((run: () => void, requestId?: number, acceptPreview = false, expectedIntent?: number) => {
+    const admission = latest.current.navigation.intent;
+    if (expectedIntent !== undefined && !admission.owns(expectedIntent)) {
+      if (requestId !== undefined) postToHost({ type: 'historyRestored', token: requestId, position: snapshot(), intent: admission.current(), ok: false });
+      return;
+    }
     finishJump();
     cancelRestore();
     const intent = latest.current.navigation.intent;
@@ -80,7 +92,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
       ? previewOrigin.current.position : snapshot();
     previewOrigin.current = undefined;
     const generation = intent.advance();
-    pending.current = { from, id: ++sequence.current, ...(requestId === undefined ? {} : { requestId }) };
+    pending.current = { from, id: ++sequence.current, ...(requestId === undefined ? {} : { requestId }), ...(expectedIntent === undefined ? {} : { acknowledge: true, generation }) };
     run();
     let previous = snapshot();
     let steady = 0;
@@ -91,8 +103,9 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
       steady = samePosition(previous, position) ? steady + 1 : 0;
       previous = position;
       frames++;
-      if (!intent.owns(generation) || (latest.current.navigation.isReady() && frames > 6 && steady >= 4) || frames >= 180) {
-        finishJump();
+      const settled = latest.current.navigation.isReady() && frames > 6 && steady >= 4;
+      if (!intent.owns(generation) || settled || frames >= 180) {
+        finishJump(settled && intent.owns(generation));
         return;
       }
       frame.current = requestAnimationFrame(settle);
@@ -115,7 +128,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     if (message.type === 'historyCapture') {
       finishJump();
       previewOrigin.current = undefined;
-      postToHost({ type: 'historyCaptured', token: message.token, position: snapshot(), intent: latest.current.navigation.intent.current(), ok: true });
+      postToHost({ type: 'historyCaptured', token: message.token, startedToken: startedToken.current, position: snapshot(), intent: latest.current.navigation.intent.current(), ok: true });
       return true;
     }
     if (message.type !== 'historyRestore') return false;
@@ -131,6 +144,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
     const intent = latest.current.navigation.intent;
     let generation = intent.advance();
     restoring.current = { token: message.token, generation };
+    startedToken.current = message.token;
     const requested = message.position;
     latest.current.setChoices({ pageLayout: requested.pageLayout, scrollMode: requested.scrollMode, scrollDirection: requested.scrollDirection });
     let frames = 0;
@@ -151,7 +165,7 @@ export function useJumpHistory(navigation: Navigation, choices: ViewChoices, set
       }
       const native = nativeZoom(position.zoom);
       const current = zoom.getState();
-      const zoomReady = typeof native === 'number' ? Math.abs(current.currentZoomLevel - native) < 0.01 : current.zoomLevel === native;
+      const zoomReady = typeof native === 'number' ? restoredZoomReady(navigation.isReady(), current.zoomLevel, current.currentZoomLevel, native) : current.zoomLevel === native;
       const choicesReady = choices.pageLayout === position.pageLayout && choices.scrollMode === position.scrollMode && choices.scrollDirection === position.scrollDirection;
       if (!zoomReady) {
         // Check ownership immediately before every deferred viewport mutation.

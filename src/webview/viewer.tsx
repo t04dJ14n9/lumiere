@@ -100,7 +100,7 @@ export function Viewer({
     step: navigation.step,
   };
   const [lookUp, setLookUp] = useState(false);
-  useLookUp(pdf, lookUp);
+  const requestLookUp = useLookUp(pdf, lookUp);
   usePagingKeys(documentArea, paging);
   usePagedWheel(documentArea, paging);
   useZoomTransition(documentArea, smooth);
@@ -125,7 +125,7 @@ export function Viewer({
     () =>
       listenToHost((message) => {
         if (handleHistory(message)) return;
-        if (message.type === "goTo") jumpHistory(() => show(message.location, message.top), message.requestId);
+        if (message.type === "goTo") jumpHistory(() => show(message.location, message.top), message.requestId, false, message.expectedIntent);
         else if (message.type === "action") {
           const action = parseViewerAction(message.action);
           if (action) runAction(action);
@@ -138,6 +138,8 @@ export function Viewer({
               ...current,
               pageLayout: settings.pageLayout,
             }));
+        } else if (message.type === "lookUpRequest") {
+          requestLookUp();
         } else if (message.type === "lookUp") {
           setLookUp(message.enabled);
         } else if (message.type === "zen") {
@@ -146,7 +148,7 @@ export function Viewer({
           setToolbar(rememberToolbarSettings(message.toolbar));
         }
       }, hostGeneration),
-    [show, runAction, setZen, handleHistory, jumpHistory, hostGeneration],
+    [show, runAction, setZen, handleHistory, jumpHistory, hostGeneration, requestLookUp],
   );
 
   const latest = useRef({ selection, searching, tool, setTool });

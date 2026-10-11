@@ -109,3 +109,33 @@ test('scrolling after a passive search preview makes explicit acceptance leave t
   expect(accepted.from.page).toBe(8);
   expect(accepted.from.top).toBeCloseTo(departure, 0);
 });
+
+test('successive native page-region deliveries keep only the latest coordinate target', async ({ page }) => {
+  await openView(page, { defaultZoom: 100, smoothScrolling: false });
+  await send(page, { type: 'goTo', requestId: 701, location: { page: 9, viewRect: { left: 72, top: 130, width: 100, height: 30 } } });
+  await send(page, { type: 'goTo', requestId: 702, location: { page: 3, viewRect: { left: 80, top: 150, width: 90, height: 25 } } });
+  await expect(page.locator('.page[data-page-index="2"] .location-highlight')).toBeVisible();
+  await expect(page.locator('.page[data-page-index="8"] .location-highlight')).toHaveCount(0);
+  // A centred region may leave the preceding page at the viewport's top.
+  await expect.poll(async () => (await messages(page, 'historyJump')).at(-1)?.requestId).toBe(702);
+  await expect(page.getByRole('textbox', {name: 'Page', exact: true})).toHaveValue('3');
+});
+
+test('native location acknowledgement rejects input during the capture-delivery round trip', async ({ page }) => {
+  await openView(page, { defaultZoom: 100, smoothScrolling: false });
+  await send(page, { type: 'historyCapture', token: 901 });
+  await expect.poll(async () => (await messages(page, 'historyCaptured')).length).toBe(1);
+  const before = (await messages(page, 'historyCaptured'))[0]!;
+  await page.locator('.viewport').click({position: {x: 20, y: 20}});
+  await send(page, {type: 'goTo', requestId: 902, expectedIntent: before.intent, location: {page: 9}});
+  await expect.poll(async () => (await messages(page, 'historyRestored')).at(-1)?.ok).toBe(false);
+  expect((await messages(page, 'historyRestored')).at(-1)?.token).toBe(902);
+  expect((await messages(page, 'historyJump')).length).toBe(0);
+  await send(page, {type: 'historyCapture', token: 903});
+  await expect.poll(async () => (await messages(page, 'historyCaptured')).length).toBe(2);
+  const current = (await messages(page, 'historyCaptured')).at(-1)!;
+  await send(page, {type: 'goTo', requestId: 904, expectedIntent: current.intent, location: {page: 9}, top: 0});
+  await expect.poll(async () => (await messages(page, 'historyRestored')).at(-1)?.token).toBe(904);
+  expect((await messages(page, 'historyRestored')).at(-1)?.ok).toBe(true);
+  await expect.poll(() => topOffset(page, 9)).toBeCloseTo(0, 0);
+});
