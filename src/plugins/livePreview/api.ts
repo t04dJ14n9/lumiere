@@ -44,6 +44,12 @@ export interface BlockRenderer {
   estimatedHeight?: number;
 }
 export interface LivePreview {
+  /** Persistent widgets intersecting the source range; revealed source is excluded. */
+  renderedWidgets?(
+    state: EditorState,
+    from: number,
+    to: number,
+  ): readonly RenderBlock[];
   verticalPosition?(state: EditorState, direction: -1 | 1): number | undefined;
   visiblePosition?(
     state: EditorState,

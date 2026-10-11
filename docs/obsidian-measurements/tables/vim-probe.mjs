@@ -20,21 +20,29 @@ const TEXT = [
 ].join("\n");
 const shotDir = process.env.SHOTS ?? "vim-shots";
 fs.mkdirSync(shotDir, { recursive: true });
-const cases = JSON.parse(fs.readFileSync(new URL("./vim-cases.json", import.meta.url), "utf8"));
+const cases = JSON.parse(
+  fs.readFileSync(new URL("./vim-cases.json", import.meta.url), "utf8"),
+);
 const filter = process.argv[2];
 for (const c of cases) {
   if (filter && !c.name.includes(filter)) continue;
   const text = c.text ?? TEXT;
-  await page.evaluate((t) => { window.__probeDoc = t; }, text);
+  await page.evaluate((t) => {
+    window.__probeDoc = t;
+  }, text);
   await setup(page, text, c.caret);
-  console.log(`\n### ${c.name}\n${c.note ?? ""}\nstart: \`${c.caret.line}:${c.caret.ch}\`\n\n\`\`\``);
+  console.log(
+    `\n### ${c.name}\n${c.note ?? ""}\nstart: \`${c.caret.line}:${c.caret.ch}\`\n\n\`\`\``,
+  );
   console.log("start        ", fmt(await snap(page)));
   for (const [i, k] of c.keys.entries()) {
     await press(page, [k]);
     const s = await snap(page);
     console.log(`${k.padEnd(12)} ${fmt(s)}`);
     if (c.shots?.includes(i)) {
-      await page.screenshot({ path: `${shotDir}/${c.name.replace(/[^a-z0-9]+/gi, "-")}-${i + 1}.png` });
+      await page.screenshot({
+        path: `${shotDir}/${c.name.replace(/[^a-z0-9]+/gi, "-")}-${i + 1}.png`,
+      });
     }
   }
   const last = await snap(page);

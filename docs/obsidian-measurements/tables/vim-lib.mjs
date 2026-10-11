@@ -50,7 +50,17 @@ export function snap(page) {
   return page.evaluate(() => {
     const ed = app.workspace.activeEditor.editor;
     const modeOf = (vim) =>
-      !vim ? "?" : vim.insertMode ? "insert" : vim.visualMode ? (vim.visualBlock ? "visual-block" : vim.visualLine ? "visual-line" : "visual") : "normal";
+      !vim
+        ? "?"
+        : vim.insertMode
+          ? "insert"
+          : vim.visualMode
+            ? vim.visualBlock
+              ? "visual-block"
+              : vim.visualLine
+                ? "visual-line"
+                : "visual"
+            : "normal";
     const a = document.activeElement;
     const cellEl = a?.closest?.("td,th");
     let cell = null;
@@ -67,17 +77,28 @@ export function snap(page) {
         head: sel?.head,
         anchor: sel?.anchor,
         mode: modeOf(vim),
-        pending: vim?.inputState ? { keys: vim.inputState.keyBuffer?.join(""), op: vim.inputState.operator } : undefined,
+        pending: vim?.inputState
+          ? {
+              keys: vim.inputState.keyBuffer?.join(""),
+              op: vim.inputState.operator,
+            }
+          : undefined,
       };
     }
     const outerVim = ed.cm.cm?.state?.vim;
     const c = ed.getCursor();
-    const s = ed.getCursor("from"), e = ed.getCursor("to");
+    const s = ed.getCursor("from"),
+      e = ed.getCursor("to");
     return {
       cursor: `${c.line}:${c.ch}`,
-      selection: s.line === e.line && s.ch === e.ch ? "" : `${s.line}:${s.ch}-${e.line}:${e.ch}`,
+      selection:
+        s.line === e.line && s.ch === e.ch
+          ? ""
+          : `${s.line}:${s.ch}-${e.line}:${e.ch}`,
       mode: modeOf(outerVim),
-      active: a ? `${a.tagName}.${(a.className || "").toString().split(" ")[0]}${cellEl ? "(in " + cellEl.tagName + ")" : ""}` : null,
+      active: a
+        ? `${a.tagName}.${(a.className || "").toString().split(" ")[0]}${cellEl ? "(in " + cellEl.tagName + ")" : ""}`
+        : null,
       cell,
       doc: ed.getValue(),
       docChanged: ed.getValue() !== window.__probeDoc,

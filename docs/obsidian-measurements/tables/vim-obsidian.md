@@ -100,16 +100,23 @@ pending operator or in visual mode; matching them would drop the pending Vim sta
 * Normal-mode `Tab` selecting the whole next cell in visual mode.
 * `dj` from the line above the blank separator: Obsidian re-adds a blank line between the prose and the table.
 * `Ctrl-d` (observed to remove a prose line): unrelated to tables, not investigated.
+* EOF/start-of-note exit: ours keeps a blank separator before new prose so typing cannot become another
+  table row. The measured single-line-break EOF exit and one-blank-line start-of-note exit are not matched.
 
-## Our editor before this change (same cases, `vim-table-probe.spec.ts`)
+## Our editor after this change (regressions in `tables-vim.spec.ts`)
 
-`vim-compare.py vim-results-raw.md ours.md` reported 45 of 78 cases differing. The differences were
-(a) `j`/`k` from prose **skipped the table entirely** (the outer Vim motion walked visual lines over the widget);
-(b) counts, `dk`/`dj`, and visual `j`/`k` across a table moved by visual lines, so `dk` from the blank line
-below **deleted the whole table**; (c) a search jump into a table left the caret in the hidden source instead of
-opening the cell; (d) counted `j`/`k` inside a cell moved inside the cell instead of hopping; (e) EOF/start-of-note
-exits created different separators. Cell-internal editing (`i a A I s S cc x r u .`, `h`/`l` hops, `Escape`,
-`ArrowDown` exits) already matched.
+The earlier probe reported 45 of 78 cases differing. The implementation now corrects outer table
+overshoots to source-line arithmetic for single/count/display-line motions, operators and visual mode.
+Normal-mode source landings open the owning cell, including search and the delimiter-line quirk; counted
+and g-prefixed normal-mode hops inside cells move one row. Unit regressions cover source-column mapping,
+the overshoot decision and navigation routing. `tables-vim.spec.ts` covers A/B/G/H/I/J/K/L behaviour,
+including header/last-row goal columns, delimiter entry, deletes, visual traversal and search focus.
+
+Browser execution and a fresh `vim-compare.py` result are pending the parent's run: Chromium cannot
+launch in the implementation sandbox. The raw log in this checkout ends with O cases; P source-column
+cases are listed in `vim-cases.json`, and the mapping units cover every column documented above.
+Cell-internal editing (`i a A I s S cc x r u .`, `h`/`l` hops, `Escape`, `ArrowDown` exits) is preserved.
+EOF/start-of-note separators and operator/visual hops inside cells remain deliberately different.
 
 ## Provenance and limits
 

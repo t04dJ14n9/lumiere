@@ -2,6 +2,25 @@ import type { EditorState } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { blockIndex } from "./blocks";
 import { revealed } from "./registry";
+import type { RenderBlock } from "./api";
+
+export function renderedWidgets(
+  state: EditorState,
+  from: number,
+  to: number,
+): readonly RenderBlock[] {
+  return (
+    state
+      .field(blockIndex, false)
+      ?.filter(
+        (block) =>
+          block.from <= to &&
+          block.to >= from &&
+          block.renderer.editing === "widget" &&
+          !block.renderer.showSource?.(state, block),
+      ) ?? []
+  );
+}
 
 /** Escape prefers the following line; at EOF it returns to the preceding line. */
 export function escapeBlock(state: EditorState): number | undefined {

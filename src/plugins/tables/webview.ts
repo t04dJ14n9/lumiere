@@ -21,6 +21,7 @@ import type { TableEnvironment } from "./environment";
 import { TableContent } from "./content";
 import { tableCommands } from "./manifest";
 import { tableOperation } from "./commands";
+import { vimTableEntry } from "./vim-entry";
 export const tablesWebview: Plugin = {
   name: "tables",
   inject: {
@@ -39,11 +40,16 @@ export const tablesWebview: Plugin = {
   apply(ctx) {
     const environment = createEnvironment(ctx);
     registerTableExtensions(ctx);
+    registerVimTableEntry(ctx);
     registerTableRenderer(ctx, environment);
     registerTableSelection(ctx);
     registerTableCommands(ctx);
   },
 };
+
+function registerVimTableEntry(ctx: Context): void {
+  ctx.effect(() => ctx.editor.extend(vimTableEntry(() => ctx.vim)));
+}
 
 function createEnvironment(ctx: Context): TableEnvironment {
   const content = new TableContent(ctx.editor.view, ctx.render, ctx.logger);

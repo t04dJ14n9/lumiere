@@ -2967,3 +2967,37 @@ See `docs/HANDOFF_GROKBOT.md` for exact bases, evidence, capability limitations,
 publication restrictions and the bounded successor checklist. The immediate
 checkpoint follows the owner's explicit instruction to commit with lightweight
 sanity checks instead of running the normally required full pre-commit gate.
+
+## Vim table source motion (2026-10-12, working tree)
+
+Implemented from the Obsidian 1.14.4 measurements in
+`docs/obsidian-measurements/tables/vim-obsidian.md` and the raw A/B/C/G/H/I/J/K/L
+logs. No Obsidian implementation was read or copied. P cases are present in
+`vim-cases.json` but absent from the raw log in this checkout; source mapping
+units cover every documented column for the measured header and last row.
+
+Live Preview exposes an optional persistent-widget query. Vim corrects only
+Table layout overshoots to clamped source-line arithmetic, including counts,
+operators, visual mode and display-line motions; Mermaid/HTML single-step
+reveal and other widgets retain their behavior. Tables defer collapsed normal
+source landings into their existing cell projection, reject pointer/projection
+transactions and pending modes, and cancel stale work or disposed views.
+In-cell normal counts and g prefixes hop one row. Operator/visual cell-buffer
+behavior and EOF/start-of-note prose separators remain deliberate differences.
+
+Added unit coverage for the pure column/delimiter mapping, arithmetic overshoot
+decision, rendered-widget query, navigation routing and deferred entry guards
+and cancellation. The owner-requested `tables-vim.spec.ts` adds 19 measured
+browser regressions for entry/exit, offsets, counts, operators, visual source
+traversal, paragraph motion and search. Plugin READMEs, `docs/tables-diff.md`
+and the measurement note record the implementation and deliberate differences.
+
+Validation: lint and typecheck passed, including the browser spec. Focused
+units passed using `node --import tsx`; `pnpm test` cannot create tsx's IPC
+socket in this sandbox. The equivalent full unit-file run passed 208/210 files;
+unchanged `test/unit/layers.test.ts` fails because nested compiler diagnostics
+are empty here, and unchanged `test/unit/webview/fonts.test.ts` expects the
+previous prose-font fallback. Chromium cannot launch (`sandbox_host_linux.cc`,
+operation not permitted), so the browser regressions, existing browser suites
+and the parity probe remain for the parent's run. Native suites and
+`check:full` were not run, as instructed. No commit or push was made.

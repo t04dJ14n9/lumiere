@@ -20,7 +20,7 @@ import { documentTree } from "./document-tree";
 import { hybridInline } from "./inline";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
-import { escapeBlock, verticalBlock, moveTo } from "./motion";
+import { escapeBlock, verticalBlock, moveTo, renderedWidgets } from "./motion";
 export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   name: "livePreview",
   inject: { required: ["editor", "commands", "render"] },
@@ -62,6 +62,7 @@ function registerEngine(
     position: renderedPosition,
     visiblePosition,
     verticalPosition: verticalBlock,
+    renderedWidgets,
     block(renderer: Parameters<typeof blockRenderers.of>[0]) {
       return ctx.editor.extend(blockRenderers.of(renderer));
     },
