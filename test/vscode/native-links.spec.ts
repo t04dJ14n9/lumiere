@@ -71,7 +71,7 @@ test("built-in Cmd-click preserves heading fragments and native source caret on 
         )
         .toBe(true);
       await page.keyboard.press(
-        process.platform === "darwin" ? "Control+-" : "Alt+Left",
+        process.platform === "darwin" ? "Control+-" : "Alt+ArrowLeft",
       );
       await expect(
         page
