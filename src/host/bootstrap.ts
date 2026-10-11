@@ -1,3 +1,4 @@
+import { nativeLinksHost } from "../plugins/links/native-host";
 import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
 import type { Logger } from "../kernel";
@@ -69,6 +70,7 @@ export async function bootstrap(
   root.plugin(settingsHost);
   root.plugin(livePreviewHost);
   const windowPlugins = [
+    nativeLinksHost,
     backlinksHost,
     outgoingLinksHost,
     outlineHost,

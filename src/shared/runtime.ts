@@ -1,6 +1,7 @@
 import type { Infer } from "../kernel";
 import type { featureSettings } from "./features";
 import type { Disposer } from "../kernel";
+import type { Cancellation } from "./rpc/lifecycle";
 import type { Endpoint, Transport } from "./rpc/endpoint";
 import type { EditorProvider } from "./editor-provider";
 export interface HostDocument {
@@ -118,6 +119,7 @@ export interface Workbench {
   workerPath?(name: "search"): string;
   // Native navigation, views and prompts.
   navigation?: Navigation;
+  registerNativeLinks?(): Disposer;
   views?: HostViews;
 }
 declare module "../kernel/types" {
@@ -149,9 +151,23 @@ export interface NavigationTarget {
   fragment: string;
   at?: number;
 }
+export interface RevealPanel {
+  readonly id: string;
+  readonly uri: string;
+  active(): boolean;
+  reveal(
+    target: NavigationTarget & { requestId: number },
+    token: Cancellation,
+  ): Promise<boolean>;
+}
+export interface NavigationIntent {
+  column?: number;
+  requestId: number;
+  token: Cancellation & { cancel(): void };
+}
 export interface Navigation {
-  takeReveal(uri: string): NavigationTarget;
-  onReveal(listener: (uri: string, target: NavigationTarget) => void): Disposer;
+  begin?(): NavigationIntent;
+  registerReveal(panel: RevealPanel): Disposer;
   readonly scheme: string;
   external(href: string): Promise<boolean>;
   confirm(message: string): Promise<boolean>;
@@ -162,6 +178,7 @@ export interface Navigation {
     create: boolean;
     folderNote: string;
     newNoteFolder?: string;
+    intent?: NavigationIntent;
   }): Promise<string | undefined>;
   open(
     root: string,
@@ -169,6 +186,7 @@ export interface Navigation {
     fragment: string,
     side: boolean,
     at?: number,
+    intent?: NavigationIntent,
   ): Promise<void>;
 }
 

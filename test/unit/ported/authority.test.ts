@@ -197,3 +197,15 @@ test("rendering without a DOM sanitizer escapes HTML and rejects script links", 
     result.includes('data-resource="https://remote.example/image.png"'),
   );
 });
+
+test("delayed navigation offsets rebase through confirmed source changes", () => {
+  const authority = new Authority("one\r\ntwo\r\nthree");
+  authority.record("prefix\r\none\r\ntwo\r\nthree");
+  assert.deepEqual(authority.mapOffsets(0, [0, 4, 8]), [7, 11, 15]);
+  authority.record("prefix\r\none\r\nthree");
+  // The canonical text diff keeps the shared "t" of "two" / "three".
+  // The later "t" falls inside its deletion and clamps after the retained one.
+  assert.deepEqual(authority.mapOffsets(0, [4, 8]), [11, 12]);
+  assert.throws(() => authority.mapOffsets(-1, [0]), /revision/);
+  assert.throws(() => authority.mapOffsets(0, [100]), /Position/);
+});

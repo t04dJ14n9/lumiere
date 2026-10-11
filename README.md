@@ -41,6 +41,13 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   when the editor's own chat is the only agent, or when
   `markdownWorkbench.copyLinkForAgent.target` picks one. Plain Ctrl/Cmd+C
   copies text.
+- **Open Copied Agent Reference** opens `@Note.md#30-32` in Markdown
+  Workbench and selects those source lines. It prefills the reference from
+  the clipboard for you to confirm or replace; surrounding quotes are fine.
+  Relative paths stay inside workspace folders, with a choice if more than
+  one folder matches. Full note URIs also work, including remote files.
+  This explicit command is the fallback when clicking an agent's link opens
+  the note without its line range; it does not intercept native chat clicks.
 - `markdownWorkbench.editor.fontSize` (8 to 48, default 16, Obsidian's body
   size) sets the note text size, replacing `editor.fontSize` for notes;
   headings, tables, code, properties, footnotes and line numbers scale with
@@ -77,7 +84,7 @@ as Text** alone. Asking for the text editor a second time within 10 seconds
 keeps it, which is how **Reopen Editor With… › Text Editor** still works.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
-The native smoke test runs against Cursor with
+The native suite runs against Cursor with
 `VSCODE_EXECUTABLE=<cursor install>/cursor pnpm test:vscode`.
 
 [CAPABILITIES.md](CAPABILITIES.md) lists every plugin, its default and how
@@ -96,8 +103,8 @@ renderers) through API v1: see [API.md](API.md) and the sample plugin in
 pnpm install
 pnpm check          # format, lint, types, unit tests, generated contributions
 pnpm test:browser   # webview smoke tests in Chromium
-pnpm test:vscode    # native smoke test in an isolated VS Code profile (local only, not in CI)
-pnpm check:full       # check, test:browser and test:vscode: run before every push
+pnpm test:vscode    # native suite in an isolated VS Code profile (local only, not in CI)
+pnpm check:full     # check, test:browser and test:vscode: run before every push
 pnpm package        # VSIX; checks THIRD_PARTY_NOTICES.md is current
 ```
 
@@ -144,3 +151,13 @@ these tokens in the repository.
 
 MIT. Bundled packages and their licenses are listed in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### Precise jumps within a note
+
+Use **Markdown Workbench: Go Back in Note** / **Go Forward in Note**, also
+available as note-title arrows, to revisit deliberate link, heading, footnote,
+explicit find-match and API/reference jumps. The 100-entry history belongs to
+one note pane, stays in extension-host memory across webview recreation, and is
+cleared when that pane closes or the host restarts. Split panes are independent.
+Ordinary scrolling and typing do not add entries. VS Code handles cross-file
+Back/Forward; Vim's Ctrl+O/Ctrl+I remain its own jumplist.

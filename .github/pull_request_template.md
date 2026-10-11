@@ -8,9 +8,9 @@
       test)
 - [ ] `pnpm check` passes (format, lint, typecheck, unit tests,
       contributions)
-- [ ] `pnpm test:browser` passes (webview changes)
-- [ ] `pnpm test:vscode` passes locally before the push (native wiring and
-      packaging); CI does not run the real-VS Code specs. On a headless Linux
+- [ ] `pnpm test:browser` passes locally before the push
+- [ ] `pnpm test:vscode` passes locally before the push, regardless of which
+      files changed; CI does not run the real-VS Code specs. On a headless Linux
       box: `xvfb-run -a pnpm check:full`
 - [ ] No limit raised, no lint exception added and no test weakened
       (`test/unit/lint-rules.test.ts`)

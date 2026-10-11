@@ -1,13 +1,22 @@
+import { RevealRouter, chooseRevealPanel } from "./reveal-router";
 import linksManifest from "../plugins/links/manifest";
 import { pluginConfiguration } from "./settings";
 import * as vscode from "vscode";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
-import type { Navigation, NavigationTarget } from "../shared/runtime";
+import type {
+  Navigation,
+  NavigationTarget,
+  NavigationIntent,
+  PanelShell,
+} from "../shared/runtime";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 
 /** All navigation paths are checked again in the native adapter, including symlinks. */
-async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
+export async function contained(
+  root: vscode.Uri,
+  target: vscode.Uri,
+): Promise<void> {
   const relative = path.posix.relative(root.path, target.path);
   if (
     root.scheme !== target.scheme ||
@@ -79,21 +88,13 @@ async function containedVirtualPath(
   }
 }
 
-export function createNavigation(): Navigation {
-  const pending = new Map<string, NavigationTarget>();
-  const listeners = new Set<(uri: string, target: NavigationTarget) => void>();
+export function createNavigation(
+  panels: () => readonly PanelShell[],
+): Navigation {
+  const reveals = new RevealRouter();
   return {
-    takeReveal(uri) {
-      const fragment = pending.get(uri) ?? { fragment: "" };
-      pending.delete(uri);
-      return fragment;
-    },
-    onReveal(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    begin: () => reveals.begin(),
+    registerReveal: (panel) => reveals.register(panel),
     scheme: vscode.env.uriScheme,
     external: async (href) => vscode.env.openExternal(vscode.Uri.parse(href)),
     confirm: async (message) =>
@@ -104,7 +105,9 @@ export function createNavigation(): Navigation {
       )) === "Open",
     resolve: resolveNavigation,
     open: (
-      ...[root, target, fragment, side, at]: Parameters<Navigation["open"]>
+      ...[root, target, fragment, side, at, intent]: Parameters<
+        Navigation["open"]
+      >
     ) =>
       openNavigation({
         root,
@@ -112,8 +115,9 @@ export function createNavigation(): Navigation {
         fragment,
         side,
         ...(at === undefined ? {} : { at }),
-        pending,
-        listeners,
+        panels,
+        reveals,
+        intent: intent ?? reveals.begin(),
       }),
   };
 }
@@ -125,6 +129,7 @@ async function resolveNavigation({
   create,
   folderNote,
   newNoteFolder,
+  intent,
 }: Parameters<Navigation["resolve"]>[0]): Promise<string | undefined> {
   const base = vscode.Uri.parse(root);
   const sourceUri = vscode.Uri.parse(source);
@@ -139,6 +144,9 @@ async function resolveNavigation({
   await contained(base, uri);
   try {
     const stat = await vscode.workspace.fs.stat(uri);
+    if (intent?.token.cancelled) {
+      return undefined;
+    }
     if (stat.type & vscode.FileType.Directory) {
       if (!folderNote) {
         await vscode.commands.executeCommand("revealInExplorer", uri);
@@ -156,7 +164,7 @@ async function resolveNavigation({
       throw error;
     }
   }
-  if (!create) {
+  if (!create || intent?.token.cancelled) {
     return undefined;
   }
   return createNote({
@@ -164,7 +172,8 @@ async function resolveNavigation({
     sourceUri,
     link,
     uri,
-    folder: newNoteFolder ?? configuredNewNoteFolder(sourceUri),
+    folder: newNoteFolder,
+    ...(intent ? { intent } : {}),
   });
 }
 
@@ -174,13 +183,16 @@ async function createNote({
   link,
   uri: candidate,
   folder,
+  intent,
 }: {
   base: vscode.Uri;
   sourceUri: vscode.Uri;
   link: string;
   uri: vscode.Uri;
-  folder: string;
-}): Promise<string> {
+  folder: string | undefined;
+  intent?: NavigationIntent;
+}): Promise<string | undefined> {
+  folder ??= configuredNewNoteFolder(sourceUri);
   let uri = candidate;
   if (!link.startsWith("/")) {
     const parent =
@@ -193,6 +205,9 @@ async function createNote({
     uri = uri.with({ path: uri.path + ".md" });
   }
   await contained(base, uri);
+  if (intent?.token.cancelled) {
+    return undefined;
+  }
   const edit = new vscode.WorkspaceEdit();
   edit.createFile(uri, { ignoreIfExists: true });
   if (!(await vscode.workspace.applyEdit(edit))) {
@@ -207,46 +222,62 @@ interface OpenNavigation {
   fragment: string;
   side: boolean;
   at?: number;
-  pending: Map<string, NavigationTarget>;
-  listeners: Set<(uri: string, target: NavigationTarget) => void>;
+  panels: () => readonly PanelShell[];
+  reveals: RevealRouter;
+  intent: NavigationIntent;
 }
 
-async function openNavigation({
-  root,
-  target,
-  fragment,
-  side,
-  at,
-  pending,
-  listeners,
-}: OpenNavigation): Promise<void> {
+async function openNavigation(options: OpenNavigation): Promise<void> {
+  const { root, target, side, panels, intent } = options;
   const uri = vscode.Uri.parse(target);
   await contained(vscode.Uri.parse(root), uri);
-  const column = side ? vscode.ViewColumn.Beside : vscode.ViewColumn.Active;
-  if (/\.md$/i.test(uri.path)) {
+  if (intent.token.cancelled) {
+    return;
+  }
+  const activeColumn =
+    intent.column ?? vscode.window.tabGroups.activeTabGroup.viewColumn;
+  const column = side ? vscode.ViewColumn.Beside : activeColumn;
+  const before = new Set(panels().map((panel) => panel.id));
+  if (/\.(md|markdown)$/i.test(uri.path)) {
     await vscode.commands.executeCommand(
       "vscode.openWith",
       uri,
       MARKDOWN_EDITOR.viewType,
       column,
     );
-    if (fragment || at !== undefined) {
-      const destination: NavigationTarget = {
-        fragment,
-        ...(at === undefined ? {} : { at }),
-      };
-      pending.set(uri.toString(), destination);
-      for (const listener of listeners) {
-        listener(uri.toString(), destination);
-      }
-    }
+    await revealOpenedNote(options, before, activeColumn);
   } else {
     await vscode.commands.executeCommand(
       "vscode.open",
-      uri.with({ fragment }),
+      uri.with({ fragment: options.fragment }),
       column,
     );
   }
+}
+
+async function revealOpenedNote(
+  options: OpenNavigation,
+  before: ReadonlySet<string>,
+  column: number,
+): Promise<void> {
+  const { panels, target, side, fragment, at, reveals, intent } = options;
+  if (intent.token.cancelled || (!fragment && at === undefined)) {
+    return;
+  }
+  const destination: NavigationTarget = {
+    fragment,
+    ...(at === undefined ? {} : { at }),
+  };
+  const panel = chooseRevealPanel(panels(), before, {
+    uri: vscode.Uri.parse(target).toString(),
+    side,
+    column,
+  });
+  if (!panel) {
+    throw new Error("The destination editor was not opened unambiguously");
+  }
+  // Superseded requests return false and leave no mailbox for a later reload.
+  await reveals.deliver(intent, panel.id, destination);
 }
 
 function configuredNewNoteFolder(source: vscode.Uri): string {

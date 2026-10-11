@@ -121,7 +121,8 @@ async function measure(
     width: Math.ceil(box.width) + margin * 2,
     height: Math.ceil(box.height) + margin * 2,
   };
-  const png = await page.screenshot({ clip });
+  // Geometry below is measured in CSS pixels, including on Retina displays.
+  const png = await page.screenshot({ clip, scale: "css" });
   const folder = process.env.VIM_CARET_SHOTS;
   if (folder) {
     mkdirSync(folder, { recursive: true });

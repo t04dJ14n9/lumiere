@@ -1,3 +1,4 @@
+import { protocol as jumpProtocol } from "../../src/plugins/editor/jump-protocol";
 import { config as editorConfig } from "../../src/plugins/editor/manifest";
 import type { Context } from "../../src/kernel";
 import { Endpoint } from "../../src/shared/rpc/endpoint";
@@ -27,6 +28,8 @@ export class BrowserHost {
   private history: string[];
   private cursor = 0;
   readonly endpoints: Endpoint[] = [];
+  private readonly navigationSessions = new Map<string, string>();
+  private navigationRequest = 0;
   readonly views: Context[] = [];
   readonly session: Session;
   clipboard = "";
@@ -188,6 +191,12 @@ export class BrowserHost {
         mode,
       };
     });
+    host.handle(jumpProtocol, "record", () => true);
+    host.handle(linksProtocol, "ready", ({ session }) => {
+      this.navigationSessions.set(id, session);
+      return true;
+    });
+    host.handle(linksProtocol, "missing", () => true);
     host.handle(linksProtocol, "open", ({ href }) => {
       this.opened.push(href);
       return true;
@@ -281,9 +290,16 @@ export class BrowserHost {
       focus: true,
     });
   }
+  navigationReady(panel = 0) {
+    return this.navigationSessions.has(String(panel));
+  }
   /** Sends the navigation the host sends when the outline or a link opens a note at a place. */
   navigate(target: { fragment: string; at?: number }, panel = 0) {
-    this.endpoints[panel]!.notify(linksProtocol, "navigate", target);
+    return this.endpoints[panel]!.call(linksProtocol, "navigate", {
+      ...target,
+      session: this.navigationSessions.get(String(panel)) ?? "",
+      requestId: ++this.navigationRequest,
+    });
   }
   /** Sends editor settings as the host does when VS Code's change. */
   configureEditor(settings: Record<string, unknown>, panel = 0) {

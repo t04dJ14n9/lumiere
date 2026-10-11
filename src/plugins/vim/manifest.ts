@@ -37,7 +37,8 @@ export default defineManifest({
     ].map((key) => ({
       id: "consumeVimHostShortcut",
       key: `ctrl+${key}`,
-      mac: `cmd+${key}`,
+      // Vim uses Control on macOS too; Command remains available to the editor.
+      mac: `ctrl+${key}`,
     })),
   },
 } as const);

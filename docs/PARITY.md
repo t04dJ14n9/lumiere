@@ -271,3 +271,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkbench.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
+| Command: markdownWorkbench.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
+| Command: markdownWorkbench.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |

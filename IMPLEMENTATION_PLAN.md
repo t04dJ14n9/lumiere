@@ -4,10 +4,11 @@ Companion to [DESIGN.md](DESIGN.md). It lists the phases in order, what each
 must deliver, how to check it, and where every source file goes. Section
 numbers such as §12 refer to DESIGN.md.
 
-## Testing policy (changed 7 October 2026, after Phase 3's first record)
+## Testing policy (clarified 10 October 2026)
 
 The owner will accept the extension by testing it hands-on with computer use.
-Automated testing is therefore **unit tests only**:
+New automated coverage is **unit tests by default**; existing browser and
+native suites remain required checks:
 
 - Port a source unit test when it still covers behaviour that exists here.
   Write unit tests for new logic (kernel, vault resolution, plugin wiring,
@@ -15,10 +16,12 @@ Automated testing is therefore **unit tests only**:
 - Do **not** port the source browser suites, native suites or fuzzers. Mark
   their ledger rows `retired` with the reason "covered by computer-use
   acceptance (docs/MANUAL_TEST_PLAN.md)".
-- Keep the existing small smoke suites (`pnpm test:browser`, 14 tests;
-  `pnpm test:vscode`, 1 test) as a quick sanity check. Fix them when a change
-  breaks them; do not expand them.
-- Instead of browser and native tests, maintain `docs/MANUAL_TEST_PLAN.md`:
+- Keep the existing suites (`pnpm test:browser`, `pnpm test:vscode`),
+  including later owner-approved targeted regressions. Fix them when a
+  change breaks them; add browser/native coverage only with explicit owner
+  approval. Historical test counts below describe those runs, not the
+  current suite size.
+- For broader acceptance, maintain `docs/MANUAL_TEST_PLAN.md`:
   scenarios the owner runs with computer use, grouped by plugin. Each has
   setup (a note in `test/fixtures/vault`), steps and the expected result.
   Draw them from the retired source scenarios and DESIGN §13–§17; one
@@ -28,6 +31,19 @@ Automated testing is therefore **unit tests only**:
 This replaces every earlier requirement below to port browser or native
 suites, fuzzers or flaky-test investigations. Phase 3's first record is
 re-judged under this policy.
+
+The CI-drop change requires `pnpm check:full` before **every push**, regardless
+of which files changed. It runs `check`, `test:browser`, then `test:vscode`
+sequentially and stops on the first failure. `check` already includes unit
+tests. Real-VS Code tests stay local; GitHub Actions does not run them.
+Packaging and the other CI jobs are separate checks, not part of `check:full`.
+
+On macOS, an empty test home can prompt for Keychain access. For credential-free
+synthetic runs, `VSCODE_TEST_MOCK_KEYCHAIN=1` opts into Chromium's mock Keychain.
+It is off by default; never use it with real accounts or personal profiles.
+The native harness requests custom rendered menus for its DOM driver. Some forks
+(including Cursor 3.23 on macOS) still use native menus; verify those paths with
+native computer-use rather than replacing menu assertions with palette commands.
 
 ## How to work
 
@@ -54,9 +70,13 @@ re-judged under this policy.
 
   ```sh
   pnpm check            # format check, lint, typecheck, unit tests, contributions check
-  pnpm test:browser     # 14-test smoke suite
-  pnpm test:vscode      # 1-test native smoke; opens VS Code; Phase 8 and when native wiring changes
+  pnpm test:browser     # existing Chromium suite
+  pnpm test:vscode      # existing native suite in an isolated VS Code profile
   ```
+
+  `pnpm check:full` runs those three in order. On headless Linux, use
+  `xvfb-run -a pnpm check:full` with its private display. Coordinate suites
+  across shared worktrees; never reuse or terminate an unrelated test server.
 
 - At the end of each phase, add a dated record (template at the end) and
   commit with a message naming the phase. Do not push, publish or install into
@@ -2776,3 +2796,140 @@ persistence/collation, case-only key rules, fuzzy-name ranking and complex YAML
 editing. Existing safe behaviour is retained for those cases. Every fix row is
 implemented or pinned by a unit; no commit, push, branch change or publication was
 performed, at the owner's instruction.
+
+### Handoff cleanup and explicit reference navigation — 2026-10-10
+
+On local branch `dot/finish-markdown-handoff`, based on the already committed
+CI-drop revision `d96386cdf1e49aeef6bc5597e1c64dbe6c665618`: corrected stale
+handoff claims, reconciled unit-default coverage with existing owner-approved
+browser/native suites, and made unconditional pre-push `check:full` wording
+consistent. Native suites stay out of CI; shared worktrees use sequential
+checks and isolated displays/profiles without killing unrelated servers.
+
+Added **Open Copied Agent Reference**, an explicit command over the public API
+host plugin. It parses the existing `@path#start-end` format (including quoted
+references), preserves full URI semantics, rejects malformed ranges and
+relative escapes, reuses native symlink containment, and prompts for duplicate
+paths across workspace folders. Candidate containment and workspace membership
+are rechecked after the picker. Inclusive line ranges are resolved only after
+editor readiness and flush, including CRLF. The command neither intercepts
+native chat links nor implements a global history stack.
+
+Native undo diagnosis found a duplicate-forwarding path: handled CodeMirror
+history shortcuts still reached VS Code's unconditional webview key forwarding.
+Added a narrow document-level guard and pure platform/modifier/non-Latin-layout
+and disposal units. Preserve the manual one-logical-edit requirement; native
+before/after evidence is pending, so this is not yet a native fix claim.
+
+Validation so far: `git diff --check` and six focused pure units pass using
+Node's built-in TypeScript stripping in temporary copies, with no installs.
+Full formatting, lint, types, unit, browser and native checks await dependency
+installation, currently blocked by approval-review cancellation. No browser or
+native suites were added or run, and no push, merge, publication, owner-profile
+installation or annotation-system work was performed.
+
+
+### Local precise-jump history and deterministic reveal delivery — 2026-10-10
+
+Owner chose separate in-memory per-document/pane histories, with native VS Code
+cross-file navigation. Implemented editor-owned Back/Forward commands and title
+arrows (100 entries), explicit jump capture, departure selection/geometric scroll,
+forward truncation, source-edit rebasing and replay suppression. Session nonce,
+source version, interaction generation and measured-layout acknowledgment guard
+restores. Pane close clears history; webview recreation retains the host stack.
+Vim Control shortcuts and Command shortcuts are unchanged. Agent/API jumps record
+by default; the earlier opt-in agent-jump-setting proposal is superseded.
+
+Replaced URI mailboxes with native-panel-addressed, webview-session-aware reveal
+requests. Newer intents and disposal cancel old work; cold startup and reload
+readiness are separate. Missing fragments produce a diagnostic. Ordinary persisted
+views refresh geometric anchors at scroll/update settle and pagehide, using the
+existing bounded pinning implementation. No annotation or shared global history
+implementation is included.
+
+Dependency installs remain blocked by approval-review cancellation. Direct Node
+TypeScript-transform execution passes focused pure units and the real contribution
+generator's check. Syntax checks and git whitespace checks pass; full Prettier,
+lint, types, all unit/browser/native and computer-use acceptance remain unrun.
+The owner authorized draft-PR publication before full validation and requested
+Mac verification next. A draft is explicitly unverified; merging still requires
+that verification. No application behavior is claimed verified by these checks.
+
+### Mac validation repairs — 2026-10-11
+
+The recovered precise-jump change now passes the required local `check:full` on
+macOS arm64 with VS Code 1.141.0: 847 unit, 115 browser and 18 native tests. The
+throwaway credential-free profile uses the owner's approved, opt-in
+`VSCODE_TEST_MOCK_KEYCHAIN=1`; no personal profile or Keychain is used.
+
+Native verification exposed a real heading navigation regression: the target
+selection and viewport were applied, but subsequent focus restored the previous
+viewport. Link/source navigation and local-history restoration now establish
+focus before applying their selection and scroll. The existing native outline
+centering regression verifies middle, early and final headings. Vim's macOS
+host-shortcut bindings now preserve Control instead of consuming Command;
+generated-contribution unit coverage protects Control+O/I and Command+I.
+
+Other Mac repairs align native font comparisons with explicit matching editor
+sizes/line heights and screenshot pixel comparisons with CSS pixels on Retina.
+The existing assertions remain in place. Copied-agent-reference parsing, UUID
+creation on the browser harness origin, strict formatting/types and narrow undo
+coverage were also validated in the recovered change. Cursor and manual desktop
+acceptance, including native Look Up, remain separate pending work; these results
+do not claim them complete.
+
+### Independent review follow-up — 2026-10-11
+
+The current code reproduced the review's front-matter reveal acknowledgement
+failure and loss of the Forward destination after an interrupted Back. Reveals
+now compare the effective post-dispatch selection, including caret filters.
+History preserves the departure snapshot before restoration and maps that
+snapshot through source edits until an acknowledged replay or explicit new jump.
+Cross-plugin unit coverage lives in `test/unit/editor/reveal.test.ts`; host and
+pure-history regressions cover movement before a failed acknowledgement.
+
+The native harness now waits for editor closure and for measured caret geometry
+without widening its geometry tolerances. Mock Keychain remains an explicit
+throwaway-profile opt-in; the duplicate unconditional macOS option was removed.
+The post-review `check:full` passes on VS Code: 850 unit, 115 browser and 18 native
+cases. Cursor startup and installed-build manual acceptance remain separate gates.
+
+## Mac verification follow-up (2026-10-11)
+
+The independent review fixes add generation-safe pane restoration, renderer
+incarnation routing, early link intent ownership, exact reference containment,
+and acknowledgement of the effective frontmatter caret. Interrupted Back keeps
+its departing Forward destination unless the renderer proves no restore began.
+A desktop-found search regression now retains the pre-query origin through
+passive previews, including Enter, arrow buttons, Cmd+G and F3 acceptance. Reader
+input, edits and panel disposal retire that pending origin.
+
+Final local `check:full` passed 862 unit tests, 115 browser tests and 18 native
+VS Code tests. The production VSIX Cursor run passed 16 tests with two editor
+startup timeouts; both passed one isolated retry. Keep that instability visible.
+CUA on the installed VS Code build verified heading/search history, branching,
+independent panes, copied line selection and containment rejection, native
+Back/Forward coexistence, Vim Control+O/I, and native Undo/Redo.
+
+Cursor's visible sign-in overlay blocked remaining manual native-menu checks.
+Built-in Markdown Cmd-click opens custom editors, but the host does not deliver
+its precise heading/PDF fragment through the public custom-editor callback.
+Physical gestures and exact sub-frame interruption timing remain unverified.
+No commits, publication or merge were performed; final exact-head CI and the
+coordinated merge remain the parent's responsibility after authorized publishing.
+
+## Native precise-link integration (2026-10-11, validation in progress)
+
+A window-scoped links plugin supplies ordinary DocumentLinks for local inline
+Markdown heading/block targets from the built-in editor. Stateless signed source
+version tickets avoid a bounded mailbox eviction failure. Native line/column
+ranges remain with VS Code. Source-group ownership survives the host's separate
+definition gesture to the same target, while unrelated tab/group changes, source
+edits and reader caret movement cancel pending work. The existing exact-panel
+reveal router handles destination acknowledgement and renderer generations.
+
+New parser, ticket and gated-preflight cancellation units plus explicitly approved
+browser/native regressions cover the integration. Full local checks and final
+installed-VSIX desktop acceptance must complete before publication; this section
+does not claim those new gates have passed yet. The previous verified snapshot is
+preserved separately.

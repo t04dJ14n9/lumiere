@@ -48,6 +48,26 @@ export async function command(page: Page, title: string) {
   await item.click();
   await expect(input).not.toBeVisible();
 }
+/** Finish native closing, including a delayed synthetic-buffer discard prompt. */
+export async function closeEditorGroups(page: Page) {
+  const dialog = page.locator(".monaco-dialog-box");
+  if (await dialog.isVisible()) {
+    await dialog.getByRole("button", { name: /Don.t Save/ }).click();
+  }
+  console.log("Native: closing all editors");
+  await command(page, "View: Close All Editor Groups");
+  // A spec that typed into the note and then restored the file leaves the
+  // editor dirty: discard its buffer when VS Code asks.
+  // The discard prompt may arrive after the palette has already closed.
+  await expect(async () => {
+    if (await dialog.isVisible()) {
+      await dialog.getByRole("button", { name: /Don.t Save/ }).click();
+    }
+    await expect(page.locator(".tabs-container .tab")).toHaveCount(0, {
+      timeout: 500,
+    });
+  }).toPass({ timeout: 10000 });
+}
 /**
  * Opens a note (Note.md by default) in Markdown Workbench and returns its
  * editable content. `timing` receives the clock at the choice of the editor
@@ -59,14 +79,7 @@ export async function openWorkbench(
   timing: { start?: number; end?: number } = {},
 ) {
   await expect(page.locator(".monaco-workbench")).toBeVisible();
-  console.log("Native: closing all editors");
-  await command(page, "View: Close All Editor Groups");
-  // A spec that typed into the note and then restored the file leaves the
-  // editor dirty: discard its buffer when VS Code asks.
-  const dialog = page.locator(".monaco-dialog-box");
-  if (await dialog.isVisible()) {
-    await dialog.getByRole("button", { name: /Don.t Save/ }).click();
-  }
+  await closeEditorGroups(page);
   console.log("Native: opening fixture");
   // A focused webview can swallow the shortcut, so press it until it opens.
   await expect(async () => {
@@ -130,18 +143,23 @@ export async function openWorkbench(
     })
     .toBe(true);
   // The custom editor can be nested inside VS Code's outer webview frame.
+  // Cursor can take over five seconds to initialize it after settings changes;
+  // wait for the actual editor, within the host reveal readiness budget.
   await expect
-    .poll(async () => {
-      for (const f of page.frames()) {
-        if (
-          await f.getByRole("textbox", { name: "Markdown content" }).count()
-        ) {
-          frame = f;
-          return true;
+    .poll(
+      async () => {
+        for (const f of page.frames()) {
+          if (
+            await f.getByRole("textbox", { name: "Markdown content" }).count()
+          ) {
+            frame = f;
+            return true;
+          }
         }
-      }
-      return false;
-    })
+        return false;
+      },
+      { timeout: 15000 },
+    )
     .toBe(true);
   timing.end = Date.now();
   return frame!.getByRole("textbox", { name: "Markdown content" });

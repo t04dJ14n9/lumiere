@@ -6,6 +6,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { open } from "./harness";
 
+const documentStart =
+  process.platform === "darwin" ? "Meta+ArrowUp" : "Control+Home";
+
 const NOTE = "---\ntitle: T\ntags:\n  - a\n---\nFirst body line\nSecond line\n";
 const offset = (text: string, line: number, column: number) =>
   text
@@ -50,17 +53,17 @@ const focused = (page: Page) =>
   });
 
 test.describe("the caret stays out of the Properties block", () => {
-  test("arrow keys, Home, Page Up and Shift selections stop at the start of the body", async ({
+  test("arrow keys, document start, Page Up and Shift selections stop at the start of the body", async ({
     page,
   }) => {
     await start(page, 5, 0);
     for (const [keys, expected] of [
       ["ArrowLeft", "5:0 5:0"],
-      ["Control+Home", "5:0 5:0"],
+      [documentStart, "5:0 5:0"],
       ["PageUp", "5:0 5:0"],
       ["Control+ArrowUp", "5:0 5:0"],
       ["Shift+ArrowUp", "5:0 5:0"],
-      ["Shift+Control+Home", "5:0 5:0"],
+      [`Shift+${documentStart}`, "5:0 5:0"],
     ] as const) {
       await start(page, 5, 0);
       await page.keyboard.press(keys);
@@ -68,10 +71,10 @@ test.describe("the caret stays out of the Properties block", () => {
       expect(await focused(page), keys).toBe("editor");
     }
     await start(page, 6, 3);
-    await page.keyboard.press("Control+Home");
+    await page.keyboard.press(documentStart);
     await expect.poll(() => selection(page)).toBe("5:0 5:0");
     await start(page, 6, 3);
-    await page.keyboard.press("Shift+Control+Home");
+    await page.keyboard.press(`Shift+${documentStart}`);
     await expect.poll(() => selection(page)).toBe("5:0 6:3");
   });
 

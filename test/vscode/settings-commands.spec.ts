@@ -6,6 +6,7 @@ import { paths, readState } from "./state";
 import {
   QUICK_INPUT,
   closeBrowser,
+  closeEditorGroups,
   command,
   openPalette,
   openWorkbench,
@@ -26,7 +27,7 @@ async function leaveClean(browser: Browser) {
   try {
     const page = workbenchPage(browser);
     await page.keyboard.press("Escape");
-    await command(page, "View: Close All Editor Groups");
+    await closeEditorGroups(page);
   } catch {
     // Best effort: the next spec's own setup reports a workbench that is stuck.
   }

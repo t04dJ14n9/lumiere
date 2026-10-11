@@ -37,6 +37,8 @@ export default async function globalSetup(): Promise<void> {
       {
         "window.newWindowDimensions": "maximized",
         "workbench.startupEditor": "none",
+        // DOM-driven tests need VS Code-rendered menus, including on macOS.
+        "window.menuStyle": "custom",
         // Another desktop app can take OS focus while CDP drives this isolated
         // window. Keep native pickers open until the test accepts or dismisses them.
         "workbench.quickOpen.closeOnFocusLost": false,
@@ -99,6 +101,11 @@ export default async function globalSetup(): Promise<void> {
     host.executable,
     [
       "--new-window",
+      // Opt-in only for credential-free, disposable macOS test profiles.
+      ...(process.platform === "darwin" &&
+      process.env.VSCODE_TEST_MOCK_KEYCHAIN === "1"
+        ? ["--use-mock-keychain"]
+        : []),
       "--skip-welcome",
       "--skip-release-notes",
       "--disable-workspace-trust",
@@ -210,8 +217,6 @@ async function resolveVsCode(): Promise<Host> {
     // Cursor's first-run onboarding covers the window.
     ...(supports("skip-onboarding") ? ["--skip-onboarding"] : []),
     ...(supports("disable-updates") ? ["--disable-updates"] : []),
-    // Chromium's own keychain access (cookies, safe storage) on macOS.
-    ...(process.platform === "darwin" ? ["--use-mock-keychain"] : []),
     // Never the desktop keyring on Linux (Cursor otherwise asks for it).
     ...(process.platform === "linux" ? ["--password-store=basic"] : []),
   ];

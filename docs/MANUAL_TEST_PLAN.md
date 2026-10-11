@@ -64,6 +64,12 @@ Unless the section says otherwise, also check:
 - **Obsidian.** Where a step says "as in Obsidian", compare with Obsidian
   on a copy of the same vault and record the result in `docs/PARITY.md`.
 
+The undo requirement above is an acceptance target. Earlier native table tests
+only established whole-table integrity and final restoration. The diagnosed
+duplicate-shortcut path and pending native granularity verification are recorded
+in [tables-diff.md](tables-diff.md); do not mark this requirement passed from
+those weaker checks alone.
+
 The `minimal` preset (`markdownWorkbench.preset`) loads only the core
 plugins; switching the preset takes effect for newly opened editors.
 
@@ -570,7 +576,7 @@ Off by default.
 
 1. Normal, insert and visual modes; `:w`, `:q`, `:wq`, `:x`, `:u`, `:red`
    use VS Code's save, close and undo. IME in normal mode inserts nothing.
-2. With Vim on, Mod+O, B, I, K, Shift+X, Shift+T, Shift+H and Alt+0–6 reach
+2. With Vim on, Control+O, B, I, K, Shift+X, Shift+T, Shift+H and Alt+0–6 reach
    Vim instead of VS Code; with Vim off they do not.
 3. In a plain paragraph in `Formatting.md`, compare with the built-in editor
    using a Vim extension. Escape and `v` show a full block over one character,
@@ -609,6 +615,26 @@ Off by default.
 3. There is no Copy for Agent or Ask Agent about Selection command, title
    button, context menu item or Mod+Alt+C binding (removed or renamed by
    owner decision; Ctrl+C copies plain text).
+
+### openCopiedAgentReference
+
+1. Copy `@Core.md#2-3` and run **Open Copied Agent Reference**, with no note
+   open. Confirm the prefilled reference: Markdown Workbench opens and
+   selects those complete source lines. Repeat with a quoted reference and
+   a one-line `#2` reference. A copied agent payload prefills only its first
+   line; unrelated clipboard content leaves the prompt empty.
+2. Repeat with CRLF, unsaved pending edits, and a note already open in two
+   panels. The selected source range is computed after the target panel is
+   ready and its edits are flushed. Out-of-range or malformed references
+   show an error instead of selecting a different range.
+3. Add a second disposable workspace folder containing `Core.md`. A
+   relative reference asks which folder to use; cancel opens nothing.
+   Full file/remote URIs select the explicit note without guessing a root.
+   A missing file, `../` escape or escaping symlink is refused; no note is
+   created. Canceling the reference prompt also opens nothing.
+4. Native chat-link clicks remain host-controlled. Use this command when a
+   click opens a note without revealing its line range; do not count it as
+   transparent chat-click support or global Back/Forward history.
 
 ## External plugins
 
@@ -681,6 +707,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.openCopiedAgentReference` — Open Copied Agent Reference | unbound | Confirm a copied source reference, verify source-line selection, then exercise prompt cancellation, malformed/out-of-range references, CRLF and multi-root ambiguity as above. |
 | `markdownWorkbench.showPluginStatus` — Show Plugin Status | unbound | On a disposable fixture, run Show Plugin Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openSettings` — Open Settings | unbound | Run Open Settings from the palette with no editor open: the Settings UI shows with the search `@ext:t04dj14n9.vscode-markdown-workbench`. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
 | `markdownWorkbench.setNoteFontSize` — Set Note Font Size | unbound | Run it: the box shows the current `markdownWorkbench.editor.fontSize`; type 20 and Enter, the open note's text, headings and line numbers grow at once and the Settings UI shows 20; 7 or `abc` is refused; Escape changes nothing. Where the value is written: in the workspace settings if the workspace sets it, else in the user settings; the notification names which. Edit the setting in the Settings UI and run again: the command reads that value. |
@@ -709,7 +736,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.tableSortDescending` — Table: Sort Descending | unbound | On a disposable fixture, run Table: Sort Descending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleChecklist` — Toggle Checklist Status | unbound | On a disposable fixture, run Toggle Checklist Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.cycleListChecklist` — Cycle List Checklist | unbound | On a disposable fixture, run Cycle List Checklist; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (Mac cmd+o); ctrl+b (Mac cmd+b); ctrl+i (Mac cmd+i); ctrl+shift+x (Mac cmd+shift+x); ctrl+k (Mac cmd+k); ctrl+alt+0 (Mac cmd+alt+0); ctrl+alt+1 (Mac cmd+alt+1); ctrl+alt+2 (Mac cmd+alt+2); ctrl+alt+3 (Mac cmd+alt+3); ctrl+alt+4 (Mac cmd+alt+4); ctrl+alt+5 (Mac cmd+alt+5); ctrl+alt+6 (Mac cmd+alt+6); ctrl+shift+t (Mac cmd+shift+t); ctrl+shift+h (Mac cmd+shift+h) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
+| `markdownWorkbench.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (also on Mac); ctrl+b (also on Mac); ctrl+i (also on Mac); ctrl+shift+x (also on Mac); ctrl+k (also on Mac); ctrl+alt+0 (also on Mac); ctrl+alt+1 (also on Mac); ctrl+alt+2 (also on Mac); ctrl+alt+3 (also on Mac); ctrl+alt+4 (also on Mac); ctrl+alt+5 (also on Mac); ctrl+alt+6 (also on Mac); ctrl+shift+t (also on Mac); ctrl+shift+h (also on Mac) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
 
 | Setting | Default | Procedure |
 | --- | --- | --- |
@@ -777,3 +804,35 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 
 Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
+
+
+## Local precise-jump navigation and restore races
+
+`markdownWorkbench.jumpBack` (**Go Back in Note**) and
+`markdownWorkbench.jumpForward` (**Go Forward in Note**) are unbound commands
+and editor-title buttons. Exercise them in the scenarios below; native cross-file
+history and Vim Control+O/Control+I remain separate.
+
+- Jump between headings, block links, footnotes, explicit find matches and copied
+  agent references. Back restores the departure selection and reading position;
+  Forward restores the later view. Scroll before Back, then Forward, and confirm
+  that departure scroll was refreshed. Typing and scrolling alone add no entries.
+- Back, then a new link jump: the old forward branch disappears. Verify repeated
+  identical jumps, 100-entry eviction, Unicode/CRLF notes and source edits before
+  saved targets. Typing immediately after a jump must not lose that jump.
+- Open the same note twice. Histories and positions remain independent. Recreate
+  one webview without closing its pane: its stack remains. Closing/reopening the
+  pane or restarting the extension host clears it. No cross-file stack is claimed.
+- Delay initialization/layout; issue a newer reveal, switch panes or close the
+  target. The old request must not move/focus a replacement webview. Check normal
+  and side opens with both cold and warm same-note panes, including vertical splits.
+- Navigate successfully, recreate the webview, and verify no stale URI target
+  replays. Missing heading/block links show a message and preserve the caret.
+- Restore a note with delayed image/font/math layout after a settled scroll.
+  The source-line anchor stays at its viewport offset. Wheel, pointer and key
+  interaction cancel pinning. Check folded tables/callouts and wrapped headings.
+- Preserve standard Vim Ctrl+O/Ctrl+I and Cmd+I italics. Test text Undo separately:
+  navigation history is not the native text history stack.
+
+Native/browser suites were not expanded for these cases. These are pending
+computer-use acceptance steps, not evidence of passed native behavior.

@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import type { Context, Infer } from "../../kernel";
+import type { Context, Infer, Logger } from "../../kernel";
 import type { ViewContributions } from "./contributions";
 import type { EditorService } from "./api";
 import { protocol, viewState } from "./protocol";
@@ -30,6 +30,10 @@ export function registerViewPersistence(
     (mode) => ctx.emit("editor/modeRestored", mode),
   );
   const view = editor.view;
+  const checkpoint = geometricPersistence(ctx, editor, presentation, {
+    state,
+    config,
+  });
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "captureView", async () => {
       await ctx.document.flush();
@@ -53,25 +57,45 @@ export function registerViewPersistence(
           )
         ) {
           config.persist?.(state.capture());
+          checkpoint();
         }
       }),
     ),
   );
   ctx.effect(() => {
-    const save = () => config.persist?.(state.capture());
+    const save = () => {
+      config.persist?.(state.capture());
+      checkpoint();
+    };
     view.scrollDOM.addEventListener("scroll", save);
     return () => view.scrollDOM.removeEventListener("scroll", save);
   });
-  if (config.saved) {
-    try {
-      const saved = viewState.parse(config.saved);
-      if (saved.source === editor.source) {
-        state.restore(saved);
-      }
-    } catch (error) {
-      ctx.logger.warn("Ignored invalid saved view state", error);
-    }
-  }
+  restoreInitialView(state, editor.source, config.saved, ctx.logger);
+}
+
+function geometricPersistence(
+  ctx: Context,
+  editor: EditorService,
+  presentation: Presentation,
+  persistence: { state: EditorPersistence; config: PersistenceConfig },
+): () => void {
+  const { state, config } = persistence;
+  const view = editor.view;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const save = () =>
+    config.persist?.(presentation.captureViewState(view, state.capture()));
+  ctx.effect(() => {
+    const window = view.dom.ownerDocument.defaultView;
+    window?.addEventListener("pagehide", save);
+    return () => {
+      clearTimeout(timer);
+      window?.removeEventListener("pagehide", save);
+    };
+  });
+  return () => {
+    clearTimeout(timer);
+    timer = setTimeout(save, 150);
+  };
 }
 
 class EditorPersistence {
@@ -106,5 +130,24 @@ class EditorPersistence {
     });
     this.presentation.restoreViewState(this.editor.view, state);
     this.modeRestored(state.mode);
+  }
+}
+
+function restoreInitialView(
+  state: EditorPersistence,
+  source: string,
+  value: unknown,
+  logger: Logger,
+): void {
+  if (!value) {
+    return;
+  }
+  try {
+    const saved = viewState.parse(value);
+    if (saved.source === source) {
+      state.restore(saved);
+    }
+  } catch (error) {
+    logger.warn("Ignored invalid saved view state", error);
   }
 }

@@ -47,8 +47,10 @@ async function editorFrame(page: Page): Promise<Frame> {
 
 const scenarios: Record<string, Record<string, unknown>> = {
   // The note's size is its own setting; matching the built-in editor means
-  // giving it the editor's size and line height.
+  // giving both editors explicit sizes; native platform defaults differ.
   none: {
+    "editor.fontSize": 14,
+    "editor.lineHeight": 19,
     "markdownWorkbench.editor.fontSize": 14,
     "markdownWorkbench.editor.lineHeight": 19 / 14, // the editor's own 19px
   },
@@ -57,6 +59,7 @@ const scenarios: Record<string, Record<string, unknown>> = {
     "markdownWorkbench.editor.lineHeight": 20 / 15,
     "editor.fontFamily": "DejaVu Sans Mono",
     "editor.fontSize": 15,
+    "editor.lineHeight": 20,
     "editor.fontWeight": "500",
     "editor.letterSpacing": 0.4,
     "editor.fontLigatures": true,
@@ -68,6 +71,7 @@ const scenarios: Record<string, Record<string, unknown>> = {
     "[markdown]": {
       "editor.fontFamily": "Liberation Mono, monospace",
       "editor.fontSize": 18,
+      "editor.lineHeight": 24,
       "editor.fontWeight": "300",
       "editor.letterSpacing": 0.5,
       "editor.fontLigatures": true,

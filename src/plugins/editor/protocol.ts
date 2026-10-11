@@ -77,6 +77,11 @@ export const protocol = defineProtocol("editor", {
         from: offset,
         to: offset,
         focus: Schema.boolean().default(true),
+        version: offset.optional(),
+        navigation: Schema.object({
+          session: Schema.string().max(100),
+          generation: offset,
+        }).optional(),
       }),
       result: Schema.boolean(),
     },

@@ -3,9 +3,12 @@ import type { ApiPlatform } from "./platform";
 import type { ConfigurationScope } from "./types";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
+import { contained } from "../navigation";
 export function nativePlatform(): ApiPlatform {
   return {
     uri: (value) => vscode.Uri.parse(value, true),
+    joinPath: (base, path) => vscode.Uri.joinPath(base, path),
+    assertContained: contained,
     async open(uri, options) {
       await vscode.commands.executeCommand(
         "vscode.openWith",

@@ -12,7 +12,8 @@ host also provides `selections` for capture and validation; `editor/selectionMen
 is an awaited menu-contribution pipeline.
 Extensions sort by slot, catalog rank, owner ID and owner-local order in one
 compartment. Persistence captures source identity and feature-owned contributions;
-transfers flush first and reject a moving document version. Settings update a
+transfers flush first and reject a moving document version. Scroll-settle and
+pagehide checkpoints also save geometric anchors without measuring every keypress. Settings update a
 separate compartment so user state survives reconfiguration.
 Tab and Shift+Tab never leave the note, as in Obsidian: on a list item they
 indent or outdent the item with its nested lines, with a selection they indent
@@ -147,3 +148,29 @@ its entries and revokes retained service handles. There are no default shortcuts
 
 Host provides `editorActions`; webview listens to `editor/selectionMenu` and the
 action-registry notifications. Callbacks remain in the extension host.
+
+## Precise-jump navigation
+
+**Go Back in Note** and **Go Forward in Note** keep up to 100 locations per
+pane in extension-host memory. Links, headings, footnotes, explicit find-next/
+previous and API reveals capture the departure selection and geometric scroll
+anchor. Typing, scrolling, incremental search text and ordinary Vim movement do
+not record. A new jump after Back discards the forward branch. Offsets rebase
+through document edits, including delayed records and CRLF source conversion.
+Replay is addressed to the same panel and random webview session, checks source
+version and interaction generation, and advances only after layout acknowledgment.
+
+- `navigation.ts`: explicit jump observers and nested-jump suppression.
+- `jump-history.ts`: bounded source-location stack and edit mapping.
+- `jump-protocol.ts`: validated capture, record and replay messages.
+- `jump-host.ts`: per-panel ownership, command/context registration and replay.
+- `jump-webview.ts`: geometric capture, queued-edit mapping and replay guard.
+- `layout.ts`: bounded measured-layout acknowledgment.
+
+The host listens to editor open/close/active and document-change events. There
+are no settings or default keybindings for this history. Deliberate agent/API
+jumps record by default. Webview recreation keeps the stack; pane close and
+extension-host restart clear it. Repeated Back/Forward clicks while a restore is
+pending are ignored. Unknown document replacements clear the stack rather than
+restore stale offsets. Native cross-file history and Vim's jumplist remain
+separate. A failed or interrupted restore does not advance the history cursor.

@@ -43,8 +43,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
   const confirms: string[] = [];
   const navigation: Navigation = {
     scheme: "vscode",
-    takeReveal: () => ({ fragment: "" }),
-    onReveal: () => () => {},
+    registerReveal: () => () => {},
     external: async (href) => {
       opens.push(href);
       return true;
@@ -117,6 +116,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     "file:///vault/New.md",
     "Heading",
     true,
+    undefined,
     undefined,
   ]);
   assert.equal((opens.at(-2) as { source: string }).source, panel.document.uri);

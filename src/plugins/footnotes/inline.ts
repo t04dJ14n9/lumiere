@@ -13,7 +13,10 @@ import { FootnoteReference, referenceText } from "./reference-widget";
  * stay rendered under selections (Ctrl+A included); only a caret reveals them.
  * Definition markers reveal when a selection touches their first line.
  */
-export function footnoteInline(render: RenderService): InlineRenderer {
+export function footnoteInline(
+  render: RenderService,
+  navigate: (jump: () => void) => void = (jump) => jump(),
+): InlineRenderer {
   return {
     nodes: ["FootnoteRef", "InlineFootnote"],
     decorate(node, cx) {
@@ -33,7 +36,11 @@ export function footnoteInline(render: RenderService): InlineRenderer {
         markReferenceSource(cx, node.from, node.to, note);
         return;
       }
-      cx.replace(node.from, node.to, new FootnoteReference(note, render));
+      cx.replace(
+        node.from,
+        node.to,
+        new FootnoteReference(note, render, navigate),
+      );
     },
   };
 }

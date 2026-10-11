@@ -1,3 +1,4 @@
+import { registerJumpHistory } from "./jump-host";
 import { registerEditorActions } from "./actions-host";
 import { registerMarkdownAssociation } from "./associations";
 import { SelectionSnapshots } from "./selection";
@@ -149,6 +150,7 @@ function provideEditorServices(
   );
   ctx.provide("selections", selections);
   registerEditorActions(ctx, editors, selections);
+  registerJumpHistory(ctx, editors);
 }
 
 function registerSelectionContext(

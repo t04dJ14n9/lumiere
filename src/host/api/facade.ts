@@ -14,6 +14,7 @@ import { editorOperations } from "./editors";
 import { vaultOperations } from "./vault";
 import { pluginOperations } from "./plugins";
 import { registerPluginManagement } from "./management";
+import { registerOpenReference } from "./open-reference";
 import { ExternalPlugins } from "./external-manager";
 import { ApiEvent } from "./event";
 import { documentSnapshot, editorSnapshot } from "./snapshots";
@@ -47,6 +48,7 @@ function buildApi(root: Context, platform: ApiPlatform): MarkdownWorkbenchApi {
   });
   bindEvents(root, platform, events, changed);
   registerPluginManagement(root, api, platform);
+  registerOpenReference(root, api, platform);
   return api;
 }
 function createEvents(root: Context) {

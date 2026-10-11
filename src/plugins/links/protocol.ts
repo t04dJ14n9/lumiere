@@ -18,12 +18,27 @@ export const unresolvedLinkpaths = Schema.array(Schema.string().max(8192)).max(
 );
 export const protocol = defineProtocol("links", {
   requests: {
-    initial: { params: Schema.object({}), result: navigationTarget },
+    ready: {
+      params: Schema.object({ session: Schema.string().max(100) }),
+      result: Schema.boolean(),
+    },
+    navigate: {
+      params: Schema.object({
+        session: Schema.string().max(100),
+        fragment: Schema.string().max(8192),
+        at: offset.optional(),
+        requestId: offset,
+      }),
+      result: Schema.boolean(),
+    },
+    missing: {
+      params: Schema.object({ fragment: Schema.string().max(8192) }),
+      result: Schema.boolean(),
+    },
     open: { params: request, result: Schema.boolean() },
     unresolved: { params: Schema.object({}), result: unresolvedLinkpaths },
   },
   notifications: {
-    navigate: navigationTarget,
     unresolvedChanged: unresolvedLinkpaths,
   },
 });

@@ -5,7 +5,10 @@ import { Schema } from "../schema";
  * one per batch from each endpoint, so a receiver drops a batch it has
  * already seen or one older than the last it applied.
  */
-export type Envelope = Message | Batch;
+export type Envelope = (Message | Batch) & {
+  session?: string;
+  recipient?: string;
+};
 export type Message =
   | {
       kind: "request";
@@ -28,8 +31,11 @@ export const MAX_BATCH_MESSAGES = 1024;
 const id = Schema.number().min(1).max(Number.MAX_SAFE_INTEGER);
 const channel = Schema.string().min(1).max(128);
 const method = Schema.string().min(1).max(128);
+const session = Schema.string().min(1).max(128).optional();
 const schemas = {
   request: Schema.object({
+    session,
+    recipient: session,
     kind: Schema.union(["request"]),
     id,
     channel,
@@ -37,24 +43,37 @@ const schemas = {
     params: Schema.unknown(),
   }),
   response: Schema.object({
+    session,
+    recipient: session,
     kind: Schema.union(["response"]),
     id,
     result: Schema.unknown(),
   }),
   error: Schema.object({
+    session,
+    recipient: session,
     kind: Schema.union(["error"]),
     id,
     code: Schema.string().max(128),
     message: Schema.string().max(4096),
   }),
   notify: Schema.object({
+    session,
+    recipient: session,
     kind: Schema.union(["notify"]),
     channel,
     method,
     params: Schema.unknown(),
   }),
-  cancel: Schema.object({ kind: Schema.union(["cancel"]), id }),
+  cancel: Schema.object({
+    session,
+    recipient: session,
+    kind: Schema.union(["cancel"]),
+    id,
+  }),
   batch: Schema.object({
+    session,
+    recipient: session,
     kind: Schema.union(["batch"]),
     version: id,
     messages: Schema.array(Schema.unknown()),
@@ -87,4 +106,33 @@ export function parseEnvelope(value: unknown): Envelope {
     }
   }
   return parsed;
+}
+
+export function resultEnvelope(
+  id: number,
+  schema: Schema<unknown>,
+  value: unknown,
+): Envelope {
+  try {
+    return { kind: "response", id, result: schema.parse(value) };
+  } catch (error) {
+    return {
+      kind: "error",
+      id,
+      code: "InvalidResult",
+      message: String(error).slice(0, 4096),
+    };
+  }
+}
+
+export function addressEnvelope(
+  value: Envelope,
+  session?: string,
+  recipient?: string,
+): Envelope {
+  return parseEnvelope(
+    session
+      ? { ...value, session, ...(recipient ? { recipient } : {}) }
+      : value,
+  );
 }
