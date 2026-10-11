@@ -61,7 +61,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 ## Services, events and settings
 
 Injects `editor`, `document`, `markdown`, `livePreview`, `render`, `commands`,
-`menu`, `rpc`; optionally `vim` and `formatting`. Provides no service. Listens to
+`menu`, `rpc`; optionally `vim`, `formatting` and `links`. The optional Links
+service follows Mod-Enter from the focused cell's own document and caret.
+Provides no service. Listens to
 `editor/clearProjection`, `editor/projectSelection` and `editor/activeView`;
 sends the validated editor `selectionChanged` notification. The feature switch
 is `markdownWorkbench.plugins.tables.enabled`; it has no separate configuration.
@@ -82,6 +84,12 @@ link-creation submenus are outside this cell menu; editor commands still work.
 
 Normal-mode cell `j`/`k` and `gj`/`gk` hop one row at a text boundary, ignoring
 counts; `h`/`l`, arrows, Escape and insert mode retain their existing behavior.
+Deferred outer-source entry requires one collapsed caret, focused content and
+settled normal mode. Selection/document changes, blur, mode transitions and
+disposal cancel pending entry. For Vim navigation entry only, every delimiter
+column opens the last row's first cell at offset zero (the header for a
+header-only table); this is an explicit compatibility rule, independent of
+ordinary source motion and operator endpoints.
 
 Not matched on purpose: Obsidian hops and abandons operators or visual mode
 inside a cell. We keep the dependency's buffer behavior. Leaving a table at EOF

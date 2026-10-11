@@ -2972,7 +2972,9 @@ sanity checks instead of running the normally required full pre-commit gate.
 
 Implemented from the Obsidian 1.14.4 measurements in
 `docs/obsidian-measurements/tables/vim-obsidian.md` and the raw A/B/C/G/H/I/J/K/L
-logs. No Obsidian implementation was read or copied. P cases are present in
+logs. The implementer used measurement notes and logs as inputs and copied no
+Obsidian code, CSS or assets; this describes implementation inputs, not the
+measurement author's source-reading provenance. P cases are present in
 `vim-cases.json` but absent from the raw log in this checkout; source mapping
 units cover every documented column for the measured header and last row.
 
@@ -3001,3 +3003,48 @@ previous prose-font fallback. Chromium cannot launch (`sandbox_host_linux.cc`,
 operation not permitted), so the browser regressions, existing browser suites
 and the parity probe remain for the parent's run. Native suites and
 `check:full` were not run, as instructed. No commit or push was made.
+
+
+## PR #16 review fixes (2026-10-12)
+
+Bounded fixes for the two ChatGPT Pro reviews at PR head `f2244e8`. Live
+Preview excludes fold-hidden widgets and exposes disjoint folded spans. Vim's
+per-editor adapter uses fold-aware source targets, preserving fold skips when
+counts also cross a visible table. Resolved motion policy is captured at the
+pinned dependency's input-state reset, including mappings/macros and operators.
+Source `j/k` retain `lastHPos`; adjacent single-step `gj/gk` table entry retains
+the adapter's resolved column. Display counts, wrapping, half-page scrolling
+and page motion keep native layout semantics. Disposal restores both hooks.
+
+Deferred table entry keeps `queueMicrotask` with a cancellation generation for
+selection/document changes, blur, mode transitions and disposal. The callback
+rechecks all selection ranges, document identity, composition, focused content,
+settled normal mode and active-table state; the existing entry path requires a
+current rendered controller. The delimiter entry compatibility rule and blank
+separator/host undo behavior are unchanged.
+
+Links provides an injected caret-following service. Tables optionally consumes
+it for cell Mod-Enter with the cell's own document/caret and the same open path.
+The outer contentDOM focus guard remains. New unit cases cover fold/table
+motion, resolved source/display goals and hook disposal, secondary-caret/focus/
+mode cancellation, and cell link following with outer focus rejection.
+
+Deferred as requested: spanning-widget visual painting, comparator-oracle
+changes, collaboration/two synchronized panes, exhaustive macro/dot/IME and
+off-screen search coverage. No browser/native coverage was added.
+
+Validation: formatting, lint, typecheck and the direct-loader contribution
+check pass. Added 18 unit regressions and updated the optional-dependency graph
+assertion. All focused modules pass. `pnpm check` reaches `pnpm test`, which
+cannot create tsx's IPC socket (`listen EPERM`). Running the same complete file
+list with `node --import tsx --test --test-concurrency=4` passes 211/212 files;
+only unchanged `test/unit/layers.test.ts` fails because its nested compiler
+returns empty diagnostics, matching the previously recorded sandbox issue.
+Browser, native and `check:full` remain for the parent's exact-head run as
+instructed. No browser/native suites, push or merge were run.
+
+Commit is blocked in this sandbox: `git add` cannot create the worktree's
+`index.lock` in the read-only shared Git directory outside the writable roots.
+Changes remain in this worktree; a complete patch and proposed commit message
+are saved in `/workspace/plans/pr16-review-fixes.patch` and
+`/workspace/plans/pr16-review-fixes-commit.txt` for the parent.

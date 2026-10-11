@@ -7,44 +7,12 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type { InlineRenderer } from "../livePreview/api";
 import type {} from "./api";
-import { markdownParser } from "../../markdown/dialect";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
 import { unresolvedKey } from "./target";
+import { linkAt, followCaretLink } from "./caret-link";
+export { linkAt } from "./caret-link";
 
-export function linkAt(
-  text: string,
-  at: number,
-): { href: string; wiki: boolean } | undefined {
-  let found: { href: string; wiki: boolean } | undefined;
-  markdownParser.parse(text).iterate({
-    enter(node) {
-      if (node.from > at || node.to < at) {
-        return false;
-      }
-      if (node.name === "Image") {
-        return false;
-      }
-      if (node.name === "WikiLink") {
-        found = {
-          href: text.slice(node.from + 2, node.to - 2).split("|")[0]!,
-          wiki: true,
-        };
-      }
-      if (node.name === "URL" && !found) {
-        found = { href: text.slice(node.from, node.to), wiki: false };
-      }
-      if (node.name === "Link") {
-        const url = node.node.getChild("URL");
-        if (url) {
-          found = { href: text.slice(url.from, url.to), wiki: false };
-        }
-      }
-      return undefined;
-    },
-  });
-  return found;
-}
 export const linksWebview: Plugin = {
   name: "links",
   inject: { required: ["editor", "livePreview", "commands", "rpc"] },
@@ -62,7 +30,7 @@ export const linksWebview: Plugin = {
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
-    registerLinkKeyboard(ctx, open);
+    registerLinkFollowing(ctx, open);
   },
 };
 
@@ -358,36 +326,19 @@ function allowsLinkClick(event: MouseEvent, link: HTMLElement): boolean {
   );
 }
 
-function registerLinkKeyboard(ctx: Context, open: OpenLink): void {
+function registerLinkFollowing(ctx: Context, open: OpenLink): void {
+  const follow = (view: EditorView) =>
+    followCaretLink(view, open, (error) =>
+      ctx.logger.warn("Follow link failed", error),
+    );
+  ctx.provide("links", { follow });
   ctx.effect(() =>
     ctx.editor.extend(
       Prec.highest(
         keymap.of([
           {
             key: "Mod-Enter",
-            run(view) {
-              // Only the editor text itself: a Vim prompt, dialog or property
-              // input owns the key while it has focus, and an IME composition
-              // uses Enter to commit.
-              if (
-                view.dom.ownerDocument.activeElement !== view.contentDOM ||
-                view.composing ||
-                !view.state.selection.main.empty
-              ) {
-                return false;
-              }
-              const link = linkAt(
-                view.state.doc.toString(),
-                view.state.selection.main.head,
-              );
-              if (!link) {
-                return false;
-              }
-              void open(link.href, link.wiki).catch((error) =>
-                ctx.logger.warn("Follow link failed", error),
-              );
-              return true;
-            },
+            run: follow,
           },
         ]),
       ),

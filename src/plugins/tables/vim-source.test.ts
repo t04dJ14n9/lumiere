@@ -171,8 +171,14 @@ function entryObserverFixture() {
     mode: {} as VimMode,
     composing: false,
     scans: 0,
+    modeChanged: () => {},
   };
+  const contentDOM = Object.assign(new EventTarget(), {
+    ownerDocument: { activeElement: null as unknown },
+  });
+  contentDOM.ownerDocument.activeElement = contentDOM;
   const view = {
+    contentDOM,
     get state() {
       return fixture.state;
     },
@@ -188,6 +194,12 @@ function entryObserverFixture() {
   } as unknown as EditorView;
   const observer = observeVimTableEntry(view, () => ({
     mode: () => fixture.mode,
+    watchMode(_view, changed) {
+      fixture.modeChanged = changed;
+      return () => {
+        fixture.modeChanged = () => {};
+      };
+    },
     extension: () => [],
     sync() {},
   }));
@@ -200,6 +212,57 @@ test("Vim table entry waits until after the outer update", async () => {
   assert.equal(fixture.scans, 0);
   await Promise.resolve();
   assert.equal(fixture.scans, 1);
+  observer.destroy();
+});
+
+test("adding a secondary caret with the same main head cancels deferred entry and preserves both ranges", async () => {
+  const { fixture, view, observer, update } = entryObserverFixture();
+  observer.update(update);
+  const transaction = fixture.state.update({
+    selection: EditorSelection.create(
+      [EditorSelection.cursor(3), EditorSelection.cursor(8)],
+      0,
+    ),
+  });
+  fixture.state = transaction.state;
+  observer.update({
+    state: fixture.state,
+    selectionSet: true,
+    docChanged: false,
+    transactions: [transaction],
+  });
+  await Promise.resolve();
+  assert.equal(fixture.scans, 0);
+  assert.equal(activeTables.get(view), undefined);
+  assert.equal(fixture.state.selection.ranges.length, 2);
+  assert.equal(fixture.state.selection.main.head, 3);
+  observer.destroy();
+});
+
+test("blur and mode transitions cancel queued entry even after focus and normal mode return", async () => {
+  for (const cancel of [
+    ({ view }: ReturnType<typeof entryObserverFixture>) =>
+      view.contentDOM.dispatchEvent(new Event("blur")),
+    ({ fixture }: ReturnType<typeof entryObserverFixture>) =>
+      fixture.modeChanged(),
+  ]) {
+    const entry = entryObserverFixture();
+    entry.observer.update(entry.update);
+    cancel(entry);
+    await Promise.resolve();
+    assert.equal(entry.fixture.scans, 0);
+    entry.observer.destroy();
+  }
+});
+
+test("entry requires contentDOM focus immediately before opening a cell", async () => {
+  const { fixture, view, observer, update } = entryObserverFixture();
+  observer.update(update);
+  Object.defineProperty(view.contentDOM.ownerDocument, "activeElement", {
+    value: {},
+  });
+  await Promise.resolve();
+  assert.equal(fixture.scans, 0);
   observer.destroy();
 });
 

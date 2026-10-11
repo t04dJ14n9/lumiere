@@ -30,6 +30,11 @@ export const vimWebview: Plugin = {
 function registerVimService(ctx: Context): void {
   ctx.provide("vim", {
     mode: (view) => getCM(view)?.state.vim ?? undefined,
+    watchMode(view, changed) {
+      const cm = getCM(view);
+      cm?.on("vim-mode-change", changed);
+      return () => cm?.off("vim-mode-change", changed);
+    },
     extension: () => vimExtensions(ctx, false),
     sync(from, to) {
       const source = getCM(from)?.state.vim;

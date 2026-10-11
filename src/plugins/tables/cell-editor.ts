@@ -152,9 +152,13 @@ export class CellEditor {
   }
 }
 
-function cellKeymap(options: CellEditorOptions) {
+export function cellKeymap(options: CellEditorOptions) {
   return Prec.highest(
     keymap.of([
+      {
+        key: "Mod-Enter",
+        run: (view) => options.environment.links?.follow(view) ?? false,
+      },
       { key: "Mod-s", run: () => options.action("save") },
       { key: "Mod-z", run: () => options.action("undo") },
       { key: "Mod-Shift-z", run: () => options.action("redo") },

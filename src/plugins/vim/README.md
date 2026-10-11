@@ -32,7 +32,9 @@ share this mode source and remove its listeners when they stop.
 - `webview.ts`: service, host action, Ex and editor extension registrations.
 - `motion.ts`: per-editor table motion correction and single-step entry into revealable blocks.
 - `source-motion.ts`: pure source-line target decision for rendered table overshoots.
-- `source-motion.test.ts`: counted, clamped, display-line and other-widget target regression units.
+- `source-motion.test.ts`: counted, clamped, folded and other-widget target regression units.
+- `motion-context.ts`: per-editor resolved motion policy captured before Vim executes it.
+- `motion.test.ts`: source/display goals, folds, mappings, macro replay and disposal units.
 - `caret.ts`: pure detection of the normal, visual, insert, replace, operator-pending and prompt states.
 - `caret.test.ts`: mode, pending-operator, prompt and stale-state regression units.
 
@@ -59,10 +61,13 @@ bindings use Control on macOS as well as other platforms, leaving Command
 shortcuts to the editor. No verify shortcut is assigned.
 
 Normal-mode single-step `j`, `k`, `gj` and `gk` enter revealable rendered blocks
-and reveal their source. Across rendered tables, every `findPosV` line motion
-uses source-line arithmetic when layout would overshoot, including counted
-`j`/`k`/`gj`/`gk`, operators and visual selections. Other widget kinds keep
-the dependency's existing behavior.
+and reveal their source. Across visible tables, source-line `j`/`k` correct
+layout overshoots with fold-aware source arithmetic, including counts,
+operators and visual selections. Single-step `gj`/`gk` can enter an adjacent
+table using the adapter's resolved column. Display counts, wrapped movement
+and half-page scrolling retain the dependency's layout behavior and pixel
+goal. Fold-hidden tables do not contribute to correction. Other widget kinds
+keep the dependency's existing behavior.
 
 Inside a table cell, normal-mode vertical boundary hops ignore counts and the
 `g` prefix and move one row. Operators and visual selections inside cells keep

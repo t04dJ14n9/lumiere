@@ -8,6 +8,7 @@ import type {} from "../render/api";
 import type {} from "../commands/api";
 import type {} from "../formatting/api";
 import type {} from "../vim/api";
+import type {} from "../links/api";
 import { protocol as editorProtocol } from "../editor/protocol";
 import { keymap } from "@codemirror/view";
 import { TableWidget, enterTable } from "./widget";
@@ -35,7 +36,7 @@ export const tablesWebview: Plugin = {
       "menu",
       "rpc",
     ],
-    optional: ["vim", "formatting"],
+    optional: ["vim", "formatting", "links"],
   },
   apply(ctx) {
     const environment = createEnvironment(ctx);
@@ -57,6 +58,7 @@ function createEnvironment(ctx: Context): TableEnvironment {
   return {
     language: ctx.markdown.language(),
     vim: ctx.vim,
+    links: ctx.links,
     inputGroups: () => {
       const groups = ctx.document.inputGroups?.((target) =>
         ctx.vim?.mode(target),

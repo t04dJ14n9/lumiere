@@ -44,12 +44,14 @@ export interface BlockRenderer {
   estimatedHeight?: number;
 }
 export interface LivePreview {
-  /** Persistent widgets intersecting the source range; revealed source is excluded. */
+  /** Persistent widgets intersecting the source range; source overrides and folds are excluded. */
   renderedWidgets?(
     state: EditorState,
     from: number,
     to: number,
   ): readonly RenderBlock[];
+  /** Disjoint folded spans in source order, for source-line motion policy. */
+  foldedRanges?(state: EditorState): readonly { from: number; to: number }[];
   verticalPosition?(state: EditorState, direction: -1 | 1): number | undefined;
   visiblePosition?(
     state: EditorState,

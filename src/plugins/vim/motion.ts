@@ -2,6 +2,7 @@ import { ViewPlugin, type EditorView } from "@codemirror/view";
 import { getCM, type CodeMirror, type Pos } from "@replit/codemirror-vim";
 import type { LivePreview } from "../livePreview/api";
 import { tableMotionPosition } from "./source-motion";
+import { observeMotionContext } from "./motion-context";
 
 /** Keep Vim's command bookkeeping while correcting rendered block targets. */
 export function revealBlockMotion(service: () => LivePreview | undefined) {
@@ -11,18 +12,20 @@ export function revealBlockMotion(service: () => LivePreview | undefined) {
   });
 }
 
-function installBlockMotion(
+export function installBlockMotion(
   view: EditorView,
   cm: CodeMirror,
   service: () => LivePreview | undefined,
 ) {
   const original = cm.findPosV;
+  const context = observeMotionContext(cm);
   let entering = false;
   const keydown = (event: KeyboardEvent) => {
     // Vim clears inputState before findPosV; capture operators before its handler.
     entering = canRevealBlock(event, cm.state.vim);
   };
   cm.findPosV = (start, amount, unit, goalColumn) => {
+    const policy = context.consume();
     const eligible = entering;
     entering = false;
     const result = original.call(cm, start, amount, unit, goalColumn);
@@ -30,12 +33,18 @@ function installBlockMotion(
     if (unit !== "line" || preview?.mode !== "livePreview") {
       return result;
     }
-    const source = tableSourcePosition(view, preview, {
-      start,
-      amount,
-      result,
-      goalColumn: cm.state.vim?.lastHPos ?? start.ch,
-    });
+    const source = policy
+      ? tableSourcePosition(view, preview, {
+          start,
+          amount,
+          result,
+          goalColumn:
+            policy === "source"
+              ? (cm.state.vim?.lastHPos ?? start.ch)
+              : result.ch,
+          policy,
+        })
+      : undefined;
     if (source) {
       return source;
     }
@@ -51,6 +60,7 @@ function installBlockMotion(
       view.contentDOM.removeEventListener("keydown", keydown, true);
       view.contentDOM.removeEventListener("keyup", keydown, true);
       cm.findPosV = original;
+      context.destroy();
     },
   };
 }
@@ -75,7 +85,13 @@ function canRevealBlock(
 function tableSourcePosition(
   view: EditorView,
   preview: LivePreview,
-  motion: { start: Pos; amount: number; result: Pos; goalColumn: number },
+  motion: {
+    start: Pos;
+    amount: number;
+    result: Pos;
+    goalColumn: number;
+    policy: "source" | "display-entry";
+  },
 ): Pos | undefined {
   const { doc } = view.state;
   const fromLine = Math.max(0, Math.min(motion.start.line, motion.result.line));
@@ -97,6 +113,10 @@ function tableSourcePosition(
       kind: block.kind,
       from: doc.lineAt(block.from).number - 1,
       to: doc.lineAt(block.to).number - 1,
+    })),
+    folds: (preview.foldedRanges?.(view.state) ?? []).map((range) => ({
+      from: doc.lineAt(range.from).number - 1,
+      to: doc.lineAt(range.to).number - 1,
     })),
   });
 }

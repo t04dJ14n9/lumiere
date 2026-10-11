@@ -12,7 +12,7 @@ const base = {
   widgets: [{ kind: "Table", from: 3, to: 6 }],
 };
 
-test("a rendered table overshoot returns the source line and remembered column for j/k and gj/gk", () => {
+test("a rendered table overshoot returns the source line and remembered column for j/k", () => {
   for (const [start, amount, result, line] of [
     [2, 1, 7, 3],
     [1, 3, 9, 4],
@@ -33,7 +33,7 @@ test("a rendered table overshoot returns the source line and remembered column f
   }
 });
 
-test("the arithmetic target is clamped before comparing overshoot; gj/gk columns are clamped to text", () => {
+test("the arithmetic target is clamped before comparing overshoot; source columns are clamped to text", () => {
   assert.deepEqual(tableMotionPosition({ ...base, goalColumn: 99 }), {
     line: 3,
     ch: 17,
@@ -76,6 +76,54 @@ test("the arithmetic target is clamped before comparing overshoot; gj/gk columns
       result: { line: -1, ch: 0 },
     }),
     { line: 0, ch: 3 },
+  );
+});
+
+test("j and dj preserve a collapsed heading's skip when its table is hidden", () => {
+  for (const amount of [1, 2]) {
+    assert.equal(
+      tableMotionPosition({
+        ...base,
+        start: { line: 0, ch: 0 },
+        amount,
+        result: { line: 6 + amount, ch: 0 },
+        folds: [{ from: 0, to: 6 }],
+        widgets: [],
+      }),
+      undefined,
+    );
+  }
+});
+
+test("counted source motions crossing a visible table and a separate fold preserve the fold skip in both directions", () => {
+  for (const [start, amount, result, line] of [
+    [2, 7, 15, 11],
+    [14, -7, 1, 5],
+  ]) {
+    assert.deepEqual(
+      tableMotionPosition({
+        ...base,
+        start: { line: start!, ch: 0 },
+        amount: amount!,
+        result: { line: result!, ch: 0 },
+        lastLine: 20,
+        folds: [{ from: 8, to: 10 }],
+      }),
+      { line, ch: 3 },
+    );
+  }
+});
+
+test("an ordinary fold skip is untouched even with a visible table elsewhere in the motion interval", () => {
+  assert.equal(
+    tableMotionPosition({
+      ...base,
+      amount: 7,
+      result: { line: 12, ch: 9 },
+      lastLine: 20,
+      folds: [{ from: 8, to: 11 }],
+    }),
+    undefined,
   );
 });
 

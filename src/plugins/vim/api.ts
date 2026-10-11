@@ -13,6 +13,7 @@ export interface VimMode {
 export interface VimService {
   extension(): Extension;
   mode(view: EditorView): VimMode | undefined;
+  watchMode?(view: EditorView, changed: () => void): () => void;
   sync(from: EditorView, to: EditorView): void;
 }
 declare module "../../kernel/types" {
