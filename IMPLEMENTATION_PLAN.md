@@ -2954,5 +2954,8 @@ it lacks `type` and `generated` provenance; nothing adds that frontmatter.
 1–3px caret and line-number geometry in `font-size.spec.ts` and
 `stable-blocks.spec.ts`. This change does not touch the webview renderer.
 GitHub Actions browser on main is green, so those three are this VM's font
-metrics, not a suite regression. Real VS Code specs stay a local pre-push
-gate and are not in CI.
+metrics, not a suite regression. `xvfb-run -a pnpm test:vscode`: 18 passed,
+1 failed. The failure is Playwright 1.60 rejecting the key name `Left` in
+`Alt+Left` inside `test/vscode/native-links.spec.ts`, after the heading
+reveal had already succeeded. The installed extension activated and the other
+native specs passed. Real VS Code specs are not in CI.
