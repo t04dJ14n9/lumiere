@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { open } from "./harness";
 import { readFileSync } from "node:fs";
-import path from "node:path";
 
 for (const vim of [false, true]) {
   test(`follow caret links with Mod-Enter, Vim ${vim}`, async ({ page }) => {
@@ -121,10 +120,27 @@ test("Tags reading layout in light and dark themes", async ({ page }) => {
     }, dark);
     await expect(page.locator(".properties")).toBeVisible();
     await expect(page.locator(".md-tag").first()).toBeVisible();
-    await page.screenshot({
-      path: path.resolve(
-        `../../editor-redesign-2026-10-11/tags-${dark ? "dark" : "light"}.png`,
-      ),
-    });
+    await expect(page.locator(".md-tag").first()).toHaveCSS(
+      "background-color",
+      /rgba?\(/,
+    );
   }
+});
+
+test("Mod-Enter leaves the Vim prompt and dialogs alone", async ({ page }) => {
+  const source = "[web](https://example.com)\n\nplain";
+  await open(page, source, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(
+    (at) => window.harness.reveal(at),
+    source.indexOf("web") + 1,
+  );
+  await page.keyboard.press("Escape");
+  await page.keyboard.press(":");
+  const prompt = page.locator(".cm-vim-panel input, .cm-panels input");
+  await expect(prompt.first()).toBeFocused();
+  const opened = await page.evaluate(() => window.harness.opened.length);
+  await page.keyboard.press("ControlOrMeta+Enter");
+  expect(await page.evaluate(() => window.harness.opened.length)).toBe(opened);
 });

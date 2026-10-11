@@ -366,8 +366,12 @@ function registerLinkKeyboard(ctx: Context, open: OpenLink): void {
           {
             key: "Mod-Enter",
             run(view) {
+              // Only the editor text itself: a Vim prompt, dialog or property
+              // input owns the key while it has focus, and an IME composition
+              // uses Enter to commit.
               if (
                 view.dom.ownerDocument.activeElement !== view.contentDOM ||
+                view.composing ||
                 !view.state.selection.main.empty
               ) {
                 return false;
