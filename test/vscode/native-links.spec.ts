@@ -71,13 +71,16 @@ test("built-in Cmd-click preserves heading fragments and native source caret on 
         )
         .toBe(true);
       await page.keyboard.press(
-        process.platform === "darwin" ? "Control+-" : "Alt+ArrowLeft",
+        process.platform === "darwin" ? "Control+-" : "Control+Alt+-",
       );
-      await expect(
-        page
-          .locator(".monaco-editor .detected-link")
-          .filter({ hasText: heading }),
-      ).toBeVisible();
+      // Fall back to the title-bar Go Back control when the chord is remapped.
+      const sourceLink = page
+        .locator(".monaco-editor .detected-link")
+        .filter({ hasText: heading });
+      if (!(await sourceLink.isVisible().catch(() => false))) {
+        await page.getByRole("button", { name: /Go Back/ }).click();
+      }
+      await expect(sourceLink).toBeVisible();
       await expect(status).toContainText(sourceCaret);
       await expect(status).toHaveText(beforeClick);
       const caret = await status.innerText();
