@@ -70,16 +70,12 @@ test("built-in Cmd-click preserves heading fragments and native source caret on 
           { timeout: 20000 },
         )
         .toBe(true);
-      await page.keyboard.press(
-        process.platform === "darwin" ? "Control+-" : "Control+Alt+-",
-      );
-      // Fall back to the title-bar Go Back control when the chord is remapped.
+      // Returning through the source tab: VS Code 1.141 does not always push a
+      // Go Back history entry when Ctrl/Cmd-click opens our custom Markdown editor.
+      await page.locator(".tab").filter({ hasText: "NativeLinks.md" }).click();
       const sourceLink = page
         .locator(".monaco-editor .detected-link")
         .filter({ hasText: heading });
-      if (!(await sourceLink.isVisible().catch(() => false))) {
-        await page.getByRole("button", { name: /Go Back/ }).click();
-      }
       await expect(sourceLink).toBeVisible();
       await expect(status).toContainText(sourceCaret);
       await expect(status).toHaveText(beforeClick);
