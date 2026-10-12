@@ -1,17 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ChangeSet, EditorState, Text } from "@codemirror/state";
+import {
+  ChangeSet,
+  EditorState,
+  Text,
+  type TransactionSpec,
+} from "@codemirror/state";
 import { parseTable } from "../../markdown/tables/model";
 import { CellProjection, projectedChanges } from "./projection";
 import { tableSelectionChanges } from "./state";
 import type { TableGrid } from "./grid";
-import type { CellEditor } from "./cell-editor";
+import { CellEditor } from "./cell-editor";
 import type { TableEnvironment } from "./environment";
 import { axisRange } from "./selection";
 import { wrapCell } from "./keyboard";
 import { containsCell } from "./toolbar";
 import { tableMenu, type TableMenuActions } from "./menu";
 import { tableOperation } from "./commands";
+import type { EditorView } from "@codemirror/view";
+import { CodeMirror, Vim } from "@replit/codemirror-vim";
+import { CellSource } from "./cell-source";
+import { installCellWordNavigation } from "./word-navigation";
 
 const source = "| first | second |\n| --- | --- |\n| alpha | beta |";
 const table = parseTable(source)!;
@@ -275,4 +284,108 @@ test("table command parsing keeps alignment validation and movement boundaries",
     to: 0,
     destination: 0,
   });
+});
+
+test("cross-cell macro replay keeps the adapter and projects edits into the destination", () => {
+  const original = "| one | two three |\n| --- | --- |";
+  let document = original;
+  let state = EditorState.create({ doc: "one" });
+  const active = { row: 0, column: 0 };
+  const labels: string[] = [];
+  const rendered: unknown[] = [];
+  const view = {
+    get state() {
+      return state;
+    },
+    contentDOM: new EventTarget(),
+    composing: false,
+    dom: {},
+    focus() {},
+    dispatch(...specs: TransactionSpec[]) {
+      const transaction = state.update(...specs);
+      state = transaction.state;
+      if (transaction.docChanged && !editor.reconciling) {
+        const changes = projectedChanges(
+          document,
+          active,
+          state.doc.toString(),
+          0,
+        );
+        document = ChangeSet.of(changes, document.length)
+          .apply(Text.of(document.split("\n")))
+          .toString();
+      }
+    },
+  } as unknown as EditorView;
+  const editor = {
+    view,
+    reconciling: false,
+    source: new CellSource(parseTable(original)!.rows[0]![0]!),
+    label(position: { row: number; column: number }) {
+      labels.push(`${position.row}:${position.column}`);
+    },
+    retarget: CellEditor.prototype.retarget,
+    destroy() {
+      assert.fail("word motion must retain the macro's adapter");
+    },
+  };
+  const projection = new CellProjection(
+    {
+      get model() {
+        return parseTable(document)!;
+      },
+      root: { isConnected: false },
+      contentElement: () => ({ replaceChildren() {} }),
+      display(position: unknown) {
+        rendered.push(position);
+      },
+    } as unknown as TableGrid,
+    {
+      disposeContent() {},
+    } as unknown as TableEnvironment,
+    {
+      activate() {},
+      highlight() {},
+      move: () => false,
+      arrow: () => false,
+    },
+  );
+  projection.active = active;
+  projection.cellEditor = editor as unknown as CellEditor;
+  const cm = new CodeMirror(view);
+  Vim.maybeInitVimState_(cm);
+  Object.defineProperty(cm, "openDialog", { value: undefined });
+  const installed = installCellWordNavigation(view, cm, (motion, count) =>
+    projection["moveWord"](motion, count),
+  );
+  const register = Vim.getRegisterController().getRegister("a");
+  const keys = (sequence: string) => {
+    for (const key of sequence) {
+      Vim.handleKey(cm, key, "user");
+    }
+  };
+  try {
+    keys("qawxq");
+    assert.equal(parseTable(document)!.rows[0]![1]!.text, "wo three");
+    assert.equal(register.keyBuffer.join(""), "wx");
+    assert.equal(projection.cellEditor, editor);
+    assert.equal(projection.active, active);
+    assert.deepEqual(active, { row: 0, column: 1 });
+    assert.deepEqual(labels, ["0:1"]);
+    assert.deepEqual(rendered, [{ row: 0, column: 0 }]);
+    document = original;
+    Object.assign(active, { row: 0, column: 0 });
+    editor.retarget.call(
+      editor as unknown as CellEditor,
+      parseTable(document)!.rows[0]![0]!,
+      active,
+      0,
+    );
+    keys("@a");
+    assert.equal(parseTable(document)!.rows[0]![0]!.text, "one");
+    assert.equal(parseTable(document)!.rows[0]![1]!.text, "wo three");
+  } finally {
+    installed.destroy();
+    register.clear();
+  }
 });

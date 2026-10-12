@@ -46,7 +46,14 @@ export function tableWordTarget(options: {
     return destination;
   }
   // Match normal Vim's clamping at buffer edges without creating table rows.
-  return isForward ? words.at(-1)?.end : words[0]?.start;
+  const edge = isForward ? words.at(-1)?.end : words[0]?.start;
+  if (
+    !edge ||
+    (isForward ? compare(edge, current) < 0 : compare(edge, current) > 0)
+  ) {
+    return current;
+  }
+  return edge;
 }
 
 function cellWords(

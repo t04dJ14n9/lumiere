@@ -108,3 +108,50 @@ test("combining characters and leading whitespace retain cell offsets", () => {
     { row: 0, column: 1, head: 0 },
   );
 });
+
+test("mixed empty edge cells never reverse the requested motion", () => {
+  for (const motion of ["w", "W", "e", "E", "b", "B", "ge", "gE"] as const) {
+    const forward = ["w", "W", "e", "E"].includes(motion);
+    const cells = forward ? [["alpha", ""]] : [["", "beta"]];
+    const current = { row: 0, column: forward ? 1 : 0, head: 0 };
+    for (const count of [1, 9]) {
+      assert.deepEqual(
+        tableWordTarget({ cells, current, motion, count }),
+        current,
+      );
+    }
+  }
+});
+
+test("retained whitespace stays put past the word edge but clamps when still ahead", () => {
+  for (const motion of ["w", "W", "e", "E"] as const) {
+    const cells = [["alpha  "]];
+    const current = { row: 0, column: 0, head: 6 };
+    assert.deepEqual(tableWordTarget({ cells, current, motion }), current);
+    assert.deepEqual(
+      tableWordTarget({
+        cells,
+        current: { ...current, head: 0 },
+        motion,
+        count: 9,
+      }),
+      { ...current, head: 4 },
+    );
+  }
+  for (const motion of ["b", "B", "ge", "gE"] as const) {
+    const current = { row: 0, column: 0, head: 0 };
+    assert.deepEqual(
+      tableWordTarget({ cells: [["  beta"]], current, motion }),
+      current,
+    );
+    assert.deepEqual(
+      tableWordTarget({
+        cells: [["  beta"]],
+        current: { ...current, head: 5 },
+        motion,
+        count: 9,
+      }),
+      { ...current, head: 2 },
+    );
+  }
+});

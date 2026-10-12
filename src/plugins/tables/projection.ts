@@ -98,9 +98,30 @@ export class CellProjection {
         scrollIntoView: true,
       });
     } else {
-      this.open(target, target.head);
+      this.retargetWordCell(target);
     }
     return true;
+  }
+
+  private retargetWordCell(target: CellPosition & { head: number }): void {
+    const editor = this.cellEditor;
+    const active = this.active;
+    const cell = this.grid.model.rows[target.row]?.[target.column];
+    const element = this.grid.contentElement(target);
+    if (!editor || !active || !cell || !element) {
+      return;
+    }
+    const previous = { ...active };
+    // The edit callback captures this object; retain it when the view changes cells.
+    Object.assign(active, { row: target.row, column: target.column });
+    this.actions.activate(active);
+    this.environment.disposeContent(element);
+    element.replaceChildren(editor.view.dom);
+    this.grid.display(previous);
+    editor.retarget(cell, active, target.head);
+    this.deferOuterCaret(editor);
+    editor.view.focus();
+    this.actions.highlight();
   }
 
   private projectChange(
