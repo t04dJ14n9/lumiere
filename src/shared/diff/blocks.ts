@@ -2,6 +2,7 @@ import { diffSequences } from "./myers";
 import type { Run } from "./myers";
 import { splitLines, wordDiff } from "./lines";
 import type { WordBudget } from "./lines";
+import { overlaps, protectedRanges } from "./protect";
 import { codeSpans } from "./spans";
 import type { Segment } from "./lines";
 
@@ -188,7 +189,9 @@ export function markSide(
     .filter((segment) => segment.type === "equal" || segment.type === own)
     .map((segment) => segment.text)
     .join("");
-  const guarded = protectedRanges(sideText);
+  const guarded = overlaps(
+    protectedRanges(sideText).concat(codeSpans(sideText)),
+  );
   let out = "";
   let at = 0;
   for (const segment of segments) {
@@ -202,10 +205,7 @@ export function markSide(
       const from = at + lead!.length;
       const to = from + core!.length;
       const safe =
-        core &&
-        PLAIN.test(core) &&
-        !core.includes("\n") &&
-        !guarded.some(([x, y]) => from < y && to > x);
+        core && PLAIN.test(core) && !core.includes("\n") && !guarded(from, to);
       out += safe
         ? `${lead}<${tag} class="${cls}">${core}</${tag}>${trail}`
         : segment.text;
@@ -215,32 +215,6 @@ export function markSide(
   return out;
 }
 
-/**
- * Syntax that is not text: line prefixes (quotes, list and task markers,
- * heading marks), reference definitions, link destinations, code spans of any
- * fence length, math, autolinks, HTML tags and wikilinks.
- */
-const PROTECTED = new RegExp(
-  [
-    String.raw`^[ \t]{0,3}(?:>[ \t]?)*(?:(?:[-+*]|\d{1,9}[.)])(?:[ \t]+\[[ xX]\])?(?=[ \t]|$)|#{1,6}(?=[ \t]|$))`,
-    String.raw`^[ \t]{0,3}\[[^\]\n]+\]:[^\n]*`,
-    String.raw`\$[^$\n]+\$`,
-    String.raw`\]\([^)\n]*\)`,
-    String.raw`<[^>\n]*>`,
-    String.raw`\[\[[^\]\n]*\]\]`,
-    String.raw`\w+:\/\/\S+`,
-  ].join("|"),
-  "gm",
-);
-
-function protectedRanges(text: string): [number, number][] {
-  const pattern = new RegExp(PROTECTED);
-  const ranges: [number, number][] = [...text.matchAll(pattern)].map((m) => [
-    m.index,
-    m.index + m[0].length,
-  ]);
-  return ranges.concat(codeSpans(text));
-}
 
 const escapeHtml = (text: string) =>
   text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
