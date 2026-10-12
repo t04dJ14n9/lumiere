@@ -56,8 +56,12 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
   await expect(editor).toHaveAttribute("data-caret-style", "block");
   await expect(caret).toBeVisible();
   await expect(shape).toHaveText("a");
-  await expect(shape).toHaveCSS("background-color", "rgb(18, 52, 86)");
-  await expect(shape).toHaveCSS("color", "rgb(254, 220, 186)");
+  // A see-through tint of the cursor colour; the glyph below shows through.
+  await expect(shape).toHaveCSS(
+    "background-color",
+    "oklch(0.319161 0.0724438 251.176 / 0.45)",
+  );
+  await expect(shape).toHaveCSS("color", "rgba(0, 0, 0, 0)");
   await expect(shape).toHaveCSS("animation-name", "none");
   await expect
     .poll(async () =>
@@ -121,7 +125,7 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
       parseFloat(before.height) / element.getBoundingClientRect().height,
     ];
   });
-  expect(half[0]).toBe("rgb(18, 52, 86)");
+  expect(half[0]).toBe("oklch(0.319161 0.0724438 251.176 / 0.45)");
   expect(half[1]).toBeCloseTo(0.5, 2);
   await page.keyboard.press("Escape");
   await expect(editor).toHaveAttribute("data-caret-mode", "normal");
@@ -139,9 +143,9 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
   await expect(editor).toHaveAttribute("data-caret-mode", "visual");
   await expect(editor).toHaveAttribute("data-caret-style", "block");
   await expect(shape).toHaveText("x");
-  // VSCodeVim: the active character in the cursor colour with its own dark
-  // text, and the editor's one-pixel line caret at the selection's end.
-  await expect(shape).toHaveCSS("color", "rgb(81, 80, 82)");
+  // A tint over the active character (its glyph shows through) and the
+  // editor's one-pixel line caret at the selection's end.
+  await expect(shape).toHaveCSS("color", "rgba(0, 0, 0, 0)");
   await expect(editor.locator(".mw-caret")).toHaveCount(2);
   const end = editor.locator('.mw-caret[data-part="end"]');
   await expect(end).toHaveCSS("width", "1px");
@@ -194,7 +198,10 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
     "rgb(18, 52, 86) 0px 0px 0px 1px inset",
   );
   await configure(page, { cursorStyle: "block" });
-  await expect(shape).toHaveCSS("background-color", "rgb(18, 52, 86)");
+  await expect(shape).toHaveCSS(
+    "background-color",
+    "oklch(0.319161 0.0724438 251.176 / 0.45)",
+  );
   await expect(shape).not.toHaveText("");
 
   for (const cursorBlinking of [
