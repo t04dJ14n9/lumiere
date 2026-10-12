@@ -17,7 +17,6 @@ for (const name of [
   "table",
   "urlish",
   "urls",
-  "many",
 ]) {
   test(`R3-B1: protection of an 80k-110k character line stays linear (${name})`, () => {
     const run = spawnSync(process.execPath, ["--import", "tsx", probe, name], {
@@ -31,6 +30,46 @@ for (const name of [
     assert.match(tail, /new/);
   });
 }
+
+const runProbe = (mode: string) => {
+  const run = spawnSync(process.execPath, ["--import", "tsx", probe, mode], {
+    timeout: 5000,
+    encoding: "utf8",
+  });
+  assert.equal(run.signal, null, `${mode}: killed after 5 s (stalled)`);
+  assert.equal(run.status, 0, run.stderr);
+  return JSON.parse(run.stdout) as {
+    ms: number;
+    head: string;
+    tail: string;
+    wrappers: number;
+  };
+};
+
+for (const mode of ["trim-ins", "trim-del"]) {
+  test(`R4-B1: long whitespace inside a changed segment is trimmed in linear time (${mode})`, () => {
+    const { ms, head, tail, wrappers } = runProbe(mode);
+    assert.ok(ms < 1000, `${mode}: ${ms} ms`);
+    // The whole changed run is wrapped once, its inner spaces kept.
+    assert.equal(wrappers, 1);
+    assert.match(head, /^prose <ins class="mw-gd-(ins|del)">a {10}/);
+    assert.match(tail, / {10}b<\/ins>$/);
+  });
+}
+
+test("N9: many changed words among protected tags: every word wrapped, fast", () => {
+  const { ms, tail, wrappers } = runProbe("many");
+  assert.ok(ms < 1000, `${ms} ms`);
+  assert.equal(wrappers, 15_000);
+  assert.match(tail, /<ins class="mw-gd-ins">v14999<\/ins> $/);
+});
+
+test("N10: an incomplete URL prefix does not suppress highlighting", () => {
+  assert.equal(
+    markSide(wordDiff("old:// ", "new:// "), "after"),
+    '<ins class="mw-gd-ins">new</ins>:// ',
+  );
+});
 
 test("R3-B1: the linear scanner keeps protecting the same syntax", () => {
   const mark = (a: string, b: string) => markSide(wordDiff(a, b), "after");

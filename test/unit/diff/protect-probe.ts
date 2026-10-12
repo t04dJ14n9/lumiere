@@ -18,21 +18,44 @@ const cases: Record<string, string> = {
   urlish: "prose " + "a:/".repeat(N / 3) + " ",
   urls: "x" + " a://b".repeat(N / 6) + " ",
 };
-// Many changed words among many protected tags: the overlap check per word.
-if (process.argv[2] === "many") {
-  const before = Array.from({ length: 20_000 }, (_, i) => `<a> w${i}`).join(
-    " ",
-  );
-  const after = before.replace(/w(\d+)/g, "v$1");
-  const started = performance.now();
-  const html = markSide(wordDiff(before, after), "after");
+const emit = (started: number, html: string) => {
   process.stdout.write(
     JSON.stringify({
       ms: performance.now() - started,
-      tail: html.slice(-40) + "new",
+      head: html.slice(0, 40),
+      tail: html.slice(-40),
+      wrappers: html.split("<ins ").length - 1,
     }),
   );
   process.exit(0);
+};
+const mode = process.argv[2]!;
+// R4-B1: a long whitespace run inside a changed segment, through wordDiff.
+if (mode === "trim-ins" || mode === "trim-del") {
+  const long = "prose a" + " ".repeat(N) + "b";
+  const segments =
+    mode === "trim-ins"
+      ? wordDiff("prose old", long)
+      : wordDiff(long, "prose old");
+  const started = performance.now();
+  const side = mode === "trim-ins" ? "after" : "before";
+  emit(
+    started,
+    markSide(segments, side)
+      .replaceAll("<del ", "<ins ")
+      .replaceAll("</del>", "</ins>"),
+  );
+}
+// Many changed words among many protected tags: one overlap query per word.
+if (mode === "many") {
+  const segments = Array.from({ length: 15_000 }, (_, i) => [
+    { type: "equal" as const, text: "<a> " },
+    { type: "delete" as const, text: `w${i}` },
+    { type: "insert" as const, text: `v${i}` },
+    { type: "equal" as const, text: " " },
+  ]).flat();
+  const started = performance.now();
+  emit(started, markSide(segments, "after"));
 }
 const prefix = cases[process.argv[2]!]!;
 const started = performance.now();

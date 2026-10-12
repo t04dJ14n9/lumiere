@@ -20,6 +20,7 @@ import {
 import type { GitDiff } from "../../../src/plugins/gitGutter/api";
 import type { RenderService } from "../../../src/plugins/render/api";
 import { fixture } from "../features/fixture";
+import { spawnSync } from "node:child_process";
 import { wordDiffStats } from "../../../src/shared/diff";
 
 const BASE =
@@ -311,4 +312,78 @@ test("R3-B1: a few very long tokens are not word-diffed and do not stall", () =>
   assert.equal(found.filter((d) => d.kind === "removed").length, 0);
   assert.equal(found.filter((d) => d.kind === "ghost:before").length, 1);
   assert.equal(wordDiffStats.calls, calls);
+});
+
+/** Run `decorations(base, now)` in a child process with a hard deadline. */
+function timed(name: string, base: string, now: string) {
+  const script = `
+    const { EditorState } = require("@codemirror/state");
+    const { markdown, markdownLanguage } = require("@codemirror/lang-markdown");
+    const { buildInline } = require("./src/plugins/gitInline/decorations");
+    const { computeHunks, hunkField } = require("./src/plugins/gitGutter/hunks");
+    const { outerBlock, peekContext } = require("./src/plugins/gitGutter/peek");
+    const [base, now] = JSON.parse(require("node:fs").readFileSync(0, "utf8"));
+    const state = EditorState.create({ doc: now, extensions: [hunkField, markdown({ base: markdownLanguage })] });
+    const diff = { field: hunkField, label: () => "HEAD", blockRange: outerBlock, context: peekContext };
+    const started = performance.now();
+    const set = buildInline(state, { hunks: computeHunks(base, state.doc), generation: 1 }, { diff, render: {} });
+    let ghosts = 0;
+    set.between(0, state.doc.length, (f, t, v) => { if (v.spec.widget && v.spec.widget.model) ghosts++; });
+    process.stdout.write(JSON.stringify({ ms: performance.now() - started, ghosts }));
+  `;
+  const run = spawnSync(process.execPath, ["--import", "tsx", "-e", script], {
+    input: JSON.stringify([base, now]),
+    timeout: 8000,
+    encoding: "utf8",
+  });
+  assert.equal(run.signal, null, `${name}: killed after 8 s (stalled)`);
+  assert.equal(run.status, 0, run.stderr);
+  return JSON.parse(run.stdout) as { ms: number; ghosts: number };
+}
+
+test("R4-B1 (inline): admitted table rows with long inner whitespace build fast", () => {
+  const now = "| value |\n| --- |\n| keep |\n";
+  const removedRow = `| a${" ".repeat(19_000)}b |\n`;
+  const { ms, ghosts } = timed(
+    "inner-spaces",
+    now + removedRow.repeat(10),
+    now,
+  );
+  assert.ok(ms < 1500, `${ms} ms`);
+  assert.equal(ghosts, 1);
+});
+
+test("R4-B2: a heavily indented non-separator row is rejected fast", () => {
+  const now = "| value |\n| --- |\n| keep |\n";
+  const { ms } = timed(
+    "indented-row",
+    now + `${" ".repeat(80_000)}| a |\n`,
+    now,
+  );
+  assert.ok(ms < 1500, `${ms} ms`);
+});
+
+test("R4-B2: table separators are still recognised", () => {
+  for (const separator of ["| --- |", "|:---:|", "  |---|", "| :-- | --: |"]) {
+    const after = ghostMarkdown(
+      "| a |\n",
+      `| a |\n${separator}\n| 1 |\n`,
+      "after",
+    );
+    assert.ok(after.includes(`\n${separator}\n`), after);
+    assert.match(after, /<ins class="mw-gd-ins">1<\/ins>/);
+  }
+  // Not separators: marked as rows.
+  const row = ghostMarkdown("| a |\n", "| a |\n| a- |\n", "after");
+  assert.match(row, /<ins/);
+});
+
+test("R4: the character budget runs out across hunks while tokens remain", () => {
+  // 12 paragraphs of 9 000 characters, one token a side: 18 000 a hunk.
+  const para = (c: string) =>
+    Array.from({ length: 12 }, () => c.repeat(9_000)).join("\n\n") + "\n";
+  const before = wordDiffStats.calls;
+  decorations(para("a"), para("b"));
+  // 200 000 / 18 000 per hunk: eleven word diffs fit, the twelfth is lines.
+  assert.equal(wordDiffStats.calls - before, 11);
 });
