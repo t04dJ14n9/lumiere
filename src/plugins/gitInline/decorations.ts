@@ -6,16 +6,32 @@ import {
   alignBlocks,
   rowMarkdown,
   splitBlocks,
+  tokens,
   wordDiff,
 } from "../../shared/diff";
 import type { Block } from "../../shared/diff";
+import {
+  adoptPass,
+  endLifetime,
+  newLifetime,
+} from "../../shared/render-lifetime";
+import type { PassLifetime, PassOwner } from "../../shared/render-lifetime";
 import type { DocHunk, GitDiff, HunkSet } from "../gitGutter/api";
-import type { RenderPass, RenderService } from "../render/api";
+import type { RenderService } from "../render/api";
 
 export interface InlineActions {
   readonly diff: GitDiff;
   readonly render: RenderService;
+  /** The plugin's render work, drained when it is turned off. */
+  readonly owner?: PassOwner;
 }
+
+/**
+ * Word diffs past these token counts (one hunk, one rebuild) fall back to the
+ * line-level view: tinted lines and the old text as a ghost above.
+ */
+export const HUNK_TOKENS = 1500;
+export const REBUILD_TOKENS = 12_000;
 
 /** Removed words, struck through where they were. Read-only and not copied. */
 class RemovedText extends WidgetType {
@@ -37,31 +53,59 @@ class RemovedText extends WidgetType {
   }
 }
 
-/** The baseline version of a removed or rewritten block, rendered, with Restore. */
+type GhostKind = "removed" | "before" | "added";
+
+interface GhostModel {
+  readonly hunk: DocHunk;
+  readonly markdown: string;
+  readonly kind: GhostKind;
+  /** The baseline label when the ghost was built; a refresh rebuilds it. */
+  readonly label: string;
+}
+
+const CAPTIONS: Record<GhostKind, string> = {
+  removed: "Removed",
+  before: "Before",
+  added: "Added",
+};
+
+const lifetimes = new WeakMap<HTMLElement, PassLifetime>();
+const signals = new WeakMap<PassLifetime, AbortSignal>();
+
+/** A block's other version, rendered, with Restore: removed, before, or added. */
 class GhostBlock extends WidgetType {
-  private passes: RenderPass[] = [];
   constructor(
-    readonly hunk: DocHunk,
-    readonly markdown: string,
+    readonly model: GhostModel,
     private readonly actions: InlineActions,
   ) {
     super();
   }
   override eq(other: GhostBlock): boolean {
+    const a = this.model;
+    const b = other.model;
     return (
-      other.markdown === this.markdown &&
-      other.hunk.kind === this.hunk.kind &&
-      other.hunk.oldLine === this.hunk.oldLine
+      a.markdown === b.markdown &&
+      a.kind === b.kind &&
+      a.label === b.label &&
+      a.hunk.kind === b.hunk.kind &&
+      a.hunk.old === b.hunk.old &&
+      a.hunk.oldLine === b.hunk.oldLine &&
+      a.hunk.from === b.hunk.from &&
+      a.hunk.to === b.hunk.to
     );
   }
   override toDOM(view: EditorView): HTMLElement {
+    const { hunk, kind, label } = this.model;
     const root = document.createElement("div");
-    const removed = this.hunk.kind === "deleted";
-    root.className = `mw-gi-ghost ${removed ? "is-removed" : "is-before"}`;
+    root.className = `mw-gi-ghost is-${kind}`;
     const caption = root.appendChild(document.createElement("div"));
     caption.className = "mw-gi-caption";
-    const label = caption.appendChild(document.createElement("span"));
-    label.textContent = `${removed ? "Removed" : "Before"} · line ${this.hunk.oldLine} in ${this.actions.diff.label()}`;
+    const where =
+      kind === "added"
+        ? `line ${view.state.doc.lineAt(hunk.from).number}`
+        : `line ${hunk.oldLine} in ${label}`;
+    caption.appendChild(document.createElement("span")).textContent =
+      `${CAPTIONS[kind]} · ${where}`;
     const restore = caption.appendChild(document.createElement("button"));
     restore.type = "button";
     restore.className = "mw-gi-restore";
@@ -70,37 +114,55 @@ class GhostBlock extends WidgetType {
     restore.addEventListener("mousedown", (event) => event.preventDefault());
     restore.addEventListener("click", (event) => {
       event.preventDefault();
-      const current = view.state
-        .field(this.actions.diff.field)
-        .hunks.find(
-          (hunk) =>
-            hunk.oldLine === this.hunk.oldLine && hunk.old === this.hunk.old,
-        );
-      if (current) {
-        this.actions.diff.revert(current);
+      if (restore.disabled) {
+        return;
       }
+      // The service resolves the hunk against a fresh diff and publishes the
+      // result at once, so a second click finds nothing left to restore.
+      restore.disabled = true;
+      this.actions.diff.revert(hunk);
     });
     const content = root.appendChild(document.createElement("div"));
     content.className = "mw-gi-ghost-body";
-    void this.actions.render
-      .into(content, this.markdown, {
-        readOnly: true,
-        measure: () => view.requestMeasure(),
-      })
-      .then((pass) => {
-        this.passes.push(pass);
-        view.requestMeasure();
-      })
-      .catch(() => {
-        content.textContent = this.markdown;
-      });
+    const abort = new AbortController();
+    const lifetime = newLifetime(this.actions.owner, () => abort.abort());
+    signals.set(lifetime, abort.signal);
+    lifetimes.set(root, lifetime);
+    this.render(view, content, lifetime);
     return root;
   }
-  override destroy(): void {
-    for (const pass of this.passes) {
-      void pass.dispose();
+  private render(
+    view: EditorView,
+    content: HTMLElement,
+    lifetime: PassLifetime,
+  ): void {
+    const { markdown } = this.model;
+    const pending = this.actions.render.into(content, markdown, {
+      signal: signals.get(lifetime)!,
+      readOnly: true,
+      measure: () => {
+        if (lifetime.live) {
+          view.requestMeasure();
+        }
+      },
+    });
+    void adoptPass(lifetime, pending)
+      .then((kept) => {
+        if (kept) {
+          view.requestMeasure();
+        }
+      })
+      .catch(() => {
+        if (lifetime.live) {
+          content.textContent = markdown;
+        }
+      });
+  }
+  override destroy(dom: HTMLElement): void {
+    const lifetime = lifetimes.get(dom);
+    if (lifetime) {
+      endLifetime(lifetime);
     }
-    this.passes = [];
   }
   override ignoreEvent(): boolean {
     return true;
@@ -130,66 +192,115 @@ export function touchesRenderedBlock(
   return now || splitBlocks(hunk.old).some((block) => RENDERED.has(block.kind));
 }
 
-/** The baseline side of a hunk as Markdown, with its changed lines and words marked. */
-export function ghostMarkdown(old: string, current: string): string {
+/** Whether removed lines sat inside a rendered block that is still there. */
+function removedInsideBlock(
+  hunk: DocHunk,
+  blocks: readonly Block[],
+  state: EditorState,
+): boolean {
+  if (hunk.atEnd) {
+    return false;
+  }
+  const at = state.doc.lineAt(hunk.from).number - 1;
+  return blocks.some(
+    (block) => RENDERED.has(block.kind) && block.from < at && block.to > at,
+  );
+}
+
+/** One side of a hunk as Markdown, with its changed lines and words marked. */
+export function ghostMarkdown(
+  old: string,
+  current: string,
+  side: "before" | "after" = "before",
+): string {
   return alignBlocks(old, current)
     .map(rowMarkdown)
-    .flatMap((row) => (row.before ? [row.before] : []))
+    .flatMap((row) => (row[side] ? [row[side]] : []))
     .join("\n\n");
+}
+
+/** The shared word-diff budget of one rebuild. */
+class Budget {
+  constructor(private left: number) {}
+  /** Whether a word diff of these texts fits; spends its tokens if so. */
+  spend(old: string, current: string): boolean {
+    const cost = tokens(old).length + tokens(current).length;
+    if (cost > HUNK_TOKENS || cost > this.left) {
+      return false;
+    }
+    this.left -= cost;
+    return true;
+  }
+}
+
+interface Context {
+  readonly blocks: readonly Block[];
+  readonly actions: InlineActions;
+  readonly budget: Budget;
+}
+
+function lineMarks(state: EditorState, hunk: DocHunk, cls: string) {
+  const { doc } = state;
+  const out: Range<Decoration>[] = [];
+  const last = doc.lineAt(hunk.to).number;
+  for (let n = doc.lineAt(hunk.from).number; n <= last; n++) {
+    out.push(Decoration.line({ class: cls }).range(doc.line(n).from));
+  }
+  return out;
+}
+
+function ghost(
+  state: EditorState,
+  hunk: DocHunk,
+  kind: GhostKind,
+  context: Context,
+): Range<Decoration> {
+  const { diff } = context.actions;
+  // Whole enclosing blocks, so a table keeps its header and code its fences.
+  const { old, now } = diff.context(state, hunk);
+  const markdown =
+    kind === "added"
+      ? ghostMarkdown(old, now, "after")
+      : ghostMarkdown(old, kind === "removed" ? "" : now);
+  const widget = new GhostBlock(
+    { hunk, markdown, kind, label: diff.label() },
+    context.actions,
+  );
+  const block = diff.blockRange(state, hunk.from, hunk.to);
+  const atEnd = hunk.kind === "deleted" && hunk.atEnd;
+  const at = atEnd ? hunk.from : Math.min(hunk.from, block.from);
+  return Decoration.widget({ widget, block: true, side: atEnd ? 1 : -1 }).range(
+    at,
+  );
 }
 
 function hunkDecorations(
   state: EditorState,
   hunk: DocHunk,
-  context: { blocks: readonly Block[]; actions: InlineActions },
+  context: Context,
 ): Range<Decoration>[] {
-  const out: Range<Decoration>[] = [];
-  const { doc } = state;
-  const lines = (cls: string) => {
-    for (
-      let n = doc.lineAt(hunk.from).number;
-      n <= doc.lineAt(hunk.to).number;
-      n++
-    ) {
-      out.push(Decoration.line({ class: cls }).range(doc.line(n).from));
-    }
-  };
-  const block = context.actions.diff.blockRange(state, hunk.from, hunk.to);
-  const before = Math.min(hunk.from, block.from);
   if (hunk.kind === "deleted") {
-    const widget = new GhostBlock(
-      hunk,
-      ghostMarkdown(hunk.old, ""),
-      context.actions,
-    );
-    out.push(
-      Decoration.widget({
-        widget,
-        block: true,
-        side: hunk.atEnd ? 1 : -1,
-      }).range(hunk.atEnd ? hunk.from : before),
-    );
-    return out;
+    const inBlock = removedInsideBlock(hunk, context.blocks, state);
+    return [ghost(state, hunk, inBlock ? "before" : "removed", context)];
+  }
+  const kind = hunk.kind === "added" ? "added" : "modified";
+  const lines = lineMarks(state, hunk, `mw-gi-${kind}`);
+  // A rendered block hides source marks: show its other version beside it.
+  if (touchesRenderedBlock(hunk, context.blocks, state)) {
+    return [
+      ...lines,
+      ghost(state, hunk, hunk.kind === "added" ? "added" : "before", context),
+    ];
   }
   if (hunk.kind === "added") {
-    lines("mw-gi-added");
-    return out;
+    return lines;
   }
   const current = state.sliceDoc(hunk.from, hunk.to);
-  if (touchesRenderedBlock(hunk, context.blocks, state)) {
-    lines("mw-gi-modified");
-    const widget = new GhostBlock(
-      hunk,
-      ghostMarkdown(hunk.old, current),
-      context.actions,
-    );
-    out.push(
-      Decoration.widget({ widget, block: true, side: -1 }).range(before),
-    );
-    return out;
+  if (!context.budget.spend(hunk.old, current)) {
+    // Too long to diff word by word now: the line-level view.
+    return [...lines, ghost(state, hunk, "before", context)];
   }
-  out.push(...wordMarks(hunk, current));
-  return out;
+  return wordMarks(hunk, current);
 }
 
 /** A rewritten passage as removed-word widgets and inserted-word marks. */
@@ -225,9 +336,13 @@ export function buildInline(
   if (set.hunks.length === 0) {
     return Decoration.none;
   }
-  const blocks = splitBlocks(state.doc.toString());
+  const context: Context = {
+    blocks: splitBlocks(state.doc.toString()),
+    actions,
+    budget: new Budget(REBUILD_TOKENS),
+  };
   const ranges = set.hunks.flatMap((hunk) =>
-    hunkDecorations(state, hunk, { blocks, actions }),
+    hunkDecorations(state, hunk, context),
   );
   return Decoration.set(ranges, true);
 }

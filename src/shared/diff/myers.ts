@@ -16,6 +16,11 @@ export interface Run extends Span {
 
 /** Above this many edits the middle is reported as one replacement. */
 export const MAX_EDITS = 4000;
+/**
+ * The most Int32 cells the backtracking trace may hold (16 MB). Depth d keeps
+ * 2d + 3 cells, so this also ends the search near 2,000 edits.
+ */
+export const TRACE_BUDGET = 4_000_000;
 
 type Equal<T> = (x: T, y: T) => boolean;
 
@@ -103,8 +108,14 @@ function forward<T>(
   const offset = max + 1;
   const v = new Int32Array(2 * max + 3);
   const trace: Int32Array[] = [];
+  let cells = 0;
   for (let d = 0; d <= max; d++) {
-    trace.push(v.slice());
+    // Only the diagonals depth d can read: -d - 1 … d + 1, offset d + 1.
+    cells += 2 * d + 3;
+    if (cells > TRACE_BUDGET) {
+      return undefined;
+    }
+    trace.push(v.slice(offset - d - 1, offset + d + 2));
     for (let k = -d; k <= d; k += 2) {
       let x = down(v, offset, k, d)
         ? v[offset + k + 1]!
@@ -127,7 +138,6 @@ const down = (v: Int32Array, offset: number, k: number, d: number) =>
   k === -d || (k !== d && v[offset + k - 1]! < v[offset + k + 1]!);
 
 function backtrack(trace: readonly Int32Array[], span: Span): Run[] {
-  const offset = (trace[0]!.length - 3) / 2 + 1;
   const steps: Run[] = [];
   const step = (type: Run["type"], x: number, y: number) =>
     steps.push({
@@ -141,6 +151,7 @@ function backtrack(trace: readonly Int32Array[], span: Span): Run[] {
   let y = span.bTo - span.bFrom;
   for (let d = trace.length - 1; d > 0; d--) {
     const v = trace[d]!;
+    const offset = d + 1;
     const k = x - y;
     const prevK = down(v, offset, k, d) ? k + 1 : k - 1;
     const prevX = v[offset + prevK]!;

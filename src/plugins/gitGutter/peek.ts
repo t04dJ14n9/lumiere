@@ -4,9 +4,15 @@ import type { EditorState, Extension } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, keymap } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { alignBlocks, rowMarkdown } from "../../shared/diff";
-import type { RenderPass, RenderService } from "../render/api";
+import type { RenderService } from "../render/api";
+import {
+  adoptPass,
+  endLifetime,
+  newLifetime,
+} from "../../shared/render-lifetime";
+import type { PassLifetime } from "../../shared/render-lifetime";
 import type { DocHunk } from "./api";
-import { currentText, hunkAt, hunkField } from "./hunks";
+import { currentText, hunkAt, hunkField, revertChange } from "./hunks";
 
 /** The open peek, as a document position inside its hunk. */
 export const setPeek = StateEffect.define<number | null>();
@@ -54,18 +60,30 @@ export function peekMarkdown(
   };
 }
 
+/** The enclosing blocks of a change, before and now, for display only. */
+export interface PeekContext {
+  readonly old: string;
+  readonly now: string;
+}
+
 interface PeekModel {
   readonly hunk: DocHunk;
   readonly current: string;
+  readonly context: PeekContext;
   readonly index: number;
   readonly total: number;
   readonly line: number;
 }
 
+export { adoptPass, endLifetime } from "../../shared/render-lifetime";
+export type { PassLifetime as Lifetime } from "../../shared/render-lifetime";
+const lifetimes = new WeakMap<HTMLElement, PassLifetime>();
+const signals = new WeakMap<PassLifetime, AbortSignal>();
+
 class PeekWidget extends WidgetType {
-  private passes: RenderPass[] = [];
   readonly hunk: DocHunk;
   readonly current: string;
+  readonly context: PeekContext;
   readonly index: number;
   readonly total: number;
   readonly line: number;
@@ -77,6 +95,7 @@ class PeekWidget extends WidgetType {
     ({
       hunk: this.hunk,
       current: this.current,
+      context: this.context,
       index: this.index,
       total: this.total,
       line: this.line,
@@ -84,9 +103,13 @@ class PeekWidget extends WidgetType {
   }
   override eq(other: PeekWidget): boolean {
     return (
+      other.hunk.from === this.hunk.from &&
+      other.hunk.to === this.hunk.to &&
       other.hunk.old === this.hunk.old &&
       other.hunk.kind === this.hunk.kind &&
       other.current === this.current &&
+      other.context.old === this.context.old &&
+      other.context.now === this.context.now &&
       other.index === this.index &&
       other.total === this.total &&
       other.line === this.line
@@ -97,7 +120,11 @@ class PeekWidget extends WidgetType {
     root.className = `mw-git-peek mw-git-peek-${this.hunk.kind}`;
     root.setAttribute("role", "region");
     root.setAttribute("aria-label", "Git change");
-    root.append(this.header(view), this.body(view));
+    const abort = new AbortController();
+    const lifetime = newLifetime(undefined, () => abort.abort());
+    signals.set(lifetime, abort.signal);
+    lifetimes.set(root, lifetime);
+    root.append(this.header(view), this.body(view, lifetime));
     return root;
   }
   private header(view: EditorView): HTMLElement {
@@ -134,14 +161,16 @@ class PeekWidget extends WidgetType {
     button("Revert this change", "Revert", () =>
       this.actions.revert(view, this.hunk),
     );
-    button("Stage the file", "Stage File", () => void this.actions.stage());
+    button("Stage the file", "Stage File", () => {
+      void this.actions.stage().catch(() => undefined);
+    });
     button("Close", "✕", () => view.dispatch({ effects: setPeek.of(null) }));
     return head;
   }
-  private body(view: EditorView): HTMLElement {
+  private body(view: EditorView, lifetime: PassLifetime): HTMLElement {
     const body = document.createElement("div");
     body.className = "mw-git-peek-body";
-    const { before, after } = peekMarkdown(this.hunk.old, this.current);
+    const { before, after } = peekMarkdown(this.context.old, this.context.now);
     const side = (label: string, source: string, cls: string) => {
       const pane = body.appendChild(document.createElement("div"));
       pane.className = `mw-git-peek-side ${cls}`;
@@ -149,17 +178,25 @@ class PeekWidget extends WidgetType {
       caption.className = "mw-git-peek-caption";
       caption.textContent = label;
       const content = pane.appendChild(document.createElement("div"));
-      void this.actions.render
-        .into(content, source, {
-          readOnly: true,
-          measure: () => view.requestMeasure(),
-        })
-        .then((pass) => {
-          this.passes.push(pass);
-          view.requestMeasure();
+      const pending = this.actions.render.into(content, source, {
+        signal: signals.get(lifetime)!,
+        readOnly: true,
+        measure: () => {
+          if (lifetime.live) {
+            view.requestMeasure();
+          }
+        },
+      });
+      void adoptPass(lifetime, pending)
+        .then((kept) => {
+          if (kept) {
+            view.requestMeasure();
+          }
         })
         .catch(() => {
-          content.textContent = source;
+          if (lifetime.live) {
+            content.textContent = source;
+          }
         });
     };
     if (this.hunk.kind !== "added") {
@@ -170,11 +207,12 @@ class PeekWidget extends WidgetType {
     }
     return body;
   }
-  override destroy(): void {
-    for (const pass of this.passes) {
-      void pass.dispose();
+  override destroy(dom: HTMLElement): void {
+    const lifetime = lifetimes.get(dom);
+    if (!lifetime) {
+      return;
     }
-    this.passes = [];
+    endLifetime(lifetime);
   }
   override ignoreEvent(): boolean {
     return true;
@@ -220,6 +258,31 @@ function frontmatterRange(
   return undefined;
 }
 
+/**
+ * Whole enclosing blocks (a fence, a table with its header, frontmatter with
+ * its delimiters) on both sides, so the peek renders the structure the change
+ * sits in. The old side is the block with the change put back; Revert still
+ * applies only the narrow hunk.
+ */
+export function peekContext(state: EditorState, hunk: DocHunk): PeekContext {
+  const change = revertChange(state, hunk);
+  const to = change.to ?? change.from;
+  const block = outerBlock(
+    state,
+    Math.min(hunk.from, change.from),
+    Math.max(hunk.to, to),
+  );
+  const from = Math.min(block.from, change.from);
+  const end = Math.max(block.to, to);
+  return {
+    old:
+      state.sliceDoc(from, change.from) +
+      (change.insert ?? "") +
+      state.sliceDoc(to, end),
+    now: state.sliceDoc(from, end),
+  };
+}
+
 const closePeek = keymap.of([
   {
     key: "Escape",
@@ -243,6 +306,7 @@ function buildPeek(state: EditorState, actions: PeekActions): DecorationSet {
     {
       hunk,
       current: currentText(state, hunk),
+      context: peekContext(state, hunk),
       index: hunks.indexOf(hunk),
       total: hunks.length,
       line:

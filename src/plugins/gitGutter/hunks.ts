@@ -1,11 +1,7 @@
 import { StateEffect, StateField } from "@codemirror/state";
-import type { ChangeSpec, EditorState, Text } from "@codemirror/state";
+import type { EditorState, Text } from "@codemirror/state";
 import { lineHunks } from "../../shared/diff";
 import type { DocHunk, HunkSet } from "./api";
-
-/** Beyond these sizes the bars are off (as in VS Code's diff limits). */
-export const MAX_CHARS = 1_000_000;
-export const MAX_LINES = 20_000;
 
 export const setHunks = StateEffect.define<readonly DocHunk[]>();
 
@@ -58,8 +54,31 @@ export function computeHunks(baseline: string, doc: Text): DocHunk[] {
   });
 }
 
+/**
+ * The fresh hunk an older one (a mapped bar, a widget's copy) stands for: same
+ * kind and baseline text, overlapping it. Undefined when the change is gone.
+ */
+export function resolveHunk(
+  fresh: readonly DocHunk[],
+  hunk: DocHunk,
+): DocHunk | undefined {
+  return fresh.find(
+    (candidate) =>
+      candidate.kind === hunk.kind &&
+      candidate.old === hunk.old &&
+      candidate.from <= hunk.to &&
+      candidate.to >= hunk.from,
+  );
+}
+
 /** The edit that puts a hunk's baseline text back. */
-export function revertChange(state: EditorState, hunk: DocHunk): ChangeSpec {
+export interface RevertEdit {
+  readonly from: number;
+  readonly to?: number;
+  readonly insert?: string;
+}
+
+export function revertChange(state: EditorState, hunk: DocHunk): RevertEdit {
   const doc = state.doc;
   if (hunk.kind === "modified") {
     return { from: hunk.from, to: hunk.to, insert: hunk.old };

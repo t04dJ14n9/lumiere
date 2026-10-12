@@ -15,7 +15,9 @@ export type GitBaselineResult =
   /** No repository, git disabled, or the file is outside any repository. */
   | { readonly status: "unavailable" }
   /** The file is in a repository but not at `ref` (new or untracked). */
-  | { readonly status: "untracked" };
+  | { readonly status: "untracked" }
+  /** Past the diff limits (`src/shared/diff/limits.ts`); the text is not kept. */
+  | { readonly status: "tooLarge" };
 
 /**
  * Git through VS Code's built-in git extension (`vscode.git`, API 1). Plugins

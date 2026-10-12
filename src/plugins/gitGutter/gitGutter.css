@@ -49,7 +49,8 @@
 }
 
 #app .mw-git-peek {
-  margin: 4px 0 6px;
+  /* A block widget: no vertical margins (CodeMirror measures the border box). */
+  margin: 0;
   border-top: 2px solid var(--mw-git-peek-border);
   border-bottom: 2px solid var(--mw-git-peek-border);
   background: var(--mw-git-peek-background);

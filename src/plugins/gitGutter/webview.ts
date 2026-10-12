@@ -5,19 +5,29 @@ import type { Context, Infer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";
-import type { GitDiff } from "./api";
+import type { DocHunk, GitDiff } from "./api";
 import { changeGutter } from "./gutter";
 import {
-  MAX_CHARS,
-  MAX_LINES,
+  MAX_DIFF_CHARS,
+  MAX_DIFF_LINES,
+  exceedsDiffLimits,
+} from "../../shared/diff";
+import {
   computeHunks,
   hunkAt,
   hunkField,
+  resolveHunk,
   revertChange,
   setHunks,
 } from "./hunks";
 import { config } from "./manifest";
-import { outerBlock, peekExtension, peekedHunk, setPeek } from "./peek";
+import {
+  outerBlock,
+  peekContext,
+  peekExtension,
+  peekedHunk,
+  setPeek,
+} from "./peek";
 import { protocol } from "./protocol";
 
 type Status = ReturnType<GitDiff["status"]>;
@@ -33,6 +43,8 @@ class GitDiffModel implements GitDiff {
   }
   private text: string | undefined;
   private name = "HEAD";
+  /** What the last baseline request returned; the status adds the size check. */
+  private loaded: Status = "loading";
   private state: Status = "loading";
   private request = 0;
   private live = true;
@@ -50,6 +62,9 @@ class GitDiffModel implements GitDiff {
   blockRange(state: EditorState, from: number, to: number) {
     return outerBlock(state, from, to);
   }
+  context(state: EditorState, hunk: DocHunk) {
+    return peekContext(state, hunk);
+  }
   label = () => this.name;
   baseline = () => this.text;
 
@@ -65,24 +80,45 @@ class GitDiffModel implements GitDiff {
     this.listeners.clear();
   }
 
+  /**
+   * Put a change back. Bars and widgets hold mapped, possibly stale offsets,
+   * so the change is first resolved against a fresh diff; one that is gone
+   * (or moved past recognition) is left alone.
+   */
   revert(hunk: Parameters<GitDiff["revert"]>[0]): void {
+    const fresh = this.fresh();
+    this.view.dispatch({ effects: setHunks.of(fresh) });
+    const target = resolveHunk(fresh, hunk);
     this.view.dispatch({
-      changes: revertChange(this.view.state, hunk),
+      ...(target && {
+        changes: revertChange(this.view.state, target),
+        userEvent: "input.revert",
+        scrollIntoView: true,
+      }),
       effects: setPeek.of(null),
-      userEvent: "input.revert",
-      scrollIntoView: true,
     });
   }
 
-  recompute = (): void => {
+  /** The hunks of the document as it is now; none past the size limits. */
+  private fresh() {
     const { doc } = this.view.state;
-    const tooLarge = doc.length > MAX_CHARS || doc.lines > MAX_LINES;
-    if (this.text !== undefined && tooLarge) {
-      this.state = "tooLarge";
+    const text = this.text;
+    if (text === undefined) {
+      this.state = this.loaded;
+      return [];
     }
-    const hunks =
-      this.text === undefined || tooLarge ? [] : computeHunks(this.text, doc);
-    this.view.dispatch({ effects: setHunks.of(hunks) });
+    const docTooLarge =
+      doc.length > MAX_DIFF_CHARS || doc.lines > MAX_DIFF_LINES;
+    if (docTooLarge || exceedsDiffLimits(text)) {
+      this.state = "tooLarge";
+      return [];
+    }
+    this.state = "ok";
+    return computeHunks(text, doc);
+  }
+
+  recompute = (): void => {
+    this.view.dispatch({ effects: setHunks.of(this.fresh()) });
     for (const listener of this.listeners) {
       listener();
     }
@@ -98,7 +134,7 @@ class GitDiffModel implements GitDiff {
       if (mine !== this.request || !this.live) {
         return;
       }
-      this.state = result.status;
+      this.loaded = result.status;
       this.text = result.status === "ok" ? (result.text ?? "") : undefined;
       this.name = result.label ?? (compareTo === "HEAD" ? "HEAD" : "Index");
     } catch (error) {
@@ -106,7 +142,7 @@ class GitDiffModel implements GitDiff {
         return;
       }
       this.ctx.logger.warn("Git baseline unavailable", error);
-      this.state = "unavailable";
+      this.loaded = "unavailable";
       this.text = undefined;
     }
     this.recompute();
@@ -158,12 +194,18 @@ class GitDiffModel implements GitDiff {
     return this.move(this.view, 1, true);
   };
 
+  /** Stage the file; the host saves first and reports a failure itself. */
   stage = async (): Promise<boolean> => {
-    const staged = await this.ctx.rpc.call(protocol, "stage", {});
-    if (staged) {
-      await this.load();
+    try {
+      const staged = await this.ctx.rpc.call(protocol, "stage", {});
+      if (staged) {
+        await this.load();
+      }
+      return staged;
+    } catch (error) {
+      this.ctx.logger.warn("Staging failed", error);
+      return false;
     }
-    return staged;
   };
 }
 

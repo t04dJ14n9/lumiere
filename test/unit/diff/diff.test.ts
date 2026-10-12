@@ -151,3 +151,41 @@ test("rowMarkdown: code blocks diff by line as an HTML block on one line", () =>
     /&lt;x&gt;/,
   );
 });
+
+test("N2: list, task and heading prefixes, reference definitions and code spans are never wrapped", () => {
+  const mark = (before: string, after: string) =>
+    markSide(wordDiff(before, after), "after");
+  assert.equal(mark("- old", "+ old"), "+ old");
+  assert.equal(mark("1. item", "2. item"), "2. item");
+  assert.equal(mark("- [ ] task", "- [x] task"), "- [x] task");
+  assert.equal(mark("[id]: /old", "[id]: /new"), "[id]: /new");
+  assert.equal(mark("## Old", "### Old"), "### Old");
+  assert.equal(
+    mark("see ``a ` b`` here", "see ``a ` c`` here"),
+    "see ``a ` c`` here",
+  );
+  // Text after the prefix is still marked.
+  assert.equal(
+    mark("- old item", "- new item"),
+    '- <ins class="mw-gd-ins">new</ins> item',
+  );
+});
+
+test("N3: very different inputs fall back to one replacement within the trace budget", () => {
+  const a = Array.from({ length: 4000 }, (_, i) => `a${i}`);
+  const b = Array.from({ length: 4000 }, (_, i) => `b${i}`);
+  const started = performance.now();
+  const runs = diffSequences(a, b);
+  assert.deepEqual(
+    runs.map((run) => run.type),
+    ["delete", "insert"],
+  );
+  assert.ok(performance.now() - started < 2000);
+  // Within the budget the exact diff is unchanged.
+  const c = [...a];
+  c[10] = "x";
+  assert.deepEqual(
+    diffSequences(a, c).map((run) => run.type),
+    ["equal", "delete", "insert", "equal"],
+  );
+});

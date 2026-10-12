@@ -6,7 +6,17 @@ import {
   ghostMarkdown,
 } from "../../../src/plugins/gitInline/decorations";
 import { computeHunks, hunkField } from "../../../src/plugins/gitGutter/hunks";
-import { outerBlock } from "../../../src/plugins/gitGutter/peek";
+import { outerBlock, peekContext } from "../../../src/plugins/gitGutter/peek";
+import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import {
+  PassOwner,
+  adoptPass,
+  newLifetime,
+} from "../../../src/shared/render-lifetime";
+import {
+  HUNK_TOKENS,
+  REBUILD_TOKENS,
+} from "../../../src/plugins/gitInline/decorations";
 import type { GitDiff } from "../../../src/plugins/gitGutter/api";
 import type { RenderService } from "../../../src/plugins/render/api";
 import { fixture } from "../features/fixture";
@@ -16,30 +26,45 @@ const BASE =
 const NOW =
   "# T\n\nReport it per region.\n\n| a | b |\n|---|---|\n| 1 | 3 |\n\nend\nnew line\n";
 
-function decorations() {
-  const state = EditorState.create({ doc: NOW, extensions: [hunkField] });
-  const set = { hunks: computeHunks(BASE, state.doc), generation: 1 };
+function decorations(base = BASE, now = NOW, label = "HEAD (abc1234)") {
+  const state = EditorState.create({
+    doc: now,
+    extensions: [hunkField, markdown({ base: markdownLanguage })],
+  });
+  const set = { hunks: computeHunks(base, state.doc), generation: 1 };
   const diff = {
     field: hunkField,
-    label: () => "HEAD (abc1234)",
+    label: () => label,
     blockRange: outerBlock,
+    context: peekContext,
   } as unknown as GitDiff;
   const render = {} as RenderService;
-  const found: { kind: string; at: number; text?: string; cls?: string }[] = [];
+  const found: {
+    kind: string;
+    at: number;
+    text?: string;
+    cls?: string;
+    widget?: { eq(other: unknown): boolean };
+  }[] = [];
   buildInline(state, set, { diff, render }).between(
     0,
     state.doc.length,
     (from, to, value) => {
       const spec = value.spec as {
         class?: string;
-        widget?: { text?: string; markdown?: string; hunk?: { kind: string } };
+        widget?: {
+          text?: string;
+          model?: { markdown: string; kind: string };
+          eq(other: unknown): boolean;
+        };
         block?: boolean;
       };
-      if (spec.widget?.markdown !== undefined) {
+      if (spec.widget?.model) {
         found.push({
-          kind: `ghost:${spec.widget.hunk!.kind}`,
+          kind: `ghost:${spec.widget.model.kind}`,
           at: state.doc.lineAt(from).number,
-          text: spec.widget.markdown,
+          text: spec.widget.model.markdown,
+          widget: spec.widget,
         });
       } else if (spec.widget) {
         found.push({ kind: "removed", at: from, text: spec.widget.text! });
@@ -76,8 +101,8 @@ test("prose changes are word marks; rendered blocks get a ghost of the old versi
   assert.deepEqual(
     ghosts.map((d) => [d.kind, d.at]),
     [
-      ["ghost:modified", 7],
-      ["ghost:deleted", 9],
+      ["ghost:before", 5],
+      ["ghost:removed", 9],
     ],
   );
   assert.match(ghosts[0]!.text!, /<del class="mw-gd-del">2<\/del>/);
@@ -119,4 +144,97 @@ test("inline changes wait for the change bars and leave with them", async () => 
   await f.configure({});
   assert.equal(f.extensions, 0);
   await f.root.dispose();
+});
+
+test("N4: a ghost shows the whole old table, fence or frontmatter, not the changed line", () => {
+  const cases: [string, string, RegExp][] = [
+    [
+      "| a |\n| --- |\n| 1 |\n",
+      "| a |\n| --- |\n| 2 |\n",
+      /^\| a \|\n\| --- \|\n\| <del class="mw-gd-del">1<\/del> \|$/,
+    ],
+    [
+      "```js\nconst x = 1;\n```\n",
+      "```js\nconst x = 2;\n```\n",
+      /^<pre class="mw-gd-lines mw-gd-code">.*mw-gd-line-del">const x = 1;/,
+    ],
+    [
+      "---\nstatus: draft\n---\n# T\n",
+      "---\nstatus: done\n---\n# T\n",
+      /mw-gd-frontmatter.*mw-gd-line-del">status: draft/,
+    ],
+  ];
+  for (const [base, now, expected] of cases) {
+    const ghosts = decorations(base, now).filter((d) =>
+      d.kind.startsWith("ghost"),
+    );
+    assert.equal(ghosts.length, 1, now);
+    assert.match(ghosts[0]!.text!, expected);
+  }
+});
+
+test("N5: a row added inside a table shows the table with the row marked as added", () => {
+  const ghosts = decorations(
+    "| a |\n| --- |\n| 1 |\n",
+    "| a |\n| --- |\n| 1 |\n| 2 |\n",
+  ).filter((d) => d.kind.startsWith("ghost"));
+  assert.deepEqual(
+    ghosts.map((d) => d.kind),
+    ["ghost:added"],
+  );
+  assert.match(ghosts[0]!.text!, /<ins class="mw-gd-ins">/);
+});
+
+test("N6: a ghost is rebuilt when the baseline label or its raw text changes", () => {
+  const a = decorations("A\n\nB\n\nC\n", "A\n\nC\n").find((d) =>
+    d.kind.startsWith("ghost"),
+  )!;
+  const relabelled = decorations(
+    "A\n\nB\n\nC\n",
+    "A\n\nC\n",
+    "HEAD (def5678)",
+  ).find((d) => d.kind.startsWith("ghost"))!;
+  const raw = decorations("A\n\nB\nC\n", "A\n\nC\n").find((d) =>
+    d.kind.startsWith("ghost"),
+  )!;
+  assert.equal(a.widget!.eq(a.widget), true);
+  assert.equal(a.widget!.eq(relabelled.widget), false);
+  assert.equal(a.widget!.eq(raw.widget), false);
+});
+
+test("B3 (inline): long rewritten paragraphs fall back to lines within the rebuild budget", () => {
+  const paragraphs = (unit: string) =>
+    Array.from({ length: 10 }, () => unit.repeat(4000)).join("\n\n") + "\n";
+  const started = performance.now();
+  const found = decorations(paragraphs("a,"), paragraphs("b;"));
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed < 1000, `${elapsed} ms`);
+  assert.equal(found.filter((d) => d.kind === "removed").length, 0);
+  assert.equal(found.filter((d) => d.kind === "ghost:before").length, 10);
+  assert.ok(HUNK_TOKENS < REBUILD_TOKENS);
+  // Short prose still gets word marks.
+  assert.ok(decorations().some((d) => d.kind === "removed"));
+});
+
+test("B2 (inline): a late pass is disposed and the plugin's drain waits for it", async () => {
+  const owner = new PassOwner();
+  let disposed = 0;
+  let resolve!: (pass: { dispose(): Promise<void> }) => void;
+  const lifetime = newLifetime(owner);
+  const adopted = adoptPass(
+    lifetime,
+    new Promise((r) => {
+      resolve = r;
+    }),
+  );
+  const drained = owner.drain();
+  resolve({
+    dispose: async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      disposed++;
+    },
+  });
+  assert.equal(await adopted, false);
+  await drained;
+  assert.equal(disposed, 1);
 });
