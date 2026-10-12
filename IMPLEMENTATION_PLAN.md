@@ -3168,7 +3168,8 @@ Validation is limited by the owner's explicit instruction: no pnpm check,
 check:full, full-repository lint or native suite. Root, webview-plugin and test
 TypeScript checks pass; ESLint passes on the seven changed TypeScript files;
 26 units across the three changed test files pass; all 26 cases in the existing
-tables-vim browser spec pass. The report and full branch diff are recorded in
+tables-vim Chromium browser spec pass. Exact commands, the report and full branch
+diff are recorded in
 /workspace/plans/review-pr30-round2.md. The pinned human-learning
 checkout remains absent; only this repository and its installed Vim dependency
 were read. No Obsidian code, CSS or assets were copied.
