@@ -1,7 +1,15 @@
 export { diffSequences } from "./myers";
 export { MAX_DIFF_CHARS, MAX_DIFF_LINES, exceedsDiffLimits } from "./limits";
 export type { Run } from "./myers";
-export { lineHunks, splitLines, tokens, wordDiff } from "./lines";
+export {
+  LINES_ONLY,
+  lineHunks,
+  splitLines,
+  tokens,
+  wordDiff,
+  wordDiffStats,
+} from "./lines";
+export type { WordBudget } from "./lines";
 export type { LineHunk, Segment } from "./lines";
 export {
   alignBlocks,

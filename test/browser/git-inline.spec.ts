@@ -116,3 +116,24 @@ test("N5: a row added to a table is shown marked beside the rendered table", asy
   await expect(ghost.locator("table")).toHaveCount(1);
   await expect(ghost.locator("ins.mw-gd-ins")).toHaveText("2");
 });
+
+test("F1: Restore on the second of two identical blocks after a prefix edit restores only that block", async ({
+  page,
+}) => {
+  const base = "X\n\n```txt\nold\n```\n\nY\n\n```txt\nold\n```\n\nZ\n";
+  const now = base.replace("old", "one").replace("old", "two");
+  await open(page, now, "obsidian", {
+    gitBaseline: base,
+    features: { gitInline: on },
+  });
+  const ghosts = page.locator(".mw-gi-ghost");
+  await expect(ghosts).toHaveCount(2);
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("Control+Home");
+  await page.keyboard.type("Q".repeat(19));
+  await ghosts.nth(1).getByRole("button", { name: "Restore" }).click();
+  // Only the second block goes back; the first keeps "one".
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("Q".repeat(19) + base.replace("old", "one"));
+});

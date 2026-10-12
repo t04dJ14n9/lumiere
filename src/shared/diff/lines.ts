@@ -76,6 +76,20 @@ export function tokens(text: string): string[] {
   return text.match(TOKEN) ?? [];
 }
 
+/** How many word diffs ran and over how many tokens; for budget tests. */
+export const wordDiffStats = { calls: 0, tokens: 0 };
+
+/**
+ * Whether a word diff of two texts may run now (spending its cost if so).
+ * Without one, word diffs always run.
+ */
+export interface WordBudget {
+  spend(before: string, after: string): boolean;
+}
+
+/** A budget that admits nothing: the line-level view. */
+export const LINES_ONLY: WordBudget = { spend: () => false };
+
 /**
  * Word diff: whitespace, words and single punctuation characters are the
  * units. A lone space between two changes joins them, so "a b" -> "c d"
@@ -84,6 +98,8 @@ export function tokens(text: string): string[] {
 export function wordDiff(before: string, after: string): Segment[] {
   const a = tokens(before);
   const b = tokens(after);
+  wordDiffStats.calls++;
+  wordDiffStats.tokens += a.length + b.length;
   const raw: Segment[] = [];
   for (const run of diffSequences(a, b)) {
     if (run.type === "insert") {

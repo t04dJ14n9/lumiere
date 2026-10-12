@@ -51,7 +51,7 @@ export function peekMarkdown(
   old: string,
   current: string,
 ): { before: string; after: string } {
-  const rows = alignBlocks(old, current).map(rowMarkdown);
+  const rows = alignBlocks(old, current).map((row) => rowMarkdown(row));
   return {
     before: rows
       .flatMap((row) => (row.before ? [row.before] : []))

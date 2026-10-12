@@ -1,6 +1,8 @@
 import { diffSequences } from "./myers";
 import type { Run } from "./myers";
 import { splitLines, wordDiff } from "./lines";
+import type { WordBudget } from "./lines";
+import { codeSpans } from "./spans";
 import type { Segment } from "./lines";
 
 export type BlockKind =
@@ -240,50 +242,6 @@ function protectedRanges(text: string): [number, number][] {
   return ranges.concat(codeSpans(text));
 }
 
-/**
- * Code spans on each line: a backtick run closed by the next run of the same
- * length. Linear time; a regex with a backreference backtracks badly on long
- * unmatched runs.
- */
-export function codeSpans(text: string): [number, number][] {
-  const spans: [number, number][] = [];
-  let line: { from: number; to: number }[] = [];
-  const flush = () => {
-    // next[i]: the next run on the line with the same length as run i.
-    const next = new Array<number>(line.length).fill(-1);
-    const seen = new Map<number, number>();
-    for (let i = line.length - 1; i >= 0; i--) {
-      const len = line[i]!.to - line[i]!.from;
-      next[i] = seen.get(len) ?? -1;
-      seen.set(len, i);
-    }
-    for (let i = 0; i < line.length;) {
-      const j = next[i]!;
-      if (j < 0) {
-        i++;
-        continue;
-      }
-      spans.push([line[i]!.from, line[j]!.to]);
-      i = j + 1;
-    }
-    line = [];
-  };
-  for (let at = 0; at < text.length; at++) {
-    const ch = text.charCodeAt(at);
-    if (ch === 10) {
-      flush();
-    } else if (ch === 96) {
-      const from = at;
-      while (text.charCodeAt(at + 1) === 96) {
-        at++;
-      }
-      line.push({ from, to: at + 1 });
-    }
-  }
-  flush();
-  return spans;
-}
-
 const escapeHtml = (text: string) =>
   text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
@@ -331,8 +289,15 @@ export function lineBlockHtml(
 const SEPARATOR = /^\s*\|?\s*:?-{3,}/;
 
 /** A whole table row added or removed: each cell's text marked. */
-function markRow(line: string, side: "before" | "after"): string {
+function markRow(
+  line: string,
+  side: "before" | "after",
+  words?: WordBudget,
+): string {
   if (SEPARATOR.test(line)) {
+    return line;
+  }
+  if (words && !words.spend(line, "")) {
     return line;
   }
   return line
@@ -354,6 +319,7 @@ function tableSide(
   before: string,
   after: string,
   side: "before" | "after",
+  words?: WordBudget,
 ): string {
   const a = splitLines(before);
   const b = splitLines(after);
@@ -367,11 +333,15 @@ function tableSide(
     } else if (run.type === "delete" && side === "before") {
       const next = runs[index + 1];
       const theirs = next?.type === "insert" ? now(next) : [];
-      out.push(...old(run).map((line, i) => rowLine(line, theirs[i], side)));
+      out.push(
+        ...old(run).map((line, i) => rowLine(line, theirs[i], side, words)),
+      );
     } else if (run.type === "insert" && side === "after") {
       const previous = runs[index - 1];
       const theirs = previous?.type === "delete" ? old(previous) : [];
-      out.push(...now(run).map((line, i) => rowLine(theirs[i], line, side)));
+      out.push(
+        ...now(run).map((line, i) => rowLine(theirs[i], line, side, words)),
+      );
     }
   });
   return out.join("\n");
@@ -382,9 +352,13 @@ function rowLine(
   before: string | undefined,
   after: string | undefined,
   side: "before" | "after",
+  words?: WordBudget,
 ): string {
   if (before === undefined || after === undefined) {
-    return markRow((before ?? after)!, side);
+    return markRow((before ?? after)!, side, words);
+  }
+  if (words && !words.spend(before, after)) {
+    return side === "before" ? before : after;
   }
   return markSide(wordDiff(before, after), side);
 }
@@ -394,12 +368,17 @@ function modifiedSides(
   before: string,
   after: string,
   kind: BlockKind,
+  words?: WordBudget,
 ): { before: string; after: string } {
   if (kind === "table") {
     return {
-      before: tableSide(before, after, "before"),
-      after: tableSide(before, after, "after"),
+      before: tableSide(before, after, "before", words),
+      after: tableSide(before, after, "after", words),
     };
+  }
+  if (words && !words.spend(before, after)) {
+    // Line-level: the sides as they are, with no word marks.
+    return { before, after };
   }
   const segments = wordDiff(before, after);
   return {
@@ -409,7 +388,10 @@ function modifiedSides(
 }
 
 /** The Markdown each side of a row renders; undefined for an empty side. */
-export function rowMarkdown(row: BlockRow): {
+export function rowMarkdown(
+  row: BlockRow,
+  words?: WordBudget,
+): {
   before?: string;
   after?: string;
 } {
@@ -431,7 +413,7 @@ export function rowMarkdown(row: BlockRow): {
     }
   }
   if (row.kind === "modified") {
-    return modifiedSides(before!.text, after!.text, kind);
+    return modifiedSides(before!.text, after!.text, kind, words);
   }
   return {
     ...(before && { before: before.text }),
