@@ -1886,6 +1886,7 @@
     "watch": "node scripts/build.mjs --watch",
     "typecheck": "tsc -p tsconfig.json && tsc -p src/host && tsc -p src/webview && tsc -p src/plugins/tsconfig.host.json && tsc -p src/plugins/tsconfig.webview.json && tsc -p src/workers && tsc -p test",
     "lint": "eslint . --max-warnings=0",
+    "test:cordis-reference": "tsx --test test/reference/cordis-reference.test.ts",
     "test": "node scripts/test.mjs",
     "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
     "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts",
