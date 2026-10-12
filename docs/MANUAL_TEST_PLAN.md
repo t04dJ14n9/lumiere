@@ -510,6 +510,26 @@ Both are off by default (owner decision). Turn on
 2. `markdownWorkbench.linkUpdates.mode`: `always` skips the dialog,
    `never` changes nothing.
 
+### gitGutter
+
+On by default. Needs the built-in Git extension and a note in a repository.
+
+1. Commit `Core.md`, then edit a paragraph, add a line and delete a line: green
+   (added), blue (modified) bars and a red triangle (deleted) appear between the
+   line numbers and the fold markers within a moment, in the theme's
+   `editorGutter.*Background` colours, in a light and a dark theme.
+2. Change a table cell or a code block line: the rendered block gets one bar for
+   the whole block.
+3. Click a bar: a peek opens below the change with the HEAD and working-tree
+   versions rendered side by side, changed words tinted. ↑/↓ move between
+   changes, **Revert** restores the old text as one undo step, **Stage File**
+   stages the file, Escape or ✕ closes it.
+4. **Go to Next/Previous Git Change** (Alt+F5 / Shift+Alt+F5) wrap around; **Show
+   Git Change** (Alt+F3) opens the peek.
+5. Commit: the bars clear. Set `markdownWorkbench.gitGutter.compareTo` to
+   `index`: bars compare with the staged text. Turn the plugin off: bars and
+   peek disappear and nothing else changes.
+
 ### folding
 
 `Core.md`.
@@ -763,6 +783,9 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.changeSetting` — Change Setting… | unbound | On a disposable fixture, run Change Setting…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.setNoteFontSize` — Set Note Font Size | unbound | On a disposable fixture, run Set Note Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleLineNumbers` — Toggle Line Numbers | unbound | On a disposable fixture, run Toggle Line Numbers; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.gitGutter.nextChange` — Go to Next Git Change | alt+f5 | On a disposable fixture, run Go to Next Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.gitGutter.previousChange` — Go to Previous Git Change | shift+alt+f5 | On a disposable fixture, run Go to Previous Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.gitGutter.showChange` — Show Git Change | alt+f3 | On a disposable fixture, run Show Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | On a disposable fixture, run Toggle Readable Line Width; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleMermaid` — Toggle Mermaid Diagrams | unbound | On a disposable fixture, run Toggle Mermaid Diagrams; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleInlineTitle` — Toggle Inline Title | unbound | On a disposable fixture, run Toggle Inline Title; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -808,6 +831,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.inlineTitle.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.gitGutter.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.gitGutter.compareTo` | `"HEAD"` | value; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.linkUpdates.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.links.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.marp.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

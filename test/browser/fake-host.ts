@@ -14,6 +14,7 @@ import {
   viewState,
 } from "../../src/plugins/editor/protocol";
 import { protocol as commandProtocol } from "../../src/plugins/commands/protocol";
+import { protocol as gitGutterProtocol } from "../../src/plugins/gitGutter/protocol";
 import { protocol as linksProtocol } from "../../src/plugins/links/protocol";
 import { protocol as propertiesProtocol } from "../../src/plugins/properties/protocol";
 import { frontmatter } from "../../src/markdown/properties";
@@ -48,8 +49,18 @@ export class BrowserHost {
   /** Online video details by `provider:id`; others fail as if offline. */
   videoDetails: Record<string, Record<string, unknown>> = {};
   readonly videoRequests: string[] = [];
+  /** The git baseline the change bars compare with; undefined: no repository. */
+  gitBaseline: string | undefined;
+  /** How many times the editor asked to stage the note. */
+  gitStaged = 0;
   private readonly saves = new Set<(doc: HostDocument) => void>();
   readonly document: HostDocument;
+  /** Tell open editors the repository changed (a commit, a stage). */
+  gitChanged(): void {
+    this.endpoints.forEach((endpoint) =>
+      endpoint.notify(gitGutterProtocol, "changed", {}),
+    );
+  }
   constructor(source: string) {
     this.text = this.saved = source;
     this.history = [source];
@@ -243,6 +254,19 @@ export class BrowserHost {
       );
       return collapsed;
     });
+    host.handle(gitGutterProtocol, "baseline", () =>
+      this.gitBaseline === undefined
+        ? { status: "unavailable" as const }
+        : {
+            status: "ok" as const,
+            text: this.gitBaseline,
+            label: "HEAD (abc1234)",
+          },
+    );
+    host.handle(gitGutterProtocol, "stage", () => {
+      this.gitStaged++;
+      return true;
+    });
     host.handle(editorProtocol, "clipboardRead", () => this.clipboard);
     host.handle(editorProtocol, "clipboardWrite", ({ text }) => {
       this.clipboard = text;
@@ -308,6 +332,10 @@ export class BrowserHost {
       "configureEditor",
       editorConfig.parse(settings),
     );
+  }
+  /** Run a webview editor command, as the command palette does. */
+  async run(command: string, panel = 0) {
+    return this.endpoints[panel]!.call(commandProtocol, "run", { command });
   }
   async mode(panel = 0) {
     return this.endpoints[panel]!.call(commandProtocol, "run", {

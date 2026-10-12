@@ -1,0 +1,41 @@
+import type { StateField } from "@codemirror/state";
+import type { Disposer } from "../../kernel";
+
+/** One change between the git baseline and the editor text, in document offsets. */
+export interface DocHunk {
+  readonly kind: "added" | "modified" | "deleted";
+  /** Start of the first changed line; for `deleted`, the line the removal sits before. */
+  readonly from: number;
+  /** End of the last changed line; equals `from` for `deleted`. */
+  readonly to: number;
+  /** The baseline lines this hunk replaces, joined with "\n" ("" for `added`). */
+  readonly old: string;
+  /** 1-based first baseline line. */
+  readonly oldLine: number;
+  /** A removal after the last line of the note. */
+  readonly atEnd: boolean;
+}
+
+export interface HunkSet {
+  readonly hunks: readonly DocHunk[];
+  /** Bumped when hunks are recomputed (not when they are only mapped through edits). */
+  readonly generation: number;
+}
+
+export interface GitDiff {
+  /** Hunks of the current editor state; read it in your own StateField to stay in sync. */
+  readonly field: StateField<HunkSet>;
+  status(): "loading" | "ok" | "untracked" | "unavailable" | "tooLarge";
+  /** The baseline's label, e.g. "HEAD (a1c9f02)". */
+  label(): string;
+  baseline(): string | undefined;
+  /** Replace a hunk with its baseline text: one undo step. */
+  revert(hunk: DocHunk): void;
+  onChange(listener: () => void): Disposer;
+}
+
+declare module "../../kernel/types" {
+  interface Services {
+    gitDiff: GitDiff;
+  }
+}

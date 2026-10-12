@@ -56,6 +56,8 @@ export const FEATURE_ORDER = [
   "agentBridge",
   // Match VS Code: line numbers to the left of fold markers.
   "lineNumbers",
+  // Git change bars sit between line numbers and fold markers, as in VS Code.
+  "gitGutter",
   "folding",
   "indentGuides",
   "spellcheck",
