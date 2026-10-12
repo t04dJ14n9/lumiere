@@ -13,13 +13,16 @@ const base = readFileSync(
   .replace(/,? \)/g, ")");
 
 test("the selection layer is drawn above line backgrounds and blended, not dimming text", () => {
-  const layer = /#app \.cm-editor \.cm-selectionLayer \{([^}]*)\}/.exec(base);
+  const layer =
+    /#app \.cm-editor :is\(\.cm-selectionLayer, \.mw-selection-layer\) \{([^}]*)\}/.exec(
+      base,
+    );
   assert.ok(layer, "selection layer rule");
   assert.match(layer[1] ?? "", /z-index: 1 !important/);
   assert.match(layer[1] ?? "", /mix-blend-mode: screen/);
   assert.match(
     base,
-    /body\.vscode-light #app \.cm-editor \.cm-selectionLayer,[^{]*\{\s*mix-blend-mode: multiply;/,
+    /body\.vscode-light #app \.cm-editor :is\(\.cm-selectionLayer, \.mw-selection-layer\),[^{]*\{\s*mix-blend-mode: multiply;/,
   );
 });
 

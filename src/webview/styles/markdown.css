@@ -214,6 +214,13 @@
   color: var(--muted);
   text-indent: 0;
 }
+.md-list-mark-source {
+  display: inline-block;
+  min-width: 1.1em;
+  color: var(--muted);
+  text-indent: 0;
+  white-space: pre;
+}
 .md-list-number {
   display: inline-block;
   min-width: var(--list-marker);
@@ -271,6 +278,11 @@
   );
   background-repeat: no-repeat;
   background-size: calc(var(--quote-depth, 1) * 16px - 14px) 100%;
+}
+/* Revealed: the dim `>` replaces the bar and the indent, as in Obsidian. */
+#app .cm-line.md-quote.is-revealed {
+  padding-left: 2px;
+  background-image: none;
 }
 input[type="checkbox"] {
   width: 15px;

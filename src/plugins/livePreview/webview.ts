@@ -1,4 +1,5 @@
 import { bindCaller } from "../../kernel";
+import { pointerSelectionTracking } from "../../webview/ui/pointer-selection";
 import type { CallerBound } from "../../kernel";
 import type { LivePreview } from "./api";
 import { renderedPosition } from "./rendered-position";
@@ -133,6 +134,7 @@ function engineExtensions(ctx: Context) {
   return [
     documentTree,
     renderRevision,
+    pointerSelectionTracking,
     hybridInline,
     blockIndex,
     blockDecorations((error) =>

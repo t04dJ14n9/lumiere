@@ -1,4 +1,5 @@
 import { syntaxTree } from "@codemirror/language";
+import { pointerSelectionToggled } from "../../webview/ui/pointer-selection";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { StateEffect, type Range } from "@codemirror/state";
 import {
@@ -42,6 +43,11 @@ class CodeSource {
         from: visible.from,
         to: visible.to,
         enter: (node) => {
+          if (node.name === "HTMLBlock" && !visited.has(node.from)) {
+            visited.add(node.from);
+            this.highlightHtml(view, node, marks, next);
+            return false;
+          }
           if (node.name !== "FencedCode" || visited.has(node.from)) {
             return;
           }
@@ -86,6 +92,45 @@ class CodeSource {
         widget: new FenceFlair(language, code, this.copy),
       }).range(view.state.doc.lineAt(node.from).to),
     );
+  }
+
+  /**
+   * A revealed HTML block keeps its syntax colours, as in Obsidian: tag
+   * names, attributes, values and dim angle brackets.
+   */
+  private highlightHtml(
+    view: EditorView,
+    node: SyntaxNodeRef,
+    marks: Range<Decoration>[],
+    next: Map<number, CachedCode>,
+  ): void {
+    if (!fenceRevealed(view.state, node)) {
+      return;
+    }
+    const language = "html";
+    if (!this.highlighter || this.languageLoads.get(language) !== "ready") {
+      this.loadHighlighter(view, language);
+      return;
+    }
+    const text = view.state.sliceDoc(node.from, node.to);
+    const previous = this.cache.get(node.from);
+    const cached =
+      previous?.text === text && previous.language === language
+        ? previous
+        : {
+            text,
+            language,
+            tokens: this.highlighter.tokenRanges(text, language),
+          };
+    next.set(node.from, cached);
+    for (const token of cached.tokens) {
+      marks.push(
+        Decoration.mark({ class: token.classes }).range(
+          node.from + token.from,
+          node.from + token.to,
+        ),
+      );
+    }
   }
 
   private highlightFence(view: EditorView, node: SyntaxNodeRef) {
@@ -136,6 +181,7 @@ class CodeSource {
     } else if (
       update.docChanged ||
       update.selectionSet ||
+      pointerSelectionToggled(update.startState, update.state) ||
       update.viewportChanged ||
       syntaxTree(update.startState) !== syntaxTree(update.state) ||
       update.transactions.some((transaction) =>

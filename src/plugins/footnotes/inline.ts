@@ -1,4 +1,5 @@
 import type { EditorState } from "@codemirror/state";
+import { revealRanges } from "../../webview/ui/pointer-selection";
 import { WidgetType } from "@codemirror/view";
 import { footnotes } from "../../markdown/metadata/footnotes";
 import type { Footnote } from "../../markdown/metadata/footnotes";
@@ -55,7 +56,7 @@ export function hasCaretWithin(
   from: number,
   to: number,
 ): boolean {
-  return state.selection.ranges.some(
+  return revealRanges(state).some(
     (range) => range.empty && range.head >= from && range.head <= to,
   );
 }

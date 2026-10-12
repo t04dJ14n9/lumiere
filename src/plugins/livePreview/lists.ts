@@ -103,5 +103,9 @@ function decorateMarker(
   }
   if (!cx.revealed(mark.from, mark.to)) {
     cx.replace(mark.from, end, new Bullet());
+    return;
   }
+  // Revealed, as in Obsidian: a dim `-` in the bullet's place, so the text
+  // keeps its indent.
+  cx.mark(mark.from, end, "md-list-mark-source");
 }

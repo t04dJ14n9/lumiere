@@ -1,4 +1,5 @@
 import type { EditorState } from "@codemirror/state";
+import { revealRanges } from "../../webview/ui/pointer-selection";
 import { WidgetType } from "@codemirror/view";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { languageLabel } from "./code-label";
@@ -11,7 +12,7 @@ export function fenceRevealed(
   state: EditorState,
   node: { from: number; to: number },
 ): boolean {
-  return state.selection.ranges.some(
+  return revealRanges(state).some(
     (range) => range.from <= node.to && range.to >= node.from,
   );
 }

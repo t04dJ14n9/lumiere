@@ -1,4 +1,5 @@
 import { Facet } from "@codemirror/state";
+import { revealRanges } from "../../webview/ui/pointer-selection";
 import type { EditorState } from "@codemirror/state";
 import type { SyntaxNode, Tree } from "@lezer/common";
 import { documentTree } from "./document-tree";
@@ -22,7 +23,7 @@ export function revealed(
   from: number,
   to: number,
 ): boolean {
-  return state.selection.ranges.some(
+  return revealRanges(state).some(
     (range) => range.from <= to && range.to >= from,
   );
 }
