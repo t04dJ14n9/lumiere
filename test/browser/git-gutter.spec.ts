@@ -217,3 +217,25 @@ test("N1, N6: the peek renders the table it changes, with no vertical margins", 
   await expect(peek).toHaveCSS("margin-top", "0px");
   await expect(peek).toHaveCSS("margin-bottom", "0px");
 });
+
+test("R2-B1: Revert held across a realigning edit never deletes an unrelated addition", async ({
+  page,
+}) => {
+  await open(page, "X\nA\nY", "obsidian", { gitBaseline: "A" });
+  await expect.poll(() => bars(page)).toContain("added");
+  await page.locator(".mw-git-bar-added").last().click();
+  const revert = page
+    .locator(".mw-git-peek")
+    .getByRole("button", { name: "Revert this change" });
+  await expect(revert).toBeVisible();
+  // Append "\nA" and click before the 250 ms recompute lands.
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("Control+End");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("A");
+  if (await revert.count()) {
+    await revert.click();
+  }
+  await page.waitForTimeout(400);
+  expect(["X\nA\nY\nA", "X\nA"]).toContain(await text(page));
+});

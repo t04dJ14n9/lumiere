@@ -3,13 +3,14 @@ import type { EditorState, Extension, Range } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import {
+  LINES_ONLY,
   alignBlocks,
   rowMarkdown,
   splitBlocks,
   tokens,
   wordDiff,
 } from "../../shared/diff";
-import type { Block } from "../../shared/diff";
+import type { Block, WordBudget } from "../../shared/diff";
 import {
   adoptPass,
   endLifetime,
@@ -120,7 +121,12 @@ class GhostBlock extends WidgetType {
       // The service resolves the hunk against a fresh diff and publishes the
       // result at once, so a second click finds nothing left to restore.
       restore.disabled = true;
-      this.actions.diff.revert(hunk);
+      // The widget's hunk has the offsets it was built with; the gutter's
+      // field has them mapped through every edit since. Act on that one.
+      const current = currentHunk(view.state, this.actions.diff, hunk);
+      if (current) {
+        this.actions.diff.revert(current);
+      }
     });
     const content = root.appendChild(document.createElement("div"));
     content.className = "mw-gi-ghost-body";
@@ -148,7 +154,7 @@ class GhostBlock extends WidgetType {
     });
     void adoptPass(lifetime, pending)
       .then((kept) => {
-        if (kept) {
+        if (kept && lifetime.live) {
           view.requestMeasure();
         }
       })
@@ -167,6 +173,26 @@ class GhostBlock extends WidgetType {
   override ignoreEvent(): boolean {
     return true;
   }
+}
+
+/**
+ * The gutter's mapped copy of a hunk a widget was built from: the one with the
+ * same baseline identity. Undefined unless exactly one matches.
+ */
+export function currentHunk(
+  state: EditorState,
+  diff: GitDiff,
+  hunk: DocHunk,
+): DocHunk | undefined {
+  const set = state.field(diff.field, false);
+  const matches = (set?.hunks ?? []).filter(
+    (candidate) =>
+      candidate.kind === hunk.kind &&
+      candidate.old === hunk.old &&
+      candidate.oldLine === hunk.oldLine &&
+      candidate.atEnd === hunk.atEnd,
+  );
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /** Blocks the live editor renders as one widget, where source marks would not show. */
@@ -192,19 +218,34 @@ export function touchesRenderedBlock(
   return now || splitBlocks(hunk.old).some((block) => RENDERED.has(block.kind));
 }
 
-/** Whether removed lines sat inside a rendered block that is still there. */
+/**
+ * The rendered block removed lines sat inside, when it is still there; rows
+ * removed from the end of a table still belong to it.
+ */
 function removedInsideBlock(
   hunk: DocHunk,
   blocks: readonly Block[],
   state: EditorState,
-): boolean {
+): { block: Block; tail: boolean } | undefined {
   if (hunk.atEnd) {
-    return false;
+    return undefined;
   }
   const at = state.doc.lineAt(hunk.from).number - 1;
-  return blocks.some(
-    (block) => RENDERED.has(block.kind) && block.from < at && block.to > at,
-  );
+  const rows = hunk.old
+    .split("\n")
+    .every((line) => line.trimStart().startsWith("|"));
+  for (const block of blocks) {
+    if (!RENDERED.has(block.kind) || block.from >= at) {
+      continue;
+    }
+    if (block.to > at) {
+      return { block, tail: false };
+    }
+    if (block.kind === "table" && block.to === at && rows) {
+      return { block, tail: true };
+    }
+  }
+  return undefined;
 }
 
 /** One side of a hunk as Markdown, with its changed lines and words marked. */
@@ -212,15 +253,16 @@ export function ghostMarkdown(
   old: string,
   current: string,
   side: "before" | "after" = "before",
+  words?: WordBudget,
 ): string {
   return alignBlocks(old, current)
-    .map(rowMarkdown)
+    .map((row) => rowMarkdown(row, words))
     .flatMap((row) => (row[side] ? [row[side]] : []))
     .join("\n\n");
 }
 
 /** The shared word-diff budget of one rebuild. */
-class Budget {
+class Budget implements WordBudget {
   constructor(private left: number) {}
   /** Whether a word diff of these texts fits; spends its tokens if so. */
   spend(old: string, current: string): boolean {
@@ -252,16 +294,27 @@ function lineMarks(state: EditorState, hunk: DocHunk, cls: string) {
 function ghost(
   state: EditorState,
   hunk: DocHunk,
-  kind: GhostKind,
   context: Context,
+  options: {
+    kind: GhostKind;
+    words?: WordBudget;
+    sides?: { old: string; now: string } | undefined;
+  },
 ): Range<Decoration> {
+  const { kind, words = context.budget, sides } = options;
   const { diff } = context.actions;
-  // Whole enclosing blocks, so a table keeps its header and code its fences.
-  const { old, now } = diff.context(state, hunk);
-  const markdown =
-    kind === "added"
-      ? ghostMarkdown(old, now, "after")
-      : ghostMarkdown(old, kind === "removed" ? "" : now);
+  let markdown: string;
+  if (kind === "removed") {
+    // A standalone removal: just the removed text, not its neighbours.
+    markdown = ghostMarkdown(hunk.old, "", "before", words);
+  } else {
+    // Whole enclosing blocks, so a table keeps its header and code its fences.
+    const { old, now } = sides ?? diff.context(state, hunk);
+    markdown =
+      kind === "added"
+        ? ghostMarkdown(old, now, "after", words)
+        : ghostMarkdown(old, now, "before", words);
+  }
   const widget = new GhostBlock(
     { hunk, markdown, kind, label: diff.label() },
     context.actions,
@@ -281,7 +334,15 @@ function hunkDecorations(
 ): Range<Decoration>[] {
   if (hunk.kind === "deleted") {
     const inBlock = removedInsideBlock(hunk, context.blocks, state);
-    return [ghost(state, hunk, inBlock ? "before" : "removed", context)];
+    if (!inBlock) {
+      return [ghost(state, hunk, context, { kind: "removed" })];
+    }
+    // Both sides of the surviving block, so only the deletion is marked.
+    const { block, tail } = inBlock;
+    const sides = tail
+      ? { old: `${block.text}\n${hunk.old}`, now: block.text }
+      : undefined;
+    return [ghost(state, hunk, context, { kind: "before", sides })];
   }
   const kind = hunk.kind === "added" ? "added" : "modified";
   const lines = lineMarks(state, hunk, `mw-gi-${kind}`);
@@ -289,7 +350,9 @@ function hunkDecorations(
   if (touchesRenderedBlock(hunk, context.blocks, state)) {
     return [
       ...lines,
-      ghost(state, hunk, hunk.kind === "added" ? "added" : "before", context),
+      ghost(state, hunk, context, {
+        kind: hunk.kind === "added" ? "added" : "before",
+      }),
     ];
   }
   if (hunk.kind === "added") {
@@ -298,7 +361,10 @@ function hunkDecorations(
   const current = state.sliceDoc(hunk.from, hunk.to);
   if (!context.budget.spend(hunk.old, current)) {
     // Too long to diff word by word now: the line-level view.
-    return [...lines, ghost(state, hunk, "before", context)];
+    return [
+      ...lines,
+      ghost(state, hunk, context, { kind: "before", words: LINES_ONLY }),
+    ];
   }
   return wordMarks(hunk, current);
 }

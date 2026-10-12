@@ -1,6 +1,8 @@
 import { diffSequences } from "./myers";
 import type { Run } from "./myers";
 import { splitLines, wordDiff } from "./lines";
+import type { WordBudget } from "./lines";
+import { codeSpans } from "./spans";
 import type { Segment } from "./lines";
 
 export type BlockKind =
@@ -222,7 +224,6 @@ const PROTECTED = new RegExp(
   [
     String.raw`^[ \t]{0,3}(?:>[ \t]?)*(?:(?:[-+*]|\d{1,9}[.)])(?:[ \t]+\[[ xX]\])?(?=[ \t]|$)|#{1,6}(?=[ \t]|$))`,
     String.raw`^[ \t]{0,3}\[[^\]\n]+\]:[^\n]*`,
-    String.raw`(\`+)[^\n]*?\1`,
     String.raw`\$[^$\n]+\$`,
     String.raw`\]\([^)\n]*\)`,
     String.raw`<[^>\n]*>`,
@@ -234,10 +235,11 @@ const PROTECTED = new RegExp(
 
 function protectedRanges(text: string): [number, number][] {
   const pattern = new RegExp(PROTECTED);
-  return [...text.matchAll(pattern)].map((m) => [
+  const ranges: [number, number][] = [...text.matchAll(pattern)].map((m) => [
     m.index,
     m.index + m[0].length,
   ]);
+  return ranges.concat(codeSpans(text));
 }
 
 const escapeHtml = (text: string) =>
@@ -295,8 +297,15 @@ function asLines(row: BlockRow["kind"], kind: string): boolean {
 const SEPARATOR = /^\s*\|?\s*:?-{3,}/;
 
 /** A whole table row added or removed: each cell's text marked. */
-function markRow(line: string, side: "before" | "after"): string {
+function markRow(
+  line: string,
+  side: "before" | "after",
+  words?: WordBudget,
+): string {
   if (SEPARATOR.test(line)) {
+    return line;
+  }
+  if (words && !words.spend(line, "")) {
     return line;
   }
   return line
@@ -318,6 +327,7 @@ function tableSide(
   before: string,
   after: string,
   side: "before" | "after",
+  words?: WordBudget,
 ): string {
   const a = splitLines(before);
   const b = splitLines(after);
@@ -331,11 +341,15 @@ function tableSide(
     } else if (run.type === "delete" && side === "before") {
       const next = runs[index + 1];
       const theirs = next?.type === "insert" ? now(next) : [];
-      out.push(...old(run).map((line, i) => rowLine(line, theirs[i], side)));
+      out.push(
+        ...old(run).map((line, i) => rowLine(line, theirs[i], side, words)),
+      );
     } else if (run.type === "insert" && side === "after") {
       const previous = runs[index - 1];
       const theirs = previous?.type === "delete" ? old(previous) : [];
-      out.push(...now(run).map((line, i) => rowLine(theirs[i], line, side)));
+      out.push(
+        ...now(run).map((line, i) => rowLine(theirs[i], line, side, words)),
+      );
     }
   });
   return out.join("\n");
@@ -346,9 +360,13 @@ function rowLine(
   before: string | undefined,
   after: string | undefined,
   side: "before" | "after",
+  words?: WordBudget,
 ): string {
   if (before === undefined || after === undefined) {
-    return markRow((before ?? after)!, side);
+    return markRow((before ?? after)!, side, words);
+  }
+  if (words && !words.spend(before, after)) {
+    return side === "before" ? before : after;
   }
   return markSide(wordDiff(before, after), side);
 }
@@ -358,12 +376,17 @@ function modifiedSides(
   before: string,
   after: string,
   kind: BlockKind,
+  words?: WordBudget,
 ): { before: string; after: string } {
   if (kind === "table") {
     return {
-      before: tableSide(before, after, "before"),
-      after: tableSide(before, after, "after"),
+      before: tableSide(before, after, "before", words),
+      after: tableSide(before, after, "after", words),
     };
+  }
+  if (words && !words.spend(before, after)) {
+    // Line-level: the sides as they are, with no word marks.
+    return { before, after };
   }
   const segments = wordDiff(before, after);
   return {
@@ -373,7 +396,10 @@ function modifiedSides(
 }
 
 /** The Markdown each side of a row renders; undefined for an empty side. */
-export function rowMarkdown(row: BlockRow): {
+export function rowMarkdown(
+  row: BlockRow,
+  words?: WordBudget,
+): {
   before?: string;
   after?: string;
 } {
@@ -394,7 +420,7 @@ export function rowMarkdown(row: BlockRow): {
     };
   }
   if (row.kind === "modified") {
-    return modifiedSides(before!.text, after!.text, kind);
+    return modifiedSides(before!.text, after!.text, kind, words);
   }
   return {
     ...(before && { before: before.text }),

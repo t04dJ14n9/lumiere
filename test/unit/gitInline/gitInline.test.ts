@@ -20,6 +20,7 @@ import {
 import type { GitDiff } from "../../../src/plugins/gitGutter/api";
 import type { RenderService } from "../../../src/plugins/render/api";
 import { fixture } from "../features/fixture";
+import { wordDiffStats } from "../../../src/shared/diff";
 
 const BASE =
   "# T\n\nReport it monthly.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nGone paragraph.\n\nend\n";
@@ -237,4 +238,60 @@ test("B2 (inline): a late pass is disposed and the plugin's drain waits for it",
   assert.equal(await adopted, false);
   await drained;
   assert.equal(disposed, 1);
+});
+
+const ghostsOf = (base: string, now: string) =>
+  decorations(base, now).filter((d) => d.kind.startsWith("ghost"));
+
+test("F3: a removal ghost shows only the removed text, not its neighbours", () => {
+  const middle = ghostsOf("A\n\nB\n\nC\n", "A\n\nC\n");
+  assert.equal(middle.length, 1);
+  assert.equal(middle[0]!.kind, "ghost:removed");
+  assert.doesNotMatch(middle[0]!.text!, /C/);
+  assert.match(middle[0]!.text!, /B/);
+  const eof = ghostsOf("A\nB", "A");
+  assert.equal(eof.length, 1);
+  assert.doesNotMatch(eof[0]!.text!, /A/);
+  assert.match(eof[0]!.text!, /B/);
+  // The last body row of a table: the table is shown, only that row marked.
+  const row = ghostsOf(
+    "| a |\n| --- |\n| 1 |\n| 2 |\n",
+    "| a |\n| --- |\n| 1 |\n",
+  );
+  assert.equal(row.length, 1);
+  const text = row[0]!.text!;
+  assert.match(text, /^\| a \|\n\| --- \|\n\| 1 \|\n/);
+  assert.match(text, /<del class="mw-gd-del">2<\/del>/);
+  assert.doesNotMatch(text, /<del class="mw-gd-del">(a|1)<\/del>/);
+});
+
+test("F2: once the budget is spent no word diff runs, directly or via ghosts", () => {
+  const count = () => wordDiffStats.calls;
+  // One oversized hunk: 80 000 characters a paragraph, rewritten.
+  const huge = (unit: string) =>
+    Array.from({ length: 10 }, () => unit.repeat(40_000)).join("\n\n") + "\n";
+  let before = count();
+  let tokensBefore = wordDiffStats.tokens;
+  const started = performance.now();
+  decorations(huge("a,"), huge("b;"));
+  assert.ok(performance.now() - started < 2000);
+  assert.equal(count() - before, 0, "word diffs on oversized hunks");
+  assert.equal(wordDiffStats.tokens - tokensBefore, 0);
+  // Thirty individually affordable hunks: the rebuild budget caps the total.
+  const words = (w: string) =>
+    Array.from({ length: 30 }, () => `${w} `.repeat(300).trim()).join("\n\n") +
+    "\n";
+  tokensBefore = wordDiffStats.tokens;
+  before = count();
+  decorations(words("x"), words("y"));
+  assert.ok(wordDiffStats.tokens - tokensBefore <= REBUILD_TOKENS);
+  assert.ok(count() - before < 30);
+  // Tables and rendered blocks spend from the same budget.
+  const table = (v: string) =>
+    "| a |\n| --- |\n" +
+    Array.from({ length: 40 }, () => `| ${`${v} `.repeat(200)} |`).join("\n") +
+    "\n";
+  tokensBefore = wordDiffStats.tokens;
+  decorations(table("x"), table("y"));
+  assert.ok(wordDiffStats.tokens - tokensBefore <= REBUILD_TOKENS);
 });
