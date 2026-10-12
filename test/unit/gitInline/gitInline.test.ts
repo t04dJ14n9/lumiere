@@ -295,3 +295,20 @@ test("F2: once the budget is spent no word diff runs, directly or via ghosts", (
   decorations(table("x"), table("y"));
   assert.ok(wordDiffStats.tokens - tokensBefore <= REBUILD_TOKENS);
 });
+
+test("R3-B1: a few very long tokens are not word-diffed and do not stall", () => {
+  const table = (c: string) => `| value |\n| --- |\n| ${c.repeat(80_000)} |\n`;
+  let started = performance.now();
+  const calls = wordDiffStats.calls;
+  decorations(table("a"), table("b"));
+  assert.ok(performance.now() - started < 1000);
+  // 80 000-character rows: past the character cap, shown line by line.
+  assert.equal(wordDiffStats.calls, calls);
+  const prose = (c: string) => `Intro ${c.repeat(80_000)} end.\n`;
+  started = performance.now();
+  const found = decorations(prose("a"), prose("b"));
+  assert.ok(performance.now() - started < 1000);
+  assert.equal(found.filter((d) => d.kind === "removed").length, 0);
+  assert.equal(found.filter((d) => d.kind === "ghost:before").length, 1);
+  assert.equal(wordDiffStats.calls, calls);
+});
