@@ -79,10 +79,16 @@ export const pointerSelectionTracking: Extension = [
       },
       { capture: true, signal: events.signal },
     );
-    doc.addEventListener("mouseup", release, {
-      capture: true,
-      signal: events.signal,
-    });
+    // A release outside the frame may not reach the document; the window,
+    // pointerup and the next move without the button also end the drag.
+    for (const target of [doc, doc.defaultView]) {
+      for (const type of ["mouseup", "pointerup", "pointercancel"]) {
+        target?.addEventListener(type, release, {
+          capture: true,
+          signal: events.signal,
+        });
+      }
+    }
     doc.defaultView?.addEventListener("blur", release, {
       signal: events.signal,
     });
