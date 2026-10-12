@@ -92,7 +92,9 @@ test("git change bars: HEAD diff, rendered peek, revert, stage, commit, off", as
     await expect.poll(() => kinds(frame), { timeout: 20000 }).toEqual([]);
 
     // Turned off, the bars go and nothing else changes; on again, they return.
-    await frame.getByRole("textbox", { name: "Markdown content" }).click();
+    const content = frame.getByRole("textbox", { name: "Markdown content" });
+    await content.click();
+    await content.focus();
     await page.keyboard.press("ControlOrMeta+End");
     await page.keyboard.type("\nlater", { delay: 20 });
     await expect
