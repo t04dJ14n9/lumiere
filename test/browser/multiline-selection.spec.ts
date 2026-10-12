@@ -248,3 +248,127 @@ for (const code of [false, true]) {
     }
   });
 }
+
+/**
+ * Every visual row of line `n`: the selected text's box and the union of
+ * the tint markers that overlap it vertically. Rows come from the browser's
+ * own text layout, independent of the layer's arithmetic.
+ */
+const bands = (page: Page, n: number) =>
+  line(page, n).evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const text = [...range.getClientRects()].filter((r) => r.width > 0);
+    const rows: { top: number; bottom: number; left: number; right: number }[] =
+      [];
+    for (const r of [...text].sort((a, b) => a.top - b.top)) {
+      const mid = (r.top + r.bottom) / 2;
+      const row = rows.find((row) => mid >= row.top && mid <= row.bottom);
+      if (row) {
+        row.top = Math.min(row.top, r.top);
+        row.bottom = Math.max(row.bottom, r.bottom);
+        row.left = Math.min(row.left, r.left);
+        row.right = Math.max(row.right, r.right);
+      } else {
+        rows.push({
+          top: r.top,
+          bottom: r.bottom,
+          left: r.left,
+          right: r.right,
+        });
+      }
+    }
+    const tint = [
+      ...document.querySelectorAll(
+        ".mw-selection-layer .cm-selectionBackground",
+      ),
+    ]
+      .map((m) => m.getBoundingClientRect())
+      .filter((r) => r.width > 0);
+    return rows.map((row) => {
+      const marks = tint.filter(
+        (m) => m.top < row.bottom - 1 && m.bottom > row.top + 1,
+      );
+      return {
+        text: row,
+        tint: marks.length
+          ? {
+              top: Math.min(...marks.map((m) => m.top)),
+              bottom: Math.max(...marks.map((m) => m.bottom)),
+              left: Math.min(...marks.map((m) => m.left)),
+              right: Math.max(...marks.map((m) => m.right)),
+            }
+          : null,
+      };
+    });
+  });
+
+const LONG = "abcdefghijklmnopqrstuvwxyzabcdefghij";
+const WRAPPED = `tiny ${LONG} ${LONG} ${LONG} done`;
+const CASES = [
+  {
+    name: "proportional 16px / 1.5",
+    font: "Arial, sans-serif",
+    size: 16,
+    lh: 1.5,
+  },
+  { name: "monospace 16px / 1.5", font: "monospace", size: 16, lh: 1.5 },
+  { name: "proportional 14px / 2", font: "Arial, sans-serif", size: 14, lh: 2 },
+  {
+    name: "proportional 20px / 1.2",
+    font: "Arial, sans-serif",
+    size: 20,
+    lh: 1.2,
+  },
+];
+for (const c of CASES) {
+  for (const kind of ["paragraph", "heading", "code"] as const) {
+    test(`wrapped ${kind} rows (${c.name}): every band covers its row's text, top to bottom`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 420, height: 900 });
+      const body =
+        kind === "code"
+          ? ["```text", WRAPPED, "```", "next", ""]
+          : kind === "heading"
+            ? [`## ${WRAPPED}`, "next", ""]
+            : [WRAPPED, "next", ""];
+      await open(page, body.join("\n"));
+      await page.evaluate((value) => window.harness.configureEditor(value), {
+        fontSize: c.size,
+        lineHeight: c.lh,
+      });
+      await page.addStyleTag({
+        content: `.cm-content .cm-line, .cm-content .cm-line * { font-family: ${c.font} !important; }`,
+      });
+      const n = kind === "code" ? 2 : 1;
+      const from = kind === "code" ? 8 : 0;
+      const lineText = kind === "heading" ? `## ${WRAPPED}` : WRAPPED;
+      // Caret far away first so the line keeps its rendered form, then select
+      // the whole line with its break.
+      await select(page, from, from + lineText.length + 1);
+      const measured = await bands(page, n);
+      expect(measured.length, "visual rows").toBeGreaterThanOrEqual(3);
+      measured.forEach(({ text, tint }, i) => {
+        const label = `row ${i + 1}`;
+        expect(tint, label).not.toBeNull();
+        // Vertical: the band covers the text's glyph box.
+        expect(tint!.top, `${label} top`).toBeLessThanOrEqual(text.top + 0.5);
+        expect(tint!.bottom, `${label} bottom`).toBeGreaterThanOrEqual(
+          text.bottom - 0.5,
+        );
+        // Horizontal, both sides: starts at the text, ends just past it.
+        expect(Math.abs(tint!.left - text.left), `${label} left`).toBeLessThan(
+          3,
+        );
+        expect(tint!.right - text.right, `${label} right`).toBeGreaterThan(-1);
+        expect(tint!.right - text.right, `${label} right`).toBeLessThan(14);
+      });
+      // Consecutive bands meet: no gap and no overlap between rows.
+      for (let i = 1; i < measured.length; i++) {
+        const gap = measured[i]!.tint!.top - measured[i - 1]!.tint!.bottom;
+        expect(Math.abs(gap), `gap above row ${i + 1}`).toBeLessThan(1.5);
+      }
+    });
+  }
+}

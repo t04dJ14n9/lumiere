@@ -11,8 +11,9 @@ import type { BlockInfo, EditorView, ViewUpdate } from "@codemirror/view";
  *
  * CodeMirror's own selection layer (drawSelection) stays for its hidden
  * native-selection handling, and is hidden in base.css. Its hide-native
- * pieces are not exported separately, so its (cheap, measure-phase) marker
- * pass still runs; this layer reads the shared geometry once per update.
+ * pieces are not exported separately, so its marker pass (measure phase,
+ * not profiled) still runs; this layer reads the shared geometry once per
+ * update.
  */
 const CLASS = "cm-selectionBackground";
 /** An empty line's stub, as measured in Obsidian 1.14.4. */
@@ -35,19 +36,13 @@ interface Geometry {
   content: DOMRect;
 }
 
-/**
- * The text from `from` to `to` (inside one text block), one rectangle per
- * contiguous run on each visual row. Rows are the block's wrapped rows, so a
- * wrapped line is tinted only on its text, row by row; runs that the browser
- * lays out apart (bidirectional text) stay apart.
- */
-function textMarkers(
-  view: EditorView,
-  block: BlockInfo,
-  span: { from: number; to: number },
-  { origin }: Geometry,
-): RectangleMarker[] {
-  const { from, to } = span;
+interface Row {
+  top: number;
+  bottom: number;
+}
+
+/** A Range over `from`..`to`, or null when the DOM can't express it. */
+function domRange(view: EditorView, from: number, to: number): Range | null {
   const start = view.domAtPos(from);
   const end = view.domAtPos(to);
   const range = document.createRange();
@@ -55,26 +50,85 @@ function textMarkers(
     range.setStart(start.node, start.offset);
     range.setEnd(end.node, end.offset);
   } catch {
-    return [];
+    return null;
   }
-  const rects = [...range.getClientRects()].filter((rect) => rect.width > 0);
-  if (rects.length === 0) {
-    return [];
-  }
+  return range;
+}
+
+/**
+ * The visual rows of a text block, measured from the browser's own layout:
+ * the line's text boxes are grouped into rows by vertical overlap, and each
+ * row's band runs from the midpoint of the gap above it to the midpoint of
+ * the gap below (the block's edges for the first and last). Bands therefore
+ * tile the line exactly whatever the font, size or line height, and a row
+ * with a taller inline (a heading, a widget) gets its real height.
+ */
+function visualRows(view: EditorView, block: BlockInfo): Row[] {
   const top = block.top + view.documentTop;
-  const pitch = rowPitch(view, block);
-  const rows = new Map<number, { left: number; right: number }[]>();
-  for (const rect of rects) {
-    const row = Math.max(
-      0,
-      Math.floor(((rect.top + rect.bottom) / 2 - top) / pitch),
-    );
-    const list = rows.get(row) ?? [];
+  const bottom = top + block.height;
+  const range = domRange(view, block.from, block.to);
+  const boxes = range
+    ? [...range.getClientRects()].filter((r) => r.height > 0)
+    : [];
+  const rows: Row[] = [];
+  for (const box of boxes.sort((a, b) => a.top - b.top)) {
+    const mid = (box.top + box.bottom) / 2;
+    const row = rows.find((row) => mid >= row.top && mid <= row.bottom);
+    if (row) {
+      row.top = Math.min(row.top, box.top);
+      row.bottom = Math.max(row.bottom, box.bottom);
+    } else {
+      rows.push({ top: box.top, bottom: box.bottom });
+    }
+  }
+  if (rows.length === 0) {
+    return [{ top, bottom }];
+  }
+  rows.sort((a, b) => a.top - b.top);
+  return rows.map((row, i) => ({
+    top: i === 0 ? top : (rows[i - 1]!.bottom + row.top) / 2,
+    bottom:
+      i === rows.length - 1 ? bottom : (row.bottom + rows[i + 1]!.top) / 2,
+  }));
+}
+
+/** The row whose band holds a box's vertical centre. */
+function rowOf(rows: Row[], box: { top: number; bottom: number }): Row {
+  const mid = (box.top + box.bottom) / 2;
+  return (
+    rows.find((row) => mid >= row.top && mid < row.bottom) ??
+    (mid < rows[0]!.top ? rows[0]! : rows[rows.length - 1]!)
+  );
+}
+
+/**
+ * The text from `from` to `to` (inside one text block), one rectangle per
+ * contiguous run on each visual row, as tall as that row. A wrapped line is
+ * tinted only on its text, row by row; runs that the browser lays out apart
+ * (bidirectional text) stay apart.
+ */
+function textMarkers(
+  view: EditorView,
+  rows: Row[],
+  span: { from: number; to: number },
+  { origin }: Geometry,
+): RectangleMarker[] {
+  const range = domRange(view, span.from, span.to);
+  if (!range) {
+    return [];
+  }
+  const runsByRow = new Map<Row, { left: number; right: number }[]>();
+  for (const rect of range.getClientRects()) {
+    if (rect.width <= 0) {
+      continue;
+    }
+    const row = rowOf(rows, rect);
+    const list = runsByRow.get(row) ?? [];
     list.push({ left: rect.left, right: rect.right });
-    rows.set(row, list);
+    runsByRow.set(row, list);
   }
   const out: RectangleMarker[] = [];
-  for (const [row, list] of rows) {
+  for (const [row, list] of runsByRow) {
     list.sort((a, b) => a.left - b.left);
     const runs: { left: number; right: number }[] = [];
     for (const rect of list) {
@@ -90,26 +144,14 @@ function textMarkers(
         new RectangleMarker(
           CLASS,
           run.left - origin.left,
-          top + row * pitch - origin.top,
+          row.top - origin.top,
           run.right - run.left,
-          pitch,
+          row.bottom - row.top,
         ),
       );
     }
   }
   return out;
-}
-
-/** The height of one visual row of a text block. */
-function rowPitch(view: EditorView, block: BlockInfo): number {
-  const first = view.coordsAtPos(block.from, 1);
-  const last = view.coordsAtPos(block.to, -1);
-  if (!first || !last) {
-    return block.height;
-  }
-  const height = first.bottom - first.top;
-  const rows = Math.max(1, Math.round((last.top - first.top) / height) + 1);
-  return block.height / rows;
 }
 
 function blockMarkers(
@@ -135,27 +177,23 @@ function blockMarkers(
     ];
   }
   const markers: RectangleMarker[] = [];
+  const rows = visualRows(view, block);
   const from = Math.max(range.from, block.from);
   const to = Math.min(range.to, block.to);
   if (to > from) {
-    markers.push(...textMarkers(view, block, { from, to }, geometry));
+    markers.push(...textMarkers(view, rows, { from, to }, geometry));
   }
   if (range.to > block.to && range.from <= block.to) {
     const end = view.coordsAtPos(block.to, -1) ?? view.coordsAtPos(block.to, 1);
     if (end) {
-      const top = block.top + view.documentTop;
-      const pitch = rowPitch(view, block);
-      const row = Math.max(
-        0,
-        Math.floor(((end.top + end.bottom) / 2 - top) / pitch),
-      );
+      const row = rowOf(rows, end);
       markers.push(
         new RectangleMarker(
           CLASS,
           end.left - origin.left,
-          top + row * pitch - origin.top,
+          row.top - origin.top,
           block.length === 0 ? EMPTY_STUB : breakStub(view),
-          pitch,
+          row.bottom - row.top,
         ),
       );
     }
