@@ -3141,3 +3141,34 @@ porting.
 Validation: dependency installation and the two focused Chromium regressions
 pass. Full required checks are recorded after completion in the task report at
 `/workspace/plans/cell-code-report.md`.
+
+
+## PR #30 round-two review fixes (2026-10-13)
+
+Merged origin/main first, retaining the word-motion record alongside the incoming
+clipboard and selection-color records and both relevant browser README entries.
+Replaced raw word-key interception and synthetic Escape with a per-editor hook
+that captures resolved moveByWords commands at Vim's input reset and routes their
+normal-mode cursor landing. Counts, mappings, original macro keys and Vim command
+bookkeeping remain in the dispatcher. Operator, visual, insert, composing and
+multiple-selection cases retain the cell buffer. Hook disposal restores the
+adapter and chains/restores the existing block-motion input observer.
+
+Cross-cell word movement retains the cell editor and adapter so a synchronous
+mapping or macro continues in the destination buffer. Retargeting suppresses
+source writes during the buffer swap and retains the captured position object
+for subsequent edits. Edge clamping now keeps the current position if the table's
+word endpoint lies opposite the requested direction; valid endpoint clamping
+when still ahead is retained. New unit regressions cover same-cell and cross-cell
+record/edit/replay, both mapping directions, nonword mappings, all eight counted
+motions, mode/selection guards, observer disposal, mixed empty edge cells and
+retained whitespace.
+
+Validation is limited by the owner's explicit instruction: no pnpm check,
+check:full, full-repository lint or native suite. Root, webview-plugin and test
+TypeScript checks pass; ESLint passes on the seven changed TypeScript files;
+26 units across the three changed test files and all 26 existing tables-vim
+Chromium cases pass. Exact commands and the full branch diff are recorded in
+/workspace/plans/review-pr30-round2.md. The pinned human-learning
+checkout remains absent; only this repository and its installed Vim dependency
+were read. No Obsidian code, CSS or assets were copied.

@@ -41,8 +41,8 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
 - `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.
-- `word-navigation.ts`: normal-mode word command routing and Vim prefix cleanup.
-- `word-motion.test.ts`, `word-navigation.test.ts`: Unicode, cell boundaries, counts and mode guards.
+- `word-navigation.ts`: per-editor resolved normal-word routing through Vim mappings and recording.
+- `word-motion.test.ts`, `word-navigation.test.ts`: Unicode, direction-preserving edges, counts, mode guards, mappings and macro replay.
 - `vim-entry.ts`: deferred normal-mode source entry with transaction and mode guards.
 - `clipboard.ts`: text/grid copy, paste and formatting, including stale-paste checks.
 - `toolbar.ts`: add-row/column controls and contextual menu lifetime.
@@ -101,7 +101,10 @@ row order, wrapping between rows and skipping cells without words. Counts span
 cells. Small words use the Vim adapter’s Unicode letter/number classification
 (including contiguous CJK); WORDs group all non-whitespace punctuation.
 Grapheme endpoints keep surrogate pairs and combining characters whole.
-Table edges clamp the caret without adding rows or prose.
+Table edges clamp in the requested direction without adding rows or prose.
+Vim resolves mappings and records the original keys before table routing replaces
+its normal word landing. Word crossings move the same cell editor to the next
+cell so a running mapping or macro continues against that cell's text.
 Deferred outer-source entry requires one collapsed caret, focused content and
 settled normal mode. Selection/document changes, blur, mode transitions and
 disposal cancel pending entry. For Vim navigation entry only, every delimiter
