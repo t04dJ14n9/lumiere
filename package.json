@@ -1400,7 +1400,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^9.30.0",
     "tsx": "^4.20.0",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.35.0",
     "@types/markdown-it": "^14.1.2",
     "@types/markdown-it-footnote": "3.0.4",
