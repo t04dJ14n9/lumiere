@@ -254,3 +254,80 @@ test("L: paragraph } skips the table and /delta opens the matching cell", async 
   await expectCell(page, 1, 1, "delta", 0);
   expect(await page.evaluate(() => window.harness.text)).toBe(source);
 });
+
+for (const motion of ["w", "W", "e", "b", "ge"]) {
+  test(`normal ${motion} crosses cell and row boundaries without editing`, async ({
+    page,
+  }) => {
+    const text =
+      "Above\n\n| 每个环境共用 | next word |\n| --- | --- |\n| final | last,value |\n\nBelow";
+    await open(page, text, "obsidian", {
+      features: { vim: { enabled: true, config: {} } },
+    });
+    await page.evaluate(() => window.harness.reveal("Above\n\n".length + 2));
+    await expectCell(page, 0, 0, "每个环境共用", 0);
+    if (motion === "b" || motion === "ge") {
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Escape");
+      await press(page, "0");
+      await press(page, motion);
+      await expectCell(page, 0, 0, "每个环境共用", motion === "b" ? 0 : 5);
+    } else {
+      if (motion === "e") {
+        await press(page, "e");
+        await expectCell(page, 0, 0, "每个环境共用", 5);
+      }
+      await press(page, motion);
+      await expectCell(page, 0, 1, "next word", motion === "e" ? 3 : 0);
+      await press(page, motion);
+      await expectCell(page, 0, 1, "next word", motion === "e" ? 8 : 5);
+      await press(page, motion);
+      await expectCell(page, 1, 0, "final", motion === "e" ? 4 : 0);
+    }
+    expect(await page.evaluate(() => window.harness.text)).toBe(text);
+  });
+}
+
+test("counted word motions span cells, skip blanks and preserve Unicode segmentation", async ({
+  page,
+}) => {
+  const text =
+    "Above\n\n| 每个环境共用 hello中文 café | next word |\n| --- | --- |\n| | last,value |\n\nBelow";
+  await open(page, text, "obsidian", {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal("Above\n\n".length + 2));
+  await press(page, "w");
+  await expectCell(page, 0, 0, "每个环境共用 hello中文 café", 7);
+  await press(page, "w");
+  await expectCell(page, 0, 0, "每个环境共用 hello中文 café", 15);
+  await press(page, "3w");
+  await expectCell(page, 1, 1, "last,value", 0);
+  await press(page, "2w");
+  await expectCell(page, 1, 1, "last,value", 5);
+  await press(page, "3b");
+  await expectCell(page, 0, 1, "next word", 5);
+  await press(page, "2ge");
+  await expectCell(page, 0, 0, "每个环境共用 hello中文 café", 18);
+  await press(page, "3W");
+  await expectCell(page, 1, 1, "last,value", 0);
+  await press(page, "W");
+  await expectCell(page, 1, 1, "last,value", 9);
+  expect(await page.evaluate(() => window.harness.text)).toBe(text);
+});
+
+test("cell word operators and visual selections remain in the cell buffer", async ({
+  page,
+}) => {
+  await openVim(page, 2);
+  await press(page, "j");
+  await expectCell(page, 0, 0, "alpha", 0);
+  await press(page, "vw");
+  await expect
+    .poll(() => focusedCell(page))
+    .toMatchObject({ label: "Table cell 1, 1", text: "alpha", mode: "visual" });
+  await page.keyboard.press("Escape");
+  await press(page, "0dw");
+  await expectCell(page, 0, 0, "", 0);
+  expect(await page.evaluate(() => window.harness.text)).toContain("beta");
+});

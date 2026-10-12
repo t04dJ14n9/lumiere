@@ -9,6 +9,8 @@ import { editGroup } from "../document/api";
 import { CellSource, cellSyntax } from "./cell-source";
 import type { Action, TableEnvironment } from "./environment";
 import { cellNavigation, type CellStep } from "./navigation";
+import { cellWordNavigation } from "./word-navigation";
+import type { WordMotion } from "./word-motion";
 
 interface CellEditorOptions {
   parent: HTMLElement;
@@ -23,6 +25,7 @@ interface CellEditorOptions {
   action(action: Action): boolean;
   move(row: number, column: number): boolean;
   arrow(step: CellStep, extend: boolean): boolean;
+  word(motion: WordMotion, count: number): boolean;
 }
 
 let session = 0;
@@ -74,6 +77,7 @@ export class CellEditor {
           options.environment.language,
           cellSyntax,
           cellNavigation((step, extend) => options.arrow(step, extend)),
+          cellWordNavigation(options.word),
           this.groups.extension,
           cellKeymap(options),
           // Table navigation gets the first chance at a cell boundary.

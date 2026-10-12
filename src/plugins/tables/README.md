@@ -36,6 +36,9 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
+- `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.
+- `word-navigation.ts`: normal-mode word command routing and Vim prefix cleanup.
+- `word-motion.test.ts`, `word-navigation.test.ts`: Unicode, cell boundaries, counts and mode guards.
 - `vim-entry.ts`: deferred normal-mode source entry with transaction and mode guards.
 - `clipboard.ts`: text/grid copy, paste and formatting, including stale-paste checks.
 - `toolbar.ts`: add-row/column controls and contextual menu lifetime.
@@ -54,7 +57,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `clipboard.test.ts`: cell/grid clipboard, selection and stale-paste unit tests.
 - `webview.test.ts`: persistent widget, entry registrations and insertion unit tests.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
-- `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection and search.
+- `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
 - `tables.css`: grid, handles, selection and cell editor appearance, bundled through
   `src/webview/styles/index.css`.
 
@@ -84,6 +87,12 @@ link-creation submenus are outside this cell menu; editor commands still work.
 
 Normal-mode cell `j`/`k` and `gj`/`gk` hop one row at a text boundary, ignoring
 counts; `h`/`l`, arrows, Escape and insert mode retain their existing behavior.
+Normal-mode `w`/`W`, `e`/`E`, `b`/`B` and `ge`/`gE` move through words in
+row order, wrapping between rows and skipping cells without words. Counts span
+cells. Small words use the Vim adapter’s Unicode letter/number classification
+(including contiguous CJK); WORDs group all non-whitespace punctuation.
+Grapheme endpoints keep surrogate pairs and combining characters whole.
+Table edges clamp the caret without adding rows or prose.
 Deferred outer-source entry requires one collapsed caret, focused content and
 settled normal mode. Selection/document changes, blur, mode transitions and
 disposal cancel pending entry. For Vim navigation entry only, every delimiter

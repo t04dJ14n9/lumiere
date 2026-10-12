@@ -3073,3 +3073,29 @@ Commit is blocked in this sandbox: `git add` cannot create the worktree's
 Changes remain in this worktree; a complete patch and proposed commit message
 are saved in `/workspace/plans/pr16-review-fixes.patch` and
 `/workspace/plans/pr16-review-fixes-commit.txt` for the parent.
+
+## Vim table word motions (2026-10-12)
+
+Normal-mode `w`/`W`, `e`/`E`, `b`/`B` and `ge`/`gE` now navigate word
+endpoints across rendered cells in row order, wrapping between rows. Counts
+span cells; cells without words are skipped. Table edges clamp without changing
+text, appending rows or creating prose separators. Operators, visual/insert
+modes and unrelated pending commands retain the cell Vim buffer's behavior.
+The projection uses the current cell session's text so retained whitespace does
+not shift word offsets. Command routing clears completed counts/g prefixes
+before a cell adapter is destroyed.
+
+Small words use the installed Vim adapter's Unicode alphabetic/number
+classification, so contiguous CJK (including `每个环境共用`) is a word;
+WORDs group punctuation. Endpoints respect grapheme boundaries for astral
+letters, emoji and combining accents. This is adapter-compatible segmentation,
+not dictionary-based Chinese word splitting. No Obsidian code/assets were used.
+The prescribed `~/Code/human-learning` checkout is absent on this machine;
+implementation was based on this repository and its pinned installed dependency.
+
+Failing-first evidence: five newly approved browser cases all failed on the
+original implementation for `w`, `W`, `e`, `b` and `ge`. Five pure endpoint
+regressions failed against the initial unimplemented helper, then passed after
+implementation. Additional units cover routing guards and combining graphemes;
+browser cases cover counts, blank cells, punctuation, CJK/Latin text and
+operator/visual isolation. Validation results follow after the final gate.
