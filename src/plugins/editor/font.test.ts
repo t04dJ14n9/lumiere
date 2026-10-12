@@ -51,7 +51,7 @@ test("the family is followed by the platform's default list, as VS Code's getMas
   // The default list itself is not repeated.
   assert.equal(
     fontVariables({ ...base, fontFamily: linux })["--text-font"],
-    linux,
+    "var(--ui-font)",
   );
   assert.equal(
     fontVariables({ ...base, fontFamily: "Fira Code" }, "mac")["--text-font"],
@@ -86,7 +86,7 @@ test("the host's own default list is used when it reports one", () => {
       defaultFontFamily,
       fontFamily: defaultFontFamily,
     })["--text-font"],
-    defaultFontFamily,
+    "var(--ui-font)",
   );
 });
 
@@ -177,4 +177,16 @@ test("fontSize is the note's own setting: 16 by default, 8 to 48, wrong values f
       description: undefined,
     },
   );
+});
+
+test("an explicitly selected default monospace family remains deliberate", () => {
+  const family = "Menlo, Monaco, 'Courier New', monospace";
+  const vars = fontVariables({
+    ...base,
+    fontFamily: family,
+    defaultFontFamily: family,
+    fontFamilyExplicit: true,
+  });
+  assert.equal(vars["--text-font"], family);
+  assert.equal(vars["--code-font"], family);
 });

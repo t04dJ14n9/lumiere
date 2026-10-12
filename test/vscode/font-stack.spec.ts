@@ -80,7 +80,7 @@ const scenarios: Record<string, Record<string, unknown>> = {
 };
 
 for (const [name, extra] of Object.entries(scenarios)) {
-  test(`note font matches the built-in text editor: ${name}`, async () => {
+  test(`note preserves explicit font settings and uses proportional defaults: ${name}`, async () => {
     const settingsFile = path.join(paths.userData, "User", "settings.json");
     const original = readFileSync(settingsFile, "utf8");
     const note = path.join(paths.workspace, "Note.md");
@@ -157,13 +157,23 @@ for (const [name, extra] of Object.entries(scenarios)) {
         "textRendering",
         "webkitFontSmoothing",
       ] as const) {
-        expect(wb.style[key], `${name}: ${key}`).toBe(bi.style[key]);
+        if (name === "none" && key === "fontFamily") {
+          expect(wb.style[key]).toContain("sans-serif");
+          expect(wb.style[key]).not.toBe(bi.style[key]);
+        } else {
+          expect(wb.style[key], `${name}: ${key}`).toBe(bi.style[key]);
+        }
       }
       expect(wb.lineHeight, `${name}: line height`).toBeCloseTo(
         bi.lineHeight,
         1,
       );
-      expect(wb.textWidth, `${name}: text width`).toBeCloseTo(bi.textWidth, 1);
+      if (name !== "none") {
+        expect(wb.textWidth, `${name}: text width`).toBeCloseTo(
+          bi.textWidth,
+          1,
+        );
+      }
     } finally {
       writeFileSync(settingsFile, original);
       writeFileSync(note, text);

@@ -1,44 +1,18 @@
 import { linkSuggestion } from "./suggestions";
-import { StateEffect, StateField } from "@codemirror/state";
+import { Prec, StateEffect, StateField } from "@codemirror/state";
 import type { EditorState } from "@codemirror/state";
-import { EditorView, ViewPlugin } from "@codemirror/view";
+import { EditorView, ViewPlugin, keymap } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type { InlineRenderer } from "../livePreview/api";
 import type {} from "./api";
-import { markdownParser } from "../../markdown/dialect";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
 import { unresolvedKey } from "./target";
+import { linkAt, followCaretLink } from "./caret-link";
+export { linkAt } from "./caret-link";
 
-export function linkAt(
-  text: string,
-  at: number,
-): { href: string; wiki: boolean } | undefined {
-  let found: { href: string; wiki: boolean } | undefined;
-  markdownParser.parse(text).iterate({
-    enter(node) {
-      if (node.from > at || node.to < at) {
-        return false;
-      }
-      if (node.name === "WikiLink") {
-        found = {
-          href: text.slice(node.from + 2, node.to - 2).split("|")[0]!,
-          wiki: true,
-        };
-      }
-      if (node.name === "Link") {
-        const url = node.node.getChild("URL");
-        if (url) {
-          found = { href: text.slice(url.from, url.to), wiki: false };
-        }
-      }
-      return undefined;
-    },
-  });
-  return found;
-}
 export const linksWebview: Plugin = {
   name: "links",
   inject: { required: ["editor", "livePreview", "commands", "rpc"] },
@@ -56,6 +30,7 @@ export const linksWebview: Plugin = {
     registerWikiLinks(ctx);
     registerLinkClicks(ctx, open);
     registerLinkCommands(ctx, open);
+    registerLinkFollowing(ctx, open);
   },
 };
 
@@ -348,5 +323,25 @@ function allowsLinkClick(event: MouseEvent, link: HTMLElement): boolean {
     (!event.altKey &&
       !event.shiftKey &&
       link.classList.contains("md-link-rendered"))
+  );
+}
+
+function registerLinkFollowing(ctx: Context, open: OpenLink): void {
+  const follow = (view: EditorView) =>
+    followCaretLink(view, open, (error) =>
+      ctx.logger.warn("Follow link failed", error),
+    );
+  ctx.provide("links", { follow });
+  ctx.effect(() =>
+    ctx.editor.extend(
+      Prec.highest(
+        keymap.of([
+          {
+            key: "Mod-Enter",
+            run: follow,
+          },
+        ]),
+      ),
+    ),
   );
 }

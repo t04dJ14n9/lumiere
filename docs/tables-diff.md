@@ -37,6 +37,31 @@ the starting code on `tables-parity`; actions below describe this change.
 | Our rectangular selection/drag, TSV paste, clear-cells action and keyboard grip menus. | Extra features beyond the measured spec. | Fix: retain because they do not conflict with normal cell navigation or the cell context menu; remove only whole-table disclosure. |
 | With line numbers on, a table shows one number (its first source line) at its top; hidden lines have none; the next number starts right under the widget. | Stacked every hidden line's number beside the table with a fixed spacing: the numbers did not line up with the rows, one sat above the table, and a gap followed it. | Fixed: one number per rendered block, level with the header row for tables (`tables-line-numbers.spec.ts`, real VS Code spec). VS Code's text editor numbers every source line; that is the deliberate difference. |
 
+## Vim and tables (measured 2026-10-12)
+
+Reference: `docs/obsidian-measurements/tables/vim-obsidian.md` and its raw
+per-key log. These changes apply only with Vim enabled. Browser assertions
+are added but await the parent's run because Chromium is blocked in the
+implementation sandbox; there is no new parity-probe result yet.
+
+| Measured behaviour | Our behaviour | Test |
+| --- | --- | --- |
+| Outer single/count `j`/`k` and `gj`/`gk` use source-line arithmetic across a table. | Correct only layout overshoots crossing a rendered Table widget; other widgets retain their existing behavior. | `vim/source-motion.test.ts`, `livePreview/widget-motion.test.ts`, `tables-vim.spec.ts` A/B/H/K. |
+| Normal-mode landings open the cell owning the source column, including padding/internal pipes; the final pipe falls back to the first cell at zero. | Deferred source entry uses the measured pure mapping. | `tables/vim-source.test.ts` A/B/P columns, `tables-vim.spec.ts` A/B. |
+| Delimiter-line landings open the last row's first cell at zero, ignoring the goal column. | Same for `3j`, `2j`, `4k` and source entry. | `tables/vim-source.test.ts` H/P delimiter, `tables-vim.spec.ts` H/P. |
+| `j`/`k` inside a normal cell move one row and reset the offset to zero. | Existing row navigation is retained, including exits and re-entry. | `tables/navigation.test.ts`, `tables-vim.spec.ts` A/B/G. |
+| Counts and the `g` prefix inside a normal cell hop one row. | `9j`/`9k` and `gj`/`gk` permit the same boundary hop as plain `j`/`k`. | `tables/navigation.test.ts` count/g routing, `tables-vim.spec.ts` H/K/G. |
+| Outer operators take source lines: `dk` below deletes the last row and blank; `d2j` above deletes three lines. | Operators use the arithmetic correction and document edits cannot trigger cell entry. | `vim/source-motion.test.ts`, `tables/vim-source.test.ts` guards, `tables-vim.spec.ts` I. |
+| Outer visual traversal includes each source line and the delimiter without opening a cell. | All line motions use the correction; visual and multiple selections reject cell entry. | `vim/source-motion.test.ts`, `tables/vim-source.test.ts` guards, `tables-vim.spec.ts` J. |
+| `}` skips the table as one paragraph without opening a cell. | Paragraph motion keeps the dependency's behavior. | `tables-vim.spec.ts` L. |
+| `/delta` focuses the matching cell at offset zero. | A normal-mode search landing uses deferred cell entry. | `tables-vim.spec.ts` L. |
+| In-cell operators and visual motions can hop and abandon pending state. | Not matched on purpose: retain the dependency's cell-buffer behavior. | `tables/navigation.test.ts` operator/visual rejection. |
+| EOF/start-of-note exits add the measured single break/empty line. | Not matched on purpose: keep a blank separator to prevent subsequent prose becoming table rows. | `tables/navigation.test.ts` EOF separator/entry. |
+
+Table projection transactions and pointer selections never invoke Vim source
+entry (`tables/vim-source.test.ts`). Non-Vim entry, arrows, horizontal hops,
+Escape and insert editing keep their existing behavior and tests.
+
 The kernel and host authority remain unchanged. No source code, CSS or assets
 from Obsidian are used. The pinned `~/Code/human-learning` checkout is absent in
 this environment; the existing port and its unit tests are available locally.

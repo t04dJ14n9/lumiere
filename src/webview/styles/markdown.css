@@ -223,10 +223,23 @@
 /* Revealed source of fenced code, quotes and tables. */
 #app .cm-line.md-code-line {
   padding-inline: 16px;
-  background: var(--code);
+  position: relative;
+  background: transparent;
   font-family: var(--code-font);
   font-size: var(--code-size);
 }
+/* CodeMirror draws selection at z-index -1. Keep opaque code surfaces below
+ * that layer, rather than hiding selected code while its trailing gap glows. */
+#app .cm-line.md-code-line::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--code);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 /*
  * Code blocks are always these lines, so the caret never changes their size:
  * only the fence text is hidden, and the empty fence lines (one line box

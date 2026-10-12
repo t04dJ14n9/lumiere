@@ -8,8 +8,8 @@
   white-space: nowrap;
 }
 .properties {
-  padding: 6px 0 24px;
-  font-family: var(--text-font);
+  padding: 4px 0 16px;
+  font-family: var(--ui-font);
   font-size: var(--text-size);
   line-height: 1.5;
 }
@@ -27,8 +27,8 @@
   gap: 6px;
   position: relative;
   margin-bottom: 8px;
-  font-size: 1.1em;
-  font-weight: 500;
+  font-size: 0.875em;
+  font-weight: 600;
   cursor: pointer;
 }
 .metadata-collapse-indicator {
@@ -50,11 +50,11 @@
 }
 .property-row {
   display: grid;
-  grid-template-columns: minmax(90px, 140px) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(80px, 8em) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: start;
-  min-height: 30px;
-  padding: 3px 0;
+  min-height: 1.75em;
+  padding: 2px 0;
   box-sizing: border-box;
 }
 .property-row[data-property-selected] {
@@ -182,8 +182,8 @@
 [data-property-type="tags"] .property-chip {
   padding: 0 8px;
   border-radius: 12px;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--vscode-editor-foreground, inherit);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
 }
 .property-list .md-tag {
   background: transparent;
@@ -252,7 +252,7 @@
   margin: 4px 0 0 8px;
 }
 .property-object dl > div {
-  padding: 3px 0;
+  padding: 2px 0;
 }
 .property-object dt {
   font-size: 0.85em;

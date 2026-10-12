@@ -4,7 +4,7 @@ import { EditorState, type TransactionSpec } from "@codemirror/state";
 import { Direction, type EditorView } from "@codemirror/view";
 import { parseTable, type CellPosition } from "../../markdown/tables/model";
 import { TableKeyboard } from "./keyboard";
-import { cellArrow, entersTable } from "./navigation";
+import { cellArrow, entersTable, navigationKey } from "./navigation";
 import type { TableGrid } from "./grid";
 import type { CellProjection } from "./projection";
 import type { TableSelection } from "./selection";
@@ -183,4 +183,79 @@ test("horizontal arrows leave a cell only at text edges; vertical arrows respect
   assert.deepEqual(cellArrow(view, "ArrowDown", false), { row: 1, column: 0 });
   state = state.update({ selection: { anchor: 0, head: 3 } }).state;
   assert.equal(cellArrow(view, "ArrowRight", false), undefined);
+});
+
+function vimMode(
+  options: {
+    keys?: string;
+    count?: string;
+    motionCount?: string;
+    operator?: string | null;
+    insertMode?: boolean;
+    visualMode?: boolean;
+  } = {},
+) {
+  return {
+    insertMode: options.insertMode ?? false,
+    visualMode: options.visualMode ?? false,
+    inputState: {
+      keyBuffer: [...(options.keys ?? "")],
+      prefixRepeat: [...(options.count ?? "")],
+      motionRepeat: [...(options.motionCount ?? "")],
+      operator: options.operator ?? null,
+    },
+  } as NonNullable<Parameters<typeof navigationKey>[1]>;
+}
+
+test("normal cell j/k and gj/gk hop one row even with a pending count", () => {
+  // Vim keeps typed digits (and the g prefix) in its key buffer.
+  for (const typed of ["", "2", "9", "123"]) {
+    for (const keys of [typed, `${typed}g`]) {
+      const mode = vimMode({ keys });
+      assert.equal(navigationKey("j", mode), "ArrowDown");
+      assert.equal(navigationKey("k", mode), "ArrowUp");
+    }
+  }
+});
+
+test("cell operators, visual and insert modes retain Vim's handling of j/k", () => {
+  for (const options of [
+    { operator: "delete" },
+    { operator: "change", motionCount: "2" },
+    { operator: "yank", count: "9" },
+    { visualMode: true },
+    { visualMode: true, count: "9" },
+    { visualMode: true, keys: "g" },
+    { visualMode: true, keys: "9" },
+    { operator: "delete", keys: "2" },
+    { keys: "9f" },
+    { insertMode: true },
+    { keys: "f" },
+    { keys: "r" },
+    { keys: "z" },
+  ]) {
+    for (const key of ["j", "k"]) {
+      assert.equal(navigationKey(key, vimMode(options)), undefined);
+    }
+  }
+});
+
+test("existing arrows, h/l and pending horizontal keys retain their routing", () => {
+  for (const mode of [undefined, vimMode(), vimMode({ insertMode: true })]) {
+    assert.equal(navigationKey("ArrowDown", mode), "ArrowDown");
+    assert.equal(navigationKey("ArrowUp", mode), "ArrowUp");
+  }
+  assert.equal(navigationKey("h", vimMode()), "ArrowLeft");
+  assert.equal(navigationKey("l", vimMode()), "ArrowRight");
+  assert.equal(navigationKey("j", undefined), undefined);
+  assert.equal(navigationKey("Escape", vimMode()), undefined);
+  for (const options of [
+    { count: "9" },
+    { keys: "g" },
+    { operator: "delete" },
+  ]) {
+    for (const key of ["h", "l", "ArrowDown", "ArrowUp"]) {
+      assert.equal(navigationKey(key, vimMode(options)), undefined);
+    }
+  }
 });

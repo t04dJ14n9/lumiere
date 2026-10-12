@@ -31,7 +31,7 @@ map visible text back to source before syntax is revealed.
 - `code-lines.ts`: code block lines; only fence text hides, so reveals never
   change the layout. Thematic breaks are likewise one decorated line.
 - `rendered-position.ts`: visible-text projection and DOM-to-source mapping.
-- `motion.ts`: Escape and vertical motion around rendered blocks.
+- `motion.ts`: Escape and vertical motion around rendered blocks, visible-widget queries and disjoint fold spans.
 - `core.test.ts`: reveal, motion, mode and lifecycle unit coverage.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
 - `code-lines.test.ts`: code and thematic break line classes and hidden text.

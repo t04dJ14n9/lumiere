@@ -36,7 +36,8 @@
   min-width: 0;
   padding: 0 2px 0 0;
   font-family: var(--code-font);
-  font-size: var(--text-size);
+  /* fixed: Obsidian sets the gutter to its 12px UI size at every note text size (font-size-results-*.json) */
+  font-size: 12px;
   font-weight: var(--text-weight, normal);
   font-feature-settings: var(--text-features, normal);
   line-height: calc(var(--line-height, 1.5) * var(--text-size));

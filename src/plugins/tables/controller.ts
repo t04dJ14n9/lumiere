@@ -1,6 +1,7 @@
 import type { EditorView } from "@codemirror/view";
 import {
   cellAtOffset,
+  cellForSourceOffset,
   parseTable,
   type CellPosition,
   type CellRange,
@@ -131,6 +132,20 @@ export class TableController {
 
   enter(direction: -1 | 1): void {
     this.keyboard.enter(direction);
+  }
+  enterSourcePosition(head: number): boolean {
+    if (this.active || this.range || !this.grid.root.isConnected) {
+      return false;
+    }
+    const target = cellForSourceOffset(
+      this.grid.model,
+      head - this.grid.start(),
+    );
+    if (!target) {
+      return false;
+    }
+    this.projection.open(target.position, target.offset);
+    return true;
   }
   highlight(): void {
     this.selected.highlight();

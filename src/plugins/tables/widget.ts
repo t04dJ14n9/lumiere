@@ -29,6 +29,19 @@ export function enterTable(view: EditorView, direction: -1 | 1): boolean {
   return false;
 }
 
+export function enterTableAtSourcePosition(
+  view: EditorView,
+  head: number,
+): boolean {
+  for (const root of view.dom.querySelectorAll<HTMLElement>(".hybrid-table")) {
+    const controller = controllers.get(root);
+    if (controller && controller.enterSourcePosition(head)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export class TableWidget extends WidgetType {
   constructor(
     readonly block: RenderBlock,

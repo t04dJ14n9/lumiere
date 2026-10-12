@@ -31,7 +31,9 @@ const CHROME = [
 test("the note's size is one variable, markdownWorkbench.editor.fontSize, not editor.fontSize", () => {
   const base = css("src/webview/styles/base.css");
   assert.match(base, /--text-size: 16px;/);
-  assert.match(base, /--text-font: var\(\s*--vscode-editor-font-family,/);
+  // Prose defaults to the proportional UI stack; code follows VS Code's editor font.
+  assert.match(base, /--text-font: var\(--ui-font\);/);
+  assert.match(base, /--code-font: var\(\s*--vscode-editor-font-family,/);
   assert.doesNotMatch(base, /--vscode-editor-font-size/);
   for (const file of stylesheets("src")) {
     assert.doesNotMatch(css(file), /--vscode-editor-font-size/, file);

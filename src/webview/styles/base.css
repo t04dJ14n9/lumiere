@@ -34,19 +34,15 @@
   );
   --surface: var(--vscode-editorWidget-background, var(--code));
   /*
-   * The editor plugin sets these on the editor (font.ts): the family and
-   * weight follow VS Code's editor font settings for Markdown files, the size
+   * Default prose is proportional; code stays monospace. The editor plugin
+   * sets these on the editor (font.ts): the family and
+   * weight preserve explicit editor font choices for Markdown files, the size
    * is the note's own setting (markdownWorkbench.editor.fontSize). These are
    * the fallbacks before the first settings arrive; every other size in the
    * note is relative to --text-size or to the em.
    */
-  --text-font: var(
-    --vscode-editor-font-family,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif
-  );
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-font: var(--ui-font);
   --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
   --text-size: 16px;
   /*

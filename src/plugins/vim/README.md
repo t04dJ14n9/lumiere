@@ -6,6 +6,10 @@ It defaults to off and transfers insert/normal mode between the note and table c
 ## How it works
 
 The plugin provides mode inspection and transfer through the injected Vim service.
+Live Preview identifies persistent widgets through an optional service query.
+The Vim adapter corrects vertical table overshoots to source-line arithmetic,
+including counts, operators and visual selections. Tables then map normal-mode
+source landings into their cell editors.
 Its editor extension uses the override slot; host shortcut consumption is active
 only with the plugin. Native undo/redo/save hooks route through Commands and are
 restored on disposal. Ex callbacks become inert on disposal and are replaced when
@@ -26,12 +30,17 @@ share this mode source and remove its listeners when they stop.
 - `manifest.ts`: default enablement and host shortcut contributions.
 - `api.ts`: mode, extension and mode-transfer contract.
 - `webview.ts`: service, host action, Ex and editor extension registrations.
+- `motion.ts`: per-editor table motion correction and single-step entry into revealable blocks.
+- `source-motion.ts`: pure source-line target decision for rendered table overshoots.
+- `source-motion.test.ts`: counted, clamped, folded and other-widget target regression units.
+- `motion-context.ts`: per-editor resolved motion policy captured before Vim executes it.
+- `motion.test.ts`: source/display goals, folds, mappings, macro replay and disposal units.
 - `caret.ts`: pure detection of the normal, visual, insert, replace, operator-pending and prompt states.
 - `caret.test.ts`: mode, pending-operator, prompt and stale-state regression units.
 
 ## Services, events and settings
 
-Injects `editor` and `commands`; provides `vim`. No kernel event listeners or
+Injects `editor` and `commands`, optionally `livePreview`; provides `vim`. No kernel event listeners or
 emissions. `markdownWorkbench.plugins.vim.enabled` defaults to false. Ex commands
 `:w`, `:q`, `:wq`, `:x`, `:u` and `:red` route to save, close, save-and-close, undo
 and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
@@ -50,3 +59,18 @@ selection; exact Vim/IME interaction parity awaits the owner's manual testing.
 The host-shortcut consumer is hidden from the command palette. Its collision
 bindings use Control on macOS as well as other platforms, leaving Command
 shortcuts to the editor. No verify shortcut is assigned.
+
+Normal-mode single-step `j`, `k`, `gj` and `gk` enter revealable rendered blocks
+and reveal their source. Across visible tables, source-line `j`/`k` correct
+layout overshoots with fold-aware source arithmetic, including counts,
+operators and visual selections. Single-step `gj`/`gk` can enter an adjacent
+table using the adapter's resolved column. Display counts, wrapped movement
+and half-page scrolling retain the dependency's layout behavior and pixel
+goal. Fold-hidden tables do not contribute to correction. Other widget kinds
+keep the dependency's existing behavior.
+
+Inside a table cell, normal-mode vertical boundary hops ignore counts and the
+`g` prefix and move one row. Operators and visual selections inside cells keep
+the dependency's behavior; Obsidian's hop would abandon that pending state.
+At note boundaries, table exit retains a blank separator so subsequent prose
+cannot become another table row.
