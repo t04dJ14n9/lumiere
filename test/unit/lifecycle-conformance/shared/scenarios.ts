@@ -18,6 +18,37 @@ function consumer(activate: PluginSpec["activate"]): PluginSpec {
   return { id: "consumer", requires: ["provider"], activate };
 }
 
+/** Bound for progress assertions; native runtimes reach these in a few turns. */
+export const progressBoundMs = 1000;
+
+/**
+ * Explicit progress assertion for a named invariant ("X must happen without
+ * waiting for Y"). A runtime that never reaches the point fails with an
+ * AssertionError carrying `message`, which is distinct from the harness
+ * scenario timeout (an infrastructure failure that is never a known failure).
+ */
+export async function reached<T>(
+  work: Promise<T>,
+  message: string,
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const expired = new Promise<{ readonly expired: true }>((resolve) => {
+    timer = setTimeout(() => resolve({ expired: true }), progressBoundMs);
+  });
+  try {
+    const outcome = await Promise.race([
+      work.then((value) => ({ expired: false as const, value })),
+      expired,
+    ]);
+    if (outcome.expired) {
+      assert.fail(message);
+    }
+    return (outcome as { value: T }).value;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function backing(generation = 1): BackingService {
   return { generation, read: () => generation };
 }
@@ -81,6 +112,7 @@ function concurrentStop(stop: "disable" | "dispose"): LifecycleScenario {
       assert.deepEqual(
         [first.settled, second.settled, third.settled],
         [false, false, false],
+        "every concurrent stop caller must stay pending behind the in-flight release",
       );
       finish.open();
       await Promise.all([first.done, second.done, third.done]);
@@ -139,7 +171,11 @@ const providerRestart: LifecycleScenario = {
     await checkpoint();
     assert.equal(restarting.settled, false);
     assert.equal(consumerActivations, 1);
-    assert.deepEqual(log, ["consumer 1 started"]);
+    assert.deepEqual(
+      log,
+      ["consumer 1 started"],
+      "provider must not release backing while its consumer is still stopping",
+    );
     finish.open();
     await restarting.done;
     // PDF explicitly enables dependents; Markdown already re-gates them.
@@ -193,7 +229,11 @@ const alreadyStopping: LifecycleScenario = {
     const providerStop = fixture.watch(runtime.disable("provider"));
     const rootStop = fixture.watch(runtime.dispose());
     await checkpoint();
-    assert.deepEqual(log, []);
+    assert.deepEqual(
+      log,
+      [],
+      "provider must not release while an already-stopping dependent runs",
+    );
     assert.deepEqual(
       [dependent.settled, providerStop.settled, rootStop.settled],
       [false, false, false],
@@ -244,7 +284,10 @@ function cancellation(stop: "disable" | "dispose"): LifecycleScenario {
       const stopping = fixture.watch(
         stop === "dispose" ? runtime.dispose() : runtime.disable("provider"),
       );
-      await releaseEntered.opened;
+      await reached(
+        releaseEntered.opened,
+        "stop must begin releasing acquired resources without waiting for the gated activation",
+      );
       await checkpoint();
       assert.equal(stopping.settled, false);
       releaseFinish.open();
@@ -318,7 +361,10 @@ function lateDrain(
       const stopProvider = () =>
         stop === "dispose" ? runtime.dispose() : runtime.disable("provider");
       const stops = [fixture.watch(stopProvider())];
-      await ordinaryEntered.opened;
+      await reached(
+        ordinaryEntered.opened,
+        "stop must begin releasing acquired resources without waiting for the gated activation",
+      );
       stops.push(fixture.watch(stopProvider()));
       assert.throws(() =>
         stoppedScope.acquire(async () => {
@@ -422,7 +468,11 @@ function rollbackOverlap(
       assert.equal(runtime.service("lifecycleBacking"), undefined);
       finish.open();
       await Promise.all([enabling.done, stopping.done]);
-      assert.deepEqual(log, ["newer", "older"]);
+      assert.deepEqual(
+        log,
+        ["newer", "older"],
+        "rollback releases newer resources before older ones (LIFO)",
+      );
       assert.equal(
         runtime.errors.filter((error) =>
           error.includes("rollback inverse failed"),
@@ -623,7 +673,11 @@ const transitiveProviderDisable: LifecycleScenario = {
     );
     await leafEntered.opened;
     assert.equal(stopping.settled, false);
-    assert.deepEqual(log, []);
+    assert.deepEqual(
+      log,
+      [],
+      "no backing is released while the transitive leaf is still stopping",
+    );
     // Capture service identities before withdrawal: publication visibility
     // differs by runtime, but both backing resources must still be usable.
     assert.equal(service.read(), 1);
@@ -668,6 +722,7 @@ const earlyRelease: LifecycleScenario = {
     assert.deepEqual(
       [first.settled, repeated.settled, disposing.settled],
       [false, false, false],
+      "repeated early release and parent disposal must join the in-flight inverse",
     );
     finish.open();
     await Promise.all([first.done, repeated.done, disposing.done]);
@@ -702,7 +757,10 @@ const staleActivation: LifecycleScenario = {
     ]);
     const old = fixture.watch(runtime.enable("provider"));
     await firstEntered.opened;
-    await runtime.disable("provider");
+    await reached(
+      fixture.watch(runtime.disable("provider")).done,
+      "disable must complete without waiting for the cancelled activation",
+    );
     assert.deepEqual(released, [1]);
     const fresh = fixture.watch(runtime.enable("provider"));
     await freshEntered.opened;
@@ -748,7 +806,10 @@ const replacedProvider: LifecycleScenario = {
     await runtime.enable("provider");
     const starting = fixture.watch(runtime.enable("consumer"));
     await entered.opened;
-    await runtime.disable("provider");
+    await reached(
+      fixture.watch(runtime.disable("provider")).done,
+      "provider disable must complete without waiting for a dependent's unfinished activation",
+    );
     assert.deepEqual(released, [1]);
     const replacing = fixture.watch(runtime.enable("provider"));
     await checkpoint();
@@ -811,7 +872,11 @@ const lateRejection: LifecycleScenario = {
       }),
     );
     await checkpoint();
-    assert.equal(calls, 1);
+    assert.equal(
+      calls,
+      1,
+      "late resource inverse is invoked immediately when acquire is refused",
+    );
     // The suite runner listens for unhandledRejection around every scenario,
     // including the event-loop checkpoint after fixture teardown.
   },

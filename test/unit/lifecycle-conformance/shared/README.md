@@ -38,7 +38,12 @@ The review additions keep the original cancellation and dependency/LIFO cases:
 - `fixture.ts`: gates, observed caller promises and failure-safe drainage.
 - `scenarios.ts`: the canonical scenario definitions and assertions.
 - `run-suite.ts`: sequential Node test registration and rejection monitoring.
-- `cordis-stub.ts`: runnable, explicitly unavailable Cordis adapter skeleton.
+- `meta.ts`: harness isolation meta-tests (F3 timeout/abort unwinding, bounded
+  cleanup, listener removal, hung-case-then-control; F4 error aggregation;
+  infrastructure errors never satisfy a known failure).
+- `cordis-adapter.ts`: public-API characterization adapter for exact
+  `cordis@4.0.0-rc.10` (devDependency). Adds no lifecycle mechanism of its own.
+- `cordis-expectations.ts`: per-scenario Passed / Known failure / Not evaluated.
 - `sync.py`: copies this README and the five TypeScript files into both repos.
 
 Canonical source lives at `/workspace/plans/cordis-conformance`. Each repo commits
@@ -85,25 +90,28 @@ to run before pending-state assertions. Test timeouts only bound a broken test.
 Fixture teardown opens all gates and awaits all tracked callers and disposal,
 including when an assertion fails.
 
-## Cordis skeleton and adoption gate
+## Cordis characterization (Stage 2a)
 
-The intended comparison version is exactly `cordis@4.0.0-rc.10`. This Stage 1
-skeleton does not import or emulate Cordis: invoking its activation endpoint
-rejects with a clear unsupported-adapter error, tested by an executable smoke
-test. All 23 conformance scenarios are registered with explicit pending-adapter
-skip reasons. A skip is neither a measured Cordis failure nor evidence of
-conformance. No native assertion is weakened, and no package dependency is
-needed for this skeleton.
+The Stage 1 skip-all stub is retired. `cordis-adapter.ts` drives real
+`cordis@4.0.0-rc.10` through its public API. Outcomes:
 
-Installing the pinned artifact was attempted during Stage 1, but registry DNS
-failed (`EAI_AGAIN`). The local cache had metadata but no Cordis artifact. A
-public-API implementation remains future work: pin the exact version as a
-devDependency, implement this factory, then remove skips one scenario at a time.
-Keep service staging, initializer cancellation, joined release, cleanup
-continuation, already-stopping dependents and permanent application shutdown as
-explicit gates. The decision memo's A–G findings are source-audit hypotheses;
-do not label them executed failures without running a concrete adapter.
+- **Passed**: the scenario executed and the harness completed cleanly.
+- **Known failure**: the scenario failed with an `AssertionError` whose first
+  message line matches the recorded assertion, and no infrastructure error
+  (scenario timeout, test abort, cleanup timeout, closed fixture) occurred.
+  A known failure that starts passing fails the suite.
+- **Not evaluated**: skipped with a reason.
 
-Only the reviewed Stage 1 baseline hardening and conformance additions are
-authorized. Stage 2 remains blocked: do not wire real Cordis, remove legacy
-runtimes, merge, push or publish as part of this suite.
+Scenarios that would block forever on a runtime that waits for an
+uncooperative activation use `reached(work, message)`, an explicit progress
+assertion bounded by `progressBoundMs`; it fails as an `AssertionError` naming
+the invariant, distinct from the harness timeout. Only the first violated
+invariant per scenario is evaluated on Cordis.
+
+`runScenario` always unwinds: the body races its own timer and
+`TestContext.signal`; expiry aborts the fixture (gates opened, new work
+refused), cleanup is idempotent and bounded, the `unhandledRejection` listener
+is always removed, and scenario/cleanup/rejection failures are reported
+together (one error as is, several as an `AggregateError` whose `cause` is the
+original scenario failure). Genuine runtime deadlocks leave abandoned promises
+pending in-process; process isolation is not implemented.
