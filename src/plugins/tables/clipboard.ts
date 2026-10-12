@@ -27,6 +27,27 @@ export class TableClipboard {
   get canFormat(): boolean {
     return this.environment.canFormat;
   }
+  keyDown(event: KeyboardEvent): void {
+    const range = this.selection.range;
+    if (
+      !range ||
+      event.defaultPrevented ||
+      event.isComposing ||
+      event.altKey ||
+      event.shiftKey ||
+      !(event.metaKey || event.ctrlKey) ||
+      event.key.toLowerCase() !== "c"
+    ) {
+      return;
+    }
+    // Grid selection focuses a non-editable element with no DOM text range.
+    // Chromium may never emit copy there; the host also owns native clipboard
+    // access in VS Code. Claim the key so forwarding cannot overwrite the TSV.
+    event.preventDefault();
+    event.stopPropagation();
+    this.environment.copy(copyCells(this.grid.model, range));
+  }
+
   copy(event: ClipboardEvent, cut: boolean): void {
     if (!this.selection.range || !event.clipboardData) {
       return;

@@ -339,7 +339,12 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    existing `<br>` behavior; compare it separately because the probe did not
    verify that behavior in Obsidian.
 4. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
-   One undo restores each operation.
+   One undo restores each operation. Click a column grip, press Cmd+C on macOS
+   or Ctrl+C elsewhere, and paste into a spreadsheet: the header and each body
+   cell occupy separate rows. Repeat with a row grip, a rectangle and a single
+   selected cell; TSV preserves the rectangle with tabs between columns and
+   newlines between rows. Copy keeps the selection, focus and note unchanged.
+   Select only text inside a cell and copy: only that text reaches the clipboard.
 5. Run **Insert Table** and every **Table:** command (insert, delete and
    move rows and columns, align, sort) from the palette and the menu.
    The cell menu has all Row/Column actions, with impossible moves disabled,

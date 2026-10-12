@@ -3073,3 +3073,25 @@ Commit is blocked in this sandbox: `git add` cannot create the worktree's
 Changes remain in this worktree; a complete patch and proposed commit message
 are saved in `/workspace/plans/pr16-review-fixes.patch` and
 `/workspace/plans/pr16-review-fixes-commit.txt` for the parent.
+
+
+## Table grid clipboard shortcuts (2026-10-12)
+
+Column/row handles and rectangular cell selection focus a non-editable grid,
+which does not reliably receive Chromium copy events. Grid Ctrl+C/Cmd+C now
+claims the key and snapshots TSV through the existing validated Editor host
+clipboard service. Copy preserves text, focus and grid selection; ordinary
+cell-text copying keeps CodeMirror behavior. HTML/Markdown clipboard flavors
+remain a future enhancement; the native clipboard API currently writes text.
+
+Owner explicitly authorized new failing-first unit, browser and feasible native
+coverage for this bug. Three new units failed before the fix; all six clipboard
+units pass afterward. Three browser cases failed with an empty host clipboard.
+The new installed VS Code case failed to paste the selected column before the
+fix. The browser scenarios cover both modifiers, row/rectangle/single-cell
+selection; the native scenario pastes the OS clipboard into ordinary prose.
+Full validation results will be recorded below before committing.
+
+The pinned human-learning checkout is unavailable at ~/Code/human-learning in
+this environment. This fix uses this repository's existing table implementation;
+no source, browser or native suite was ported and no reference repository changed.
