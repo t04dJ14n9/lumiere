@@ -10,13 +10,17 @@ interface Comparison {
   readonly preview: boolean;
 }
 
-const fileName = (uri: string) =>
-  decodeURIComponent(
-    uri
-      .replace(/[?#].*$/, "")
-      .split("/")
-      .pop() ?? uri,
-  );
+/** The last path segment, without query or fragment (no regex on the URI). */
+export function fileName(uri: string): string {
+  const query = uri.search(/[?#]/);
+  const path = query < 0 ? uri : uri.slice(0, query);
+  const name = path.slice(path.lastIndexOf("/") + 1);
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
+}
 
 /** "HEAD", "Index" or "Working tree", from a git: URI's query or its scheme. */
 export function sideLabel(uri: string): string {

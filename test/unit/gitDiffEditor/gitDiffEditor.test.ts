@@ -7,7 +7,7 @@ import {
 } from "../../../src/plugins/gitDiffEditor/host";
 import { alignBlocks, rowMarkdown } from "../../../src/shared/diff";
 import { createRenderer } from "../../../src/markdown/html";
-import { diffRows } from "../../../src/webview/diff/rows";
+import { definitions, diffRows } from "../../../src/webview/diff/rows";
 import { stepChange } from "../../../src/webview/diff/step";
 import type {
   DiffPanel,
@@ -520,4 +520,68 @@ test("R3: a failed command presentation releases its change listener", async () 
   assert.equal(errors.length, 1);
   assert.equal(h.changes.size, 0);
   await root.dispose();
+});
+
+test("R4-1: a quoted paragraph after a definition is not its title", () => {
+  const source =
+    'Read [guide][g].\n\n[g]: https://example.test/guide\n"Quoted paragraph" with **emphasis**.\n\nTail.\n';
+  const changed = source.replace("Quoted paragraph", "Quoted words");
+  for (const after of [source, changed]) {
+    const rows = diffRows(source, after, renderSide);
+    const all = rows.map((row) => row.after ?? "");
+    assert.equal(rows.length, 3);
+    assert.match(all[0]!, /href="https:\/\/example.test\/guide"/);
+    assert.doesNotMatch(all[0]!, /Quoted/);
+    assert.doesNotMatch(all[2]!, /Quoted/);
+    assert.match(all[1]!, /<strong>emphasis<\/strong>/);
+    assert.doesNotMatch(all[1]!, /mw-gd-lines/);
+  }
+});
+
+test("R4-2: a definition inside a list item resolves references elsewhere", () => {
+  const side = (url: string) => `- Item\n\n  [g]: ${url}\n\nRead [guide][g].\n`;
+  const rows = diffRows(
+    side("https://example.test/old"),
+    side("https://example.test/new"),
+    renderSide,
+  );
+  const last = rows.at(-1)!;
+  assert.match(last.before!, /href="https:\/\/example.test\/old"/);
+  assert.match(last.after!, /href="https:\/\/example.test\/new"/);
+  // The definition stays in the list's row, not copied as visible text.
+  assert.doesNotMatch(last.after!, /\[g\]:/);
+  const quoted = diffRows(
+    "> [q]: https://example.test/q\n\nSee [q].\n",
+    "> [q]: https://example.test/q\n\nSee [q].\n",
+    renderSide,
+  );
+  assert.match(quoted.at(-1)!.after!, /href="https:\/\/example.test\/q"/);
+});
+
+test("R4: link reference definitions follow CommonMark", () => {
+  const defs = (text: string) =>
+    definitions({ kind: "text", text, from: 0, to: 1 })?.map((d) => d.text);
+  // Title on the same line, or on the next line, or spanning lines.
+  assert.deepEqual(defs('[a]: /u "t"'), ['[a]: /u "t"']);
+  assert.deepEqual(defs("[a]: /u\n'next line'"), ["[a]: /u\n'next line'"]);
+  assert.deepEqual(defs('[a]: /u "one\ntwo"'), ['[a]: /u "one\ntwo"']);
+  assert.deepEqual(defs("[a]: <with space> (paren title)"), [
+    "[a]: <with space> (paren title)",
+  ]);
+  assert.deepEqual(defs("[a]:\n/u\n[b]: /v"), ["[a]:\n/u", "[b]: /v"]);
+  // Junk after a title on the destination's line: not a definition.
+  assert.equal(defs('[a]: /u "t" junk'), undefined);
+  // An unclosed title on the next line: the definition ends before it, and
+  // the block is not definitions only.
+  assert.equal(defs('[a]: /u\n"never closed'), undefined);
+  // No destination, or a label with an unescaped bracket.
+  assert.equal(defs("[a]:"), undefined);
+  assert.equal(defs("[a[b]: /u"), undefined);
+  // Balanced parentheses in a destination.
+  assert.deepEqual(defs("[a]: /u(x)y"), ["[a]: /u(x)y"]);
+  // Footnotes: each its own record, continuation lines included.
+  assert.deepEqual(defs("[^a]: one\n  more\n[^b]: two"), [
+    "[^a]: one\n  more",
+    "[^b]: two",
+  ]);
 });
