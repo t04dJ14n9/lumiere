@@ -60,6 +60,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `tables-copy.spec.ts` (browser): handle, row, rectangle and single-cell TSV shortcuts.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection and search.
+- `tables-selection-colors.spec.ts` (browser): selected inline code, bold, links and math colors in dark and light themes.
 - `tables.css`: grid, handles, selection and cell editor appearance, bundled through
   `src/webview/styles/index.css`.
 
@@ -80,6 +81,8 @@ Markdown offsets for consumers of the editor selection API. Live Preview always
 keeps tables rendered; only the focused cell reveals raw Markdown. Source mode
 shows the full table source. HTML conversion is delegated
 to the paste pipeline rather than implemented by the table widget.
+Selected cells show their selection background through inline code while keeping
+its theme foreground and monospace styling; unselected code keeps its background.
 
 HTML paste in a focused cell uses the outer editor capture pipeline; the table
 clipboard ignores already-handled events. Rectangular paste keeps TSV semantics.

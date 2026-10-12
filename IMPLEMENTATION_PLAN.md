@@ -3095,3 +3095,24 @@ Full validation results will be recorded below before committing.
 The pinned human-learning checkout is unavailable at ~/Code/human-learning in
 this environment. This fix uses this repository's existing table implementation;
 no source, browser or native suite was ported and no reference repository changed.
+## Selected table cells and inline code (2026-10-12)
+
+Selected table cells now expose their selection background through rendered
+inline code, preserving its foreground, font and spacing. The rule is scoped to
+selected cells and excludes preformatted blocks; unselected code regains its
+normal theme background when selection moves. Bold, links and MathJax output
+already have transparent backgrounds and need no style changes.
+
+The owner explicitly requested a failing-first browser regression. Both dark
+and light cases failed against the original CSS on the computed code background
+and pass with the fix. The tests use real column-handle selection, cover header
+and body cells, inspect code/bold/link/math backgrounds and text contrast,
+verify preserved foregrounds and bold weight, and check unselected/restored code
+and unchanged source. Updated the Tables README and manual acceptance steps.
+No Obsidian code, CSS or assets were copied. The pinned human-learning checkout
+is absent from this environment; this is a local CSS correction, with no source
+porting.
+
+Validation: dependency installation and the two focused Chromium regressions
+pass. Full required checks are recorded after completion in the task report at
+`/workspace/plans/cell-code-report.md`.
