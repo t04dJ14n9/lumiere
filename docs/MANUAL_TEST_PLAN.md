@@ -339,6 +339,12 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    existing `<br>` behavior; compare it separately because the probe did not
    verify that behavior in Obsidian.
 4. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
+   One undo restores each operation. Click a column grip, press Cmd+C on macOS
+   or Ctrl+C elsewhere, and paste into a spreadsheet: the header and each body
+   cell occupy separate rows. Repeat with a row grip, a rectangle and a single
+   selected cell; TSV preserves the rectangle with tabs between columns and
+   newlines between rows. Copy keeps the selection, focus and note unchanged.
+   Select only text inside a cell and copy: only that text reaches the clipboard.
    One undo restores each operation.
    Include inline code (for example `git.tencent.com`), bold, links and inline
    math in selected header and body cells. In dark and light themes, the blue

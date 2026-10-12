@@ -182,7 +182,14 @@ export class TableController {
     root.addEventListener("contextmenu", (event) =>
       this.toolbar.contextMenu(event),
     );
-    root.addEventListener("keydown", (event) => this.keyboard.keyDown(event));
+    root.addEventListener(
+      "keydown",
+      (event) => {
+        this.clipboard.keyDown(event);
+        this.keyboard.keyDown(event);
+      },
+      { signal: this.events.signal },
+    );
   }
 
   private registerFocus(): void {
