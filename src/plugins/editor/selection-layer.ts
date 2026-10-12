@@ -39,6 +39,8 @@ interface Geometry {
 interface Row {
   top: number;
   bottom: number;
+  /** Horizontal extents of all the line's content on this row. */
+  content: { left: number; right: number }[];
 }
 
 /** A Range over `from`..`to`, or null when the DOM can't express it. */
@@ -74,58 +76,124 @@ function outOfFlow(element: Element, cache: Map<Element, boolean>): boolean {
   return known;
 }
 
+/** Replaced or rendered inline content measured as one box, never inside. */
+const ATOMIC_TAGS = new Set([
+  "svg",
+  "img",
+  "canvas",
+  "math",
+  "video",
+  "audio",
+  "iframe",
+  "object",
+  "embed",
+  "picture",
+  "input",
+  "button",
+  "select",
+  "textarea",
+  "mjx-container",
+]);
+
 /**
- * The client rects of the document text in `range`: text nodes (clipped to
- * the range) and childless inline elements (images, widgets), skipping any
- * subtree that is out of flow (absolutely/fixed positioned, hidden, a
- * tooltip, or marked with SELECTION_IGNORE). An open footnote preview, say,
- * is a descendant of its reference but adds no rows or runs.
+ * Whether `element` is atomic inline content: a replaced element, a math
+ * container (MathJax, KaTeX), or a widget (contenteditable=false). Its own
+ * layout boxes stand for it; its internals (SVG paths, glyph groups, a
+ * widget's parts) are drawing details, not document rows.
+ */
+function atomic(element: Element): boolean {
+  return (
+    ATOMIC_TAGS.has(element.localName) ||
+    element.getAttribute("contenteditable") === "false" ||
+    element.classList.contains("MathJax") ||
+    element.classList.contains("katex")
+  );
+}
+
+/**
+ * Checks the range root and its ancestors up to the line: inside out-of-flow
+ * content nothing counts (null); inside atomic content the outermost atom
+ * stands for the range; otherwise undefined.
+ */
+function enclosingAtom(
+  root: Node,
+  cache: Map<Element, boolean>,
+): Element | null | undefined {
+  let atom: Element | undefined;
+  for (
+    let el: Element | null =
+      root instanceof Element ? root : root.parentElement;
+    el;
+    el = el.parentElement
+  ) {
+    if (el.classList.contains("cm-line")) {
+      break;
+    }
+    if (outOfFlow(el, cache)) {
+      return null;
+    }
+    if (atomic(el)) {
+      atom = el;
+    }
+  }
+  return atom;
+}
+
+/**
+ * The layout boxes of the document content in `range`: text nodes (clipped
+ * to the range) and atomic inline content (one box per fragment of the
+ * outer element), skipping any subtree that is out of flow (absolutely or
+ * fixed positioned, hidden, a tooltip, or marked SELECTION_IGNORE). An open
+ * footnote preview adds nothing; an inline formula adds its own box, not
+ * its SVG's glyphs.
  */
 function flowRects(range: Range): DOMRect[] {
   const root = range.commonAncestorContainer;
   const cache = new Map<Element, boolean>();
   const rects: DOMRect[] = [];
   const doc = root.ownerDocument ?? document;
-  const walker = doc.createTreeWalker(
-    root,
-    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (node) =>
-        node instanceof Element && outOfFlow(node, cache)
-          ? NodeFilter.FILTER_REJECT
-          : NodeFilter.FILTER_ACCEPT,
-    },
-  );
-  // A text root (a range inside one text node) is not visited by the walker.
-  const nodes: Node[] = root.nodeType === Node.TEXT_NODE ? [root] : [];
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    nodes.push(node);
-  }
-  for (let el = root.parentElement; el; el = el.parentElement) {
-    if (el.classList.contains("cm-line")) {
-      break;
-    }
-    if (outOfFlow(el, cache)) {
-      return [];
-    }
+  const enclosing = enclosingAtom(root, cache);
+  if (enclosing !== undefined) {
+    return enclosing ? [...enclosing.getClientRects()] : [];
   }
   const part = doc.createRange();
-  for (const node of nodes) {
+  const visit = (node: Node): void => {
     if (!range.intersectsNode(node)) {
-      continue;
+      return;
     }
     if (node.nodeType === Node.TEXT_NODE) {
-      const length = (node as Text).length;
       part.setStart(
         node,
         node === range.startContainer ? range.startOffset : 0,
       );
-      part.setEnd(node, node === range.endContainer ? range.endOffset : length);
+      part.setEnd(
+        node,
+        node === range.endContainer ? range.endOffset : (node as Text).length,
+      );
       rects.push(...part.getClientRects());
-    } else if (!node.firstChild && node instanceof Element) {
-      rects.push(...node.getClientRects());
+      return;
     }
-  }
+    if (!(node instanceof Element)) {
+      return;
+    }
+    if (node !== root) {
+      if (outOfFlow(node, cache)) {
+        return;
+      }
+      if (atomic(node)) {
+        rects.push(...node.getClientRects());
+        return;
+      }
+    }
+    if (!node.firstChild && node !== root) {
+      rects.push(...node.getClientRects());
+      return;
+    }
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+      visit(child);
+    }
+  };
+  visit(root);
   return rects;
 }
 
@@ -158,7 +226,7 @@ function visualRows(view: EditorView, block: BlockInfo): Row[] {
   const bottom = box ? box.bottom : top + block.height;
   const range = domRange(view, block.from, block.to);
   const boxes = range ? flowRects(range).filter((r) => r.height > 0) : [];
-  const rows: Row[] = [];
+  const rows: { top: number; bottom: number }[] = [];
   for (const box of boxes.sort((a, b) => a.top - b.top)) {
     const mid = (box.top + box.bottom) / 2;
     const row = rows.find((row) => mid >= row.top && mid <= row.bottom);
@@ -170,14 +238,21 @@ function visualRows(view: EditorView, block: BlockInfo): Row[] {
     }
   }
   if (rows.length === 0) {
-    return [{ top, bottom }];
+    return [{ top, bottom, content: [] }];
   }
   rows.sort((a, b) => a.top - b.top);
-  return rows.map((row, i) => ({
+  const bands: Row[] = rows.map((row, i) => ({
     top: i === 0 ? top : (rows[i - 1]!.bottom + row.top) / 2,
     bottom:
       i === rows.length - 1 ? bottom : (row.bottom + rows[i + 1]!.top) / 2,
+    content: [],
   }));
+  for (const box of boxes) {
+    if (box.width > 0) {
+      rowOf(bands, box).content.push({ left: box.left, right: box.right });
+    }
+  }
+  return bands;
 }
 
 /** The row whose band holds a box's vertical centre. */
@@ -221,7 +296,16 @@ function textMarkers(
     const runs: { left: number; right: number }[] = [];
     for (const rect of list) {
       const last = runs[runs.length - 1];
-      if (last && rect.left <= last.right + 1) {
+      // Touching runs merge; so do runs separated only by empty space
+      // (a checkbox's or code span's margin). Runs with other content of
+      // the line between them (bidirectional text) stay apart.
+      if (
+        last &&
+        (rect.left <= last.right + 1 ||
+          !row.content.some(
+            (box) => box.right > last.right + 0.5 && box.left < rect.left - 0.5,
+          ))
+      ) {
         last.right = Math.max(last.right, rect.right);
       } else {
         runs.push({ ...rect });
