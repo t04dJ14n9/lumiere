@@ -96,7 +96,8 @@ function urlAt(text: string, i: number): Range | undefined {
   while (to < text.length && !SPACE.test(text[to]!)) {
     to++;
   }
-  return [from, to];
+  // As the old `\S+`: at least one character after "://".
+  return to > i + 3 ? [from, to] : undefined;
 }
 
 export function protectedRanges(text: string): Range[] {
