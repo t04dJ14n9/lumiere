@@ -249,6 +249,12 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.gitDiffEditor.open",
+        "title": "Open Rendered Git Diff",
+        "category": "Markdown Workbench",
+        "icon": "$(diff)"
+      },
+      {
         "command": "markdownWorkbench.gitGutter.nextChange",
         "title": "Go to Next Git Change",
         "category": "Markdown Workbench"
@@ -830,6 +836,10 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
         },
         {
+          "command": "markdownWorkbench.gitDiffEditor.open",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.gitDiffEditor.enabled"
+        },
+        {
           "command": "markdownWorkbench.gitGutter.nextChange",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
         },
@@ -1175,6 +1185,12 @@
           "scope": "resource",
           "description": "Markdown editing commands."
         },
+        "markdownWorkbench.plugins.gitDiffEditor.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "A side-by-side diff of two versions of a note, both rendered, blocks aligned and changed words marked. Opens from Source Control when diffEditor is rendered."
+        },
         "markdownWorkbench.plugins.gitGutter.enabled": {
           "type": "boolean",
           "default": true,
@@ -1421,6 +1437,15 @@
         "markdownWorkbench.folding.indent": {
           "type": "boolean",
           "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.gitDiffEditor.diffEditor": {
+          "enum": [
+            "native",
+            "rendered"
+          ],
+          "default": "native",
+          "description": "How a Markdown diff opened from Source Control or the Timeline is shown: VS Code's text diff (native), or both versions rendered side by side (rendered).",
           "scope": "resource"
         },
         "markdownWorkbench.gitGutter.compareTo": {

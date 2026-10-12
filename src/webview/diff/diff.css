@@ -1,0 +1,108 @@
+/*
+ * The rendered diff panel. The editor's stylesheet (editor.css) gives the
+ * rendered Markdown and the git tokens; this lays out the two aligned sides.
+ */
+body {
+  overflow: hidden;
+}
+#app.mw-diff-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.mw-diff-head {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--vscode-panel-border, var(--border));
+  font-family: var(--ui-font);
+  font-size: 0.85em;
+  color: var(--vscode-descriptionForeground, var(--muted));
+}
+.mw-diff-readonly {
+  margin-left: 8px;
+  padding: 0 5px;
+  border: 1px solid var(--vscode-panel-border, var(--border));
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+.mw-diff-tools {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mw-diff-tools button {
+  font: inherit;
+  padding: 1px 8px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground, inherit);
+  background: var(--vscode-button-secondaryBackground, var(--hover));
+  cursor: pointer;
+}
+.mw-diff-grid {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 0 48px;
+  font-family: var(--text-font);
+  font-size: var(--text-size);
+  line-height: var(--line-height, 1.5);
+}
+.mw-diff-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.mw-diff-cell {
+  padding: 2px 24px;
+  min-width: 0;
+  border-left: 3px solid transparent;
+}
+.mw-diff-cell.is-before {
+  border-right: 1px solid var(--vscode-panel-border, var(--border));
+}
+.mw-diff-cell > :first-child {
+  margin-top: 0.3em;
+}
+.mw-diff-cell > :last-child {
+  margin-bottom: 0.3em;
+}
+.mw-diff-row.is-modified .mw-diff-cell.is-before,
+.mw-diff-row.is-deleted .mw-diff-cell.is-before {
+  background: var(--mw-git-del-line);
+  border-left-color: var(--mw-git-deleted);
+}
+.mw-diff-row.is-modified .mw-diff-cell.is-after,
+.mw-diff-row.is-added .mw-diff-cell.is-after {
+  background: var(--mw-git-ins-line);
+  border-left-color: var(--mw-git-added);
+}
+.mw-diff-row.is-modified .mw-diff-cell.is-after {
+  border-left-color: var(--mw-git-modified);
+}
+.mw-diff-cell.is-spacer {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 6px,
+    color-mix(in oklch, var(--vscode-editor-foreground) 8%, transparent) 6px 7px
+  );
+}
+.mw-diff-row.is-current .mw-diff-cell {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+.mw-diff-cell pre {
+  font-family: var(--code-font);
+  background: var(--vscode-textCodeBlock-background, var(--code));
+  padding: 8px 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.mw-diff-cell pre .mw-gd-line {
+  margin: 0 -12px;
+  padding: 0 12px;
+}
+.mw-diff-cell pre.mw-gd-frontmatter {
+  font-size: 0.85em;
+}

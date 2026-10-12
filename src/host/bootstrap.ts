@@ -28,6 +28,7 @@ import {
   wikiHost,
   assetsHost,
   scratchHost,
+  gitDiffEditorHost,
   marpHost,
   tagsViewHost,
   settingsHost,
@@ -93,6 +94,7 @@ function startWindowFeatures(root: Context, workbench: Workbench): void {
     wikiHost,
     assetsHost,
     scratchHost,
+    gitDiffEditorHost,
     marpHost,
     tagsViewHost,
   ];

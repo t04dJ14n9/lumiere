@@ -266,27 +266,34 @@ export function lineBlockHtml(
   }
 }
 
+/** Code and frontmatter diff by line; math only when it changed. */
+function asLines(row: BlockRow["kind"], kind: string): boolean {
+  if (kind === "math") {
+    return row === "modified";
+  }
+  return kind === "code" || kind === "frontmatter";
+}
+
 /** The Markdown each side of a row renders; undefined for an empty side. */
 export function rowMarkdown(row: BlockRow): {
   before?: string;
   after?: string;
 } {
   const { before, after } = row;
-  if (row.kind === "equal") {
+  const kind = (before ?? after)!.kind;
+  // The renderer drops a leading frontmatter, so it always shows as lines.
+  if (row.kind === "equal" && kind !== "frontmatter") {
     return { before: before!.text, after: after!.text };
   }
-  const kind = (before ?? after)!.kind;
-  if (kind === "code" || kind === "frontmatter" || kind === "math") {
-    if (row.kind === "modified" || kind !== "math") {
-      return {
-        ...(before && {
-          before: lineBlockHtml(before.text, after?.text, "before", kind),
-        }),
-        ...(after && {
-          after: lineBlockHtml(before?.text, after.text, "after", kind),
-        }),
-      };
-    }
+  if (asLines(row.kind, kind)) {
+    return {
+      ...(before && {
+        before: lineBlockHtml(before.text, after?.text, "before", kind),
+      }),
+      ...(after && {
+        after: lineBlockHtml(before?.text, after.text, "after", kind),
+      }),
+    };
   }
   if (row.kind === "modified") {
     const segments = wordDiff(before!.text, after!.text);
