@@ -22,12 +22,7 @@ export interface PluginSpec {
 }
 
 export type LifecycleState =
-  | "inactive"
-  | "starting"
-  | "active"
-  | "stopping"
-  | "failed"
-  | "blocked";
+  "inactive" | "starting" | "active" | "stopping" | "failed" | "blocked";
 
 export interface LifecycleHarness {
   readonly errors: readonly string[];
