@@ -94,7 +94,8 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
         measured.footnoteDefinition / expected,
         `${label} footnote text`,
       ).toBeCloseTo(0.875, 2);
-      expect(measured.lineNumber, `${label} line numbers`).toBe(expected);
+      // Obsidian keeps the gutter at its 12px UI size at every note size.
+      expect(measured.lineNumber, `${label} line numbers`).toBe(12);
       // Obsidian's line heights, scaled with the size.
       expect(measured.bodyLineHeight, `${label} line height`).toBeCloseTo(
         expected * 1.5,

@@ -1,0 +1,865 @@
+[
+  {
+    "name": "A-down-into-table-goalcol-0",
+    "caret": {
+      "line": 1,
+      "ch": 0
+    },
+    "keys": ["j", "j", "j", "j"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "A-down-into-table-goalcol-3",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["j", "j", "j", "j"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "A-down-into-table-goalcol-8",
+    "caret": {
+      "line": 1,
+      "ch": 8
+    },
+    "keys": ["j", "j", "j", "j"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "A-down-into-table-goalcol-14",
+    "caret": {
+      "line": 1,
+      "ch": 14
+    },
+    "keys": ["j", "j", "j", "j"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "B-up-into-table-goalcol-0",
+    "caret": {
+      "line": 9,
+      "ch": 0
+    },
+    "keys": ["k", "k", "k", "k"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "B-up-into-table-goalcol-3",
+    "caret": {
+      "line": 9,
+      "ch": 3
+    },
+    "keys": ["k", "k", "k", "k"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "B-up-into-table-goalcol-8",
+    "caret": {
+      "line": 9,
+      "ch": 8
+    },
+    "keys": ["k", "k", "k", "k"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "B-up-into-table-goalcol-14",
+    "caret": {
+      "line": 9,
+      "ch": 14
+    },
+    "keys": ["k", "k", "k", "k"],
+    "shots": [1, 2]
+  },
+  {
+    "name": "C-rows-in-column-1",
+    "caret": {
+      "line": 5,
+      "ch": 10
+    },
+    "keys": ["j", "k", "k", "j", "j"],
+    "note": "start on source line 5 (gamma|delta) offset 10"
+  },
+  {
+    "name": "C2-goal-column-across-cells",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["l", "l", "j", "k", "k", "j"],
+    "note": "start 'gamma' offset 4, motions inside the cell"
+  },
+  {
+    "name": "D-horizontal-l",
+    "caret": {
+      "line": 3,
+      "ch": 2
+    },
+    "keys": ["l", "l", "l", "l", "l", "l", "l", "l"],
+    "note": "from alpha start: l x8"
+  },
+  {
+    "name": "D-horizontal-h",
+    "caret": {
+      "line": 3,
+      "ch": 10
+    },
+    "keys": ["h", "h", "h", "h", "h", "h", "h", "h", "h"],
+    "note": "from beta start: h x9"
+  },
+  {
+    "name": "D-horizontal-row-end-next-row",
+    "caret": {
+      "line": 3,
+      "ch": 13
+    },
+    "keys": ["l", "l", "l", "l", "l", "l"],
+    "note": "from end of beta: l"
+  },
+  {
+    "name": "D-horizontal-w-b",
+    "caret": {
+      "line": 5,
+      "ch": 2
+    },
+    "keys": ["w", "w", "w", "b", "b"],
+    "note": "w/b across cells in row gamma|delta"
+  },
+  {
+    "name": "D-line-motions",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["$", "0", "^", "$", "l"],
+    "note": "$ 0 ^ inside cell then l"
+  },
+  {
+    "name": "E-insert-i-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["i", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-a-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["a", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-A-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["A", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-I-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["I", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-o-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["o", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-O-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["O", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-s-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["s", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-cc-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["c", "c", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [1]
+  },
+  {
+    "name": "E-insert-S-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["S", "X", "Escape"],
+    "note": "caret in gamma, type X, Escape",
+    "shots": [0]
+  },
+  {
+    "name": "E-insert-arrows",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": [
+      "i",
+      "ArrowDown",
+      "ArrowDown",
+      "ArrowUp",
+      "ArrowRight",
+      "ArrowRight",
+      "ArrowRight",
+      "ArrowRight",
+      "ArrowRight",
+      "ArrowRight",
+      "Escape"
+    ],
+    "note": "insert mode arrows in the cell"
+  },
+  {
+    "name": "E-insert-tab-enter",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["i", "Tab", "Tab", "Enter", "Escape"],
+    "note": "Tab / Enter in insert mode"
+  },
+  {
+    "name": "E-normal-tab-enter",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["Tab", "Tab", "Enter", "Shift+Tab"],
+    "note": "Tab/Enter in normal mode inside a cell"
+  },
+  {
+    "name": "F-escape-normal-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["Escape", "Escape"],
+    "note": "Escape twice in cell normal mode"
+  },
+  {
+    "name": "F-escape-insert-then-normal",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["i", "Escape", "Escape", "Escape"]
+  },
+  {
+    "name": "F-escape-visual",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["v", "l", "Escape", "Escape"]
+  },
+  {
+    "name": "G-exit-down-from-last-row",
+    "caret": {
+      "line": 6,
+      "ch": 3
+    },
+    "keys": ["j", "j", "j"],
+    "shots": [0]
+  },
+  {
+    "name": "G-exit-up-from-header",
+    "caret": {
+      "line": 3,
+      "ch": 3
+    },
+    "keys": ["k", "k", "k"],
+    "shots": [0]
+  },
+  {
+    "name": "G-exit-down-then-back",
+    "caret": {
+      "line": 6,
+      "ch": 3
+    },
+    "keys": ["j", "k", "k"]
+  },
+  {
+    "name": "H-count-3j-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["3", "j"],
+    "note": "3j from prose line 1"
+  },
+  {
+    "name": "H-count-2j-from-blank",
+    "caret": {
+      "line": 2,
+      "ch": 0
+    },
+    "keys": ["2", "j"]
+  },
+  {
+    "name": "H-count-5j-from-prose",
+    "caret": {
+      "line": 0,
+      "ch": 3
+    },
+    "keys": ["5", "j"]
+  },
+  {
+    "name": "H-count-2k-from-prose-below",
+    "caret": {
+      "line": 8,
+      "ch": 3
+    },
+    "keys": ["2", "k"]
+  },
+  {
+    "name": "H-count-4k-from-prose-below",
+    "caret": {
+      "line": 8,
+      "ch": 3
+    },
+    "keys": ["4", "k"]
+  },
+  {
+    "name": "H-count-2j-in-table",
+    "caret": {
+      "line": 3,
+      "ch": 3
+    },
+    "keys": ["2", "j"]
+  },
+  {
+    "name": "H-count-3k-in-table",
+    "caret": {
+      "line": 6,
+      "ch": 3
+    },
+    "keys": ["3", "k"]
+  },
+  {
+    "name": "H-count-9j-in-table",
+    "caret": {
+      "line": 3,
+      "ch": 3
+    },
+    "keys": ["9", "j"]
+  },
+  {
+    "name": "H-count-9k-in-table",
+    "caret": {
+      "line": 6,
+      "ch": 3
+    },
+    "keys": ["9", "k"]
+  },
+  {
+    "name": "I-dj-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["d", "j"],
+    "note": "dj with caret on prose line above blank"
+  },
+  {
+    "name": "I-d2j-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["d", "2", "j"]
+  },
+  {
+    "name": "I-dj-from-blank",
+    "caret": {
+      "line": 2,
+      "ch": 0
+    },
+    "keys": ["d", "j"],
+    "note": "dj from blank line directly above table"
+  },
+  {
+    "name": "I-dk-from-blank-below",
+    "caret": {
+      "line": 7,
+      "ch": 0
+    },
+    "keys": ["d", "k"]
+  },
+  {
+    "name": "I-yj-from-blank",
+    "caret": {
+      "line": 2,
+      "ch": 0
+    },
+    "keys": ["y", "j", "G", "p"]
+  },
+  {
+    "name": "I-dj-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 3
+    },
+    "keys": ["d", "j"],
+    "note": "dj with caret in a body cell"
+  },
+  {
+    "name": "I-cj-from-blank",
+    "caret": {
+      "line": 2,
+      "ch": 0
+    },
+    "keys": ["c", "j", "X", "Escape"]
+  },
+  {
+    "name": "J-v-j-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["v", "j", "j", "j"],
+    "note": "charwise visual from prose through table"
+  },
+  {
+    "name": "J-V-j-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["V", "j", "j", "j", "j"],
+    "note": "linewise visual"
+  },
+  {
+    "name": "J-V-k-from-below",
+    "caret": {
+      "line": 8,
+      "ch": 3
+    },
+    "keys": ["V", "k", "k", "k", "k"]
+  },
+  {
+    "name": "J-v-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["v", "l", "l", "Escape"]
+  },
+  {
+    "name": "J-ctrlv-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["Control+v", "j", "j", "j"],
+    "note": "blockwise visual"
+  },
+  {
+    "name": "K-gj-from-prose",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["g", "j", "g", "j", "g", "j"]
+  },
+  {
+    "name": "K-gk-from-prose-below",
+    "caret": {
+      "line": 8,
+      "ch": 3
+    },
+    "keys": ["g", "k", "g", "k", "g", "k"]
+  },
+  {
+    "name": "L-braces",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["}", "}", "{", "{"],
+    "note": "paragraph motions"
+  },
+  {
+    "name": "L-G-gg",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["G", "g", "g"]
+  },
+  {
+    "name": "L-search",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["/", "d", "e", "l", "t", "a", "Enter"],
+    "note": "/delta from prose above"
+  },
+  {
+    "name": "L-ctrl-d",
+    "caret": {
+      "line": 1,
+      "ch": 3
+    },
+    "keys": ["Control+d", "Control+u"]
+  },
+  {
+    "name": "M-x-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["x", "x"],
+    "note": "x in cell"
+  },
+  {
+    "name": "M-dd-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["d", "d"],
+    "note": "dd with caret in cell"
+  },
+  {
+    "name": "M-p-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["y", "y", "p"],
+    "note": "yy then p in cell"
+  },
+  {
+    "name": "M-u-undo",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["i", "X", "Escape", "u"]
+  },
+  {
+    "name": "M-r-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["r", "Q"]
+  },
+  {
+    "name": "M-dot-repeat",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["x", "l", ".", "l", "."]
+  },
+  {
+    "name": "M-colon-w",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": [":", "w", "Enter"]
+  },
+  {
+    "name": "N-l-at-last-cell-last-row",
+    "caret": {
+      "line": 6,
+      "ch": 14
+    },
+    "keys": ["l", "l", "l"],
+    "note": "from end of zeta: l"
+  },
+  {
+    "name": "N-h-first-cell-second-row",
+    "caret": {
+      "line": 5,
+      "ch": 2
+    },
+    "keys": ["h", "h"],
+    "note": "h at start of gamma (row 1, col 0)"
+  },
+  {
+    "name": "N-v-j-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["v", "j", "j", "Escape"],
+    "note": "visual j inside a cell"
+  },
+  {
+    "name": "N-V-j-in-cell",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["V", "j", "j", "Escape"],
+    "note": "linewise visual j inside a cell"
+  },
+  {
+    "name": "N-v-from-cell-k",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["v", "k", "k", "k"],
+    "note": "visual k out of the table"
+  },
+  {
+    "name": "N-insert-j-k-not-motion",
+    "caret": {
+      "line": 5,
+      "ch": 4
+    },
+    "keys": ["i", "j", "k", "Escape"],
+    "note": "j/k are text in insert mode"
+  },
+  {
+    "name": "O-eof-table-j-from-last-row",
+    "caret": {
+      "line": 4,
+      "ch": 3
+    },
+    "keys": ["j", "j", "j"],
+    "note": "table is the last block, no trailing newline",
+    "shots": [0],
+    "text": "prose before\n\n| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |"
+  },
+  {
+    "name": "O-eof-table-enter-from-above",
+    "caret": {
+      "line": 0,
+      "ch": 3
+    },
+    "keys": ["j", "j", "j", "j", "j"],
+    "note": "enter an EOF table from above and walk through",
+    "text": "prose before\n\n| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |"
+  },
+  {
+    "name": "O-sof-table-k-from-header",
+    "caret": {
+      "line": 0,
+      "ch": 3
+    },
+    "keys": ["k", "k"],
+    "note": "table is the first block",
+    "text": "| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |\n\nprose after\n"
+  },
+  {
+    "name": "O-sof-table-enter-from-below",
+    "caret": {
+      "line": 4,
+      "ch": 3
+    },
+    "keys": ["k", "k", "k", "k"],
+    "text": "| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |\n\nprose after\n"
+  },
+  {
+    "name": "O-only-table-j-k",
+    "caret": {
+      "line": 0,
+      "ch": 3
+    },
+    "keys": ["j", "j", "j", "k"],
+    "note": "the note is only a table",
+    "text": "| alpha | beta  |\n| ----- | ----- |\n| gamma | delta |"
+  },
+  {
+    "name": "P-down-into-header-goalcol-1",
+    "caret": {
+      "line": 1,
+      "ch": 1
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-6",
+    "caret": {
+      "line": 1,
+      "ch": 6
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-7",
+    "caret": {
+      "line": 1,
+      "ch": 7
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-9",
+    "caret": {
+      "line": 1,
+      "ch": 9
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-10",
+    "caret": {
+      "line": 1,
+      "ch": 10
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-12",
+    "caret": {
+      "line": 1,
+      "ch": 12
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-15",
+    "caret": {
+      "line": 1,
+      "ch": 15
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-down-into-header-goalcol-16",
+    "caret": {
+      "line": 1,
+      "ch": 16
+    },
+    "keys": ["j", "j"],
+    "note": "which cell and offset a source column maps to (header line `| alpha | beta  |`)"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-1",
+    "caret": {
+      "line": 9,
+      "ch": 1
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-6",
+    "caret": {
+      "line": 9,
+      "ch": 6
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-7",
+    "caret": {
+      "line": 9,
+      "ch": 7
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-9",
+    "caret": {
+      "line": 9,
+      "ch": 9
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-10",
+    "caret": {
+      "line": 9,
+      "ch": 10
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-15",
+    "caret": {
+      "line": 9,
+      "ch": 15
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-up-into-last-row-goalcol-16",
+    "caret": {
+      "line": 9,
+      "ch": 16
+    },
+    "keys": ["k", "k", "k"],
+    "note": "last row line `| eps   | zeta  |`"
+  },
+  {
+    "name": "P-delimiter-down-goal14",
+    "caret": {
+      "line": 0,
+      "ch": 14
+    },
+    "keys": ["4", "j"],
+    "note": "count lands on the delimiter line, goal column 14"
+  },
+  {
+    "name": "P-delimiter-up-goal14",
+    "caret": {
+      "line": 8,
+      "ch": 14
+    },
+    "keys": ["4", "k"]
+  },
+  {
+    "name": "P-delimiter-down-goal3-row",
+    "caret": {
+      "line": 0,
+      "ch": 3
+    },
+    "keys": ["4", "j"]
+  }
+]

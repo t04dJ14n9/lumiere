@@ -3,6 +3,7 @@ import type { EditorView } from "@codemirror/view";
 import type { InputGrouping } from "../document/api";
 import type { MenuItem } from "../editor/api";
 import type { VimService } from "../vim/api";
+import type { LinksService } from "../links/api";
 export type Action =
   | "save"
   | "undo"
@@ -14,6 +15,7 @@ export type Action =
 export interface TableEnvironment {
   language: Extension;
   vim?: VimService;
+  links?: LinksService;
   inputGroups(): InputGrouping;
   renderContent(element: HTMLElement, source: string, offset: number): void;
   disposeContent(element: HTMLElement): void;

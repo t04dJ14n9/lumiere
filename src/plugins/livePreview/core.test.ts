@@ -328,3 +328,19 @@ test("HTML blocks reveal whole source at every offset, including leading indenta
     await kernel.root.dispose();
   }
 });
+
+test("Mermaid vertical entry reveals source at either fence without changing text", () => {
+  const doc = "before\n\n```mermaid\nflowchart LR\nA --> B\n```\n\nafter";
+  for (const [anchor, direction, target] of [
+    [7, 1, doc.indexOf("```mermaid")],
+    [doc.indexOf("\n\nafter") + 1, -1, doc.lastIndexOf("```")],
+  ] as const) {
+    const state = sourceState(doc, anchor);
+    const block = state.field(blockIndex)[0]!;
+    assert.equal(revealed(state, block.from, block.to), false);
+    assert.equal(verticalBlock(state, direction), target);
+    const next = state.update({ selection: { anchor: target } }).state;
+    assert.equal(revealed(next, block.from, block.to), true);
+    assert.equal(next.doc.toString(), doc);
+  }
+});

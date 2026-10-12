@@ -1,9 +1,10 @@
-import { Facet } from "@codemirror/state";
+import { Annotation, Facet } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { TableController } from "./controller";
 import type { Action } from "./environment";
 
 export const activeTables = new WeakMap<EditorView, TableController>();
+export const tableProjection = Annotation.define<boolean>();
 export const tableActions = Facet.define<
   (action: Action) => void,
   (action: Action) => void

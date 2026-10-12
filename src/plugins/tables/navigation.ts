@@ -14,6 +14,7 @@ export const arrowKeys = [
   "ArrowDown",
 ] as const;
 export type ArrowKey = (typeof arrowKeys)[number];
+type CellVimState = NonNullable<ReturnType<typeof getCM>>["state"]["vim"];
 
 /** Enter from an adjacent line, including the blank prose space created at EOF. */
 export function entersTable(
@@ -120,9 +121,9 @@ export function cellArrow(
   return step;
 }
 
-function navigationKey(
+export function navigationKey(
   key: string,
-  vim: NonNullable<ReturnType<typeof getCM>>["state"]["vim"],
+  vim: CellVimState,
 ): ArrowKey | undefined {
   const motions: Partial<Record<string, ArrowKey>> = {
     h: "ArrowLeft",
@@ -130,6 +131,9 @@ function navigationKey(
     k: "ArrowUp",
     l: "ArrowRight",
   };
+  if (canHopVimRow(key, vim)) {
+    return motions[key];
+  }
   if (
     vim &&
     (vim.inputState.operator ||
@@ -146,6 +150,20 @@ function navigationKey(
     return motions[key];
   }
   return undefined;
+}
+
+function canHopVimRow(key: string, vim: CellVimState): boolean {
+  if (!vim || vim.insertMode || vim.visualMode) {
+    return false;
+  }
+  // Only counts and g may be abandoned by a normal-mode row hop. Operators,
+  // visual selections and other prefixes stay with the cell's Vim buffer.
+  return (
+    !vim.inputState.operator &&
+    ["j", "k"].includes(key) &&
+    // Vim keeps typed digits and the g prefix in its key buffer.
+    /^(?:[1-9]\d*)?g?$/.test(vim.inputState.keyBuffer.join(""))
+  );
 }
 
 function atHorizontalBoundary(

@@ -1,7 +1,43 @@
 import type { EditorState } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
+import { foldedRanges as languageFoldedRanges } from "@codemirror/language";
 import { blockIndex } from "./blocks";
 import { revealed } from "./registry";
+import type { RenderBlock } from "./api";
+
+export function renderedWidgets(
+  state: EditorState,
+  from: number,
+  to: number,
+): readonly RenderBlock[] {
+  const folds = foldedRanges(state);
+  return (
+    state
+      .field(blockIndex, false)
+      ?.filter(
+        (block) =>
+          block.from <= to &&
+          block.to >= from &&
+          block.renderer.editing === "widget" &&
+          !folds.some((fold) => fold.from < block.to && fold.to > block.from) &&
+          !block.renderer.showSource?.(state, block),
+      ) ?? []
+  );
+}
+
+export function foldedRanges(state: EditorState) {
+  const ranges: { from: number; to: number }[] = [];
+  languageFoldedRanges(state).between(0, state.doc.length, (from, to) => {
+    const previous = ranges.at(-1);
+    // Nested folds remain stored when an enclosing heading is collapsed.
+    if (previous && from <= previous.to) {
+      previous.to = Math.max(previous.to, to);
+    } else {
+      ranges.push({ from, to });
+    }
+  });
+  return ranges;
+}
 
 /** Escape prefers the following line; at EOF it returns to the preceding line. */
 export function escapeBlock(state: EditorState): number | undefined {
@@ -37,6 +73,13 @@ export function verticalBlock(
     return undefined;
   }
   const target = state.doc.line(next);
+  if (
+    foldedRanges(state).some(
+      (fold) => fold.from < target.to && fold.to > target.from,
+    )
+  ) {
+    return undefined;
+  }
   const block = state
     .field(blockIndex, false)
     ?.find(

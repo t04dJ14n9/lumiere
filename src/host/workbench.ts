@@ -300,11 +300,28 @@ function configurationOperations(): Pick<
         languageId: "markdown",
       });
       const native: SettingsReader = {
-        get: <T>(key: string, fallback?: T) =>
-          key.endsWith("#default")
-            ? (configuration.inspect(key.slice(0, -"#default".length))
-                ?.defaultValue as T | undefined)
-            : configuration.get<T>(key, fallback as T),
+        get: <T>(key: string, fallback?: T) => {
+          if (key.endsWith("#default")) {
+            return configuration.inspect(key.slice(0, -8))?.defaultValue as
+              | T
+              | undefined;
+          }
+          if (key.endsWith("#explicit")) {
+            const values = configuration.inspect(key.slice(0, -9));
+            return Boolean(
+              values &&
+                [
+                  values.globalValue,
+                  values.workspaceValue,
+                  values.workspaceFolderValue,
+                  values.globalLanguageValue,
+                  values.workspaceLanguageValue,
+                  values.workspaceFolderLanguageValue,
+                ].some((value) => value !== undefined),
+            ) as T;
+          }
+          return configuration.get<T>(key, fallback as T);
+        },
       };
       return readSettings(config, native);
     },

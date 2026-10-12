@@ -46,7 +46,8 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 - `navigation-host.ts`: per-panel readiness, session identity and cancellation.
 - `host.ts`: unresolved sets, source authorization and
   default opening policy.
-- `webview.ts`: caret lookup, decoration (including unresolved styling), click
+- `caret-link.ts`: source caret lookup and focus-guarded link following for any editor.
+- `webview.ts`: decoration (including unresolved styling), click
   handling, navigation and commands.
 - `links.test.ts`: target parsing and caret lookup units.
 - `host.test.ts`: source identity, scheme policy, side opens and handler lifecycle.
@@ -59,10 +60,11 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 Listens to `suggest/trigger` for its own completion syntax.
 
 Webview injects `editor`, `livePreview`, `commands` and `rpc`; host injects `rpc`,
-`workbench`, `vault` and `resources`. Provides no service. Queries `link/click`
+`workbench`, `vault` and `resources`. Webview provides `links` for focused-editor
+caret following; host provides no service. Queries `link/click`
 and `links/open` with bail semantics. Settings: plugin enabled (true),
 `links.newLinkFormat` (shortest), `links.useWikilinks` (true), `links.folderNote`
-(empty), and native `files.newNoteFolder` for creation. No default command keys.
+(empty), and native `files.newNoteFolder` for creation. The editor binds Mod+Enter to follow the caret link.
 
 ## Limits and differences from Obsidian
 
@@ -89,3 +91,11 @@ remote files, external links and native line/column fragments keep the built-in
 route. Command links do not receive VS Code's side-open modifier context; this
 route uses the source group. A manual switch to the exact expected target cannot
 be distinguished from the built-in definition gesture through the public API.
+
+Command+Enter on macOS (Ctrl+Enter elsewhere) follows a link at the caret
+through the same navigation and trust checks as clicking it. It only handles
+a collapsed caret in the Markdown editor, leaving property inputs, dialogs
+and unlinked text to their existing handlers. Bare URLs and autolinks work too.
+The injected `links.follow(view)` service lets table cell editors use the same
+open path with their own text and caret. Each editor keeps its contentDOM focus
+guard; focusing a cell never follows a link at the outer editor's caret.

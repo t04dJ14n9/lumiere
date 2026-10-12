@@ -44,6 +44,7 @@ test("editor settings have application defaults and reconfigure without changing
     lineHeight: 1.5,
     // Native editor font settings for Markdown; empty until the host reads them.
     fontFamily: "",
+    fontFamilyExplicit: false,
     defaultFontFamily: "",
     fontWeight: "normal",
     letterSpacing: 0,

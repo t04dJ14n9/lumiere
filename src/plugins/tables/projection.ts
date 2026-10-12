@@ -7,7 +7,7 @@ import {
 import { tableSourceChanges } from "./source-edits";
 import { CellEditor } from "./cell-editor";
 import type { Action, TableEnvironment } from "./environment";
-import { tableActions, tableSelectionChanges } from "./state";
+import { tableActions, tableSelectionChanges, tableProjection } from "./state";
 import { sameCell, type TableGrid } from "./grid";
 import type { CellStep } from "./navigation";
 
@@ -99,6 +99,7 @@ export class CellProjection {
       const cell = this.grid.model.rows[this.active.row]![this.active.column]!;
       this.grid.outer.dispatch({
         selection: { anchor: this.grid.start() + cell.from },
+        annotations: tableProjection.of(true),
       });
     });
   }

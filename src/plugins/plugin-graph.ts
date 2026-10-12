@@ -46,6 +46,7 @@ export const SERVICE_PROVIDERS: Readonly<
   vim: "vim",
   bridgeCapture: "bridge",
   wikiLayout: "wiki",
+  links: "links",
 };
 
 export interface PluginNode {

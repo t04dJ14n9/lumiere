@@ -270,6 +270,43 @@ export function cellAtOffset(
   return undefined;
 }
 
+/** Source entry follows the measured Vim pipe ownership, including its delimiter quirk. */
+export function cellForSourceOffset(
+  table: Table,
+  offset: number,
+): { position: CellPosition; offset: number } | undefined {
+  if (offset < 0 || offset > table.source.length) {
+    return undefined;
+  }
+  const line = table.source.slice(0, offset).split("\n").length - 1;
+  // A delimiter-line landing opens the last row's first cell, regardless of column.
+  if (line === 1) {
+    return { position: { row: table.rows.length - 1, column: 0 }, offset: 0 };
+  }
+  const row = line === 0 ? 0 : line - 1;
+  const cells = table.rows[row];
+  const first = cells?.[0];
+  const last = cells?.at(-1);
+  if (!cells || !first || !last) {
+    return undefined;
+  }
+  // The leading and final pipes belong to no cell; Obsidian falls back to column zero.
+  if (offset < first.rawFrom || offset >= last.rawTo) {
+    return { position: { row, column: 0 }, offset: 0 };
+  }
+  const column = cells.findIndex(
+    (cell) => cell.rawFrom <= offset && offset <= cell.rawTo,
+  );
+  const cell = cells[column];
+  if (!cell) {
+    return { position: { row, column: 0 }, offset: 0 };
+  }
+  return {
+    position: { row, column },
+    offset: Math.max(0, Math.min(cell.text.length, offset - cell.from)),
+  };
+}
+
 export function writeCells(
   table: Table,
   range: CellRange,
