@@ -11,7 +11,7 @@
   },
   "private": true,
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.128.0"
   },
   "main": "./dist/extension.js",
   "types": "./dist/api/types.d.ts",
@@ -1575,7 +1575,7 @@
     "@types/node": "^22.0.0",
     "@types/prismjs": "1.26.6",
     "@types/turndown": "^5.0.6",
-    "@types/vscode": "1.90.0",
+    "@types/vscode": "1.125.0",
     "@vscode/test-electron": "^2.5.0",
     "@vscode/vsce": "^3.6.0",
     "esbuild": "^0.28.2",
