@@ -59,6 +59,8 @@ export const FEATURE_ORDER = [
   // Git change bars sit between line numbers and fold markers, as in VS Code.
   "gitGutter",
   "folding",
+  // Track changes over the bars' hunks; after the gutter it reads from.
+  "gitInline",
   "indentGuides",
   "spellcheck",
   "autoPair",

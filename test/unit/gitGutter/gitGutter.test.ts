@@ -268,6 +268,7 @@ test("B3: a render pass resolving after the peek is gone is disposed exactly onc
   endLifetime(late);
   pending.resolve(pass);
   assert.equal(await adopted, false);
+  await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(disposed, 1);
   assert.equal(late.passes.length, 0);
   // In time: kept, then disposed once when the peek goes, not again after.
@@ -275,6 +276,7 @@ test("B3: a render pass resolving after the peek is gone is disposed exactly onc
   assert.equal(await adoptPass(live, Promise.resolve(pass)), true);
   endLifetime(live);
   endLifetime(live);
+  await new Promise((resolve) => setTimeout(resolve, 0));
   assert.equal(disposed, 2);
 });
 

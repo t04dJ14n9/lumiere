@@ -8,6 +8,7 @@ export { resourcesWebview } from "./resources/webview";
 export { foldingWebview } from "./folding/webview";
 export { lineNumbersWebview } from "./lineNumbers/webview";
 export { gitGutterWebview } from "./gitGutter/webview";
+export { gitInlineWebview } from "./gitInline/webview";
 export { indentGuidesWebview } from "./indentGuides/webview";
 export { spellcheckWebview } from "./spellcheck/webview";
 export { autoPairWebview } from "./autoPair/webview";

@@ -1,4 +1,4 @@
-import type { StateField } from "@codemirror/state";
+import type { EditorState, StateField } from "@codemirror/state";
 import type { Disposer } from "../../kernel";
 
 /** One change between the git baseline and the editor text, in document offsets. */
@@ -32,6 +32,20 @@ export interface GitDiff {
   /** Replace a hunk with its baseline text: one undo step. */
   revert(hunk: DocHunk): void;
   onChange(listener: () => void): Disposer;
+  /**
+   * The range of the rendered blocks (top-level Markdown blocks, frontmatter)
+   * a range touches: where a widget must go so a block's own widget does not hide it.
+   */
+  blockRange(
+    state: EditorState,
+    from: number,
+    to: number,
+  ): { from: number; to: number };
+  /**
+   * The whole enclosing blocks of a hunk, as they were and as they are, for
+   * display; the hunk itself stays the edit Revert applies.
+   */
+  context(state: EditorState, hunk: DocHunk): { old: string; now: string };
 }
 
 declare module "../../kernel/types" {
