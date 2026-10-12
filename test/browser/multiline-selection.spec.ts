@@ -197,3 +197,54 @@ test("a mouse drag keeps the note rendered until the button is released", async 
   await expect(page.locator(".code-language")).toHaveCount(0);
   await expect(line(page, 4)).toContainText("```text");
 });
+
+/** For each visual row of a line: its text's right edge and the tint's. */
+const rows = (page: Page, n: number) =>
+  line(page, n).evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const text = [...range.getClientRects()].filter((r) => r.width > 0);
+    const tops = [...new Set(text.map((r) => Math.round(r.top)))].sort(
+      (a, b) => a - b,
+    );
+    const tint = [...document.querySelectorAll(".cm-selectionBackground")]
+      .map((marker) => marker.getBoundingClientRect())
+      .filter((r) => r.width > 0);
+    return tops.map((top) => {
+      const row = text.filter((r) => Math.abs(Math.round(r.top) - top) < 3);
+      const mid = top + row[0]!.height / 2;
+      const marks = tint.filter((r) => r.top < mid && r.bottom > mid);
+      return {
+        text: Math.max(...row.map((r) => r.right)),
+        tint: marks.length ? Math.max(...marks.map((r) => r.right)) : null,
+      };
+    });
+  });
+
+for (const code of [false, true]) {
+  test(`wrapped ${code ? "code lines" : "paragraphs"}: each visual row's tint ends at its text`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 420, height: 700 });
+    const long = "abcdefghijklmnopqrstuvwxyzabcdefghij";
+    const two = `short first ${long} end`;
+    const three = `tiny ${long} ${long} ${long} done`;
+    const body = code
+      ? ["```text", two, three, "```", "next", ""]
+      : [two, three, "next", ""];
+    await open(page, body.join("\n"));
+    const lineNo = code ? 2 : 1;
+    const startPos = code ? 8 : 0;
+    const endPos = startPos + two.length + 1 + three.length + 1;
+    await select(page, startPos, endPos);
+    for (const n of [lineNo, lineNo + 1]) {
+      const measured = await rows(page, n);
+      expect(measured.length).toBeGreaterThanOrEqual(2);
+      for (const row of measured.slice(0, -1)) {
+        expect(row.tint).not.toBeNull();
+        // Hugs the text (a wrap point may leave a trailing space).
+        expect(row.tint! - row.text).toBeLessThan(14);
+      }
+    }
+  });
+}
