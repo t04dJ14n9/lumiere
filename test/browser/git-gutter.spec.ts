@@ -143,3 +143,77 @@ test("turned off, the editor has no change gutter", async ({ page }) => {
   await expect(page.locator(".cm-lineNumbers")).toHaveCount(1);
   await expect(page.locator(".mw-git-gutter")).toHaveCount(0);
 });
+
+const text = (page: Page) => page.evaluate(() => window.harness.text);
+
+test("B1: after an edit above, Revert in an open peek reverts its own lines, before and after the recompute", async ({
+  page,
+}) => {
+  for (const wait of [0, 600]) {
+    await open(page, "b\n\nnew\n", "obsidian", { gitBaseline: "a\n\nold\n" });
+    await expect.poll(() => bars(page)).toEqual(["modified", "modified"]);
+    await page.locator(".mw-git-bar-modified").nth(1).click();
+    const peek = page.locator(".mw-git-peek");
+    await expect(peek.locator(".mw-git-peek-title")).toHaveText(/Line 3/);
+    await page.getByRole("textbox", { name: "Markdown content" }).focus();
+    await page.keyboard.press("Control+Home");
+    await page.keyboard.type("b");
+    await page.waitForTimeout(wait);
+    await peek.getByRole("button", { name: "Revert this change" }).click();
+    await expect.poll(() => text(page)).toBe("bb\n\nold\n");
+  }
+});
+
+test("B2: Revert on a change that was just undone by hand leaves the text alone", async ({
+  page,
+}) => {
+  await open(page, "a\nnew\nz", "obsidian", { gitBaseline: "a\nz" });
+  await expect.poll(() => bars(page)).toEqual(["added"]);
+  await page.locator(".mw-git-bar-added").click();
+  const revert = page
+    .locator(".mw-git-peek")
+    .getByRole("button", { name: "Revert this change" });
+  await expect(revert).toBeVisible();
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("Control+Home");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Shift+ArrowDown");
+  await page.keyboard.press("Delete");
+  await expect.poll(() => text(page)).toBe("a\nz");
+  // Before the debounced recompute, if the peek is still there.
+  if (await revert.count()) {
+    await revert.click();
+  }
+  await page.waitForTimeout(400);
+  expect(await text(page)).toBe("a\nz");
+});
+
+test("B5: either side past the line limit shows no bars; back under it, they return", async ({
+  page,
+}) => {
+  const big = "x\n".repeat(20_001);
+  await open(page, "x\n", "obsidian", { gitBaseline: big });
+  await page.waitForTimeout(600);
+  expect(await bars(page)).toEqual([]);
+  await open(page, big, "obsidian", { gitBaseline: "y\n" });
+  await page.waitForTimeout(600);
+  expect(await bars(page)).toEqual([]);
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("Control+a");
+  await page.keyboard.type("z");
+  await expect.poll(() => bars(page)).toEqual(["modified"]);
+});
+
+test("N1, N6: the peek renders the table it changes, with no vertical margins", async ({
+  page,
+}) => {
+  await open(page, NOW, "obsidian", { gitBaseline: BASE });
+  await expect.poll(() => bars(page)).toHaveLength(6);
+  await page.locator(".mw-git-bar-modified").nth(1).click();
+  const peek = page.locator(".mw-git-peek");
+  await expect(peek.locator(".is-before table")).toHaveCount(1);
+  await expect(peek.locator(".is-after table")).toHaveCount(1);
+  await expect(peek.locator(".is-after table th").first()).toHaveText("Region");
+  await expect(peek).toHaveCSS("margin-top", "0px");
+  await expect(peek).toHaveCSS("margin-bottom", "0px");
+});

@@ -212,10 +212,27 @@ export function markSide(
   return out;
 }
 
-/** Link destinations, code spans, math, autolinks, HTML tags and wikilinks. */
+/**
+ * Syntax that is not text: line prefixes (quotes, list and task markers,
+ * heading marks), reference definitions, link destinations, code spans of any
+ * fence length, math, autolinks, HTML tags and wikilinks.
+ */
+const PROTECTED = new RegExp(
+  [
+    String.raw`^[ \t]{0,3}(?:>[ \t]?)*(?:(?:[-+*]|\d{1,9}[.)])(?:[ \t]+\[[ xX]\])?(?=[ \t]|$)|#{1,6}(?=[ \t]|$))`,
+    String.raw`^[ \t]{0,3}\[[^\]\n]+\]:[^\n]*`,
+    String.raw`(\`+)[^\n]*?\1`,
+    String.raw`\$[^$\n]+\$`,
+    String.raw`\]\([^)\n]*\)`,
+    String.raw`<[^>\n]*>`,
+    String.raw`\[\[[^\]\n]*\]\]`,
+    String.raw`\w+:\/\/\S+`,
+  ].join("|"),
+  "gm",
+);
+
 function protectedRanges(text: string): [number, number][] {
-  const pattern =
-    /`[^`\n]*`|\$[^$\n]+\$|\]\([^)\n]*\)|<[^>\n]*>|\[\[[^\]\n]*\]\]|\w+:\/\/\S+/g;
+  const pattern = new RegExp(PROTECTED);
   return [...text.matchAll(pattern)].map((m) => [
     m.index,
     m.index + m[0].length,
