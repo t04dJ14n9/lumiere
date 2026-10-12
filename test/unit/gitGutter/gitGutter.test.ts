@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState, Text } from "@codemirror/state";
+import type { DocHunk } from "../../../src/plugins/gitGutter/api";
+import {
+  MAX_DIFF_CHARS,
+  MAX_DIFF_LINES,
+  exceedsDiffLimits,
+} from "../../../src/shared/diff";
 import { Context } from "../../../src/kernel";
 import { createRenderer } from "../../../src/markdown/html";
 import { kindFor } from "../../../src/plugins/gitGutter/gutter";
@@ -8,10 +14,19 @@ import {
   computeHunks,
   hunkAt,
   hunkField,
+  resolveHunk,
   revertChange,
   setHunks,
 } from "../../../src/plugins/gitGutter/hunks";
-import { peekMarkdown } from "../../../src/plugins/gitGutter/peek";
+import {
+  adoptPass,
+  endLifetime,
+  peekContext,
+  peekMarkdown,
+} from "../../../src/plugins/gitGutter/peek";
+import type { Lifetime } from "../../../src/plugins/gitGutter/peek";
+import { markdownLanguage } from "@codemirror/lang-markdown";
+import { markdown } from "@codemirror/lang-markdown";
 import { gitGutterHost } from "../../../src/plugins/gitGutter/host";
 import { protocol } from "../../../src/plugins/gitGutter/protocol";
 import type { GitAccess } from "../../../src/shared/git";
@@ -134,24 +149,31 @@ function fakeGit(
   };
 }
 
-async function host(git: GitAccess | undefined) {
+async function host(
+  git: GitAccess | undefined,
+  save: () => Promise<boolean> = async () => true,
+) {
   const pair = rpcPair();
   const root = Context.create();
   let saved = 0;
-  root.provide("workbench", { git } as never);
+  const errors: string[] = [];
+  root.provide("workbench", {
+    git,
+    error: (message: string) => errors.push(message),
+  } as never);
   root.provide("rpc", pair.host);
   const panel = {
     document: {
       uri: "file:///n.md",
       async save() {
         saved++;
-        return true;
+        return save();
       },
     },
   };
   const fiber = root.plugin(gitGutterHost, { panel } as never);
   await root.settled();
-  return { pair, root, fiber, saved: () => saved };
+  return { pair, root, fiber, errors, saved: () => saved };
 }
 
 test("host: serves the baseline, stages after saving, and stops listening when off", async () => {
@@ -184,4 +206,153 @@ test("host: without git the note is unavailable, not an error", async () => {
   assert.equal(await h.pair.client.call(protocol, "stage", {}), false);
   await h.root.dispose();
   await h.pair.dispose();
+});
+
+/** Revert as the model does it: resolve the held hunk against a fresh diff. */
+function revertHeld(state: EditorState, baseline: string, held: DocHunk) {
+  const target = resolveHunk(computeHunks(baseline, state.doc), held);
+  return target
+    ? state.update({ changes: revertChange(state, target) }).state
+    : state;
+}
+
+test("B1: a hunk held from before an earlier edit still reverts its own lines", () => {
+  const baseline = "a\n\nold\n";
+  let state = EditorState.create({ doc: "b\n\nnew\n", extensions: hunkField });
+  state = state.update({
+    effects: setHunks.of(computeHunks(baseline, state.doc)),
+  }).state;
+  const held = state.field(hunkField).hunks[1]!;
+  assert.deepEqual([held.from, held.to], [3, 6]);
+  // b → bb: the second hunk moves to [4, 7); same line, text, index and count.
+  state = state.update({ changes: { from: 0, insert: "b" } }).state;
+  assert.equal(revertHeld(state, baseline, held).doc.toString(), "bb\n\nold\n");
+  // After the recompute too.
+  state = state.update({
+    effects: setHunks.of(computeHunks(baseline, state.doc)),
+  }).state;
+  assert.equal(revertHeld(state, baseline, held).doc.toString(), "bb\n\nold\n");
+});
+
+test("B2: reverting a change that has disappeared leaves the text alone", () => {
+  const baseline = "a\nz";
+  let state = EditorState.create({ doc: "a\nnew\nz", extensions: hunkField });
+  state = state.update({
+    effects: setHunks.of(computeHunks(baseline, state.doc)),
+  }).state;
+  // Delete "new\n" before the recompute: the mapped hunk is still "added", empty.
+  state = state.update({ changes: { from: 2, to: 6 } }).state;
+  const mapped = state.field(hunkField).hunks[0]!;
+  assert.deepEqual([mapped.kind, mapped.from, mapped.to], ["added", 2, 2]);
+  assert.equal(revertHeld(state, baseline, mapped).doc.toString(), "a\nz");
+  // A line join next to a removal anchor: only the real change is reverted.
+  const joined = EditorState.create({ doc: "a\nb c\n" });
+  const hunks = computeHunks("a\nb\nc\n", joined.doc);
+  const after = revertHeld(joined, "a\nb\nc\n", hunks[0]!);
+  assert.equal(after.doc.toString(), "a\nb\nc\n");
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((r) => (resolve = r));
+  return { promise, resolve };
+}
+
+test("B3: a render pass resolving after the peek is gone is disposed exactly once", async () => {
+  let disposed = 0;
+  const pass = { dispose: async () => void disposed++ } as never;
+  // Late: the peek closed (or the plugin went off) while it rendered.
+  const late: Lifetime = { live: true, passes: [] };
+  const pending = deferred<never>();
+  const adopted = adoptPass(late, pending.promise);
+  endLifetime(late);
+  pending.resolve(pass);
+  assert.equal(await adopted, false);
+  assert.equal(disposed, 1);
+  assert.equal(late.passes.length, 0);
+  // In time: kept, then disposed once when the peek goes, not again after.
+  const live: Lifetime = { live: true, passes: [] };
+  assert.equal(await adoptPass(live, Promise.resolve(pass)), true);
+  endLifetime(live);
+  endLifetime(live);
+  assert.equal(disposed, 2);
+});
+
+test("B4: a failed or rejected save stages nothing; a staging failure is reported", async () => {
+  for (const save of [
+    async () => false,
+    async () => {
+      throw new Error("disk full");
+    },
+  ]) {
+    const git = fakeGit("old\n");
+    const h = await host(git, save);
+    assert.equal(await h.pair.client.call(protocol, "stage", {}), false);
+    assert.deepEqual(git.staged, []);
+    assert.match(h.errors[0]!, /could not be saved/);
+    await h.root.dispose();
+    await h.pair.dispose();
+  }
+  const git = fakeGit("old\n");
+  git.stage = async () => {
+    throw new Error("index.lock exists");
+  };
+  const h = await host(git);
+  assert.equal(await h.pair.client.call(protocol, "stage", {}), false);
+  assert.match(h.errors[0]!, /Staging failed: index.lock exists/);
+  await h.root.dispose();
+  await h.pair.dispose();
+});
+
+test("B5: a baseline past the limits is refused before it reaches the editor", async () => {
+  const lines = fakeGit("x\n".repeat(MAX_DIFF_LINES + 1));
+  const chars = fakeGit("x".repeat(MAX_DIFF_CHARS + 1));
+  for (const git of [lines, chars]) {
+    const h = await host(git);
+    assert.deepEqual(
+      await h.pair.client.call(protocol, "baseline", { ref: "HEAD" }),
+      { status: "tooLarge" },
+    );
+    await h.root.dispose();
+    await h.pair.dispose();
+  }
+  assert.equal(exceedsDiffLimits("x\n".repeat(MAX_DIFF_LINES - 1)), false);
+  assert.equal(exceedsDiffLimits("x\n".repeat(MAX_DIFF_LINES)), true);
+});
+
+test("N1: the peek shows the whole table, fence or frontmatter the change sits in", () => {
+  const state = (doc: string) =>
+    EditorState.create({
+      doc,
+      extensions: markdown({ base: markdownLanguage }),
+    });
+  const cases: [string, string, RegExp][] = [
+    [
+      "| a |\n| --- |\n| 1 |\n",
+      "| a |\n| --- |\n| 2 |\n",
+      /^\| a \|\n\| --- \|\n\| 1 \|$/,
+    ],
+    [
+      "```js\nconst x = 1;\n```\n",
+      "```js\nconst x = 2;\n```\n",
+      /^```js\nconst x = 1;\n```$/,
+    ],
+    [
+      "---\nstatus: draft\n---\n# T\n",
+      "---\nstatus: done\n---\n# T\n",
+      /^---\nstatus: draft\n---$/,
+    ],
+  ];
+  for (const [baseline, now, old] of cases) {
+    const s = state(now);
+    const [hunk] = computeHunks(baseline, s.doc);
+    const context = peekContext(s, hunk!);
+    assert.match(context.old, old);
+    assert.equal(context.now, now.slice(0, context.now.length));
+    // Revert stays narrow: only the changed line.
+    assert.equal(
+      s.update({ changes: revertChange(s, hunk!) }).state.doc.toString(),
+      baseline,
+    );
+  }
 });

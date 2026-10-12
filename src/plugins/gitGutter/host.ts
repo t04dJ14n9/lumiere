@@ -1,6 +1,29 @@
 import type { Plugin } from "../../kernel";
 import type { PanelShell } from "../../shared/runtime";
+import { exceedsDiffLimits } from "../../shared/diff";
+import type { GitAccess } from "../../shared/git";
 import { protocol } from "./protocol";
+
+/** Save, then stage; nothing is staged unless the buffer reached the disk. */
+async function saveAndStage(
+  panel: PanelShell,
+  git: GitAccess,
+  report: (message: string) => void,
+): Promise<boolean> {
+  const saved = await panel.document.save().catch(() => false);
+  if (!saved) {
+    report("The note could not be saved, so nothing was staged.");
+    return false;
+  }
+  try {
+    return await git.stage(panel.document.uri);
+  } catch (error) {
+    report(
+      `Staging failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return false;
+  }
+}
 
 /** Reads the note's git baseline through VS Code's git extension; never shells out. */
 export const gitGutterHost: Plugin<{ panel: PanelShell }> = {
@@ -14,6 +37,9 @@ export const gitGutterHost: Plugin<{ panel: PanelShell }> = {
         const result = git
           ? await git.baseline(uri, ref)
           : { status: "unavailable" as const };
+        if (result.status === "ok" && exceedsDiffLimits(result.baseline.text)) {
+          return { status: "tooLarge" as const };
+        }
         return result.status === "ok"
           ? {
               status: "ok" as const,
@@ -28,8 +54,9 @@ export const gitGutterHost: Plugin<{ panel: PanelShell }> = {
         if (!git) {
           return false;
         }
-        await panel.document.save();
-        return git.stage(uri);
+        return saveAndStage(panel, git, (message) =>
+          ctx.workbench.error(message),
+        );
       }),
     );
     if (!git) {
