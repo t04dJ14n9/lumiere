@@ -67,7 +67,7 @@ export class PropertyField {
     }
     this.input.dataset.propertyCommitting = "true";
     delete this.input.dataset.propertyEditing;
-    let applied = false;
+    let applied: boolean;
     try {
       applied =
         this.editor?.set(

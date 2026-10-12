@@ -1,4 +1,4 @@
-import type MarkdownIt from "markdown-it";
+import type { MarkdownIt } from "markdown-it";
 import { headingId } from "./helpers";
 export function headings(md: MarkdownIt): void {
   md.core.ruler.after("inline", "headings", (state) => {

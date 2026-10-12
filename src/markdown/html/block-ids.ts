@@ -1,5 +1,5 @@
-import type MarkdownIt from "markdown-it";
-import type Token from "markdown-it/lib/token.mjs";
+import type { MarkdownIt } from "markdown-it";
+import type { Token } from "markdown-it";
 export function blockids(md: MarkdownIt): void {
   md.core.ruler.after("inline", "block-ids", (state) => {
     for (let index = 0; index < state.tokens.length; index++) {

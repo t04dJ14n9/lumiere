@@ -1,6 +1,6 @@
-import type MarkdownIt from "markdown-it";
-import type StateCore from "markdown-it/lib/rules_core/state_core.mjs";
-import type Token from "markdown-it/lib/token.mjs";
+import type { MarkdownIt } from "markdown-it";
+import type { StateCore } from "markdown-it";
+import type { Token } from "markdown-it";
 const calloutAliases: Record<string, string> = {
   summary: "abstract",
   tldr: "abstract",
@@ -47,7 +47,7 @@ export function callouts(
     }
   });
   md.renderer.rules.callout_open = (tokens, index, _options, env) => {
-    const data = tokens[index]!.meta as Callout;
+    const data = tokens[index]!.meta as unknown as Callout;
     const title = md.renderInline(data.title, env);
     const icon = calloutIcon(data.kind);
     return data.fold
@@ -55,7 +55,7 @@ export function callouts(
       : `<aside class="callout" data-callout="${data.kind}"><div class="callout-title">${icon}${title}</div><div class="callout-content">`;
   };
   md.renderer.rules.callout_close = (tokens, index) =>
-    `</div></${(tokens[index]!.meta as Callout).fold ? "details" : "aside"}>`;
+    `</div></${(tokens[index]!.meta as unknown as Callout).fold ? "details" : "aside"}>`;
 }
 
 function transformCallout(
@@ -80,11 +80,11 @@ function transformCallout(
   }
   const closing = closingQuote(state.tokens, index);
   token.type = "callout_open";
-  token.meta = calloutData(match);
+  token.meta = { ...calloutData(match) };
   const close = state.tokens[closing];
   if (close) {
     close.type = "callout_close";
-    close.meta = calloutData(match);
+    close.meta = { ...calloutData(match) };
   }
   inline.content = inline.content.slice(match[0].length);
   inline.children = [];

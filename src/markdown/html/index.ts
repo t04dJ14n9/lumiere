@@ -2,6 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference -- markdown-it plugins have no types; see vendor.d.ts
 /// <reference path="./vendor.d.ts" />
 import MarkdownIt from "markdown-it";
+import type { MarkdownIt as MarkdownItInstance } from "markdown-it";
 import footnote from "markdown-it-footnote";
 import mark from "markdown-it-mark";
 import { frontmatter } from "../properties";
@@ -32,7 +33,7 @@ export function createRenderer(options: RendererOptions = {}) {
     typographer: false,
     breaks: defaultBreaks,
   })
-    .use(footnote as unknown as (md: MarkdownIt) => void)
+    .use(footnote as unknown as (md: MarkdownItInstance) => void)
     .use(mark);
   tags(md);
   wiki(md);
@@ -54,7 +55,7 @@ export function createRenderer(options: RendererOptions = {}) {
       const properties = frontmatter(source);
       const html = md.render(
         properties ? source.slice(properties.end) : source,
-        options,
+        { ...options },
       );
       return options.sanitize ? options.sanitize(html) : html;
     },
@@ -63,7 +64,7 @@ export function createRenderer(options: RendererOptions = {}) {
         options.strictLineBreaks === undefined
           ? defaultBreaks
           : !options.strictLineBreaks;
-      const html = md.renderInline(source, options);
+      const html = md.renderInline(source, { ...options });
       return options.sanitize ? options.sanitize(html) : html;
     },
   };

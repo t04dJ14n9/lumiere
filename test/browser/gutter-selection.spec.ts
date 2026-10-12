@@ -73,12 +73,12 @@ for (const vim of [false, true]) {
       anchor: lineStart(4),
       head: lineStart(4),
     });
-    if (shots) await page.screenshot({ path: `${shots}/hover${vim ? "-vim" : ""}.png` });
+    if (shots) {await page.screenshot({ path: `${shots}/hover${vim ? "-vim" : ""}.png` });}
 
     // A block caret is a tint: the glyph under it keeps the text colour.
     const caret = await page.evaluate(() => {
       const shape = document.querySelector(".mw-caret-shape");
-      if (!shape) return null;
+      if (!shape) {return null;}
       const style = getComputedStyle(shape);
       return { bg: style.backgroundColor, color: style.color };
     });
@@ -93,7 +93,7 @@ for (const vim of [false, true]) {
       anchor: lineStart(4),
       head: lineStart(5),
     });
-    if (shots) await page.screenshot({ path: `${shots}/click${vim ? "-vim" : ""}.png` });
+    if (shots) {await page.screenshot({ path: `${shots}/click${vim ? "-vim" : ""}.png` });}
 
     // Shift+click extends to the clicked line.
     const six = await centre(page, 6);
@@ -116,7 +116,7 @@ for (const vim of [false, true]) {
       anchor: lineStart(6),
       head: lineStart(3),
     });
-    if (shots) await page.screenshot({ path: `${shots}/drag${vim ? "-vim" : ""}.png` });
+    if (shots) {await page.screenshot({ path: `${shots}/drag${vim ? "-vim" : ""}.png` });}
     expect(await page.evaluate(() => window.harness.text)).toBe(NOTE);
   });
 }

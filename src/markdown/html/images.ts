@@ -1,4 +1,4 @@
-import type MarkdownIt from "markdown-it";
+import type { MarkdownIt } from "markdown-it";
 import { attr, wikiTarget } from "./helpers";
 export function images(md: MarkdownIt): void {
   md.renderer.rules.image = (tokens, index) => {

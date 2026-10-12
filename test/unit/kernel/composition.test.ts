@@ -64,7 +64,7 @@ test("event slots and owner rank survive reversed loading, update and toggles", 
     },
   });
   root.plugin(plugin("b"));
-  let a = root.plugin(plugin("a"));
+  const a = root.plugin(plugin("a"));
   await root.settled();
   const expected = "aPbPa1a2b1b2";
   assert.equal(await root.pipeline("ranked", ""), expected);
@@ -72,7 +72,7 @@ test("event slots and owner rank survive reversed loading, update and toggles", 
   await root.settled();
   assert.equal(await root.pipeline("ranked", ""), expected);
   await a.dispose();
-  a = root.plugin(plugin("a"));
+  root.plugin(plugin("a"));
   await root.settled();
   assert.equal(await root.pipeline("ranked", ""), expected);
   await root.dispose();

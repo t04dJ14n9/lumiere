@@ -1,4 +1,4 @@
-import type MarkdownIt from "markdown-it";
+import type { MarkdownIt } from "markdown-it";
 import { attr, escape } from "./helpers";
 import { readTag } from "../tags/grammar";
 export function tags(md: MarkdownIt): void {
