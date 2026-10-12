@@ -1,4 +1,5 @@
 import { registerJumpRecorder } from "./jump-webview";
+import { selectionLayer } from "./selection-layer";
 import { afterLayout } from "./layout";
 import {
   runNavigation,
@@ -127,6 +128,7 @@ function createEditorView(
         ctx.document.extension,
         ctx.markdown.language(),
         drawSelection(),
+        selectionLayer,
         caretExtension(),
         findExtension(),
         EditorView.lineWrapping,

@@ -74,7 +74,7 @@ for (const dark of [false, true]) {
         expect(selected.text).toBe(source.slice(from, to));
         expect(await page.evaluate(() => window.harness.text)).toBe(source);
         await expect(
-          page.locator(".cm-selectionBackground").first(),
+          page.locator(".mw-selection-layer .cm-selectionBackground").first(),
         ).toBeVisible();
         const copied = await page.evaluate(() => {
           const data = new DataTransfer();
@@ -91,11 +91,27 @@ for (const dark of [false, true]) {
         const point = await page
           .locator(".cm-line", { hasText: "const alpha" })
           .evaluate((line) => {
-            const rect = line.getBoundingClientRect();
-            return {
-              x: Math.floor(rect.right - 40),
-              y: Math.floor((rect.top + rect.bottom) / 2),
-            };
+            // The space after `const`: selected, and no glyph pixels. The
+            // selection hugs the text, so the line's right side is untinted.
+            const walker = document.createTreeWalker(
+              line,
+              NodeFilter.SHOW_TEXT,
+            );
+            let node: Node | null;
+            while ((node = walker.nextNode())) {
+              const index = node.nodeValue!.indexOf(" alpha");
+              if (index >= 0) {
+                const range = document.createRange();
+                range.setStart(node, index);
+                range.setEnd(node, index + 1);
+                const rect = range.getBoundingClientRect();
+                return {
+                  x: Math.floor((rect.left + rect.right) / 2),
+                  y: Math.floor((rect.top + rect.bottom) / 2),
+                };
+              }
+            }
+            throw new Error("no space after const");
           });
         const pixels = await page.screenshot();
         const pixel = await page.evaluate(

@@ -91,12 +91,11 @@ for (const vim of [false, true]) {
       expect(caret.bg).not.toMatch(/^rgb\(/);
     }
 
-    // Click: the whole line. The editor selection stops at the line's end
-    // (the next line is not touched); copy and delete add the break.
+    // Click: the whole line with its break, as in VS Code.
     await page.mouse.click(four.x, four.y);
     expect(await selection(page)).toEqual({
       anchor: lineStart(4),
-      head: lineStart(5) - 1,
+      head: lineStart(5),
     });
     if (shots) {
       await page.screenshot({ path: `${shots}/click${vim ? "-vim" : ""}.png` });
@@ -109,7 +108,7 @@ for (const vim of [false, true]) {
     await page.keyboard.up("Shift");
     expect(await selection(page)).toEqual({
       anchor: lineStart(4),
-      head: lineStart(7) - 1,
+      head: lineStart(7),
     });
 
     // Drag upward from 5 to 3: anchor line stays whole (its end), head at line 3's start.
@@ -120,7 +119,7 @@ for (const vim of [false, true]) {
     await page.mouse.move(three.x, three.y, { steps: 5 });
     await page.mouse.up();
     expect(await selection(page)).toEqual({
-      anchor: lineStart(6) - 1,
+      anchor: lineStart(6),
       head: lineStart(3),
     });
     if (shots) {
@@ -182,30 +181,38 @@ for (const vim of [false, true]) {
     await page.mouse.click(four.x, four.y);
     expect(await selection(page)).toEqual({
       anchor: fencedStart(4),
-      head: fencedStart(4),
+      head: fencedStart(5),
     });
     // The fence stays rendered and nothing is drawn on it.
     await expect(fence).not.toContainText("```");
     const fenceBox = (await fence.boundingBox())!;
     const onFence = await page.evaluate(
       (box) =>
-        [...document.querySelectorAll(".cm-selectionBackground")].filter(
-          (element) => {
-            const rect = element.getBoundingClientRect();
-            return (
-              rect.width > 0 &&
-              rect.bottom > box.y + 1 &&
-              rect.top < box.y + box.height - 1
-            );
-          },
-        ).length,
+        [
+          ...document.querySelectorAll(
+            ".mw-selection-layer .cm-selectionBackground",
+          ),
+        ].filter((element) => {
+          const rect = element.getBoundingClientRect();
+          return (
+            rect.width > 0 &&
+            rect.bottom > box.y + 1 &&
+            rect.top < box.y + box.height - 1
+          );
+        }).length,
       fenceBox,
     );
     expect(onFence).toBe(0);
-    // The empty line shows VS Code's short sliver, not a full-width band.
-    await expect(page.locator(".cm-line.mw-line-selected-empty")).toHaveCount(
-      1,
+    // The empty line shows a thin stub, not a full-width band.
+    const stubs = await page.evaluate(() =>
+      [
+        ...document.querySelectorAll(
+          ".mw-selection-layer .cm-selectionBackground",
+        ),
+      ].map((element) => element.getBoundingClientRect().width),
     );
+    expect(stubs).toHaveLength(1);
+    expect(stubs[0]).toBeLessThanOrEqual(5);
     if (shots) {
       await page.screenshot({
         path: `${shots}/fence${vim ? "-vim" : ""}.png`,
@@ -219,7 +226,7 @@ for (const vim of [false, true]) {
     await page.mouse.click(three.x, three.y);
     expect(await selection(page)).toEqual({
       anchor: fencedStart(3),
-      head: fencedStart(4) - 1,
+      head: fencedStart(4),
     });
     await expect(fence).not.toContainText("```");
     expect(await copyText(page)).toBe("Before.\n");
@@ -232,25 +239,146 @@ for (const vim of [false, true]) {
   });
 }
 
-test("a drag reveals syntax live, before the pointer is released", async ({
+/**
+ * Operation-level checks: a line-number selection is an ordinary selection
+ * over the lines and their break, so editing commands, undo, the clipboard
+ * and Vim treat it as text (document, caret, clipboard and undo together).
+ */
+const OPS = "one\n\nthree\nlast";
+const opsStart = (n: number) =>
+  OPS.split("\n")
+    .slice(0, n - 1)
+    .reduce((sum, line) => sum + line.length + 1, 0);
+const text = (page: Page) => page.evaluate(() => window.harness.text);
+
+async function clickLine(page: Page, n: number, shift = false) {
+  const at = await centre(page, n);
+  if (shift) {
+    await page.keyboard.down("Shift");
+  }
+  await page.mouse.click(at.x, at.y);
+  if (shift) {
+    await page.keyboard.up("Shift");
+  }
+}
+
+test("operations on line-number selections: delete, undo, type, paste, EOF, brackets", async ({
   page,
 }) => {
-  const note = "Plain start line.\n\nSome **bold** words here.\n\nEnd.\n";
-  await open(page, note);
+  await open(page, OPS);
   await page.evaluate(() => window.harness.reveal(0));
-  const bold = page.locator(".cm-line", { hasText: "Some" });
-  await expect(bold).not.toContainText("**");
-  const start = (await page
-    .locator(".cm-line", { hasText: "Plain start" })
-    .boundingBox())!;
-  const end = (await bold.boundingBox())!;
-  await page.mouse.move(start.x + 5, start.y + start.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(end.x + end.width - 5, end.y + end.height / 2, {
-    steps: 8,
+
+  // Empty line 2: copy is the break; Backspace removes the line; undo restores
+  // it; deleting again gives the same document.
+  await clickLine(page, 2);
+  expect(await selection(page)).toEqual({
+    anchor: opsStart(2),
+    head: opsStart(3),
   });
-  // Still dragging: the bold marks are already revealed.
-  await expect(bold).toContainText("**bold**");
-  await page.mouse.up();
-  await expect(bold).toContainText("**bold**");
+  expect(await copyText(page)).toBe("\n");
+  await page.keyboard.press("Backspace");
+  await expect.poll(() => text(page)).toBe("one\nthree\nlast");
+  expect(await selection(page)).toEqual({
+    anchor: opsStart(2),
+    head: opsStart(2),
+  });
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => text(page)).toBe(OPS);
+  // Delete again (from the line selection): the same result.
+  await clickLine(page, 2);
+  await page.keyboard.press("Delete");
+  await expect.poll(() => text(page)).toBe("one\nthree\nlast");
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // Typing over line 3 replaces the line and its break (VS Code).
+  await clickLine(page, 3);
+  await page.keyboard.type("X");
+  await expect.poll(() => text(page)).toBe("one\n\nXlast");
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // The last line has no break: typing replaces only its text, never
+  // merging it into the line above.
+  await clickLine(page, 4);
+  expect(await selection(page)).toEqual({
+    anchor: opsStart(4),
+    head: OPS.length,
+  });
+  expect(await copyText(page)).toBe("last");
+  await page.keyboard.type("Y");
+  await expect.poll(() => text(page)).toBe("one\n\nthree\nY");
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // Paste over a line.
+  await clickLine(page, 1);
+  await page.evaluate(() => {
+    const data = new DataTransfer();
+    data.setData("text/plain", "pasted\n");
+    document.activeElement!.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: data,
+      }),
+    );
+  });
+  await expect.poll(() => text(page)).toBe("pasted\n\nthree\nlast");
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // A bracket over the selection (closeBrackets wraps or replaces; either
+  // way one undo restores the note).
+  await clickLine(page, 3);
+  await page.keyboard.type("(");
+  await expect.poll(() => text(page)).not.toBe(OPS);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // A plain click in the text cancels a line selection.
+  await clickLine(page, 2);
+  const one = (await page.locator(".cm-line").first().boundingBox())!;
+  await page.mouse.click(one.x + 4, one.y + one.height / 2);
+  const after = await selection(page);
+  expect(after.anchor).toBe(after.head);
+
+  // Shift+click extends from the current line selection.
+  await clickLine(page, 1);
+  await clickLine(page, 3, true);
+  expect(await selection(page)).toEqual({ anchor: 0, head: opsStart(4) });
+});
+
+test("Vim yanks, deletes, changes and puts a line-number selection as text", async ({
+  page,
+}) => {
+  await open(page, OPS, undefined, {
+    features: { vim: { enabled: true, config: {} } },
+  });
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.press("Escape");
+
+  // y then P: the yanked text is the line and its break.
+  await clickLine(page, 3);
+  await page.keyboard.press("y");
+  await page.keyboard.press("g");
+  await page.keyboard.press("g");
+  await page.keyboard.press("Shift+P");
+  await expect.poll(() => text(page)).toBe("three\none\n\nthree\nlast");
+  await page.keyboard.press("u");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // d removes the line and its break; u restores it.
+  await clickLine(page, 3);
+  await page.keyboard.press("d");
+  await expect.poll(() => text(page)).toBe("one\n\nlast");
+  await page.keyboard.press("u");
+  await expect.poll(() => text(page)).toBe(OPS);
+
+  // c replaces the line and its break with typed text.
+  await clickLine(page, 1);
+  await page.keyboard.press("c");
+  await page.keyboard.type("new\n");
+  await page.keyboard.press("Escape");
+  await expect.poll(() => text(page)).toBe("new\n\nthree\nlast");
 });

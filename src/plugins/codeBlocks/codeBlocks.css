@@ -83,9 +83,13 @@
 .token.symbol {
   color: var(--vscode-debugTokenExpression-number, #d19a66);
 }
-.token.builtin,
-.token.property,
+/* HTML, as Obsidian colours it: red tag names, yellow attribute names. */
 .token.tag {
+  color: var(--vscode-gitDecoration-deletedResourceForeground, #e06c75);
+}
+.token.attr-name,
+.token.builtin,
+.token.property {
   color: var(--vscode-symbolIcon-propertyForeground, #e5c07b);
 }
 .token.operator,

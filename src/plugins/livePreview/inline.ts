@@ -173,7 +173,14 @@ class InlineDecorations implements InlineContext {
       pos <= Math.min(node.to, visible.to);
     ) {
       const current = this.state.doc.lineAt(pos);
-      this.line(pos, cls, this.lineAttributes(node.name, current.to));
+      // A revealed quote line shows its dim `>` in place of the bar.
+      const revealedQuote =
+        node.name === "Blockquote" && this.lineRevealed(pos);
+      this.line(
+        pos,
+        revealedQuote ? `${cls} is-revealed` : cls,
+        this.lineAttributes(node.name, current.to),
+      );
       pos = current.to + 1;
     }
   }

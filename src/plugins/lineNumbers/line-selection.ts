@@ -1,231 +1,133 @@
-import {
-  EditorSelection,
-  EditorState,
-  StateEffect,
-  StateField,
-  Transaction,
-} from "@codemirror/state";
-import type { Extension, Text, TransactionSpec } from "@codemirror/state";
-import { Decoration, EditorView } from "@codemirror/view";
-import type { BlockInfo, DecorationSet } from "@codemirror/view";
+import { EditorSelection } from "@codemirror/state";
+import type { EditorState, Extension } from "@codemirror/state";
+import { ViewPlugin } from "@codemirror/view";
+import type { BlockInfo, EditorView, ViewUpdate } from "@codemirror/view";
 
 /**
- * A whole-line selection made from the line numbers, as in VS Code: the
- * lines `from`..`to` (line starts and ends) plus their line break.
- *
- * The editor selection itself stops at the end of the last line, so nothing
- * on the next line is drawn or revealed (a fence there stays rendered). The
- * line break joins in through this field: copy and cut put it on the
- * clipboard, and typing, deleting or pasting over the selection replace it
- * too (the break before, for the last line of the note).
+ * Line-number selections, as in VS Code: a real selection over whole lines
+ * including the last line's break, so the caret lands at the start of the
+ * next line and every command (copy, cut, typing, delete, undo, Vim, IME)
+ * treats it as ordinary text. Nothing on the next line is drawn or revealed:
+ * the selection layer draws no zero-width part there, and Live Preview's
+ * reveal test ignores a range that ends exactly at a line start.
  */
 export interface LineRange {
   from: number;
   to: number;
 }
 
-const setLines = StateEffect.define<LineRange | null>();
-
-export const selectedLines = StateField.define<LineRange | null>({
-  create: () => null,
-  update(value, tr) {
-    for (const effect of tr.effects) {
-      if (effect.is(setLines)) {
-        return effect.value;
-      }
-    }
-    if (!value || tr.docChanged) {
-      return null;
-    }
-    const main = tr.state.selection.main;
-    return tr.state.selection.ranges.length === 1 &&
-      main.from === value.from &&
-      main.to === value.to
-      ? value
-      : null;
-  },
-  provide: (field) =>
-    EditorView.decorations.from(field, (range) => emptyLineMarks(range)),
-});
-
-const emptyLine = Decoration.line({ class: "mw-line-selected-empty" });
-
-/** Empty lines have no text to tint, so they get VS Code's short sliver. */
-function emptyLineMarks(
-  range: LineRange | null,
-): (view: EditorView) => DecorationSet {
-  return (view) => {
-    if (!range) {
-      return Decoration.none;
-    }
-    const { doc } = view.state;
-    const marks = [];
-    for (
-      let n = doc.lineAt(range.from).number;
-      n <= doc.lineAt(range.to).number;
-      n++
-    ) {
-      const line = doc.line(n);
-      if (line.length === 0) {
-        marks.push(emptyLine.range(line.from));
-      }
-    }
-    return Decoration.set(marks);
-  };
-}
-
-/** The span a copy, cut or replacement covers: the lines with a break. */
-export function withBreak(doc: Text, range: LineRange): LineRange {
-  if (range.to < doc.length) {
-    return { from: range.from, to: range.to + 1 };
-  }
-  return { from: Math.max(0, range.from - 1), to: range.to };
+/** The start of the line after `pos`'s line, or the document end. */
+function after(state: EditorState, pos: number): number {
+  const line = state.doc.lineAt(pos);
+  return line.number < state.doc.lines
+    ? line.to + state.lineBreak.length
+    : line.to;
 }
 
 /**
- * The lines from the anchor block to the head block. The selection's head
- * goes on the side of the head block: the end of its last line when dragging
- * down, the start of its first when dragging up.
+ * Whole lines from the anchor block to the head block. Dragging down puts
+ * the head after the head block's break; dragging up puts it at the start of
+ * the head block and keeps the anchor block whole (its break included).
  */
 export function lineSelectionFor(
   state: EditorState,
   anchor: LineRange,
   head: LineRange,
-): { selection: EditorSelection; lines: LineRange } {
-  const { doc } = state;
-  const down = head.from >= anchor.from;
-  const first = down ? anchor : head;
-  const last = down ? head : anchor;
-  const lines = {
-    from: doc.lineAt(first.from).from,
-    to: doc.lineAt(last.to).to,
-  };
-  return {
-    selection: down
-      ? EditorSelection.single(lines.from, lines.to)
-      : EditorSelection.single(lines.to, lines.from),
-    lines,
-  };
+): EditorSelection {
+  const start = (pos: number) => state.doc.lineAt(pos).from;
+  return head.from >= anchor.from
+    ? EditorSelection.single(start(anchor.from), after(state, head.to))
+    : EditorSelection.single(after(state, anchor.to), start(head.from));
 }
 
-/** Typing, deleting or pasting over the whole selection takes the break too. */
-const replaceWithBreak = EditorState.transactionFilter.of((tr) => {
-  const lines = tr.startState.field(selectedLines, false);
-  if (
-    !lines ||
-    !tr.docChanged ||
-    (!tr.isUserEvent("input") && !tr.isUserEvent("delete"))
-  ) {
-    return tr;
+/** The lines a selection made from the line numbers covers. */
+function anchorLines(state: EditorState): LineRange {
+  const { anchor, head } = state.selection.main;
+  let line = state.doc.lineAt(anchor);
+  // An upward line selection's anchor is the start of the line after it.
+  if (anchor > head && anchor === line.from && line.number > 1) {
+    line = state.doc.line(line.number - 1);
   }
-  let exact = true;
-  let count = 0;
-  let insert = "";
-  tr.changes.iterChanges((fromA, toA, ...[, , inserted]) => {
-    count++;
-    exact &&= fromA === lines.from && toA === lines.to;
-    insert = inserted.toString();
-  });
-  if (count !== 1 || !exact) {
-    return tr;
-  }
-  const span = withBreak(tr.startState.doc, lines);
-  const keep =
-    span.to === lines.to + 1 && insert !== "" && !insert.endsWith("\n")
-      ? "\n"
-      : "";
-  const spec: TransactionSpec = {
-    changes: { from: span.from, to: span.to, insert: insert + keep },
-    selection: EditorSelection.cursor(span.from + insert.length),
-    scrollIntoView: tr.scrollIntoView,
-    annotations:
-      tr.annotation(Transaction.userEvent) === undefined
-        ? []
-        : [Transaction.userEvent.of(tr.annotation(Transaction.userEvent)!)],
-  };
-  return spec;
-});
+  return { from: line.from, to: line.to };
+}
 
-function clipboard(
-  view: EditorView,
-  event: ClipboardEvent,
-  cut: boolean,
-): boolean {
-  const lines = view.state.field(selectedLines, false);
-  if (!lines || !event.clipboardData) {
-    return false;
+class Gesture {
+  private anchor: LineRange | null = null;
+  private readonly events = new AbortController();
+  private drag: AbortController | null = null;
+
+  constructor(private readonly view: EditorView) {}
+
+  update(update: ViewUpdate): void {
+    if (this.anchor && update.docChanged) {
+      // An edit during the drag (a remote change, say) moves the anchor.
+      this.anchor = {
+        from: update.changes.mapPos(this.anchor.from, -1),
+        to: update.changes.mapPos(this.anchor.to, 1),
+      };
+    }
   }
-  const { doc } = view.state;
-  const text = doc.sliceString(lines.from, lines.to) + "\n";
-  event.clipboardData.clearData();
-  event.clipboardData.setData("text/plain", text);
-  event.preventDefault();
-  if (cut && !view.state.readOnly) {
-    const span = withBreak(doc, lines);
-    view.dispatch({
-      changes: span,
-      selection: EditorSelection.cursor(span.from),
-      userEvent: "delete.cut",
-      scrollIntoView: true,
+
+  start(block: BlockInfo, event: MouseEvent): boolean {
+    if (event.button !== 0) {
+      return false;
+    }
+    // Without this the browser starts a native selection in the gutter.
+    event.preventDefault();
+    const view = this.view;
+    view.focus();
+    this.anchor = event.shiftKey ? anchorLines(view.state) : block;
+    this.select(block);
+    this.drag?.abort();
+    const drag = new AbortController();
+    this.drag = drag;
+    const signal = AbortSignal.any([drag.signal, this.events.signal]);
+    const doc = view.dom.ownerDocument;
+    const stop = () => {
+      drag.abort();
+      this.anchor = null;
+    };
+    doc.addEventListener(
+      "mousemove",
+      (next) => {
+        if ((next.buttons & 1) === 0) {
+          stop();
+          return;
+        }
+        this.select(view.lineBlockAtHeight(next.clientY - view.documentTop));
+      },
+      { signal },
+    );
+    doc.addEventListener("mouseup", stop, { signal });
+    return true;
+  }
+
+  private select(head: LineRange): void {
+    if (!this.anchor) {
+      return;
+    }
+    this.view.dispatch({
+      selection: lineSelectionFor(this.view.state, this.anchor, head),
+      userEvent: "select.pointer",
+      scrollIntoView: false,
     });
   }
-  return true;
+
+  destroy(): void {
+    this.events.abort();
+    this.anchor = null;
+  }
 }
 
-export const lineSelection: Extension = [
-  selectedLines,
-  replaceWithBreak,
-  EditorView.domEventHandlers({
-    copy: (event, view) => clipboard(view, event, false),
-    cut: (event, view) => clipboard(view, event, true),
-  }),
-];
+const gesture = ViewPlugin.fromClass(Gesture);
 
-function blockAtY(view: EditorView, clientY: number): BlockInfo {
-  return view.lineBlockAtHeight(clientY - view.documentTop);
-}
+export const lineSelection: Extension = gesture;
 
-/** Click, drag and shift+click on a line number, as in VS Code. */
+/** Click, drag and shift+click on a line number. */
 export function startLineSelection(
   view: EditorView,
   block: BlockInfo,
   event: Event,
 ): boolean {
-  const mouse = event as MouseEvent;
-  if (mouse.button !== 0) {
-    return false;
-  }
-  // Without this the browser starts a native selection in the gutter.
-  mouse.preventDefault();
-  view.focus();
-  let anchor: LineRange = block;
-  if (mouse.shiftKey) {
-    const line = view.state.doc.lineAt(view.state.selection.main.anchor);
-    anchor = { from: line.from, to: line.to };
-  }
-  const select = (head: LineRange) => {
-    const { selection, lines } = lineSelectionFor(view.state, anchor, head);
-    view.dispatch({
-      selection,
-      effects: setLines.of(lines),
-      userEvent: "select.pointer",
-      scrollIntoView: false,
-    });
-  };
-  select(block);
-  const doc = view.dom.ownerDocument;
-  const move = (next: MouseEvent) => {
-    if ((next.buttons & 1) === 0) {
-      stop();
-      return;
-    }
-    select(blockAtY(view, next.clientY));
-  };
-  const stop = () => {
-    doc.removeEventListener("mousemove", move);
-    doc.removeEventListener("mouseup", stop);
-  };
-  doc.addEventListener("mousemove", move);
-  doc.addEventListener("mouseup", stop);
-  return true;
+  return view.plugin(gesture)?.start(block, event as MouseEvent) ?? false;
 }

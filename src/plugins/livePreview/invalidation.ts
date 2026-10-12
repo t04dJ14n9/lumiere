@@ -1,4 +1,8 @@
 import type { EditorState, Transaction } from "@codemirror/state";
+import {
+  pointerSelectionToggled,
+  revealRanges,
+} from "../../webview/ui/pointer-selection";
 import type { Tree } from "@lezer/common";
 import { documentTree } from "./document-tree";
 import { blockRenderers } from "./registry";
@@ -136,9 +140,15 @@ export function renderInvalidations(tr: Transaction): RenderInvalidation[] {
       reason: "text",
     });
   }
-  if (tr.selection || tr.docChanged) {
-    const before = tr.startState.selection.map(tr.changes).ranges;
-    for (const range of [...before, ...tr.state.selection.ranges]) {
+  if (
+    tr.selection ||
+    tr.docChanged ||
+    pointerSelectionToggled(tr.startState, tr.state)
+  ) {
+    const before = revealRanges(tr.startState).map((range) =>
+      range.map(tr.changes),
+    );
+    for (const range of [...before, ...revealRanges(tr.state)]) {
       result.push({
         fromLine: doc.lineAt(range.from).number,
         toLine: doc.lineAt(range.to).number,

@@ -73,13 +73,3 @@
 #app .cm-lineNumbers .cm-gutterElement.mw-table-line-number {
   padding-top: 24px;
 }
-/* An empty line in a line-number selection: VS Code's short tinted sliver. */
-#app .cm-line.mw-line-selected-empty {
-  background-image: linear-gradient(
-    to right,
-    var(--selection-tint) 0.6em,
-    transparent 0.6em
-  );
-  background-repeat: no-repeat;
-  background-origin: content-box;
-}
