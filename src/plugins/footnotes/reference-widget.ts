@@ -45,6 +45,9 @@ class ReferenceControl {
     this.preview.className = "footnote-preview";
     this.preview.hidden = true;
     this.preview.setAttribute("role", "tooltip");
+    // Not document text: the selection layer ignores it (with role=tooltip
+    // and its absolute position, this is the explicit marker).
+    this.preview.setAttribute("data-mw-selection-ignore", "");
     sup.classList.add("mw-footnote-ref");
     sup.replaceChildren(this.button, this.preview);
     this.registerEvents();

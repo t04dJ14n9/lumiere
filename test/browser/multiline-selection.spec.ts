@@ -341,6 +341,15 @@ for (const c of CASES) {
       await page.addStyleTag({
         content: `.cm-content .cm-line, .cm-content .cm-line * { font-family: ${c.font} !important; }`,
       });
+      // Let fonts and CodeMirror's measurement settle before selecting.
+      await page.evaluate(() =>
+        document.fonts.ready.then(
+          () =>
+            new Promise((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(resolve)),
+            ),
+        ),
+      );
       const n = kind === "code" ? 2 : 1;
       const from = kind === "code" ? 8 : 0;
       const lineText = kind === "heading" ? `## ${WRAPPED}` : WRAPPED;
@@ -364,6 +373,38 @@ for (const c of CASES) {
         expect(tint!.right - text.right, `${label} right`).toBeGreaterThan(-1);
         expect(tint!.right - text.right, `${label} right`).toBeLessThan(14);
       });
+      // Known-layout oracle, independent of row clustering: with a uniform
+      // line height every marker on the line is one line-height tall and
+      // starts a whole number of line-heights below the line's content top.
+      // (Headings are skipped: their first band also covers the heading's
+      // top spacing, by design.)
+      if (kind !== "heading") {
+        const known = await line(page, n).evaluate((element) => {
+          const style = getComputedStyle(element);
+          const box = element.getBoundingClientRect();
+          const top = box.top + parseFloat(style.paddingTop);
+          const lh = parseFloat(style.lineHeight);
+          return {
+            lh,
+            offsets: [
+              ...document.querySelectorAll(
+                ".mw-selection-layer .cm-selectionBackground",
+              ),
+            ]
+              .map((m) => m.getBoundingClientRect())
+              .filter((r) => r.top < box.bottom - 1 && r.bottom > box.top + 1)
+              .map((r) => ({ at: (r.top - top) / lh, height: r.height })),
+          };
+        });
+        expect(known.offsets.length).toBeGreaterThanOrEqual(3);
+        for (const { at, height } of known.offsets) {
+          expect(Math.abs(at - Math.round(at)) * known.lh).toBeLessThan(1);
+          expect(
+            Math.abs(height - known.lh),
+            JSON.stringify(known),
+          ).toBeLessThan(1);
+        }
+      }
       // Consecutive bands meet: no gap and no overlap between rows.
       for (let i = 1; i < measured.length; i++) {
         const gap = measured[i]!.tint!.top - measured[i - 1]!.tint!.bottom;
@@ -371,4 +412,126 @@ for (const c of CASES) {
       }
     });
   }
+}
+
+/**
+ * An open footnote preview is an out-of-flow descendant of the reference in
+ * the line; it is not document text. Selecting the line (hovering the
+ * reference, then Shift+Down) must tint only the line's own row and its
+ * break, whether the preview is hidden, open below or open above.
+ * The oracle is the known layout: the .cm-line box and the preview box.
+ */
+for (const mode of ["hidden", "below", "above"] as const) {
+  test(`a footnote preview (${mode}) adds no selection rows or runs`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 640, height: 480 });
+    const filler =
+      mode === "above" ? Array(14).fill("filler").join("\n\n") + "\n\n" : "";
+    const definition = `[^n]: ${"A long definition that wraps over several rows. ".repeat(14)}`;
+    const doc = `${filler}before[^n] after\nnext\n\n${definition}\n`;
+    await open(page, doc);
+    const at = filler.length;
+    await page.evaluate((pos) => window.harness.reveal(pos), at);
+    const target = page.locator(".cm-content > .cm-line", {
+      hasText: "before",
+    });
+    await expect(target).toHaveCount(1);
+    if (mode === "above") {
+      // Bring the line to the bottom of the webview so the preview flips up.
+      await target.evaluate((line) => {
+        const scroller = line.closest(".cm-scroller")!;
+        scroller.scrollTop +=
+          line.getBoundingClientRect().bottom - (window.innerHeight - 120);
+      });
+      await page.waitForTimeout(100);
+    }
+    const reference = target.locator(".mw-footnote-ref");
+    await expect(reference).toBeVisible();
+    const preview = reference.locator(".footnote-preview");
+    if (mode !== "hidden") {
+      await reference.hover();
+      await expect(preview).toBeVisible();
+      await expect(preview).toContainText("A long definition");
+    }
+    await page.keyboard.press("Shift+ArrowDown");
+    await page.waitForTimeout(150);
+    if (mode !== "hidden" && !(await preview.isVisible())) {
+      // The line may be redrawn under the pointer; hover it again so the
+      // preview is open over the selection.
+      await page.mouse.move(0, 0);
+      await reference.hover();
+      await page.waitForTimeout(150);
+    }
+    if (mode !== "hidden") {
+      await expect(preview).toBeVisible();
+      const isAbove = await preview.evaluate((el) =>
+        el.classList.contains("is-above"),
+      );
+      expect(isAbove).toBe(mode === "above");
+    }
+    const sel = await page.evaluate(() => {
+      const view = [...window.harness.views[0]!.runtime.fibers].find(
+        (fiber) => fiber.definition.name === "livePreview",
+      )!.context!.editor.view;
+      return view.state.selection.main;
+    });
+    expect(sel.from).toBe(at);
+    expect(sel.to).toBe(at + "before[^n] after\n".length);
+
+    const geometry = await target.evaluate((line) => {
+      const box = line.getBoundingClientRect();
+      const pop = line.querySelector(".footnote-preview") as HTMLElement;
+      const popBox = pop && !pop.hidden ? pop.getBoundingClientRect() : null;
+      const marks = [
+        ...document.querySelectorAll(
+          ".mw-selection-layer .cm-selectionBackground",
+        ),
+      ].map((m) => {
+        const r = m.getBoundingClientRect();
+        return {
+          top: r.top,
+          bottom: r.bottom,
+          left: r.left,
+          right: r.right,
+          height: r.height,
+          width: r.width,
+        };
+      });
+      return {
+        line: {
+          top: box.top,
+          bottom: box.bottom,
+          left: box.left,
+          right: box.right,
+        },
+        pop: popBox && {
+          top: popBox.top,
+          bottom: popBox.bottom,
+          left: popBox.left,
+          right: popBox.right,
+        },
+        marks,
+      };
+    });
+    const { line: row, pop, marks } = geometry;
+    expect(marks.length).toBeGreaterThan(0);
+    for (const m of marks) {
+      expect(m.height, "positive height").toBeGreaterThan(0);
+      expect(m.width, "positive width").toBeGreaterThan(0);
+      // Only the document row: nothing above or below the line box.
+      expect(m.top, "inside the row").toBeGreaterThanOrEqual(row.top - 1);
+      expect(m.bottom, "inside the row").toBeLessThanOrEqual(row.bottom + 1);
+      if (pop) {
+        const overlaps =
+          m.left < pop.right &&
+          m.right > pop.left &&
+          m.top < pop.bottom &&
+          m.bottom > pop.top;
+        expect(overlaps, "no tint on the preview").toBe(false);
+      }
+    }
+    // One row: the markers share one band.
+    expect(new Set(marks.map((m) => Math.round(m.top))).size).toBe(1);
+  });
 }
