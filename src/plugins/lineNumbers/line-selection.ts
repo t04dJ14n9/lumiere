@@ -2,6 +2,7 @@ import { EditorSelection } from "@codemirror/state";
 import type { EditorState, Extension } from "@codemirror/state";
 import { ViewPlugin } from "@codemirror/view";
 import type { BlockInfo, EditorView, ViewUpdate } from "@codemirror/view";
+import { onGestureEnd } from "../../webview/ui/pointer-selection";
 
 /**
  * Line-number selections, as in VS Code: a real selection over whole lines
@@ -20,7 +21,7 @@ export interface LineRange {
 function after(state: EditorState, pos: number): number {
   const line = state.doc.lineAt(pos);
   return line.number < state.doc.lines
-    ? line.to + state.lineBreak.length
+    ? line.to + 1 // one document position between lines, whatever the separator
     : line.to;
 }
 
@@ -85,20 +86,22 @@ class Gesture {
     const doc = view.dom.ownerDocument;
     const stop = () => {
       drag.abort();
-      this.anchor = null;
+      if (this.drag === drag) {
+        this.drag = null;
+        this.anchor = null;
+      }
     };
+    // The same ends as the reveal freeze: release, pointercancel, blur.
+    onGestureEnd(doc, stop, signal);
     doc.addEventListener(
       "mousemove",
       (next) => {
-        if ((next.buttons & 1) === 0) {
-          stop();
-          return;
+        if (this.drag === drag && (next.buttons & 1) !== 0) {
+          this.select(view.lineBlockAtHeight(next.clientY - view.documentTop));
         }
-        this.select(view.lineBlockAtHeight(next.clientY - view.documentTop));
       },
       { signal },
     );
-    doc.addEventListener("mouseup", stop, { signal });
     return true;
   }
 

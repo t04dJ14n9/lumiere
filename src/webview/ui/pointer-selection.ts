@@ -54,6 +54,34 @@ export function revealRanges(state: EditorState): readonly SelectionRange[] {
   });
 }
 
+/**
+ * Calls `end` when a mouse gesture in `doc` ends or is cancelled: a release
+ * (which may happen outside the frame and reach only the window), pointer
+ * cancellation, window blur, or a move with the left button up. The line
+ * number drag and the reveal freeze share this so their lifecycles agree.
+ */
+export function onGestureEnd(
+  doc: Document,
+  end: () => void,
+  signal: AbortSignal,
+): void {
+  for (const target of [doc, doc.defaultView]) {
+    for (const type of ["mouseup", "pointerup", "pointercancel"]) {
+      target?.addEventListener(type, end, { capture: true, signal });
+    }
+  }
+  doc.defaultView?.addEventListener("blur", end, { signal });
+  doc.addEventListener(
+    "mousemove",
+    (event) => {
+      if ((event.buttons & 1) === 0) {
+        end();
+      }
+    },
+    { capture: true, signal },
+  );
+}
+
 export const pointerSelectionTracking: Extension = [
   pointerSelection,
   ViewPlugin.define((view: EditorView) => {
@@ -61,9 +89,15 @@ export const pointerSelectionTracking: Extension = [
     const doc = view.dom.ownerDocument;
     const release = () => {
       if (view.state.field(pointerSelection, false)) {
-        // After CodeMirror's own mouseup handling has set the final selection.
+        // Usually after CodeMirror's own mouseup handling (not guaranteed:
+        // pointerup can come first). The callback may outlive the tracker or
+        // the extension, so it checks both.
         queueMicrotask(() => {
-          if (view.dom.isConnected && view.state.field(pointerSelection)) {
+          if (
+            !events.signal.aborted &&
+            view.dom.isConnected &&
+            view.state.field(pointerSelection, false)
+          ) {
             view.dispatch({ effects: press.of(null) });
           }
         });
@@ -79,28 +113,7 @@ export const pointerSelectionTracking: Extension = [
       },
       { capture: true, signal: events.signal },
     );
-    // A release outside the frame may not reach the document; the window,
-    // pointerup and the next move without the button also end the drag.
-    for (const target of [doc, doc.defaultView]) {
-      for (const type of ["mouseup", "pointerup", "pointercancel"]) {
-        target?.addEventListener(type, release, {
-          capture: true,
-          signal: events.signal,
-        });
-      }
-    }
-    doc.defaultView?.addEventListener("blur", release, {
-      signal: events.signal,
-    });
-    doc.addEventListener(
-      "mousemove",
-      (event) => {
-        if ((event.buttons & 1) === 0) {
-          release();
-        }
-      },
-      { signal: events.signal },
-    );
+    onGestureEnd(doc, release, events.signal);
     return { destroy: () => events.abort() };
   }),
 ];
