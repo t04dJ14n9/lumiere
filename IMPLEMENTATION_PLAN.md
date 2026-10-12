@@ -3099,3 +3099,45 @@ regressions failed against the initial unimplemented helper, then passed after
 implementation. Additional units cover routing guards and combining graphemes;
 browser cases cover counts, blank cells, punctuation, CJK/Latin text and
 operator/visual isolation. Validation results follow after the final gate.
+
+## Table grid clipboard shortcuts (2026-10-12)
+
+Column/row handles and rectangular cell selection focus a non-editable grid,
+which does not reliably receive Chromium copy events. Grid Ctrl+C/Cmd+C now
+claims the key and snapshots TSV through the existing validated Editor host
+clipboard service. Copy preserves text, focus and grid selection; ordinary
+cell-text copying keeps CodeMirror behavior. HTML/Markdown clipboard flavors
+remain a future enhancement; the native clipboard API currently writes text.
+
+Owner explicitly authorized new failing-first unit, browser and feasible native
+coverage for this bug. Three new units failed before the fix; all six clipboard
+units pass afterward. Three browser cases failed with an empty host clipboard.
+The new installed VS Code case failed to paste the selected column before the
+fix. The browser scenarios cover both modifiers, row/rectangle/single-cell
+selection; the native scenario pastes the OS clipboard into ordinary prose.
+Full validation results will be recorded below before committing.
+
+The pinned human-learning checkout is unavailable at ~/Code/human-learning in
+this environment. This fix uses this repository's existing table implementation;
+no source, browser or native suite was ported and no reference repository changed.
+## Selected table cells and inline code (2026-10-12)
+
+Selected table cells now expose their selection background through rendered
+inline code, preserving its foreground, font and spacing. The rule is scoped to
+selected cells and excludes preformatted blocks; unselected code regains its
+normal theme background when selection moves. Bold, links and MathJax output
+already have transparent backgrounds and need no style changes.
+
+The owner explicitly requested a failing-first browser regression. Both dark
+and light cases failed against the original CSS on the computed code background
+and pass with the fix. The tests use real column-handle selection, cover header
+and body cells, inspect code/bold/link/math backgrounds and text contrast,
+verify preserved foregrounds and bold weight, and check unselected/restored code
+and unchanged source. Updated the Tables README and manual acceptance steps.
+No Obsidian code, CSS or assets were copied. The pinned human-learning checkout
+is absent from this environment; this is a local CSS correction, with no source
+porting.
+
+Validation: dependency installation and the two focused Chromium regressions
+pass. Full required checks are recorded after completion in the task report at
+`/workspace/plans/cell-code-report.md`.
