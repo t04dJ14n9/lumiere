@@ -11,6 +11,8 @@
   background: var(--mw-git-mod-line);
 }
 #app del.mw-gi-removed {
+  /* A gap so a removed word never reads as one word with the inserted one. */
+  margin-inline-end: 0.3em;
   opacity: 0.85;
   user-select: none;
 }

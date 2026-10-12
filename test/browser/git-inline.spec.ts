@@ -34,6 +34,12 @@ test("removed words are struck through, added ones tinted, blocks get a ghost", 
     "user-select",
     "none",
   );
+  // A removed word keeps a gap before the inserted word that replaces it.
+  const gap = await page
+    .locator("del.mw-gi-removed")
+    .first()
+    .evaluate((del) => parseFloat(getComputedStyle(del).marginRight));
+  expect(gap).toBeGreaterThan(2);
 });
 
 test("Restore puts a removed paragraph back as one undo step", async ({
