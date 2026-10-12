@@ -37,7 +37,9 @@ export const foldedViewState = {
     foldedRanges(view.state).between(0, view.state.doc.length, (from, to) => {
       effects.push(unfoldEffect.of({ from, to }));
     });
-    for (const range of ranges) {
+    // @codemirror/language >= 6.13 requires fold effects sorted by position.
+    const sorted = [...ranges].sort((a, b) => a.from - b.from || b.to - a.to);
+    for (const range of sorted) {
       if (range.to <= view.state.doc.length) {
         effects.push(foldEffect.of(range));
       }
