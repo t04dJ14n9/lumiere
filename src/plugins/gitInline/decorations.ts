@@ -33,6 +33,9 @@ export interface InlineActions {
  */
 export const HUNK_TOKENS = 1500;
 export const REBUILD_TOKENS = 12_000;
+/** The same limits in characters, for few very long tokens. */
+export const HUNK_CHARS = 20_000;
+export const REBUILD_CHARS = 200_000;
 
 /** Removed words, struck through where they were. Read-only and not copied. */
 class RemovedText extends WidgetType {
@@ -263,14 +266,26 @@ export function ghostMarkdown(
 
 /** The shared word-diff budget of one rebuild. */
 class Budget implements WordBudget {
-  constructor(private left: number) {}
-  /** Whether a word diff of these texts fits; spends its tokens if so. */
+  constructor(
+    private left: number,
+    private chars: number,
+  ) {}
+  /**
+   * Whether a word diff of these texts fits; spends its tokens if so. Texts
+   * are also capped by length, checked first: a few very long tokens cost
+   * little in tokens but a lot to mark and protect.
+   */
   spend(old: string, current: string): boolean {
+    const length = old.length + current.length;
+    if (length > HUNK_CHARS || length > this.chars) {
+      return false;
+    }
     const cost = tokens(old).length + tokens(current).length;
     if (cost > HUNK_TOKENS || cost > this.left) {
       return false;
     }
     this.left -= cost;
+    this.chars -= length;
     return true;
   }
 }
@@ -405,7 +420,7 @@ export function buildInline(
   const context: Context = {
     blocks: splitBlocks(state.doc.toString()),
     actions,
-    budget: new Budget(REBUILD_TOKENS),
+    budget: new Budget(REBUILD_TOKENS, REBUILD_CHARS),
   };
   const ranges = set.hunks.flatMap((hunk) =>
     hunkDecorations(state, hunk, context),

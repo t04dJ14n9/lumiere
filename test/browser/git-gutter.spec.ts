@@ -233,9 +233,7 @@ test("R2-B1: Revert held across a realigning edit never deletes an unrelated add
   await page.keyboard.press("Control+End");
   await page.keyboard.press("Enter");
   await page.keyboard.type("A");
-  if (await revert.count()) {
-    await revert.click();
-  }
+  await revert.click();
   await page.waitForTimeout(400);
   expect(["X\nA\nY\nA", "X\nA"]).toContain(await text(page));
 });
