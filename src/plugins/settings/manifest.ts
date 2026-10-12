@@ -37,6 +37,11 @@ export default defineManifest({
         title: "Toggle Inline Title",
         scope: "workbench",
       },
+      {
+        id: "toggleInlineGitChanges",
+        title: "Toggle Inline Git Changes",
+        scope: "workbench",
+      },
       { id: "toggleVim", title: "Toggle Vim Mode", scope: "workbench" },
     ],
   },

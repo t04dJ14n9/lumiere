@@ -390,6 +390,11 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.toggleInlineGitChanges",
+        "title": "Toggle Inline Git Changes",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleVim",
         "title": "Toggle Vim Mode",
         "category": "Markdown Workbench"
@@ -927,6 +932,9 @@
           "command": "markdownWorkbench.toggleInlineTitle"
         },
         {
+          "command": "markdownWorkbench.toggleInlineGitChanges"
+        },
+        {
           "command": "markdownWorkbench.toggleVim"
         },
         {
@@ -1172,6 +1180,12 @@
           "default": true,
           "scope": "resource",
           "description": "Added, modified and deleted bars beside the line numbers, like VS Code's quick diff, with a rendered peek of the old version to revert or stage."
+        },
+        "markdownWorkbench.plugins.gitInline.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Track changes in the rendered note: removed words struck through, added words tinted, removed blocks shown with Restore. Needs Git change bars."
         },
         "markdownWorkbench.plugins.indentGuides.enabled": {
           "type": "boolean",

@@ -1,4 +1,5 @@
 import { EditorSelection } from "@codemirror/state";
+import type { EditorState } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Context, Infer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
@@ -16,7 +17,7 @@ import {
   setHunks,
 } from "./hunks";
 import { config } from "./manifest";
-import { peekExtension, peekedHunk, setPeek } from "./peek";
+import { outerBlock, peekExtension, peekedHunk, setPeek } from "./peek";
 import { protocol } from "./protocol";
 
 type Status = ReturnType<GitDiff["status"]>;
@@ -46,6 +47,9 @@ class GitDiffModel implements GitDiff {
     return this.ctx.editor.view;
   }
   status = () => this.state;
+  blockRange(state: EditorState, from: number, to: number) {
+    return outerBlock(state, from, to);
+  }
   label = () => this.name;
   baseline = () => this.text;
 

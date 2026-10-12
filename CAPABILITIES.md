@@ -49,6 +49,7 @@ records it in `docs/PARITY.md`.
 | folding | Heading and list folding, restored on reload | — |
 | lineNumbers | Line numbers laid out like VS Code's gutter, following `editor.lineNumbers`; rendered blocks list all their source lines' numbers | On by default |
 | gitGutter | Git change bars (added, modified, deleted) beside the line numbers against HEAD or the index, through VS Code's git extension; click a bar for a rendered peek with Revert and Stage File; Alt+F5 / Shift+Alt+F5 move between changes | On by default |
+| gitInline | Inline track changes over the git change bars' hunks: removed words struck through, added words tinted, a rendered ghost of changed tables, code and frontmatter, removed blocks with Restore; needs gitGutter | Off by default; Toggle Inline Git Changes |
 | indentGuides | Indentation guides | No active-guide highlight |
 | spellcheck | The host's spellchecker | Dictionaries come from the OS |
 | autoPair | Brackets, quotes and Markdown markers | — |

@@ -1,0 +1,51 @@
+/*
+ * Inline git changes: track changes in the rendered note. Added words and
+ * lines take the diff editor's inserted tint; removed words are struck
+ * through in the removed tint; a removed or rewritten block shows its
+ * baseline version above, dimmed, with a red edge. Tokens: styles/git-diff.css.
+ */
+#app .cm-line.mw-gi-added {
+  background: var(--mw-git-ins-line);
+}
+#app .cm-line.mw-gi-modified {
+  background: var(--mw-git-mod-line);
+}
+#app del.mw-gi-removed {
+  opacity: 0.85;
+  user-select: none;
+}
+#app .mw-gi-ghost {
+  margin: 2px 0;
+  padding: 2px 10px 4px;
+  border-left: 2px solid var(--mw-git-deleted);
+  background: var(--mw-git-del-line);
+  white-space: normal;
+}
+#app .mw-gi-ghost.is-removed .mw-gi-ghost-body {
+  text-decoration: line-through;
+  text-decoration-color: var(--mw-git-strike);
+  opacity: 0.8;
+}
+#app .mw-gi-ghost.is-before .mw-gi-ghost-body {
+  opacity: 0.85;
+}
+#app .mw-gi-caption {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--ui-font);
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vscode-descriptionForeground, var(--muted));
+}
+#app .mw-gi-restore {
+  font: inherit;
+  text-transform: none;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground, inherit);
+  background: var(--vscode-button-secondaryBackground, var(--hover));
+  cursor: pointer;
+}

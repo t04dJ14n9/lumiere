@@ -28,5 +28,6 @@
 @import "../../plugins/lineNumbers/lineNumbers.css";
 @import "./git-diff.css";
 @import "../../plugins/gitGutter/gitGutter.css";
+@import "../../plugins/gitInline/gitInline.css";
 
 @import "../../plugins/indentGuides/indentGuides.css";

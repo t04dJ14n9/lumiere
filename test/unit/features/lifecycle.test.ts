@@ -63,13 +63,36 @@ const noEditorExtensions = new Set(["onlineVideos", "agentBridge"]);
 const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
   noEditorExtensions.has(id) ? f.extensions === 0 : f.extensions > 0;
 
+/** Features that need another feature running (declared through `inject.required`). */
+const providers: Record<string, string[]> = { gitInline: ["gitGutter"] };
+const settingsOf = (ids: readonly string[]) =>
+  Object.fromEntries(
+    ids.map((id) => {
+      const manifest = features.find((item) => item.id === id)!;
+      return [
+        id,
+        {
+          enabled: true,
+          config: (manifest.config?.parse({}) as Record<string, unknown>) ?? {},
+        },
+      ];
+    }),
+  );
+
 for (const manifest of features) {
   test(`${manifest.id}: disabling and re-enabling disposes its extensions and commands, leaving no trace`, async () => {
     const f = fixture();
     const config =
       (manifest.config?.parse({}) as Record<string, unknown>) ?? {};
+    const required = settingsOf(providers[manifest.id] ?? []);
+    await f.configure(required);
     const baseline = f.root.runtime.ledger.snapshot();
-    await f.configure({ [manifest.id]: { enabled: true, config } });
+    const baseExtensions = f.extensions;
+    const baseHandlers = f.handlers.size;
+    await f.configure({
+      ...required,
+      [manifest.id]: { enabled: true, config },
+    });
     const fiber = [...f.root.runtime.fibers].find(
       (fiber) => fiber.definition.name === manifest.id,
     )!;
@@ -105,18 +128,21 @@ for (const manifest of features) {
     if (manifest.id === "diagrams") {
       assert.equal(activeHooks.fence, true);
     }
-    await f.configure({});
+    await f.configure(required);
     assert.deepEqual(await renderHooks(f.root), {
       reads: 0,
       prepared: false,
       fence: undefined,
     });
     assert.deepEqual(await f.root.pipeline("editor/selectionMenu", []), []);
-    assert.equal(f.extensions, 0);
-    assert.equal(f.handlers.size, 0);
+    assert.equal(f.extensions, baseExtensions);
+    assert.equal(f.handlers.size, baseHandlers);
     // Every effect, listener, child plugin and service it held is gone.
     assert.deepEqual(f.root.runtime.ledger.snapshot(), baseline);
-    await f.configure({ [manifest.id]: { enabled: true, config } });
+    await f.configure({
+      ...required,
+      [manifest.id]: { enabled: true, config },
+    });
     assert.ok(hasExtensions(f, manifest.id));
     assert.deepEqual(await renderHooks(f.root), activeHooks);
     await f.root.dispose();
@@ -185,10 +211,17 @@ function settingsFor(enabled: Set<string>) {
   );
 }
 function owners(f: ReturnType<typeof fixture>) {
+  const running = new Set(
+    [...f.root.runtime.fibers].map((fiber) => fiber.definition.name),
+  );
   for (const fiber of f.root.runtime.fibers) {
+    // A feature whose provider is off waits for it, as declared.
+    const waiting = (providers[fiber.definition.name] ?? []).some(
+      (id) => !running.has(id),
+    );
     assert.equal(
       fiber.state,
-      "active",
+      waiting ? "pending" : "active",
       `${fiber.definition.name}: ${String(fiber.error)}`,
     );
   }

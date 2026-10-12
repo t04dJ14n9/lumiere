@@ -36,6 +36,11 @@ export const toggles: readonly SettingToggle[] = [
     label: "Inline title",
   },
   {
+    command: "toggleInlineGitChanges",
+    key: "plugins.gitInline.enabled",
+    label: "Inline git changes",
+  },
+  {
     command: "toggleVim",
     key: "plugins.vim.enabled",
     label: "Vim mode",
