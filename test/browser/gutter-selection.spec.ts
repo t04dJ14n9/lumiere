@@ -5,6 +5,7 @@
  * on dark themes no gutter cell or caret paints a solid box over the text.
  */
 import { test, expect, type Page } from "@playwright/test";
+import type { EditorState } from "@codemirror/state";
 import { open } from "./harness";
 
 const NOTE =
@@ -284,7 +285,15 @@ test("operations on line-number selections: delete, undo, type, paste, EOF, brac
   });
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => text(page)).toBe(OPS);
-  // Delete again (from the line selection): the same result.
+  // Undo goes through the host's document history, which restores text but
+  // not the selection: the caret is left collapsed at the line's start (a
+  // known gap, tracked in review-multisel-round2.md). Pinned exactly so a
+  // change either way is noticed.
+  expect(await selection(page)).toEqual({
+    anchor: opsStart(2),
+    head: opsStart(2),
+  });
+  // Delete again from a fresh line selection: the same result.
   await clickLine(page, 2);
   await page.keyboard.press("Delete");
   await expect.poll(() => text(page)).toBe("one\nthree\nlast");
@@ -328,11 +337,15 @@ test("operations on line-number selections: delete, undo, type, paste, EOF, brac
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => text(page)).toBe(OPS);
 
-  // A bracket over the selection (closeBrackets wraps or replaces; either
-  // way one undo restores the note).
+  // A bracket over the selection: closeBrackets wraps the line and its
+  // break, keeping the text selected inside; one undo restores the note.
   await clickLine(page, 3);
   await page.keyboard.type("(");
-  await expect.poll(() => text(page)).not.toBe(OPS);
+  await expect.poll(() => text(page)).toBe("one\n\n(three\n)last");
+  expect(await selection(page)).toEqual({
+    anchor: opsStart(3) + 1,
+    head: opsStart(4) + 1,
+  });
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => text(page)).toBe(OPS);
 
@@ -368,6 +381,21 @@ test("Vim yanks, deletes, changes and puts a line-number selection as text", asy
   await page.keyboard.press("u");
   await expect.poll(() => text(page)).toBe(OPS);
 
+  // p away from column zero: the register is characterwise (the line's text
+  // and break), so it goes after the cursor inside line 1, not below it.
+  await clickLine(page, 3);
+  await page.keyboard.press("y");
+  await page.keyboard.press("g");
+  await page.keyboard.press("g");
+  await page.keyboard.press("l");
+  await page.keyboard.press("p");
+  await expect.poll(() => text(page)).toBe("onthree\ne\n\nthree\nlast");
+  // Multi-line characterwise p leaves the cursor at the start of the put
+  // text, as in Vim.
+  expect(await selection(page)).toMatchObject({ head: 2 });
+  await page.keyboard.press("u");
+  await expect.poll(() => text(page)).toBe(OPS);
+
   // d removes the line and its break; u restores it.
   await clickLine(page, 3);
   await page.keyboard.press("d");
@@ -381,4 +409,71 @@ test("Vim yanks, deletes, changes and puts a line-number selection as text", asy
   await page.keyboard.type("new\n");
   await page.keyboard.press("Escape");
   await expect.poll(() => text(page)).toBe("new\n\nthree\nlast");
+});
+
+for (const cancel of ["blur", "pointercancel"] as const) {
+  test(`a cancelled line-number drag (${cancel}) stops extending the selection`, async ({
+    page,
+  }) => {
+    const doc = "one\ntwo\nthree\nfour";
+    await open(page, doc);
+    await page.evaluate(() => window.harness.reveal(0));
+    const one = await centre(page, 1);
+    const three = await centre(page, 3);
+    await page.mouse.move(one.x, one.y);
+    await page.mouse.down();
+    expect(await selection(page)).toEqual({ anchor: 0, head: 4 });
+    await page.evaluate((type) => {
+      if (type === "blur") {
+        window.dispatchEvent(new Event("blur"));
+      } else {
+        document.dispatchEvent(
+          new PointerEvent("pointercancel", { bubbles: true }),
+        );
+      }
+    }, cancel);
+    // The button is still held (buttons: 1) but the gesture is over.
+    await page.mouse.move(three.x, three.y, { steps: 5 });
+    expect(await selection(page)).toEqual({ anchor: 0, head: 4 });
+    await page.mouse.up();
+    expect(await selection(page)).toEqual({ anchor: 0, head: 4 });
+    expect(await page.evaluate(() => window.harness.text)).toBe(doc);
+    // A fresh gesture still works.
+    await page.mouse.move(three.x, three.y);
+    await page.mouse.down();
+    await page.mouse.move(one.x, one.y, { steps: 5 });
+    await page.mouse.up();
+    expect(await selection(page)).toEqual({ anchor: 14, head: 0 });
+  });
+}
+
+test("a queued pointer release after the tracker is removed does not throw", async ({
+  page,
+}) => {
+  await open(page, OPS);
+  const errors: string[] = [];
+  // Collab's synchronizer also needs fields the bare state lacks; only the
+  // pointer tracker's own queued release is under test.
+  page.on("pageerror", (error) => {
+    if (!/sendableUpdates/.test(error.stack ?? "")) {
+      errors.push(error.message);
+    }
+  });
+  await page.evaluate(async () => {
+    const view = [...window.harness.views[0]!.runtime.fibers].find(
+      (fiber) => fiber.definition.name === "livePreview",
+    )!.context!.editor.view;
+    view.contentDOM.dispatchEvent(
+      new MouseEvent("mousedown", { bubbles: true, button: 0, buttons: 1 }),
+    );
+    document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+    // Remove every extension before the queued release runs.
+    view.setState(
+      (view.state.constructor as typeof EditorState).create({
+        doc: view.state.doc,
+      }),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+  expect(errors).toEqual([]);
 });
