@@ -55,20 +55,28 @@ export function computeHunks(baseline: string, doc: Text): DocHunk[] {
 }
 
 /**
- * The fresh hunk an older one (a mapped bar, a widget's copy) stands for: same
- * kind and baseline text, overlapping it. Undefined when the change is gone.
+ * The fresh hunk an older one (a mapped bar, a widget's copy) stands for. The
+ * identity is the baseline side: same kind, baseline text and baseline line.
+ * The fresh hunk must also overlap the held one and be no wider than it, so a
+ * re-diff that realigns the baseline or widens the change (taking unrelated
+ * edits with it) never becomes the target of a destructive action. Undefined
+ * when the change is gone or no longer recognisable: the caller does nothing.
  */
 export function resolveHunk(
   fresh: readonly DocHunk[],
   hunk: DocHunk,
 ): DocHunk | undefined {
-  return fresh.find(
+  const matches = fresh.filter(
     (candidate) =>
       candidate.kind === hunk.kind &&
       candidate.old === hunk.old &&
+      candidate.oldLine === hunk.oldLine &&
+      candidate.atEnd === hunk.atEnd &&
       candidate.from <= hunk.to &&
-      candidate.to >= hunk.from,
+      candidate.to >= hunk.from &&
+      candidate.to - candidate.from <= hunk.to - hunk.from,
   );
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /** The edit that puts a hunk's baseline text back. */

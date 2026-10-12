@@ -356,3 +356,19 @@ test("N1: the peek shows the whole table, fence or frontmatter the change sits i
     );
   }
 });
+
+test("R2-B1: a held addition never retargets a different, larger fresh hunk", () => {
+  const baseline = "A";
+  let state = EditorState.create({ doc: "X\nA\nY", extensions: hunkField });
+  state = state.update({
+    effects: setHunks.of(computeHunks(baseline, state.doc)),
+  }).state;
+  const y = state.field(hunkField).hunks[1]!;
+  assert.deepEqual([y.kind, y.from, y.to, y.oldLine], ["added", 4, 5, 2]);
+  // Append "\nA" before the recompute: the fresh diff is one [0,5) addition.
+  state = state.update({ changes: { from: 5, insert: "\nA" } }).state;
+  const mapped = state.field(hunkField).hunks[1]!;
+  const after = revertHeld(state, baseline, mapped).doc.toString();
+  assert.ok(after.startsWith("X\n"), `X was deleted: ${JSON.stringify(after)}`);
+  assert.ok(["X\nA\nY\nA", "X\nA"].includes(after), after);
+});

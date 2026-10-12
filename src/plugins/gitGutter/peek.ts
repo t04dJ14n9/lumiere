@@ -207,7 +207,7 @@ class PeekWidget extends WidgetType {
       });
       void adoptPass(lifetime, pending)
         .then((kept) => {
-          if (kept) {
+          if (kept && lifetime.live) {
             view.requestMeasure();
           }
         })

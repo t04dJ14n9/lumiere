@@ -189,3 +189,29 @@ test("N3: very different inputs fall back to one replacement within the trace bu
     ["equal", "delete", "insert", "equal"],
   );
 });
+
+test("R2-B2: an unmatched long backtick run does not stall highlighting", () => {
+  const prefix = "prose " + "`".repeat(10_000) + "x ".repeat(50_000);
+  const before = prefix + "old";
+  const after = prefix + "new";
+  const started = performance.now();
+  const segments = wordDiff(before, after);
+  const html = markSide(segments, "after");
+  const elapsed = performance.now() - started;
+  assert.ok(html.endsWith('<ins class="mw-gd-ins">new</ins>'), html.slice(-80));
+  assert.ok(elapsed < 1500, `took ${elapsed} ms`);
+});
+
+test("R2-B2: code spans still need a closing run of the same length", () => {
+  const mark = (a: string, b: string) => markSide(wordDiff(a, b), "after");
+  assert.equal(mark("a ``x` old`` b", "a ``x` new`` b"), "a ``x` new`` b");
+  assert.equal(
+    mark("a `x` old", "a `x` new"),
+    'a `x` <ins class="mw-gd-ins">new</ins>',
+  );
+  // An unmatched run protects nothing after it.
+  assert.equal(
+    mark("a ``` old", "a ``` new"),
+    'a ``` <ins class="mw-gd-ins">new</ins>',
+  );
+});
