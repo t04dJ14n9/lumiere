@@ -23,14 +23,32 @@ const HEADING = /^ {0,3}#{1,6}(\s|$)/;
 const isTable = (line: string) => line.trimStart().startsWith("|");
 const isMath = (line: string) => line.trim().startsWith("$$");
 
+/**
+ * Whether `line` closes a fence of `length` `char`s: up to three spaces, at
+ * least that many fence characters, then only whitespace. A hand scan; the
+ * regex form backtracks the run against a long whitespace tail.
+ */
+function closesFence(line: string, char: string, length: number): boolean {
+  let i = 0;
+  while (i < 3 && line[i] === " ") {
+    i++;
+  }
+  const start = i;
+  while (line[i] === char) {
+    i++;
+  }
+  return i - start >= length && line.slice(i).trim() === "";
+}
+
 /** Where the block starting at line `i` ends (exclusive), and its kind. */
 function blockAt(lines: readonly string[], i: number): [BlockKind, number] {
   const line = lines[i]!;
   const fence = FENCE.exec(line);
   if (fence) {
     const marker = fence[1]!;
-    const close = new RegExp(`^ {0,3}\\${marker[0]}{${marker.length},}\\s*$`);
-    return ["code", scan(lines, i + 1, (next) => !close.test(next)) + 1];
+    const close = (next: string) =>
+      closesFence(next, marker[0]!, marker.length);
+    return ["code", scan(lines, i + 1, (next) => !close(next)) + 1];
   }
   if (isMath(line)) {
     const oneLine = line.trim().length > 2 && line.trim().endsWith("$$");
@@ -178,6 +196,9 @@ export const INS_CLASS = "mw-gd-ins";
  * bare (the block is still marked as changed), so the diff never breaks the
  * rendering of emphasis, links or table pipes.
  */
+/** Longest side text `markSide` marks; longer sides are returned unmarked. */
+export const MAX_MARK_CHARS = 200_000;
+
 export function markSide(
   segments: readonly Segment[],
   side: "before" | "after",
@@ -189,6 +210,10 @@ export function markSide(
     .filter((segment) => segment.type === "equal" || segment.type === own)
     .map((segment) => segment.text)
     .join("");
+  if (sideText.length > MAX_MARK_CHARS) {
+    // Past the admission limit: the side as it is, before any scan.
+    return sideText;
+  }
   const guarded = overlaps(
     protectedRanges(sideText).concat(codeSpans(sideText)),
   );
@@ -199,11 +224,17 @@ export function markSide(
       out += segment.text;
       at += segment.text.length;
     } else if (segment.type === own) {
-      const [, lead, core, trail] = /^(\s*)([\s\S]*?)(\s*)$/.exec(
-        segment.text,
-      )!;
-      const from = at + lead!.length;
-      const to = from + core!.length;
+      // Split off surrounding whitespace by length, not by a regex (a lazy
+      // core with a trailing \s* is quadratic on long inner whitespace).
+      const text = segment.text;
+      const head = text.length - text.trimStart().length;
+      const tail =
+        head === text.length ? 0 : text.length - text.trimEnd().length;
+      const lead = text.slice(0, head);
+      const core = text.slice(head, text.length - tail);
+      const trail = text.slice(text.length - tail);
+      const from = at + lead.length;
+      const to = from + core.length;
       const safe =
         core && PLAIN.test(core) && !core.includes("\n") && !guarded(from, to);
       out += safe
