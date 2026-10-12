@@ -340,6 +340,10 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    verify that behavior in Obsidian.
 4. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
    One undo restores each operation.
+   Include inline code (for example `git.tencent.com`), bold, links and inline
+   math in selected header and body cells. In dark and light themes, the blue
+   tint continues through code without opaque holes; all text stays readable.
+   Move or clear the selection: unselected code regains its theme background.
 5. Run **Insert Table** and every **Table:** command (insert, delete and
    move rows and columns, align, sort) from the palette and the menu.
    The cell menu has all Row/Column actions, with impossible moves disabled,
