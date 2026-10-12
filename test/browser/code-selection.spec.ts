@@ -15,6 +15,9 @@ for (const dark of [false, true]) {
         features: { vim: { enabled: vim, config: {} } },
       });
       await page.evaluate((dark) => {
+        // VS Code always sets the theme kind on the body; the blend follows it.
+        document.body.classList.remove("vscode-light", "vscode-dark");
+        document.body.classList.add(dark ? "vscode-dark" : "vscode-light");
         const style = document.documentElement.style;
         style.setProperty(
           "--vscode-editor-background",
@@ -112,8 +115,17 @@ for (const dark of [false, true]) {
           },
           { bytes: [...pixels], point },
         );
-        expect(pixel).toEqual(dark ? [38, 79, 120] : [173, 214, 255]);
-        const dir = path.resolve("../../editor-redesign-2026-10-11/selection");
+        // 62633ed's see-through accent tint over the code-block background
+        // (#282828 / #f2f3f5): screen-blended on dark, multiplied on light.
+        const expected = dark ? [75, 71, 102] : [217, 215, 239];
+        pixel.forEach((channel, index) =>
+          expect(Math.abs(channel - expected[index]!)).toBeLessThanOrEqual(2),
+        );
+        // Optional review screenshots: SELECTION_SHOTS=<dir>.
+        const dir = process.env.SELECTION_SHOTS;
+        if (!dir) {
+          continue;
+        }
         mkdirSync(dir, { recursive: true });
         await page.screenshot({
           path: path.join(
