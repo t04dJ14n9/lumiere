@@ -39,6 +39,7 @@ test("the emitted dist/api declarations type-check a consumer on their own", () 
       ].join("\n"),
     );
     const checked = run([
+      "--ignoreConfig",
       "--noEmit",
       "--strict",
       "--target",
