@@ -1,6 +1,6 @@
-import type MarkdownIt from "markdown-it";
-import type StateInline from "markdown-it/lib/rules_inline/state_inline.mjs";
-import type StateBlock from "markdown-it/lib/rules_block/state_block.mjs";
+import type { MarkdownIt } from "markdown-it";
+import type { StateInline } from "markdown-it";
+import type { StateBlock } from "markdown-it";
 import { attr, escape } from "./helpers";
 export function math(md: MarkdownIt): void {
   md.inline.ruler.before("escape", "math", inlineMath);

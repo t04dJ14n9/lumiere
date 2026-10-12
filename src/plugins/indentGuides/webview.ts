@@ -20,7 +20,7 @@ export function indentation(text: string, tabSize: number): number {
 function guides(view: EditorView): DecorationSet {
   const ranges: Range<Decoration>[] = [];
   for (const visible of view.visibleRanges) {
-    for (let at = visible.from; at <= visible.to; ) {
+    for (let at = visible.from; at <= visible.to;) {
       const line = view.state.doc.lineAt(at);
       const width = indentation(line.text, view.state.tabSize);
       if (width) {

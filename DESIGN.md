@@ -1290,6 +1290,17 @@ Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
 - Available from the editor context menu, the selection menu and the
   command palette.
 
+### 17.1 Bridge envelope
+
+Copy Link for Agent still copies the text above and may open a chat. A
+separate `bridge` plugin publishes a versioned JSON envelope
+(`docs/bridge-envelope.md`) for the same selection and does not open a
+chat. Agent PDF Viewer stays a second extension: `vscodeEmbedPdf.bridge.envelope`
+is called only when that command is registered. Wiki copy commands use the
+envelope and the clipboard text, and they never start an agent. The envelope
+is a workbench protocol, not OKF metadata, and it is not a shared
+Back/Forward history.
+
 ## 18. Public API v1 and outside extensions
 
 ### 18.1 Shape

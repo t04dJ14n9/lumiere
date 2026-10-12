@@ -259,7 +259,7 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
       };
     });
     expect(half.share).toBeCloseTo(0.5, 2);
-    expect(half.colour).toMatch(/^rgb\(/);
+    expect(half.colour).toMatch(/^(rgb|oklch)\(/);
     await page.keyboard.press("Escape");
     await page.keyboard.press("/");
     await expect(editor).toHaveAttribute("data-caret-mode", "prompt");

@@ -1,4 +1,4 @@
-import type MarkdownIt from "markdown-it";
+import type { MarkdownIt } from "markdown-it";
 import { attr, escape } from "./helpers";
 export function fences(md: MarkdownIt): void {
   md.renderer.rules.fence = (tokens, index) => {

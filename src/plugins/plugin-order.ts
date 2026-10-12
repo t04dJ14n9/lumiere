@@ -73,6 +73,12 @@ export const WORKBENCH_FEATURE_ORDER = [
   "quickSwitcher",
   "wordCount",
   "linkUpdates",
+  // Bridge before wiki: wiki copy reads the bridge, and does not inject back.
+  "bridge",
+  "wiki",
+  "assets",
+  "scratch",
+  "marp",
 ] as const;
 
 const owners: readonly string[] = [

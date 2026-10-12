@@ -5,13 +5,7 @@ import { findClusterBreak, type Text } from "@codemirror/state";
  * the search or ex line being typed. VSCodeVim draws both differently.
  */
 export type CaretMode =
-  | "typing"
-  | "normal"
-  | "visual"
-  | "insert"
-  | "replace"
-  | "pending"
-  | "prompt";
+  "typing" | "normal" | "visual" | "insert" | "replace" | "pending" | "prompt";
 export type CursorStyle =
   | "line"
   | "block"

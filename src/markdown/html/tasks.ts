@@ -1,4 +1,4 @@
-import type MarkdownIt from "markdown-it";
+import type { MarkdownIt } from "markdown-it";
 import { attr } from "./helpers";
 export function tasks(md: MarkdownIt): void {
   md.core.ruler.after("inline", "tasks", (state) => {

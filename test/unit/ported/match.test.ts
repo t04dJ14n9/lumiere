@@ -56,9 +56,8 @@ test("repeated tokens skip occupied matches and normalized ranges coalesce", () 
 });
 
 test("prepared ranking scores equal highlighted fuzzy scores for ASCII, CJK and normalization", async () => {
-  const { prepareFuzzyText, preparedFuzzyScore } = await import(
-    "../../../src/shared/fuzzy"
-  );
+  const { prepareFuzzyText, preparedFuzzyScore } =
+    await import("../../../src/shared/fuzzy");
   for (const query of [
     "",
     "a",

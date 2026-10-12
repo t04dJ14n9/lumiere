@@ -4,6 +4,14 @@
 
 First packaged build, for the owner's acceptance testing. Not published.
 
+- Wiki, assets, scratch and Marp plugins, plus a versioned bridge
+  envelope (`docs/bridge-envelope.md`). Copy Wiki Reference for Agent and
+  Copy Bridge Envelope do not start an agent. Import Asset writes into the
+  configured assets folder only when you import. Scratch notes stay outside
+  the bundle until Promote Scratch Note. Marp decks preview and export
+  through VS Code and Marp for VS Code; a deck inside the wiki bundle is
+  not wrapped into a page. Agent PDF Viewer stays a separate extension.
+
 - Opening a target in a note (a Note Outline click, a Backlinks entry, a
   same-note `#heading` link or a link from another note) scrolls it to the vertical centre of the editor, as VS Code's Outline and
   Obsidian's do, instead of to the nearest edge; near the start or end of a

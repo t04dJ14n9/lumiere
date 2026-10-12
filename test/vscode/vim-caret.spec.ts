@@ -325,19 +325,13 @@ test("Vim carets match the built-in editor's block, line and underline in the re
       await page.keyboard.press("l");
     }
     const results: Record<string, [Measured, Measured]> = {};
-    results.normal = [
-      builtins.block!,
-      await ours(frame, page, "normal", builtins.block!.colour),
-    ];
+    results.normal = [builtins.block!, await ours(frame, page, "normal")];
     await page.keyboard.press("v");
     await expect(frame.locator(".mw-editor")).toHaveAttribute(
       "data-caret-mode",
       "visual",
     );
-    results.visual = [
-      builtins.block!,
-      await ours(frame, page, "visual", builtins.block!.colour),
-    ];
+    results.visual = [builtins.block!, await ours(frame, page, "visual")];
     await page.keyboard.press("Escape");
     // Insert mode is the editor's own caret, like VSCodeVim's: editor.cursorStyle decides.
     style("line");
@@ -383,6 +377,11 @@ test("Vim carets match the built-in editor's block, line and underline in the re
         ),
         `${said}: element height`,
       ).toBeLessThanOrEqual(1);
+      // Our block carets are see-through tints (the glyph keeps its colour),
+      // so only their element boxes are compared with the opaque built-in.
+      if (mode === "normal" || mode === "visual") {
+        continue;
+      }
       // Same width on screen, to the pixel (±1 for anti-aliased edges).
       expect(
         Math.abs(mine.pixels.width - native.pixels.width),

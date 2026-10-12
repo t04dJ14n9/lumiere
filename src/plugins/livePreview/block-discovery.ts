@@ -62,7 +62,7 @@ export function visitRendererNodes(
   );
   if (hasOnlyBlockNodes && !options.region) {
     const nodes = blockNodes(tree);
-    for (let index = 0; index < nodes.length; ) {
+    for (let index = 0; index < nodes.length;) {
       const entry = nodes[index]!;
       index =
         options.enter(entry.node) === false ? entry.subtreeEnd : index + 1;

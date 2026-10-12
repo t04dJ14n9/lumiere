@@ -1,5 +1,5 @@
-import type MarkdownIt from "markdown-it";
-import type { RenderRule } from "markdown-it/lib/renderer.mjs";
+import type { MarkdownIt } from "markdown-it";
+import type { RendererRule as RenderRule } from "markdown-it";
 import { escape } from "./helpers";
 import type { RenderOptions } from "./types";
 export function html(md: MarkdownIt): void {

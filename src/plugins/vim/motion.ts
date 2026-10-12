@@ -71,14 +71,14 @@ function canRevealBlock(
 ): boolean {
   return Boolean(
     event.type === "keydown" &&
-      ["j", "k"].includes(event.key) &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey &&
-      mode &&
-      !mode.insertMode &&
-      !mode.visualMode &&
-      !mode.inputState.operator,
+    ["j", "k"].includes(event.key) &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey &&
+    mode &&
+    !mode.insertMode &&
+    !mode.visualMode &&
+    !mode.inputState.operator,
   );
 }
 

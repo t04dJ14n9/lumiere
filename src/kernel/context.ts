@@ -259,8 +259,7 @@ export class Context {
   ): ReturnType<EventFunction<K>> | undefined {
     this.assertLive();
     return this.runtime.events.bail(name, args) as
-      | ReturnType<EventFunction<K>>
-      | undefined;
+      ReturnType<EventFunction<K>> | undefined;
   }
   pipeline<K extends keyof Events>(
     name: K,

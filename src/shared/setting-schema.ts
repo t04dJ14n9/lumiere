@@ -27,8 +27,7 @@ function typeOf(schema: Schema): string | undefined {
     Array.isArray(schema.type) ? schema.type : [schema.type]
   ) as unknown[];
   return types.find((type) => typeof type === "string" && type !== "null") as
-    | string
-    | undefined;
+    string | undefined;
 }
 
 export function editKind(schema: Schema | undefined): EditKind {

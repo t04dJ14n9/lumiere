@@ -45,8 +45,8 @@ async function reconcileFeatureCommands(
   for (const manifest of manifests) {
     const enabled = Boolean(
       panel &&
-        settings?.preset === "obsidian" &&
-        (settings.features?.[manifest.id]?.enabled ?? manifest.defaultEnabled),
+      settings?.preset === "obsidian" &&
+      (settings.features?.[manifest.id]?.enabled ?? manifest.defaultEnabled),
     );
     const previous = fibers.get(manifest.id);
     if (!enabled && previous) {

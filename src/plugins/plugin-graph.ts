@@ -44,6 +44,8 @@ export const SERVICE_PROVIDERS: Readonly<
   suggest: "suggest",
   codeBlocks: "codeBlocks",
   vim: "vim",
+  bridgeCapture: "bridge",
+  wikiLayout: "wiki",
   links: "links",
 };
 

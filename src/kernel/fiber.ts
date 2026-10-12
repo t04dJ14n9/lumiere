@@ -3,11 +3,7 @@ import type { Runtime } from "./runtime";
 import { KernelError } from "./errors";
 import type { Plugin, Services } from "./types";
 export type FiberState =
-  | "pending"
-  | "loading"
-  | "active"
-  | "failed"
-  | "disposed";
+  "pending" | "loading" | "active" | "failed" | "disposed";
 /**
  * One started plugin, gated on its required services. Invariants: only the
  * current generation commits (a stale apply's context is already disposed),

@@ -11,7 +11,7 @@
   },
   "private": true,
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.128.0"
   },
   "main": "./dist/extension.js",
   "types": "./dist/api/types.d.ts",
@@ -43,6 +43,21 @@
         "title": "Copy Link for Agent",
         "category": "Markdown Workbench",
         "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "markdownWorkbench.assets.import",
+        "title": "Import Asset",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.bridge.copyEnvelope",
+        "title": "Copy Bridge Envelope",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.bridge.envelope",
+        "title": "Bridge Envelope",
+        "category": "Markdown Workbench"
       },
       {
         "command": "markdownWorkbench.insertCallout",
@@ -254,6 +269,31 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.marp.preview",
+        "title": "Open Marp Preview to the Side",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.marp.export",
+        "title": "Export Marp Slide Deck",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.marp.toggle",
+        "title": "Toggle Marp",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.marp.moveOutside",
+        "title": "Move Marp Deck Outside Bundle",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.marp.keepInWorkbench",
+        "title": "Keep Marp Deck in Workbench",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.toggleInlineMath",
         "title": "Toggle Inline Math",
         "category": "Markdown Workbench"
@@ -287,6 +327,16 @@
       {
         "command": "markdownWorkbench.quickSwitcher",
         "title": "Quick Switcher",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.scratch.new",
+        "title": "New Scratch Note",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.scratch.promote",
+        "title": "Promote Scratch Note",
         "category": "Markdown Workbench"
       },
       {
@@ -422,6 +472,26 @@
       {
         "command": "markdownWorkbench.consumeVimHostShortcut",
         "title": "Consume Vim Host Shortcut",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.wiki.copyForAgent",
+        "title": "Copy Wiki Reference for Agent",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.wiki.copyEnvelope",
+        "title": "Copy Wiki Bridge Envelope",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.wiki.showLayout",
+        "title": "Show Wiki Layout",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.wiki.refresh",
+        "title": "Refresh Wiki Diagnostics",
         "category": "Markdown Workbench"
       }
     ],
@@ -564,6 +634,18 @@
         {
           "command": "markdownWorkbench.copyLinkForAgent",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.agentBridge"
+        },
+        {
+          "command": "markdownWorkbench.assets.import",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.assets.enabled"
+        },
+        {
+          "command": "markdownWorkbench.bridge.copyEnvelope",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.bridge.enabled"
+        },
+        {
+          "command": "markdownWorkbench.bridge.envelope",
+          "when": "false"
         },
         {
           "command": "markdownWorkbench.insertCallout",
@@ -729,6 +811,26 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.livePreview"
         },
         {
+          "command": "markdownWorkbench.marp.preview",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.marp.enabled"
+        },
+        {
+          "command": "markdownWorkbench.marp.export",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.marp.enabled"
+        },
+        {
+          "command": "markdownWorkbench.marp.toggle",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.marp.enabled"
+        },
+        {
+          "command": "markdownWorkbench.marp.moveOutside",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.marp.enabled"
+        },
+        {
+          "command": "markdownWorkbench.marp.keepInWorkbench",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.marp.enabled"
+        },
+        {
           "command": "markdownWorkbench.toggleInlineMath",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.math"
         },
@@ -752,6 +854,14 @@
         {
           "command": "markdownWorkbench.quickSwitcher",
           "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.quickSwitcher.enabled"
+        },
+        {
+          "command": "markdownWorkbench.scratch.new",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.scratch.enabled"
+        },
+        {
+          "command": "markdownWorkbench.scratch.promote",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.scratch.enabled"
         },
         {
           "command": "markdownWorkbench.openSettings"
@@ -852,6 +962,22 @@
         {
           "command": "markdownWorkbench.consumeVimHostShortcut",
           "when": "false"
+        },
+        {
+          "command": "markdownWorkbench.wiki.copyForAgent",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.wiki.enabled"
+        },
+        {
+          "command": "markdownWorkbench.wiki.copyEnvelope",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.wiki.enabled"
+        },
+        {
+          "command": "markdownWorkbench.wiki.showLayout",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.wiki.enabled"
+        },
+        {
+          "command": "markdownWorkbench.wiki.refresh",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.wiki.enabled"
         }
       ],
       "webview/context": [
@@ -933,6 +1059,12 @@
           "scope": "resource",
           "description": "Copy selected text with a link to its saved source lines, for an agent."
         },
+        "markdownWorkbench.plugins.assets.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Import a file into the project's assets folder and insert a portable Markdown link."
+        },
         "markdownWorkbench.plugins.autoPair.enabled": {
           "type": "boolean",
           "default": true,
@@ -944,6 +1076,12 @@
           "default": false,
           "scope": "resource",
           "description": "Backlinks view and status bar count for the active note, with unlinked mentions."
+        },
+        "markdownWorkbench.plugins.bridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Build a versioned selection envelope for an agent. Agent PDF Viewer is used when it is installed. This does not open a chat."
         },
         "markdownWorkbench.plugins.callouts.enabled": {
           "type": "boolean",
@@ -1017,6 +1155,12 @@
           "scope": "resource",
           "description": "Follow Markdown links and wikilinks."
         },
+        "markdownWorkbench.plugins.marp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Detect Marp decks and open Marp's preview or export. Decks inside a wiki bundle are not wrapped into pages."
+        },
         "markdownWorkbench.plugins.math.enabled": {
           "type": "boolean",
           "default": true,
@@ -1064,6 +1208,12 @@
           "default": true,
           "scope": "resource",
           "description": "Find a note by name, alias or path, or create it, like Obsidian's quick switcher."
+        },
+        "markdownWorkbench.plugins.scratch.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Temporary notes outside the wiki bundle. Promote one into the wiki only when you ask."
         },
         "markdownWorkbench.plugins.search.enabled": {
           "type": "boolean",
@@ -1113,11 +1263,23 @@
           "scope": "resource",
           "description": "Vim in the Markdown editor."
         },
+        "markdownWorkbench.plugins.wiki.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Read a project's .wiki layout and copy a reference for an agent. This does not run an agent or create folders."
+        },
         "markdownWorkbench.plugins.wordCount.enabled": {
           "type": "boolean",
           "default": true,
           "scope": "resource",
           "description": "Word and character count of the active note, or of the selection, in the status bar."
+        },
+        "markdownWorkbench.assets.path": {
+          "type": "string",
+          "default": "",
+          "description": "Project-relative assets folder used when the folder has no .wiki/layout.json. Empty uses assets. The folder is created on import, not on open.",
+          "scope": "resource"
         },
         "markdownWorkbench.autoPair.brackets": {
           "type": "boolean",
@@ -1240,6 +1402,15 @@
           "description": "Attachment destination policy: empty for vault root, . for current folder, or ./sub. Rich HTML paste keeps links and does not import files.",
           "scope": "resource"
         },
+        "markdownWorkbench.marp.open": {
+          "enum": [
+            "workbench",
+            "textEditor"
+          ],
+          "default": "workbench",
+          "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workbench remembers a deck.",
+          "scope": "resource"
+        },
         "markdownWorkbench.onlineVideos.bilibiliPlayer": {
           "type": "boolean",
           "default": false,
@@ -1253,6 +1424,12 @@
             "source"
           ],
           "default": "visible",
+          "scope": "resource"
+        },
+        "markdownWorkbench.scratch.folder": {
+          "type": "string",
+          "default": "scratch",
+          "description": "Project-relative folder for scratch notes when the folder has no .wiki/layout.json. A loaded layout uses its scratch path. The folder is created when you create a note.",
           "scope": "resource"
         },
         "markdownWorkbench.tags.viewSort": {
@@ -1381,31 +1558,30 @@
     "@mathjax/src": "4.1.3",
     "@replit/codemirror-vim": "6.4.0",
     "dompurify": "3.4.16",
-    "lucide": "1.53.0",
-    "markdown-it": "14.3.0",
+    "lucide": "1.55.0",
+    "markdown-it": "15.0.2",
     "markdown-it-footnote": "4.0.0",
     "markdown-it-mark": "4.0.0",
-    "mermaid": "11.4.1",
+    "mermaid": "12.1.0",
     "prismjs": "1.30.0",
     "turndown": "^7.2.4",
     "yaml": "2.9.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.30.0",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "1.64.0",
-    "@types/markdown-it": "^14.1.2",
     "@types/markdown-it-footnote": "3.0.4",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.19.2",
     "@types/prismjs": "1.26.6",
     "@types/turndown": "^5.0.6",
-    "@types/vscode": "1.90.0",
-    "@vscode/test-electron": "^2.5.0",
-    "@vscode/vsce": "^3.6.0",
+    "@types/vscode": "1.125.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",
-    "eslint": "^9.30.0",
-    "prettier": "3.9.9",
-    "tsx": "^4.20.0",
+    "eslint": "^10.12.0",
+    "prettier": "3.9.10",
+    "tsx": "^4.23.15",
     "typescript": "6.0.3",
-    "typescript-eslint": "^8.35.0"
+    "typescript-eslint": "^8.71.1"
   }
 }

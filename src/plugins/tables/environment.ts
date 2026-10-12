@@ -5,12 +5,7 @@ import type { MenuItem } from "../editor/api";
 import type { VimService } from "../vim/api";
 import type { LinksService } from "../links/api";
 export type Action =
-  | "save"
-  | "undo"
-  | "redo"
-  | "close"
-  | "saveClose"
-  | "openAsText";
+  "save" | "undo" | "redo" | "close" | "saveClose" | "openAsText";
 /** Services captured by one table plugin instance, shared with its cell views. */
 export interface TableEnvironment {
   language: Extension;

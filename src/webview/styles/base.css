@@ -123,12 +123,55 @@ button {
 #app .cm-dropCursor {
   border-left-color: var(--vscode-editorCursor-foreground, currentColor);
 }
+/*
+ * Selection, after Obsidian: a see-through accent tint (33% on dark themes,
+ * 20% on light ones) that shows over code blocks and other line backgrounds.
+ * CodeMirror draws the selection layer behind the text (z-index -2), where
+ * opaque line backgrounds hide it, so it goes in front of the text and is
+ * blended: screen on dark themes and multiply on light ones tint the
+ * background while glyphs keep full opacity and their syntax colours.
+ */
+:root {
+  --selection-accent: var(--vscode-focusBorder, var(--accent));
+  --selection-tint: color-mix(
+    in oklch,
+    var(--selection-accent) 33%,
+    transparent
+  );
+  --selection-tint-inactive: color-mix(
+    in oklch,
+    var(--selection-accent) 18%,
+    transparent
+  );
+}
+body.vscode-light,
+body.vscode-high-contrast-light {
+  --selection-tint: color-mix(
+    in oklch,
+    var(--selection-accent) 20%,
+    transparent
+  );
+  --selection-tint-inactive: color-mix(
+    in oklch,
+    var(--selection-accent) 11%,
+    transparent
+  );
+}
+#app .cm-editor .cm-selectionLayer {
+  z-index: 1 !important; /* CodeMirror's base theme puts it at -2 */
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+body.vscode-light #app .cm-editor .cm-selectionLayer,
+body.vscode-high-contrast-light #app .cm-editor .cm-selectionLayer {
+  mix-blend-mode: multiply;
+}
 #app .cm-selectionBackground {
-  background: var(--vscode-editor-inactiveSelectionBackground, #8884);
+  background: var(--selection-tint-inactive);
 }
 #app .cm-editor.cm-focused .cm-selectionBackground,
 #app .cm-content ::selection {
-  background: var(--vscode-editor-selectionBackground, #8886);
+  background: var(--selection-tint);
 }
 /*
  * Gutters look like VS Code's: at the editor's left edge, on the editor

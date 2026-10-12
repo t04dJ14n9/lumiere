@@ -154,3 +154,27 @@
   color: var(--caret-background);
   clip-path: inset(50% 0 0);
 }
+
+/*
+ * Block carets are see-through tints over the character, like the selection,
+ * so the glyph below keeps its own colour instead of being covered.
+ */
+#app .mw-caret-layer {
+  --caret-tint: color-mix(in oklch, var(--caret-foreground) 45%, transparent);
+}
+#app .cm-editor.cm-focused[data-caret-style="block"] .mw-caret-shape,
+#app .cm-editor[data-caret-mode="visual"] .mw-caret-shape,
+.vscode-light #app .cm-editor[data-caret-mode="visual"] .mw-caret-shape,
+.vscode-high-contrast-light
+  #app
+  .cm-editor[data-caret-mode="visual"]
+  .mw-caret-shape {
+  background: var(--caret-tint);
+  color: transparent;
+}
+#app .cm-editor[data-caret-style="half-block"] .mw-caret-shape::before {
+  background: var(--caret-tint);
+}
+#app .cm-editor[data-caret-style="half-block"] .mw-caret-shape::after {
+  content: none;
+}

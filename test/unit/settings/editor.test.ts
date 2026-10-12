@@ -276,7 +276,7 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
   );
 });
 
-test("agent commands are Copy Link for Agent and explicit copied-reference navigation", async () => {
+test("agent commands copy a reference or open a reference the user already copied", async () => {
   const generated = await contributions();
   const settings = Object.keys(generated.configuration.properties);
   assert.ok(settings.includes("markdownWorkbench.plugins.agentBridge.enabled"));
@@ -286,12 +286,18 @@ test("agent commands are Copy Link for Agent and explicit copied-reference navig
   );
   const commands = generated.commands.map((command) => command.command);
   assert.ok(commands.includes("markdownWorkbench.copyLinkForAgent"));
+  // A bare copyForAgent command would look like it starts an agent. The wiki
+  // command copies text and does not open a chat.
   assert.equal(commands.includes("markdownWorkbench.copyForAgent"), false);
   assert.deepEqual(
     generated.commands
       .filter((command) => /agent/i.test(command.command))
       .map((command) => command.title),
-    ["Copy Link for Agent", "Open Copied Agent Reference"],
+    [
+      "Copy Link for Agent",
+      "Open Copied Agent Reference",
+      "Copy Wiki Reference for Agent",
+    ],
   );
   assert.equal(
     settings.some((key) => key.includes("askAgent")),
@@ -305,7 +311,11 @@ test("agent commands are Copy Link for Agent and explicit copied-reference navig
   );
   for (const menus of Object.values(generated.menus)) {
     assert.equal(
-      menus.some((menu) => menu.command.endsWith(".copyForAgent")),
+      menus.some(
+        (menu) =>
+          menu.command.endsWith(".copyForAgent") &&
+          menu.command !== "markdownWorkbench.wiki.copyForAgent",
+      ),
       false,
     );
   }

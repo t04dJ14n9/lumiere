@@ -186,9 +186,8 @@ test("suggest host enforces source feature switches and disposes RPC handlers", 
 });
 
 test("suggestion cache invalidates changed metadata and computes link text only for shown results", async () => {
-  const { SuggestionIndex } = await import(
-    "../../../src/plugins/suggest/sources"
-  );
+  const { SuggestionIndex } =
+    await import("../../../src/plugins/suggest/sources");
   const vault = index();
   for (let n = 0; n < 100; n++) {
     vault.upsertFile({
@@ -237,9 +236,8 @@ test("suggestion cache invalidates changed metadata and computes link text only 
 });
 
 test("Use Wikilinks off materializes Markdown links and replaces the entire partial wiki token", async () => {
-  const { SuggestionIndex } = await import(
-    "../../../src/plugins/suggest/sources"
-  );
+  const { SuggestionIndex } =
+    await import("../../../src/plugins/suggest/sources");
   const cached = new SuggestionIndex(index());
   const alias = cached.query(
     "Home.md",
