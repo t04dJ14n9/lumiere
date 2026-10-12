@@ -97,7 +97,7 @@ export class FindPanel implements Panel {
       button("↑", "Previous match (Shift+Enter)", () => this.next(true)),
       button("↓", "Next match (Enter)", () => this.next()),
       button("⇄", "Toggle replace", () =>
-        this.show(this.replaceRow.hidden, false),
+        this.show(this.replaceRow.hidden !== false, false),
       ),
       button("×", "Close (Escape)", () => this.close()),
     );

@@ -97,7 +97,7 @@ test("nested folds expose one disjoint span without hiding a separate visible ta
   });
   const to = source.indexOf("\n\n# After");
   const folded = state.update({
-    effects: [foldEffect.of({ from: 17, to }), foldEffect.of({ from: 8, to })],
+    effects: [foldEffect.of({ from: 8, to }), foldEffect.of({ from: 17, to })],
   }).state;
   assert.deepEqual(foldedRanges(folded), [{ from: 8, to }]);
   assert.equal(renderedWidgets(folded, 0, source.length).length, 1);

@@ -42,15 +42,30 @@ const calloutIcons: Record<string, IconNode> = {
   example: List,
   quote: Quote,
 };
+// lucide >= 1.0 icon nodes hold only the children; the root <svg> attributes are ours.
+const svgAttributes = {
+  xmlns: "http://www.w3.org/2000/svg",
+  width: 24,
+  height: 24,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  "stroke-width": 2,
+  "stroke-linecap": "round",
+  "stroke-linejoin": "round",
+};
 function iconHTML(node: IconNode, cls: string): string {
-  const attributes = (attrs: Record<string, string | number>): string =>
+  const attributes = (
+    attrs: Record<string, string | number | undefined>,
+  ): string =>
     Object.entries(attrs)
+      .filter(([, value]) => value !== undefined)
       .map(
         ([name, value]) =>
           ` ${name}="${String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;")}"`,
       )
       .join("");
-  return `<svg${attributes(node[1])} class="${cls}" aria-hidden="true">${(node[2] ?? []).map(([tag, attrs]) => `<${tag}${attributes(attrs)}/>`).join("")}</svg>`;
+  return `<svg${attributes(svgAttributes)} class="${cls}" aria-hidden="true">${node.map(([tag, attrs]) => `<${tag}${attributes(attrs)}/>`).join("")}</svg>`;
 }
 export function calloutIcon(kind: string): string {
   return iconHTML(calloutIcons[kind] ?? Info, "callout-icon");
