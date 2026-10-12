@@ -267,3 +267,13 @@ body.vscode-high-contrast-light #app .cm-editor .cm-selectionLayer {
     --file-margins: 20px;
   }
 }
+/*
+ * CodeMirror's widget buffers (zero-width 1em images beside inline widgets)
+ * sit on the baseline, which pokes above the strut of large-font lines and
+ * makes a heading with a hidden marker ~1.4px taller than its revealed source,
+ * so the note jumped when the caret entered or left. Text-top keeps them
+ * inside the line box (pinned by test/browser/stable-blocks.spec.ts).
+ */
+#app .cm-line .cm-widgetBuffer {
+  vertical-align: text-top;
+}
