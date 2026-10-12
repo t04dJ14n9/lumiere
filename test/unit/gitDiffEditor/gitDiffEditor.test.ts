@@ -414,3 +414,110 @@ test("B4: a list item's later paragraphs stay inside the list", () => {
   }
   assert.ok(rows.some((row) => /<li>[\s\S]*more of a/.test(row.after ?? "")));
 });
+
+test("R3 B4: a reference definition with its destination on the next line", () => {
+  const rows = diffRows(
+    "Read [guide][g].\n\n[g]:\n  https://example.test/old\n",
+    "Read [guide][g].\n\n[g]:\n  https://example.test/new\n",
+    renderSide,
+  );
+  assert.match(rows[0]!.before!, /href="https:\/\/example.test\/old"/);
+  assert.match(rows[0]!.after!, /href="https:\/\/example.test\/new"/);
+  const definition = rows[1]!;
+  assert.match(
+    definition.before!,
+    /mw-gd-line-del"> {2}https:\/\/example.test\/old/,
+  );
+  assert.match(
+    definition.after!,
+    /mw-gd-line-ins"> {2}https:\/\/example.test\/new/,
+  );
+});
+
+test("R3 B4: the second of two adjacent footnote definitions is found", () => {
+  const rows = diffRows(
+    "Read[^b].\n\n[^a]: First note.\n[^b]: Second note.\n",
+    "Reads[^b].\n\n[^a]: First note.\n[^b]: Second note.\n",
+    renderSide,
+  );
+  assert.match(rows[0]!.after!, /Second note\./);
+  assert.doesNotMatch(rows[0]!.after!, /First note\./);
+  assert.match(rows[1]!.after!, /mw-gd-line/);
+});
+
+test("R3 B1: disabling while a read is pending drops its change listener at once", async () => {
+  const h = slowHarness("native");
+  const root = Context.create();
+  root.provide("workbench", h.workbench as never);
+  const fiber = root.plugin(gitDiffEditorHost);
+  await root.settled();
+  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  await tick();
+  assert.equal(h.changes.size, 1);
+  await fiber.dispose();
+  // Still pending: the listener must already be gone.
+  assert.equal(h.changes.size, 0);
+  h.head.resolve({ getText: () => "# T\n\nold\n" });
+  await flush();
+  assert.equal(h.changes.size, 0);
+  assert.equal(h.shown.length, 0);
+  await root.dispose();
+});
+
+test("R3 B2: disabling while the native tab closes restores the native diff", async () => {
+  const h = harness("rendered");
+  const natives: unknown[][] = [];
+  Object.assign(h.workbench.diffViews, {
+    async openNative(...args: unknown[]) {
+      natives.push(args);
+    },
+  });
+  const root = Context.create();
+  root.provide("workbench", h.workbench as never);
+  const fiber = root.plugin(gitDiffEditorHost);
+  await root.settled();
+  const closing = deferred<boolean>();
+  let asked = false;
+  h.opened.forEach((listener) =>
+    listener(
+      opened(() => {
+        asked = true;
+        return closing.promise;
+      }),
+    ),
+  );
+  await flush();
+  assert.equal(asked, true);
+  await fiber.dispose();
+  closing.resolve(true);
+  await flush();
+  assert.equal(h.shown.filter((s) => !s.disposed).length, 0);
+  assert.equal(natives.length, 1);
+  assert.deepEqual(natives[0]!.slice(0, 2), [gitUri("HEAD"), "file:///n.md"]);
+  assert.equal(h.changes.size, 0);
+  await root.dispose();
+});
+
+test("R3: a failed command presentation releases its change listener", async () => {
+  const h = harness("native");
+  const errors: string[] = [];
+  Object.assign(h.workbench, {
+    error: (message: string) => void errors.push(message),
+  });
+  Object.assign(h.workbench.diffViews, {
+    show() {
+      throw new Error("webview failed");
+    },
+  });
+  const root = Context.create();
+  root.provide("workbench", h.workbench as never);
+  root.plugin(gitDiffEditorHost);
+  await root.settled();
+  await Promise.resolve(
+    h.commands.get("markdownWorkbench.gitDiffEditor.open")!(),
+  ).catch(() => {});
+  await flush();
+  assert.equal(errors.length, 1);
+  assert.equal(h.changes.size, 0);
+  await root.dispose();
+});

@@ -44,6 +44,8 @@ export function sideLabel(uri: string): string {
 interface Life {
   live: boolean;
   readonly panels: Set<DiffPanel>;
+  /** Cleanups of preparations no panel owns yet; run on disposal. */
+  readonly pending: Set<() => void>;
 }
 
 export const gitDiffEditorHost: Plugin = {
@@ -54,9 +56,12 @@ export const gitDiffEditorHost: Plugin = {
     if (!views || !diffViews) {
       return;
     }
-    const life: Life = { live: true, panels: new Set() };
+    const life: Life = { live: true, panels: new Set(), pending: new Set() };
     ctx.effect(() => () => {
       life.live = false;
+      for (const stop of [...life.pending]) {
+        stop();
+      }
       for (const panel of [...life.panels]) {
         panel.dispose();
       }
@@ -106,19 +111,37 @@ function report(ctx: Context, what: string, error: unknown): void {
  * that then fails reopens the native diff.
  */
 async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
+  // Captured while the plugin is live: recovery after disposal must not
+  // look the workbench up again.
+  const diffViews = ctx.workbench.diffViews!;
+  const logger = ctx.logger;
   const prepared = await prepare(ctx, life, diff);
-  if (!prepared) {
+  if (!prepared || !life.live) {
+    prepared?.stop();
     return;
   }
   let closed = false;
   try {
     closed = await diff.close();
   } catch (error) {
-    ctx.logger.warn("The native diff did not close", error);
+    logger.warn("The native diff did not close", error);
   }
-  if (!closed || !life.live) {
-    // A dirty or refused tab stays; nothing replaces it.
+  const restore = () =>
+    diffViews.openNative(
+      diff.original,
+      diff.modified,
+      title(diff, prepared),
+      diff.column,
+    );
+  if (!closed) {
+    // A dirty or refused tab stays open; nothing replaces it.
     prepared.stop();
+    return;
+  }
+  if (!life.live) {
+    // The tab closed after the plugin was turned off: put it back.
+    prepared.stop();
+    await restore();
     return;
   }
   try {
@@ -126,12 +149,7 @@ async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
   } catch (error) {
     prepared.stop();
     report(ctx, "Could not open the rendered diff", error);
-    await ctx.workbench.diffViews!.openNative(
-      diff.original,
-      diff.modified,
-      title(diff, prepared),
-      diff.column,
-    );
+    await restore();
   }
 }
 
@@ -151,8 +169,19 @@ async function openActive(ctx: Context, life: Life): Promise<void> {
     preview: false,
   };
   const prepared = await prepare(ctx, life, comparison);
-  if (prepared) {
+  if (!prepared) {
+    return;
+  }
+  if (!life.live) {
+    prepared.stop();
+    return;
+  }
+  try {
     present(ctx, life, comparison, prepared);
+  } catch (error) {
+    // Until a panel owns it, the subscription is ours to release.
+    prepared.stop();
+    throw error;
   }
 }
 
@@ -198,7 +227,16 @@ async function prepare(
       onChange?.();
     }
   });
-  const stop = () => void unsubscribe();
+  let stopped = false;
+  const stop = () => {
+    if (!stopped) {
+      stopped = true;
+      life.pending.delete(stop);
+      void unsubscribe();
+    }
+  };
+  // Owned by the plugin until a panel takes it over.
+  life.pending.add(stop);
   try {
     let sides: [DiffSide, DiffSide];
     let reads = 0;
@@ -270,6 +308,8 @@ function present(
   let open = true;
   let version = 0;
   life.panels.add(panel);
+  // The panel owns the subscription from here; its disposal releases it.
+  life.pending.delete(prepared.stop);
   panel.onDispose(() => {
     open = false;
     version++;
