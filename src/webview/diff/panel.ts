@@ -1,4 +1,6 @@
 /** The rendered diff panel's DOM: header, aligned rows and change navigation. */
+import { stepChange } from "./step";
+
 export interface PanelRow {
   readonly kind: "equal" | "modified" | "added" | "deleted";
   readonly before?: string;
@@ -82,14 +84,17 @@ export function setupPanel(
   grid.className = "mw-diff-grid";
   let current = -1;
   const changes = () => [
-    ...grid.querySelectorAll<HTMLElement>(".mw-diff-row:not(.is-equal)"),
+    // The panel's own rows only, not look-alikes inside a note's HTML.
+    ...grid.querySelectorAll<HTMLElement>(
+      ":scope > .mw-diff-row:not(.is-equal)",
+    ),
   ];
   const go = (direction: 1 | -1) => {
     const list = changes();
     if (list.length === 0) {
       return;
     }
-    current = (current + direction + list.length) % list.length;
+    current = stepChange(current, direction, list.length);
     list.forEach((row, index) =>
       row.classList.toggle("is-current", index === current),
     );
@@ -113,7 +118,8 @@ export function setupPanel(
       setLabels(head, names);
       renderRows(grid, rows);
       const total = changes().length;
-      current = Math.min(current, total - 1);
+      // The rows were rebuilt: no change is selected any more.
+      current = -1;
       head.count.textContent = total === 0 ? "No changes" : `${total} changes`;
     },
   };

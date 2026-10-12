@@ -39,8 +39,11 @@ export interface OpenedDiff {
   readonly modified: string;
   readonly column: number | undefined;
   readonly preview: boolean;
-  /** Close the native tab, unless it has unsaved changes. */
-  close(): Promise<void>;
+  /**
+   * Close the native tab, unless it has unsaved changes. True only when the
+   * tab is closed.
+   */
+  close(): Promise<boolean>;
 }
 
 /** What one side of a rendered diff shows. */

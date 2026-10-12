@@ -6,9 +6,8 @@
 import createDOMPurify from "dompurify";
 import { createRenderer } from "../../markdown/html";
 import { sanitizerOptions } from "../../plugins/render/sanitizer-options";
-import { alignBlocks, rowMarkdown } from "../../shared/diff";
-import type { BlockRow } from "../../shared/diff";
 import { setupPanel } from "./panel";
+import { diffRows } from "./rows";
 import "./diff.css";
 
 interface Side {
@@ -29,15 +28,6 @@ const sanitize = (html: string) =>
 const render = (markdown: string) =>
   renderer.renderMarkdown(markdown, { sanitize });
 
-/** One grid row per aligned block: HTML for each side, or a spacer. */
-export function rowHtml(row: BlockRow): { before?: string; after?: string } {
-  const markdown = rowMarkdown(row);
-  return {
-    ...(markdown.before !== undefined && { before: render(markdown.before) }),
-    ...(markdown.after !== undefined && { after: render(markdown.after) }),
-  };
-}
-
 const app = document.getElementById("app")!;
 const view = setupPanel(app, (action) =>
   vscode.postMessage({ type: "action", action }),
@@ -48,10 +38,7 @@ window.addEventListener(
   (event: MessageEvent<{ type?: string; left?: Side; right?: Side }>) => {
     const { type, left, right } = event.data;
     if (type === "update" && left && right) {
-      const rows = alignBlocks(left.text, right.text).map((row) => ({
-        kind: row.kind,
-        ...rowHtml(row),
-      }));
+      const rows = diffRows(left.text, right.text, render);
       view.update({ left: left.label, right: right.label }, rows);
     }
   },

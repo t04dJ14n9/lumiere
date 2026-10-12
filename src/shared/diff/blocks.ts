@@ -78,8 +78,18 @@ function frontmatterEnd(lines: readonly string[]): number {
   return close > 0 ? close + 1 : 0;
 }
 
+const LIST_ITEM = /^ {0,3}(?:[-+*]|\d{1,9}[.)])(?:[ \t]|$)/;
+
+export interface SplitOptions {
+  /**
+   * Keep a list together across blank lines: an indented paragraph or a
+   * further item after a list joins its block, so it renders inside it.
+   */
+  readonly containers?: boolean;
+}
+
 /** Split Markdown into blocks; blank lines separate blocks and belong to none. */
-export function splitBlocks(text: string): Block[] {
+export function splitBlocks(text: string, options: SplitOptions = {}): Block[] {
   const lines = splitLines(text);
   const blocks: Block[] = [];
   const add = (kind: BlockKind, from: number, to: number) =>
@@ -95,7 +105,19 @@ export function splitBlocks(text: string): Block[] {
     }
     const [kind, end] = blockAt(lines, i);
     const to = Math.min(Math.max(end, i + 1), lines.length);
-    add(kind, i, to);
+    const last = blocks[blocks.length - 1];
+    if (
+      options.containers &&
+      kind === "text" &&
+      last?.kind === "text" &&
+      LIST_ITEM.test(lines[last.from]!) &&
+      (/^[ \t]+\S/.test(lines[i]!) || LIST_ITEM.test(lines[i]!))
+    ) {
+      blocks.pop();
+      add("text", last.from, to);
+    } else {
+      add(kind, i, to);
+    }
     i = to;
   }
   return blocks;
@@ -109,9 +131,13 @@ export interface BlockRow {
 }
 
 /** Align the blocks of two texts; replaced runs pair up in order when kinds match. */
-export function alignBlocks(before: string, after: string): BlockRow[] {
-  const a = splitBlocks(before);
-  const b = splitBlocks(after);
+export function alignBlocks(
+  before: string,
+  after: string,
+  options: SplitOptions = {},
+): BlockRow[] {
+  const a = splitBlocks(before, options);
+  const b = splitBlocks(after, options);
   const rows: BlockRow[] = [];
   const runs = diffSequences(a, b, (x, y) => x.text === y.text);
   for (let r = 0; r < runs.length; r++) {

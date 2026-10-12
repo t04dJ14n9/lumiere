@@ -66,9 +66,10 @@ function openedDiff(
     column: tab.group.viewColumn,
     preview: tab.isPreview,
     close: async () => {
-      if (!tab.isDirty) {
-        await vscode.window.tabGroups.close(tab, true);
+      if (tab.isDirty) {
+        return false;
       }
+      return vscode.window.tabGroups.close(tab, true);
     },
   };
 }

@@ -40,6 +40,12 @@ export function sideLabel(uri: string): string {
  * Markdown text diffs as VS Code opens them (Source Control, Timeline); the
  * command opens one against HEAD for the active note in either mode.
  */
+/** The plugin's lifetime: false once it is turned off. */
+interface Life {
+  live: boolean;
+  readonly panels: Set<DiffPanel>;
+}
+
 export const gitDiffEditorHost: Plugin = {
   name: "gitDiffEditor",
   inject: { required: ["workbench"] },
@@ -48,9 +54,10 @@ export const gitDiffEditorHost: Plugin = {
     if (!views || !diffViews) {
       return;
     }
-    const panels = new Set<DiffPanel>();
+    const life: Life = { live: true, panels: new Set() };
     ctx.effect(() => () => {
-      for (const panel of [...panels]) {
+      life.live = false;
+      for (const panel of [...life.panels]) {
         panel.dispose();
       }
     });
@@ -64,7 +71,7 @@ export const gitDiffEditorHost: Plugin = {
       [
         {
           id: "markdownWorkbench.gitDiffEditor.open",
-          run: () => openActive(ctx, panels),
+          run: () => openActive(ctx, life),
         },
       ],
     );
@@ -74,23 +81,61 @@ export const gitDiffEditorHost: Plugin = {
           views.setting<string>("gitDiffEditor.diffEditor", "native") ===
           "rendered"
         ) {
-          void takeOver(ctx, panels, diff);
+          takeOver(ctx, life, diff).catch((error: unknown) =>
+            report(ctx, "Could not open the rendered diff", error),
+          );
         }
       }),
     );
   },
 };
 
-async function takeOver(
-  ctx: Context,
-  panels: Set<DiffPanel>,
-  diff: OpenedDiff,
-) {
-  await diff.close();
-  await open(ctx, panels, diff);
+function report(ctx: Context, what: string, error: unknown): void {
+  ctx.logger.warn(what, error);
+  const reason = error instanceof Error ? error.message : String(error);
+  try {
+    ctx.workbench.error(`${what}: ${reason}`);
+  } catch {
+    // Reporting must not throw out of an event handler.
+  }
 }
 
-async function openActive(ctx: Context, panels: Set<DiffPanel>): Promise<void> {
+/**
+ * Replace a native text diff. The comparison is prepared while the native
+ * tab stays open; the tab is closed only when that worked, and a replacement
+ * that then fails reopens the native diff.
+ */
+async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
+  const prepared = await prepare(ctx, life, diff);
+  if (!prepared) {
+    return;
+  }
+  let closed = false;
+  try {
+    closed = await diff.close();
+  } catch (error) {
+    ctx.logger.warn("The native diff did not close", error);
+  }
+  if (!closed || !life.live) {
+    // A dirty or refused tab stays; nothing replaces it.
+    prepared.stop();
+    return;
+  }
+  try {
+    present(ctx, life, diff, prepared);
+  } catch (error) {
+    prepared.stop();
+    report(ctx, "Could not open the rendered diff", error);
+    await ctx.workbench.diffViews!.openNative(
+      diff.original,
+      diff.modified,
+      title(diff, prepared),
+      diff.column,
+    );
+  }
+}
+
+async function openActive(ctx: Context, life: Life): Promise<void> {
   const note = ctx.workbench.views?.activeNote();
   const original = note ? ctx.workbench.git?.toGitUri(note, "HEAD") : undefined;
   if (!note || !original) {
@@ -99,63 +144,155 @@ async function openActive(ctx: Context, panels: Set<DiffPanel>): Promise<void> {
     );
     return;
   }
-  await open(ctx, panels, {
+  const comparison = {
     original,
     modified: note,
     column: undefined,
     preview: false,
-  });
+  };
+  const prepared = await prepare(ctx, life, comparison);
+  if (prepared) {
+    present(ctx, life, comparison, prepared);
+  }
 }
 
+/** One side's text; a side that cannot be read is an error, not empty. */
 async function readSide(ctx: Context, uri: string): Promise<DiffSide> {
-  const text =
-    ctx.workbench.views?.documentText(uri) ??
-    (await ctx.workbench.openDocument?.(uri))?.getText() ??
-    "";
+  let text = ctx.workbench.views?.documentText(uri);
+  if (text === undefined) {
+    const document = await ctx.workbench.openDocument?.(uri);
+    if (!document) {
+      throw new Error(`${sideLabel(uri)} is not available`);
+    }
+    text = document.getText();
+  }
   return { uri, label: sideLabel(uri), text: text.replace(/\r\n?/g, "\n") };
 }
 
-async function open(
+/** Both sides, read again until no change arrived while reading. */
+interface Prepared {
+  left: DiffSide;
+  right: DiffSide;
+  /** Stop following changes. */
+  stop(): void;
+  /** Called with each change after the sides were read. */
+  listen(onChange: () => void): void;
+}
+
+const MAX_REREADS = 5;
+
+async function prepare(
   ctx: Context,
-  panels: Set<DiffPanel>,
+  life: Life,
   comparison: Comparison,
-): Promise<void> {
+): Promise<Prepared | undefined> {
+  // Subscribe before reading, so an edit during the first read is seen.
+  let changed = false;
+  let onChange: (() => void) | undefined;
+  const unsubscribe = ctx.workbench.onChange((document) => {
+    if (
+      document.uri === comparison.modified ||
+      document.uri === comparison.original
+    ) {
+      changed = true;
+      onChange?.();
+    }
+  });
+  const stop = () => void unsubscribe();
+  try {
+    let sides: [DiffSide, DiffSide];
+    let reads = 0;
+    do {
+      changed = false;
+      sides = await Promise.all([
+        readSide(ctx, comparison.original),
+        readSide(ctx, comparison.modified),
+      ]);
+      if (!life.live) {
+        stop();
+        return undefined;
+      }
+    } while (changed && ++reads < MAX_REREADS);
+    const [left, right] = sides;
+    return {
+      left,
+      right,
+      stop,
+      listen(next) {
+        onChange = next;
+        if (changed) {
+          next();
+        }
+      },
+    };
+  } catch (error) {
+    stop();
+    if (life.live) {
+      report(ctx, "Could not read the diff", error);
+    }
+    return undefined;
+  }
+}
+
+const title = (comparison: Comparison, sides: Prepared) =>
+  `${fileName(comparison.modified)} (${sides.left.label} ↔ ${sides.right.label})`;
+
+/** Show the panel and keep both sides current until it or the plugin ends. */
+function present(
+  ctx: Context,
+  life: Life,
+  comparison: Comparison,
+  prepared: Prepared,
+): void {
   const workbench = ctx.workbench;
-  const [left, right] = await Promise.all([
-    readSide(ctx, comparison.original),
-    readSide(ctx, comparison.modified),
-  ]);
-  const name = fileName(comparison.modified);
+  const name = title(comparison, prepared);
   const panel = workbench.diffViews!.show({
-    left,
-    right,
-    title: `${name} (${left.label} ↔ ${right.label})`,
+    left: prepared.left,
+    right: prepared.right,
+    title: name,
     column: comparison.column,
     preview: comparison.preview,
     onAction(action) {
-      if (action === "openFile") {
-        void workbench.execute("vscode.open", comparison.modified);
-      } else {
-        void workbench.diffViews!.openNative(
-          comparison.original,
-          comparison.modified,
-          `${name} (${left.label} ↔ ${right.label})`,
-          comparison.column,
-        );
-      }
+      const done =
+        action === "openFile"
+          ? workbench.execute("vscode.open", comparison.modified)
+          : workbench.diffViews!.openNative(
+              comparison.original,
+              comparison.modified,
+              name,
+              comparison.column,
+            );
+      void Promise.resolve(done).catch((error: unknown) =>
+        report(ctx, "Could not open", error),
+      );
     },
   });
-  panels.add(panel);
-  // Keep the right side current while the note is edited.
-  const stop = workbench.onChange((document) => {
-    if (document.uri === comparison.modified) {
-      void readSide(ctx, comparison.modified).then((next) =>
-        panel.update(left, next),
-      );
-    }
-  });
+  let open = true;
+  let version = 0;
+  life.panels.add(panel);
   panel.onDispose(() => {
-    void stop();
-    panels.delete(panel);
+    open = false;
+    version++;
+    prepared.stop();
+    life.panels.delete(panel);
+  });
+  // A versioned refresh: an older read that lands late is discarded.
+  prepared.listen(() => {
+    const mine = ++version;
+    Promise.all([
+      readSide(ctx, comparison.original),
+      readSide(ctx, comparison.modified),
+    ]).then(
+      ([left, right]) => {
+        if (open && life.live && mine === version) {
+          panel.update(left, right);
+        }
+      },
+      (error: unknown) => {
+        if (open && life.live && mine === version) {
+          ctx.logger.warn("Could not refresh the diff", error);
+        }
+      },
+    );
   });
 }
