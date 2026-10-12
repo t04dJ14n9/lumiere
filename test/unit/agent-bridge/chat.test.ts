@@ -227,9 +227,8 @@ test("with no agent but VS Code's empty chat, the passage is only copied", async
 });
 
 test("scratch file names keep the note name and line range", async () => {
-  const { scratchName } = await import(
-    "../../../src/plugins/agentBridge/agent"
-  );
+  const { scratchName } =
+    await import("../../../src/plugins/agentBridge/agent");
   assert.equal(
     scratchName("@notes/Transformer.md#5-6"),
     "Transformer.md-5-6.md",
@@ -238,9 +237,8 @@ test("scratch file names keep the note name and line range", async () => {
 });
 
 test("the Codex attachment names the note's file, since it lives outside the workspace", async () => {
-  const { scratchText } = await import(
-    "../../../src/plugins/agentBridge/agent"
-  );
+  const { scratchText } =
+    await import("../../../src/plugins/agentBridge/agent");
   assert.equal(
     scratchText("@notes/a.md#5-6\n\n> x", {
       text: "@notes/a.md#5-6",

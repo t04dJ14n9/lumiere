@@ -105,9 +105,8 @@ test("search host cancels work on disable and registers again on enable", async 
   const { Context } = await import("../../../src/kernel");
   const { searchHost } = await import("../../../src/plugins/search/host");
   const { protocol } = await import("../../../src/plugins/search/protocol");
-  const { MemoryVaultIndex } = await import(
-    "../../../src/plugins/vault/memory-index"
-  );
+  const { MemoryVaultIndex } =
+    await import("../../../src/plugins/vault/memory-index");
   const { fakeWorkbench } = await import("../../support/vscode-fake");
   const { rpcPair } = await import("../../support/rpc-pair");
   const pair = rpcPair();

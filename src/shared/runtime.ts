@@ -332,12 +332,7 @@ export interface SourceEdit {
 }
 /** The `markdownWorkbench.copyLinkForAgent.target` setting. */
 export type CopyLinkTarget =
-  | "auto"
-  | "cursor"
-  | "chat"
-  | "claudeCode"
-  | "codex"
-  | "clipboard";
+  "auto" | "cursor" | "chat" | "claudeCode" | "codex" | "clipboard";
 
 /** What the editor offers Copy Link for Agent. */
 export interface AgentEnvironment {

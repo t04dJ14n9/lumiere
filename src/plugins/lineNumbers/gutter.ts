@@ -183,7 +183,11 @@ function startLineSelection(
     anchor = { from: line.from, to: line.to };
     // An anchor at a line start after a downward line selection belongs to
     // the line it starts; one at the end of a line selection, to that line.
-    if (current.anchor > current.head && current.anchor === line.from && line.number > 1) {
+    if (
+      current.anchor > current.head &&
+      current.anchor === line.from &&
+      line.number > 1
+    ) {
       const previous = view.state.doc.line(line.number - 1);
       anchor = { from: previous.from, to: previous.to };
     }

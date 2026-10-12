@@ -47,9 +47,9 @@ function registerEmbedRenderers(ctx: Context): void {
         const first = node.node.firstChild;
         return Boolean(
           first &&
-            ["WikiEmbed", "Image"].includes(first.name) &&
-            state.sliceDoc(node.from, first.from).trim() === "" &&
-            state.sliceDoc(first.to, node.to).trim() === "",
+          ["WikiEmbed", "Image"].includes(first.name) &&
+          state.sliceDoc(node.from, first.from).trim() === "" &&
+          state.sliceDoc(first.to, node.to).trim() === "",
         );
       },
       // Embedded notes keep clicks for their content, as in Obsidian.

@@ -96,9 +96,9 @@ function registerActiveContexts(
         `markdownWorkbench.plugin.${manifest.id}`,
         Boolean(
           panel &&
-            settings?.preset === "obsidian" &&
-            (settings.features?.[manifest.id]?.enabled ??
-              manifest.defaultEnabled),
+          settings?.preset === "obsidian" &&
+          (settings.features?.[manifest.id]?.enabled ??
+            manifest.defaultEnabled),
         ),
       );
     }

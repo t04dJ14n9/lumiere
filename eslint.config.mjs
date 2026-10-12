@@ -31,8 +31,8 @@ const boundaries = {
         const other = target.match(/\/src\/plugins\/([^/]+)\/([^/]+)$/);
         invalid ||= Boolean(
           other &&
-            other[1] !== owner &&
-            !/^(api|manifest|protocol)(\.ts)?$/.test(other[2]),
+          other[1] !== owner &&
+          !/^(api|manifest|protocol)(\.ts)?$/.test(other[2]),
         );
         invalid ||=
           /\/src\/host\//.test(target) &&

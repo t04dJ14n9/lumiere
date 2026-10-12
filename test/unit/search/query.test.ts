@@ -67,9 +67,8 @@ test("vault search uses live text, excludes hidden files and counts per-document
 
 test("indexed predicates avoid note reads while content scopes conservatively request text", async () => {
   const { metadata } = await import("../../../src/markdown/metadata");
-  const { queryRequirements } = await import(
-    "../../../src/markdown/search/plan"
-  );
+  const { queryRequirements } =
+    await import("../../../src/markdown/search/plan");
   const { parseSearch } = await import("../../../src/markdown/search/query");
   const index = vault();
   index.setMetadata(

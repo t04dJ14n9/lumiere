@@ -171,7 +171,6 @@ class InlineDecorations implements InlineContext {
     for (
       let pos = Math.max(node.from, visible.from);
       pos <= Math.min(node.to, visible.to);
-
     ) {
       const current = this.state.doc.lineAt(pos);
       this.line(pos, cls, this.lineAttributes(node.name, current.to));

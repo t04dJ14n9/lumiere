@@ -1,8 +1,7 @@
 import type { Disposer } from "../../kernel";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 export type ProcessorResult =
-  | { markdown: string; html?: never }
-  | { html: string; markdown?: never };
+  { markdown: string; html?: never } | { html: string; markdown?: never };
 export interface CodeProcessor {
   language: string;
   isAvailable?(editorId: string): boolean;

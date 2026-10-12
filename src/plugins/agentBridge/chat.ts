@@ -2,11 +2,7 @@ import type { AgentEnvironment, CopyLinkTarget } from "../../shared/runtime";
 
 /** Where Copy Link for Agent put the passage. */
 export type ChatTarget =
-  | "chat"
-  | "chatWithClipboard"
-  | "claudeCode"
-  | "codex"
-  | "clipboard";
+  "chat" | "chatWithClipboard" | "claudeCode" | "codex" | "clipboard";
 
 export type { AgentEnvironment };
 

@@ -88,8 +88,7 @@ declare module "../../kernel/types" {
     /** @mode emit */ "editor/clearProjection": () => void;
     /** @mode bail */ "editor/activeView": () => EditorView | undefined;
     /** @mode bail */ "editor/projectSelection": () =>
-      | { from: number; to: number }
-      | undefined;
+      { from: number; to: number } | undefined;
     /** @mode emit */ "editor/modeRestored": (
       mode: "source" | "livePreview",
     ) => void;
