@@ -290,7 +290,29 @@ export function lineBlockHtml(
   }
 }
 
-const SEPARATOR = /^\s*\|?\s*:?-{3,}/;
+/**
+ * Whether a table line is the delimiter row: cells of `:?-+:?` between
+ * pipes. A hand scan over the line once; the old regex's overlapping
+ * `\s*\|?\s*` backtracked quadratically on deep indentation.
+ */
+export function isSeparator(line: string): boolean {
+  const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
+  return cells.every((cell) => {
+    const c = cell.trim();
+    let i = c.startsWith(":") ? 1 : 0;
+    const dashes = i;
+    while (c[i] === "-") {
+      i++;
+    }
+    if (i === dashes) {
+      return false;
+    }
+    if (c[i] === ":") {
+      i++;
+    }
+    return i === c.length;
+  });
+}
 
 /** A whole table row added or removed: each cell's text marked. */
 function markRow(
@@ -298,7 +320,8 @@ function markRow(
   side: "before" | "after",
   words?: WordBudget,
 ): string {
-  if (SEPARATOR.test(line)) {
+  // Admission first: a row past the limit is not scanned at all.
+  if (line.length > MAX_MARK_CHARS || isSeparator(line)) {
     return line;
   }
   if (words && !words.spend(line, "")) {

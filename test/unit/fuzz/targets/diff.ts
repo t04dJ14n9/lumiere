@@ -10,7 +10,7 @@ import {
   tokens,
   wordDiff,
 } from "../../../../src/shared/diff";
-import { codeSpans } from "../../../../src/shared/diff/blocks";
+import { codeSpans } from "../../../../src/shared/diff/spans";
 import { protectedRanges } from "../../../../src/shared/diff/protect";
 import { computeHunks } from "../../../../src/plugins/gitGutter/hunks";
 import type { Target } from "../target";
