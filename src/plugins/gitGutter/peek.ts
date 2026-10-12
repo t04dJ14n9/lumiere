@@ -4,7 +4,13 @@ import type { EditorState, Extension } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType, keymap } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { alignBlocks, rowMarkdown } from "../../shared/diff";
-import type { RenderPass, RenderService } from "../render/api";
+import type { RenderService } from "../render/api";
+import {
+  adoptPass,
+  endLifetime,
+  newLifetime,
+} from "../../shared/render-lifetime";
+import type { PassLifetime } from "../../shared/render-lifetime";
 import type { DocHunk } from "./api";
 import { currentText, hunkAt, hunkField, revertChange } from "./hunks";
 
@@ -69,37 +75,10 @@ interface PeekModel {
   readonly line: number;
 }
 
-/**
- * Each mounted peek's lifetime: the render passes it owns. A pass that
- * resolves after the DOM is destroyed is disposed at once.
- */
-export interface Lifetime {
-  live: boolean;
-  readonly passes: RenderPass[];
-}
-const lifetimes = new WeakMap<HTMLElement, Lifetime>();
-
-/** Keep a pass while its peek lives; dispose it at once when it arrives late. */
-export async function adoptPass(
-  lifetime: Lifetime,
-  pending: Promise<RenderPass>,
-): Promise<boolean> {
-  const pass = await pending;
-  if (!lifetime.live) {
-    void pass.dispose();
-    return false;
-  }
-  lifetime.passes.push(pass);
-  return true;
-}
-
-/** End a peek's lifetime, disposing every pass it holds exactly once. */
-export function endLifetime(lifetime: Lifetime): void {
-  lifetime.live = false;
-  for (const pass of lifetime.passes.splice(0)) {
-    void pass.dispose();
-  }
-}
+export { adoptPass, endLifetime } from "../../shared/render-lifetime";
+export type { PassLifetime as Lifetime } from "../../shared/render-lifetime";
+const lifetimes = new WeakMap<HTMLElement, PassLifetime>();
+const signals = new WeakMap<PassLifetime, AbortSignal>();
 
 class PeekWidget extends WidgetType {
   readonly hunk: DocHunk;
@@ -141,7 +120,9 @@ class PeekWidget extends WidgetType {
     root.className = `mw-git-peek mw-git-peek-${this.hunk.kind}`;
     root.setAttribute("role", "region");
     root.setAttribute("aria-label", "Git change");
-    const lifetime: Lifetime = { live: true, passes: [] };
+    const abort = new AbortController();
+    const lifetime = newLifetime(undefined, () => abort.abort());
+    signals.set(lifetime, abort.signal);
     lifetimes.set(root, lifetime);
     root.append(this.header(view), this.body(view, lifetime));
     return root;
@@ -186,7 +167,7 @@ class PeekWidget extends WidgetType {
     button("Close", "✕", () => view.dispatch({ effects: setPeek.of(null) }));
     return head;
   }
-  private body(view: EditorView, lifetime: Lifetime): HTMLElement {
+  private body(view: EditorView, lifetime: PassLifetime): HTMLElement {
     const body = document.createElement("div");
     body.className = "mw-git-peek-body";
     const { before, after } = peekMarkdown(this.context.old, this.context.now);
@@ -198,6 +179,7 @@ class PeekWidget extends WidgetType {
       caption.textContent = label;
       const content = pane.appendChild(document.createElement("div"));
       const pending = this.actions.render.into(content, source, {
+        signal: signals.get(lifetime)!,
         readOnly: true,
         measure: () => {
           if (lifetime.live) {

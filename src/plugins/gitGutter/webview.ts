@@ -5,7 +5,7 @@ import type { Context, Infer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";
-import type { GitDiff } from "./api";
+import type { DocHunk, GitDiff } from "./api";
 import { changeGutter } from "./gutter";
 import {
   MAX_DIFF_CHARS,
@@ -21,7 +21,13 @@ import {
   setHunks,
 } from "./hunks";
 import { config } from "./manifest";
-import { outerBlock, peekExtension, peekedHunk, setPeek } from "./peek";
+import {
+  outerBlock,
+  peekContext,
+  peekExtension,
+  peekedHunk,
+  setPeek,
+} from "./peek";
 import { protocol } from "./protocol";
 
 type Status = ReturnType<GitDiff["status"]>;
@@ -55,6 +61,9 @@ class GitDiffModel implements GitDiff {
   status = () => this.state;
   blockRange(state: EditorState, from: number, to: number) {
     return outerBlock(state, from, to);
+  }
+  context(state: EditorState, hunk: DocHunk) {
+    return peekContext(state, hunk);
   }
   label = () => this.name;
   baseline = () => this.text;

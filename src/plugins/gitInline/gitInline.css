@@ -51,3 +51,7 @@
   background: var(--vscode-button-secondaryBackground, var(--hover));
   cursor: pointer;
 }
+#app .mw-gi-ghost.is-added {
+  border-left-color: var(--mw-git-added);
+  background: var(--mw-git-ins-line);
+}

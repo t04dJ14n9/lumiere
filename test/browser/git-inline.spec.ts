@@ -79,3 +79,40 @@ test("without the change bars inline changes wait; off, nothing is drawn", async
     page.locator(".mw-gi-ghost, del.mw-gi-removed, .mw-gi-inserted"),
   ).toHaveCount(0);
 });
+
+test("B1: a double-click on Restore before the recompute restores once", async ({
+  page,
+}) => {
+  await open(page, "A\n\nC\n", "obsidian", {
+    gitBaseline: "A\n\nB\n\nC\n",
+    features: { gitInline: on },
+  });
+  const restore = page
+    .locator(".mw-gi-ghost.is-removed")
+    .getByRole("button", { name: "Restore" });
+  await expect(restore).toBeVisible();
+  await restore.dblclick();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("A\n\nB\n\nC\n");
+  await page.waitForTimeout(400);
+  expect(await page.evaluate(() => window.harness.text)).toBe("A\n\nB\n\nC\n");
+  await expect(page.locator(".mw-gi-ghost")).toHaveCount(0);
+  await page.getByRole("textbox", { name: "Markdown content" }).focus();
+  await page.keyboard.press("Control+z");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("A\n\nC\n");
+});
+
+test("N5: a row added to a table is shown marked beside the rendered table", async ({
+  page,
+}) => {
+  await open(page, "| a |\n| --- |\n| 1 |\n| 2 |\n", "obsidian", {
+    gitBaseline: "| a |\n| --- |\n| 1 |\n",
+    features: { gitInline: on },
+  });
+  const ghost = page.locator(".mw-gi-ghost.is-added");
+  await expect(ghost.locator("table")).toHaveCount(1);
+  await expect(ghost.locator("ins.mw-gd-ins")).toHaveText("2");
+});

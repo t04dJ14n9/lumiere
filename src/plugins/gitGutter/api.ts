@@ -41,6 +41,11 @@ export interface GitDiff {
     from: number,
     to: number,
   ): { from: number; to: number };
+  /**
+   * The whole enclosing blocks of a hunk, as they were and as they are, for
+   * display; the hunk itself stays the edit Revert applies.
+   */
+  context(state: EditorState, hunk: DocHunk): { old: string; now: string };
 }
 
 declare module "../../kernel/types" {

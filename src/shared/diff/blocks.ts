@@ -1,4 +1,5 @@
 import { diffSequences } from "./myers";
+import type { Run } from "./myers";
 import { splitLines, wordDiff } from "./lines";
 import type { Segment } from "./lines";
 
@@ -283,6 +284,86 @@ export function lineBlockHtml(
   }
 }
 
+const SEPARATOR = /^\s*\|?\s*:?-{3,}/;
+
+/** A whole table row added or removed: each cell's text marked. */
+function markRow(line: string, side: "before" | "after"): string {
+  if (SEPARATOR.test(line)) {
+    return line;
+  }
+  return line
+    .split("|")
+    .map((cell) =>
+      markSide(
+        side === "before" ? wordDiff(cell, "") : wordDiff("", cell),
+        side,
+      ),
+    )
+    .join("|");
+}
+
+/**
+ * One side of a changed table, row by row: a rewritten row gets word marks,
+ * an added or removed row has every cell marked, so the table stays a table.
+ */
+function tableSide(
+  before: string,
+  after: string,
+  side: "before" | "after",
+): string {
+  const a = splitLines(before);
+  const b = splitLines(after);
+  const runs = diffSequences(a, b);
+  const out: string[] = [];
+  const old = (run: Run) => a.slice(run.aFrom, run.aTo);
+  const now = (run: Run) => b.slice(run.bFrom, run.bTo);
+  runs.forEach((run, index) => {
+    if (run.type === "equal") {
+      out.push(...(side === "before" ? old(run) : now(run)));
+    } else if (run.type === "delete" && side === "before") {
+      const next = runs[index + 1];
+      const theirs = next?.type === "insert" ? now(next) : [];
+      out.push(...old(run).map((line, i) => rowLine(line, theirs[i], side)));
+    } else if (run.type === "insert" && side === "after") {
+      const previous = runs[index - 1];
+      const theirs = previous?.type === "delete" ? old(previous) : [];
+      out.push(...now(run).map((line, i) => rowLine(theirs[i], line, side)));
+    }
+  });
+  return out.join("\n");
+}
+
+/** A rewritten row's word marks, or a whole added or removed row. */
+function rowLine(
+  before: string | undefined,
+  after: string | undefined,
+  side: "before" | "after",
+): string {
+  if (before === undefined || after === undefined) {
+    return markRow((before ?? after)!, side);
+  }
+  return markSide(wordDiff(before, after), side);
+}
+
+/** Both sides of a rewritten block with changed words (or table rows) marked. */
+function modifiedSides(
+  before: string,
+  after: string,
+  kind: BlockKind,
+): { before: string; after: string } {
+  if (kind === "table") {
+    return {
+      before: tableSide(before, after, "before"),
+      after: tableSide(before, after, "after"),
+    };
+  }
+  const segments = wordDiff(before, after);
+  return {
+    before: markSide(segments, "before"),
+    after: markSide(segments, "after"),
+  };
+}
+
 /** The Markdown each side of a row renders; undefined for an empty side. */
 export function rowMarkdown(row: BlockRow): {
   before?: string;
@@ -306,11 +387,7 @@ export function rowMarkdown(row: BlockRow): {
     }
   }
   if (row.kind === "modified") {
-    const segments = wordDiff(before!.text, after!.text);
-    return {
-      before: markSide(segments, "before"),
-      after: markSide(segments, "after"),
-    };
+    return modifiedSides(before!.text, after!.text, kind);
   }
   return {
     ...(before && { before: before.text }),
