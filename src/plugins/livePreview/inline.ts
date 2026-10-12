@@ -295,17 +295,14 @@ const SYNTAX_MARKS = [
 export const hybridInline = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
-    dragging = false;
-    events = new AbortController();
-    destroy(): void {
-      this.events.abort();
-    }
     constructor(view: EditorView) {
       this.decorations = inlineDecorations(view.state, view.visibleRanges);
     }
     update(update: ViewUpdate): void {
       // Keep composition's DOM stable, then rebuild at compositionend.
-      if (update.view.composing || this.dragging) {
+      // Pointer drags update live, as in Obsidian: CodeMirror maps each
+      // mousemove from coordinates, so revealed marks don't skew the drag.
+      if (update.view.composing) {
         this.decorations = this.decorations.map(update.changes);
         return;
       }
@@ -318,30 +315,6 @@ export const hybridInline = ViewPlugin.fromClass(
   {
     decorations: (plugin) => plugin.decorations,
     eventHandlers: {
-      mousedown(_event, view) {
-        this.dragging = true;
-        view.dom.ownerDocument.addEventListener(
-          "mouseup",
-          () => {
-            this.dragging = false;
-            queueMicrotask(() => {
-              if (view.dom.isConnected) {
-                view.dispatch({});
-              }
-            });
-          },
-          { once: true, signal: this.events.signal },
-        );
-      },
-      mouseup(_event, view) {
-        this.dragging = false;
-        queueMicrotask(() => {
-          if (view.dom.isConnected) {
-            view.dispatch({});
-          }
-        });
-      },
-
       compositionend(_event, view) {
         queueMicrotask(() => {
           if (view.dom.isConnected) {
