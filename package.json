@@ -249,6 +249,21 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.gitGutter.nextChange",
+        "title": "Go to Next Git Change",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.gitGutter.previousChange",
+        "title": "Go to Previous Git Change",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.gitGutter.showChange",
+        "title": "Show Git Change",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.insertWikilink",
         "title": "Insert Wikilink",
         "category": "Markdown Workbench"
@@ -513,6 +528,21 @@
         "key": "ctrl+k",
         "mac": "cmd+k",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+      },
+      {
+        "command": "markdownWorkbench.gitGutter.nextChange",
+        "key": "alt+f5",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
+      },
+      {
+        "command": "markdownWorkbench.gitGutter.previousChange",
+        "key": "shift+alt+f5",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
+      },
+      {
+        "command": "markdownWorkbench.gitGutter.showChange",
+        "key": "alt+f3",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
       },
       {
         "command": "markdownWorkbench.addProperty",
@@ -793,6 +823,18 @@
         {
           "command": "markdownWorkbench.setHeading6",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkbench.gitGutter.nextChange",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
+        },
+        {
+          "command": "markdownWorkbench.gitGutter.previousChange",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
+        },
+        {
+          "command": "markdownWorkbench.gitGutter.showChange",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
         },
         {
           "command": "markdownWorkbench.insertWikilink",
@@ -1125,6 +1167,12 @@
           "scope": "resource",
           "description": "Markdown editing commands."
         },
+        "markdownWorkbench.plugins.gitGutter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Added, modified and deleted bars beside the line numbers, like VS Code's quick diff, with a rendered peek of the old version to revert or stage."
+        },
         "markdownWorkbench.plugins.indentGuides.enabled": {
           "type": "boolean",
           "default": true,
@@ -1359,6 +1407,15 @@
         "markdownWorkbench.folding.indent": {
           "type": "boolean",
           "default": true,
+          "scope": "resource"
+        },
+        "markdownWorkbench.gitGutter.compareTo": {
+          "enum": [
+            "HEAD",
+            "index"
+          ],
+          "default": "HEAD",
+          "description": "What the change bars compare the note with: the last commit (HEAD) or the staged version (index).",
           "scope": "resource"
         },
         "markdownWorkbench.linkUpdates.mode": {

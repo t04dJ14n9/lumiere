@@ -1,0 +1,112 @@
+/*
+ * Git change bars, VS Code's quick-diff look: a 3px bar in the theme's
+ * editorGutter colours between the line numbers and the fold markers.
+ * Tokens (--mw-git-*) are in styles/git-diff.css.
+ */
+#app .cm-gutter.mw-git-gutter {
+  width: 7px;
+}
+#app .cm-gutter.mw-git-gutter:last-child {
+  width: 26px;
+}
+#app .mw-git-gutter .cm-gutterElement {
+  position: relative;
+  padding: 0;
+}
+#app .mw-git-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2px;
+  width: 3px;
+  cursor: pointer;
+}
+#app .mw-git-bar-added {
+  background: var(--mw-git-added);
+}
+#app .mw-git-bar-modified {
+  background: var(--mw-git-modified);
+}
+#app .mw-git-bar-added:hover,
+#app .mw-git-bar-modified:hover,
+#app .mw-git-bar.is-open {
+  left: 1px;
+  width: 5px;
+}
+/* A removal: a triangle at the boundary between the surviving lines. */
+#app .mw-git-bar-deleted,
+#app .mw-git-bar-deleted-end {
+  bottom: auto;
+  top: -5px;
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+  border-left: 6px solid var(--mw-git-deleted);
+}
+#app .mw-git-bar-deleted-end {
+  top: auto;
+  bottom: -5px;
+}
+
+#app .mw-git-peek {
+  /* A block widget: no vertical margins (CodeMirror measures the border box). */
+  margin: 0;
+  border-top: 2px solid var(--mw-git-peek-border);
+  border-bottom: 2px solid var(--mw-git-peek-border);
+  background: var(--mw-git-peek-background);
+  font-size: 0.9em;
+  white-space: normal;
+}
+#app .mw-git-peek-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  background: var(--mw-git-peek-title);
+  font-family: var(--ui-font);
+  font-size: 0.75em;
+}
+#app .mw-git-peek-title {
+  font-weight: 600;
+}
+#app .mw-git-peek-detail,
+#app .mw-git-peek-caption {
+  color: var(--vscode-descriptionForeground, var(--muted));
+}
+#app .mw-git-peek-space {
+  flex: 1;
+}
+#app .mw-git-peek-button {
+  font: inherit;
+  padding: 1px 7px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground, inherit);
+  background: var(--vscode-button-secondaryBackground, var(--hover));
+  cursor: pointer;
+}
+#app .mw-git-peek-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, var(--hover));
+}
+#app .mw-git-peek-button.is-primary {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+#app .mw-git-peek-body {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+#app .mw-git-peek-side {
+  padding: 4px 12px 6px;
+  min-width: 0;
+}
+#app .mw-git-peek-side + .mw-git-peek-side {
+  border-left: 1px solid var(--mw-git-peek-border-soft);
+}
+#app .mw-git-peek-caption {
+  font-family: var(--ui-font);
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

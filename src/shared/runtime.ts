@@ -1,3 +1,4 @@
+import type { DiffViews, GitAccess } from "./git";
 import type { Infer } from "../kernel";
 import type { featureSettings } from "./features";
 import type { Disposer } from "../kernel";
@@ -130,6 +131,9 @@ export interface Workbench {
   navigation?: Navigation;
   registerNativeLinks?(): Disposer;
   views?: HostViews;
+  // Git, through VS Code's git extension.
+  git?: GitAccess;
+  diffViews?: DiffViews;
 }
 declare module "../kernel/types" {
   interface Services {

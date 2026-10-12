@@ -4,6 +4,7 @@ import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
 import { createSettingsAccess } from "./settings-access";
 import { createDiagnostics } from "./diagnostics";
+import { createGitAccess } from "./git";
 import { createWorkspaceFiles } from "./workspace-files";
 import type { SettingsReader } from "./settings";
 import * as vscode from "vscode";
@@ -56,6 +57,7 @@ export function createWorkbench(
     ...fileOperations(),
     files: createWorkspaceFiles(),
     diagnostics: createDiagnostics(),
+    git: createGitAccess(),
     revealTextEditor,
     hasExtension: (id) => Boolean(vscode.extensions.getExtension(id)),
     registerEditor: (provider, open) =>

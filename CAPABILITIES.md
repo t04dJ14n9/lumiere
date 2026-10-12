@@ -48,6 +48,7 @@ records it in `docs/PARITY.md`.
 | linkUpdates | Updates links when notes or folders are renamed in VS Code | Asks first by default (`prompt`); heading renames do not update links |
 | folding | Heading and list folding, restored on reload | — |
 | lineNumbers | Line numbers laid out like VS Code's gutter, following `editor.lineNumbers`; rendered blocks list all their source lines' numbers | On by default |
+| gitGutter | Git change bars (added, modified, deleted) beside the line numbers against HEAD or the index, through VS Code's git extension; click a bar for a rendered peek with Revert and Stage File; Alt+F5 / Shift+Alt+F5 move between changes | On by default |
 | indentGuides | Indentation guides | No active-guide highlight |
 | spellcheck | The host's spellchecker | Dictionaries come from the OS |
 | autoPair | Brackets, quotes and Markdown markers | — |

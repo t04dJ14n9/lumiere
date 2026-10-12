@@ -33,6 +33,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `search` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `folding` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `lineNumbers` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `gitGutter` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `indentGuides` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `vim` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `autoPair` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -169,6 +170,9 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.setNoteFontSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.changeSetting | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.toggleLineNumbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkbench.gitGutter.nextChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkbench.gitGutter.previousChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkbench.gitGutter.showChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.toggleReadableLineWidth | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.toggleMermaid | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.toggleInlineTitle | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -207,6 +211,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.math.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

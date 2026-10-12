@@ -1,0 +1,101 @@
+/*
+ * Git diff tokens, shared by the change bars, the inline changes and the
+ * rendered diff editor. Every colour is a VS Code theme variable; the tints
+ * are see-through mixes of them (like --selection-tint in base.css), so they
+ * show over code blocks, tables and callouts and keep the text's own colours.
+ */
+:root {
+  --mw-git-added: var(
+    --vscode-editorGutter-addedBackground,
+    var(--vscode-gitDecoration-addedResourceForeground)
+  );
+  --mw-git-modified: var(
+    --vscode-editorGutter-modifiedBackground,
+    var(--vscode-gitDecoration-modifiedResourceForeground)
+  );
+  --mw-git-deleted: var(
+    --vscode-editorGutter-deletedBackground,
+    var(--vscode-gitDecoration-deletedResourceForeground)
+  );
+  --mw-git-ins-text: var(
+    --vscode-diffEditor-insertedTextBackground,
+    color-mix(in oklch, var(--mw-git-added) 30%, transparent)
+  );
+  --mw-git-del-text: var(
+    --vscode-diffEditor-removedTextBackground,
+    color-mix(in oklch, var(--mw-git-deleted) 28%, transparent)
+  );
+  --mw-git-ins-line: var(
+    --vscode-diffEditor-insertedLineBackground,
+    color-mix(in oklch, var(--mw-git-added) 12%, transparent)
+  );
+  --mw-git-del-line: var(
+    --vscode-diffEditor-removedLineBackground,
+    color-mix(in oklch, var(--mw-git-deleted) 11%, transparent)
+  );
+  --mw-git-mod-line: color-mix(
+    in oklch,
+    var(--mw-git-modified) 10%,
+    transparent
+  );
+  --mw-git-peek-border: var(
+    --vscode-peekView-border,
+    var(--vscode-focusBorder)
+  );
+  --mw-git-peek-border-soft: color-mix(
+    in oklch,
+    var(--mw-git-peek-border) 35%,
+    transparent
+  );
+  --mw-git-peek-background: var(
+    --vscode-peekViewEditor-background,
+    var(--vscode-editorWidget-background)
+  );
+  --mw-git-peek-title: var(
+    --vscode-peekViewTitle-background,
+    var(--vscode-editorWidget-background)
+  );
+  --mw-git-strike: color-mix(in oklch, var(--mw-git-deleted) 80%, transparent);
+}
+
+/* Word-level changes in rendered Markdown (peek, inline, diff editor). */
+ins.mw-gd-ins {
+  text-decoration: none;
+  background: var(--mw-git-ins-text);
+  border-radius: 2px;
+}
+del.mw-gd-del {
+  background: var(--mw-git-del-text);
+  text-decoration: line-through;
+  text-decoration-color: var(--mw-git-strike);
+  border-radius: 2px;
+}
+tr:has(ins.mw-gd-ins),
+tr:has(del.mw-gd-del) {
+  background: var(--mw-git-mod-line);
+}
+/* Line-level changes inside code, math source and frontmatter. */
+pre.mw-gd-lines code {
+  display: block;
+}
+.mw-gd-line {
+  display: block;
+  white-space: pre;
+}
+.mw-gd-line-ins {
+  background: var(--mw-git-ins-line);
+}
+.mw-gd-line-del {
+  background: var(--mw-git-del-line);
+  text-decoration: line-through;
+  text-decoration-color: var(--mw-git-strike);
+}
+/* High-contrast themes: an outline, not only a tint. */
+body.vscode-high-contrast ins.mw-gd-ins,
+body.vscode-high-contrast-light ins.mw-gd-ins {
+  outline: 1px dashed var(--mw-git-added);
+}
+body.vscode-high-contrast del.mw-gd-del,
+body.vscode-high-contrast-light del.mw-gd-del {
+  outline: 1px dashed var(--mw-git-deleted);
+}

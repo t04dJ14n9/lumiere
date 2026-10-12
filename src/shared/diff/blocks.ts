@@ -1,0 +1,367 @@
+import { diffSequences } from "./myers";
+import { splitLines, wordDiff } from "./lines";
+import { overlaps, protectedRanges } from "./protect";
+import type { Segment } from "./lines";
+
+export type BlockKind =
+  "frontmatter" | "code" | "math" | "table" | "heading" | "text";
+
+/** A Markdown block: the unit the rendered diff aligns and renders. */
+export interface Block {
+  readonly kind: BlockKind;
+  readonly text: string;
+  /** 0-based, half-open source line range. */
+  readonly from: number;
+  readonly to: number;
+}
+
+const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const HEADING = /^ {0,3}#{1,6}(\s|$)/;
+const isTable = (line: string) => line.trimStart().startsWith("|");
+const isMath = (line: string) => line.trim().startsWith("$$");
+
+/**
+ * Whether `line` closes a fence of `length` `char`s: up to three spaces, at
+ * least that many fence characters, then only whitespace. A hand scan; the
+ * regex form backtracks the run against a long whitespace tail.
+ */
+function closesFence(line: string, char: string, length: number): boolean {
+  let i = 0;
+  while (i < 3 && line[i] === " ") {
+    i++;
+  }
+  const start = i;
+  while (line[i] === char) {
+    i++;
+  }
+  return i - start >= length && line.slice(i).trim() === "";
+}
+
+/** Where the block starting at line `i` ends (exclusive), and its kind. */
+function blockAt(lines: readonly string[], i: number): [BlockKind, number] {
+  const line = lines[i]!;
+  const fence = FENCE.exec(line);
+  if (fence) {
+    const marker = fence[1]!;
+    const close = (next: string) =>
+      closesFence(next, marker[0]!, marker.length);
+    return ["code", scan(lines, i + 1, (next) => !close(next)) + 1];
+  }
+  if (isMath(line)) {
+    const oneLine = line.trim().length > 2 && line.trim().endsWith("$$");
+    return [
+      "math",
+      oneLine
+        ? i + 1
+        : scan(lines, i + 1, (next) => !next.trim().endsWith("$$")) + 1,
+    ];
+  }
+  if (HEADING.test(line)) {
+    return ["heading", i + 1];
+  }
+  if (isTable(line)) {
+    return ["table", scan(lines, i, isTable)];
+  }
+  const prose = (next: string) =>
+    next.trim() !== "" &&
+    !FENCE.test(next) &&
+    !HEADING.test(next) &&
+    !isTable(next) &&
+    !isMath(next);
+  return ["text", scan(lines, i + 1, prose)];
+}
+
+/** The first line at or after `from` that fails `keep`, or the line count. */
+function scan(
+  lines: readonly string[],
+  from: number,
+  keep: (line: string) => boolean,
+): number {
+  let j = from;
+  while (j < lines.length && keep(lines[j]!)) {
+    j++;
+  }
+  return j;
+}
+
+function frontmatterEnd(lines: readonly string[]): number {
+  if (lines[0] !== "---") {
+    return 0;
+  }
+  const close = lines.findIndex(
+    (line, index) => index > 0 && (line === "---" || line === "..."),
+  );
+  return close > 0 ? close + 1 : 0;
+}
+
+/** Split Markdown into blocks; blank lines separate blocks and belong to none. */
+export function splitBlocks(text: string): Block[] {
+  const lines = splitLines(text);
+  const blocks: Block[] = [];
+  const add = (kind: BlockKind, from: number, to: number) =>
+    blocks.push({ kind, from, to, text: lines.slice(from, to).join("\n") });
+  let i = frontmatterEnd(lines);
+  if (i > 0) {
+    add("frontmatter", 0, i);
+  }
+  while (i < lines.length) {
+    if (lines[i]!.trim() === "") {
+      i++;
+      continue;
+    }
+    const [kind, end] = blockAt(lines, i);
+    const to = Math.min(Math.max(end, i + 1), lines.length);
+    add(kind, i, to);
+    i = to;
+  }
+  return blocks;
+}
+
+/** One row of a rendered diff: a block on either side, or both. */
+export interface BlockRow {
+  readonly kind: "equal" | "modified" | "added" | "deleted";
+  readonly before?: Block;
+  readonly after?: Block;
+}
+
+/** Align the blocks of two texts; replaced runs pair up in order when kinds match. */
+export function alignBlocks(before: string, after: string): BlockRow[] {
+  const a = splitBlocks(before);
+  const b = splitBlocks(after);
+  const rows: BlockRow[] = [];
+  const runs = diffSequences(a, b, (x, y) => x.text === y.text);
+  for (let r = 0; r < runs.length; r++) {
+    const run = runs[r]!;
+    if (run.type === "equal") {
+      for (let k = 0; k < run.aTo - run.aFrom; k++) {
+        rows.push({
+          kind: "equal",
+          before: a[run.aFrom + k]!,
+          after: b[run.bFrom + k]!,
+        });
+      }
+      continue;
+    }
+    // Gather a delete/insert pair into one replacement.
+    let removed = run.type === "delete" ? a.slice(run.aFrom, run.aTo) : [];
+    let added = run.type === "insert" ? b.slice(run.bFrom, run.bTo) : [];
+    const next = runs[r + 1];
+    if (next && next.type !== "equal" && next.type !== run.type) {
+      if (next.type === "delete") {
+        removed = a.slice(next.aFrom, next.aTo);
+      } else {
+        added = b.slice(next.bFrom, next.bTo);
+      }
+      r++;
+    }
+    rows.push(...pair(removed, added));
+  }
+  return rows;
+}
+
+function pair(removed: readonly Block[], added: readonly Block[]): BlockRow[] {
+  const rows: BlockRow[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < removed.length || j < added.length) {
+    const x = removed[i];
+    const y = added[j];
+    if (x && y && x.kind === y.kind) {
+      rows.push({ kind: "modified", before: x, after: y });
+      i++;
+      j++;
+    } else if (x && (!y || removed.length - i >= added.length - j)) {
+      rows.push({ kind: "deleted", before: x });
+      i++;
+    } else {
+      rows.push({ kind: "added", after: y! });
+      j++;
+    }
+  }
+  return rows;
+}
+
+/** Text a run can be wrapped in inline HTML without breaking Markdown syntax. */
+const PLAIN = /^[\p{L}\p{N}\s.,;:!?'"()%/+\-\u2013\u2014]+$/u;
+
+export const DEL_CLASS = "mw-gd-del";
+export const INS_CLASS = "mw-gd-ins";
+
+/**
+ * One side of a word diff as Markdown: changed plain-text runs on this side
+ * are wrapped in `<del>`/`<ins>`. Runs that contain Markdown syntax are left
+ * bare (the block is still marked as changed), so the diff never breaks the
+ * rendering of emphasis, links or table pipes.
+ */
+/** Longest side text `markSide` marks; longer sides are returned unmarked. */
+export const MAX_MARK_CHARS = 200_000;
+
+export function markSide(
+  segments: readonly Segment[],
+  side: "before" | "after",
+): string {
+  const own = side === "before" ? "delete" : "insert";
+  const tag = side === "before" ? "del" : "ins";
+  const cls = side === "before" ? DEL_CLASS : INS_CLASS;
+  const sideText = segments
+    .filter((segment) => segment.type === "equal" || segment.type === own)
+    .map((segment) => segment.text)
+    .join("");
+  if (sideText.length > MAX_MARK_CHARS) {
+    // Past the admission limit: the side as it is, before any scan.
+    return sideText;
+  }
+  const guarded = overlaps(
+    protectedRanges(sideText).concat(codeSpans(sideText)),
+  );
+  let out = "";
+  let at = 0;
+  for (const segment of segments) {
+    if (segment.type === "equal") {
+      out += segment.text;
+      at += segment.text.length;
+    } else if (segment.type === own) {
+      // Split off surrounding whitespace by length, not by a regex (a lazy
+      // core with a trailing \s* is quadratic on long inner whitespace).
+      const text = segment.text;
+      const head = text.length - text.trimStart().length;
+      const tail =
+        head === text.length ? 0 : text.length - text.trimEnd().length;
+      const lead = text.slice(0, head);
+      const core = text.slice(head, text.length - tail);
+      const trail = text.slice(text.length - tail);
+      const from = at + lead.length;
+      const to = from + core.length;
+      const safe =
+        core && PLAIN.test(core) && !core.includes("\n") && !guarded(from, to);
+      out += safe
+        ? `${lead}<${tag} class="${cls}">${core}</${tag}>${trail}`
+        : segment.text;
+      at += segment.text.length;
+    }
+  }
+  return out;
+}
+
+/**
+ * Code spans on each line: a backtick run closed by the next run of the same
+ * length. Linear time; a regex with a backreference backtracks badly on long
+ * unmatched runs.
+ */
+export function codeSpans(text: string): [number, number][] {
+  const spans: [number, number][] = [];
+  let line: { from: number; to: number }[] = [];
+  const flush = () => {
+    // next[i]: the next run on the line with the same length as run i.
+    const next = new Array<number>(line.length).fill(-1);
+    const seen = new Map<number, number>();
+    for (let i = line.length - 1; i >= 0; i--) {
+      const len = line[i]!.to - line[i]!.from;
+      next[i] = seen.get(len) ?? -1;
+      seen.set(len, i);
+    }
+    for (let i = 0; i < line.length;) {
+      const j = next[i]!;
+      if (j < 0) {
+        i++;
+        continue;
+      }
+      spans.push([line[i]!.from, line[j]!.to]);
+      i = j + 1;
+    }
+    line = [];
+  };
+  for (let at = 0; at < text.length; at++) {
+    const ch = text.charCodeAt(at);
+    if (ch === 10) {
+      flush();
+    } else if (ch === 96) {
+      const from = at;
+      while (text.charCodeAt(at + 1) === 96) {
+        at++;
+      }
+      line.push({ from, to: at + 1 });
+    }
+  }
+  flush();
+  return spans;
+}
+
+const escapeHtml = (text: string) =>
+  text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+/**
+ * A code, math source or frontmatter block as a one-line HTML block: each
+ * source line a span marked kept, removed or added. One line, because a
+ * blank line would end a Markdown HTML block.
+ */
+export function lineBlockHtml(
+  before: string | undefined,
+  after: string | undefined,
+  side: "before" | "after",
+  kind: BlockKind,
+): string {
+  const a = before === undefined ? [] : splitLines(before);
+  const b = after === undefined ? [] : splitLines(after);
+  const spans: string[] = [];
+  for (const run of diffSequences(a, b)) {
+    if (run.type === "equal") {
+      const lines =
+        side === "before"
+          ? a.slice(run.aFrom, run.aTo)
+          : b.slice(run.bFrom, run.bTo);
+      spans.push(...lines.map((line) => span("", line)));
+    } else if (run.type === "delete" && side === "before") {
+      spans.push(
+        ...a
+          .slice(run.aFrom, run.aTo)
+          .map((line) => span("mw-gd-line-del", line)),
+      );
+    } else if (run.type === "insert" && side === "after") {
+      spans.push(
+        ...b
+          .slice(run.bFrom, run.bTo)
+          .map((line) => span("mw-gd-line-ins", line)),
+      );
+    }
+  }
+  return `<pre class="mw-gd-lines mw-gd-${kind}"><code>${spans.join("")}</code></pre>`;
+  function span(cls: string, line: string): string {
+    return `<span class="mw-gd-line${cls ? ` ${cls}` : ""}">${escapeHtml(line) || "&#8203;"}</span>`;
+  }
+}
+
+/** The Markdown each side of a row renders; undefined for an empty side. */
+export function rowMarkdown(row: BlockRow): {
+  before?: string;
+  after?: string;
+} {
+  const { before, after } = row;
+  if (row.kind === "equal") {
+    return { before: before!.text, after: after!.text };
+  }
+  const kind = (before ?? after)!.kind;
+  if (kind === "code" || kind === "frontmatter" || kind === "math") {
+    if (row.kind === "modified" || kind !== "math") {
+      return {
+        ...(before && {
+          before: lineBlockHtml(before.text, after?.text, "before", kind),
+        }),
+        ...(after && {
+          after: lineBlockHtml(before?.text, after.text, "after", kind),
+        }),
+      };
+    }
+  }
+  if (row.kind === "modified") {
+    const segments = wordDiff(before!.text, after!.text);
+    return {
+      before: markSide(segments, "before"),
+      after: markSide(segments, "after"),
+    };
+  }
+  return {
+    ...(before && { before: before.text }),
+    ...(after && { after: after.text }),
+  };
+}

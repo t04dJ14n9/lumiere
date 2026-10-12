@@ -47,6 +47,7 @@ export const SERVICE_PROVIDERS: Readonly<
   bridgeCapture: "bridge",
   wikiLayout: "wiki",
   links: "links",
+  gitDiff: "gitGutter",
 };
 
 export interface PluginNode {

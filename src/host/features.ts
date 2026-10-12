@@ -4,6 +4,7 @@ import type { PanelShell, Workbench } from "../shared/runtime";
 import {
   linksHost,
   tasksHost,
+  gitGutterHost,
   propertiesHost,
   tagsHost,
   suggestHost,
@@ -33,6 +34,7 @@ export function hostFeatures(
         for (const plugin of [
           linksHost,
           tasksHost,
+          gitGutterHost,
           propertiesHost,
           tagsHost,
           suggestHost,

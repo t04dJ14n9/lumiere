@@ -95,12 +95,14 @@ export async function openWorkbench(
   await expect(
     page
       .locator(".quick-input-list .monaco-list-row")
-      .filter({ hasText: file })
+      .filter({ hasText: path.basename(file) })
       .first(),
   ).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(
-    page.locator(".tabs-container .tab").filter({ hasText: file }),
+    page
+      .locator(".tabs-container .tab")
+      .filter({ hasText: path.basename(file) }),
   ).toBeVisible();
   const reopen = page
     .locator(".quick-input-list .monaco-list-row")
