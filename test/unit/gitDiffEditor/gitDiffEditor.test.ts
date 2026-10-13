@@ -585,3 +585,27 @@ test("R4: link reference definitions follow CommonMark", () => {
     "[^b]: two",
   ]);
 });
+
+test("angle reference destinations preserve escaped closers and reject malformed spans", () => {
+  for (const text of [
+    "[a]: <>",
+    "[a]: <with space>",
+    "[a]: <escaped\\>closer>",
+  ]) {
+    assert.equal(
+      definitions({ kind: "text", text, from: 0, to: 1 })?.[0]?.text,
+      text,
+    );
+  }
+  for (const text of [
+    "[a]: <nested<angle>",
+    "[a]: <line\nbreak>",
+    "[a]: <unclosed",
+    "[a]: <escaped\\>",
+  ]) {
+    assert.equal(
+      definitions({ kind: "text", text, from: 0, to: 1 }),
+      undefined,
+    );
+  }
+});

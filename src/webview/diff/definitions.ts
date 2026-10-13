@@ -60,20 +60,25 @@ function label(p: string, at: number): { label: string; end: number } | null {
   return null;
 }
 
+/** Angle destinations allow spaces and escaped closers, but no line ending. */
+function angleDestination(p: string, at: number): number {
+  for (let j = at + 1; j < p.length; j++) {
+    const ch = p[j];
+    if (ch === "\\") {
+      j++;
+    } else if (ch === ">") {
+      return j + 1;
+    } else if (ch === "<" || ch === "\n") {
+      return -1;
+    }
+  }
+  return -1;
+}
+
 /** The end of a destination starting at `at`, or -1. */
 function destination(p: string, at: number): number {
   if (p[at] === "<") {
-    for (let j = at + 1; j < p.length; j++) {
-      const ch = p[j];
-      if (ch === "\\") {
-        j++;
-      } else if (ch === ">") {
-        return j + 1;
-      } else if (ch === "<" || ch === "\n") {
-        return -1;
-      }
-    }
-    return -1;
+    return angleDestination(p, at);
   }
   let depth = 0;
   let j = at;

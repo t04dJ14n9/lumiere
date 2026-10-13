@@ -157,13 +157,20 @@ body.vscode-high-contrast-light {
     transparent
   );
 }
-#app .cm-editor .cm-selectionLayer {
+/* CodeMirror's full-width selection; editor/selection-layer.ts draws ours. */
+#app .mw-editor > .cm-scroller > .cm-selectionLayer {
+  display: none;
+}
+#app .cm-editor :is(.cm-selectionLayer, .mw-selection-layer) {
   z-index: 1 !important; /* CodeMirror's base theme puts it at -2 */
   mix-blend-mode: screen;
   pointer-events: none;
 }
-body.vscode-light #app .cm-editor .cm-selectionLayer,
-body.vscode-high-contrast-light #app .cm-editor .cm-selectionLayer {
+body.vscode-light #app .cm-editor :is(.cm-selectionLayer, .mw-selection-layer),
+body.vscode-high-contrast-light
+  #app
+  .cm-editor
+  :is(.cm-selectionLayer, .mw-selection-layer) {
   mix-blend-mode: multiply;
 }
 #app .cm-selectionBackground {

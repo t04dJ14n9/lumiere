@@ -3073,3 +3073,22 @@ Commit is blocked in this sandbox: `git add` cannot create the worktree's
 Changes remain in this worktree; a complete patch and proposed commit message
 are saved in `/workspace/plans/pr16-review-fixes.patch` and
 `/workspace/plans/pr16-review-fixes-commit.txt` for the parent.
+
+## Git diff round-5 integration and readability — 2026-10-12
+
+Integrated the owner's approved main merges into `feat/git-diff-editor` without
+conflicts. The initial `pnpm check` found two readability violations: the shared
+block module had 406 counted lines, and destination parsing had complexity 16.
+Table delimiter recognition now has a dedicated module with a cell predicate;
+angle destinations have a separate scanner. Both retain the previous behavior,
+including short GFM delimiters, escaped angle closers and malformed destination
+rejection. Added unit cases for these boundaries; no browser/native cases added.
+
+The round-5 parser, citation and filename fixes remain in this branch. Review
+packets and the regex audit are under `/workspace/plans/review-gitdiff-{1,2,3}-round5.md`.
+The release gate is the sequential `xvfb-run -a pnpm check:full`, with an isolated
+native test profile. Its complete output is `/workspace/plans/gitdiff3-check-full.log`;
+only a passing gate authorizes the normal push and the owner's approved merge.
+Final counts, merge hashes and package evidence are recorded in
+`/workspace/plans/merge-2026-10-12.log`. The upstream Markdown parser's known slow
+100k-space-line parse and owner-run manual acceptance remain separate limits.

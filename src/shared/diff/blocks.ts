@@ -1,3 +1,5 @@
+import { isSeparator } from "./table-delimiter";
+export { isSeparator } from "./table-delimiter";
 import { diffSequences } from "./myers";
 import type { Run } from "./myers";
 import { splitLines, wordDiff } from "./lines";
@@ -322,30 +324,6 @@ function asLines(row: BlockRow["kind"], kind: string): boolean {
     return row === "modified";
   }
   return kind === "code" || kind === "frontmatter";
-}
-
-/**
- * Whether a table line is the delimiter row: cells of `:?-+:?` between
- * pipes. A hand scan over the line once; the old regex's overlapping
- * `\s*\|?\s*` backtracked quadratically on deep indentation.
- */
-export function isSeparator(line: string): boolean {
-  const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
-  return cells.every((cell) => {
-    const c = cell.trim();
-    let i = c.startsWith(":") ? 1 : 0;
-    const dashes = i;
-    while (c[i] === "-") {
-      i++;
-    }
-    if (i === dashes) {
-      return false;
-    }
-    if (c[i] === ":") {
-      i++;
-    }
-    return i === c.length;
-  });
 }
 
 /** A whole table row added or removed: each cell's text marked. */
