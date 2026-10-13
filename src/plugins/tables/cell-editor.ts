@@ -9,6 +9,8 @@ import { editGroup } from "../document/api";
 import { CellSource, cellSyntax } from "./cell-source";
 import type { Action, TableEnvironment } from "./environment";
 import { cellNavigation, type CellStep } from "./navigation";
+import { installCellWordNavigation } from "./word-navigation";
+import type { WordMotion } from "./word-motion";
 
 interface CellEditorOptions {
   parent: HTMLElement;
@@ -23,6 +25,7 @@ interface CellEditorOptions {
   action(action: Action): boolean;
   move(row: number, column: number): boolean;
   arrow(step: CellStep, extend: boolean): boolean;
+  word(motion: WordMotion, count: number): boolean;
 }
 
 let session = 0;
@@ -38,10 +41,12 @@ export class CellEditor {
   private readonly outer: EditorView;
   private readonly environment: TableEnvironment;
   private unbindMode?: () => void;
+  private readonly word: CellEditorOptions["word"];
 
   constructor(options: CellEditorOptions) {
     const { cell, selection } = options;
     this.environment = options.environment;
+    this.word = options.word;
     this.groups = options.environment.inputGroups();
     this.source = new CellSource(cell);
     this.vimEnabled = options.vim;
@@ -104,7 +109,11 @@ export class CellEditor {
     this.environment.vim?.sync(this.outer, this.view);
     const sync = (): void => this.environment.vim?.sync(this.view, this.outer);
     inner.on("vim-mode-change", sync);
-    this.unbindMode = () => inner.off("vim-mode-change", sync);
+    const words = installCellWordNavigation(this.view, inner, this.word);
+    this.unbindMode = () => {
+      words.destroy();
+      inner.off("vim-mode-change", sync);
+    };
   }
 
   label(position: CellPosition): void {
@@ -140,6 +149,21 @@ export class CellEditor {
         });
         this.bindMode();
       }
+    } finally {
+      this.reconciling = false;
+    }
+  }
+
+  /** Keep the adapter alive so a mapping or macro can continue in the next cell. */
+  retarget(cell: Cell, position: CellPosition, head: number): void {
+    this.reconciling = true;
+    try {
+      this.source.remember(cell.text);
+      this.label(position);
+      this.view.dispatch({
+        changes: { from: 0, to: this.view.state.doc.length, insert: cell.text },
+        selection: { anchor: head },
+      });
     } finally {
       this.reconciling = false;
     }

@@ -364,6 +364,14 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
 8. With Vim on, move between note and cells in normal and insert mode. Repeat
    with two panels, IME and external cell edits; selection and typed whitespace
    survive aligned rewrites without creating a second history.
+9. In a disposable copy, use a header cell `每个环境共用 hello中文 café`,
+   followed by `next word`; include an empty body cell and `last,value`.
+   In normal mode, `w` visits offsets 7 and 15, then the next cell at zero;
+   `e` first reaches the final character of each word. `w`/`W`, `e`/`E`,
+   `b`/`B` and `ge`/`gE` cross cells and wrap rows, skipping empty cells.
+   Counts span cells; WORD motions include punctuation. At the table edges,
+   repeated motions stop without edits. Check `dw` and visual `vw` remain in
+   their current cell, and insert-mode letters still type normally.
 
 ### callouts
 
