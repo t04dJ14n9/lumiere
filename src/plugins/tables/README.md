@@ -107,7 +107,9 @@ its normal word landing. Word crossings move the same cell editor to the next
 cell so a running mapping or macro continues against that cell's text.
 Normal `gg`/`G` and their counted forms close the cell editor and move the outer
 caret to the requested source line, clamped to the document. A table-source
-destination stays in the outer editor rather than reopening a cell.
+destination stays in the outer editor rather than reopening a cell. The buffer
+handoff is synchronous so remaining mapped or replayed commands act on the note;
+only the old cell editor and adapter teardown waits until Vim finishes the motion.
 Deferred outer-source entry requires one collapsed caret, focused content and
 settled normal mode. Selection/document changes, blur, mode transitions and
 disposal cancel pending entry. For Vim navigation entry only, every delimiter

@@ -3401,3 +3401,33 @@ passes all 1,130 tests. The initial targeted browser run passes all 52 cases in
 existing `k` case times out in harness `page.goto` before editor assertions and
 passes on an isolated rerun (1/1). No `pnpm check`,
 repository-wide lint, native suite, commit or push was run, as instructed.
+
+## P1 synchronous table Vim document handoff — 2026-10-13 (working tree)
+
+Read `/workspace/plans/review-obsidian-parity-pro-answer.md`. Document jumps now
+release the logical cell session, clear the active table and place/focus the
+outer caret synchronously. The injected Vim service redirects subsequent key
+resolution from the old cell adapter to the outer adapter before a mapped or
+replayed sequence dispatches its next key. Only cell editor/adapter teardown
+and redirect release wait for a microtask, so the current motion can finish its
+bookkeeping. The dispatcher hook is context-owned, adapter-scoped, restores on
+stop and preserves other panels when they stop out of registration order.
+
+The owner explicitly requested two browser regressions. Both fail against the
+original code: Q -> ggx changes alpha to lpha instead of deleting the first
+prose character; Q -> ggG leaves the caret on line 1 instead of the last line.
+They assert the complete source, focused outer editor, absent cell editor and
+final source caret line. Seven unit cases cover both mappings and macro replay,
+a counted second jump followed by editing, redirect release, unaffected adapters
+and out-of-order panel disposal. Plugin READMEs describe the handoff contract.
+The prescribed ~/Code/human-learning checkout is absent here; only this repository
+and its pinned Vim dependency were read. No reference code or assets were copied.
+
+Validation: `pnpm typecheck`, ESLint on only the seven changed TypeScript
+files, `pnpm test` (all 1,137 units), `pnpm build` and all 56 Chromium cases in
+`tables-vim`, `gutter-selection` and `font-size` pass. The final browser run used
+`npx playwright test -c test/browser/playwright.config.ts tables-vim.spec.ts
+gutter-selection.spec.ts font-size.spec.ts --workers=1`. Logs are saved as
+`/tmp/obsfix-p1-{typecheck,eslint,test,build,browser}.log`; the failing-first
+evidence is `/tmp/obsfix-p1-browser-before.log`. No pnpm check, repository-wide
+ESLint, native suite, commit or push was run, as instructed.

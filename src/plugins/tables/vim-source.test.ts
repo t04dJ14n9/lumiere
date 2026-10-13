@@ -202,6 +202,7 @@ function entryObserverFixture() {
     },
     extension: () => [],
     sync() {},
+    handoff: () => () => {},
   }));
   return { fixture, view, observer, update };
 }

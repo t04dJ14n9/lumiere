@@ -89,28 +89,38 @@ export class CellProjection {
     if (!editor) {
       return false;
     }
-    // Finish Vim's command bookkeeping before destroying its cell adapter.
+    const outer = this.grid.outer;
+    const doc = outer.state.doc;
+    const number = target === "last" ? doc.lines : target;
+    const line = doc.line(Math.max(1, Math.min(doc.lines, number)));
+    const firstCharacter = line.text.search(/\S/);
+    const head = line.from + Math.max(0, firstCharacter);
+    const release = this.environment.vim?.handoff(editor.view, outer);
+    // Detach logically before another mapped/replayed key runs. Only teardown
+    // waits: Vim still finishes the current motion against its cell adapter.
+    const active = this.active;
+    delete this.cellEditor;
+    delete this.active;
     queueMicrotask(() => {
-      if (this.cellEditor !== editor || !this.grid.root.isConnected) {
-        return;
+      try {
+        editor.destroy();
+      } finally {
+        release?.();
       }
-      const outer = this.grid.outer;
-      const doc = outer.state.doc;
-      const number = target === "last" ? doc.lines : target;
-      const line = doc.line(Math.max(1, Math.min(doc.lines, number)));
-      const firstCharacter = line.text.search(/\S/);
-      const head = line.from + Math.max(0, firstCharacter);
-      this.close();
-      activeTables.delete(outer);
-      this.actions.highlight();
-      // A document jump may land on table source; keep it in the outer view.
-      outer.dispatch({
-        selection: { anchor: head },
-        annotations: tableProjection.of(true),
-        scrollIntoView: true,
-      });
-      outer.focus();
     });
+    if (active) {
+      this.grid.display(active);
+    }
+    outer.state.facet(tableSelectionChanges)(false);
+    activeTables.delete(outer);
+    this.actions.highlight();
+    // A document jump may land on table source; keep it in the outer view.
+    outer.dispatch({
+      selection: { anchor: head },
+      annotations: tableProjection.of(true),
+      scrollIntoView: true,
+    });
+    outer.focus();
     return true;
   }
 

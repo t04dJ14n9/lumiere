@@ -372,3 +372,30 @@ for (const [motion, line] of [
     expect(await page.evaluate(() => window.harness.text)).toBe(source);
   });
 }
+
+for (const [mapping, finalLine] of [
+  ["ggx", 0],
+  ["ggG", lines.length - 1],
+] as const) {
+  test(`cell mapping Q -> ${mapping} continues in the outer source buffer`, async ({
+    page,
+  }) => {
+    await openVim(page, 1);
+    // :nmap uses Vim.map with the normal-mode context in the pinned engine.
+    await press(page, `:nmap Q ${mapping}`);
+    await page.keyboard.press("Enter");
+    await press(page, "jj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, "Q");
+    const expected = mapping === "ggx" ? source.slice(1) : source;
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toBe(expected);
+    await expectOuter(page, finalLine);
+    const caretLine = await page.evaluate(async () => {
+      const state = await window.harness.viewState();
+      return window.harness.text.slice(0, state.head).split("\n").length;
+    });
+    expect(caretLine).toBe(finalLine + 1);
+  });
+}

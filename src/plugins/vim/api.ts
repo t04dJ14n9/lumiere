@@ -15,6 +15,8 @@ export interface VimService {
   mode(view: EditorView): VimMode | undefined;
   watchMode?(view: EditorView, changed: () => void): () => void;
   sync(from: EditorView, to: EditorView): void;
+  /** Route remaining mapped/replayed keys until the source adapter is destroyed. */
+  handoff(from: EditorView, to: EditorView): () => void;
 }
 declare module "../../kernel/types" {
   interface Services {
