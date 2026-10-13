@@ -3173,3 +3173,35 @@ diff are recorded in
 /workspace/plans/review-pr30-round2.md. The pinned human-learning
 checkout remains absent; only this repository and its installed Vim dependency
 were read. No Obsidian code, CSS or assets were copied.
+
+## Task checkbox focus investigation (2026-10-13)
+
+The owner authorized a failing-first Chromium spec and limited validation to
+TypeScript, changed-file lint, related units and that browser spec. The new
+`tasks-scroll.spec.ts` constrains the harness panel so CodeMirror actually
+scrolls, opens 220 wrapped Chinese tasks, scrolls to the middle and clicks one
+visible task six times. It checks the complete source, scroll within four pixels,
+unchanged selection and retained editor focus, with start/end/range selections
+and Vim both enabled and disabled, using immediate and held mouse clicks.
+
+All six cases failed before the fix on lost editor focus. An event trace showed
+native mousedown transferring focus to the checkbox, then widget replacement on
+toggle removing the focused input and leaving focus on the body. Cancelling the
+inline checkbox's mousedown default preserves editor focus and still lets click
+activate the checkbox. The edit already changes only the task marker without a
+selection or scroll request; inherited WidgetType.ignoreEvent already excludes
+checkbox events from CodeMirror mouse selection. No coordinate, widget height,
+equality or pointer-selection changes were justified by the evidence.
+
+The reported intermittent jump to the bottom did **not** reproduce in this
+Chromium runtime, including repeated and held clicks with an off-screen caret.
+The fix addresses a confirmed focus/caret defect and removes native mouse-focus
+scrolling from this path; it does not establish the root cause of the reported
+bottom jump. Reproduction in the affected app/runtime remains outstanding.
+
+Validation: root, webview-plugin and test TypeScript checks pass; ESLint on the
+two changed TypeScript files passes; all ten related task units pass; build and
+all six cases in the new Chromium spec pass. No new pure logic needed unit
+coverage. No broad checks, native suite, commits or pushes were run. The pinned
+human-learning checkout is absent; only local code and the installed CodeMirror
+dependency were read.

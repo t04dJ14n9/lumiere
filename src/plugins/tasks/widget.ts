@@ -26,6 +26,13 @@ export class TaskBox extends WidgetType {
     checkbox.dataset.task = this.status;
     const events = new AbortController();
     this.events.set(checkbox, events);
+    // A toggle replaces this widget. Letting the native mouse press focus the
+    // checkbox would then leave focus on the body when the old input is removed,
+    // losing the editor's caret and exposing the browser's focus scrolling.
+    // Cancelling mousedown preserves focus without cancelling checkbox activation.
+    checkbox.addEventListener("mousedown", (event) => event.preventDefault(), {
+      signal: events.signal,
+    });
     checkbox.addEventListener(
       "click",
       (event) => {
