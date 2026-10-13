@@ -3471,3 +3471,57 @@ Changed-file formatting and Git whitespace checks pass. Logs are
 coverage is `/tmp/obsfix-p1r2-browser-before.log`, and the corrected intermediate
 motion-identity regression is `/tmp/obsfix-p1r2-browser-motion-identity.log`.
 No forbidden checks, native suite, commit, push or publication were run.
+
+## Vim Shift+4/6 input-source investigation — 2026-10-13 (working tree)
+
+The owner requested browser reproduction, a fix and regression coverage, limited
+checks to the affected behavior, and prohibited pnpm check, repository-wide lint
+and commits. Inspected cell editing, word/document routing, projection, table
+entry, Vim sequence routing and package keybindings. No binding captures plain
+Shift+4/6. Existing disposable-vault Obsidian measurements and fresh Chromium
+controls agree: ASCII `$` lands on the last cell character, `^` on its first
+nonblank character, and `0` at its start. The same logical-line motions work in
+ordinary paragraphs and wrapped CJK text.
+
+The pinned Vim dependency converts non-ASCII single-character keys through the
+last character of their physical code, making Shift+4 `￥`/`¥` a count `4`. Chinese
+`……`/`…` is unbound, and `Process` is deferred to text input. Before the fix,
+all nine non-ASCII end-motion cases failed in prose, wrapped CJK and cells while
+three ASCII controls passed; three independent non-ASCII first-nonblank cases
+failed while their ASCII control passed. Playwright's Shift+4 notation itself
+sends key `4`, so the trusted ASCII controls use Shift+$ / Shift+^; Chinese cases
+explicitly replay the reported key/code and Process/229/composing event shapes.
+This reproduces the event-handling defect, not an actual macOS input-source
+session.
+
+The Vim plugin now includes a shared, view-owned keyboard adapter in both note
+and cell extensions. It translates only the reported shifted Digit4/Digit6
+variants in normal mode, before composition filtering, and redelivers a regular
+command key through the existing dispatcher. Counts, operators, mappings and
+macro recording/replay remain native. ASCII input, other physical keys,
+modifier shortcuts, insert/visual mode and literal-character arguments retain
+their existing routing. A composition-start guard covers the interval before
+its first edit; prompt exclusion checks for an input so macro-recording
+notifications do not suppress commands. Two new guard regressions exposed those
+initial implementation mistakes and pass after correction. No table motion or
+projection behavior needed changing.
+
+Added 25 key-policy units and 22 owner-requested Chromium regressions, plus the
+Vim README and macOS manual acceptance scenario. The prescribed
+~/Code/human-learning checkout is absent; only this repository, its recorded
+behavior measurements and installed dependencies were read. No reference
+repository or proprietary code, CSS or assets were modified or copied.
+
+Final targeted validation: ESLint on the four changed TypeScript files,
+webview-plugin and test TypeScript projects, all 65 related units, changed-file
+Prettier and Git whitespace checks pass. The sequential final Chromium run
+passes all 71 cases (22 new line-key regressions, 40 existing tables-vim and nine
+existing vim-block-motion cases): `pnpm exec playwright test -c
+test/browser/playwright.config.ts vim-line-keys.spec.ts tables-vim.spec.ts
+vim-block-motion.spec.ts --workers=1`. Unit validation used `pnpm exec tsx --test`
+with keyboard.test.ts, motion.test.ts, word-navigation.test.ts,
+navigation.test.ts and test/unit/vim-key-routing.test.ts only. Logs are
+`/tmp/vimdollar-{unit,browser-after,typecheck,eslint}.log`; failing-first evidence
+is `/tmp/vimdollar-browser-before.log` and `/tmp/vimdollar-caret-before.log`.
+No pnpm check, repository-wide lint, full unit/browser/native suite, commit,
+push or publication was run. Real macOS input-source acceptance remains manual.

@@ -13,6 +13,7 @@ import type {} from "../commands/api";
 import { vimCaretMode } from "./caret";
 import { revealBlockMotion } from "./motion";
 import { installVimKeyRouting } from "./key-routing";
+import { vimLineKeyboard } from "./keyboard";
 import type {} from "../livePreview/api";
 
 /** Each webview has one editor; restore the library hooks when its fiber stops. */
@@ -148,6 +149,7 @@ function registerVimExtension(ctx: Context): void {
 function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
+    vimLineKeyboard,
     revealBlockMotion(() => ctx.livePreview),
     ctx.editor.caret({
       mode: (view) => {
