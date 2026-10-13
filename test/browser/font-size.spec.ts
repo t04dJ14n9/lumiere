@@ -172,11 +172,10 @@ test("line numbers stay level with their lines, headings, code, table and proper
         .map((element) => element.textContent)
         .join(""),
     );
-    // Numbering is the numbering branches decide (a rendered block may show
-    // one number or stack its lines'); the note still starts at 1 and ends at
-    // its last line.
+    // Properties has no number; the body starts at source line 5 and
+    // rendered blocks retain their first source line number.
     const lineCount = NOTE.split("\n").length;
-    expect(numbers.startsWith("1"), `${size}px x ${multiple} first`).toBe(true);
+    expect(numbers.startsWith("5"), `${size}px x ${multiple} first`).toBe(true);
     expect(
       numbers.endsWith(String(lineCount)),
       `${size}px x ${multiple} last`,

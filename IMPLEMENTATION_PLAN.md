@@ -3368,3 +3368,106 @@ checks passed. No pnpm check, repository-wide lint, browser/native suite, commit
 push or publication was run. The pinned `~/Code/human-learning` checkout is absent;
 only this repository and its installed dependencies were used, with no reference
 repository modified or copied.
+
+## Obsidian table document jumps and Properties gutter — 2026-10-13 (working tree)
+
+The temporary table cell owns a separate Vim buffer. Its resolved-motion hook
+previously routed only word movement, so `gg` and `G` used the cell's local
+one-line document. The same hook now routes normal document-line motions after
+Vim resolves prefixes, counts and mappings. The projection waits for Vim's
+command bookkeeping to finish, closes the cell, clears the active table, and
+focuses the outer caret on the requested source line's first non-whitespace
+character. Uncounted `gg` targets line 1, uncounted `G` the last line, and counts
+clamp to the source document. A table-source destination stays in the outer
+editor. Operators, visual and insert commands retain their existing routing.
+
+The line-number gutter previously treated Properties like every other rendered
+replacement block and labeled it with its first source line (`1`). Gutter labels
+now exclude the parsed frontmatter range, including its closing delimiter;
+subsequent lines keep their real source numbers. Updated the existing font-size
+numbering assertion and both plugin READMEs.
+
+Owner-requested regressions extend `tables-vim.spec.ts` for both document edges,
+counts, clamping, continued outer movement and table-source destinations.
+`gutter-selection.spec.ts` checks an unnumbered Properties widget followed by
+source lines 8 and 9. Units cover resolved document counts/mappings and
+frontmatter text/widget labels. The prescribed `~/Code/human-learning` checkout
+is absent here; implementation used this repository and its pinned Vim package.
+
+Validation: typecheck and ESLint on changed TypeScript files pass; `pnpm test`
+passes all 1,130 tests. The initial targeted browser run passes all 52 cases in
+`tables-vim`, `gutter-selection` and `font-size`. After the final routing change,
+33/34 table cases pass, including both new table-source destination cases; one
+existing `k` case times out in harness `page.goto` before editor assertions and
+passes on an isolated rerun (1/1). No `pnpm check`,
+repository-wide lint, native suite, commit or push was run, as instructed.
+
+## P1 synchronous table Vim document handoff — 2026-10-13 (working tree)
+
+Read `/workspace/plans/review-obsidian-parity-pro-answer.md`. Document jumps now
+release the logical cell session, clear the active table and place/focus the
+outer caret synchronously. The injected Vim service redirects subsequent key
+resolution from the old cell adapter to the outer adapter before a mapped or
+replayed sequence dispatches its next key. Only cell editor/adapter teardown
+and redirect release wait for a microtask, so the current motion can finish its
+bookkeeping. The dispatcher hook is context-owned, adapter-scoped, restores on
+stop and preserves other panels when they stop out of registration order.
+
+The owner explicitly requested two browser regressions. Both fail against the
+original code: Q -> ggx changes alpha to lpha instead of deleting the first
+prose character; Q -> ggG leaves the caret on line 1 instead of the last line.
+They assert the complete source, focused outer editor, absent cell editor and
+final source caret line. Seven unit cases cover both mappings and macro replay,
+a counted second jump followed by editing, redirect release, unaffected adapters
+and out-of-order panel disposal. Plugin READMEs describe the handoff contract.
+The prescribed ~/Code/human-learning checkout is absent here; only this repository
+and its pinned Vim dependency were read. No reference code or assets were copied.
+
+Validation: `pnpm typecheck`, ESLint on only the seven changed TypeScript
+files, `pnpm test` (all 1,137 units), `pnpm build` and all 56 Chromium cases in
+`tables-vim`, `gutter-selection` and `font-size` pass. The final browser run used
+`npx playwright test -c test/browser/playwright.config.ts tables-vim.spec.ts
+gutter-selection.spec.ts font-size.spec.ts --workers=1`. Logs are saved as
+`/tmp/obsfix-p1-{typecheck,eslint,test,build,browser}.log`; the failing-first
+evidence is `/tmp/obsfix-p1-browser-before.log`. No pnpm check, repository-wide
+ESLint, native suite, commit or push was run, as instructed.
+
+## P1 round-two table Vim insertion handoff — 2026-10-13 (working tree)
+
+Read `/workspace/plans/review-obsidian-parity-round2-pro-answer.md`. Redirecting
+only command lookup left the dependency's mapping executor and macro replay with
+cached cell adapters and mode objects. The dispatcher now supplies forwarding
+adapter, state and mode objects that follow the destination at the next key
+lookup. The handing-off motion finishes its cell bookkeeping first; subsequent
+mode checks, literal insertion, special-key fallback and separately recorded
+macro insert changes operate on the outer editor synchronously. Real cell state
+is retained for teardown, and the context-owned hook still restores correctly
+when panels stop out of order. This preserves the dependency's mapping and macro
+execution rather than reconstructing recorded insert edits from key strings.
+
+All three owner-requested Chromium insertion regressions failed against the
+original code and pass with the fix: Q -> ggiZ<Esc>, Q -> ggciwZ<Esc> and a macro
+recorded with actual typed text, then replayed from a cell. They assert the full
+outer document (including unchanged table cells), outer focus and final normal
+mode. The existing mapping browser cases also cover gg2Gx alongside ggx/ggG.
+Seven added unit cases cover insert/replacement mappings and macro insert changes,
+including Space/Enter/Escape, plus horizontal goals across blank lines. The first
+full browser run exposed that binding stored motion functions changed their
+identity and reset vertical goals; binding is now limited to adapter methods.
+Existing routing and disposal cases remain intact.
+Updated the Vim README. The pinned ~/Code/human-learning checkout is absent;
+only this repository and its installed Vim dependency were read. No reference
+repository or Obsidian code, CSS or assets were modified or copied.
+
+Validation follows the owner's targeted scope: no pnpm check, repository-wide
+ESLint, native suite, commit or push. Final check results are recorded below.
+
+Final validation: `pnpm typecheck` and ESLint limited to the three changed
+TypeScript files pass; `pnpm test` passes all **1,144** units. All **60** Chromium
+cases pass with `pnpm exec playwright test -c test/browser/playwright.config.ts
+tables-vim.spec.ts gutter-selection.spec.ts font-size.spec.ts --workers=1`.
+Changed-file formatting and Git whitespace checks pass. Logs are
+`/tmp/obsfix-p1r2-{typecheck,eslint,test,browser}.log`; failing-first insertion
+coverage is `/tmp/obsfix-p1r2-browser-before.log`, and the corrected intermediate
+motion-identity regression is `/tmp/obsfix-p1r2-browser-motion-identity.log`.
+No forbidden checks, native suite, commit, push or publication were run.

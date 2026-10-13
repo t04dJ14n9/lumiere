@@ -6,6 +6,12 @@ It defaults to off and transfers insert/normal mode between the note and table c
 ## How it works
 
 The plugin provides mode inspection and transfer through the injected Vim service.
+A scoped key-dispatch hook routes remaining mapping and macro keys to the note
+adapter after a cell document jump, while its current motion finishes bookkeeping.
+The executor receives forwarding adapter and mode objects: at the next key lookup,
+its cached references follow the destination for mode checks, literal insertion,
+special keys and separately recorded macro insert changes. The real cell state
+stays available to its teardown hooks.
 Live Preview identifies persistent widgets through an optional service query.
 The Vim adapter corrects vertical table overshoots to source-line arithmetic,
 including counts, operators and visual selections. Tables then map normal-mode
@@ -28,7 +34,9 @@ share this mode source and remove its listeners when they stop.
 ## Files
 
 - `manifest.ts`: default enablement and host shortcut contributions.
-- `api.ts`: mode, extension and mode-transfer contract.
+- `api.ts`: mode, extension, mode-transfer and buffer-handoff contract.
+- `key-routing.ts`: adapter-scoped mapping/macro handoff and dispatcher restoration.
+- `test/unit/vim-key-routing.test.ts`: cross-buffer sequences, unaffected adapters and hook disposal.
 - `webview.ts`: service, host action, Ex and editor extension registrations.
 - `motion.ts`: per-editor table motion correction and single-step entry into revealable blocks.
 - `source-motion.ts`: pure source-line target decision for rendered table overshoots.

@@ -7,7 +7,12 @@ import {
 import { tableSourceChanges } from "./source-edits";
 import { CellEditor } from "./cell-editor";
 import type { Action, TableEnvironment } from "./environment";
-import { tableActions, tableSelectionChanges, tableProjection } from "./state";
+import {
+  activeTables,
+  tableActions,
+  tableSelectionChanges,
+  tableProjection,
+} from "./state";
 import { sameCell, type TableGrid } from "./grid";
 import type { CellStep } from "./navigation";
 import { tableWordTarget, type WordMotion } from "./word-motion";
@@ -66,6 +71,7 @@ export class CellProjection {
       move: (row, column) => this.actions.move(row, column),
       arrow: (step, extend) => this.actions.arrow(step, extend),
       word: (motion, count) => this.moveWord(motion, count),
+      documentLine: (line) => this.moveDocumentLine(line),
       selected: (selected) =>
         this.grid.outer.state.facet(tableSelectionChanges)(selected),
       change: (text, group) => this.projectChange(position, text, group),
@@ -76,6 +82,46 @@ export class CellProjection {
     this.grid.outer.state.facet(tableSelectionChanges)(
       !this.cellEditor.view.state.selection.main.empty,
     );
+  }
+
+  private moveDocumentLine(target: number | "last"): boolean {
+    const editor = this.cellEditor;
+    if (!editor) {
+      return false;
+    }
+    const outer = this.grid.outer;
+    const doc = outer.state.doc;
+    const number = target === "last" ? doc.lines : target;
+    const line = doc.line(Math.max(1, Math.min(doc.lines, number)));
+    const firstCharacter = line.text.search(/\S/);
+    const head = line.from + Math.max(0, firstCharacter);
+    const release = this.environment.vim?.handoff(editor.view, outer);
+    // Detach logically before another mapped/replayed key runs. Only teardown
+    // waits: Vim still finishes the current motion against its cell adapter.
+    const active = this.active;
+    delete this.cellEditor;
+    delete this.active;
+    queueMicrotask(() => {
+      try {
+        editor.destroy();
+      } finally {
+        release?.();
+      }
+    });
+    if (active) {
+      this.grid.display(active);
+    }
+    outer.state.facet(tableSelectionChanges)(false);
+    activeTables.delete(outer);
+    this.actions.highlight();
+    // A document jump may land on table source; keep it in the outer view.
+    outer.dispatch({
+      selection: { anchor: head },
+      annotations: tableProjection.of(true),
+      scrollIntoView: true,
+    });
+    outer.focus();
+    return true;
   }
 
   private moveWord(motion: WordMotion, count: number): boolean {

@@ -331,3 +331,127 @@ test("cell word operators and visual selections remain in the cell buffer", asyn
   await expectCell(page, 0, 0, "", 0);
   expect(await page.evaluate(() => window.harness.text)).toContain("beta");
 });
+
+for (const [motion, line] of [
+  ["gg", 0],
+  ["G", lines.length - 1],
+  ["2gg", 1],
+  ["9G", 8],
+  ["1G", 0],
+  ["999gg", lines.length - 1],
+] as const) {
+  test(`cell normal ${motion} exits to the outer source line ${line + 1}`, async ({
+    page,
+  }) => {
+    await openVim(page, 1);
+    await press(page, "jj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, motion);
+    await expectOuter(page, line);
+    await expect(
+      page.locator('.cm-editor[data-caret-mode="normal"]'),
+    ).toHaveCount(1);
+    expect(await page.evaluate(() => window.harness.text)).toBe(source);
+    await press(page, "j");
+    await expectOuter(page, Math.min(lines.length - 1, line + 1));
+  });
+}
+
+for (const [motion, line] of [
+  ["4gg", 3],
+  ["6G", 5],
+] as const) {
+  test(`cell normal ${motion} keeps a table-source destination in the outer editor`, async ({
+    page,
+  }) => {
+    await openVim(page, 1);
+    await press(page, "jj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, motion);
+    await expectOuter(page, line);
+    expect(await page.evaluate(() => window.harness.text)).toBe(source);
+  });
+}
+
+for (const [mapping, finalLine] of [
+  ["ggx", 0],
+  ["ggG", lines.length - 1],
+  ["gg2Gx", 1],
+] as const) {
+  test(`cell mapping Q -> ${mapping} continues in the outer source buffer`, async ({
+    page,
+  }) => {
+    await openVim(page, 1);
+    // :nmap uses Vim.map with the normal-mode context in the pinned engine.
+    await press(page, `:nmap Q ${mapping}`);
+    await page.keyboard.press("Enter");
+    await press(page, "jj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, "Q");
+    const expectedDocuments = {
+      ggx: source.slice(1),
+      ggG: source,
+      gg2Gx: source.replace("prose above two", "rose above two"),
+    };
+    const expected = expectedDocuments[mapping];
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toBe(expected);
+    await expectOuter(page, finalLine);
+    const caretLine = await page.evaluate(async () => {
+      const state = await window.harness.viewState();
+      return window.harness.text.slice(0, state.head).split("\n").length;
+    });
+    expect(caretLine).toBe(finalLine + 1);
+  });
+}
+
+for (const [mapping, firstLine] of [
+  ["ggiZ<Esc>", "ZAbove"],
+  ["ggciwZ<Esc>", "Z"],
+] as const) {
+  test(`cell mapping Q -> ${mapping} inserts into the outer document`, async ({
+    page,
+  }) => {
+    const document = source.replace("prose above one here", "Above");
+    await open(page, document, "obsidian", {
+      features: { vim: { enabled: true, config: {} } },
+    });
+    await page.evaluate(() => window.harness.reveal(0));
+    await press(page, `:nmap Q ${mapping}`);
+    await page.keyboard.press("Enter");
+    await press(page, "jjj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, "Q");
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toBe(document.replace("Above", firstLine));
+    await expectOuter(page, 0);
+    await expect(
+      page.locator('.cm-editor[data-caret-mode="normal"]'),
+    ).toHaveCount(1);
+  });
+}
+
+test("recorded macro inserts into the outer document after a cell document jump", async ({
+  page,
+}) => {
+  await openVim(page, 0);
+  await press(page, "qaggi");
+  await page.keyboard.type("Z");
+  await page.keyboard.press("Escape");
+  await press(page, "q");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`Z${source}`);
+  await press(page, "jjj");
+  await expectCell(page, 0, 0, "alpha", 0);
+  await press(page, "@a");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`ZZ${source}`);
+  await expectOuter(page, 0);
+  await expect(
+    page.locator('.cm-editor[data-caret-mode="normal"]'),
+  ).toHaveCount(1);
+});

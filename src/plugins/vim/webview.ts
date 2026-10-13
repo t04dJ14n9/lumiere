@@ -12,6 +12,7 @@ import type {} from "./api";
 import type {} from "../commands/api";
 import { vimCaretMode } from "./caret";
 import { revealBlockMotion } from "./motion";
+import { installVimKeyRouting } from "./key-routing";
 import type {} from "../livePreview/api";
 
 /** Each webview has one editor; restore the library hooks when its fiber stops. */
@@ -28,7 +29,14 @@ export const vimWebview: Plugin = {
 };
 
 function registerVimService(ctx: Context): void {
+  const routing = installVimKeyRouting();
+  ctx.effect(() => () => routing.destroy());
   ctx.provide("vim", {
+    handoff(from, to) {
+      const source = getCM(from);
+      const target = getCM(to);
+      return source && target ? routing.handoff(source, target) : () => {};
+    },
     mode: (view) => getCM(view)?.state.vim ?? undefined,
     watchMode(view, changed) {
       const cm = getCM(view);

@@ -26,6 +26,7 @@ interface CellEditorOptions {
   move(row: number, column: number): boolean;
   arrow(step: CellStep, extend: boolean): boolean;
   word(motion: WordMotion, count: number): boolean;
+  documentLine(line: number | "last"): boolean;
 }
 
 let session = 0;
@@ -42,11 +43,13 @@ export class CellEditor {
   private readonly environment: TableEnvironment;
   private unbindMode?: () => void;
   private readonly word: CellEditorOptions["word"];
+  private readonly documentLine: CellEditorOptions["documentLine"];
 
   constructor(options: CellEditorOptions) {
     const { cell, selection } = options;
     this.environment = options.environment;
     this.word = options.word;
+    this.documentLine = options.documentLine;
     this.groups = options.environment.inputGroups();
     this.source = new CellSource(cell);
     this.vimEnabled = options.vim;
@@ -109,7 +112,12 @@ export class CellEditor {
     this.environment.vim?.sync(this.outer, this.view);
     const sync = (): void => this.environment.vim?.sync(this.view, this.outer);
     inner.on("vim-mode-change", sync);
-    const words = installCellWordNavigation(this.view, inner, this.word);
+    const words = installCellWordNavigation(
+      this.view,
+      inner,
+      this.word,
+      this.documentLine,
+    );
     this.unbindMode = () => {
       words.destroy();
       inner.off("vim-mode-change", sync);
