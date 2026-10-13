@@ -376,6 +376,7 @@ for (const [motion, line] of [
 for (const [mapping, finalLine] of [
   ["ggx", 0],
   ["ggG", lines.length - 1],
+  ["gg2Gx", 1],
 ] as const) {
   test(`cell mapping Q -> ${mapping} continues in the outer source buffer`, async ({
     page,
@@ -387,7 +388,12 @@ for (const [mapping, finalLine] of [
     await press(page, "jj");
     await expectCell(page, 0, 0, "alpha", 0);
     await press(page, "Q");
-    const expected = mapping === "ggx" ? source.slice(1) : source;
+    const expectedDocuments = {
+      ggx: source.slice(1),
+      ggG: source,
+      gg2Gx: source.replace("prose above two", "rose above two"),
+    };
+    const expected = expectedDocuments[mapping];
     await expect
       .poll(() => page.evaluate(() => window.harness.text))
       .toBe(expected);
@@ -399,3 +405,53 @@ for (const [mapping, finalLine] of [
     expect(caretLine).toBe(finalLine + 1);
   });
 }
+
+for (const [mapping, firstLine] of [
+  ["ggiZ<Esc>", "ZAbove"],
+  ["ggciwZ<Esc>", "Z"],
+] as const) {
+  test(`cell mapping Q -> ${mapping} inserts into the outer document`, async ({
+    page,
+  }) => {
+    const document = source.replace("prose above one here", "Above");
+    await open(page, document, "obsidian", {
+      features: { vim: { enabled: true, config: {} } },
+    });
+    await page.evaluate(() => window.harness.reveal(0));
+    await press(page, `:nmap Q ${mapping}`);
+    await page.keyboard.press("Enter");
+    await press(page, "jjj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, "Q");
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toBe(document.replace("Above", firstLine));
+    await expectOuter(page, 0);
+    await expect(
+      page.locator('.cm-editor[data-caret-mode="normal"]'),
+    ).toHaveCount(1);
+  });
+}
+
+test("recorded macro inserts into the outer document after a cell document jump", async ({
+  page,
+}) => {
+  await openVim(page, 0);
+  await press(page, "qaggi");
+  await page.keyboard.type("Z");
+  await page.keyboard.press("Escape");
+  await press(page, "q");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`Z${source}`);
+  await press(page, "jjj");
+  await expectCell(page, 0, 0, "alpha", 0);
+  await press(page, "@a");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe(`ZZ${source}`);
+  await expectOuter(page, 0);
+  await expect(
+    page.locator('.cm-editor[data-caret-mode="normal"]'),
+  ).toHaveCount(1);
+});

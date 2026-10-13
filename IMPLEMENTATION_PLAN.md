@@ -3431,3 +3431,43 @@ gutter-selection.spec.ts font-size.spec.ts --workers=1`. Logs are saved as
 `/tmp/obsfix-p1-{typecheck,eslint,test,build,browser}.log`; the failing-first
 evidence is `/tmp/obsfix-p1-browser-before.log`. No pnpm check, repository-wide
 ESLint, native suite, commit or push was run, as instructed.
+
+## P1 round-two table Vim insertion handoff — 2026-10-13 (working tree)
+
+Read `/workspace/plans/review-obsidian-parity-round2-pro-answer.md`. Redirecting
+only command lookup left the dependency's mapping executor and macro replay with
+cached cell adapters and mode objects. The dispatcher now supplies forwarding
+adapter, state and mode objects that follow the destination at the next key
+lookup. The handing-off motion finishes its cell bookkeeping first; subsequent
+mode checks, literal insertion, special-key fallback and separately recorded
+macro insert changes operate on the outer editor synchronously. Real cell state
+is retained for teardown, and the context-owned hook still restores correctly
+when panels stop out of order. This preserves the dependency's mapping and macro
+execution rather than reconstructing recorded insert edits from key strings.
+
+All three owner-requested Chromium insertion regressions failed against the
+original code and pass with the fix: Q -> ggiZ<Esc>, Q -> ggciwZ<Esc> and a macro
+recorded with actual typed text, then replayed from a cell. They assert the full
+outer document (including unchanged table cells), outer focus and final normal
+mode. The existing mapping browser cases also cover gg2Gx alongside ggx/ggG.
+Seven added unit cases cover insert/replacement mappings and macro insert changes,
+including Space/Enter/Escape, plus horizontal goals across blank lines. The first
+full browser run exposed that binding stored motion functions changed their
+identity and reset vertical goals; binding is now limited to adapter methods.
+Existing routing and disposal cases remain intact.
+Updated the Vim README. The pinned ~/Code/human-learning checkout is absent;
+only this repository and its installed Vim dependency were read. No reference
+repository or Obsidian code, CSS or assets were modified or copied.
+
+Validation follows the owner's targeted scope: no pnpm check, repository-wide
+ESLint, native suite, commit or push. Final check results are recorded below.
+
+Final validation: `pnpm typecheck` and ESLint limited to the three changed
+TypeScript files pass; `pnpm test` passes all **1,144** units. All **60** Chromium
+cases pass with `pnpm exec playwright test -c test/browser/playwright.config.ts
+tables-vim.spec.ts gutter-selection.spec.ts font-size.spec.ts --workers=1`.
+Changed-file formatting and Git whitespace checks pass. Logs are
+`/tmp/obsfix-p1r2-{typecheck,eslint,test,browser}.log`; failing-first insertion
+coverage is `/tmp/obsfix-p1r2-browser-before.log`, and the corrected intermediate
+motion-identity regression is `/tmp/obsfix-p1r2-browser-motion-identity.log`.
+No forbidden checks, native suite, commit, push or publication were run.

@@ -8,6 +8,10 @@ It defaults to off and transfers insert/normal mode between the note and table c
 The plugin provides mode inspection and transfer through the injected Vim service.
 A scoped key-dispatch hook routes remaining mapping and macro keys to the note
 adapter after a cell document jump, while its current motion finishes bookkeeping.
+The executor receives forwarding adapter and mode objects: at the next key lookup,
+its cached references follow the destination for mode checks, literal insertion,
+special keys and separately recorded macro insert changes. The real cell state
+stays available to its teardown hooks.
 Live Preview identifies persistent widgets through an optional service query.
 The Vim adapter corrects vertical table overshoots to source-line arithmetic,
 including counts, operators and visual selections. Tables then map normal-mode
