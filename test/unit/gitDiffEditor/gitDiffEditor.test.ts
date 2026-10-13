@@ -625,13 +625,49 @@ test("review: mid-document rules and setext headings survive equal and modified 
   assert.equal(renderer.renderMarkdown("---\nstatus: retained\n---"), "");
 });
 
+for (const [kind, before, after] of [
+  ["heading", "# Heading[^n]", "# Changed heading[^n]"],
+  [
+    "table",
+    "| Value[^n] |\n| --- |\n| Cell[^n] |",
+    "| Changed value[^n] |\n| --- |\n| Changed cell[^n] |",
+  ],
+] as const) {
+  test(`review: equal and modified ${kind} fragments retain footnote context`, () => {
+    const source = `${before}\n\n[^n]: Before explanation.`;
+    for (const modified of [false, true]) {
+      const target = modified
+        ? `${after}\n\n[^n]: After explanation.`
+        : source;
+      const rows = diffRows(source, target, renderSide);
+      const row = rows[0]!;
+      assert.equal(row.kind, modified ? "modified" : "equal");
+      for (const html of [row.before!, row.after!]) {
+        assert.match(html, kind === "heading" ? /<h1/ : /<table/);
+        assert.equal(
+          (html.match(/class="footnote-ref"/g) ?? []).length,
+          kind === "heading" ? 1 : 2,
+        );
+        assert.doesNotMatch(html, /\[\^n\]/);
+      }
+      assert.match(row.before!, /Before explanation/);
+      assert.match(
+        row.after!,
+        modified ? /After explanation/ : /Before explanation/,
+      );
+    }
+  });
+}
+
 test("review: an equal unclosed fence never gains reference definitions", () => {
-  const source = "[g]: /target\n\n```text\nkeep exactly this";
+  const source =
+    "[g]: /target\n\n[^n]: Explanation.\n\n```text\nkeep exactly this[^n]";
   const rows = diffRows(source, source, renderSide);
   const fence = rows.find((row) => row.before?.includes("keep exactly this"))!;
   assert.equal(fence.kind, "equal");
   for (const html of [fence.before!, fence.after!]) {
     assert.doesNotMatch(html, /\[g\]:/);
+    assert.doesNotMatch(html, /Explanation/);
     assert.match(html, /keep exactly this/);
   }
   const next = diffRows("[g]", "[g]", renderSide)[0]!;
