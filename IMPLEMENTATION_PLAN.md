@@ -3205,3 +3205,31 @@ all six cases in the new Chromium spec pass. No new pure logic needed unit
 coverage. No broad checks, native suite, commits or pushes were run. The pinned
 human-learning checkout is absent; only local code and the installed CodeMirror
 dependency were read.
+
+## Table grid collapse review fixes (2026-10-13)
+
+Arrow collapse now saves a caret offset belonging to the target cell: zero
+backward and its text length forward. Reopening a grid anchor clamps that saved
+offset to the current cell length, including after an intervening source edit.
+Collapse retains grid mode so the next Shift+Arrow extends cells. Printable
+characters and Enter open a single selected cell and deliver the initiating key
+to its keyboard handlers; unhandled printable input is inserted once with the
+cell's normal input transaction. Enter uses the existing cell navigation keymap.
+
+The owner explicitly authorized three Chromium regressions with Vim disabled.
+They cover the abcdef/z collapse-and-extend sequence without runtime errors,
+typing x after Left collapse, and Enter navigation after Left collapse. Three
+new unit cases cover directional offsets, source shortening and reopening the
+shorter anchor. Error collection starts after harness initialization to check
+the keyboard sequence; an unrelated existing Vim-entry Context-disposal error
+during feature initialization remains outside this fix. No reference code or
+assets were copied; the pinned human-learning checkout is absent here.
+
+Validation stayed within the owner's targeted scope: npx tsc --noEmit (root,
+webview plugins and tests), ESLint on the three changed TypeScript files, all
+86 table units, pnpm build, and all 59 tables-*.spec.ts Chromium cases including
+column Cmd+C and tables-vim pass. The existing external-edit/remount case passed
+on the first two-worker run, failed intermittently on the second, and passed
+with all 59 cases on a serial rerun (--workers=1). No changes were made to that
+case or its implementation. No pnpm check, full lint, native suite, commit or
+push was run.

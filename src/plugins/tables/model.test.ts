@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   cellText,
+  copyCells,
   parseTable,
   serializeTable,
   writeCells,
@@ -109,4 +110,17 @@ test("padding counts UTF-16 code units, as Obsidian 1.14.4 does (measured), for 
     serializeTable([["h"], ["中文"]], ["right"]),
     "|   h |\n| --: |\n|  中文 |",
   );
+});
+
+test("rectangular clipboard serialization includes every column in either selection direction", () => {
+  const table = parseTable(
+    "| a | b | c |\n|---|---|---|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |",
+  )!;
+  for (const range of [
+    { anchor: { row: 1, column: 0 }, head: { row: 2, column: 1 } },
+    { anchor: { row: 2, column: 1 }, head: { row: 1, column: 0 } },
+    { anchor: { row: 1, column: 1 }, head: { row: 2, column: 0 } },
+  ]) {
+    assert.equal(copyCells(table, range), "1\t2\n4\t5");
+  }
 });
