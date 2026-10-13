@@ -573,148 +573,148 @@
         "command": "markdownWorkshop.cursorBridge.chat",
         "key": "ctrl+l",
         "mac": "cmd+l",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.cursorBridge.edit",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.toggleItalics",
         "key": "ctrl+i",
         "mac": "cmd+i",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge) && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.gitGutter.nextChange",
         "key": "alt+f5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.gitGutter.previousChange",
         "key": "shift+alt+f5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.gitGutter.showChange",
         "key": "alt+f3",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.outline.goToHeading",
         "key": "ctrl+shift+o",
         "mac": "cmd+shift+o",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.outline.toggle",
         "key": "ctrl+alt+o",
         "mac": "ctrl+cmd+o",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.addProperty",
         "key": "ctrl+;",
         "mac": "cmd+;",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+o",
         "mac": "ctrl+o",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+b",
         "mac": "ctrl+b",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+i",
         "mac": "ctrl+i",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+shift+x",
         "mac": "ctrl+shift+x",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+k",
         "mac": "ctrl+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+0",
         "mac": "ctrl+alt+0",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+1",
         "mac": "ctrl+alt+1",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+2",
         "mac": "ctrl+alt+2",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+3",
         "mac": "ctrl+alt+3",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+4",
         "mac": "ctrl+alt+4",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+5",
         "mac": "ctrl+alt+5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+alt+6",
         "mac": "ctrl+alt+6",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+shift+t",
         "mac": "ctrl+shift+t",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+shift+h",
         "mac": "ctrl+shift+h",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
       }
     ],
     "views": {

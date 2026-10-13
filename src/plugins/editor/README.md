@@ -87,6 +87,8 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
 - `select-all.ts`: stops VS Code's own Select All from undoing the
   editor's Ctrl/Cmd+A (VS Code forwards every webview keydown).
+- `focus-report.ts`: reports the webview's focus for
+  `markdownWorkshop.editorFocus`, which every note keybinding requires.
 - `menu-context.ts`: gives the native context menu the selection as it is
   when the menu opens, so a macOS secondary click that selects a word shows
   the selection items.
@@ -110,8 +112,10 @@ Host injects `workbench` and `documents`, provides `editors`, and emits/listens 
 `editor/opened`, `editor/closed` and `editor/activeChanged`. Webview injects
 `document`, `markdown` and `rpc`, provides `editor` and `menu`, listens to
 `document/syncStatus`, calls `editor/projectSelection`, and emits
-`editor/clearProjection` and `editor/modeRestored`. Selection changes notify the
-host through the editor channel. Core settings are `editor.useTabs` (true) and
+`editor/clearProjection` and `editor/modeRestored`. Selection and focus changes notify the
+host through the editor channel; the host keeps the
+`markdownWorkshop.hasSelection` and `markdownWorkshop.editorFocus` context
+keys for the active panel. Core settings are `editor.useTabs` (true) and
 `editor.tabSize` (4, integer 1–16), under `markdownWorkshop`.
 
 Each panel kernel logs through the window's logger, tagged with the panel ID,
@@ -165,6 +169,10 @@ its entries and revokes retained service handles. There are no default shortcuts
 
 Host provides `editorActions`; webview listens to `editor/selectionMenu` and the
 action-registry notifications. Callbacks remain in the extension host.
+
+The note's keybindings need `markdownWorkshop.editorFocus`, which the
+webview reports through the extension host: a key pressed within a few
+milliseconds of focusing the note can still reach VS Code's own binding.
 
 ## Precise-jump navigation
 

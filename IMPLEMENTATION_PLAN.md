@@ -4134,13 +4134,13 @@ The owner reported that a two-finger click on macOS (VS Code and Cursor)
 does not offer the selection items of the editor's context menu. VS Code
 builds the webview menu from the clicked element's `data-vscode-context`,
 read synchronously in the `contextmenu` event, but evaluates the items' `when`
-against `markdownWorkbench.hasSelection`, which the webview reports through
+against `markdownWorkshop.hasSelection`, which the webview reports through
 the extension host to the workbench. On macOS, Chromium selects the word under
 the pointer on a secondary click outside a selection
 (`SelectionController::SendContextMenuEvent`) just before dispatching
 `contextmenu`; CodeMirror reads that selection back on the next
 `selectionchange`, so the menu always opened with the previous state. The
-editor element now stamps `markdownWorkbench.hasSelection` into its own
+editor element now stamps `markdownWorkshop.hasSelection` into its own
 `data-vscode-context` in a `contextmenu` listener, from the browser's selection
 when it lies in the content and from CodeMirror's otherwise; VS Code's
 per-menu overlay shadows the global key. The listener is a plain one on the
@@ -4148,3 +4148,16 @@ editor element (CodeMirror's handlers skip widgets) and the attribute is not
 on the content element, whose attributes CodeMirror observes and restores.
 `menu-context.test.ts` covers the decision; the macOS gesture is manual
 scenario copyLinkForAgent 4, as Linux Chromium does not select on right-click.
+
+Reviewing the keybindings showed a second defect: every note keybinding was
+scoped by `activeCustomEditorId` alone, which VS Code keeps while focus is in
+the Explorer, a chat input or a panel, and an extension binding outranks a
+built-in one for the same key. With a note open, Mod+B in the Explorer bolded
+the word at the note's caret (`runFeatureCommand` targets the active panel)
+instead of toggling the sidebar, Mod+K swallowed every Mod+K chord, and in
+Cursor Mod+I/Mod+K no longer reached its chat. The webview now reports its
+window focus (`focus-report.ts`), the host keeps `markdownWorkshop.editorFocus`
+for the active panel through the per-panel key helper that
+`markdownWorkshop.hasSelection` now shares, and the generator ANDs that key
+into every editor-scoped keybinding. Units cover the reporter and the generated
+clauses; formatting scenario 3 and Vim scenario 2 cover the real workbench.

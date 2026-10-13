@@ -31,6 +31,7 @@ import { findExtension } from "./find";
 import { keepSelectAllInEditor } from "./select-all";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
+import { reportWebviewFocus } from "./focus-report";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -97,6 +98,16 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerJumpRecorder(ctx, editor, presentation);
     registerReveal(ctx, view);
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
+    ctx.effect(() =>
+      reportWebviewFocus(window, (hasFocus) =>
+        ctx.rpc.notify(
+          protocol,
+          "focusChanged",
+          { hasFocus },
+          { coalesce: true },
+        ),
+      ),
+    );
     view.focus();
   },
 };

@@ -35,6 +35,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     };
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
+    const setFocus = registerFocusContext(ctx, active);
     provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
     ctx.effect(() =>
@@ -68,6 +69,9 @@ export const editorHost: Plugin<EditorHostConfig> = {
           notify(() =>
             ctx.emit("editor/selectionChanged", panel, hasSelection),
           ),
+        );
+        panel.rpc.on(protocol, "focusChanged", ({ hasFocus }) =>
+          notify(() => setFocus(panel, hasFocus)),
         );
         panel.rpc.on(protocol, "initialized", () =>
           notify(() => ctx.emit("editor/ready", panel)),
@@ -164,6 +168,17 @@ function registerSelectionContext(
     contributionId("hasSelection"),
   );
   ctx.on("editor/selectionChanged", setSelection);
+}
+
+/**
+ * `markdownWorkshop.editorFocus`: whether the active note's webview has
+ * focus. The note's keybindings require it (see `focus-report.ts`).
+ */
+function registerFocusContext(
+  ctx: Context,
+  active: () => EditorPanel | undefined,
+): (panel: { readonly id: string }, hasFocus: boolean) => void {
+  return registerPanelContextKey(ctx, active, contributionId("editorFocus"));
 }
 
 /**

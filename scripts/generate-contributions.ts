@@ -70,7 +70,7 @@ export async function contributions() {
             key: command.key,
             ...(command.mac ? { mac: command.mac } : {}),
           },
-          contributionWhen(manifest, command),
+          contributionKeyWhen(manifest, command),
         ),
       ),
     ),
@@ -201,6 +201,29 @@ function whenEnabled(
     return "";
   }
   return `config.${contributionId("preset")} != 'minimal' && config.${contributionId(`plugins.${manifest.id}.enabled`)}`;
+}
+
+/**
+ * Keybinding when-clause: plugin enablement, optional per-command `when`
+ * (B3), then editorFocus for editor-scoped keys. A note's keys also need the
+ * note to have focus: VS Code keeps `activeCustomEditorId` while focus is in
+ * the Explorer or a chat, and an extension binding outranks the built-in one
+ * for the same key, so Cmd+B there would bold the note instead of toggling
+ * the sidebar. editorFocus is last so the contributions test can assert every
+ * note key ends with it.
+ */
+function contributionKeyWhen(
+  manifest: Manifest,
+  contribution: { scope?: "editor" | "workbench"; when?: string },
+): string {
+  const parts = [
+    whenEnabled(manifest, contribution.scope),
+    contribution.when,
+  ].filter(Boolean);
+  if ((contribution.scope ?? "editor") === "editor") {
+    parts.push(contributionId("editorFocus"));
+  }
+  return parts.join(" && ");
 }
 
 async function main() {

@@ -1,10 +1,11 @@
+import { contributionId } from "../../shared/setting-schema";
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 
 /**
  * VS Code builds a webview's context menu from the `data-vscode-context` of
  * the clicked element and its ancestors, read by a `contextmenu` listener on
- * the webview's window. The `markdownWorkbench.hasSelection` key that gates
+ * the webview's window. The `markdownWorkshop.hasSelection` key that gates
  * the selection items travels from the webview through the extension host
  * to the workbench, so it lags the selection. On macOS a secondary click
  * (two-finger click or Ctrl-click) outside a selection first selects the
@@ -39,7 +40,7 @@ export function menuHasSelection(
 
 /** The `data-vscode-context` value for a menu opened now. */
 export function menuContext(hasSelection: boolean): string {
-  return JSON.stringify({ "markdownWorkbench.hasSelection": hasSelection });
+  return JSON.stringify({ [contributionId("hasSelection")]: hasSelection });
 }
 
 function readDomSelection(view: EditorView): DomSelection | null {
