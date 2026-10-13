@@ -7,6 +7,7 @@
 import { alignBlocks, lineBlockHtml, rowMarkdown } from "../../shared/diff";
 import type { Block, BlockRow } from "../../shared/diff";
 import { blockDefinitions, citations, definitions } from "./definitions";
+import type { RenderOptions } from "../../markdown/html";
 import type { PanelRow } from "./panel";
 
 export { definitions } from "./definitions";
@@ -40,7 +41,7 @@ function withContext(markdown: string, context: SideContext): string {
     const text = context.footnotes.get(label);
     return text && !markdown.includes(`[^${label}]:`) ? [text] : [];
   });
-  const extra = [...notes, context.references.join("\n")].filter(Boolean);
+  const extra = notes;
   return extra.length ? `${markdown}\n\n${extra.join("\n\n")}` : markdown;
 }
 
@@ -48,7 +49,7 @@ function sideHtml(
   row: BlockRow,
   side: "before" | "after",
   context: SideContext,
-  render: (markdown: string) => string,
+  render: (markdown: string, options: RenderOptions) => string,
 ): string | undefined {
   const block = row[side];
   if (!block) {
@@ -61,13 +62,19 @@ function sideHtml(
   const markdown = rowMarkdown(row)[side];
   return markdown === undefined
     ? undefined
-    : render(withContext(markdown, context));
+    : render(
+        block.kind === "text" ? withContext(markdown, context) : markdown,
+        {
+          fragment: true,
+          referenceDefinitions: context.references.join("\n"),
+        },
+      );
 }
 
 export function diffRows(
   before: string,
   after: string,
-  render: (markdown: string) => string,
+  render: (markdown: string, options: RenderOptions) => string,
 ): PanelRow[] {
   const rows = alignBlocks(before, after, { containers: true });
   const left = sideContext(rows.map((row) => row.before));

@@ -1,16 +1,47 @@
 # gitDiffEditor
 
-A side-by-side diff of two versions of a note, both rendered with the editor's
-Markdown renderer and sanitizer. Blocks are aligned in one grid (shared engine
-in `src/shared/diff`), changed words are marked, added and removed blocks face
-a hatched spacer, and code, math and frontmatter diff line by line.
+Shows two versions of a note as rendered Markdown side by side, with changed
+words and lines marked. Obsidian has no built-in Git diff editor equivalent.
 
-- **Open Rendered Git Diff** compares the active note with HEAD.
-- With `diffEditor: rendered`, Markdown text diffs that VS Code opens (Source
-  Control, Timeline) are closed and replaced by the rendered panel. **Text
-  Diff** in the panel opens VS Code's diff and is not taken over again.
-- The left side is read-only; the right side follows edits to the note.
-- Disabling the plugin closes its panels and stops the takeover.
+## How it works
 
-Host adapters: `src/host/diff-views.ts` (tabs, `vscode.diff`, the webview
-panel); webview bundle: `src/webview/diff`.
+The command compares the active note with HEAD. With `diffEditor: rendered`,
+the host replaces Markdown text diffs opened by Source Control or Timeline;
+**Text Diff** opens the native comparison again. Panels follow text-document
+edits, repository changes and working-file events until disposal. Blocks align
+in one grid and render as fragments with reference definitions supplied through
+parser context. Each side resolves images through the existing contained
+resource pipeline; Git sides read revision bytes. Unavailable images show their
+source text.
+
+## Files
+
+- `manifest.ts`: settings and command contributions.
+- `host.ts`: native takeover, comparison reads and panel refresh lifetime.
+- `resources.ts`: independent image resolvers for the two sides.
+- `src/host/diff-views.ts`: native tabs and webview panel adapter.
+- `src/host/diff-image-url.ts`: local image URLs, revision bytes and resource roots.
+- `src/shared/diff-panel-protocol.ts`: validated panel messages.
+- `src/webview/diff/main.ts`: sanitized rendering and image requests.
+- `src/webview/diff/rows.ts`: fragment rows and side-specific definition context.
+- `src/webview/diff/definitions.ts`: reference and footnote context discovery.
+- `src/webview/diff/images.ts`: image enhancement and source fallback.
+- `src/webview/diff/panel.ts`: aligned grid and change controls.
+- `src/webview/diff/step.ts`: change navigation.
+- `src/webview/diff/diff.css`: panel presentation.
+
+## Services, events and settings
+
+Injects `workbench` and optionally `diffResources`; provides no services or kernel
+events. Subscribes to native diff tabs, document changes, Git repository changes
+and working-file events. `gitDiffEditor.diffEditor` selects `native` (default)
+or `rendered`. The plugin enablement setting controls takeover and closes owned
+panels on disable.
+
+## Limits and differences from Obsidian
+
+The comparison is read-only; **Open File** opens the note for editing. Images
+must resolve through the current vault index and containment checks. Assets
+missing from that index or an unavailable Git revision show a source fallback.
+Resource roots contain only the extension bundle and the compared notes' vaults;
+the image CSP allows their webview URLs and revision data URLs.

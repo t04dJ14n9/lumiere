@@ -731,6 +731,22 @@ On by default; VS Code's text diff stays the default until
 4. Disable the plugin: open panels close and Source Control opens the text
    diff again.
 
+5. Compare a note containing `# Intro`, a blank line, then
+   `---\nstatus: retained\n---`, another blank line and `Tail.`. The body
+   rule and setext heading stay visible when unchanged and when `retained`
+   changes on one side. Actual leading frontmatter still shows as source lines.
+6. Put `[g]: /target` before an unclosed fenced code block containing
+   `keep exactly this`. An unchanged comparison shows only that original code;
+   no reference definition appears inside the fence.
+7. Compare `![diagram](assets/old.png)` with `![diagram](assets/new.png)` using
+   different contained fixture images. Both load from their respective sides.
+   Change the same image path between HEAD, index and working tree: each side
+   shows its own bytes. Missing or escaped paths show explicit source fallbacks.
+8. After Source Control takeover, close remaining native note editors. Stage
+   new contents externally, then edit the working file externally. The open
+   rendered panel follows both changes. Close the panel and repeat: no disposed
+   panel updates or retained subscriptions should remain.
+
 ### wiki, assets, scratch and Marp
 
 Use a disposable folder, never a personal vault. Add the slim

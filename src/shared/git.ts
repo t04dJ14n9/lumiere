@@ -74,6 +74,10 @@ export interface DiffViews {
     title: string;
     column: number | undefined;
     preview: boolean;
+    resources?: {
+      roots: readonly string[];
+      load(side: "left" | "right", target: string): Promise<string>;
+    };
     /** Messages from the panel's buttons. */
     onAction(action: "openFile" | "openNative"): void;
   }): DiffPanel;

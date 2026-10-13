@@ -1,3 +1,5 @@
+import { prepareResources } from "./resources";
+import type {} from "../resources/api";
 import type { Context, Plugin } from "../../kernel";
 import type { DiffPanel, DiffSide, OpenedDiff } from "../../shared/git";
 import { registerReportedCommands } from "../../shared/reported-command";
@@ -54,7 +56,7 @@ interface Life {
 
 export const gitDiffEditorHost: Plugin = {
   name: "gitDiffEditor",
-  inject: { required: ["workbench"] },
+  inject: { required: ["workbench"], optional: ["diffResources"] },
   apply(ctx) {
     const { views, diffViews } = ctx.workbench;
     if (!views || !diffViews) {
@@ -206,6 +208,9 @@ async function readSide(ctx: Context, uri: string): Promise<DiffSide> {
 interface Prepared {
   left: DiffSide;
   right: DiffSide;
+  resources?: Parameters<
+    NonNullable<Context["workbench"]["diffViews"]>["show"]
+  >[0]["resources"];
   /** Stop following changes. */
   stop(): void;
   /** Called with each change after the sides were read. */
@@ -222,15 +227,11 @@ async function prepare(
   // Subscribe before reading, so an edit during the first read is seen.
   let changed = false;
   let onChange: (() => void) | undefined;
-  const unsubscribe = ctx.workbench.onChange((document) => {
-    if (
-      document.uri === comparison.modified ||
-      document.uri === comparison.original
-    ) {
-      changed = true;
-      onChange?.();
-    }
-  });
+  const notify = () => {
+    changed = true;
+    onChange?.();
+  };
+  const unsubscribe = followSources(ctx, comparison, notify);
   let stopped = false;
   const stop = () => {
     if (!stopped) {
@@ -256,9 +257,11 @@ async function prepare(
       }
     } while (changed && ++reads < MAX_REREADS);
     const [left, right] = sides;
+    const resources = await prepareResources(ctx, left, right);
     return {
       left,
       right,
+      resources,
       stop,
       listen(next) {
         onChange = next;
@@ -294,6 +297,7 @@ function present(
     title: name,
     column: comparison.column,
     preview: comparison.preview,
+    ...(prepared.resources && { resources: prepared.resources }),
     onAction(action) {
       const done =
         action === "openFile"
@@ -339,4 +343,34 @@ function present(
       },
     );
   });
+}
+
+/** Independent subscriptions survive native TextDocument disposal. */
+function followSources(
+  ctx: Context,
+  comparison: Comparison,
+  notify: () => void,
+) {
+  const workbench = ctx.workbench;
+  const uris = [comparison.original, comparison.modified];
+  const subscriptions = [
+    workbench.onChange((document) => {
+      if (uris.includes(document.uri)) {
+        notify();
+      }
+    }),
+  ];
+  if (uris.some((uri) => uri.startsWith("git:"))) {
+    const stop = workbench.git?.onDidChange?.(notify);
+    if (stop) {
+      subscriptions.push(stop);
+    }
+  }
+  for (const uri of new Set(uris.filter((uri) => !uri.startsWith("git:")))) {
+    const stop = workbench.watchFile?.(uri, notify);
+    if (stop) {
+      subscriptions.push(stop);
+    }
+  }
+  return () => subscriptions.forEach((stop) => void stop());
 }

@@ -17,6 +17,7 @@ requests. Webview URLs include modification time for cache invalidation.
 - `api.ts`: resource kind and service contracts.
 - `protocol.ts`: load request/result schemas.
 - `host.ts`: service and RPC registration.
+- `diff-resources.ts`: independent diff-side resolution and Git revision selection.
 - `note-resources.ts`: known-source authorization, contained reads and kind selection.
 - `containment.ts`: URI/realpath and virtual-symlink checks.
 - `webview.ts`: validated resource RPC client.
@@ -26,7 +27,9 @@ requests. Webview URLs include modification time for cache invalidation.
 
 Host injects `rpc`, `workbench` and `vault`; webview injects `rpc`. Provides
 `resources` on both surfaces. No kernel events, commands or direct user settings.
-Vault configuration determines roots and resolution.
+Vault configuration determines roots and resolution. The window service
+`diffResources` injects `vaults` and `workbench` and provides contained image
+resolution for standalone diff panels.
 
 ## Limits and differences from Obsidian
 

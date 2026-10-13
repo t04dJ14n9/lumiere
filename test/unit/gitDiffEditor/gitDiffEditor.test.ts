@@ -368,7 +368,8 @@ test("S5: Previous from no selection picks the last change, Next the first", () 
 });
 
 const renderer = createRenderer();
-const renderSide = (markdown: string) => renderer.renderMarkdown(markdown);
+const renderSide: Parameters<typeof diffRows>[2] = (markdown, options) =>
+  renderer.renderMarkdown(markdown, options);
 
 test("B4: a reference link renders with its definition from another block", () => {
   const rows = diffRows(
@@ -608,4 +609,111 @@ test("angle reference destinations preserve escaped closers and reject malformed
       undefined,
     );
   }
+});
+
+test("review: mid-document rules and setext headings survive equal and modified fragments", () => {
+  const source = "# Intro\n\n---\nstatus: retained\n---\n\nTail.";
+  for (const after of [source, source.replace("retained", "changed")]) {
+    const rows = diffRows(source, after, renderSide);
+    const left = rows.map((row) => row.before ?? "").join("");
+    const right = rows.map((row) => row.after ?? "").join("");
+    assert.match(left, /<hr>/);
+    assert.match(left, /retained/);
+    assert.match(right, /<hr>/);
+    assert.match(right, after === source ? /retained/ : /changed/);
+  }
+  assert.equal(renderer.renderMarkdown("---\nstatus: retained\n---"), "");
+});
+
+test("review: an equal unclosed fence never gains reference definitions", () => {
+  const source = "[g]: /target\n\n```text\nkeep exactly this";
+  const rows = diffRows(source, source, renderSide);
+  const fence = rows.find((row) => row.before?.includes("keep exactly this"))!;
+  assert.equal(fence.kind, "equal");
+  for (const html of [fence.before!, fence.after!]) {
+    assert.doesNotMatch(html, /\[g\]:/);
+    assert.match(html, /keep exactly this/);
+  }
+  const next = diffRows("[g]", "[g]", renderSide)[0]!;
+  assert.doesNotMatch(
+    next.before!,
+    /href=/,
+    "parser context cannot leak between renders",
+  );
+});
+
+test("review: Git and file events refresh after both native documents close; disposal unsubscribes", async () => {
+  const h = harness("rendered");
+  const gitChanges = new Set<() => void>();
+  const fileChanges = new Set<() => void>();
+  const closedDocuments: { closed: boolean; uri: string; getText(): string }[] =
+    [];
+  Object.assign(h.workbench.git, {
+    onDidChange(listener: () => void) {
+      gitChanges.add(listener);
+      return () => gitChanges.delete(listener);
+    },
+  });
+  Object.assign(h.workbench, {
+    watchFile(uri: string, listener: () => void) {
+      assert.equal(uri, "file:///n.md");
+      fileChanges.add(listener);
+      return () => fileChanges.delete(listener);
+    },
+    async openDocument(uri: string) {
+      const text = h.texts[uri]!;
+      const document = {
+        uri,
+        closed: false,
+        getText() {
+          assert.equal(
+            this.closed,
+            false,
+            "disposed documents must never be read",
+          );
+          return text;
+        },
+      };
+      closedDocuments.push(document);
+      return document;
+    },
+  });
+  h.workbench.views.documentText = () => undefined as never;
+  const root = Context.create();
+  root.provide("workbench", h.workbench as never);
+  root.plugin(gitDiffEditorHost);
+  await root.settled();
+  for (const open of h.opened) {
+    open({
+      original: gitUri(""),
+      modified: "file:///n.md",
+      column: 1,
+      preview: false,
+      async close() {
+        closedDocuments.forEach((document) => {
+          document.closed = true;
+        });
+        return true;
+      },
+    });
+  }
+  await tick();
+  assert.equal(closedDocuments.length, 2);
+  assert.ok(closedDocuments.every((document) => document.closed));
+  h.texts[gitUri("")] = "externally staged";
+  gitChanges.forEach((notify) => notify());
+  await tick();
+  assert.equal(h.shown[0]!.left.text, "externally staged");
+  closedDocuments.forEach((document) => {
+    document.closed = true;
+  });
+  h.texts["file:///n.md"] = "external disk write";
+  fileChanges.forEach((notify) => notify());
+  await tick();
+  assert.equal(h.shown[0]!.right.text, "external disk write");
+  h.disposeShown(0);
+  assert.equal(gitChanges.size, 0);
+  assert.equal(fileChanges.size, 0);
+  assert.equal(h.changes.size, 0);
+  await root.dispose();
 });

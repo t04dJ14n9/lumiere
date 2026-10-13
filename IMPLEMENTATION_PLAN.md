@@ -3335,3 +3335,36 @@ both nine-case branch/main comparisons are in
 /workspace/plans/gitdiff3-targeted-validation/. Final verification changes only
 native helpers/spec selectors, two units, this record and the three reviewed
 table screenshots. No product implementation change was necessary.
+
+## Rendered diff review fixes — 2026-10-13 (working tree)
+
+Read the complete review at `/workspace/plans/review-diff-editor-pro-answer.md`.
+Diff fragments now retain body thematic breaks and setext headings; whole-document
+rendering still strips actual frontmatter. Reference definitions are parsed into
+fresh Markdown-It environments instead of appended to fragment source. Opaque
+blocks also exclude appended footnote context.
+
+Each panel follows native document edits, Git repository events and a scoped
+working-file watcher, retaining the existing reread/version/disposal guards.
+Independent side resolvers reuse NoteResources vault resolution and containment.
+Local images receive webview URLs; Git images read bytes at the side's revision.
+Resource roots include only the extension bundle and those vaults, with the
+existing restricted image CSP permitting webview and data URLs. Unresolvable or
+failed images expose their escaped source fallback. Panel messages now use shared
+schemas in both directions. Assets absent from the current vault index retain
+that explicit fallback, including historical assets no longer indexed.
+
+Removed the absolute `.vscode-test` symlink from the index with `git rm --cached`
+and added an exact ignore entry for the symlink as well as the existing directory
+entry. Added nine unit regressions covering fragments, unchanged unclosed fences,
+closed native document refreshes and subscription cleanup, independent image
+resolution/revisions/roots/fallbacks, service lifetime, message validation and
+cache tracking. Updated resource/diff READMEs and owner-run manual scenarios.
+
+Validation: `pnpm typecheck` passed; ESLint on only the 19 changed TypeScript files
+passed; `pnpm test` passed all **1,123** tests, including the final revision-image
+assertions. Logs: `/tmp/gitdiff-review-{typecheck,eslint,test}.log`. Git whitespace
+checks passed. No pnpm check, repository-wide lint, browser/native suite, commit,
+push or publication was run. The pinned `~/Code/human-learning` checkout is absent;
+only this repository and its installed dependencies were used, with no reference
+repository modified or copied.

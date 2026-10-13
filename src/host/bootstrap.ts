@@ -1,3 +1,4 @@
+import { diffResourcesHost } from "../plugins/resources/diff-resources";
 import { nativeLinksHost } from "../plugins/links/native-host";
 import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
@@ -50,6 +51,7 @@ export async function bootstrap(
   }
   root.plugin(documentHost);
   root.plugin(vaultsHost);
+  root.plugin(diffResourcesHost);
   // The editor host injects these services. Publish them first: a service
   // arriving after it started would restart it, unregistering the editor
   // provider and closing any editor VS Code was already opening.

@@ -1,3 +1,12 @@
+import { diffImageUrl, diffResourceRoots } from "./diff-image-url";
+import {
+  diffImageRequest,
+  diffImageReply,
+  diffUpdate,
+  diffReady,
+  diffAction,
+  parseDiffMessage,
+} from "../shared/diff-panel-protocol";
 import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
 import type { Disposer } from "../kernel";
@@ -105,7 +114,10 @@ function showPanel(extensionUri: vscode.Uri, options: ShowOptions): DiffPanel {
     },
     {
       enableScripts: true,
-      localResourceRoots: [dist],
+      localResourceRoots: diffResourceRoots(
+        dist.toString(),
+        options.resources?.roots ?? [],
+      ).map((root) => vscode.Uri.parse(root)),
       retainContextWhenHidden: true,
     },
   );
@@ -117,6 +129,7 @@ function showPanel(extensionUri: vscode.Uri, options: ShowOptions): DiffPanel {
 class RenderedDiffPanel implements DiffPanel {
   private latest: { left: DiffSide; right: DiffSide };
   private ready = false;
+  private isDisposed = false;
   private readonly listeners = new Set<() => void>();
   private readonly subscriptions: vscode.Disposable[];
   constructor(
@@ -125,19 +138,19 @@ class RenderedDiffPanel implements DiffPanel {
   ) {
     this.latest = { left: options.left, right: options.right };
     this.subscriptions = [
-      panel.webview.onDidReceiveMessage(
-        (message: { type?: string; action?: string }) => {
-          if (message.type === "ready") {
-            this.ready = true;
-            this.post();
-          } else if (
-            message.type === "action" &&
-            (message.action === "openFile" || message.action === "openNative")
-          ) {
-            options.onAction(message.action);
+      panel.webview.onDidReceiveMessage((message: unknown) => {
+        if (parseDiffMessage(diffImageRequest, message)) {
+          void this.resolveImage(message, options);
+        } else if (parseDiffMessage(diffReady, message)) {
+          this.ready = true;
+          this.post();
+        } else {
+          const action = parseDiffMessage(diffAction, message);
+          if (action) {
+            options.onAction(action.action);
           }
-        },
-      ),
+        }
+      }),
       panel.onDidDispose(() => this.disposed()),
     ];
   }
@@ -156,10 +169,45 @@ class RenderedDiffPanel implements DiffPanel {
   }
   private post(): void {
     if (this.ready) {
-      void this.panel.webview.postMessage({ type: "update", ...this.latest });
+      void this.panel.webview.postMessage(
+        diffUpdate.parse({ type: "update", ...this.latest }),
+      );
+    }
+  }
+  private async resolveImage(
+    message: unknown,
+    options: ShowOptions,
+  ): Promise<void> {
+    try {
+      const request = diffImageRequest.parse(message);
+      let url = "";
+      try {
+        const resource = await options.resources?.load(
+          request.side,
+          request.target,
+        );
+        if (resource) {
+          url = await diffImageUrl(resource, {
+            read: async (uri) =>
+              vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
+            localUrl: (uri) =>
+              this.panel.webview.asWebviewUri(vscode.Uri.parse(uri)).toString(),
+          });
+        }
+      } catch {
+        // Missing, rejected or unavailable revision images retain their source fallback.
+      }
+      if (!this.isDisposed) {
+        void this.panel.webview.postMessage(
+          diffImageReply.parse({ type: "image", id: request.id, url }),
+        );
+      }
+    } catch {
+      // Untrusted malformed requests are ignored.
     }
   }
   private disposed(): void {
+    this.isDisposed = true;
     for (const listener of this.listeners) {
       listener();
     }

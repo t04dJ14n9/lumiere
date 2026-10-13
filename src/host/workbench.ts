@@ -329,8 +329,27 @@ function configurationOperations(): Pick<
     },
   };
 }
-function fileOperations(): Pick<Workbench, "read" | "stat"> {
+function fileOperations(): Pick<Workbench, "read" | "stat" | "watchFile"> {
   return {
+    watchFile(uri, listener) {
+      const target = vscode.Uri.parse(uri);
+      const watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(vscode.Uri.joinPath(target, ".."), "*"),
+      );
+      const changed = (file: vscode.Uri) => {
+        if (file.toString() === target.toString()) {
+          listener();
+        }
+      };
+      const subscriptions = [
+        watcher,
+        watcher.onDidCreate(changed),
+        watcher.onDidChange(changed),
+        watcher.onDidDelete(changed),
+      ];
+      return () =>
+        subscriptions.forEach((subscription) => subscription.dispose());
+    },
     async read(uri) {
       return vscode.workspace.fs.readFile(vscode.Uri.parse(uri));
     },
