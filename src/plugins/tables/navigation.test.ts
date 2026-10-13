@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState, type TransactionSpec } from "@codemirror/state";
 import { Direction, type EditorView } from "@codemirror/view";
-import { parseTable, type CellPosition } from "../../markdown/tables/model";
+import {
+  copyCells,
+  parseTable,
+  type CellPosition,
+  type CellRange,
+} from "../../markdown/tables/model";
 import { TableKeyboard } from "./keyboard";
 import { cellArrow, entersTable, navigationKey } from "./navigation";
 import type { TableGrid } from "./grid";
@@ -258,4 +263,47 @@ test("existing arrows, h/l and pending horizontal keys retain their routing", ()
       assert.equal(navigationKey(key, vimMode(options)), undefined);
     }
   }
+});
+
+test("collapsing a grid selection keeps Shift arrows extending a cell rectangle", () => {
+  const model = parseTable(source)!;
+  const opened: CellPosition[] = [];
+  const selection = {
+    range: {
+      anchor: { row: 1, column: 0 },
+      head: { row: 1, column: 2 },
+    } as CellRange | undefined,
+    select(range: CellRange) {
+      this.range = range;
+    },
+  } as TableSelection;
+  const projection = {
+    open(position: CellPosition) {
+      opened.push(position);
+      delete selection.range;
+    },
+  } as unknown as CellProjection;
+  const grid = {
+    model,
+    root: { focus() {} },
+    cells: model.rows.map((row) => row.map(() => ({ scrollIntoView() {} }))),
+  } as unknown as TableGrid;
+  const keyboard = new TableKeyboard(grid, projection, selection, {
+    request() {},
+    deactivate() {},
+    menu() {},
+  });
+  keyboard.arrow({ row: 0, column: -1 }, false);
+  assert.deepEqual(selection.range, {
+    anchor: { row: 1, column: 0 },
+    head: { row: 1, column: 0 },
+  });
+  assert.deepEqual(opened, []);
+  keyboard.arrow({ row: 0, column: 1 }, true);
+  keyboard.arrow({ row: 1, column: 0 }, true);
+  assert.deepEqual(selection.range, {
+    anchor: { row: 1, column: 0 },
+    head: { row: 2, column: 1 },
+  });
+  assert.equal(copyCells(model, selection.range!), "1\t2\n4\t5");
 });

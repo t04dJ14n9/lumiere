@@ -4,6 +4,7 @@ import {
   rectangle,
   writeCells,
   type CellPosition,
+  type CellRange,
 } from "../../markdown/tables/model";
 import {
   arrowKeys,
@@ -120,19 +121,7 @@ export class TableKeyboard {
   arrow(step: CellStep, extend: boolean): boolean {
     const range = this.selection.range;
     if (range && !extend) {
-      const area = rectangle(range);
-      const before = step.row < 0 || step.column < 0;
-      const target = {
-        row: before ? area.top : area.bottom,
-        column: before ? area.left : area.right,
-      };
-      this.projection.open(
-        target,
-        before
-          ? 0
-          : this.grid.model.rows[target.row]![target.column]!.text.length,
-      );
-      return true;
+      return this.collapseSelection(range, step);
     }
     const current = range?.head ?? this.projection.active;
     if (!current) {
@@ -152,6 +141,29 @@ export class TableKeyboard {
     } else {
       this.leave(wrapped.row < 0 ? -1 : 1);
     }
+    return true;
+  }
+
+  private collapseSelection(range: CellRange, step: CellStep): boolean {
+    const area = rectangle(range);
+    const before = step.row < 0 || step.column < 0;
+    const target = {
+      row: before ? area.top : area.bottom,
+      column: before ? area.left : area.right,
+    };
+    if (!sameCell(range.anchor, range.head)) {
+      // Collapse in grid mode so the next Shift arrow extends cells rather
+      // than selecting text inside a newly opened cell editor.
+      this.selection.select({ anchor: target, head: target });
+      this.grid.root.focus();
+      return true;
+    }
+    this.projection.open(
+      target,
+      before
+        ? 0
+        : this.grid.model.rows[target.row]![target.column]!.text.length,
+    );
     return true;
   }
 
