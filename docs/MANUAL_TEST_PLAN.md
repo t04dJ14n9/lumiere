@@ -734,6 +734,13 @@ Off by default.
 3. There is no Copy for Agent or Ask Agent about Selection command, title
    button, context menu item or Mod+Alt+C binding (removed or renamed by
    owner decision; Ctrl+C copies plain text).
+4. On macOS, in VS Code and in Cursor, with only a caret in a paragraph,
+   two-finger click (then Ctrl-click) a word: the word is selected and the
+   first menu already lists Copy Link for Agent, which copies that word's
+   line. Two-finger click inside an existing multi-line selection, on plain
+   text and on a rendered link in it: the selection stays and the menu
+   lists the item. On Windows or Linux, right-click with only a caret: the
+   menu has no Copy Link for Agent.
 
 ### cursorBridge
 

@@ -30,6 +30,7 @@ import { indentationKeymap } from "./indentation";
 import { findExtension } from "./find";
 import { keepSelectAllInEditor } from "./select-all";
 import { caretExtension } from "./caret-view";
+import { menuSelectionContext } from "./menu-context";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -139,6 +140,7 @@ function createEditorView(
             preventDefaultContextMenuItems: true,
           }),
         }),
+        menuSelectionContext,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
         Prec.low(keymap.of([...indentationKeymap, ...defaultKeymap])),
         EditorView.updateListener.of((update) => {
