@@ -17,6 +17,8 @@ import path from "node:path";
 import { paths, readState } from "./state";
 import {
   closeBrowser,
+  focusWorkbench,
+  nativeTextEditor,
   openWorkbench,
   ORIGINAL_NOTE,
   reopenWith,
@@ -32,12 +34,12 @@ interface Caret {
 
 /** The built-in caret, left relative to the first character of "Original line". */
 async function nativeCaret(page: Page): Promise<Caret> {
-  const caret = page.locator(".monaco-editor .cursors-layer > .cursor").first();
+  await focusWorkbench(page);
+  const editor = nativeTextEditor(page, "Original line");
+  const caret = editor.locator(".cursors-layer > .cursor");
   await expect(caret).toBeVisible();
-  return page.evaluate(() => {
-    const line = [
-      ...document.querySelectorAll(".monaco-editor .view-line"),
-    ].find((element) =>
+  return editor.evaluate((element) => {
+    const line = [...element.querySelectorAll(".view-line")].find((element) =>
       element.textContent?.replace(/\u00a0/g, " ").includes("Original line"),
     );
     if (!line) {
@@ -50,8 +52,8 @@ async function nativeCaret(page: Page): Promise<Caret> {
     range.setStart(text, 0);
     range.setEnd(text, 1);
     const start = range.getBoundingClientRect().left;
-    const box = document
-      .querySelector(".monaco-editor .cursors-layer > .cursor")!
+    const box = element
+      .querySelector(".cursors-layer > .cursor")!
       .getBoundingClientRect();
     return { left: box.left - start, width: box.width, height: box.height };
   });
