@@ -158,27 +158,45 @@ function registerSelectionContext(
   ctx: Context,
   active: () => EditorPanel | undefined,
 ): void {
-  const selections = new Map<string, boolean>();
+  const setSelection = registerPanelContextKey(
+    ctx,
+    active,
+    contributionId("hasSelection"),
+  );
+  ctx.on("editor/selectionChanged", setSelection);
+}
+
+/**
+ * A boolean context key that follows the active panel: each panel keeps its
+ * own value, and the key shows the active one's (false when none is).
+ * Returns the setter for a panel's value.
+ */
+function registerPanelContextKey(
+  ctx: Context,
+  active: () => EditorPanel | undefined,
+  key: string,
+): (panel: { readonly id: string }, value: boolean) => void {
+  const values = new Map<string, boolean>();
   // Captured while live: the cleanup below runs after the context is disposed.
   const workshop = ctx.workshop;
   const refresh = () => {
     void workshop.execute(
       "setContext",
-      contributionId("hasSelection"),
-      selections.get(active()?.id ?? "") ?? false,
+      key,
+      values.get(active()?.id ?? "") ?? false,
     );
   };
-  ctx.on("editor/selectionChanged", (panel, hasSelection) => {
-    selections.set(panel.id, hasSelection);
-    refresh();
-  });
   ctx.on("editor/closed", (panel) => {
-    selections.delete(panel.id);
+    values.delete(panel.id);
     refresh();
   });
   ctx.on("editor/activeChanged", refresh);
   ctx.effect(() => async () => {
-    await workshop.execute("setContext", contributionId("hasSelection"), false);
+    await workshop.execute("setContext", key, false);
   });
   refresh();
+  return (panel, value) => {
+    values.set(panel.id, value);
+    refresh();
+  };
 }
