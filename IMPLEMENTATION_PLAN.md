@@ -3368,3 +3368,36 @@ checks passed. No pnpm check, repository-wide lint, browser/native suite, commit
 push or publication was run. The pinned `~/Code/human-learning` checkout is absent;
 only this repository and its installed dependencies were used, with no reference
 repository modified or copied.
+
+## Obsidian table document jumps and Properties gutter — 2026-10-13 (working tree)
+
+The temporary table cell owns a separate Vim buffer. Its resolved-motion hook
+previously routed only word movement, so `gg` and `G` used the cell's local
+one-line document. The same hook now routes normal document-line motions after
+Vim resolves prefixes, counts and mappings. The projection waits for Vim's
+command bookkeeping to finish, closes the cell, clears the active table, and
+focuses the outer caret on the requested source line's first non-whitespace
+character. Uncounted `gg` targets line 1, uncounted `G` the last line, and counts
+clamp to the source document. A table-source destination stays in the outer
+editor. Operators, visual and insert commands retain their existing routing.
+
+The line-number gutter previously treated Properties like every other rendered
+replacement block and labeled it with its first source line (`1`). Gutter labels
+now exclude the parsed frontmatter range, including its closing delimiter;
+subsequent lines keep their real source numbers. Updated the existing font-size
+numbering assertion and both plugin READMEs.
+
+Owner-requested regressions extend `tables-vim.spec.ts` for both document edges,
+counts, clamping, continued outer movement and table-source destinations.
+`gutter-selection.spec.ts` checks an unnumbered Properties widget followed by
+source lines 8 and 9. Units cover resolved document counts/mappings and
+frontmatter text/widget labels. The prescribed `~/Code/human-learning` checkout
+is absent here; implementation used this repository and its pinned Vim package.
+
+Validation: typecheck and ESLint on changed TypeScript files pass; `pnpm test`
+passes all 1,130 tests. The initial targeted browser run passes all 52 cases in
+`tables-vim`, `gutter-selection` and `font-size`. After the final routing change,
+33/34 table cases pass, including both new table-source destination cases; one
+existing `k` case times out in harness `page.goto` before editor assertions and
+passes on an isolated rerun (1/1). No `pnpm check`,
+repository-wide lint, native suite, commit or push was run, as instructed.

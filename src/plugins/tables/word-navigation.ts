@@ -29,11 +29,33 @@ export function normalWordCommand(
   return { motion: motion as WordMotion, count: args.repeat };
 }
 
-/** Keep Vim's recorder/dispatcher; replace only a resolved normal word landing. */
+/** Document jumps must use the outer buffer, never the one-line cell buffer. */
+export function normalDocumentLine(
+  input: VimState["inputState"],
+  mode: VimState,
+): number | "last" | undefined {
+  if (
+    mode.insertMode ||
+    mode.visualMode ||
+    input.operator ||
+    input.motion !== "moveToLineOrEdgeOfDocument" ||
+    !input.motionArgs
+  ) {
+    return undefined;
+  }
+  const args = input.motionArgs;
+  if (args.repeatIsExplicit) {
+    return args.repeat;
+  }
+  return args.forward ? "last" : 1;
+}
+
+/** Keep Vim's recorder/dispatcher; route resolved normal word and document landings. */
 export function installCellWordNavigation(
   view: EditorView,
   cm: CodeMirror,
   move: (motion: WordMotion, count: number) => boolean,
+  documentLine?: (line: number | "last") => boolean,
 ) {
   const mode = cm.state.vim;
   if (!mode) {
@@ -43,6 +65,7 @@ export function installCellWordNavigation(
   const original = cm.setCursor;
   let input = mode.inputState;
   let command: ReturnType<typeof normalWordCommand>;
+  let lineTarget: ReturnType<typeof normalDocumentLine>;
   // Pinned Vim clears inputState after resolving mappings/counts and before
   // executing the motion. Chain the existing observer used for block motions.
   Object.defineProperty(mode, "inputState", {
@@ -51,6 +74,7 @@ export function installCellWordNavigation(
     get: () => input,
     set(next: typeof input) {
       command = normalWordCommand(input, mode);
+      lineTarget = normalDocumentLine(input, mode);
       input = next;
       descriptor?.set?.call(mode, next);
     },
@@ -58,9 +82,18 @@ export function installCellWordNavigation(
   cm.setCursor = (line, ch?: number) => {
     const resolved = command;
     command = undefined;
+    const target = lineTarget;
+    lineTarget = undefined;
+    if (
+      target !== undefined &&
+      canRouteMotion(view) &&
+      documentLine?.(target)
+    ) {
+      return;
+    }
     if (
       resolved &&
-      canMoveWord(view) &&
+      canRouteMotion(view) &&
       move(resolved.motion, resolved.count)
     ) {
       return;
@@ -79,7 +112,7 @@ export function installCellWordNavigation(
   };
 }
 
-function canMoveWord(view: EditorView): boolean {
+function canRouteMotion(view: EditorView): boolean {
   return (
     !view.composing &&
     view.state.selection.ranges.length === 1 &&

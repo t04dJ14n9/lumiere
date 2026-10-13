@@ -477,3 +477,18 @@ test("a queued pointer release after the tracker is removed does not throw", asy
   });
   expect(errors).toEqual([]);
 });
+
+test("Properties has no line number and the body retains source numbering", async ({
+  page,
+}) => {
+  await open(
+    page,
+    "---\ntitle: Note\ntags:\n  - one\n  - two\naliases: []\n---\nBody\nEnd",
+  );
+  await expect(page.locator(".hybrid-properties")).toBeVisible();
+  for (let line = 1; line <= 7; line++) {
+    await expect(number(page, line)).toHaveCount(0);
+  }
+  await expect(number(page, 8)).toBeVisible();
+  await expect(number(page, 9)).toBeVisible();
+});

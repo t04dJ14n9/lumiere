@@ -79,6 +79,10 @@ export function blockLabel(
   if (block.type !== BlockType.WidgetRange && block.type !== BlockType.Text) {
     return null;
   }
+  const header = syntaxTree(state).topNode.firstChild;
+  if (header?.name === "Frontmatter" && block.from < header.to) {
+    return null;
+  }
   const first = state.doc.lineAt(block.from).number;
   return lineLabel(first, cursorLine(state), style);
 }

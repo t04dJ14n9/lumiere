@@ -331,3 +331,44 @@ test("cell word operators and visual selections remain in the cell buffer", asyn
   await expectCell(page, 0, 0, "", 0);
   expect(await page.evaluate(() => window.harness.text)).toContain("beta");
 });
+
+for (const [motion, line] of [
+  ["gg", 0],
+  ["G", lines.length - 1],
+  ["2gg", 1],
+  ["9G", 8],
+  ["1G", 0],
+  ["999gg", lines.length - 1],
+] as const) {
+  test(`cell normal ${motion} exits to the outer source line ${line + 1}`, async ({
+    page,
+  }) => {
+    await openVim(page, 1);
+    await press(page, "jj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, motion);
+    await expectOuter(page, line);
+    await expect(
+      page.locator('.cm-editor[data-caret-mode="normal"]'),
+    ).toHaveCount(1);
+    expect(await page.evaluate(() => window.harness.text)).toBe(source);
+    await press(page, "j");
+    await expectOuter(page, Math.min(lines.length - 1, line + 1));
+  });
+}
+
+for (const [motion, line] of [
+  ["4gg", 3],
+  ["6G", 5],
+] as const) {
+  test(`cell normal ${motion} keeps a table-source destination in the outer editor`, async ({
+    page,
+  }) => {
+    await openVim(page, 1);
+    await press(page, "jj");
+    await expectCell(page, 0, 0, "alpha", 0);
+    await press(page, motion);
+    await expectOuter(page, line);
+    expect(await page.evaluate(() => window.harness.text)).toBe(source);
+  });
+}

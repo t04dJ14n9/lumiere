@@ -18,13 +18,15 @@ area between numbers and text, as in VS Code.
 `editor.lineNumbers` is read on the host for Markdown files (`on`, `off`,
 `relative`, `interval`): relative shows distances from the caret line and
 interval every tenth number; the caret line always shows its own number. A
-rendered block (table, callout, embed, math, diagram, properties) hides several
+rendered block (table, callout, embed, math, diagram) hides several
 source lines. As in Obsidian 1.14.4 (measured: `docs/obsidian-measurements/tables/line-numbers*.mjs`),
 it gets **one** number, that of its first source line, at the top of the block, and the
 hidden lines are not numbered (a three-row table on lines 3-6 shows `3`, then `7`). The
 number of a table is lowered to sit level with its header row. An earlier version stacked
 a number per hidden line beside the block; the stack could not line up with rows of a
 different height and left a gap after the block.
+Frontmatter has no gutter labels, including the Properties widget and its
+closing delimiter. The first body line retains its real source line number.
 Catalog rank places line numbers before folding.
 
 ## Files

@@ -210,3 +210,31 @@ test("input reset observers remain chained and are restored on disposal", () => 
   assert.equal(restored?.set, set);
   assert.equal(f.mode.inputState, input);
 });
+
+test("resolved document jumps route counts and mappings to the outer buffer", () => {
+  const f = wordFixture();
+  f.installed.destroy();
+  const targets: (number | "last")[] = [];
+  const installed = installCellWordNavigation(
+    f.view,
+    f.cm,
+    () => false,
+    (line) => {
+      targets.push(line);
+      return true;
+    },
+  );
+  Vim.map("Q", "12G", "normal");
+  try {
+    for (const command of ["gg", "G", "3gg", "9G", "1G", "Q"]) {
+      keys(f.cm, command);
+      assert.equal(f.mode.inputState.keyBuffer.length, 0);
+    }
+    assert.deepEqual(targets, [1, "last", 3, 9, 1, 12]);
+    keys(f.cm, "dgg");
+    assert.equal(targets.length, 6);
+  } finally {
+    Vim.unmap("Q", "normal");
+    installed.destroy();
+  }
+});
