@@ -98,6 +98,11 @@
   background: var(--vscode-editor-selectionBackground, #65529266);
   outline: 1px solid var(--accent);
 }
+/* Opaque inline code would cover the cell's selection tint. Keep its text
+   styling while letting the selected cell paint the background underneath. */
+.hybrid-table .table-cell-selected :not(pre) > code {
+  background: transparent;
+}
 .table-controls {
   display: contents;
 }

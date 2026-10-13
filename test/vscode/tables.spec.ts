@@ -225,3 +225,37 @@ test("line numbers in the real editor: a table gets one number level with its he
     await closeBrowser(browser);
   }
 });
+
+test("column handle copy reaches the native clipboard and pastes TSV into prose", async () => {
+  const browser = await chromium.connectOverCDP(readState().webSocket);
+  try {
+    const page = workbenchPage(browser);
+    const editor = await openWorkbench(page);
+    await editor.click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.insertText(TABLE);
+    await page.keyboard.press("ControlOrMeta+s");
+    await expect.poll(readNote).toBe(TABLE);
+    const frame = await tableFrame(() => page.frames());
+    const table = frame.locator(".hybrid-table");
+    await table
+      .locator('.table-column-handle[data-index="1"]')
+      .click({ force: true });
+    await expect(table.locator(".table-cell-selected")).toHaveCount(3);
+    await page.keyboard.press("ControlOrMeta+c");
+    // Paste back into ordinary prose to verify the OS clipboard, rather than
+    // observing a message or substituting a clipboard API in the webview.
+    await frame
+      .locator(".cm-line")
+      .filter({ hasText: /^after$/ })
+      .click();
+    await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.press("End");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ControlOrMeta+v");
+    await page.keyboard.press("ControlOrMeta+s");
+    await expect.poll(readNote).toContain("b\n2\n5");
+  } finally {
+    await closeBrowser(browser);
+  }
+});

@@ -339,7 +339,17 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    existing `<br>` behavior; compare it separately because the probe did not
    verify that behavior in Obsidian.
 4. Select a range by dragging or Shift+arrows; copy, cut and paste TSV.
+   One undo restores each operation. Click a column grip, press Cmd+C on macOS
+   or Ctrl+C elsewhere, and paste into a spreadsheet: the header and each body
+   cell occupy separate rows. Repeat with a row grip, a rectangle and a single
+   selected cell; TSV preserves the rectangle with tabs between columns and
+   newlines between rows. Copy keeps the selection, focus and note unchanged.
+   Select only text inside a cell and copy: only that text reaches the clipboard.
    One undo restores each operation.
+   Include inline code (for example `git.tencent.com`), bold, links and inline
+   math in selected header and body cells. In dark and light themes, the blue
+   tint continues through code without opaque holes; all text stays readable.
+   Move or clear the selection: unselected code regains its theme background.
 5. Run **Insert Table** and every **Table:** command (insert, delete and
    move rows and columns, align, sort) from the palette and the menu.
    The cell menu has all Row/Column actions, with impossible moves disabled,
@@ -354,6 +364,14 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
 8. With Vim on, move between note and cells in normal and insert mode. Repeat
    with two panels, IME and external cell edits; selection and typed whitespace
    survive aligned rewrites without creating a second history.
+9. In a disposable copy, use a header cell `每个环境共用 hello中文 café`,
+   followed by `next word`; include an empty body cell and `last,value`.
+   In normal mode, `w` visits offsets 7 and 15, then the next cell at zero;
+   `e` first reaches the final character of each word. `w`/`W`, `e`/`E`,
+   `b`/`B` and `ge`/`gE` cross cells and wrap rows, skipping empty cells.
+   Counts span cells; WORD motions include punctuation. At the table edges,
+   repeated motions stop without edits. Check `dw` and visual `vw` remain in
+   their current cell, and insert-mode letters still type normally.
 
 ### callouts
 

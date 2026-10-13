@@ -51,6 +51,7 @@ function clipboardFixture() {
     inner,
     grid,
     copied,
+    selection,
     setRead(reader: () => Promise<string>) {
       read = reader;
     },
@@ -122,4 +123,59 @@ test("Select all selects cell text while editing and the entire grid while selec
     anchor: { row: 0, column: 0 },
     head: { row: 1, column: 1 },
   });
+});
+
+for (const modifier of ["ctrlKey", "metaKey"] as const) {
+  test(`${modifier}+C copies a grid column through the host without changing selection or text`, () => {
+    const fixture = clipboardFixture();
+    fixture.selection.range = {
+      anchor: { row: 0, column: 1 },
+      head: { row: 1, column: 1 },
+    };
+    const range = fixture.selection.range;
+    let prevented = false;
+    let stopped = false;
+    const event = {
+      key: "c",
+      [modifier]: true,
+      preventDefault() {
+        prevented = true;
+      },
+      stopPropagation() {
+        stopped = true;
+      },
+    } as unknown as KeyboardEvent;
+    fixture.clipboard.keyDown(event);
+    assert.deepEqual(fixture.copied, ["b\nsecond"]);
+    assert.equal(prevented, true);
+    assert.equal(stopped, true);
+    assert.equal(fixture.selection.range, range);
+    assert.equal(fixture.grid.block.source, source);
+  });
+}
+
+test("copy shortcut leaves cell text and unrelated shortcuts to their editors", () => {
+  const fixture = clipboardFixture();
+  fixture.clipboard.keyDown({
+    key: "c",
+    ctrlKey: true,
+  } as unknown as KeyboardEvent);
+  fixture.selection.range = {
+    anchor: { row: 0, column: 0 },
+    head: { row: 1, column: 1 },
+  };
+  for (const extra of [
+    { altKey: true },
+    { shiftKey: true },
+    { isComposing: true },
+    { defaultPrevented: true },
+  ]) {
+    fixture.clipboard.keyDown({
+      key: "c",
+      ctrlKey: true,
+      ...extra,
+    } as unknown as KeyboardEvent);
+  }
+  fixture.clipboard.keyDown({ key: "c" } as unknown as KeyboardEvent);
+  assert.deepEqual(fixture.copied, []);
 });

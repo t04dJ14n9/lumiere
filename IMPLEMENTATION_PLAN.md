@@ -3092,3 +3092,171 @@ only a passing gate authorizes the normal push and the owner's approved merge.
 Final counts, merge hashes and package evidence are recorded in
 `/workspace/plans/merge-2026-10-12.log`. The upstream Markdown parser's known slow
 100k-space-line parse and owner-run manual acceptance remain separate limits.
+## Vim table word motions (2026-10-12)
+
+Normal-mode `w`/`W`, `e`/`E`, `b`/`B` and `ge`/`gE` now navigate word
+endpoints across rendered cells in row order, wrapping between rows. Counts
+span cells; cells without words are skipped. Table edges clamp without changing
+text, appending rows or creating prose separators. Operators, visual/insert
+modes and unrelated pending commands retain the cell Vim buffer's behavior.
+The projection uses the current cell session's text so retained whitespace does
+not shift word offsets. Command routing clears completed counts/g prefixes
+before a cell adapter is destroyed.
+
+Small words use the installed Vim adapter's Unicode alphabetic/number
+classification, so contiguous CJK (including `每个环境共用`) is a word;
+WORDs group punctuation. Endpoints respect grapheme boundaries for astral
+letters, emoji and combining accents. This is adapter-compatible segmentation,
+not dictionary-based Chinese word splitting. No Obsidian code/assets were used.
+The prescribed `~/Code/human-learning` checkout is absent on this machine;
+implementation was based on this repository and its pinned installed dependency.
+
+Failing-first evidence: five newly approved browser cases all failed on the
+original implementation for `w`, `W`, `e`, `b` and `ge`. Five pure endpoint
+regressions failed against the initial unimplemented helper, then passed after
+implementation. Additional units cover routing guards and combining graphemes;
+browser cases cover counts, blank cells, punctuation, CJK/Latin text and
+operator/visual isolation. Validation results follow after the final gate.
+
+## Table grid clipboard shortcuts (2026-10-12)
+
+Column/row handles and rectangular cell selection focus a non-editable grid,
+which does not reliably receive Chromium copy events. Grid Ctrl+C/Cmd+C now
+claims the key and snapshots TSV through the existing validated Editor host
+clipboard service. Copy preserves text, focus and grid selection; ordinary
+cell-text copying keeps CodeMirror behavior. HTML/Markdown clipboard flavors
+remain a future enhancement; the native clipboard API currently writes text.
+
+Owner explicitly authorized new failing-first unit, browser and feasible native
+coverage for this bug. Three new units failed before the fix; all six clipboard
+units pass afterward. Three browser cases failed with an empty host clipboard.
+The new installed VS Code case failed to paste the selected column before the
+fix. The browser scenarios cover both modifiers, row/rectangle/single-cell
+selection; the native scenario pastes the OS clipboard into ordinary prose.
+Full validation results will be recorded below before committing.
+
+The pinned human-learning checkout is unavailable at ~/Code/human-learning in
+this environment. This fix uses this repository's existing table implementation;
+no source, browser or native suite was ported and no reference repository changed.
+## Selected table cells and inline code (2026-10-12)
+
+Selected table cells now expose their selection background through rendered
+inline code, preserving its foreground, font and spacing. The rule is scoped to
+selected cells and excludes preformatted blocks; unselected code regains its
+normal theme background when selection moves. Bold, links and MathJax output
+already have transparent backgrounds and need no style changes.
+
+The owner explicitly requested a failing-first browser regression. Both dark
+and light cases failed against the original CSS on the computed code background
+and pass with the fix. The tests use real column-handle selection, cover header
+and body cells, inspect code/bold/link/math backgrounds and text contrast,
+verify preserved foregrounds and bold weight, and check unselected/restored code
+and unchanged source. Updated the Tables README and manual acceptance steps.
+No Obsidian code, CSS or assets were copied. The pinned human-learning checkout
+is absent from this environment; this is a local CSS correction, with no source
+porting.
+
+Validation: dependency installation and the two focused Chromium regressions
+pass. Full required checks are recorded after completion in the task report at
+`/workspace/plans/cell-code-report.md`.
+
+
+## PR #30 round-two review fixes (2026-10-13)
+
+Merged origin/main first, retaining the word-motion record alongside the incoming
+clipboard and selection-color records and both relevant browser README entries.
+Replaced raw word-key interception and synthetic Escape with a per-editor hook
+that captures resolved moveByWords commands at Vim's input reset and routes their
+normal-mode cursor landing. Counts, mappings, original macro keys and Vim command
+bookkeeping remain in the dispatcher. Operator, visual, insert, composing and
+multiple-selection cases retain the cell buffer. Hook disposal restores the
+adapter and chains/restores the existing block-motion input observer.
+
+Cross-cell word movement retains the cell editor and adapter so a synchronous
+mapping or macro continues in the destination buffer. Retargeting suppresses
+source writes during the buffer swap and retains the captured position object
+for subsequent edits. Edge clamping now keeps the current position if the table's
+word endpoint lies opposite the requested direction; valid endpoint clamping
+when still ahead is retained. New unit regressions cover same-cell and cross-cell
+record/edit/replay, both mapping directions, nonword mappings, all eight counted
+motions, mode/selection guards, observer disposal, mixed empty edge cells and
+retained whitespace.
+
+Validation is limited by the owner's explicit instruction: no pnpm check,
+check:full, full-repository lint or native suite. Root, webview-plugin and test
+TypeScript checks pass; ESLint passes on the seven changed TypeScript files;
+26 units across the three changed test files pass; all 26 cases in the existing
+tables-vim Chromium browser spec pass. Exact commands, the report and full branch
+diff are recorded in
+/workspace/plans/review-pr30-round2.md. The pinned human-learning
+checkout remains absent; only this repository and its installed Vim dependency
+were read. No Obsidian code, CSS or assets were copied.
+
+## Task checkbox focus investigation (2026-10-13)
+
+The owner authorized a failing-first Chromium spec and limited validation to
+TypeScript, changed-file lint, related units and that browser spec. The new
+`tasks-scroll.spec.ts` constrains the harness panel so CodeMirror actually
+scrolls, opens 220 wrapped Chinese tasks, scrolls to the middle and clicks one
+visible task six times. It checks the complete source, scroll within four pixels,
+unchanged selection and retained editor focus, with start/end/range selections
+and Vim both enabled and disabled, using immediate and held mouse clicks.
+
+All six cases failed before the fix on lost editor focus. An event trace showed
+native mousedown transferring focus to the checkbox, then widget replacement on
+toggle removing the focused input and leaving focus on the body. Cancelling the
+inline checkbox's mousedown default preserves editor focus and still lets click
+activate the checkbox. The edit already changes only the task marker without a
+selection or scroll request; inherited WidgetType.ignoreEvent already excludes
+checkbox events from CodeMirror mouse selection. No coordinate, widget height,
+equality or pointer-selection changes were justified by the evidence.
+
+The reported intermittent jump to the bottom did **not** reproduce in this
+Chromium runtime, including repeated and held clicks with an off-screen caret.
+The fix addresses a confirmed focus/caret defect and removes native mouse-focus
+scrolling from this path; it does not establish the root cause of the reported
+bottom jump. Reproduction in the affected app/runtime remains outstanding.
+
+Validation: root, webview-plugin and test TypeScript checks pass; ESLint on the
+two changed TypeScript files passes; all ten related task units pass; build and
+all six cases in the new Chromium spec pass. No new pure logic needed unit
+coverage. No broad checks, native suite, commits or pushes were run. The pinned
+human-learning checkout is absent; only local code and the installed CodeMirror
+dependency were read.
+
+## Table grid collapse review fixes (2026-10-13)
+
+Arrow collapse now saves a caret offset belonging to the target cell: zero
+backward and its text length forward. Reopening a grid anchor clamps that saved
+offset to the current cell length, including after an intervening source edit.
+Collapse retains grid mode so the next Shift+Arrow extends cells. Printable
+characters and Enter open a single selected cell and deliver the initiating key
+to its keyboard handlers; unhandled printable input is inserted once with the
+cell's normal input transaction. Enter uses the existing cell navigation keymap.
+
+The owner explicitly authorized three Chromium regressions with Vim disabled.
+They cover the abcdef/z collapse-and-extend sequence without runtime errors,
+typing x after Left collapse, and Enter navigation after Left collapse. Three
+new unit cases cover directional offsets, source shortening and reopening the
+shorter anchor. Error collection starts after harness initialization to check
+the keyboard sequence; an unrelated existing Vim-entry Context-disposal error
+during feature initialization remains outside this fix. No reference code or
+assets were copied; the pinned human-learning checkout is absent here.
+
+Validation stayed within the owner's targeted scope: npx tsc --noEmit (root,
+webview plugins and tests), ESLint on the three changed TypeScript files, all
+86 table units, pnpm build, and all 59 tables-*.spec.ts Chromium cases including
+column Cmd+C and tables-vim pass. The existing external-edit/remount case passed
+on the first two-worker run, failed intermittently on the second, and passed
+with all 59 cases on a serial rerun (--workers=1). No changes were made to that
+case or its implementation. No pnpm check, full lint, native suite, commit or
+push was run.
+
+## Git diff editor main integration — 2026-10-13
+
+Continued the already-started merge of origin/main (7b0e300). The sole conflict
+was adjacent implementation records; retained both the branch's round-five
+record and every incoming table, Vim, clipboard and task record. All incoming
+code merged automatically. The owner requested the merge commit before targeted
+diagnosis and validation, and explicitly excluded pnpm check and repository-wide
+lint. Those targeted results will be recorded in the next phase. No push.

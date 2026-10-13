@@ -10,6 +10,7 @@ import type { Action, TableEnvironment } from "./environment";
 import { tableActions, tableSelectionChanges, tableProjection } from "./state";
 import { sameCell, type TableGrid } from "./grid";
 import type { CellStep } from "./navigation";
+import { tableWordTarget, type WordMotion } from "./word-motion";
 
 interface ProjectionActions {
   activate(position: CellPosition): void;
@@ -22,6 +23,12 @@ interface ProjectionActions {
 export class CellProjection {
   active?: CellPosition;
   cellEditor?: CellEditor;
+  private cellSessionRevision = 0;
+
+  get sessionRevision(): number {
+    return this.cellSessionRevision;
+  }
+
   get inner() {
     return this.cellEditor?.view;
   }
@@ -58,6 +65,7 @@ export class CellProjection {
       action: (action) => this.hostAction(action),
       move: (row, column) => this.actions.move(row, column),
       arrow: (step, extend) => this.actions.arrow(step, extend),
+      word: (motion, count) => this.moveWord(motion, count),
       selected: (selected) =>
         this.grid.outer.state.facet(tableSelectionChanges)(selected),
       change: (text, group) => this.projectChange(position, text, group),
@@ -68,6 +76,60 @@ export class CellProjection {
     this.grid.outer.state.facet(tableSelectionChanges)(
       !this.cellEditor.view.state.selection.main.empty,
     );
+  }
+
+  private moveWord(motion: WordMotion, count: number): boolean {
+    if (!this.active || !this.inner) {
+      return false;
+    }
+    const active = this.active;
+    const text = this.inner.state.doc.toString();
+    const target = tableWordTarget({
+      // The session can retain whitespace that serialization treats as padding.
+      cells: this.grid.model.rows.map((row, rowIndex) =>
+        row.map((cell, column) =>
+          sameCell(active, { row: rowIndex, column }) ? text : cell.text,
+        ),
+      ),
+      current: { ...this.active, head: this.inner.state.selection.main.head },
+      motion,
+      count,
+    });
+    if (!target) {
+      return true;
+    }
+    if (sameCell(this.active, target)) {
+      this.inner.dispatch({
+        selection: { anchor: target.head },
+        scrollIntoView: true,
+      });
+    } else {
+      this.retargetWordCell(target);
+    }
+    return true;
+  }
+
+  private retargetWordCell(target: CellPosition & { head: number }): void {
+    const editor = this.cellEditor;
+    const active = this.active;
+    const cell = this.grid.model.rows[target.row]?.[target.column];
+    const element = this.grid.contentElement(target);
+    if (!editor || !active || !cell || !element) {
+      return;
+    }
+    const previous = { ...active };
+    // Retaining the view must still invalidate async work from the previous cell.
+    this.cellSessionRevision++;
+    // The edit callback captures this object; retain it when the view changes cells.
+    Object.assign(active, { row: target.row, column: target.column });
+    this.actions.activate(active);
+    this.environment.disposeContent(element);
+    element.replaceChildren(editor.view.dom);
+    this.grid.display(previous);
+    editor.retarget(cell, active, target.head);
+    this.deferOuterCaret(editor);
+    editor.view.focus();
+    this.actions.highlight();
   }
 
   private projectChange(
@@ -126,6 +188,9 @@ export class CellProjection {
     }
     const view = this.cellEditor.view;
     const focused = view.hasFocus;
+    if (!sameCell(this.active, position)) {
+      this.cellSessionRevision++;
+    }
     // Keep the position object captured by the cell's change callback alive.
     Object.assign(this.active, position);
     this.grid.render();

@@ -16,6 +16,10 @@ CodeMirror; embedded-note edits use validated RPC, and the host rechecks source
 authorization and expected text before changing the native document. Pass/plugin
 cleanup disables controls and removes listeners.
 
+Inline checkbox mouse presses prevent native focus transfer. The click still
+activates the checkbox, but the editor retains its caret focus when the toggle
+replaces the widget. Toggle edits do not request selection or scrolling changes.
+
 ## Files
 
 - `manifest.ts`: enablement and checklist command contributions.

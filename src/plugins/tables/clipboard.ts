@@ -4,6 +4,7 @@ import {
   rangeTexts,
   toggleMarker,
   writeCells,
+  type CellPosition,
   type CellRange,
 } from "../../markdown/tables/model";
 
@@ -11,6 +12,22 @@ import type { TableGrid } from "./grid";
 import type { CellProjection } from "./projection";
 import type { TableSelection } from "./selection";
 import type { TableEnvironment } from "./environment";
+
+interface CellSessionSnapshot {
+  revision: number;
+  active: Partial<CellPosition>;
+}
+
+function isCurrentCellSession(
+  projection: Pick<CellProjection, "sessionRevision" | "active">,
+  snapshot: CellSessionSnapshot,
+): boolean {
+  return (
+    snapshot.revision === projection.sessionRevision &&
+    snapshot.active.row === projection.active?.row &&
+    snapshot.active.column === projection.active?.column
+  );
+}
 
 /** Clipboard and formatting operations over cell text or a rectangular range. */
 export class TableClipboard {
@@ -27,6 +44,27 @@ export class TableClipboard {
   get canFormat(): boolean {
     return this.environment.canFormat;
   }
+  keyDown(event: KeyboardEvent): void {
+    const range = this.selection.range;
+    if (
+      !range ||
+      event.defaultPrevented ||
+      event.isComposing ||
+      event.altKey ||
+      event.shiftKey ||
+      !(event.metaKey || event.ctrlKey) ||
+      event.key.toLowerCase() !== "c"
+    ) {
+      return;
+    }
+    // Grid selection focuses a non-editable element with no DOM text range.
+    // Chromium may never emit copy there; the host also owns native clipboard
+    // access in VS Code. Claim the key so forwarding cannot overwrite the TSV.
+    event.preventDefault();
+    event.stopPropagation();
+    this.environment.copy(copyCells(this.grid.model, range));
+  }
+
   copy(event: ClipboardEvent, cut: boolean): void {
     if (!this.selection.range || !event.clipboardData) {
       return;
@@ -94,6 +132,11 @@ export class TableClipboard {
   async pasteFromMenu(range: CellRange): Promise<void> {
     const expected = this.grid.block.source;
     const editor = this.projection.inner;
+    // Word navigation mutates the retained editor's position object in place.
+    const session = {
+      revision: this.projection.sessionRevision,
+      active: { ...this.projection.active },
+    };
     const selection = editor?.state.selection;
     const grid = this.selection.range;
     const context = this.environment;
@@ -110,6 +153,7 @@ export class TableClipboard {
     if (
       expected !== this.grid.block.source ||
       editor !== this.projection.inner ||
+      !isCurrentCellSession(this.projection, session) ||
       grid !== this.selection.range ||
       (selection && !selection.eq(editor.state.selection))
     ) {
