@@ -653,6 +653,16 @@ Off by default.
    character wide. Check `[markdown]` overrides, live settings changes, selection
    backgrounds, and turning Vim off/on without changing the note or selection.
 
+6. On macOS, use English and Chinese input sources in a disposable note. In normal
+   mode, Shift+4 moves to the last character of the logical line, Shift+6 to its
+   first nonblank character, and `0` to its start. Repeat in a narrow, wrapped CJK
+   paragraph and in a table cell; cell motions stay inside that cell. Add leading
+   spaces while editing the cell to distinguish `^` from `0`. Chinese `￥`/`¥`,
+   `……`/`…`, or `Process` key events on Shift+4/6 must produce the same motions.
+   In insert mode, punctuation remains literal; `f￥` and `r￥` retain their literal
+   argument. Search/Ex prompts and an already active composition remain input.
+   Repeat after disabling/re-enabling Vim and with the same note in two panels.
+
 ### pasteHtml
 
 1. Copy a web page section with headings, emphasis, nested task lists,
