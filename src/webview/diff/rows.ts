@@ -63,7 +63,9 @@ function sideHtml(
   return markdown === undefined
     ? undefined
     : render(
-        block.kind === "text" ? withContext(markdown, context) : markdown,
+        ["text", "heading", "table"].includes(block.kind)
+          ? withContext(markdown, context)
+          : markdown,
         {
           fragment: true,
           referenceDefinitions: context.references.join("\n"),

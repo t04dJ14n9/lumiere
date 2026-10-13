@@ -1,5 +1,7 @@
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -25,6 +27,91 @@ import type { Workbench } from "../../../src/shared/runtime";
 
 const gitUri = (path: string, ref: string) =>
   `git:${path}?${encodeURIComponent(JSON.stringify({ path, ref }))}`;
+
+test("Git source file URIs round-trip literal percent paths and Windows drive/UNC paths", () => {
+  for (const [path, source, windows] of [
+    ["/vault/100% done/n.md", "file:///vault/100%25%20done/n.md", false],
+    [
+      "/vault/release%20notes/n.md",
+      "file:///vault/release%2520notes/n.md",
+      false,
+    ],
+    [
+      "C:\\vault\\100% done\\n.md",
+      "file:///C:/vault/100%25%20done/n.md",
+      true,
+    ],
+    [
+      "C:/vault/release%20notes/n.md",
+      "file:///C:/vault/release%2520notes/n.md",
+      true,
+    ],
+    [
+      "\\\\server\\share\\release%20notes\\n.md",
+      "file://server/share/release%2520notes/n.md",
+      true,
+    ],
+  ] as const) {
+    const result = diffSource(gitUri(path, "HEAD"));
+    assert.deepEqual(result, { source, ref: "HEAD" });
+    assert.equal(
+      fileURLToPath(result.source, { windows }),
+      windows ? path.replaceAll("/", "\\") : path,
+    );
+  }
+});
+
+for (const directory of ["100% done", "release%20notes"]) {
+  test(`Git images resolve relative to the literal ${directory} directory`, async (t) => {
+    const vaultPath = await mkdtemp(join(tmpdir(), "mw-diff-images-"));
+    t.after(() => rm(vaultPath, { recursive: true, force: true }));
+    const notePath = join(vaultPath, directory, "n.md");
+    const imagePath = join(vaultPath, directory, "image.png");
+    await mkdir(join(vaultPath, directory));
+    await writeFile(imagePath, new Uint8Array([1]));
+    const root = pathToFileURL(vaultPath).href;
+    const source = pathToFileURL(notePath).href;
+    const image = pathToFileURL(imagePath).href;
+    const vaults = {
+      async forDocument(uri: string) {
+        assert.equal(uri, source);
+        return {
+          async settled() {},
+          index: {
+            root,
+            resolveLink(target: string, relative: string) {
+              assert.equal(target, "image.png");
+              assert.equal(relative, `${directory}/n.md`);
+              return { uri: image, path: `${directory}/image.png` };
+            },
+          },
+        };
+      },
+    } as unknown as Vaults;
+    const files = {
+      async stat(uri: string) {
+        assert.equal(uri, image);
+        return { mtime: 7, symbolicLink: false };
+      },
+      git: {
+        toGitUri(uri: string, ref: string) {
+          assert.equal(uri, image);
+          assert.equal(ref, "HEAD");
+          return gitUri(fileURLToPath(uri), ref);
+        },
+      },
+    } as unknown as Workbench;
+    const resource = await sideResources(vaults, files, {
+      uri: gitUri(notePath, "HEAD"),
+      label: "HEAD",
+      text: "",
+    });
+    assert.equal(
+      await resource.load("image.png"),
+      gitUri(imagePath, "HEAD"),
+    );
+  });
+}
 
 test("images resolve separately against each note and Git revision with existing containment", async () => {
   const resolutions: string[] = [];
@@ -67,7 +154,7 @@ test("images resolve separately against each note and Git revision with existing
   await assert.rejects(resource.load("missing.md"), /not an image/);
   assert.deepEqual(resolutions, [source]);
 
-  const directory = await mkdtemp("/tmp/mw-diff-images-");
+  const directory = await mkdtemp(join(tmpdir(), "mw-diff-images-"));
   const rootUri = pathToFileURL(directory).href;
   const revisions: [string, string][] = [];
   try {
