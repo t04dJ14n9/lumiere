@@ -3074,6 +3074,31 @@ Changes remain in this worktree; a complete patch and proposed commit message
 are saved in `/workspace/plans/pr16-review-fixes.patch` and
 `/workspace/plans/pr16-review-fixes-commit.txt` for the parent.
 
+## Vim table word motions (2026-10-12)
+
+Normal-mode `w`/`W`, `e`/`E`, `b`/`B` and `ge`/`gE` now navigate word
+endpoints across rendered cells in row order, wrapping between rows. Counts
+span cells; cells without words are skipped. Table edges clamp without changing
+text, appending rows or creating prose separators. Operators, visual/insert
+modes and unrelated pending commands retain the cell Vim buffer's behavior.
+The projection uses the current cell session's text so retained whitespace does
+not shift word offsets. Command routing clears completed counts/g prefixes
+before a cell adapter is destroyed.
+
+Small words use the installed Vim adapter's Unicode alphabetic/number
+classification, so contiguous CJK (including `每个环境共用`) is a word;
+WORDs group punctuation. Endpoints respect grapheme boundaries for astral
+letters, emoji and combining accents. This is adapter-compatible segmentation,
+not dictionary-based Chinese word splitting. No Obsidian code/assets were used.
+The prescribed `~/Code/human-learning` checkout is absent on this machine;
+implementation was based on this repository and its pinned installed dependency.
+
+Failing-first evidence: five newly approved browser cases all failed on the
+original implementation for `w`, `W`, `e`, `b` and `ge`. Five pure endpoint
+regressions failed against the initial unimplemented helper, then passed after
+implementation. Additional units cover routing guards and combining graphemes;
+browser cases cover counts, blank cells, punctuation, CJK/Latin text and
+operator/visual isolation. Validation results follow after the final gate.
 
 ## Table grid clipboard shortcuts (2026-10-12)
 
@@ -3116,3 +3141,67 @@ porting.
 Validation: dependency installation and the two focused Chromium regressions
 pass. Full required checks are recorded after completion in the task report at
 `/workspace/plans/cell-code-report.md`.
+
+
+## PR #30 round-two review fixes (2026-10-13)
+
+Merged origin/main first, retaining the word-motion record alongside the incoming
+clipboard and selection-color records and both relevant browser README entries.
+Replaced raw word-key interception and synthetic Escape with a per-editor hook
+that captures resolved moveByWords commands at Vim's input reset and routes their
+normal-mode cursor landing. Counts, mappings, original macro keys and Vim command
+bookkeeping remain in the dispatcher. Operator, visual, insert, composing and
+multiple-selection cases retain the cell buffer. Hook disposal restores the
+adapter and chains/restores the existing block-motion input observer.
+
+Cross-cell word movement retains the cell editor and adapter so a synchronous
+mapping or macro continues in the destination buffer. Retargeting suppresses
+source writes during the buffer swap and retains the captured position object
+for subsequent edits. Edge clamping now keeps the current position if the table's
+word endpoint lies opposite the requested direction; valid endpoint clamping
+when still ahead is retained. New unit regressions cover same-cell and cross-cell
+record/edit/replay, both mapping directions, nonword mappings, all eight counted
+motions, mode/selection guards, observer disposal, mixed empty edge cells and
+retained whitespace.
+
+Validation is limited by the owner's explicit instruction: no pnpm check,
+check:full, full-repository lint or native suite. Root, webview-plugin and test
+TypeScript checks pass; ESLint passes on the seven changed TypeScript files;
+26 units across the three changed test files pass; all 26 cases in the existing
+tables-vim Chromium browser spec pass. Exact commands, the report and full branch
+diff are recorded in
+/workspace/plans/review-pr30-round2.md. The pinned human-learning
+checkout remains absent; only this repository and its installed Vim dependency
+were read. No Obsidian code, CSS or assets were copied.
+
+## Task checkbox focus investigation (2026-10-13)
+
+The owner authorized a failing-first Chromium spec and limited validation to
+TypeScript, changed-file lint, related units and that browser spec. The new
+`tasks-scroll.spec.ts` constrains the harness panel so CodeMirror actually
+scrolls, opens 220 wrapped Chinese tasks, scrolls to the middle and clicks one
+visible task six times. It checks the complete source, scroll within four pixels,
+unchanged selection and retained editor focus, with start/end/range selections
+and Vim both enabled and disabled, using immediate and held mouse clicks.
+
+All six cases failed before the fix on lost editor focus. An event trace showed
+native mousedown transferring focus to the checkbox, then widget replacement on
+toggle removing the focused input and leaving focus on the body. Cancelling the
+inline checkbox's mousedown default preserves editor focus and still lets click
+activate the checkbox. The edit already changes only the task marker without a
+selection or scroll request; inherited WidgetType.ignoreEvent already excludes
+checkbox events from CodeMirror mouse selection. No coordinate, widget height,
+equality or pointer-selection changes were justified by the evidence.
+
+The reported intermittent jump to the bottom did **not** reproduce in this
+Chromium runtime, including repeated and held clicks with an off-screen caret.
+The fix addresses a confirmed focus/caret defect and removes native mouse-focus
+scrolling from this path; it does not establish the root cause of the reported
+bottom jump. Reproduction in the affected app/runtime remains outstanding.
+
+Validation: root, webview-plugin and test TypeScript checks pass; ESLint on the
+two changed TypeScript files passes; all ten related task units pass; build and
+all six cases in the new Chromium spec pass. No new pure logic needed unit
+coverage. No broad checks, native suite, commits or pushes were run. The pinned
+human-learning checkout is absent; only local code and the installed CodeMirror
+dependency were read.
