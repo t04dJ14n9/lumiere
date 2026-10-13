@@ -23,6 +23,12 @@ interface ProjectionActions {
 export class CellProjection {
   active?: CellPosition;
   cellEditor?: CellEditor;
+  private cellSessionRevision = 0;
+
+  get sessionRevision(): number {
+    return this.cellSessionRevision;
+  }
+
   get inner() {
     return this.cellEditor?.view;
   }
@@ -112,6 +118,8 @@ export class CellProjection {
       return;
     }
     const previous = { ...active };
+    // Retaining the view must still invalidate async work from the previous cell.
+    this.cellSessionRevision++;
     // The edit callback captures this object; retain it when the view changes cells.
     Object.assign(active, { row: target.row, column: target.column });
     this.actions.activate(active);
@@ -180,6 +188,9 @@ export class CellProjection {
     }
     const view = this.cellEditor.view;
     const focused = view.hasFocus;
+    if (!sameCell(this.active, position)) {
+      this.cellSessionRevision++;
+    }
     // Keep the position object captured by the cell's change callback alive.
     Object.assign(this.active, position);
     this.grid.render();

@@ -4,6 +4,7 @@ import {
   rangeTexts,
   toggleMarker,
   writeCells,
+  type CellPosition,
   type CellRange,
 } from "../../markdown/tables/model";
 
@@ -11,6 +12,22 @@ import type { TableGrid } from "./grid";
 import type { CellProjection } from "./projection";
 import type { TableSelection } from "./selection";
 import type { TableEnvironment } from "./environment";
+
+interface CellSessionSnapshot {
+  revision: number;
+  active: Partial<CellPosition>;
+}
+
+function isCurrentCellSession(
+  projection: Pick<CellProjection, "sessionRevision" | "active">,
+  snapshot: CellSessionSnapshot,
+): boolean {
+  return (
+    snapshot.revision === projection.sessionRevision &&
+    snapshot.active.row === projection.active?.row &&
+    snapshot.active.column === projection.active?.column
+  );
+}
 
 /** Clipboard and formatting operations over cell text or a rectangular range. */
 export class TableClipboard {
@@ -115,6 +132,11 @@ export class TableClipboard {
   async pasteFromMenu(range: CellRange): Promise<void> {
     const expected = this.grid.block.source;
     const editor = this.projection.inner;
+    // Word navigation mutates the retained editor's position object in place.
+    const session = {
+      revision: this.projection.sessionRevision,
+      active: { ...this.projection.active },
+    };
     const selection = editor?.state.selection;
     const grid = this.selection.range;
     const context = this.environment;
@@ -131,6 +153,7 @@ export class TableClipboard {
     if (
       expected !== this.grid.block.source ||
       editor !== this.projection.inner ||
+      !isCurrentCellSession(this.projection, session) ||
       grid !== this.selection.range ||
       (selection && !selection.eq(editor.state.selection))
     ) {
