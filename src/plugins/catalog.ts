@@ -42,6 +42,7 @@ import bridge from "./bridge/manifest";
 import wiki from "./wiki/manifest";
 import assets from "./assets/manifest";
 import scratch from "./scratch/manifest";
+import gitDiffEditor from "./gitDiffEditor/manifest";
 import marp from "./marp/manifest";
 /**
  * Which plugins exist; nothing else. Their precedence is plugin-order.ts,
@@ -91,6 +92,7 @@ export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
     assets,
     backlinks,
     bridge,
+    gitDiffEditor,
     linkUpdates,
     marp,
     outgoingLinks,

@@ -3074,6 +3074,24 @@ Changes remain in this worktree; a complete patch and proposed commit message
 are saved in `/workspace/plans/pr16-review-fixes.patch` and
 `/workspace/plans/pr16-review-fixes-commit.txt` for the parent.
 
+## Git diff round-5 integration and readability — 2026-10-12
+
+Integrated the owner's approved main merges into `feat/git-diff-editor` without
+conflicts. The initial `pnpm check` found two readability violations: the shared
+block module had 406 counted lines, and destination parsing had complexity 16.
+Table delimiter recognition now has a dedicated module with a cell predicate;
+angle destinations have a separate scanner. Both retain the previous behavior,
+including short GFM delimiters, escaped angle closers and malformed destination
+rejection. Added unit cases for these boundaries; no browser/native cases added.
+
+The round-5 parser, citation and filename fixes remain in this branch. Review
+packets and the regex audit are under `/workspace/plans/review-gitdiff-{1,2,3}-round5.md`.
+The release gate is the sequential `xvfb-run -a pnpm check:full`, with an isolated
+native test profile. Its complete output is `/workspace/plans/gitdiff3-check-full.log`;
+only a passing gate authorizes the normal push and the owner's approved merge.
+Final counts, merge hashes and package evidence are recorded in
+`/workspace/plans/merge-2026-10-12.log`. The upstream Markdown parser's known slow
+100k-space-line parse and owner-run manual acceptance remain separate limits.
 ## Vim table word motions (2026-10-12)
 
 Normal-mode `w`/`W`, `e`/`E`, `b`/`B` and `ge`/`gE` now navigate word
@@ -3233,3 +3251,120 @@ on the first two-worker run, failed intermittently on the second, and passed
 with all 59 cases on a serial rerun (--workers=1). No changes were made to that
 case or its implementation. No pnpm check, full lint, native suite, commit or
 push was run.
+
+## Git diff editor main integration — 2026-10-13
+
+Continued the already-started merge of origin/main (7b0e300). The sole conflict
+was adjacent implementation records; retained both the branch's round-five
+record and every incoming table, Vim, clipboard and task record. All incoming
+code merged automatically. The owner requested the merge commit before targeted
+diagnosis and validation, and explicitly excluded pnpm check and repository-wide
+lint. Those targeted results will be recorded in the next phase. No push.
+
+## Git diff editor targeted regression diagnosis — 2026-10-13
+
+Continued from merge commit 8ce6f07, retaining main's table, Vim, clipboard and
+task behavior alongside the rendered diff editor and inline Git features.
+Reviewed the prior agent's edits: removed its temporary native-caret diagnostic
+print and retained the three valid table screenshots, refreshed by verification.
+No source behavior change or test assertion weakening was needed.
+
+Classification of the eight failures in gitdiff3-check-full.log:
+
+| Spec and original line | Classification | Evidence |
+| --- | --- | --- |
+| git-inline.spec.ts:25 | Intermittent native command acceptance | The final Close All Editor Groups palette stayed open; the same spec passes on main and the merged branch. |
+| settings-commands.spec.ts:78 | Environment: VS Code renderer crash | Target crashed; an archived startup log also records renderer termination with signal 9. The process that sent the signal is unknown. |
+| settings-commands.spec.ts:282 | Cascade from the missing renderer | workbenchPage returned undefined after the crash. |
+| tables.spec.ts:62 | Cascade from the missing renderer | Same undefined-page failure. |
+| tables.spec.ts:124 | Cascade from the missing renderer | Same undefined-page failure. |
+| tables.spec.ts:200 | Cascade from the missing renderer | Same undefined-page failure. |
+| vim-caret-vscodevim.spec.ts:96 | Cascade from the missing renderer | Same undefined-page failure. |
+| vim-caret.spec.ts:255 | Cascade from the missing renderer | Same undefined-page failure. |
+
+These classifications are supported by the prior successful 22-case retry, a
+nine-case comparison at origin/main 7b0e300 in /tmp/gd3-main, and a fresh nine-case
+merged-branch run before the helper changes. No branch-specific or reproducible
+main product regression was found. The earlier post-merge investigation also
+caught an intermittent restore/save failure; it did not recur in either
+comparison. Its archived trace remains in
+/workspace/plans/gitdiff3-native-first-failure.
+
+The shared native command helper now waits until the requested result is the
+input's active descendant, then accepts it once with Enter. This avoids mouse
+acceptance timing without replaying toggles or editing commands. Missing-window
+lookup now rejects explicitly with the startup-log location instead of returning
+undefined, and ignores closed pages and DevTools. Two unit tests cover lookup
+and the diagnostic. A later ten-case native run passed diff-editor, inline Git,
+all tables and Change Setting but exposed three more timing failures: the
+settings palette did not open, and the built-in carets were hidden in both
+comparators. Native helpers now explicitly activate the isolated window and
+verify document focus before opening notes and measuring built-in carets;
+palette opening first leaves the webview through the status bar. Caret geometry
+and behavior assertions retain their original tolerances. The failed run and
+traces are archived in /workspace/plans/gitdiff3-native-focus-failure. Window
+activation fixed the palette failure, but the caret failures persisted. A
+focused diff-editor/caret diagnostic established the actual cross-spec cause:
+Source Control's commit-message box is the first Monaco editor, before the note.
+The diff-editor test exposes it by opening Source Control. Both native caret
+comparators now select the visible Monaco editor containing the fixture line,
+and measure its own cursor and text origin. This fixes a test-harness regression
+exposed by the branch's diff-editor scenario, without changing product behavior
+or hiding Source Control. Diagnostic prints were removed; evidence is in
+/workspace/plans/gitdiff3-caret-diagnostic.log. Renderer crashes still fail the
+suite; they are not hidden by retries or automatic relaunch.
+
+Validation: pnpm build, pnpm typecheck, ESLint limited to the changed TypeScript
+and MJS files relative to origin/main (plus the new unit file), and all 1,114
+unit tests pass. All 97 relevant browser cases (tables-*, git-* and vim-*,
+workers=1) and all ten targeted native cases pass, including
+git-diff-editor.spec.ts and the new main table-column clipboard case. Suites
+ran sequentially with 900-second timeouts. Native runs use a private Xvfb
+display and the harness's isolated profile. No new browser/native cases were
+added. The pinned ~/Code/human-learning checkout is absent here; no reference
+repository, code or assets were modified or copied. No pnpm check, repository-wide
+lint, push or publication was run.
+
+A repeated full unit run hit the existing rendered-row fuzz child-process
+20-second deadline on linkopen/adv→adv+ (1,113 passed, one timed out), after two
+full 1,114-pass runs. Its evidence is saved in
+/workspace/plans/gitdiff3-unit-timeout.log. No fuzz input, assertion or timeout
+was changed. The final pnpm test rerun passed all 1,114 tests, including the same rendered-row
+fuzz target. Final build/typecheck/targeted-lint/unit/browser/native logs and
+both nine-case branch/main comparisons are in
+/workspace/plans/gitdiff3-targeted-validation/. Final verification changes only
+native helpers/spec selectors, two units, this record and the three reviewed
+table screenshots. No product implementation change was necessary.
+
+## Rendered diff review fixes — 2026-10-13 (working tree)
+
+Read the complete review at `/workspace/plans/review-diff-editor-pro-answer.md`.
+Diff fragments now retain body thematic breaks and setext headings; whole-document
+rendering still strips actual frontmatter. Reference definitions are parsed into
+fresh Markdown-It environments instead of appended to fragment source. Opaque
+blocks also exclude appended footnote context.
+
+Each panel follows native document edits, Git repository events and a scoped
+working-file watcher, retaining the existing reread/version/disposal guards.
+Independent side resolvers reuse NoteResources vault resolution and containment.
+Local images receive webview URLs; Git images read bytes at the side's revision.
+Resource roots include only the extension bundle and those vaults, with the
+existing restricted image CSP permitting webview and data URLs. Unresolvable or
+failed images expose their escaped source fallback. Panel messages now use shared
+schemas in both directions. Assets absent from the current vault index retain
+that explicit fallback, including historical assets no longer indexed.
+
+Removed the absolute `.vscode-test` symlink from the index with `git rm --cached`
+and added an exact ignore entry for the symlink as well as the existing directory
+entry. Added nine unit regressions covering fragments, unchanged unclosed fences,
+closed native document refreshes and subscription cleanup, independent image
+resolution/revisions/roots/fallbacks, service lifetime, message validation and
+cache tracking. Updated resource/diff READMEs and owner-run manual scenarios.
+
+Validation: `pnpm typecheck` passed; ESLint on only the 19 changed TypeScript files
+passed; `pnpm test` passed all **1,123** tests, including the final revision-image
+assertions. Logs: `/tmp/gitdiff-review-{typecheck,eslint,test}.log`. Git whitespace
+checks passed. No pnpm check, repository-wide lint, browser/native suite, commit,
+push or publication was run. The pinned `~/Code/human-learning` checkout is absent;
+only this repository and its installed dependencies were used, with no reference
+repository modified or copied.

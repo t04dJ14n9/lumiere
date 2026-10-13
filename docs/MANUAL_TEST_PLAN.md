@@ -712,6 +712,41 @@ install it into the same isolated profile, and lists what it does.
    without touching built-in plugins. **Show Plugin Status** lists it as
    external.
 
+### gitDiffEditor
+
+On by default; VS Code's text diff stays the default until
+`markdownWorkbench.gitDiffEditor.diffEditor` is `rendered`.
+
+1. With `Core.md` edited since the last commit, run **Open Rendered Git Diff**:
+   a panel shows HEAD on the left (read-only badge) and the working tree on the
+   right, both rendered, blocks side by side, changed words tinted with
+   `diffEditor.removedTextBackground` / `insertedTextBackground`, added and
+   removed blocks against a hatched spacer, in a light and a dark theme.
+   Frontmatter, code and math show as lines with changed lines tinted.
+2. Edit the note: the right side follows. **↑/↓** and Alt+F5 move between
+   changes; **Open File** opens the note; **Text Diff** opens VS Code's diff.
+3. Set `diffEditor` to `rendered` and open the note from Source Control
+   (working tree and staged changes): the text diff tab is replaced by the
+   rendered panel. Non-Markdown files keep the text diff.
+4. Disable the plugin: open panels close and Source Control opens the text
+   diff again.
+
+5. Compare a note containing `# Intro`, a blank line, then
+   `---\nstatus: retained\n---`, another blank line and `Tail.`. The body
+   rule and setext heading stay visible when unchanged and when `retained`
+   changes on one side. Actual leading frontmatter still shows as source lines.
+6. Put `[g]: /target` before an unclosed fenced code block containing
+   `keep exactly this`. An unchanged comparison shows only that original code;
+   no reference definition appears inside the fence.
+7. Compare `![diagram](assets/old.png)` with `![diagram](assets/new.png)` using
+   different contained fixture images. Both load from their respective sides.
+   Change the same image path between HEAD, index and working tree: each side
+   shows its own bytes. Missing or escaped paths show explicit source fallbacks.
+8. After Source Control takeover, close remaining native note editors. Stage
+   new contents externally, then edit the working file externally. The open
+   rendered panel follows both changes. Close the panel and repeat: no disposed
+   panel updates or retained subscriptions should remain.
+
 ### wiki, assets, scratch and Marp
 
 Use a disposable folder, never a personal vault. Add the slim
@@ -819,6 +854,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.changeSetting` — Change Setting… | unbound | On a disposable fixture, run Change Setting…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.setNoteFontSize` — Set Note Font Size | unbound | On a disposable fixture, run Set Note Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleLineNumbers` — Toggle Line Numbers | unbound | On a disposable fixture, run Toggle Line Numbers; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.gitDiffEditor.open` — Open Rendered Git Diff | unbound | On a disposable fixture, run Open Rendered Git Diff; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleInlineGitChanges` — Toggle Inline Git Changes | unbound | On a disposable fixture, run Toggle Inline Git Changes; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.gitGutter.nextChange` — Go to Next Git Change | alt+f5 | On a disposable fixture, run Go to Next Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.gitGutter.previousChange` — Go to Previous Git Change | shift+alt+f5 | On a disposable fixture, run Go to Previous Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -868,6 +904,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.inlineTitle.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.gitDiffEditor.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.gitDiffEditor.diffEditor` | `"native"` | value; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.gitInline.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.gitGutter.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.gitGutter.compareTo` | `"HEAD"` | value; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

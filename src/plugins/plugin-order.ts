@@ -83,6 +83,7 @@ export const WORKBENCH_FEATURE_ORDER = [
   "assets",
   "scratch",
   "marp",
+  "gitDiffEditor",
 ] as const;
 
 const owners: readonly string[] = [

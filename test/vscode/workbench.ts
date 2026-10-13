@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import type { Browser, Page, Frame } from "@playwright/test";
+import type { Browser, Page, Frame, Locator } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths } from "./state";
@@ -10,6 +10,11 @@ import { paths } from "./state";
  */
 export const QUICK_INPUT =
   ".quick-input-widget input:not([type='checkbox']):visible";
+/** CDP can drive a background window whose native focus-dependent UI is hidden. */
+export async function focusWorkbench(page: Page) {
+  await page.bringToFront();
+  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
+}
 /**
  * Opens the command palette. A webview that is still taking focus (a new
  * split, in Cursor) can swallow the shortcut, so press it until it opens.
@@ -19,6 +24,9 @@ export async function openPalette(page: Page) {
   let attempt = 0;
   await expect(async () => {
     if (!(await input.isVisible())) {
+      await focusWorkbench(page);
+      // Leave a webview's input context before opening the host's palette.
+      await page.locator(".part.statusbar").click({ position: { x: 5, y: 5 } });
       // F1 opens the palette too, when the shortcut is swallowed.
       await page.keyboard.press(
         attempt++ % 2 === 0 ? "ControlOrMeta+Shift+p" : "F1",
@@ -45,7 +53,16 @@ export async function command(page: Page, title: string) {
       throw error;
     }
   }).toPass({ timeout: 30000 });
-  await item.click();
+  // The virtualized list can move between mouse-down and mouse-up after a
+  // settings update. Accept the focused command once, avoiding a lost click
+  // without retrying commands that toggle settings or edit the document.
+  await expect
+    .poll(async () => {
+      const active = await input.getAttribute("aria-activedescendant");
+      return active !== null && active === (await item.getAttribute("id"));
+    })
+    .toBe(true);
+  await input.press("Enter");
   await expect(input).not.toBeVisible();
 }
 /** Finish native closing, including a delayed synthetic-buffer discard prompt. */
@@ -78,6 +95,7 @@ export async function openWorkbench(
   file = "Note.md",
   timing: { start?: number; end?: number } = {},
 ) {
+  await focusWorkbench(page);
   await expect(page.locator(".monaco-workbench")).toBeVisible();
   await closeEditorGroups(page);
   console.log("Native: opening fixture");
@@ -167,10 +185,25 @@ export async function openWorkbench(
   return frame!.getByRole("textbox", { name: "Markdown content" });
 }
 export function workbenchPage(browser: Browser): Page {
-  return browser
+  const page = browser
     .contexts()
-    .flatMap((c) => c.pages())
-    .find((page) => !page.url().startsWith("devtools:"))!;
+    .flatMap((context) => context.pages())
+    .find(
+      (candidate) =>
+        !candidate.isClosed() && !candidate.url().startsWith("devtools:"),
+    );
+  if (!page) {
+    throw new Error(
+      `No live VS Code workbench page. Check ${path.join(paths.root, "startup.log")} for a renderer crash or process termination.`,
+    );
+  }
+  return page;
+}
+/** SCM and Chat also use Monaco; measure the note editor containing the fixture. */
+export function nativeTextEditor(page: Page, lineText: string): Locator {
+  return page.locator(".monaco-editor:visible").filter({
+    has: page.locator(".view-line").filter({ hasText: lineText }),
+  });
 }
 export function readNote(): string {
   return readFileSync(path.join(paths.workspace, "Note.md"), "utf8");

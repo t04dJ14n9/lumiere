@@ -94,6 +94,11 @@ as Text** alone. Asking for the text editor a second time within 10 seconds
 keeps it, which is how **Reopen Editor With… › Text Editor** still works.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
+Markdown diffs from Source Control stay VS Code's text diff unless
+`markdownWorkbench.gitDiffEditor.diffEditor` is `rendered`; then they open as
+both versions rendered side by side. **Open Rendered Git Diff** opens one
+against HEAD for the active note either way.
+
 The native suite runs against Cursor with
 `VSCODE_EXECUTABLE=<cursor install>/cursor pnpm test:vscode`.
 

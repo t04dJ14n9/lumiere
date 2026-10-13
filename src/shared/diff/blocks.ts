@@ -1,3 +1,5 @@
+import { isSeparator } from "./table-delimiter";
+export { isSeparator } from "./table-delimiter";
 import { diffSequences } from "./myers";
 import type { Run } from "./myers";
 import { splitLines, wordDiff } from "./lines";
@@ -97,8 +99,18 @@ function frontmatterEnd(lines: readonly string[]): number {
   return close > 0 ? close + 1 : 0;
 }
 
+const LIST_ITEM = /^ {0,3}(?:[-+*]|\d{1,9}[.)])(?:[ \t]|$)/;
+
+export interface SplitOptions {
+  /**
+   * Keep a list together across blank lines: an indented paragraph or a
+   * further item after a list joins its block, so it renders inside it.
+   */
+  readonly containers?: boolean;
+}
+
 /** Split Markdown into blocks; blank lines separate blocks and belong to none. */
-export function splitBlocks(text: string): Block[] {
+export function splitBlocks(text: string, options: SplitOptions = {}): Block[] {
   const lines = splitLines(text);
   const blocks: Block[] = [];
   const add = (kind: BlockKind, from: number, to: number) =>
@@ -114,7 +126,19 @@ export function splitBlocks(text: string): Block[] {
     }
     const [kind, end] = blockAt(lines, i);
     const to = Math.min(Math.max(end, i + 1), lines.length);
-    add(kind, i, to);
+    const last = blocks[blocks.length - 1];
+    if (
+      options.containers &&
+      kind === "text" &&
+      last?.kind === "text" &&
+      LIST_ITEM.test(lines[last.from]!) &&
+      (/^[ \t]+\S/.test(lines[i]!) || LIST_ITEM.test(lines[i]!))
+    ) {
+      blocks.pop();
+      add("text", last.from, to);
+    } else {
+      add(kind, i, to);
+    }
     i = to;
   }
   return blocks;
@@ -128,9 +152,13 @@ export interface BlockRow {
 }
 
 /** Align the blocks of two texts; replaced runs pair up in order when kinds match. */
-export function alignBlocks(before: string, after: string): BlockRow[] {
-  const a = splitBlocks(before);
-  const b = splitBlocks(after);
+export function alignBlocks(
+  before: string,
+  after: string,
+  options: SplitOptions = {},
+): BlockRow[] {
+  const a = splitBlocks(before, options);
+  const b = splitBlocks(after, options);
   const rows: BlockRow[] = [];
   const runs = diffSequences(a, b, (x, y) => x.text === y.text);
   for (let r = 0; r < runs.length; r++) {
@@ -290,28 +318,12 @@ export function lineBlockHtml(
   }
 }
 
-/**
- * Whether a table line is the delimiter row: cells of `:?-+:?` between
- * pipes. A hand scan over the line once; the old regex's overlapping
- * `\s*\|?\s*` backtracked quadratically on deep indentation.
- */
-export function isSeparator(line: string): boolean {
-  const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|");
-  return cells.every((cell) => {
-    const c = cell.trim();
-    let i = c.startsWith(":") ? 1 : 0;
-    const dashes = i;
-    while (c[i] === "-") {
-      i++;
-    }
-    if (i === dashes) {
-      return false;
-    }
-    if (c[i] === ":") {
-      i++;
-    }
-    return i === c.length;
-  });
+/** Code and frontmatter diff by line; math only when it changed. */
+function asLines(row: BlockRow["kind"], kind: string): boolean {
+  if (kind === "math") {
+    return row === "modified";
+  }
+  return kind === "code" || kind === "frontmatter";
 }
 
 /** A whole table row added or removed: each cell's text marked. */
@@ -423,21 +435,20 @@ export function rowMarkdown(
   after?: string;
 } {
   const { before, after } = row;
-  if (row.kind === "equal") {
+  const kind = (before ?? after)!.kind;
+  // The renderer drops a leading frontmatter, so it always shows as lines.
+  if (row.kind === "equal" && kind !== "frontmatter") {
     return { before: before!.text, after: after!.text };
   }
-  const kind = (before ?? after)!.kind;
-  if (kind === "code" || kind === "frontmatter" || kind === "math") {
-    if (row.kind === "modified" || kind !== "math") {
-      return {
-        ...(before && {
-          before: lineBlockHtml(before.text, after?.text, "before", kind),
-        }),
-        ...(after && {
-          after: lineBlockHtml(before?.text, after.text, "after", kind),
-        }),
-      };
-    }
+  if (asLines(row.kind, kind)) {
+    return {
+      ...(before && {
+        before: lineBlockHtml(before.text, after?.text, "before", kind),
+      }),
+      ...(after && {
+        after: lineBlockHtml(before?.text, after.text, "after", kind),
+      }),
+    };
   }
   if (row.kind === "modified") {
     return modifiedSides(before!.text, after!.text, kind, words);

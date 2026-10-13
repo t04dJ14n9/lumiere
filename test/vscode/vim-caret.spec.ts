@@ -16,6 +16,8 @@ import { inflateSync } from "node:zlib";
 import { paths, readState } from "./state";
 import {
   closeBrowser,
+  focusWorkbench,
+  nativeTextEditor,
   openWorkbench,
   ORIGINAL_NOTE,
   reopenWith,
@@ -208,7 +210,10 @@ async function builtIn(
   name: string,
   expected?: string,
 ): Promise<Measured> {
-  const caret = page.locator(".monaco-editor .cursors-layer > .cursor").first();
+  await focusWorkbench(page);
+  const caret = nativeTextEditor(page, "Original line").locator(
+    ".cursors-layer > .cursor",
+  );
   await expect(caret).toBeVisible();
   const box = (await caret.boundingBox())!;
   const glyph = (await caret.textContent()) ?? "";
@@ -292,9 +297,8 @@ test("Vim carets match the built-in editor's block, line and underline in the re
       }
       await expect
         .poll(async () => {
-          const box = await page
-            .locator(".monaco-editor .cursors-layer > .cursor")
-            .first()
+          const box = await nativeTextEditor(page, "Original line")
+            .locator(".cursors-layer > .cursor")
             .boundingBox();
           return cursorStyle === "block"
             ? box!.width > 6

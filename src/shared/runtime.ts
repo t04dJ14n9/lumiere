@@ -110,6 +110,7 @@ export interface Workbench {
     mode: "source" | "livePreview";
   };
   // Files, workspace and storage.
+  watchFile?(uri: string, listener: () => void): Disposer;
   read(uri: string): Promise<Uint8Array>;
   stat(uri: string): Promise<{ mtime: number; symbolicLink: boolean }>;
   /** Create, copy and list workspace files. Plugins pass URIs; the host checks them. */

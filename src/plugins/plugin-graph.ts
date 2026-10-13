@@ -36,6 +36,7 @@ export const SERVICE_PROVIDERS: Readonly<
   livePreview: "livePreview",
   render: "render",
   resources: "resources",
+  diffResources: "resources",
   vault: "vault",
   vaults: "vault",
   markers: "markers",

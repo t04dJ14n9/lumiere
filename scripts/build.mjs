@@ -31,7 +31,10 @@ const builds = [
   },
   {
     ...shared,
-    entryPoints: { editor: "src/webview/main.ts" },
+    entryPoints: {
+      editor: "src/webview/main.ts",
+      diff: "src/webview/diff/main.ts",
+    },
     outdir: "dist/webview",
     platform: "browser",
     format: "esm",

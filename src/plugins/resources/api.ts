@@ -1,3 +1,4 @@
+import type { DiffSide } from "../../shared/git";
 export interface Resource {
   kind: "note" | "image" | "audio" | "video" | "pdf" | "file";
   source: string;
@@ -11,5 +12,17 @@ export interface Resources {
 declare module "../../kernel/types" {
   interface Services {
     resources: Resources;
+  }
+}
+
+export interface DiffResources {
+  forSide(side: DiffSide): Promise<{
+    root: string;
+    load(target: string): Promise<string>;
+  }>;
+}
+declare module "../../kernel/types" {
+  interface Services {
+    diffResources: DiffResources;
   }
 }

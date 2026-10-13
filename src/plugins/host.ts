@@ -19,6 +19,7 @@ export { bridgeHost } from "./bridge/host";
 export { wikiHost } from "./wiki/host";
 export { assetsHost } from "./assets/host";
 export { scratchHost } from "./scratch/host";
+export { gitDiffEditorHost } from "./gitDiffEditor/host";
 export { marpHost } from "./marp/host";
 export { inlineTitleHost } from "./inlineTitle/host";
 export { tagsHost } from "./tags/host";

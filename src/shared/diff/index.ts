@@ -20,4 +20,4 @@ export {
   DEL_CLASS,
   INS_CLASS,
 } from "./blocks";
-export type { Block, BlockKind, BlockRow } from "./blocks";
+export type { Block, BlockKind, BlockRow, SplitOptions } from "./blocks";

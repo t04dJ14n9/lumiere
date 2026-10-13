@@ -7,3 +7,5 @@ playwright-report/
 *.vsix
 *.tsbuildinfo
 .vscode-test/
+
+.vscode-test

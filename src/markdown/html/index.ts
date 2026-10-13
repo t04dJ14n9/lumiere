@@ -52,10 +52,14 @@ export function createRenderer(options: RendererOptions = {}) {
         options.strictLineBreaks === undefined
           ? defaultBreaks
           : !options.strictLineBreaks;
-      const properties = frontmatter(source);
+      const properties = options.fragment ? null : frontmatter(source);
+      const environment = { ...options };
+      if (options.referenceDefinitions) {
+        md.parse(options.referenceDefinitions, environment);
+      }
       const html = md.render(
         properties ? source.slice(properties.end) : source,
-        { ...options },
+        environment,
       );
       return options.sanitize ? options.sanitize(html) : html;
     },
