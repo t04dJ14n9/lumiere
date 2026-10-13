@@ -77,7 +77,51 @@ export class TableKeyboard {
       event.stopPropagation();
       return true;
     }
-    return false;
+    return this.enterSelectedCell(event);
+  }
+
+  private enterSelectedCell(event: KeyboardEvent): boolean {
+    const range = this.selection.range;
+    if (
+      !range ||
+      !sameCell(range.anchor, range.head) ||
+      event.altKey ||
+      event.metaKey ||
+      event.ctrlKey ||
+      (event.key !== "Enter" && Array.from(event.key).length !== 1)
+    ) {
+      return false;
+    }
+    this.openGridCell(range.head);
+    const inner = this.projection.inner;
+    if (!inner) {
+      return false;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    // Focus alone loses the grid's initiating key. Let the cell's keymap
+    // (including Vim) claim it before supplying synthetic text input.
+    const unhandled = inner.contentDOM.dispatchEvent(
+      new KeyboardEvent("keydown", event),
+    );
+    if (unhandled && event.key !== "Enter") {
+      inner.dispatch(inner.state.replaceSelection(event.key), {
+        userEvent: "input.type",
+        scrollIntoView: true,
+      });
+    }
+    return true;
+  }
+
+  private openGridCell(position: CellPosition): void {
+    const length =
+      this.grid.model.rows[position.row]![position.column]!.text.length;
+    // Source edits can shorten a cell while its saved grid caret survives.
+    const offset = Math.max(
+      0,
+      Math.min(this.selection.gridCursor ?? length, length),
+    );
+    this.projection.open(position, offset);
   }
 
   private openMenu(event: KeyboardEvent): void {
@@ -151,6 +195,9 @@ export class TableKeyboard {
       row: before ? area.top : area.bottom,
       column: before ? area.left : area.right,
     };
+    this.selection.gridCursor = before
+      ? 0
+      : this.grid.model.rows[target.row]![target.column]!.text.length;
     if (!sameCell(range.anchor, range.head)) {
       // Collapse in grid mode so the next Shift arrow extends cells rather
       // than selecting text inside a newly opened cell editor.
@@ -158,12 +205,7 @@ export class TableKeyboard {
       this.grid.root.focus();
       return true;
     }
-    this.projection.open(
-      target,
-      before
-        ? 0
-        : this.grid.model.rows[target.row]![target.column]!.text.length,
-    );
+    this.openGridCell(target);
     return true;
   }
 
@@ -176,7 +218,7 @@ export class TableKeyboard {
     }
     const anchor = this.selection.range?.anchor ?? current;
     if (sameCell(anchor, target)) {
-      this.projection.open(target, this.selection.gridCursor);
+      this.openGridCell(target);
       return true;
     }
     if (!this.selection.range) {
