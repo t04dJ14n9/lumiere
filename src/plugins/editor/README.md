@@ -10,6 +10,9 @@ attached to a shared TextDocument session. The webview creates CodeMirror and
 provides caller-bound extension registration, clipboard and menu services. The
 host also provides `selections` for capture and validation; `editor/selectionMenu`
 is an awaited menu-contribution pipeline.
+The validated `captureCursor` request returns the active selection end and
+its synchronized version for cursor-following host views; projected table
+selections return a position in the outer document.
 Extensions sort by slot, catalog rank, owner ID and owner-local order in one
 compartment. Persistence captures source identity and feature-owned contributions;
 transfers flush first and reject a moving document version. Scroll-settle and

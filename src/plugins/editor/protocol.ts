@@ -70,6 +70,10 @@ export const protocol = defineProtocol("editor", {
       }),
     },
     captureSelection: { params: Schema.object({}), result: selection },
+    captureCursor: {
+      params: Schema.object({}),
+      result: Schema.object({ head: offset, version: offset }),
+    },
     captureView: { params: Schema.object({}), result: viewState },
     restoreView: { params: viewState, result: Schema.boolean() },
     reveal: {

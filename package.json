@@ -325,6 +325,22 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.outline.expandAll",
+        "title": "Expand All",
+        "category": "Markdown Workbench",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "markdownWorkbench.outline.enableFollowCursor",
+        "title": "Follow Cursor",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.outline.disableFollowCursor",
+        "title": "✓ Follow Cursor",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.addProperty",
         "title": "Add File Property",
         "category": "Markdown Workbench",
@@ -896,6 +912,18 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.math"
         },
         {
+          "command": "markdownWorkbench.outline.expandAll",
+          "when": "false"
+        },
+        {
+          "command": "markdownWorkbench.outline.enableFollowCursor",
+          "when": "false"
+        },
+        {
+          "command": "markdownWorkbench.outline.disableFollowCursor",
+          "when": "false"
+        },
+        {
           "command": "markdownWorkbench.addProperty",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.properties"
         },
@@ -1082,6 +1110,23 @@
           "group": "formatting"
         }
       ],
+      "view/title": [
+        {
+          "command": "markdownWorkbench.outline.expandAll",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled && view == markdownWorkbench.outline",
+          "group": "navigation@1"
+        },
+        {
+          "command": "markdownWorkbench.outline.enableFollowCursor",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled && view == markdownWorkbench.outline && !markdownWorkbench.outline.followCursor",
+          "group": "outline@1"
+        },
+        {
+          "command": "markdownWorkbench.outline.disableFollowCursor",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled && view == markdownWorkbench.outline && markdownWorkbench.outline.followCursor",
+          "group": "outline@1"
+        }
+      ],
       "editor/title": [
         {
           "command": "markdownWorkbench.jumpBack",
@@ -1261,7 +1306,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Outline view of the active note's headings, following the caret. VS Code's own Outline covers the text editor."
+          "description": "Outline view of the active note's headings, with expansion actions and optional cursor following. VS Code's own Outline covers the text editor."
         },
         "markdownWorkbench.plugins.pagePreview.enabled": {
           "type": "boolean",
@@ -1511,6 +1556,12 @@
           "type": "boolean",
           "default": false,
           "description": "Offer **Play here** on Bilibili cards in trusted workspaces. Off by default: Bilibili's player does not play inside VS Code's webview.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.outline.followCursor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Select and reveal the current heading in Note Outline as the cursor moves, without taking focus.",
           "scope": "resource"
         },
         "markdownWorkbench.properties.display": {

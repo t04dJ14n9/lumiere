@@ -12,6 +12,7 @@ import type { Target } from "./target";
 const probe = fileURLToPath(new URL("./probe.ts", import.meta.url));
 /** Per case; generous for slow boxes, far below a quadratic stall. */
 const CASE_MS = 1500;
+/** Default child-process budget for a full adversarial suite. */
 const DEADLINE_MS = 20_000;
 
 interface Line {
@@ -28,10 +29,13 @@ export function fuzzSuite(
 ): void {
   for (const name of Object.keys(targets)) {
     test(`fuzz: ${label}.${name} is linear on adversarial input`, () => {
+      const target = targets[name]!;
+      const deadline = target.deadlineMs ?? DEADLINE_MS;
+      const caseMs = target.caseMs ?? CASE_MS;
       const child = spawnSync(
         process.execPath,
         ["--import", "tsx", probe, path, name],
-        { timeout: DEADLINE_MS, encoding: "utf8", maxBuffer: 64 << 20 },
+        { timeout: deadline, encoding: "utf8", maxBuffer: 64 << 20 },
       );
       const lines = child.stdout
         .split("\n")
@@ -40,7 +44,7 @@ export function fuzzSuite(
       const last = lines.filter((line) => line.start).at(-1)?.start;
       assert.equal(child.signal, null, `stalled (killed) on case ${last}`);
       assert.equal(child.status, 0, `${last}: ${child.stderr}`);
-      const slow = lines.filter((line) => line.done && line.ms! > CASE_MS);
+      const slow = lines.filter((line) => line.done && line.ms! > caseMs);
       assert.deepEqual(
         slow.map((line) => `${line.done}: ${Math.round(line.ms!)} ms`),
         [],

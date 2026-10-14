@@ -636,9 +636,7 @@ for (const [kind, before, after] of [
   test(`review: equal and modified ${kind} fragments retain footnote context`, () => {
     const source = `${before}\n\n[^n]: Before explanation.`;
     for (const modified of [false, true]) {
-      const target = modified
-        ? `${after}\n\n[^n]: After explanation.`
-        : source;
+      const target = modified ? `${after}\n\n[^n]: After explanation.` : source;
       const rows = diffRows(source, target, renderSide);
       const row = rows[0]!;
       assert.equal(row.kind, modified ? "modified" : "equal");

@@ -36,11 +36,7 @@ test("Git source file URIs round-trip literal percent paths and Windows drive/UN
       "file:///vault/release%2520notes/n.md",
       false,
     ],
-    [
-      "C:\\vault\\100% done\\n.md",
-      "file:///C:/vault/100%25%20done/n.md",
-      true,
-    ],
+    ["C:\\vault\\100% done\\n.md", "file:///C:/vault/100%25%20done/n.md", true],
     [
       "C:/vault/release%20notes/n.md",
       "file:///C:/vault/release%2520notes/n.md",
@@ -106,10 +102,7 @@ for (const directory of ["100% done", "release%20notes"]) {
       label: "HEAD",
       text: "",
     });
-    assert.equal(
-      await resource.load("image.png"),
-      gitUri(imagePath, "HEAD"),
-    );
+    assert.equal(await resource.load("image.png"), gitUri(imagePath, "HEAD"));
   });
 }
 

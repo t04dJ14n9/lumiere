@@ -77,6 +77,7 @@ export async function contributions() {
     menus: {
       commandPalette: menus,
       "webview/context": manifestMenus(manifests, "webview/context"),
+      "view/title": manifestMenus(manifests, "view/title"),
       "editor/title": [
         ...manifestMenus(manifests, "editor/title"),
         {
@@ -212,14 +213,22 @@ if (process.argv[1]?.endsWith("generate-contributions.ts")) {
 
 function manifestMenus(
   manifests: readonly Manifest[],
-  location: "editor/title" | "webview/context",
+  location: "editor/title" | "webview/context" | "view/title",
 ) {
   return manifests.flatMap((manifest) =>
     (manifest.contributes?.menus ?? [])
       .filter((menu) => menu.location === location)
       .map((menu) => ({
         command: `markdownWorkbench.${menu.command}`,
-        when: [whenEnabled(manifest), menu.when].filter(Boolean).join(" && "),
+        when: [
+          whenEnabled(
+            manifest,
+            location === "view/title" ? "workbench" : "editor",
+          ),
+          menu.when,
+        ]
+          .filter(Boolean)
+          .join(" && "),
         ...(menu.group ? { group: menu.group } : {}),
       })),
   );

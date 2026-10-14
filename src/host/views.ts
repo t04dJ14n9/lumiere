@@ -3,9 +3,7 @@ import type {
   FileTextEdits,
   HostViews,
   StatusHandle,
-  TreeHandle,
   TreeNode,
-  TreeSource,
 } from "../shared/runtime";
 import { cleanEditedUris } from "./rename-save";
 
@@ -120,9 +118,10 @@ function textEditor(uri: string) {
   };
 }
 
-function createTree(viewId: string, source: TreeSource): TreeHandle {
+const createTree: HostViews["tree"] = (viewId, source, options) => {
   const changed = new vscode.EventEmitter<TreeNode | undefined>();
   const view = vscode.window.createTreeView<TreeNode>(viewId, {
+    ...options,
     treeDataProvider: {
       onDidChangeTreeData: changed.event,
       getChildren: (node) => (node ? source.children(node) : source.roots()),
@@ -138,9 +137,9 @@ function createTree(viewId: string, source: TreeSource): TreeHandle {
       // would not reach the view.
       (view as { message: string | undefined }).message = message;
     },
-    reveal: (node) => {
+    reveal: async (node, options) => {
       if (view.visible) {
-        void view.reveal(node, { select: true, focus: false });
+        await view.reveal(node, { select: true, focus: false, ...options });
       }
     },
     get visible() {
@@ -155,7 +154,7 @@ function createTree(viewId: string, source: TreeSource): TreeHandle {
       changed.dispose();
     },
   };
-}
+};
 
 function collapsibleState(node: TreeNode): vscode.TreeItemCollapsibleState {
   if (node.expanded === undefined) {

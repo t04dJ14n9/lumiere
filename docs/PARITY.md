@@ -309,3 +309,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkbench.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
