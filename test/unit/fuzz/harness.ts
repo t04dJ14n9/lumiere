@@ -29,7 +29,9 @@ export function fuzzSuite(
 ): void {
   for (const name of Object.keys(targets)) {
     test(`fuzz: ${label}.${name} is linear on adversarial input`, () => {
-      const deadline = targets[name]!.deadlineMs ?? DEADLINE_MS;
+      const target = targets[name]!;
+      const deadline = target.deadlineMs ?? DEADLINE_MS;
+      const caseMs = target.caseMs ?? CASE_MS;
       const child = spawnSync(
         process.execPath,
         ["--import", "tsx", probe, path, name],
@@ -42,7 +44,7 @@ export function fuzzSuite(
       const last = lines.filter((line) => line.start).at(-1)?.start;
       assert.equal(child.signal, null, `stalled (killed) on case ${last}`);
       assert.equal(child.status, 0, `${last}: ${child.stderr}`);
-      const slow = lines.filter((line) => line.done && line.ms! > CASE_MS);
+      const slow = lines.filter((line) => line.done && line.ms! > caseMs);
       assert.deepEqual(
         slow.map((line) => `${line.done}: ${Math.round(line.ms!)} ms`),
         [],
