@@ -36,6 +36,8 @@ export const FEATURE_ORDER = [
   // Table navigation claims override keys before Vim.
   "tables",
   "properties",
+  // Sources reads the properties renderer extension point.
+  "sourcesProperty",
   "inlineTitle",
   "pagePreview",
   // Claims video links before embeds renders them as images.
@@ -84,6 +86,9 @@ export const WORKBENCH_FEATURE_ORDER = [
   "scratch",
   "marp",
   "gitDiffEditor",
+  // OKF before the graph: the graph reads the okf service.
+  "okfCore",
+  "graph",
 ] as const;
 
 const owners: readonly string[] = [

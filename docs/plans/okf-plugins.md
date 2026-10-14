@@ -1,6 +1,7 @@
 # OKF plugin family for Markdown Workbench: design plan
 
-Date: 2026-10-09 (SGT). Status: **plan only**, nothing implemented or pushed. The workbench clone
+Date: 2026-10-09 (SGT). Status: **plan only**, except the vault graph and read-only Sources
+noted below. The workbench clone
 (`/workspace/repos/vscode-markdown-workbench`, branch `continue-handover`) was only read.
 Diagram: `okf-plugin-graph.png` (source `okf-plugin-graph.dot`).
 
@@ -8,6 +9,11 @@ Sources: workbench `docs/HANDOVER.md`, `DESIGN.md` §5–7, §10.2, §12, §16�
 `src/shared/manifest.ts`, `src/host/{settings,features,workbench-features}.ts`, `scripts/generate-contributions.ts`,
 `/workspace/plans/{plugins-architecture.md,plugin-graph.dot}`. OKF: `SPEC.md` v0.2 (cited **S§n**), sample bundles
 `acme_retail`, `ga4`, `stackoverflow`, `crypto_bitcoin` (78 `.md`), reference viewer `generator.py`/`viz.js`/`viz.html`.
+
+Update 2026-10-14: the vault graph shipped as `graph` (graphology and Sigma, view type
+`markdownWorkbench.graph`). Read-only Sources shipped as `sourcesProperty`. The id
+`okfGraph` in this plan means `graph`. Section 13's cytoscape, trust-colour and
+sources-edge sketch is not the implementation. Everything else here is still a plan.
 
 ---
 
@@ -210,7 +216,7 @@ Legend: **Def** = default when the umbrella is on. **Layers** = existing workben
 | 10 | `okfComputation` | Read-only Attested Computation view: runtime, parameters, executor, attester and receipt fields. **Never executes.** | livePreview, render | okfCore | on | block widget | S |
 | 11 | `okfSuggest` | Link autocomplete across the bundle (`/path.md` form), plus `type`/`tags`/`status` value suggestions | suggest | okfCore | on | suggest popup | S |
 | 12 | `okfSearch` | Quick pick and search with type/tag/status/tier/stale facets | commands, vault | okfCore | on | quick pick, command | M |
-| 13 | `okfGraph` | Interactive concept graph: type/tag filters, local graph, trust colouring | resources | okfCore | off | webview panel | L |
+| 13 | `graph` | Interactive concept graph: type/tag filters, local graph, trust colouring | resources | okfCore | off | webview panel | L |
 | 14 | `okfHistory` | `log.md` timeline merged with per-concept git history and trust-field changes | vault | okfCore, *opt* **gitDiff** | off | tree view and webview panel | M |
 | 15 | `okfReview` | Review queue (stale, stale soon, unverified, draft) with **Mark Verified** and **Extend Freshness** | commands | okfCore, *opt* okfLog (service `okfLogWriter`) | off | tree view, commands | M |
 | 16 | `okfNewConcept` | New-concept wizard with per-type templates | commands, document | okfCore, *opt* okfIndex, *opt* okfLog | on | command, quick input | M |
@@ -368,7 +374,9 @@ description, tags and headings, built incrementally. Settings: `includeBody = fa
 existing `search` plugin). Tests: facet parser, query results over the samples. Risk: overlap with `search`
 (scope is limited to metadata facets).
 
-**13. `okfGraph`**: Webview panel showing the concept graph (cytoscape, MIT, **bundled locally and loaded lazily
+**13. `graph`**: The shipped panel is `src/plugins/graph` (graphology and Sigma, directed
+aggregated body links, no trust colouring and no sources edges). The sketch below was the
+earlier plan: a webview panel showing the concept graph (cytoscape, MIT, **bundled locally and loaded lazily
 only in this panel**; it never touches the editor bundle). Nodes are coloured by type and outlined by tier, with
 dashed outlines for stale nodes and faded ones for deprecated. Edges are undirected-untyped relationships
 (S§6.1), plus optional `sources` derivation edges. Filters cover type, tag, status and tier. **Local graph** mode
@@ -603,7 +611,7 @@ native wiring (HANDOVER rules). Bug fixes are separate commits with unit tests.
 | M2: navigate | `okfLinks` (resolver, `links/open`, rename rewrites), `okfTree`, `okfHover`, `okfSources` (no PDF), `okfSuggest`, `okfExtraKeys`, `okfComputation`; diagnostics: link, footnote and index rules | Navigate acme by tree, hover and link, including `/metrics/…` links. Footnote `[^revenue-policy]` opens the policy concept. | 2 wk |
 | M3: general plugins | `lint` full (markdownlint library, config files, quick fixes, CodeActionProvider); **`gitDiff`** (gutter, compare, rendered diff, `gitHistory`, `diffRenderers`) | `.markdownlint.jsonc` drives rules. Gutter shows edits vs HEAD. Rendered diff of `metrics/gross-margin.md` across two commits. | 2–3 wk |
 | M4: history, review, authoring | `okfHistory` (on `gitHistory`), `okfReview`, `okfLog`, `okfNewConcept`, `okfIndex`, `okfBacklinks`, `okfSearch` | Stale queue → Mark Verified → log line drafted → history shows "verified added by human:…". | 2–3 wk |
-| M5: graph, export, agents | `okfGraph`, `okfExport`, `okfStats`, `okfCopyForAgent`, `okfAgentTools` (bridge or LM tools) | Exported acme HTML opens offline and shows the `policies → gross-margin-legacy` edge. An agent answers "which revenue concepts are stale?" with the tool. | 2–3 wk |
+| M5: graph, export, agents | `graph`, `okfExport`, `okfStats`, `okfCopyForAgent`, `okfAgentTools` (bridge or LM tools) | Exported acme HTML opens offline and shows the `policies → gross-margin-legacy` edge. An agent answers "which revenue concepts are stale?" with the tool. | 2–3 wk |
 | M6: PDF | `okfPdfCapture`; `okfSources` PDF locations through the `pdf` service; `gitDiff` sidecar renderer | Select a region in a PDF → a draft concept with `sources[0].resource = refs/x.pdf#page=3&viewrect=…`, and clicking it reopens the box. Starts after architecture-plan P3. | 1–2 wk |
 
 M3 can run in parallel with M2 (different owners). `okfHistory` waits for `gitDiff`, and the full rule set waits

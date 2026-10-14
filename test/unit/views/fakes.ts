@@ -55,6 +55,8 @@ export function memoryVaults(notes: Record<string, string>) {
       });
     },
     all: () => [vault],
+    registerLinkPolicy: () => () => {},
+    invalidateLinkResolution() {},
   };
   return { vaults, index, texts, opened };
 }
@@ -126,6 +128,21 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
     documentText: () => undefined,
     setting: (key, fallback) =>
       key in settings ? (settings[key] as never) : fallback,
+    panel: () => ({
+      reveal() {},
+      setTitle() {},
+      visible: true,
+      onDidChangeVisibility: () => () => {},
+      onDispose: () => () => {},
+      dispose() {},
+      webview: {
+        cspSource: "csp://webview",
+        asset: (relative) => relative,
+        setHTML() {},
+        post() {},
+        onMessage: () => () => {},
+      },
+    }),
     onWillRename: (listener) => {
       renameListener = listener;
       return () => {

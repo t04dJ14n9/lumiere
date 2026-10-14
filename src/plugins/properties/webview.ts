@@ -15,6 +15,8 @@ import { PropertyPresentation } from "./presentation";
 import { propertyHeadingFocus } from "./heading";
 import { frontmatterBodyStart, propertyCaretGuard } from "./caret-guard";
 import type { PropertyContext } from "./context";
+import { createPropertyRenderers } from "./renderers";
+import type {} from "./renderers";
 import type { PropertyKind } from "../../markdown/properties/types";
 
 const configurations = new WeakMap<
@@ -36,6 +38,8 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     required: ["editor", "commands", "livePreview", "rpc", "document", "menu"],
   },
   apply(ctx, settings) {
+    const renderers = createPropertyRenderers();
+    ctx.provide("propertyRenderers", renderers);
     ctx.on("editor/focusProperties", () => {
       const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
         ".hybrid-properties [data-properties-heading]",
@@ -62,7 +66,7 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     });
     const presentation = new PropertyPresentation(
       ctx.livePreview,
-      createSheetContext(ctx, editing),
+      createSheetContext(ctx, editing, renderers),
       settings.display,
     );
     registerConfiguration(ctx, presentation);
@@ -161,8 +165,12 @@ function setPropertyType(
 function createSheetContext(
   ctx: Context,
   editing: PropertyEditing,
+  renderers: ReturnType<typeof createPropertyRenderers>,
 ): PropertyContext {
   return {
+    renderProperty: (key, value, values) =>
+      renderers.render(key, value, values),
+    bindRenderedProperties: (root) => renderers.bind(root),
     source: "current",
     propertyEditor: editing.editor("current"),
     readClipboard: () => ctx.editor.clipboard.read(),

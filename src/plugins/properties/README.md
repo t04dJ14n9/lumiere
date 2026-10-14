@@ -74,7 +74,9 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 ## Services, events and settings
 
 The host injects `rpc`, `vault` and `workbench`; the webview injects `editor`,
-`document`, `livePreview`, `commands`, `rpc` and `menu`. Provides no service.
+`document`, `livePreview`, `commands`, `rpc` and `menu`. The webview provides
+`propertyRenderers`, so another feature can replace one property's markup.
+`sourcesProperty` registers `sources` there.
 Widgets bind sheet content; heading interactions call `editor/focusTitle`.
 Edits emit `render/changed` and `editor/clearProjection`; RPC receives type
 preferences and shared disclosure; name suggestions use indexed vault metadata.

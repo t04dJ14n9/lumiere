@@ -715,6 +715,58 @@ Off by default.
    click opens a note without revealing its line range; do not count it as
    transparent chat-click support or global Back/Forward history.
 
+### sources (read-only)
+
+A note inside an OKF bundle, with a `sources` frontmatter list. Confirm light
+and dark themes.
+
+1. Rows stack in document order. The first eight are expanded. **Showing 8 of
+   N** reveals the rest. There is no Edit, Add or Apply control, and revealing
+   rows does not change the file.
+2. A row shows its title, or a resource-derived label, with the original
+   resource on its own line. `id` appears only when the entry has one. Copy id
+   copies that id. A missing `usage_count` is not shown as zero; zero is shown
+   as zero. An entry `usage_window` wins over the inherited one.
+3. An `https` resource opens in the browser. A bundle path opens that workspace
+   file. `command:`, `javascript:` and `data:` stay plain text and do not open.
+   Nothing is fetched to preview a title or a remote page.
+4. Edit the note so the clicked resource is gone, then activate the stale row.
+   The click does nothing. It does not open a different source by position.
+5. A note outside a bundle still shows the rows. A path that leaves the vault
+   does not open.
+
+### vault graph
+
+**Open Vault Graph** (`markdownWorkbench.graph.open`). One panel per window; running
+the command again reveals it. The panel is not tied to a Markdown document.
+
+1. With the active note inside one OKF bundle, the toolbar shows that bundle's
+   name and path. Notes are directed: a link from A to B is not the same edge
+   as B to A. `index.md` and `log.md` are not nodes. A note with no `type` is
+   still drawn. Clicking a node opens that note.
+2. Open a note that sits in no bundle, or in a workspace with several bundles,
+   and the command asks which bundle to use. Cancel leaves the previous scope.
+   It does not pick the first workspace folder. Switching notes does not move
+   the graph to the new note. **Choose Vault Graph Bundle**
+   (`markdownWorkbench.graph.chooseBundle`) asks again.
+3. Local mode draws the neighbourhood of the note that was active at open, or
+   of the last node you clicked. Depth is 1–3. If filters hide that note, the
+   panel says **Focus excluded by filters**. **Clear filters** brings it back
+   and does not jump to a different note.
+4. Orphans, type, tag, folder and text search narrow the drawing. A vault over
+   the node or edge cap shows the counts and draws nothing until the filters
+   fit. There is no sampled substitute. **Re-layout** runs after a large change;
+   filtering does not throw the remaining notes to new coordinates.
+5. Hide the panel and show it again. The layout worker does not keep running
+   while it is hidden. Close the panel. The worker stops. Repeat in light and
+   dark themes. The graph does not request remote images or URLs.
+6. Settings, all off in a minimal preset: `markdownWorkbench.plugins.graph.enabled`,
+   `markdownWorkbench.plugins.okfCore.enabled`,
+   `markdownWorkbench.plugins.sourcesProperty.enabled`,
+   `markdownWorkbench.graph.maxNodes`, `markdownWorkbench.graph.maxEdges`,
+   `markdownWorkbench.graph.defaultMode`, `markdownWorkbench.graph.localDepth`,
+   `markdownWorkbench.graph.colorBy`, `markdownWorkbench.okfCore.bundles`.
+
 ## External plugins
 
 The sample plugin in `test/fixtures/sample-plugin/` is the example from

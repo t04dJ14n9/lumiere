@@ -286,3 +286,37 @@
 .properties [hidden] {
   display: none;
 }
+.source-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.source-row {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.source-title {
+  margin: 0;
+  font-weight: 600;
+}
+.source-resource,
+.source-id,
+.source-usage,
+.source-meta {
+  margin: 2px 0;
+}
+.source-resource button,
+.source-id button,
+.source-rows [data-source-more] {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: start;
+}
+.source-raw {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  font-size: 0.85em;
+}

@@ -30,7 +30,7 @@ export function reconcileProperties(
   if (!panel || header?.error) {
     return false;
   }
-  const nextRows = nextPropertyRows(source, context.propertyEditor);
+  const nextRows = nextPropertyRows(source, context);
   const list = panel.querySelector<HTMLElement>(".metadata-properties")!;
   const active = panel.contains(document.activeElement)
     ? document.activeElement
@@ -54,6 +54,7 @@ export function reconcileProperties(
   bindPropertyFields(container, source, context);
   bindPropertyLists(container, source, context);
   bindPropertyControls(container, source, context);
+  context.bindRenderedProperties?.(container);
 
   restoreReplacedFocus(active, activeRow, rows);
   return true;
@@ -61,13 +62,17 @@ export function reconcileProperties(
 
 function nextPropertyRows(
   source: string,
-  editor: PropertyContext["propertyEditor"],
+  context: PropertyContext,
 ): HTMLElement[] {
+  const editor = context.propertyEditor;
   const fresh = document.createElement("div");
   fresh.innerHTML = sanitize(
     renderProperties(source, editor?.types?.(), {
       collapsed: editor?.collapsed?.() ?? false,
       allowEmpty: true,
+      ...(context.renderProperty
+        ? { renderValue: context.renderProperty }
+        : {}),
     }),
   );
   return [...fresh.querySelectorAll<HTMLElement>("[data-property-row]")];

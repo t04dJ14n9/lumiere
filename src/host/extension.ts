@@ -21,7 +21,7 @@ export async function activate(
     context.extensionUri,
     context.workspaceState,
   );
-  workbench.views = createHostViews();
+  workbench.views = createHostViews(context.extensionUri);
   const channel = window.createOutputChannel("Markdown Workbench", {
     log: true,
   });

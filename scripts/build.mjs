@@ -34,6 +34,8 @@ const builds = [
     entryPoints: {
       editor: "src/webview/main.ts",
       diff: "src/webview/diff/main.ts",
+      graph: "src/webview/graph/main.ts",
+      "graph-layout": "src/webview/graph/layout-worker.ts",
     },
     outdir: "dist/webview",
     platform: "browser",

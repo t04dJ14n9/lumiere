@@ -21,6 +21,11 @@ export interface RewriteContext {
   /** Every vault path after the rename, to tell whether a name is unique. */
   pathsAfter: readonly string[];
   format: LinkFormat;
+  /**
+   * Policy-owned link text, such as an OKF bundle-absolute path. When it
+   * returns a string, the new-link format setting does not apply.
+   */
+  preferredText?(targetPath: string, sourcePath: string): string | undefined;
 }
 
 type Edit = FileTextEdits["edits"][number];
@@ -68,6 +73,10 @@ function targetText(
   source: string,
   context: RewriteContext,
 ): string {
+  const preferred = context.preferredText?.(target, source);
+  if (preferred !== undefined) {
+    return preferred;
+  }
   const withoutNote = (path: string) =>
     isMarkdownPath(path) ? path.slice(0, -3) : path;
   if (context.format === "relative") {

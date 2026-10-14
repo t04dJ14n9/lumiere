@@ -65,6 +65,8 @@ async function linkEdits(
       .files()
       .map((file) => paths.get(file.path) ?? file.path),
     format,
+    preferredText: (target: string, source: string) =>
+      vault.index.describeLink(target, source),
   };
   const sources = new Set<string>(paths.keys());
   for (const path of paths.keys()) {

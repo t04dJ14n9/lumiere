@@ -298,6 +298,23 @@ export interface SettingsAccess {
   openUi(query: string): Promise<void>;
 }
 
+/** A webview panel that is not tied to a text document. */
+export interface WorkbenchPanel {
+  reveal(): void;
+  setTitle(title: string): void;
+  readonly visible: boolean;
+  onDidChangeVisibility(listener: (visible: boolean) => void): Disposer;
+  onDispose(listener: () => void): Disposer;
+  dispose(): void;
+  readonly webview: {
+    readonly cspSource: string;
+    asset(relative: string): string;
+    setHTML(html: string): void;
+    post(message: unknown): void;
+    onMessage(listener: (message: unknown) => void): Disposer;
+  };
+}
+
 /** Native views, status bar and prompts for host plugins (DESIGN §7.1). */
 export interface HostViews {
   tree(
@@ -330,6 +347,11 @@ export interface HostViews {
   documentText(uri: string): string | undefined;
   /** A window-level setting under `markdownWorkbench.`. */
   setting<T>(key: string, fallback: T): T;
+  /**
+   * A document-independent webview panel. One panel per view type; a second
+   * call reveals the existing one.
+   */
+  panel(viewType: string, title: string): WorkbenchPanel;
   /** Before files are renamed in VS Code; the edits apply with the rename. */
   onWillRename(
     listener: (

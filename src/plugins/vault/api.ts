@@ -32,6 +32,12 @@ export interface VaultIndex {
     sourcePath: string,
   ): readonly VaultFile[];
   linkText(target: VaultFile, sourcePath: string): string;
+  /**
+   * Link text a registered policy wants for this pair, or `undefined` when
+   * vault formatting still applies. Rename rewrites use this so OKF paths
+   * stay bundle-absolute.
+   */
+  describeLink(targetPath: string, sourcePath: string): string | undefined;
   resolvedLinks(sourcePath: string): ReadonlyMap<string, number>;
   unresolvedLinks(sourcePath: string): ReadonlyMap<string, number>;
   backlinks(targetPath: string): readonly Backlink[];
@@ -121,6 +127,36 @@ export interface Vaults {
     options?: { offset?: number; side?: boolean },
   ): Promise<void>;
   all(): readonly Vault[];
+  /**
+   * A resolution override. The vault never imports a feature to get one;
+   * the feature registers and unregisters it. Returning `unresolved` stops
+   * basename fallback for that link.
+   */
+  registerLinkPolicy(policy: LinkPolicy): Disposer;
+  /** Re-resolve every note after a policy's answers change. */
+  invalidateLinkResolution(): void;
+}
+
+export interface LinkPolicyQuery {
+  vaultRoot: string;
+  linktext: string;
+  sourcePath: string;
+  /** Canonical path when that exact vault path exists. */
+  find(path: string): string | undefined;
+}
+
+export type LinkPolicyDecision =
+  { status: "resolved"; path: string } | { status: "unresolved" };
+
+export interface LinkPolicy {
+  readonly id: string;
+  resolve(query: LinkPolicyQuery): LinkPolicyDecision | undefined;
+  /** Bundle-absolute (or other) link text. `undefined` keeps vault formatting. */
+  linkText?(query: {
+    vaultRoot: string;
+    sourcePath: string;
+    targetPath: string;
+  }): string | undefined;
 }
 declare module "../../kernel/types" {
   interface Services {

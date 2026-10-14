@@ -6,9 +6,10 @@ import type {
   TreeNode,
 } from "../shared/runtime";
 import { cleanEditedUris } from "./rename-save";
+import { createWorkbenchPanel } from "./panel-adapter";
 
 /** The VS Code side of `workbench.views` (DESIGN §7.1). */
-export function createHostViews(): HostViews {
+export function createHostViews(extensionUri: vscode.Uri): HostViews {
   return {
     tree: createTree,
     status: createStatus,
@@ -45,6 +46,7 @@ export function createHostViews(): HostViews {
         ?.getText(),
     setting: (key, fallback) =>
       vscode.workspace.getConfiguration("markdownWorkbench").get(key, fallback),
+    panel: createWorkbenchPanel(extensionUri),
     onWillRename: (listener) =>
       toDisposer(
         vscode.workspace.onWillRenameFiles((event) => {

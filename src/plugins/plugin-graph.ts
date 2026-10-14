@@ -49,6 +49,8 @@ export const SERVICE_PROVIDERS: Readonly<
   wikiLayout: "wiki",
   links: "links",
   gitDiff: "gitGutter",
+  okf: "okfCore",
+  propertyRenderers: "properties",
 };
 
 export interface PluginNode {

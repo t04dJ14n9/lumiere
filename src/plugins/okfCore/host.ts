@@ -1,0 +1,129 @@
+import type { Context, Plugin } from "../../kernel";
+import { detectBundles, owningBundle } from "../../markdown/okf";
+import { isMarkdownPath } from "../../shared/vault-path";
+import type { Vault } from "../vault/api";
+import type { Okf, OkfBundle } from "./api";
+import type { OkfFacade } from "./facade";
+import { okfLinkPolicy } from "./policy";
+
+export interface OkfCoreConfig {
+  facade?: OkfFacade;
+}
+
+/** Window service for OKF bundles. It registers the link policy; the vault does not inject it. */
+export const okfCoreHost: Plugin<OkfCoreConfig> = {
+  name: "okfCore",
+  inject: { required: ["workbench", "vaults"] },
+  apply(ctx, config) {
+    const bundles = new Map<string, readonly string[]>();
+    const service = createService(bundles);
+    syncBundles(ctx, bundles);
+    publish(ctx, service, config?.facade);
+    const stop = ctx.vaults.registerLinkPolicy(
+      okfLinkPolicy((root) => bundles.get(root) ?? []),
+    );
+    ctx.effect(() => stop);
+    const refresh = () => {
+      if (syncBundles(ctx, bundles)) {
+        ctx.vaults.invalidateLinkResolution();
+      }
+    };
+    ctx.on("vault/changed", refresh);
+    ctx.on("vault/resolved", refresh);
+    if (ctx.workbench.onConfiguration) {
+      ctx.effect(() => ctx.workbench.onConfiguration!(refresh));
+    }
+  },
+};
+
+function publish(
+  ctx: Context,
+  service: Okf,
+  facade: OkfFacade | undefined,
+): void {
+  facade?.bind(service);
+  ctx.provide("okf", facade ?? service);
+  ctx.effect(() => () => facade?.bind(undefined));
+}
+
+function createService(bundles: Map<string, readonly string[]>): Okf {
+  return {
+    live: true,
+    bundles(vault) {
+      return listed(vault, bundles).map((root) => toBundle(vault, root));
+    },
+    scope(vault, path) {
+      const choices = this.bundles(vault);
+      const owner =
+        path === undefined
+          ? undefined
+          : owningBundle(listed(vault, bundles), path);
+      if (owner === undefined) {
+        return { ambiguous: true, choices };
+      }
+      return {
+        ambiguous: false,
+        owner: toBundle(vault, owner),
+        choices,
+      };
+    },
+  };
+}
+
+function listed(
+  vault: Vault,
+  bundles: Map<string, readonly string[]>,
+): readonly string[] {
+  return bundles.get(vault.index.root) ?? [];
+}
+
+function toBundle(vault: Vault, root: string): OkfBundle {
+  return {
+    id: `${encodeURIComponent(vault.index.root)}:${encodeURIComponent(root)}`,
+    name: root || "vault",
+    root,
+    vaultRoot: vault.index.root,
+  };
+}
+
+function syncBundles(
+  ctx: Context,
+  bundles: Map<string, readonly string[]>,
+): boolean {
+  let changed = false;
+  for (const vault of ctx.vaults.all()) {
+    const next = detectBundles(bundleFiles(vault), manualBundles(ctx));
+    const previous = bundles.get(vault.index.root) ?? [];
+    if (previous.join("\0") !== next.join("\0")) {
+      bundles.set(vault.index.root, next);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function bundleFiles(vault: Vault) {
+  return vault.index.files().flatMap((file) => {
+    if (!isMarkdownPath(file.path)) {
+      return [];
+    }
+    const type = vault.index.metadata(file.path)?.frontmatter?.type;
+    return [
+      {
+        path: file.path,
+        markdown: true,
+        ...(typeof type === "string" && type.trim()
+          ? { type: type.trim() }
+          : {}),
+      },
+    ];
+  });
+}
+
+function manualBundles(ctx: Context): string[] {
+  const value = ctx.workbench.views?.setting<unknown>("okfCore.bundles", []);
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string");
+}

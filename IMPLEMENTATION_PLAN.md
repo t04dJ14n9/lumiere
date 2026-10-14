@@ -3594,3 +3594,30 @@ full unit suite, browser/native suite, push or publication was run. Manual
 scenarios cover expansion, persistent toggles, panel switches and active ends.
 The pinned `~/Code/human-learning` checkout is absent; no reference repository
 or proprietary code, CSS or assets were modified or copied.
+
+## Vault graph and read-only Sources — 2026-10-14
+
+Ships the approved OKF slices in one change. The window plugin `okfCore`
+provides `okf` and registers a vault link policy; the vault never imports it.
+Inside a bundle, `/…` is bundle-root relative and `./` / `../` are relative to
+the source file. An explicit miss stays unresolved. Wikilinks and notes outside
+a bundle keep the existing vault rules. Renames use the same policy when it
+supplies link text. Open panels share a facade, so stopping `okfCore` does not
+restart the editor. `properties` provides `propertyRenderers`. `sourcesProperty`
+draws stacked read-only Sources rows and opens only `http`/`https` or an
+in-policy workspace file from the row's own document. `command:`, `javascript:`
+and `data:` are not links. Nothing is fetched. `graph` is a document-independent
+panel (`markdownWorkbench.graph`) using graphology and Sigma in their own
+bundles. It draws one chosen OKF bundle, directed aggregated body links and
+embeds, local and global modes, and refuses graphs over 2000 notes, 20000
+edges or 1.5 MB. The layout worker stops while the panel is hidden and when
+the panel is disposed.
+
+Sources writes, sources-derivation edges, trust badges, 3D and saved layouts
+are not in this change.
+
+Validation: `pnpm format:check`, `pnpm lint`, `pnpm typecheck` (seven projects),
+`pnpm test` (1225 unit tests), `pnpm contributions --check` and a production
+`pnpm build` pass. `THIRD_PARTY_NOTICES.md` was regenerated from that build.
+Chromium `properties-parity` and `properties-caret` pass (11 tests). The rest
+of the browser suite and the native VS Code suite were not re-run.

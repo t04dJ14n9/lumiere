@@ -1,0 +1,74 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  font: 13px var(--vscode-font-family);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.graph-scope,
+.graph-banners p {
+  margin: 0;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border, transparent);
+}
+
+.graph-controls,
+.graph-legend,
+.graph-facets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.graph-facets fieldset {
+  border: 1px solid var(--vscode-panel-border, transparent);
+  margin: 0;
+  max-height: 7rem;
+  overflow: auto;
+}
+
+.graph-legend-item {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.graph-legend-item i {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid var(--vscode-foreground);
+  display: inline-block;
+}
+
+#graph-canvas {
+  flex: 1;
+  min-height: 160px;
+}
+
+button,
+input,
+select {
+  color: var(--vscode-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  font: inherit;
+}
