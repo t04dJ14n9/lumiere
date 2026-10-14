@@ -129,6 +129,11 @@ separately, since that explicitly disables the workaround.
 6. With `markdownWorkshop.debug.logging` on, the **Markdown Workshop**
    output channel shows debug lines from the host and the webview; with it
    off, only warnings and errors.
+7. Right-click a selection that spans hidden syntax (bold, a link): the
+   menu has Cut, Copy and Paste. Copy and Cut put the exact source on the
+   clipboard; Paste of a copied web page section arrives as Markdown, as
+   Mod+V does. Right-click in a table cell or a property chip: their own
+   menus open instead.
 
 ### dialect, render and livePreview
 

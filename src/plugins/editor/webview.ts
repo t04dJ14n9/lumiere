@@ -144,11 +144,13 @@ function createEditorView(
         caretExtension(),
         findExtension(),
         EditorView.lineWrapping,
+        // VS Code's own Cut, Copy and Paste stay in the menu, as in
+        // Obsidian's editor menu; they run the browser's clipboard commands,
+        // which CodeMirror and the paste plugins already handle.
         EditorView.contentAttributes.of({
           "aria-label": "Markdown content",
           "data-vscode-context": JSON.stringify({
             webviewSection: "markdownContent",
-            preventDefaultContextMenuItems: true,
           }),
         }),
         menuSelectionContext,

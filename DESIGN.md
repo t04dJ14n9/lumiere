@@ -1171,7 +1171,8 @@ Rules:
   (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
   (§13 outline).
 - The right-click menu uses VS Code's `webview/context` menu with
-  `webviewSection` for static commands (formatting, Copy Link for Agent).
+  `webviewSection` for static commands (formatting, Copy Link for Agent),
+  after VS Code's own Cut, Copy and Paste, as Obsidian's menu starts with them.
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions

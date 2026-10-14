@@ -4161,3 +4161,10 @@ for the active panel through the per-panel key helper that
 `markdownWorkshop.hasSelection` now shares, and the generator ANDs that key
 into every editor-scoped keybinding. Units cover the reporter and the generated
 clauses; formatting scenario 3 and Vim scenario 2 cover the real workbench.
+
+By owner decision, the editor's right-click menu keeps VS Code's own Cut, Copy
+and Paste: the content no longer sets `preventDefaultContextMenuItems`, so
+the menu starts with them as Obsidian's does (it already offered them outside
+the content). They run the browser's clipboard commands in the webview, which
+CodeMirror and `pasteHtml` handle as for the keyboard; table cells and
+property chips keep their own menus. Editor scenario 7 covers it.
