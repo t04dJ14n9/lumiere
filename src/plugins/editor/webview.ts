@@ -210,6 +210,17 @@ function registerSyncStatus(ctx: Context, parent: HTMLElement): void {
 
 function registerSelectionCapture(ctx: Context, view: EditorView): void {
   ctx.effect(() =>
+    ctx.rpc.handle(protocol, "captureCursor", async () => {
+      await ctx.document.flush();
+      return {
+        head:
+          ctx.bail("editor/projectSelection")?.to ??
+          view.state.selection.main.head,
+        version: getSyncedVersion(view.state),
+      };
+    }),
+  );
+  ctx.effect(() =>
     ctx.rpc.handle(protocol, "captureSelection", async () => {
       await ctx.document.flush();
       const { from, to } =

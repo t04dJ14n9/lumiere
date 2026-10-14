@@ -67,7 +67,7 @@ export interface Manifest {
   readonly contributes?: {
     menus?: readonly {
       command: string;
-      location: "editor/title" | "webview/context";
+      location: "editor/title" | "webview/context" | "view/title";
       when?: string;
       group?: string;
     }[];

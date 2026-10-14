@@ -482,6 +482,19 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    selected as the caret moves.
 2. In the text editor, Note Outline hides; VS Code's Outline lists headings
    once.
+3. Use **Collapse All** in Note Outline's title bar, then **Expand All**.
+   All branches expand, including a note nested from `#` through `######`.
+   Expand All preserves the selected item without focusing a heading.
+4. Open the title's **...** menu. **Follow Cursor** starts checked. Turn it
+   off, move the caret between sections and click a heading: the selection
+   no longer follows movement, while the click still navigates. Reload the
+   window and confirm the setting stays off. Turn it on and confirm the
+   current section is selected immediately, with focus remaining in the note.
+5. With following on, switch notes and switch between two panels of the same
+   note with different cursors. Edit or add a heading, hide and show the view,
+   and confirm it selects the current panel's section after each change.
+   A selection extending across sections follows its active end. Also check
+   a CRLF note and a caret in the preamble before its first heading.
 
 ### backlinks and outgoingLinks
 

@@ -3525,3 +3525,72 @@ navigation.test.ts and test/unit/vim-key-routing.test.ts only. Logs are
 is `/tmp/vimdollar-browser-before.log` and `/tmp/vimdollar-caret-before.log`.
 No pnpm check, repository-wide lint, full unit/browser/native suite, commit,
 push or publication was run. Real macOS input-source acceptance remains manual.
+
+## Note Outline title actions and Follow Cursor — 2026-10-14
+
+Previous mechanism: the `outline` window plugin supplied a custom Explorer
+TreeView (`markdownWorkbench.outline`, **Note Outline**) for the active
+Markdown Workbench panel. It read text through `vaults.text`, nested parsed
+headings by level and refreshed after editor/document events with a 300 ms
+debounce. Selection notifications captured the sorted selection start and
+unconditionally revealed its preceding heading when the view was visible.
+Items navigated through `vaults.open` at their original-source offsets. There
+were no title actions or follow preference; native Outline used VS Code's
+built-in Markdown support.
+
+Delivered: the tree opts into VS Code's native Collapse All action. Expand All
+reveals every heading in parent-first order, including all six Markdown heading
+levels, without selecting or focusing items. The overflow menu has mutually
+exclusive enable/disable Follow Cursor commands, controlled by
+`markdownWorkbench.outline.followCursor`. The setting of the same name is
+resource-scoped, defaults to true and persists through the existing settings
+adapter. Public command contributions do not expose native checked state, so
+the enabled variant uses the visible title **✓ Follow Cursor** and the disabled
+variant **Follow Cursor**.
+
+Following reveals and selects without focusing when the cursor, current panel,
+document or view visibility changes. A small schema-validated `captureCursor`
+RPC returns the active selection end and synchronization version, with table
+positions projected into the outer document. The tree reads authoritative
+TextDocument text and maps LF editor offsets to untouched CRLF source offsets.
+Panel identity, document/synchronization versions and request generations reject
+obsolete replies, including two panels of the same note. Plugin-owned cleanup
+cancels timers, disposes registrations and clears its context key using a
+captured workbench service after services are withdrawn. Heading clicks retain
+their navigation behavior with following either on or off. The optional
+DocumentSymbolProvider was not added; native Markdown support remains in use.
+
+Files changed:
+
+- `src/plugins/outline/{host,manifest,actions,commands,tree,view}.ts` and
+  `src/plugins/outline/README.md`.
+- `src/plugins/editor/{protocol,webview}.ts` and `src/plugins/editor/README.md`.
+- `src/host/views.ts`, `src/shared/{runtime,manifest}.ts`,
+  `scripts/generate-contributions.ts` and generated `package.json`.
+- `test/unit/outline/{fixture,host.test,tree.test}.ts`,
+  `test/unit/contributions.test.ts` and `test/unit/views/fakes.ts`.
+- `docs/MANUAL_TEST_PLAN.md` and this phase record.
+
+Validation, limited to the owner's requested scope and run sequentially:
+
+- `timeout 180s pnpm typecheck`: all seven TypeScript projects pass.
+- `timeout 180s pnpm exec eslint --max-warnings=0 <17 changed TypeScript files>`:
+  passes with no errors or warnings.
+- `timeout 120s pnpm exec tsx --test` with
+  `test/unit/outline/{headings,tree,host}.test.ts`,
+  `test/unit/ported/outline.test.ts`, `test/unit/contributions.test.ts`,
+  `test/unit/plugins/capabilities.test.ts`, `test/unit/views/views.test.ts`,
+  `test/unit/tags/view.test.ts` and `test/unit/editor/bootstrap.test.ts`:
+  **39/39 pass**.
+- `timeout 60s pnpm exec tsx --test --test-name-pattern='outline'
+  test/unit/features/leave-no-trace.test.ts`: **1/1 selected test passes**,
+  36 unrelated tests skipped.
+
+Logs: `/tmp/outline-mw-{typecheck,eslint,unit,lifecycle}.log`. Changed code was
+formatted and contributions regenerated, with generator consistency covered by
+the targeted unit run. Dependencies were installed from the offline pnpm cache
+without scripts or lockfile changes. No pnpm check, repository-wide ESLint,
+full unit suite, browser/native suite, push or publication was run. Manual
+scenarios cover expansion, persistent toggles, panel switches and active ends.
+The pinned `~/Code/human-learning` checkout is absent; no reference repository
+or proprietary code, CSS or assets were modified or copied.

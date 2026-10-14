@@ -229,7 +229,11 @@ export interface TreeHandle {
   refresh(): void;
   /** Text shown above the tree, such as "No note is open"; undefined removes it. */
   setMessage(message: string | undefined): void;
-  reveal(node: TreeNode): void;
+  /** Reveal without taking focus; expansion commands can also preserve selection. */
+  reveal(
+    node: TreeNode,
+    options?: { select?: boolean; focus?: boolean; expand?: boolean | number },
+  ): Promise<void>;
   readonly visible: boolean;
   onVisibilityChanged(listener: (visible: boolean) => void): Disposer;
   dispose(): void;
@@ -296,7 +300,11 @@ export interface SettingsAccess {
 
 /** Native views, status bar and prompts for host plugins (DESIGN §7.1). */
 export interface HostViews {
-  tree(viewId: string, source: TreeSource): TreeHandle;
+  tree(
+    viewId: string,
+    source: TreeSource,
+    options?: { showCollapseAll?: boolean },
+  ): TreeHandle;
   status(id: string, priority: number): StatusHandle;
   /** A quick pick whose items are recomputed as the user types. */
   pick<T>(options: {
