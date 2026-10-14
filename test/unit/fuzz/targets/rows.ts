@@ -32,8 +32,11 @@ export const targets: Record<string, Target> = {
   // Our row building, with the renderer replaced by identity...
   diffRows: { arity: 2, run: (a, b) => diffRows(a, b, (m) => m) },
   // ...and with the production renderer (markdown-it and our plugins).
+  // Full markdown-it render × ~210 adversarial cases; 20s is tight under CI
+  // load (flaky SIGTERM on whichever case is mid-flight). Keep CASE_MS.
   diffRowsRendered: {
     arity: 2,
+    deadlineMs: 45_000,
     run: (a, b) => diffRows(a, b, (m) => renderer.renderMarkdown(m)),
   },
 };

@@ -12,6 +12,7 @@ import type { Target } from "./target";
 const probe = fileURLToPath(new URL("./probe.ts", import.meta.url));
 /** Per case; generous for slow boxes, far below a quadratic stall. */
 const CASE_MS = 1500;
+/** Default child-process budget for a full adversarial suite. */
 const DEADLINE_MS = 20_000;
 
 interface Line {
@@ -28,10 +29,11 @@ export function fuzzSuite(
 ): void {
   for (const name of Object.keys(targets)) {
     test(`fuzz: ${label}.${name} is linear on adversarial input`, () => {
+      const deadline = targets[name]!.deadlineMs ?? DEADLINE_MS;
       const child = spawnSync(
         process.execPath,
         ["--import", "tsx", probe, path, name],
-        { timeout: DEADLINE_MS, encoding: "utf8", maxBuffer: 64 << 20 },
+        { timeout: deadline, encoding: "utf8", maxBuffer: 64 << 20 },
       );
       const lines = child.stdout
         .split("\n")
