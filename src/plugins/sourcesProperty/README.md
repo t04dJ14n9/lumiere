@@ -6,12 +6,15 @@ sheet.
 
 ## How it works
 
-The properties sheet asks `propertyRenderers` for `sources`. Each entry becomes
-a row in document order. The first eight rows are visible; the rest stay in the
-page and appear when the disclosure is opened. A click sends the resource string
-to the host. The host reads the owning document again, refuses a resource that
-is no longer there, and allows only `http`/`https` or a path inside the note's
-bundle. The webview does not fetch the resource.
+The properties sheet asks `propertyRenderers` for `sources` on the first paint
+and again when a renderer is registered or removed. Each entry becomes a row
+in document order. The first eight rows are visible; the rest stay in the page
+and appear when the disclosure is opened. A path or `http`/`https` resource is
+clickable; scope text is not. A click sends the resource string to the host.
+The host reads the owning document again, refuses a resource that is no longer
+there, strips a `#fragment` before the file lookup, and allows only `http`/`https`
+or a path that stays inside the vault. A heading or block fragment opens at
+that offset. The webview does not fetch the resource.
 
 ## Files
 

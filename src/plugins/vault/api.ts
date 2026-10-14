@@ -1,5 +1,6 @@
 import type { Disposer } from "../../kernel";
 import type { NoteMetadata } from "../../markdown/metadata";
+import type { LinkSyntax } from "../../shared/vault-path";
 export interface VaultFile {
   path: string;
   basename: string;
@@ -26,11 +27,26 @@ export interface VaultIndex {
   files(): readonly VaultFile[];
   file(path: string): VaultFile | undefined;
   metadata(path: string): NoteMetadata | undefined;
-  resolveLink(linktext: string, sourcePath: string): VaultFile | undefined;
+  resolveLink(
+    linktext: string,
+    sourcePath: string,
+    syntax?: LinkSyntax,
+  ): VaultFile | undefined;
   resolveLinkCandidates(
     linktext: string,
     sourcePath: string,
+    syntax?: LinkSyntax,
   ): readonly VaultFile[];
+  /**
+   * The policy's claim for this link, or `undefined` when vault rules still
+   * apply. Navigation uses this so an explicit Markdown miss does not open
+   * a different file.
+   */
+  classifyLink(
+    linktext: string,
+    sourcePath: string,
+    syntax?: LinkSyntax,
+  ): LinkPolicyDecision | undefined;
   linkText(target: VaultFile, sourcePath: string): string;
   /**
    * Link text a registered policy wants for this pair, or `undefined` when
@@ -141,6 +157,8 @@ export interface LinkPolicyQuery {
   vaultRoot: string;
   linktext: string;
   sourcePath: string;
+  /** Markdown and wikilink resolution are not inferred from the extension. */
+  syntax: LinkSyntax;
   /** Canonical path when that exact vault path exists. */
   find(path: string): string | undefined;
 }

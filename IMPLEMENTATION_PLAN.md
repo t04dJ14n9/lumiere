@@ -3621,3 +3621,22 @@ Validation: `pnpm format:check`, `pnpm lint`, `pnpm typecheck` (seven projects),
 `pnpm build` pass. `THIRD_PARTY_NOTICES.md` was regenerated from that build.
 Chromium `properties-parity` and `properties-caret` pass (11 tests). The rest
 of the browser suite and the native VS Code suite were not re-run.
+
+## Review fixes for the vault graph and Sources — 2026-10-14
+
+Corrects seven resolution and presentation bugs from the review of that
+change. A vault-root bundle (`""`) is stored and removed like any other root.
+Markdown and wikilink intent is stored with each indexed link and passed to
+the policy; an extension no longer decides which rules apply. A Markdown link
+that misses does not open a conflicting vault-root file, and navigation does
+not fall through after that miss. A move into another bundle rewrites Markdown
+as an explicit source-relative path that resolves again. The properties sheet
+paints `propertyRenderers` on the first mount and rebuilds when they change.
+Sources treats parent-relative resources as clickable and lets the host check
+containment. A `#fragment` is removed before the file lookup; a heading or
+block fragment still opens at its offset. The graph layout worker is fetched
+from the extension and started from a `blob:` URL, then terminated and revoked
+on dispose.
+
+Filter positions are still dropped when a filter hides a node, and this change
+does not add browser or native coverage for the Sources mount or the worker.

@@ -73,6 +73,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
   root.provide("vault", {
     root: "file:///vault",
     resolveLink: () => undefined,
+    classifyLink: () => undefined,
     unresolvedLinks: () => new Map(),
     onDidResolve: () => () => {},
   } as unknown as VaultIndex);

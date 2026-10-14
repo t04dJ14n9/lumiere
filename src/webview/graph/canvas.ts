@@ -1,5 +1,10 @@
 import Graph from "graphology";
 import Sigma from "sigma";
+import {
+  startLayoutWorker,
+  stopLayoutWorker,
+  type LayoutWorkerSession,
+} from "./worker-boot";
 
 export interface GraphCamera {
   x: number;
@@ -43,7 +48,8 @@ interface CanvasModel {
   renderer: Sigma;
   positions: Map<string, { x: number; y: number }>;
   previous: Set<string>;
-  worker: Worker | undefined;
+  workerSession: LayoutWorkerSession | undefined;
+  workerTicket: number;
   workerUrl: string | undefined;
   nodes: readonly CanvasNode[];
   edges: readonly CanvasEdge[];
@@ -60,7 +66,8 @@ export function mountCanvas(
     renderer: new Sigma(graph, container, { defaultEdgeType: "arrow" }),
     positions: new Map(),
     previous: new Set(),
-    worker: undefined,
+    workerSession: undefined,
+    workerTicket: 0,
     workerUrl,
     nodes: [],
     edges: [],
@@ -125,20 +132,56 @@ function startWorker(model: CanvasModel): void {
   if (!model.workerUrl || model.nodes.length === 0) {
     return;
   }
-  const worker = new Worker(model.workerUrl, { type: "module" });
-  model.worker = worker;
-  worker.onmessage = (event: MessageEvent<unknown>) => {
-    const data = event.data;
-    if (
-      !isRecord(data) ||
-      data.type !== "positions" ||
-      !Array.isArray(data.positions)
-    ) {
-      return;
-    }
-    applyPositions(model.graph, model.positions, data.positions);
+  const ticket = ++model.workerTicket;
+  const scriptUrl = model.workerUrl;
+  void startLayoutWorker({
+    scriptUrl,
+    ticket,
+    isCurrent: (current) => current === model.workerTicket,
+    fetchScript: fetchWorkerSource,
+    createObjectUrl: (source) =>
+      URL.createObjectURL(new Blob([source], { type: "text/javascript" })),
+    revokeObjectUrl: (url) => URL.revokeObjectURL(url),
+    createWorker: (objectUrl) => new Worker(objectUrl, { type: "module" }),
+  }).then((session) => attachWorker(model, ticket, session));
+}
+
+function attachWorker(
+  model: CanvasModel,
+  ticket: number,
+  session: LayoutWorkerSession | undefined,
+): void {
+  if (!session) {
+    return;
+  }
+  if (ticket !== model.workerTicket) {
+    stopLayoutWorker(session, (url) => URL.revokeObjectURL(url));
+    return;
+  }
+  model.workerSession = session;
+  session.worker.onmessage = (event: MessageEvent<unknown>) => {
+    receivePositions(model, event.data);
   };
-  worker.postMessage({
+  session.worker.postMessage(layoutMessage(model));
+}
+
+function receivePositions(model: CanvasModel, data: unknown): void {
+  if (
+    !isRecord(data) ||
+    data.type !== "positions" ||
+    !Array.isArray(data.positions)
+  ) {
+    return;
+  }
+  applyPositions(model.graph, model.positions, data.positions);
+}
+
+function layoutMessage(model: CanvasModel): {
+  type: "start";
+  nodes: { id: string; x: number; y: number }[];
+  edges: { source: string; target: string }[];
+} {
+  return {
     type: "start",
     nodes: [...model.positions].map(([id, point]) => ({
       id,
@@ -149,13 +192,22 @@ function startWorker(model: CanvasModel): void {
       source: edge.source,
       target: edge.target,
     })),
-  });
+  };
+}
+
+async function fetchWorkerSource(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Layout worker failed to load");
+  }
+  return response.text();
 }
 
 function stopWorker(model: CanvasModel): void {
-  model.worker?.postMessage({ type: "stop" });
-  model.worker?.terminate();
-  model.worker = undefined;
+  model.workerTicket += 1;
+  const session = model.workerSession;
+  model.workerSession = undefined;
+  stopLayoutWorker(session, (url) => URL.revokeObjectURL(url));
 }
 
 function readCamera(model: CanvasModel): GraphCamera {

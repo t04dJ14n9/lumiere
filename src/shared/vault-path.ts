@@ -4,6 +4,9 @@
  * indexing worker and tests share one definition.
  */
 
+/** Whether a stored link was written as Markdown or as a wikilink. */
+export type LinkSyntax = "markdown" | "wikilink";
+
 /** A link target split into its path and its `#heading` or `#^block` part. */
 export interface Linkpath {
   path: string;

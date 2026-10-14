@@ -6,7 +6,7 @@ const escape = (value: string) =>
     .replaceAll('"', "&quot;")
     .replaceAll("<", "&lt;");
 
-/** Panel document. Scripts and the layout worker come from the extension; nothing is fetched. */
+/** Panel document. The layout worker script is read from the extension, then started from a blob URL. */
 export function graphPanelHtml(assets: {
   cspSource: string;
   script: string;
@@ -18,10 +18,10 @@ export function graphPanelHtml(assets: {
     "default-src 'none'",
     `script-src 'nonce-${nonce}' ${assets.cspSource}`,
     `style-src ${assets.cspSource} 'unsafe-inline'`,
-    `worker-src ${assets.cspSource}`,
+    "worker-src blob:",
     `img-src ${assets.cspSource} data:`,
     `font-src ${assets.cspSource}`,
-    "connect-src 'none'",
+    `connect-src ${assets.cspSource}`,
   ].join("; ");
   return `<!doctype html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="${escape(policy)}"><link rel="stylesheet" href="${escape(assets.style)}"></head><body data-worker="${escape(assets.worker)}"><main id="app"></main><script type="module" nonce="${nonce}" src="${escape(assets.script)}"></script></body></html>`;
 }

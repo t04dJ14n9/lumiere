@@ -1,16 +1,32 @@
 import type { NoteMetadata } from "../../markdown/metadata";
-import { linkpathOf, vaultLinks } from "../../markdown/metadata/linkpaths";
-import { linkLookupKey } from "../../shared/vault-path";
+import {
+  linkpathOf,
+  linkSyntax,
+  vaultLinks,
+} from "../../markdown/metadata/linkpaths";
+import { linkLookupKey, type LinkSyntax } from "../../shared/vault-path";
 import type { Backlink, VaultFile } from "./api";
 
-type Resolver = (linkpath: string, sourcePath: string) => VaultFile | undefined;
+export interface IndexedLink {
+  path: string;
+  syntax: LinkSyntax;
+}
+
+type Resolver = (
+  linkpath: string,
+  sourcePath: string,
+  syntax: LinkSyntax,
+) => VaultFile | undefined;
 
 /**
  * The vault paths a note links to, as written: links, embeds and links in
- * properties, without `#subpaths`.
+ * properties, without `#subpaths`, each with the syntax that produced it.
  */
-export function outgoingLinkpaths(metadata: NoteMetadata): string[] {
-  return vaultLinks(metadata).map((link) => linkpathOf(link)!);
+export function outgoingLinks(metadata: NoteMetadata): IndexedLink[] {
+  return vaultLinks(metadata).map((link) => ({
+    path: linkpathOf(link)!,
+    syntax: linkSyntax(link),
+  }));
 }
 
 /**
@@ -19,7 +35,7 @@ export function outgoingLinkpaths(metadata: NoteMetadata): string[] {
  * that file's name (Obsidian's `updateRelatedLinks`).
  */
 export class LinkMaps {
-  private readonly linkpaths = new Map<string, readonly string[]>();
+  private readonly linkpaths = new Map<string, readonly IndexedLink[]>();
   private readonly resolved = new Map<string, Map<string, number>>();
   private readonly unresolved = new Map<string, Map<string, number>>();
   /** Lower-case link name → notes whose links use that name. */
@@ -31,11 +47,11 @@ export class LinkMaps {
     return this.linkpaths.keys();
   }
 
-  setLinks(sourcePath: string, linkpaths: readonly string[]): void {
+  setLinks(sourcePath: string, links: readonly IndexedLink[]): void {
     this.forgetMentions(sourcePath);
-    this.linkpaths.set(sourcePath, linkpaths);
-    for (const linkpath of linkpaths) {
-      const key = linkLookupKey(linkpath);
+    this.linkpaths.set(sourcePath, links);
+    for (const link of links) {
+      const key = linkLookupKey(link.path);
       const sources = this.mentions.get(key) ?? new Set<string>();
       sources.add(sourcePath);
       this.mentions.set(key, sources);
@@ -90,10 +106,10 @@ export class LinkMaps {
   private resolveSource(sourcePath: string): void {
     const resolved = new Map<string, number>();
     const unresolved = new Map<string, number>();
-    for (const linkpath of this.linkpaths.get(sourcePath) ?? []) {
-      const target = this.resolve(linkpath, sourcePath);
+    for (const link of this.linkpaths.get(sourcePath) ?? []) {
+      const target = this.resolve(link.path, sourcePath, link.syntax);
       const counts = target ? resolved : unresolved;
-      const key = target ? target.path : linkpath;
+      const key = target ? target.path : link.path;
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     this.resolved.set(sourcePath, resolved);
@@ -101,8 +117,8 @@ export class LinkMaps {
   }
 
   private forgetMentions(sourcePath: string): void {
-    for (const linkpath of this.linkpaths.get(sourcePath) ?? []) {
-      const key = linkLookupKey(linkpath);
+    for (const link of this.linkpaths.get(sourcePath) ?? []) {
+      const key = linkLookupKey(link.path);
       const sources = this.mentions.get(key);
       sources?.delete(sourcePath);
       if (sources?.size === 0) {

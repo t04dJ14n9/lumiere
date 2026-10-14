@@ -38,7 +38,8 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
     required: ["editor", "commands", "livePreview", "rpc", "document", "menu"],
   },
   apply(ctx, settings) {
-    const renderers = createPropertyRenderers();
+    let refreshRenderers = () => {};
+    const renderers = createPropertyRenderers(() => refreshRenderers());
     ctx.provide("propertyRenderers", renderers);
     ctx.on("editor/focusProperties", () => {
       const heading = ctx.editor.view.contentDOM.querySelector<HTMLElement>(
@@ -69,6 +70,14 @@ export const propertiesWebview: Plugin<Infer<typeof config>> = {
       createSheetContext(ctx, editing, renderers),
       settings.display,
     );
+    refreshRenderers = () => {
+      // Teardown can unregister a renderer after this context has stopped.
+      if (!ctx.isLive) {
+        return;
+      }
+      ctx.emit("render/changed");
+      presentation.reconcileEmpty();
+    };
     registerConfiguration(ctx, presentation);
     registerEmptySheet(ctx, presentation);
     registerEditorControls(ctx, { heading, editing, presentation });

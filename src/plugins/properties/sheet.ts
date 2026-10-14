@@ -60,21 +60,25 @@ export function reconcileProperties(
   return true;
 }
 
+/** Markup for a property sheet, including plugin renderers on the first paint. */
+export function propertyMarkup(
+  source: string,
+  context: PropertyContext,
+  allowEmpty: boolean,
+): string {
+  return renderProperties(source, context.propertyEditor?.types?.(), {
+    collapsed: context.propertyEditor?.collapsed?.() ?? false,
+    allowEmpty,
+    ...(context.renderProperty ? { renderValue: context.renderProperty } : {}),
+  });
+}
+
 function nextPropertyRows(
   source: string,
   context: PropertyContext,
 ): HTMLElement[] {
-  const editor = context.propertyEditor;
   const fresh = document.createElement("div");
-  fresh.innerHTML = sanitize(
-    renderProperties(source, editor?.types?.(), {
-      collapsed: editor?.collapsed?.() ?? false,
-      allowEmpty: true,
-      ...(context.renderProperty
-        ? { renderValue: context.renderProperty }
-        : {}),
-    }),
-  );
+  fresh.innerHTML = sanitize(propertyMarkup(source, context, true));
   return [...fresh.querySelectorAll<HTMLElement>("[data-property-row]")];
 }
 

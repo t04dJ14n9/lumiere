@@ -8,8 +8,10 @@ Obsidian's graph view, scoped to the bundle rather than the whole vault.
 **Open Vault Graph** captures the active note's bundle, or asks when that note
 belongs to none or to more than one. The host builds a concept graph from
 Markdown files in that bundle, drops reserved `index.md` and `log.md`, and
-aggregates body links and note embeds. A worker lays the drawing out. Filtering
-and later edits keep coordinates; a large change waits for **Re-layout**.
+aggregates body links and note embeds. A worker lays the drawing out. The
+panel reads the worker script from the extension and starts it from a blob
+URL, which a webview is allowed to do. Filtering and later edits keep
+coordinates; a large change waits for **Re-layout**.
 Clicking a node asks the host to open that note. The host checks the scope, the
 snapshot generation and that the id is still in the drawing.
 

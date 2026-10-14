@@ -1,4 +1,4 @@
-import { planResourceOpen } from "./authorize";
+import { extensionOf, splitLinktext } from "../../shared/vault-path";
 
 export interface SourceRow {
   index: number;
@@ -107,13 +107,29 @@ function usageOf(
   };
 }
 
+/**
+ * Presentation only. Containment is checked again by the host against the
+ * owning note, so a parent-relative path stays clickable here.
+ */
 function isNavigable(resource: string): boolean {
-  const plan = planResourceOpen({
-    resource,
-    documentPath: "note.md",
-    bundleRoot: "",
-  });
-  return plan.action === "external" || plan.action === "workspace";
+  const trimmed = resource.trim();
+  if (!trimmed) {
+    return false;
+  }
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(trimmed)?.[1]?.toLowerCase();
+  if (scheme) {
+    return scheme === "http" || scheme === "https";
+  }
+  if (
+    trimmed.startsWith("/") ||
+    trimmed.startsWith("./") ||
+    trimmed.startsWith("../") ||
+    trimmed.includes("/") ||
+    trimmed.includes("\\")
+  ) {
+    return true;
+  }
+  return extensionOf(splitLinktext(trimmed).path) !== "";
 }
 
 function unknownFields(record: Record<string, unknown>): string | undefined {

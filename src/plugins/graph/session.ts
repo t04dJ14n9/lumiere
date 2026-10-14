@@ -250,8 +250,8 @@ async function buildSnapshot(
   return presentSnapshot({
     bundle: scope.bundle,
     notes: collected.notes,
-    resolve: (linktext, sourcePath) =>
-      resolve(scope.vault, linktext, sourcePath),
+    resolve: (linktext, sourcePath, syntax) =>
+      resolve(scope.vault, linktext, sourcePath, syntax),
     completeness: collected.completeness,
     generation,
     mode: state.view.mode,
@@ -279,8 +279,9 @@ function resolve(
   vault: Vault,
   linktext: string,
   sourcePath: string,
+  syntax: "markdown" | "wikilink",
 ): { status: "file" | "missing"; path?: string } {
-  const file = vault.index.resolveLink(linktext, sourcePath);
+  const file = vault.index.resolveLink(linktext, sourcePath, syntax);
   if (!file) {
     return { status: "missing" };
   }

@@ -94,12 +94,24 @@ function syncBundles(
   for (const vault of ctx.vaults.all()) {
     const next = detectBundles(bundleFiles(vault), manualBundles(ctx));
     const previous = bundles.get(vault.index.root) ?? [];
-    if (previous.join("\0") !== next.join("\0")) {
+    if (!sameRoots(previous, next)) {
       bundles.set(vault.index.root, next);
       changed = true;
     }
   }
   return changed;
+}
+
+function sameRoots(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function bundleFiles(vault: Vault) {

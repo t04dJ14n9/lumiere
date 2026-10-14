@@ -57,6 +57,32 @@ test("a bundle-absolute path stays inside the bundle", () => {
   );
 });
 
+test("a parent-relative resource stays inside the owning note", () => {
+  assert.deepEqual(
+    planResourceOpen({
+      resource: "../raw/paper.pdf",
+      documentPath: "bundle/concept/topic.md",
+      bundleRoot: "bundle",
+    }),
+    { action: "workspace", path: "bundle/raw/paper.pdf" },
+  );
+});
+
+test("a fragment is not part of the file lookup", () => {
+  assert.deepEqual(
+    planResourceOpen({
+      resource: "/raw/paper.pdf#page=3",
+      documentPath: "bundle/concept/topic.md",
+      bundleRoot: "bundle",
+    }),
+    {
+      action: "workspace",
+      path: "bundle/raw/paper.pdf",
+      fragment: "#page=3",
+    },
+  );
+});
+
 test("a path that escapes the vault is refused", () => {
   assert.equal(
     planResourceOpen({

@@ -6,6 +6,7 @@ import { graphFacets } from "./facets";
 import type { GraphFilters } from "./filters";
 import type { protocol } from "./protocol";
 import { buildConceptGraph } from "./project";
+import type { LinkSyntax } from "../../shared/vault-path";
 import type { GraphNote, ResolvedTarget } from "./project";
 import { drawGraph } from "./view";
 import type { DrawnNode } from "./view";
@@ -15,7 +16,11 @@ export type GraphSnapshot = Infer<(typeof protocol.notifications)["snapshot"]>;
 export interface SnapshotRequest {
   bundle: OkfBundle;
   notes: readonly GraphNote[];
-  resolve(linktext: string, sourcePath: string): ResolvedTarget;
+  resolve(
+    linktext: string,
+    sourcePath: string,
+    syntax: LinkSyntax,
+  ): ResolvedTarget;
   completeness: GraphSnapshot["completeness"];
   generation: number;
   mode: "global" | "local";

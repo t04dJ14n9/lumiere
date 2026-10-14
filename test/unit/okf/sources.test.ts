@@ -29,6 +29,21 @@ test("absent usage is distinct from zero and the window can be inherited", () =>
   assert.equal(rows[0]?.usageInherited, true);
 });
 
+test("a parent-relative resource stays clickable", () => {
+  const rows = sourceRows([{ resource: "../raw/paper.pdf" }], {});
+  assert.equal(rows[0]?.navigable, true);
+  assert.equal(rows[0]?.resource, "../raw/paper.pdf");
+});
+
+test("scope text and rejected schemes stay plain", () => {
+  const rows = sourceRows(
+    [{ resource: "Q3 board discussion" }, { resource: "javascript:alert(1)" }],
+    {},
+  );
+  assert.equal(rows[0]?.navigable, false);
+  assert.equal(rows[1]?.navigable, false);
+});
+
 test("malformed entries stay inspectable", () => {
   const rows = sourceRows(
     ["not-a-record", { resource: 3, extra: { n: 1 } }],

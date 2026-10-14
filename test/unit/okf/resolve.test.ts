@@ -20,6 +20,7 @@ test("a leading slash inside a bundle is bundle-root relative", () => {
     linktext: "/metrics/topic.md",
     sourcePath: "bundle/notes/source.md",
     bundleRoot: "bundle",
+    syntax: "markdown",
     find,
   });
   assert.deepEqual(hit, {
@@ -33,6 +34,7 @@ test("a leading slash does not fall through to a vault-root file of the same nam
     linktext: "/metrics/topic",
     sourcePath: "bundle/notes/source.md",
     bundleRoot: "bundle",
+    syntax: "markdown",
     find,
   });
   assert.equal(hit.action, "resolved");
@@ -46,6 +48,7 @@ test("an explicit missing OKF path does not basename-fallback", () => {
     linktext: "/metrics/missing.md",
     sourcePath: "bundle/notes/source.md",
     bundleRoot: "bundle",
+    syntax: "markdown",
     find,
   });
   assert.deepEqual(hit, { action: "unresolved" });
@@ -56,6 +59,7 @@ test("an ordinary relative link is source-file relative", () => {
     linktext: "sibling.md",
     sourcePath: "bundle/notes/source.md",
     bundleRoot: "bundle",
+    syntax: "markdown",
     find,
   });
   assert.deepEqual(hit, {
@@ -69,6 +73,7 @@ test("a relative link that leaves the vault is unresolved", () => {
     linktext: "../../outside.md",
     sourcePath: "bundle/notes/source.md",
     bundleRoot: "bundle",
+    syntax: "markdown",
     find,
   });
   assert.deepEqual(hit, { action: "unresolved" });
@@ -79,6 +84,29 @@ test("wikilinks keep vault compatibility outside the OKF rule", () => {
     linktext: "topic",
     sourcePath: "bundle/notes/source.md",
     bundleRoot: "bundle",
+    syntax: "wikilink",
+    find,
+  });
+  assert.deepEqual(hit, { action: "passthrough" });
+});
+
+test("markdown without an extension does not fall through to a vault-root file", () => {
+  const hit = resolveOkfLink({
+    linktext: "metrics/topic",
+    sourcePath: "bundle/notes/source.md",
+    bundleRoot: "bundle",
+    syntax: "markdown",
+    find,
+  });
+  assert.deepEqual(hit, { action: "unresolved" });
+});
+
+test("a wikilink keeps vault rules even when it names a markdown extension", () => {
+  const hit = resolveOkfLink({
+    linktext: "topic.md",
+    sourcePath: "bundle/notes/source.md",
+    bundleRoot: "bundle",
+    syntax: "wikilink",
     find,
   });
   assert.deepEqual(hit, { action: "passthrough" });
@@ -89,6 +117,7 @@ test("outside an OKF bundle the resolver does not change vault rules", () => {
     linktext: "/metrics/topic.md",
     sourcePath: "readme.md",
     bundleRoot: undefined,
+    syntax: "markdown",
     find,
   });
   assert.deepEqual(hit, { action: "passthrough" });

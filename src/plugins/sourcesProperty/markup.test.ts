@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderSources } from "./markup";
-import { planSourceOpen } from "./open";
+import { planSourceOpen, supportedFragmentOffset } from "./open";
 
 test("sources markup is stacked, read-only, and keeps every row", () => {
   const entries = Array.from({ length: 9 }, (_, index) => ({
@@ -47,6 +47,28 @@ test("navigation stays on the owning document and rejects unsafe targets", () =>
     }).reason,
     "okf is off",
   );
+  assert.deepEqual(
+    planSourceOpen({
+      resource: "../raw/paper.pdf",
+      text: "---\nsources:\n  - resource: ../raw/paper.pdf\n---\n",
+      documentPath: "bundle/concept/topic.md",
+      bundleRoot: "bundle",
+      live: true,
+    }),
+    { action: "workspace", path: "bundle/raw/paper.pdf" },
+  );
+  const headed = "# Details\n\nbody\n";
+  const note = planSourceOpen({
+    resource: "../notes/topic.md#Details",
+    text: "---\nsources:\n  - resource: ../notes/topic.md#Details\n---\n",
+    documentPath: "bundle/concept/topic.md",
+    bundleRoot: "bundle",
+    live: true,
+  });
+  assert.equal(note.path, "bundle/notes/topic.md");
+  assert.equal(note.fragment, "#Details");
+  assert.equal(supportedFragmentOffset(headed, note.fragment), 0);
+  assert.equal(supportedFragmentOffset(headed, "#page=3"), undefined);
   assert.equal(
     planSourceOpen({
       resource: "https://example.com/missing",

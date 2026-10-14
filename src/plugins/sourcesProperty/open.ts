@@ -1,10 +1,12 @@
 import { planResourceOpen, sourceRows } from "../../markdown/okf";
+import { noteFragment } from "../../markdown/metadata/fragments";
 import { frontmatter } from "../../markdown/properties";
 
 export interface SourceOpenPlan {
   action: "external" | "workspace" | "refuse";
   url?: string;
   path?: string;
+  fragment?: string;
   reason?: string;
 }
 
@@ -34,12 +36,34 @@ export function planSourceOpen(input: {
     return { action: "external", url: plan.url };
   }
   if (plan.action === "workspace") {
-    return { action: "workspace", path: plan.path };
+    return {
+      action: "workspace",
+      path: plan.path,
+      ...(plan.fragment ? { fragment: plan.fragment } : {}),
+    };
   }
   return {
     action: "refuse",
     reason: plan.action === "text" ? "not a link" : plan.reason,
   };
+}
+
+/**
+ * Heading and block fragments become an offset `vaults.open` already accepts.
+ * A page fragment has no viewer here; the file still opens without one.
+ */
+export function supportedFragmentOffset(
+  text: string,
+  fragment: string | undefined,
+): number | undefined {
+  if (!fragment || fragment === "#") {
+    return undefined;
+  }
+  const body = fragment.startsWith("#") ? fragment.slice(1) : fragment;
+  if (body.startsWith("page=")) {
+    return undefined;
+  }
+  return noteFragment(text, body)?.from;
 }
 
 function listed(text: string, resource: string): boolean {

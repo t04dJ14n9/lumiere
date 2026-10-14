@@ -1,4 +1,9 @@
-import { folderOf, isMarkdownPath, nameOf } from "../../shared/vault-path";
+import {
+  folderOf,
+  isMarkdownPath,
+  nameOf,
+  relativeVaultPath,
+} from "../../shared/vault-path";
 
 /** `index.md` and `log.md` at any depth are navigation files, not concepts. */
 export function isReservedNote(path: string): boolean {
@@ -32,8 +37,10 @@ export function owningBundle(
 }
 
 /**
- * Bundle-absolute link text (`/metrics/topic`) for a target in the same
- * bundle as the source. Callers keep vault formatting when this is undefined.
+ * Link text that round-trips through OKF resolution. The same bundle uses a
+ * bundle-absolute path (`/metrics/topic`). A target in another bundle uses an
+ * explicit source-relative path, so a later resolve does not treat the new
+ * text as a wikilink. Callers keep vault formatting when this is undefined.
  */
 export function okfLinkText(
   bundleRoot: string,
@@ -44,12 +51,21 @@ export function okfLinkText(
     return undefined;
   }
   if (!isInsideBundle(targetPath, bundleRoot)) {
-    return undefined;
+    return explicitRelative(sourcePath, targetPath);
   }
   const relative =
     bundleRoot === "" ? targetPath : targetPath.slice(bundleRoot.length + 1);
   const text = isMarkdownPath(relative) ? relative.slice(0, -3) : relative;
   return `/${text}`;
+}
+
+function explicitRelative(sourcePath: string, targetPath: string): string {
+  const relative = relativeVaultPath(folderOf(sourcePath), targetPath);
+  const text = isMarkdownPath(targetPath) ? relative.slice(0, -3) : relative;
+  if (text.startsWith("/") || text.startsWith("./") || text.startsWith("../")) {
+    return text;
+  }
+  return `./${text}`;
 }
 
 export function bundleFolder(path: string): string {

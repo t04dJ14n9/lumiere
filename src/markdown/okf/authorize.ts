@@ -1,8 +1,13 @@
-import { extensionOf, folderOf, joinVaultPath } from "../../shared/vault-path";
+import {
+  extensionOf,
+  folderOf,
+  joinVaultPath,
+  splitLinktext,
+} from "../../shared/vault-path";
 
 export type ResourcePlan =
   | { action: "external"; url: string }
-  | { action: "workspace"; path: string }
+  | { action: "workspace"; path: string; fragment?: string }
   | { action: "text" }
   | { action: "refuse"; reason: string };
 
@@ -29,11 +34,19 @@ export function planResourceOpen(input: {
   if (isScopeText(resource)) {
     return { action: "text" };
   }
-  const path = workspacePath(resource, input.documentPath, input.bundleRoot);
-  if (!path) {
+  const target = workspaceTarget(
+    resource,
+    input.documentPath,
+    input.bundleRoot,
+  );
+  if (!target) {
     return { action: "refuse", reason: "outside the vault" };
   }
-  return { action: "workspace", path };
+  return {
+    action: "workspace",
+    path: target.path,
+    ...(target.fragment ? { fragment: target.fragment } : {}),
+  };
 }
 
 function schemeOf(resource: string): string | undefined {
@@ -85,13 +98,17 @@ function isScopeText(resource: string): boolean {
   return extensionOf(resource) === "";
 }
 
-function workspacePath(
+function workspaceTarget(
   resource: string,
   documentPath: string,
   bundleRoot: string | undefined,
-): string | undefined {
-  if (resource.startsWith("/")) {
-    return joinVaultPath(bundleRoot ?? "", resource.slice(1));
+): { path: string; fragment: string } | undefined {
+  const { path: resourcePath, subpath } = splitLinktext(resource);
+  const path = resourcePath.startsWith("/")
+    ? joinVaultPath(bundleRoot ?? "", resourcePath.slice(1))
+    : joinVaultPath(folderOf(documentPath), resourcePath);
+  if (path === undefined) {
+    return undefined;
   }
-  return joinVaultPath(folderOf(documentPath), resource);
+  return { path, fragment: subpath };
 }

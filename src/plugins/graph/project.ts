@@ -1,5 +1,5 @@
-import { linkpathOf } from "../../markdown/metadata/linkpaths";
 import type { NoteMetadata } from "../../markdown/metadata";
+import { linkpathOf, linkSyntax } from "../../markdown/metadata/linkpaths";
 import {
   conceptClass,
   conceptDescription,
@@ -9,7 +9,12 @@ import {
   isInsideBundle,
   isReservedNote,
 } from "../../markdown/okf";
-import { extensionOf, folderOf, isMarkdownPath } from "../../shared/vault-path";
+import {
+  extensionOf,
+  folderOf,
+  isMarkdownPath,
+  type LinkSyntax,
+} from "../../shared/vault-path";
 
 export interface GraphNote {
   path: string;
@@ -60,7 +65,11 @@ interface EdgeHit {
 export function buildConceptGraph(input: {
   bundleRoot: string;
   notes: readonly GraphNote[];
-  resolve(linktext: string, sourcePath: string): ResolvedTarget;
+  resolve(
+    linktext: string,
+    sourcePath: string,
+    syntax: LinkSyntax,
+  ): ResolvedTarget;
 }): ConceptGraph {
   const nodes = conceptNodes(input.bundleRoot, input.notes);
   const byPath = new Map(nodes.map((node) => [node.path, node]));
@@ -74,16 +83,10 @@ export function buildConceptGraph(input: {
       continue;
     }
     for (const link of bodyLinks(note.metadata)) {
-      const linktext = linkpathOf(link);
-      if (!linktext) {
-        continue;
+      const hit = classifyHit(input, source.path, link, byPath);
+      if (hit) {
+        recordHit(source, hit, counts, neighbours);
       }
-      recordHit(
-        source,
-        classifyHit(input, source.path, linktext, byPath),
-        counts,
-        neighbours,
-      );
     }
   }
   for (const node of nodes) {
@@ -138,13 +141,21 @@ function bodyLinks(metadata: NoteMetadata) {
 function classifyHit(
   input: {
     bundleRoot: string;
-    resolve(linktext: string, sourcePath: string): ResolvedTarget;
+    resolve(
+      linktext: string,
+      sourcePath: string,
+      syntax: LinkSyntax,
+    ): ResolvedTarget;
   },
   sourcePath: string,
-  linktext: string,
+  link: ReturnType<typeof bodyLinks>[number],
   nodes: Map<string, ConceptNode>,
-): EdgeHit {
-  const target = input.resolve(linktext, sourcePath);
+): EdgeHit | undefined {
+  const linktext = linkpathOf(link);
+  if (!linktext) {
+    return undefined;
+  }
+  const target = input.resolve(linktext, sourcePath, linkSyntax(link));
   if (target.status === "missing" || !target.path) {
     return { kind: "unresolved" };
   }

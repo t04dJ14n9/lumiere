@@ -1,6 +1,11 @@
 import type { Disposer } from "../../kernel";
 import type { NoteMetadata } from "../../markdown/metadata";
-import { lookupKey, nameOf, folderOf } from "../../shared/vault-path";
+import {
+  lookupKey,
+  nameOf,
+  folderOf,
+  type LinkSyntax,
+} from "../../shared/vault-path";
 import type {
   Backlink,
   LinkPolicy,
@@ -11,7 +16,7 @@ import type {
 } from "./api";
 import { FileTable, vaultFile } from "./file-table";
 import type { FileEntry } from "./file-table";
-import { LinkMaps, outgoingLinkpaths } from "./link-maps";
+import { LinkMaps, outgoingLinks } from "./link-maps";
 import { linkText } from "./link-text";
 import type { LinkFormat } from "./link-text";
 import { resolveCandidates } from "./resolve";
@@ -32,8 +37,8 @@ export class MemoryVaultIndex implements VaultIndex {
   private options: IndexOptions;
   private readonly table = new FileTable();
   private readonly notes = new Map<string, NoteMetadata>();
-  private readonly links = new LinkMaps((linkpath, source) =>
-    this.resolveLink(linkpath, source),
+  private readonly links = new LinkMaps((linkpath, source, syntax) =>
+    this.resolveLink(linkpath, source, syntax),
   );
   private readonly changeListeners = new Set<(change: VaultChange) => void>();
   private readonly resolveListeners = new Set<() => void>();
@@ -59,15 +64,20 @@ export class MemoryVaultIndex implements VaultIndex {
     return this.notes.get(path);
   }
 
-  resolveLink(linktext: string, sourcePath: string): VaultFile | undefined {
-    return this.resolveLinkCandidates(linktext, sourcePath)[0];
+  resolveLink(
+    linktext: string,
+    sourcePath: string,
+    syntax: LinkSyntax = "wikilink",
+  ): VaultFile | undefined {
+    return this.resolveLinkCandidates(linktext, sourcePath, syntax)[0];
   }
 
   resolveLinkCandidates(
     linktext: string,
     sourcePath: string,
+    syntax: LinkSyntax = "wikilink",
   ): readonly VaultFile[] {
-    const decided = this.policyDecision(linktext, sourcePath);
+    const decided = this.policyDecision(linktext, sourcePath, syntax);
     if (decided?.status === "unresolved") {
       return [];
     }
@@ -76,6 +86,14 @@ export class MemoryVaultIndex implements VaultIndex {
       return file ? [file] : [];
     }
     return resolveCandidates(this.table, linktext, sourcePath, this.options);
+  }
+
+  classifyLink(
+    linktext: string,
+    sourcePath: string,
+    syntax: LinkSyntax = "wikilink",
+  ): LinkPolicyDecision | undefined {
+    return this.policyDecision(linktext, sourcePath, syntax);
   }
 
   linkText(target: VaultFile, sourcePath: string): string {
@@ -241,7 +259,7 @@ export class MemoryVaultIndex implements VaultIndex {
 
   private setNote(path: string, metadata: NoteMetadata): void {
     this.notes.set(path, metadata);
-    this.links.setLinks(path, outgoingLinkpaths(metadata));
+    this.links.setLinks(path, outgoingLinks(metadata));
     delete this.tagCounts;
   }
 
@@ -272,11 +290,13 @@ export class MemoryVaultIndex implements VaultIndex {
   private policyDecision(
     linktext: string,
     sourcePath: string,
+    syntax: LinkSyntax,
   ): LinkPolicyDecision | undefined {
     const query = {
       vaultRoot: this.root,
       linktext,
       sourcePath,
+      syntax,
       find: (path: string) => this.table.find(path)?.path,
     };
     for (const policy of this.policies) {
