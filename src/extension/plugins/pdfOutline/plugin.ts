@@ -8,7 +8,7 @@ export const pdfOutlinePlugin: PluginDefinition<PdfServices> = {
   manifest,
   activate(scope) {
     const panels = scope.get('panels');
-    scope.acquire(registerOutlineView(panels), 'treeView');
+    scope.acquire(registerOutlineView(panels, scope.get('log')), 'treeView');
     scope.acquire(panels.handle('toggleOutline', () => vscode.commands.executeCommand('vscodeEmbedPdf.toggleOutline')), 'message handler');
   },
 };

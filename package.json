@@ -151,6 +151,23 @@
         "category": "PDF"
       },
       {
+        "command": "vscodeEmbedPdf.expandOutline",
+        "title": "Expand All",
+        "category": "PDF",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "vscodeEmbedPdf.enableOutlineFollowCursor",
+        "title": "Follow Cursor",
+        "category": "PDF"
+      },
+      {
+        "command": "vscodeEmbedPdf.disableOutlineFollowCursor",
+        "title": "Follow Cursor",
+        "category": "PDF",
+        "icon": "$(check)"
+      },
+      {
         "command": "vscodeEmbedPdf.copyMcpSetup",
         "title": "Copy MCP Setup for Claude Code / Codex…",
         "category": "PDF"
@@ -321,6 +338,23 @@
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "vscodeEmbedPdf.expandOutline",
+          "when": "view == vscodeEmbedPdf.outline",
+          "group": "navigation@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.enableOutlineFollowCursor",
+          "when": "view == vscodeEmbedPdf.outline && !vscodeEmbedPdf.outlineFollowCursor",
+          "group": "1_outline@1"
+        },
+        {
+          "command": "vscodeEmbedPdf.disableOutlineFollowCursor",
+          "when": "view == vscodeEmbedPdf.outline && vscodeEmbedPdf.outlineFollowCursor",
+          "group": "1_outline@1"
+        }
+      ],
       "editor/title": [
         {
           "command": "vscodeEmbedPdf.historyBack",
@@ -489,6 +523,18 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "vscodeEmbedPdf.expandOutline",
+          "when": "false"
+        },
+        {
+          "command": "vscodeEmbedPdf.enableOutlineFollowCursor",
+          "when": "false"
+        },
+        {
+          "command": "vscodeEmbedPdf.disableOutlineFollowCursor",
+          "when": "false"
+        },
         {
           "command": "vscodeEmbedPdf.lookUp",
           "when": "false"
@@ -714,6 +760,11 @@
     "configuration": {
       "title": "Agent PDF Viewer",
       "properties": {
+        "vscodeEmbedPdf.outline.followCursor": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reveal and select the bookmark containing the current PDF page and reading position in PDF Outline, without moving focus. Toggle Follow Cursor in the outline's More Actions menu."
+        },
         "vscodeEmbedPdf.copyLinkForAgent.target": {
           "type": "string",
           "default": "auto",

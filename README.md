@@ -34,7 +34,10 @@ is the only agent installed (or you pick one), that chat opens with it.
 - **Select Region tool.** Draws a region even over text (a paragraph with its
   equation, a table with its caption); Escape puts the tool down.
 - **PDF Outline in the Explorer.** The PDF's bookmarks appear as a native
-  tree view; click an entry to open its page.
+  tree view; click an entry to open its page. The title bar offers **Expand All**
+  and **Collapse All**. Turn on **Follow Cursor** in the **…** menu to select
+  the bookmark for the current page and reading position without moving focus.
+  This choice is saved as `vscodeEmbedPdf.outline.followCursor` (off by default).
 - **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   button next to the selection, the right-click menu, the editor title
