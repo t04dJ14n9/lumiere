@@ -1226,3 +1226,29 @@ owner's vault for these checks.
    External changes still refresh the scoped snapshots. Service rejection and
    concurrent-writer behavior are unit tested, with no new browser/native suite
    or UI type-storage migration.
+
+## Current-line authorship (`gitBlame`)
+
+In a disposable Git repository, commit a Markdown note with several paragraphs.
+Change paragraph 2 in a second commit with a different author. Open the note in
+Live Preview with `markdownWorkshop.plugins.gitBlame.enabled` on.
+
+1. Put the main caret on an unchanged committed line. Expect quiet EOL text
+   `Author, relative time • subject`, with “You” for matching Git identity. A
+   root/boundary commit must still appear; long subjects end in an ellipsis.
+2. Insert an unsaved line above paragraph 1, then put the caret on its shifted
+   first line. Expect its original author/commit, rather than paragraph 2's
+   author. On the newly inserted line, expect no ghost.
+3. Edit without moving the caret, and move rapidly between lines. Expect the
+   ghost to clear immediately and refresh after settling; old replies must not
+   flash back. Same-line horizontal motion keeps the current ghost.
+4. Open the same note in two panels. Move their carets independently, then
+   commit/checkout in the disposable repository. Expect both to clear and
+   refresh, with each showing its own caret line.
+5. Toggle the setting off/on during rapid movement, and rename/reopen the note.
+   Expect no old reply after disable or in another document. Re-enabling works
+   immediately even after earlier repository changes.
+6. Leave change bars and inline changes on: gutter clicks, peek, Revert and
+   inline changes must still work. Turn the change bars off: authorship remains.
+   Source mode hides authorship. Empty, untracked and non-repository notes show
+   nothing. Check light, dark and high-contrast themes for readable muted text.

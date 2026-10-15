@@ -4255,3 +4255,15 @@ Identity responses have their own latest/lifetime guard and redraw current
 blame without another blame process. TDD: missing modules red; all 21 formatting,
 widget and epoch cases pass; scoped lint and webview compilation pass. No VSIX
 built or installed.
+
+## gitBlame Task 7 — Catalog, settings and coexistence, 2026-10-15
+
+Registered both halves, ordered EOL chrome after gitInline, generated the single
+`markdownWorkshop.plugins.gitBlame.enabled` switch (default true), and documented
+the plugin plus owner-run acceptance scenarios. TDD: absent catalog/order red,
+then all 46 focused blame cases pass, including actual webview registration
+with/without gutter and independent teardown. All 53 selected feature lifecycle,
+order and contribution cases also pass. Full `pnpm typecheck`, `pnpm lint` and
+`pnpm contributions` pass. On Node 20 the requested directory-form tsx command
+finds zero tests; the verified run uses explicit `*.test.ts` globs. No source
+suites ported and no VSIX built or installed. Full integration gate follows.
