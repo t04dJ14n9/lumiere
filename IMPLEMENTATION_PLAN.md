@@ -3648,3 +3648,11 @@ image inside an OKF bundle resolves source-relative. Unclaimed Markdown links
 outside OKF fall through to source-relative navigation instead of wikilink
 index lookup. Sources `#page=` / `#viewrect` fragments are forwarded through
 `vaults.open` to the native viewer.
+
+## ChatGPT Pro r3 remaining blockers — 2026-10-15
+
+Sources opens authorize the owning document (known source note) and contain
+the target via `authorizeTarget`, so a PDF such as `/raw/paper.pdf#page=3` no
+longer fails the note-source allowlist. Embed "Open image file" passes each
+resource element's `data-wiki` intent into `links/open`, so a Markdown image
+opens the Markdown-resolved sibling rather than the wikilink vault-root twin.

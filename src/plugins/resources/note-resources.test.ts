@@ -46,3 +46,34 @@ test("resource loading defaults to markdown syntax", async () => {
   await resources.load("image.png");
   assert.deepEqual(seen, ["markdown"]);
 });
+
+test("authorizeTarget contains PDFs without requiring a known source note", async () => {
+  const root = "vscode-remote://host/vault";
+  const resources = new NoteResources({
+    source: `${root}/notes/source.md`,
+    vault: {
+      root,
+      resolveLink() {
+        return undefined;
+      },
+    } as unknown as VaultIndex,
+    files: {
+      async stat() {
+        return { mtime: 1, symbolicLink: false };
+      },
+      async read() {
+        return new Uint8Array();
+      },
+    },
+    resourceUrl: (uri) => uri,
+  });
+  await assert.rejects(
+    resources.authorize(`${root}/raw/paper.pdf`),
+    /Unknown note source/,
+  );
+  await resources.authorizeTarget(`${root}/raw/paper.pdf`);
+  await assert.rejects(
+    resources.authorizeTarget("vscode-remote://host/outside/secret.pdf"),
+    /Resource escapes the vault/,
+  );
+});

@@ -7,7 +7,10 @@ export interface Resource {
   text?: string;
 }
 export interface Resources {
+  /** Known source-note allowlist (owning doc and nested Markdown notes). */
   authorize?(source: string): Promise<void>;
+  /** Vault containment for a target that is not itself a known source note. */
+  authorizeTarget?(target: string): Promise<void>;
   load(target: string, source?: string, syntax?: LinkSyntax): Promise<Resource>;
 }
 declare module "../../kernel/types" {

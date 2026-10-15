@@ -25,7 +25,7 @@ viewer. The webview does not fetch the resource.
 - `open.ts`: stale-row and navigation plan.
 - `protocol.ts`: open and copy RPC.
 - `webview.ts`: registers the `sources` renderer.
-- `host.ts`: authorizes the current document and opens the target.
+- `host.ts`: authorizes the owning document, contains the target, and opens it.
 - `markup.test.ts`: disclosure, refused URLs and a stale row.
 
 ## Services, events and settings

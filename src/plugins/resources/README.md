@@ -18,7 +18,7 @@ requests. Webview URLs include modification time for cache invalidation.
 - `protocol.ts`: load request/result schemas.
 - `host.ts`: service and RPC registration.
 - `diff-resources.ts`: independent diff-side resolution and Git revision selection.
-- `note-resources.ts`: known-source authorization, contained reads and kind selection.
+- `note-resources.ts`: known-source authorization, target containment, contained reads and kind selection.
 - `containment.ts`: URI/realpath and virtual-symlink checks.
 - `webview.ts`: validated resource RPC client.
 - `note-resources.test.ts`: kind precedence and fallback units.

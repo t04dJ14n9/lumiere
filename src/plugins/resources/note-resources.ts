@@ -23,6 +23,10 @@ export class NoteResources implements Resources {
     await this.containedStat(source);
   }
 
+  async authorizeTarget(target: string): Promise<void> {
+    await this.containedStat(target);
+  }
+
   async load(
     target: string,
     source = this.options.source,

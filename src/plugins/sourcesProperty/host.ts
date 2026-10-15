@@ -60,7 +60,12 @@ async function openResource(
   if (!file) {
     return false;
   }
-  await ctx.resources.authorize?.(file.uri);
+  // authorize = known source note; authorizeTarget = vault containment for PDFs/etc.
+  if (!ctx.resources.authorize || !ctx.resources.authorizeTarget) {
+    throw new Error("Resource authorization unavailable");
+  }
+  await ctx.resources.authorize(panel.document.uri);
+  await ctx.resources.authorizeTarget(file.uri);
   await openAuthorized(ctx, file.uri, plan.fragment);
   return true;
 }
