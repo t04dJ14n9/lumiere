@@ -128,19 +128,20 @@ export async function sendIdeContext(
   const delays = deps.codexRetryDelaysMs ?? [0, 10];
   let attached = false;
   for (let i = 0; i < delays.length; i++) {
-    if (i > 0) {
-      // Renew before retry across renewal boundary
-      await renew(fs, leasePathFor(finalPath), {
-        leaseUntil: new Date(now() + leaseMs).toISOString(),
-        owner,
-        sessionId,
-      });
-      if (delays[i]! > 0) {
-        await new Promise((r) => setTimeout(r, delays[i]));
-      }
+    if (i > 0 && delays[i]! > 0) {
+      await new Promise((r) => setTimeout(r, delays[i]));
     }
     try {
+      // Delay + open first on retry; renew immediately before add-file so the
+      // lease cannot expire during prep work after renewal.
       await deps.executeCommand(AGENT_COMMANDS.codexOpen);
+      if (i > 0) {
+        await renew(fs, leasePathFor(finalPath), {
+          leaseUntil: new Date(now() + leaseMs).toISOString(),
+          owner,
+          sessionId,
+        });
+      }
       await deps.executeCommand(AGENT_COMMANDS.codexAddFile, finalPath);
       attached = true;
       break;

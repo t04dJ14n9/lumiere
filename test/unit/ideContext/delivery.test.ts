@@ -183,6 +183,43 @@ test("MW Codex: renewLeaseAtomic called before retry across renewal boundary", a
   assert.ok(addAttempts >= 2);
 });
 
+test("MW Codex: on retry renew is after open prep and immediately before add-file", async () => {
+  const events: string[] = [];
+  let addAttempts = 0;
+  await sendIdeContext(mwPacket(), {
+    setting: "codex",
+    commands: new Set([AGENT_COMMANDS.codexOpen, AGENT_COMMANDS.codexAddFile]),
+    clipboardWrite: async () => {},
+    executeCommand: async (id) => {
+      if (id === AGENT_COMMANDS.codexOpen) {
+        events.push("open");
+      }
+      if (id === AGENT_COMMANDS.codexAddFile) {
+        events.push("addFile");
+        addAttempts++;
+        if (addAttempts === 1) throw new Error("not ready");
+      }
+    },
+    showQuickPick: async () => undefined,
+    tempFs: new MemoryTempFs(),
+    tempDir: "/tmp/agent-ide-context",
+    now: () => 1_000_000,
+    leaseMs: 1_000,
+    sessionId: "renew-order-test",
+    codexRetryDelaysMs: [0, 5],
+    renewLease: async (...args) => {
+      events.push("renew");
+      const { renewLeaseAtomic } = await import("../../../src/shared/ide-context");
+      return renewLeaseAtomic(...args);
+    },
+  });
+  // First attempt: open → addFile (fails). Retry: delay → open → renew → addFile.
+  assert.deepEqual(events, ["open", "addFile", "open", "renew", "addFile"]);
+  const renewIdx = events.indexOf("renew");
+  assert.equal(events[renewIdx - 1], "open", "renew after open prep on retry");
+  assert.equal(events[renewIdx + 1], "addFile", "renew immediately before add-file");
+});
+
 test("MW Codex: temp publish {skipped:true} → clipboard kept; no invalid add-file; soft-fail", async () => {
   const executed: string[] = [];
   let clipboard = "";
