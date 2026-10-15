@@ -304,23 +304,31 @@ function omitCaretAndSelectionBodies(packet: IdeContextPacket): boolean {
   return changed;
 }
 
-function underBudget(packet: IdeContextPacket, caps: IdeContextCaps): boolean {
-  // Field truncation must satisfy JSON cap; clipboard is enforced in render.
+function defaultJsonUnderBudget(packet: IdeContextPacket, caps: IdeContextCaps): boolean {
+  // Default: field truncation must satisfy JSON cap; clipboard may supply its own predicate.
   return jsonLen(packet) <= caps.maxJsonChars;
+}
+
+export interface TruncateOptions {
+  /** Replace the default JSON-length budget check (e.g. rendered Markdown length). */
+  underBudget?: (packet: IdeContextPacket) => boolean;
 }
 
 /**
  * Field-level truncate before serialize. Mutates a copy; appends budget warnings.
+ * Priority: selections → rects → diagnostics → open tabs → visible tabs → optionals.
  */
 export function truncatePacket(
   packet: IdeContextPacket,
   caps: IdeContextCaps = packet.caps,
+  opts?: TruncateOptions,
 ): IdeContextPacket {
   const out = clonePacket(packet);
   out.caps = { ...caps };
+  const isUnder = opts?.underBudget ?? ((p: IdeContextPacket) => defaultJsonUnderBudget(p, caps));
 
   const perStringChanged = applyPerStringCaps(out, caps);
-  let budgetFired = perStringChanged && !underBudget(out, caps);
+  let budgetFired = perStringChanged && !isUnder(out);
 
   const steps: Array<() => boolean> = [
     () => shrinkSelectionTexts(out, caps),
@@ -338,10 +346,10 @@ export function truncatePacket(
     },
   ];
 
-  // Always ensure per-string applied; then loop priority until under JSON budget
+  // Always ensure per-string applied; then loop priority until under budget
   // or no more shrinks possible. Selection text shrink may need multiple passes.
   let guard = 0;
-  while (!underBudget(out, caps) && guard < 200) {
+  while (!isUnder(out) && guard < 200) {
     guard++;
     let progressed = false;
     // Prefer repeatedly shrinking selection texts first (priority 2)

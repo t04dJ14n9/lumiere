@@ -47,19 +47,21 @@ export async function reclaimEligible(
     return;
   }
 
+  // Lease staging/renew leftovers (names like *.lease.staging-* / *.lease.renew-*
+  // do NOT endsWith(".lease"), so this pass must run independently of that gate).
+  for (const name of names) {
+    if (!name.includes(".lease.staging-") && !name.includes(".lease.renew-")) continue;
+    try {
+      const st = await fs.stat(join(dir, name));
+      if (now() - st.mtimeMs >= YOUNG_FILE_MS) await fs.unlink(join(dir, name));
+    } catch {
+      /* */
+    }
+  }
+
   // Orphan sidecars (no final payload)
   for (const name of names) {
     if (!name.endsWith(".lease")) continue;
-    if (name.includes(".staging-") || name.includes(".renew-")) {
-      // stale lease-staging — reclaim if old
-      try {
-        const st = await fs.stat(join(dir, name));
-        if (now() - st.mtimeMs >= YOUNG_FILE_MS) await fs.unlink(join(dir, name));
-      } catch {
-        /* */
-      }
-      continue;
-    }
     const payloadName = name.slice(0, -".lease".length);
     const payloadExists = names.includes(payloadName);
     if (!payloadExists) {

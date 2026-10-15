@@ -26,8 +26,9 @@ export interface PublishOpts {
   /**
    * Test hook: after successful final revalidation — treated as a suspension.
    * On return, precondition MUST be re-run from scratch (stale decision forbidden).
+   * Return `false` to disarm the hook for subsequent attempts (reacquire→publish path).
    */
-  onAfterFinalRevalidated?: () => void | Promise<void>;
+  onAfterFinalRevalidated?: () => void | boolean | Promise<void | boolean>;
   reclaimCaps?: ReclaimCaps;
 }
 
@@ -101,7 +102,7 @@ export async function commitFinalPayload(
     sessionId: string;
     now: () => number;
     leaseMs: number;
-    onAfterFinalRevalidated?: () => void | Promise<void>;
+    onAfterFinalRevalidated?: () => void | boolean | Promise<void | boolean>;
   },
 ): Promise<"ok" | "abort"> {
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -110,7 +111,10 @@ export async function commitFinalPayload(
 
     if (args.onAfterFinalRevalidated) {
       // Suspension after successful revalidation — decision becomes stale
-      await args.onAfterFinalRevalidated();
+      const keep = await args.onAfterFinalRevalidated();
+      if (keep === false) {
+        args.onAfterFinalRevalidated = undefined;
+      }
       // MUST re-run precondition from scratch (stale decision forbidden)
       continue;
     }

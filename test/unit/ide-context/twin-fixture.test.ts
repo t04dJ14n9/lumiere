@@ -18,7 +18,7 @@ const PINNED: Record<string, string> = {
   "src/shared/ide-context/index.ts":
     "15263a832e778057955a6cb0d4f9c5169309e20240349c281a22bf9102a1d079",
   "src/shared/ide-context/render.ts":
-    "64e4cea7fabc2da53e75d641b872b3647321f7c00e4870faf4191ad8b90d068d",
+    "e1ba07c36f2333f9b2834125624f453b62cd1374264c1cabcefe939ddb81a9c3",
   "src/shared/ide-context/resolve-target.ts":
     "985b8338f2e90a995a61ae7f4dd587cff2ac8806c651f40a97a62a73bdefcdc5",
   "src/shared/ide-context/scrub.ts":
@@ -26,11 +26,11 @@ const PINNED: Record<string, string> = {
   "src/shared/ide-context/temp-lease.ts":
     "62d979701d1b8f76e0aa0b8757508211201e34caf26f900c7e470dcccbe4d142",
   "src/shared/ide-context/temp-publish.ts":
-    "19e55a6d5932d5c50327ae7b2a6c7f9b97bf68ddc0eadc717a1945a25836d4a7",
+    "1d3d067b4a95c164624f8838abd8f8604c5680ed7c2e298e0f8781d4fe082743",
   "src/shared/ide-context/temp-reclaim.ts":
-    "c718d1a49e6e57d47edd52d531f31695f3bc85a78dabebfdf2f0406ac23b62d6",
+    "a8314509ad81c72ed647ed7a26b404764843be1d3dc4434e8239bd3241116555",
   "src/shared/ide-context/truncate.ts":
-    "1d3fbf4d5a295dff745aaddbb9ebc7b17a97c17c2a00c2b9224e3976b5dac880",
+    "c8f88846b3ae48405922518d5b0bfca1b64f4024d9fb2426e7aec85abc003e68",
   "src/shared/ide-context/types.ts":
     "e6186c6d570840ca534cb3720c0d3cb1784d43ae86f34110dafe87449d4e7a22",
 };

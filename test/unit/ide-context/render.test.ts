@@ -125,3 +125,55 @@ test("PDF dirty packet: renderMarkdown + serializeJson omit secrets incl. pdf.ur
   assertNoSecrets("PDF", md, raw, ["token=secret-token"]);
   assert.equal(JSON.parse(raw).pdf.uri.includes("secret-token"), false);
 });
+
+function makeLongUri(i: number, targetLen: number): string {
+  const prefix = `file:///workspace/project/module-${i}/`;
+  const pad = "a".repeat(Math.max(0, targetLen - prefix.length - 4));
+  return prefix + pad + ".md";
+}
+
+test("clipboard: JSON under 64K but Markdown over 32K uses structured truncation (no mid-URI hard slice)", () => {
+  // ChatGPT review A trigger: 20 visible + 20 open ~900-char URIs + 20×250-char diagnostics
+  const visible = Array.from({ length: 20 }, (_, i) => makeLongUri(i, 900));
+  const open = Array.from({ length: 20 }, (_, i) => makeLongUri(100 + i, 900));
+  const packet = {
+    ...baseMw(),
+    active: { uri: visible[0]!, languageId: "markdown" },
+    tabs: { visible, open, truncated: false },
+    diagnostics: {
+      uri: visible[0]!,
+      items: Array.from({ length: 20 }, (_, i) => ({
+        severity: "warning" as const,
+        message: "diag-message-" + "x".repeat(236),
+        startLine: i + 1,
+        startCharacter: 0,
+      })),
+      truncated: false,
+    },
+  };
+
+  const json = serializeJson(packet);
+  assert.ok(json.length <= DEFAULT_CAPS.maxJsonChars, `JSON ${json.length} should be under 64K`);
+  assert.ok(json.length > 32_000, `precondition: JSON ${json.length} should still be large`);
+
+  const md = renderMarkdown(packet);
+  assert.ok(md.length <= DEFAULT_CAPS.maxClipboardChars, `markdown ${md.length} exceeds maxClipboardChars`);
+  assert.ok(/budget|truncat/i.test(md), "expected explicit budget warning");
+
+  // Must not end mid-token mid-URI without warning (hard slice artifact)
+  const lastLine = md.trim().split("\n").pop() ?? "";
+  const endsMidUri =
+    lastLine.includes("file://") &&
+    !lastLine.endsWith(".md") &&
+    !/budget|truncat|…truncated|Warnings:/i.test(lastLine);
+  assert.equal(endsMidUri, false, `must not end mid-URI: ${JSON.stringify(lastLine.slice(-80))}`);
+
+  // Prefer dropping lower-priority sections (diagnostics) over hard-slicing tab URIs
+  const diagItemLines = md
+    .split("\n")
+    .filter((l) => /^- (error|warning|information|hint) /.test(l));
+  assert.ok(
+    diagItemLines.length < 20 || !md.includes("file:///workspace/project/module-100/"),
+    "structured truncate should drop diagnostics and/or lower-priority open tabs rather than hard-slice",
+  );
+});

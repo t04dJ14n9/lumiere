@@ -114,3 +114,47 @@ test("concurrent renewal vs sibling reclaim on payload older than 60s: never rec
   const lease = JSON.parse(fs.read("ide-context-race.json.lease"));
   assert.ok(Date.parse(lease.leaseUntil) > 100_000);
 });
+
+test("leftover *.lease.staging-* older than grace is unlinked", async () => {
+  const fs = new MemoryTempFs();
+  fs.nowMs = 1_000_000;
+  await fs.mkdir(DIR, { recursive: true });
+  const staging = `${DIR}/ide-context-x.json.lease.staging-abc123`;
+  await fs.writeFile(staging, Buffer.from("{}"));
+  fs.setMtime(staging, 1_000_000 - 60_000);
+  await reclaimEligible(fs, DIR, () => 1_000_000, caps);
+  assert.equal(fs.exists("ide-context-x.json.lease.staging-abc123"), false);
+});
+
+test("young *.lease.staging-* within grace is kept", async () => {
+  const fs = new MemoryTempFs();
+  fs.nowMs = 1_000_000;
+  await fs.mkdir(DIR, { recursive: true });
+  const staging = `${DIR}/ide-context-x.json.lease.staging-young`;
+  await fs.writeFile(staging, Buffer.from("{}"));
+  fs.setMtime(staging, 1_000_000 - 10_000);
+  await reclaimEligible(fs, DIR, () => 1_000_000, caps);
+  assert.equal(fs.exists("ide-context-x.json.lease.staging-young"), true);
+});
+
+test("leftover *.lease.renew-* older than grace is unlinked", async () => {
+  const fs = new MemoryTempFs();
+  fs.nowMs = 1_000_000;
+  await fs.mkdir(DIR, { recursive: true });
+  const renew = `${DIR}/ide-context-x.json.lease.renew-sess-xyz`;
+  await fs.writeFile(renew, Buffer.from("{}"));
+  fs.setMtime(renew, 1_000_000 - 60_000);
+  await reclaimEligible(fs, DIR, () => 1_000_000, caps);
+  assert.equal(fs.exists("ide-context-x.json.lease.renew-sess-xyz"), false);
+});
+
+test("young *.lease.renew-* within grace is kept", async () => {
+  const fs = new MemoryTempFs();
+  fs.nowMs = 1_000_000;
+  await fs.mkdir(DIR, { recursive: true });
+  const renew = `${DIR}/ide-context-x.json.lease.renew-young`;
+  await fs.writeFile(renew, Buffer.from("{}"));
+  fs.setMtime(renew, 1_000_000 - 30_000);
+  await reclaimEligible(fs, DIR, () => 1_000_000, caps);
+  assert.equal(fs.exists("ide-context-x.json.lease.renew-young"), true);
+});

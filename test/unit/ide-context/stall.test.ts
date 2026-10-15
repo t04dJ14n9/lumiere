@@ -7,6 +7,7 @@ import { reclaimEligible } from "../../../src/shared/ide-context/temp-reclaim";
 test("Phase3 stall: pause AFTER successful final revalidation past leaseUntil; sibling reclaims; resume must NOT publish unleased final", async () => {
   const fs = new MemoryTempFs();
   let now = Date.parse("2026-10-16T00:00:00.000Z");
+  fs.nowMs = now; // keep mtimes aligned with reclaim clock so .partial is not swept as ancient
   const basename = "ide-context-stall.json";
   let paused: (() => void) | undefined;
   const gate = new Promise<void>((r) => {
@@ -23,6 +24,8 @@ test("Phase3 stall: pause AFTER successful final revalidation past leaseUntil; s
     leaseMs: 5_000,
     onAfterFinalRevalidated: async () => {
       await gate;
+      // Disarm after first suspension so the next successful revalidation can publish.
+      return false;
     },
   });
 
@@ -36,17 +39,15 @@ test("Phase3 stall: pause AFTER successful final revalidation past leaseUntil; s
     maxBytes: 2 * 1024 * 1024,
   });
   assert.equal(fs.exists(basename), false, "final must not exist during stall");
-  // Resume publisher
+  assert.equal(fs.exists(basename + ".lease"), false, "expired lease reclaimed during stall");
+  // Resume publisher — must reacquire lease then publish (never unleased final)
   paused!();
   const result = await publish;
-  // Either soft-fail, or republished WITH a valid lease — never unleased final
-  if (fs.exists(basename)) {
-    assert.equal(fs.exists(basename + ".lease"), true);
-    const lease = JSON.parse(fs.read(basename + ".lease"));
-    assert.ok(Date.parse(lease.leaseUntil) > now);
-  } else {
-    assert.equal("skipped" in result && result.skipped, true);
-  }
+  assert.ok("finalPath" in result, "expected reacquire→publish after disarming stall hook");
+  assert.equal(fs.exists(basename), true);
+  assert.equal(fs.exists(basename + ".lease"), true);
+  const lease = JSON.parse(fs.read(basename + ".lease"));
+  assert.ok(Date.parse(lease.leaseUntil) > now);
 });
 
 test("commitFinalPayload production path has no await between revalidate success and rename", async () => {

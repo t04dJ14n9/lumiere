@@ -96,24 +96,38 @@ function renderBody(packet: IdeContextPacket): string {
   return lines.join("\n");
 }
 
+const CLIPBOARD_BUDGET_WARNING =
+  "packet budget: truncated/omitted fields to satisfy maxJsonChars|maxClipboardChars";
+
 export function renderMarkdown(packet: IdeContextPacket): string {
+  // NORMATIVE: scrubPacket → truncatePacket → encode
+  // Clipboard cap is enforced by structured-field truncation driven by rendered Markdown length.
   let prepared = prepare(packet);
-  let md = renderBody(prepared);
   const max = prepared.caps.maxClipboardChars;
-  // If still over clipboard budget after field truncate, re-truncate more aggressively
-  let guard = 0;
-  while (md.length > max && guard < 50) {
-    guard++;
-    prepared = truncatePacket(prepared, {
-      ...prepared.caps,
-      maxSelectedChars: Math.max(0, Math.floor(prepared.caps.maxSelectedChars / 2)),
-      maxPdfSelectedChars: Math.max(0, Math.floor(prepared.caps.maxPdfSelectedChars / 2)),
-      maxJsonChars: Math.min(prepared.caps.maxJsonChars, Math.floor(max * 2)),
-    });
-    md = renderBody(prepared);
-  }
+
+  prepared = truncatePacket(prepared, prepared.caps, {
+    underBudget: (p) => renderBody(p).length <= max,
+  });
+
+  let md = renderBody(prepared);
   if (md.length > max) {
-    md = md.slice(0, max);
+    // Impossible-minimum fallback only: keep an explicit budget warning; never silent mid-URI cut.
+    if (!prepared.warnings.some((w) => /budget|truncat/i.test(w))) {
+      const msg = CLIPBOARD_BUDGET_WARNING.slice(0, prepared.caps.maxWarningChars);
+      prepared = {
+        ...prepared,
+        warnings: [...prepared.warnings, msg].slice(-prepared.caps.maxWarnings),
+      };
+      md = renderBody(prepared);
+    }
+    if (md.length > max) {
+      const notice =
+        "\n\nWarnings:\n- " +
+        CLIPBOARD_BUDGET_WARNING.slice(0, prepared.caps.maxWarningChars) +
+        "\n";
+      const bodyBudget = Math.max(0, max - notice.length);
+      md = md.slice(0, bodyBudget) + notice;
+    }
   }
   return md;
 }
