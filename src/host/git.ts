@@ -1,4 +1,14 @@
 import * as vscode from "vscode";
+import { relative, isAbsolute, sep } from "node:path";
+import { MAX_DIFF_CHARS } from "../shared/diff";
+import type {
+  GitBlameSnapshot,
+  GitBlameLineResult,
+  GitIdentity,
+} from "../shared/git-blame";
+import { runBlameLine, createSpawnBlameRunner } from "./git-blame";
+import type { GitBlameRunner } from "./git-blame";
+import { RepositoryWatch } from "./git-watch";
 import { exceedsDiffLimits } from "../shared/diff";
 import type { GitAccess, GitBaselineResult, GitRef } from "../shared/git";
 
@@ -66,27 +76,59 @@ export function createGitAccess(): GitAccess {
   return new NativeGitAccess();
 }
 
-class NativeGitAccess implements GitAccess {
+export class NativeGitAccess implements GitAccess {
+  private watchUsers = 0;
+  private readonly rootsByUri = new Map<string, string>();
+  private currentApi: GitApi | undefined;
+  private readonly watch = new RepositoryWatch();
+  private enablement: vscode.Disposable | undefined;
+  constructor(
+    private readonly runGit: GitBlameRunner = createSpawnBlameRunner(),
+  ) {}
   private api: Promise<GitApi | undefined> | undefined;
   private readonly cache = new Map<string, string>();
   private cached = 0;
+  private readonly identities = new Map<
+    string,
+    { generation: number; pending: Promise<GitIdentity> }
+  >();
 
   /** The API, retried on the next use while git is absent, disabled or failing. */
   private async load(): Promise<GitApi | undefined> {
     const pending = (this.api ??= gitApi().catch(() => undefined));
     const api = await pending;
-    if (!api && this.api === pending) {
+    if (this.api !== pending) {
+      return this.load();
+    }
+    if (!api) {
       this.api = undefined;
     }
+    this.currentApi = api;
+    if (this.watchUsers === 0) {
+      return api;
+    }
+    if (api) {
+      this.watch.attach(api);
+    }
+    this.enablement ??= gitExtension()?.onDidChangeEnablement?.(() => {
+      this.api = undefined;
+      this.currentApi = undefined;
+      this.watch.detach();
+      this.watch.invalidate();
+      void this.load().catch(() => undefined);
+    });
     return api;
   }
 
   private async repositoryFor(uri: string): Promise<GitRepository | undefined> {
     const git = await this.load();
     const target = vscode.Uri.parse(uri);
-    return target.scheme === "file"
-      ? (git?.getRepository(target) ?? undefined)
-      : undefined;
+    const repository =
+      target.scheme === "file" ? git?.getRepository(target) : undefined;
+    if (repository) {
+      this.rootsByUri.set(uri, repository.rootUri.toString());
+    }
+    return repository ?? undefined;
   }
 
   async baseline(uri: string, ref: GitRef): Promise<GitBaselineResult> {
@@ -147,35 +189,140 @@ class NativeGitAccess implements GitAccess {
     return text;
   }
 
-  /**
-   * Repository changes, opened and closed repositories, and git being enabled
-   * or disabled: each tells the editors to reload their baseline.
-   */
+  /** Initial discovery notifies only this subscriber; repository events fan out once. */
   onDidChange(listener: () => void): () => void {
-    const watch = new RepositoryWatch(listener);
-    let enablement: vscode.Disposable | undefined;
+    const release = this.retainWatch();
+    const unsubscribe = this.watch.subscribe(listener);
     let live = true;
-    const attach = (): void =>
-      void this.load().then((git) => {
-        if (!live) {
-          return;
+    void this.load()
+      .then(() => {
+        if (live) {
+          listener();
         }
-        if (git) {
-          watch.attach(git);
-        }
-        // Enabling or disabling git later drops the API and attaches again.
-        enablement ??= gitExtension()?.onDidChangeEnablement?.(() => {
-          this.api = undefined;
-          attach();
-        });
-        // Repositories found before this listener was attached.
-        listener();
-      });
-    attach();
+      })
+      .catch(() => undefined);
     return () => {
       live = false;
-      enablement?.dispose();
-      watch.dispose();
+      unsubscribe();
+      release();
+    };
+  }
+
+  private retainWatch(): () => void {
+    if (this.watchUsers === 0) {
+      this.watch.invalidate();
+    }
+    this.watchUsers++;
+    return () => {
+      this.watchUsers--;
+      if (this.watchUsers === 0) {
+        this.watch.detach();
+        this.enablement?.dispose();
+        this.enablement = undefined;
+      }
+    };
+  }
+
+  repoGeneration(uri: string): number {
+    const target = vscode.Uri.parse(uri);
+    const repository =
+      target.scheme === "file"
+        ? this.currentApi?.getRepository(target)
+        : undefined;
+    const root = repository?.rootUri.toString() ?? this.rootsByUri.get(uri);
+    return root ? this.watch.repoGeneration(root) : 0;
+  }
+
+  async blameLine(
+    uri: string,
+    line: number,
+    snapshot: GitBlameSnapshot,
+  ): Promise<GitBlameLineResult> {
+    const release = this.retainWatch();
+    try {
+      return await this.blameSnapshot(uri, line, snapshot);
+    } finally {
+      release();
+    }
+  }
+
+  private async blameSnapshot(
+    uri: string,
+    line: number,
+    snapshot: GitBlameSnapshot,
+  ): Promise<GitBlameLineResult> {
+    const repository = await this.repositoryFor(uri);
+    const repoGeneration = this.repoGeneration(uri);
+    if (!repository || snapshot.contents.length > MAX_DIFF_CHARS) {
+      return { status: "unavailable", repoGeneration };
+    }
+    const relativePath = relative(
+      repository.rootUri.fsPath,
+      vscode.Uri.parse(uri).fsPath,
+    );
+    if (
+      isAbsolute(relativePath) ||
+      relativePath === ".." ||
+      relativePath.startsWith(`..${sep}`)
+    ) {
+      return { status: "unavailable", repoGeneration };
+    }
+    const root = repository.rootUri.toString();
+    return runBlameLine({
+      cwd: repository.rootUri.fsPath,
+      relativePath,
+      line,
+      snapshot,
+      // RPC snapshots may include edits that have not reached the TextDocument yet.
+      // Without proof of disk identity, always send the complete editor snapshot.
+      knownClean: false,
+      generationAtStart: repoGeneration,
+      getGeneration: () => this.watch.repoGeneration(root),
+      runGit: this.runGit,
+      timeoutMs: 5000,
+    });
+  }
+
+  async identity(uri: string): Promise<GitIdentity | undefined> {
+    const repository = await this.repositoryFor(uri);
+    if (!repository) {
+      return undefined;
+    }
+    const root = repository.rootUri.toString();
+    const generation = this.watch.repoGeneration(root);
+    const cached = this.identities.get(root);
+    if (cached?.generation === generation) {
+      return cached.pending;
+    }
+    const pending = this.readIdentity(repository.rootUri.fsPath);
+    if (this.identities.size >= 32) {
+      this.identities.clear();
+    }
+    this.identities.set(root, { generation, pending });
+    return pending;
+  }
+
+  private async readIdentity(cwd: string): Promise<GitIdentity> {
+    const read = async (key: string): Promise<string> => {
+      try {
+        const result = await this.runGit({
+          args: ["config", "--get", key],
+          cwd,
+          timeoutMs: 5000,
+          maxBuffer: 2000,
+        });
+        return result.stdout.trim();
+      } catch {
+        return "";
+      }
+    };
+    const [userName, userEmail] = await Promise.all([
+      read("user.name"),
+      read("user.email"),
+    ]);
+    return {
+      ...(userName ? { userName } : {}),
+      ...(userEmail ? { userEmail } : {}),
     };
   }
 
@@ -200,42 +347,5 @@ class NativeGitAccess implements GitAccess {
         query: JSON.stringify({ path: target.fsPath, ref }),
       })
       .toString();
-  }
-}
-
-/** Subscriptions to every repository of one or more API instances. */
-class RepositoryWatch {
-  private readonly subscriptions: vscode.Disposable[] = [];
-  private readonly repositories = new Set<GitRepository>();
-  private readonly apis = new Set<GitApi>();
-  private live = true;
-  constructor(private readonly listener: () => void) {}
-  attach(git: GitApi): void {
-    if (!this.live || this.apis.has(git)) {
-      return;
-    }
-    this.apis.add(git);
-    git.repositories.forEach((repository) => this.watch(repository));
-    this.subscriptions.push(
-      git.onDidOpenRepository((repository) => {
-        this.watch(repository);
-        this.listener();
-      }),
-      git.onDidCloseRepository(() => this.listener()),
-    );
-  }
-  private watch(repository: GitRepository): void {
-    if (!this.repositories.has(repository)) {
-      this.repositories.add(repository);
-      this.subscriptions.push(
-        repository.state.onDidChange(() => this.listener()),
-      );
-    }
-  }
-  dispose(): void {
-    this.live = false;
-    this.subscriptions
-      .splice(0)
-      .forEach((subscription) => subscription.dispose());
   }
 }

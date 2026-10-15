@@ -4207,3 +4207,16 @@ contract/gutter cases pass. As approved in Task 2, NativeGitAccess implements
 these methods in Task 3. Task 1 `pnpm check` passed 1,578 cases; the browser run
 received SIGTERM after 222 passing cases with no assertion failure. The full
 browser gate will be rerun after integration. No VSIX built or installed.
+
+## gitBlame Task 3 — Native snapshot blame, 2026-10-15
+
+Added a real stdin-capable Git runner with timeout, bounded stdout/stderr and
+pipe-error handling. Dirty snapshots always use `--contents -` against HEAD;
+clean callers can use the path-only route. NativeGitAccess rejects non-file or
+outside-repository paths, soft-hides over-cap/failing blame, and caches identity
+by repository generation. RepositoryWatch is the production binding shared by
+all observers: one advance before fan-out, including open/close and enablement.
+Watch subscriptions are released after the last observer/request exits.
+TDD: module-missing red, then 16 native/parser cases green; the production
+watcher helper proves mid-request stale and identical generations for two
+subscribers. Full typecheck and scoped lint pass. No VSIX built or installed.
