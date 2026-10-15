@@ -23,6 +23,7 @@ import {
 import { config } from "./manifest";
 import {
   outerBlock,
+  canPeek,
   peekContext,
   peekExtension,
   peekedHunk,
@@ -168,7 +169,9 @@ class GitDiffModel implements GitDiff {
         selection: EditorSelection.cursor(next.from),
         effects: [
           EditorView.scrollIntoView(next.from, { y: "center" }),
-          ...(peek || open ? [setPeek.of(next.from)] : []),
+          ...(peek || open
+            ? [setPeek.of(canPeek(next) ? next.from : null)]
+            : []),
         ],
       }),
     );
@@ -179,8 +182,16 @@ class GitDiffModel implements GitDiff {
   toggle = (target: EditorView, from: number, to: number): void => {
     const hunk = hunkAt(target.state.field(hunkField).hunks, from, to);
     const open = peekedHunk(target.state);
+    // Added hunks have no old side — the Working Tree pane would only duplicate
+    // the note. Keep the gutter bar; never open (or keep) a peek for them.
+    if (!hunk || !canPeek(hunk)) {
+      if (open) {
+        target.dispatch({ effects: setPeek.of(null) });
+      }
+      return;
+    }
     target.dispatch({
-      effects: setPeek.of(!hunk || open === hunk ? null : hunk.from),
+      effects: setPeek.of(open === hunk ? null : hunk.from),
     });
   };
 

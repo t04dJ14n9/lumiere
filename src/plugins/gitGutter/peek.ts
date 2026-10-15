@@ -29,13 +29,19 @@ export const peekState = StateField.define<number | null>({
   },
 });
 
-/** The hunk the peek shows, if it still exists. */
+/** True when a hunk has an old side worth peeking (not pure additions). */
+export function canPeek(hunk: DocHunk): boolean {
+  return hunk.kind !== "added";
+}
+
+/** The hunk the peek shows, if it still exists and is peekable. */
 export function peekedHunk(state: EditorState): DocHunk | undefined {
   const at = state.field(peekState, false);
   if (at === null || at === undefined) {
     return undefined;
   }
-  return hunkAt(state.field(hunkField).hunks, at, at);
+  const hunk = hunkAt(state.field(hunkField).hunks, at, at);
+  return hunk && canPeek(hunk) ? hunk : undefined;
 }
 
 export interface PeekActions {
