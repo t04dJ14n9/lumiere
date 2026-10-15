@@ -1409,7 +1409,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workbench note's headings."
+          "description": "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings."
         },
         "markdownWorkshop.plugins.pagePreview.enabled": {
           "type": "boolean",

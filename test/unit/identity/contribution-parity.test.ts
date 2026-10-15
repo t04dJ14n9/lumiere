@@ -21,6 +21,7 @@ import { graphHost } from "../../../src/plugins/graph/host";
 import { livePreviewHost } from "../../../src/plugins/livePreview/host";
 import { marpHost } from "../../../src/plugins/marp/host";
 import { registerOutlineActions } from "../../../src/plugins/outline/actions";
+import { registerSymbolPicker } from "../../../src/plugins/outline/symbol-picker";
 import { OPEN_COMMAND as outlineOpenCommand } from "../../../src/plugins/outline/commands";
 import { outlineHost } from "../../../src/plugins/outline/host";
 import { OPEN_COMMAND as backlinksOpenCommand } from "../../../src/plugins/backlinks/tree";
@@ -234,7 +235,7 @@ function capturingWorkbench(
 function directRegistrations(selections: Selections): Plugin {
   return {
     name: "direct-command-registrations",
-    inject: { required: ["workshop", "editors"] },
+    inject: { required: ["workshop", "editors", "vaults"] },
     apply(ctx) {
       registerMarkdownAssociation(ctx);
       registerJumpHistory(ctx, ctx.editors);
@@ -242,6 +243,7 @@ function directRegistrations(selections: Selections): Plugin {
       registerPluginManagement(ctx, {} as never, {} as never);
       registerOpenReference(ctx, {} as never, {} as never);
       registerOutlineActions(ctx, {} as never);
+      registerSymbolPicker(ctx, ctx.workshop.views!);
     },
   };
 }
