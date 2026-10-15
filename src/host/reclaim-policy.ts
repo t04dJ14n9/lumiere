@@ -1,4 +1,4 @@
-/** What a tab shows, as far as reclaiming the text editor is concerned. */
+/** `other` is Cursor's Markdown editor, which exposes no public tab input. */
 export type TabKind = "workbench" | "text" | "other" | "none";
 
 export interface ReclaimSetting {
@@ -22,11 +22,10 @@ export interface TabSwap {
 }
 
 /**
- * Whether a Markdown note that just showed up in the plain text editor
- * should go back to Markdown Workbench. Cursor's Preview | Markdown switch
- * opens notes as text, and remembers that per file, so later opens arrive
- * as text too. Only notes the workspace routes to this editor are taken
- * back; diffs, Git and untitled files are never plain `file:` text tabs.
+ * Whether an associated note arriving in the text or Cursor Markdown editor
+ * should go back to Markdown Workbench. Cursor remembers that choice per
+ * file, so later opens can arrive in either editor. Diffs, Git and untitled
+ * files are excluded by the tab classifier and note predicate.
  * Notes this extension opened as text stay, as does a note reclaimed a
  * moment ago, so asking for the text editor a second time keeps it.
  */
@@ -41,8 +40,8 @@ export function shouldReclaim(
 ): boolean {
   return (
     context.enabled &&
-    swap.after === "text" &&
-    swap.before !== "text" &&
+    (swap.after === "text" || swap.after === "other") &&
+    swap.before !== swap.after &&
     context.isNote(swap.uri) &&
     context.associated(swap.uri) &&
     !context.bypassed(swap.uri)

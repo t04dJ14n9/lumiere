@@ -45,6 +45,37 @@ test("a note Cursor remembers as text is reclaimed when it opens", () => {
   assert.equal(shouldReclaim(swap("text", "text"), context), false);
 });
 
+test("associated notes in Cursor's input-less Markdown editor are reclaimed", () => {
+  for (const before of ["none", "text", "workbench"] as const) {
+    assert.equal(shouldReclaim(swap(before, "other"), context), true);
+  }
+  assert.equal(shouldReclaim(swap("other", "other"), context), false);
+  assert.equal(
+    shouldReclaim(swap("none", "other"), {
+      ...context,
+      associated: () => false,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldReclaim(swap("none", "other"), { ...context, enabled: false }),
+    false,
+  );
+  assert.equal(
+    shouldReclaim(swap("none", "other"), {
+      ...context,
+      bypassed: () => true,
+    }),
+    false,
+  );
+});
+
+test("the handoff from Cursor Markdown into Workbench is left in place", () => {
+  assert.equal(shouldReclaim(swap("other", "workbench"), context), false);
+  assert.equal(shouldReclaim(swap("text", "workbench"), context), false);
+  assert.equal(shouldReclaim(swap("workbench", "workbench"), context), false);
+});
+
 test("only notes the workspace routes to Markdown Workbench are reclaimed", () => {
   const associations = { "*.md": "markdownWorkbench.editor" };
   const viewType = "markdownWorkbench.editor";
@@ -63,9 +94,15 @@ test("only notes the workspace routes to Markdown Workbench are reclaimed", () =
   );
 });
 
-test("diffs, previews and other files are left alone", () => {
+test("diffs and other files are left alone", () => {
   assert.equal(shouldReclaim(swap("workbench", "none"), context), false);
-  assert.equal(shouldReclaim(swap("workbench", "other"), context), false);
+  for (const uri of [
+    "untitled:Note.md",
+    "git:/vault/Note.md",
+    "file:///a.ts",
+  ]) {
+    assert.equal(shouldReclaim(swap("none", "other", uri), context), false);
+  }
   assert.equal(
     shouldReclaim(swap("workbench", "text", "untitled:Untitled-1"), context),
     false,

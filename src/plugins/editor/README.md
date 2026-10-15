@@ -125,9 +125,17 @@ like an Obsidian vault, where notes always open in the editor.
 
 `editor.reclaimTextEditor` (`auto`/`on`/`off`, auto meaning on in Cursor
 only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
-here that shows up in the plain text editor, as Cursor's **Preview |
-Markdown** switch does, is reopened in this editor and the text tab closed.
+here that shows up in the plain text or Cursor Markdown editor, as Cursor's
+**Preview | Markdown** switch does, is warmed and reopened in this editor.
+Clean text tabs are closed; dirty text tabs keep their native document and undo.
 **Open as Text** and a just-reclaimed note keep the text editor for 10 s.
+
+`editor.warmTextDocument` (`auto`/`on`/`off`, auto meaning on in Cursor) opens
+Markdown `TextDocument`s early: at activation for open notes, on document open,
+on file create/change and for git-dirty notes. Every extension-controlled
+`openWith` into this editor awaits another warm, even when Cursor's built-in
+editor already holds the dirty document. The workaround targets Cursor's
+custom-editor handoff assertion before `resolveCustomTextEditor` runs.
 
 ## Limits and differences from Obsidian
 
