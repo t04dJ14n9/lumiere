@@ -1,7 +1,7 @@
-# Markdown Workbench API, version 1
+# Markdown Workshop API, version 1
 
 Other VS Code extensions use this API to inspect notes open in Markdown
-Workbench, to read the vault index, and to add **external plugins**: host-side
+Workshop, to read the vault index, and to add **external plugins**: host-side
 plugins that put badges (markers) on note text, claim links, render fenced
 code blocks, add actions and register commands. It plays the role of
 Obsidian's plugin API, with one difference: no outside code runs inside the
@@ -64,14 +64,14 @@ Readiness and pending edits are awaited before line ranges are resolved.
 
 ## Editors and documents
 
-Each Markdown Workbench editor panel has an `EditorId`. One note open twice
+Each Markdown Workshop editor panel has an `EditorId`. One note open twice
 has two editors with two IDs and the same `documentId`.
 
 | Member | Behaviour |
 | --- | --- |
 | `getEditors()` | Snapshots of every open editor: `editorId`, `documentId`, `uri`, `version`, `isDirty`, `isUntitled`, `viewColumn`, `isActive`. |
 | `getActiveEditor()` | The editor in the active tab, or `undefined` (also when the active tab is another editor). |
-| `open(uri, options?)` | Opens the note in Markdown Workbench (`viewColumn`, `preserveFocus`) and resolves with its snapshot once the editor is ready. `reveal` scrolls to a `SourceTarget` and selects it. |
+| `open(uri, options?)` | Opens the note in Markdown Workshop (`viewColumn`, `preserveFocus`) and resolves with its snapshot once the editor is ready. `reveal` scrolls to a `SourceTarget` and selects it. |
 | `reveal(editorId, target, { focus? })` | Scrolls an open editor to the target and selects it. `InvalidArgument` for a target outside the note. |
 
 ## Selections and agent references
@@ -106,10 +106,10 @@ The vault is the folder holding a `.obsidian` marker (setting
 | Member | Behaviour |
 | --- | --- |
 | `getPluginCatalog()` | Every built-in plugin (`core` or `feature`) and every registered external plugin, with title, description, default and surfaces. |
-| `getPlugins(editorId)` | Each plugin's state in one editor: `active`, `loading`, `pending` (with `waitingFor`), `failed` (with `error`) or `disabled`. This is what **Markdown Workbench: Show Plugin Status** lists. |
+| `getPlugins(editorId)` | Each plugin's state in one editor: `active`, `loading`, `pending` (with `waitingFor`), `failed` (with `error`) or `disabled`. This is what **Markdown Workshop: Show Plugin Status** lists. |
 | `setPluginEnabled(id, enabled, scope)` | Writes `markdownWorkbench.plugins.<id>.enabled` (features) or an entry of `markdownWorkbench.plugins.external` (external plugins) at an explicit scope: `{ target: "global" }`, `{ target: "workspace" }` or `{ target: "workspaceFolder", resource }`. Resolves once open editors have applied it, with each editor's new states. Core plugins cannot be turned off (`InvalidArgument`). |
 | `resetPluginOverride(id, scope)` | Removes that scope's value, so the next scope or the default applies. |
-| `openPluginSettings(resource?)` | Opens Settings at the plugin switches, as **Markdown Workbench: Manage Plugins** does. |
+| `openPluginSettings(resource?)` | Opens Settings at the plugin switches, as **Markdown Workshop: Manage Plugins** does. |
 | `plugin(definition)` | Runs an external plugin; see below. |
 
 ## Events
@@ -121,7 +121,7 @@ All are VS Code `Event`s; listener errors are logged, not rethrown.
 | `onDidOpenEditor` | `EditorSnapshot` |
 | `onDidCloseEditor` | `{ editorId }` |
 | `onDidChangeActiveEditor` | `EditorSnapshot \| undefined` |
-| `onDidChangeDocument` | `DocumentState` of a note open in Markdown Workbench, after each change and save |
+| `onDidChangeDocument` | `DocumentState` of a note open in Markdown Workshop, after each change and save |
 | `onDidChangeSelection` | `{ editorId, hasSelection }` |
 | `onDidChangePlugins` | `{ editorId, states }` after plugin states change in an editor |
 | `onDidResolveLinks` | `{ vault }` |
@@ -176,7 +176,7 @@ Rules:
 | `markers` | `set`, `clear`, `registerAction` |
 | `commands` | `register(id, run)`: a VS Code command whose ID starts with the owner extension's ID (`acme.badges.refresh`). Declare it in your own `contributes.commands` to show it in the palette. |
 | `codeBlocks` | `register(processor)` |
-| `logger` | `debug`, `warn`, `error`, written to the **Markdown Workbench** output channel under the plugin's ID |
+| `logger` | `debug`, `warn`, `error`, written to the **Markdown Workshop** output channel under the plugin's ID |
 
 `ctx.on(name, listener)` subscribes to:
 
@@ -188,7 +188,7 @@ Rules:
 | `editor/selectionChanged` | `({ editorId, hasSelection }) => void` |
 | `links/open` | `(request: LinkRequest) => true \| Promise<true> \| undefined` |
 
-`links/open` runs before Markdown Workbench opens a clicked link
+`links/open` runs before Markdown Workshop opens a clicked link
 (`{ editorId, href, source, side }`). Return `undefined` to pass, or `true`
 (or a promise of `true`) to claim it; the first claim wins, in plugin order
 (built-ins first, then external plugins by ID). Unclaimed links follow the
@@ -311,7 +311,7 @@ export async function activate(context: vscode.ExtensionContext) {
     ?.activate();
   if (api?.apiVersion !== 1) {
     void vscode.window.showWarningMessage(
-      "Sample Tickets needs Markdown Workbench with API version 1.",
+      "Sample Tickets needs Markdown Workshop with API version 1.",
     );
     return;
   }

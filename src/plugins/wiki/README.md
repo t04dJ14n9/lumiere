@@ -31,4 +31,4 @@ Each workspace folder is read on its own. A missing layout is the legacy preset 
 - Wikilinks are reported, not rewritten. Portable Markdown links are the wiki form.
 - This plugin does not scaffold a vault, write `index.md`, ingest `inbox/`, or follow the Obsidian graph.
 - A Marp deck inside the bundle without `type` and `generated` provenance is an error. The editor does not add that frontmatter.
-- Copy needs the note open in Markdown Workbench. A dirty or untitled note has an envelope but no `@path` clipboard text until it is saved.
+- Copy needs the note open in Markdown Workshop. A dirty or untitled note has an envelope but no `@path` clipboard text until it is saved.

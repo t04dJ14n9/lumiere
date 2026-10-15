@@ -6,7 +6,7 @@ By “reference/test oracle,” I mean a differential comparison target for shar
 
 Audit scope
 
-I inspected Markdown Workbench main at 6e6c88a, embedPDF main at c22df1f, and Cordis main at 518b8bc. Cordis’s package manifest at that commit identifies version 4.0.0-rc.10. These are source snapshots; I did not establish byte-for-byte equivalence between the Cordis checkout and the published npm artifact.   
+I inspected Markdown Workshop main at 6e6c88a, embedPDF main at c22df1f, and Cordis main at 518b8bc. Cordis’s package manifest at that commit identifies version 4.0.0-rc.10. These are source snapshots; I did not establish byte-for-byte equivalence between the Cordis checkout and the published npm artifact.   
 
 The concurrency findings below are source-level counterexamples, not claims that I executed failing tests. Your main snapshots still contain relevant gaps, so “keep the existing runtime” must mean “repair and narrow it,” not “consider it finished.”
 
