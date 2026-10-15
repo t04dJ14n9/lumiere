@@ -20,21 +20,22 @@ for each added (green), modified (blue) or removed (red triangle) range, against
   `folding` (plugin-order.ts), so it sits where VS Code draws quick diff. A
   rendered block (table, properties, callout) gets one bar for the whole block,
   as it gets one line number; a removal inside it marks it modified.
-- **Peek.** Clicking a **modified** or **deleted** bar (or **Show Git Change**,
-  Alt+F3 on those hunks) opens a block widget below the change: the baseline and
-  working-tree versions rendered through `render`, aligned by block, with changed
-  words in `<del>`/`<ins>` and changed code lines tinted. ↑/↓ move to the adjacent
-  change, **Revert** replaces the hunk with the baseline text as one undo step,
-  **Stage File** saves and stages the file (the git API has no hunk staging),
-  Escape or ✕ closes it. Pure **added** hunks keep the green gutter bar (and
-  hover title `added`) but do not open a peek — the Working Tree pane would only
-  duplicate the note.
+- **Peek.** Clicking any bar, including a pure **addition** (or **Show Git
+  Change**, Alt+F3) opens a block widget below the change: a raw unified diff
+  with the baseline and working-tree line numbers. Live Preview outside the peek
+  stays rendered. ↑/↓ move to the adjacent change. **Revert** replaces that hunk
+  with the baseline text as one undo step, and only when the shared mutation
+  gate accepts the exact hunk and `worktreeBytes`. **Stage** stays disabled:
+  there is no hunk-scoped stage API, and the button must not save or stage the
+  whole file. **Open Full Diff** opens this comparison's base → target.
+  Escape or ✕ closes the peek.
 - **Bar titles.** Each gutter bar's `title` / `aria-label` is `added`,
   `modified`, or `deleted` so the color meaning is clear on hover.
 - **Navigation.** **Go to Next/Previous Git Change** (Alt+F5 / Shift+Alt+F5)
   move the caret, wrapping at the ends, and carry an open peek along.
 - **Service.** Provides `gitDiff` (`api.ts`): the hunk `StateField`, the
-  baseline and `revert`. `gitInline` builds on it.
+  baseline, `revert`, and `openHunk`. Emits `git-diff:open-full` when Open Full
+  Diff is used. `gitInline` builds on the service.
 - **Colours.** Theme variables only, through the tokens in
   `src/webview/styles/git-diff.css` (`editorGutter.*Background`,
   `diffEditor.*Background`, `peekView*`).
@@ -48,6 +49,9 @@ handlers and the repository listener.
 - `host.ts`: baseline and stage through `workbench.git`; repository change notifications.
 - `hunks.ts`: hunk state, mapping, revert edits.
 - `gutter.ts`: the bar gutter.
-- `peek.ts`: the peek widget.
+- `peek.ts`: peek state and placement.
+- `peek-widget.ts`: the raw unified peek.
+- `session.ts`: the editor's DiffSnapshot.
+- `mutations.ts`: hunk-scoped Stage/Revert through the shared gate.
 - `webview.ts`: the model, commands and wiring.
 - `gitGutter.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.

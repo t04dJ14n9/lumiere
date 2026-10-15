@@ -267,6 +267,8 @@ export class BrowserHost {
       this.gitStaged++;
       return true;
     });
+    host.handle(gitGutterProtocol, "mutationLock", () => true);
+    host.handle(gitGutterProtocol, "openFullDiff", () => true);
     host.handle(editorProtocol, "clipboardRead", () => this.clipboard);
     host.handle(editorProtocol, "clipboardWrite", ({ text }) => {
       this.clipboard = text;
