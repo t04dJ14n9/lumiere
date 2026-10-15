@@ -4,6 +4,11 @@ import type { Extension } from "@codemirror/state";
 import type { DocHunk } from "./api";
 import { hunkField } from "./hunks";
 
+/** Hover / aria text for a gutter bar color. */
+export function barTooltip(kind: DocHunk["kind"] | "deleted-end"): string {
+  return kind === "deleted-end" ? "deleted" : kind;
+}
+
 class BarMarker extends GutterMarker {
   constructor(
     readonly kind: DocHunk["kind"] | "deleted-end",
@@ -21,10 +26,9 @@ class BarMarker extends GutterMarker {
   override toDOM(): Node {
     const bar = document.createElement("div");
     bar.className = `mw-git-bar mw-git-bar-${this.kind}${this.open ? " is-open" : ""}`;
-    bar.setAttribute(
-      "aria-label",
-      this.kind === "deleted-end" ? "deleted lines" : `${this.kind} lines`,
-    );
+    const tip = barTooltip(this.kind);
+    bar.title = tip;
+    bar.setAttribute("aria-label", tip);
     return bar;
   }
 }
