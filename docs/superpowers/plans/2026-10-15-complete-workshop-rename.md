@@ -56,7 +56,7 @@
 **Interfaces:**
 - Produces: `SETTING_PREFIX = "markdownWorkshop."`; `contributionId(localId)` → `` `markdownWorkshop.${localId}` `` (same module as `SETTING_PREFIX`, or a tiny adjacent export); `MARKDOWN_EDITOR.viewType = "markdownWorkshop.editor"`; `EXTENSION_ID = "t04dj14n9.vscode-markdown-workshop"`; `EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workshop"`; generated contributes all use `markdownWorkshop.*`
 
-- [ ] **Step 1: Flip identity constants + add shared contribution id helper**
+- [x] **Step 1: Flip identity constants + add shared contribution id helper**
 
 ```ts
 // src/shared/setting-schema.ts
@@ -79,11 +79,11 @@ export const EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workshop";
 
 Generator **and** runtime command/view registration must both call `contributionId` (or read `MARKDOWN_EDITOR.viewType`) — do not leave independent `` `markdownWorkbench.${…}` `` / `` `markdownWorkshop.${…}` `` string templates in registration paths.
 
-- [ ] **Step 2: Update the generator to use the helper**
+- [x] **Step 2: Update the generator to use the helper**
 
 In `scripts/generate-contributions.ts`, replace owned `` markdownWorkbench. `` string templates with `contributionId(...)` / `SETTING_PREFIX` (commands, view ids, menus, config keys, when-clauses). Leave the `whenEnabled(..., "workbench" | "editor")` **scope argument** alone — that is VS Code panel-vs-editor, not product identity.
 
-- [ ] **Step 3: Regenerate contributes**
+- [x] **Step 3: Regenerate contributes**
 
 ```bash
 pnpm contributions
@@ -91,7 +91,7 @@ pnpm contributions
 
 Expected: `package.json` `contributes.commands[].command`, `customEditors[].viewType` (`markdownWorkshop.editor`), configuration property keys, and when/enablement strings all use `markdownWorkshop.*`. `package.json` `name` still `vscode-markdown-workbench` for now.
 
-- [ ] **Step 4: Sanity-check generator**
+- [x] **Step 4: Sanity-check generator**
 
 ```bash
 pnpm contributions --check
@@ -100,7 +100,7 @@ node -e "const p=require('./package.json'); const c=p.contributes; if(c.customEd
 
 Expected: prints `ok` and command count (~102).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/shared/setting-schema.ts src/shared/editor-provider.ts src/host/settings-access.ts src/plugins/settings/commands.ts scripts/generate-contributions.ts package.json
@@ -126,7 +126,7 @@ git commit -m "refactor(identity): Workshop constants and regenerated contribute
 - Consumes: `contributionId`, `MARKDOWN_EDITOR`, regenerated contributes from Task 1
 - Produces: green B3 asserts that fail if runtime still registers `markdownWorkbench.*` (or any id divergent from contributes)
 
-- [ ] **Step 1: Point runtime registration at `contributionId` / `MARKDOWN_EDITOR`**
+- [x] **Step 1: Point runtime registration at `contributionId` / `MARKDOWN_EDITOR`**
 
 Replace independent templates at registration sites:
 
@@ -141,7 +141,7 @@ Custom editor path already registers `provider.viewType` — confirm that path i
 
 Remaining non-registration string literals can wait for Task 4; **registration-id derivation must not**.
 
-- [ ] **Step 2: Write the B3 parity test (runtime ↔ manifest)**
+- [x] **Step 2: Write the B3 parity test (runtime ↔ manifest)**
 
 ```ts
 import assert from "node:assert/strict";
@@ -184,7 +184,7 @@ Add a **runtime capture / set comparison** assert — this is the part that clos
 
 Optional companion: `pnpm contributions --check` / `contributions()` deep-equal — **label it generator smoke**, not B3. Source asserts that registration modules import `contributionId` are fine **additional** lint, never the B3 pass condition for fixed registrations.
 
-- [ ] **Step 3: Run the new test — expect PASS after Step 1**
+- [x] **Step 3: Run the new test — expect PASS after Step 1**
 
 ```bash
 pnpm exec tsx --test test/unit/identity/contribution-parity.test.ts
@@ -192,7 +192,7 @@ pnpm exec tsx --test test/unit/identity/contribution-parity.test.ts
 
 Expected: **PASS** on viewType + **runtime-capture/set ↔ manifest** command-id parity. Do **not** call this done if only the generator self-check or a helper-import lint is green while independently registered runtime ids are uncompared. (Full `pnpm check` may still fail until later tasks fix remaining sources.)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add test/unit/identity/contribution-parity.test.ts \
@@ -221,7 +221,7 @@ git commit -m "test(identity): B3 runtime command/viewType parity with contribut
 **Interfaces:**
 - Produces: `Workshop`, `WorkshopPanel`, `createWorkshop`, `createWorkshopPanel`, `ctx.workshop`, `MarkdownWorkshopApi`
 
-- [ ] **Step 1: Rename types in `runtime.ts` and update Context**
+- [x] **Step 1: Rename types in `runtime.ts` and update Context**
 
 ```ts
 export interface Workshop { /* was Workbench */ }
@@ -232,7 +232,7 @@ workshop: Workshop; // was workbench: Workbench
 
 Update JSDoc examples that say `markdownWorkbench.*` settings to `markdownWorkshop.*`.
 
-- [ ] **Step 2: Rename host modules + factories**
+- [x] **Step 2: Rename host modules + factories**
 
 ```bash
 git mv src/host/workbench.ts src/host/workshop.ts
@@ -241,11 +241,11 @@ git mv src/host/workbench-features.ts src/host/workshop-features.ts
 
 Inside: `export function createWorkshop(...)`; panel adapter `export function createWorkshopPanel(...)`. Fix imports (`from "./workshop"`, `from "./workshop-features"`).
 
-- [ ] **Step 3: Propagate `ctx.workshop` and `MarkdownWorkshopApi`**
+- [x] **Step 3: Propagate `ctx.workshop` and `MarkdownWorkshopApi`**
 
 Update call sites that read `ctx.workbench` or pass `workbench: Workbench`. Rename API interface and all generics/`getExtension<…>` examples to `MarkdownWorkshopApi` + `t04dj14n9.vscode-markdown-workshop`.
 
-- [ ] **Step 4: Typecheck host**
+- [x] **Step 4: Typecheck host**
 
 ```bash
 pnpm exec tsc -p src/host --noEmit
@@ -254,7 +254,7 @@ pnpm exec tsc -p src/plugins/tsconfig.host.json --noEmit
 
 Expected: no remaining `Workbench` / `MarkdownWorkbenchApi` / `createWorkbench` product-symbol errors. Fix stragglers before continuing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A src/host src/shared/runtime.ts src/host/api test/fixtures/sample-plugin test/unit
@@ -275,7 +275,7 @@ git commit -m "refactor(host): Workbench façade → Workshop"
 - Consumes: constants from Task 1; façade from Task 3
 - Produces: no owned `markdownWorkbench` / old full id in runtime sources & tests (docs swept in Task 5)
 
-- [ ] **Step 1: Replace owned contribution namespace in sources/tests**
+- [x] **Step 1: Replace owned contribution namespace in sources/tests**
 
 ```bash
 # Review hits first — do not pipe blind sed over the whole repo
@@ -284,7 +284,7 @@ git grep -n 'markdownWorkbench' -- src test scripts
 
 Replace owned tokens with `markdownWorkshop`. Prefer editing through shared helpers already using `SETTING_PREFIX` / `MARKDOWN_EDITOR` where a literal is redundant.
 
-- [ ] **Step 2: B2 full-id checklist**
+- [x] **Step 2: B2 full-id checklist**
 
 Search and update (or confirm absent):
 
@@ -297,7 +297,7 @@ Search and update (or confirm absent):
 
 Audit: `getExtension` call sites, API.md examples, sample plugin, tests asserting `@ext:`.
 
-- [ ] **Step 3: Spot-check dangerous false positives**
+- [x] **Step 3: Spot-check dangerous false positives**
 
 ```bash
 git grep -n 'workbench\.editorAssociations\|workbench\.action\|workbenchState\|whenEnabled(.*workbench' -- src scripts
@@ -305,7 +305,7 @@ git grep -n 'workbench\.editorAssociations\|workbench\.action\|workbenchState\|w
 
 Expected: those VS Code / generator-scope hits remain unchanged.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src test scripts
@@ -324,7 +324,7 @@ git commit -m "refactor(identity): markdownWorkshop namespace and full extension
 - Modify: CHANGELOG — short “renamed from …” note (this note stays on B1 allowlist)
 - Do **not** update badges/clone URLs that must resolve today to the old GitHub name (allowlist)
 
-- [ ] **Step 1: Flip package `name` only**
+- [x] **Step 1: Flip package `name` only**
 
 ```json
 "name": "vscode-markdown-workshop",
@@ -334,7 +334,7 @@ git commit -m "refactor(identity): markdownWorkshop namespace and full extension
 }
 ```
 
-- [ ] **Step 2: CSS/DOM owned strings**
+- [x] **Step 2: CSS/DOM owned strings**
 
 ```bash
 git grep -n 'markdown-workbench' -- src test
@@ -342,11 +342,11 @@ git grep -n 'markdown-workbench' -- src test
 
 Rename product DOM ids / data attrs / strings to `markdown-workshop`. Leave `mw-*` alone.
 
-- [ ] **Step 3: Docs + test prose**
+- [x] **Step 3: Docs + test prose**
 
 Update user-facing and developer docs. Do **not** silently rewrite historical session handoffs / old PR titles that quote the old identity — list them for the Task 6 allowlist instead.
 
-- [ ] **Step 4: Package VSIX once for a name check**
+- [x] **Step 4: Package VSIX once for a name check**
 
 ```bash
 pnpm package
@@ -355,7 +355,7 @@ ls -1 *.vsix
 
 Expected: `vscode-markdown-workshop-<version>.vsix`. Unzip/`vsce` manifest name = `vscode-markdown-workshop`; publisher id pair = `t04dj14n9.vscode-markdown-workshop`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json src test docs README.md CHANGELOG.md .github
@@ -389,7 +389,7 @@ Allowlist rules (**occurrence-scoped**, not whole-file):
 - **Do not** whole-file allowlist `package.json` (or any critical file). Phase-1 may permit only the old GitHub URL substring; a stray old command id / package `name` / extension id in the same file must still fail B1.
 - Examples (reviewed): CHANGELOG / design “renamed from …” lines; historical handoff quotes; phase-1 `repository.url` / badges still on the old GitHub name — each as its own `path<TAB>substring` row.
 
-- [ ] **Step 1: Write the gate script (token/occurrence-scoped allowlist)**
+- [x] **Step 1: Write the gate script (token/occurrence-scoped allowlist)**
 
 ```bash
 #!/usr/bin/env bash
@@ -440,7 +440,7 @@ CHANGELOG.md	renamed from Markdown Workbench
 
 Whole-file allowlisting is **rejected** for v1.
 
-- [ ] **Step 2: Run B1 until clean**
+- [x] **Step 2: Run B1 until clean**
 
 ```bash
 bash scripts/check-identity-rename.sh
@@ -448,7 +448,7 @@ bash scripts/check-identity-rename.sh
 
 Expected: exit 0, or only allowlisted hits. Fix real stragglers; do not broaden allowlist without review.
 
-- [ ] **Step 3: Re-run B3 + `pnpm check`**
+- [x] **Step 3: Re-run B3 + `pnpm check`**
 
 ```bash
 pnpm check
@@ -465,7 +465,7 @@ Expected: format/lint/typecheck/unit/contributions --check green.
 
 Policy reminder: **no** migration of `globalState` / `workspaceState` / secrets / `storageUri` / webview storage — reset is accepted.
 
-- [ ] **Step 5: Commit gate + allowlist**
+- [x] **Step 5: Commit gate + allowlist**
 
 ```bash
 git add scripts/check-identity-rename.sh scripts/identity-rename-allowlist.txt
@@ -482,11 +482,11 @@ git commit -m "chore(identity): B1 old-token grep gate and phase-1 allowlist"
 
 **Landing rule (preferred A):** Land MW rename first (including fixture text). PDF PR copies the **same fixture bytes** and merges same day / immediately after. CI asserts against **checked-in** fixtures only.
 
-- [ ] **Step 1: Update MW twin fixtures to Workshop naming**
+- [x] **Step 1: Update MW twin fixtures to Workshop naming**
 
 Replace “Markdown Workbench” / old package id in those two files with Workshop identity. Keep the shared format contract intact.
 
-- [ ] **Step 2: Record bytes for PDF**
+- [x] **Step 2: Record bytes for PDF**
 
 ```bash
 sha256sum docs/agent-handoff-format.md test/fixtures/agent-handoff-format.json
@@ -496,14 +496,14 @@ Hand the hashes to the PDF rename PR. Before either merge: byte-identical twins.
 
 Also search PDF repo for MW’s **full old id**, command ids, and repo name (cross-ref only).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add docs/agent-handoff-format.md test/fixtures/agent-handoff-format.json
 git commit -m "docs(handoff): Workshop naming in twin agent-handoff fixtures"
 ```
 
-- [ ] **Step 4: Final verification on phase-1 HEAD (order fix)**
+- [x] **Step 4: Final verification on phase-1 HEAD (order fix)**
 
 Task 6 ran B1 / `pnpm check` **before** this fixture commit. Re-verify the **final** branch tip so executed HEAD matches what passed the gates:
 
@@ -537,15 +537,15 @@ Alternative (also valid per spec): rename GitHub after PR approval but **before*
 
 ## Acceptance checklist (phase-1 PR)
 
-- [ ] B3 parity test green: **runtime-capture/set** command ids + `MARKDOWN_EDITOR` / custom editor viewTypes agree with contributes (not generator-only self-check; not helper-import-only)
-- [ ] B2 full-id / `@ext:` / deep-link consumers updated or confirmed absent
-- [ ] B1 gate clean except **occurrence-scoped** reviewed allowlist (phase-1 old `repository.url` substring only — not whole-file `package.json`)
-- [ ] VSIX id = `t04dj14n9.vscode-markdown-workshop`; artifact `vscode-markdown-workshop-*.vsix`
-- [ ] `pnpm check` green on **final** HEAD (re-run after Task 7 fixture commit)
+- [x] B3 parity test green: **runtime-capture/set** command ids + `MARKDOWN_EDITOR` / custom editor viewTypes agree with contributes (not generator-only self-check; not helper-import-only)
+- [x] B2 full-id / `@ext:` / deep-link consumers updated or confirmed absent
+- [x] B1 gate clean except **occurrence-scoped** reviewed allowlist (phase-1 old `repository.url` substring only — not whole-file `package.json`)
+- [x] VSIX id = `t04dj14n9.vscode-markdown-workshop`; artifact `vscode-markdown-workshop-*.vsix`
+- [x] `pnpm check` green on **final** HEAD (re-run after Task 7 fixture commit)
 - [ ] B4 fresh-install smoke done (uninstall old → install new → empty state OK)
-- [ ] Twin fixtures updated; SHA handed to PDF rename; hashes re-confirmed after Task 7; no cross-repo atomicity assumed
-- [ ] **No** back-compat aliases / migrations
-- [ ] Phase-2 GitHub rename **not** attempted in this PR
+- [x] Twin fixtures updated; SHA handed to PDF rename; hashes re-confirmed after Task 7; no cross-repo atomicity assumed
+- [x] **No** back-compat aliases / migrations
+- [x] Phase-2 GitHub rename **not** attempted in this PR
 
 ## Self-review (author)
 
