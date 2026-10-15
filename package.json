@@ -98,12 +98,12 @@
       {
         "command": "markdownWorkbench.cursorBridge.chat",
         "title": "Cursor Chat with Selection",
-        "category": "Markdown Workbench"
+        "category": "Markdown Workshop"
       },
       {
         "command": "markdownWorkbench.cursorBridge.edit",
         "title": "Cursor Edit Selection",
-        "category": "Markdown Workbench"
+        "category": "Markdown Workshop"
       },
       {
         "command": "markdownWorkbench.jumpBack",
