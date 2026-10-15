@@ -4,6 +4,10 @@ A VS Code extension that edits Markdown like Obsidian's Live Preview, built so
 that everything is a plugin. Read [DESIGN.md](DESIGN.md) and
 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) before changing code.
 
+If the task is a user / third-party custom plugin, read root
+[AGENT.md](AGENT.md) and implement it as a **separate VS Code extension** —
+do **not** add it under `src/plugins/`.
+
 ## Rules
 
 - `src/kernel`, `src/shared` and `src/markdown` must run anywhere: no DOM,

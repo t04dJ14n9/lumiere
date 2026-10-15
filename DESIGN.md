@@ -1371,7 +1371,9 @@ Errors use PDF Workbench's codes (`EditorNotFound`, `InvalidArgument`,
 
 ### 18.2 External host plugins
 
-An outside extension contributes a **real plugin**, not only a description:
+An outside extension contributes a **real plugin**, not only a description.
+Authoring for user / third-party plugins: root [AGENT.md](AGENT.md) (see also
+[API.md](API.md) § External plugins).
 
 ```ts
 const wiki = workbench.plugin({
