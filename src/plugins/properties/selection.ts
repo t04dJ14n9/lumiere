@@ -103,6 +103,11 @@ export class PropertySelection {
         ) {
           return;
         }
+        // Selected Sources ids (and other in-row text) must copy natively.
+        const native = this.panel.ownerDocument.getSelection();
+        if (native && !native.isCollapsed && native.toString().length > 0) {
+          return;
+        }
         const keys = this.keys(document.activeElement as HTMLElement);
         const values = this.values(keys);
         if (!keys.length) {
@@ -169,6 +174,8 @@ export class PropertySelection {
     rows.forEach((row) => this.selected.add(row.dataset.propertyRow!));
     rows[0]!.focus({ preventScroll: true });
     this.sync();
+    // Explicit row actions must copy whole properties, even with text selected.
+    this.panel.ownerDocument.getSelection()?.removeAllRanges();
     // The native copy event supplies both YAML and structured properties.
     return this.panel.ownerDocument.execCommand("copy");
   }

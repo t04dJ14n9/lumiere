@@ -7,7 +7,7 @@ import {
   viewerFragment,
 } from "./open";
 
-test("sources markup is stacked, read-only, and keeps every row", () => {
+test("sources markup is stacked, keeps every row, and has no Copy id", () => {
   const entries = Array.from({ length: 9 }, (_, index) => ({
     resource: `https://example.com/${index}`,
     title: `Source ${index}`,
@@ -17,6 +17,16 @@ test("sources markup is stacked, read-only, and keeps every row", () => {
   assert.match(html, /data-source-extra/);
   assert.equal(html.match(/data-source-index=/g)?.length, 9);
   assert.doesNotMatch(html, /contenteditable|Add source|data-property-list/);
+  assert.doesNotMatch(html, /Copy id|data-source-copy/);
+});
+
+test("sources id is plain selectable text without a copy control", () => {
+  const html = renderSources(
+    [{ resource: "https://example.com/a", id: "src-1", title: "One" }],
+    {},
+  );
+  assert.match(html, /class="source-id">src-1</);
+  assert.doesNotMatch(html, /Copy id|data-source-copy|button[^>]*source-id/);
 });
 
 test("navigation stays on the owning document and rejects unsafe targets", () => {

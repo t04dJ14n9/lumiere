@@ -59,7 +59,12 @@ test("scalar Enter commits quoted text and focuses its row; untouched mismatches
       return true;
     },
   };
-  new PropertyField(html(container), html(field), source, editor);
+  new PropertyField({
+    container: html(container),
+    input: html(field),
+    source: source,
+    editor: editor,
+  });
   field.textContent = "a: b # c";
   field.dispatchEvent(new Event("input"));
   field.dispatchEvent(propertyKey("Enter"));
@@ -70,7 +75,12 @@ test("scalar Enter commits quoted text and focuses its row; untouched mismatches
   const mismatch = new PropertyNativeInput(document);
   mismatch.dataset = { propertyInput: "title", propertyKind: "number" };
   mismatch.type = "number";
-  new PropertyField(html(container), html(mismatch), source, editor);
+  new PropertyField({
+    container: html(container),
+    input: html(mismatch),
+    source: source,
+    editor: editor,
+  });
   mismatch.dispatchEvent(new Event("focus"));
   mismatch.dispatchEvent(new Event("blur"));
   mismatch.dispatchEvent(new Event("property-commit", { cancelable: true }));
@@ -391,4 +401,211 @@ test("the native checkbox activation handler writes true and false without alter
     assert.match(source, /# keep\ntitle: Hello/);
     assert.ok(source.endsWith("Body"));
   }
+});
+
+test("YAML drafts reject invalid text and concurrent property conflicts without writing", (t) => {
+  const document = installPropertyDOM(t);
+  const row = new PropertyElement(document);
+  const container = new PropertyElement(document);
+  container.find = () => row;
+  const field = new PropertyNativeInput(document);
+  field.tagName = "TEXTAREA";
+  field.dataset = { propertyInput: "generated", propertyKind: "yaml" };
+  field.value = 'by: "old"\n';
+  let source = '---\ngenerated:\n  by: "old"\ntitle: Note\n---\nBody';
+  let writes = 0;
+  const editor = {
+    source: "current",
+    currentSource: () => source,
+    set: (
+      expected: string,
+      key: string,
+      value: string | number | boolean | null | object,
+    ) => {
+      const current = frontmatter(source)?.raw ?? "";
+      if (current.replace(/\r?\n$/, "") !== expected.replace(/\r?\n$/, "")) {
+        return false;
+      }
+      const next = propertyChanges(source, {
+        type: "set",
+        key,
+        value: value as never,
+      });
+      if (!next) {
+        return false;
+      }
+      writes++;
+      source = applySource(source, {
+        type: "set",
+        key,
+        value: value as never,
+      });
+      return true;
+    },
+  };
+  new PropertyField({
+    container: html(container),
+    input: html(field),
+    source: source,
+    editor: editor,
+  });
+
+  field.value = "{";
+  field.dispatchEvent(new Event("input"));
+  field.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 0);
+  assert.equal(field.validityMessage, "Enter valid YAML for this property.");
+  assert.deepEqual(frontmatter(source)?.values?.generated, { by: "old" });
+
+  field.value = 'by: "fresh"\n';
+  field.dispatchEvent(new Event("input"));
+  // Concurrent edit of the same property while the draft is open.
+  source = applySource(source, {
+    type: "set",
+    key: "generated",
+    value: { by: "external" },
+  });
+  field.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 0);
+  assert.equal(
+    field.validityMessage,
+    "The property changed. Reopen it and try again.",
+  );
+  assert.deepEqual(frontmatter(source)?.values?.generated, { by: "external" });
+  assert.equal(frontmatter(source)?.values?.title, "Note");
+});
+
+test("idle property fields refresh conflict baselines after another property commits", (t) => {
+  const document = installPropertyDOM(t);
+  const row = new PropertyElement(document);
+  const container = new PropertyElement(document);
+  container.find = () => row;
+  const first = new PropertyNativeInput(document);
+  first.tagName = "TEXTAREA";
+  first.dataset = { propertyInput: "a", propertyKind: "yaml" };
+  first.value = 'x: "one"\n';
+  const second = new PropertyNativeInput(document);
+  second.tagName = "TEXTAREA";
+  second.dataset = { propertyInput: "b", propertyKind: "yaml" };
+  second.value = 'y: "two"\n';
+  let source = '---\na:\n  x: "one"\nb:\n  y: "two"\n---\n';
+  let writes = 0;
+  const editor = {
+    source: "current",
+    currentSource: () => source,
+    set: (
+      expected: string,
+      key: string,
+      value: string | number | boolean | null | object,
+    ) => {
+      const current = frontmatter(source)?.raw ?? "";
+      if (current.replace(/\r?\n$/, "") !== expected.replace(/\r?\n$/, "")) {
+        return false;
+      }
+      const operation = {
+        type: "set" as const,
+        key,
+        value: value as never,
+      };
+      if (!propertyChanges(source, operation)) {
+        return false;
+      }
+      writes++;
+      source = applySource(source, operation);
+      return true;
+    },
+  };
+  new PropertyField({
+    container: html(container),
+    input: html(first),
+    source: source,
+    editor: editor,
+  });
+  new PropertyField({
+    container: html(container),
+    input: html(second),
+    source: source,
+    editor: editor,
+  });
+
+  first.dispatchEvent(new Event("focus"));
+  first.value = 'x: "edited"\n';
+  first.dispatchEvent(new Event("input"));
+  first.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 1);
+  assert.deepEqual(frontmatter(source)?.values?.a, { x: "edited" });
+
+  second.dispatchEvent(new Event("focus"));
+  second.value = 'y: "next"\n';
+  second.dispatchEvent(new Event("input"));
+  second.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 2);
+  assert.deepEqual(frontmatter(source)?.values?.b, { y: "next" });
+  assert.deepEqual(frontmatter(source)?.values?.a, { x: "edited" });
+});
+
+test("YAML field commits carry source text through the editor and reject stale header bytes", (t) => {
+  const document = installPropertyDOM(t);
+  const container = new PropertyElement(document);
+  const field = new PropertyNativeInput(document);
+  field.tagName = "TEXTAREA";
+  field.dataset = { propertyInput: "generated", propertyKind: "yaml" };
+  field.value = "by: old\n# checksum is external\nchecksum: '01'\n";
+  const source =
+    "---\ngenerated:\n  by: old\n  # checksum is external\n  checksum: '01'\nkeep: yes\n---\nBody";
+  let state = EditorState.create({ doc: source });
+  let writes = 0;
+  const view = {
+    get state() {
+      return state;
+    },
+    dom: { querySelectorAll: () => [] },
+    dispatch(spec: TransactionSpec) {
+      state = state.update(spec).state;
+      writes++;
+    },
+  } as unknown as EditorView;
+  const editing = new PropertyEditing({
+    view: () => view,
+    setStatus: () => {},
+    action: () => {},
+    refresh: () => {},
+    setType: () => {},
+    show: () => {},
+    focusTitle: () => {},
+    pageHeading: () => {},
+    signal: new AbortController().signal,
+  });
+  new PropertyField({
+    container: html(container),
+    input: html(field),
+    source,
+    editor: editing.editor(source),
+  });
+  field.dispatchEvent(new Event("focus"));
+  field.value = field.value.replace("by: old", "by: new # typed comment");
+  field.dispatchEvent(new Event("input"));
+  field.dispatchEvent(new Event("property-commit", { cancelable: true }));
+  assert.equal(writes, 1);
+  assert.equal(
+    state.doc.toString(),
+    source.replace("by: old", "by: new # typed comment"),
+  );
+
+  field.dispatchEvent(new Event("focus"));
+  field.value = field.value.replace("by: new", "by: another");
+  field.dispatchEvent(new Event("input"));
+  // A comment-only concurrent change keeps decoded values equal. The raw
+  // baseline must still reject this pending draft, including on save flush.
+  const external = state.doc.toString().replace("external", "external change");
+  state = EditorState.create({ doc: external });
+  const flush = new Event("property-commit", { cancelable: true });
+  field.dispatchEvent(flush);
+  assert.equal(flush.defaultPrevented, true);
+  assert.equal(writes, 1);
+  assert.equal(state.doc.toString(), external);
+  assert.equal(
+    field.validityMessage,
+    "The property changed. Reopen it and try again.",
+  );
 });

@@ -1,29 +1,28 @@
 # Sources
 
-Shows an OKF `sources` property as stacked read-only rows and opens an allowed
-resource, in the same place Obsidian would show that property in the properties
-sheet.
+Shows an OKF `sources` property as stacked rows with open links for navigable
+resources, and edits the same property as YAML in the Properties sheet like any
+other nested frontmatter value.
 
 ## How it works
 
 The properties sheet asks `propertyRenderers` for `sources` on the first paint
-and again when a renderer is registered or removed. Each entry becomes a row
-in document order. The first eight rows are visible; the rest stay in the page
-and appear when the disclosure is opened. A path or `http`/`https` resource is
-clickable; scope text is not. A click sends the resource string to the host.
-The host reads the owning document again, refuses a resource that is no longer
-there, strips a `#fragment` before the file lookup, and allows only `http`/`https`
-or a path that stays inside the vault. A heading or block fragment opens at
-that offset; a `#page=` or `#viewrect` fragment is forwarded to the native
-viewer. The webview does not fetch the resource.
+and again when a renderer is registered or removed. The custom rows sit above an
+editable YAML draft for the whole `sources` value. Changing that draft writes
+back into the note frontmatter through the normal Properties edit path. A path
+or `http`/`https` resource in the rows is clickable; scope text is not. A click
+sends the resource string to the host. The host re-reads the owning document,
+refuses a resource that is no longer there, strips a `#fragment` before the file
+lookup, and allows only `http`/`https` or a path that stays inside the vault. Id
+text is plain selectable text; there is no Copy id control.
 
 ## Files
 
 - `manifest.ts`: feature identity. There are no commands or settings.
-- `markup.ts`: read-only row HTML, including malformed values.
-- `bind.ts`: disclosure, copy and open clicks. It does not edit YAML.
+- `markup.ts`: stacked row HTML, including malformed values.
+- `bind.ts`: disclosure and open clicks.
 - `open.ts`: stale-row and navigation plan.
-- `protocol.ts`: open and copy RPC.
+- `protocol.ts`: open RPC.
 - `webview.ts`: registers the `sources` renderer.
 - `host.ts`: authorizes the owning document, contains the target, and opens it.
 - `markup.test.ts`: disclosure, refused URLs and a stale row.
@@ -36,8 +35,7 @@ events. No settings. The property name is `sources`.
 
 ## Limits and differences from Obsidian
 
-Rows are unconditionally read-only. There is no edit, add, apply or cancel
-control in this version; writing sources needs its own design. The panel does
-not fetch previews, titles or remote contents. `id` is shown only when the
-entry has one. Positional labels are not citation keys. Scope text that is not
-a link stays plain text.
+Nested `sources` entries edit as YAML text rather than per-field forms. Open
+links remain for navigable resources. The panel does not fetch previews, titles
+or remote contents. `id` is shown only when the entry has one. Positional labels
+are not citation keys. Scope text that is not a link stays plain text.

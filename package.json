@@ -1420,7 +1420,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Show OKF sources as read-only stacked rows and open allowed resources."
+          "description": "Show OKF sources with open links; values edit as YAML beside other Properties."
         },
         "markdownWorkbench.plugins.spellcheck.enabled": {
           "type": "boolean",

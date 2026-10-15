@@ -21,12 +21,6 @@ export const sourcesPropertyHost: Plugin<{ panel: PanelShell }> = {
         opened: await openResource(ctx, panel, resource),
       })),
     );
-    ctx.effect(() =>
-      ctx.rpc.handle(protocol, "copy", async ({ text }) => {
-        await ctx.workbench.clipboard.write(text);
-        return { copied: true };
-      }),
-    );
   },
 };
 

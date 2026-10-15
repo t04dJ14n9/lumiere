@@ -10,8 +10,11 @@ retaining focused draft inputs. Edits use the pure YAML operations and become on
 outer-document transaction. List and chip drafts resolve the selected occurrence
 against current values before committing, so a stale render cannot replace a
 concurrently edited list. Save participants commit drafts and reject invalid
-input. Types are a vault-wide registry keyed by property name, scoped by the
-injected vault root. Changing a type only changes that registry; a mismatched YAML value
+input. Nested YAML drafts come from source node ranges and commit as text,
+retaining comments, quoting and exact numbers. Replaced anchors materialize their
+external aliases with exact integers. Types are a vault-wide registry keyed by
+property name, scoped by the injected vault root. Changing a type only changes
+that registry; a mismatched YAML value
 retains its warning until edited. Collapse is one persisted workspace preference
 shared by notes and panels. New rows remain drafts until their names are accepted.
 
@@ -40,7 +43,7 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 - `sanitize.ts`: property-specific sanitized HTML policy.
 - `rows.ts`: row reconciliation and focused field retention.
 - `fields.ts`: checkbox and scalar field registrations.
-- `field-draft.ts`: one scalar draft, validation and commit/cancel focus.
+- `field-draft.ts`: scalar and raw YAML drafts, validation and commit/cancel focus.
 - `controls.ts`: structural controls, retained panel bindings and ordering.
 - `control-edits.ts`: structural transactions and focus restoration.
 - `row-name.ts`: quiet name validation and rename-to-value focus.
@@ -92,7 +95,9 @@ Add File Property can temporarily show the sheet when properties are hidden.
 Disclosure is shared within the VS Code workspace, rather than across unrelated
 workspaces. Native picker appearance depends on Chromium, OS and locale. Daily
 note links are not provided because the editor has no daily-note capability.
-Nested/anchored/recursive YAML retains guarded source-only support.
+YAML drafts must parse independently. Recursive aliases, tagged collections
+(including `!!pairs`, `!!map` and `!!set`) and timestamps remain display-only.
+Concurrent frontmatter changes reject an active draft without overwriting source.
 
 ## The caret never enters the block
 
