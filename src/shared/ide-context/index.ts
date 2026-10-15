@@ -12,3 +12,4 @@ export {
   type PdfSelectionWire,
 } from "./types";
 export { scrubDiagnosticMessage, scrubPacket, scrubUri } from "./scrub";
+export { truncatePacket } from "./truncate";
