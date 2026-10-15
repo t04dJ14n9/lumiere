@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRenderer } from "../../../src/markdown/html";
 
 const markdownCss = readFileSync(
   new URL("../../../src/webview/styles/markdown.css", import.meta.url),
@@ -49,10 +50,25 @@ test("linked code chips keep their look without painting over the underline", ()
   // Include nested formatting in rendered links, such as <a><em><code>.
   const linkedCode = rule(
     markdownCss,
-    ".md-link .md-inline-code,\n.markdown-rendered a :not(pre) > code",
+    ".md-link .md-inline-code,\n.markdown-rendered a > code,\n.markdown-rendered a :not(pre) > code",
   );
   assert.match(linkedCode, /padding-block:\s*0\s*;/);
   assert.doesNotMatch(linkedCode, /padding(?:-inline(?:-start|-end)?)?:/);
+});
+
+test("rendered links with a direct code child and trailing text zero the chip's vertical padding", () => {
+  const html = createRenderer().renderMarkdown(
+    "[`code` text](https://example.com)",
+  );
+  assert.match(html, /<a\b[^>]*><code>code<\/code> text<\/a>/);
+
+  // A descendant before :not(pre) requires an intermediate element and misses
+  // this renderer output, so the direct-child selector must share the override.
+  const linkedCode = rule(
+    markdownCss,
+    ".markdown-rendered a > code,\n.markdown-rendered a :not(pre) > code",
+  );
+  assert.match(linkedCode, /padding-block:\s*0\s*;/);
 });
 
 test("unresolved links keep a dotted underline via border-bottom-style", () => {

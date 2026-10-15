@@ -192,6 +192,7 @@
 /* Keep opaque chip backgrounds inside the link's underline. Horizontal
  * padding and rounded backgrounds still give linked code its chip shape. */
 .md-link .md-inline-code,
+.markdown-rendered a > code,
 .markdown-rendered a :not(pre) > code {
   padding-block: 0;
 }
