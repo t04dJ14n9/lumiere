@@ -4186,3 +4186,14 @@ sandbox's denied tsx IPC socket. Running units through Node's tsx loader passes
 Git images, Git inline and layer tests. Contributions checking and production
 builds pass. Browser/native checks were attempted sequentially but blocked by
 Chromium startup permissions, VS Code download DNS, and installed-editor setup.
+
+## gitBlame Task 1 — Porcelain and shared types, 2026-10-15
+
+Approved r5 Approach A implementation started on `feat/git-blame-current-line`.
+Added shared snapshot/result/identity types and a porcelain parser. All-zero
+SHA-1/SHA-256 OIDs alone mean uncommitted; boundary commits remain attributable.
+TDD: module-missing red, then five parser cases green, including malformed input.
+No source suites ported. The pinned human-learning checkout is absent on this
+host; this feature is authored from the approved plan and local git patterns.
+Native checks await clarification because their harness builds/installs a VSIX,
+which the task explicitly prohibits.
