@@ -163,14 +163,21 @@ test("hover buttons-up timer does not arm while inactive; cancelPending drops a 
   const view = new EventTarget() as Window;
   Object.defineProperty(doc, "defaultView", { value: view });
 
-  const handle = onGestureEnd(doc, () => {
-    ended += 1;
-  }, events.signal, () => active);
+  const handle = onGestureEnd(
+    doc,
+    () => {
+      ended += 1;
+    },
+    events.signal,
+    () => active,
+  );
 
   doc.dispatchEvent(
     Object.assign(new Event("mousemove", { bubbles: true }), { buttons: 0 }),
   );
-  await new Promise((resolve) => setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20));
+  await new Promise((resolve) =>
+    setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20),
+  );
   assert.equal(ended, 0, "idle hover must not schedule a buttons-up release");
 
   active = true;
@@ -180,14 +187,22 @@ test("hover buttons-up timer does not arm while inactive; cancelPending drops a 
   // New press takes ownership before the debounce elapses.
   active = true;
   handle.cancelPending();
-  await new Promise((resolve) => setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20));
-  assert.equal(ended, 0, "cancelPending must drop the prior buttons-up release");
+  await new Promise((resolve) =>
+    setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20),
+  );
+  assert.equal(
+    ended,
+    0,
+    "cancelPending must drop the prior buttons-up release",
+  );
 
   // Sustained buttons-up while still active does end the gesture.
   doc.dispatchEvent(
     Object.assign(new Event("mousemove", { bubbles: true }), { buttons: 0 }),
   );
-  await new Promise((resolve) => setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20));
+  await new Promise((resolve) =>
+    setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20),
+  );
   assert.equal(ended, 1, "active sustained buttons-up must release");
 
   events.abort();

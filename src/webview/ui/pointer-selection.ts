@@ -188,7 +188,10 @@ export const pointerSelectionTracking: Extension = [
     };
     events.signal.addEventListener("abort", clearThaw);
     const release = () => {
-      if (!view.state.field(pointerSelection, false) || thawTimer !== undefined) {
+      if (
+        !view.state.field(pointerSelection, false) ||
+        thawTimer !== undefined
+      ) {
         return;
       }
       const scheduledGeneration = gestureGeneration;
@@ -208,11 +211,8 @@ export const pointerSelectionTracking: Extension = [
         view.dispatch({ effects: press.of(null) });
       }, 0);
     };
-    const gestureEnd = onGestureEnd(
-      doc,
-      release,
-      events.signal,
-      () => isPointerSelecting(view.state),
+    const gestureEnd = onGestureEnd(doc, release, events.signal, () =>
+      isPointerSelecting(view.state),
     );
     view.dom.addEventListener(
       "mousedown",
