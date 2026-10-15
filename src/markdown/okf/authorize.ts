@@ -1,4 +1,5 @@
 import {
+  decodeLinkPath,
   extensionOf,
   folderOf,
   joinVaultPath,
@@ -103,7 +104,8 @@ function workspaceTarget(
   documentPath: string,
   bundleRoot: string | undefined,
 ): { path: string; fragment: string } | undefined {
-  const { path: resourcePath, subpath } = splitLinktext(resource);
+  const { path: pathSegment, subpath } = splitLinktext(resource);
+  const resourcePath = decodeLinkPath(pathSegment);
   const path = resourcePath.startsWith("/")
     ? joinVaultPath(bundleRoot ?? "", resourcePath.slice(1))
     : joinVaultPath(folderOf(documentPath), resourcePath);

@@ -3754,3 +3754,16 @@ outlive their gesture and thaw a newly held drag.
 
 Files: `src/webview/ui/pointer-selection.ts`,
 `test/unit/webview/pointer-selection.test.ts`.
+
+## Sources resource path decoding — 2026-10-15
+
+`workspaceTarget` now splits the fragment with `splitLinktext`, applies
+`decodeLinkPath` to the path segment only, then joins the vault path. That
+matches Markdown link decoding so percent-encoded Chinese (and other) Sources
+`resource` values hit the Unicode vault index.
+
+Unit coverage: encoded Chinese relative paths, already-decoded Unicode,
+fragment preservation, unchanged HTTP(S) URLs, and malformed percent escapes
+that must not throw.
+
+Validation: `pnpm exec tsx --test test/unit/okf/authorize.test.ts` — 11 pass.

@@ -6,22 +6,17 @@ const documentPath = "bundle/notes/source.md";
 const bundleRoot = "bundle";
 
 test("http and https resources are external opens", () => {
-  assert.deepEqual(
-    planResourceOpen({
-      resource: "https://example.com/paper",
-      documentPath,
-      bundleRoot,
-    }),
-    { action: "external", url: "https://example.com/paper" },
-  );
-  assert.equal(
-    planResourceOpen({
-      resource: "http://example.com/a",
-      documentPath,
-      bundleRoot,
-    }).action,
-    "external",
-  );
+  for (const resource of [
+    "https://example.com/paper",
+    "http://example.com/a",
+    "https://example.com/%E6%9A%97%E5%8C%BA.md#heading",
+    "http://example.com/%E6%9A%97%E5%8C%BA.md#heading",
+  ]) {
+    assert.deepEqual(planResourceOpen({ resource, documentPath, bundleRoot }), {
+      action: "external",
+      url: resource,
+    });
+  }
 });
 
 test("command, javascript and data URLs are rejected", () => {
@@ -66,6 +61,53 @@ test("a parent-relative resource stays inside the owning note", () => {
     }),
     { action: "workspace", path: "bundle/raw/paper.pdf" },
   );
+});
+
+test("a percent-encoded relative resource resolves to a Unicode vault path", () => {
+  assert.deepEqual(
+    planResourceOpen({
+      resource: "../../raw/articles/%E6%9A%97%E5%8C%BA.md",
+      documentPath: "knowledge/wiki/summaries/note.md",
+    }),
+    { action: "workspace", path: "knowledge/raw/articles/暗区.md" },
+  );
+});
+
+test("an already-decoded Unicode resource resolves to the same vault path", () => {
+  assert.deepEqual(
+    planResourceOpen({
+      resource: "../../raw/articles/暗区.md",
+      documentPath: "knowledge/wiki/summaries/note.md",
+    }),
+    { action: "workspace", path: "knowledge/raw/articles/暗区.md" },
+  );
+});
+
+test("a percent-encoded resource path preserves its fragment without decoding it", () => {
+  assert.deepEqual(
+    planResourceOpen({
+      resource: "../../raw/articles/%E6%9A%97%E5%8C%BA.md#heading%20one",
+      documentPath: "knowledge/wiki/summaries/note.md",
+    }),
+    {
+      action: "workspace",
+      path: "knowledge/raw/articles/暗区.md",
+      fragment: "#heading%20one",
+    },
+  );
+});
+
+test("malformed percent escapes in resource paths do not throw", () => {
+  for (const basename of ["%E6%9A%97%.md", "%ZZ.md"]) {
+    assert.deepEqual(
+      planResourceOpen({
+        resource: `../raw/${basename}`,
+        documentPath,
+        bundleRoot,
+      }),
+      { action: "workspace", path: `bundle/raw/${basename}` },
+    );
+  }
 });
 
 test("a fragment is not part of the file lookup", () => {
