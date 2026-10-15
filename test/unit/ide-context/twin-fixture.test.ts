@@ -30,7 +30,7 @@ const PINNED: Record<string, string> = {
   "src/shared/ide-context/temp-reclaim.ts":
     "a8314509ad81c72ed647ed7a26b404764843be1d3dc4434e8239bd3241116555",
   "src/shared/ide-context/truncate.ts":
-    "c8f88846b3ae48405922518d5b0bfca1b64f4024d9fb2426e7aec85abc003e68",
+    "9a50aaae71f729b06f0963743f903815dec48323a812cb34de5738d03add6058",
   "src/shared/ide-context/types.ts":
     "e6186c6d570840ca534cb3720c0d3cb1784d43ae86f34110dafe87449d4e7a22",
 };

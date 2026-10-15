@@ -160,13 +160,26 @@ test("clipboard: JSON under 64K but Markdown over 32K uses structured truncation
   assert.ok(md.length <= DEFAULT_CAPS.maxClipboardChars, `markdown ${md.length} exceeds maxClipboardChars`);
   assert.ok(/budget|truncat/i.test(md), "expected explicit budget warning");
 
-  // Must not end mid-token mid-URI without warning (hard slice artifact)
-  const lastLine = md.trim().split("\n").pop() ?? "";
-  const endsMidUri =
-    lastLine.includes("file://") &&
-    !lastLine.endsWith(".md") &&
-    !/budget|truncat|…truncated|Warnings:/i.test(lastLine);
-  assert.equal(endsMidUri, false, `must not end mid-URI: ${JSON.stringify(lastLine.slice(-80))}`);
+  // Hard-slice fallback appends Warnings: last — checking only the last line misses a
+  // mid-URI/mid-token cut on the content line immediately before Warnings:.
+  const mdLines = md.split("\n");
+  const warningsIdx = mdLines.findIndex((l) => l === "Warnings:");
+  assert.ok(warningsIdx > 0, "expected Warnings: section from budget truncation");
+  const lineBeforeWarnings = mdLines[warningsIdx - 1] ?? "";
+  const contentBeforeWarnings =
+    lineBeforeWarnings === "" ? (mdLines[warningsIdx - 2] ?? "") : lineBeforeWarnings;
+  const hardCutBeforeWarnings =
+    (contentBeforeWarnings.startsWith("- file://") && !contentBeforeWarnings.endsWith(".md")) ||
+    // mid-diagnostic / mid-token residue (e.g. hard-sliced "xxxx..." body)
+    (/^x{20,}$/.test(contentBeforeWarnings.trim())) ||
+    (contentBeforeWarnings.includes("file://") &&
+      !contentBeforeWarnings.endsWith(".md") &&
+      !/budget|truncat|…truncated/i.test(contentBeforeWarnings));
+  assert.equal(
+    hardCutBeforeWarnings,
+    false,
+    `must not hard-cut content immediately before Warnings: ${JSON.stringify(contentBeforeWarnings.slice(-100))}`,
+  );
 
   // Prefer dropping lower-priority sections (diagnostics) over hard-slicing tab URIs
   const diagItemLines = md
@@ -175,5 +188,62 @@ test("clipboard: JSON under 64K but Markdown over 32K uses structured truncation
   assert.ok(
     diagItemLines.length < 20 || !md.includes("file:///workspace/project/module-100/"),
     "structured truncate should drop diagnostics and/or lower-priority open tabs rather than hard-slice",
+  );
+});
+
+test("clipboard: budget warning crossing cap continues structured truncate (no hard-slice before Warnings:)", () => {
+  // r2 Finding 1: underBudget measured renderBody *before* pushBudgetWarning(); a packet that
+  // lands just under the cap without the warning can go over after it is appended, and
+  // renderMarkdown then falls through to md.slice (mid-token cut before Warnings:).
+  const visible = Array.from({ length: 5 }, (_, i) => makeLongUri(i, 900));
+  const open = Array.from({ length: 20 }, (_, i) => makeLongUri(100 + i, 900));
+  const maxClipboardChars = 24_000;
+  const caps = { ...DEFAULT_CAPS, maxClipboardChars };
+  const packet = {
+    ...baseMw(),
+    caps,
+    active: { uri: visible[0]!, languageId: "markdown" },
+    tabs: { visible, open, truncated: false },
+    diagnostics: {
+      uri: visible[0]!,
+      items: Array.from({ length: 10 }, (_, i) => ({
+        severity: "warning" as const,
+        message: "diag-message-" + "x".repeat(236),
+        startLine: i + 1,
+        startCharacter: 0,
+      })),
+      truncated: false,
+    },
+  };
+
+  const md = renderMarkdown(packet);
+  assert.ok(md.length <= maxClipboardChars, `markdown ${md.length} exceeds maxClipboardChars ${maxClipboardChars}`);
+  // Exact equality to the cap is the hard-slice fingerprint (bodyBudget + notice === max).
+  assert.ok(md.length < maxClipboardChars, `hard-slice fingerprint: md.length === max (${md.length})`);
+  assert.ok(/budget|truncat/i.test(md), "expected explicit budget warning");
+
+  const mdLines = md.split("\n");
+  const warningsIdx = mdLines.findIndex((l) => l === "Warnings:");
+  assert.ok(warningsIdx > 0, "expected Warnings: section");
+  const lineBeforeWarnings = mdLines[warningsIdx - 1] ?? "";
+  const contentBeforeWarnings =
+    lineBeforeWarnings === "" ? (mdLines[warningsIdx - 2] ?? "") : lineBeforeWarnings;
+  assert.equal(
+    contentBeforeWarnings.startsWith("- file://") && !contentBeforeWarnings.endsWith(".md"),
+    false,
+    `mid-URI hard-cut before Warnings: ${JSON.stringify(contentBeforeWarnings.slice(-80))}`,
+  );
+  assert.equal(
+    /^x{20,}$/.test(contentBeforeWarnings.trim()),
+    false,
+    `mid-token hard-cut before Warnings: ${JSON.stringify(contentBeforeWarnings.slice(-80))}`,
+  );
+
+  // Structured drop must have removed lower-priority fields (open tabs and/or diagnostics).
+  const openTabLines = mdLines.filter((l) => /^- file:\/\/workspace\/project\/module-1\d+\//.test(l));
+  const diagItemLines = mdLines.filter((l) => /^- (error|warning|information|hint) /.test(l));
+  assert.ok(
+    openTabLines.length < 20 || diagItemLines.length < 10,
+    "structured truncate should drop open tabs and/or diagnostics rather than hard-slice",
   );
 });

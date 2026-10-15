@@ -349,24 +349,28 @@ export function truncatePacket(
   // Always ensure per-string applied; then loop priority until under budget
   // or no more shrinks possible. Selection text shrink may need multiple passes.
   let guard = 0;
-  while (!isUnder(out) && guard < 200) {
-    guard++;
-    let progressed = false;
-    // Prefer repeatedly shrinking selection texts first (priority 2)
-    if (shrinkSelectionTexts(out, caps)) {
-      progressed = true;
-      budgetFired = true;
-      continue;
-    }
-    for (const step of steps.slice(1)) {
-      if (step()) {
+  const shrinkUntilUnder = (): void => {
+    while (!isUnder(out) && guard < 200) {
+      guard++;
+      let progressed = false;
+      // Prefer repeatedly shrinking selection texts first (priority 2)
+      if (shrinkSelectionTexts(out, caps)) {
         progressed = true;
         budgetFired = true;
-        break;
+        continue;
       }
+      for (const step of steps.slice(1)) {
+        if (step()) {
+          progressed = true;
+          budgetFired = true;
+          break;
+        }
+      }
+      if (!progressed) break;
     }
-    if (!progressed) break;
-  }
+  };
+
+  shrinkUntilUnder();
 
   // Also mark budget if per-string caps truncated selection texts (test expects warning)
   if (perStringChanged) {
@@ -381,12 +385,23 @@ export function truncatePacket(
   if (budgetFired) pushBudgetWarning(out.warnings, caps);
 
   // Cap warnings last; keep budget warning
-  if (out.warnings.length > caps.maxWarnings) {
-    const budget = out.warnings.filter((w) => /budget|truncat/i.test(w));
-    const others = out.warnings.filter((w) => !/budget|truncat/i.test(w));
-    const keepOthers = others.slice(-(caps.maxWarnings - budget.length));
-    out.warnings = [...keepOthers, ...budget].slice(-caps.maxWarnings);
-  }
+  const capWarnings = (): void => {
+    if (out.warnings.length > caps.maxWarnings) {
+      const budget = out.warnings.filter((w) => /budget|truncat/i.test(w));
+      const others = out.warnings.filter((w) => !/budget|truncat/i.test(w));
+      const keepOthers = others.slice(-(caps.maxWarnings - budget.length));
+      out.warnings = [...keepOthers, ...budget].slice(-caps.maxWarnings);
+    }
+  };
+  capWarnings();
+
+  // Budget warning itself can push a just-under packet back over the predicate
+  // (clipboard Markdown underBudget). Continue structured truncation with the
+  // warning included until under budget or no further shrink is possible.
+  // Keep md.slice only for a genuinely impossible minimum in renderMarkdown.
+  shrinkUntilUnder();
+  if (budgetFired) pushBudgetWarning(out.warnings, caps);
+  capWarnings();
 
   return out;
 }
