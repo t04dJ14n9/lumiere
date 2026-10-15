@@ -6,6 +6,13 @@ import {
   type PropertyChange,
 } from "./yaml-value";
 
+/** Alias sites are mid-line; multiline plain scalars would break indentation. */
+function inlineYamlValue(value: unknown): string {
+  return typeof value === "string" && /[\r\n]/.test(value)
+    ? JSON.stringify(value)
+    : yamlValue(value);
+}
+
 type Header = NonNullable<ReturnType<typeof headerParts>>;
 
 type Anchored = {
@@ -24,7 +31,7 @@ function rememberAnchored(
   }
   targets.push({
     node: anchored,
-    insert: yamlValue(anchored.toJS(document, { maxAliasCount: 100 })),
+    insert: inlineYamlValue(anchored.toJS(document, { maxAliasCount: 100 })),
   });
 }
 

@@ -214,3 +214,23 @@ test("unrelated recursive aliases do not block editing other properties", () => 
   assert.equal(frontmatter(next)?.values?.title, "new");
   assert.ok(frontmatter(next)?.values?.loop);
 });
+
+test("merge preserves explicit alias values regardless of paste key order", () => {
+  const source = "---\nfirst: &a 1\nsecond: *a\n---\n";
+  for (const values of [
+    { first: 2, second: 3 },
+    { second: 3, first: 2 },
+  ]) {
+    const next = edit(source, { type: "merge", values });
+    assert.deepEqual(frontmatter(next)?.values, { first: 2, second: 3 });
+  }
+});
+
+test("inlining multiline anchored strings quotes them at alias sites", () => {
+  const source = '---\nfirst: &a "one\\ntwo"\nsecond: *a\n---\n';
+  const next = edit(source, { type: "set", key: "first", value: "x" });
+  assert.deepEqual(frontmatter(next)?.values, {
+    first: "x",
+    second: "one\ntwo",
+  });
+});

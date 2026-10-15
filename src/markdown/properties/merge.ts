@@ -127,16 +127,24 @@ class MergeEdits {
     if (!changes) {
       return false;
     }
-    // Explicit replacements win over earlier alias-preservation inserts on the
-    // same span (e.g. paste updates both an anchor and its alias).
-    for (const change of changes) {
-      for (let index = this.changes.length - 1; index >= 0; index--) {
-        const prior = this.changes[index]!;
-        if (!(prior.to <= change.from || prior.from >= change.to)) {
-          this.changes.splice(index, 1);
-        }
+    const [primary, ...aliases] = changes;
+    // Explicit replacement wins over any overlapping prior alias-preservation.
+    for (let index = this.changes.length - 1; index >= 0; index--) {
+      const prior = this.changes[index]!;
+      if (!(prior.to <= primary!.from || prior.from >= primary!.to)) {
+        this.changes.splice(index, 1);
       }
-      this.changes.push(change);
+    }
+    this.changes.push(primary!);
+    for (const alias of aliases) {
+      if (
+        this.changes.some(
+          (prior) => !(prior.to <= alias.from || prior.from >= alias.to),
+        )
+      ) {
+        continue;
+      }
+      this.changes.push(alias);
     }
     return true;
   }
