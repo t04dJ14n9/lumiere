@@ -5,8 +5,13 @@ import type * as Reclaim from "../../../src/host/reclaim";
 import type * as DocumentWarm from "../../../src/host/document-warm";
 import type * as Workbench from "../../../src/host/workbench";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
+import type * as CursorHandoff from "../../../src/host/cursor-handoff";
 import type { Uri as NativeUri } from "vscode";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
+import {
+  confirmActiveEditor,
+  handOffSelection,
+} from "../../../src/plugins/cursorBridge/handoff";
 
 const { viewType } = MARKDOWN_EDITOR;
 class Uri {
@@ -26,6 +31,18 @@ class Uri {
 }
 class TabInputText {
   constructor(readonly uri: Uri) {}
+}
+class Position {
+  constructor(
+    readonly line: number,
+    readonly character: number,
+  ) {}
+}
+class Range {
+  constructor(
+    readonly start: Position,
+    readonly end: Position,
+  ) {}
 }
 class TabInputCustom {
   constructor(
@@ -49,6 +66,14 @@ interface Document {
   uri: Uri;
   isDirty: boolean;
 }
+interface TextEditor {
+  document: Document & {
+    version: number;
+    getText(): string;
+    positionAt(offset: number): Position;
+  };
+  selection: Range;
+}
 interface Tab {
   input: unknown;
   label: string;
@@ -66,7 +91,11 @@ const opened = new Emitter<Document>();
 const changedFile = new Emitter<Uri>();
 const createdFile = new Emitter<Uri>();
 const createdFiles = new Emitter<{ files: Uri[] }>();
-const tabsChanged = new Emitter<{ opened: Tab[]; changed: Tab[] }>();
+const tabsChanged = new Emitter<{
+  opened: Tab[];
+  changed: Tab[];
+  closed: Tab[];
+}>();
 const warmed: string[] = [];
 const commands: unknown[][] = [];
 const scopes: { section: string; uri: string | undefined }[] = [];
@@ -78,6 +107,8 @@ const vscode = {
   Uri,
   TabInputText,
   TabInputCustom,
+  Position,
+  Range,
   ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
   DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 },
   Disposable: {
@@ -125,6 +156,15 @@ const vscode = {
     }),
   },
   window: {
+    activeTextEditor: undefined as TextEditor | undefined,
+    async showTextDocument(
+      document: TextEditor["document"],
+      options: { selection: Range },
+    ) {
+      const editor = { document, selection: options.selection };
+      vscode.window.activeTextEditor = editor;
+      return editor;
+    },
     tabGroups: {
       all: [group],
       activeTabGroup: group,
@@ -156,6 +196,8 @@ function loadHost() {
       warm: require("../../../src/host/document-warm.ts") as typeof DocumentWarm,
       workbench: require("../../../src/host/workbench.ts") as typeof Workbench,
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
+      cursorHandoff:
+        require("../../../src/host/cursor-handoff.ts") as typeof CursorHandoff,
     };
   } finally {
     loader._load = originalLoad;
@@ -172,6 +214,8 @@ beforeEach(() => {
   scopes.length = 0;
   group.tabs = [];
   group.activeTab = undefined;
+  vscode.window.tabGroups.all = [group];
+  vscode.window.activeTextEditor = undefined;
   beforeOpen = undefined;
   vscode.env.appName = "Cursor";
   settings.clear();
@@ -188,7 +232,9 @@ beforeEach(() => {
 });
 
 function cursorTab(uri = note) {
-  documents.push({ uri: Uri.parse(uri), isDirty: true });
+  if (!documents.some((document) => document.uri.toString() === uri)) {
+    documents.push({ uri: Uri.parse(uri), isDirty: true });
+  }
   const tab: Tab = {
     input: undefined,
     label: Uri.parse(uri).path.split("/").at(-1)!,
@@ -216,7 +262,7 @@ test("an input-less dirty Cursor tab awaits warming before the custom-editor han
   t.after(() => stop.dispose());
   const stop = host.reclaim.registerReclaim();
   const tab = cursorTab();
-  tabsChanged.fire({ opened: [tab], changed: [] });
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
   assert.deepEqual(commands, []);
   release();
@@ -233,7 +279,7 @@ test("an input-less dirty Cursor tab awaits warming before the custom-editor han
   );
 
   tab.input = new TabInputCustom(Uri.parse(note), viewType);
-  tabsChanged.fire({ opened: [], changed: [tab] });
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
   await tick();
   assert.equal(commands.length, 1, "other → workbench must not loop");
 });
@@ -244,7 +290,7 @@ test("switching an existing Workbench tab to Cursor Markdown is reclaimed", asyn
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
   tab.input = undefined;
-  tabsChanged.fire({ opened: [], changed: [tab] });
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
   await tick();
   assert.deepEqual(warmed, [note]);
   assert.equal(commands.length, 1);
@@ -257,7 +303,7 @@ for (const transfer of ["completed", "closed", "another preview"] as const) {
     const stop = host.reclaim.registerReclaim();
     t.after(() => stop.dispose());
     const tab = cursorTab();
-    tabsChanged.fire({ opened: [tab], changed: [] });
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
     if (transfer === "completed") {
       tab.input = new TabInputCustom(Uri.parse(note), viewType);
     } else if (transfer === "another preview") {
@@ -280,7 +326,7 @@ test("selecting another tab during warming does not steal focus back", async (t)
   const tab = cursorTab();
   const other = cursorTab(`file:///vault/Other-${serial}.md`);
   group.activeTab = tab;
-  tabsChanged.fire({ opened: [tab], changed: [] });
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
   group.activeTab = other;
   release();
@@ -303,12 +349,163 @@ test("selecting another same-URI editor during warming does not reopen", async (
   };
   group.tabs.push(sibling);
   group.activeTab = tab;
-  tabsChanged.fire({ opened: [tab], changed: [] });
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
   group.activeTab = sibling;
   release();
   await tick();
   assert.deepEqual(commands, [], "same-URI custom tab must keep focus");
+});
+
+test("same-URI Workbench tab events keep the lease until the last text tab closes", async (t) => {
+  const workbench = cursorTab();
+  workbench.input = new TabInputCustom(Uri.parse(note), viewType);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  t.after(() => host.reclaim.handoffLease.release(note));
+  host.reclaim.handoffLease.acquire(note);
+  const text = cursorTab();
+  text.input = new TabInputText(Uri.parse(note));
+
+  // The Workbench tab becomes inactive as the handed-off text tab opens.
+  tabsChanged.fire({ opened: [text], changed: [workbench], closed: [] });
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+
+  const sibling = cursorTab();
+  sibling.input = new TabInputCustom(Uri.parse(note), viewType);
+  group.activeTab = text;
+  tabsChanged.fire({ opened: [sibling], changed: [], closed: [] });
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+
+  group.tabs = group.tabs.filter((tab) => tab !== workbench);
+  tabsChanged.fire({ opened: [], changed: [], closed: [workbench] });
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+  await tick();
+  assert.deepEqual(warmed, []);
+  assert.deepEqual(commands, [], "reclaim must not interrupt Cursor Edit");
+
+  group.tabs = group.tabs.filter((tab) => tab !== text);
+  group.activeTab = sibling;
+  tabsChanged.fire({ opened: [], changed: [sibling], closed: [text] });
+  assert.equal(host.reclaim.handoffLease.has(note), false);
+
+  sibling.input = undefined;
+  tabsChanged.fire({ opened: [], changed: [sibling], closed: [] });
+  await tick();
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+});
+
+test("closing one of two native text tabs keeps the handoff lease", (t) => {
+  const first = cursorTab();
+  first.input = new TabInputText(Uri.parse(note));
+  const last = cursorTab();
+  last.input = new TabInputText(Uri.parse(note));
+  const otherGroup = { viewColumn: 2, tabs: [last], activeTab: last };
+  last.group = otherGroup;
+  group.tabs = [first];
+  vscode.window.tabGroups.all.push(otherGroup);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  t.after(() => host.reclaim.handoffLease.release(note));
+  host.reclaim.handoffLease.acquire(note);
+
+  group.tabs = [];
+  tabsChanged.fire({ opened: [], changed: [], closed: [first] });
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+
+  otherGroup.tabs = [];
+  tabsChanged.fire({ opened: [], changed: [], closed: [last] });
+  assert.equal(host.reclaim.handoffLease.has(note), false);
+});
+
+test("switching the last native text tab to Markdown releases the handoff lease", async (t) => {
+  const tab = cursorTab();
+  tab.input = new TabInputText(Uri.parse(note));
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  t.after(() => host.reclaim.handoffLease.release(note));
+  host.reclaim.handoffLease.acquire(note);
+
+  tab.input = undefined;
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
+  await tick();
+  assert.equal(host.reclaim.handoffLease.has(note), false);
+  assert.equal(commands[0]?.[0], "vscode.openWith");
+});
+
+test("a lease acquired during queued reclaim survives sibling tab changes", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  t.after(() => host.reclaim.handoffLease.release(note));
+  const text = cursorTab();
+  text.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [text], changed: [], closed: [] });
+  assert.deepEqual(warmed, [note]);
+
+  host.reclaim.handoffLease.acquire(note);
+  const sibling = cursorTab();
+  sibling.input = new TabInputCustom(Uri.parse(note), viewType);
+  group.activeTab = text;
+  tabsChanged.fire({ opened: [sibling], changed: [], closed: [] });
+  group.tabs = [text];
+  tabsChanged.fire({ opened: [], changed: [], closed: [sibling] });
+  release();
+  await tick();
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+  assert.deepEqual(commands, [], "queued openWith must honor the lease");
+});
+
+test("Cursor handoff surface reads live editor state and checks native editor identity", async (t) => {
+  const document: TextEditor["document"] = {
+    uri: Uri.parse(note),
+    isDirty: true,
+    version: 1,
+    getText: () => "abcdef",
+    positionAt: (offset) => new Position(0, offset),
+  };
+  documents.push(document);
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  t.after(() => surface.releaseLease(note));
+  const selection = { from: 2, to: 4, text: "cd", version: 1 };
+  const handoff = await handOffSelection(surface, note, selection);
+  assert.equal(handoff.ok, true);
+  if (!handoff.ok) {
+    return;
+  }
+  const native = vscode.window.activeTextEditor;
+  assert.ok(native);
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+  const opened = await surface.open(note);
+  document.version++;
+  assert.equal(opened.version, 2, "open must also expose the live version");
+  assert.deepEqual(confirmActiveEditor(handoff.editor, note, selection), {
+    ok: false,
+    reason: "changed",
+  });
+
+  document.version = 1;
+  const mirrored = native.selection;
+  native.selection = new Range(new Position(0, 0), new Position(0, 1));
+  assert.deepEqual(confirmActiveEditor(handoff.editor, note, selection), {
+    ok: false,
+    reason: "inactive",
+  });
+  native.selection = mirrored;
+  assert.equal(confirmActiveEditor(handoff.editor, note, selection).ok, true);
+
+  // Another editor of the same document and range is still a different tab.
+  vscode.window.activeTextEditor = { document, selection: mirrored };
+  assert.equal(handoff.editor.isActive(), false);
+  assert.deepEqual(confirmActiveEditor(handoff.editor, note, selection), {
+    ok: false,
+    reason: "inactive",
+  });
+  vscode.window.activeTextEditor = undefined;
+  assert.equal(handoff.editor.isActive(), false);
+  surface.releaseLease(note);
+  assert.equal(host.reclaim.handoffLease.has(note), false);
 });
 
 test("ambiguous basenames, known previews and diffs are not reclaimed", async (t) => {
@@ -319,11 +516,11 @@ test("ambiguous basenames, known previews and diffs are not reclaimed", async (t
     uri: Uri.parse(note.replace("/vault/", "/other/")),
     isDirty: true,
   });
-  tabsChanged.fire({ opened: [tab], changed: [] });
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   tab.input = new TabInputCustom(Uri.parse(note), "another.preview");
-  tabsChanged.fire({ opened: [], changed: [tab] });
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
   tab.input = { original: Uri.parse(note), modified: Uri.parse(note) };
-  tabsChanged.fire({ opened: [], changed: [tab] });
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
   await tick();
   assert.deepEqual(warmed, []);
   assert.deepEqual(commands, []);
@@ -342,7 +539,7 @@ for (const gate of ["reclaim disabled", "unassociated", "bypassed"] as const) {
     }
     const stop = host.reclaim.registerReclaim();
     t.after(() => stop.dispose());
-    tabsChanged.fire({ opened: [cursorTab()], changed: [] });
+    tabsChanged.fire({ opened: [cursorTab()], changed: [], closed: [] });
     await tick();
     assert.deepEqual(warmed, []);
     assert.deepEqual(commands, []);

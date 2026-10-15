@@ -4,6 +4,7 @@ import { warmMarkdownDocument } from "./document-warm";
 import type {
   HandoffSurface,
   NativeDocument,
+  NativeEditor,
 } from "../plugins/cursorBridge/handoff";
 
 /** VS Code surface for cursorBridge selection mirror + reclaim lease. */
@@ -11,6 +12,9 @@ export function createCursorHandoffSurface(): HandoffSurface {
   return {
     acquireLease(uri) {
       handoffLease.acquire(uri);
+    },
+    releaseLease(uri) {
+      handoffLease.release(uri);
     },
     async warm(uri) {
       await warmMarkdownDocument(vscode.Uri.parse(uri));
@@ -33,27 +37,29 @@ export function createCursorHandoffSurface(): HandoffSurface {
           new vscode.Position(range.end.line, range.end.character),
         ),
       });
-      return {
-        document: wrapDocument(editor.document),
-        selection: {
-          start: {
-            line: editor.selection.start.line,
-            character: editor.selection.start.character,
-          },
-          end: {
-            line: editor.selection.end.line,
-            character: editor.selection.end.character,
-          },
-        },
-      };
+      return wrapEditor(editor);
     },
+  };
+}
+
+function wrapEditor(editor: vscode.TextEditor): NativeEditor {
+  return {
+    get document() {
+      return wrapDocument(editor.document);
+    },
+    get selection() {
+      return editor.selection;
+    },
+    isActive: () => vscode.window.activeTextEditor === editor,
   };
 }
 
 function wrapDocument(document: vscode.TextDocument): NativeDocument {
   return {
     uri: document.uri.toString(),
-    version: document.version,
+    get version() {
+      return document.version;
+    },
     getText: () => document.getText(),
     positionAt: (offset) => {
       const position = document.positionAt(offset);

@@ -2,7 +2,11 @@ import type { Context, Plugin } from "../../kernel";
 import type { HostDocument } from "../../shared/runtime";
 import type {} from "../editor/api";
 import { isCursorHost, openCursorChat, openCursorEdit } from "./cursor";
-import { handOffSelection, type HandoffSurface } from "./handoff";
+import {
+  confirmActiveEditor,
+  handOffSelection,
+  type HandoffSurface,
+} from "./handoff";
 import { captureActiveSelection } from "./selection";
 
 const IS_CURSOR_HOST = "markdownWorkbench.isCursorHost";
@@ -58,20 +62,28 @@ async function runBridge(
     ctx.workbench.inform?.("Select text in the note first");
     return;
   }
+  const commands = await commandSet(ctx);
   const handoff = await handOffSelection(
     config.surface,
     captured.uri,
     captured.selection,
   );
-  if (!handoff.ok) {
+  // The await above can resume after focus or selection changes. Keep this
+  // check and Cursor invocation in the same synchronous turn.
+  const confirmed = handoff.ok
+    ? confirmActiveEditor(handoff.editor, captured.uri, captured.selection)
+    : handoff;
+  if (!confirmed.ok) {
+    if (handoff.ok) {
+      config.surface.releaseLease(captured.uri);
+    }
     ctx.workbench.error(
-      handoff.reason === "changed"
+      confirmed.reason === "changed"
         ? "The note changed before Cursor could use the selection."
         : "Could not mirror the selection into Cursor’s editor.",
     );
     return;
   }
-  const commands = await commandSet(ctx);
   if (mode === "chat") {
     await runChat(ctx, captured.selection.text, commands);
     return;
@@ -121,6 +133,7 @@ async function commandSet(
 
 const unusedSurface: HandoffSurface = {
   acquireLease() {},
+  releaseLease() {},
   async warm() {},
   async open() {
     throw new Error("cursorBridge handoff surface was not configured");

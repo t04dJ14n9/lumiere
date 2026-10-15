@@ -42,6 +42,25 @@ function uriOf(tab: vscode.Tab): string | undefined {
   return input?.uri?.toString();
 }
 
+function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
+  const uri = uriOf(tab) ?? labelUri(tab);
+  if (!uri || !handoffLease.has(uri)) {
+    return;
+  }
+  // Same-URI custom tabs can close or become inactive during Cursor Edit.
+  // The lease ends only when no native text tab remains in any group.
+  const hasNativeTextTab = vscode.window.tabGroups.all.some((group) =>
+    group.tabs.some(
+      (candidate) =>
+        candidate.input instanceof vscode.TabInputText &&
+        candidate.input.uri.toString() === uri,
+    ),
+  );
+  if (!hasNativeTextTab) {
+    handoffLease.release(uri);
+  }
+}
+
 /**
  * `markdownWorkbench.editor.reclaimTextEditor`: Cursor's Preview | Markdown
  * switch opens notes in the text or Cursor Markdown editor; warm them before
@@ -64,11 +83,8 @@ export function registerReclaim(): vscode.Disposable {
   };
   remember();
   return vscode.window.tabGroups.onDidChangeTabs((event) => {
-    for (const tab of event.closed ?? []) {
-      const uri = uriOf(tab) ?? labelUri(tab);
-      if (uri) {
-        handoffLease.release(uri);
-      }
+    for (const tab of [...event.closed, ...event.opened, ...event.changed]) {
+      releaseLeaseWithoutTextTab(tab);
     }
     for (const tab of [...event.opened, ...event.changed]) {
       const uri = uriOf(tab) ?? labelUri(tab);
@@ -76,11 +92,6 @@ export function registerReclaim(): vscode.Disposable {
         continue;
       }
       const after = kindOf(tab);
-      // Leaving the native text editor ends the handoff session so a later
-      // Preview | Markdown switch can reclaim into Markdown Workbench.
-      if (handoffLease.has(uri) && after !== "text") {
-        handoffLease.release(uri);
-      }
       const swap = {
         uri,
         before: seen.get(key(tab, uri)) ?? "none",

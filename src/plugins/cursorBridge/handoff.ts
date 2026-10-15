@@ -11,11 +11,13 @@ export interface NativeDocument {
 }
 
 export interface NativeEditor {
+  /** Live values: revalidation must observe changes after show() resolves. */
   readonly document: NativeDocument;
   readonly selection: {
     start: { line: number; character: number };
     end: { line: number; character: number };
   };
+  isActive(): boolean;
 }
 
 export interface HandoffSurface {
@@ -29,6 +31,7 @@ export interface HandoffSurface {
     },
   ): Promise<NativeEditor>;
   acquireLease(uri: string): void;
+  releaseLease(uri: string): void;
 }
 
 export interface SelectionSnapshot {
@@ -53,18 +56,27 @@ export async function handOffSelection(
   selection: SelectionSnapshot,
 ): Promise<HandoffResult> {
   surface.acquireLease(uri);
-  await surface.warm(uri);
-  const document = await surface.open(uri);
-  const validated = validateDocument(document, uri, selection);
-  if (!validated.ok) {
-    return validated;
+  let isHandedOff = false;
+  try {
+    await surface.warm(uri);
+    const document = await surface.open(uri);
+    const validated = validateDocument(document, uri, selection);
+    if (!validated.ok) {
+      return validated;
+    }
+    const range = {
+      start: document.positionAt(selection.from),
+      end: document.positionAt(selection.to),
+    };
+    const editor = await surface.show(document, range);
+    const confirmed = confirmActiveEditor(editor, uri, selection);
+    isHandedOff = confirmed.ok;
+    return confirmed;
+  } finally {
+    if (!isHandedOff) {
+      surface.releaseLease(uri);
+    }
   }
-  const range = {
-    start: document.positionAt(selection.from),
-    end: document.positionAt(selection.to),
-  };
-  const editor = await surface.show(document, range);
-  return confirmEditor(editor, uri, selection, range);
 }
 
 function validateDocument(
@@ -91,21 +103,23 @@ function validateDocument(
   return { ok: true };
 }
 
-function confirmEditor(
+/** Synchronous final check; invoke Cursor immediately after it succeeds. */
+export function confirmActiveEditor(
   editor: NativeEditor,
   uri: string,
   selection: SelectionSnapshot,
-  range: {
-    start: { line: number; character: number };
-    end: { line: number; character: number };
-  },
 ): HandoffResult {
-  if (
-    editor.document.uri !== uri ||
-    editor.document.version !== selection.version
-  ) {
-    return { ok: false, reason: "changed" };
+  if (!editor.isActive()) {
+    return { ok: false, reason: "inactive" };
   }
+  const validated = validateDocument(editor.document, uri, selection);
+  if (!validated.ok) {
+    return validated;
+  }
+  const range = {
+    start: editor.document.positionAt(selection.from),
+    end: editor.document.positionAt(selection.to),
+  };
   if (
     !samePosition(editor.selection.start, range.start) ||
     !samePosition(editor.selection.end, range.end)

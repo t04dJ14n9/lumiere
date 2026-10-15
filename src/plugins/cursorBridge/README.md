@@ -8,13 +8,16 @@ memory on Markdown Workbench’s custom editor.
 ## How it works
 
 The host captures a flushed, version-checked selection from the active panel,
-acquires a reclaim handoff lease, warms the shared `TextDocument`, rechecks
-document version and text after that async work, mirrors the range with
-`positionAt` into a focused native text editor, then runs Cursor’s Chat or Edit
-command. The lease suppresses reclaim for the whole native session (not a timed
-bypass); it releases when the note leaves the text editor so a later Preview |
-Markdown switch can restore Markdown Workbench. Apply stays in Cursor; MW
-follows the document model. Dirty notes are allowed without autosave.
+discovers Cursor commands, acquires a reclaim handoff lease, warms the shared
+`TextDocument`, rechecks document version and text after that async work, mirrors
+the range with `positionAt` into a focused native text editor, then runs Cursor’s Chat or Edit
+command after a final synchronous check of the active editor, version, text and
+range. The lease suppresses reclaim for the whole native session (not a timed
+bypass); it releases on failed handoff or when the last native text tab for the
+note leaves the text editor. Same-URI Workbench tab changes keep the lease, and
+a later Preview | Markdown switch can restore Markdown Workbench. Apply stays
+in Cursor; MW follows the document model. Dirty notes are allowed without
+autosave.
 
 ## Files
 

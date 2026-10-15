@@ -1,9 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  confirmActiveEditor,
   handOffSelection,
   type HandoffSurface,
   type NativeDocument,
+  type NativeEditor,
 } from "../../../src/plugins/cursorBridge/handoff";
 
 function positionAt(text: string, offset: number) {
@@ -30,150 +32,231 @@ function positionAt(text: string, offset: number) {
   return { line, character };
 }
 
-function fakeDocument(
-  uri: string,
-  text: string,
-  version: number,
-): NativeDocument {
-  return {
-    uri,
+const note = "file:///vault/Note.md";
+
+function fixture(text: string, version = 1) {
+  const state = {
+    uri: note,
+    text,
     version,
-    getText: () => text,
-    positionAt: (offset) => positionAt(text, offset),
+    isActive: true,
+    range: {
+      start: { line: 0, character: 0 },
+      end: { line: 0, character: 0 },
+    },
   };
+  const leases = new Set<string>();
+  const released: string[] = [];
+  const document: NativeDocument = {
+    get uri() {
+      return state.uri;
+    },
+    get version() {
+      return state.version;
+    },
+    getText: () => state.text,
+    positionAt: (offset) => positionAt(state.text, offset),
+  };
+  const editor: NativeEditor = {
+    document,
+    get selection() {
+      return state.range;
+    },
+    isActive: () => state.isActive,
+  };
+  const surface: HandoffSurface = {
+    acquireLease: (uri) => {
+      leases.add(uri);
+    },
+    releaseLease: (uri) => {
+      leases.delete(uri);
+      released.push(uri);
+    },
+    async warm() {},
+    async open() {
+      return document;
+    },
+    async show(_document, range) {
+      state.range = range;
+      return editor;
+    },
+  };
+  return { state, leases, released, surface, document, editor };
 }
 
 test("handoff acquires a lease and mirrors a CRLF selection", async () => {
   const text = "one\r\ntwo\r\nthree";
-  const from = 5;
-  const to = 8;
-  const leases: string[] = [];
-  const handoff: HandoffSurface = {
-    acquireLease(uri) {
-      leases.push(uri);
-    },
-    async warm() {},
-    async open() {
-      return fakeDocument("file:///vault/Note.md", text, 3);
-    },
-    async show(document, range) {
-      return {
-        document,
-        selection: { start: range.start, end: range.end },
-      };
-    },
-  };
-  const result = await handOffSelection(handoff, "file:///vault/Note.md", {
-    from,
-    to,
+  const f = fixture(text, 3);
+  const result = await handOffSelection(f.surface, note, {
+    from: 5,
+    to: 8,
     text: "two",
     version: 3,
   });
   assert.equal(result.ok, true);
-  assert.deepEqual(leases, ["file:///vault/Note.md"]);
+  assert.deepEqual([...f.leases], [note]);
+  assert.deepEqual(f.released, []);
   if (result.ok) {
-    assert.deepEqual(result.editor.selection.start, positionAt(text, from));
-    assert.deepEqual(result.editor.selection.end, positionAt(text, to));
+    assert.deepEqual(result.editor.selection.start, positionAt(text, 5));
+    assert.deepEqual(result.editor.selection.end, positionAt(text, 8));
   }
 });
 
-test("handoff fails closed when the document changes during warm", async () => {
-  let version = 1;
-  let current = "hello world";
-  const leases: string[] = [];
-  const handoff: HandoffSurface = {
-    acquireLease(uri) {
-      leases.push(uri);
-    },
-    async warm() {
-      version = 2;
-      current = "hello there";
-    },
-    async open() {
-      return fakeDocument("file:///vault/Note.md", current, version);
-    },
-    async show() {
-      assert.fail("show must not run after a version change");
-    },
+test("handoff releases the lease when the document changes during warm", async () => {
+  const f = fixture("hello world");
+  f.surface.warm = async () => {
+    f.state.version = 2;
+    f.state.text = "hello there";
   };
-  const result = await handOffSelection(handoff, "file:///vault/Note.md", {
+  f.surface.show = async () => {
+    assert.fail("show must not run after a version change");
+  };
+  const result = await handOffSelection(f.surface, note, {
     from: 6,
     to: 11,
     text: "world",
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "changed" });
-  assert.deepEqual(leases, ["file:///vault/Note.md"]);
+  assert.equal(f.leases.size, 0);
+  assert.deepEqual(f.released, [note]);
 });
 
-test("handoff fails closed on surrogate-pair text mismatch", async () => {
-  const text = "A😀B";
-  const handoff: HandoffSurface = {
-    acquireLease() {},
-    async warm() {},
-    async open() {
-      return fakeDocument("file:///vault/Note.md", text, 1);
-    },
-    async show() {
-      assert.fail("show must not run");
-    },
+test("handoff releases the lease on surrogate-pair text mismatch", async () => {
+  const f = fixture("A😀B");
+  f.surface.show = async () => {
+    assert.fail("show must not run on a text mismatch");
   };
-  const result = await handOffSelection(handoff, "file:///vault/Note.md", {
+  const result = await handOffSelection(f.surface, note, {
     from: 1,
     to: 3,
     text: "XY",
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "changed" });
+  assert.equal(f.leases.size, 0);
+  assert.deepEqual(f.released, [note]);
 });
 
 test("handoff allows a dirty buffer when version and text still match", async () => {
-  const text = "draft line";
-  const handoff: HandoffSurface = {
-    acquireLease() {},
-    async warm() {},
-    async open() {
-      return fakeDocument("file:///vault/Note.md", text, 7);
-    },
-    async show(document, range) {
-      return {
-        document,
-        selection: { start: range.start, end: range.end },
-      };
-    },
-  };
-  const result = await handOffSelection(handoff, "file:///vault/Note.md", {
+  const f = fixture("draft line", 7);
+  const result = await handOffSelection(f.surface, note, {
     from: 0,
     to: 5,
     text: "draft",
     version: 7,
   });
   assert.equal(result.ok, true);
+  assert.equal(f.leases.has(note), true);
+  assert.deepEqual(f.released, []);
 });
 
-test("handoff fails when the mirrored editor selection is wrong", async () => {
-  const text = "abcdef";
-  const handoff: HandoffSurface = {
-    acquireLease() {},
-    async warm() {},
-    async open() {
-      return fakeDocument("file:///vault/Note.md", text, 1);
-    },
-    async show(document) {
-      return {
-        document,
-        selection: {
-          start: { line: 0, character: 0 },
-          end: { line: 0, character: 1 },
-        },
-      };
-    },
+test("handoff releases the lease when the mirrored selection is wrong", async () => {
+  const f = fixture("abcdef");
+  f.surface.show = async () => {
+    f.state.range = {
+      start: { line: 0, character: 0 },
+      end: { line: 0, character: 1 },
+    };
+    return f.editor;
   };
-  const result = await handOffSelection(handoff, "file:///vault/Note.md", {
+  const result = await handOffSelection(f.surface, note, {
     from: 2,
     to: 4,
     text: "cd",
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "inactive" });
+  assert.equal(f.leases.size, 0);
+  assert.deepEqual(f.released, [note]);
 });
+
+test("handoff requires the mirrored editor to be active", async () => {
+  const f = fixture("abcdef");
+  f.state.isActive = false;
+  const result = await handOffSelection(f.surface, note, {
+    from: 2,
+    to: 4,
+    text: "cd",
+    version: 1,
+  });
+  assert.deepEqual(result, { ok: false, reason: "inactive" });
+  assert.equal(f.leases.size, 0);
+  assert.deepEqual(f.released, [note]);
+});
+
+test("handoff releases the lease on an out-of-bounds range", async () => {
+  const f = fixture("abcdef");
+  const result = await handOffSelection(f.surface, note, {
+    from: 2,
+    to: 9,
+    text: "cdef",
+    version: 1,
+  });
+  assert.deepEqual(result, { ok: false, reason: "mismatch" });
+  assert.equal(f.leases.size, 0);
+  assert.deepEqual(f.released, [note]);
+});
+
+for (const stage of ["warm", "open", "show"] as const) {
+  test(`handoff releases the lease when ${stage} throws`, async () => {
+    const f = fixture("abcdef");
+    f.surface[stage] = async () => {
+      throw new Error(`${stage} failed`);
+    };
+    await assert.rejects(
+      handOffSelection(f.surface, note, {
+        from: 2,
+        to: 4,
+        text: "cd",
+        version: 1,
+      }),
+      new RegExp(`${stage} failed`),
+    );
+    assert.equal(f.leases.size, 0);
+    assert.deepEqual(f.released, [note]);
+  });
+}
+
+for (const change of [
+  "active editor",
+  "uri",
+  "version",
+  "text",
+  "range",
+] as const) {
+  test(`final revalidation fails closed if ${change} changes after handoff`, async () => {
+    const f = fixture("abcdef");
+    const selection = { from: 2, to: 4, text: "cd", version: 1 };
+    const handoff = await handOffSelection(f.surface, note, selection);
+    assert.equal(handoff.ok, true);
+    if (!handoff.ok) {
+      return;
+    }
+    assert.equal(confirmActiveEditor(handoff.editor, note, selection).ok, true);
+
+    // Model work queued after handoff validation but before Cursor invocation.
+    await Promise.resolve().then(() => {
+      if (change === "active editor") {
+        f.state.isActive = false;
+      } else if (change === "uri") {
+        f.state.uri = "file:///vault/Other.md";
+      } else if (change === "version") {
+        f.state.version++;
+      } else if (change === "text") {
+        f.state.text = "abXYef";
+      } else {
+        f.state.range = {
+          start: { line: 0, character: 0 },
+          end: { line: 0, character: 1 },
+        };
+      }
+    });
+    const reason =
+      change === "active editor" || change === "range" ? "inactive" : "changed";
+    assert.deepEqual(confirmActiveEditor(handoff.editor, note, selection), {
+      ok: false,
+      reason,
+    });
+  });
+}
