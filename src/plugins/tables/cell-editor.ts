@@ -191,9 +191,21 @@ export function cellKeymap(options: CellEditorOptions) {
         key: "Mod-Enter",
         run: (view) => options.environment.links?.follow(view) ?? false,
       },
-      { key: "Mod-s", run: () => options.action("save") },
-      { key: "Mod-z", run: () => options.action("undo") },
-      { key: "Mod-Shift-z", run: () => options.action("redo") },
+      {
+        key: "Mod-s",
+        run: () => options.action("save"),
+        stopPropagation: true,
+      },
+      {
+        key: "Mod-z",
+        run: () => options.action("undo"),
+        stopPropagation: true,
+      },
+      {
+        key: "Mod-Shift-z",
+        run: () => options.action("redo"),
+        stopPropagation: true,
+      },
       {
         key: "Mod-b",
         run: (view) => options.environment.wrap("**", view),
