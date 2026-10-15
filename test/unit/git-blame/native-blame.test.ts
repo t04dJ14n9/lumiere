@@ -324,3 +324,21 @@ test("empty/invalid/oversize snapshots never spawn; timeout errors soft-hide", a
   assert.equal(calls, 0);
   assert.equal((await runBlameLine(options(runGit))).status, "unavailable");
 });
+
+test("known-identical-to-disk optimization still classifies dirty worktree lines as uncommitted", async () => {
+  const { root } = await repo();
+  try {
+    const contents = "alpha\nunsaved on disk\ngamma\n";
+    await writeFile(join(root, "note.md"), contents);
+    const result = await runBlameLine({
+      ...options(createSpawnBlameRunner()),
+      cwd: root,
+      line: 2,
+      knownClean: true,
+      snapshot: { contents, version: 4 },
+    });
+    assert.equal(result.status, "uncommitted");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

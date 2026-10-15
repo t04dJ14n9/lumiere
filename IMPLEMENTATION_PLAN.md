@@ -4267,3 +4267,12 @@ order and contribution cases also pass. Full `pnpm typecheck`, `pnpm lint` and
 `pnpm contributions` pass. On Node 20 the requested directory-form tsx command
 finds zero tests; the verified run uses explicit `*.test.ts` globs. No source
 suites ported and no VSIX built or installed. Full integration gate follows.
+
+## gitBlame review fix — Path-only worktree attribution, 2026-10-15
+
+A post-integration real-Git regression showed that the optional known-identical-
+to-disk route returned committed attribution for a dirty worktree line because
+it explicitly named HEAD. Removed that revision only for the path-only route,
+so Git includes working-tree edits. The production snapshot route continues to
+send stdin against HEAD. TDD: the new dirty-disk case failed with ok, now returns
+uncommitted; all 47 focused cases pass. No VSIX built or installed.

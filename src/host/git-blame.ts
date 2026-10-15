@@ -99,9 +99,11 @@ export async function runBlameLine(
   }
   const args = ["blame", "--line-porcelain", "-L", `${line},${line}`];
   if (!knownClean) {
-    args.push("--contents", "-");
+    args.push("--contents", "-", "HEAD");
   }
-  args.push("HEAD", "--", options.relativePath);
+  // With no explicit revision, git includes uncommitted worktree lines. A clean
+  // editor snapshot only proves disk identity, not that disk equals HEAD.
+  args.push("--", options.relativePath);
   try {
     const { stdout } = await options.runGit({
       args,
