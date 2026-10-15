@@ -3735,5 +3735,5 @@ note scroller for Y. Properties order is unchanged (one viewport for both).
 
 Files: `src/webview/ui/edge-scroll.ts`,
 `src/plugins/tables/{grid,selection,selection-drag,handles,controller}.ts`,
-`test/unit/webview/edge-scroll.test.ts`, `src/plugins/tables/hit-test.test.ts`.
+`test/unit/webview/edge-scroll.test.ts`, `test/unit/tables/hit-test.test.ts`.
 
