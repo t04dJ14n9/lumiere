@@ -242,7 +242,7 @@ function directRegistrations(selections: Selections): Plugin {
       registerEditorActions(ctx, ctx.editors, selections);
       registerPluginManagement(ctx, {} as never, {} as never);
       registerOpenReference(ctx, {} as never, {} as never);
-      registerOutlineActions(ctx, {} as never);
+      registerOutlineActions(ctx, {} as never, {} as never);
       registerSymbolPicker(ctx, ctx.workshop.views!);
     },
   };
