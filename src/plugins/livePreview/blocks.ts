@@ -1,7 +1,7 @@
 import { StateEffect, StateField, type EditorState } from "@codemirror/state";
 import {
-  isPointerSelecting,
-  pointerSelectionToggled,
+  isRevealFrozen,
+  revealFreezeToggled,
 } from "../../webview/ui/pointer-selection";
 import type { Range } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
@@ -280,12 +280,12 @@ export function blockDecorations(report: (error: unknown) => void) {
       if (changesMetadata(tr) || !tr.startState.field(blockIndex, false)) {
         return build(tr.state);
       }
-      // Pointer-drag freezes reveal: keep widgets so tall blocks do not reflow.
-      const freeze = pointerSelectionToggled(tr.startState, tr.state);
+      // Pointer / Vim-visual freezes reveal: keep widgets so tall blocks do not reflow.
+      const freeze = revealFreezeToggled(tr.startState, tr.state);
       if (
         !tr.docChanged &&
         !freeze &&
-        (isPointerSelecting(tr.state) || !tr.selection)
+        (isRevealFrozen(tr.state) || !tr.selection)
       ) {
         return value;
       }

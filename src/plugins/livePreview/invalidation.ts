@@ -1,6 +1,6 @@
 import type { EditorState, Transaction } from "@codemirror/state";
 import {
-  pointerSelectionToggled,
+  revealFreezeToggled,
   revealRanges,
 } from "../../webview/ui/pointer-selection";
 import type { Tree } from "@lezer/common";
@@ -143,7 +143,7 @@ export function renderInvalidations(tr: Transaction): RenderInvalidation[] {
   if (
     tr.selection ||
     tr.docChanged ||
-    pointerSelectionToggled(tr.startState, tr.state)
+    revealFreezeToggled(tr.startState, tr.state)
   ) {
     const before = revealRanges(tr.startState).map((range) =>
       range.map(tr.changes),

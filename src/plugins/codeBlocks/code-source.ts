@@ -1,7 +1,7 @@
 import { syntaxTree } from "@codemirror/language";
 import {
-  isPointerSelecting,
-  pointerSelectionToggled,
+  isRevealFrozen,
+  revealFreezeToggled,
 } from "../../webview/ui/pointer-selection";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { StateEffect, type Range } from "@codemirror/state";
@@ -24,7 +24,7 @@ interface CachedCode {
 }
 
 /** Use the same lazy highlighter in editable fences and rendered code. */
-class CodeSource {
+export class CodeSource {
   decorations: DecorationSet = Decoration.none;
   private readonly copy: (text: string) => void;
   private highlighter?: typeof CodeHighlighter;
@@ -179,19 +179,14 @@ class CodeSource {
   }
 
   update(update: ViewUpdate): void {
-    if (
-      update.view.composing ||
-      (isPointerSelecting(update.state) &&
-        !pointerSelectionToggled(update.startState, update.state) &&
-        !update.docChanged)
-    ) {
+    if (update.view.composing) {
       this.decorations = this.decorations.map(update.changes);
       return;
     }
     if (
       update.docChanged ||
-      update.selectionSet ||
-      pointerSelectionToggled(update.startState, update.state) ||
+      (update.selectionSet && !isRevealFrozen(update.state)) ||
+      revealFreezeToggled(update.startState, update.state) ||
       update.viewportChanged ||
       syntaxTree(update.startState) !== syntaxTree(update.state) ||
       update.transactions.some((transaction) =>

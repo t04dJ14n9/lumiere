@@ -4168,3 +4168,21 @@ the menu starts with them as Obsidian's does (it already offered them outside
 the content). They run the browser's clipboard commands in the webview, which
 CodeMirror and `pasteHtml` handle as for the keyboard; table cells and
 property chips keep their own menus. Editor scenario 7 covers it.
+
+## PR #44 CodeSource freeze rebuild gate — 2026-10-15
+
+Pointer and Vim visual freezes now suppress only selection-driven code-source
+rebuilds. Viewport changes, syntax-tree changes and highlighter-ready effects
+still rebuild decorations, so newly visible fences are decorated during visual
+autoscroll. Composition still maps existing decorations and returns early.
+
+Validation: 11 new unit tests pass for both freeze types, including viewport
+changes with and without selection growth, syntax and ready updates, and
+composition mapping. The original guard fails nine of those tests. Existing
+code-block, visual-reveal, reveal-freeze, pointer-selection and selection units
+pass. `pnpm check` passes format, lint and all typecheck projects, then hits the
+sandbox's denied tsx IPC socket. Running units through Node's tsx loader passes
+268/272 files; the four unrelated failures are subprocess/probe checks in diff,
+Git images, Git inline and layer tests. Contributions checking and production
+builds pass. Browser/native checks were attempted sequentially but blocked by
+Chromium startup permissions, VS Code download DNS, and installed-editor setup.
