@@ -29,7 +29,7 @@ function setSettings(file: string, original: string, extra: object) {
   );
 }
 
-test("markdownWorkbench.editor.fontSize sets the note's body size (16px by default, never editor.fontSize) and everything scales with it, live", async () => {
+test("markdownWorkshop.editor.fontSize sets the note's body size (16px by default, never editor.fontSize) and everything scales with it, live", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
@@ -62,7 +62,7 @@ test("markdownWorkbench.editor.fontSize sets the note's body size (16px by defau
         "[markdown]": { "editor.fontSize": 31, "editor.lineHeight": 44 },
         ...(size === undefined
           ? {}
-          : { "markdownWorkbench.editor.fontSize": size }),
+          : { "markdownWorkshop.editor.fontSize": size }),
       });
       const expected = size ?? 16;
       await expect.poll(async () => (await sizes(frame)).body).toBe(expected);

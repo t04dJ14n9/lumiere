@@ -55,7 +55,7 @@ test("inline title host owns resource-enabled RPC handlers and reports rename er
     restore: async () => {},
   } satisfies Editors);
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       renameFile: async () => {},
       config: () => ({

@@ -14,10 +14,10 @@ an agent because an envelope was built.
 
 | Command | Who publishes it | When it is absent |
 | --- | --- | --- |
-| `markdownWorkbench.bridge.envelope` | Markdown Workshop, hidden from the palette | This extension is disabled or not installed |
+| `markdownWorkshop.bridge.envelope` | Markdown Workshop, hidden from the palette | This extension is disabled or not installed |
 | `vscodeEmbedPdf.bridge.envelope` | Agent PDF Viewer | This extension does not call it, and does not require that extension |
 
-`markdownWorkbench.bridge.envelope` returns one envelope for the active
+`markdownWorkshop.bridge.envelope` returns one envelope for the active
 Markdown selection, or asks the PDF command when this editor has no
 selection. An optional argument is a wiki context (`preset`, `bundle`,
 `collection`, `type`). A malformed argument is ignored. The command does
@@ -86,7 +86,7 @@ hash, because the hash would not match disk. Clipboard `@path` text is
 produced only for a saved file, so the line numbers match disk.
 
 Hashes are SHA-256 of the UTF-8 text when this extension produces them
-(`Workbench.fingerprint`). The shared handoff fixture's PDF prefix
+(`Workshop.fingerprint`). The shared handoff fixture's PDF prefix
 `9f86d081884c7d65` is accepted.
 
 ## PDF locator
@@ -132,7 +132,7 @@ not create those folders.
 
 - **Agent PDF Viewer** can publish `vscodeEmbedPdf.bridge.envelope`
   returning this version-1 object (`producer: "pdf"`), and can call
-  `markdownWorkbench.bridge.envelope` for a note. It should keep its
+  `markdownWorkshop.bridge.envelope` for a note. It should keep its
   current Source-link clipboard text. Do not merge the PDF extension into
   this repository.
 - **Browser Bridge** stays a Chrome-owned extension. It is not implemented

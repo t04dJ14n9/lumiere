@@ -67,12 +67,12 @@ records it in `docs/PARITY.md`.
 | markers | Badges and actions that other extensions place on source ranges | Plain text only; at most 1,000 per plugin per editor |
 | settings | Open Settings, Change Setting… (any contributed setting, edited by type), and commands to set the note font size and toggle line numbers, readable line width, Mermaid, inline title and Vim | Same keys as the Settings UI, no state of its own; Obsidian has no such commands |
 
-## Workbench
+## Workshop
 
 - **Manage Plugins**, **Show Plugin Status** and **Use Markdown Workshop
   for Markdown in This Workspace**.
 - A **Markdown Workshop** log output channel;
-  `markdownWorkbench.debug.logging` adds debug lines from host and webview.
+  `markdownWorkshop.debug.logging` adds debug lines from host and webview.
 - Untrusted workspaces: no remote images, media or frames, and no external
   code block processors.
 

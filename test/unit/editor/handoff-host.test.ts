@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import Module, { createRequire } from "node:module";
 import type * as Reclaim from "../../../src/host/reclaim";
 import type * as DocumentWarm from "../../../src/host/document-warm";
-import type * as Workbench from "../../../src/host/workbench";
+import type * as Workshop from "../../../src/host/workshop";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
 import type * as CursorHandoff from "../../../src/host/cursor-handoff";
 import type { Uri as NativeUri } from "vscode";
@@ -194,7 +194,7 @@ function loadHost() {
     return {
       reclaim: require("../../../src/host/reclaim.ts") as typeof Reclaim,
       warm: require("../../../src/host/document-warm.ts") as typeof DocumentWarm,
-      workbench: require("../../../src/host/workbench.ts") as typeof Workbench,
+      workshop: require("../../../src/host/workshop.ts") as typeof Workshop,
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
       cursorHandoff:
         require("../../../src/host/cursor-handoff.ts") as typeof CursorHandoff,
@@ -274,7 +274,7 @@ test("an input-less dirty Cursor tab awaits warming before the custom-editor han
   assert.equal(documents[0]?.isDirty, true);
   assert.ok(
     scopes.some(
-      (scope) => scope.section === "markdownWorkbench" && scope.uri === note,
+      (scope) => scope.section === "markdownWorkshop" && scope.uri === note,
     ),
   );
 
@@ -614,7 +614,7 @@ test("ambiguous basenames, known previews and diffs are not reclaimed", async (t
 for (const gate of ["reclaim disabled", "unassociated", "bypassed"] as const) {
   test(`an input-less Cursor tab stays in place when ${gate}`, async (t) => {
     if (gate === "reclaim disabled") {
-      settings.set(`markdownWorkbench.editor.reclaimTextEditor:${note}`, "off");
+      settings.set(`markdownWorkshop.editor.reclaimTextEditor:${note}`, "off");
     } else if (gate === "unassociated") {
       settings.set(`workbench.editorAssociations:${note}`, {
         "*.md": "default",
@@ -651,7 +651,7 @@ test("document-open warming reissues an already-open dirty note and deduplicates
 
 test("activation warms already-open Markdown notes with per-URI settings", async (t) => {
   const disabled = note.replace(".md", ".markdown");
-  settings.set(`markdownWorkbench.editor.warmTextDocument:${disabled}`, "off");
+  settings.set(`markdownWorkshop.editor.warmTextDocument:${disabled}`, "off");
   for (const uri of [note, disabled, "file:///vault/a.ts", "git:/vault/a.md"]) {
     documents.push({ uri: Uri.parse(uri), isDirty: true });
   }
@@ -672,7 +672,7 @@ test("watcher warming does not recursively warm the document-open event it creat
 for (const gate of ["off", "non-Cursor auto"] as const) {
   test(`proactive document-open warming respects ${gate}`, async (t) => {
     if (gate === "off") {
-      settings.set("markdownWorkbench.editor.warmTextDocument", "off");
+      settings.set("markdownWorkshop.editor.warmTextDocument", "off");
     } else {
       vscode.env.appName = "Visual Studio Code";
     }
@@ -696,8 +696,8 @@ for (const route of [
     const open =
       route === "public API"
         ? host.api.nativePlatform().open(uri, { preserveFocus: true })
-        : host.workbench
-            .createWorkbench(uri)
+        : host.workshop
+            .createWorkshop(uri)
             .execute(
               "vscode.openWith",
               route === "workbench string" ? note : uri,
@@ -714,10 +714,10 @@ for (const route of [
 }
 
 test("Open as Text remains bypassed without warming", async () => {
-  const workbench = host.workbench.createWorkbench(
+  const workshop = host.workshop.createWorkshop(
     Uri.parse(note) as unknown as NativeUri,
   );
-  await workbench.execute("vscode.openWith", note, "default");
+  await workshop.execute("vscode.openWith", note, "default");
   assert.deepEqual(warmed, []);
   assert.equal(host.reclaim.textBypass.has(note), true);
 });

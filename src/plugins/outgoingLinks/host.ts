@@ -1,20 +1,20 @@
 import type { Plugin } from "../../kernel";
 import type {} from "../vault/api";
-import { OPEN_COMMAND, OutgoingLinksTree } from "./tree";
+import { OPEN_COMMAND, OutgoingLinksTree, VIEW_ID } from "./tree";
 
 const REFRESH_DELAY_MS = 300;
 
 /** The Outgoing links view, following the active note. */
 export const outgoingLinksHost: Plugin = {
   name: "outgoingLinks",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
     const source = new OutgoingLinksTree(ctx.vaults);
-    const tree = views.tree("markdownWorkbench.outgoingLinks", source);
+    const tree = views.tree(VIEW_ID, source);
     ctx.effect(() => () => tree.dispose());
 
     let timer: ReturnType<typeof setTimeout> | undefined;

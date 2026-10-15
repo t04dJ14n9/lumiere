@@ -39,7 +39,7 @@ function vscodeWarmHost(): DocumentWarmHost {
     appName: vscode.env.appName,
     warmMode(resourceUri) {
       return vscode.workspace
-        .getConfiguration("markdownWorkbench", vscode.Uri.parse(resourceUri))
+        .getConfiguration("markdownWorkshop", vscode.Uri.parse(resourceUri))
         .get<"auto" | "on" | "off">("editor.warmTextDocument", "auto");
     },
     openTextDocument(uri) {

@@ -1,6 +1,7 @@
 import { frontmatter } from "../../markdown/properties";
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import type { HostDocument } from "../../shared/runtime";
 import { asString, asStrings } from "../../shared/values";
 import { baseName, containingFolder } from "../../shared/workspace-path";
@@ -11,20 +12,20 @@ import { PROMOTE_TARGETS } from "./template";
 /** Temporary notes outside the bundle, promoted only by an explicit command. */
 export const scratchHost: Plugin = {
   name: "scratch",
-  inject: { required: ["workbench"], optional: ["editors", "wikiLayout"] },
+  inject: { required: ["workshop"], optional: ["editors", "wikiLayout"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
-    if (!views || typeof ctx.workbench.files?.readText !== "function") {
+    const views = ctx.workshop.views;
+    if (!views || typeof ctx.workshop.files?.readText !== "function") {
       return;
     }
     const effect = (setup: () => Disposer) => {
       ctx.effect(setup);
     };
-    const report = (message: string) => ctx.workbench.error(message);
+    const report = (message: string) => ctx.workshop.error(message);
     registerReportedCommands(effect, views, report, [
-      { id: "markdownWorkbench.scratch.new", run: () => newScratch(ctx) },
+      { id: contributionId("scratch.new"), run: () => newScratch(ctx) },
       {
-        id: "markdownWorkbench.scratch.promote",
+        id: contributionId("scratch.promote"),
         run: () => promote(ctx),
       },
     ]);
@@ -32,10 +33,10 @@ export const scratchHost: Plugin = {
 };
 
 async function newScratch(ctx: Context): Promise<void> {
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   const located = locate(ctx);
-  if (!views || !located || !ctx.workbench.files) {
-    ctx.workbench.error("Open a folder before creating a scratch note.");
+  if (!views || !located || !ctx.workshop.files) {
+    ctx.workshop.error("Open a folder before creating a scratch note.");
     return;
   }
   const title = await views.input({
@@ -57,11 +58,11 @@ async function newScratch(ctx: Context): Promise<void> {
 }
 
 async function promote(ctx: Context): Promise<void> {
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   const note = await openNote(ctx);
   const located = note ? locate(ctx, note.uri) : undefined;
-  if (!views || !note || !located?.relative || !ctx.workbench.files) {
-    ctx.workbench.error(
+  if (!views || !note || !located?.relative || !ctx.workshop.files) {
+    ctx.workshop.error(
       "Save the scratch note into the project before promoting it.",
     );
     return;
@@ -102,7 +103,7 @@ function scratchFolder(
 }
 
 function locate(ctx: Context, uri?: string) {
-  const roots = asStrings(ctx.workbench.workspaceFolders?.());
+  const roots = asStrings(ctx.workshop.workspaceFolders?.());
   const found = uri ? containingFolder(uri, roots) : undefined;
   const root = found?.root ?? roots[0];
   if (!root) {
@@ -124,7 +125,7 @@ function usableLayout(layout: WikiLayout | undefined): WikiLayout | undefined {
 }
 
 function io(ctx: Context, located: { root: string; layout?: ResolvedLayout }) {
-  const files = ctx.workbench.files;
+  const files = ctx.workshop.files;
   if (!files) {
     throw new Error("Workspace files are unavailable.");
   }
@@ -133,13 +134,13 @@ function io(ctx: Context, located: { root: string; layout?: ResolvedLayout }) {
     rootUri: located.root,
     ...(located.layout ? { layout: located.layout } : {}),
     execute: (id: string, ...args: unknown[]) =>
-      ctx.workbench.execute(id, ...args),
+      ctx.workshop.execute(id, ...args),
     apply: (
       document: HostDocument,
-      edits: Parameters<Context["workbench"]["apply"]>[1],
-    ) => ctx.workbench.apply(document, edits),
-    inform: (message: string) => ctx.workbench.inform?.(message),
-    error: (message: string) => ctx.workbench.error(message),
+      edits: Parameters<Context["workshop"]["apply"]>[1],
+    ) => ctx.workshop.apply(document, edits),
+    inform: (message: string) => ctx.workshop.inform?.(message),
+    error: (message: string) => ctx.workshop.error(message),
   };
 }
 

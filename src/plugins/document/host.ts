@@ -4,7 +4,7 @@ import { Session } from "./session";
 import type { Documents } from "./api";
 export const documentHost: Plugin = {
   name: "document",
-  inject: { required: ["workbench"] },
+  inject: { required: ["workshop"] },
   apply(ctx) {
     const sessions = new Map<
       HostDocument,
@@ -15,7 +15,7 @@ export const documentHost: Plugin = {
         let entry = sessions.get(document);
         if (!entry) {
           entry = {
-            session: new Session(document, ctx.workbench),
+            session: new Session(document, ctx.workshop),
             references: 0,
           };
           sessions.set(document, entry);
@@ -33,7 +33,7 @@ export const documentHost: Plugin = {
     ctx.provide("documents", documents);
     ctx.on("document/willSave", (session) => session.flush());
     ctx.effect(() =>
-      ctx.workbench.onChange((document, changes) => {
+      ctx.workshop.onChange((document, changes) => {
         const session = sessions.get(document)?.session;
         if (session) {
           session.changed();
@@ -42,7 +42,7 @@ export const documentHost: Plugin = {
       }),
     );
     ctx.effect(() =>
-      ctx.workbench.onWillSave(async (document) => {
+      ctx.workshop.onWillSave(async (document) => {
         const session = sessions.get(document)?.session;
         if (session) {
           await ctx.serial("document/willSave", session);

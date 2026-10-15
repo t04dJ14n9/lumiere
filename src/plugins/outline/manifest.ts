@@ -15,7 +15,7 @@ export default defineManifest({
   id: "outline",
   title: "Outline",
   description:
-    "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workbench note's headings.",
+    "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],

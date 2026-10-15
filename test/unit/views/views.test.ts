@@ -2,12 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
 import { backlinksHost } from "../../../src/plugins/backlinks/host";
-import { BacklinksTree } from "../../../src/plugins/backlinks/tree";
+import {
+  BacklinksTree,
+  OPEN_COMMAND,
+  VIEW_ID as backlinksViewId,
+} from "../../../src/plugins/backlinks/tree";
 import backlinks from "../../../src/plugins/backlinks/manifest";
 import { outgoingLinksHost } from "../../../src/plugins/outgoingLinks/host";
-import { OutgoingLinksTree } from "../../../src/plugins/outgoingLinks/tree";
+import {
+  OutgoingLinksTree,
+  VIEW_ID as outgoingLinksViewId,
+} from "../../../src/plugins/outgoingLinks/tree";
 import outgoingLinks from "../../../src/plugins/outgoingLinks/manifest";
-import { workbenchFeatures } from "../../../src/host/workbench-features";
+import { workbenchFeatures } from "../../../src/host/workshop-features";
 import {
   fakeViews,
   memoryVaults,
@@ -91,17 +98,17 @@ test("Backlinks and Outgoing Links are off until turned on", async () => {
   const fake = fakeViews();
   const root = Context.create();
   root.provide("vaults", vaults);
-  const workbench = workbenchWith(fake.views);
-  root.provide("workbench", workbench);
-  workbenchFeatures(root, workbench, [
+  const workshop = workbenchWith(fake.views);
+  root.provide("workshop", workshop);
+  workbenchFeatures(root, workshop, [
     { manifest: backlinks, plugin: backlinksHost },
     { manifest: outgoingLinks, plugin: outgoingLinksHost },
   ]);
   await root.settled();
   await wait();
-  assert.equal(fake.trees.has("markdownWorkbench.backlinks"), false);
-  assert.equal(fake.trees.has("markdownWorkbench.outgoingLinks"), false);
-  assert.equal(fake.statuses.has("markdownWorkbench.backlinks"), false);
+  assert.equal(fake.trees.has(backlinksViewId), false);
+  assert.equal(fake.trees.has(outgoingLinksViewId), false);
+  assert.equal(fake.statuses.has("markdownWorkshop.backlinks"), false);
   await root.dispose();
 });
 
@@ -113,21 +120,21 @@ test("view plugins follow the active note and their setting, and clean up when t
   });
   const root = Context.create();
   root.provide("vaults", vaults);
-  const workbench = workbenchWith(fake.views);
+  const workshop = workbenchWith(fake.views);
   let configure = () => {};
-  workbench.onConfiguration = (listener) => {
+  workshop.onConfiguration = (listener) => {
     configure = listener;
     return () => {};
   };
-  root.provide("workbench", workbench);
-  workbenchFeatures(root, workbench, [
+  root.provide("workshop", workshop);
+  workbenchFeatures(root, workshop, [
     { manifest: backlinks, plugin: backlinksHost },
     { manifest: outgoingLinks, plugin: outgoingLinksHost },
   ]);
   await root.settled();
   await wait();
-  const status = fake.statuses.get("markdownWorkbench.backlinks")!;
-  const view = fake.trees.get("markdownWorkbench.backlinks")!;
+  const status = fake.statuses.get("markdownWorkshop.backlinks")!;
+  const view = fake.trees.get(backlinksViewId)!;
   assert.equal(view.message, "Open a note to see its backlinks.");
   assert.equal(status.text, undefined);
 
@@ -136,10 +143,7 @@ test("view plugins follow the active note and their setting, and clean up when t
   assert.equal(view.message, undefined);
   assert.equal(status.text, "2 backlinks");
 
-  await fake.commands.get("markdownWorkbench.backlinks.open")!(
-    uriOf("A.md"),
-    6,
-  );
+  await fake.commands.get(OPEN_COMMAND)!(uriOf("A.md"), 6);
   assert.deepEqual(opened, [{ uri: uriOf("A.md"), offset: 6 }]);
 
   fake.settings["plugins.backlinks.enabled"] = false;
@@ -148,19 +152,13 @@ test("view plugins follow the active note and their setting, and clean up when t
   await root.settled();
   assert.equal(view.disposed, true);
   assert.equal(status.disposed, true);
-  assert.equal(fake.commands.has("markdownWorkbench.backlinks.open"), false);
-  assert.equal(
-    fake.trees.get("markdownWorkbench.outgoingLinks")!.disposed,
-    false,
-  );
+  assert.equal(fake.commands.has(OPEN_COMMAND), false);
+  assert.equal(fake.trees.get(outgoingLinksViewId)!.disposed, false);
 
   fake.settings.preset = "minimal";
   configure();
   await wait();
   await root.settled();
-  assert.equal(
-    fake.trees.get("markdownWorkbench.outgoingLinks")!.disposed,
-    true,
-  );
+  assert.equal(fake.trees.get(outgoingLinksViewId)!.disposed, true);
   await root.dispose();
 });

@@ -1,3 +1,5 @@
+import { contributionId } from "../setting-schema";
+
 /**
  * Versioned selection envelope shared by Markdown Workshop and, when it is
  * installed, Agent PDF Viewer. This is a workbench protocol, not OKF
@@ -16,7 +18,8 @@ export const BRIDGE_ENVELOPE_VERSION = 1;
 /** Soft command. Absent when Agent PDF Viewer is not installed. */
 export const PDF_BRIDGE_COMMAND = "vscodeEmbedPdf.bridge.envelope";
 
-export const MARKDOWN_BRIDGE_COMMAND = "markdownWorkbench.bridge.envelope";
+/** Passed to command registration so callers and the host share one id. */
+export const MARKDOWN_BRIDGE_COMMAND = contributionId("bridge.envelope");
 
 export const BRIDGE_KEYS = new Set([
   "version",

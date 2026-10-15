@@ -14,6 +14,7 @@ import { alignBlocks, rowMarkdown } from "../../../src/shared/diff";
 import { createRenderer } from "../../../src/markdown/html";
 import { definitions, diffRows } from "../../../src/webview/diff/rows";
 import { stepChange } from "../../../src/webview/diff/step";
+import { contributionId } from "../../../src/shared/setting-schema";
 import type {
   DiffPanel,
   DiffSide,
@@ -108,7 +109,7 @@ function harness(mode: "native" | "rendered") {
       return panel;
     },
   };
-  const workbench = {
+  const workshop = {
     diffViews,
     git: { toGitUri: (_uri: string, ref: string) => gitUri(ref) },
     views: {
@@ -130,7 +131,7 @@ function harness(mode: "native" | "rendered") {
     async execute() {},
   };
   const disposeShown = (index: number) => panels[index]!.dispose();
-  return { workbench, commands, opened, shown, changes, texts, disposeShown };
+  return { workshop, commands, opened, shown, changes, texts, disposeShown };
 }
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -138,10 +139,10 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 test("host: the command opens HEAD against the note and follows edits; off disposes panels", async () => {
   const h = harness("native");
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
-  h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   await tick();
   assert.equal(h.shown.length, 1);
@@ -180,7 +181,7 @@ test("host: the command opens HEAD against the note and follows edits; off dispo
 test("host: in rendered mode a Markdown text diff is replaced by the rendered panel", async () => {
   const h = harness("rendered");
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   let closed = false;
@@ -221,7 +222,7 @@ function slowHarness(mode: "native" | "rendered") {
   const errors: string[] = [];
   delete h.texts[gitUri("HEAD")];
   delete h.texts[gitUri("")];
-  Object.assign(h.workbench, {
+  Object.assign(h.workshop, {
     openDocument: () => head.promise,
     error: (message: string) => void errors.push(message),
   });
@@ -237,10 +238,10 @@ const flush = async () => {
 test("B1: an open still reading when the plugin is turned off creates nothing", async () => {
   const h = slowHarness("native");
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
-  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  void h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   await fiber.dispose();
   h.head.resolve({ getText: () => "# T\n\nold\n" });
@@ -253,10 +254,10 @@ test("B1: an open still reading when the plugin is turned off creates nothing", 
 test("B1: an update queued before its panel closes is dropped", async () => {
   const h = harness("native");
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
-  h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  h.commands.get(contributionId("gitDiffEditor.open"))!();
   await flush();
   assert.equal(h.shown.length, 1);
   h.texts["file:///n.md"] = "# T\n\nnewer\n";
@@ -273,10 +274,10 @@ test("B1: an update queued before its panel closes is dropped", async () => {
 test("B3: an edit while the baseline loads is in the first comparison", async () => {
   const h = slowHarness("native");
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
-  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  void h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   h.texts["file:///n.md"] = "# T\n\nedited\n";
   h.changes.forEach((listener) => listener({ uri: "file:///n.md" }));
@@ -315,7 +316,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
       const h = slowHarness("rendered");
       h.head.resolve({ getText: () => "# T\n\nold\n" });
       const root = Context.create();
-      root.provide("workbench", h.workbench as never);
+      root.provide("workshop", h.workshop as never);
       root.plugin(gitDiffEditorHost);
       await root.settled();
       h.opened.forEach((listener) => listener(opened(close)));
@@ -328,7 +329,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
       const h = slowHarness("rendered");
       h.head.reject(new Error("no such revision"));
       const root = Context.create();
-      root.provide("workbench", h.workbench as never);
+      root.provide("workshop", h.workshop as never);
       root.plugin(gitDiffEditorHost);
       await root.settled();
       let closed = false;
@@ -351,10 +352,10 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
       const h = harness("rendered");
       const natives: unknown[][] = [];
       const errors: string[] = [];
-      Object.assign(h.workbench, {
+      Object.assign(h.workshop, {
         error: (message: string) => void errors.push(message),
       });
-      Object.assign(h.workbench.diffViews, {
+      Object.assign(h.workshop.diffViews, {
         show() {
           throw new Error("webview failed");
         },
@@ -363,7 +364,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
         },
       });
       const root = Context.create();
-      root.provide("workbench", h.workbench as never);
+      root.provide("workshop", h.workshop as never);
       root.plugin(gitDiffEditorHost);
       await root.settled();
       h.opened.forEach((listener) => listener(opened(async () => true)));
@@ -473,10 +474,10 @@ test("R3 B4: the second of two adjacent footnote definitions is found", () => {
 test("R3 B1: disabling while a read is pending drops its change listener at once", async () => {
   const h = slowHarness("native");
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
-  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  void h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   assert.equal(h.changes.size, 1);
   await fiber.dispose();
@@ -492,13 +493,13 @@ test("R3 B1: disabling while a read is pending drops its change listener at once
 test("R3 B2: disabling while the native tab closes restores the native diff", async () => {
   const h = harness("rendered");
   const natives: unknown[][] = [];
-  Object.assign(h.workbench.diffViews, {
+  Object.assign(h.workshop.diffViews, {
     async openNative(...args: unknown[]) {
       natives.push(args);
     },
   });
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
   const closing = deferred<boolean>();
@@ -526,20 +527,20 @@ test("R3 B2: disabling while the native tab closes restores the native diff", as
 test("R3: a failed command presentation releases its change listener", async () => {
   const h = harness("native");
   const errors: string[] = [];
-  Object.assign(h.workbench, {
+  Object.assign(h.workshop, {
     error: (message: string) => void errors.push(message),
   });
-  Object.assign(h.workbench.diffViews, {
+  Object.assign(h.workshop.diffViews, {
     show() {
       throw new Error("webview failed");
     },
   });
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   await Promise.resolve(
-    h.commands.get("markdownWorkbench.gitDiffEditor.open")!(),
+    h.commands.get(contributionId("gitDiffEditor.open"))!(),
   ).catch(() => {});
   await flush();
   assert.equal(errors.length, 1);
@@ -706,13 +707,13 @@ test("review: Git and file events refresh after both native documents close; dis
   const fileChanges = new Set<() => void>();
   const closedDocuments: { closed: boolean; uri: string; getText(): string }[] =
     [];
-  Object.assign(h.workbench.git, {
+  Object.assign(h.workshop.git, {
     onDidChange(listener: () => void) {
       gitChanges.add(listener);
       return () => gitChanges.delete(listener);
     },
   });
-  Object.assign(h.workbench, {
+  Object.assign(h.workshop, {
     watchFile(uri: string, listener: () => void) {
       assert.equal(uri, "file:///n.md");
       fileChanges.add(listener);
@@ -736,9 +737,9 @@ test("review: Git and file events refresh after both native documents close; dis
       return document;
     },
   });
-  h.workbench.views.documentText = () => undefined as never;
+  h.workshop.views.documentText = () => undefined as never;
   const root = Context.create();
-  root.provide("workbench", h.workbench as never);
+  root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   for (const open of h.opened) {

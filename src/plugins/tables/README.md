@@ -83,7 +83,7 @@ service follows Mod-Enter from the focused cell's own document and caret.
 Provides no service. Listens to
 `editor/clearProjection`, `editor/projectSelection` and `editor/activeView`;
 sends the validated editor `selectionChanged` notification. The feature switch
-is `markdownWorkbench.plugins.tables.enabled`; it has no separate configuration.
+is `markdownWorkshop.plugins.tables.enabled`; it has no separate configuration.
 
 ## Limits and differences from Obsidian
 

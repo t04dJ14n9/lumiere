@@ -4,7 +4,7 @@ import { EffectiveConfiguration } from "./configuration";
 export function createConfiguration(): EffectiveConfiguration {
   const scoped = (resource?: string) =>
     vscode.workspace.getConfiguration(
-      "markdownWorkbench",
+      "markdownWorkshop",
       resource
         ? { uri: vscode.Uri.parse(resource), languageId: "markdown" }
         : undefined,

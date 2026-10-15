@@ -7,7 +7,7 @@ import { VaultConfigs } from "./vault-configs";
 
 export const obsidianCompatHost: Plugin = {
   name: "obsidianCompat",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
     const configs = createConfigs(ctx);
     registerService(ctx, configs);
@@ -18,15 +18,15 @@ export const obsidianCompatHost: Plugin = {
 };
 
 function createConfigs(ctx: Context): VaultConfigs {
-  const workbench = ctx.workbench;
-  const configuration = workbench.configuration;
+  const workshop = ctx.workshop;
+  const configuration = workshop.configuration;
   return new VaultConfigs({
     vaults: ctx.vaults,
     configFolder: (root) =>
       configuration?.get("obsidianCompat.configFolder", ".obsidian", root) ??
       ".obsidian",
     files: (root, directory) =>
-      new ContainedConfigFiles(workbench, root, directory),
+      new ContainedConfigFiles(workshop, root, directory),
     warn: (message, error) => ctx.logger.warn(message, error),
     changed(change) {
       if (ctx.isLive) {
@@ -47,7 +47,7 @@ function isEnabled(configuration: Configuration, resource: string): boolean {
   );
 }
 function registerOverrides(ctx: Context, configs: VaultConfigs): void {
-  const configuration = ctx.workbench.configuration;
+  const configuration = ctx.workshop.configuration;
   if (!configuration) {
     return;
   }
@@ -86,10 +86,10 @@ function registerOverrides(ctx: Context, configs: VaultConfigs): void {
   );
 }
 function registerConfigRefresh(ctx: Context, configs: VaultConfigs): void {
-  const workbench = ctx.workbench;
-  if (workbench.onConfiguration) {
+  const workshop = ctx.workshop;
+  if (workshop.onConfiguration) {
     ctx.effect(() =>
-      workbench.onConfiguration!(() => {
+      workshop.onConfiguration!(() => {
         trackRefresh(ctx, configs.reconfigure());
       }),
     );
@@ -99,7 +99,7 @@ function registerVaultPreparation(ctx: Context, configs: VaultConfigs): void {
   const prepare = (uri: string) => trackRefresh(ctx, configs.prepare(uri));
   ctx.on("editor/opened", (panel) => prepare(panel.document.uri));
   ctx.on("vault/resolved", (root) => prepare(`${root}/`));
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   const prepareActive = () => {
     const uri = views?.activeNote();
     if (uri) {

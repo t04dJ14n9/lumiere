@@ -4,7 +4,7 @@ import { runtimeStates } from "../../shared/plugin-state";
 import type { ApiPlatform } from "./platform";
 import type { ExternalPlugins } from "./external-manager";
 import type {
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   PluginState,
   ConfigurationScope,
   PluginDescriptor,
@@ -17,7 +17,7 @@ export function pluginOperations(
   platform: ApiPlatform,
   external: ExternalPlugins,
 ): Pick<
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   | "getPluginCatalog"
   | "getPlugins"
   | "setPluginEnabled"
@@ -74,7 +74,7 @@ export function pluginOperations(
 }
 function builtinStates(root: Context, id: string): PluginState[] {
   const panel = panelById(root, id);
-  const config = root.workbench.config(panel.document);
+  const config = root.workshop.config(panel.document);
   const states = [...runtimeStates(root), ...(panel.pluginStates?.() ?? [])];
   return builtinCatalog.map((descriptor) => {
     const candidates = states.filter((state) => state.id === descriptor.id);

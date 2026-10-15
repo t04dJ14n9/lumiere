@@ -6,7 +6,7 @@ import { RevealRouter } from "../../../src/host/reveal-router";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
 import type { VaultIndex } from "../../../src/plugins/vault/api";
-import type { Workbench, PanelShell } from "../../../src/shared/runtime";
+import type { Workshop, PanelShell } from "../../../src/shared/runtime";
 import { rpcPair } from "../../support/rpc-pair";
 
 test("a slow earlier link resolution cannot open over a newer request", async () => {
@@ -32,7 +32,7 @@ test("a slow earlier link resolution cannot open over a newer request", async ()
     classifyLink: () => undefined,
     resolveLink: () => undefined,
   } as unknown as VaultIndex);
-  root.provide("workbench", {
+  root.provide("workshop", {
     config: () => ({ preset: "obsidian", mode: "livePreview" }),
     navigation: {
       scheme: "vscode",
@@ -53,7 +53,7 @@ test("a slow earlier link resolution cannot open over a newer request", async ()
         openings.push(uri);
       },
     },
-  } as Partial<Workbench> as Workbench);
+  } as Partial<Workshop> as Workshop);
   root.plugin(linksHost, {
     panel: {
       id: "pane",

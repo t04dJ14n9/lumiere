@@ -64,7 +64,7 @@ test("tag RPC opens a matching indexed note and unregisters when disabled", asyn
   root.provide("rpc", pair.host);
   root.provide("vault", index());
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       views,
       navigation: {

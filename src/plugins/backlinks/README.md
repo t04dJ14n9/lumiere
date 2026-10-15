@@ -23,7 +23,7 @@ note's basename and aliases as whole words, outside links and properties.
 ## Services, events and settings
 
 - Injects `workbench` (views) and `vaults`. Listens to `vault/resolved`.
-- Setting: `markdownWorkbench.plugins.backlinks.enabled`.
+- Setting: `markdownWorkshop.plugins.backlinks.enabled`.
 
 ## Limits and differences from Obsidian
 

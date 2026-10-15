@@ -24,8 +24,8 @@ them.
 ## Services, events and settings
 
 - Injects `workbench` (views) and `vaults`.
-- Settings: `markdownWorkbench.linkUpdates.mode` (`prompt`, `always`,
-  `never`), `markdownWorkbench.links.newLinkFormat`.
+- Settings: `markdownWorkshop.linkUpdates.mode` (`prompt`, `always`,
+  `never`), `markdownWorkshop.links.newLinkFormat`.
 
 ## Limits and differences from Obsidian
 

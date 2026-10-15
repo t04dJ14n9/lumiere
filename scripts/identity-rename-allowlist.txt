@@ -1,0 +1,884 @@
+# Occurrence-scoped B1 allowlist.
+# Format: path<TAB>exact-substring
+# A hit is exempt only when that same file's row appears on the hit line and
+# the matched old token lies inside that substring. A different old token on
+# the same line still fails. There is no whole-file or directory wildcard.
+
+# The gate script lists the tokens it searches for. Each row is one pattern
+# entry, including the surrounding quotes, so a later comment in the script
+# is not covered.
+scripts/check-identity-rename.sh	'markdownWorkbench'
+scripts/check-identity-rename.sh	'vscode-markdown-workbench'
+scripts/check-identity-rename.sh	'MarkdownWorkbench'
+scripts/check-identity-rename.sh	'Markdown Workbench'
+scripts/check-identity-rename.sh	'markdown-workbench'
+scripts/check-identity-rename.sh	't04dj14n9.vscode-markdown-workbench'
+
+# Lines of this file are covered by the phrase self-rows at the end.
+
+# Phase-1 GitHub URLs that must keep resolving. The row is the URL, so a
+# stray old command id in the same file still fails.
+package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench
+README.md	https://github.com/t04dJ14n9/vscode-markdown-workbench
+API.md	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/
+test/fixtures/sample-plugin/package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/
+test/fixtures/sample-plugin/README.md	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/42
+
+# The unreleased changelog records the rename.
+CHANGELOG.md	Renamed from Markdown Workbench
+
+# Parity tests mention the old prefix so they can reject it. The assertion
+# text is allowlisted, not the file.
+test/unit/identity/contribution-parity.test.ts	assert.doesNotMatch(command.command, /markdownWorkbench/)
+test/unit/identity/contribution-parity.test.ts	assert.equal(blob.includes("markdownWorkbench."), false)
+test/unit/identity/contribution-parity.test.ts	assert.doesNotMatch(id, /markdownWorkbench/)
+
+# Historical handoffs. Each row is a reviewed phrase from that file.
+docs/HANDOFF_GROKBOT.md	t04dJ14n9/vscode-markdown-workbench
+docs/HANDOFF_GROKBOT.md	Markdown Workbench 0.1.0
+docs/HANDOFF_OPENAI.md	# Handoff: Markdown Workbench
+docs/HANDOFF_OPENAI.md	| vscode-markdown-workbench | Obsidian-like Markdown editor extension (Cordis-style in-house kernel `src/kernel`, ~50 plugins, OKF/LLM-wiki aware) | /workspace/repos/ci-work/... and many worktrees under /workspace/repos/mdwb-* (see `git worktree list`) |
+docs/HANDOFF_OPENAI.md	### vscode-markdown-workbench
+docs/HANDOVER.md	  behind `markdownWorkbench.onlineVideos.bilibiliPlayer` (false) until the
+docs/HANDOVER.md	- `markdownWorkbench.editor.reclaimTextEditor` (`auto` = on in Cursor,
+docs/HANDOVER.md	  with no migration: command `markdownWorkbench.copyLinkForAgent`, plugin
+docs/HANDOVER.md	  `agentBridge` (renamed from `copyLinkForAgent` by the review fixes; `markdownWorkbench.plugins.agentBridge.enabled`,
+docs/HANDOVER.md	  context key `markdownWorkbench.plugin.agentBridge`), setting
+docs/HANDOVER.md	  `markdownWorkbench.copyLinkForAgent.target` (was `askAgent.target`). The
+docs/HANDOVER.md	  | Text and code size | `markdownWorkbench.editor.fontSize` (default 16, Obsidian's body size); `editor.fontSize` no longer applies to notes | code keeps the text's size; headings, tables, properties, footnotes, line numbers are relative to it |
+docs/HANDOVER.md	  | Line height | `markdownWorkbench.editor.lineHeight` (multiplier, default 1.5, Obsidian's); `editor.lineHeight` no longer applies | replaced the built-in rule on 2026-10-10 |
+docs/HANDOVER.md	  `markdownWorkbench.*` has no font settings of its own. Note text in the
+docs/HANDOVER.md	- Superseded: the note's line height is now `markdownWorkbench.editor.lineHeight`
+docs/HANDOVER.md	  (`src/host/api/management.ts`), §25.2 **Use Markdown Workbench for
+docs/HANDOVER.md	- Ctrl+I in a Markdown Workbench note italicises in Cursor (checked by
+docs/SESSION_HANDOFF_2026-10-09.md	| Fonts | Family, weight follow `editor.*` for Markdown; the size and line height are `markdownWorkbench.editor.fontSize` (default 16) and `lineHeight` (default 1.5), Obsidian's. |
+docs/SESSION_HANDOFF_2026-10-09.md	| Copy Link for Agent | **One agent action only.** Copy for Agent and Ask Agent are gone; the remaining action is **Copy Link for Agent** (`markdownWorkbench.copyLinkForAgent`, `vscodeEmbedPdf.copyLinkForAgent`), no migration. It **never guesses the agent**: `auto` opens a chat only when the editor's own chat is the only agent installed; otherwise it copies the link and text. `markdownWorkbench.copyLinkForAgent.target` / `vscodeEmbedPdf.copyLinkForAgent.target` force a target: `auto`, `cursor`, `chat`, `claudeCode`, `codex` or `clipboard` (0fa88e0, 4147c0d, 565b1e6; PDF: 3141d6f, ff83165). |
+docs/SESSION_HANDOFF_2026-10-09.md	| Cursor Markdown button | `markdownWorkbench.editor.reclaimTextEditor` (`auto` means on in Cursor only). A note that Cursor's Markdown switch sends to the text editor reopens in the workbench (bf77ed1). |
+docs/SESSION_HANDOFF_2026-10-09.md	| t04dJ14n9/vscode-markdown-workbench | `continue-handover` | this docs commit, on 8e72f8e | [#1](https://github.com/t04dJ14n9/vscode-markdown-workbench/pull/1) → `main` (open, **the only PR**) | yes |
+docs/SESSION_HANDOFF_2026-10-09.md	| `/workspace/repos/vscode-markdown-workbench` | `continue-handover` |
+docs/SESSION_HANDOFF_2026-10-09.md	| `/workspace/repos/agent-integration/vscode-markdown-workbench-agents` | `agent-handoff-deepseek`, merged into `continue-handover` |
+docs/SESSION_HANDOFF_2026-10-09.md	GitHub Actions CI (check, browser, VS Code stable, package, secret scan, audit) passed on both PR #1 heads: [markdown @ 8e72f8e](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/runs/37904047930), [embedPDF @ efc5cb8](https://github.com/t04dJ14n9/vscode-embedPDF/actions/runs/37906395620).
+
+# Historical measurement harnesses. Paths point at an old checkout.
+docs/obsidian-measurements/probe.mjs	/workspace/repos/vscode-markdown-workbench/node_modules
+docs/obsidian-measurements/tables/vim-lib.mjs	/workspace/repos/vscode-markdown-workbench/node_modules
+docs/vim-caret-measurements/ours.mjs	"*.md": "markdownWorkbench.editor"
+docs/vim-caret-measurements/ours.mjs	"markdownWorkbench.plugins.vim.enabled": true
+docs/vim-caret-measurements/timing-ours.mjs	"*.md": "markdownWorkbench.editor"
+docs/vim-caret-measurements/timing-ours.mjs	"markdownWorkbench.plugins.vim.enabled": true
+
+# Historical plans. Not current product prose.
+docs/plans/obsidian-settings-audit.md	- `mw.` means `markdownWorkbench.`
+docs/plans/obsidian-settings-audit.md	| Hotkeys pane (customise any command) | — | Rebind any command; filter by conflicts | **N/A (VS Code)** Keyboard Shortcuts (`keybindings.json`). All 65 `markdownWorkbench.*` commands can be rebound | map | — | — |
+docs/plans/obsidian-settings-audit.md	| Default bindings parity | see above | — | partial. Ctrl+B/I/K and Ctrl+; ship as defaults. Quick switcher, Toggle source mode, Toggle checklist, Set heading and Insert wikilink have **no default key** (the Vim shortcut list consumes Ctrl+O and Ctrl+Alt+0–6 but doesn't bind them) | port Obsidian-style default `when`-scoped bindings (`activeCustomEditorId == 'markdownWorkbench.editor'`): Ctrl/Cmd+O Quick switcher (only inside the editor, or leave it opt-in because it clashes with VS Code's Open File), Ctrl/Cmd+E toggle mode, Ctrl/Cmd+Enter toggle checklist. No Ctrl+P override | **P1** | S |
+docs/plans/obsidian-settings-audit.md	/workspace/repos/vscode-markdown-workbench
+docs/plans/okf-plugins.md	`markdownWorkbench.graph`). Read-only Sources shipped as `sourcesProperty`. The id
+docs/plans/okf-plugins.md	- **One umbrella switch**, `markdownWorkbench.plugins.okf.enabled`, sits on top of the existing per-plugin
+docs/plans/okf-plugins.md	Current mechanism: each feature has `markdownWorkbench.plugins.<id>.enabled`, a resource-scoped setting whose
+docs/plans/okf-plugins.md	| Settings | Add `markdownWorkbench.plugins.okf.enabled` (resource scope). Each child keeps its own `plugins.<id>.enabled` and default. Turning the umbrella off disposes every OKF fiber at once (DESIGN §6.3). Turning it back on restores each child's own state. |
+docs/plans/okf-plugins.md	| Generator | When-clauses gain `&& config.markdownWorkbench.plugins.okf.enabled`. The settings UI lists the group switch first, with "OKF:" prefixed titles. |
+docs/plans/okf-plugins.md	| Runtime gating | Enabled is not the same as visible. Every OKF UI checks `okf.bundleFor(uri)` and the context key `markdownWorkbench.okf.inBundle`. A note outside a bundle sees no card, badge, diagnostic or view content. |
+docs/plans/okf-plugins.md	### 3.4 Settings (`markdownWorkbench.plugins.okfCore.config.*`, resource scope)
+docs/plans/okf-plugins.md	`okfStats` when enabled, and otherwise a quick pick of bundle actions. Context keys: `markdownWorkbench.okf.inBundle`
+docs/plans/okf-plugins.md	/workspace/repos/vscode-markdown-workbench
+docs/plans/plugins-architecture.md	- A setting, `markdownWorkbench.fileTypes`, is a table `{ glob → editor plugin | "off" }`. The **Manage
+docs/plans/plugins-architecture.md	- Add a setting, `markdownWorkbench.marp.open: "workbench" | "textEditor"`. With `textEditor`, Marp
+docs/plans/plugins-architecture.md	| ID / view type | `t04dj14n9.vscode-markdown-workbench` / `markdownWorkbench.editor` (CustomTextEditor, `priority: option`, `*.md`, `*.markdown`) | `t04dj14n9.vscode-embedpdf` / `vscodeEmbedPdf.viewer` (CustomReadonlyEditor, `priority: default`, `*.pdf`) |
+docs/plans/plugins-architecture.md	"markdownWorkbench.fileTypes": {
+docs/plans/plugins-architecture.md	- `markdownWorkbench.plugins.pdf.enabled` and `markdownWorkbench.plugins.markdown.enabled` are the
+docs/plans/plugins-architecture.md	- It runs on activation, on `onDidChangeConfiguration` for `markdownWorkbench.fileTypes` and
+docs/plans/plugins-architecture.md	- **Use Markdown Workshop for Markdown in This Workspace** (`markdownWorkbench.useForMarkdownInWorkspace`,
+docs/plans/plugins-architecture.md	  "markdownWorkbench.pdf"` at user scope once, on first activation. **Catch:** nothing activates the
+docs/plans/plugins-architecture.md	- **Manage Plugins** keeps opening Settings at `markdownWorkbench.plugins`. Settings now also shows
+docs/plans/plugins-architecture.md	  `markdownWorkbench.fileTypes` as the table.
+docs/plans/plugins-architecture.md	  id: string;                       // "markdown" | "pdf" → viewType markdownWorkbench.<id>
+docs/plans/plugins-architecture.md	views?: …  // existing; add scope: "editor:<id>" so the generator emits activeCustomEditorId == 'markdownWorkbench.<id>'
+docs/plans/plugins-architecture.md	- The command prefix stays `markdownWorkbench.` (Q1). PDF commands get `category: "PDF"` through a
+docs/plans/plugins-architecture.md	  panels per plugin, and the active panel. It publishes context keys `markdownWorkbench.activeEditor
+docs/plans/plugins-architecture.md	- `Settings` namespace per plugin: `markdownWorkbench.<pluginId>.*` (already the convention:
+docs/plans/plugins-architecture.md	  `markdownWorkbench.links.*`). PDF settings start empty. Candidates: `pdf.reloadOnChange`,
+docs/plans/plugins-architecture.md	| `PdfPanels` + context keys `vscodeEmbedPdf.pdfActive`, `hasSelection`, `outlineLoading` | `editors` registry + `markdownWorkbench.pdf.active`, `.hasSelection`, `.outlineLoading`; old keys set too for one release |
+docs/plans/plugins-architecture.md	| `copyForAgent` (enablement `hasSelection`, editor/title) | `markdownWorkbench.pdf.copyForAgent`; wording byte-identical (`agent-text.ts` unit tests move verbatim). Exposed through the internal `agent` service so the API v1 `copyForAgent` stays Markdown-only (frozen) and v2 adds `pdf.copyForAgent` |
+docs/plans/plugins-architecture.md	| `openLocation(uri?, location?)`: callable by other extensions | `markdownWorkbench.pdf.openLocation` with the same signature. **`vscodeEmbedPdf.openLocation` kept as a hidden alias** (documented in README; LLM Wiki and agent skills may call it) |
+docs/plans/plugins-architecture.md	| `goToOutlineItem` (hidden) | `markdownWorkbench.pdf.goToOutlineItem` (hidden) |
+docs/plans/plugins-architecture.md	   `markdownWorkbench.isMarp`. Also `markdownWorkbench.marpInstalled`
+docs/plans/plugins-architecture.md	2. **Setting:** `markdownWorkbench.marp.open: "workbench" (default) | "textEditor"`. With
+docs/plans/plugins-architecture.md	- `markdownWorkbench.fileTypes` plus the reconciler (pure `plan()` with ownership and conflicts),
+docs/plans/plugins-architecture.md	- Native smoke: one PDF opens in `markdownWorkbench.pdf`, the outline shows, and Copy for Agent
+docs/plans/plugins-architecture.md	  `vscodeEmbedPdf.viewer` to `markdownWorkbench.pdf` (user and workspace scopes; recorded as owned).
+docs/plans/plugins-architecture.md	  `markdownWorkbench.*` key at each scope, plus aliases for every command, in its own phase.
+docs/plans/plugins-architecture.md	  `markdownWorkbench.*` namespace.** That means zero migration, and API v1 stays valid. Change only
+docs/plans/plugins-architecture.md	- `t04dJ14n9/vscode-markdown-workbench` at `continue-handover` (`aa393a9`, PR #1 open against `main`):
+docs/plans/plugins-architecture.md	cd ../vscode-markdown-workbench && git checkout -b import-pdf
+docs/plans/plugins-architecture.md	- **API:** v1 (`getExtension("t04dj14n9.vscode-markdown-workbench")`) stays frozen and identical. PDF
+docs/plans/plugins-architecture.md	| Parallel work: another job is editing `/workspace/repos/vscode-markdown-workbench`, and the `pdf-workbench` branch diverges from `test-and-fix-ui` | P1 starts only after PR #1 merges; Q3 decides `pdf-workbench` before P2 |
+docs/plans/plugins-architecture.md	- **Q1. Identity.** **Keep the extension ID `t04dj14n9.vscode-markdown-workbench` and the
+docs/plans/plugins-architecture.md	withMarkdownWorkbench
+docs/plans/scm-inline-routing.md	opening Markdown Workbench with
+
+# Dated phase records, including the original target-tree folder name.
+IMPLEMENTATION_PLAN.md	editor protocol, `markdownWorkbench.debug.logging` gates debug lines on both
+IMPLEMENTATION_PLAN.md	  `markdownWorkbench.plugins.agentBridge.enabled`, renamed with no
+IMPLEMENTATION_PLAN.md	and it publishes `markdownWorkbench.bridge.envelope` without opening a chat.
+IMPLEMENTATION_PLAN.md	TreeView (`markdownWorkbench.outline`, **Note Outline**) for the active
+IMPLEMENTATION_PLAN.md	`markdownWorkbench.outline.followCursor`. The setting of the same name is
+IMPLEMENTATION_PLAN.md	panel (`markdownWorkbench.graph`) using graphology and Sigma in their own
+IMPLEMENTATION_PLAN.md	vscode-markdown-workbench/
+IMPLEMENTATION_PLAN.md	`~/Code/vscode-markdown-workbench-phase5` and merges it into `main` when its
+IMPLEMENTATION_PLAN.md	retained contexts. Document events cover open Markdown Workbench notes only.
+IMPLEMENTATION_PLAN.md	`Markdown Workbench` log output channel, webview records forwarded over the
+IMPLEMENTATION_PLAN.md	Markdown Workbench for Markdown in This Workspace` (writes the workspace
+IMPLEMENTATION_PLAN.md	findings A1–C4). Markdown Workbench and Agent PDF Viewer stay separate
+IMPLEMENTATION_PLAN.md	Markdown Workbench now speaks the version-1 bridge envelope in
+IMPLEMENTATION_PLAN.md	Markdown Workbench panel. It read text through `vaults.text`, nested parsed
+IMPLEMENTATION_PLAN.md	`package.json` say `Markdown Workbench` while the generator expects
+IMPLEMENTATION_PLAN.md	/tmp/markdown-workbench-e2e-
+
+# Rename plan and design specs, quoted on purpose and not rewritten.
+# Six lines in the rename plan are only a searched token. Those rows are
+# that whole line. The gate treats a substring that is exactly the searched
+# token as an exact-line match, so a longer line in the same file is not
+# exempt. The plan stays unchanged.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: `scripts/generate-contributions.ts` (use `contributionId` / `SETTING_PREFIX`; no hard-coded `` `markdownWorkbench.${…}` ``)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Generator **and** runtime command/view registration must both call `contributionId` (or read `MARKDOWN_EDITOR.viewType`) — do not leave independent `` `markdownWorkbench.${…}` `` / `` `markdownWorkshop.${…}` `` string templates in registration paths.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	In `scripts/generate-contributions.ts`, replace owned `` markdownWorkbench. `` string templates with `contributionId(...)` / `SETTING_PREFIX` (commands, view ids, menus, config keys, when-clauses). Leave the `whenEnabled(..., "workbench" | "editor")` **scope argument** alone — that is VS Code panel-vs-editor, not product identity.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	node -e "const p=require('./package.json'); const c=p.contributes; if(c.customEditors[0].viewType!=='markdownWorkshop.editor') process.exit(1); if(c.commands.some(x=>x.command.startsWith('markdownWorkbench.'))) process.exit(2); console.log('ok', c.commands.length)"
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: runtime registration call sites that still build ids with independent templates — at least `src/plugins/commands/features.ts`, `src/plugins/commands/host.ts`, `src/plugins/editor/jump-host.ts`, `src/plugins/editor/actions-host.ts`, `src/plugins/settings/host.ts`, `src/plugins/editor/associations.ts`, `src/plugins/livePreview/host.ts`, `src/host/api/management.ts` (and any other `ctx.workbench.command(\`markdownWorkbench.${…}\`)` / hard-coded owned command id)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Produces: green B3 asserts that fail if runtime still registers `markdownWorkbench.*` (or any id divergent from contributes)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	ctx.workbench.command(`markdownWorkbench.${command.id}`, ...)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	    assert.doesNotMatch(c.command, /markdownWorkbench/);
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  assert.equal(blob.includes("markdownWorkbench."), false);
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Update JSDoc examples that say `markdownWorkbench.*` settings to `markdownWorkshop.*`.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: remaining `src/**`, `test/**` string literals / comments for `markdownWorkbench` → `markdownWorkshop`
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: owned viewType strings still hard-coded (`markdownWorkbench.graph`, `markdownWorkbench.renderedDiff`, reclaim comments, cursorBridge context `markdownWorkbench.isCursorHost`, etc.)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Produces: no owned `markdownWorkbench` / old full id in runtime sources & tests (docs swept in Task 5)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	git grep -n 'markdownWorkbench' -- src test scripts
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	markdownWorkbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  'markdownWorkbench'
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Phase 1 keeps `repository.url` on `…/vscode-markdown-workbench`; phase 2 (post-merge) renames GitHub + metadata — **out of this code PR**
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Expected: `package.json` `contributes.commands[].command`, `customEditors[].viewType` (`markdownWorkshop.editor`), configuration property keys, and when/enablement strings all use `markdownWorkshop.*`. `package.json` `name` still `vscode-markdown-workbench` for now.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	| `t04dj14n9.vscode-markdown-workbench` | `t04dj14n9.vscode-markdown-workshop` |
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	| `@ext:t04dj14n9.vscode-markdown-workbench` | `@ext:t04dj14n9.vscode-markdown-workshop` |
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	| `vscode:extension/t04dj14n9.vscode-markdown-workbench` | `…markdown-workshop` |
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	| `vscode://t04dj14n9.vscode-markdown-workbench/` | `…markdown-workshop/` |
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: `package.json` — `"name": "vscode-markdown-workshop"`; **keep** `"repository.url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"`
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  "url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	vscode-markdown-workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	t04dj14n9.vscode-markdown-workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  'vscode-markdown-workbench'
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  't04dj14n9.vscode-markdown-workbench'
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	1. Uninstall old VSIX `t04dj14n9.vscode-markdown-workbench` if present.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	1. Rename GitHub `vscode-markdown-workbench` → `vscode-markdown-workshop`.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	| API | `src/host/api/types.ts` (`MarkdownWorkbenchApi` → `MarkdownWorkshopApi` + id in docs), other `src/host/api/*` |
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: `src/host/api/types.ts` — `MarkdownWorkbenchApi` → `MarkdownWorkshopApi`; doc example extension id
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Expected: no remaining `Workbench` / `MarkdownWorkbenchApi` / `createWorkbench` product-symbol errors. Fix stragglers before continuing.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	MarkdownWorkbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  'MarkdownWorkbench'
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	**Goal:** Finish the breaking identity rename from Markdown Workbench → Markdown Workshop (extension id, package/VSIX name, contribution namespace, host façade, docs/tests/CI) with **no** backward-compat.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: README / API.md / CAPABILITIES.md / DESIGN.md / prose “Markdown Workbench” → “Markdown Workshop”; package path refs
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Markdown Workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  'Markdown Workbench'
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	CHANGELOG.md	renamed from Markdown Workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Replace “Markdown Workbench” / old package id in those two files with Workshop identity. Keep the shared format contract intact.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	| CSS/DOM | strings / data attrs `markdown-workbench` → `markdown-workshop`; leave `mw-*` |
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: DOM/strings `markdown-workbench` → `markdown-workshop` (not `mw-*` classes)
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	git grep -n 'markdown-workbench' -- src test
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	markdown-workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	  'markdown-workbench'
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Command ids, settings keys, view ids, context keys | `markdownWorkbench.*` | `markdownWorkshop.*` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Custom editor `viewType` | `markdownWorkbench.editor` | `markdownWorkshop.editor` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- Keeping `markdownWorkbench.*` as aliases or deprecations.
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `markdownWorkbench` | ~820 in `src`/`test`/`docs` | Commands, settings, viewTypes, contexts |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `SETTING_PREFIX` | `"markdownWorkbench."` | Single source of truth in `src/shared/setting-schema.ts` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Contribution generator | `scripts/generate-contributions.ts` | Hard-codes `` `markdownWorkbench.${id}` `` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- `MARKDOWN_EDITOR.viewType` = `markdownWorkbench.editor` (`src/shared/editor-provider.ts`)
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- `SETTING_PREFIX` = `markdownWorkbench.` (`src/shared/setting-schema.ts`)
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- Manifest command ids are **unprefixed** in plugin manifests; the generator adds `markdownWorkbench.`
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	Mechanical rule: replace the contribution namespace string `markdownWorkbench` → `markdownWorkshop` everywhere it is **our** namespace. Do not touch foreign namespaces.
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	Changing `package.json` `name` changes the canonical id `publisher.name`. Search and update every consumer of the **old full id**, not only `markdownWorkbench`:
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	3. **Bulk namespace replace** — `markdownWorkbench` → `markdownWorkshop` in tracked sources; full-id / `@ext:` / deep-link updates (B2).
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	git grep -n 'markdownWorkbench'
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	3. Owned context keys referenced in contributed `when` / `enablement` use the `markdownWorkshop.` prefix (no leftover `markdownWorkbench.`).
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	Repo (current): `t04dJ14n9/vscode-markdown-workbench`  
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Extension id | `t04dj14n9.vscode-markdown-workbench` | `t04dj14n9.vscode-markdown-workshop` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `package.json` `name` / VSIX base | `vscode-markdown-workbench` | `vscode-markdown-workshop` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| GitHub repository | `vscode-markdown-workbench` | `vscode-markdown-workshop` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Full extension id `t04dj14n9.vscode-markdown-workbench` | API docs, fixtures, `@ext:` filters, `EXTENSION_ID` | See B2 checklist |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- `EXTENSION_ID` / `EXTENSION_FILTER` = `t04dj14n9.vscode-markdown-workbench` / `@ext:…` (`src/host/settings-access.ts`, `src/plugins/settings/commands.ts`)
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- Local folder checkouts named `vscode-markdown-workbench` until operators rename them (document only).
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Full extension id | `t04dj14n9.vscode-markdown-workbench` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Settings filter | `@ext:t04dj14n9.vscode-markdown-workbench` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Install / deep links (docs) | `vscode:extension/t04dj14n9.vscode-markdown-workbench` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| URI-handler docs (if any) | `vscode://t04dj14n9.vscode-markdown-workbench/` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	- Leave `repository.url` / bugs / homepage (and clone badges that must resolve today) on the **current** GitHub URL `…/vscode-markdown-workbench`.
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	git grep -n 'vscode-markdown-workbench'
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	git grep -n 't04dj14n9.vscode-markdown-workbench'
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `MarkdownWorkbench` / `MarkdownWorkbenchApi` | ~40 | TS API types |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `MarkdownWorkbenchApi` | `MarkdownWorkshopApi` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	git grep -n 'MarkdownWorkbench'
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	# Complete rename: Markdown Workbench → Markdown Workshop
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `Markdown Workbench` | ~40 | Stale prose (display already Workshop) |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	5. **Docs prose** — remaining “Markdown Workbench” / `markdown-workbench` path refs; historical quotes → B1 allowlist, do not silently rewrite.
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	git grep -n 'Markdown Workbench'
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| `markdown-workbench` | ~1350 | Package name, paths, prose, some DOM/ids |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	| Identifiers / data attrs / strings `markdown-workbench` | `markdown-workshop` |
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	git grep -n 'markdown-workbench'
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	2. Set VS Code context key `markdownWorkbench.isCursorHost` to that boolean
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	   `markdownWorkbench.isCursorHost` in their `when` clause so they are
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	| Cmd/Ctrl+L | `markdownWorkbench.cursorBridge.chat` | Cursor Chat with Selection |
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	| Cmd/Ctrl+K | `markdownWorkbench.cursorBridge.edit` | Cursor Edit Selection |
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	Palette: visible only when `markdownWorkbench.isCursorHost` (and plugin
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	  `markdownWorkbench.isCursorHost` ∧ `markdownWorkbench.hasSelection`.
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	  `!(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)`
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	- Only the generated `markdownWorkbench.plugins.cursorBridge.enabled`
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	Repo: `vscode-markdown-workbench`  
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	When Markdown Workbench runs **inside Cursor**, the familiar Cursor shortcuts
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	- **PDF / Agent PDF Viewer**: Markdown Workbench panels only.
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	   returns to Markdown Workbench (lease releases when the note’s tab leaves
+docs/superpowers/specs/pro-answer.md	!(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection)
+docs/superpowers/specs/pro-answer.md	But the Cursor Edit binding separately requires `markdownWorkbench.plugin.cursorBridge`.
+docs/superpowers/specs/pro-answer.md	!(markdownWorkbench.isCursorHost &&
+docs/superpowers/specs/pro-answer.md	  markdownWorkbench.hasSelection &&
+docs/superpowers/specs/pro-answer.md	  markdownWorkbench.plugin.cursorBridge)
+docs/superpowers/specs/pro-answer.md	- Verify that `markdownWorkbench.hasSelection` is current when keybindings resolve, especially immediately after a selection changes.
+docs/superpowers/specs/pro-answer.md	- `reopen()` calls `vscode.openWith` to restore Markdown Workbench and may close a clean native text tab.
+docs/superpowers/specs/pro-answer.md	1. Select text in Markdown Workbench and press Cmd+K.
+docs/superpowers/specs/pro-answer.md	5. Markdown Workbench replaces the editor while Cursor's edit is still pending.
+docs/superpowers/specs/pro-answer.md	  - If Cursor provides no usable completion signal, leave the native text editor open until the user explicitly returns to Markdown Workbench.
+docs/superpowers/specs/pro-answer.md	1. Run Markdown Workbench inside Cursor.
+docs/superpowers/specs/pro-answer.md	5. Insert Link is suppressed, and Cursor Edit is disabled. The existing Markdown Workbench shortcut is therefore lost.
+docs/superpowers/specs/pro-answer.md	If the Cursor Edit bar's completion cannot be detected reliably, retain the native editor until the user explicitly returns to Markdown Workbench. This is safer than guessing when native editing has completed.
+docs/superpowers/specs/pro-meta.md	- Cursor detection method proposed: /cursor/i.test(vscode.env.appName) → context markdownWorkbench.isCursorHost
+docs/superpowers/specs/pro-meta.md	- Proposed MW command IDs: markdownWorkbench.cursorBridge.chat, markdownWorkbench.cursorBridge.edit
+
+# Historical pnpm logs under docs/checks. Check and browser logs share the
+# package-script header and the local checkout path on the same line; each is
+# its own row so one cannot exempt the other. Native logs also name the
+# throwaway profile and the webview wait line; a hit outside those phrases
+# still fails.
+docs/checks/composition-audit-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-audit-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/composition-audit-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-audit-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/composition-audit-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-audit-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/composition-audit-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/composition-audit-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/composition-kernel.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-kernel.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/composition-registry.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-registry.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/composition-state.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-state.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/panel-vault-bridge-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/panel-vault-bridge-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/panel-vault-bridge-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/panel-vault-bridge-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/panel-vault-bridge-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase3-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase3-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase3-completed-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase3-completed-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase3-completed-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase3-completed-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase3-completed-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase3-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase3-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase3-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-callouts-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-callouts-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-callouts-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-callouts-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-codeblocks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-codeblocks-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-codeblocks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-codeblocks-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-continuation-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-continuation-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-continuation-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-continuation-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-continuation-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-continuation-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-continuation-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-continuation-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-copy-agent-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-copy-agent-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-copy-agent-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-copy-agent-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-copy-agent-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-copy-agent-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-copy-agent-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-copy-agent-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-diagrams-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-diagrams-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-diagrams-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-diagrams-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-embeds-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-embeds-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-embeds-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-embeds-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-embeds-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-footnotes-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-footnotes-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-footnotes-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-footnotes-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-incomplete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-incomplete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-incomplete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-incomplete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-incomplete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-indexed-search-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-indexed-search-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-indexed-search-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-indexed-search-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-indexed-search-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-indexed-search-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-indexed-search-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-indexed-search-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-inline-title-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-inline-title-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-inline-title-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-inline-title-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-inline-title-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-inline-title-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-inline-title-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-inline-title-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-links-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-links-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-links-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-links-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-links-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-links-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-links-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-links-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-markers-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-markers-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-markers-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-markers-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-markers-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-markers-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-markers-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-markers-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-math-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-math-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-math-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-math-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-pagepreview-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-pagepreview-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-pagepreview-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-pagepreview-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-paste-html-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-paste-html-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-paste-html-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-paste-html-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-properties-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-properties-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-properties-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-properties-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-properties-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-search-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-search-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-search-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-search-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-search-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-search-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-search-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-search-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-suggest-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-suggest-cache-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-cache-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-suggest-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-suggest-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-suggest-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-suggest-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-tables-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tables-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tables-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tables-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tables-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tables-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tables-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-tables-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-tags-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tags-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tags-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tags-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tags-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tags-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tags-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-tags-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-tasks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tasks-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tasks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tasks-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tasks-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tasks-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-tasks-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-tasks-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-widget-links-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-widget-links-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase4-widget-links-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-widget-links-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase5-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase5-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase5-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase5-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase5-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase6-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase6-complete-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase6-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase6-complete-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase6-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase6-complete-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase6-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase6-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase7-contributions-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase7-contributions-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase7-contributions-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase7-contributions-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase7-contributions-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase7-contributions-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/phase7-contributions-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase7-contributions-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-callouts-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-callouts-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-callouts-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-callouts-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-canvas-data-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-canvas-data-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-codeblocks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-codeblocks-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-codeblocks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-codeblocks-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-commands-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-commands-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-commands-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-commands-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-commands-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-complete-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-complete-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-complete-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-diagrams-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-diagrams-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-diagrams-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-diagrams-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-document-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-document-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-document-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-document-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-document-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-editor-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-editor-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-editor-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-editor-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-editor-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-editor-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-editor-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-editor-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-embeds-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-embeds-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-embeds-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-embeds-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-features-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-features-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-features-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-features-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-footnote-metadata-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnote-metadata-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-footnote-metadata-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnote-metadata-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-footnotes-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnotes-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-footnotes-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnotes-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-formatting-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-formatting-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-formatting-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-formatting-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-fuzzy-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-fuzzy-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-html-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-html-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-html-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-html-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-images-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-images-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-images-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-images-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-kernel-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-kernel-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-kernel-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-kernel-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-links-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-links-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-links-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-links-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-links-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-livepreview-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-livepreview-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-livepreview-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-livepreview-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-math-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-math-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-math-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-math-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-menu-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-menu-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-menu-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-menu-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-metadata-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-metadata-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-navigation-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-navigation-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-navigation-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-navigation-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-navigation-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-preview-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-preview-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-preview-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-preview-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-properties-final-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-properties-final-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-properties-final-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-properties-final-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-controls-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-controls-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-controls-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-controls-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-editing-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-editing-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-editing-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-editing-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-edits-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-edits-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-lists-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-lists-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-lists-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-lists-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-merge-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-merge-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-property-order-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-order-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-query-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-query-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-readmes-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-readmes-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-render-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-render-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-render-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-render-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-resources-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-resources-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-resources-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-resources-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-resources-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-rpc-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-rpc-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-rpc-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-rpc-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-search-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-search-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-search-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-search-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-table-model-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-table-model-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-tables-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tables-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-tables-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tables-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-tasks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tasks-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-tasks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tasks-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-vim-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-vim-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-vim-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-vim-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-webm-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-webm-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-webm-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-webm-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-workbench-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-browser.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-workbench-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-check.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-workbench-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-native.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+docs/checks/readability-workbench-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-workbench-native.txt	Native: waiting for Markdown Workbench webview
+
+# Phrases above also appear on the lines of this file. Each self-row is one
+# phrase. That row's own line contains the phrase, so it covers itself and the
+# data row. A line in this file that does not contain one of these phrases
+# still fails. Where a data row's phrase is only a searched token, the
+# self-row is that data row's text, not the token alone.
+scripts/identity-rename-allowlist.txt	'markdownWorkbench'
+scripts/identity-rename-allowlist.txt	'vscode-markdown-workbench'
+scripts/identity-rename-allowlist.txt	'MarkdownWorkbench'
+scripts/identity-rename-allowlist.txt	'Markdown Workbench'
+scripts/identity-rename-allowlist.txt	'markdown-workbench'
+scripts/identity-rename-allowlist.txt	't04dj14n9.vscode-markdown-workbench'
+scripts/identity-rename-allowlist.txt	https://github.com/t04dJ14n9/vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/
+scripts/identity-rename-allowlist.txt	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/42
+scripts/identity-rename-allowlist.txt	Renamed from Markdown Workbench
+scripts/identity-rename-allowlist.txt	assert.doesNotMatch(command.command, /markdownWorkbench/)
+scripts/identity-rename-allowlist.txt	assert.equal(blob.includes("markdownWorkbench."), false)
+scripts/identity-rename-allowlist.txt	assert.doesNotMatch(id, /markdownWorkbench/)
+scripts/identity-rename-allowlist.txt	t04dJ14n9/vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	Markdown Workbench 0.1.0
+scripts/identity-rename-allowlist.txt	# Handoff: Markdown Workbench
+scripts/identity-rename-allowlist.txt	| vscode-markdown-workbench | Obsidian-like Markdown editor extension (Cordis-style in-house kernel `src/kernel`, ~50 plugins, OKF/LLM-wiki aware) | /workspace/repos/ci-work/... and many worktrees under /workspace/repos/mdwb-* (see `git worktree list`) |
+scripts/identity-rename-allowlist.txt	### vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	  behind `markdownWorkbench.onlineVideos.bilibiliPlayer` (false) until the
+scripts/identity-rename-allowlist.txt	- `markdownWorkbench.editor.reclaimTextEditor` (`auto` = on in Cursor,
+scripts/identity-rename-allowlist.txt	  with no migration: command `markdownWorkbench.copyLinkForAgent`, plugin
+scripts/identity-rename-allowlist.txt	  `agentBridge` (renamed from `copyLinkForAgent` by the review fixes; `markdownWorkbench.plugins.agentBridge.enabled`,
+scripts/identity-rename-allowlist.txt	  context key `markdownWorkbench.plugin.agentBridge`), setting
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.copyLinkForAgent.target` (was `askAgent.target`). The
+scripts/identity-rename-allowlist.txt	  | Text and code size | `markdownWorkbench.editor.fontSize` (default 16, Obsidian's body size); `editor.fontSize` no longer applies to notes | code keeps the text's size; headings, tables, properties, footnotes, line numbers are relative to it |
+scripts/identity-rename-allowlist.txt	  | Line height | `markdownWorkbench.editor.lineHeight` (multiplier, default 1.5, Obsidian's); `editor.lineHeight` no longer applies | replaced the built-in rule on 2026-10-10 |
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.*` has no font settings of its own. Note text in the
+scripts/identity-rename-allowlist.txt	- Superseded: the note's line height is now `markdownWorkbench.editor.lineHeight`
+scripts/identity-rename-allowlist.txt	  (`src/host/api/management.ts`), §25.2 **Use Markdown Workbench for
+scripts/identity-rename-allowlist.txt	- Ctrl+I in a Markdown Workbench note italicises in Cursor (checked by
+scripts/identity-rename-allowlist.txt	| Fonts | Family, weight follow `editor.*` for Markdown; the size and line height are `markdownWorkbench.editor.fontSize` (default 16) and `lineHeight` (default 1.5), Obsidian's. |
+scripts/identity-rename-allowlist.txt	| Copy Link for Agent | **One agent action only.** Copy for Agent and Ask Agent are gone; the remaining action is **Copy Link for Agent** (`markdownWorkbench.copyLinkForAgent`, `vscodeEmbedPdf.copyLinkForAgent`), no migration. It **never guesses the agent**: `auto` opens a chat only when the editor's own chat is the only agent installed; otherwise it copies the link and text. `markdownWorkbench.copyLinkForAgent.target` / `vscodeEmbedPdf.copyLinkForAgent.target` force a target: `auto`, `cursor`, `chat`, `claudeCode`, `codex` or `clipboard` (0fa88e0, 4147c0d, 565b1e6; PDF: 3141d6f, ff83165). |
+scripts/identity-rename-allowlist.txt	| Cursor Markdown button | `markdownWorkbench.editor.reclaimTextEditor` (`auto` means on in Cursor only). A note that Cursor's Markdown switch sends to the text editor reopens in the workbench (bf77ed1). |
+scripts/identity-rename-allowlist.txt	| t04dJ14n9/vscode-markdown-workbench | `continue-handover` | this docs commit, on 8e72f8e | [#1](https://github.com/t04dJ14n9/vscode-markdown-workbench/pull/1) → `main` (open, **the only PR**) | yes |
+scripts/identity-rename-allowlist.txt	| `/workspace/repos/vscode-markdown-workbench` | `continue-handover` |
+scripts/identity-rename-allowlist.txt	| `/workspace/repos/agent-integration/vscode-markdown-workbench-agents` | `agent-handoff-deepseek`, merged into `continue-handover` |
+scripts/identity-rename-allowlist.txt	GitHub Actions CI (check, browser, VS Code stable, package, secret scan, audit) passed on both PR #1 heads: [markdown @ 8e72f8e](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/runs/37904047930), [embedPDF @ efc5cb8](https://github.com/t04dJ14n9/vscode-embedPDF/actions/runs/37906395620).
+scripts/identity-rename-allowlist.txt	/workspace/repos/vscode-markdown-workbench/node_modules
+scripts/identity-rename-allowlist.txt	"*.md": "markdownWorkbench.editor"
+scripts/identity-rename-allowlist.txt	"markdownWorkbench.plugins.vim.enabled": true
+scripts/identity-rename-allowlist.txt	- `mw.` means `markdownWorkbench.`
+scripts/identity-rename-allowlist.txt	| Hotkeys pane (customise any command) | — | Rebind any command; filter by conflicts | **N/A (VS Code)** Keyboard Shortcuts (`keybindings.json`). All 65 `markdownWorkbench.*` commands can be rebound | map | — | — |
+scripts/identity-rename-allowlist.txt	| Default bindings parity | see above | — | partial. Ctrl+B/I/K and Ctrl+; ship as defaults. Quick switcher, Toggle source mode, Toggle checklist, Set heading and Insert wikilink have **no default key** (the Vim shortcut list consumes Ctrl+O and Ctrl+Alt+0–6 but doesn't bind them) | port Obsidian-style default `when`-scoped bindings (`activeCustomEditorId == 'markdownWorkbench.editor'`): Ctrl/Cmd+O Quick switcher (only inside the editor, or leave it opt-in because it clashes with VS Code's Open File), Ctrl/Cmd+E toggle mode, Ctrl/Cmd+Enter toggle checklist. No Ctrl+P override | **P1** | S |
+scripts/identity-rename-allowlist.txt	/workspace/repos/vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	`markdownWorkbench.graph`). Read-only Sources shipped as `sourcesProperty`. The id
+scripts/identity-rename-allowlist.txt	- **One umbrella switch**, `markdownWorkbench.plugins.okf.enabled`, sits on top of the existing per-plugin
+scripts/identity-rename-allowlist.txt	Current mechanism: each feature has `markdownWorkbench.plugins.<id>.enabled`, a resource-scoped setting whose
+scripts/identity-rename-allowlist.txt	| Settings | Add `markdownWorkbench.plugins.okf.enabled` (resource scope). Each child keeps its own `plugins.<id>.enabled` and default. Turning the umbrella off disposes every OKF fiber at once (DESIGN §6.3). Turning it back on restores each child's own state. |
+scripts/identity-rename-allowlist.txt	| Generator | When-clauses gain `&& config.markdownWorkbench.plugins.okf.enabled`. The settings UI lists the group switch first, with "OKF:" prefixed titles. |
+scripts/identity-rename-allowlist.txt	| Runtime gating | Enabled is not the same as visible. Every OKF UI checks `okf.bundleFor(uri)` and the context key `markdownWorkbench.okf.inBundle`. A note outside a bundle sees no card, badge, diagnostic or view content. |
+scripts/identity-rename-allowlist.txt	### 3.4 Settings (`markdownWorkbench.plugins.okfCore.config.*`, resource scope)
+scripts/identity-rename-allowlist.txt	`okfStats` when enabled, and otherwise a quick pick of bundle actions. Context keys: `markdownWorkbench.okf.inBundle`
+scripts/identity-rename-allowlist.txt	- A setting, `markdownWorkbench.fileTypes`, is a table `{ glob → editor plugin | "off" }`. The **Manage
+scripts/identity-rename-allowlist.txt	- Add a setting, `markdownWorkbench.marp.open: "workbench" | "textEditor"`. With `textEditor`, Marp
+scripts/identity-rename-allowlist.txt	| ID / view type | `t04dj14n9.vscode-markdown-workbench` / `markdownWorkbench.editor` (CustomTextEditor, `priority: option`, `*.md`, `*.markdown`) | `t04dj14n9.vscode-embedpdf` / `vscodeEmbedPdf.viewer` (CustomReadonlyEditor, `priority: default`, `*.pdf`) |
+scripts/identity-rename-allowlist.txt	"markdownWorkbench.fileTypes": {
+scripts/identity-rename-allowlist.txt	- `markdownWorkbench.plugins.pdf.enabled` and `markdownWorkbench.plugins.markdown.enabled` are the
+scripts/identity-rename-allowlist.txt	- It runs on activation, on `onDidChangeConfiguration` for `markdownWorkbench.fileTypes` and
+scripts/identity-rename-allowlist.txt	- **Use Markdown Workshop for Markdown in This Workspace** (`markdownWorkbench.useForMarkdownInWorkspace`,
+scripts/identity-rename-allowlist.txt	  "markdownWorkbench.pdf"` at user scope once, on first activation. **Catch:** nothing activates the
+scripts/identity-rename-allowlist.txt	- **Manage Plugins** keeps opening Settings at `markdownWorkbench.plugins`. Settings now also shows
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.fileTypes` as the table.
+scripts/identity-rename-allowlist.txt	  id: string;                       // "markdown" | "pdf" → viewType markdownWorkbench.<id>
+scripts/identity-rename-allowlist.txt	views?: …  // existing; add scope: "editor:<id>" so the generator emits activeCustomEditorId == 'markdownWorkbench.<id>'
+scripts/identity-rename-allowlist.txt	- The command prefix stays `markdownWorkbench.` (Q1). PDF commands get `category: "PDF"` through a
+scripts/identity-rename-allowlist.txt	  panels per plugin, and the active panel. It publishes context keys `markdownWorkbench.activeEditor
+scripts/identity-rename-allowlist.txt	- `Settings` namespace per plugin: `markdownWorkbench.<pluginId>.*` (already the convention:
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.links.*`). PDF settings start empty. Candidates: `pdf.reloadOnChange`,
+scripts/identity-rename-allowlist.txt	| `PdfPanels` + context keys `vscodeEmbedPdf.pdfActive`, `hasSelection`, `outlineLoading` | `editors` registry + `markdownWorkbench.pdf.active`, `.hasSelection`, `.outlineLoading`; old keys set too for one release |
+scripts/identity-rename-allowlist.txt	| `copyForAgent` (enablement `hasSelection`, editor/title) | `markdownWorkbench.pdf.copyForAgent`; wording byte-identical (`agent-text.ts` unit tests move verbatim). Exposed through the internal `agent` service so the API v1 `copyForAgent` stays Markdown-only (frozen) and v2 adds `pdf.copyForAgent` |
+scripts/identity-rename-allowlist.txt	| `openLocation(uri?, location?)`: callable by other extensions | `markdownWorkbench.pdf.openLocation` with the same signature. **`vscodeEmbedPdf.openLocation` kept as a hidden alias** (documented in README; LLM Wiki and agent skills may call it) |
+scripts/identity-rename-allowlist.txt	| `goToOutlineItem` (hidden) | `markdownWorkbench.pdf.goToOutlineItem` (hidden) |
+scripts/identity-rename-allowlist.txt	   `markdownWorkbench.isMarp`. Also `markdownWorkbench.marpInstalled`
+scripts/identity-rename-allowlist.txt	2. **Setting:** `markdownWorkbench.marp.open: "workbench" (default) | "textEditor"`. With
+scripts/identity-rename-allowlist.txt	- `markdownWorkbench.fileTypes` plus the reconciler (pure `plan()` with ownership and conflicts),
+scripts/identity-rename-allowlist.txt	- Native smoke: one PDF opens in `markdownWorkbench.pdf`, the outline shows, and Copy for Agent
+scripts/identity-rename-allowlist.txt	  `vscodeEmbedPdf.viewer` to `markdownWorkbench.pdf` (user and workspace scopes; recorded as owned).
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.*` key at each scope, plus aliases for every command, in its own phase.
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.*` namespace.** That means zero migration, and API v1 stays valid. Change only
+scripts/identity-rename-allowlist.txt	- `t04dJ14n9/vscode-markdown-workbench` at `continue-handover` (`aa393a9`, PR #1 open against `main`):
+scripts/identity-rename-allowlist.txt	cd ../vscode-markdown-workbench && git checkout -b import-pdf
+scripts/identity-rename-allowlist.txt	- **API:** v1 (`getExtension("t04dj14n9.vscode-markdown-workbench")`) stays frozen and identical. PDF
+scripts/identity-rename-allowlist.txt	| Parallel work: another job is editing `/workspace/repos/vscode-markdown-workbench`, and the `pdf-workbench` branch diverges from `test-and-fix-ui` | P1 starts only after PR #1 merges; Q3 decides `pdf-workbench` before P2 |
+scripts/identity-rename-allowlist.txt	- **Q1. Identity.** **Keep the extension ID `t04dj14n9.vscode-markdown-workbench` and the
+scripts/identity-rename-allowlist.txt	withMarkdownWorkbench
+scripts/identity-rename-allowlist.txt	opening Markdown Workbench with
+scripts/identity-rename-allowlist.txt	editor protocol, `markdownWorkbench.debug.logging` gates debug lines on both
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.plugins.agentBridge.enabled`, renamed with no
+scripts/identity-rename-allowlist.txt	and it publishes `markdownWorkbench.bridge.envelope` without opening a chat.
+scripts/identity-rename-allowlist.txt	TreeView (`markdownWorkbench.outline`, **Note Outline**) for the active
+scripts/identity-rename-allowlist.txt	`markdownWorkbench.outline.followCursor`. The setting of the same name is
+scripts/identity-rename-allowlist.txt	panel (`markdownWorkbench.graph`) using graphology and Sigma in their own
+scripts/identity-rename-allowlist.txt	vscode-markdown-workbench/
+scripts/identity-rename-allowlist.txt	`~/Code/vscode-markdown-workbench-phase5` and merges it into `main` when its
+scripts/identity-rename-allowlist.txt	retained contexts. Document events cover open Markdown Workbench notes only.
+scripts/identity-rename-allowlist.txt	`Markdown Workbench` log output channel, webview records forwarded over the
+scripts/identity-rename-allowlist.txt	Markdown Workbench for Markdown in This Workspace` (writes the workspace
+scripts/identity-rename-allowlist.txt	findings A1–C4). Markdown Workbench and Agent PDF Viewer stay separate
+scripts/identity-rename-allowlist.txt	Markdown Workbench now speaks the version-1 bridge envelope in
+scripts/identity-rename-allowlist.txt	Markdown Workbench panel. It read text through `vaults.text`, nested parsed
+scripts/identity-rename-allowlist.txt	`package.json` say `Markdown Workbench` while the generator expects
+scripts/identity-rename-allowlist.txt	/tmp/markdown-workbench-e2e-
+scripts/identity-rename-allowlist.txt	- Modify: `scripts/generate-contributions.ts` (use `contributionId` / `SETTING_PREFIX`; no hard-coded `` `markdownWorkbench.${…}` ``)
+scripts/identity-rename-allowlist.txt	Generator **and** runtime command/view registration must both call `contributionId` (or read `MARKDOWN_EDITOR.viewType`) — do not leave independent `` `markdownWorkbench.${…}` `` / `` `markdownWorkshop.${…}` `` string templates in registration paths.
+scripts/identity-rename-allowlist.txt	In `scripts/generate-contributions.ts`, replace owned `` markdownWorkbench. `` string templates with `contributionId(...)` / `SETTING_PREFIX` (commands, view ids, menus, config keys, when-clauses). Leave the `whenEnabled(..., "workbench" | "editor")` **scope argument** alone — that is VS Code panel-vs-editor, not product identity.
+scripts/identity-rename-allowlist.txt	node -e "const p=require('./package.json'); const c=p.contributes; if(c.customEditors[0].viewType!=='markdownWorkshop.editor') process.exit(1); if(c.commands.some(x=>x.command.startsWith('markdownWorkbench.'))) process.exit(2); console.log('ok', c.commands.length)"
+scripts/identity-rename-allowlist.txt	- Modify: runtime registration call sites that still build ids with independent templates — at least `src/plugins/commands/features.ts`, `src/plugins/commands/host.ts`, `src/plugins/editor/jump-host.ts`, `src/plugins/editor/actions-host.ts`, `src/plugins/settings/host.ts`, `src/plugins/editor/associations.ts`, `src/plugins/livePreview/host.ts`, `src/host/api/management.ts` (and any other `ctx.workbench.command(\`markdownWorkbench.${…}\`)` / hard-coded owned command id)
+scripts/identity-rename-allowlist.txt	- Produces: green B3 asserts that fail if runtime still registers `markdownWorkbench.*` (or any id divergent from contributes)
+scripts/identity-rename-allowlist.txt	ctx.workbench.command(`markdownWorkbench.${command.id}`, ...)
+scripts/identity-rename-allowlist.txt	    assert.doesNotMatch(c.command, /markdownWorkbench/);
+scripts/identity-rename-allowlist.txt	  assert.equal(blob.includes("markdownWorkbench."), false);
+scripts/identity-rename-allowlist.txt	Update JSDoc examples that say `markdownWorkbench.*` settings to `markdownWorkshop.*`.
+scripts/identity-rename-allowlist.txt	- Modify: remaining `src/**`, `test/**` string literals / comments for `markdownWorkbench` → `markdownWorkshop`
+scripts/identity-rename-allowlist.txt	- Modify: owned viewType strings still hard-coded (`markdownWorkbench.graph`, `markdownWorkbench.renderedDiff`, reclaim comments, cursorBridge context `markdownWorkbench.isCursorHost`, etc.)
+scripts/identity-rename-allowlist.txt	- Produces: no owned `markdownWorkbench` / old full id in runtime sources & tests (docs swept in Task 5)
+scripts/identity-rename-allowlist.txt	git grep -n 'markdownWorkbench' -- src test scripts
+scripts/identity-rename-allowlist.txt	  'markdownWorkbench'
+scripts/identity-rename-allowlist.txt	- Phase 1 keeps `repository.url` on `…/vscode-markdown-workbench`; phase 2 (post-merge) renames GitHub + metadata — **out of this code PR**
+scripts/identity-rename-allowlist.txt	Expected: `package.json` `contributes.commands[].command`, `customEditors[].viewType` (`markdownWorkshop.editor`), configuration property keys, and when/enablement strings all use `markdownWorkshop.*`. `package.json` `name` still `vscode-markdown-workbench` for now.
+scripts/identity-rename-allowlist.txt	| `t04dj14n9.vscode-markdown-workbench` | `t04dj14n9.vscode-markdown-workshop` |
+scripts/identity-rename-allowlist.txt	| `@ext:t04dj14n9.vscode-markdown-workbench` | `@ext:t04dj14n9.vscode-markdown-workshop` |
+scripts/identity-rename-allowlist.txt	| `vscode:extension/t04dj14n9.vscode-markdown-workbench` | `…markdown-workshop` |
+scripts/identity-rename-allowlist.txt	| `vscode://t04dj14n9.vscode-markdown-workbench/` | `…markdown-workshop/` |
+scripts/identity-rename-allowlist.txt	- Modify: `package.json` — `"name": "vscode-markdown-workshop"`; **keep** `"repository.url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"`
+scripts/identity-rename-allowlist.txt	  "url": "https://github.com/t04dJ14n9/vscode-markdown-workbench"
+scripts/identity-rename-allowlist.txt	  'vscode-markdown-workbench'
+scripts/identity-rename-allowlist.txt	  't04dj14n9.vscode-markdown-workbench'
+scripts/identity-rename-allowlist.txt	package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	1. Uninstall old VSIX `t04dj14n9.vscode-markdown-workbench` if present.
+scripts/identity-rename-allowlist.txt	1. Rename GitHub `vscode-markdown-workbench` → `vscode-markdown-workshop`.
+scripts/identity-rename-allowlist.txt	| API | `src/host/api/types.ts` (`MarkdownWorkbenchApi` → `MarkdownWorkshopApi` + id in docs), other `src/host/api/*` |
+scripts/identity-rename-allowlist.txt	- Modify: `src/host/api/types.ts` — `MarkdownWorkbenchApi` → `MarkdownWorkshopApi`; doc example extension id
+scripts/identity-rename-allowlist.txt	Expected: no remaining `Workbench` / `MarkdownWorkbenchApi` / `createWorkbench` product-symbol errors. Fix stragglers before continuing.
+scripts/identity-rename-allowlist.txt	  'MarkdownWorkbench'
+scripts/identity-rename-allowlist.txt	**Goal:** Finish the breaking identity rename from Markdown Workbench → Markdown Workshop (extension id, package/VSIX name, contribution namespace, host façade, docs/tests/CI) with **no** backward-compat.
+scripts/identity-rename-allowlist.txt	- Modify: README / API.md / CAPABILITIES.md / DESIGN.md / prose “Markdown Workbench” → “Markdown Workshop”; package path refs
+scripts/identity-rename-allowlist.txt	  'Markdown Workbench'
+scripts/identity-rename-allowlist.txt	CHANGELOG.md	renamed from Markdown Workbench
+scripts/identity-rename-allowlist.txt	Replace “Markdown Workbench” / old package id in those two files with Workshop identity. Keep the shared format contract intact.
+scripts/identity-rename-allowlist.txt	| CSS/DOM | strings / data attrs `markdown-workbench` → `markdown-workshop`; leave `mw-*` |
+scripts/identity-rename-allowlist.txt	- Modify: DOM/strings `markdown-workbench` → `markdown-workshop` (not `mw-*` classes)
+scripts/identity-rename-allowlist.txt	git grep -n 'markdown-workbench' -- src test
+scripts/identity-rename-allowlist.txt	  'markdown-workbench'
+scripts/identity-rename-allowlist.txt	| Command ids, settings keys, view ids, context keys | `markdownWorkbench.*` | `markdownWorkshop.*` |
+scripts/identity-rename-allowlist.txt	| Custom editor `viewType` | `markdownWorkbench.editor` | `markdownWorkshop.editor` |
+scripts/identity-rename-allowlist.txt	- Keeping `markdownWorkbench.*` as aliases or deprecations.
+scripts/identity-rename-allowlist.txt	| `markdownWorkbench` | ~820 in `src`/`test`/`docs` | Commands, settings, viewTypes, contexts |
+scripts/identity-rename-allowlist.txt	| `SETTING_PREFIX` | `"markdownWorkbench."` | Single source of truth in `src/shared/setting-schema.ts` |
+scripts/identity-rename-allowlist.txt	| Contribution generator | `scripts/generate-contributions.ts` | Hard-codes `` `markdownWorkbench.${id}` `` |
+scripts/identity-rename-allowlist.txt	- `MARKDOWN_EDITOR.viewType` = `markdownWorkbench.editor` (`src/shared/editor-provider.ts`)
+scripts/identity-rename-allowlist.txt	- `SETTING_PREFIX` = `markdownWorkbench.` (`src/shared/setting-schema.ts`)
+scripts/identity-rename-allowlist.txt	- Manifest command ids are **unprefixed** in plugin manifests; the generator adds `markdownWorkbench.`
+scripts/identity-rename-allowlist.txt	Mechanical rule: replace the contribution namespace string `markdownWorkbench` → `markdownWorkshop` everywhere it is **our** namespace. Do not touch foreign namespaces.
+scripts/identity-rename-allowlist.txt	Changing `package.json` `name` changes the canonical id `publisher.name`. Search and update every consumer of the **old full id**, not only `markdownWorkbench`:
+scripts/identity-rename-allowlist.txt	3. **Bulk namespace replace** — `markdownWorkbench` → `markdownWorkshop` in tracked sources; full-id / `@ext:` / deep-link updates (B2).
+scripts/identity-rename-allowlist.txt	git grep -n 'markdownWorkbench'
+scripts/identity-rename-allowlist.txt	3. Owned context keys referenced in contributed `when` / `enablement` use the `markdownWorkshop.` prefix (no leftover `markdownWorkbench.`).
+scripts/identity-rename-allowlist.txt	Repo (current): `t04dJ14n9/vscode-markdown-workbench`  
+scripts/identity-rename-allowlist.txt	| Extension id | `t04dj14n9.vscode-markdown-workbench` | `t04dj14n9.vscode-markdown-workshop` |
+scripts/identity-rename-allowlist.txt	| `package.json` `name` / VSIX base | `vscode-markdown-workbench` | `vscode-markdown-workshop` |
+scripts/identity-rename-allowlist.txt	| GitHub repository | `vscode-markdown-workbench` | `vscode-markdown-workshop` |
+scripts/identity-rename-allowlist.txt	| Full extension id `t04dj14n9.vscode-markdown-workbench` | API docs, fixtures, `@ext:` filters, `EXTENSION_ID` | See B2 checklist |
+scripts/identity-rename-allowlist.txt	- `EXTENSION_ID` / `EXTENSION_FILTER` = `t04dj14n9.vscode-markdown-workbench` / `@ext:…` (`src/host/settings-access.ts`, `src/plugins/settings/commands.ts`)
+scripts/identity-rename-allowlist.txt	- Local folder checkouts named `vscode-markdown-workbench` until operators rename them (document only).
+scripts/identity-rename-allowlist.txt	| Full extension id | `t04dj14n9.vscode-markdown-workbench` |
+scripts/identity-rename-allowlist.txt	| Settings filter | `@ext:t04dj14n9.vscode-markdown-workbench` |
+scripts/identity-rename-allowlist.txt	| Install / deep links (docs) | `vscode:extension/t04dj14n9.vscode-markdown-workbench` |
+scripts/identity-rename-allowlist.txt	| URI-handler docs (if any) | `vscode://t04dj14n9.vscode-markdown-workbench/` |
+scripts/identity-rename-allowlist.txt	- Leave `repository.url` / bugs / homepage (and clone badges that must resolve today) on the **current** GitHub URL `…/vscode-markdown-workbench`.
+scripts/identity-rename-allowlist.txt	git grep -n 'vscode-markdown-workbench'
+scripts/identity-rename-allowlist.txt	git grep -n 't04dj14n9.vscode-markdown-workbench'
+scripts/identity-rename-allowlist.txt	| `MarkdownWorkbench` / `MarkdownWorkbenchApi` | ~40 | TS API types |
+scripts/identity-rename-allowlist.txt	| `MarkdownWorkbenchApi` | `MarkdownWorkshopApi` |
+scripts/identity-rename-allowlist.txt	git grep -n 'MarkdownWorkbench'
+scripts/identity-rename-allowlist.txt	# Complete rename: Markdown Workbench → Markdown Workshop
+scripts/identity-rename-allowlist.txt	| `Markdown Workbench` | ~40 | Stale prose (display already Workshop) |
+scripts/identity-rename-allowlist.txt	5. **Docs prose** — remaining “Markdown Workbench” / `markdown-workbench` path refs; historical quotes → B1 allowlist, do not silently rewrite.
+scripts/identity-rename-allowlist.txt	git grep -n 'Markdown Workbench'
+scripts/identity-rename-allowlist.txt	| `markdown-workbench` | ~1350 | Package name, paths, prose, some DOM/ids |
+scripts/identity-rename-allowlist.txt	| Identifiers / data attrs / strings `markdown-workbench` | `markdown-workshop` |
+scripts/identity-rename-allowlist.txt	git grep -n 'markdown-workbench'
+scripts/identity-rename-allowlist.txt	2. Set VS Code context key `markdownWorkbench.isCursorHost` to that boolean
+scripts/identity-rename-allowlist.txt	   `markdownWorkbench.isCursorHost` in their `when` clause so they are
+scripts/identity-rename-allowlist.txt	| Cmd/Ctrl+L | `markdownWorkbench.cursorBridge.chat` | Cursor Chat with Selection |
+scripts/identity-rename-allowlist.txt	| Cmd/Ctrl+K | `markdownWorkbench.cursorBridge.edit` | Cursor Edit Selection |
+scripts/identity-rename-allowlist.txt	Palette: visible only when `markdownWorkbench.isCursorHost` (and plugin
+scripts/identity-rename-allowlist.txt	  `markdownWorkbench.isCursorHost` ∧ `markdownWorkbench.hasSelection`.
+scripts/identity-rename-allowlist.txt	  `!(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)`
+scripts/identity-rename-allowlist.txt	- Only the generated `markdownWorkbench.plugins.cursorBridge.enabled`
+scripts/identity-rename-allowlist.txt	Repo: `vscode-markdown-workbench`  
+scripts/identity-rename-allowlist.txt	When Markdown Workbench runs **inside Cursor**, the familiar Cursor shortcuts
+scripts/identity-rename-allowlist.txt	- **PDF / Agent PDF Viewer**: Markdown Workbench panels only.
+scripts/identity-rename-allowlist.txt	   returns to Markdown Workbench (lease releases when the note’s tab leaves
+scripts/identity-rename-allowlist.txt	!(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection)
+scripts/identity-rename-allowlist.txt	But the Cursor Edit binding separately requires `markdownWorkbench.plugin.cursorBridge`.
+scripts/identity-rename-allowlist.txt	!(markdownWorkbench.isCursorHost &&
+scripts/identity-rename-allowlist.txt	  markdownWorkbench.hasSelection &&
+scripts/identity-rename-allowlist.txt	  markdownWorkbench.plugin.cursorBridge)
+scripts/identity-rename-allowlist.txt	- Verify that `markdownWorkbench.hasSelection` is current when keybindings resolve, especially immediately after a selection changes.
+scripts/identity-rename-allowlist.txt	- `reopen()` calls `vscode.openWith` to restore Markdown Workbench and may close a clean native text tab.
+scripts/identity-rename-allowlist.txt	1. Select text in Markdown Workbench and press Cmd+K.
+scripts/identity-rename-allowlist.txt	5. Markdown Workbench replaces the editor while Cursor's edit is still pending.
+scripts/identity-rename-allowlist.txt	  - If Cursor provides no usable completion signal, leave the native text editor open until the user explicitly returns to Markdown Workbench.
+scripts/identity-rename-allowlist.txt	1. Run Markdown Workbench inside Cursor.
+scripts/identity-rename-allowlist.txt	5. Insert Link is suppressed, and Cursor Edit is disabled. The existing Markdown Workbench shortcut is therefore lost.
+scripts/identity-rename-allowlist.txt	If the Cursor Edit bar's completion cannot be detected reliably, retain the native editor until the user explicitly returns to Markdown Workbench. This is safer than guessing when native editing has completed.
+scripts/identity-rename-allowlist.txt	- Cursor detection method proposed: /cursor/i.test(vscode.env.appName) → context markdownWorkbench.isCursorHost
+scripts/identity-rename-allowlist.txt	- Proposed MW command IDs: markdownWorkbench.cursorBridge.chat, markdownWorkbench.cursorBridge.edit
+scripts/identity-rename-allowlist.txt	vscode-markdown-workbench@0.1.0
+scripts/identity-rename-allowlist.txt	/Users/t04dj14n9/Code/vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	Native: waiting for Markdown Workbench webview
+scripts/identity-rename-allowlist.txt	docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	markdownWorkbench
+scripts/identity-rename-allowlist.txt	docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	t04dj14n9.vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	MarkdownWorkbench
+scripts/identity-rename-allowlist.txt	docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Markdown Workbench
+scripts/identity-rename-allowlist.txt	docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	markdown-workbench

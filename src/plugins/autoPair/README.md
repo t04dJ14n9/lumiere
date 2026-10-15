@@ -19,7 +19,7 @@ the editor or unrelated plugin state; disposal removes the registrations.
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
 `plugins.autoPair.enabled`, `autoPair.brackets` and `autoPair.markdown` under
-`markdownWorkbench` all default to true. No palette commands.
+`markdownWorkshop` all default to true. No palette commands.
 
 ## Limits and differences from Obsidian
 

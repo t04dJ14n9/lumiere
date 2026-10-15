@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import type { Disposer } from "../kernel";
-import type { WorkbenchPanel } from "../shared/runtime";
+import type { WorkshopPanel } from "../shared/runtime";
 
 /** One webview panel per view type, independent of any Markdown document. */
-export function createWorkbenchPanel(
+export function createWorkshopPanel(
   extensionUri: vscode.Uri,
-): (viewType: string, title: string) => WorkbenchPanel {
+): (viewType: string, title: string) => WorkshopPanel {
   const open = new Map<string, vscode.WebviewPanel>();
   return (viewType, title) => {
     const existing = open.get(viewType);
@@ -32,7 +32,7 @@ export function createWorkbenchPanel(
 function wrap(
   panel: vscode.WebviewPanel,
   extensionUri: vscode.Uri,
-): WorkbenchPanel {
+): WorkshopPanel {
   const dist = vscode.Uri.joinPath(extensionUri, "dist");
   return {
     reveal: () => panel.reveal(vscode.ViewColumn.Active),

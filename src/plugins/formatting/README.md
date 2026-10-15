@@ -29,7 +29,7 @@ Read-only views reject edits.
 
 Injects `editor` and `commands`; provides `formatting` with wrap and clear
 operations. Queries the `editor/activeView` bail event for palette commands.
-`markdownWorkbench.plugins.formatting.enabled` defaults to true. Bold, italics
+`markdownWorkshop.plugins.formatting.enabled` defaults to true. Bold, italics
 and Insert Link use Mod+B, Mod+I and Mod+K. Verify bindings remain unbound.
 
 ## Limits and differences from Obsidian

@@ -17,7 +17,7 @@ without changing other content attributes or editor state.
 ## Services, events and settings
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
-`markdownWorkbench.plugins.spellcheck.enabled` defaults to true. No commands
+`markdownWorkshop.plugins.spellcheck.enabled` defaults to true. No commands
 or keybindings.
 
 ## Limits and differences from Obsidian

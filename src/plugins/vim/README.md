@@ -56,7 +56,7 @@ share this mode source and remove its listeners when they stop.
 ## Services, events and settings
 
 Injects `editor` and `commands`, optionally `livePreview`; provides `vim`. No kernel event listeners or
-emissions. `markdownWorkbench.plugins.vim.enabled` defaults to false. Ex commands
+emissions. `markdownWorkshop.plugins.vim.enabled` defaults to false. Ex commands
 `:w`, `:q`, `:wq`, `:x`, `:u` and `:red` route to save, close, save-and-close, undo
 and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
 Vim mode chooses the caret shape in every mode but insert, regardless of

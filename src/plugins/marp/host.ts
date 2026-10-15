@@ -1,6 +1,7 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { isMarpDocument } from "../../markdown/marp";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import type { HostDocument } from "../../shared/runtime";
 import { asString, asStrings } from "../../shared/values";
 import { containingFolder } from "../../shared/workspace-path";
@@ -20,26 +21,26 @@ import type { MarpActions } from "./actions";
 /** Detects Marp decks and bridges preview and export. It does not render themes. */
 export const marpHost: Plugin = {
   name: "marp",
-  inject: { required: ["workbench"], optional: ["editors", "wikiLayout"] },
+  inject: { required: ["workshop"], optional: ["editors", "wikiLayout"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
     const effect = (setup: () => Disposer) => {
       ctx.effect(setup);
     };
-    const report = (message: string) => ctx.workbench.error(message);
+    const report = (message: string) => ctx.workshop.error(message);
     registerReportedCommands(effect, views, report, [
-      { id: "markdownWorkbench.marp.preview", run: () => previewActive(ctx) },
-      { id: "markdownWorkbench.marp.export", run: () => exportActive(ctx) },
-      { id: "markdownWorkbench.marp.toggle", run: () => toggleActive(ctx) },
+      { id: contributionId("marp.preview"), run: () => previewActive(ctx) },
+      { id: contributionId("marp.export"), run: () => exportActive(ctx) },
+      { id: contributionId("marp.toggle"), run: () => toggleActive(ctx) },
       {
-        id: "markdownWorkbench.marp.moveOutside",
+        id: contributionId("marp.moveOutside"),
         run: () => moveActive(ctx),
       },
       {
-        id: "markdownWorkbench.marp.keepInWorkbench",
+        id: contributionId("marp.keepInWorkbench"),
         run: () => keepActive(ctx),
       },
     ]);
@@ -50,11 +51,11 @@ export const marpHost: Plugin = {
       publishMarp(ctx);
     });
     ctx.effect(() => views.onActiveNoteChanged(() => publishMarp(ctx)));
-    ctx.effect(() => ctx.workbench.onChange(() => publishMarp(ctx)));
+    ctx.effect(() => ctx.workshop.onChange(() => publishMarp(ctx)));
     // Captured while live: teardown runs after this context is disposed.
-    const workbench = ctx.workbench;
+    const workshop = ctx.workshop;
     ctx.effect(() => async () => {
-      await workbench.execute("setContext", "markdownWorkbench.isMarp", false);
+      await workshop.execute("setContext", contributionId("isMarp"), false);
     });
     publishMarp(ctx);
   },
@@ -66,21 +67,21 @@ function consider(ctx: Context, panel: PanelPort): void {
   if (!note) {
     return;
   }
-  const mode = ctx.workbench.views?.setting("marp.open", "workbench");
+  const mode = ctx.workshop.views?.setting("marp.open", "workbench");
   if (
     !redirectToTextEditor({
       mode,
       text: note.text,
       uri: note.uri,
-      ...(ctx.workbench.storage ? { storage: ctx.workbench.storage } : {}),
+      ...(ctx.workshop.storage ? { storage: ctx.workshop.storage } : {}),
     })
   ) {
     return;
   }
-  void ctx.workbench
+  void ctx.workshop
     .execute("vscode.openWith", note.uri, "default")
     .catch((error: unknown) => {
-      ctx.workbench.error(
+      ctx.workshop.error(
         error instanceof Error
           ? error.message
           : "Could not open the text editor.",
@@ -91,15 +92,15 @@ function consider(ctx: Context, panel: PanelPort): void {
 function publishMarp(ctx: Context): void {
   const text = activeNote(ctx)?.text;
   const isMarp = typeof text === "string" && isMarpDocument(text);
-  void ctx.workbench
-    .execute("setContext", "markdownWorkbench.isMarp", isMarp)
+  void ctx.workshop
+    .execute("setContext", contributionId("isMarp"), isMarp)
     .catch(() => undefined);
 }
 
 async function previewActive(ctx: Context): Promise<void> {
   const note = activeNote(ctx);
   if (!note) {
-    ctx.workbench.error("Open a Markdown note to preview it.");
+    ctx.workshop.error("Open a Markdown note to preview it.");
     return;
   }
   await previewDeck(actions(ctx), note.uri);
@@ -108,7 +109,7 @@ async function previewActive(ctx: Context): Promise<void> {
 async function exportActive(ctx: Context): Promise<void> {
   const note = activeNote(ctx);
   if (!note) {
-    ctx.workbench.error("Open a Marp deck to export it.");
+    ctx.workshop.error("Open a Marp deck to export it.");
     return;
   }
   await exportDeck(actions(ctx), note.uri);
@@ -117,7 +118,7 @@ async function exportActive(ctx: Context): Promise<void> {
 async function toggleActive(ctx: Context): Promise<void> {
   const note = activeNote(ctx);
   if (!note) {
-    ctx.workbench.error("Open a Markdown note to toggle Marp.");
+    ctx.workshop.error("Open a Markdown note to toggle Marp.");
     return;
   }
   await toggleMarp(actions(ctx), note.document);
@@ -126,7 +127,7 @@ async function toggleActive(ctx: Context): Promise<void> {
 async function keepActive(ctx: Context): Promise<void> {
   const note = activeNote(ctx);
   if (!note) {
-    ctx.workbench.error("Open a Marp deck to keep it in Markdown Workshop.");
+    ctx.workshop.error("Open a Marp deck to keep it in Markdown Workshop.");
     return;
   }
   await keepDeck(actions(ctx), note.uri);
@@ -134,10 +135,10 @@ async function keepActive(ctx: Context): Promise<void> {
 
 async function moveActive(ctx: Context): Promise<void> {
   const note = activeNote(ctx);
-  const roots = asStrings(ctx.workbench.workspaceFolders?.());
+  const roots = asStrings(ctx.workshop.workspaceFolders?.());
   const folder = note ? containingFolder(note.uri, roots) : undefined;
   if (!note || !folder) {
-    ctx.workbench.error("Open a Marp deck in a workspace folder.");
+    ctx.workshop.error("Open a Marp deck in a workspace folder.");
     return;
   }
   const place = usableWiki(ctx.wikiLayout)?.place(note.uri);
@@ -155,19 +156,19 @@ async function moveActive(ctx: Context): Promise<void> {
 }
 
 function actions(ctx: Context): MarpActions {
-  const reveal = ctx.workbench.revealTextEditor;
+  const reveal = ctx.workshop.revealTextEditor;
   return {
-    ...(ctx.workbench.files ? { files: ctx.workbench.files } : {}),
-    ...(ctx.workbench.storage ? { storage: ctx.workbench.storage } : {}),
-    execute: (id, ...args) => ctx.workbench.execute(id, ...args),
+    ...(ctx.workshop.files ? { files: ctx.workshop.files } : {}),
+    ...(ctx.workshop.storage ? { storage: ctx.workshop.storage } : {}),
+    execute: (id, ...args) => ctx.workshop.execute(id, ...args),
     ...(reveal ? { reveal: (uri: string) => reveal(uri) } : {}),
-    apply: (document, edits) => ctx.workbench.apply(document, edits),
+    apply: (document, edits) => ctx.workshop.apply(document, edits),
     ask: (message, choices) => ask(ctx, message, choices),
-    clipboardWrite: (text) => ctx.workbench.clipboard.write(text),
-    inform: (message) => ctx.workbench.inform?.(message),
-    error: (message) => ctx.workbench.error(message),
-    trusted: () => ctx.workbench.isTrusted?.(),
-    marpInstalled: () => ctx.workbench.hasExtension?.(MARP_EXTENSION) === true,
+    clipboardWrite: (text) => ctx.workshop.clipboard.write(text),
+    inform: (message) => ctx.workshop.inform?.(message),
+    error: (message) => ctx.workshop.error(message),
+    trusted: () => ctx.workshop.isTrusted?.(),
+    marpInstalled: () => ctx.workshop.hasExtension?.(MARP_EXTENSION) === true,
   };
 }
 
@@ -176,7 +177,7 @@ function ask(
   message: string,
   choices: readonly string[],
 ): Promise<string | undefined> {
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   if (!views) {
     return Promise.resolve(undefined);
   }

@@ -92,8 +92,8 @@ test("note text uses the same font settings as the built-in text editor for Mark
     JSON.stringify({
       ...(JSON.parse(original) as object),
       "editor.fontSize": 13,
-      "markdownWorkbench.editor.fontSize": 18,
-      "markdownWorkbench.editor.lineHeight": 1.8,
+      "markdownWorkshop.editor.fontSize": 18,
+      "markdownWorkshop.editor.lineHeight": 1.8,
       "[markdown]": {
         "editor.fontFamily": "DejaVu Sans Mono",
         // The built-in editor uses this; the note ignores it.
@@ -173,7 +173,7 @@ async function workbenchLines(frame: Frame) {
   });
 }
 
-// The note's line height is markdownWorkbench.editor.lineHeight times its own
+// The note's line height is markdownWorkshop.editor.lineHeight times its own
 // font size (Obsidian's 1.5 by default), whatever editor.lineHeight says.
 test("the note's lines are the line height setting times the size (1.5 by default), and line numbers stay level", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
@@ -200,9 +200,9 @@ test("the note's lines are the line height setting times the size (1.5 by defaul
           ...(JSON.parse(original) as object),
           // Ignored: the note has its own line height.
           "editor.lineHeight": 40,
-          "markdownWorkbench.editor.fontSize": size,
+          "markdownWorkshop.editor.fontSize": size,
           ...(multiple
-            ? { "markdownWorkbench.editor.lineHeight": multiple }
+            ? { "markdownWorkshop.editor.lineHeight": multiple }
             : {}),
         }),
       );

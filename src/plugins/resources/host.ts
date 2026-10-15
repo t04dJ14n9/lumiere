@@ -5,12 +5,12 @@ import { NoteResources } from "./note-resources";
 import { protocol } from "./protocol";
 export const resourcesHost: Plugin<{ panel: PanelShell }> = {
   name: "resources",
-  inject: { required: ["rpc", "workbench", "vault"] },
+  inject: { required: ["rpc", "workshop", "vault"] },
   apply(ctx, { panel }) {
     const resources = new NoteResources({
       source: panel.document.uri,
       vault: ctx.vault,
-      files: ctx.workbench,
+      files: ctx.workshop,
       resourceUrl: (uri) => panel.resource(uri),
     });
     ctx.provide("resources", resources);

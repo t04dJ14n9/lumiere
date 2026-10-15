@@ -51,12 +51,12 @@ const scenarios: Record<string, Record<string, unknown>> = {
   none: {
     "editor.fontSize": 14,
     "editor.lineHeight": 19,
-    "markdownWorkbench.editor.fontSize": 14,
-    "markdownWorkbench.editor.lineHeight": 19 / 14, // the editor's own 19px
+    "markdownWorkshop.editor.fontSize": 14,
+    "markdownWorkshop.editor.lineHeight": 19 / 14, // the editor's own 19px
   },
   global: {
-    "markdownWorkbench.editor.fontSize": 15,
-    "markdownWorkbench.editor.lineHeight": 20 / 15,
+    "markdownWorkshop.editor.fontSize": 15,
+    "markdownWorkshop.editor.lineHeight": 20 / 15,
     "editor.fontFamily": "DejaVu Sans Mono",
     "editor.fontSize": 15,
     "editor.lineHeight": 20,
@@ -65,8 +65,8 @@ const scenarios: Record<string, Record<string, unknown>> = {
     "editor.fontLigatures": true,
   },
   markdown: {
-    "markdownWorkbench.editor.fontSize": 18,
-    "markdownWorkbench.editor.lineHeight": 24 / 18,
+    "markdownWorkshop.editor.fontSize": 18,
+    "markdownWorkshop.editor.lineHeight": 24 / 18,
     "editor.fontSize": 13,
     "[markdown]": {
       "editor.fontFamily": "Liberation Mono, monospace",

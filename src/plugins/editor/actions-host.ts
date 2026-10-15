@@ -9,15 +9,16 @@ import type { EditorActions } from "./actions-api";
 import { ActionRegistry } from "./actions";
 import { protocol } from "./actions-protocol";
 import { RpcError } from "../../shared/rpc/lifecycle";
+import { contributionId } from "../../shared/setting-schema";
 export function registerEditorActions(
   ctx: Context,
   editors: Editors,
   selections: Selections,
 ): void {
   // Captured while live: the last publish runs after the context is disposed.
-  const workbench = ctx.workbench;
-  const publish = () => publishActions(workbench, editors, registry);
-  const registry = new ActionRegistry(editors, selections, workbench, publish);
+  const workshop = ctx.workshop;
+  const publish = () => publishActions(workshop, editors, registry);
+  const registry = new ActionRegistry(editors, selections, workshop, publish);
   const service: EditorActions & CallerBound<EditorActions> = {
     register: (action) => registry.register("editor", action),
     [bindCaller](caller) {
@@ -41,7 +42,7 @@ export function registerEditorActions(
   registerActionPanels(ctx, editors, registry);
   for (const scope of ["title", "selection"] as const) {
     ctx.effect(() =>
-      ctx.workbench.command(`markdownWorkbench.${scope}Actions`, () =>
+      ctx.workshop.command(contributionId(`${scope}Actions`), () =>
         registry.pick(scope),
       ),
     );
@@ -50,8 +51,8 @@ export function registerEditorActions(
     registry.dispose();
     return publish();
   });
-  if (ctx.workbench.onConfiguration) {
-    ctx.effect(() => ctx.workbench.onConfiguration!(() => void publish()));
+  if (ctx.workshop.onConfiguration) {
+    ctx.effect(() => ctx.workshop.onConfiguration!(() => void publish()));
   }
   ctx.on("editor/activeChanged", () => void publish());
   void publish();
@@ -96,7 +97,7 @@ function registerActionPanels(
 
 /** Settles once VS Code has the new context keys; never rejects. */
 async function publishActions(
-  workbench: Context["workbench"],
+  workshop: Context["workshop"],
   editors: Editors,
   registry: ActionRegistry,
 ): Promise<void> {
@@ -108,9 +109,11 @@ async function publishActions(
   }
   await Promise.allSettled(
     (["selection", "title"] as const).map((scope) =>
-      workbench.execute(
+      workshop.execute(
         "setContext",
-        `markdownWorkbench.has${scope === "title" ? "Title" : "Selection"}Actions`,
+        contributionId(
+          `has${scope === "title" ? "Title" : "Selection"}Actions`,
+        ),
         values.some((value) => value.scope === scope),
       ),
     ),

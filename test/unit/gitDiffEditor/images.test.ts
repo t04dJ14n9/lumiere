@@ -23,7 +23,7 @@ import {
   diffUpdate,
 } from "../../../src/shared/diff-panel-protocol";
 import type { Vaults } from "../../../src/plugins/vault/api";
-import type { Workbench } from "../../../src/shared/runtime";
+import type { Workshop } from "../../../src/shared/runtime";
 
 const gitUri = (path: string, ref: string) =>
   `git:${path}?${encodeURIComponent(JSON.stringify({ path, ref }))}`;
@@ -96,7 +96,7 @@ for (const directory of ["100% done", "release%20notes"]) {
           return gitUri(fileURLToPath(uri), ref);
         },
       },
-    } as unknown as Workbench;
+    } as unknown as Workshop;
     const resource = await sideResources(vaults, files, {
       uri: gitUri(notePath, "HEAD"),
       label: "HEAD",
@@ -135,7 +135,7 @@ test("images resolve separately against each note and Git revision with existing
     async stat() {
       return { mtime: 7, symbolicLink: false };
     },
-  } as unknown as Workbench;
+  } as unknown as Workshop;
   const resource = await sideResources(vaults, files, {
     uri: source,
     label: "Working tree",
@@ -177,7 +177,7 @@ test("images resolve separately against each note and Git revision with existing
           return gitUri(new URL(uri).pathname, ref);
         },
       },
-    } as unknown as Workbench;
+    } as unknown as Workshop;
     for (const [ref, target] of [
       ["HEAD", "old.png"],
       ["", "new.png"],
@@ -306,7 +306,7 @@ test("each side assigns resolved image sources and shows source fallback until l
 test("image resolution service is injected and withdrawn with its plugin", async () => {
   const root = Context.create();
   root.provide("vaults", {} as never);
-  root.provide("workbench", {} as never);
+  root.provide("workshop", {} as never);
   const fiber = root.plugin(diffResourcesHost);
   await root.settled();
   let provided = false;

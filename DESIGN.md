@@ -17,7 +17,7 @@ plugin**.
 
 | Topic | Decision |
 | --- | --- |
-| Identity | Display name **Markdown Workshop**; package `vscode-markdown-workbench`; publisher `t04dj14n9`; extension ID `t04dj14n9.vscode-markdown-workbench`; editor view type `markdownWorkbench.editor`; settings, commands and context keys under `markdownWorkbench.` |
+| Identity | Display name **Markdown Workshop**; package `vscode-markdown-workshop`; publisher `t04dj14n9`; extension ID `t04dj14n9.vscode-markdown-workshop`; editor view type `markdownWorkshop.editor`; settings, commands and context keys under `markdownWorkshop.` |
 | Source to extract | `claude/markdown-integration` at `ff3a902ef4ec50a136455c0cf2ccaff698682a06` in `~/Code/human-learning`. Not `main`, whose 4,900-line `webview-src/markdown-editor.ts` it supersedes |
 | Architecture | A small cordis-style kernel (`src/kernel`) runs in the extension host, in each webview and in unit tests. Every capability, the core ones included, is a plugin that injects services, provides services, owns effects and extends others through typed events |
 | Behaviour reference | Obsidian 1.13.7 as observed, plus the 1.12.7 source study. Implement behaviour independently; never copy Obsidian code |
@@ -220,11 +220,11 @@ import type { Context } from '../../kernel';
 import type { BacklinksConfig } from './manifest';
 
 export const name = 'backlinks';
-export const inject = { required: ['vault', 'editors', 'workbench'] } as const;
+export const inject = { required: ['vault', 'editors', 'workshop'] } as const;
 
 export function apply(ctx: Context, config: BacklinksConfig): void {
   const view = new BacklinksView(ctx.vault, ctx.editors, config);
-  ctx.effect(() => ctx.workbench.treeView('markdownWorkbench.backlinks', view));
+  ctx.effect(() => ctx.workshop.views.tree('markdownWorkshop.backlinks', view));
   ctx.on('vault/resolved', () => view.refresh());
   ctx.on('editor/activeChanged', () => view.refresh());
 }
@@ -328,7 +328,7 @@ array, object, record. That covers every setting in §15.
   `DuplicateService`, `PluginFailed`, `PluginDisabled`, `Disposed`.
 - Each fiber has a `Logger` tagged with the plugin name. The host writes to the
   **Markdown Workshop** output channel; webview logs are forwarded over RPC at
-  `warn` and above, plus all levels when `markdownWorkbench.debug.logging` is
+  `warn` and above, plus all levels when `markdownWorkshop.debug.logging` is
   on. Load and stop timings are logged.
 - **Show Plugin Status** lists every fiber per open editor: active, pending
   (and what for), failed (and why), disabled.
@@ -510,7 +510,7 @@ with `contributes`, allows `editorProvider` only on `editor`, and requires
 
 ### 6.3 Enabling, disabling and presets
 
-- Each `feature` plugin has `markdownWorkbench.plugins.<id>.enabled`
+- Each `feature` plugin has `markdownWorkshop.plugins.<id>.enabled`
   (resource scope, default from the manifest). `core` plugins have no switch.
 - A **preset** is the list of plugins the root context loads:
   - `obsidian` (default): everything in §13 that is enabled;
@@ -518,14 +518,14 @@ with `contributes`, allows `editorProvider` only on `editor`, and requires
     gives a plain CodeMirror Markdown source editor that stays synchronized,
     saves and undoes. It is the safe mode for diagnosing a plugin, like
     Obsidian's restricted mode.
-  - Chosen by `markdownWorkbench.preset`.
+  - Chosen by `markdownWorkshop.preset`.
 - Turning a plugin off disposes its fibers in every runtime at once. Its
   CodeMirror extensions leave their compartments, its decorations disappear
   and its widgets re-render as source. No reload is needed.
 - A plugin can inject another plugin's service. If the provider is off, the
   consumer is `pending` and the status shows it blocked.
 - External overrides (plugins from other extensions) use
-  `markdownWorkbench.plugins.external` (`{ [id]: boolean }`), as in PDF
+  `markdownWorkshop.plugins.external` (`{ [id]: boolean }`), as in PDF
   Workbench.
 
 ### 6.4 Generated contributions
@@ -534,9 +534,9 @@ VS Code needs static `contributes`. `scripts/generate-contributions.ts` builds
 `configuration`, `commands`, `menus`, `keybindings`, `views` and
 `viewsWelcome` from the manifests:
 
-- `when` clauses are ANDed with `markdownWorkbench.plugin.<id>` (a context key
+- `when` clauses are ANDed with `markdownWorkshop.plugin.<id>` (a context key
   the host sets while that plugin is active for the active editor) and, for
-  editor commands, `activeCustomEditorId == 'markdownWorkbench.editor'`.
+  editor commands, `activeCustomEditorId == 'markdownWorkshop.editor'`.
 - Editor commands (`editorCommand`) route to the active editor's webview
   (§14), so they need no host code.
 - A unit test fails when `package.json` differs from the generator's output.
@@ -544,7 +544,7 @@ VS Code needs static `contributes`. `scripts/generate-contributions.ts` builds
 ### 6.5 Plugin management UI
 
 As in PDF Workbench: **Markdown Workshop: Manage Plugins** opens Settings
-filtered to `markdownWorkbench.plugins`, and **Show Plugin Status** shows a
+filtered to `markdownWorkshop.plugins`, and **Show Plugin Status** shows a
 quick pick of states for the active editor. `setPluginEnabled` and
 `resetPluginOverride` take an explicit scope (user, workspace, folder).
 
@@ -703,7 +703,7 @@ Split `vscode-extension/src/markdown/provider.ts` (752 lines) into:
 
 The editor is described by an `EditorProvider` (`src/shared/editor-provider.ts`:
 view type, display name, file patterns, document kind, panel options);
-`Workbench.registerEditor(provider, open)` and `src/host/editor-panels.ts`
+`workshop.registerEditor(provider, open)` and `src/host/editor-panels.ts`
 register whatever provider they are given and know nothing about Markdown.
 `MARKDOWN_EDITOR` is the single source of the view type and patterns for
 associations, reclaiming, navigation, renames and generated contributions.
@@ -908,7 +908,7 @@ One function, `revealed(state, from, to, kind)`, used by every renderer:
 ### 11.5 Modes and motion
 
 - **Live Preview** and **Source mode**, per view. The default comes from
-  `markdownWorkbench.editor.defaultMode`. **Toggle Live Preview/Source Mode**
+  `markdownWorkshop.editor.defaultMode`. **Toggle Live Preview/Source Mode**
   switches the active view. Source mode removes all Live Preview decorations
   and shows properties as YAML; the inline title stays.
 - Vertical motion: ArrowUp and ArrowDown step over a rendered block as one
@@ -934,7 +934,7 @@ The vault index replaces all of them, following Obsidian's MetadataCache.
 ### 12.1 Vault root
 
 A vault is the nearest ancestor folder of a note, within its workspace
-folder, that contains a marker from `markdownWorkbench.vault.rootMarkers`
+folder, that contains a marker from `markdownWorkshop.vault.rootMarkers`
 (default `[".obsidian"]`; LLM Wiki users add `"SCHEMA.md"`). With no marker,
 the workspace folder is the vault. A note outside any workspace folder is a
 one-note vault: no index, and links resolve relative to its folder.
@@ -976,7 +976,7 @@ interface VaultIndex {
 - Open documents count with their unsaved text: `document/changed` re-indexes
   a note from its `TextDocument`, debounced to 300 ms.
 - Ignored: hidden folders (`.git`, `.obsidian`, `.trash`) and
-  `node_modules`. `markdownWorkbench.vault.excludedFiles` is Obsidian's
+  `node_modules`. `markdownWorkshop.vault.excludedFiles` is Obsidian's
   **Excluded files** and behaves as it does there: excluded files are still
   indexed and links to them resolve, but they are flagged `excluded`, and the
   quick switcher, suggestions, search and unlinked mentions leave them out. A
@@ -998,7 +998,7 @@ interface VaultIndex {
    distance from the source (same folder first), then by path. The first
    wins; `resolveLinkCandidates` returns all of them.
 
-A folder link resolves to `markdownWorkbench.links.folderNote` inside it when
+A folder link resolves to `markdownWorkshop.links.folderNote` inside it when
 that setting is set (default empty; LLM Wiki uses `_index.md`), and otherwise
 reveals the folder in the Explorer.
 
@@ -1120,7 +1120,7 @@ Short specifications, beyond the source's tested behaviour:
 
 Editor commands are registered in the webview under Obsidian IDs
 (`ctx.commands.register('editor:toggle-bold', run)`). Their manifests declare
-the VS Code command `markdownWorkbench.<name>`, which the generator routes to
+the VS Code command `markdownWorkshop.<name>`, which the generator routes to
 the active editor. They work in the command palette, keybindings and menus.
 
 | VS Code command | Obsidian ID | Plugin | Default key |
@@ -1161,7 +1161,7 @@ Rules:
   (Settings → Hotkeys) before it is bound. Record the observation (§21.4).
 - Host shortcuts that collide with editor keys while the editor has focus
   (Vim's Ctrl-O, Ctrl-B and others) are consumed only while the `vim` plugin is
-  active (`markdownWorkbench.plugin.vim` context key), as the source's
+  active (`markdownWorkshop.plugin.vim` context key), as the source's
   `consumeVimHostShortcut` does. The list moves to the `vim` manifest.
 - The editor title bar keeps **Add File Property** and **Open as Text**
   (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
@@ -1184,19 +1184,19 @@ default (§25).
 
 | Obsidian setting | Setting or plugin | Default |
 | --- | --- | --- |
-| Default editing mode | `markdownWorkbench.editor.defaultMode` (`livePreview` \| `source`) | `livePreview` |
-| Readable line length | `markdownWorkbench.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
-| Strict line breaks | `markdownWorkbench.editor.strictLineBreaks` | `false` |
-| Properties in document | `markdownWorkbench.properties.display` | `visible` |
+| Default editing mode | `markdownWorkshop.editor.defaultMode` (`livePreview` \| `source`) | `livePreview` |
+| Readable line length | `markdownWorkshop.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
+| Strict line breaks | `markdownWorkshop.editor.strictLineBreaks` | `false` |
+| Properties in document | `markdownWorkshop.properties.display` | `visible` |
 | Show inline title | plugin `inlineTitle` | off (owner decision, 2026-10-09) |
-| Fold heading, Fold indent | `markdownWorkbench.folding.heading`, `.indent` | `true`, `true` |
+| Fold heading, Fold indent | `markdownWorkshop.folding.heading`, `.indent` | `true`, `true` |
 | Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |
-| Right-to-left | `markdownWorkbench.editor.rightToLeft` | `false` |
+| Right-to-left | `markdownWorkshop.editor.rightToLeft` | `false` |
 | Spellcheck | plugin `spellcheck` | on |
-| Auto pair brackets / Markdown syntax | `markdownWorkbench.autoPair.brackets`, `.markdown` | `true`, `true` |
+| Auto pair brackets / Markdown syntax | `markdownWorkshop.autoPair.brackets`, `.markdown` | `true`, `true` |
 | Smart lists | plugin `smartLists` | on |
-| Indent using tabs, Tab indent size | `markdownWorkbench.editor.useTabs`, `.tabSize` | `true`, `4` |
+| Indent using tabs, Tab indent size | `markdownWorkshop.editor.useTabs`, `.tabSize` | `true`, `4` |
 | Auto convert HTML | plugin `pasteHtml` | on |
 | Vim key bindings | plugin `vim` | off |
 
@@ -1204,14 +1204,14 @@ default (§25).
 
 | Obsidian setting | Setting | Default |
 | --- | --- | --- |
-| New link format | `markdownWorkbench.links.newLinkFormat` (`shortest` \| `relative` \| `absolute`) | `shortest` |
-| Use [[Wikilinks]] | `markdownWorkbench.links.useWikilinks` | `true` |
-| Automatically update internal links | `markdownWorkbench.linkUpdates.mode` (`prompt` \| `always` \| `never`) | `prompt` |
-| Default location for new notes | `markdownWorkbench.files.newNoteFolder` (empty = vault root, `.` = current folder, or a path) | empty |
-| Default location for new attachments | `markdownWorkbench.files.attachmentFolder` (same forms, plus `./sub`) | empty |
-| Excluded files | `markdownWorkbench.vault.excludedFiles` (globs) | `[]` |
-| (no equivalent) | `markdownWorkbench.vault.rootMarkers` | `[".obsidian"]` |
-| (no equivalent) | `markdownWorkbench.links.folderNote` | `""` |
+| New link format | `markdownWorkshop.links.newLinkFormat` (`shortest` \| `relative` \| `absolute`) | `shortest` |
+| Use [[Wikilinks]] | `markdownWorkshop.links.useWikilinks` | `true` |
+| Automatically update internal links | `markdownWorkshop.linkUpdates.mode` (`prompt` \| `always` \| `never`) | `prompt` |
+| Default location for new notes | `markdownWorkshop.files.newNoteFolder` (empty = vault root, `.` = current folder, or a path) | empty |
+| Default location for new attachments | `markdownWorkshop.files.attachmentFolder` (same forms, plus `./sub`) | empty |
+| Excluded files | `markdownWorkshop.vault.excludedFiles` (globs) | `[]` |
+| (no equivalent) | `markdownWorkshop.vault.rootMarkers` | `[".obsidian"]` |
+| (no equivalent) | `markdownWorkshop.links.folderNote` | `""` |
 
 Settings are resource-scoped, so a vault (workspace folder) can carry its own,
 as Obsidian keeps settings per vault. Core plugins keep owning these settings.
@@ -1263,13 +1263,13 @@ The host `links` plugin owns one pipeline:
    - other schemes: a modal confirmation, then `openExternal`;
    - otherwise resolve with `vault.resolveLink` (wikilinks) or relative to the
      source (Markdown links); then
-     - Markdown notes open in `markdownWorkbench.editor`, or in place in the
+     - Markdown notes open in `markdownWorkshop.editor`, or in place in the
        same group with Mod for the side, and pass the fragment to `navigate`;
      - folders: §12.3;
      - other files: `vscode.open`, so PDFs use PDF Workbench when it is the
        default;
      - unresolved wikilinks: create the note in the new-note folder
-       (`markdownWorkbench.files.newNoteFolder`) and open it, as Obsidian
+       (`markdownWorkshop.files.newNoteFolder`) and open it, as Obsidian
        does.
 
 ## 17. Copy Link for Agent (`agentBridge` plugin)
@@ -1285,7 +1285,7 @@ command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
 public API has no agent methods or service. Review fixes (round 1) settled the names
 shared with Agent PDF Viewer: plugin `agentBridge`, service class
 `AgentHandoff`, command `copyLinkForAgent`; the plugin setting is now
-`markdownWorkbench.plugins.agentBridge.enabled`. The text format is shared with
+`markdownWorkshop.plugins.agentBridge.enabled`. The text format is shared with
 Agent PDF Viewer and specified in `docs/agent-handoff-format.md`.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
@@ -1326,7 +1326,7 @@ The activation export is a frozen object with `apiVersion: 1`, as in PDF
 Workbench. Public declarations ship in `dist/api/` from `src/host/api/types.ts`.
 
 ```ts
-export interface MarkdownWorkbenchApi {
+export interface MarkdownWorkshopApi {
   readonly apiVersion: 1;
 
   // Editors and documents
@@ -1394,7 +1394,7 @@ context.subscriptions.push(wiki);
   `commands` (IDs restricted to the owner's namespace), `links` events,
   `codeBlocks` (§18.4) and `logger`. Internal services stay hidden.
 - They follow the same lifecycle, gating and error isolation. Enablement
-  comes from `markdownWorkbench.plugins.external`.
+  comes from `markdownWorkshop.plugins.external`.
 - IDs are namespaced under an installed owner extension; namespaces prevent
   accidents but do not authenticate extensions sharing a host (same caveat as
   PDF Workbench).
@@ -1438,7 +1438,7 @@ The VS Code Markdown preview lets extensions add `markdown.markdownItPlugins`
 and `markdown.previewScripts`. Markdown Workshop v2 adds:
 
 ```json
-"contributes": { "markdownWorkbench.webviewPlugins": [{ "id": "acme.wavedrom", "module": "./dist/wavedrom.js", "styles": ["./dist/wavedrom.css"] }] }
+"contributes": { "markdownWorkshop.webviewPlugins": [{ "id": "acme.wavedrom", "module": "./dist/wavedrom.js", "styles": ["./dist/wavedrom.css"] }] }
 ```
 
 - Modules are ES modules exporting a webview plugin (`name`, `inject`,

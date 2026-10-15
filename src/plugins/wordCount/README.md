@@ -22,7 +22,7 @@ breaks.
 
 - Injects `workbench` (views) and, optionally, `editors`.
 - Listens to `editor/selectionChanged`.
-- Setting: `markdownWorkbench.plugins.wordCount.enabled`.
+- Setting: `markdownWorkshop.plugins.wordCount.enabled`.
 
 ## Limits and differences from Obsidian
 

@@ -16,11 +16,11 @@ import { OutlineView } from "./view";
 /** The active panel's headings, with native expansion actions and optional following. */
 export const outlineHost: Plugin = {
   name: "outline",
-  inject: { required: ["workbench", "vaults", "editors"] },
+  inject: { required: ["workshop", "vaults", "editors"] },
   apply(ctx) {
-    const workbench = ctx.workbench;
+    const workshop = ctx.workshop;
     const editors = ctx.editors;
-    const views = workbench.views;
+    const views = workshop.views;
     if (!views) {
       return;
     }
@@ -33,7 +33,7 @@ export const outlineHost: Plugin = {
       editors,
       logger: ctx.logger,
       followsCursor: () =>
-        followsCursor(workbench, editors.active()?.document.uri),
+        followsCursor(workshop, editors.active()?.document.uri),
     });
     ctx.effect(() => () => view.dispose());
     registerOutlineCommandContext(ctx);

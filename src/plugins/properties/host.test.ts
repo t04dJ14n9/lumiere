@@ -42,7 +42,7 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
     }),
   } as unknown as VaultIndex);
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       storage: {
         get<T>(key: string, fallback: T): T {

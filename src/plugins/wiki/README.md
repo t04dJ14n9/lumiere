@@ -24,7 +24,7 @@ Each workspace folder is read on its own. A missing layout is the legacy preset 
 - Provides `wikiLayout`.
 - Listens to document changes, saves and the active note.
 - Diagnostics owner `wiki`.
-- Setting: `markdownWorkbench.plugins.wiki.enabled`.
+- Setting: `markdownWorkshop.plugins.wiki.enabled`.
 
 ## Limits and differences from Obsidian
 

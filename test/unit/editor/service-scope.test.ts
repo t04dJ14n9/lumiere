@@ -22,7 +22,7 @@ test("independent panel kernels share the injected vault registry before feature
     release() {},
   });
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       registerEditor: (_provider, callback) => {
         open = callback;

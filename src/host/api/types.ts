@@ -3,7 +3,7 @@
  *
  * ```ts
  * const api = await vscode.extensions
- *   .getExtension<MarkdownWorkbenchApi>("t04dj14n9.vscode-markdown-workbench")
+ *   .getExtension<MarkdownWorkshopApi>("t04dj14n9.vscode-markdown-workshop")
  *   ?.activate();
  * ```
  *
@@ -112,7 +112,7 @@ export interface OpenOptions {
   /** Reveal this place once the editor is ready. */
   readonly reveal?: SourceTarget;
 }
-export interface MarkdownWorkbenchApi {
+export interface MarkdownWorkshopApi {
   readonly apiVersion: 1;
 
   // Editors and documents

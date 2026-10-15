@@ -1,7 +1,7 @@
 # Obsidian Compatibility
 
 Uses a vault's Obsidian property types and eight Files & Links/editor policies in
-Markdown Workbench, like Obsidian's vault configuration. This is a host-only
+Markdown Workshop, like Obsidian's vault configuration. This is a host-only
 feature, enabled by default in the Obsidian preset.
 
 ## How it works
@@ -33,7 +33,7 @@ settings are written. Watcher changes and plugin teardown notify those consumers
 
 ## Services, events and settings
 
-Injects `workbench` and `vaults`; provides `obsidianCompat`. All registry methods
+Injects `workshop` and `vaults`; provides `obsidianCompat`. All registry methods
 take `{vaultRoot}` or `{documentUri}`. Getters return promises so scope discovery
 cannot silently fall back to the active editor. `getPropertyTypes` returns an
 immutable map including unknown type strings. `setPropertyType(scope, name,
@@ -44,11 +44,11 @@ conditionally; the registry is read-only.
 their context. Listens to `editor/opened`, `vault/resolved`, active-note and
 configuration changes; emits `obsidianCompat/changed` with `{vaultRoot}`.
 
-Settings: `markdownWorkbench.plugins.obsidianCompat.enabled` (true) and
-`markdownWorkbench.obsidianCompat.configFolder` (`.obsidian`). Core plugins keep
+Settings: `markdownWorkshop.plugins.obsidianCompat.enabled` (true) and
+`markdownWorkshop.obsidianCompat.configFolder` (`.obsidian`). Core plugins keep
 owning their settings. Supported `app.json` mappings, in rank order:
 
-| Obsidian | Workbench |
+| Obsidian | Workshop |
 | --- | --- |
 | `useMarkdownLinks` | `links.useWikilinks` (inverse) |
 | `newLinkFormat` | `links.newLinkFormat` |

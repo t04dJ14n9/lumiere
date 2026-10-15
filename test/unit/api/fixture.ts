@@ -11,7 +11,7 @@ import { protocol as jumps } from "../../../src/plugins/editor/jump-protocol";
 import { protocol } from "../../../src/plugins/editor/protocol";
 import { createApi } from "../../../src/host/api/facade";
 import type { ApiPlatform } from "../../../src/host/api/platform";
-import type { HostDocument, Workbench } from "../../../src/shared/runtime";
+import type { HostDocument, Workshop } from "../../../src/shared/runtime";
 import { metadata } from "../../../src/markdown/metadata";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import type { Vault } from "../../../src/plugins/vault/api";
@@ -64,8 +64,8 @@ export async function fixture() {
   const featureOverrides: Record<string, boolean> = {};
   const externalOverrides = new Map<string, Record<string, boolean>>();
   let documentChanged = (_document: HostDocument) => {};
-  const workbench: Workbench = {
-    ...f.workbench,
+  const workshop: Workshop = {
+    ...f.workshop,
     isTrusted: () => true,
     onChange: (listener) => {
       documentChanged = listener;
@@ -104,14 +104,14 @@ export async function fixture() {
   };
   const selections = new SelectionSnapshots(
     (id) => panels.find((panel) => panel.id === id),
-    workbench,
+    workshop,
   );
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   root.provide("editors", editors);
   root.provide("selections", selections);
   root.plugin({
     name: "editor",
-    inject: { required: ["workbench"] },
+    inject: { required: ["workshop"] },
     apply(ctx) {
       registerEditorActions(ctx, editors, selections);
     },
@@ -194,7 +194,7 @@ export async function fixture() {
   const api = await createApi(root, platform);
   return {
     ...f,
-    workbench,
+    workshop,
     root,
     api,
     platform,

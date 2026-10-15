@@ -1,18 +1,18 @@
 import type { Context, Fiber, Plugin } from "../kernel";
 import type { Manifest } from "../shared/manifest";
-import type { Workbench } from "../shared/runtime";
+import type { Workshop } from "../shared/runtime";
 
 /**
  * Window-level plugins (views, status bar, quick switcher, link updates)
- * follow their `markdownWorkbench.plugins.<id>.enabled` setting and the
+ * follow their `markdownWorkshop.plugins.<id>.enabled` setting and the
  * preset, like editor plugins follow theirs per panel.
  */
 export function workbenchFeatures(
   root: Context,
-  workbench: Workbench,
+  workshop: Workshop,
   plugins: readonly { manifest: Manifest; plugin: Plugin; config?: unknown }[],
 ): void {
-  const views = workbench.views;
+  const views = workshop.views;
   if (!views) {
     return;
   }
@@ -34,12 +34,12 @@ export function workbenchFeatures(
         }
       })
       .catch((error) =>
-        root.logger.error("Workbench feature update failed", error),
+        root.logger.error("Workshop feature update failed", error),
       );
     root.runtime.track(queue);
   };
-  if (workbench.onConfiguration) {
-    root.effect(() => workbench.onConfiguration!(refresh));
+  if (workshop.onConfiguration) {
+    root.effect(() => workshop.onConfiguration!(refresh));
   }
   root.on("editor/configure", refresh);
   refresh();

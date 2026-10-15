@@ -12,13 +12,14 @@ import type { EditorPanel, Editors } from "./api";
 import { createPanel } from "./panel";
 import { protocol } from "./protocol";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
+import { contributionId } from "../../shared/setting-schema";
 interface EditorHostConfig {
   features?: readonly Manifest[];
   configure: (context: Context, panel: PanelShell) => void;
 }
 export const editorHost: Plugin<EditorHostConfig> = {
   name: "editor",
-  inject: { required: ["workbench", "documents"], optional: ["vaults"] },
+  inject: { required: ["workshop", "documents"], optional: ["vaults"] },
   apply(ctx, config) {
     const panels = new Map<string, EditorPanel>();
     // Panels whose shutdown has not finished, closed ones included: the
@@ -37,8 +38,8 @@ export const editorHost: Plugin<EditorHostConfig> = {
     provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
     ctx.effect(() =>
-      ctx.workbench.registerEditor(MARKDOWN_EDITOR, (shell) => {
-        const panel = createPanel(shell, ctx.documents, ctx.workbench, {
+      ctx.workshop.registerEditor(MARKDOWN_EDITOR, (shell) => {
+        const panel = createPanel(shell, ctx.documents, ctx.workshop, {
           onClose: () => {
             panels.delete(shell.id);
             // Inside the panel's shutdown: this joins it. Never rejects.
@@ -89,11 +90,11 @@ function registerActiveContexts(
 ): void {
   const contexts = () => {
     const panel = active();
-    const settings = panel ? ctx.workbench.config(panel.document) : undefined;
+    const settings = panel ? ctx.workshop.config(panel.document) : undefined;
     for (const manifest of features) {
-      void ctx.workbench.execute(
+      void ctx.workshop.execute(
         "setContext",
-        `markdownWorkbench.plugin.${manifest.id}`,
+        contributionId(`plugin.${manifest.id}`),
         Boolean(
           panel &&
           settings?.preset === "obsidian" &&
@@ -103,17 +104,17 @@ function registerActiveContexts(
       );
     }
     for (const id of ["editor", "commands", "livePreview"]) {
-      void ctx.workbench.execute(
+      void ctx.workshop.execute(
         "setContext",
-        `markdownWorkbench.plugin.${id}`,
+        contributionId(`plugin.${id}`),
         Boolean(
           active() && (id !== "livePreview" || settings?.preset === "obsidian"),
         ),
       );
     }
   };
-  if (ctx.workbench.onConfiguration) {
-    ctx.effect(() => ctx.workbench.onConfiguration!(contexts));
+  if (ctx.workshop.onConfiguration) {
+    ctx.effect(() => ctx.workshop.onConfiguration!(contexts));
   }
   ctx.on("editor/activeChanged", contexts);
   ctx.on("editor/opened", contexts);
@@ -146,7 +147,7 @@ function provideEditorServices(
   ctx.provide("editors", editors);
   const selections = new SelectionSnapshots(
     (id) => panels.get(id),
-    ctx.workbench,
+    ctx.workshop,
   );
   ctx.provide("selections", selections);
   registerEditorActions(ctx, editors, selections);
@@ -159,11 +160,11 @@ function registerSelectionContext(
 ): void {
   const selections = new Map<string, boolean>();
   // Captured while live: the cleanup below runs after the context is disposed.
-  const workbench = ctx.workbench;
+  const workshop = ctx.workshop;
   const refresh = () => {
-    void workbench.execute(
+    void workshop.execute(
       "setContext",
-      "markdownWorkbench.hasSelection",
+      contributionId("hasSelection"),
       selections.get(active()?.id ?? "") ?? false,
     );
   };
@@ -177,11 +178,7 @@ function registerSelectionContext(
   });
   ctx.on("editor/activeChanged", refresh);
   ctx.effect(() => async () => {
-    await workbench.execute(
-      "setContext",
-      "markdownWorkbench.hasSelection",
-      false,
-    );
+    await workshop.execute("setContext", contributionId("hasSelection"), false);
   });
   refresh();
 }

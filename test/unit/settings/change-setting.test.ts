@@ -16,14 +16,14 @@ test("every contributed setting is listed, and each type gets its editor", () =>
   const kinds = new Map(
     contributed.map((setting) => [setting.key, editKind(setting.schema)]),
   );
-  assert.equal(kinds.get("markdownWorkbench.plugins.vim.enabled"), "boolean");
-  assert.equal(kinds.get("markdownWorkbench.editor.defaultMode"), "enum");
-  assert.equal(kinds.get("markdownWorkbench.preset"), "enum");
-  assert.equal(kinds.get("markdownWorkbench.editor.fontSize"), "number");
-  assert.equal(kinds.get("markdownWorkbench.editor.tabSize"), "integer");
-  assert.equal(kinds.get("markdownWorkbench.links.folderNote"), "string");
-  assert.equal(kinds.get("markdownWorkbench.vault.excludedFiles"), "external");
-  assert.equal(kinds.get("markdownWorkbench.plugins.external"), "external");
+  assert.equal(kinds.get("markdownWorkshop.plugins.vim.enabled"), "boolean");
+  assert.equal(kinds.get("markdownWorkshop.editor.defaultMode"), "enum");
+  assert.equal(kinds.get("markdownWorkshop.preset"), "enum");
+  assert.equal(kinds.get("markdownWorkshop.editor.fontSize"), "number");
+  assert.equal(kinds.get("markdownWorkshop.editor.tabSize"), "integer");
+  assert.equal(kinds.get("markdownWorkshop.links.folderNote"), "string");
+  assert.equal(kinds.get("markdownWorkshop.vault.excludedFiles"), "external");
+  assert.equal(kinds.get("markdownWorkshop.plugins.external"), "external");
   assert.deepEqual([...new Set(kinds.values())].sort(), [
     "boolean",
     "enum",
@@ -35,15 +35,15 @@ test("every contributed setting is listed, and each type gets its editor", () =>
 });
 
 test("settings are grouped by plugin, the plugin's switch beside its other settings", () => {
-  assert.deepEqual(placement("markdownWorkbench.plugins.lineNumbers.enabled"), {
+  assert.deepEqual(placement("markdownWorkshop.plugins.lineNumbers.enabled"), {
     group: "Line numbers",
     name: "Enabled",
   });
-  assert.deepEqual(placement("markdownWorkbench.autoPair.brackets"), {
+  assert.deepEqual(placement("markdownWorkshop.autoPair.brackets"), {
     group: "Auto pair",
     name: "Brackets",
   });
-  assert.equal(placement("markdownWorkbench.preset").group, "General");
+  assert.equal(placement("markdownWorkshop.preset").group, "General");
   const rows = settingRows(contributed, () => undefined, "");
   const groups = rows.map((row) => row.group!);
   assert.deepEqual(
@@ -64,11 +64,11 @@ test("rows show the current value and the description, and a query ranks matches
     (key) => (key === "editor.fontSize" ? 20 : undefined),
     "font size",
   );
-  assert.equal(rows[0]!.value.key, "markdownWorkbench.editor.fontSize");
+  assert.equal(rows[0]!.value.key, "markdownWorkshop.editor.fontSize");
   assert.equal(rows[0]!.description, "20");
   assert.match(rows[0]!.detail!, /Font size of the note text/);
   const unset = settingRows(contributed, () => 16, "").find(
-    (row) => row.value.key === "markdownWorkbench.editor.fontSize",
+    (row) => row.value.key === "markdownWorkshop.editor.fontSize",
   )!;
   assert.equal(unset.description, "16 (default)");
   assert.equal(settingRows(contributed, () => 1, "zzzzqqqq").length, 0);
@@ -94,7 +94,7 @@ test("Change Setting edits each type through its own prompt, with the Settings U
   const pickKey = (name: string) => (items: readonly PickItem<unknown>[]) =>
     items.find(
       (item) =>
-        (item.value as ContributedSetting).key === `markdownWorkbench.${name}`,
+        (item.value as ContributedSetting).key === `markdownWorkshop.${name}`,
     )?.value;
   const change = async (
     answers: Parameters<typeof run>[1],
@@ -149,11 +149,11 @@ test("Change Setting edits each type through its own prompt, with the Settings U
 
   // Arrays and objects open in the Settings UI on that key.
   await change({ pick: pickKey("vault.excludedFiles") });
-  assert.deepEqual(store.opened, ["@id:markdownWorkbench.vault.excludedFiles"]);
+  assert.deepEqual(store.opened, ["@id:markdownWorkshop.vault.excludedFiles"]);
   assert.equal(store.user.has("vault.excludedFiles"), false);
 
   // A key given as the argument skips the list.
-  session = await change({ input: "30" }, "markdownWorkbench.editor.fontSize");
+  session = await change({ input: "30" }, "markdownWorkshop.editor.fontSize");
   assert.equal(store.user.get("editor.fontSize"), 30);
   assert.equal(session.picks.length, 0);
 });

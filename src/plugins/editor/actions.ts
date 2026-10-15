@@ -1,6 +1,6 @@
 import { type Infer } from "../../kernel";
 import type { Editors, Selections, SourceSelection } from "./api";
-import type { Workbench } from "../../shared/runtime";
+import type { Workshop } from "../../shared/runtime";
 import {
   CancelToken,
   RpcError,
@@ -19,7 +19,7 @@ export class ActionRegistry {
   constructor(
     private readonly editors: Editors,
     private readonly selections: Selections,
-    private readonly workbench: Workbench,
+    private readonly workshop: Workshop,
     private readonly changed: () => void,
   ) {}
   register(owner: string, value: EditorAction): () => void {
@@ -108,7 +108,7 @@ export class ActionRegistry {
   }
   async pick(scope: EditorAction["scope"]): Promise<boolean> {
     const panel = this.editors.active();
-    const views = this.workbench.views;
+    const views = this.workshop.views;
     if (!panel || !views) {
       return false;
     }

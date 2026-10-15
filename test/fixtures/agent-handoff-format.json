@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "about": "Agent handoff text shared by Markdown Workbench and Agent PDF Viewer. Keep this file byte-identical in both repositories (docs/agent-handoff-format.md).",
+  "about": "Agent handoff text shared by Markdown Workshop and Agent PDF Viewer. Keep this file byte-identical in both repositories (docs/agent-handoff-format.md).",
   "noteReferences": [
     {
       "path": "notes/a.md",

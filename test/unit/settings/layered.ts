@@ -7,7 +7,7 @@ import type {
   SettingsAccess,
   SettingTarget,
 } from "../../../src/shared/runtime";
-import { checkWrite } from "../../../src/shared/setting-schema";
+import { checkWrite, contributionId } from "../../../src/shared/setting-schema";
 import { fakeViews, workbenchWith } from "../views/fakes";
 
 /** The contributed settings exactly as the generated package.json lists them. */
@@ -24,7 +24,7 @@ export const contributed: readonly ContributedSetting[] = Object.entries(
 ).map(([key, schema]) => ({ key, schema }));
 
 export const contributedSetting = (key: string) =>
-  contributed.find((setting) => setting.key === `markdownWorkbench.${key}`)!;
+  contributed.find((setting) => setting.key === `markdownWorkshop.${key}`)!;
 
 /**
  * Layered settings, the workspace over the user's as in VS Code. `update` is
@@ -35,7 +35,7 @@ export function layered(
   list: readonly ContributedSetting[] = contributed,
   defaults: Record<string, unknown> = Object.fromEntries(
     list.map((setting) => [
-      setting.key.replace("markdownWorkbench.", ""),
+      setting.key.replace("markdownWorkshop.", ""),
       setting.schema?.default,
     ]),
   ),
@@ -97,18 +97,18 @@ export async function run(
       return answers.input;
     },
   } as never;
-  const workbench = workbenchWith(views);
-  workbench.settings = store.access;
+  const workshop = workbenchWith(views);
+  workshop.settings = store.access;
   const informed: string[] = [];
   const errors: string[] = [];
-  workbench.inform = (message) => informed.push(message);
-  workbench.error = (message) => errors.push(message);
+  workshop.inform = (message) => informed.push(message);
+  workshop.error = (message) => errors.push(message);
   const root = Context.create({});
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   root.plugin(settingsHost);
   await root.settled();
   const command = (id: string) => {
-    const run = fake.commands.get(`markdownWorkbench.${id}`);
+    const run = fake.commands.get(contributionId(id));
     if (!run) {
       throw new Error(`No command ${id}`);
     }

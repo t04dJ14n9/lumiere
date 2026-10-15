@@ -1,6 +1,6 @@
 import type { Plugin } from "../../kernel";
 import type { ContributedSetting } from "../../shared/runtime";
-import { validateValue } from "../../shared/setting-schema";
+import { contributionId, validateValue } from "../../shared/setting-schema";
 import { PREFIX, settingRows } from "./change";
 import {
   EXTENSION_FILTER,
@@ -19,7 +19,7 @@ import {
 /**
  * **Markdown Workshop: Open Settings**, **Change Setting…** and the commands
  * for the common settings. Each one reads and writes the same
- * `markdownWorkbench.*` key as the Settings UI, in the workspace when the
+ * `markdownWorkshop.*` key as the Settings UI, in the workspace when the
  * workspace sets it and in the user settings otherwise. They hold no state:
  * every run reads the setting as it is now, and the editors follow the
  * configuration change as they do for an edit in the Settings UI or
@@ -31,10 +31,10 @@ import {
  */
 export const settingsHost: Plugin = {
   name: "settings",
-  inject: { required: ["workbench"] },
+  inject: { required: ["workshop"] },
   apply(ctx) {
-    const settings = ctx.workbench.settings;
-    const views = ctx.workbench.views;
+    const settings = ctx.workshop.settings;
+    const views = ctx.workshop.views;
     if (!settings || !views) {
       return;
     }
@@ -42,11 +42,11 @@ export const settingsHost: Plugin = {
       settings,
       views,
       resource: () => views.activeNote(),
-      inform: (message) => ctx.workbench.inform?.(message),
-      error: (message) => ctx.workbench.error(message),
+      inform: (message) => ctx.workshop.inform?.(message),
+      error: (message) => ctx.workshop.error(message),
     };
     const command = (id: string, run: (...args: unknown[]) => unknown) =>
-      ctx.effect(() => views.command(`markdownWorkbench.${id}`, run));
+      ctx.effect(() => views.command(contributionId(id), run));
     command("openSettings", () => settings.openUi(EXTENSION_FILTER));
     command("changeSetting", (argument) => changeSetting(editing, argument));
     command("setNoteFontSize", (argument) => setFontSize(editing, argument));

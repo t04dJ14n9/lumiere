@@ -9,13 +9,13 @@ const UPDATE_DELAY_MS = 200;
 /** The status bar word count for the active note or its selection. */
 export const wordCountHost: Plugin = {
   name: "wordCount",
-  inject: { required: ["workbench"], optional: ["editors"] },
+  inject: { required: ["workshop"], optional: ["editors"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
-    const status = views.status("markdownWorkbench.wordCount", 99);
+    const status = views.status("markdownWorkshop.wordCount", 99);
     ctx.effect(() => () => status.dispose());
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = async () => {
@@ -33,7 +33,7 @@ export const wordCountHost: Plugin = {
     ctx.effect(() => () => clearTimeout(timer));
     ctx.effect(() => views.onActiveNoteChanged(schedule));
     ctx.effect(() => views.onTextSelectionChanged(schedule));
-    ctx.effect(() => ctx.workbench.onChange(schedule));
+    ctx.effect(() => ctx.workshop.onChange(schedule));
     ctx.on("editor/selectionChanged", schedule);
     void update();
   },

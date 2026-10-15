@@ -4,7 +4,7 @@ import { Context } from "../../../src/kernel";
 import type {
   HostDocument,
   PanelShell,
-  Workbench,
+  Workshop,
 } from "../../../src/shared/runtime";
 import type { Okf } from "../../../src/plugins/okfCore/api";
 import { NoteResources } from "../../../src/plugins/resources/note-resources";
@@ -83,7 +83,7 @@ test("Sources opens a PDF after containing the target, not the note-source allow
     },
     text: async () => "",
   } as unknown as Vaults);
-  ctx.provide("workbench", {
+  ctx.provide("workshop", {
     clipboard: {
       async read() {
         return "";
@@ -91,7 +91,7 @@ test("Sources opens a PDF after containing the target, not the note-source allow
       async write() {},
     },
     async execute() {},
-  } as unknown as Workbench);
+  } as unknown as Workshop);
   const panel = {
     document: {
       uri: documentUri,

@@ -34,7 +34,7 @@ async function hostWithPanel() {
     release: () => void order.push("document released"),
   });
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       registerEditor: (_provider, callback) => {
         open = callback;

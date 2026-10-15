@@ -138,7 +138,7 @@ test("caret settings come from native Markdown configuration and survive setting
   assert.equal(updated.facet(editorSettings).cursorBlinking, "expand");
   const generated = await contributions();
   for (const key of Object.keys(generated.configuration.properties)) {
-    assert.ok(!key.startsWith("markdownWorkbench.editor.cursor"), key);
+    assert.ok(!key.startsWith("markdownWorkshop.editor.cursor"), key);
   }
 });
 test("resource settings use manifest aliases and validate all editor fields", () => {
@@ -195,8 +195,8 @@ test("required settings, title actions, native context menus and unbound verify 
   })) {
     assert.deepEqual(
       [
-        properties[`markdownWorkbench.${key}`]?.default,
-        properties[`markdownWorkbench.${key}`]?.scope,
+        properties[`markdownWorkshop.${key}`]?.default,
+        properties[`markdownWorkshop.${key}`]?.scope,
       ],
       [value, "resource"],
       key,
@@ -205,17 +205,17 @@ test("required settings, title actions, native context menus and unbound verify 
   assert.deepEqual(
     generated.menus["editor/title"].map((menu) => menu.command).sort(),
     [
-      "markdownWorkbench.addProperty",
-      "markdownWorkbench.jumpBack",
-      "markdownWorkbench.jumpForward",
-      "markdownWorkbench.openAsText",
-      "markdownWorkbench.titleActions",
+      "markdownWorkshop.addProperty",
+      "markdownWorkshop.jumpBack",
+      "markdownWorkshop.jumpForward",
+      "markdownWorkshop.openAsText",
+      "markdownWorkshop.titleActions",
     ],
   );
   assert.ok(
     generated.menus["webview/context"].some(
       (menu) =>
-        menu.command === "markdownWorkbench.toggleBold" &&
+        menu.command === "markdownWorkshop.toggleBold" &&
         menu.when.includes("markdownContent"),
     ),
   );
@@ -230,7 +230,7 @@ test("required settings, title actions, native context menus and unbound verify 
   ]) {
     assert.ok(
       !generated.keybindings.some(
-        (binding) => binding.command === `markdownWorkbench.${id}`,
+        (binding) => binding.command === `markdownWorkshop.${id}`,
       ),
       id,
     );
@@ -251,7 +251,7 @@ test("manual and parity inventories include every generated command and setting"
   }
   assert.equal(
     generated.menus.commandPalette.find(
-      (menu) => menu.command === "markdownWorkbench.consumeVimHostShortcut",
+      (menu) => menu.command === "markdownWorkshop.consumeVimHostShortcut",
     )?.when,
     "false",
   );
@@ -273,7 +273,7 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
   const generated = await contributions();
   assert.ok(
     !Object.keys(generated.configuration.properties).some((key) =>
-      key.startsWith("markdownWorkbench.lineNumbers."),
+      key.startsWith("markdownWorkshop.lineNumbers."),
     ),
   );
 });
@@ -281,16 +281,16 @@ test("line numbers follow the native editor.lineNumbers setting, which is not co
 test("agent commands copy a reference or open a reference the user already copied", async () => {
   const generated = await contributions();
   const settings = Object.keys(generated.configuration.properties);
-  assert.ok(settings.includes("markdownWorkbench.plugins.agentBridge.enabled"));
+  assert.ok(settings.includes("markdownWorkshop.plugins.agentBridge.enabled"));
   assert.equal(
     settings.some((key) => key.includes("copyForAgent")),
     false,
   );
   const commands = generated.commands.map((command) => command.command);
-  assert.ok(commands.includes("markdownWorkbench.copyLinkForAgent"));
+  assert.ok(commands.includes("markdownWorkshop.copyLinkForAgent"));
   // A bare copyForAgent command would look like it starts an agent. The wiki
   // command copies text and does not open a chat.
-  assert.equal(commands.includes("markdownWorkbench.copyForAgent"), false);
+  assert.equal(commands.includes("markdownWorkshop.copyForAgent"), false);
   assert.deepEqual(
     generated.commands
       .filter((command) => /agent/i.test(command.command))
@@ -316,14 +316,14 @@ test("agent commands copy a reference or open a reference the user already copie
       menus.some(
         (menu) =>
           menu.command.endsWith(".copyForAgent") &&
-          menu.command !== "markdownWorkbench.wiki.copyForAgent",
+          menu.command !== "markdownWorkshop.wiki.copyForAgent",
       ),
       false,
     );
   }
 });
 
-test("note text follows the native editor font settings for Markdown files (not its size, which is markdownWorkbench.editor.fontSize)", async () => {
+test("note text follows the native editor font settings for Markdown files (not its size, which is markdownWorkshop.editor.fontSize)", async () => {
   // What VS Code returns for a Markdown file, [markdown] overrides included.
   const markdown: Record<string, unknown> = {
     "editor.fontFamily": "Fira Code",
@@ -393,14 +393,11 @@ test("note text follows the native editor font settings for Markdown files (not 
     Object.keys(generated).filter((key) =>
       /\.(font|lineHeight|letterSpacing)/.test(key),
     ),
-    [
-      "markdownWorkbench.editor.fontSize",
-      "markdownWorkbench.editor.lineHeight",
-    ],
+    ["markdownWorkshop.editor.fontSize", "markdownWorkshop.editor.lineHeight"],
   );
   assert.deepEqual(
     {
-      ...(generated["markdownWorkbench.editor.fontSize"] as object),
+      ...(generated["markdownWorkshop.editor.fontSize"] as object),
       description: undefined,
     },
     {
@@ -414,7 +411,7 @@ test("note text follows the native editor font settings for Markdown files (not 
   );
   assert.deepEqual(
     {
-      ...(generated["markdownWorkbench.editor.lineHeight"] as object),
+      ...(generated["markdownWorkshop.editor.lineHeight"] as object),
       description: undefined,
     },
     {

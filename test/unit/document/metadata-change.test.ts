@@ -13,7 +13,7 @@ test("a change event without content keeps a panel's pending edit its own", asyn
   let text = "Original line";
   const owner: { session?: Session } = {};
   const document = fakeDocument({ getText: () => text });
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     apply: async (_doc, edits) => {
       owner.session!.changed();
       for (const edit of edits) {
@@ -23,7 +23,7 @@ test("a change event without content keeps a panel's pending edit its own", asyn
       return true;
     },
   });
-  const session = new Session(document, workbench);
+  const session = new Session(document, workshop);
   owner.session = session;
   const pair = rpcPair();
   const received: string[] = [];

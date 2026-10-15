@@ -1,9 +1,11 @@
 import { tagTree, type TagNode } from "../../markdown/tags/tree";
 import type { TreeNode, TreeSource } from "../../shared/runtime";
 import { isMarkdownPath } from "../../shared/vault-path";
+import { contributionId } from "../../shared/setting-schema";
 import type { VaultIndex } from "../vault/api";
 
-export const SEARCH_COMMAND = "markdownWorkbench.tags.search";
+export const VIEW_ID = contributionId("tags");
+export const SEARCH_COMMAND = contributionId("tags.search");
 
 export interface TagsViewOptions {
   sort: "name" | "frequency";

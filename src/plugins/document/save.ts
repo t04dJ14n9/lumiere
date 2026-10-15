@@ -1,8 +1,8 @@
-import type { HostDocument, Workbench } from "../../shared/runtime";
+import type { HostDocument, Workshop } from "../../shared/runtime";
 /** Preserve the source's workaround for overlapping workbench/webview saves. */
 export async function saveDocument(
   document: HostDocument,
-  workbench: Workbench,
+  workshop: Workshop,
 ): Promise<boolean> {
   if (!document.isDirty && !document.isUntitled) {
     return true;
@@ -11,7 +11,7 @@ export async function saveDocument(
   const completion = new Promise<boolean>((resolve) => {
     complete = resolve;
   });
-  const stop = workbench.onSave((saved) => {
+  const stop = workshop.onSave((saved) => {
     if (saved === document) {
       complete(true);
     }

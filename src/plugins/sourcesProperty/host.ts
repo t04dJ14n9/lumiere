@@ -14,7 +14,7 @@ import { protocol } from "./protocol";
 /** Opens a Sources resource after host authorization. The webview never fetches it. */
 export const sourcesPropertyHost: Plugin<{ panel: PanelShell }> = {
   name: "sourcesProperty",
-  inject: { required: ["workbench", "rpc", "okf", "resources", "vaults"] },
+  inject: { required: ["workshop", "rpc", "okf", "resources", "vaults"] },
   apply(ctx, { panel }) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "open", async ({ resource }) => ({
@@ -44,7 +44,7 @@ async function openResource(
     live: ctx.okf.live,
   });
   if (plan.action === "external" && plan.url) {
-    await ctx.workbench.execute("vscode.open", plan.url);
+    await ctx.workshop.execute("vscode.open", plan.url);
     return true;
   }
   if (plan.action !== "workspace" || !plan.path) {

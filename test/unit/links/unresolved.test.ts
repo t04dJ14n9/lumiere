@@ -15,7 +15,7 @@ import { inlineDecorations } from "../../../src/plugins/livePreview/inline";
 import { inlineRenderers } from "../../../src/plugins/livePreview/registry";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
-import type { PanelShell, Workbench } from "../../../src/shared/runtime";
+import type { PanelShell, Workshop } from "../../../src/shared/runtime";
 
 test("an unresolved key is the link path as written, lower-cased, without subpath or alias", () => {
   assert.equal(unresolvedKey("New Note"), "new note");
@@ -111,7 +111,7 @@ test("the links host sends the note's unresolved set, then only its changes", as
   const root = Context.create();
   root.provide("rpc", host);
   root.provide("vault", index);
-  root.provide("workbench", { config: () => ({}) } as unknown as Workbench);
+  root.provide("workshop", { config: () => ({}) } as unknown as Workshop);
   root.provide("resources", {
     load: async () => {
       throw new Error("Unused");

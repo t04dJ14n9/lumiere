@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../kernel";
 import { Endpoint } from "../../shared/rpc/endpoint";
-import type { PanelShell, Workbench } from "../../shared/runtime";
+import type { PanelShell, Workshop } from "../../shared/runtime";
 import { onlineVideosHost } from "./host";
 import { protocol } from "./protocol";
 
@@ -45,9 +45,9 @@ test("the host looks up details only in a trusted workspace", async (t) => {
   const { host, client } = pair();
   const root = Context.create();
   root.provide("rpc", host);
-  root.provide("workbench", {
+  root.provide("workshop", {
     isTrusted: () => trusted,
-  } as unknown as Workbench);
+  } as unknown as Workshop);
   root.plugin(onlineVideosHost, { panel: {} as PanelShell });
   await root.settled();
   const ask = () =>

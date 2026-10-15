@@ -1,6 +1,6 @@
 # Agent handoff format
 
-Markdown Workbench and Agent PDF Viewer are separate extensions, but both
+Markdown Workshop and Agent PDF Viewer are separate extensions, but both
 hand a selection to an agent with **Copy Link for Agent**, and agents (and
 skills written for them) should read one format. This file and
 `test/fixtures/agent-handoff-format.json` are kept **byte-identical in both
@@ -30,9 +30,9 @@ raw links, never a chat-specific mention syntax.
 - After a blank line comes the selection, every line quoted with `> `
   (an empty line is a bare `>`), line endings normalised to `\n` and
   trailing newlines dropped.
-- Markdown Workbench saves the note first, so the lines are those on disk.
+- Markdown Workshop saves the note first, so the lines are those on disk.
   Agent PDF Viewer's MCP tool `get_current_note_selection` returns the same text for a
-  note open in Markdown Workbench; for an unsaved note, which has no stable
+  note open in Markdown Workshop; for an unsaved note, which has no stable
   line numbers, its reference reads `notes/a.md (unsaved, lines 12-18)`.
 
 ## PDF selections (Agent PDF Viewer)

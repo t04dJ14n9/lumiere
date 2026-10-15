@@ -5,7 +5,7 @@ import { protocol } from "./protocol";
 import { SuggestionIndex } from "./sources";
 export const suggestHost: Plugin<{ panel: PanelShell }> = {
   name: "suggest",
-  inject: { required: ["rpc", "vault", "workbench"] },
+  inject: { required: ["rpc", "vault", "workshop"] },
   apply(ctx, { panel }) {
     const index = new SuggestionIndex(ctx.vault);
     ctx.effect(() =>
@@ -21,7 +21,7 @@ export const suggestHost: Plugin<{ panel: PanelShell }> = {
         if (
           token.cancelled ||
           source === undefined ||
-          ctx.workbench.config(panel.document).features?.[feature]?.enabled ===
+          ctx.workshop.config(panel.document).features?.[feature]?.enabled ===
             false
         ) {
           return [];
@@ -29,7 +29,7 @@ export const suggestHost: Plugin<{ panel: PanelShell }> = {
         return index.query(
           source,
           request,
-          ctx.workbench.config(panel.document).features?.links?.config
+          ctx.workshop.config(panel.document).features?.links?.config
             .useWikilinks !== false,
         );
       }),

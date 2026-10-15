@@ -25,7 +25,7 @@ applies only if the view, document and selection are still current.
 
 Injects `editor`; provides no service. Emits and listens to the awaited
 `paste/transform` pipeline; queries `editor/projectSelection` to preserve grid
-paste. `markdownWorkbench.plugins.pasteHtml.enabled` defaults to true. No palette
+paste. `markdownWorkshop.plugins.pasteHtml.enabled` defaults to true. No palette
 command or bound verify shortcut.
 
 ## Limits and differences from Obsidian

@@ -11,11 +11,11 @@
   },
   "main": "./dist/extension.js",
   "extensionDependencies": [
-    "t04dj14n9.vscode-markdown-workbench"
+    "t04dj14n9.vscode-markdown-workshop"
   ],
   "activationEvents": [
     "onLanguage:markdown",
-    "onCustomEditor:markdownWorkbench.editor"
+    "onCustomEditor:markdownWorkshop.editor"
   ],
   "contributes": {
     "commands": [

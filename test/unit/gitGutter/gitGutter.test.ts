@@ -162,7 +162,7 @@ async function host(
   const root = Context.create();
   let saved = 0;
   const errors: string[] = [];
-  root.provide("workbench", {
+  root.provide("workshop", {
     git,
     error: (message: string) => errors.push(message),
   } as never);

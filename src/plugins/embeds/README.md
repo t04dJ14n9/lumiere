@@ -33,7 +33,7 @@ stops. Original placeholders are restored and late resource results are ignored.
 
 Injects `editor`, `commands`, `livePreview`, `render`, `resources` and `rpc`;
 provides no services. Listens to `render/postProcess`; no kernel events emitted.
-Uses Links RPC to open an embedded target. `markdownWorkbench.plugins.embeds.enabled`
+Uses Links RPC to open an embedded target. `markdownWorkshop.plugins.embeds.enabled`
 defaults to true. Insert Embed has no default keybinding. Remote media follows
 workspace trust from Render.
 

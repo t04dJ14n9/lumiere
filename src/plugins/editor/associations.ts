@@ -1,6 +1,7 @@
 import type { Context } from "../../kernel";
-import type { Workbench } from "../../shared/runtime";
+import type { Workshop } from "../../shared/runtime";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
+import { contributionId } from "../../shared/setting-schema";
 
 const { viewType, filenamePatterns: markdownPatterns } = MARKDOWN_EDITOR;
 
@@ -9,7 +10,7 @@ const { viewType, filenamePatterns: markdownPatterns } = MARKDOWN_EDITOR;
  * Other patterns are kept; a value that is not an association map (an old
  * array form, or a hand-edited mistake) is replaced.
  */
-export function withMarkdownWorkbench(
+export function withMarkdownWorkshop(
   existing: unknown,
 ): Record<string, string> {
   const associations: Record<string, string> = {};
@@ -41,31 +42,31 @@ function opensMarkdownHere(existing: unknown): boolean {
  * over every README; this makes it the default for one workspace, as a vault.
  */
 export async function useForMarkdownInWorkspace(
-  workbench: Workbench,
+  workshop: Workshop,
 ): Promise<void> {
-  const existing = workbench.editorAssociations?.read();
-  if (!workbench.editorAssociations || existing === undefined) {
-    workbench.error(
+  const existing = workshop.editorAssociations?.read();
+  if (!workshop.editorAssociations || existing === undefined) {
+    workshop.error(
       "Open a folder or workspace first: the association is saved in the workspace settings.",
     );
     return;
   }
   if (opensMarkdownHere(existing)) {
-    workbench.inform?.(
+    workshop.inform?.(
       "Markdown files in this workspace already open in Markdown Workshop.",
     );
     return;
   }
-  await workbench.editorAssociations.write(withMarkdownWorkbench(existing));
-  workbench.inform?.(
+  await workshop.editorAssociations.write(withMarkdownWorkshop(existing));
+  workshop.inform?.(
     "Markdown files in this workspace now open in Markdown Workshop. Use Open as Text or Reopen Editor With… for the text editor.",
   );
 }
 
 export function registerMarkdownAssociation(ctx: Context): void {
   ctx.effect(() =>
-    ctx.workbench.command("markdownWorkbench.useForMarkdownInWorkspace", () =>
-      useForMarkdownInWorkspace(ctx.workbench),
+    ctx.workshop.command(contributionId("useForMarkdownInWorkspace"), () =>
+      useForMarkdownInWorkspace(ctx.workshop),
     ),
   );
 }

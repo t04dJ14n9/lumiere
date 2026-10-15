@@ -1,4 +1,5 @@
 import { CancelToken } from "../../shared/rpc/lifecycle";
+import { contributionId } from "../../shared/setting-schema";
 import type { Context, Disposer } from "../../kernel";
 import type { EditorPanel, Editors } from "./api";
 import type { SourceEdit } from "../../shared/runtime";
@@ -35,7 +36,7 @@ export function registerJumpHistory(ctx: Context, editors: Editors): void {
     ["jumpForward", 1],
   ] as const) {
     ctx.effect(() =>
-      ctx.workbench.command(`markdownWorkbench.${name}`, () =>
+      ctx.workshop.command(contributionId(name), () =>
         histories.move(direction),
       ),
     );
@@ -49,13 +50,13 @@ export function registerJumpHistory(ctx: Context, editors: Editors): void {
 
 class PaneHistories {
   private readonly panes = new Map<string, PaneHistory>();
-  private readonly workbench;
+  private readonly workshop;
 
   constructor(
     private readonly ctx: Context,
     private readonly editors: Editors,
   ) {
-    this.workbench = ctx.workbench;
+    this.workshop = ctx.workshop;
   }
 
   register(id: string): void {
@@ -131,7 +132,7 @@ class PaneHistories {
       await replay(pane, direction, live, token);
     } catch (error) {
       if (!token.cancelled) {
-        this.workbench.error(`Note navigation failed: ${String(error)}`);
+        this.workshop.error(`Note navigation failed: ${String(error)}`);
       }
     } finally {
       pane.busy = false;
@@ -141,14 +142,14 @@ class PaneHistories {
 
   refresh(): void {
     const history = this.panes.get(this.editors.active()?.id ?? "")?.history;
-    void this.workbench.execute(
+    void this.workshop.execute(
       "setContext",
-      "markdownWorkbench.canJumpBack",
+      contributionId("canJumpBack"),
       history?.canBack ?? false,
     );
-    void this.workbench.execute(
+    void this.workshop.execute(
       "setContext",
-      "markdownWorkbench.canJumpForward",
+      contributionId("canJumpForward"),
       history?.canForward ?? false,
     );
   }

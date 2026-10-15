@@ -25,12 +25,12 @@ export function nativePlatform(): ApiPlatform {
     installed: (id) => !!vscode.extensions.getExtension(id),
     external: (resource) =>
       vscode.workspace
-        .getConfiguration("markdownWorkbench", resource)
+        .getConfiguration("markdownWorkshop", resource)
         .get("plugins.external", {}),
     write: writeSetting,
     async settings(resource, query) {
       await vscode.commands.executeCommand("workbench.action.openSettings", {
-        query: query ?? "@ext:t04dj14n9.vscode-markdown-workbench plugins",
+        query: query ?? "@ext:t04dj14n9.vscode-markdown-workshop plugins",
         ...(resource ? { resource } : {}),
       });
     },
@@ -44,7 +44,7 @@ async function writeSetting(
 ): Promise<void> {
   const target = configurationTarget(scope);
   const configuration = vscode.workspace.getConfiguration(
-    "markdownWorkbench",
+    "markdownWorkshop",
     scope.resource,
   );
   if (!external) {

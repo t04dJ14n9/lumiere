@@ -1,9 +1,10 @@
 import type { Uri } from "vscode";
 import type { Context } from "../../kernel";
 import type { PickItem } from "../../shared/runtime";
+import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";
 import type {
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   PluginDescriptor,
   PluginState,
 } from "./types";
@@ -49,10 +50,10 @@ function stateText(state: PluginState): string {
 
 function settingOf(descriptor: PluginDescriptor): string | undefined {
   if (descriptor.kind === "feature") {
-    return `markdownWorkbench.plugins.${descriptor.id}.enabled`;
+    return contributionId(`plugins.${descriptor.id}.enabled`);
   }
   if (descriptor.kind === "external") {
-    return "markdownWorkbench.plugins.external";
+    return contributionId("plugins.external");
   }
   return undefined;
 }
@@ -85,13 +86,13 @@ export function pluginStatusItems(
 
 async function showPluginStatus(
   ctx: Context,
-  api: MarkdownWorkbenchApi,
+  api: MarkdownWorkshopApi,
   platform: ApiPlatform,
 ): Promise<void> {
   const editor = api.getActiveEditor();
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   if (!editor || !views) {
-    ctx.workbench.inform?.(
+    ctx.workshop.inform?.(
       "Open a note in Markdown Workshop to see its plugin states.",
     );
     return;
@@ -128,16 +129,16 @@ function basename(uri: Uri): string {
 /** Manage Plugins and Show Plugin Status (DESIGN §6.5). */
 export function registerPluginManagement(
   ctx: Context,
-  api: MarkdownWorkbenchApi,
+  api: MarkdownWorkshopApi,
   platform: ApiPlatform,
 ): void {
   ctx.effect(() =>
-    ctx.workbench.command("markdownWorkbench.managePlugins", () =>
+    ctx.workshop.command(contributionId("managePlugins"), () =>
       api.openPluginSettings(api.getActiveEditor()?.uri),
     ),
   );
   ctx.effect(() =>
-    ctx.workbench.command("markdownWorkbench.showPluginStatus", () =>
+    ctx.workshop.command(contributionId("showPluginStatus"), () =>
       showPluginStatus(ctx, api, platform),
     ),
   );

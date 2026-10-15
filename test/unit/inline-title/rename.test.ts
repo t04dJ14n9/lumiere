@@ -59,7 +59,7 @@ function fixture() {
     capture: async (id) => snapshots.get(id)!,
     restore: async () => {},
   };
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     renameFile: async (_doc, target) => {
       events.push(`rename:${target}`);
     },
@@ -67,14 +67,14 @@ function fixture() {
       events.push(`open:${(options as { viewColumn: number }).viewColumn}`);
     },
   });
-  const renames = new TitleRenames(editors, workbench, async () => {
+  const renames = new TitleRenames(editors, workshop, async () => {
     events.push("restore");
   });
   return {
     panels,
     snapshots,
     editors,
-    workbench,
+    workshop,
     renames,
     events,
     change: () => {
@@ -139,7 +139,7 @@ test("rename refuses stale capture, cancellation and failed native edits without
   );
   assert.deepEqual(cancelled.events, ["flush"]);
   const failed = fixture();
-  failed.workbench.renameFile = async () => {
+  failed.workshop.renameFile = async () => {
     throw new Error("exists");
   };
   await assert.rejects(

@@ -1,7 +1,7 @@
 import type { Context, Fiber } from "../../kernel";
 import type { ApiPlatform } from "./platform";
 import type {
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   PluginDescriptor,
   PluginState,
 } from "./types";
@@ -31,15 +31,15 @@ export class ExternalPlugins {
     private readonly options: {
       root: Context;
       platform: ApiPlatform;
-      api(): MarkdownWorkbenchApi;
+      api(): MarkdownWorkshopApi;
       changed(): void;
     },
   ) {
     const { root } = options;
     root.effect(() => () => this.dispose());
-    if (root.workbench.onConfiguration) {
+    if (root.workshop.onConfiguration) {
       root.effect(() =>
-        root.workbench.onConfiguration!(() => {
+        root.workshop.onConfiguration!(() => {
           void this.refresh();
         }),
       );

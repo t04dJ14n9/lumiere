@@ -2,11 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
 import { commandsHost } from "../../../src/plugins/commands/host";
+import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeWorkbench, fakeDocument } from "../../support/vscode-fake";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
 import folding from "../../../src/plugins/folding/manifest";
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
+const foldAll = contributionId("foldAll");
 
 test("host feature commands disappear when disabled and target the current panel after switching", async () => {
   const root = Context.create();
@@ -35,7 +37,7 @@ test("host feature commands disappear when disabled and target the current panel
     async restore() {},
   });
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       command(id, run) {
         assert.equal(commands.has(id), false);
@@ -60,23 +62,23 @@ test("host feature commands disappear when disabled and target the current panel
   root.plugin(commandsHost, { features: [folding] });
   await root.settled();
   await tick();
-  assert.ok(commands.has("markdownWorkbench.foldAll"));
-  await commands.get("markdownWorkbench.foldAll")!();
+  assert.ok(commands.has(foldAll));
+  await commands.get(foldAll)!();
   active = panel("two");
-  await commands.get("markdownWorkbench.foldAll")!();
+  await commands.get(foldAll)!();
   assert.deepEqual(calls, ["one", "two"]);
   enabled = false;
   changed();
   await tick();
-  assert.equal(commands.has("markdownWorkbench.foldAll"), false);
+  assert.equal(commands.has(foldAll), false);
   enabled = true;
   changed();
   await tick();
-  assert.ok(commands.has("markdownWorkbench.foldAll"));
+  assert.ok(commands.has(foldAll));
   active = undefined;
   root.emit("editor/activeChanged", undefined);
   await tick();
-  assert.equal(commands.has("markdownWorkbench.foldAll"), false);
+  assert.equal(commands.has(foldAll), false);
   await root.dispose();
   assert.equal(commands.size, 0);
 });

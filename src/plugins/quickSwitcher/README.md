@@ -22,8 +22,8 @@ a name no note has, creates it in the new-note folder.
 ## Services, events and settings
 
 - Injects `workbench` (views, navigation) and `vaults`.
-- Settings: `markdownWorkbench.plugins.quickSwitcher.enabled`,
-  `markdownWorkbench.files.newNoteFolder`.
+- Settings: `markdownWorkshop.plugins.quickSwitcher.enabled`,
+  `markdownWorkshop.files.newNoteFolder`.
 
 ## Limits and differences from Obsidian
 

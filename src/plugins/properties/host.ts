@@ -1,5 +1,5 @@
 import type { Context, Plugin } from "../../kernel";
-import type { PanelShell, Workbench } from "../../shared/runtime";
+import type { PanelShell, Workshop } from "../../shared/runtime";
 import type {} from "../vault/api";
 import type {} from "./api";
 import { canSetPropertyType } from "../../markdown/properties/types";
@@ -12,31 +12,31 @@ interface PropertyStores {
   types: PropertyTypeStore;
   collapse: PropertyCollapseStore;
 }
-const stores = new WeakMap<Workbench, PropertyStores>();
+const stores = new WeakMap<Workshop, PropertyStores>();
 
 export const propertiesHost: Plugin<{ panel: PanelShell }> = {
   name: "properties",
-  inject: { required: ["rpc", "workbench", "vault"] },
+  inject: { required: ["rpc", "workshop", "vault"] },
   apply(ctx, { panel }) {
-    const preferences = sharedStores(ctx.workbench);
+    const preferences = sharedStores(ctx.workshop);
     registerTypes(ctx, preferences.types);
     registerPropertyNames(ctx, preferences.types);
     registerDisclosure(ctx, preferences.collapse, panel.document.uri);
   },
 };
 
-function sharedStores(workbench: Workbench): PropertyStores {
-  const storage = workbench.storage;
+function sharedStores(workshop: Workshop): PropertyStores {
+  const storage = workshop.storage;
   if (!storage) {
     throw new Error("Property preference storage is unavailable");
   }
-  let preferences = stores.get(workbench);
+  let preferences = stores.get(workshop);
   if (!preferences) {
     preferences = {
       types: new PropertyTypeStore(storage),
       collapse: new PropertyCollapseStore(storage),
     };
-    stores.set(workbench, preferences);
+    stores.set(workshop, preferences);
   }
   return preferences;
 }

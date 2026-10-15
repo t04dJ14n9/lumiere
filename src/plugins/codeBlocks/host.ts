@@ -13,7 +13,7 @@ import { ProcessorRegistry } from "./processors";
 import { RpcError } from "../../shared/rpc/lifecycle";
 export const codeBlocksHost: Plugin = {
   name: "codeBlocks",
-  inject: { required: ["editors", "workbench"], optional: ["vaults"] },
+  inject: { required: ["editors", "workshop"], optional: ["vaults"] },
   apply(ctx) {
     const registry = new ProcessorRegistry(() => {
       for (const panel of ctx.editors.all()) {
@@ -49,9 +49,9 @@ export const codeBlocksHost: Plugin = {
     ctx.provide("codeBlocks", service);
     registerProcessorPanels(ctx, registry);
     ctx.effect(() => () => registry.dispose());
-    if (ctx.workbench.onConfiguration) {
+    if (ctx.workshop.onConfiguration) {
       ctx.effect(() =>
-        ctx.workbench.onConfiguration!(() => {
+        ctx.workshop.onConfiguration!(() => {
           for (const panel of ctx.editors.all()) {
             panel.rpc.notify(
               protocol,
@@ -113,7 +113,7 @@ function registerProcessorPanels(
 }
 
 function assertProcessorAccess(ctx: Context, id: string): void {
-  if (!ctx.workbench.isTrusted?.()) {
+  if (!ctx.workshop.isTrusted?.()) {
     throw new RpcError(
       "WorkspaceUntrusted",
       "Code processors require a trusted workspace",
@@ -123,7 +123,7 @@ function assertProcessorAccess(ctx: Context, id: string): void {
   if (!panel) {
     throw new RpcError("EditorNotFound", "Editor closed");
   }
-  const config = ctx.workbench.config(panel.document);
+  const config = ctx.workshop.config(panel.document);
   if (
     config.preset !== "obsidian" ||
     config.features?.codeBlocks?.enabled === false

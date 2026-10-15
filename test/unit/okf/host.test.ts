@@ -6,7 +6,7 @@ import type { Okf } from "../../../src/plugins/okfCore/api";
 import { okfCoreHost } from "../../../src/plugins/okfCore/host";
 import type { Vault, Vaults } from "../../../src/plugins/vault/api";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
-import type { Workbench } from "../../../src/shared/runtime";
+import type { Workshop } from "../../../src/shared/runtime";
 
 test("a vault-root bundle is registered and then removed", async () => {
   const index = new MemoryVaultIndex({
@@ -37,9 +37,9 @@ test("a vault-root bundle is registered and then removed", async () => {
       invalidated += 1;
     },
   } as unknown as Vaults);
-  root.provide("workbench", {
+  root.provide("workshop", {
     views: { setting: () => [] },
-  } as unknown as Workbench);
+  } as unknown as Workshop);
   root.plugin(okfCoreHost, {});
   await root.settled();
   let service!: Okf;

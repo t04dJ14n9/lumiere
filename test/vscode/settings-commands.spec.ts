@@ -16,7 +16,7 @@ import {
 const userFile = path.join(paths.userData, "User", "settings.json");
 const folderFile = path.join(paths.workspace, ".vscode", "settings.json");
 const notePath = path.join(paths.workspace, "Note.md");
-const key = (name: string) => `markdownWorkbench.${name}`;
+const key = (name: string) => `markdownWorkshop.${name}`;
 
 /**
  * Closes the Settings editor and any input box this spec left open, so the
@@ -106,7 +106,7 @@ test("Open Settings, and the commands for common settings read and write the Set
     const search = page.locator(".settings-editor .suggest-input-container");
     await expect(search).toBeVisible();
     await expect(search).toContainText(
-      "@ext:t04dj14n9.vscode-markdown-workbench",
+      "@ext:t04dj14n9.vscode-markdown-workshop",
     );
     await expect(
       page
@@ -386,7 +386,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     await changeSetting(page, "excluded files", "Excluded files");
     await expect(
       page.locator(".settings-editor .suggest-input-container"),
-    ).toContainText("@id:markdownWorkbench.vault.excludedFiles");
+    ).toContainText("@id:markdownWorkshop.vault.excludedFiles");
     expect(userKeys()[key("vault.excludedFiles")]).toBeUndefined();
   } finally {
     writeFileSync(userFile, originalUser);

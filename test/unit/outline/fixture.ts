@@ -63,21 +63,21 @@ export async function outlineFixture(
       },
     };
   };
-  const workbench = workbenchWith(fake.views);
-  workbench.command = (id, run) => fake.views.command(id, run);
-  workbench.execute = async (command, key, value) => {
+  const workshop = workbenchWith(fake.views);
+  workshop.command = (id, run) => fake.views.command(id, run);
+  workshop.execute = async (command, key, value) => {
     executed.push([command, key, value].filter((part) => part !== undefined));
     if (command === "setContext") {
       contexts.set(String(key), value);
     }
   };
-  workbench.onConfiguration = (listener) => {
+  workshop.onConfiguration = (listener) => {
     configure = listener;
     return () => {
       configure = () => {};
     };
   };
-  workbench.settings = {
+  workshop.settings = {
     inspect(key, resource) {
       assert.equal(key, FOLLOW_CURSOR_SETTING);
       return {
@@ -118,7 +118,7 @@ export async function outlineFixture(
       },
     },
   });
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   root.provide("vaults", vaults);
   root.provide("editors", editors);
   root.plugin(outlineHost);

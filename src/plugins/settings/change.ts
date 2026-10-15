@@ -2,10 +2,10 @@ import { fuzzyMatch } from "../../shared/fuzzy";
 import type { ContributedSetting, PickItem } from "../../shared/runtime";
 import { SETTING_PREFIX, type Schema } from "../../shared/setting-schema";
 
-/** The `markdownWorkbench.` prefix of every key this extension contributes. */
+/** The `markdownWorkshop.` prefix of every key this extension contributes. */
 export const PREFIX = SETTING_PREFIX;
 
-/** The key without the extension prefix, as `getConfiguration("markdownWorkbench")` takes it. */
+/** The key without the extension prefix, as `getConfiguration("markdownWorkshop")` takes it. */
 export function relativeKey(key: string): string {
   return key.startsWith(PREFIX) ? key.slice(PREFIX.length) : key;
 }

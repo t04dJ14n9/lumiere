@@ -6,7 +6,7 @@ import { SourceCoordinates } from "../../shared/document/coordinates";
 import { noteFragment } from "../../markdown/metadata/fragments";
 import { RpcError, CancelToken } from "../../shared/rpc/lifecycle";
 import type { ApiPlatform } from "./platform";
-import type { MarkdownWorkbenchApi, SourceTarget, OpenOptions } from "./types";
+import type { MarkdownWorkshopApi, SourceTarget, OpenOptions } from "./types";
 import { editorSnapshot } from "./snapshots";
 import { withCancellation } from "./cancellation";
 import type { Uri } from "vscode";
@@ -22,7 +22,7 @@ export function editorOperations(
   root: Context,
   platform: ApiPlatform,
 ): Pick<
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   "getEditors" | "getActiveEditor" | "open" | "reveal" | "getSelection"
 > {
   if (!activeRevisions.has(root)) {

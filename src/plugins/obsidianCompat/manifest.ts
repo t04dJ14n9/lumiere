@@ -13,7 +13,7 @@ export default defineManifest({
   id: "obsidianCompat",
   title: "Obsidian Compatibility",
   description:
-    "Use Obsidian property types and vault settings in Markdown Workbench.",
+    "Use Obsidian property types and vault settings in Markdown Workshop.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],

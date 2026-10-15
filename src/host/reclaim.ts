@@ -63,7 +63,7 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
 }
 
 /**
- * `markdownWorkbench.editor.reclaimTextEditor`: Cursor's Preview | Markdown
+ * `markdownWorkshop.editor.reclaimTextEditor`: Cursor's Preview | Markdown
  * switch opens notes in the text or Cursor Markdown editor; warm them before
  * transferring back to our CustomTextEditorProvider.
  */
@@ -112,7 +112,7 @@ function reclaimContext(uri: string) {
   return {
     enabled: reclaimEnabled({
       mode: vscode.workspace
-        .getConfiguration("markdownWorkbench", target)
+        .getConfiguration("markdownWorkshop", target)
         .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
       appName: vscode.env.appName,
     }),

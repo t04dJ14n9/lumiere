@@ -1,5 +1,6 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import { asString, asStrings } from "../../shared/values";
 import { containingFolder } from "../../shared/workspace-path";
 import type { BridgeCapture } from "../bridge/api";
@@ -14,9 +15,9 @@ const REFRESH_DELAY_MS = 200;
 /** Reads `.wiki` layout and registry. It copies references and never runs an agent. */
 export const wikiHost: Plugin = {
   name: "wiki",
-  inject: { required: ["workbench"], optional: ["editors", "bridgeCapture"] },
+  inject: { required: ["workshop"], optional: ["editors", "bridgeCapture"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
@@ -28,23 +29,23 @@ export const wikiHost: Plugin = {
     };
     const report = (message: string) => {
       if (ctx.isLive) {
-        ctx.workbench.error(message);
+        ctx.workshop.error(message);
       }
     };
     registerReportedCommands(effect, views, report, [
       {
-        id: "markdownWorkbench.wiki.copyForAgent",
+        id: contributionId("wiki.copyForAgent"),
         run: () => copyReference(ctx, state, false),
       },
       {
-        id: "markdownWorkbench.wiki.copyEnvelope",
+        id: contributionId("wiki.copyEnvelope"),
         run: () => copyReference(ctx, state, true),
       },
       {
-        id: "markdownWorkbench.wiki.showLayout",
+        id: contributionId("wiki.showLayout"),
         run: () => showLayout(ctx, state),
       },
-      { id: "markdownWorkbench.wiki.refresh", run: () => reload() },
+      { id: contributionId("wiki.refresh"), run: () => reload() },
     ]);
     bindRefresh(ctx, reload, report);
   },
@@ -55,7 +56,7 @@ function bindRefresh(
   reload: () => Promise<void>,
   report: (message: string) => void,
 ): void {
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   if (!views) {
     return;
   }
@@ -72,10 +73,10 @@ function bindRefresh(
     timer = setTimeout(run, REFRESH_DELAY_MS);
   };
   ctx.effect(() => views.onActiveNoteChanged(schedule));
-  ctx.effect(() => ctx.workbench.onChange(schedule));
-  ctx.effect(() => ctx.workbench.onSave(schedule));
+  ctx.effect(() => ctx.workshop.onChange(schedule));
+  ctx.effect(() => ctx.workshop.onSave(schedule));
   // Captured while live: teardown runs after this context is disposed.
-  const diagnostics = ctx.workbench.diagnostics;
+  const diagnostics = ctx.workshop.diagnostics;
   ctx.effect(() => () => {
     clearTimeout(timer);
     diagnostics?.clear("wiki");
@@ -95,9 +96,9 @@ async function copyReference(
     place,
     noteText: note.text,
     json,
-    clipboard: ctx.workbench.clipboard,
-    inform: (message) => ctx.workbench.inform?.(message),
-    error: (message) => ctx.workbench.error(message),
+    clipboard: ctx.workshop.clipboard,
+    inform: (message) => ctx.workshop.inform?.(message),
+    error: (message) => ctx.workshop.error(message),
   });
 }
 
@@ -107,17 +108,17 @@ async function showLayout(ctx: Context, state: WikiSession): Promise<void> {
   const root =
     place?.project.rootUri ??
     (uri
-      ? containingFolder(uri, asStrings(ctx.workbench.workspaceFolders?.()))
+      ? containingFolder(uri, asStrings(ctx.workshop.workspaceFolders?.()))
           ?.root
       : undefined);
-  ctx.workbench.inform?.(layoutSummary(place?.project, state.problems, root));
+  ctx.workshop.inform?.(layoutSummary(place?.project, state.problems, root));
 }
 
 function activeNote(ctx: Context): { uri?: string; text?: string } {
   const panel = ctx.editors?.active();
   const uri =
     asString(panel?.document?.uri) ??
-    asString(ctx.workbench.views?.activeNote());
+    asString(ctx.workshop.views?.activeNote());
   const read = panel?.document?.getText;
   const text = typeof read === "function" ? read() : undefined;
   return {

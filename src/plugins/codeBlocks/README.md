@@ -42,7 +42,7 @@ click handlers, original text and late-result guards.
 ## Services, events and settings
 
 Injects `editor`, `livePreview` and `render`; provides no service. Listens to
-`render/postProcess`; emits no kernel events. `markdownWorkbench.plugins.codeBlocks.enabled`
+`render/postProcess`; emits no kernel events. `markdownWorkshop.plugins.codeBlocks.enabled`
 defaults to true. No palette commands or default keybindings.
 
 ## Limits and differences from Obsidian

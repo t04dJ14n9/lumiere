@@ -12,7 +12,7 @@ const key = createHash("sha256")
   .update(`${repository}\n${hostExecutable ?? "downloaded"}`)
   .digest("hex")
   .slice(0, 8);
-const root = path.join("/tmp", `markdown-workbench-e2e-${key}`);
+const root = path.join("/tmp", `markdown-workshop-e2e-${key}`);
 
 export const paths = {
   repository,

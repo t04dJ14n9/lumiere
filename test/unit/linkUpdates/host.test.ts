@@ -16,7 +16,7 @@ async function start(settings: Record<string, unknown> = {}) {
   const fake = fakeViews(settings);
   const root = Context.create();
   root.provide("vaults", vaults);
-  root.provide("workbench", workbenchWith(fake.views));
+  root.provide("workshop", workbenchWith(fake.views));
   root.plugin(linkUpdatesHost);
   await root.settled();
   return { root, fake };

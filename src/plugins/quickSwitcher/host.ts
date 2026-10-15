@@ -1,4 +1,5 @@
 import type { Plugin } from "../../kernel";
+import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
 import { switcherItems } from "./ranking";
 import type { SwitcherTarget } from "./ranking";
@@ -6,14 +7,14 @@ import type { SwitcherTarget } from "./ranking";
 /** **Markdown Workshop: Quick Switcher**: open or create a note by name. */
 export const quickSwitcherHost: Plugin = {
   name: "quickSwitcher",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
     const create = async (vault: Vault, name: string, source: string) => {
-      const uri = await ctx.workbench.navigation?.resolve({
+      const uri = await ctx.workshop.navigation?.resolve({
         root: vault.index.root,
         source,
         path: name,
@@ -40,16 +41,16 @@ export const quickSwitcherHost: Plugin = {
       }
     };
     ctx.effect(() =>
-      views.command("markdownWorkbench.quickSwitcher", async () => {
+      views.command(contributionId("quickSwitcher"), async () => {
         const active = views.activeNote();
         const vault = await switcherVault(ctx.vaults, active);
         if (!vault) {
-          ctx.workbench.error("Open a folder to use the quick switcher.");
+          ctx.workshop.error("Open a folder to use the quick switcher.");
           return;
         }
         // Keep the initiating note through the picker, even if focus changes.
         const source = active ?? `${vault.index.root}/`;
-        await ctx.workbench.configuration?.prepare(source);
+        await ctx.workshop.configuration?.prepare(source);
         const result = await views.pick({
           placeholder: "Find or create a note…",
           items: (query) => switcherItems(vault.index, query),

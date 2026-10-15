@@ -40,7 +40,7 @@ export interface DetailsOptions {
 }
 
 // Bilibili's firewall answers 412 to browser-like agents that are not browsers.
-export const USER_AGENT = "MarkdownWorkbench (VS Code extension)";
+export const USER_AGENT = "MarkdownWorkshop (VS Code extension)";
 const COVER_HOSTS = new Set(["i0.hdslb.com", "i1.hdslb.com", "i2.hdslb.com"]);
 // Bilibili's image service scales covers; a card needs no more than this.
 const COVER_SIZE = "@480w_270h_1c.jpg";

@@ -73,7 +73,7 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
 
     // With diffEditor: rendered, Source Control's text diff is replaced.
     setUserSettings({
-      "markdownWorkbench.gitDiffEditor.diffEditor": "rendered",
+      "markdownWorkshop.gitDiffEditor.diffEditor": "rendered",
     });
     await page.waitForTimeout(500);
     await openWorkbench(page, NOTE);
@@ -89,15 +89,15 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
 
     // Turned off, the panel closes and nothing takes over the text diff.
     setUserSettings({
-      "markdownWorkbench.plugins.gitDiffEditor.enabled": false,
+      "markdownWorkshop.plugins.gitDiffEditor.enabled": false,
     });
     await expect.poll(() => panelFrames(page), { timeout: 15000 }).toBe(0);
     await closeEditorGroups(page);
   } finally {
     setUserSettings({
       "workbench.colorTheme": undefined,
-      "markdownWorkbench.gitDiffEditor.diffEditor": undefined,
-      "markdownWorkbench.plugins.gitDiffEditor.enabled": undefined,
+      "markdownWorkshop.gitDiffEditor.diffEditor": undefined,
+      "markdownWorkshop.plugins.gitDiffEditor.enabled": undefined,
     });
     await closeBrowser(browser);
   }

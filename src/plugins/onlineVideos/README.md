@@ -19,7 +19,7 @@ fetched: no title, cover, still or player, and the card says so. The caret
 on the link reveals its Markdown, as for images.
 
 **Play here** (Bilibili only) is off by default because Bilibili's player
-does not play in VS Code (below). `markdownWorkbench.onlineVideos.bilibiliPlayer`
+does not play in VS Code (below). `markdownWorkshop.onlineVideos.bilibiliPlayer`
 turns it back on in trusted workspaces; it then swaps in the provider's
 player.
 
@@ -58,7 +58,7 @@ them up (`host.ts`, `details.ts`) when a trusted card asks over the
   and channel; the still stays the ID-derived `i.ytimg.com` image.
 
 The host refuses the RPC in an untrusted workspace (and the webview does not
-ask), checks the ID again, sends `User-Agent: MarkdownWorkbench (VS Code
+ask), checks the ID again, sends `User-Agent: MarkdownWorkshop (VS Code
 extension)` (Bilibili answers 412 to browser-like agents from non-browsers),
 refuses redirects, gives each lookup 5 s, runs at most four at once, caches
 answers for the window (200 videos) and remembers failures for 5 minutes.
@@ -106,9 +106,9 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 The webview half injects `render` (for workspace trust) and `rpc` (Links
 `open`, `onlineVideos.details`); the host half injects `rpc` and
 `workbench` (trust). No services. Listens to `render/postProcess`.
-`markdownWorkbench.plugins.onlineVideos.enabled` defaults to true; switched
+`markdownWorkshop.plugins.onlineVideos.enabled` defaults to true; switched
 off, the links fall back to Embeds (a remote image).
-`markdownWorkbench.onlineVideos.bilibiliPlayer` defaults to false.
+`markdownWorkshop.onlineVideos.bilibiliPlayer` defaults to false.
 
 ## Limits
 

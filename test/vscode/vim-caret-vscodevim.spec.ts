@@ -105,12 +105,12 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
     ...(JSON.parse(original) as object),
     "editor.fontFamily": "DejaVu Sans Mono",
     "editor.fontSize": 16,
-    "markdownWorkbench.editor.fontSize": 16,
+    "markdownWorkshop.editor.fontSize": 16,
     "editor.lineHeight": 24,
-    "markdownWorkbench.editor.lineHeight": 1.5,
+    "markdownWorkshop.editor.lineHeight": 1.5,
     "editor.cursorBlinking": "solid",
     "editor.cursorSmoothCaretAnimation": "off",
-    "markdownWorkbench.plugins.vim.enabled": true,
+    "markdownWorkshop.plugins.vim.enabled": true,
   };
   const style = (cursorStyle: string) =>
     writeFileSync(

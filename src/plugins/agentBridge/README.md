@@ -4,7 +4,7 @@
 LLM Wiki-compatible `@path#start-end` link, a blank line and the passage
 quoted with `> `, so the agent both reads the exact words and can open the
 note at that range. It opens a chat only when the editor's own chat is the
-only agent installed, or when `markdownWorkbench.copyLinkForAgent.target`
+only agent installed, or when `markdownWorkshop.copyLinkForAgent.target`
 forces one. Obsidian has no built-in equivalent.
 
 The separate Copy for Agent command (Mod+Alt+C, a title button and menu
@@ -42,7 +42,7 @@ to editor open/close and configuration changes; saving awaits
 `document/willSave`. Webview contributes to `editor/selectionMenu`.
 `plugins.agentBridge.enabled` defaults to true. Command: Copy Link for Agent
 (no shortcut; selection menu and editor context menu).
-`markdownWorkbench.copyLinkForAgent.target` forces the agent.
+`markdownWorkshop.copyLinkForAgent.target` forces the agent.
 
 ## Limits and differences from Obsidian
 

@@ -22,16 +22,16 @@ import type {
   CopyLinkTarget,
   HostDocument,
   PanelShell,
-  Workbench,
+  Workshop,
 } from "../shared/runtime";
 import { SourceCoordinates } from "../shared/document/coordinates";
 import { registerEditor } from "./editor-panels";
 
-export function createWorkbench(
+export function createWorkshop(
   extensionUri: vscode.Uri,
   storage?: vscode.Memento,
   configuration: Configuration = createConfiguration(),
-): Workbench {
+): Workshop {
   const documents = new NativeDocuments();
   const panels = new Map<string, PanelShell>();
   const navigation = createNavigation(
@@ -124,7 +124,7 @@ export class NativeDocuments {
 function documentOperations(
   documents: NativeDocuments,
 ): Pick<
-  Workbench,
+  Workshop,
   "openDocument" | "apply" | "onChange" | "onSave" | "onWillSave"
 > {
   return {
@@ -181,14 +181,14 @@ const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
 
 /** Copy Link for Agent: which agent chats exist, and files to attach. */
 function agentOperations(): Pick<
-  Workbench,
+  Workshop,
   "agentEnvironment" | "writeScratchFile"
 > {
   return {
     async agentEnvironment() {
       return {
         target: vscode.workspace
-          .getConfiguration("markdownWorkbench")
+          .getConfiguration("markdownWorkshop")
           .get<CopyLinkTarget>("copyLinkForAgent.target", "auto"),
         agentExtensions: new Set(
           AGENT_EXTENSIONS.filter((id) => vscode.extensions.getExtension(id)),
@@ -207,7 +207,7 @@ function agentOperations(): Pick<
       };
     },
     async writeScratchFile(name, text) {
-      const folder = path.join(os.tmpdir(), "markdown-workbench-agent");
+      const folder = path.join(os.tmpdir(), "markdown-workshop-agent");
       await mkdir(folder, { recursive: true, mode: 0o700 });
       const file = path.join(folder, path.basename(name));
       await writeFile(file, text, { mode: 0o600 });
@@ -248,7 +248,7 @@ async function revealTextEditor(uri: string): Promise<void> {
 }
 
 function commandOperations(): Pick<
-  Workbench,
+  Workshop,
   "command" | "execute" | "clipboard" | "error" | "inform"
 > {
   return {
@@ -279,7 +279,7 @@ function commandOperations(): Pick<
   };
 }
 function workspaceEditorAssociations(): NonNullable<
-  Workbench["editorAssociations"]
+  Workshop["editorAssociations"]
 > {
   const settings = () => vscode.workspace.getConfiguration("workbench");
   return {
@@ -300,7 +300,7 @@ function workspaceEditorAssociations(): NonNullable<
 }
 function configurationOperations(
   settings: Configuration,
-): Pick<Workbench, "onConfiguration" | "config"> {
+): Pick<Workshop, "onConfiguration" | "config"> {
   return {
     onConfiguration(listener) {
       return settings.onDidChange(listener);
@@ -342,7 +342,7 @@ function configurationOperations(
     },
   };
 }
-function fileOperations(): Pick<Workbench, "read" | "stat" | "watchFile"> {
+function fileOperations(): Pick<Workshop, "read" | "stat" | "watchFile"> {
   return {
     watchFile(uri, listener) {
       const target = vscode.Uri.parse(uri);

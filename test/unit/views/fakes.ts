@@ -5,7 +5,7 @@ import type {
   HostViews,
   TreeNode,
   TreeSource,
-  Workbench,
+  Workshop,
 } from "../../../src/shared/runtime";
 import { fakeWorkbench } from "../../support/vscode-fake";
 
@@ -170,10 +170,10 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
   };
 }
 
-export function workbenchWith(views: HostViews): Workbench {
-  const workbench = fakeWorkbench();
-  workbench.views = views;
-  return workbench;
+export function workbenchWith(views: HostViews): Workshop {
+  const workshop = fakeWorkbench();
+  workshop.views = views;
+  return workshop;
 }
 
 /** Expand a tree fully into labels, for assertions. */

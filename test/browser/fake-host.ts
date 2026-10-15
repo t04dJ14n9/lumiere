@@ -4,7 +4,7 @@ import type { Context } from "../../src/kernel";
 import { Endpoint } from "../../src/shared/rpc/endpoint";
 import type {
   HostDocument,
-  Workbench,
+  Workshop,
   PanelShell,
 } from "../../src/shared/runtime";
 import { SourceCoordinates } from "../../src/shared/document/coordinates";
@@ -89,7 +89,7 @@ export class BrowserHost {
         return true;
       },
     };
-    const workbench: Workbench = {
+    const workshop: Workshop = {
       fingerprint: (text) => text,
       read: async () => new Uint8Array(),
       stat: async () => ({ mtime: 0, symbolicLink: false }),
@@ -140,7 +140,7 @@ export class BrowserHost {
         (_provider, _open: (panel: PanelShell) => void) => () => {},
       config: () => ({ preset: "obsidian", mode: "livePreview" }),
     };
-    this.session = new Session(this.document, workbench);
+    this.session = new Session(this.document, workshop);
   }
   async open(
     preset: "minimal" | "obsidian" = "obsidian",

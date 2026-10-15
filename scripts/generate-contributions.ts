@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import path from "node:path";
 import type { Manifest } from "../src/shared/manifest";
 import { MARKDOWN_EDITOR, whenActive } from "../src/shared/editor-provider";
+import { contributionId } from "../src/shared/setting-schema";
 export async function contributions() {
   const manifests: Manifest[] = [];
   for (const directory of readdirSync("src/plugins", {
@@ -19,7 +20,7 @@ export async function contributions() {
   }
   const commands = manifests.flatMap((manifest) =>
     (manifest.contributes?.commands ?? []).map((command) => ({
-      command: `markdownWorkbench.${command.id}`,
+      command: contributionId(command.id),
       title: command.title,
       category: "Markdown Workshop",
       ...(command.icon ? { icon: command.icon } : {}),
@@ -28,7 +29,7 @@ export async function contributions() {
   const menus = manifests.flatMap((manifest) =>
     (manifest.contributes?.commands ?? []).map((command) =>
       withWhen(
-        { command: `markdownWorkbench.${command.id}` },
+        { command: contributionId(command.id) },
         command.palette === false
           ? "false"
           : contributionWhen(manifest, command),
@@ -37,7 +38,7 @@ export async function contributions() {
   );
   const views = manifests.flatMap((manifest) =>
     (manifest.contributes?.views ?? []).map((view) => ({
-      id: `markdownWorkbench.${view.id}`,
+      id: contributionId(view.id),
       name: view.name,
       when: [whenEnabled(manifest, view.scope), view.when]
         .filter(Boolean)
@@ -65,7 +66,7 @@ export async function contributions() {
       ].map((command) =>
         withWhen(
           {
-            command: `markdownWorkbench.${command.id}`,
+            command: contributionId(command.id),
             key: command.key,
             ...(command.mac ? { mac: command.mac } : {}),
           },
@@ -81,8 +82,8 @@ export async function contributions() {
       "editor/title": [
         ...manifestMenus(manifests, "editor/title"),
         {
-          command: "markdownWorkbench.openAsText",
-          when: `${whenActive(MARKDOWN_EDITOR)} && markdownWorkbench.plugin.commands`,
+          command: contributionId("openAsText"),
+          when: `${whenActive(MARKDOWN_EDITOR)} && ${contributionId("plugin.commands")}`,
           group: "navigation",
         },
       ],
@@ -94,7 +95,7 @@ export async function contributions() {
           manifests
             .filter((manifest) => manifest.kind === "feature")
             .map((manifest) => [
-              `markdownWorkbench.plugins.${manifest.id}.enabled`,
+              contributionId(`plugins.${manifest.id}.enabled`),
               {
                 type: "boolean",
                 default: manifest.defaultEnabled,
@@ -114,12 +115,14 @@ export async function contributions() {
               // Fields backed by a native VS Code setting contribute nothing.
               .filter(([key]) => !manifest.nativeConfigKeys?.[key])
               .map(([key, value]) => [
-                `markdownWorkbench.${manifest.configKeys?.[key] ?? `${manifest.id}.${key}`}`,
+                contributionId(
+                  manifest.configKeys?.[key] ?? `${manifest.id}.${key}`,
+                ),
                 { ...value, scope: "resource" },
               ]),
           ),
         ),
-        "markdownWorkbench.copyLinkForAgent.target": {
+        [contributionId("copyLinkForAgent.target")]: {
           type: "string",
           enum: ["auto", "cursor", "chat", "claudeCode", "codex", "clipboard"],
           enumDescriptions: [
@@ -135,14 +138,14 @@ export async function contributions() {
           markdownDescription:
             "Which chat **Copy Link for Agent** opens after copying the link and passage. Extensions cannot see which agent you are working in, so `auto` only opens a chat when the editor's own chat is the only agent; pick one here to send the passage to it.",
         },
-        "markdownWorkbench.debug.logging": {
+        [contributionId("debug.logging")]: {
           type: "boolean",
           default: false,
           scope: "window",
           description:
             "Log plugin load/stop timings and debug messages in the Markdown Workshop output channel.",
         },
-        "markdownWorkbench.plugins.external": {
+        [contributionId("plugins.external")]: {
           type: "object",
           default: {},
           additionalProperties: { type: "boolean" },
@@ -150,7 +153,7 @@ export async function contributions() {
           description:
             "External host plugin enablement by registered plugin ID.",
         },
-        "markdownWorkbench.preset": {
+        [contributionId("preset")]: {
           type: "string",
           enum: ["obsidian", "minimal"],
           default: "obsidian",
@@ -163,7 +166,7 @@ export async function contributions() {
 }
 /**
  * The when-clause for a plugin's command or view. In the editor, the editor
- * host keeps `markdownWorkbench.plugin.<id>` current for the active panel.
+ * host keeps `markdownWorkshop.plugin.<id>` current for the active panel.
  * Elsewhere, the plugin's setting decides.
  */
 /** Adds a `when` clause unless the contribution applies everywhere. */
@@ -189,7 +192,7 @@ function whenEnabled(
   scope: "editor" | "workbench" = "editor",
 ): string {
   if (scope === "editor") {
-    return `${whenActive(MARKDOWN_EDITOR)} && markdownWorkbench.plugin.${manifest.id}`;
+    return `${whenActive(MARKDOWN_EDITOR)} && ${contributionId(`plugin.${manifest.id}`)}`;
   }
   if (manifest.kind === "core") {
     // Core workbench commands (plugin management, the editor association)
@@ -197,7 +200,7 @@ function whenEnabled(
     // diagnosing plugins.
     return "";
   }
-  return `config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.${manifest.id}.enabled`;
+  return `config.${contributionId("preset")} != 'minimal' && config.${contributionId(`plugins.${manifest.id}.enabled`)}`;
 }
 
 async function main() {
@@ -229,7 +232,7 @@ function manifestMenus(
     (manifest.contributes?.menus ?? [])
       .filter((menu) => menu.location === location)
       .map((menu) => ({
-        command: `markdownWorkbench.${menu.command}`,
+        command: contributionId(menu.command),
         when: [
           whenEnabled(
             manifest,

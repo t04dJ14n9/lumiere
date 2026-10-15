@@ -1,5 +1,5 @@
 import type { Context } from "../../kernel";
-import type { TreeHandle, Workbench } from "../../shared/runtime";
+import type { TreeHandle, Workshop } from "../../shared/runtime";
 import {
   COMMANDS_CONTEXT,
   DISABLE_FOLLOW_COMMAND,
@@ -15,26 +15,23 @@ import type { OutlineView } from "./view";
 export function registerOutlineCommandContext(ctx: Context): void {
   // The editor populates contexts for panel plugins only. Outline runs once
   // per window, so its own lifetime controls the generated command guards.
-  const workbench = ctx.workbench;
-  const enabled = workbench
+  const workshop = ctx.workshop;
+  const enabled = workshop
     .execute("setContext", COMMANDS_CONTEXT, true)
     .catch((error) => ctx.logger.warn("Outline command context failed", error));
   ctx.effect(() => async () => {
     await enabled;
-    await workbench.execute("setContext", COMMANDS_CONTEXT, undefined);
+    await workshop.execute("setContext", COMMANDS_CONTEXT, undefined);
   });
 }
 
-export function followsCursor(
-  workbench: Workbench,
-  resource?: string,
-): boolean {
-  const configured = workbench.settings?.inspect(
+export function followsCursor(workshop: Workshop, resource?: string): boolean {
+  const configured = workshop.settings?.inspect(
     FOLLOW_CURSOR_SETTING,
     resource,
   ).value;
   return configured === undefined
-    ? (workbench.views?.setting(FOLLOW_CURSOR_SETTING, true) ?? true)
+    ? (workshop.views?.setting(FOLLOW_CURSOR_SETTING, true) ?? true)
     : configured !== false;
 }
 
@@ -44,20 +41,20 @@ export function registerOutlineActions(
   tree: TreeHandle,
 ): void {
   ctx.effect(() =>
-    ctx.workbench.command(EXPAND_ALL_COMMAND, () => view.expandAll()),
+    ctx.workshop.command(EXPAND_ALL_COMMAND, () => view.expandAll()),
   );
   ctx.effect(() =>
-    ctx.workbench.command(TOGGLE_COMMAND, async () => {
+    ctx.workshop.command(TOGGLE_COMMAND, async () => {
       if (tree.visible) {
         // VS Code resolves this view's current container after Move View.
-        await ctx.workbench.execute(`${VIEW_ID}.removeView`);
+        await ctx.workshop.execute(`${VIEW_ID}.removeView`);
       } else {
-        await ctx.workbench.execute(`${VIEW_ID}.focus`);
+        await ctx.workshop.execute(`${VIEW_ID}.focus`);
       }
     }),
   );
   const setFollowCursor = async (enabled: boolean) => {
-    const settings = ctx.workbench.settings;
+    const settings = ctx.workshop.settings;
     if (!settings) {
       return;
     }
@@ -70,22 +67,22 @@ export function registerOutlineActions(
     await view.followCaret();
   };
   ctx.effect(() =>
-    ctx.workbench.command(ENABLE_FOLLOW_COMMAND, () => setFollowCursor(true)),
+    ctx.workshop.command(ENABLE_FOLLOW_COMMAND, () => setFollowCursor(true)),
   );
   ctx.effect(() =>
-    ctx.workbench.command(DISABLE_FOLLOW_COMMAND, () => setFollowCursor(false)),
+    ctx.workshop.command(DISABLE_FOLLOW_COMMAND, () => setFollowCursor(false)),
   );
 }
 
 export function registerFollowCursor(ctx: Context, view: OutlineView): void {
-  const workbench = ctx.workbench;
+  const workshop = ctx.workshop;
   const update = () => {
     void updateFollowContext(ctx).catch((error) =>
       ctx.logger.warn("Outline follow setting failed", error),
     );
     void view.followCaret();
   };
-  const onConfiguration = ctx.workbench.onConfiguration;
+  const onConfiguration = ctx.workshop.onConfiguration;
   if (onConfiguration) {
     ctx.effect(() => onConfiguration(update));
   }
@@ -94,15 +91,15 @@ export function registerFollowCursor(ctx: Context, view: OutlineView): void {
   ctx.on("editor/closed", update);
   // Services may have been withdrawn before plugin effects are disposed.
   ctx.effect(() => async () => {
-    await workbench.execute("setContext", FOLLOW_CURSOR_CONTEXT, undefined);
+    await workshop.execute("setContext", FOLLOW_CURSOR_CONTEXT, undefined);
   });
   update();
 }
 
 async function updateFollowContext(ctx: Context): Promise<void> {
-  await ctx.workbench.execute(
+  await ctx.workshop.execute(
     "setContext",
     FOLLOW_CURSOR_CONTEXT,
-    followsCursor(ctx.workbench, ctx.editors.active()?.document.uri),
+    followsCursor(ctx.workshop, ctx.editors.active()?.document.uri),
   );
 }

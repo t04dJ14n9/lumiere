@@ -6,6 +6,7 @@ import {
   toggles,
 } from "../../../src/plugins/settings/commands";
 import settings from "../../../src/plugins/settings/manifest";
+import { contributionId } from "../../../src/shared/setting-schema";
 import { contributedSetting, layered, run } from "./layered";
 
 test("the manifest's commands are the ones the plugin registers", async () => {
@@ -13,7 +14,7 @@ test("the manifest's commands are the ones the plugin registers", async () => {
   assert.deepEqual(
     [...fake.commands.keys()].sort(),
     settings.contributes.commands
-      .map((command) => `markdownWorkbench.${command.id}`)
+      .map((command) => contributionId(command.id))
       .sort(),
   );
   await root.dispose();
@@ -23,7 +24,7 @@ test("Open Settings filters the Settings UI to this extension", async () => {
   const store = layered();
   const { command, root } = await run(store);
   await command("openSettings")();
-  assert.deepEqual(store.opened, ["@ext:t04dj14n9.vscode-markdown-workbench"]);
+  assert.deepEqual(store.opened, ["@ext:t04dj14n9.vscode-markdown-workshop"]);
   assert.equal(EXTENSION_FILTER, store.opened[0]);
   await root.dispose();
 });
