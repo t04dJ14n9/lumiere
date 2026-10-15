@@ -234,3 +234,14 @@ test("inlining multiline anchored strings quotes them at alias sites", () => {
     second: "one\ntwo",
   });
 });
+
+test("replacing a map with a multiline string quotes the insert", () => {
+  const source = "---\nobj: {a: 1}\n---\n";
+  const next = edit(source, {
+    type: "set",
+    key: "obj",
+    value: "first\nsecond",
+  });
+  assert.deepEqual(frontmatter(next)?.values, { obj: "first\nsecond" });
+  assert.match(next, /obj: "first\\nsecond"/);
+});

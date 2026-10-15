@@ -78,3 +78,11 @@ test("empty sources keeps custom renderer and YAML draft instead of scalar chips
   );
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });
+
+test("tagged YAML sets that cannot round-trip stay non-draft displays", () => {
+  const html = renderProperties("---\nvalue: !!set {a: null, b: null}\n---\n");
+  assert.doesNotMatch(
+    html,
+    /data-property-input="value"[^>]*data-property-kind="yaml"/,
+  );
+});

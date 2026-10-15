@@ -1,4 +1,8 @@
-import { frontmatter, matchesPropertyKind } from "../../markdown/properties";
+import {
+  frontmatter,
+  matchesPropertyKind,
+  propertyYamlInput,
+} from "../../markdown/properties";
 import {
   inferPropertyKind,
   propertyKindLabels,
@@ -201,15 +205,28 @@ function yamlDraft(value: unknown): string | undefined {
   if (value === null || value === undefined) {
     return "";
   }
+  if (value instanceof Set || value instanceof Map) {
+    // Tagged collections (!!set / !!map) do not round-trip through plain YAML.
+    return undefined;
+  }
   try {
     // Keep stringify's trailing newline: block scalars with |+ need it to
     // round-trip. Prefer double-quoted strings so leading spaces survive.
-    return stringify(value, {
+    const text = stringify(value, {
       lineWidth: 0,
       defaultKeyType: "PLAIN",
       defaultStringType: "QUOTE_DOUBLE",
       aliasDuplicateObjects: false,
     });
+    const parsed = propertyYamlInput(text);
+    try {
+      if (JSON.stringify(parsed) !== JSON.stringify(value)) {
+        return undefined;
+      }
+    } catch {
+      return undefined;
+    }
+    return text;
   } catch {
     return undefined;
   }

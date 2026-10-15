@@ -58,14 +58,17 @@ export function setPropertyChange(
   }
   // Complex sequences (list-of-maps) are replaced wholesale as YAML text.
   let insert = yamlValue(value);
-  if (
+  if (typeof value === "string" && /[\r\n]/.test(value)) {
+    // Mid-line replacements cannot use a plain multiline scalar.
+    insert = JSON.stringify(value);
+  } else if (
     isScalar(node) &&
     typeof value === typeof node.value &&
     typeof value === "string"
   ) {
-    if (node.type === "QUOTE_SINGLE" && !/[\r\n]/.test(value)) {
+    if (node.type === "QUOTE_SINGLE") {
       insert = "'" + value.replaceAll("'", "''") + "'";
-    } else if (node.type === "QUOTE_DOUBLE" || /[\r\n]/.test(value)) {
+    } else if (node.type === "QUOTE_DOUBLE") {
       insert = JSON.stringify(value);
     }
   }
