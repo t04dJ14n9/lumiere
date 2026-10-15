@@ -330,3 +330,5 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.graph.localDepth | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkbench.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkbench.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |

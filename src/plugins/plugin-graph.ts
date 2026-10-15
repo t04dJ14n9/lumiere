@@ -50,6 +50,7 @@ export const SERVICE_PROVIDERS: Readonly<
   links: "links",
   gitDiff: "gitGutter",
   okf: "okfCore",
+  obsidianCompat: "obsidianCompat",
   propertyRenderers: "properties",
 };
 

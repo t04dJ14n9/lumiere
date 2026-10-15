@@ -84,7 +84,7 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
       .click();
     await expect.poll(() => panelFrames(page), { timeout: 20000 }).toBe(1);
     await expect(
-      page.locator(".tab .monaco-icon-label", { hasText: "↔" }),
+      page.locator(".tab .monaco-icon-label", { hasText: "→" }),
     ).toHaveCount(1);
 
     // Turned off, the panel closes and nothing takes over the text diff.

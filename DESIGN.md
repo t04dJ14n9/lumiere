@@ -1214,8 +1214,24 @@ default (§25).
 | (no equivalent) | `markdownWorkbench.links.folderNote` | `""` |
 
 Settings are resource-scoped, so a vault (workspace folder) can carry its own,
-as Obsidian keeps settings per vault. The extension never reads or writes
-`.obsidian/*.json`.
+as Obsidian keeps settings per vault. Core plugins keep owning these settings.
+The optional host-only `obsidianCompat` feature supplies in-memory candidates
+from `app.json` through a disposable configuration provider. Every applicable
+explicit VS Code inspect layer, resolved for the document URI and Markdown
+language, takes precedence; package defaults come last. It never writes VS Code
+settings. Vault root discovery stays in core; the compatibility config folder
+defaults to `.obsidian` and is independently configurable and contained.
+
+The feature also provides a vault/document-scoped `types.json` registry. Wire
+`aliases` and `tags` stay distinct; UI `list` maps to wire `multitext`. It retains
+last-good snapshots and unknown entries. The current host has no atomic
+conditional-write API, so property-type edits reject before any filesystem
+mutation, including creating missing files or folders. Writes require an adapter
+that atomically replaces the expected source or rejects without writing; a
+separate read/check followed by write or rename is insufficient. Each vault
+retains its identity through async work and profile replacement.
+The existing properties UI keeps its preference storage; the scoped service is
+available for a later consumer. See [the plugin contract](src/plugins/obsidianCompat/README.md).
 
 ### 15.3 Deliberate divergences from Obsidian
 

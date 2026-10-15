@@ -15,7 +15,15 @@ export const linkUpdatesHost: Plugin = {
     }
     ctx.effect(() =>
       views.onWillRename(async (renames) => {
-        const mode = views.setting<string>("linkUpdates.mode", "prompt");
+        const resource = renames[0]?.oldUri;
+        if (resource) {
+          await ctx.workbench.configuration?.prepare(resource);
+        }
+        const mode = views.setting<string>(
+          "linkUpdates.mode",
+          "prompt",
+          resource,
+        );
         if (mode === "never") {
           return [];
         }
@@ -56,7 +64,11 @@ async function linkEdits(
   if (paths.size === 0) {
     return [];
   }
-  const format = views.setting<LinkFormat>("links.newLinkFormat", "shortest");
+  const format = views.setting<LinkFormat>(
+    "links.newLinkFormat",
+    "shortest",
+    renames[0]?.oldUri,
+  );
   const context: RewriteContext = {
     renames: paths,
     resolve: (linkpath, source, syntax) =>

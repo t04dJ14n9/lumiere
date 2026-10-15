@@ -11,7 +11,7 @@ export default defineManifest({
   id: "gitGutter",
   title: "Git change bars",
   description:
-    "Added, modified and deleted bars beside the line numbers, like VS Code's quick diff, with a rendered peek of the old version to revert or stage.",
+    "Added, modified and deleted bars beside the line numbers, like VS Code's quick diff, with a raw unified peek to revert a hunk.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],

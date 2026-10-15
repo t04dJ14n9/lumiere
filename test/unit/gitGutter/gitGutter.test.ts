@@ -387,15 +387,15 @@ test("barTooltip names each gutter color", () => {
   assert.equal(barTooltip("deleted-end"), "deleted");
 });
 
-test("canPeek: added hunks have no peek; modified and deleted do", () => {
+test("canPeek allows added hunks", () => {
   const doc = Text.of(after.split("\n"));
   const hunks = computeHunks(before, doc);
-  assert.equal(canPeek(hunks.find((h) => h.kind === "added")!), false);
+  assert.equal(canPeek(hunks.find((h) => h.kind === "added")!), true);
   assert.equal(canPeek(hunks.find((h) => h.kind === "modified")!), true);
   assert.equal(canPeek(hunks.find((h) => h.kind === "deleted")!), true);
 });
 
-test("peekedHunk: ignores a peek position on an added hunk", () => {
+test("peekedHunk opens an added hunk", () => {
   const doc = Text.of(after.split("\n"));
   const hunks = computeHunks(before, doc);
   const added = hunks.find((h) => h.kind === "added")!;
@@ -407,7 +407,7 @@ test("peekedHunk: ignores a peek position on an added hunk", () => {
   state = state.update({
     effects: [setHunks.of(hunks), setPeek.of(added.from)],
   }).state;
-  assert.equal(peekedHunk(state), undefined);
+  assert.equal(peekedHunk(state)?.kind, "added");
   state = state.update({ effects: setPeek.of(modified.from) }).state;
   assert.equal(peekedHunk(state)?.kind, "modified");
 });
@@ -427,5 +427,5 @@ test("peekTargetAt prefers a modified hunk when an added hunk overlaps the same 
   // hunkAt returns the earlier added row; the bar would show modified.
   assert.equal(hunkAt(hunks, 10, 40)?.kind, "added");
   assert.equal(peekTargetAt(hunks, 10, 40)?.kind, "modified");
-  assert.equal(peekTargetAt(hunks, 10, 14), undefined);
+  assert.equal(peekTargetAt(hunks, 10, 14)?.kind, "added");
 });

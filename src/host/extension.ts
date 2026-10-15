@@ -5,6 +5,7 @@ import { nativePlatform } from "./api/native-platform";
 import type { MarkdownWorkbenchApi } from "./api/types";
 import type { ExtensionContext } from "vscode";
 import { createWorkbench } from "./workbench";
+import { createConfiguration } from "./configuration-access";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
@@ -18,11 +19,13 @@ export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkbenchApi> {
   const started = performance.now();
+  const configuration = createConfiguration();
   const workbench = createWorkbench(
     context.extensionUri,
     context.workspaceState,
+    configuration,
   );
-  workbench.views = createHostViews(context.extensionUri);
+  workbench.views = createHostViews(context.extensionUri, configuration);
   const channel = window.createOutputChannel("Markdown Workshop", {
     log: true,
   });
@@ -34,7 +37,11 @@ export async function activate(
   const logger = outputLogger(channel, () =>
     workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
   );
-  root = await bootstrap(workbench, createVaultSystem(context), logger);
+  root = await bootstrap(
+    workbench,
+    createVaultSystem(context, configuration),
+    logger,
+  );
   channel.info(`Activated in ${Math.round(performance.now() - started)} ms`);
   return createApi(root, nativePlatform());
 }

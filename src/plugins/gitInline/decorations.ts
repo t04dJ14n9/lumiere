@@ -19,6 +19,7 @@ import {
 import type { PassLifetime, PassOwner } from "../../shared/render-lifetime";
 import type { DocHunk, GitDiff, HunkSet } from "../gitGutter/api";
 import type { RenderService } from "../render/api";
+import { currentHunk, lineMarks } from "./open";
 
 export interface InlineActions {
   readonly diff: GitDiff;
@@ -178,26 +179,6 @@ class GhostBlock extends WidgetType {
   }
 }
 
-/**
- * The gutter's mapped copy of a hunk a widget was built from: the one with the
- * same baseline identity. Undefined unless exactly one matches.
- */
-export function currentHunk(
-  state: EditorState,
-  diff: GitDiff,
-  hunk: DocHunk,
-): DocHunk | undefined {
-  const set = state.field(diff.field, false);
-  const matches = (set?.hunks ?? []).filter(
-    (candidate) =>
-      candidate.kind === hunk.kind &&
-      candidate.old === hunk.old &&
-      candidate.oldLine === hunk.oldLine &&
-      candidate.atEnd === hunk.atEnd,
-  );
-  return matches.length === 1 ? matches[0] : undefined;
-}
-
 /** Blocks the live editor renders as one widget, where source marks would not show. */
 const RENDERED: ReadonlySet<Block["kind"]> = new Set([
   "table",
@@ -296,16 +277,6 @@ interface Context {
   readonly budget: Budget;
 }
 
-function lineMarks(state: EditorState, hunk: DocHunk, cls: string) {
-  const { doc } = state;
-  const out: Range<Decoration>[] = [];
-  const last = doc.lineAt(hunk.to).number;
-  for (let n = doc.lineAt(hunk.from).number; n <= last; n++) {
-    out.push(Decoration.line({ class: cls }).range(doc.line(n).from));
-  }
-  return out;
-}
-
 function ghost(
   state: EditorState,
   hunk: DocHunk,
@@ -360,7 +331,7 @@ function hunkDecorations(
     return [ghost(state, hunk, context, { kind: "before", sides })];
   }
   const kind = hunk.kind === "added" ? "added" : "modified";
-  const lines = lineMarks(state, hunk, `mw-gi-${kind}`);
+  const lines = lineMarks(state, hunk, `mw-gi-${kind}`, context.actions.diff);
   // A rendered block hides source marks: show its other version beside it.
   if (touchesRenderedBlock(hunk, context.blocks, state)) {
     return [

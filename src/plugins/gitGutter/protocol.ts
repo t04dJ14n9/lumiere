@@ -12,6 +12,29 @@ export const protocol = defineProtocol("gitGutter", {
       result: baselineResult,
     },
     stage: { params: Schema.object({}), result: Schema.boolean() },
+    openFullDiff: {
+      params: Schema.object({
+        baseKind: Schema.union([
+          "HEAD",
+          "INDEX",
+          "WORKTREE",
+          "revision",
+          "empty",
+        ]),
+        targetKind: Schema.union([
+          "HEAD",
+          "INDEX",
+          "WORKTREE",
+          "revision",
+          "empty",
+        ]),
+      }),
+      result: Schema.boolean(),
+    },
+    mutationLock: {
+      params: Schema.object({ hold: Schema.boolean() }),
+      result: Schema.boolean(),
+    },
   },
   notifications: { changed: Schema.object({}) },
 });

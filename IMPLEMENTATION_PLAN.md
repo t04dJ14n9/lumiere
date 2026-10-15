@@ -4026,6 +4026,98 @@ clear`; `released and cleared tokens cannot revive sessions or release newer
 owners`; `clearing one URI leaves other pending and established owners alone`.
 The existing suppression and overlap tests now use per-handoff tokens, and the
 failed-retry test also checks that no pending token remains after session clear.
+## Git diff VS Code UX — 2026-10-15
+
+Delivered: one semantic snapshot and hunk model for the change bars, inline
+changes, and the rendered diff. The gutter peek is a raw unified diff, including
+pure additions; Live Preview outside the peek stays rendered. Stage and Revert
+go through a per-file mutation gate that requires the exact hunk and a matching
+`sourceState`. A worktree comparison without `worktreeBytes` aborts both Stage
+and Revert. There is no hunk-scoped stage API, so Stage stays disabled and never
+falls through to whole-file `git.stage` or save-then-stage. A dirty buffer is
+not saved or reclassified as disk in order to stage. Inline changes open that
+peek from a Show Diff control; a text selection, link, or checkbox keeps its own
+action. `gitInline` stays off by default. Open Full Diff uses the peek's
+base → target sides, and `gitDiffEditor.diffEditor` still offers `native` and
+`rendered`.
+
+A bar mapped through a later edit still resolves the snapshot hunk by baseline
+line and text, so Revert and Restore keep working. The click's snapshot is the
+gate operand; the existing `resolveHunk` check still refuses a change that has
+disappeared or grown. Nearest rematch is display-only.
+
+Checks: `pnpm check` (1,476 unit tests passed, contributions check passed).
+Git change-bar and inline Chromium specs 18/18. The full Chromium suite was
+271/276: the five failures are pixel baselines and one previously recorded
+intermittent table assertion (`font-size`, `stable-blocks`, `gutter-selection`,
+`vim-line-keys` Chinese punctuation). Peek and Show Diff rules are class-scoped
+and those specs do not open a git peek. `pnpm test:vscode` was not run: this
+sandbox has no cached VS Code binary, and earlier native runs here lost the
+workbench window. The native specs that assert the new title arrow and the
+disabled Stage button are updated.
+Deviations from the approved plan: none of the locked decisions. Stage stays
+disabled because the host git adapter stages a whole file. Shared hashing is a
+pure SHA-256, not `node:crypto`, so `src/shared` stays free of Node APIs.
+Known issues: the five Chromium failures above; native suite not executed here.
+
+## Git diff review fixes — 2026-10-15
+
+A nearest peek rematch moves the display anchor and keeps the disappeared hunk's
+ref, so Revert stays disabled and the gate aborts instead of editing the
+neighbor. The same change payload (original range plus the non-context delete and add
+lines) keeps its mutation ref when only context lines change its hunk id, so
+an edit above a peeked hunk still reverts that hunk. A changed or grown added
+payload does not: rematch keeps the stale ref, and a click that republishes
+before the debounce does not mint a ref from the baseline alone. Production Revert reads the live
+document version and baseline at gate time and applies the validated snapshot
+hunk. An edit after the click and before execute changes that version and makes
+no edit. Show Diff opens at the mapped decoration, not the snapshot anchor from
+before the edit.
+
+## Obsidian compatibility phase 1 — 15 October 2026
+
+Adds the host-only `obsidianCompat` feature and scoped registry API. Pro B1–B4
+are incorporated: aliases wire identity/unknown JSON preservation, last-good
+reads and serialized conflict-checked writes; document/language-scoped full
+inspect precedence; a separately configured contained profile folder; and
+vault-keyed caches, watchers and async writes. Eight ranked app policies feed
+the existing editor, index and commands through an in-memory provider, without
+VS Code settings writes. Properties preference storage remains unchanged.
+
+Unit tests and synthetic `.obsidian` fixtures cover the blockers and lifecycle;
+the plugin README, design and manual acceptance plan describe the contract.
+Plan 01 was updated at `/workspace/plans/pro-batch-2026-10-15/01-obsidian-compat.md`.
+The pinned `~/Code/human-learning` checkout is absent; no reference source or
+proprietary code/assets were copied. Work is isolated in
+`/tmp/mdwb-obsidian-compat` because another task switched the shared checkout.
+Validation results are recorded below before commit.
+
+## PR #55 — Fail closed on Obsidian property-type writes, 15 October 2026
+
+The final content comparison in `ContainedConfigFiles.writeTypes` could be
+followed by an external Obsidian write before `writeText`, losing that writer's
+unknown entries. The host's file API has no atomic conditional replacement;
+moving a temporary file after another comparison leaves the same race. The
+adapter now rejects all property-type edits as read-only before any filesystem
+mutation, including directory creation, and the manifest no longer declares
+file-write capability. The registry I/O contract explicitly
+requires atomic replacement of the expected source or rejection without writing.
+Reads, last-good snapshots, watchers, explicit VS Code setting precedence,
+in-memory app policies and per-vault/profile isolation remain available. The
+existing properties UI still uses its separate preference storage.
+
+Unit coverage models A passing the final comparison, external B arriving before
+the attempted mutation, and the A-derived edit rejecting with B preserved. It
+also checks missing files/folders remain absent, deletion attempts retain the
+snapshot, rejected edits leave the queue/watchers usable, and independent vault
+work remains scoped during asynchronous reads. The generic registry tests use
+an in-memory conditional writer and cover rejection without accepting a proposed
+snapshot. README, service documentation, design and manual acceptance describe
+the read-only fallback. No source tests were ported; the configured
+`~/Code/human-learning` checkout is absent in this environment.
+
+Validation: pending the required sequential local checks before commit/push.
+
 ## Outline Go to Heading (PR #45 review) — 2026-10-16
 
 CustomTextEditorProvider webviews are not native Outline / Go to Symbol hosts

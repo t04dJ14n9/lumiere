@@ -6,7 +6,17 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";
 import type { DocHunk, GitDiff } from "./api";
+import type {
+  DiffHunk,
+  DiffSnapshot,
+  HunkRef,
+  LineRecord,
+} from "../../shared/git-diff";
+import { sourceStateEquals } from "../../shared/git-diff";
 import { changeGutter } from "./gutter";
+import { stageControlEnabled } from "./mutations";
+import { docHunkForDiffHunk, revertDisplayedHunk } from "./revert-run";
+import { DiffSession } from "./session";
 import {
   MAX_DIFF_CHARS,
   MAX_DIFF_LINES,
@@ -16,17 +26,17 @@ import {
   computeHunks,
   hunkAt,
   hunkField,
-  resolveHunk,
   revertChange,
   setHunks,
 } from "./hunks";
 import { config } from "./manifest";
 import {
   outerBlock,
-  canPeek,
   peekContext,
   peekExtension,
   peekedHunk,
+  peekRef,
+  peekState,
   peekTargetAt,
   setPeek,
 } from "./peek";
@@ -50,12 +60,16 @@ class GitDiffModel implements GitDiff {
   private state: Status = "loading";
   private request = 0;
   private live = true;
+  private fileUri = "live-document";
+  private readonly session: DiffSession;
   private readonly listeners = new Set<() => void>();
 
   constructor(
     private readonly ctx: Context,
     private readonly options: Options,
-  ) {}
+  ) {
+    this.session = new DiffSession(options.compareTo);
+  }
 
   get view(): EditorView {
     return this.ctx.editor.view;
@@ -83,22 +97,88 @@ class GitDiffModel implements GitDiff {
   }
 
   /**
-   * Put a change back. Bars and widgets hold mapped, possibly stale offsets,
-   * so the change is first resolved against a fresh diff; one that is gone
-   * (or moved past recognition) is left alone.
+   * Put a change back through the mutation gate. The edit is the validated
+   * snapshot hunk; a disappeared change, or one that drifts before execute, is
+   * left alone.
    */
   revert(hunk: Parameters<GitDiff["revert"]>[0]): void {
-    const fresh = this.fresh();
-    this.view.dispatch({ effects: setHunks.of(fresh) });
-    const target = resolveHunk(fresh, hunk);
+    void revertDisplayedHunk({
+      session: this.session,
+      hunk,
+      fileUri: this.fileUri,
+      baseline: this.text,
+      docText: () => this.view.state.doc.toString(),
+      hold: (locking) => this.hold(locking),
+      apply: (validated, snapshot) => this.applyValidated(validated, snapshot),
+    });
+  }
+
+  /** Record a keystroke so the gate sees it even before the debounced publish. */
+  noteEdit(text: string): void {
+    this.session.noteDocument(text);
+  }
+
+  openHunk(ref: HunkRef, at?: number): void {
+    const found = this.session.snapshot?.hunks.find(
+      (hunk) =>
+        hunk.hunkId === ref.hunkId && hunk.generationId === ref.generationId,
+    );
+    if (!found) {
+      return;
+    }
+    // A mapped Show Diff control passes its current position. The snapshot
+    // anchor is only the fallback when nothing has mapped the decoration.
+    const anchor = at ?? found.liveAnchor?.from;
+    if (anchor === undefined) {
+      return;
+    }
     this.view.dispatch({
-      ...(target && {
-        changes: revertChange(this.view.state, target),
-        userEvent: "input.revert",
-        scrollIntoView: true,
-      }),
+      selection: EditorSelection.cursor(anchor),
+      effects: setPeek.of({ at: anchor, ref }),
+    });
+    this.view.focus();
+  }
+
+  refFor(hunk: DocHunk): HunkRef | undefined {
+    return this.session.refFor(hunk);
+  }
+
+  linesFor(hunk: DocHunk): readonly LineRecord[] {
+    return this.session.linesFor(hunk);
+  }
+
+  /** Apply the gate's hunk, and only while the buffer is still that snapshot. */
+  private applyValidated(hunk: DiffHunk, snapshot: DiffSnapshot): boolean {
+    const auth = this.session.authoritativeSourceState();
+    const baseline = this.text;
+    if (!auth || baseline === undefined) {
+      return false;
+    }
+    if (!sourceStateEquals(auth, snapshot.sourceState)) {
+      return false;
+    }
+    const target = docHunkForDiffHunk(baseline, this.view.state.doc, hunk);
+    if (!target) {
+      return false;
+    }
+    this.view.dispatch({
+      changes: revertChange(this.view.state, target),
+      userEvent: "input.revert",
+      scrollIntoView: true,
       effects: setPeek.of(null),
     });
+    this.view.dispatch({ effects: setHunks.of(this.fresh()) });
+    return true;
+  }
+
+  private async hold(locking: boolean): Promise<boolean> {
+    try {
+      return await this.ctx.rpc.call(protocol, "mutationLock", {
+        hold: locking,
+      });
+    } catch {
+      return false;
+    }
   }
 
   /** The hunks of the document as it is now; none past the size limits. */
@@ -120,7 +200,26 @@ class GitDiffModel implements GitDiff {
   }
 
   recompute = (): void => {
-    this.view.dispatch({ effects: setHunks.of(this.fresh()) });
+    const fresh = this.fresh();
+    const previous = this.session.snapshot;
+    const baseline = this.text;
+    if (baseline === undefined) {
+      this.session.clear();
+    } else {
+      this.session.publish(
+        this.fileUri,
+        baseline,
+        this.view.state.doc.toString(),
+      );
+    }
+    const open = this.view.state.field(peekState, false) ?? null;
+    const nextOpen = this.session.rematch(previous, open, fresh);
+    this.view.dispatch({
+      effects: [
+        setHunks.of(fresh),
+        ...(nextOpen !== open ? [setPeek.of(nextOpen)] : []),
+      ],
+    });
     for (const listener of this.listeners) {
       listener();
     }
@@ -170,9 +269,7 @@ class GitDiffModel implements GitDiff {
         selection: EditorSelection.cursor(next.from),
         effects: [
           EditorView.scrollIntoView(next.from, { y: "center" }),
-          ...(peek || open
-            ? [setPeek.of(canPeek(next) ? next.from : null)]
-            : []),
+          ...(peek || open ? [setPeek.of(this.peekAnchor(next))] : []),
         ],
       }),
     );
@@ -183,8 +280,6 @@ class GitDiffModel implements GitDiff {
   toggle = (target: EditorView, from: number, to: number): void => {
     const hunk = peekTargetAt(target.state.field(hunkField).hunks, from, to);
     const open = peekedHunk(target.state);
-    // Pure additions have no old side — keep the bar, never a Working Tree peek.
-    // Mixed blocks still peek the modified/deleted hunk under the same bar.
     if (!hunk) {
       if (open) {
         target.dispatch({ effects: setPeek.of(null) });
@@ -192,9 +287,70 @@ class GitDiffModel implements GitDiff {
       return;
     }
     target.dispatch({
-      effects: setPeek.of(open === hunk ? null : hunk.from),
+      selection: EditorSelection.cursor(hunk.from),
+      effects: setPeek.of(open === hunk ? null : this.peekAnchor(hunk)),
     });
   };
+
+  private peekAnchor(hunk: DocHunk) {
+    const ref = this.session.refFor(hunk);
+    return ref ? { at: hunk.from, ref } : hunk.from;
+  }
+
+  peekActions() {
+    return {
+      comparisonLabel: () =>
+        this.session.snapshot ? `${this.name} → Working tree` : this.name,
+      move: (target: EditorView, direction: 1 | -1) =>
+        this.move(target, direction, true),
+      revert: (view: EditorView, hunk: DocHunk) => {
+        if (this.peekMayRevert(view, hunk)) {
+          this.revert(hunk);
+        }
+      },
+      openFull: () => this.openFull(),
+      lines: (hunk: DocHunk) => this.linesFor(hunk),
+      canStage: () =>
+        stageControlEnabled(this.session.snapshot, false) &&
+        this.session.mutationAllowed(this.peekOpen()),
+      canRevert: () => this.session.mutationAllowed(this.peekOpen()),
+      close: (view: EditorView) => view.dispatch({ effects: setPeek.of(null) }),
+    };
+  }
+
+  /** Nearest display keeps the old ref, which is not an exact hunk anymore. */
+  private peekMayRevert(view: EditorView, displayed: DocHunk): boolean {
+    const open = view.state.field(peekState, false) ?? null;
+    if (!this.session.mutationAllowed(open)) {
+      return false;
+    }
+    const stored = peekRef(open);
+    const shown = this.session.refFor(displayed);
+    if (!stored || !shown) {
+      return false;
+    }
+    return (
+      stored.hunkId === shown.hunkId &&
+      stored.generationId === shown.generationId
+    );
+  }
+
+  private peekOpen() {
+    return this.view.state.field(peekState, false) ?? null;
+  }
+
+  private openFull(): void {
+    const snap = this.session.snapshot;
+    if (!snap) {
+      return;
+    }
+    void this.ctx.rpc
+      .call(protocol, "openFullDiff", {
+        baseKind: snap.base.kind,
+        targetKind: snap.target.kind,
+      })
+      .catch(() => undefined);
+  }
 
   showChange = (): boolean => {
     const { state } = this.view;
@@ -205,20 +361,6 @@ class GitDiffModel implements GitDiff {
     }
     return this.move(this.view, 1, true);
   };
-
-  /** Stage the file; the host saves first and reports a failure itself. */
-  stage = async (): Promise<boolean> => {
-    try {
-      const staged = await this.ctx.rpc.call(protocol, "stage", {});
-      if (staged) {
-        await this.load();
-      }
-      return staged;
-    } catch (error) {
-      this.ctx.logger.warn("Staging failed", error);
-      return false;
-    }
-  };
 }
 
 /** Recompute the hunks a moment after typing stops. */
@@ -227,7 +369,11 @@ function debounce(model: GitDiffModel) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     return {
       update(update) {
-        if (update.docChanged && model.baseline() !== undefined) {
+        if (!update.docChanged) {
+          return;
+        }
+        model.noteEdit(update.state.doc.toString());
+        if (model.baseline() !== undefined) {
           clearTimeout(timer);
           timer = setTimeout(model.recompute, RECOMPUTE_MS);
         }
@@ -257,13 +403,7 @@ export const gitGutterWebview: Plugin<Options> = {
           },
           click: model.toggle,
         }),
-        peekExtension({
-          render: ctx.render,
-          label: model.label,
-          move: (target, direction) => model.move(target, direction, true),
-          revert: (_target, hunk) => model.revert(hunk),
-          stage: model.stage,
-        }),
+        peekExtension(model.peekActions()),
         debounce(model),
       ]),
     );

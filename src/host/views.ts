@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import type { Configuration } from "../shared/configuration";
+import { createConfiguration } from "./configuration-access";
 import type {
   FileTextEdits,
   HostViews,
@@ -9,7 +11,10 @@ import { cleanEditedUris } from "./rename-save";
 import { createWorkbenchPanel } from "./panel-adapter";
 
 /** The VS Code side of `workbench.views` (DESIGN §7.1). */
-export function createHostViews(extensionUri: vscode.Uri): HostViews {
+export function createHostViews(
+  extensionUri: vscode.Uri,
+  configuration: Configuration = createConfiguration(),
+): HostViews {
   return {
     tree: createTree,
     status: createStatus,
@@ -44,8 +49,8 @@ export function createHostViews(extensionUri: vscode.Uri): HostViews {
       vscode.workspace.textDocuments
         .find((document) => document.uri.toString() === uri)
         ?.getText(),
-    setting: (key, fallback) =>
-      vscode.workspace.getConfiguration("markdownWorkbench").get(key, fallback),
+    setting: (key, fallback, resource) =>
+      configuration.get(key, fallback, resource),
     panel: createWorkbenchPanel(extensionUri),
     onWillRename: (listener) =>
       toDisposer(
