@@ -56,7 +56,11 @@ interface Tab {
   isPreview: boolean;
   group: typeof group;
 }
-const group = { viewColumn: 1, tabs: [] as Tab[] };
+const group = {
+  viewColumn: 1,
+  tabs: [] as Tab[],
+  activeTab: undefined as Tab | undefined,
+};
 const documents: Document[] = [];
 const opened = new Emitter<Document>();
 const changedFile = new Emitter<Uri>();
@@ -167,6 +171,7 @@ beforeEach(() => {
   documents.length = 0;
   scopes.length = 0;
   group.tabs = [];
+  group.activeTab = undefined;
   beforeOpen = undefined;
   vscode.env.appName = "Cursor";
   settings.clear();
@@ -192,6 +197,7 @@ function cursorTab(uri = note) {
     group,
   };
   group.tabs.push(tab);
+  group.activeTab = tab;
   return tab;
 }
 
@@ -265,6 +271,22 @@ for (const transfer of ["completed", "closed", "another preview"] as const) {
     assert.deepEqual(commands, []);
   });
 }
+
+test("selecting another tab during warming does not steal focus back", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  const other = cursorTab(`file:///vault/Other-${serial}.md`);
+  group.activeTab = tab;
+  tabsChanged.fire({ opened: [tab], changed: [] });
+  assert.deepEqual(warmed, [note]);
+  group.activeTab = other;
+  release();
+  await tick();
+  assert.deepEqual(commands, [], "openWith must not override the newer tab");
+});
 
 test("ambiguous basenames, known previews and diffs are not reclaimed", async (t) => {
   const stop = host.reclaim.registerReclaim();

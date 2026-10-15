@@ -112,6 +112,16 @@ async function reopen(tab: vscode.Tab, uri: string): Promise<void> {
   ) {
     return;
   }
+  // Warm already ran; do not steal focus if the reader moved to another tab.
+  const active = vscode.window.tabGroups.activeTabGroup?.activeTab;
+  const stillFocused =
+    active === tab ||
+    (active !== undefined &&
+      active.group.viewColumn === column &&
+      (uriOf(active) ?? labelUri(active)) === uri);
+  if (!stillFocused) {
+    return;
+  }
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
     viewColumn: column,
     preview: tab.isPreview,
