@@ -5,6 +5,7 @@ import {
   propertyChanges,
   propertyYamlInput,
 } from "../../../src/markdown/properties";
+import { renderProperties } from "../../../src/plugins/properties/sheet-html";
 
 function edit(
   source: string,
@@ -17,6 +18,14 @@ function edit(
       source.slice(0, change.from) + change.insert + source.slice(change.to);
   }
   return source;
+}
+
+function decodeEntities(text: string): string {
+  return text
+    .replaceAll("&quot;", '"')
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&");
 }
 
 test("propertyYamlInput accepts nested maps and list-of-maps", () => {
@@ -71,4 +80,23 @@ test("YAML drafts keep significant trailing newlines on nested block scalars", (
     by: "new",
     notes: "a\n\n",
   });
+});
+
+test("YAML draft HTML round-trips nested trailing newlines and leading spaces", () => {
+  const source =
+    '---\ngenerated:\n  by: old\n  notes: |+\n    a\n\ntext: " one\\n two"\n---\n';
+  const html = renderProperties(source);
+  const generated = html.match(
+    /data-property-input="generated"[^>]*>([\s\S]*?)<\/textarea>/,
+  )?.[1];
+  const text = html.match(
+    /data-property-input="text"[^>]*>([\s\S]*?)<\/textarea>/,
+  )?.[1];
+  assert.ok(generated);
+  assert.ok(text);
+  assert.deepEqual(propertyYamlInput(decodeEntities(generated!)), {
+    by: "old",
+    notes: "a\n\n",
+  });
+  assert.equal(propertyYamlInput(decodeEntities(text!)), " one\n two");
 });

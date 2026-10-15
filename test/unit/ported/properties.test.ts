@@ -38,7 +38,7 @@ test("nested property values preserve links, empty lists and multiline text", ()
     html,
     /data-property-input="text"[^>]*data-property-kind="yaml"/,
   );
-  assert.match(html, /first\nsecond/);
+  assert.match(html, /first\\nsecond/);
 });
 
 test("boolean property edits preserve anchors, comments, flow syntax and CRLF", () => {

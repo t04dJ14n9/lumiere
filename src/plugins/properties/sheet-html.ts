@@ -185,12 +185,13 @@ function yamlDraft(value: unknown): string | undefined {
     return "";
   }
   try {
-    const draft = stringify(value, {
+    // Keep stringify's trailing newline: block scalars with |+ need it to
+    // round-trip. Prefer double-quoted strings so leading spaces survive.
+    return stringify(value, {
       lineWidth: 0,
-      defaultKeyType: null,
-      defaultStringType: "PLAIN",
+      defaultKeyType: "PLAIN",
+      defaultStringType: "QUOTE_DOUBLE",
     });
-    return draft.endsWith("\n") ? draft.slice(0, -1) : draft;
   } catch {
     return undefined;
   }
