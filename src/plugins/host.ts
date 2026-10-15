@@ -38,3 +38,5 @@ export { graphHost } from "./graph/host";
 export { sourcesPropertyHost } from "./sourcesProperty/host";
 export { publicApiHost } from "./publicApi/host";
 export { settingsHost } from "./settings/host";
+
+export { gitBlameHost } from "./gitBlame/host";

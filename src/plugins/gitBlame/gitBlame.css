@@ -1,0 +1,16 @@
+.mw-gb-eol {
+  color: var(--vscode-descriptionForeground, var(--muted));
+  font-size: 0.85em;
+  padding-inline-start: 1.5em;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.85;
+}
+.is-source-mode .mw-gb-eol {
+  display: none;
+}
+@media (forced-colors: active) {
+  .mw-gb-eol {
+    opacity: 1;
+  }
+}

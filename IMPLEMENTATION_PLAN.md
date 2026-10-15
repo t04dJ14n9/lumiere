@@ -4186,3 +4186,104 @@ sandbox's denied tsx IPC socket. Running units through Node's tsx loader passes
 Git images, Git inline and layer tests. Contributions checking and production
 builds pass. Browser/native checks were attempted sequentially but blocked by
 Chromium startup permissions, VS Code download DNS, and installed-editor setup.
+
+## gitBlame Task 1 — Porcelain and shared types, 2026-10-15
+
+Approved r5 Approach A implementation started on `feat/git-blame-current-line`.
+Added shared snapshot/result/identity types and a porcelain parser. All-zero
+SHA-1/SHA-256 OIDs alone mean uncommitted; boundary commits remain attributable.
+TDD: module-missing red, then five parser cases green, including malformed input.
+No source suites ported. The pinned human-learning checkout is absent on this
+host; this feature is authored from the approved plan and local git patterns.
+Native checks await clarification because their harness builds/installs a VSIX,
+which the task explicitly prohibits.
+
+## gitBlame Task 2 — GitAccess contract, 2026-10-15
+
+Added required snapshot blame, identity and per-repository generation methods;
+updated the typed gutter fake. TDD: the contract compile failed on absent API
+members before the extension; its isolated compile now passes and all 20
+contract/gutter cases pass. As approved in Task 2, NativeGitAccess implements
+these methods in Task 3. Task 1 `pnpm check` passed 1,578 cases; the browser run
+received SIGTERM after 222 passing cases with no assertion failure. The full
+browser gate will be rerun after integration. No VSIX built or installed.
+
+## gitBlame Task 3 — Native snapshot blame, 2026-10-15
+
+Added a real stdin-capable Git runner with timeout, bounded stdout/stderr and
+pipe-error handling. Dirty snapshots always use `--contents -` against HEAD;
+clean callers can use the path-only route. NativeGitAccess rejects non-file or
+outside-repository paths, soft-hides over-cap/failing blame, and caches identity
+by repository generation. RepositoryWatch is the production binding shared by
+all observers: one advance before fan-out, including open/close and enablement.
+Watch subscriptions are released after the last observer/request exits.
+TDD: module-missing red, then 16 native/parser cases green; the production
+watcher helper proves mid-request stale and identical generations for two
+subscribers. Full typecheck and scoped lint pass. No VSIX built or installed.
+
+## gitBlame Task 4 — Validated host RPC, 2026-10-15
+
+Added the quiet, default-on manifest and panel-bound blame/identity RPC. Changed
+notifications carry required authoritative generation immediately; the host
+only reads that counter. Contents use MAX_DIFF_CHARS in both schema and handler.
+The local kernel has no `.int()` or schema-valued unions, so custom Schema
+validators enforce safe integer/version and required blame on ok responses.
+TDD: missing-module red followed by four host cases green, including real schema
+over-cap rejection, handler defense, immediate notify and disposal. Scoped lint
+and host plugin compilation pass. No VSIX built or installed.
+
+## gitBlame Task 5 — Panel freshness controller, 2026-10-15
+
+Added B2 epoch helpers, transaction-owned blame/version fields and a panel-local
+controller with an injectable scheduler. Every invalidation clears immediately;
+only re-request is debounced 150ms. URI and disable invalidate serial as well as
+timers. Success/rejection share the current-request guard. A still-current
+response may adopt host generation; intervening changed cannot be adopted over.
+TDD: missing-module red, then all 11 state/controller cases green, including
+late URI/disable ok, obsolete rejection preserving R2, same-line no-op, current
+reject/over-cap soft-hide and startup/re-entry behind the host. Scoped lint and
+webview plugin compilation pass. No VSIX built or installed.
+
+## gitBlame Task 6 — EOL ghost and formatting, 2026-10-15
+
+Added one non-block widget at the caret line end, using plain text, aria-hidden,
+and no pointer/selection capture. Description foreground/muted styling stays
+separate from diff tints, restores opacity under forced colors, and hides in
+Source mode. Formatting covers You by email/name, English relative buckets,
+first-line subjects capped at 48 graphemes plus ellipsis, and empty fallbacks.
+Identity responses have their own latest/lifetime guard and redraw current
+blame without another blame process. TDD: missing modules red; all 21 formatting,
+widget and epoch cases pass; scoped lint and webview compilation pass. No VSIX
+built or installed.
+
+## gitBlame Task 7 — Catalog, settings and coexistence, 2026-10-15
+
+Registered both halves, ordered EOL chrome after gitInline, generated the single
+`markdownWorkshop.plugins.gitBlame.enabled` switch (default true), and documented
+the plugin plus owner-run acceptance scenarios. TDD: absent catalog/order red,
+then all 46 focused blame cases pass, including actual webview registration
+with/without gutter and independent teardown. All 53 selected feature lifecycle,
+order and contribution cases also pass. Full `pnpm typecheck`, `pnpm lint` and
+`pnpm contributions` pass. On Node 20 the requested directory-form tsx command
+finds zero tests; the verified run uses explicit `*.test.ts` globs. No source
+suites ported and no VSIX built or installed. Full integration gate follows.
+
+## gitBlame review fix — Path-only worktree attribution, 2026-10-15
+
+A post-integration real-Git regression showed that the optional known-identical-
+to-disk route returned committed attribution for a dirty worktree line because
+it explicitly named HEAD. Removed that revision only for the path-only route,
+so Git includes working-tree edits. The production snapshot route continues to
+send stdin against HEAD. TDD: the new dirty-disk case failed with ok, now returns
+uncommitted; all 47 focused cases pass. No VSIX built or installed.
+
+## gitBlame integration checks — Inventory and Node events, 2026-10-15
+
+The first final full check passed formatting/lint/typecheck but exposed two
+integration failures: the setting lacked a parity inventory row, and the event
+catalog audit interpreted literal Node EventEmitter events as kernel events.
+Added parity/capability rows and a Node-process event helper in the runner fake;
+the existing audit stays unchanged. All 58 focused blame/audit/settings cases
+now pass. Native packaging remains prohibited by this task. An unpackaged test
+harness option was prototyped and unit-checked but removed from the shared
+checkout externally; it is not part of this branch. No VSIX built or installed.

@@ -36,3 +36,5 @@ export { pasteHtmlWebview } from "./pasteHtml/webview";
 export { agentBridgeWebview } from "./agentBridge/webview";
 export { cursorBridgeWebview } from "./cursorBridge/webview";
 export { markersWebview } from "./markers/webview";
+
+export { gitBlameWebview } from "./gitBlame/webview";

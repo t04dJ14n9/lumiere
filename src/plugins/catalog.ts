@@ -28,6 +28,7 @@ import folding from "./folding/manifest";
 import lineNumbers from "./lineNumbers/manifest";
 import gitGutter from "./gitGutter/manifest";
 import gitInline from "./gitInline/manifest";
+import gitBlame from "./gitBlame/manifest";
 import indentGuides from "./indentGuides/manifest";
 import spellcheck from "./spellcheck/manifest";
 import autoPair from "./autoPair/manifest";
@@ -67,6 +68,7 @@ export const features: readonly Manifest[] = inPluginOrder(
     formatting,
     gitGutter,
     gitInline,
+    gitBlame,
     indentGuides,
     inlineTitle,
     lineNumbers,

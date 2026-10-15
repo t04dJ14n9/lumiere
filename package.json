@@ -1315,6 +1315,12 @@
           "scope": "resource",
           "description": "Markdown editing commands."
         },
+        "markdownWorkshop.plugins.gitBlame.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Shows who last committed the caret line at the end of the line in Live Preview."
+        },
         "markdownWorkshop.plugins.gitDiffEditor.enabled": {
           "type": "boolean",
           "default": true,

@@ -65,6 +65,8 @@ export const FEATURE_ORDER = [
   "folding",
   // Track changes over the bars' hunks; after the gutter it reads from.
   "gitInline",
+  // EOL authorship follows gutter/inline chrome and never owns gutter hit-testing.
+  "gitBlame",
   "indentGuides",
   "spellcheck",
   "autoPair",
