@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
 import tagsManifest from "../../../src/plugins/tags/manifest";
-import { SEARCH_COMMAND } from "../../../src/plugins/tags/tree";
+import { SEARCH_COMMAND, VIEW_ID } from "../../../src/plugins/tags/tree";
 import { tagsViewHost } from "../../../src/plugins/tags/view";
 import { workbenchFeatures } from "../../../src/host/workbench-features";
 import {
@@ -34,7 +34,7 @@ async function start(
     root,
     fake,
     opened,
-    view: fake.trees.get("markdownWorkbench.tags")!,
+    view: fake.trees.get(VIEW_ID)!,
   };
 }
 
@@ -121,14 +121,14 @@ test("the Tags view follows the tags plugin's enabled setting", async () => {
     { manifest: tagsManifest, plugin: tagsViewHost },
   ]);
   await wait();
-  assert.equal(fake.trees.has("markdownWorkbench.tags"), false);
+  assert.equal(fake.trees.has(VIEW_ID), false);
   fake.settings["plugins.tags.enabled"] = true;
   reconfigure();
   await wait();
-  assert.equal(fake.trees.get("markdownWorkbench.tags")?.disposed, false);
+  assert.equal(fake.trees.get(VIEW_ID)?.disposed, false);
   fake.settings["plugins.tags.enabled"] = false;
   reconfigure();
   await wait();
-  assert.equal(fake.trees.get("markdownWorkbench.tags")?.disposed, true);
+  assert.equal(fake.trees.get(VIEW_ID)?.disposed, true);
   await root.dispose();
 });

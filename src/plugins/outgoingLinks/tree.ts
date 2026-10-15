@@ -3,6 +3,7 @@ import { folderOf, stemOf } from "../../shared/vault-path";
 import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
 
+export const VIEW_ID = contributionId("outgoingLinks");
 export const OPEN_COMMAND = contributionId("outgoingLinks.open");
 
 /**

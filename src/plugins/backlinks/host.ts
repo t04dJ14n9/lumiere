@@ -1,6 +1,6 @@
 import type { Plugin } from "../../kernel";
 import type {} from "../vault/api";
-import { BacklinksTree, OPEN_COMMAND } from "./tree";
+import { BacklinksTree, OPEN_COMMAND, VIEW_ID } from "./tree";
 
 /** Refreshes wait for a burst of file events to end. */
 const REFRESH_DELAY_MS = 300;
@@ -15,7 +15,7 @@ export const backlinksHost: Plugin = {
       return;
     }
     const source = new BacklinksTree(ctx.vaults);
-    const tree = views.tree("markdownWorkbench.backlinks", source);
+    const tree = views.tree(VIEW_ID, source);
     const status = views.status("markdownWorkbench.backlinks", 100);
     ctx.effect(() => () => tree.dispose());
     ctx.effect(() => () => status.dispose());

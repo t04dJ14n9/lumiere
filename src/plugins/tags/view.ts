@@ -2,7 +2,7 @@ import type { Plugin } from "../../kernel";
 import type { HostViews } from "../../shared/runtime";
 import type { Vault, Vaults } from "../vault/api";
 import { pickTaggedNote } from "./search";
-import { SEARCH_COMMAND, TagsTree } from "./tree";
+import { SEARCH_COMMAND, TagsTree, VIEW_ID } from "./tree";
 
 /** Refreshes wait for a burst of file events to end. */
 const REFRESH_DELAY_MS = 300;
@@ -21,7 +21,7 @@ export const tagsViewHost: Plugin = {
       return;
     }
     const source = new TagsTree();
-    const tree = views.tree("markdownWorkbench.tags", source);
+    const tree = views.tree(VIEW_ID, source);
     ctx.effect(() => () => tree.dispose());
 
     let timer: ReturnType<typeof setTimeout> | undefined;

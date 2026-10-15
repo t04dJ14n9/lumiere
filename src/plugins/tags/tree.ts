@@ -4,6 +4,7 @@ import { isMarkdownPath } from "../../shared/vault-path";
 import { contributionId } from "../../shared/setting-schema";
 import type { VaultIndex } from "../vault/api";
 
+export const VIEW_ID = contributionId("tags");
 export const SEARCH_COMMAND = contributionId("tags.search");
 
 export interface TagsViewOptions {

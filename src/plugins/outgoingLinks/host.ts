@@ -1,6 +1,6 @@
 import type { Plugin } from "../../kernel";
 import type {} from "../vault/api";
-import { OPEN_COMMAND, OutgoingLinksTree } from "./tree";
+import { OPEN_COMMAND, OutgoingLinksTree, VIEW_ID } from "./tree";
 
 const REFRESH_DELAY_MS = 300;
 
@@ -14,7 +14,7 @@ export const outgoingLinksHost: Plugin = {
       return;
     }
     const source = new OutgoingLinksTree(ctx.vaults);
-    const tree = views.tree("markdownWorkbench.outgoingLinks", source);
+    const tree = views.tree(VIEW_ID, source);
     ctx.effect(() => () => tree.dispose());
 
     let timer: ReturnType<typeof setTimeout> | undefined;

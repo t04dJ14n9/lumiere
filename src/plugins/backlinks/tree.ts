@@ -5,6 +5,7 @@ import { linkedLines, unlinkedLines } from "./mentions";
 import { contributionId } from "../../shared/setting-schema";
 import type { MentionLine } from "./mentions";
 
+export const VIEW_ID = contributionId("backlinks");
 export const OPEN_COMMAND = contributionId("backlinks.open");
 
 interface Note {

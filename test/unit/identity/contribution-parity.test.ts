@@ -48,6 +48,7 @@ const pkg = JSON.parse(readFileSync("package.json", "utf8")) as {
   contributes: {
     commands: { command: string }[];
     customEditors: { viewType: string }[];
+    views: { explorer: { id: string }[] };
   };
 };
 const contributes = pkg.contributes;
@@ -115,6 +116,13 @@ test("tree hosts register open and search commands outside contributes", async (
   for (const id of alsoContributed) {
     assert.equal(contributed.has(id), true);
   }
+});
+
+test("tree hosts register the explorer view ids from package.json", async () => {
+  const captured = await captureTreeHostCommands();
+  assert.deepEqual(captured.problems, []);
+  const contributed = contributes.views.explorer.map((view) => view.id);
+  assert.deepEqual([...captured.treeIds].sort(), [...contributed].sort());
 });
 
 test("editor host passes MARKDOWN_EDITOR.viewType to registerEditor", async () => {
@@ -314,11 +322,13 @@ async function captureRegisteredCommands(): Promise<{
 
 async function captureTreeHostCommands(): Promise<{
   ids: Set<string>;
+  treeIds: Set<string>;
   problems: string[];
 }> {
   const ids = new Set<string>();
+  const treeIds = new Set<string>();
   const root = Context.create();
-  root.provide("workbench", viewHostWorkbench(ids));
+  root.provide("workbench", viewHostWorkbench(ids, treeIds));
   root.provide("vaults", idleVaults());
   root.provide("editors", idleEditors());
   root.plugin(outlineHost);
@@ -329,11 +339,11 @@ async function captureTreeHostCommands(): Promise<{
   await tick();
   const problems = pluginProblems(root);
   await root.dispose();
-  return { ids, problems };
+  return { ids, treeIds, problems };
 }
 
 /** Tree and status handles the four view hosts touch while registering. */
-function viewHostWorkbench(ids: Set<string>): Workbench {
+function viewHostWorkbench(ids: Set<string>, treeIds: Set<string>): Workbench {
   const workbench = capturingWorkbench(ids, []);
   const views = workbench.views;
   if (!views) {
@@ -343,14 +353,17 @@ function viewHostWorkbench(ids: Set<string>): Workbench {
     ...workbench,
     views: {
       ...views,
-      tree: () => ({
-        refresh() {},
-        setMessage() {},
-        reveal: async () => {},
-        visible: false,
-        onVisibilityChanged: () => () => {},
-        dispose() {},
-      }),
+      tree: (viewId) => {
+        treeIds.add(viewId);
+        return {
+          refresh() {},
+          setMessage() {},
+          reveal: async () => {},
+          visible: false,
+          onVisibilityChanged: () => () => {},
+          dispose() {},
+        };
+      },
       status: () => ({
         show() {},
         hide() {},

@@ -5,10 +5,14 @@ import { backlinksHost } from "../../../src/plugins/backlinks/host";
 import {
   BacklinksTree,
   OPEN_COMMAND,
+  VIEW_ID as backlinksViewId,
 } from "../../../src/plugins/backlinks/tree";
 import backlinks from "../../../src/plugins/backlinks/manifest";
 import { outgoingLinksHost } from "../../../src/plugins/outgoingLinks/host";
-import { OutgoingLinksTree } from "../../../src/plugins/outgoingLinks/tree";
+import {
+  OutgoingLinksTree,
+  VIEW_ID as outgoingLinksViewId,
+} from "../../../src/plugins/outgoingLinks/tree";
 import outgoingLinks from "../../../src/plugins/outgoingLinks/manifest";
 import { workbenchFeatures } from "../../../src/host/workbench-features";
 import {
@@ -102,8 +106,8 @@ test("Backlinks and Outgoing Links are off until turned on", async () => {
   ]);
   await root.settled();
   await wait();
-  assert.equal(fake.trees.has("markdownWorkbench.backlinks"), false);
-  assert.equal(fake.trees.has("markdownWorkbench.outgoingLinks"), false);
+  assert.equal(fake.trees.has(backlinksViewId), false);
+  assert.equal(fake.trees.has(outgoingLinksViewId), false);
   assert.equal(fake.statuses.has("markdownWorkbench.backlinks"), false);
   await root.dispose();
 });
@@ -130,7 +134,7 @@ test("view plugins follow the active note and their setting, and clean up when t
   await root.settled();
   await wait();
   const status = fake.statuses.get("markdownWorkbench.backlinks")!;
-  const view = fake.trees.get("markdownWorkbench.backlinks")!;
+  const view = fake.trees.get(backlinksViewId)!;
   assert.equal(view.message, "Open a note to see its backlinks.");
   assert.equal(status.text, undefined);
 
@@ -149,18 +153,12 @@ test("view plugins follow the active note and their setting, and clean up when t
   assert.equal(view.disposed, true);
   assert.equal(status.disposed, true);
   assert.equal(fake.commands.has(OPEN_COMMAND), false);
-  assert.equal(
-    fake.trees.get("markdownWorkbench.outgoingLinks")!.disposed,
-    false,
-  );
+  assert.equal(fake.trees.get(outgoingLinksViewId)!.disposed, false);
 
   fake.settings.preset = "minimal";
   configure();
   await wait();
   await root.settled();
-  assert.equal(
-    fake.trees.get("markdownWorkbench.outgoingLinks")!.disposed,
-    true,
-  );
+  assert.equal(fake.trees.get(outgoingLinksViewId)!.disposed, true);
   await root.dispose();
 });
