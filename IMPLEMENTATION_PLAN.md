@@ -4026,3 +4026,37 @@ clear`; `released and cleared tokens cannot revive sessions or release newer
 owners`; `clearing one URI leaves other pending and established owners alone`.
 The existing suppression and overlap tests now use per-handoff tokens, and the
 failed-retry test also checks that no pending token remains after session clear.
+
+## Git diff VS Code UX — 2026-10-15
+
+Delivered: one semantic snapshot and hunk model for the change bars, inline
+changes, and the rendered diff. The gutter peek is a raw unified diff, including
+pure additions; Live Preview outside the peek stays rendered. Stage and Revert
+go through a per-file mutation gate that requires the exact hunk and a matching
+`sourceState`. A worktree comparison without `worktreeBytes` aborts both Stage
+and Revert. There is no hunk-scoped stage API, so Stage stays disabled and never
+falls through to whole-file `git.stage` or save-then-stage. A dirty buffer is
+not saved or reclassified as disk in order to stage. Inline changes open that
+peek from a Show Diff control; a text selection, link, or checkbox keeps its own
+action. `gitInline` stays off by default. Open Full Diff uses the peek's
+base → target sides, and `gitDiffEditor.diffEditor` still offers `native` and
+`rendered`.
+
+A bar mapped through a later edit still resolves the snapshot hunk by baseline
+line and text, so Revert and Restore keep working. The click's snapshot is the
+gate operand; the existing `resolveHunk` check still refuses a change that has
+disappeared or grown. Nearest rematch is display-only.
+
+Checks: `pnpm check` (1,476 unit tests passed, contributions check passed).
+Git change-bar and inline Chromium specs 18/18. The full Chromium suite was
+271/276: the five failures are pixel baselines and one previously recorded
+intermittent table assertion (`font-size`, `stable-blocks`, `gutter-selection`,
+`vim-line-keys` Chinese punctuation). Peek and Show Diff rules are class-scoped
+and those specs do not open a git peek. `pnpm test:vscode` was not run: this
+sandbox has no cached VS Code binary, and earlier native runs here lost the
+workbench window. The native specs that assert the new title arrow and the
+disabled Stage button are updated.
+Deviations from the approved plan: none of the locked decisions. Stage stays
+disabled because the host git adapter stages a whole file. Shared hashing is a
+pure SHA-256, not `node:crypto`, so `src/shared` stays free of Node APIs.
+Known issues: the five Chromium failures above; native suite not executed here.
