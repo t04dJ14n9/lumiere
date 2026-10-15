@@ -47,8 +47,11 @@ export interface GitDiff {
    * display; the hunk itself stays the edit Revert applies.
    */
   context(state: EditorState, hunk: DocHunk): { old: string; now: string };
-  /** Open the raw peek for a snapshot hunk and move the caret to its live anchor. */
-  openHunk(ref: HunkRef): void;
+  /**
+   * Open the raw peek for a snapshot hunk. `at` is the decoration's mapped
+   * position; when omitted, the snapshot live anchor is used.
+   */
+  openHunk(ref: HunkRef, at?: number): void;
   /** The snapshot hunk that shares this document offset, if one is published. */
   refFor(hunk: DocHunk): HunkRef | undefined;
   /** Raw unified lines for the peek body. */

@@ -19,7 +19,7 @@ import {
 import type { PassLifetime, PassOwner } from "../../shared/render-lifetime";
 import type { DocHunk, GitDiff, HunkSet } from "../gitGutter/api";
 import type { RenderService } from "../render/api";
-import { lineMarks } from "./open";
+import { currentHunk, lineMarks } from "./open";
 
 export interface InlineActions {
   readonly diff: GitDiff;
@@ -177,26 +177,6 @@ class GhostBlock extends WidgetType {
   override ignoreEvent(): boolean {
     return true;
   }
-}
-
-/**
- * The gutter's mapped copy of a hunk a widget was built from: the one with the
- * same baseline identity. Undefined unless exactly one matches.
- */
-export function currentHunk(
-  state: EditorState,
-  diff: GitDiff,
-  hunk: DocHunk,
-): DocHunk | undefined {
-  const set = state.field(diff.field, false);
-  const matches = (set?.hunks ?? []).filter(
-    (candidate) =>
-      candidate.kind === hunk.kind &&
-      candidate.old === hunk.old &&
-      candidate.oldLine === hunk.oldLine &&
-      candidate.atEnd === hunk.atEnd,
-  );
-  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /** Blocks the live editor renders as one widget, where source marks would not show. */

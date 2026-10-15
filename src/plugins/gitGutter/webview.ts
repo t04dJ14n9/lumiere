@@ -6,13 +6,16 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";
 import type { DocHunk, GitDiff } from "./api";
-import type { ActionIntent, HunkRef, LineRecord } from "../../shared/git-diff";
+import type {
+  DiffHunk,
+  DiffSnapshot,
+  HunkRef,
+  LineRecord,
+} from "../../shared/git-diff";
+import { sourceStateEquals } from "../../shared/git-diff";
 import { changeGutter } from "./gutter";
-import {
-  revertControlEnabled,
-  stageControlEnabled,
-  runGutterRevert,
-} from "./mutations";
+import { stageControlEnabled } from "./mutations";
+import { docHunkForDiffHunk, revertDisplayedHunk } from "./revert-run";
 import { DiffSession } from "./session";
 import {
   MAX_DIFF_CHARS,
@@ -23,7 +26,6 @@ import {
   computeHunks,
   hunkAt,
   hunkField,
-  resolveHunk,
   revertChange,
   setHunks,
 } from "./hunks";
@@ -33,6 +35,7 @@ import {
   peekContext,
   peekExtension,
   peekedHunk,
+  peekRef,
   peekState,
   peekTargetAt,
   setPeek,
@@ -94,25 +97,44 @@ class GitDiffModel implements GitDiff {
   }
 
   /**
-   * Put a change back through the mutation gate. The edit is the exact buffer
-   * hunk; a disappeared change is left alone.
+   * Put a change back through the mutation gate. The edit is the validated
+   * snapshot hunk; a disappeared change, or one that drifts before execute, is
+   * left alone.
    */
   revert(hunk: Parameters<GitDiff["revert"]>[0]): void {
-    void this.revertThroughGate(hunk);
+    void revertDisplayedHunk({
+      session: this.session,
+      hunk,
+      fileUri: this.fileUri,
+      baseline: this.text,
+      docText: () => this.view.state.doc.toString(),
+      hold: (locking) => this.hold(locking),
+      apply: (validated, snapshot) => this.applyValidated(validated, snapshot),
+    });
   }
 
-  openHunk(ref: HunkRef): void {
+  /** Record a keystroke so the gate sees it even before the debounced publish. */
+  noteEdit(text: string): void {
+    this.session.noteDocument(text);
+  }
+
+  openHunk(ref: HunkRef, at?: number): void {
     const found = this.session.snapshot?.hunks.find(
       (hunk) =>
         hunk.hunkId === ref.hunkId && hunk.generationId === ref.generationId,
     );
-    const at = found?.liveAnchor?.from;
-    if (at === undefined) {
+    if (!found) {
+      return;
+    }
+    // A mapped Show Diff control passes its current position. The snapshot
+    // anchor is only the fallback when nothing has mapped the decoration.
+    const anchor = at ?? found.liveAnchor?.from;
+    if (anchor === undefined) {
       return;
     }
     this.view.dispatch({
-      selection: EditorSelection.cursor(at),
-      effects: setPeek.of({ at, ref }),
+      selection: EditorSelection.cursor(anchor),
+      effects: setPeek.of({ at: anchor, ref }),
     });
     this.view.focus();
   }
@@ -125,49 +147,28 @@ class GitDiffModel implements GitDiff {
     return this.session.linesFor(hunk);
   }
 
-  private async revertThroughGate(hunk: DocHunk): Promise<void> {
-    const snap = this.session.snapshot;
-    const ref = this.session.refFor(hunk);
-    if (!snap || !ref || !revertControlEnabled(snap)) {
-      return;
+  /** Apply the gate's hunk, and only while the buffer is still that snapshot. */
+  private applyValidated(hunk: DiffHunk, snapshot: DiffSnapshot): boolean {
+    const auth = this.session.authoritativeSourceState();
+    const baseline = this.text;
+    if (!auth || baseline === undefined) {
+      return false;
     }
-    const intent: ActionIntent = {
-      generationId: ref.generationId,
-      hunkId: ref.hunkId,
-      sourceState: snap.sourceState,
-      action: "revert",
-    };
-    if (!(await this.hold(true))) {
-      return;
+    if (!sourceStateEquals(auth, snapshot.sourceState)) {
+      return false;
     }
-    try {
-      // The click's snapshot is the operand. A debounce that republishes the
-      // same buffer must not look like drift; resolveHunk still refuses a
-      // change that is gone or has grown past the held hunk.
-      await runGutterRevert(this.session.gate, snap.fileUri, intent, {
-        readSnapshot: async () => snap,
-        readAuthoritativeSourceState: async () => snap.sourceState,
-        applyRevert: async () => this.applyRevert(hunk),
-      });
-    } finally {
-      await this.hold(false);
+    const target = docHunkForDiffHunk(baseline, this.view.state.doc, hunk);
+    if (!target) {
+      return false;
     }
-  }
-
-  /** Resolve the held hunk against a fresh diff and edit only that one. */
-  private applyRevert(hunk: DocHunk): boolean {
-    const fresh = this.fresh();
-    this.view.dispatch({ effects: setHunks.of(fresh) });
-    const target = resolveHunk(fresh, hunk);
     this.view.dispatch({
-      ...(target && {
-        changes: revertChange(this.view.state, target),
-        userEvent: "input.revert",
-        scrollIntoView: true,
-      }),
+      changes: revertChange(this.view.state, target),
+      userEvent: "input.revert",
+      scrollIntoView: true,
       effects: setPeek.of(null),
     });
-    return Boolean(target);
+    this.view.dispatch({ effects: setHunks.of(this.fresh()) });
+    return true;
   }
 
   private async hold(locking: boolean): Promise<boolean> {
@@ -302,15 +303,40 @@ class GitDiffModel implements GitDiff {
         this.session.snapshot ? `${this.name} → Working tree` : this.name,
       move: (target: EditorView, direction: 1 | -1) =>
         this.move(target, direction, true),
-      revert: (_target: EditorView, hunk: DocHunk) => this.revert(hunk),
+      revert: (view: EditorView, hunk: DocHunk) => {
+        if (this.peekMayRevert(view, hunk)) {
+          this.revert(hunk);
+        }
+      },
       openFull: () => this.openFull(),
       lines: (hunk: DocHunk) => this.linesFor(hunk),
-      canStage: (_hunk: DocHunk) =>
-        stageControlEnabled(this.session.snapshot, false),
-      canRevert: (_hunk: DocHunk) =>
-        revertControlEnabled(this.session.snapshot),
+      canStage: () =>
+        stageControlEnabled(this.session.snapshot, false) &&
+        this.session.mutationAllowed(this.peekOpen()),
+      canRevert: () => this.session.mutationAllowed(this.peekOpen()),
       close: (view: EditorView) => view.dispatch({ effects: setPeek.of(null) }),
     };
+  }
+
+  /** Nearest display keeps the old ref, which is not an exact hunk anymore. */
+  private peekMayRevert(view: EditorView, displayed: DocHunk): boolean {
+    const open = view.state.field(peekState, false) ?? null;
+    if (!this.session.mutationAllowed(open)) {
+      return false;
+    }
+    const stored = peekRef(open);
+    const shown = this.session.refFor(displayed);
+    if (!stored || !shown) {
+      return false;
+    }
+    return (
+      stored.hunkId === shown.hunkId &&
+      stored.generationId === shown.generationId
+    );
+  }
+
+  private peekOpen() {
+    return this.view.state.field(peekState, false) ?? null;
   }
 
   private openFull(): void {
@@ -343,7 +369,11 @@ function debounce(model: GitDiffModel) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     return {
       update(update) {
-        if (update.docChanged && model.baseline() !== undefined) {
+        if (!update.docChanged) {
+          return;
+        }
+        model.noteEdit(update.state.doc.toString());
+        if (model.baseline() !== undefined) {
           clearTimeout(timer);
           timer = setTimeout(model.recompute, RECOMPUTE_MS);
         }

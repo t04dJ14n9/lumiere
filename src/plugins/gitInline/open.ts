@@ -31,6 +31,7 @@ export function isInteractiveGitTarget(target: EventTarget | null): boolean {
 
 class ShowDiffControl extends WidgetType {
   constructor(
+    private readonly hunk: DocHunk,
     private readonly ref: HunkRef,
     private readonly diff: GitDiff,
   ) {
@@ -60,8 +61,12 @@ class ShowDiffControl extends WidgetType {
       if (!open) {
         return;
       }
+      const opened = showDiffOpenAt(view.state, this.diff, this.hunk, this.ref);
+      if (!opened) {
+        return;
+      }
       event.preventDefault();
-      this.diff.openHunk(this.ref);
+      this.diff.openHunk(opened.ref, opened.at);
     });
     return button;
   }
@@ -103,7 +108,49 @@ export function showDiffRange(
     return undefined;
   }
   return Decoration.widget({
-    widget: new ShowDiffControl(ref, diff),
+    widget: new ShowDiffControl(hunk, ref, diff),
     side: -1,
   }).range(hunk.from);
+}
+
+/**
+ * Where Show Diff opens. The position is the hunk after CodeMirror has mapped
+ * the decoration, not the snapshot live anchor from before that edit. The ref
+ * must still be this change.
+ */
+export function showDiffOpenAt(
+  state: EditorState,
+  diff: GitDiff,
+  built: DocHunk,
+  ref: HunkRef,
+): { at: number; ref: HunkRef } | undefined {
+  const current = currentHunk(state, diff, built);
+  if (!current) {
+    return undefined;
+  }
+  const live = diff.refFor(current);
+  if (!live || live.hunkId !== ref.hunkId) {
+    return undefined;
+  }
+  return { at: current.from, ref: live };
+}
+
+/**
+ * The gutter's mapped copy of a hunk a widget was built from: the one with the
+ * same baseline identity. Undefined unless exactly one matches.
+ */
+export function currentHunk(
+  state: EditorState,
+  diff: GitDiff,
+  hunk: DocHunk,
+): DocHunk | undefined {
+  const set = state.field(diff.field, false);
+  const matches = (set?.hunks ?? []).filter(
+    (candidate) =>
+      candidate.kind === hunk.kind &&
+      candidate.old === hunk.old &&
+      candidate.oldLine === hunk.oldLine &&
+      candidate.atEnd === hunk.atEnd,
+  );
+  return matches.length === 1 ? matches[0] : undefined;
 }

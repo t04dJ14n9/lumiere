@@ -4060,3 +4060,15 @@ Deviations from the approved plan: none of the locked decisions. Stage stays
 disabled because the host git adapter stages a whole file. Shared hashing is a
 pure SHA-256, not `node:crypto`, so `src/shared` stays free of Node APIs.
 Known issues: the five Chromium failures above; native suite not executed here.
+
+## Git diff review fixes — 2026-10-15
+
+A nearest peek rematch moves the display anchor and keeps the disappeared hunk's
+ref, so Revert stays disabled and the gate aborts instead of editing the
+neighbor. The same baseline change (original range, deleted text, and kind)
+keeps its mutation ref when only context lines change its hunk id, so an edit
+above a peeked hunk still reverts that hunk. Production Revert reads the live
+document version and baseline at gate time and applies the validated snapshot
+hunk. An edit after the click and before execute changes that version and makes
+no edit. Show Diff opens at the mapped decoration, not the snapshot anchor from
+before the edit.

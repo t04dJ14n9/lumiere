@@ -3,6 +3,7 @@ import {
   createMutationGate,
   resolveExactHunk,
   resolveNearestHunk,
+  sideToken,
   textFingerprint,
 } from "../../shared/git-diff";
 import type { MutationGate } from "../../shared/git-diff";
@@ -11,8 +12,11 @@ import type {
   DiffSnapshot,
   HunkRef,
   LineRecord,
+  SourceState,
 } from "../../shared/git-diff";
 import type { DocHunk } from "./api";
+import { sameBaseline, sameChange } from "./identity";
+import { revertControlEnabled } from "./mutations";
 import type { PeekPosition } from "./peek";
 import { peekRef } from "./peek";
 
@@ -20,17 +24,52 @@ import { peekRef } from "./peek";
 export class DiffSession {
   snapshot: DiffSnapshot | undefined;
   readonly gate: MutationGate = createMutationGate();
-  private version = 0;
+  /** Bumps on every distinct buffer text, including edits before the next publish. */
+  private docVersion = 0;
+  private docText = "";
+  private baseline = "";
+  private baselineToken = "";
 
   constructor(private readonly compareTo: "HEAD" | "index") {}
 
+  /** Record the live buffer. A later gate read sees this version, not the click's. */
+  noteDocument(text: string): void {
+    if (text === this.docText) {
+      return;
+    }
+    this.docText = text;
+    this.docVersion += 1;
+  }
+
+  baselineText(): string {
+    return this.baseline;
+  }
+
+  /** Identity of the buffer and baseline as they are now, not when a click closed over them. */
+  authoritativeSourceState(): SourceState | undefined {
+    const snap = this.snapshot;
+    if (!snap) {
+      return undefined;
+    }
+    return {
+      baseOidOrFingerprint: this.baselineToken,
+      targetOidOrFingerprint: sideToken(snap.target),
+      worktreeBytes: {
+        origin: "document",
+        uri: snap.fileUri,
+        version: this.docVersion,
+        isDirty: true,
+      },
+    };
+  }
+
   publish(fileUri: string, baseline: string, doc: string): DiffSnapshot {
-    this.version += 1;
-    const token = textFingerprint(baseline);
+    this.noteBaseline(baseline);
+    this.noteDocument(doc);
     const base =
       this.compareTo === "index"
-        ? ({ kind: "INDEX", fingerprint: token } as const)
-        : ({ kind: "HEAD", oid: token } as const);
+        ? ({ kind: "INDEX", fingerprint: this.baselineToken } as const)
+        : ({ kind: "HEAD", oid: this.baselineToken } as const);
     this.snapshot = buildWorktreeSnapshot({
       repository: fileUri,
       fileUri,
@@ -41,7 +80,7 @@ export class DiffSession {
       worktreeBytes: {
         origin: "document",
         uri: fileUri,
-        version: this.version,
+        version: this.docVersion,
         isDirty: true,
       },
       liveDocumentUri: fileUri,
@@ -56,9 +95,17 @@ export class DiffSession {
         canUnstage: false,
         canRevert: true,
       }),
-      computedAt: this.version,
+      computedAt: this.docVersion,
     });
     return this.snapshot;
+  }
+
+  private noteBaseline(baseline: string): void {
+    if (baseline === this.baseline) {
+      return;
+    }
+    this.baseline = baseline;
+    this.baselineToken = textFingerprint(baseline);
   }
 
   clear(): void {
@@ -78,8 +125,9 @@ export class DiffSession {
   }
 
   /**
-   * Keep an open peek on the same hunk, or the nearest survivor for display.
-   * Returns null when nothing remains. Does not retarget a mutation.
+   * Keep an open peek on the same hunk, or move the anchor to a neighbor for
+   * display only. A true nearest fallback keeps the original mutation ref, so
+   * Revert exact-gates the disappeared hunk and aborts.
    */
   rematch(
     previous: DiffSnapshot | undefined,
@@ -100,66 +148,80 @@ export class DiffSession {
     if (!prior) {
       return typeof open === "number" ? open : null;
     }
-    return this.anchorNearest(prior, docHunks);
+    const survived = this.uniqueSurvivor(prior);
+    if (survived) {
+      return this.anchor(survived, docHunks, {
+        generationId: this.snapshot.generationId,
+        hunkId: survived.hunkId,
+      });
+    }
+    return this.displayNearest(prior, docHunks, {
+      generationId: prior.generationId,
+      hunkId: prior.hunkId,
+    });
+  }
+
+  /** True only when the peek ref is still that exact hunk in the current snapshot. */
+  mutationAllowed(open: PeekPosition | null): boolean {
+    const ref = peekRef(open);
+    const snap = this.snapshot;
+    if (!ref || !snap || !revertControlEnabled(snap)) {
+      return false;
+    }
+    return Boolean(resolveExactHunk(snap, ref)?.capabilities.canRevert);
   }
 
   /**
-   * The snapshot hunk for a document hunk. Offsets match until an edit maps
-   * the bar; after that the baseline line and text still identify it. A
-   * mapped bar must not miss the gate, and an ambiguous match must not guess.
+   * The current hunk with this baseline change. More than one match is
+   * ambiguous, so the caller keeps the old ref and Revert stays off.
+   */
+  private uniqueSurvivor(prior: DiffHunk): DiffHunk | undefined {
+    const matches = (this.snapshot?.hunks ?? []).filter((hunk) =>
+      sameChange(hunk, prior),
+    );
+    return matches.length === 1 ? matches[0] : undefined;
+  }
+
+  /**
+   * The snapshot hunk with this baseline identity. An offset match that is a
+   * different change is not used: that would let a neighbor become the edit.
    */
   private hunkFor(hunk: DocHunk): DiffHunk | undefined {
-    const atOffset = this.snapshot?.hunks.find(
-      (candidate) => candidate.liveAnchor?.from === hunk.from,
-    );
-    if (atOffset) {
-      return atOffset;
-    }
     const matches = (this.snapshot?.hunks ?? []).filter((candidate) =>
       sameBaseline(candidate, hunk),
     );
     return matches.length === 1 ? matches[0] : undefined;
   }
 
-  private anchorNearest(
+  /** Move the caret to a neighbor. The ref stays the hunk that disappeared. */
+  private displayNearest(
     prior: DiffHunk,
     docHunks: readonly DocHunk[],
+    original: HunkRef,
   ): PeekPosition | null {
-    const nearest = this.snapshot
-      ? resolveNearestHunk(this.snapshot, prior)
-      : undefined;
-    const at = nearest?.liveAnchor?.from;
-    const doc =
-      at === undefined ? undefined : docHunks.find((hunk) => hunk.from === at);
-    if (!nearest || !this.snapshot || !doc) {
+    if (!this.snapshot) {
       return null;
     }
-    return {
-      at: doc.from,
-      ref: { generationId: this.snapshot.generationId, hunkId: nearest.hunkId },
-    };
+    const nearest = resolveNearestHunk(this.snapshot, prior);
+    if (!nearest || nearest.hunkId === prior.hunkId) {
+      return null;
+    }
+    return this.anchor(nearest, docHunks, original);
   }
-}
 
-/** Baseline identity: the comparison side, which mapping an edit does not change. */
-function sameBaseline(candidate: DiffHunk, hunk: DocHunk): boolean {
-  if (candidate.originalRange.startLine + 1 !== hunk.oldLine) {
-    return false;
+  private anchor(
+    hunk: DiffHunk,
+    docHunks: readonly DocHunk[],
+    ref: HunkRef,
+  ): PeekPosition | null {
+    const at = hunk.liveAnchor?.from;
+    if (at === undefined) {
+      return null;
+    }
+    const doc = docHunks.find((item) => item.from === at);
+    if (!doc) {
+      return null;
+    }
+    return { at: doc.from, ref };
   }
-  const removed = candidate.lines.filter((line) => line.kind === "delete");
-  const added = candidate.lines.some((line) => line.kind === "add");
-  if (changeKind(removed.length > 0, added) !== hunk.kind) {
-    return false;
-  }
-  return removed.map((line) => line.text).join("\n") === hunk.old;
-}
-
-function changeKind(hasRemoved: boolean, hasAdded: boolean): DocHunk["kind"] {
-  if (hasRemoved && hasAdded) {
-    return "modified";
-  }
-  if (hasRemoved) {
-    return "deleted";
-  }
-  return "added";
 }
