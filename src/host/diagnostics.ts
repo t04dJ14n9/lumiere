@@ -55,6 +55,6 @@ function diagnostic(item: DiagnosticItem): vscode.Diagnostic {
     item.message,
     severities[item.severity],
   );
-  problem.source = "Markdown Workbench";
+  problem.source = "Markdown Workshop";
   return problem;
 }

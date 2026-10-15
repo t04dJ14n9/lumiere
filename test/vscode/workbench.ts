@@ -86,7 +86,7 @@ export async function closeEditorGroups(page: Page) {
   }).toPass({ timeout: 10000 });
 }
 /**
- * Opens a note (Note.md by default) in Markdown Workbench and returns its
+ * Opens a note (Note.md by default) in Markdown Workshop and returns its
  * editable content. `timing` receives the clock at the choice of the editor
  * and when its content is on screen, for load-time measurements.
  */
@@ -144,11 +144,11 @@ export async function openWorkbench(
   await page
     .locator(".quick-input-widget")
     .locator(".monaco-list-row")
-    .filter({ hasText: "Markdown Workbench" })
+    .filter({ hasText: "Markdown Workshop" })
     .first()
     .click();
   timing.start = Date.now();
-  console.log("Native: waiting for Markdown Workbench webview");
+  console.log("Native: waiting for Markdown Workshop webview");
   let frame: Frame | undefined;
   await expect
     .poll(() => {

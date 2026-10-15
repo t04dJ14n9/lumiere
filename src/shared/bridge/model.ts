@@ -1,5 +1,5 @@
 /**
- * Versioned selection envelope shared by Markdown Workbench and, when it is
+ * Versioned selection envelope shared by Markdown Workshop and, when it is
  * installed, Agent PDF Viewer. This is a workbench protocol, not OKF
  * metadata. Version 1 carries one locator.
  *

@@ -2,6 +2,15 @@
 
 ## 0.1.0 (unreleased)
 
+- Display name is **Markdown Workshop** (Marketplace, custom editor,
+  command category, settings UI title, and other user-visible strings).
+  Extension id `vscode-markdown-workbench` and settings keys
+  `markdownWorkbench.*` are unchanged so existing installs keep working.
+
+- Tables: the open cell and rectangular selections draw an inset accent
+  selection box again. Opening a cell used to clear `.table-cell-selected`, and
+  CSS `outline` was clipped by `.table-scroll` overflow.
+
 First packaged build, for the owner's acceptance testing. Not published.
 
 - Wiki, assets, scratch and Marp plugins, plus a versioned bridge
@@ -37,8 +46,8 @@ First packaged build, for the owner's acceptance testing. Not published.
 - Vault index that resolves links like Obsidian, with a saved snapshot for
   instant start-up.
 - Commands: **Manage Plugins**, **Show Plugin Status** and **Use Markdown
-  Workbench for Markdown in This Workspace**.
-- Logging to the **Markdown Workbench** output channel;
+  Workshop for Markdown in This Workspace**.
+- Logging to the **Markdown Workshop** output channel;
   `markdownWorkbench.debug.logging` adds debug lines.
 - Public API v1 for other extensions: editors, selections, vault queries,
   plugin catalog and states, and external plugins with markers, actions,

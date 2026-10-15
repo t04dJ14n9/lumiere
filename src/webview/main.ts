@@ -34,5 +34,5 @@ void bootstrap(
 ).catch((error) => {
   logging.logger.error("Editor bootstrap failed", error);
   document.getElementById("app")!.textContent =
-    `Markdown Workbench could not open: ${String(error)}`;
+    `Markdown Workshop could not open: ${String(error)}`;
 });

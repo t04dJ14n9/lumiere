@@ -17,7 +17,7 @@ import {
 } from "./edit";
 
 /**
- * **Markdown Workbench: Open Settings**, **Change Setting…** and the commands
+ * **Markdown Workshop: Open Settings**, **Change Setting…** and the commands
  * for the common settings. Each one reads and writes the same
  * `markdownWorkbench.*` key as the Settings UI, in the workspace when the
  * workspace sets it and in the user settings otherwise. They hold no state:
@@ -93,11 +93,11 @@ async function changeSetting(
   if (argument === undefined) {
     const all = editing.settings.contributed();
     if (all.length === 0) {
-      editing.error("The Markdown Workbench settings are not available.");
+      editing.error("The Markdown Workshop settings are not available.");
       return;
     }
     const picked = await editing.views.pick({
-      placeholder: "Change a Markdown Workbench setting…",
+      placeholder: "Change a Markdown Workshop setting…",
       items: (query) =>
         settingRows(
           all,
@@ -110,7 +110,7 @@ async function changeSetting(
     // A key from a keybinding or another extension: only ours is accepted.
     chosen = ownSetting(editing, argument);
     if (!chosen) {
-      editing.error("That is not a Markdown Workbench setting.");
+      editing.error("That is not a Markdown Workshop setting.");
       return;
     }
   }

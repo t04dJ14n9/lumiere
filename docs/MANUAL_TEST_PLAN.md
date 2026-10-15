@@ -27,10 +27,10 @@ never open a real vault.
 
    For Cursor use `cursor` with the same flags. Delete `/tmp/mdwb-manual`
    and `/tmp/mdwb-vault` afterwards.
-4. Run **Markdown Workbench: Use Markdown Workbench for Markdown in This
+4. Run **Markdown Workshop: Use Markdown Workshop for Markdown in This
    Workspace** once, so `.md` files open in the workbench (see Editor below).
 5. Turn on `markdownWorkbench.debug.logging` while testing and keep the
-   **Markdown Workbench** output channel open; note any error lines in the
+   **Markdown Workshop** output channel open; note any error lines in the
    result.
 
 Change settings at workspace scope (or folder scope in a multi-root
@@ -98,11 +98,11 @@ Owns the text, saving and history; VS Code's TextDocument is the authority.
 The CodeMirror view in a webview panel, its commands and view state.
 
 Cursor Remote SSH handoff regression (use the disposable vault): associate
-`*.md` with Markdown Workbench and leave both `editor.warmTextDocument` and
+`*.md` with Markdown Workshop and leave both `editor.warmTextDocument` and
 `editor.reclaimTextEditor` at `auto`. Have an agent edit a note on disk, open
 it with Cursor's built-in Markdown editor, and make an unsaved edit there.
-Let Cursor auto-transfer the note into Markdown Workbench, then repeat with
-**Reopen Editor With… → Markdown Workbench**. The custom editor opens without
+Let Cursor auto-transfer the note into Markdown Workshop, then repeat with
+**Reopen Editor With… → Markdown Workshop**. The custom editor opens without
 the `Argument is 'undefined' or 'null.'` assertion, the unsaved text survives,
 and native undo still restores the edit. Repeat with a `.markdown` note and
 the matching association, and after reloading with the dirty note already
@@ -114,7 +114,7 @@ separately, since that explicitly disables the workaround.
    editor: the exact source is copied.
 2. Give two panels different selections, scroll positions and modes; reload
    the window: each panel restores its own state.
-3. Run **Use Markdown Workbench for Markdown in This Workspace**: the
+3. Run **Use Markdown Workshop for Markdown in This Workspace**: the
    workspace `settings.json` gets `workbench.editorAssociations` entries for
    `*.md` and `*.markdown`, other associations stay, and running it again
    changes nothing. A note opened from the Explorer now opens in the
@@ -126,7 +126,7 @@ separately, since that explicitly disables the workaround.
    and `markdownWorkbench.editor.tabSize` with the note open: the editor
    updates without reopening and keeps text, folds and selection.
    `markdownWorkbench.editor.defaultMode` applies to newly opened panels.
-6. With `markdownWorkbench.debug.logging` on, the **Markdown Workbench**
+6. With `markdownWorkbench.debug.logging` on, the **Markdown Workshop**
    output channel shows debug lines from the host and the webview; with it
    off, only warnings and errors.
 
@@ -720,7 +720,7 @@ Off by default.
 ### openCopiedAgentReference
 
 1. Copy `@Core.md#2-3` and run **Open Copied Agent Reference**, with no note
-   open. Confirm the prefilled reference: Markdown Workbench opens and
+   open. Confirm the prefilled reference: Markdown Workshop opens and
    selects those complete source lines. Repeat with a quoted reference and
    a one-line `#2` reference. A copied agent payload prefills only its first
    line; unrelated clipboard content leaves the prompt empty.
@@ -896,7 +896,7 @@ paths; a missing layout is the legacy preset.
    Marp for VS Code installed and the workspace trusted, the text editor
    opens and Marp's export follows. **Toggle Marp** flips only the `marp`
    flag. Set `markdownWorkbench.marp.open` to `textEditor`: the deck opens
-   in the text editor; **Keep Marp Deck in Workbench** brings it back.
+   in the text editor; **Keep Marp Deck in Workshop** brings it back.
    A deck saved inside the bundle without `type` and `generated` is
    reported and is not rewritten. **Move Marp Deck Outside Bundle** moves
    it under `exports/` and copies a Markdown link; the deck text is unchanged.
@@ -923,7 +923,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.jumpForward` — Go Forward in Note | unbound | On a disposable fixture, run Go Forward in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workbench for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workbench for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workshop for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workshop for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertEmbed` — Insert Embed | unbound | On a disposable fixture, run Insert Embed; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.foldAll` — Fold All | unbound | On a disposable fixture, run Fold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.unfoldAll` — Unfold All | unbound | On a disposable fixture, run Unfold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -961,7 +961,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.marp.toggle` — Toggle Marp | unbound | On a disposable fixture, run Toggle Marp; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.marp.moveOutside` — Move Marp Deck Outside Bundle | unbound | On a disposable fixture, run Move Marp Deck Outside Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.marp.keepInWorkbench` — Keep Marp Deck in Workbench | unbound | On a disposable fixture, run Keep Marp Deck in Workbench; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.keepInWorkbench` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |

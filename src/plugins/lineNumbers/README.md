@@ -1,7 +1,7 @@
 # Line numbers
 
 Shows a source line-number gutter laid out like VS Code's text editor, so a note
-looks the same in Markdown Workbench and in **Open With > Text Editor**. It is on
+looks the same in Markdown Workshop and in **Open With > Text Editor**. It is on
 by default and follows `editor.lineNumbers` for Markdown files.
 
 ## How it works

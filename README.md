@@ -1,4 +1,4 @@
-# Markdown Workbench
+# Markdown Workshop
 
 [![CI](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/workflows/ci.yml)
 
@@ -26,8 +26,8 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
 
 ## Use
 
-- Open a note with **Open With… › Markdown Workbench**, or run **Markdown
-  Workbench: Use Markdown Workbench for Markdown in This Workspace** to make
+- Open a note with **Open With… › Markdown Workshop**, or run **Markdown
+  Workshop: Use Markdown Workshop for Markdown in This Workspace** to make
   it the editor for `*.md` in the workspace.
 - A folder containing `.obsidian/` is a vault: links, tags, backlinks and
   search work within it. Without one, each workspace folder is a vault.
@@ -52,7 +52,7 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   Slide Deck** hand a `marp: true` deck to VS Code and Marp. A deck inside
   the wiki bundle is not wrapped into a page.
 - **Open Copied Agent Reference** opens `@Note.md#30-32` in Markdown
-  Workbench and selects those source lines. It prefills the reference from
+  Workshop and selects those source lines. It prefills the reference from
   the clipboard for you to confirm or replace; surrounding quotes are fine.
   Relative paths stay inside workspace folders, with a choice if more than
   one folder matches. Full note URIs also work, including remote files.
@@ -65,7 +65,7 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   Obsidian's) is the line height as a multiple of that size, so lines scale
   with it too. The font family, weight, letter spacing and ligatures still
   follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
-- **Markdown Workbench: Open Settings** opens the Settings UI filtered to this
+- **Markdown Workshop: Open Settings** opens the Settings UI filtered to this
   extension. **Change Setting…** lists every setting of the extension (by
   plugin, with its value) and edits the one you pick by its type. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle
   Readable Line Width**, **Toggle Mermaid Diagrams**, **Toggle Inline Title**
@@ -75,19 +75,19 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   edits in the Settings UI or `settings.json` and the commands always agree.
 - `markdownWorkbench.preset: "minimal"` loads only the core editor.
 - `markdownWorkbench.debug.logging` writes debug lines to the **Markdown
-  Workbench** output channel.
+  Workshop** output channel.
 
 ### In Cursor
 
 Cursor opens `*.md` in its own **Markdown Editor**, with a **Preview |
-Markdown** switch in the editor's top-right corner. **Use Markdown Workbench
+Markdown** switch in the editor's top-right corner. **Use Markdown Workshop
 for Markdown in This Workspace** writes a workspace editor association, which
 takes precedence over Cursor's editor for notes opened afterwards; reopen
 tabs that were already open.
 
 Cursor's **Markdown** button opens the note in the plain text editor and
 remembers that per file. `markdownWorkbench.editor.reclaimTextEditor`
-(`auto`, on only in Cursor) reopens such a note in Markdown Workbench and
+(`auto`, on only in Cursor) reopens such a note in Markdown Workshop and
 closes the text tab, for notes the workspace association routes here.
 It leaves diffs, Git views, untitled files and anything opened with **Open
 as Text** alone. Asking for the text editor a second time within 10 seconds
@@ -104,7 +104,7 @@ The native suite runs against Cursor with
 
 [CAPABILITIES.md](CAPABILITIES.md) lists every plugin, its default and how
 it differs from Obsidian. The extension's commands are under **Markdown
-Workbench** in the command palette.
+Workshop** in the command palette.
 
 ## Extend
 
@@ -169,7 +169,7 @@ MIT. Bundled packages and their licenses are listed in
 
 ### Precise jumps within a note
 
-Use **Markdown Workbench: Go Back in Note** / **Go Forward in Note**, also
+Use **Markdown Workshop: Go Back in Note** / **Go Forward in Note**, also
 available as note-title arrows, to revisit deliberate link, heading, footnote,
 explicit find-match and API/reference jumps. The 100-entry history belongs to
 one note pane, stays in extension-host memory across webview recreation, and is

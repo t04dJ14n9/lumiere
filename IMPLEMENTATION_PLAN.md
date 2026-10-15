@@ -3921,3 +3921,27 @@ instruction, the complete patch remains in this checkout, without stashing or
 an alternate remote. HEAD remains `629e2a08c7484b5eba874c11ec4208badef5b428`;
 the parent must commit and push `fix/sources-editable` to update PR #49. No
 commit, push or merge occurred.
+
+## Mermaid stays rendered until explicit edit — 2026-10-15
+
+Rendered Mermaid (and other `MarkdownBlock` widgets) collapsed to raw
+`` ```mermaid `` source when the pointer interacted with blank diagram area
+without an intentional Edit / click-to-edit commit.
+
+Root cause: PR #46 set `ignoreEvent` to hand blank-area mousedown to CodeMirror
+so selection drags could cross tall widgets. CM then placed the caret inside the
+replace range; Live Preview `editing: "reveal"` showed source. A press that
+ended outside the widget still left that caret, so click-away looked like a
+collapse. CM's `MouseSelection` already listens on the document for move/up, so
+drags that start outside do not need blank-area mousedown.
+
+Fix: blank hybrid-block area keeps events again (with controls and Mermaid SVG
+labels). Reveal still happens via click-to-edit mouseup, the Edit button, or a
+caret that truly enters the fence. Copy/Edit alignment and SVG `user-select`
+from PR #46 are unchanged.
+
+Files: `src/webview/ui/markdown-widget.ts`,
+`test/unit/webview/markdown-widget.test.ts`.
+
+Validation: `pnpm exec tsx --test` markdown-widget + pointer-selection +
+selection unit tests.

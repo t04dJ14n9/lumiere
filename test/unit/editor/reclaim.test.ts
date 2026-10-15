@@ -76,7 +76,7 @@ test("the handoff from Cursor Markdown into Workbench is left in place", () => {
   assert.equal(shouldReclaim(swap("workbench", "workbench"), context), false);
 });
 
-test("only notes the workspace routes to Markdown Workbench are reclaimed", () => {
+test("only notes the workspace routes to Markdown Workshop are reclaimed", () => {
   const associations = { "*.md": "markdownWorkbench.editor" };
   const viewType = "markdownWorkbench.editor";
   assert.equal(associatedWith(associations, note, viewType), true);
