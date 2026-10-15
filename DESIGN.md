@@ -220,11 +220,11 @@ import type { Context } from '../../kernel';
 import type { BacklinksConfig } from './manifest';
 
 export const name = 'backlinks';
-export const inject = { required: ['vault', 'editors', 'workbench'] } as const;
+export const inject = { required: ['vault', 'editors', 'workshop'] } as const;
 
 export function apply(ctx: Context, config: BacklinksConfig): void {
   const view = new BacklinksView(ctx.vault, ctx.editors, config);
-  ctx.effect(() => ctx.workshop.treeView('markdownWorkshop.backlinks', view));
+  ctx.effect(() => ctx.workshop.views.tree('markdownWorkshop.backlinks', view));
   ctx.on('vault/resolved', () => view.refresh());
   ctx.on('editor/activeChanged', () => view.refresh());
 }
