@@ -28,6 +28,8 @@ export interface DiagnosticSink {
  * URI the host re-checks; plugins do not touch the filesystem themselves.
  */
 export interface WorkspaceFiles {
+  /** Checks lexical containment and existing symlinks, including missing targets. */
+  authorize?(root: string, target: string): Promise<void>;
   readText(uri: string): Promise<string | undefined>;
   writeText(uri: string, text: string): Promise<void>;
   list(uri: string): Promise<readonly string[] | undefined>;

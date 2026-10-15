@@ -35,6 +35,7 @@ import {
   tagsViewHost,
   settingsHost,
   okfCoreHost,
+  obsidianCompatHost,
   graphHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
@@ -117,6 +118,7 @@ function startWindowFeatures(
     marpHost,
     tagsViewHost,
     okfCoreHost,
+    obsidianCompatHost,
     graphHost,
   ];
   const manifests = [...workbenchFeatures, ...features];

@@ -46,6 +46,7 @@ import scratch from "./scratch/manifest";
 import gitDiffEditor from "./gitDiffEditor/manifest";
 import marp from "./marp/manifest";
 import okfCore from "./okfCore/manifest";
+import obsidianCompat from "./obsidianCompat/manifest";
 import graph from "./graph/manifest";
 import sourcesProperty from "./sourcesProperty/manifest";
 /**
@@ -108,6 +109,7 @@ export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
     wiki,
     wordCount,
     okfCore,
+    obsidianCompat,
     graph,
   ],
   WORKBENCH_FEATURE_ORDER,

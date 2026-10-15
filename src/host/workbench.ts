@@ -2,6 +2,8 @@ import { registerNativeLinks } from "./native-links";
 import { renameFile } from "./file-rename";
 import { createNavigation } from "./navigation";
 import { readSettings } from "./settings";
+import { createConfiguration } from "./configuration-access";
+import type { Configuration } from "../shared/configuration";
 import { createSettingsAccess } from "./settings-access";
 import { createDiagnostics } from "./diagnostics";
 import { createGitAccess } from "./git";
@@ -28,10 +30,14 @@ import { registerEditor } from "./editor-panels";
 export function createWorkbench(
   extensionUri: vscode.Uri,
   storage?: vscode.Memento,
+  configuration: Configuration = createConfiguration(),
 ): Workbench {
   const documents = new NativeDocuments();
   const panels = new Map<string, PanelShell>();
-  const navigation = createNavigation(() => [...panels.values()]);
+  const navigation = createNavigation(
+    () => [...panels.values()],
+    configuration,
+  );
   return {
     registerNativeLinks: () => {
       const links = registerNativeLinks(navigation);
@@ -54,7 +60,8 @@ export function createWorkbench(
     ...documentOperations(documents),
     ...commandOperations(),
     ...agentOperations(),
-    ...configurationOperations(),
+    configuration,
+    ...configurationOperations(configuration),
     settings: createSettingsAccess(),
     editorAssociations: workspaceEditorAssociations(),
     ...fileOperations(),
@@ -291,21 +298,18 @@ function workspaceEditorAssociations(): NonNullable<
     },
   };
 }
-function configurationOperations(): Pick<
-  Workbench,
-  "onConfiguration" | "config"
-> {
+function configurationOperations(
+  settings: Configuration,
+): Pick<Workbench, "onConfiguration" | "config"> {
   return {
     onConfiguration(listener) {
-      const subscription = vscode.workspace.onDidChangeConfiguration(listener);
-      return () => subscription.dispose();
+      return settings.onDidChange(listener);
     },
     config(document) {
       const uri = vscode.Uri.parse(document.uri);
-      const config = vscode.workspace.getConfiguration(
-        "markdownWorkbench",
-        uri,
-      );
+      const config: SettingsReader = {
+        get: (key, fallback) => settings.get(key, fallback, document.uri),
+      };
       // Native editor settings as they apply to Markdown files.
       const configuration = vscode.workspace.getConfiguration(undefined, {
         uri,
