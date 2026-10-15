@@ -124,7 +124,11 @@ export class PropertyField {
     this.input.dataset.propertyCommitting = "true";
     delete this.input.dataset.propertyEditing;
     try {
-      return this.editor?.set(this.expectedRaw, this.key, value) ?? false;
+      const yaml =
+        this.input.dataset.propertyKind === "yaml"
+          ? inputText(this.input)
+          : undefined;
+      return this.editor?.set(this.expectedRaw, this.key, value, yaml) ?? false;
     } finally {
       delete this.input.dataset.propertyCommitting;
     }

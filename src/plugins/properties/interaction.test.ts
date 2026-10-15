@@ -543,3 +543,69 @@ test("idle property fields refresh conflict baselines after another property com
   assert.deepEqual(frontmatter(source)?.values?.b, { y: "next" });
   assert.deepEqual(frontmatter(source)?.values?.a, { x: "edited" });
 });
+
+test("YAML field commits carry source text through the editor and reject stale header bytes", (t) => {
+  const document = installPropertyDOM(t);
+  const container = new PropertyElement(document);
+  const field = new PropertyNativeInput(document);
+  field.tagName = "TEXTAREA";
+  field.dataset = { propertyInput: "generated", propertyKind: "yaml" };
+  field.value = "by: old\n# checksum is external\nchecksum: '01'\n";
+  const source =
+    "---\ngenerated:\n  by: old\n  # checksum is external\n  checksum: '01'\nkeep: yes\n---\nBody";
+  let state = EditorState.create({ doc: source });
+  let writes = 0;
+  const view = {
+    get state() {
+      return state;
+    },
+    dom: { querySelectorAll: () => [] },
+    dispatch(spec: TransactionSpec) {
+      state = state.update(spec).state;
+      writes++;
+    },
+  } as unknown as EditorView;
+  const editing = new PropertyEditing({
+    view: () => view,
+    setStatus: () => {},
+    action: () => {},
+    refresh: () => {},
+    setType: () => {},
+    show: () => {},
+    focusTitle: () => {},
+    pageHeading: () => {},
+    signal: new AbortController().signal,
+  });
+  new PropertyField({
+    container: html(container),
+    input: html(field),
+    source,
+    editor: editing.editor(source),
+  });
+  field.dispatchEvent(new Event("focus"));
+  field.value = field.value.replace("by: old", "by: new # typed comment");
+  field.dispatchEvent(new Event("input"));
+  field.dispatchEvent(new Event("property-commit", { cancelable: true }));
+  assert.equal(writes, 1);
+  assert.equal(
+    state.doc.toString(),
+    source.replace("by: old", "by: new # typed comment"),
+  );
+
+  field.dispatchEvent(new Event("focus"));
+  field.value = field.value.replace("by: new", "by: another");
+  field.dispatchEvent(new Event("input"));
+  // A comment-only concurrent change keeps decoded values equal. The raw
+  // baseline must still reject this pending draft, including on save flush.
+  const external = state.doc.toString().replace("external", "external change");
+  state = EditorState.create({ doc: external });
+  const flush = new Event("property-commit", { cancelable: true });
+  field.dispatchEvent(flush);
+  assert.equal(flush.defaultPrevented, true);
+  assert.equal(writes, 1);
+  assert.equal(state.doc.toString(), external);
+  assert.equal(
+    field.validityMessage,
+    "The property changed. Reopen it and try again.",
+  );
+});

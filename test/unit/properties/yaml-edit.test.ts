@@ -28,6 +28,197 @@ function decodeEntities(text: string): string {
     .replaceAll("&amp;", "&");
 }
 
+function yamlDraft(source: string, key: string): string {
+  const textarea = renderProperties(source).match(
+    new RegExp(`data-property-input="${key}"[^>]*>([\\s\\S]*?)</textarea>`),
+  );
+  assert.ok(textarea, `Missing YAML editor for ${key}`);
+  return decodeEntities(textarea[1]!);
+}
+
+function editYaml(source: string, key: string, yaml: string): string {
+  const value = propertyYamlInput(yaml);
+  assert.notEqual(value, undefined, "Invalid test draft");
+  return edit(source, { type: "set", key, value: value!, yaml });
+}
+
+for (const eol of ["\n", "\r\n"]) {
+  test(`nested YAML edits retain source comments, quotes and typed comments (${JSON.stringify(eol)})`, () => {
+    const body =
+      "generated:\n  by: old\n  # checksum is generated externally; keep this\n  checksum: abc\n  serial: 9007199254740993\n  id: !!str '01' # keep quoting and tag\n  notes: |+\n    a\n\n";
+    const source =
+      `---\n# Header\n${body}title: 'Note'\n---\nBody\n`.replaceAll("\n", eol);
+    const draft = yamlDraft(source, "generated");
+    assert.equal(
+      draft,
+      body.slice("generated:\n  ".length).replaceAll("\n  ", "\n"),
+    );
+    const yaml = draft
+      .replace("by: old", "by: new")
+      .replace("checksum: abc", "# typed in the draft\nchecksum: abc");
+    const next = editYaml(source, "generated", yaml);
+    assert.equal(
+      next,
+      source
+        .replace("by: old", "by: new")
+        .replace("checksum: abc", `# typed in the draft${eol}  checksum: abc`),
+    );
+    assert.equal(
+      (frontmatter(next)?.values?.generated as { notes: string }).notes,
+      "a\n\n",
+    );
+  });
+}
+
+test("Sources YAML drafts retain comments inside lists of mappings", () => {
+  const source =
+    "---\nsources:\n  - resource: ../raw/old.pdf\n    # stable id\n    id: '01'\nkeep: yes\n---\n";
+  const yaml = yamlDraft(source, "sources").replace("old.pdf", "new.pdf");
+  assert.equal(
+    editYaml(source, "sources", yaml),
+    source.replace("old.pdf", "new.pdf"),
+  );
+});
+
+test("anchored YAML drafts preserve leading comments and prior external alias values", () => {
+  const source =
+    "---\ngenerated: &a # generated comment\n  # before the first child\n  by: old\n  # checksum is external\n  checksum: 'abc'\nmirror: *a\n---\n";
+  const yaml = yamlDraft(source, "generated").replace("by: old", "by: new");
+  const next = editYaml(source, "generated", yaml);
+  assert.match(next, /# generated comment/);
+  assert.match(next, /# before the first child/);
+  assert.match(next, /# checksum is external/);
+  assert.match(next, /checksum: 'abc'/);
+  assert.deepEqual(frontmatter(next)?.values, {
+    generated: { by: "new", checksum: "abc" },
+    mirror: { by: "old", checksum: "abc" },
+  });
+});
+
+test("aliases to tagged pairs cannot bypass the draft and set guards", () => {
+  const source = "---\nfirst: &a !!pairs [a: 1]\nvalue: *a\nkeep: yes\n---\n";
+  assert.doesNotMatch(renderProperties(source), /data-property-input="value"/);
+  assert.equal(
+    propertyYamlInput("first: &a !!pairs [a: 1]\nsecond: *a"),
+    undefined,
+  );
+  assert.equal(
+    propertyChanges(source, {
+      type: "set",
+      key: "value",
+      value: ["a"],
+      yaml: "[a]",
+    }),
+    undefined,
+  );
+});
+
+test("flow YAML drafts retain inline comments and property-adjacent bytes", () => {
+  const source =
+    "---\ngenerated: {by: old, # keep the child comment\n  checksum: 'abc'} # property comment\ntitle: Note\n---\n";
+  const yaml = yamlDraft(source, "generated")
+    .replace("by: old", "by: new")
+    .replace("checksum:", "# typed inside flow YAML\n  checksum:");
+  assert.equal(
+    editYaml(source, "generated", yaml),
+    source
+      .replace("by: old", "by: new")
+      .replace("checksum:", "# typed inside flow YAML\n  checksum:"),
+  );
+});
+
+test("raw YAML commits place block collections below inline property keys", () => {
+  for (const source of [
+    "---\ngenerated: {by: old}\nkeep: yes\n---\n",
+    "---\ngenerated:\n    by: old\nkeep: yes\n---\n",
+  ]) {
+    const yaml = "by: new\n# typed\nchecksum: abc\n";
+    const next = editYaml(source, "generated", yaml);
+    assert.deepEqual(frontmatter(next)?.values, {
+      generated: { by: "new", checksum: "abc" },
+      keep: "yes",
+    });
+    assert.match(next, /# typed/);
+  }
+});
+
+test("raw YAML commits reject invalid or mismatched drafts atomically", () => {
+  const source = "---\ngenerated: {by: old}\nkeep: yes\n---\n";
+  for (const yaml of ["by: [", "by: different"]) {
+    assert.equal(
+      propertyChanges(source, {
+        type: "set",
+        key: "generated",
+        value: { by: "new" },
+        yaml,
+      }),
+      undefined,
+    );
+  }
+});
+
+for (const yaml of [
+  "!!pairs [a: 1, b: 2]",
+  "!!pairs []",
+  "{nested: !!pairs [a: 1]}",
+  "!!map {a: 1}",
+  "!!set {a: null}",
+  "{at: !!timestamp 2026-10-15}",
+]) {
+  test(`tagged values stay display-only and cannot be stripped by set: ${yaml}`, () => {
+    const source = `---\nvalue: ${yaml}\nkeep: yes\n---\n`;
+    const html = renderProperties(source);
+    assert.doesNotMatch(html, /data-property-input="value"/);
+    assert.doesNotMatch(html, /data-property-list="value"/);
+    assert.equal(propertyYamlInput(yaml), undefined);
+    for (const raw of [undefined, "[a, b]"]) {
+      assert.equal(
+        propertyChanges(source, {
+          type: "set",
+          key: "value",
+          value: ["a", "b"],
+          yaml: raw,
+        }),
+        undefined,
+      );
+    }
+    assert.equal(
+      edit(source, { type: "set", key: "keep", value: "fresh" }),
+      source.replace("keep: yes", "keep: fresh"),
+    );
+  });
+}
+
+test("replacing an anchor materializes an exact integer from source digits", () => {
+  const source = "---\nfirst: &a 9007199254740993\nmirror: *a # keep\n---\n";
+  const next = edit(source, { type: "set", key: "first", value: 1 });
+  assert.equal(next, "---\nfirst: 1\nmirror: 9007199254740993 # keep\n---\n");
+  assert.doesNotMatch(next, /9007199254740992/);
+});
+
+test("alias materialization keeps exact integers inside collections and nested aliases", () => {
+  const source =
+    "---\nother: &n 9007199254740993\nfirst: &a {positive: 9007199254740993, negative: -9007199254740993, nested: [*n, .nan, .inf, -.inf]}\nmirror: *a\n---\n";
+  const next = edit(source, { type: "set", key: "first", value: 1 });
+  assert.match(
+    next,
+    /mirror: \{positive: 9007199254740993, negative: -9007199254740993, nested: \[9007199254740993, \.nan, \.inf, -\.inf\]\}/,
+  );
+  assert.doesNotMatch(next, /9007199254740992/);
+});
+
+test("exact integer alias materialization also retains negative zero", () => {
+  for (const yaml of ["-0", "{zero: -0}"]) {
+    const source = `---\nfirst: &a ${yaml}\nmirror: *a\n---\n`;
+    const next = edit(source, { type: "set", key: "first", value: 1 });
+    assert.equal(next, `---\nfirst: 1\nmirror: ${yaml}\n---\n`);
+    const mirror = frontmatter(next)?.values?.mirror;
+    const zero =
+      typeof mirror === "number" ? mirror : (mirror as { zero: number }).zero;
+    assert.ok(Object.is(zero, -0));
+  }
+});
+
 test("propertyYamlInput accepts nested maps and list-of-maps", () => {
   assert.deepEqual(propertyYamlInput("by: agent\nat: now"), {
     by: "agent",

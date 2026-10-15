@@ -22,7 +22,12 @@ export interface PropertyContext {
     source: string;
     currentSource?(): string;
     refresh?(): void;
-    set(header: string, key: string, value: PropertyValue): boolean;
+    set(
+      header: string,
+      key: string,
+      value: PropertyValue,
+      yaml?: string,
+    ): boolean;
     edit?(header: string, operation: PropertyEdit): boolean;
     types?(): PropertyTypes;
     names?(): Promise<readonly string[]>;

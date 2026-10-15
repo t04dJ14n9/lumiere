@@ -1,6 +1,16 @@
-import { isAlias, isNode, stringify, visit, type Document } from "yaml";
+import {
+  isAlias,
+  isNode,
+  parseDocument,
+  stringify,
+  visit,
+  type Document,
+  type Node,
+} from "yaml";
 import type { headerParts } from "./frontmatter";
 import { setPropertyChange, type PropertyChange } from "./yaml-value";
+import { setPropertyYamlChange } from "./yaml-source-edit";
+import { settablePropertyNode } from "./values";
 
 /** Alias sites are mid-line; keep inserts indentation-independent. */
 function inlineYamlValue(value: unknown): string {
@@ -19,36 +29,39 @@ function inlineYamlValue(value: unknown): string {
 
 type Header = NonNullable<ReturnType<typeof headerParts>>;
 
-type Anchored = {
-  anchor?: string | null;
-  range?: [number, number, number] | null;
-  toJS: (doc: Document, opts: { maxAliasCount: number }) => unknown;
-};
-
-function rememberAnchored(
-  document: Document,
-  anchored: Anchored,
-  targets: Map<Anchored, string>,
-): void {
-  if (!anchored.anchor || !anchored.range) {
-    return;
-  }
-  targets.set(
-    anchored,
-    inlineYamlValue(anchored.toJS(document, { maxAliasCount: 100 })),
-  );
-}
-
-function anchoredTargets(
-  document: Document,
-  node: Anchored,
-): Map<Anchored, string> {
-  const targets = new Map<Anchored, string>();
-  rememberAnchored(document, node, targets);
-  visit(node as never, {
+function anchoredTargets(body: string, node: Node): Map<Node, string> {
+  const originals = new Map<number, Node>();
+  visit(node, {
     Node(_key, child) {
-      if (child !== node && isNode(child)) {
-        rememberAnchored(document, child as Anchored, targets);
+      if (child.anchor && child.range) {
+        originals.set(child.range[0], child);
+      }
+    },
+  });
+  const targets = new Map<Node, string>();
+  if (!originals.size) {
+    return targets;
+  }
+  // The caller's AST may already contain rounded Numbers. Reparse the source
+  // with exact integers, including descendants and aliases to other subtrees.
+  const exact = parseDocument(body, { intAsBigInt: true });
+  visit(exact, {
+    Scalar(_key, scalar) {
+      // BigInt has no negative zero; YAML and Number retain its sign.
+      if (scalar.value === 0n && scalar.source?.startsWith("-")) {
+        scalar.value = -0;
+      }
+    },
+  });
+  visit(exact, {
+    Node(_key, child) {
+      const original =
+        child.anchor && child.range && originals.get(child.range[0]);
+      if (original) {
+        targets.set(
+          original,
+          inlineYamlValue(child.toJS(exact, { maxAliasCount: 100 })),
+        );
       }
     },
   });
@@ -83,7 +96,7 @@ export function aliasPreservationChanges(
   if (!isNode(node) || !node.range) {
     return [];
   }
-  const targets = anchoredTargets(document, node as Anchored);
+  const targets = anchoredTargets(header.body, node);
   if (!targets.size) {
     return [];
   }
@@ -114,9 +127,16 @@ export function setPropertyChanges(options: {
   document: Document;
   node: unknown;
   value: unknown;
+  yaml?: string | undefined;
 }): PropertyChange[] | undefined {
-  const { source, header, document, node, value } = options;
-  const change = setPropertyChange(source, header, node, value);
+  const { source, header, document, node, value, yaml } = options;
+  if (!settablePropertyNode(node, document)) {
+    return undefined;
+  }
+  const change =
+    yaml === undefined
+      ? setPropertyChange(source, header, node, value)
+      : setPropertyYamlChange(source, header, node, yaml);
   return change
     ? [change, ...aliasPreservationChanges(source, header, document, node)]
     : undefined;

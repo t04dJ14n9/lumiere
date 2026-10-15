@@ -1,8 +1,5 @@
-import {
-  frontmatter,
-  matchesPropertyKind,
-  propertyYamlInput,
-} from "../../markdown/properties";
+import { frontmatter, matchesPropertyKind } from "../../markdown/properties";
+import { propertyYamlDraft } from "../../markdown/properties/yaml-draft";
 import {
   inferPropertyKind,
   propertyKindLabels,
@@ -15,8 +12,14 @@ import { propertyIcon, propertyFlairIcon } from "../../webview/ui/icons";
 import { validTag } from "../../markdown/tags/grammar";
 import { attr, escape } from "../../markdown/html/helpers";
 import { createRenderer } from "../../markdown/html";
-import { stringify } from "yaml";
 const { renderInline } = createRenderer();
+
+interface PropertyRowOptions {
+  kind: PropertyKind;
+  editable: boolean;
+  custom: string | undefined;
+  draft: string | undefined;
+}
 
 export function renderProperties(
   source: string,
@@ -48,6 +51,12 @@ export function renderProperties(
           properties?.editableLists?.includes(key)
         ),
         custom: options.renderValue?.(key, value, values),
+        draft: propertyYamlDraft(
+          properties?.yaml?.body ?? "",
+          properties?.yaml?.document.get(key, true),
+          value,
+          properties?.yaml?.document,
+        ),
       }),
     )
     .join("");
@@ -57,30 +66,22 @@ export function renderProperties(
 function propertyBody(
   key: string,
   value: unknown,
-  options: {
-    kind: PropertyKind;
-    editable: boolean;
-    custom: string | undefined;
-  },
+  options: PropertyRowOptions,
 ): string {
   // Custom renderers (e.g. Sources) keep structured YAML editing even for [].
   if (options.custom) {
-    return complexEditable(key, value, options.custom);
+    return complexEditable(key, value, options);
   }
   if (options.editable) {
     return editableValue(key, value, options.kind);
   }
-  return complexEditable(key, value, undefined);
+  return complexEditable(key, value, options);
 }
 
 function propertyRow(
   key: string,
   value: unknown,
-  options: {
-    kind: PropertyKind;
-    editable: boolean;
-    custom: string | undefined;
-  },
+  options: PropertyRowOptions,
 ): string {
   const { kind } = options;
   const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
@@ -166,104 +167,21 @@ function propertyInputText(value: unknown): string {
 function complexEditable(
   key: string,
   value: unknown,
-  custom: string | undefined,
+  options: Pick<PropertyRowOptions, "custom" | "draft">,
 ): string {
-  if (hasCycle(value)) {
+  const { custom, draft } = options;
+  if (draft === undefined) {
     return custom ?? propertyValue(value);
   }
-  const text = yamlDraft(value);
-  if (text === undefined) {
-    return custom ?? propertyValue(value);
-  }
-  const editor = editableYaml(key, text);
+  const editor = editableYaml(key, draft);
   return custom
     ? `<div class="property-complex">${custom}${editor}</div>`
     : editor;
 }
 
-function hasCycle(value: unknown, ancestors = new Set<object>()): boolean {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  if (ancestors.has(value)) {
-    return true;
-  }
-  ancestors.add(value);
-  const children = Array.isArray(value) ? value : Object.values(value);
-  const cyclic = children.some((item) => hasCycle(item, ancestors));
-  ancestors.delete(value);
-  return cyclic;
-}
-
 function editableYaml(key: string, text: string): string {
   // textarea keeps Enter as real newlines (contenteditable textContent does not).
   return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
-}
-
-function isPlainObject(value: object): value is Record<string, unknown> {
-  return (
-    !Array.isArray(value) &&
-    !(value instanceof Date) &&
-    !(value instanceof Map) &&
-    !(value instanceof Set)
-  );
-}
-
-/** Type-preserving equality so Date vs ISO string does not pass round-trip. */
-function yamlDraftEqual(left: unknown, right: unknown): boolean {
-  if (Object.is(left, right)) {
-    return true;
-  }
-  if (
-    left === null ||
-    right === null ||
-    typeof left !== "object" ||
-    typeof right !== "object"
-  ) {
-    return false;
-  }
-  if (Array.isArray(left) && Array.isArray(right)) {
-    return (
-      left.length === right.length &&
-      left.every((item, i) => yamlDraftEqual(item, right[i]))
-    );
-  }
-  if (!isPlainObject(left) || !isPlainObject(right)) {
-    return false;
-  }
-  const keys = Object.keys(left);
-  return (
-    keys.length === Object.keys(right).length &&
-    keys.every((key) => yamlDraftEqual(left[key], right[key]))
-  );
-}
-
-/** Undefined when the value cannot round-trip (e.g. recursive aliases). */
-function yamlDraft(value: unknown): string | undefined {
-  if (value === null || value === undefined) {
-    return "";
-  }
-  if (value instanceof Set || value instanceof Map || value instanceof Date) {
-    // Tagged collections / timestamps do not round-trip through plain YAML.
-    return undefined;
-  }
-  try {
-    // Keep stringify's trailing newline: block scalars with |+ need it to
-    // round-trip. Prefer double-quoted strings so leading spaces survive.
-    const text = stringify(value, {
-      lineWidth: 0,
-      defaultKeyType: "PLAIN",
-      defaultStringType: "QUOTE_DOUBLE",
-      aliasDuplicateObjects: false,
-    });
-    const parsed = propertyYamlInput(text);
-    if (!yamlDraftEqual(parsed, value)) {
-      return undefined;
-    }
-    return text;
-  } catch {
-    return undefined;
-  }
 }
 
 function propertyValue(value: unknown, ancestors = new Set<object>()): string {

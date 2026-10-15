@@ -75,7 +75,7 @@ function commentStartsBefore(
 }
 
 /** Include a leading `&anchor` so replacement does not leave aliases retargeted. */
-function valueStart(
+export function valueStart(
   body: string,
   start: number,
   anchor: string | null | undefined,

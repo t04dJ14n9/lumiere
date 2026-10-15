@@ -30,8 +30,8 @@ test("generated and sources complex values render as editable YAML drafts", () =
     html,
     /data-property-input="sources"[^>]*data-property-kind="yaml"/,
   );
-  assert.match(html, /by: &quot;agent&quot;/);
-  assert.match(html, /resource: &quot;\.\.\/raw\/a\.pdf&quot;/);
+  assert.match(html, /by: agent/);
+  assert.match(html, /resource: \.\.\/raw\/a\.pdf/);
 });
 
 test("registry property types retain mismatch warnings and choose the expected control", () => {

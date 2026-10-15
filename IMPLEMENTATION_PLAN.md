@@ -3854,3 +3854,70 @@ Focused Properties/YAML/Sources unit tests pass (109). Broader `pnpm check`
 may hit sandbox `tsx` IPC `EPERM` in some environments; use
 `node --import tsx --test …` as the fallback. Browser/native suites not re-run
 for this review fix.
+
+## PR #49 GPT-5.6 review blockers — lossless YAML, 2026-10-15
+
+Nested YAML drafts now use the property's AST source range, with only outer
+indentation removed. The sheet passes that raw text through `PropertyField`,
+the editor adapter and `propertyChanges`; parsing validates the draft and its
+decoded projection, while the write uses the draft text. Comments from the
+original subtree and comments typed in the draft survive, along with scalar
+quoting, supported scalar tags, exact integer text, block-scalar newlines and
+CRLF. Source replacements retain unrelated frontmatter bytes and compose with
+alias preservation and displayed ordering in one transaction.
+
+Alias preservation reparses the original body with `intAsBigInt`, avoiding an
+already-rounded Number in the caller's AST. Materialized collections retain
+large integers and nested aliases as well as `.nan`, `.inf`, `-.inf` and negative
+zero. Original anchor nodes remain the lookup keys, so reused anchor names and
+one resolution per external alias retain their existing behavior.
+
+AST tag checks reject non-round-trip tagged collections before JS conversion,
+including `!!pairs` (also empty pairs), `!!map`, `!!set` and tagged timestamps,
+including through aliases. These values remain display-only and the set path
+rejects attempts to strip their tags. Standalone draft validation and existing
+recursive-alias / colliding-key guards remain in place.
+
+B2's field value snapshot and raw-header transaction baseline are unchanged.
+New units exercise the actual field-to-editor raw-text path, same-property and
+comment-only concurrent changes, save-flush rejection, body-only changes and
+combined displayed ordering. The Properties README and manual plan describe
+the lossless draft behavior and display-only limits. No browser/native tests
+were added, and the pinned source checkout remains unavailable and untouched.
+
+Validation:
+
+- Formatting, repository-wide ESLint and all seven TypeScript projects pass.
+- Sequential direct `node --import tsx <test-file>` runs pass **134/134 tests
+  across 23 Properties/YAML/Sources files**, including **43 YAML edit tests**
+  and the existing NaN/Inf, reused-anchor, descendant-anchor and alias-resolution
+  units. The B2 conflict regressions pass.
+- The full direct unit fallback runs 1,386 tests in 271 files: 1,367 pass and
+  19 fail in four unchanged subprocess-based test files. `protect-perf` child
+  probes return empty output; `gitInline` child probes time out; the Git cache
+  assertion in `gitDiffEditor/images` fails with `spawnSync git EPERM`; the
+  `layers` child compiler probes return empty output. Their tests and source
+  modules are unchanged by this patch.
+- `node --import tsx scripts/generate-contributions.ts --check` passes.
+  Production builds and native VSIX packaging pass.
+- `xvfb-run -a pnpm check:full` reaches the unit runner after successful
+  formatting/lint/types, then stops because `tsx` cannot create its IPC socket
+  (`listen EPERM /tmp/tsx-1000/...pipe`). The direct unit runs above are the
+  documented fallback; the full check is not green in this sandbox.
+- Existing Chromium suite attempted separately: all 272 tests fail to launch
+  Chromium before assertions (`sandbox_host_linux.cc`, `shutdown: Operation
+  not permitted`). Existing native suite attempted sequentially on a private
+  Xvfb display with the cached VS Code binary and its isolated `/tmp` profile:
+  VSIX packaging succeeds, then setup cannot bind `127.0.0.1` (`listen EPERM`),
+  before launching the test window. Neither suite is reported as passing.
+
+Logs: `/tmp/pr49-{properties-direct,all-units-direct,check-full,typecheck,
+contributions,browser,native}.log`. The full pre-push check remains required in
+an environment that permits IPC, browser startup and loopback listeners.
+
+Commit/push blocked: `git add` cannot create this worktree's `index.lock`
+because its shared Git metadata is mounted read-only. Per the owner's run
+instruction, the complete patch remains in this checkout, without stashing or
+an alternate remote. HEAD remains `629e2a08c7484b5eba874c11ec4208badef5b428`;
+the parent must commit and push `fix/sources-editable` to update PR #49. No
+commit, push or merge occurred.

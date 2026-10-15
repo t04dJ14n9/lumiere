@@ -3,7 +3,7 @@ import { headerParts, frontmatter } from "./frontmatter";
 import { orderPropertyBody } from "./order";
 import { validPropertyName } from "./types";
 import type { PropertyValue } from "./values";
-import { settablePropertyValue } from "./values";
+import { propertyYamlInput, settablePropertyValue } from "./values";
 import { mergeProperties } from "./merge";
 import { setPropertyChanges } from "./alias-edits";
 import {
@@ -20,7 +20,13 @@ export { yamlValue, yamlKey, scalarValue, setPropertyChange };
 export type PropertyEdit =
   | { type: "order"; keys: readonly string[] }
   | { type: "merge"; values: Record<string, unknown> }
-  | { type: "set"; key: string; value: PropertyValue }
+  | {
+      type: "set";
+      key: string;
+      value: PropertyValue;
+      /** When supplied, this text is the write source; value only validates it. */
+      yaml?: string | undefined;
+    }
   | { type: "add"; key: string; value?: PropertyValue }
   | { type: "rename"; key: string; name: string }
   | { type: "remove"; keys: readonly string[] };
@@ -86,7 +92,11 @@ function validKeyEdit(edit: KeyEdit): boolean {
     return false;
   }
   if (edit.type === "set") {
-    return propertyValue(edit.value);
+    return (
+      propertyValue(edit.value) &&
+      (edit.yaml === undefined ||
+        stableEqual(propertyYamlInput(edit.yaml), edit.value))
+    );
   }
   return (
     edit.type !== "add" || edit.value === undefined || propertyValue(edit.value)
@@ -138,6 +148,7 @@ class PropertyMapEdits {
           document: this.document,
           node: pair?.value,
           value: edit.value,
+          yaml: edit.yaml,
         });
       }
     }

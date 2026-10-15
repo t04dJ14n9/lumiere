@@ -761,6 +761,21 @@ map. Confirm light and dark themes.
 6. `generated` (and any other nested map / list-of-maps) is editable as YAML in
    Properties and writes back into the note. Scalar and scalar-list properties
    keep their usual controls.
+7. Add a comment between `generated.by` and `generated.checksum`, and quote the
+   checksum. Open the YAML draft: its comments and quoting match the source.
+   Change only `by`, add another comment in the draft, and commit with
+   Ctrl/Cmd+Enter or Save. Both comments and the checksum's quoting survive.
+   Repeat with comments inside Sources entries and with a CRLF note. Undo once
+   restores the whole edit.
+8. In source, add `first: &a 9007199254740993` and `mirror: *a`. Edit `first`
+   through Properties. Inspect source: `mirror` becomes the exact decimal
+   `9007199254740993`. Repeat with that number inside an anchored collection.
+9. Add `pairs: !!pairs [a: 1, b: 2]` and an empty `!!pairs []`, plus nested
+   `!!pairs`, `!!set`, `!!map` and `!!timestamp` values. These rows remain
+   display-only. Editing another property leaves every tag unchanged.
+10. Start a YAML draft, then edit its property or a frontmatter comment from
+    another view before committing. The draft reports a conflict and preserves
+    the other edit. A body-only edit still permits the property commit.
 
 ### vault graph
 
