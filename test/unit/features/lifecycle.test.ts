@@ -64,7 +64,10 @@ const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
   noEditorExtensions.has(id) ? f.extensions === 0 : f.extensions > 0;
 
 /** Features that need another feature running (declared through `inject.required`). */
-const providers: Record<string, string[]> = { gitInline: ["gitGutter"] };
+const providers: Record<string, string[]> = {
+  gitInline: ["gitGutter"],
+  sourcesProperty: ["properties"],
+};
 const settingsOf = (ids: readonly string[]) =>
   Object.fromEntries(
     ids.map((id) => {

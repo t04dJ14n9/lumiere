@@ -34,4 +34,12 @@ export interface PropertyContext {
     pageHeading?(backward: boolean): void;
     action?(action: Action): void;
   };
+  /** A plugin renderer for one property value. Undefined keeps the default control. */
+  renderProperty?(
+    key: string,
+    value: unknown,
+    values: Record<string, unknown>,
+  ): string | undefined;
+  /** Bind plugin renderers after a reconcile. Presentation only. */
+  bindRenderedProperties?(root: HTMLElement): void;
 }

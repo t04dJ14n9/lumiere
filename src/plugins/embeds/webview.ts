@@ -81,11 +81,11 @@ function registerEmbedContent(ctx: Context, cleanups: Set<() => void>): void {
       pass,
       render: ctx.render,
       resources: ctx.resources,
-      open: (target) => {
+      open: (target, wiki) => {
         void ctx.rpc
           .call(links, "open", {
             href: target,
-            wiki: true,
+            wiki,
             side: false,
             ...(pass.documentUri === undefined
               ? {}

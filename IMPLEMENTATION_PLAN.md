@@ -3594,3 +3594,65 @@ full unit suite, browser/native suite, push or publication was run. Manual
 scenarios cover expansion, persistent toggles, panel switches and active ends.
 The pinned `~/Code/human-learning` checkout is absent; no reference repository
 or proprietary code, CSS or assets were modified or copied.
+
+## Vault graph and read-only Sources — 2026-10-14
+
+Ships the approved OKF slices in one change. The window plugin `okfCore`
+provides `okf` and registers a vault link policy; the vault never imports it.
+Inside a bundle, `/…` is bundle-root relative and `./` / `../` are relative to
+the source file. An explicit miss stays unresolved. Wikilinks and notes outside
+a bundle keep the existing vault rules. Renames use the same policy when it
+supplies link text. Open panels share a facade, so stopping `okfCore` does not
+restart the editor. `properties` provides `propertyRenderers`. `sourcesProperty`
+draws stacked read-only Sources rows and opens only `http`/`https` or an
+in-policy workspace file from the row's own document. `command:`, `javascript:`
+and `data:` are not links. Nothing is fetched. `graph` is a document-independent
+panel (`markdownWorkbench.graph`) using graphology and Sigma in their own
+bundles. It draws one chosen OKF bundle, directed aggregated body links and
+embeds, local and global modes, and refuses graphs over 2000 notes, 20000
+edges or 1.5 MB. The layout worker stops while the panel is hidden and when
+the panel is disposed.
+
+Sources writes, sources-derivation edges, trust badges, 3D and saved layouts
+are not in this change.
+
+Validation: `pnpm format:check`, `pnpm lint`, `pnpm typecheck` (seven projects),
+`pnpm test` (1225 unit tests), `pnpm contributions --check` and a production
+`pnpm build` pass. `THIRD_PARTY_NOTICES.md` was regenerated from that build.
+Chromium `properties-parity` and `properties-caret` pass (11 tests). The rest
+of the browser suite and the native VS Code suite were not re-run.
+
+## Review fixes for the vault graph and Sources — 2026-10-14
+
+Corrects seven resolution and presentation bugs from the review of that
+change. A vault-root bundle (`""`) is stored and removed like any other root.
+Markdown and wikilink intent is stored with each indexed link and passed to
+the policy; an extension no longer decides which rules apply. A Markdown link
+that misses does not open a conflicting vault-root file, and navigation does
+not fall through after that miss. A move into another bundle rewrites Markdown
+as an explicit source-relative path that resolves again. The properties sheet
+paints `propertyRenderers` on the first mount and rebuilds when they change.
+Sources treats parent-relative resources as clickable and lets the host check
+containment. A `#fragment` is removed before the file lookup; a heading or
+block fragment still opens at its offset. The graph layout worker is fetched
+from the extension and started from a `blob:` URL, then terminated and revoked
+on dispose.
+
+Filter positions are still dropped when a filter hides a node, and this change
+does not add browser or native coverage for the Sources mount or the worker.
+
+## ChatGPT Pro r2 remaining blockers — 2026-10-15
+
+Resource loading now carries Markdown versus wikilink syntax so a Markdown
+image inside an OKF bundle resolves source-relative. Unclaimed Markdown links
+outside OKF fall through to source-relative navigation instead of wikilink
+index lookup. Sources `#page=` / `#viewrect` fragments are forwarded through
+`vaults.open` to the native viewer.
+
+## ChatGPT Pro r3 remaining blockers — 2026-10-15
+
+Sources opens authorize the owning document (known source note) and contain
+the target via `authorizeTarget`, so a PDF such as `/raw/paper.pdf#page=3` no
+longer fails the note-source allowlist. Embed "Open image file" passes each
+resource element's `data-wiki` intent into `links/open`, so a Markdown image
+opens the Markdown-resolved sibling rather than the wikilink vault-root twin.

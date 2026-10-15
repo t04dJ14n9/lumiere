@@ -270,6 +270,16 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.graph.open",
+        "title": "Open Vault Graph",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.graph.chooseBundle",
+        "title": "Choose Vault Graph Bundle",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.insertWikilink",
         "title": "Insert Wikilink",
         "category": "Markdown Workbench"
@@ -868,6 +878,14 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
         },
         {
+          "command": "markdownWorkbench.graph.open",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.graph.enabled"
+        },
+        {
+          "command": "markdownWorkbench.graph.chooseBundle",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.graph.enabled"
+        },
+        {
           "command": "markdownWorkbench.insertWikilink",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.links"
         },
@@ -1248,6 +1266,12 @@
           "scope": "resource",
           "description": "Track changes in the rendered note: removed words struck through, added words tinted, removed blocks shown with Restore. Needs Git change bars."
         },
+        "markdownWorkbench.plugins.graph.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Draw an OKF bundle as a directed graph of notes, in a panel of its own."
+        },
         "markdownWorkbench.plugins.indentGuides.enabled": {
           "type": "boolean",
           "default": true,
@@ -1289,6 +1313,12 @@
           "default": true,
           "scope": "resource",
           "description": "Render TeX formulas with MathJax."
+        },
+        "markdownWorkbench.plugins.okfCore.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Shared Open Knowledge Format bundles, link resolution and resource checks."
         },
         "markdownWorkbench.plugins.onlineVideos.enabled": {
           "type": "boolean",
@@ -1349,6 +1379,12 @@
           "default": true,
           "scope": "resource",
           "description": "Smart lists in the Markdown editor."
+        },
+        "markdownWorkbench.plugins.sourcesProperty.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Show OKF sources as read-only stacked rows and open allowed resources."
         },
         "markdownWorkbench.plugins.spellcheck.enabled": {
           "type": "boolean",
@@ -1502,6 +1538,49 @@
           "description": "What the change bars compare the note with: the last commit (HEAD) or the staged version (index).",
           "scope": "resource"
         },
+        "markdownWorkbench.graph.maxNodes": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2000,
+          "default": 2000,
+          "description": "Hard cap on notes drawn in the vault graph.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.graph.maxEdges": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 20000,
+          "default": 20000,
+          "description": "Hard cap on aggregated links drawn in the vault graph.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.graph.defaultMode": {
+          "enum": [
+            "global",
+            "local"
+          ],
+          "default": "global",
+          "description": "Open the vault graph in global or local mode.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.graph.localDepth": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3,
+          "default": 2,
+          "description": "How many hops the local graph includes.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.graph.colorBy": {
+          "enum": [
+            "type",
+            "folder",
+            "tag"
+          ],
+          "default": "type",
+          "description": "Color graph notes by type, folder or first tag.",
+          "scope": "resource"
+        },
         "markdownWorkbench.linkUpdates.mode": {
           "enum": [
             "prompt",
@@ -1550,6 +1629,17 @@
           ],
           "default": "workbench",
           "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workbench remembers a deck.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.okfCore.bundles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "maxItems": 200,
+          "default": [],
+          "description": "Extra OKF bundle roots, relative to the vault. A folder is also a bundle when it contains index.md and a typed concept.",
           "scope": "resource"
         },
         "markdownWorkbench.onlineVideos.bilibiliPlayer": {
@@ -1705,12 +1795,14 @@
     "@mathjax/src": "4.1.3",
     "@replit/codemirror-vim": "6.4.0",
     "dompurify": "3.4.16",
+    "graphology": "0.26.0",
     "lucide": "1.55.0",
     "markdown-it": "15.0.2",
     "markdown-it-footnote": "4.0.0",
     "markdown-it-mark": "4.0.0",
     "mermaid": "12.1.0",
     "prismjs": "1.30.0",
+    "sigma": "3.0.2",
     "turndown": "^7.2.4",
     "yaml": "2.9.1"
   },

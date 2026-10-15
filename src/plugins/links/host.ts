@@ -14,7 +14,7 @@ import {
   protocol,
   type request as requestSchema,
 } from "./protocol";
-import { externalScheme, linkParts } from "./target";
+import { externalScheme, linkParts, openedVaultTarget } from "./target";
 export const linksHost: Plugin<{ panel: PanelShell }> = {
   name: "links",
   inject: { required: ["rpc", "workbench", "vault", "resources"] },
@@ -133,9 +133,9 @@ async function openInternal(
   const { path, fragment } = linkParts(request.href);
   const root = ctx.vault.root;
   const source = notePath(root, sourceUri);
-  const file = request.wiki ? ctx.vault.resolveLink(path, source) : undefined;
-  let uri = file?.uri;
-  if (!uri) {
+  const located = openedVaultTarget(ctx.vault, path, source, request.wiki);
+  let uri = located.uri;
+  if (!uri && located.passthrough) {
     uri = await navigation.resolve({
       root,
       ...(intent ? { intent } : {}),

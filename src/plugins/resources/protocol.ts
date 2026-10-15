@@ -5,6 +5,7 @@ export const protocol = defineProtocol("resources", {
       params: Schema.object({
         target: Schema.string().max(8192),
         source: Schema.string().max(8192).optional(),
+        syntax: Schema.union(["markdown", "wikilink"]).optional(),
       }),
       result: Schema.object({
         kind: Schema.union(["note", "image", "audio", "video", "pdf", "file"]),

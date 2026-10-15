@@ -1,4 +1,5 @@
-import { splitLinktext } from "../../shared/vault-path";
+import { splitLinktext, type LinkSyntax } from "../../shared/vault-path";
+import type { VaultIndex } from "../vault/api";
 
 /** Decode once and reject ambiguous paths before the host resolves a target. */
 export function linkParts(href: string): { path: string; fragment: string } {
@@ -24,4 +25,33 @@ export function externalScheme(href: string): string | undefined {
  */
 export function unresolvedKey(href: string): string {
   return splitLinktext(href.split("|")[0]!).path.toLowerCase();
+}
+
+/**
+ * Where navigation should open an internal link. An explicit OKF miss does
+ * not fall through to a different file the filesystem happens to find.
+ */
+export function openedVaultTarget(
+  vault: Pick<VaultIndex, "classifyLink" | "resolveLink" | "file">,
+  path: string,
+  source: string,
+  wiki: boolean,
+): { uri: string | undefined; passthrough: boolean } {
+  const syntax: LinkSyntax = wiki ? "wikilink" : "markdown";
+  const decision = vault.classifyLink(path, source, syntax);
+  if (decision?.status === "resolved") {
+    return { uri: vault.file(decision.path)?.uri, passthrough: false };
+  }
+  if (decision?.status === "unresolved") {
+    return { uri: undefined, passthrough: false };
+  }
+  // Outside OKF, Markdown must use source-relative navigation — not the
+  // vault's wikilink-style index lookup that would prefer a vault-root twin.
+  if (!wiki) {
+    return { uri: undefined, passthrough: true };
+  }
+  return {
+    uri: vault.resolveLink(path, source, syntax)?.uri,
+    passthrough: true,
+  };
 }

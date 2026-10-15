@@ -1,7 +1,13 @@
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import type { Navigation } from "../../shared/runtime";
 import { isMarkdownPath } from "../../shared/vault-path";
-import type { Vault, VaultChange, Vaults, VaultSystem } from "./api";
+import type {
+  LinkPolicy,
+  Vault,
+  VaultChange,
+  Vaults,
+  VaultSystem,
+} from "./api";
 import { VaultIndexer } from "./indexer";
 import { MemoryVaultIndex } from "./memory-index";
 import { findVaultRoot, foldersUpTo } from "./roots";
@@ -25,6 +31,7 @@ export class VaultRegistry implements Vaults {
   private parser?: ReturnType<VaultSystem["createParser"]>;
   /** The latest text of each open note, kept without the indexing delay. */
   private readonly openTexts = new Map<string, string>();
+  private policies: readonly LinkPolicy[] = [];
 
   constructor(
     private readonly system: VaultSystem,
@@ -73,7 +80,7 @@ export class VaultRegistry implements Vaults {
 
   async open(
     uri: string,
-    options: { offset?: number; side?: boolean } = {},
+    options: { offset?: number; side?: boolean; fragment?: string } = {},
   ): Promise<void> {
     const located = await this.locate(uri);
     if (!located || !this.navigation) {
@@ -87,7 +94,7 @@ export class VaultRegistry implements Vaults {
     await this.navigation.open(
       located.vault.index.root,
       uri,
-      "",
+      options.fragment ?? "",
       options.side ?? false,
       at,
     );
@@ -95,6 +102,21 @@ export class VaultRegistry implements Vaults {
 
   all(): readonly Vault[] {
     return [...this.opened.values()];
+  }
+
+  registerLinkPolicy(policy: LinkPolicy): () => void {
+    this.policies = [...this.policies, policy];
+    this.applyPolicies();
+    return () => {
+      this.policies = this.policies.filter((item) => item !== policy);
+      this.applyPolicies();
+    };
+  }
+
+  invalidateLinkResolution(): void {
+    for (const vault of this.opened.values()) {
+      vault.indexer.index.invalidateLinkResolution();
+    }
   }
 
   /** An open note's unsaved text replaces its file on disk in the index. */
@@ -158,6 +180,7 @@ export class VaultRegistry implements Vaults {
       onError: (message, error) => this.events.error(message, error),
     });
     indexer.index.onDidChange((change) => this.events.changed(root, change));
+    indexer.index.setLinkPolicies(this.policies);
     const vault = new IndexedVault(root, indexer);
     this.opened.set(root, vault);
     await indexer.ready;
@@ -176,12 +199,19 @@ export class VaultRegistry implements Vaults {
       linkFormat: "shortest",
     });
     const listing = await this.system.list(root, 1_000, true);
+    index.setLinkPolicies(this.policies);
     index.replaceFiles(listing.files);
     return {
       index,
       settled: async () => {},
       pathOf: (target) => pathInside(root, target),
     };
+  }
+
+  private applyPolicies(): void {
+    for (const vault of this.opened.values()) {
+      vault.indexer.index.setLinkPolicies(this.policies);
+    }
   }
 
   /** The nearest opened vault containing a URI. */

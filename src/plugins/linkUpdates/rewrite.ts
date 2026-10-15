@@ -1,6 +1,10 @@
 import { metadata } from "../../markdown/metadata";
 import type { LinkMetadata } from "../../markdown/metadata";
-import { linkpathOf, vaultLinks } from "../../markdown/metadata/linkpaths";
+import {
+  linkpathOf,
+  linkSyntax,
+  vaultLinks,
+} from "../../markdown/metadata/linkpaths";
 import type { FileTextEdits } from "../../shared/runtime";
 import {
   folderOf,
@@ -9,6 +13,7 @@ import {
   nameOf,
   relativeVaultPath,
   splitLinktext,
+  type LinkSyntax,
 } from "../../shared/vault-path";
 
 export type LinkFormat = "shortest" | "relative" | "absolute";
@@ -17,10 +22,19 @@ export interface RewriteContext {
   /** Old vault path → new vault path, for every file being renamed. */
   renames: ReadonlyMap<string, string>;
   /** Resolve a link path from a note, before the rename. */
-  resolve(linkpath: string, sourcePath: string): string | undefined;
+  resolve(
+    linkpath: string,
+    sourcePath: string,
+    syntax: LinkSyntax,
+  ): string | undefined;
   /** Every vault path after the rename, to tell whether a name is unique. */
   pathsAfter: readonly string[];
   format: LinkFormat;
+  /**
+   * Policy-owned link text, such as an OKF bundle-absolute path. When it
+   * returns a string, the new-link format setting does not apply.
+   */
+  preferredText?(targetPath: string, sourcePath: string): string | undefined;
 }
 
 type Edit = FileTextEdits["edits"][number];
@@ -41,7 +55,7 @@ export function rewriteLinks(
   const edits: Edit[] = [];
   for (const link of vaultLinks(metadata(text))) {
     const linkpath = linkpathOf(link)!;
-    const target = context.resolve(linkpath, sourcePath);
+    const target = context.resolve(linkpath, sourcePath, linkSyntax(link));
     if (!target) {
       continue;
     }
@@ -68,6 +82,10 @@ function targetText(
   source: string,
   context: RewriteContext,
 ): string {
+  const preferred = context.preferredText?.(target, source);
+  if (preferred !== undefined) {
+    return preferred;
+  }
   const withoutNote = (path: string) =>
     isMarkdownPath(path) ? path.slice(0, -3) : path;
   if (context.format === "relative") {

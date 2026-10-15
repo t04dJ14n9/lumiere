@@ -29,6 +29,8 @@ test("a slow earlier link resolution cannot open over a newer request", async ()
     root: "memory:/vault",
     onDidResolve: () => () => {},
     unresolvedLinks: () => new Map(),
+    classifyLink: () => undefined,
+    resolveLink: () => undefined,
   } as unknown as VaultIndex);
   root.provide("workbench", {
     config: () => ({ preset: "obsidian", mode: "livePreview" }),

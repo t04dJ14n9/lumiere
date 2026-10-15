@@ -16,7 +16,15 @@ const { renderInline } = createRenderer();
 export function renderProperties(
   source: string,
   types: PropertyTypes = {},
-  options: { collapsed?: boolean; allowEmpty?: boolean } = {},
+  options: {
+    collapsed?: boolean;
+    allowEmpty?: boolean;
+    renderValue?(
+      key: string,
+      value: unknown,
+      values: Record<string, unknown>,
+    ): string | undefined;
+  } = {},
 ): string {
   const properties = frontmatter(source);
   if (!properties && !options.allowEmpty) {
@@ -34,6 +42,7 @@ export function renderProperties(
           properties?.editableKeys?.includes(key) ||
           properties?.editableLists?.includes(key)
         ),
+        custom: options.renderValue?.(key, value, values),
       }),
     )
     .join("");
@@ -43,11 +52,18 @@ export function renderProperties(
 function propertyRow(
   key: string,
   value: unknown,
-  options: { kind: PropertyKind; editable: boolean },
+  options: {
+    kind: PropertyKind;
+    editable: boolean;
+    custom: string | undefined;
+  },
 ): string {
   const { kind, editable } = options;
   const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
-  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${editable ? editableValue(key, value, kind) : propertyValue(value)}</div>${warning}</div>`;
+  const body =
+    options.custom ??
+    (editable ? editableValue(key, value, kind) : propertyValue(value));
+  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
 }
 
 export function pendingPropertyRow(): string {

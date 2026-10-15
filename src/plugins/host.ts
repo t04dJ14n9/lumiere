@@ -31,5 +31,8 @@ export { agentBridgeHost } from "./agentBridge/host";
 export { markersHost } from "./markers/host";
 export { codeBlocksHost } from "./codeBlocks/host";
 
+export { okfCoreHost } from "./okfCore/host";
+export { graphHost } from "./graph/host";
+export { sourcesPropertyHost } from "./sourcesProperty/host";
 export { publicApiHost } from "./publicApi/host";
 export { settingsHost } from "./settings/host";

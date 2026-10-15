@@ -2,7 +2,7 @@ import { diffResourcesHost } from "../plugins/resources/diff-resources";
 import { nativeLinksHost } from "../plugins/links/native-host";
 import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
-import type { Logger } from "../kernel";
+import type { Logger, Plugin } from "../kernel";
 import { Context } from "../kernel";
 import type { Workbench } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
@@ -33,8 +33,11 @@ import {
   marpHost,
   tagsViewHost,
   settingsHost,
+  okfCoreHost,
+  graphHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
+import { createOkfFacade } from "../plugins/okfCore/facade";
 export async function bootstrap(
   workbench: Workbench,
   vaultSystem?: VaultSystem,
@@ -56,9 +59,12 @@ export async function bootstrap(
   // arriving after it started would restart it, unregistering the editor
   // provider and closing any editor VS Code was already opening.
   await root.settled();
+  const okf = createOkfFacade();
   root.plugin(editorHost, {
     features,
     configure(context, panel) {
+      // Panel kernels are isolated. The facade stays put while okfCore binds it.
+      context.provide("okf", okf);
       context.on("links/open", (request) =>
         root.bail("links/open", { ...request, editorId: panel.id }),
       );
@@ -77,13 +83,17 @@ export async function bootstrap(
   root.plugin(commandsHost, { features });
   root.plugin(settingsHost);
   root.plugin(livePreviewHost);
-  startWindowFeatures(root, workbench);
+  startWindowFeatures(root, workbench, okf);
   await root.settled();
   return root;
 }
 
 /** Window plugins, including the Tags view, which shares an editor-feature manifest. */
-function startWindowFeatures(root: Context, workbench: Workbench): void {
+function startWindowFeatures(
+  root: Context,
+  workbench: Workbench,
+  okf: ReturnType<typeof createOkfFacade>,
+): void {
   const plugins = [
     nativeLinksHost,
     backlinksHost,
@@ -99,6 +109,8 @@ function startWindowFeatures(root: Context, workbench: Workbench): void {
     gitDiffEditorHost,
     marpHost,
     tagsViewHost,
+    okfCoreHost,
+    graphHost,
   ];
   const manifests = [...workbenchFeatures, ...features];
   startWorkbenchFeatures(
@@ -106,7 +118,8 @@ function startWindowFeatures(root: Context, workbench: Workbench): void {
     workbench,
     plugins.map((plugin) => ({
       manifest: manifests.find((item) => item.id === plugin.name)!,
-      plugin,
+      plugin: plugin as Plugin,
+      ...(plugin.name === "okfCore" ? { config: { facade: okf } } : {}),
     })),
   );
 }

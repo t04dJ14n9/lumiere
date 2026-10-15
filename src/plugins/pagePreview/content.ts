@@ -27,9 +27,10 @@ export async function renderPreview(options: {
   resource: Resource;
   href: string;
   source?: string;
+  wiki?: boolean;
   render: RenderService;
 }): Promise<RenderPass | undefined> {
-  const { body, resource, href, source, render } = options;
+  const { body, resource, href, source, wiki, render } = options;
   if (resource.kind === "note" && resource.text !== undefined) {
     const preview = notePreview(resource.text, href, resource.source);
     return render.into(body, preview.text, preview.context);
@@ -37,7 +38,7 @@ export async function renderPreview(options: {
   if (["image", "pdf", "audio", "video"].includes(resource.kind)) {
     return render.into(
       body,
-      `<span${attr("data-resource", href)}>${escape(href)}</span>`,
+      `<span${wiki ? ' data-wiki="true"' : ""}${attr("data-resource", href)}>${escape(href)}</span>`,
       {
         ...(source === undefined ? {} : { documentUri: source }),
         taskLineCount: 0,

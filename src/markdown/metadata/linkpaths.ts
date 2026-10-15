@@ -2,8 +2,14 @@ import {
   decodeLinkPath,
   isExternalLink,
   splitLinktext,
+  type LinkSyntax,
 } from "../../shared/vault-path";
 import type { LinkMetadata, NoteMetadata } from "./types";
+
+/** Wikilinks keep their brackets; every other vault link is Markdown. */
+export function linkSyntax(link: Pick<LinkMetadata, "original">): LinkSyntax {
+  return /^!?\[\[/.test(link.original) ? "wikilink" : "markdown";
+}
 
 /**
  * The vault path a link names, as written and without its `#subpath`, or

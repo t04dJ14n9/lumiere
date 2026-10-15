@@ -148,6 +148,8 @@ export async function fixture() {
     locate: async (value) => ({ vault, path: vault.pathOf(value)! }),
     text: async () => "",
     open: async () => {},
+    registerLinkPolicy: () => () => {},
+    invalidateLinkResolution() {},
   });
   const settings: unknown[] = [];
   const platform: ApiPlatform = {
