@@ -37,7 +37,7 @@ import { registerPluginManagement } from "../../../src/host/api/management";
 import { registerOpenReference } from "../../../src/host/api/open-reference";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import type { Manifest } from "../../../src/shared/manifest";
-import type { Workshop } from "../../../src/shared/runtime";
+import type { HostViews, Workshop } from "../../../src/shared/runtime";
 import {
   contributionId,
   SETTING_PREFIX,
@@ -200,7 +200,7 @@ function activePanel(): EditorPanel {
       call: async () => undefined,
       on: () => () => {},
     },
-  } as EditorPanel;
+  } as unknown as EditorPanel;
 }
 
 function capturingWorkbench(
@@ -221,17 +221,17 @@ function capturingWorkbench(
       features,
     }),
     views: {
-      command(id) {
+      command(id: string) {
         ids.add(id);
         return () => {};
       },
-      setting(_key, fallback) {
+      setting<T>(_key: string, fallback: T): T {
         return fallback;
       },
       activeNote: () => undefined,
       onActiveNoteChanged: () => () => {},
       documentText: () => undefined,
-    } as Workshop["views"],
+    } as unknown as HostViews,
     settings: {
       inspect: () => ({ value: undefined, target: "user" }),
       async update() {
@@ -242,10 +242,10 @@ function capturingWorkbench(
     },
     files: {
       readText: async () => "",
-    } as NonNullable<Workshop["files"]>,
+    } as unknown as NonNullable<Workshop["files"]>,
     diffViews: {
       onDidOpenDiff: () => () => {},
-    } as NonNullable<Workshop["diffViews"]>,
+    } as unknown as NonNullable<Workshop["diffViews"]>,
     workspaceFolders: () => [],
   });
 }
