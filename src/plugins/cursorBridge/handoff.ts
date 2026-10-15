@@ -20,6 +20,13 @@ export interface NativeEditor {
   isActive(): boolean;
 }
 
+export interface HandoffLease {
+  /** A confirmed native editor now owns this pending acquisition. */
+  promote(): void;
+  /** Release only this handoff, even when another one uses the same URI. */
+  release(): void;
+}
+
 export interface HandoffSurface {
   warm(uri: string): Promise<void>;
   open(uri: string): Promise<NativeDocument>;
@@ -30,8 +37,7 @@ export interface HandoffSurface {
       end: { line: number; character: number };
     },
   ): Promise<NativeEditor>;
-  acquireLease(uri: string): void;
-  releaseLease(uri: string): void;
+  acquireLease(uri: string): HandoffLease;
 }
 
 export interface SelectionSnapshot {
@@ -43,8 +49,11 @@ export interface SelectionSnapshot {
 
 export type HandoffFailure = "changed" | "mismatch" | "inactive";
 
+type HandoffRejected = { ok: false; reason: HandoffFailure };
+type EditorConfirmation = { ok: true; editor: NativeEditor } | HandoffRejected;
+
 export type HandoffResult =
-  { ok: true; editor: NativeEditor } | { ok: false; reason: HandoffFailure };
+  { ok: true; editor: NativeEditor; lease: HandoffLease } | HandoffRejected;
 
 /**
  * Acquire the reclaim lease, warm/open the live document, validate version and
@@ -55,7 +64,7 @@ export async function handOffSelection(
   uri: string,
   selection: SelectionSnapshot,
 ): Promise<HandoffResult> {
-  surface.acquireLease(uri);
+  const lease = surface.acquireLease(uri);
   let isHandedOff = false;
   try {
     await surface.warm(uri);
@@ -70,11 +79,15 @@ export async function handOffSelection(
     };
     const editor = await surface.show(document, range);
     const confirmed = confirmActiveEditor(editor, uri, selection);
-    isHandedOff = confirmed.ok;
-    return confirmed;
+    if (!confirmed.ok) {
+      return confirmed;
+    }
+    lease.promote();
+    isHandedOff = true;
+    return { ...confirmed, lease };
   } finally {
     if (!isHandedOff) {
-      surface.releaseLease(uri);
+      lease.release();
     }
   }
 }
@@ -83,7 +96,7 @@ function validateDocument(
   document: NativeDocument,
   uri: string,
   selection: SelectionSnapshot,
-): HandoffResult | { ok: true } {
+): HandoffRejected | { ok: true } {
   if (document.uri !== uri || document.version !== selection.version) {
     return { ok: false, reason: "changed" };
   }
@@ -108,7 +121,7 @@ export function confirmActiveEditor(
   editor: NativeEditor,
   uri: string,
   selection: SelectionSnapshot,
-): HandoffResult {
+): EditorConfirmation {
   if (!editor.isActive()) {
     return { ok: false, reason: "inactive" };
   }

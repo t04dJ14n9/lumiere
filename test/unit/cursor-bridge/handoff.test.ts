@@ -7,7 +7,7 @@ import {
   type NativeDocument,
   type NativeEditor,
 } from "../../../src/plugins/cursorBridge/handoff";
-import { Lease } from "../../../src/host/reclaim-policy";
+import { Lease, shouldReclaim } from "../../../src/host/reclaim-policy";
 
 function positionAt(text: string, offset: number) {
   let line = 0;
@@ -46,7 +46,7 @@ function fixture(text: string, version = 1) {
       end: { line: 0, character: 0 },
     },
   };
-  const leases = new Set<string>();
+  const leases = new Lease();
   const released: string[] = [];
   const document: NativeDocument = {
     get uri() {
@@ -67,11 +67,14 @@ function fixture(text: string, version = 1) {
   };
   const surface: HandoffSurface = {
     acquireLease: (uri) => {
-      leases.add(uri);
-    },
-    releaseLease: (uri) => {
-      leases.delete(uri);
-      released.push(uri);
+      const lease = leases.acquire(uri);
+      return {
+        promote: lease.promote,
+        release() {
+          lease.release();
+          released.push(uri);
+        },
+      };
     },
     async warm() {},
     async open() {
@@ -95,7 +98,7 @@ test("handoff acquires a lease and mirrors a CRLF selection", async () => {
     version: 3,
   });
   assert.equal(result.ok, true);
-  assert.deepEqual([...f.leases], [note]);
+  assert.equal(f.leases.has(note), true);
   assert.deepEqual(f.released, []);
   if (result.ok) {
     assert.deepEqual(result.editor.selection.start, positionAt(text, 5));
@@ -119,7 +122,7 @@ test("handoff releases the lease when the document changes during warm", async (
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "changed" });
-  assert.equal(f.leases.size, 0);
+  assert.equal(f.leases.has(note), false);
   assert.deepEqual(f.released, [note]);
 });
 
@@ -135,7 +138,7 @@ test("handoff releases the lease on surrogate-pair text mismatch", async () => {
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "changed" });
-  assert.equal(f.leases.size, 0);
+  assert.equal(f.leases.has(note), false);
   assert.deepEqual(f.released, [note]);
 });
 
@@ -168,7 +171,7 @@ test("handoff releases the lease when the mirrored selection is wrong", async ()
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "inactive" });
-  assert.equal(f.leases.size, 0);
+  assert.equal(f.leases.has(note), false);
   assert.deepEqual(f.released, [note]);
 });
 
@@ -182,7 +185,7 @@ test("handoff requires the mirrored editor to be active", async () => {
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "inactive" });
-  assert.equal(f.leases.size, 0);
+  assert.equal(f.leases.has(note), false);
   assert.deepEqual(f.released, [note]);
 });
 
@@ -195,7 +198,7 @@ test("handoff releases the lease on an out-of-bounds range", async () => {
     version: 1,
   });
   assert.deepEqual(result, { ok: false, reason: "mismatch" });
-  assert.equal(f.leases.size, 0);
+  assert.equal(f.leases.has(note), false);
   assert.deepEqual(f.released, [note]);
 });
 
@@ -214,26 +217,17 @@ for (const stage of ["warm", "open", "show"] as const) {
       }),
       new RegExp(`${stage} failed`),
     );
-    assert.equal(f.leases.size, 0);
+    assert.equal(f.leases.has(note), false);
     assert.deepEqual(f.released, [note]);
   });
 }
 
 test("failed second same-URI handoff keeps the first lease held", async () => {
-  const lease = new Lease();
-  const released: string[] = [];
   const f = fixture("abcdef");
-  f.surface.acquireLease = (uri) => {
-    lease.acquire(uri);
-  };
-  f.surface.releaseLease = (uri) => {
-    lease.release(uri);
-    released.push(uri);
-  };
   const selection = { from: 2, to: 4, text: "cd", version: 1 };
   const first = await handOffSelection(f.surface, note, selection);
   assert.equal(first.ok, true);
-  assert.equal(lease.has(note), true);
+  assert.equal(f.leases.has(note), true);
 
   f.surface.warm = async () => {
     f.state.version = 2;
@@ -246,9 +240,60 @@ test("failed second same-URI handoff keeps the first lease held", async () => {
     version: 1,
   });
   assert.deepEqual(second, { ok: false, reason: "changed" });
-  assert.equal(lease.has(note), true, "first Edit session lease must survive");
-  assert.deepEqual(released, [note]);
+  assert.equal(
+    f.leases.has(note),
+    true,
+    "first Edit session lease must survive",
+  );
+  assert.deepEqual(f.released, [note]);
+  f.leases.clear(note);
+  assert.equal(
+    f.leases.has(note),
+    false,
+    "failed retry must leave no pending token",
+  );
 });
+
+for (const outcome of ["success", "failure"] as const) {
+  test(`pending handoff survives session clear during warm until ${outcome}`, async (t) => {
+    const f = fixture("abcdef");
+    const lease = f.leases;
+    const selection = { from: 2, to: 4, text: "cd", version: 1 };
+    const first = await handOffSelection(f.surface, note, selection);
+    assert.equal(first.ok, true);
+
+    let resume = () => {};
+    const warming = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    t.after(resume);
+    f.surface.warm = () => warming;
+    const pending = handOffSelection(f.surface, note, selection);
+    // A's last text tab closes while B has acquired but is still warming.
+    lease.clear(note);
+    assert.equal(lease.has(note), true, "B must keep reclaim suppressed");
+    const swap = { uri: note, before: "none", after: "text" } as const;
+    assert.equal(
+      shouldReclaim(swap, {
+        enabled: true,
+        isNote: () => true,
+        associated: () => true,
+        bypassed: (uri) => lease.has(uri),
+      }),
+      false,
+    );
+
+    if (outcome === "failure") {
+      f.state.version++;
+    }
+    resume();
+    const result = await pending;
+    assert.equal(result.ok, outcome === "success");
+    assert.equal(lease.has(note), outcome === "success");
+    lease.clear(note);
+    assert.equal(lease.has(note), false, "successful B must be established");
+  });
+}
 
 for (const change of [
   "active editor",

@@ -362,8 +362,9 @@ test("same-URI Workbench tab events keep the lease until the last text tab close
   workbench.input = new TabInputCustom(Uri.parse(note), viewType);
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  t.after(() => host.reclaim.handoffLease.release(note));
-  host.reclaim.handoffLease.acquire(note);
+  const lease = host.reclaim.handoffLease.acquire(note);
+  lease.promote();
+  t.after(lease.release);
   const text = cursorTab();
   text.input = new TabInputText(Uri.parse(note));
 
@@ -406,8 +407,9 @@ test("closing one of two native text tabs keeps the handoff lease", (t) => {
   vscode.window.tabGroups.all.push(otherGroup);
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  t.after(() => host.reclaim.handoffLease.release(note));
-  host.reclaim.handoffLease.acquire(note);
+  const lease = host.reclaim.handoffLease.acquire(note);
+  lease.promote();
+  t.after(lease.release);
 
   group.tabs = [];
   tabsChanged.fire({ opened: [], changed: [], closed: [first] });
@@ -423,8 +425,9 @@ test("switching the last native text tab to Markdown releases the handoff lease"
   tab.input = new TabInputText(Uri.parse(note));
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  t.after(() => host.reclaim.handoffLease.release(note));
-  host.reclaim.handoffLease.acquire(note);
+  const lease = host.reclaim.handoffLease.acquire(note);
+  lease.promote();
+  t.after(lease.release);
 
   tab.input = undefined;
   tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
@@ -438,13 +441,13 @@ test("a lease acquired during queued reclaim survives sibling tab changes", asyn
   t.after(release);
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
-  t.after(() => host.reclaim.handoffLease.release(note));
   const text = cursorTab();
   text.input = new TabInputText(Uri.parse(note));
   tabsChanged.fire({ opened: [text], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
 
-  host.reclaim.handoffLease.acquire(note);
+  const lease = host.reclaim.handoffLease.acquire(note);
+  t.after(lease.release);
   const sibling = cursorTab();
   sibling.input = new TabInputCustom(Uri.parse(note), viewType);
   group.activeTab = text;
@@ -455,6 +458,62 @@ test("a lease acquired during queued reclaim survives sibling tab changes", asyn
   await tick();
   assert.equal(host.reclaim.handoffLease.has(note), true);
   assert.deepEqual(commands, [], "queued openWith must honor the lease");
+});
+
+test("pending handoff survives the last text tab closing and suppresses queued reclaim", async (t) => {
+  const document: TextEditor["document"] = {
+    uri: Uri.parse(note),
+    isDirty: true,
+    version: 1,
+    getText: () => "abcdef",
+    positionAt: (offset) => new Position(0, offset),
+  };
+  documents.push(document);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  t.after(() => host.reclaim.handoffLease.clear(note));
+  const resume = delayWarm();
+  t.after(resume);
+  const firstText = cursorTab();
+  firstText.input = new TabInputText(Uri.parse(note));
+  // Reclaim was queued before Edit A established its native session.
+  tabsChanged.fire({ opened: [firstText], changed: [], closed: [] });
+  assert.deepEqual(warmed, [note]);
+  host.reclaim.handoffLease.acquire(note).promote();
+
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const pending = handOffSelection(surface, note, {
+    from: 2,
+    to: 4,
+    text: "cd",
+    version: 1,
+  });
+  assert.deepEqual(warmed, [note, note], "Edit B is paused in warm");
+  group.tabs = [];
+  group.activeTab = undefined;
+  tabsChanged.fire({ opened: [], changed: [], closed: [firstText] });
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+
+  // The native tab reappears before either warm operation has resumed.
+  const nextText = cursorTab();
+  nextText.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [nextText], changed: [], closed: [] });
+  assert.deepEqual(
+    warmed,
+    [note, note],
+    "B's pending token blocks new reclaim",
+  );
+  resume();
+  const result = await pending;
+  assert.equal(result.ok, true);
+  await tick();
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+  assert.deepEqual(commands, [], "queued openWith must not interrupt Edit B");
+
+  group.tabs = [];
+  group.activeTab = undefined;
+  tabsChanged.fire({ opened: [], changed: [], closed: [nextText] });
+  assert.equal(host.reclaim.handoffLease.has(note), false, "B was promoted");
 });
 
 test("failed second same-URI surface handoff keeps the first lease", async (t) => {
@@ -493,7 +552,7 @@ test("Cursor handoff surface reads live editor state and checks native editor id
   };
   documents.push(document);
   const surface = host.cursorHandoff.createCursorHandoffSurface();
-  t.after(() => surface.releaseLease(note));
+  t.after(() => host.reclaim.handoffLease.clear(note));
   const selection = { from: 2, to: 4, text: "cd", version: 1 };
   const handoff = await handOffSelection(surface, note, selection);
   assert.equal(handoff.ok, true);
@@ -530,7 +589,7 @@ test("Cursor handoff surface reads live editor state and checks native editor id
   });
   vscode.window.activeTextEditor = undefined;
   assert.equal(handoff.editor.isActive(), false);
-  surface.releaseLease(note);
+  handoff.lease.release();
   assert.equal(host.reclaim.handoffLease.has(note), false);
 });
 

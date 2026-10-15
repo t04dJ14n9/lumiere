@@ -93,34 +93,57 @@ export class Bypass {
   }
 }
 
+type LeaseState = "pending" | "established";
+
 /**
- * Holds reclaim off for a URI until every overlapping handoff releases and
- * (via clear) until the last native text tab for that URI is gone. Used by
- * cursorBridge so an open Cursor Edit session is never yanked by a timed
- * bypass expiry or by a failed same-URI retry.
+ * Each handoff holds reclaim off while pending, then promotes its own token
+ * once a native editor is confirmed. Tab disappearance clears established
+ * sessions only: overlapping handoffs may still be warming or opening text.
  */
 export class Lease {
-  private readonly counts = new Map<string, number>();
-  acquire(uri: string): void {
-    this.counts.set(uri, (this.counts.get(uri) ?? 0) + 1);
+  private readonly owners = new Map<string, Map<symbol, LeaseState>>();
+
+  acquire(uri: string) {
+    const token = Symbol();
+    const owners = this.owners.get(uri) ?? new Map<symbol, LeaseState>();
+    owners.set(token, "pending");
+    this.owners.set(uri, owners);
+    return {
+      promote: () => this.promote(uri, token),
+      release: () => this.release(uri, token),
+    };
   }
-  /** Drop one overlapping acquisition; the URI stays leased while count > 0. */
-  release(uri: string): void {
-    const count = this.counts.get(uri);
-    if (count === undefined) {
-      return;
-    }
-    if (count <= 1) {
-      this.counts.delete(uri);
-      return;
-    }
-    this.counts.set(uri, count - 1);
-  }
-  /** Drop every acquisition (last native TabInputText for the URI is gone). */
+
+  /** The last native text tab is gone; pending handoffs still own their tokens. */
   clear(uri: string): void {
-    this.counts.delete(uri);
+    const owners = this.owners.get(uri);
+    if (!owners) {
+      return;
+    }
+    for (const [token, state] of owners) {
+      if (state === "established") {
+        this.release(uri, token);
+      }
+    }
   }
+
   has(uri: string): boolean {
-    return (this.counts.get(uri) ?? 0) > 0;
+    return this.owners.has(uri);
+  }
+
+  private promote(uri: string, token: symbol): void {
+    const owners = this.owners.get(uri);
+    // A released or cleared token cannot revive a session or affect a retry.
+    if (owners?.has(token)) {
+      owners.set(token, "established");
+    }
+  }
+
+  private release(uri: string, token: symbol): void {
+    const owners = this.owners.get(uri);
+    owners?.delete(token);
+    if (owners?.size === 0) {
+      this.owners.delete(uri);
+    }
   }
 }

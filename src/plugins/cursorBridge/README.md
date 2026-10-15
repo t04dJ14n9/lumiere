@@ -12,9 +12,12 @@ discovers Cursor commands, acquires a reclaim handoff lease, warms the shared
 `TextDocument`, rechecks document version and text after that async work, mirrors
 the range with `positionAt` into a focused native text editor, then runs Cursor’s Chat or Edit
 command after a final synchronous check of the active editor, version, text and
-range. The lease suppresses reclaim for the whole native session (not a timed
-bypass); it releases on failed handoff or when the last native text tab for the
-note leaves the text editor. Same-URI Workbench tab changes keep the lease, and
+range. Each handoff acquires a pending lease token and promotes it after native
+editor confirmation. Tab cleanup clears established sessions only, preserving
+overlapping handoffs still warming or opening text. A failed handoff releases
+only its own token. The lease suppresses reclaim for the whole native session
+and ends when the last native text tab for the note leaves the text editor.
+Same-URI Workbench tab changes keep the lease, and
 a later Preview | Markdown switch can restore Markdown Workbench. Apply stays
 in Cursor; MW follows the document model. Dirty notes are allowed without
 autosave.

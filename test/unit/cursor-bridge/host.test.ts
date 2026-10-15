@@ -61,10 +61,7 @@ async function fixture() {
   const surface: HandoffSurface = {
     acquireLease(uri) {
       events.push("lease");
-      lease.acquire(uri);
-    },
-    releaseLease(uri) {
-      lease.release(uri);
+      return lease.acquire(uri);
     },
     async warm() {
       events.push("warm");

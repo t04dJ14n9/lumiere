@@ -75,7 +75,7 @@ async function runBridge(
     : handoff;
   if (!confirmed.ok) {
     if (handoff.ok) {
-      config.surface.releaseLease(captured.uri);
+      handoff.lease.release();
     }
     ctx.workbench.error(
       confirmed.reason === "changed"
@@ -132,8 +132,7 @@ async function commandSet(
 }
 
 const unusedSurface: HandoffSurface = {
-  acquireLease() {},
-  releaseLease() {},
+  acquireLease: () => ({ promote() {}, release() {} }),
   async warm() {},
   async open() {
     throw new Error("cursorBridge handoff surface was not configured");

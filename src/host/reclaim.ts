@@ -48,7 +48,8 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
     return;
   }
   // Same-URI custom tabs can close or become inactive during Cursor Edit.
-  // The lease ends only when no native text tab remains in any group.
+  // Established sessions end only when no native text tab remains in any group.
+  // Pending handoffs keep their own tokens while warming/opening the next tab.
   const hasNativeTextTab = vscode.window.tabGroups.all.some((group) =>
     group.tabs.some(
       (candidate) =>

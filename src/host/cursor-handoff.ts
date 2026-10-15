@@ -11,10 +11,7 @@ import type {
 export function createCursorHandoffSurface(): HandoffSurface {
   return {
     acquireLease(uri) {
-      handoffLease.acquire(uri);
-    },
-    releaseLease(uri) {
-      handoffLease.release(uri);
+      return handoffLease.acquire(uri);
     },
     async warm(uri) {
       await warmMarkdownDocument(vscode.Uri.parse(uri));
