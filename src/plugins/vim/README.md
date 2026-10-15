@@ -37,6 +37,10 @@ caret; a pending operator is detected in the input state, the prompt through
 share this mode source and remove its listeners when they stop.
 
 While visual mode is active, Live Preview reveal stays frozen at the selection from when visual started, like the pointer-drag freeze, so extending the selection does not reflow blocks and jump the viewport.
+Mode events queue freeze/thaw transactions after CodeMirror's update lifecycle;
+the event's target mode also thaws visual-to-insert commands. The Vim extension
+owns the freeze field, so disabling Vim removes it during reconfiguration and
+cancels pending work without dispatching from plugin cleanup.
 
 ## Files
 
@@ -55,6 +59,7 @@ While visual mode is active, Live Preview reveal stays frozen at the selection f
 - `caret.ts`: pure detection of the normal, visual, insert, replace, operator-pending and prompt states.
 - `caret.test.ts`: mode, pending-operator, prompt and stale-state regression units.
 - `visual-reveal.ts`: freeze Live Preview reveal for the duration of visual mode.
+- `visual-reveal.test.ts`: deferred mode transitions, insert commands, selection mapping and cleanup units.
 
 ## Services, events and settings
 

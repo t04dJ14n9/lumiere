@@ -228,7 +228,6 @@ export function setPointerSelection(
 
 export const pointerSelectionTracking: Extension = [
   pointerSelection,
-  visualRevealFreeze,
   ViewPlugin.define((view: EditorView) => {
     const events = new AbortController();
     const doc = view.dom.ownerDocument;
