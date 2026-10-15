@@ -33,12 +33,6 @@ test/unit/identity/contribution-parity.test.ts	assert.doesNotMatch(command.comma
 test/unit/identity/contribution-parity.test.ts	assert.equal(blob.includes("markdownWorkbench."), false)
 test/unit/identity/contribution-parity.test.ts	assert.doesNotMatch(id, /markdownWorkbench/)
 
-# Task 7 should delete the agent-handoff rows below after it rewrites those files.
-docs/agent-handoff-format.md	Markdown Workbench and Agent PDF Viewer
-docs/agent-handoff-format.md	Markdown Workbench saves the note first
-docs/agent-handoff-format.md	note open in Markdown Workbench
-test/fixtures/agent-handoff-format.json	shared by Markdown Workbench and Agent PDF Viewer
-
 # Historical handoffs. Each row is a reviewed phrase from that file.
 docs/HANDOFF_GROKBOT.md	t04dJ14n9/vscode-markdown-workbench
 docs/HANDOFF_GROKBOT.md	Markdown Workbench 0.1.0
@@ -511,10 +505,6 @@ scripts/identity-rename-allowlist.txt	Renamed from Markdown Workbench
 scripts/identity-rename-allowlist.txt	assert.doesNotMatch(command.command, /markdownWorkbench/)
 scripts/identity-rename-allowlist.txt	assert.equal(blob.includes("markdownWorkbench."), false)
 scripts/identity-rename-allowlist.txt	assert.doesNotMatch(id, /markdownWorkbench/)
-scripts/identity-rename-allowlist.txt	Markdown Workbench and Agent PDF Viewer
-scripts/identity-rename-allowlist.txt	Markdown Workbench saves the note first
-scripts/identity-rename-allowlist.txt	note open in Markdown Workbench
-scripts/identity-rename-allowlist.txt	shared by Markdown Workbench and Agent PDF Viewer
 scripts/identity-rename-allowlist.txt	t04dJ14n9/vscode-markdown-workbench
 scripts/identity-rename-allowlist.txt	Markdown Workbench 0.1.0
 scripts/identity-rename-allowlist.txt	# Handoff: Markdown Workbench

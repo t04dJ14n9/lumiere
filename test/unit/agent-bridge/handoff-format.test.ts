@@ -14,9 +14,9 @@ import {
  */
 const PINNED = {
   "test/fixtures/agent-handoff-format.json":
-    "9d29aaed6ffc09359ffccbefc254f7f5542ed7cd2fc8de1970632595471f52c3",
+    "1578be9c39029c78ca4be2306f025f43077584ac8a5d3484b62a5b9222b315fe",
   "docs/agent-handoff-format.md":
-    "4422afadf038d3904f755be844abf94f39381f4a7f25d05dd3db93b5edd56e25",
+    "065c077095fa39f5befd543743efd891aef578cdefb5e55f079f99ddea08f5d8",
 };
 
 interface Fixture {
