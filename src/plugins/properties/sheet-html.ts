@@ -50,6 +50,25 @@ export function renderProperties(
   return `<div class="properties metadata-container${options.collapsed ? " is-collapsed" : ""}"><div class="metadata-properties-heading" data-properties-heading tabindex="0" role="button" aria-expanded="${!options.collapsed}"><span class="metadata-collapse-indicator">${propertyFlairIcon("collapse")}</span><span>Properties</span></div><div class="metadata-content"${options.collapsed ? " hidden" : ""}><div class="metadata-properties">${rows}</div><button type="button" data-property-add><span aria-hidden="true">＋</span> Add property</button></div><p class="property-message" aria-live="polite"></p></div>`;
 }
 
+function propertyBody(
+  key: string,
+  value: unknown,
+  options: {
+    kind: PropertyKind;
+    editable: boolean;
+    custom: string | undefined;
+  },
+): string {
+  // Custom renderers (e.g. Sources) keep structured YAML editing even for [].
+  if (options.custom) {
+    return complexEditable(key, value, options.custom);
+  }
+  if (options.editable) {
+    return editableValue(key, value, options.kind);
+  }
+  return complexEditable(key, value, undefined);
+}
+
 function propertyRow(
   key: string,
   value: unknown,
@@ -59,11 +78,9 @@ function propertyRow(
     custom: string | undefined;
   },
 ): string {
-  const { kind, editable } = options;
+  const { kind } = options;
   const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
-  const body = editable
-    ? editableValue(key, value, kind)
-    : complexEditable(key, value, options.custom);
+  const body = propertyBody(key, value, options);
   return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
 }
 
@@ -191,6 +208,7 @@ function yamlDraft(value: unknown): string | undefined {
       lineWidth: 0,
       defaultKeyType: "PLAIN",
       defaultStringType: "QUOTE_DOUBLE",
+      aliasDuplicateObjects: false,
     });
   } catch {
     return undefined;

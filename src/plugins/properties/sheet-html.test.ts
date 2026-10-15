@@ -59,3 +59,22 @@ test("property rendering bounds recursive aliases and leaves absent frontmatter 
   const empty = renderProperties("---\nvalue: null\n---\n");
   assert.match(empty, /data-placeholder="Empty"/);
 });
+
+test("empty sources keeps custom renderer and YAML draft instead of scalar chips", () => {
+  const html = renderProperties(
+    "---\nsources: []\n---\n",
+    {},
+    {
+      renderValue: (key) =>
+        key === "sources"
+          ? '<div class="source-rows" data-sources></div>'
+          : undefined,
+    },
+  );
+  assert.match(html, /data-sources/);
+  assert.match(
+    html,
+    /data-property-input="sources"[^>]*data-property-kind="yaml"/,
+  );
+  assert.doesNotMatch(html, /data-property-list="sources"/);
+});

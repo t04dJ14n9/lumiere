@@ -100,3 +100,31 @@ test("YAML draft HTML round-trips nested trailing newlines and leading spaces", 
   });
   assert.equal(propertyYamlInput(decodeEntities(text!)), " one\n two");
 });
+
+test("setting a nested value does not retarget unrelated YAML aliases", () => {
+  const source =
+    "---\nfirst: &shared\n  child: one\nsecond: *shared\nextra: keep\n---\n";
+  const next = edit(source, {
+    type: "set",
+    key: "first",
+    value: { child: "two" },
+  });
+  const values = frontmatter(next)?.values;
+  assert.deepEqual(values?.first, { child: "two" });
+  assert.deepEqual(values?.second, { child: "one" });
+  assert.equal(values?.extra, "keep");
+});
+
+test("setting a value does not invent anchors that collide with existing aliases", () => {
+  const source = "---\nother: &a1\n  x: 1\ntarget: old\n---\n";
+  const shared = { z: 1 };
+  const next = edit(source, {
+    type: "set",
+    key: "target",
+    value: { a: shared, b: shared },
+  });
+  const values = frontmatter(next)?.values;
+  assert.deepEqual(values?.other, { x: 1 });
+  assert.deepEqual(values?.target, { a: { z: 1 }, b: { z: 1 } });
+  assert.doesNotMatch(next, /target:[^\n]*&/);
+});

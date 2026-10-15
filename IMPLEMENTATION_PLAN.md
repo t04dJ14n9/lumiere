@@ -3813,6 +3813,12 @@ lists keep their existing controls. Nested maps and list-of-maps (including
 `propertyChanges` / `set`. The Sources custom renderer still draws open links
 above that draft; the Copy id control is removed (id is selectable text).
 
-Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts,
-`propertyYamlInput`, and set round-trips for `generated` / `sources`.
+Review follow-ups: YAML draft flush/focus include `textarea`; empty `sources: []`
+keeps the custom renderer + YAML draft; `yamlValue` sets `aliasDuplicateObjects:
+false`; replacing an anchored value strips `&anchor` and inlines the prior value
+at matching aliases so unrelated properties are not retargeted.
+
+Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts
+(including empty Sources + custom), `propertyYamlInput`, set round-trips for
+`generated` / `sources`, and alias-safe nested sets. `pnpm check` green.
 

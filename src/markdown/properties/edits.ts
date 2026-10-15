@@ -1,4 +1,12 @@
-import { isMap, isNode, isScalar, parseDocument, stringify } from "yaml";
+import {
+  isAlias,
+  isMap,
+  isNode,
+  isScalar,
+  parseDocument,
+  stringify,
+  visit,
+} from "yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import { orderPropertyBody } from "./order";
 import { validPropertyName } from "./types";
@@ -18,11 +26,14 @@ export interface PropertyChange {
   insert: string;
 }
 
+type Header = NonNullable<ReturnType<typeof headerParts>>;
+
 export const yamlValue = (value: unknown): string =>
   stringify(value, {
     collectionStyle: "flow",
     flowCollectionPadding: false,
     lineWidth: 0,
+    aliasDuplicateObjects: false,
   }).trimEnd();
 export const scalarValue = (value: unknown): value is PropertyScalar =>
   value === null ||
@@ -54,7 +65,8 @@ export function setPropertyChange(
       insert = JSON.stringify(value);
     }
   }
-  const from = header.offset + node.range[0];
+  const from =
+    header.offset + valueStart(header.body, node.range[0], node.anchor);
   const to = header.offset + node.range[1];
   if (source[from - 1] === ":") {
     insert = " " + insert;
@@ -65,8 +77,53 @@ export function setPropertyChange(
   return { from, to, insert };
 }
 
+/** Include a leading `&anchor` so replacement does not leave aliases retargeted. */
+function valueStart(
+  body: string,
+  start: number,
+  anchor: string | null | undefined,
+): number {
+  if (!anchor) {
+    return start;
+  }
+  const token = `&${anchor}`;
+  const at = body.lastIndexOf(token, start);
+  return at >= 0 && at <= start ? at : start;
+}
+
+function inlineAliasChanges(
+  source: string,
+  header: Header,
+  document: ReturnType<typeof parseDocument>,
+  node: { anchor?: string | null; range?: [number, number, number] | null },
+): PropertyChange[] {
+  if (!node.anchor || !node.range || !isNode(node)) {
+    return [];
+  }
+  // Preserve the pre-edit value at every alias that pointed at this anchor.
+  const insert = yamlValue(node.toJSON());
+  const changes: PropertyChange[] = [];
+  visit(document, {
+    Alias(_key, alias) {
+      if (!isAlias(alias) || alias.source !== node.anchor || !alias.range) {
+        return;
+      }
+      let text = insert;
+      const from = header.offset + alias.range[0];
+      const to = header.offset + alias.range[1];
+      if (source[from - 1] === ":") {
+        text = ` ${text}`;
+      }
+      if (source.slice(from, to).endsWith("\n")) {
+        text += header.eol;
+      }
+      changes.push({ from, to, insert: text });
+    },
+  });
+  return changes;
+}
+
 type KeyEdit = Exclude<PropertyEdit, { type: "order" | "merge" }>;
-type Header = NonNullable<ReturnType<typeof headerParts>>;
 
 /** Structural edits touch selected keys/values, preserving unrelated YAML bytes. */
 export function propertyChanges(
@@ -168,13 +225,16 @@ class PropertyMapEdits {
         const pair = this.items.find(
           (pair) => isScalar(pair.key) && pair.key.value === edit.key,
         );
-        const change = setPropertyChange(
-          source,
-          this.header,
-          pair?.value,
-          edit.value,
-        );
-        return change ? [change] : undefined;
+        const node = pair?.value;
+        const change = setPropertyChange(source, this.header, node, edit.value);
+        if (!change) {
+          return undefined;
+        }
+        const aliases =
+          isNode(node) && node.anchor
+            ? inlineAliasChanges(source, this.header, this.document, node)
+            : [];
+        return [change, ...aliases];
       }
     }
   }
