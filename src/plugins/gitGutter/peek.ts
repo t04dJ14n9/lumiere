@@ -34,6 +34,39 @@ export function canPeek(hunk: DocHunk): boolean {
   return hunk.kind !== "added";
 }
 
+/**
+ * Hunk to open for a gutter click spanning `from`..`to`. Prefers a peekable
+ * (modified/deleted) hunk when a rendered block mixes kinds — `hunkAt` alone
+ * can return an earlier added row while the bar shows modified.
+ */
+export function peekTargetAt(
+  hunks: readonly DocHunk[],
+  from: number,
+  to: number,
+): DocHunk | undefined {
+  const hit = hunkAt(hunks, from, to);
+  if (hit && canPeek(hit)) {
+    return hit;
+  }
+  for (const hunk of hunks) {
+    if (!canPeek(hunk)) {
+      continue;
+    }
+    if (hunk.kind === "deleted") {
+      if (
+        hunk.from >= from &&
+        hunk.from <= to &&
+        (hunk.from < to || hunk.atEnd || from === to)
+      ) {
+        return hunk;
+      }
+    } else if (hunk.from <= to && hunk.to >= from) {
+      return hunk;
+    }
+  }
+  return undefined;
+}
+
 /** The hunk the peek shows, if it still exists and is peekable. */
 export function peekedHunk(state: EditorState): DocHunk | undefined {
   const at = state.field(peekState, false);

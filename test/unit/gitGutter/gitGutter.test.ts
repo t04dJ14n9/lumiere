@@ -26,6 +26,7 @@ import {
   peekedHunk,
   peekMarkdown,
   peekState,
+  peekTargetAt,
   setPeek,
 } from "../../../src/plugins/gitGutter/peek";
 import type { Lifetime } from "../../../src/plugins/gitGutter/peek";
@@ -409,4 +410,22 @@ test("peekedHunk: ignores a peek position on an added hunk", () => {
   assert.equal(peekedHunk(state), undefined);
   state = state.update({ effects: setPeek.of(modified.from) }).state;
   assert.equal(peekedHunk(state)?.kind, "modified");
+});
+
+test("peekTargetAt prefers a modified hunk when an added hunk overlaps the same block", () => {
+  const hunks: DocHunk[] = [
+    { kind: "added", from: 10, to: 20, old: "", oldLine: 2, atEnd: false },
+    {
+      kind: "modified",
+      from: 15,
+      to: 40,
+      old: "old row",
+      oldLine: 3,
+      atEnd: false,
+    },
+  ];
+  // hunkAt returns the earlier added row; the bar would show modified.
+  assert.equal(hunkAt(hunks, 10, 40)?.kind, "added");
+  assert.equal(peekTargetAt(hunks, 10, 40)?.kind, "modified");
+  assert.equal(peekTargetAt(hunks, 10, 14), undefined);
 });
