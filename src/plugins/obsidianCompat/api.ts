@@ -21,6 +21,7 @@ export interface VaultConfigChange {
 export interface ObsidianCompat {
   /** Resolves the supplied identity before returning an immutable snapshot. */
   getPropertyTypes(scope: VaultConfigScope): Promise<PropertyTypes>;
+  /** Rejects on hosts without atomic conditional writes; their registry is read-only. */
   setPropertyType(
     scope: VaultConfigScope,
     name: string,

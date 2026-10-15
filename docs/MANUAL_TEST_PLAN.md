@@ -1181,5 +1181,9 @@ owner's vault for these checks.
    closing/reloading the extension leaves no duplicate watchers. Inspect the
    fixture `types.json`: aliases remains `aliases`, tags remains `tags`, and
    cssclasses remains `multitext`. The properties UI still uses its existing
-   preference storage in this phase; scoped service edits/conflicts are unit
-   tested, with no new browser/native test suite or UI type-storage migration.
+   preference storage. The compatibility registry is read-only because the host
+   has no atomic conditional-write API: service edits reject, leaving existing
+   bytes and unknown entries untouched and missing files/directories absent.
+   External changes still refresh the scoped snapshots. Service rejection and
+   concurrent-writer behavior are unit tested, with no new browser/native suite
+   or UI type-storage migration.

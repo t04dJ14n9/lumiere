@@ -17,6 +17,6 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
-  capabilities: ["resourceLoading", "fileWrites"],
+  capabilities: ["resourceLoading"],
   config,
 } as const);

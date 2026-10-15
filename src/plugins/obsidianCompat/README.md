@@ -8,8 +8,8 @@ feature, enabled by default in the Obsidian preset.
 
 Core `vault` discovers the root using `vault.rootMarkers`. Compatibility separately
 selects `.obsidian` (or `obsidianCompat.configFolder`) under that root, and the host
-checks containment and symlinks before reading or writing. Each resolved vault
-owns its watchers, last-good snapshots and serialized property-type write queue.
+checks containment and symlinks before reading. Each resolved vault owns its
+watchers, last-good snapshots and serialized property-type operation queue.
 The plugin registers an in-memory configuration provider; editor initialization,
 vault indexing, note creation and rename commands use that shared configuration.
 Explicit VS Code values at **any** applicable user/local/remote/workspace/folder
@@ -27,7 +27,7 @@ settings are written. Watcher changes and plugin teardown notify those consumers
 - `app-settings.ts`: the eight ranked `app.json` mappings and input validation.
 - `precedence.ts`: pure detection of all explicit inspect layers.
 - `config-dir.ts`: independent, contained config-folder selection.
-- `config-files.ts`: strict host file I/O, containment and final conflict check.
+- `config-files.ts`: strict contained reads, watchers and read-only write rejection.
 - `vault-config.ts`: one vault's file watchers and app/property snapshots.
 - `vault-configs.ts`: caches, scope resolution, profile changes and teardown.
 
@@ -36,8 +36,9 @@ settings are written. Watcher changes and plugin teardown notify those consumers
 Injects `workbench` and `vaults`; provides `obsidianCompat`. All registry methods
 take `{vaultRoot}` or `{documentUri}`. Getters return promises so scope discovery
 cannot silently fall back to the active editor. `getPropertyTypes` returns an
-immutable map including unknown type strings; `setPropertyType(scope, name,
-wireType | null)` edits only `types.json` (null removes the preference).
+immutable map including unknown type strings. `setPropertyType(scope, name,
+wireType | null)` rejects on the current host because it cannot replace a file
+conditionally; the registry is read-only.
 `getObsidianOverrides` returns mapped candidates, before explicit-setting filtering.
 `onDidChangeVaultConfig` returns a disposer. Consumers own subscriptions with
 their context. Listens to `editor/opened`, `vault/resolved`, active-note and
@@ -65,16 +66,19 @@ consume this registry. Host consumers can use the scoped service now. Wire types
 are `text`, `number`, `checkbox`, `date`, `datetime`, `multitext`, `tags`, `aliases`.
 `multitext` maps to the `list` editor; `aliases` and `tags` keep their distinct
 wire/UI kinds. Built-ins are guarded: tags → tags, aliases → aliases,
-cssclasses → multitext. Unknown root keys and registry entries survive edits.
+cssclasses → multitext. Unknown root keys and registry entries remain untouched.
 An unreadable/invalid file retains the last good snapshot (empty memory if none)
-and logs once per file/vault; it never authorizes a replacement write. Missing
-files mean inference only and are created only by an explicit service edit.
+and logs once per file/vault. Missing files mean inference only; service calls
+never create them or their configuration directory.
 
-Edits re-read their base and reject changes with `TypesRegistryConflict`, including
-a final check after asynchronous directory/containment work. The VS Code file API
-has no atomic compare-and-swap, so a separate writer can still race the final
-read/write interval. Profile changes join the previous writer before replacing
-watchers. Filename selection is scoped to the vault, not individual notes.
+The VS Code file API has no atomic compare-and-swap. A read followed by a write
+or temporary-file rename can silently overwrite an external change, so the host
+rejects every property-type edit before any filesystem mutation. A successful
+write requires an adapter that atomically replaces the expected source or
+rejects without writing; a last-minute content comparison alone is insufficient.
+The registry still detects stale bases with `TypesRegistryConflict` and keeps
+its snapshot when an adapter rejects. Profile changes join the previous queue
+before replacing watchers. Filename selection is scoped to the vault, not notes.
 Ignored-file prefixes and globs use MW's existing exclusion semantics; Obsidian
 regular-expression filters are not translated. Changes to `editor.defaultMode`
 affect new editor views, preserving an existing view's current mode.

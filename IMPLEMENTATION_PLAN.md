@@ -4092,3 +4092,29 @@ The pinned `~/Code/human-learning` checkout is absent; no reference source or
 proprietary code/assets were copied. Work is isolated in
 `/tmp/mdwb-obsidian-compat` because another task switched the shared checkout.
 Validation results are recorded below before commit.
+
+## PR #55 — Fail closed on Obsidian property-type writes, 15 October 2026
+
+The final content comparison in `ContainedConfigFiles.writeTypes` could be
+followed by an external Obsidian write before `writeText`, losing that writer's
+unknown entries. The host's file API has no atomic conditional replacement;
+moving a temporary file after another comparison leaves the same race. The
+adapter now rejects all property-type edits as read-only before any filesystem
+mutation, including directory creation, and the manifest no longer declares
+file-write capability. The registry I/O contract explicitly
+requires atomic replacement of the expected source or rejection without writing.
+Reads, last-good snapshots, watchers, explicit VS Code setting precedence,
+in-memory app policies and per-vault/profile isolation remain available. The
+existing properties UI still uses its separate preference storage.
+
+Unit coverage models A passing the final comparison, external B arriving before
+the attempted mutation, and the A-derived edit rejecting with B preserved. It
+also checks missing files/folders remain absent, deletion attempts retain the
+snapshot, rejected edits leave the queue/watchers usable, and independent vault
+work remains scoped during asynchronous reads. The generic registry tests use
+an in-memory conditional writer and cover rejection without accepting a proposed
+snapshot. README, service documentation, design and manual acceptance describe
+the read-only fallback. No source tests were ported; the configured
+`~/Code/human-learning` checkout is absent in this environment.
+
+Validation: pending the required sequential local checks before commit/push.

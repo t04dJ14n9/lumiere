@@ -1222,10 +1222,13 @@ settings. Vault root discovery stays in core; the compatibility config folder
 defaults to `.obsidian` and is independently configurable and contained.
 
 The feature also provides a vault/document-scoped `types.json` registry. Wire
-`aliases` and `tags` stay distinct; UI `list` maps to wire `multitext`. Serialized
-RMW preserves unknown entries and top-level keys, refuses unreadable bases,
-retains last-good snapshots and rejects changed file content before writing.
-Each vault retains its identity through async work and profile replacement.
+`aliases` and `tags` stay distinct; UI `list` maps to wire `multitext`. It retains
+last-good snapshots and unknown entries. The current host has no atomic
+conditional-write API, so property-type edits reject before any filesystem
+mutation, including creating missing files or folders. Writes require an adapter
+that atomically replaces the expected source or rejects without writing; a
+separate read/check followed by write or rename is insufficient. Each vault
+retains its identity through async work and profile replacement.
 The existing properties UI keeps its preference storage; the scoped service is
 available for a later consumer. See [the plugin contract](src/plugins/obsidianCompat/README.md).
 

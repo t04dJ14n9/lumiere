@@ -1,10 +1,10 @@
 import type { Workbench } from "../../shared/runtime";
 import { joinContained } from "../../shared/workspace-path";
-import { TypesRegistryConflict } from "./types-registry";
 
 export type ConfigFile = "types.json" | "app.json";
 export interface ConfigFiles {
   read(file: ConfigFile): Promise<string | undefined>;
+  /** Atomically replace the expected source, or reject without writing. */
   writeTypes(text: string, expectedSource: string | undefined): Promise<void>;
   watch(file: ConfigFile, changed: () => void): () => void | Promise<void>;
 }
@@ -33,22 +33,15 @@ export class ContainedConfigFiles implements ConfigFiles {
   }
 
   async writeTypes(
-    text: string,
-    expectedSource: string | undefined,
+    _text: string,
+    _expectedSource: string | undefined,
   ): Promise<void> {
-    const files = this.workbench.files;
-    const uri = this.target("types.json");
-    await this.authorize(uri);
-    if (!files) {
-      throw new Error("Obsidian configuration writes are unavailable.");
-    }
-    await files.mkdir(this.directory);
-    // Re-check after folder creation and containment I/O, as close to writing as
-    // the host file API permits. It does not provide an atomic compare-and-swap.
-    if ((await this.read("types.json")) !== expectedSource) {
-      throw new TypesRegistryConflict();
-    }
-    await files.writeText(uri, text);
+    // Neither writeText nor move can condition replacement on the observed base.
+    // Re-reading before either still races external writers, so fail closed
+    // before any filesystem mutation, including creating a missing directory.
+    throw new Error(
+      "Obsidian property types are read-only: the host file API does not support atomic conditional writes.",
+    );
   }
 
   watch(file: ConfigFile, changed: () => void) {

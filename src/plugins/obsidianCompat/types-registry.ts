@@ -9,6 +9,7 @@ import type { TypesDocument } from "./types-document";
 export interface TypesRegistryIO {
   /** Only confirmed absence returns undefined; every other failure rejects. */
   read(): Promise<string | undefined>;
+  /** Must replace expectedSource atomically, or reject without modifying it. */
   write(text: string, expectedSource: string | undefined): Promise<void>;
   warn(message: string, error: unknown): void;
   changed(): void;

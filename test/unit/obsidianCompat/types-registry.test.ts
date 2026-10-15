@@ -14,6 +14,7 @@ function registryFixture(source: string | undefined) {
   const state = {
     source,
     failure: undefined as Error | undefined,
+    beforeWrite: undefined as (() => void) | undefined,
     writes: [] as string[],
     warnings: [] as string[],
     changed: 0,
@@ -26,7 +27,10 @@ function registryFixture(source: string | undefined) {
       return state.source;
     },
     async write(text, expected) {
-      assert.equal(state.source, expected);
+      state.beforeWrite?.();
+      if (state.source !== expected) {
+        throw new TypesRegistryConflict();
+      }
       state.source = text;
       state.writes.push(text);
     },
@@ -170,6 +174,31 @@ test("B1: concurrent edits serialize, compose and leave the queue usable after r
   assert.equal(state.writes.length, 3);
   await registry.dispose();
   await assert.rejects(registry.set("d", "text"), /stopped/);
+});
+
+test("B1: a conditional writer rejects B arriving after the final registry read without accepting A-derived types", async () => {
+  const base = '{"types":{"status":"text"}}';
+  const external = '{"types":{"status":"checkbox","unknown":"future"}}';
+  const { registry, state } = registryFixture(base);
+  await registry.refresh();
+  const lastGood = registry.types;
+  const changes = state.changed;
+  state.beforeWrite = () => {
+    state.source = external;
+  };
+  await assert.rejects(registry.set("status", "number"), TypesRegistryConflict);
+  assert.equal(state.source, external);
+  assert.equal(state.writes.length, 0);
+  assert.equal(registry.types, lastGood);
+  assert.equal(state.changed, changes);
+  state.beforeWrite = undefined;
+  await registry.refresh();
+  assert.deepEqual(registry.types, { status: "checkbox", unknown: "future" });
+  await registry.set("status", "number");
+  assert.deepEqual(JSON.parse(state.source!), {
+    types: { status: "number", unknown: "future" },
+  });
+  await registry.dispose();
 });
 
 test("B1: built-ins reject incompatible retypes, including case variants", async () => {
