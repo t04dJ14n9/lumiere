@@ -12,6 +12,8 @@ import type { TableEnvironment } from "./environment";
 export class TableGrid {
   readonly table = document.createElement("table");
   readonly wrapper = document.createElement("div");
+  /** Owns horizontal overflow for wide tables (not the note scroller). */
+  readonly scroll: HTMLElement;
   cells: HTMLElement[][] = [];
   model: Table;
   private operationSequence = 0;
@@ -29,12 +31,12 @@ export class TableGrid {
     this.table.className = "markdown-rendered table-editor";
     this.table.setAttribute("aria-label", "Markdown table");
     // A wide table scrolls by itself, as in Obsidian, not the whole note.
-    const scroll = document.createElement("div");
-    scroll.className = "table-scroll";
+    this.scroll = document.createElement("div");
+    this.scroll.className = "table-scroll";
     this.wrapper.className = "table-wrapper";
     this.wrapper.append(this.table);
-    scroll.append(this.wrapper);
-    root.append(scroll);
+    this.scroll.append(this.wrapper);
+    root.append(this.scroll);
   }
 
   start(): number {

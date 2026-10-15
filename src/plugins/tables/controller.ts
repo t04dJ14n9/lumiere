@@ -226,7 +226,10 @@ export class TableController {
     return new TableHandles(
       this.grid.root,
       this.grid.table,
-      this.grid.outer.scrollDOM,
+      {
+        vertical: this.grid.outer.scrollDOM,
+        horizontal: this.grid.scroll,
+      },
       {
         select: (axis, index) => this.selected.selectAxis(axis, index),
         move: (axis, from, to) => {

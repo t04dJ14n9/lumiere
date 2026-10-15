@@ -3720,3 +3720,20 @@ click-to-edit round:
 Files: `src/webview/ui/{pointer-selection,markdown-widget}.ts`,
 `test/unit/webview/pointer-selection.test.ts`.
 
+## Wide-table mouse selection scrolls horizontally — 2026-10-15
+
+Rectangular cell selection and handle drags on a wide Live Preview table did
+not extend rightward past the visible columns. `EdgeScroll` was wired to the
+note `scrollDOM`, but wide tables keep horizontal overflow on `.table-scroll`
+(`overflow-x: auto`; the note does not widen). Dragging near the table's right
+edge therefore never auto-scrolled, so `cellAtPoint` kept resolving to the
+last on-screen column.
+
+Fix: `EdgeScroll` accepts an optional horizontal viewport (defaults to the
+vertical one). Table selection and handles pass `grid.scroll` for X and the
+note scroller for Y. Properties order is unchanged (one viewport for both).
+
+Files: `src/webview/ui/edge-scroll.ts`,
+`src/plugins/tables/{grid,selection,selection-drag,handles,controller}.ts`,
+`test/unit/webview/edge-scroll.test.ts`, `src/plugins/tables/hit-test.test.ts`.
+
