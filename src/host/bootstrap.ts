@@ -11,6 +11,7 @@ import {
   codeBlocksHost,
   markersHost,
   agentBridgeHost,
+  ideContextHost,
   cursorBridgeHost,
   documentHost,
   editorHost,
@@ -83,6 +84,7 @@ export async function bootstrap(
   root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
   root.plugin(agentBridgeHost);
+  root.plugin(ideContextHost);
   root.plugin(cursorBridgeHost, {
     appName: vscode.env?.appName ?? "",
     surface: createCursorHandoffSurface(),

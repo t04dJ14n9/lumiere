@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-/** Keep these files byte-identical with vscode-embedPDF (PDF Workshop). */
+/** Keep these files byte-identical with PDF Workshop. */
 const PINNED: Record<string, string> = {
   "docs/ide-context-packet.md":
     "9a769b58c9492d080e884acdf78d29edfd026b8ba9ec278bbcfd5f7d8807a761",
@@ -16,9 +16,11 @@ const PINNED: Record<string, string> = {
   "src/shared/ide-context/gather.ts":
     "46b45260c9c00b44d49e169628bccafe437f1847e2b327ac809c35a76084b923",
   "src/shared/ide-context/index.ts":
-    "6749b7c5c12374e22f156c856c65bc4089fb37d5dee429861b6c3e748d7a6cbd",
+    "15263a832e778057955a6cb0d4f9c5169309e20240349c281a22bf9102a1d079",
   "src/shared/ide-context/render.ts":
     "64e4cea7fabc2da53e75d641b872b3647321f7c00e4870faf4191ad8b90d068d",
+  "src/shared/ide-context/resolve-target.ts":
+    "985b8338f2e90a995a61ae7f4dd587cff2ac8806c651f40a97a62a73bdefcdc5",
   "src/shared/ide-context/scrub.ts":
     "eb39d23e86b8bb02039abcd33236c237195a2a0fdad77464f24cfce5417e793b",
   "src/shared/ide-context/temp-lease.ts":

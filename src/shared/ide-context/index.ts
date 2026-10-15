@@ -44,3 +44,11 @@ export {
   isReclaimablePayload,
   type ReclaimCaps,
 } from "./temp-reclaim";
+
+export {
+  resolveIdeContextSendTarget,
+  IDE_CONTEXT_AGENT_COMMANDS,
+  type IdeContextTargetSetting,
+  type IdeContextSendResolution,
+  type IdeContextSendEnvironment,
+} from "./resolve-target";
