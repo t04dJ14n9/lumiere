@@ -288,6 +288,29 @@ test("selecting another tab during warming does not steal focus back", async (t)
   assert.deepEqual(commands, [], "openWith must not override the newer tab");
 });
 
+test("selecting another same-URI editor during warming does not reopen", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  const sibling: Tab = {
+    input: new TabInputCustom(Uri.parse(note), viewType),
+    label: tab.label,
+    isDirty: false,
+    isPreview: false,
+    group,
+  };
+  group.tabs.push(sibling);
+  group.activeTab = tab;
+  tabsChanged.fire({ opened: [tab], changed: [] });
+  assert.deepEqual(warmed, [note]);
+  group.activeTab = sibling;
+  release();
+  await tick();
+  assert.deepEqual(commands, [], "same-URI custom tab must keep focus");
+});
+
 test("ambiguous basenames, known previews and diffs are not reclaimed", async (t) => {
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
