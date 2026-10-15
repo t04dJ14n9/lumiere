@@ -1,0 +1,337 @@
+# Occurrence-scoped B1 allowlist.
+# Format: path<TAB>exact-substring
+# A hit is exempt only when that same file's row appears on the hit line and
+# the matched old token lies inside that substring. A different old token on
+# the same line still fails. There is no whole-file or directory wildcard.
+
+# The gate script lists the tokens it searches for. Each row is one pattern
+# entry, including the surrounding quotes, so a later comment in the script
+# is not covered.
+scripts/check-identity-rename.sh	'markdownWorkbench'
+scripts/check-identity-rename.sh	'vscode-markdown-workbench'
+scripts/check-identity-rename.sh	'MarkdownWorkbench'
+scripts/check-identity-rename.sh	'Markdown Workbench'
+scripts/check-identity-rename.sh	'markdown-workbench'
+scripts/check-identity-rename.sh	't04dj14n9.vscode-markdown-workbench'
+
+# This file quotes the tokens it exempts. These rows apply only to lines of
+# this file; they do not exempt the same text anywhere else.
+scripts/identity-rename-allowlist.txt	markdownWorkbench
+scripts/identity-rename-allowlist.txt	vscode-markdown-workbench
+scripts/identity-rename-allowlist.txt	MarkdownWorkbench
+scripts/identity-rename-allowlist.txt	Markdown Workbench
+scripts/identity-rename-allowlist.txt	markdown-workbench
+scripts/identity-rename-allowlist.txt	t04dj14n9.vscode-markdown-workbench
+
+# Phase-1 GitHub URLs that must keep resolving. The row is the URL, so a
+# stray old command id in the same file still fails.
+package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench
+README.md	https://github.com/t04dJ14n9/vscode-markdown-workbench
+API.md	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/
+test/fixtures/sample-plugin/package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/
+test/fixtures/sample-plugin/README.md	https://github.com/t04dJ14n9/vscode-markdown-workbench/issues/42
+
+# The unreleased changelog records the rename.
+CHANGELOG.md	Renamed from Markdown Workbench
+
+# Parity tests mention the old prefix so they can reject it. The assertion
+# text is allowlisted, not the file.
+test/unit/identity/contribution-parity.test.ts	assert.doesNotMatch(command.command, /markdownWorkbench/)
+test/unit/identity/contribution-parity.test.ts	assert.equal(blob.includes("markdownWorkbench."), false)
+test/unit/identity/contribution-parity.test.ts	assert.doesNotMatch(id, /markdownWorkbench/)
+
+# Task 7 should delete the agent-handoff rows below after it rewrites those files.
+docs/agent-handoff-format.md	Markdown Workbench and Agent PDF Viewer
+docs/agent-handoff-format.md	Markdown Workbench saves the note first
+docs/agent-handoff-format.md	note open in Markdown Workbench
+test/fixtures/agent-handoff-format.json	shared by Markdown Workbench and Agent PDF Viewer
+
+# Historical handoffs. Each row is a reviewed phrase from that file.
+docs/HANDOFF_GROKBOT.md	t04dJ14n9/vscode-markdown-workbench
+docs/HANDOFF_GROKBOT.md	Markdown Workbench 0.1.0
+docs/HANDOFF_OPENAI.md	# Handoff: Markdown Workbench
+docs/HANDOFF_OPENAI.md	vscode-markdown-workbench
+docs/HANDOVER.md	markdownWorkbench
+docs/HANDOVER.md	Markdown Workbench
+docs/SESSION_HANDOFF_2026-10-09.md	markdownWorkbench
+docs/SESSION_HANDOFF_2026-10-09.md	vscode-markdown-workbench
+
+# Historical measurement harnesses. Paths point at an old checkout.
+docs/obsidian-measurements/probe.mjs	/workspace/repos/vscode-markdown-workbench/node_modules
+docs/obsidian-measurements/tables/vim-lib.mjs	/workspace/repos/vscode-markdown-workbench/node_modules
+docs/vim-caret-measurements/ours.mjs	"*.md": "markdownWorkbench.editor"
+docs/vim-caret-measurements/ours.mjs	"markdownWorkbench.plugins.vim.enabled": true
+docs/vim-caret-measurements/timing-ours.mjs	"*.md": "markdownWorkbench.editor"
+docs/vim-caret-measurements/timing-ours.mjs	"markdownWorkbench.plugins.vim.enabled": true
+
+# Historical plans. Not current product prose.
+docs/plans/obsidian-settings-audit.md	markdownWorkbench
+docs/plans/obsidian-settings-audit.md	/workspace/repos/vscode-markdown-workbench
+docs/plans/okf-plugins.md	markdownWorkbench
+docs/plans/okf-plugins.md	/workspace/repos/vscode-markdown-workbench
+docs/plans/plugins-architecture.md	markdownWorkbench
+docs/plans/plugins-architecture.md	t04dj14n9.vscode-markdown-workbench
+docs/plans/plugins-architecture.md	vscode-markdown-workbench
+docs/plans/plugins-architecture.md	withMarkdownWorkbench
+docs/plans/scm-inline-routing.md	opening Markdown Workbench with
+
+# Dated phase records, including the original target-tree folder name.
+IMPLEMENTATION_PLAN.md	markdownWorkbench
+IMPLEMENTATION_PLAN.md	vscode-markdown-workbench
+IMPLEMENTATION_PLAN.md	Markdown Workbench
+IMPLEMENTATION_PLAN.md	/tmp/markdown-workbench-e2e-
+
+# Rename plan and design specs, quoted on purpose and not rewritten.
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	markdownWorkbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	t04dj14n9.vscode-markdown-workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	vscode-markdown-workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	MarkdownWorkbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Markdown Workbench
+docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	markdown-workbench
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	markdownWorkbench
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	t04dj14n9.vscode-markdown-workbench
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	vscode-markdown-workbench
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	MarkdownWorkbench
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	Markdown Workbench
+docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md	markdown-workbench
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	markdownWorkbench
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	vscode-markdown-workbench
+docs/superpowers/specs/2026-10-15-cursor-bridge-design.md	Markdown Workbench
+docs/superpowers/specs/pro-answer.md	markdownWorkbench
+docs/superpowers/specs/pro-answer.md	Markdown Workbench
+docs/superpowers/specs/pro-meta.md	markdownWorkbench
+
+# Historical pnpm logs under docs/checks. One row per file. Check and browser
+# logs share the package-script header. Native logs also name the throwaway
+# profile and the webview wait line; a hit outside those phrases still fails.
+docs/checks/composition-audit-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-audit-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-audit-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-audit-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/composition-audit-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/composition-kernel.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-registry.txt	vscode-markdown-workbench@0.1.0
+docs/checks/composition-state.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/panel-vault-bridge-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/panel-vault-bridge-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase3-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-completed-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase3-completed-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase3-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase3-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase3-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-callouts-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-callouts-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-codeblocks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-codeblocks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-continuation-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-continuation-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-continuation-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-continuation-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-continuation-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-copy-agent-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-copy-agent-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-copy-agent-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-copy-agent-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-copy-agent-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-diagrams-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-diagrams-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-embeds-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-embeds-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-footnotes-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-footnotes-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-incomplete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-incomplete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-indexed-search-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-indexed-search-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-indexed-search-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-indexed-search-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-indexed-search-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-inline-title-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-inline-title-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-inline-title-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-inline-title-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-inline-title-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-links-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-links-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-links-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-links-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-links-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-markers-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-markers-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-markers-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-markers-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-markers-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-math-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-math-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-pagepreview-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-pagepreview-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-paste-html-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-paste-html-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-properties-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-properties-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-search-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-search-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-search-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-search-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-search-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-suggest-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-cache-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-suggest-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-suggest-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-tables-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tables-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tables-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tables-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-tables-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-tags-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tags-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tags-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tags-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-tags-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-tasks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tasks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tasks-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-tasks-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase4-tasks-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase4-widget-links-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase4-widget-links-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase5-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase5-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase6-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase6-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase6-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase6-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase6-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/phase7-contributions-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase7-contributions-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase7-contributions-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/phase7-contributions-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/phase7-contributions-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-callouts-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-callouts-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-canvas-data-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-codeblocks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-codeblocks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-commands-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-commands-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-complete-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-complete-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-complete-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-complete-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-complete-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-diagrams-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-diagrams-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-document-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-document-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-editor-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-editor-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-editor-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-editor-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-editor-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-embeds-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-embeds-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-features-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-features-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnote-metadata-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnote-metadata-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnotes-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-footnotes-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-formatting-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-formatting-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-fuzzy-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-html-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-html-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-images-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-images-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-kernel-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-kernel-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-links-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-links-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-livepreview-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-livepreview-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-math-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-math-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-menu-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-menu-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-metadata-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-navigation-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-navigation-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-preview-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-preview-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-properties-final-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-properties-final-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-controls-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-controls-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-editing-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-editing-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-edits-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-lists-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-lists-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-merge-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-property-order-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-query-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-readmes-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-render-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-render-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-resources-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-resources-native.txt	Native: waiting for Markdown Workbench webview
+docs/checks/readability-rpc-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-rpc-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-search-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-search-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-table-model-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tables-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tables-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tasks-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-tasks-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-vim-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-vim-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-webm-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-webm-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-browser.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-check.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-native.txt	vscode-markdown-workbench@0.1.0
+docs/checks/readability-workbench-native.txt	/tmp/markdown-workbench-e2e-
+docs/checks/readability-workbench-native.txt	Native: waiting for Markdown Workbench webview
