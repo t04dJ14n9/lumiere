@@ -1,14 +1,15 @@
 # Git diff viewer UX (borrow VS Code, keep our stack)
 
 Date: 2026-10-15  
-Status: revised after ChatGPT High REQUEST CHANGES (r2 → R1–R3)  
+Status: revised after ChatGPT High REQUEST CHANGES (r3 → R4)  
 Repo: vscode-markdown-workbench  
 Branch: `docs/git-diff-vscode-ux`
 
 ## Review provenance
 
-- Round 1: ChatGPT High REQUEST CHANGES **B1–B6** — local `/workspace/plans/chatgpt-git-diff-ux/ANSWER.md`; folded into this doc (commit `2e283e1`).
-- Round 2: ChatGPT High REQUEST CHANGES **R1–R3** — local `/workspace/plans/chatgpt-git-diff-ux-r2/ANSWER.md`; this revision folds those three only.
+- Round 1: ChatGPT High REQUEST CHANGES **B1–B6** — local `/workspace/plans/chatgpt-git-diff-ux/ANSWER.md`; folded in `2e283e1`.
+- Round 2: ChatGPT High REQUEST CHANGES **R1–R3** — local `/workspace/plans/chatgpt-git-diff-ux-r2/ANSWER.md`; folded in `eb5c413`.
+- Round 3: ChatGPT High REQUEST CHANGES **R4** — local `/workspace/plans/chatgpt-git-diff-ux-r3/ANSWER.md`; this revision folds R4 only.
 - Chat: [Critique Git UX Design](https://chatgpt.com/g/g-p-6ad0841322fc81919438032f917cf8e8-markdown-workshop/c/6ad0beea-a44c-83ea-95ad-ac069f24867c)
 - Locked product decisions below are unchanged. Author judgment: keep the shared model readable — enough state for correct peek mutations in v1, not an enterprise SCM framework.
 
@@ -96,7 +97,7 @@ Replace vague `compareTo` with an explicit pair **and** concrete identities.
 base / target =
   { kind: 'HEAD', oid }           // resolved commit OID at compute time
 | { kind: 'INDEX', fingerprint }  // per-file (or index) fingerprint available from the Git layer
-| { kind: 'WORKTREE' }            // bytes come from disk or the live document — see sourceState.document
+| { kind: 'WORKTREE' }            // bytes origin recorded in sourceState.worktreeBytes (document vs disk)
 | { kind: 'revision', ref, oid }  // ref is the user-facing name; oid is the resolved object
 | { kind: 'empty' }               // untracked / no base
 ```
@@ -111,12 +112,16 @@ Do **not** store bare category strings like `"revision"` without `ref` + `oid`.
 sourceState =
   baseOidOrFingerprint   // from base side
   targetOidOrFingerprint // from target side (index fingerprint when target is INDEX)
-  document?              // { uri, version, isDirty } when liveDocumentUri is set / WORKTREE bytes come from TextDocument
+  worktreeBytes?         // required when base or target is WORKTREE (incl. empty→untracked worktree file):
+                         //   { origin: 'document', uri, version, isDirty }
+                         //   | { origin: 'disk', path, fingerprint }  // per-file worktree content identity
 ```
 
-Exact fingerprint mechanism follows whatever the existing Git API already exposes — do not invent a full-repo hash. The invariant:
+`worktreeBytes` records **which** WORKTREE bytes the snapshot was computed from — the in-memory `TextDocument` or the on-disk file. Matching `document.version` / `isDirty` alone does not prove the Git backend will mutate those same bytes.
 
-> A mutation runs only if the source state against which its hunk was computed is still the source state being mutated.
+Exact fingerprint mechanism follows whatever the existing Git API already exposes — do not invent a full-repo hash. A per-file content identity / provider version that proves the backend is operating on the same worktree content is enough. The invariant:
+
+> A mutation runs only if every source it consumes or mutates still corresponds to the bytes represented by `sourceState` — including Stage, not only Revert / Unstage.
 
 `generationId` remains useful for UI lifecycle and cancelling in-flight recomputes. It is **not** the sole correctness proof for Stage / Unstage / Revert.
 
@@ -174,18 +179,34 @@ ActionIntent {
 Then:
 
 1. Synchronously enter **mutation-pending** for that file (or repository) — disable conflicting mutation controls; reject a second click on a stale generation (single-flight; not a transaction framework).
-2. Re-read / validate authoritative `sourceState` (OIDs / index fingerprint / document version as applicable). If it does not match the intent → **ABORT**, refresh UI, clear pending.
+2. Re-read / validate authoritative `sourceState` (OIDs / index fingerprint / `worktreeBytes` document version or disk fingerprint as applicable). If it does not match the intent — or if the backend would operate on different WORKTREE bytes than `worktreeBytes` records → **ABORT**, refresh UI, clear pending.
 3. Re-resolve the hunk by **exact** fingerprint + matching `sourceState`. If missing → **ABORT**. **Never** fall back to nearest surviving hunk for a mutation.
 4. Execute the Git mutation only against that exact hunk.
 5. On completion (success or failure): clear pending, recompute snapshot, apply passive UI rematch for whatever peek remains.
 
 **No nearest fallback is ever allowed for Stage / Unstage / Revert.** Silently acting on a different hunk after a refresh is a correctness failure.
 
-### Dirty unsaved documents
+### Dirty / disk-divergent WORKTREE bytes (covers Stage too)
 
-If the preview is from the in-memory `TextDocument` but the Git action would apply against disk/index, disable destructive buttons unless the existing Git layer can safely reconcile that exact buffer version (`sourceState.document`). Prefer disable over wrong-target mutation.
+For **any** Stage / Unstage / Revert, every operand must match the bytes represented by `sourceState`. “Destructive only” is not enough — Stage can wrong-target too.
 
-Initial Stage/Revert wiring may ship disabled until exact + `sourceState` validation and single-flight are in place (see build order).
+Example (must not Stage disk bytes when the peek shows the buffer):
+
+```text
+disk:            foo\nbar
+dirty TextDocument: foo\nNEW LINE\nbar
+peek (from buffer): shows NEW LINE as an addition
+user clicks Stage → if backend stages the on-disk file, Git stages foo\nbar — not the hunk shown
+```
+
+Rules:
+
+1. If the hunk was computed from an in-memory dirty `TextDocument` (`worktreeBytes.origin === 'document'`) but the Git backend stages / reverts the **on-disk** file, **disable Stage and Revert** (and abort if somehow invoked) unless that backend can safely apply the **exact in-memory hunk** / buffer content. Matching `document.version` + `isDirty` while the backend reads disk is still a mismatch.
+2. Same for `empty → untracked` dirty files: UI may show unsaved contents; Stage must not stage an older disk version.
+3. If WORKTREE contents were computed from disk (`worktreeBytes.origin === 'disk'`), revalidate the per-file worktree fingerprint before mutation; mismatch → **ABORT**.
+4. Prefer disable / abort over wrong-target mutation.
+
+Initial Stage/Revert wiring may ship disabled until exact + `sourceState` (including `worktreeBytes`) validation and single-flight are in place (see build order).
 
 ---
 
@@ -284,9 +305,9 @@ Optional later: `\ No newline at end of file` indicator for terminal-newline-onl
 
 Name TBD (e.g. `gitShared` or `shared/git-diff-chrome`). Responsibilities:
 
-1. Snapshot / hunk computation (single source for gutter + peek + inline), including structured sides + `sourceState`.
+1. Snapshot / hunk computation (single source for gutter + peek + inline), including structured sides + `sourceState` / `worktreeBytes`.
 2. `openHunk` / prev / next / close against current generation; UI nearest rematch.
-3. Capability-gated action dispatch with **exact** hunk + `sourceState` checks and per-file single-flight mutation pending.
+3. Capability-gated action dispatch with **exact** hunk + `sourceState`/`worktreeBytes` checks (Stage included for dirty-buffer vs disk) and per-file single-flight mutation pending.
 4. Theme tokens mapped to host when available — prefer real VS Code token names where they exist, e.g. `diffEditor.insertedLineBackground`, `diffEditor.removedLineBackground`, `editorGutter.addedBackground`, `editorGutter.modifiedBackground`, `editorGutter.deletedBackground`, `peekView.*`. Prefer non-opaque diff backgrounds so underlying decorations remain visible.
 5. Unified raw peek widget (B6).
 
@@ -306,7 +327,7 @@ Name TBD (e.g. `gitShared` or `shared/git-diff-chrome`). Responsibilities:
 
 1. Click gutter mark (add/modify/delete) → resolve hunk from current snapshot → open raw unified peek; if `liveAnchor` present, Live Preview caret → that anchor (clicked line); focus stays in Live Preview; header shows derived `N of M`.
 2. Prev/next cycle file-local + comparison-local hunks with wraparound; update caret per B4 when `liveAnchor` exists; retain focus owner.
-3. Stage / Unstage / Revert only when `capabilities` allow **and** exact fingerprint + `sourceState` validate under single-flight (B2/R2, B3/R3). Never nearest-retarget a mutation.
+3. Stage / Unstage / Revert only when `capabilities` allow **and** exact fingerprint + `sourceState` (including `worktreeBytes`) validate under single-flight (B2/R2, B3/R3/R4). Never nearest-retarget a mutation; never Stage disk bytes when the peek was computed from a divergent dirty buffer.
 4. Escape / close → focus Live Preview at currently displayed hunk’s `liveAnchor` when present.
 5. Open Full Diff from peek with this snapshot’s base→target.
 6. Inline collapsed click → same `openHunk`, subject to B5 precedence.
@@ -324,8 +345,8 @@ Name TBD (e.g. `gitShared` or `shared/git-diff-chrome`). Responsibilities:
 
 ## Build order
 
-1. **Shared semantic hunk layer** — repository; structured base/target (with OID/fingerprint/`{kind,ref,oid}`); `sourceState` version vector; `originalRange` / `modifiedRange`; optional `liveAnchor` / `liveDocumentUri`; immutable `generationId`; line records; capabilities; exact vs nearest rematch helpers; single-flight mutation gate. No chrome yet.
-2. **`gitGutter` → raw unified peek** — pure adds, pure deletes, prev/next, deterministic focus restoration when `liveAnchor` present, passive stale refresh; Stage/Revert disabled until exact + `sourceState` + single-flight work, then enable per matrix.
+1. **Shared semantic hunk layer** — repository; structured base/target (with OID/fingerprint/`{kind,ref,oid}`); `sourceState` version vector including `worktreeBytes` (document vs disk); `originalRange` / `modifiedRange`; optional `liveAnchor` / `liveDocumentUri`; immutable `generationId`; line records; capabilities; exact vs nearest rematch helpers; single-flight mutation gate; dirty-buffer vs disk Stage disable/abort. No chrome yet.
+2. **`gitGutter` → raw unified peek** — pure adds, pure deletes, prev/next, deterministic focus restoration when `liveAnchor` present, passive stale refresh; Stage/Revert disabled until exact + `sourceState`/`worktreeBytes` + single-flight work, then enable per matrix.
 3. **`gitInline` thin adapter** to the same `openHunk` with B5 precedence.
 4. **`gitDiffEditor` chrome / navigation alignment** last (no `liveAnchor` required).
 
@@ -339,7 +360,7 @@ This tests the hard state model once instead of three visually consistent surfac
 - Reference VS Code for measurements, aria label ideas, and **actual** theme token names (not merely similar colors).
 - Preserve horizontal scroll and copy for long Markdown lines (URLs, tables, frontmatter).
 - Responsive peek header: on narrow editors keep close + prev/next visible; overflow Stage / Revert / Open Full Diff into `…`.
-- Tests (minimum): gutter click on added line opens peek; modified/deleted unchanged; caret = `liveAnchor` / clicked line for WORKTREE; HEAD→INDEX hunks have comparison-side ranges without pretending Live Preview is the target; stale / mismatched `sourceState` aborts mutation; nearest UI rematch does **not** retarget Stage/Revert; overlapping Stage clicks are single-flight; inline click does not steal link/checkbox/selection.
+- Tests (minimum): gutter click on added line opens peek; modified/deleted unchanged; caret = `liveAnchor` / clicked line for WORKTREE; HEAD→INDEX hunks have comparison-side ranges without pretending Live Preview is the target; stale / mismatched `sourceState` aborts mutation; nearest UI rematch does **not** retarget Stage/Revert; overlapping Stage clicks are single-flight; **dirty TextDocument + disk divergence → Stage disabled/aborted** unless the staging backend explicitly consumes that exact in-memory hunk; inline click does not steal link/checkbox/selection.
 - Ship behind existing plugin toggles; no forced enable of `gitInline`.
 
 ---
@@ -364,5 +385,7 @@ This tests the hard state model once instead of three visually consistent surfac
 1. User approved direction in chat (2026-10-15): keep own viewer; borrow UX (click → diff; added lines open diff); raw text inside hunk; Live Preview stays rendered; shared language across three surfaces.
 2. ChatGPT High REQUEST CHANGES round 1 (same date): blockers B1–B6 — folded in `2e283e1`.
 3. User approved revising with ChatGPT’s B1–B6 fixes (same date).
-4. ChatGPT High REQUEST CHANGES round 2 (same date): blockers R1–R3 — this revision.
+4. ChatGPT High REQUEST CHANGES round 2 (same date): blockers R1–R3 — folded in `eb5c413`.
 5. User approved folding R1–R3 only (real correctness); skip trivial/low-ROI asks; keep the model readable for v1 peek-mutation correctness.
+6. ChatGPT High REQUEST CHANGES round 3 (same date): blocker **R4** (Stage + dirty WORKTREE operand identity) — this revision.
+7. User approved folding R4 only (real issue); skip fluff / non-blocking polish.
