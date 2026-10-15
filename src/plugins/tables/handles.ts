@@ -1,6 +1,10 @@
 import type { CellPosition } from "../../markdown/tables/model";
 import type { Axis } from "../../markdown/tables/operations";
-import { EdgeScroll, type PointerPoint } from "../../webview/ui/edge-scroll";
+import {
+  EdgeScroll,
+  type DragViewports,
+  type PointerPoint,
+} from "../../webview/ui/edge-scroll";
 import { nearestEntry } from "./hit-test";
 
 interface HandleActions {
@@ -30,11 +34,14 @@ export class TableHandles {
   constructor(
     private readonly root: HTMLElement,
     private readonly table: HTMLTableElement,
-    viewport: HTMLElement,
+    viewports: DragViewports,
     actions: HandleActions,
   ) {
-    this.scrolling = new EdgeScroll(viewport, table, (point) =>
-      this.updateTarget(point),
+    this.scrolling = new EdgeScroll(
+      viewports.vertical,
+      table,
+      (point) => this.updateTarget(point),
+      viewports.horizontal,
     );
     this.indicator.className = "table-drop-indicator";
     this.indicator.hidden = true;

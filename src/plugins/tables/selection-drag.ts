@@ -1,5 +1,9 @@
 import type { CellPosition } from "../../markdown/tables/model";
-import { EdgeScroll, type PointerPoint } from "../../webview/ui/edge-scroll";
+import {
+  EdgeScroll,
+  type DragViewports,
+  type PointerPoint,
+} from "../../webview/ui/edge-scroll";
 import { cellAtPoint } from "./hit-test";
 
 interface Gesture {
@@ -30,11 +34,14 @@ export class TableSelectionDrag {
   constructor(
     private readonly root: HTMLElement,
     private readonly table: HTMLTableElement,
-    viewport: HTMLElement,
+    viewports: DragViewports,
     private readonly actions: SelectionActions,
   ) {
-    this.scrolling = new EdgeScroll(viewport, table, (point) =>
-      this.update(point),
+    this.scrolling = new EdgeScroll(
+      viewports.vertical,
+      table,
+      (point) => this.update(point),
+      viewports.horizontal,
     );
     this.registerEvents();
   }

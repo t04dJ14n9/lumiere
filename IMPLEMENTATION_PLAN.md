@@ -3656,3 +3656,101 @@ the target via `authorizeTarget`, so a PDF such as `/raw/paper.pdf#page=3` no
 longer fails the note-source allowlist. Embed "Open image file" passes each
 resource element's `data-wiki` intent into `links/open`, so a Markdown image
 opens the Markdown-resolved sibling rather than the wikilink vault-root twin.
+
+## Phase record — mouse selection scroll + Mermaid UI (15 October 2026)
+
+Live Preview mouse drags near tall blocks (images, Mermaid, ASCII fences) jumped
+the viewport. Root causes verified in code:
+
+1. `editOnClick` ran on **mousedown** with `scrollIntoView: true` and
+   `preventDefault`, so clicking/dragging a rendered Mermaid/math/code widget
+   scrolled to the fence start and blocked selection.
+2. A `mousemove` with a transient `buttons === 0` (common on remote desktop
+   during fast drags) thawed the pointer reveal freeze mid-gesture, so Live
+   Preview reflowed under the live selection and heights jumped.
+3. Block/inline/code-source decorations still rebuilt on every selection tick
+   while the freeze was active, thrashing widget DOM needlessly.
+
+Fix: defer click-to-edit until a non-drag mouseup without forced scroll; let
+CodeMirror handle mouse events through block widgets (buttons excluded);
+debounce buttons-up release by 50ms; skip decoration rebuilds while
+`isPointerSelecting`. Mermaid Copy/Edit share one row (`top: 10px`, aligned
+sizes); SVG labels opt into `user-select: text`.
+
+Files: `src/webview/ui/{pointer-selection,markdown-widget}.ts`,
+`src/plugins/livePreview/{blocks,inline}.ts`,
+`src/plugins/codeBlocks/{code-source.ts,codeBlocks.css}`,
+`src/plugins/diagrams/diagrams.css`, `src/webview/styles/markdown.css`,
+`test/unit/webview/{pointer-selection,selection}.test.ts`.
+
+Validation: eslint on changed files; `tsx --test` pointer-selection + selection
+unit tests (7/7); `tsc` for webview, plugins webview, and test projects.
+
+## Review fixes for mouse selection / Mermaid widgets — 2026-10-15
+
+Addresses two P2 findings from the ChatGPT Pro review of PR #46:
+
+1. `ignoreEvent` no longer uses unbounded `target.closest(interactive)` (which
+   matched the outer `.cm-content[contenteditable]`). Ownership is bounded to
+   `.hybrid-block`; `selectionchange` stays with the widget so native Mermaid
+   SVG label selection is not remapped; SVG `<text>` / `<tspan>` keep native
+   mouse handling while blank diagram area still goes to CodeMirror.
+2. Click-to-edit uses a full gesture lifecycle: drag latches once the threshold
+   is crossed (even if the pointer returns), document-level mouseup only commits
+   when the matching press ends over the widget, and blur / pointercancel /
+   outside release clear the pending press without editing.
+
+Files: `src/webview/ui/markdown-widget.ts`,
+`test/unit/webview/markdown-widget.test.ts`.
+
+## Pointer freeze skips native Mermaid label selection — 2026-10-15
+
+Addresses the remaining ChatGPT Pro P2 on PR #46 after the ignoreEvent /
+click-to-edit round:
+
+1. `pointerSelectionTracking` no longer freezes on primary mousedown over
+   Mermaid SVG `<text>` / `<tspan>`. Thaw was dispatching a transaction that
+   ran CodeMirror `updateSelection()` and cleared the browser's native label
+   selection. Ordinary Live Preview drags still freeze so tall blocks do not
+   reflow mid-selection.
+2. Thaw is deferred with `setTimeout(0)` instead of `queueMicrotask`, so a
+   `pointerup`-first gesture cannot reveal/destroy the widget before
+   click-to-edit's `mouseup`.
+
+Files: `src/webview/ui/{pointer-selection,markdown-widget}.ts`,
+`test/unit/webview/pointer-selection.test.ts`.
+
+## Wide-table mouse selection scrolls horizontally — 2026-10-15
+
+Rectangular cell selection and handle drags on a wide Live Preview table did
+not extend rightward past the visible columns. `EdgeScroll` was wired to the
+note `scrollDOM`, but wide tables keep horizontal overflow on `.table-scroll`
+(`overflow-x: auto`; the note does not widen). Dragging near the table's right
+edge therefore never auto-scrolled, so `cellAtPoint` kept resolving to the
+last on-screen column.
+
+Fix: `EdgeScroll` accepts an optional horizontal viewport (defaults to the
+vertical one). Table selection and handles pass `grid.scroll` for X and the
+note scroller for Y. Properties order is unchanged (one viewport for both).
+
+Files: `src/webview/ui/edge-scroll.ts`,
+`src/plugins/tables/{grid,selection,selection-drag,handles,controller}.ts`,
+`test/unit/webview/edge-scroll.test.ts`, `test/unit/tables/hit-test.test.ts`.
+
+
+## Pointer release timers scoped to gesture generation — 2026-10-15
+
+Addresses the remaining ChatGPT Pro P2 on PR #46 (r3): release timers could
+outlive their gesture and thaw a newly held drag.
+
+1. `onGestureEnd` only arms the buttons-up debounce while `isActive()` is true
+   (pointer freeze present), so idle hover cannot schedule a release that fires
+   after a later press. `cancelPending()` lets a new primary press drop any
+   in-flight buttons-up timer from a prior gesture.
+2. Each editor-selection press bumps a gesture generation, clears deferred thaw,
+   and re-establishes the frozen selection. Deferred thaw callbacks no-op when
+   their captured generation is stale, so release → new press before `setTimeout(0)`
+   cannot clear the second freeze. Native Mermaid SVG label bypass is unchanged.
+
+Files: `src/webview/ui/pointer-selection.ts`,
+`test/unit/webview/pointer-selection.test.ts`.

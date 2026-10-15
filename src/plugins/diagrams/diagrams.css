@@ -8,6 +8,12 @@ pre[data-fence="mermaid"]:has(> svg) {
 pre[data-fence="mermaid"] svg {
   max-width: 100%;
   height: auto;
+  /* Labels are SVG text; allow selecting them when not click-to-editing. */
+  user-select: text;
+  -webkit-user-select: text;
+}
+pre[data-fence="mermaid"] svg text {
+  cursor: text;
 }
 .diagram-error {
   margin: 4px 0 0;

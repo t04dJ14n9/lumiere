@@ -30,7 +30,7 @@ export class TableSelection {
     this.drag = new TableSelectionDrag(
       grid.root,
       grid.table,
-      grid.outer.scrollDOM,
+      { vertical: grid.outer.scrollDOM, horizontal: grid.scroll },
       {
         select: (anchor, head) => {
           this.select({ anchor, head });
