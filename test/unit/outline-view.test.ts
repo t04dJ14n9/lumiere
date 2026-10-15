@@ -5,10 +5,11 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import type { OutlineItem } from '../../src/shared/messages';
 import { findActiveOutlineItem } from '../../src/shared/outline';
+import { OUTLINE_COMMAND_IDS } from '../../src/extension/plugins/pdf/registered-commands';
 import { Disposable, EventEmitter, TreeItem, TreeItemCollapsibleState } from './support/fake-vscode';
 
-const SETTING = 'vscodeEmbedPdf.outline.followCursor';
-const CONTEXT = 'vscodeEmbedPdf.outlineFollowCursor';
+const SETTING = 'pdfWorkshop.outline.followCursor';
+const CONTEXT = 'pdfWorkshop.outlineFollowCursor';
 const tick = () => new Promise<void>(resolve => setImmediate(resolve));
 const heading = (title: string, page: number, children: OutlineItem[] = [], top = 0): OutlineItem =>
   ({ title, page, top, children });
@@ -83,6 +84,7 @@ function harness(enabled = false, visible = true) {
   const modules: Record<string, unknown> = {
     vscode: api,
     '../../../shared/outline': { findActiveOutlineItem },
+    '../pdf/registered-commands': { OUTLINE_COMMAND_IDS },
     '../../settings': {
       updateSetting: async (key: string, value: boolean) => {
         writes.push({ key, value });
@@ -123,7 +125,7 @@ function harness(enabled = false, visible = true) {
     },
     hold(callback?: () => Promise<void>) { hold = callback; },
     command(id: string, ...args: unknown[]) {
-      const command = commands.get(`vscodeEmbedPdf.${id}`);
+      const command = commands.get(`pdfWorkshop.${id}`);
       assert.ok(command, id);
       return command(...args);
     },
@@ -268,7 +270,7 @@ test('clicking an outline item still navigates to its page and offset', t => {
   const item = heading('Heading', 3, [], 120);
   const panel = h.panel([item], 3); h.activate(panel); h.start();
   const command = h.provider.getTreeItem(item).command!;
-  h.command(command.command.replace('vscodeEmbedPdf.', ''), ...command.arguments);
+  h.command(command.command.replace('pdfWorkshop.', ''), ...command.arguments);
   assert.deepEqual(h.navigations, [{ panel, page: 3, top: 120 }]);
 });
 
@@ -295,16 +297,16 @@ test('outline actions contribute Expand All and mutually exclusive overflow Foll
   assert.deepEqual(contributes.configuration.properties[SETTING]?.default, false);
   assert.equal(contributes.configuration.properties[SETTING]?.type, 'boolean');
   const menus = contributes.menus['view/title']!;
-  const expand = menus.find(item => item.command === 'vscodeEmbedPdf.expandOutline')!;
-  assert.equal(expand.when, 'view == vscodeEmbedPdf.outline');
+  const expand = menus.find(item => item.command === 'pdfWorkshop.expandOutline')!;
+  assert.equal(expand.when, 'view == pdfWorkshop.outline');
   assert.equal(expand.group, 'navigation@1');
   for (const [name, checked] of [['enableOutlineFollowCursor', false], ['disableOutlineFollowCursor', true]] as const) {
-    const command = `vscodeEmbedPdf.${name}`;
+    const command = `pdfWorkshop.${name}`;
     const definition = contributes.commands.find(item => item.command === command)!;
     assert.equal(definition.title, 'Follow Cursor');
     assert.equal(definition.icon, checked ? '$(check)' : undefined);
     const menu = menus.find(item => item.command === command)!;
-    assert.equal(menu.when, `view == vscodeEmbedPdf.outline && ${checked ? '' : '!'}${CONTEXT}`);
+    assert.equal(menu.when, `view == pdfWorkshop.outline && ${checked ? '' : '!'}${CONTEXT}`);
     assert.ok(!menu.group?.startsWith('navigation'), 'Follow Cursor belongs in the overflow menu');
   }
 });

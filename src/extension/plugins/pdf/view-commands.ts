@@ -7,6 +7,7 @@ import {
 } from "../../../shared/view-state";
 import { ZOOM_STEPS } from "../../../shared/zoom-steps";
 import type { PdfPanels } from "./panels";
+import { VIEW_COMMAND_IDS } from "./registered-commands";
 
 /**
  * The commands behind the viewer's controls, wherever they are: the editor
@@ -17,55 +18,55 @@ export function registerViewCommands(panels: PdfPanels): vscode.Disposable {
   const act = (action: ViewerAction) => (): void => panels.active?.act(action);
   return vscode.Disposable.from(
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.previousPage",
+      VIEW_COMMAND_IDS.previousPage,
       act({ action: "previousPage" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.nextPage",
+      VIEW_COMMAND_IDS.nextPage,
       act({ action: "nextPage" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.previousPageKeepingPlace",
+      VIEW_COMMAND_IDS.previousPageKeepingPlace,
       act({ action: "previousPageKeepingPlace" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.nextPageKeepingPlace",
+      VIEW_COMMAND_IDS.nextPageKeepingPlace,
       act({ action: "nextPageKeepingPlace" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.zoomIn",
+      VIEW_COMMAND_IDS.zoomIn,
       act({ action: "zoomIn" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.zoomOut",
+      VIEW_COMMAND_IDS.zoomOut,
       act({ action: "zoomOut" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.fitWidth",
+      VIEW_COMMAND_IDS.fitWidth,
       act({ action: "fitWidth" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.fitPage",
+      VIEW_COMMAND_IDS.fitPage,
       act({ action: "fitPage" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.find",
+      VIEW_COMMAND_IDS.find,
       act({ action: "find" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.selectTextTool",
+      VIEW_COMMAND_IDS.selectTextTool,
       act({ action: "setTool", tool: "text" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.selectRegionTool",
+      VIEW_COMMAND_IDS.selectRegionTool,
       act({ action: "setTool", tool: "region" }),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.goToPage",
+      VIEW_COMMAND_IDS.goToPage,
       (page?: unknown) => goToPage(panels, page),
     ),
     vscode.commands.registerCommand(
-      "vscodeEmbedPdf.selectZoom",
+      VIEW_COMMAND_IDS.selectZoom,
       (percent?: unknown) => selectZoom(panels, percent),
     ),
   );

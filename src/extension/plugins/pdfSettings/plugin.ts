@@ -5,8 +5,9 @@ import { EXTENSION_ID, updateSetting } from '../../settings';
 import type { PluginDefinition, PdfServices } from '../services';
 import { changeSetting } from './change-setting';
 import manifest from './manifest';
+import { SETTINGS_COMMAND_IDS } from '../pdf/registered-commands';
 
-const VIEW = 'vscodeEmbedPdf.view';
+const VIEW = 'pdfWorkshop.view';
 
 const read = <T>(key: string, fallback: T): T => vscode.workspace.getConfiguration().get<T>(key, fallback);
 const say = (text: string): void => void vscode.window.setStatusBarMessage(`PDF: ${text}`, 3_000);
@@ -28,8 +29,8 @@ async function choose<T>(title: string, choices: Pick<T>[], current: unknown): P
 export const pdfSettingsPlugin: PluginDefinition<PdfServices> = {
   manifest,
   activate(scope) {
-    const command = (id: string, run: () => Thenable<unknown> | void): void =>
-      void scope.acquire(vscode.commands.registerCommand(`vscodeEmbedPdf.${id}`, run), 'command');
+    const command = (id: keyof typeof SETTINGS_COMMAND_IDS, run: () => Thenable<unknown> | void): void =>
+      void scope.acquire(vscode.commands.registerCommand(SETTINGS_COMMAND_IDS[id], run), 'command');
 
     command('openSettings', () => vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${EXTENSION_ID}`));
 
@@ -42,8 +43,8 @@ export const pdfSettingsPlugin: PluginDefinition<PdfServices> = {
     });
 
     command('toggleKeyboardShortcuts', async () => {
-      const on = read('vscodeEmbedPdf.keyboardShortcuts', true);
-      await updateSetting('vscodeEmbedPdf.keyboardShortcuts', !on);
+      const on = read('pdfWorkshop.keyboardShortcuts', true);
+      await updateSetting('pdfWorkshop.keyboardShortcuts', !on);
       say(`keyboard shortcuts ${on ? 'off' : 'on'}`);
     });
 

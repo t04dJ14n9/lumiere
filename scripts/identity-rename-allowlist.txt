@@ -1,0 +1,11 @@
+# phase-1 GitHub URLs still use the live repository name
+package.json	https://github.com/t04dJ14n9/vscode-embedPDF
+README.md	https://github.com/t04dJ14n9/vscode-embedPDF
+
+# changelog rename note
+CHANGELOG.md	renamed from Agent PDF Viewer
+
+# historical handoff names the still-live repository
+docs/HANDOFF_OPENAI.md	https://github.com/t04dJ14n9/vscode-embedPDF
+docs/HANDOFF_OPENAI.md	| vscode-embedPDF | PDF viewer extension
+docs/HANDOFF_OPENAI.md	### vscode-embedPDF

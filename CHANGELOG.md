@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The extension was renamed from Agent PDF Viewer (EmbedPDF) to PDF Workshop (package `vscode-pdf-workshop`).
 - Memory-only, per-pane PDF location history: Back to Previous Location / Forward
   to Next Location restore page coordinates, zoom and view mode after deliberate
   jumps. Separate from page stepping and native file navigation; no keybindings changed.
@@ -11,8 +12,8 @@
   rejects invalid page destinations. Cancelled or superseded queued requests are
   skipped. An already dispatched native editor open may finish, then the newest
   valid request opens last; stale requests never apply a page destination.
-- PDFs render in Restricted Mode. Workspace values for `vscodeEmbedPdf.agentBridge.enabled`
-  and `vscodeEmbedPdf.copyLinkForAgent.target` are ignored until the folder is trusted.
+- PDFs render in Restricted Mode. Workspace values for `pdfWorkshop.agentBridge.enabled`
+  and `pdfWorkshop.copyLinkForAgent.target` are ignored until the folder is trusted.
 - Open Location safely handles malformed percent escapes and drops invalid or non-finite
   page rectangles supplied by links or other extensions.
 - Turning pages no longer shows blank pages. Like macOS Preview, the viewer renders the pages around the one being read
@@ -38,7 +39,7 @@
 - ⌥←/↑/→/↓ (macOS) and Ctrl+Alt+←/↑/→/↓ (Windows, Linux) turn the page keeping the
   zoom and the place in the page, as Preview does; commands
   `PDF: Previous/Next Page, Keeping Place`. Scoped and opt-out like the other
-  shortcuts (`vscodeEmbedPdf.keyboardShortcuts`).
+  shortcuts (`pdfWorkshop.keyboardShortcuts`).
 
 - Fix: pages stored with a `/Rotate` entry (slides saved sideways, scans) were
   drawn sideways and in a box of the wrong shape: EmbedPDF opens documents with
@@ -46,7 +47,7 @@
   Such pages are now turned to the way the PDF says, with search hits, links
   and the text selection on the page; spec `page-rotation.spec.ts`.
 
-- New plugin `pdfLookUp` (macOS only, `vscodeEmbedPdf.lookUp.enabled`): Look Up in
+- New plugin `pdfLookUp` (macOS only, `pdfWorkshop.lookUp.enabled`): Look Up in
   the right-click menu, and a force click, open the word under the pointer in
   the Dictionary app. Native three-finger-tap Look Up is not possible on
   image-drawn pages; see docs/look-up.md.
@@ -66,7 +67,7 @@
   The extension now activates when a PDF opens. The stdio shim is now
   included in the VSIX (it was missing).
 - Region snapshots have a hard size limit: a snapshot larger than
-  `vscodeEmbedPdf.regionImageCache.maxSizeMB` is not saved (the handoff goes
+  `pdfWorkshop.regionImageCache.maxSizeMB` is not saved (the handoff goes
   without the image and says why) instead of exceeding the cap.
 - The viewer batches its state reports (outline, selection, page and zoom)
   into versioned patches, about one per frame; each reload disposes the
@@ -77,7 +78,7 @@
 
 - The viewer's controls move into VS Code's own UI by default: editor title
   buttons and the page and zoom in the status bar (Go to Page, a zoom
-  picker). `vscodeEmbedPdf.toolbar.mode` picks a slim bar in the viewer, a
+  picker). `pdfWorkshop.toolbar.mode` picks a slim bar in the viewer, a
   floating bar dockable to any edge, or none.
 - A command and a keyboard shortcut for every action: page, go to page,
   zoom, fit width or page, find, the PDF Outline, and the selection tools.
@@ -85,16 +86,16 @@
 - In Cursor, page, zoom and find buttons in the status bar.
 - Removed Copy for Agent (command, title button, context and selection menu
   items) and renamed Ask Agent to **Copy Link for Agent**
-  (`vscodeEmbedPdf.copyLinkForAgent`, setting
-  `vscodeEmbedPdf.copyLinkForAgent.target`; no migration). It copies the
+  (`pdfWorkshop.copyLinkForAgent`, setting
+  `pdfWorkshop.copyLinkForAgent.target`; no migration). It copies the
   same text, and ⌘C / Ctrl+C copies the selected text as plain text (the Copy text button is removed).
 - Copy Link for Agent does not guess the agent: `auto` opens a chat only when
   the editor's own chat is the only agent installed, otherwise it copies and
-  asks you to paste. `vscodeEmbedPdf.copyLinkForAgent.target` picks `cursor`,
+  asks you to paste. `pdfWorkshop.copyLinkForAgent.target` picks `cursor`,
   `chat`, `claudeCode` (a new conversation with the selection typed in),
   `codex` (selection and snapshot attached) or `clipboard`.
 - Experimental agent bridge, **off by default**
-  (`vscodeEmbedPdf.agentBridge.enabled`): a local MCP server (127.0.0.1,
+  (`pdfWorkshop.agentBridge.enabled`): a local MCP server (127.0.0.1,
   random port, bearer token) that serves the current PDF selection to VS Code
   chat, Cursor, Claude Code and Codex; **PDF: Copy MCP Setup for Claude Code /
   Codex…** connects the last two.

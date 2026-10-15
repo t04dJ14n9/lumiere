@@ -20,28 +20,28 @@ test("every contributed setting is listed, once, in the manifest's order, with a
 
 test("settings are edited by type: boolean, tri-state, enum, number, and the rest in the Settings editor", () => {
   const kind = (key: string) => entries.find(entry => entry.key === key)!.kind;
-  assert.equal(kind("vscodeEmbedPdf.keyboardShortcuts"), "boolean");
-  assert.equal(kind("vscodeEmbedPdf.view.smoothScrolling"), "tristate");
-  assert.equal(kind("vscodeEmbedPdf.view.pageLayout"), "enum");
-  assert.equal(kind("vscodeEmbedPdf.regionImageCache.maxSizeMB"), "number");
-  assert.equal(kind("vscodeEmbedPdf.view.defaultZoom"), "complex");
+  assert.equal(kind("pdfWorkshop.keyboardShortcuts"), "boolean");
+  assert.equal(kind("pdfWorkshop.view.smoothScrolling"), "tristate");
+  assert.equal(kind("pdfWorkshop.view.pageLayout"), "enum");
+  assert.equal(kind("pdfWorkshop.regionImageCache.maxSizeMB"), "number");
+  assert.equal(kind("pdfWorkshop.view.defaultZoom"), "complex");
   assert.equal(settingKind({ type: "string" }), "string");
   assert.equal(settingKind({ type: "array" }), "complex");
   assert.equal(settingKind({}), "complex");
 });
 
 test("enum choices keep their descriptions; keys group by their first part", () => {
-  const layout = entries.find(entry => entry.key === "vscodeEmbedPdf.view.pageLayout")!;
+  const layout = entries.find(entry => entry.key === "pdfWorkshop.view.pageLayout")!;
   assert.deepEqual(layout.choices.map(choice => choice.value), ["single", "spread", "spreadCover"]);
   assert.match(layout.choices[1]!.description, /Pair pages/u);
   assert.equal(layout.group, "View");
   assert.equal(layout.title, "Page Layout");
-  assert.equal(entries.find(entry => entry.key === "vscodeEmbedPdf.keyboardShortcuts")!.group, "General");
-  assert.equal(entries.find(entry => entry.key === "vscodeEmbedPdf.agentBridge.enabled")!.title, "Enabled");
+  assert.equal(entries.find(entry => entry.key === "pdfWorkshop.keyboardShortcuts")!.group, "General");
+  assert.equal(entries.find(entry => entry.key === "pdfWorkshop.agentBridge.enabled")!.title, "Enabled");
 });
 
 test("numbers are checked against the manifest's minimum and maximum", () => {
-  const cache = entries.find(entry => entry.key === "vscodeEmbedPdf.regionImageCache.maxSizeMB")!;
+  const cache = entries.find(entry => entry.key === "pdfWorkshop.regionImageCache.maxSizeMB")!;
   assert.equal(cache.minimum, 1);
   assert.match(numberProblem("0", cache)!, /at least 1/u);
   assert.match(numberProblem("abc", cache)!, /number/u);

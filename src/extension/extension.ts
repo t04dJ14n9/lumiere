@@ -1,5 +1,5 @@
 /**
- * Agent PDF Viewer: opens PDFs in an EmbedPDF-based viewer, shows their
+ * PDF Workshop: opens PDFs in an EmbedPDF-based viewer, shows their
  * outline in the Explorer, and copies selections in a form agents can locate.
  *
  * Activation only builds the plugin runtime; every capability is a plugin
@@ -16,7 +16,7 @@ let runtime: PluginRuntime<PdfServices> | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const started = performance.now();
-  const log = vscode.window.createOutputChannel('Agent PDF Viewer', { log: true });
+  const log = vscode.window.createOutputChannel('PDF Workshop', { log: true });
   context.subscriptions.push(log);
   runtime = new PluginRuntime<PdfServices>(plugins, log, { context, log });
   await runtime.start();

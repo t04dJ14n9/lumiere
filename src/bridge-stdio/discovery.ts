@@ -70,7 +70,7 @@ export function chooseBridge(records: readonly BridgeRecord[], options: ChoiceOp
   if (options.pid !== undefined && options.pid !== '') {
     const named = live.filter(record => String(record.pid) === options.pid);
     if (named.length === 1) return { bridge: named[0]! };
-    return { error: `No running Agent PDF Viewer bridge has AGENT_PDF_BRIDGE_PID ${options.pid}.` };
+    return { error: `No running PDF Workshop bridge has AGENT_PDF_BRIDGE_PID ${options.pid}.` };
   }
   // How specific a match is: the length of the deepest workspace folder containing cwd.
   const scored = live.map(record => ({
@@ -78,7 +78,7 @@ export function chooseBridge(records: readonly BridgeRecord[], options: ChoiceOp
     score: Math.max(0, ...record.workspaceFolders.filter(folder => contains(folder, options.cwd)).map(folder => path.resolve(folder).length)),
   })).filter(({ score }) => score > 0);
   if (scored.length === 0) {
-    return { error: `No VS Code or Cursor window with Agent PDF Viewer has a workspace containing ${options.cwd}. Open that folder in a window with the agent bridge on, or set AGENT_PDF_BRIDGE_PID.` };
+    return { error: `No VS Code or Cursor window with PDF Workshop has a workspace containing ${options.cwd}. Open that folder in a window with the agent bridge on, or set AGENT_PDF_BRIDGE_PID.` };
   }
   const best = Math.max(...scored.map(({ score }) => score));
   const top = scored.filter(({ score }) => score === best);

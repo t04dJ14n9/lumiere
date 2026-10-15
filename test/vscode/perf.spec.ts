@@ -29,7 +29,7 @@ function activation(): string {
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (/Agent PDF Viewer\.log$/.test(entry)) found.push(full);
+      else if (/PDF Workshop\.log$/.test(entry)) found.push(full);
     }
   };
   walk(path.join(paths.userData, 'logs'));

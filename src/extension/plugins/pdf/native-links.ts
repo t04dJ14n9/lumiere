@@ -5,11 +5,12 @@ import { parseLocationFragment } from "../../../shared/pdf-location";
 import { registerSourceLinks, type LinkRun } from "./source-links";
 import { deliverNativeLocation } from "./native-delivery";
 import { VIEW_TYPE, type PdfPanels } from "./panels";
+import { OPEN_NATIVE_LINK_COMMAND_ID } from "./registered-commands";
 
 export function registerNativeLinks(panels: PdfPanels): vscode.Disposable {
   const cancellations = new WeakMap<LinkRun, () => void>();
   return registerSourceLinks({
-    command: "vscodeEmbedPdf.openNativeLink",
+    command: OPEN_NATIVE_LINK_COMMAND_ID,
     accepts: (file, fragment) =>
       /\.pdf$/i.test(file) && !!parseLocationFragment(fragment),
     authorize: contained,

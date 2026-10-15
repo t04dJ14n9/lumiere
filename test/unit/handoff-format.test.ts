@@ -8,11 +8,11 @@ import type { PdfSelection } from '../../src/shared/selection';
 
 /**
  * docs/agent-handoff-format.md and this fixture are byte-identical in
- * Markdown Workbench. If a hash changes, update both repositories together.
+ * Markdown Workshop. If a hash changes, update both repositories together.
  */
 const PINNED: Record<string, string> = {
-  'test/fixtures/agent-handoff-format.json': '9d29aaed6ffc09359ffccbefc254f7f5542ed7cd2fc8de1970632595471f52c3',
-  'docs/agent-handoff-format.md': '4422afadf038d3904f755be844abf94f39381f4a7f25d05dd3db93b5edd56e25',
+  'test/fixtures/agent-handoff-format.json': '4db5869bc1ba8a58872c0ffddfc3e9c316ab717fb32d50b039ab032c76c22e72',
+  'docs/agent-handoff-format.md': 'c2119f8b85867b2bc9a4c451bbb4915a4f3b22522c378f97e9872a7bd62fc4ec',
 };
 
 interface Fixture {
@@ -23,9 +23,9 @@ interface Fixture {
 
 const fixture = JSON.parse(readFileSync('test/fixtures/agent-handoff-format.json', 'utf8')) as Fixture;
 
-test('the shared handoff format files match the copies in Markdown Workbench', () => {
+test('the shared handoff format files match the copies in Markdown Workshop', () => {
   for (const [file, hash] of Object.entries(PINNED)) {
-    assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'), hash, `${file} changed; update Markdown Workbench too`);
+    assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'), hash, `${file} changed; update Markdown Workshop too`);
   }
 });
 

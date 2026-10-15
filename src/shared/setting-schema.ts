@@ -44,7 +44,7 @@ export interface SettingEntry {
 }
 
 /** The prefix of every key this extension contributes. */
-export const SETTING_PREFIX = "vscodeEmbedPdf.";
+export const SETTING_PREFIX = "pdfWorkshop.";
 const PREFIX = SETTING_PREFIX;
 
 const words = (text: string): string =>

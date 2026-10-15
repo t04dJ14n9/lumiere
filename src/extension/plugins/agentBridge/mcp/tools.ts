@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { notePayload, noteReference } from '../../../../shared/note-reference';
 import type { PdfPanel } from '../../pdf/panel';
 import type { PdfPanels } from '../../pdf/panels';
+import { OPEN_LOCATION_COMMAND_ID } from '../../pdf/registered-commands';
 import type { AgentHandoff } from '../handoff';
 
 export const MARKDOWN_WORKBENCH_ID = 't04dj14n9.vscode-markdown-workbench';
@@ -50,7 +51,7 @@ export function createBridgeServer(lastPdf: LastPdf, handoff: AgentHandoff): Mcp
   server.registerTool('get_current_pdf_selection', {
     title: 'Current PDF selection',
     description:
-      'The text or region the user has selected in the PDF open in their editor (Agent PDF Viewer): ' +
+      'The text or region the user has selected in the PDF open in their editor (PDF Workshop): ' +
       'the quoted text, a link to the page and box (path#page=N&viewrect=left,top,width,height, RFC 8118), ' +
       'the file\'s SHA-256 and, for a region, a PNG snapshot. Call this when the user refers to ' +
       '"this", "the selection", "the highlighted passage", "this figure", or similar in a PDF.',
@@ -65,7 +66,7 @@ export function createBridgeServer(lastPdf: LastPdf, handoff: AgentHandoff): Mcp
       return {
         content: [{ type: 'text', text: panel
           ? `No selection in ${vscode.workspace.asRelativePath(panel.uri, false)}. Ask the user to select text or drag a region in the PDF.`
-          : 'No PDF is open in Agent PDF Viewer.' }],
+          : 'No PDF is open in PDF Workshop.' }],
       };
     }
     const content: Content[] = [{ type: 'text', text: snapshot.agentText }];
@@ -87,7 +88,7 @@ export function createBridgeServer(lastPdf: LastPdf, handoff: AgentHandoff): Mcp
       '"papers/paper.pdf#page=3&viewrect=72,83,134,21" (workspace-relative or absolute path), or a Markdown link to one.',
     inputSchema: { link: z.string().min(1).describe('PDF path with optional #page=…&viewrect=… fragment.') },
   }, async ({ link }) => {
-    const opened = await vscode.commands.executeCommand<boolean>('vscodeEmbedPdf.openLocation', link);
+    const opened = await vscode.commands.executeCommand<boolean>(OPEN_LOCATION_COMMAND_ID, link);
     return { content: [{ type: 'text', text: opened ? `Opened ${link}` : `Could not open ${link}: no such PDF.` }], isError: !opened };
   });
 

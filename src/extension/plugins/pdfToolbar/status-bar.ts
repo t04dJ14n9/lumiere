@@ -5,6 +5,10 @@ import {
 } from "../../../shared/toolbar-settings";
 import { pageLabel, zoomLabel } from "../../../shared/view-state";
 import type { PdfPanels } from "../pdf/panels";
+import {
+  VIEW_COMMAND_IDS,
+  VIEW_CONTROL_COMMAND_IDS,
+} from "../pdf/registered-commands";
 import { SECTION } from "./preferences";
 
 /** A shortcut as this platform writes it: `key('Ctrl+G', '⌃G')`. */
@@ -34,7 +38,7 @@ const ITEMS: Item[] = [
     name: "PDF Previous Page",
     text: "$(chevron-up)",
     tooltip: `Previous Page (${key("Alt+PageUp", "⌥PageUp")})`,
-    command: "vscodeEmbedPdf.previousPage",
+    command: VIEW_COMMAND_IDS.previousPage,
     priority: 106,
     button: true,
   },
@@ -43,7 +47,7 @@ const ITEMS: Item[] = [
     name: "PDF Page",
     text: "",
     tooltip: `Go to Page… (${key("Ctrl+G", "⌃G")})`,
-    command: "vscodeEmbedPdf.goToPage",
+    command: VIEW_COMMAND_IDS.goToPage,
     priority: 105,
   },
   {
@@ -51,7 +55,7 @@ const ITEMS: Item[] = [
     name: "PDF Next Page",
     text: "$(chevron-down)",
     tooltip: `Next Page (${key("Alt+PageDown", "⌥PageDown")})`,
-    command: "vscodeEmbedPdf.nextPage",
+    command: VIEW_COMMAND_IDS.nextPage,
     priority: 104,
     button: true,
   },
@@ -60,7 +64,7 @@ const ITEMS: Item[] = [
     name: "PDF Zoom Out",
     text: "$(zoom-out)",
     tooltip: `Zoom Out (${key("Ctrl+-", "⌘-")})`,
-    command: "vscodeEmbedPdf.zoomOut",
+    command: VIEW_COMMAND_IDS.zoomOut,
     priority: 103,
     button: true,
   },
@@ -69,7 +73,7 @@ const ITEMS: Item[] = [
     name: "PDF Zoom",
     text: "",
     tooltip: "Pick a Zoom…",
-    command: "vscodeEmbedPdf.selectZoom",
+    command: VIEW_COMMAND_IDS.selectZoom,
     priority: 102,
   },
   {
@@ -77,7 +81,7 @@ const ITEMS: Item[] = [
     name: "PDF Zoom In",
     text: "$(zoom-in)",
     tooltip: `Zoom In (${key("Ctrl+=", "⌘=")})`,
-    command: "vscodeEmbedPdf.zoomIn",
+    command: VIEW_COMMAND_IDS.zoomIn,
     priority: 101,
     button: true,
   },
@@ -86,7 +90,7 @@ const ITEMS: Item[] = [
     name: "PDF Find",
     text: "$(search)",
     tooltip: `Find in PDF (${key("Ctrl+F", "⌘F")})`,
-    command: "vscodeEmbedPdf.find",
+    command: VIEW_COMMAND_IDS.find,
     priority: 100,
     button: true,
   },
@@ -95,7 +99,7 @@ const ITEMS: Item[] = [
     name: "PDF View",
     text: "$(layout) View",
     tooltip: "Choose zoom, page layout and scrolling",
-    command: "vscodeEmbedPdf.selectView",
+    command: VIEW_CONTROL_COMMAND_IDS.selectView,
     priority: 99,
   },
 ];
@@ -107,7 +111,7 @@ export class StatusBar implements vscode.Disposable {
   constructor(private readonly panels: PdfPanels) {
     for (const item of ITEMS) {
       const entry = vscode.window.createStatusBarItem(
-        `vscodeEmbedPdf.${item.id}`,
+        `pdfWorkshop.${item.id}`,
         vscode.StatusBarAlignment.Right,
         item.priority,
       );

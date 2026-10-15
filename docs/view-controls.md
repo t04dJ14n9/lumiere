@@ -66,16 +66,16 @@ An unrelated settings update preserves a panel's chosen or saved layout.
 
 | Setting                               | Values / default                                                                                           |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `vscodeEmbedPdf.view.defaultZoom`     | `fitWidth` (default), `fitPage`, `actual`, or a numeric percentage (25–400)                                |
-| `vscodeEmbedPdf.view.pageLayout`      | `single` (default, native `none`), `spread` (native `odd`), `spreadCover` (native `even`)                     |
-| `vscodeEmbedPdf.view.scrollMode`      | `continuous` (default), `paged`                                                                            |
-| `vscodeEmbedPdf.view.scrollDirection` | `vertical` (default), `horizontal`                                                                         |
-| `vscodeEmbedPdf.view.restoreOnReopen` | `true` (default): reopen a PDF at its last page, scroll position, zoom and view choices; `false`: always start from the defaults |
-| `vscodeEmbedPdf.view.smoothScrolling` | `null` (default: follows `editor.smoothScrolling`), `true`, `false`; reduced motion overrides all settings |
+| `pdfWorkshop.view.defaultZoom`     | `fitWidth` (default), `fitPage`, `actual`, or a numeric percentage (25–400)                                |
+| `pdfWorkshop.view.pageLayout`      | `single` (default, native `none`), `spread` (native `odd`), `spreadCover` (native `even`)                     |
+| `pdfWorkshop.view.scrollMode`      | `continuous` (default), `paged`                                                                            |
+| `pdfWorkshop.view.scrollDirection` | `vertical` (default), `horizontal`                                                                         |
+| `pdfWorkshop.view.restoreOnReopen` | `true` (default): reopen a PDF at its last page, scroll position, zoom and view choices; `false`: always start from the defaults |
+| `pdfWorkshop.view.smoothScrolling` | `null` (default: follows `editor.smoothScrolling`), `true`, `false`; reduced motion overrides all settings |
 
 ## Commands
 
-Command ids use the `vscodeEmbedPdf.` prefix. Existing `fitWidth`, `fitPage`,
+Command ids use the `pdfWorkshop.` prefix. Existing `fitWidth`, `fitPage`,
 `zoomIn`, `zoomOut`, `selectZoom`, `goToPage`, `nextPage`, and `previousPage`
 remain the controls for zoom and navigation. New view choices use
 `actualSize`, `selectView`, `singlePage`, `twoPageSpread`, `twoPageCover`,

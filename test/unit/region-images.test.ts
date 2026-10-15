@@ -108,7 +108,7 @@ test('the setting\'s contributed default is the default used in code: 100 MB', a
   const manifest = JSON.parse(await readFile(path.join(import.meta.dirname, '../../package.json'), 'utf8')) as {
     contributes: { configuration: { properties: Record<string, { default?: unknown; minimum?: unknown }> } };
   };
-  const setting = manifest.contributes.configuration.properties['vscodeEmbedPdf.regionImageCache.maxSizeMB'];
+  const setting = manifest.contributes.configuration.properties['pdfWorkshop.regionImageCache.maxSizeMB'];
   assert.equal(setting?.default, 100);
   assert.equal(setting?.minimum, 1);
   assert.equal(regionCacheBytes(undefined), 100 * 1024 * 1024);

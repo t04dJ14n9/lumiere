@@ -10,13 +10,13 @@ exports.activate = context => {
   context.subscriptions.push(
     // A stub only: no third-party agent is installed or contacted.
     vscode.commands.registerCommand('claude-vscode.editor.open', (...args) => agentCalls.push(args)),
-    vscode.commands.registerCommand('vscodeEmbedPdfTests.reportTrust', async () => {
+    vscode.commands.registerCommand('pdfWorkshopTests.reportTrust', async () => {
       const folder = vscode.workspace.workspaceFolders?.[0];
       if (!folder) throw new Error('The test workspace is missing');
-      const settings = vscode.workspace.getConfiguration('vscodeEmbedPdf');
+      const settings = vscode.workspace.getConfiguration('pdfWorkshop');
       const report = {
         trusted: vscode.workspace.isTrusted,
-        extensionActive: vscode.extensions.getExtension('t04dj14n9.vscode-embedpdf')?.isActive,
+        extensionActive: vscode.extensions.getExtension('t04dj14n9.vscode-pdf-workshop')?.isActive,
         bridgeEnabled: settings.get('agentBridge.enabled'),
         target: settings.get('copyLinkForAgent.target'),
         workspaceBridge: settings.inspect('agentBridge.enabled')?.workspaceValue,

@@ -34,14 +34,14 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     ...(restrictedMode ? {
       'security.workspace.trust.startupPrompt': 'never',
       'security.workspace.trust.emptyWindow': false,
-      'vscodeEmbedPdf.agentBridge.enabled': false,
-      'vscodeEmbedPdf.copyLinkForAgent.target': 'clipboard',
+      'pdfWorkshop.agentBridge.enabled': false,
+      'pdfWorkshop.copyLinkForAgent.target': 'clipboard',
     } : {}),
     'telemetry.telemetryLevel': 'off',
     'update.mode': 'none',
     'extensions.autoUpdate': false,
     // Specs start every PDF from the defaults; view-controls.spec.ts turns this on.
-    'vscodeEmbedPdf.view.restoreOnReopen': false,
+    'pdfWorkshop.view.restoreOnReopen': false,
   }, null, 2));
 
   mkdirSync(path.join(paths.workspace, 'docs'), { recursive: true });
@@ -50,8 +50,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   if (restrictedMode) {
     mkdirSync(path.join(paths.workspace, '.vscode'));
     writeFileSync(path.join(paths.workspace, '.vscode', 'settings.json'), JSON.stringify({
-      'vscodeEmbedPdf.agentBridge.enabled': true,
-      'vscodeEmbedPdf.copyLinkForAgent.target': 'claudeCode',
+      'pdfWorkshop.agentBridge.enabled': true,
+      'pdfWorkshop.copyLinkForAgent.target': 'claudeCode',
     }, null, 2));
   }
 

@@ -5,7 +5,7 @@ import path from 'node:path';
 const repository = path.resolve(__dirname, '..', '..');
 // Keep the profile path short: VS Code puts sockets in it, and macOS limits
 // socket paths to about 100 characters.
-const root = path.join('/tmp', `vscode-embedpdf-e2e-${createHash('sha256').update(repository).digest('hex').slice(0, 8)}`);
+const root = path.join('/tmp', `vscode-pdf-workshop-e2e-${createHash('sha256').update(repository).digest('hex').slice(0, 8)}`);
 
 export const paths = {
   repository,

@@ -206,7 +206,7 @@ async function listen(options: ServerOptions, undo: Undo[], token: string, scrub
     const HttpDefinition = (vscode as any).McpHttpServerDefinition as (new (label: string, uri: vscode.Uri, headers?: Record<string, string>, version?: string) => unknown) | undefined;
     if (lm?.registerMcpServerDefinitionProvider && HttpDefinition) {
       const registration = lm.registerMcpServerDefinitionProvider(PROVIDER_ID, {
-        provideMcpServerDefinitions: () => [new HttpDefinition('Agent PDF Viewer', vscode.Uri.parse(info.url), headers, '0.1.0')],
+        provideMcpServerDefinitions: () => [new HttpDefinition('PDF Workshop', vscode.Uri.parse(info.url), headers, '0.1.0')],
       });
       undo.push(() => registration.dispose());
       log.info('Registered with VS Code (vscode.lm.registerMcpServerDefinitionProvider)');

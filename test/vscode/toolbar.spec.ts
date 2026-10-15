@@ -32,7 +32,7 @@ function zoomStatus(page: Page) {
 
 /** A status bar button of the viewer, by its id. */
 function statusBarButton(page: Page, id: string) {
-  return page.locator(`.part.statusbar [id$="vscodeEmbedPdf.${id}"]`);
+  return page.locator(`.part.statusbar [id$="pdfWorkshop.${id}"]`);
 }
 
 function zoomPercent(label: string): number {

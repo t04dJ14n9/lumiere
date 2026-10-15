@@ -35,8 +35,8 @@ test('Restricted Mode renders PDFs and ignores workspace agent settings', async 
   expect(report.target).toBe('clipboard');
   expect(report.agentCalls).toEqual([]);
   const workspace = JSON.parse(readFileSync(path.join(paths.workspace, '.vscode', 'settings.json'), 'utf8')) as Record<string, unknown>;
-  expect(workspace['vscodeEmbedPdf.agentBridge.enabled']).toBe(true);
-  expect(workspace['vscodeEmbedPdf.copyLinkForAgent.target']).toBe('claudeCode');
+  expect(workspace['pdfWorkshop.agentBridge.enabled']).toBe(true);
+  expect(workspace['pdfWorkshop.copyLinkForAgent.target']).toBe('claudeCode');
   const discovery = path.join(paths.home, '.agent-pdf-viewer', 'bridges');
   expect(existsSync(discovery) ? readdirSync(discovery).filter(file => file.endsWith('.json')) : []).toEqual([]);
 });

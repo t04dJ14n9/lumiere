@@ -26,17 +26,17 @@ test("every view choice has a PDF command, scoped menus and a contributed defaul
     ),
   ];
   for (const name of names) {
-    const command = `vscodeEmbedPdf.${name}`;
+    const command = `pdfWorkshop.${name}`;
     assert.equal(
       contributes.commands.find((item) => item.command === command)?.enablement,
-      "vscodeEmbedPdf.pdfActive",
+      "pdfWorkshop.pdfActive",
     );
     for (const menu of ["commandPalette", "editor/title", "webview/context"]) {
       assert.ok(
         contributes.menus[menu]?.some(
           (item) =>
             item.command === command &&
-            item.when?.includes("vscodeEmbedPdf.viewer"),
+            item.when?.includes("pdfWorkshop.viewer"),
         ),
         `${menu}: ${command}`,
       );
@@ -50,7 +50,7 @@ test("every view choice has a PDF command, scoped menus and a contributed defaul
     smoothScrolling: null,
   })) {
     assert.equal(
-      contributes.configuration.properties[`vscodeEmbedPdf.view.${name}`]
+      contributes.configuration.properties[`pdfWorkshop.view.${name}`]
         ?.default,
       value,
     );

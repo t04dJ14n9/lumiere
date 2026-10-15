@@ -4,7 +4,7 @@
  * their own (dist/agent-bridge-server.js) that is loaded only when the
  * server starts.
  *
- * Invariant: the server runs only while `vscodeEmbedPdf.agentBridge.enabled`
+ * Invariant: the server runs only while `pdfWorkshop.agentBridge.enabled`
  * is on AND it has been used in this window: a PDF editor was opened, or the
  * user ran Copy MCP Setup. Turning the setting off stops it at once, without
  * a reload; starts and stops run one at a time, in order.
@@ -16,13 +16,14 @@
  */
 import * as vscode from 'vscode';
 import type { PdfPanels } from '../../pdf/panels';
+import { AGENT_BRIDGE_COMMAND_IDS } from '../../pdf/registered-commands';
 import type { AgentHandoff } from '../handoff';
 import { SERVER_NAME } from './constants';
 import type { BridgeLog, RunningBridge } from './server';
 
 /** Whether the user has turned the bridge on. Off by default: it starts a local server. */
 export function agentBridgeEnabled(): boolean {
-  return vscode.workspace.getConfiguration('vscodeEmbedPdf').get<boolean>('agentBridge.enabled', false) === true;
+  return vscode.workspace.getConfiguration('pdfWorkshop').get<boolean>('agentBridge.enabled', false) === true;
 }
 
 export interface BridgeOptions {
@@ -81,13 +82,13 @@ export function registerAgentBridge(options: BridgeOptions): AgentBridgeControll
   void sync();
   const subscriptions = vscode.Disposable.from(
     vscode.workspace.onDidChangeConfiguration(event => {
-      if (event.affectsConfiguration('vscodeEmbedPdf.agentBridge.enabled')) void sync();
+      if (event.affectsConfiguration('pdfWorkshop.agentBridge.enabled')) void sync();
     }),
     panels.onDidOpen(() => {
       used = true;
       void sync();
     }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.copyMcpSetup', async () => {
+    vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.copyMcpSetup, async () => {
       if (!agentBridgeEnabled()) {
         const turnOn = 'Turn On';
         const choice = await vscode.window.showInformationMessage(
@@ -95,7 +96,7 @@ export function registerAgentBridge(options: BridgeOptions): AgentBridgeControll
           turnOn,
         );
         if (choice !== turnOn) return;
-        await vscode.workspace.getConfiguration('vscodeEmbedPdf').update('agentBridge.enabled', true, vscode.ConfigurationTarget.Global);
+        await vscode.workspace.getConfiguration('pdfWorkshop').update('agentBridge.enabled', true, vscode.ConfigurationTarget.Global);
       }
       used = true;
       void sync();

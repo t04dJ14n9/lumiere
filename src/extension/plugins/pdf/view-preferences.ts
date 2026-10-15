@@ -11,7 +11,7 @@ import {
 } from "../../../shared/view-settings";
 import type { PdfPanels } from "./panels";
 
-const SECTION = "vscodeEmbedPdf.view";
+const SECTION = "pdfWorkshop.view";
 
 /** Defaults for new views; saved positions are read once, independently by each panel. */
 export class ViewPreferences implements vscode.Disposable {
@@ -73,6 +73,6 @@ export class ViewPreferences implements vscode.Disposable {
   }
 
   private key(uri: vscode.Uri): string {
-    return `vscodeEmbedPdf.readingPosition:${uri.toString()}`;
+    return `pdfWorkshop.readingPosition:${uri.toString()}`;
   }
 }

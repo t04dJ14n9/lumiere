@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { extractPdfLink, parseLocationFragment, parsePdfLocation } from '../../../shared/pdf-location';
 import { resolvePdfCandidates } from '../../../shared/pdf-target-resolution';
 import { VIEW_TYPE, type PdfPanels } from './panels';
+import { OPEN_LOCATION_COMMAND_ID } from './registered-commands';
 
 /** PDF: Open Location, which makes the viewer a navigation target for links and other extensions. */
 export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
@@ -16,7 +17,7 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
     opening = result.then(() => undefined, () => undefined);
     return result;
   };
-  const command = vscode.commands.registerCommand('vscodeEmbedPdf.openLocation', async (target?: unknown, location?: unknown) => {
+  const command = vscode.commands.registerCommand(OPEN_LOCATION_COMMAND_ID, async (target?: unknown, location?: unknown) => {
     pending?.cancel();
     pending?.dispose();
     const cancellation = new vscode.CancellationTokenSource();
@@ -42,7 +43,7 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
  * one an agent printed: `papers/paper.pdf#page=3&viewrect=72,83,134,21`.
  * Other extensions can pass a URI and a location:
  *
- *     vscode.commands.executeCommand('vscodeEmbedPdf.openLocation', uri, { page: 3 })
+ *     vscode.commands.executeCommand('pdfWorkshop.openLocation', uri, { page: 3 })
  */
 async function openLocation(panels: PdfPanels, target: unknown, location: unknown, current: () => boolean, token: vscode.CancellationToken, dispatch: (run: () => Promise<boolean>) => Promise<boolean>): Promise<boolean> {
   const link = target ?? await vscode.window.showInputBox({

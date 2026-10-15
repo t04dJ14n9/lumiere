@@ -4,7 +4,7 @@ import * as path from 'node:path';
 
 const PNG_DATA_URL = 'data:image/png;base64,';
 const MB = 1024 * 1024;
-/** `vscodeEmbedPdf.regionImageCache.maxSizeMB`: its default and its floor. */
+/** `pdfWorkshop.regionImageCache.maxSizeMB`: its default and its floor. */
 const DEFAULT_MAX_MB = 100;
 const MIN_MAX_MB = 1;
 
@@ -17,7 +17,7 @@ export function regionCacheBytes(megabytes: unknown): number {
 /** A snapshot bigger than the whole cache: it is not saved at all. */
 export class RegionTooLargeError extends Error {
   constructor(readonly bytes: number, readonly maxBytes: number) {
-    super(`The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (vscodeEmbedPdf.regionImageCache.maxSizeMB)`);
+    super(`The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (pdfWorkshop.regionImageCache.maxSizeMB)`);
     this.name = 'RegionTooLargeError';
   }
 }

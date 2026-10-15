@@ -3,7 +3,7 @@ import { type SchemaProperty, writeProblem } from '../shared/setting-schema';
 import { settingTarget } from '../shared/settings-target';
 
 /** The id of this extension, as VS Code knows it. */
-export const EXTENSION_ID = 't04dj14n9.vscode-embedpdf';
+export const EXTENSION_ID = 't04dj14n9.vscode-pdf-workshop';
 
 /** The settings this extension contributes, from its manifest, by key. */
 export function contributedProperties(extensionId: string = EXTENSION_ID): Record<string, SchemaProperty> {
@@ -19,7 +19,7 @@ export function contributedProperties(extensionId: string = EXTENSION_ID): Recor
 
 /**
  * Save a setting of this extension under the key the Settings editor uses
- * (`vscodeEmbedPdf.view.smoothScrolling`, …): in the workspace if it is set
+ * (`pdfWorkshop.view.smoothScrolling`, …): in the workspace if it is set
  * there, else in the user settings. Commands keep no state of their own, so
  * the Settings editor and the commands always agree.
  *

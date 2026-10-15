@@ -143,7 +143,7 @@ test('the viewer reloads when the PDF changes on disk', async ({ workbench: page
 });
 
 test('the agent bridge is off by default, and its setting starts and stops it', async ({ workbench: page }) => {
-  // The bridge starts a local MCP server, so it is opt-in (vscodeEmbedPdf.agentBridge.enabled).
+  // The bridge starts a local MCP server, so it is opt-in (pdfWorkshop.agentBridge.enabled).
   // A running bridge announces itself with a file in ~/.agent-pdf-viewer/bridges.
   const bridges = path.join(paths.home, '.agent-pdf-viewer', 'bridges');
   const announced = (): number => existsSync(bridges) ? readdirSync(bridges).filter(name => name.endsWith('.json')).length : 0;
@@ -163,7 +163,7 @@ test('the agent bridge is off by default, and its setting starts and stops it', 
   // Turning the setting off stops the server, without a reload.
   const settingsFile = path.join(paths.userData, 'User', 'settings.json');
   const settings = JSON.parse(readFileSync(settingsFile, 'utf8')) as Record<string, unknown>;
-  expect(settings['vscodeEmbedPdf.agentBridge.enabled']).toBe(true);
-  writeFileSync(settingsFile, JSON.stringify({ ...settings, 'vscodeEmbedPdf.agentBridge.enabled': false }, null, 2));
+  expect(settings['pdfWorkshop.agentBridge.enabled']).toBe(true);
+  writeFileSync(settingsFile, JSON.stringify({ ...settings, 'pdfWorkshop.agentBridge.enabled': false }, null, 2));
   await expect.poll(announced, { timeout: 15_000 }).toBe(0);
 });

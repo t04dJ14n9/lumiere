@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { PluginDefinition, PdfServices } from '../services';
+import { AGENT_BRIDGE_COMMAND_IDS } from '../pdf/registered-commands';
 import { AgentHandoff } from './handoff';
 import manifest from './manifest';
 import { registerAgentBridge } from './mcp/controller';
@@ -7,7 +8,7 @@ import { registerAgentBridge } from './mcp/controller';
 /**
  * Everything that hands a selection to an agent: Copy Link for Agent (the
  * command and the viewer's button), the `handoff` service behind it, and the
- * opt-in local MCP server (`vscodeEmbedPdf.agentBridge.enabled`, off by
+ * opt-in local MCP server (`pdfWorkshop.agentBridge.enabled`, off by
  * default).
  *
  * Naming: the plugin is `agentBridge`, its service is `AgentHandoff`, and its
@@ -19,7 +20,7 @@ export const agentBridgePlugin: PluginDefinition<PdfServices> = {
     const panels = scope.get('panels');
     const context = scope.get('context');
     const handoff = new AgentHandoff(() => scope.find('regions'));
-    scope.acquire(vscode.commands.registerCommand('vscodeEmbedPdf.copyLinkForAgent', () => {
+    scope.acquire(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.copyLinkForAgent, () => {
       const panel = panels.active;
       return panel ? handoff.copyLinkForAgent(panel) : undefined;
     }), 'command');

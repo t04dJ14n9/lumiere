@@ -92,7 +92,7 @@ test('a region snapshot over the cap is not saved and evicts nothing, but the li
   assert.doesNotMatch(text, /Region image/u);
 
   assert.equal(warnings.length, 1);
-  assert.match(warnings[0]!, /^The region snapshot is .* MB, more than the .* MB snapshot limit \(vscodeEmbedPdf\.regionImageCache\.maxSizeMB\), so it was not attached\./u);
+  assert.match(warnings[0]!, /^The region snapshot is .* MB, more than the .* MB snapshot limit \(pdfWorkshop\.regionImageCache\.maxSizeMB\), so it was not attached\./u);
 });
 
 test('the MCP snapshot of an over-cap region has the same link and text, without a warning', async () => {

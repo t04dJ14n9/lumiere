@@ -2,7 +2,7 @@
 
 Look Up shows the Dictionary entry of a word, as Preview does. It is the
 plugin `pdfLookUp`, on by default on macOS only
-(`vscodeEmbedPdf.lookUp.enabled`; it does nothing on Windows and Linux).
+(`pdfWorkshop.lookUp.enabled`; it does nothing on Windows and Linux).
 
 ## What works natively, and what is a fallback
 
@@ -25,7 +25,7 @@ plugin's on/off switch. Only a real Mac can show the Dictionary opening:
 1. Open a PDF in VS Code on macOS, right-click a word, choose **Look Up**.
    The Dictionary app opens at that word.
 2. Hard-press a word: if nothing happens, Chromium sent no force event (expected).
-3. Set `vscodeEmbedPdf.lookUp.enabled` to `false`: the menu entry disappears.
+3. Set `pdfWorkshop.lookUp.enabled` to `false`: the menu entry disappears.
 
 ## Design
 

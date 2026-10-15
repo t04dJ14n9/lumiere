@@ -2,7 +2,7 @@
   "name": "test-restricted-probe",
   "displayName": "Test restricted-workspace probe",
   "description": "Reports effective settings and intercepted agent calls for isolated Restricted Mode tests.",
-  "publisher": "vscode-embedpdf-tests",
+  "publisher": "vscode-pdf-workshop-tests",
   "version": "0.0.1",
   "private": true,
   "engines": { "vscode": "^1.90.0" },
@@ -10,6 +10,6 @@
   "activationEvents": ["onStartupFinished"],
   "capabilities": { "untrustedWorkspaces": { "supported": true } },
   "contributes": {
-    "commands": [{ "command": "vscodeEmbedPdfTests.reportTrust", "title": "PDF Test: Report Workspace Trust" }]
+    "commands": [{ "command": "pdfWorkshopTests.reportTrust", "title": "PDF Test: Report Workspace Trust" }]
   }
 }

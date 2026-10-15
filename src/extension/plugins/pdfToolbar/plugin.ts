@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { titleActionsInMenu } from '../../../shared/toolbar-settings';
 import type { PluginDefinition, PdfServices } from '../services';
+import { TOOLBAR_COMMAND_IDS } from '../pdf/registered-commands';
 import manifest from './manifest';
 import { selectToolbarMode } from './mode-picker';
 import { ToolbarPreferences } from './preferences';
@@ -19,9 +20,9 @@ export const pdfToolbarPlugin: PluginDefinition<PdfServices> = {
     const preferences = scope.acquire(new ToolbarPreferences(scope.get('context').globalState), 'preferences');
     // Where the title bar would only add the viewer's buttons to its "…" menu,
     // they would repeat that menu's own page and zoom entries: leave them out.
-    void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.titleActionsInMenu', titleActionsInMenu(vscode.env.appName));
+    void vscode.commands.executeCommand('setContext', 'pdfWorkshop.titleActionsInMenu', titleActionsInMenu(vscode.env.appName));
     // Lifecycle work: the reset is returned, so teardown awaits it.
-    scope.acquire({ dispose: () => vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.titleActionsInMenu', false) }, 'context key');
+    scope.acquire({ dispose: () => vscode.commands.executeCommand('setContext', 'pdfWorkshop.titleActionsInMenu', false) }, 'context key');
     const statusBar = scope.acquire(new StatusBar(panels), 'statusBar');
     scope.acquire(panels.provideViewerToolbar(() => preferences.settings), 'viewer settings');
     scope.acquire(panels.handle('floatingDock', (_panel, message) => preferences.setDock(message.dock)), 'message handler');
@@ -32,7 +33,7 @@ export const pdfToolbarPlugin: PluginDefinition<PdfServices> = {
       statusBar.update();
     };
     scope.acquire(preferences.onDidChange(follow), 'listener');
-    scope.acquire(vscode.commands.registerCommand('vscodeEmbedPdf.selectToolbarMode', selectToolbarMode), 'command');
+    scope.acquire(vscode.commands.registerCommand(TOOLBAR_COMMAND_IDS.selectToolbarMode, selectToolbarMode), 'command');
     // Viewers opened before this plugin started got the default layout.
     follow();
   },

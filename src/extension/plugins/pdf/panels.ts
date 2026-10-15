@@ -5,7 +5,7 @@ import {
 } from "../../../shared/toolbar-settings";
 import type { PdfPanel, PluginMessage } from "./panel";
 
-export const VIEW_TYPE = "vscodeEmbedPdf.viewer";
+export const VIEW_TYPE = "pdfWorkshop.viewer";
 
 type Handler<T extends PluginMessage["type"]> = (
   panel: PdfPanel,
@@ -172,17 +172,17 @@ export class PdfPanels implements vscode.Disposable {
     const panel = this.current;
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.pdfActive",
+      "pdfWorkshop.pdfActive",
       Boolean(panel),
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.hasSelection",
+      "pdfWorkshop.hasSelection",
       Boolean(panel?.selection),
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.outlineLoading",
+      "pdfWorkshop.outlineLoading",
       Boolean(panel && !panel.outline),
     );
     // For the editor title actions: which fit and tool buttons to show, and
@@ -190,37 +190,37 @@ export class PdfPanels implements vscode.Disposable {
     const view = panel?.view;
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.fit",
+      "pdfWorkshop.fit",
       view?.fit ?? "",
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.tool",
+      "pdfWorkshop.tool",
       view?.tool ?? "text",
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.pageLayout",
+      "pdfWorkshop.pageLayout",
       view?.pageLayout ?? "single",
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.scrollMode",
+      "pdfWorkshop.scrollMode",
       view?.scrollMode ?? "continuous",
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.scrollDirection",
+      "pdfWorkshop.scrollDirection",
       view?.scrollDirection ?? "vertical",
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.canGoBack",
+      "pdfWorkshop.canGoBack",
       view?.canGoBack ?? false,
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "vscodeEmbedPdf.canGoForward",
+      "pdfWorkshop.canGoForward",
       view?.canGoForward ?? false,
     );
     this.changed.fire();

@@ -7,7 +7,7 @@ import { RegionSnapshots } from './region-snapshots';
 
 /**
  * PNG snapshots of selected regions, in the extension's storage, capped by
- * `vscodeEmbedPdf.regionImageCache.maxSizeMB`. Each region is saved as soon
+ * `pdfWorkshop.regionImageCache.maxSizeMB`. Each region is saved as soon
  * as it is selected, so its file exists before anything is copied.
  */
 export const pdfRegionsPlugin: PluginDefinition<PdfServices> = {
@@ -18,7 +18,7 @@ export const pdfRegionsPlugin: PluginDefinition<PdfServices> = {
     const images = new RegionImages(
       vscode.Uri.joinPath(context.storageUri ?? context.globalStorageUri, 'regions').fsPath,
       // Read at every save, so a changed setting applies without a reload.
-      () => regionCacheBytes(vscode.workspace.getConfiguration('vscodeEmbedPdf').get('regionImageCache.maxSizeMB')),
+      () => regionCacheBytes(vscode.workspace.getConfiguration('pdfWorkshop').get('regionImageCache.maxSizeMB')),
     );
     const snapshots = new RegionSnapshots(images);
     const watched = new Map<PdfPanel, vscode.Disposable>();

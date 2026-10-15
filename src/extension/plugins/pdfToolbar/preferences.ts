@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { parseFloatingDock, parseToolbarMode, type FloatingDock, type ToolbarSettings } from '../../../shared/toolbar-settings';
 
-export const SECTION = 'vscodeEmbedPdf.toolbar';
-const DOCK_KEY = 'vscodeEmbedPdf.floatingDock';
+export const SECTION = 'pdfWorkshop.toolbar';
+const DOCK_KEY = 'pdfWorkshop.floatingDock';
 
 /**
  * The toolbar settings the viewers need: the mode from the settings, and

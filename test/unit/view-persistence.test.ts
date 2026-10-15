@@ -127,7 +127,7 @@ test("view defaults inherit editor smoothScrolling and explicit PDF false overri
   );
   const uri = vscode.Uri.parse("memory://same.pdf") as never;
   assert.equal(preferences.settings(uri).smoothScrolling, true);
-  vscode.configuration.set("vscodeEmbedPdf.view.smoothScrolling", false);
+  vscode.configuration.set("pdfWorkshop.view.smoothScrolling", false);
   assert.equal(preferences.settings(uri).smoothScrolling, false);
   preferences.dispose();
   vscode.configuration.clear();

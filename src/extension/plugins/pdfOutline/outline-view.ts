@@ -4,9 +4,10 @@ import { findActiveOutlineItem } from '../../../shared/outline';
 import { updateSetting } from '../../settings';
 import type { PdfPanel } from '../pdf/panel';
 import type { PdfPanels } from '../pdf/panels';
+import { OUTLINE_COMMAND_IDS } from '../pdf/registered-commands';
 
-const FOLLOW_SETTING = 'vscodeEmbedPdf.outline.followCursor';
-const FOLLOW_CONTEXT = 'vscodeEmbedPdf.outlineFollowCursor';
+const FOLLOW_SETTING = 'pdfWorkshop.outline.followCursor';
+const FOLLOW_CONTEXT = 'pdfWorkshop.outlineFollowCursor';
 
 /**
  * The "PDF Outline" view in the Explorer: the bookmarks of the PDF in the
@@ -14,7 +15,7 @@ const FOLLOW_CONTEXT = 'vscodeEmbedPdf.outlineFollowCursor';
  */
 export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutputChannel, 'warn'>): vscode.Disposable {
   const provider = new OutlineProvider(panels);
-  const view = vscode.window.createTreeView('vscodeEmbedPdf.outline', {
+  const view = vscode.window.createTreeView('pdfWorkshop.outline', {
     treeDataProvider: provider,
     showCollapseAll: true,
   });
@@ -86,7 +87,7 @@ export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutpu
     vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration(FOLLOW_SETTING)) applyFollowSetting();
     }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.expandOutline', async () => {
+    vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.expandOutline, async () => {
       const panel = panels.active;
       const outline = panel?.outline;
       // reveal's numeric expansion depth is capped by VS Code. Visit every
@@ -101,14 +102,14 @@ export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutpu
         }
       }
     }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.enableOutlineFollowCursor', () => setFollow(true)),
-    vscode.commands.registerCommand('vscodeEmbedPdf.disableOutlineFollowCursor', () => setFollow(false)),
+    vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.enableOutlineFollowCursor, () => setFollow(true)),
+    vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.disableOutlineFollowCursor, () => setFollow(false)),
     // Show the outline, or hide the side bar it is shown in.
-    vscode.commands.registerCommand('vscodeEmbedPdf.toggleOutline', async () => {
+    vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.toggleOutline, async () => {
       if (view.visible) await vscode.commands.executeCommand('workbench.action.closeSidebar');
-      else await vscode.commands.executeCommand('vscodeEmbedPdf.outline.focus');
+      else await vscode.commands.executeCommand('pdfWorkshop.outline.focus');
     }),
-    vscode.commands.registerCommand('vscodeEmbedPdf.goToOutlineItem', (page: unknown, top?: unknown) => {
+    vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.goToOutlineItem, (page: unknown, top?: unknown) => {
       if (typeof page === 'number') panels.active?.goTo({ page }, typeof top === 'number' ? top : undefined);
     }),
   );
@@ -170,7 +171,7 @@ class OutlineProvider implements vscode.TreeDataProvider<OutlineItem>, vscode.Di
       node.description = String(item.page);
       node.tooltip = `${item.title} — page ${item.page}`;
       node.command = {
-        command: 'vscodeEmbedPdf.goToOutlineItem',
+        command: OUTLINE_COMMAND_IDS.goToOutlineItem,
         title: 'Go to page',
         arguments: [item.page, item.top],
       };

@@ -11,13 +11,13 @@ the PDF with nothing else on screen. It is VS Code's own Zen Mode, with the part
   settings, and puts everything back when it ends. The extension does not close or reopen anything itself.
 - The controls that live in VS Code's chrome (the editor title actions and the status bar) are hidden or unreliable
   in zen, so with `toolbar.mode` **chrome** or **slim** the viewer shows its **floating bar** for as long as zen lasts.
-  The bar has an **Exit zen mode** button. This is a temporary look only: `vscodeEmbedPdf.toolbar.mode` is never
+  The bar has an **Exit zen mode** button. This is a temporary look only: `pdfWorkshop.toolbar.mode` is never
   changed, and the bar you chose comes back afterwards. **floating** stays as it is (with the button added), and
   **none** stays none: use the keys.
 - **Exit**: `Ctrl+Alt+Z` again (`Ctrl+Cmd+Z`), `Escape Escape` with the PDF focused, the bar's button, **PDF: Exit
   Zen Mode**, or VS Code's own `Ctrl+K Z`.
 
-All of the PDF shortcuts are turned off by `vscodeEmbedPdf.keyboardShortcuts`, these too.
+All of the PDF shortcuts are turned off by `pdfWorkshop.keyboardShortcuts`, these too.
 
 ## Settings that matter
 

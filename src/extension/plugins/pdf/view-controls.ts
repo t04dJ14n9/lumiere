@@ -6,13 +6,19 @@ import {
 } from "../../../shared/view-options";
 import type { ViewerAction } from "../../../shared/view-state";
 import type { PdfPanels } from "./panels";
+import {
+  SETTINGS_COMMAND_IDS,
+  VIEW_COMMAND_IDS,
+  VIEW_CONTROL_COMMAND_IDS,
+  viewControlCommandId,
+} from "./registered-commands";
 
 type Choice = vscode.QuickPickItem & { action?: ViewerAction; command?: string };
 
 /** Layout and scrolling commands use exactly the same actions as the viewer's View group. */
 export function registerViewControls(panels: PdfPanels): vscode.Disposable {
   const register = (name: string, action: ViewerAction) =>
-    vscode.commands.registerCommand(`vscodeEmbedPdf.${name}`, () =>
+    vscode.commands.registerCommand(viewControlCommandId(name), () =>
       panels.active?.act(action),
     );
   return vscode.Disposable.from(
@@ -35,7 +41,7 @@ export function registerViewControls(panels: PdfPanels): vscode.Disposable {
         scrollDirection: item.value,
       }),
     ),
-    vscode.commands.registerCommand("vscodeEmbedPdf.selectView", async () => {
+    vscode.commands.registerCommand(VIEW_CONTROL_COMMAND_IDS.selectView, async () => {
       const panel = panels.active;
       const view = panel?.view;
       if (!panel || !view) return;
@@ -95,7 +101,7 @@ export function registerViewControls(panels: PdfPanels): vscode.Disposable {
         section("More"),
         {
           label: "$(settings-gear) Settings…",
-          command: "vscodeEmbedPdf.openSettings",
+          command: SETTINGS_COMMAND_IDS.openSettings,
         },
       ];
       const choice = await vscode.window.showQuickPick(choices, {
@@ -106,7 +112,7 @@ export function registerViewControls(panels: PdfPanels): vscode.Disposable {
       if (choice.action) panel.act(choice.action);
       else if (choice.command)
         await vscode.commands.executeCommand(choice.command);
-      else await vscode.commands.executeCommand("vscodeEmbedPdf.selectZoom");
+      else await vscode.commands.executeCommand(VIEW_COMMAND_IDS.selectZoom);
     }),
   );
 }

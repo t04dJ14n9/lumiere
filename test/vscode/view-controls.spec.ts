@@ -28,7 +28,7 @@ test("PDF view commands change the active panel and its choices survive closing 
     settingsFile,
     JSON.stringify({
       ...(JSON.parse(original) as object),
-      "vscodeEmbedPdf.view.restoreOnReopen": true,
+      "pdfWorkshop.view.restoreOnReopen": true,
     }),
   );
   try {
@@ -85,7 +85,7 @@ async function body(page: Page): Promise<void> {
     "data-scroll-direction",
     "horizontal",
   );
-  await page.locator('.part.statusbar [id$="vscodeEmbedPdf.view"]').click();
+  await page.locator('.part.statusbar [id$="pdfWorkshop.view"]').click();
   await expect(quickInputTitled(page, /^PDF View$/u)).toBeVisible();
   await page
     .locator(".quick-input-list .monaco-list-row")

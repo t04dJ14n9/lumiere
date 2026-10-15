@@ -2,7 +2,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 export const SERVER_NAME = 'agent-pdf-viewer';
-export const PROVIDER_ID = 'vscodeEmbedPdf.agentBridge';
+export const PROVIDER_ID = 'pdfWorkshop.agentBridge';
 /** Where running bridges announce themselves for the stdio shim. */
 export const DISCOVERY_DIR = path.join(os.homedir(), '.agent-pdf-viewer', 'bridges');
 

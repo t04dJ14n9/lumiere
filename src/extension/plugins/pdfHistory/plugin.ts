@@ -4,6 +4,7 @@ import { cloneHistoryEntry, sameHistoryEntry, type PdfHistoryEntry } from '../..
 import type { ReadingPosition } from '../../../shared/reading-position';
 import type { PdfPanel } from '../pdf/panel';
 import type { PdfServices, PluginDefinition } from '../services';
+import { HISTORY_COMMAND_IDS } from '../pdf/registered-commands';
 import manifest from './manifest';
 
 interface PanelHistory {
@@ -38,8 +39,8 @@ export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
         panel.setHistoryState(Boolean(panel.view) && !state.busy && state.history.canGoBack, Boolean(panel.view) && !state.busy && state.history.canGoForward);
       }
       const active = panels.active?.view && states.get(panels.active);
-      void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.historyBack', Boolean(active && !active.busy && active.history.canGoBack));
-      void vscode.commands.executeCommand('setContext', 'vscodeEmbedPdf.historyForward', Boolean(active && !active.busy && active.history.canGoForward));
+      void vscode.commands.executeCommand('setContext', 'pdfWorkshop.historyBack', Boolean(active && !active.busy && active.history.canGoBack));
+      void vscode.commands.executeCommand('setContext', 'pdfWorkshop.historyForward', Boolean(active && !active.busy && active.history.canGoForward));
     };
     const traverse = async (panel: PdfPanel | undefined, direction: 'back' | 'forward'): Promise<boolean> => {
       if (!panel) return false;
@@ -86,8 +87,8 @@ export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
       }
       publish();
     }), 'listener');
-    scope.acquire(vscode.commands.registerCommand('vscodeEmbedPdf.historyBack', () => traverse(panels.active, 'back')), 'command');
-    scope.acquire(vscode.commands.registerCommand('vscodeEmbedPdf.historyForward', () => traverse(panels.active, 'forward')), 'command');
+    scope.acquire(vscode.commands.registerCommand(HISTORY_COMMAND_IDS.historyBack, () => traverse(panels.active, 'back')), 'command');
+    scope.acquire(vscode.commands.registerCommand(HISTORY_COMMAND_IDS.historyForward, () => traverse(panels.active, 'forward')), 'command');
     scope.acquire({ dispose: () => {
       for (const [panel, state] of states) {
         state.generation++;

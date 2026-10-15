@@ -1,5 +1,5 @@
 /**
- * Where the viewer's controls are (setting `vscodeEmbedPdf.toolbar.mode`):
+ * Where the viewer's controls are (setting `pdfWorkshop.toolbar.mode`):
  *   chrome    VS Code's own: editor title actions and the status bar
  *   slim      a slim bar along the top of the viewer
  *   floating  a bar over the pages, docked to an edge the reader drags it to
@@ -67,7 +67,7 @@ export function titleActionsInMenu(appName: string): boolean {
 
 /**
  * Whether the status bar shows page and zoom buttons besides the page and
- * zoom (setting `vscodeEmbedPdf.toolbar.statusBarButtons`). `auto` shows
+ * zoom (setting `pdfWorkshop.toolbar.statusBarButtons`). `auto` shows
  * them in Cursor, whose editor title bar keeps extension buttons in its
  * "…" menu, so the status bar is the only place they are always in view.
  */

@@ -6,6 +6,7 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as locations from '../../src/shared/pdf-location';
 import * as targets from '../../src/shared/pdf-target-resolution';
+import { OPEN_LOCATION_COMMAND_ID } from '../../src/extension/plugins/pdf/registered-commands';
 
 class Uri {
   readonly path: string;
@@ -67,7 +68,8 @@ function harness() {
     vscode,
     '../../../shared/pdf-location': locations,
     '../../../shared/pdf-target-resolution': targets,
-    './panels': { VIEW_TYPE: 'vscodeEmbedPdf.viewer' },
+    './panels': { VIEW_TYPE: 'pdfWorkshop.viewer' },
+    './registered-commands': { OPEN_LOCATION_COMMAND_ID },
   };
   const source = readFileSync(new URL('../../src/extension/plugins/pdf/commands.ts', import.meta.url), 'utf8');
   const output = ts.transpileModule(source, {

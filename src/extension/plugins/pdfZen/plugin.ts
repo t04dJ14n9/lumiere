@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import type { PluginDefinition, PdfServices } from '../services';
+import { ZEN_COMMAND_IDS } from '../pdf/registered-commands';
 import manifest from './manifest';
 
 /**
@@ -36,8 +37,8 @@ export const pdfZenPlugin: PluginDefinition<PdfServices> = {
     };
     scope.acquire(panels.onDidOpen(panel => panel.setZen(on)), 'listener');
     scope.acquire(panels.handle('zen', (_panel, message) => message.exit ? exit() : show(false)), 'message handler');
-    scope.acquire(vscode.commands.registerCommand('vscodeEmbedPdf.enterZen', enter), 'command');
-    scope.acquire(vscode.commands.registerCommand('vscodeEmbedPdf.exitZen', exit), 'command');
+    scope.acquire(vscode.commands.registerCommand(ZEN_COMMAND_IDS.enterZen, enter), 'command');
+    scope.acquire(vscode.commands.registerCommand(ZEN_COMMAND_IDS.exitZen, exit), 'command');
     scope.acquire({ dispose: () => show(false) }, 'viewer zen state');
   },
 };

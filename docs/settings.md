@@ -4,7 +4,7 @@ Every setting of this extension can be changed without opening a settings file.
 
 | Command | What it does |
 |---|---|
-| **PDF: Open Settings** | Opens VS Code's Settings editor filtered to this extension (`@ext:t04dj14n9.vscode-embedpdf`). Also in the viewer's right-click menu and as **Settings…** in the **View…** picker. |
+| **PDF: Open Settings** | Opens VS Code's Settings editor filtered to this extension (`@ext:t04dj14n9.vscode-pdf-workshop`). Also in the viewer's right-click menu and as **Settings…** in the **View…** picker. |
 | **PDF: Change Setting…** | Lists *all* of the extension's settings, grouped, with the current value and the description; picking one edits it by its type (below). |
 | **PDF: Toggle Smooth Scrolling** | Flips `view.smoothScrolling` (from what is in effect now, also when it followed the editor). |
 | **PDF: Toggle Keyboard Shortcuts** | Flips `keyboardShortcuts`. |
