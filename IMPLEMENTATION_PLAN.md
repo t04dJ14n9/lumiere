@@ -3829,3 +3829,14 @@ Files: `src/webview/ui/markdown-widget.ts`,
 
 Validation: `pnpm exec tsx --test` markdown-widget + pointer-selection +
 selection unit tests.
+
+## Outline Go to Heading (PR #45 review) — 2026-10-16
+
+CustomTextEditorProvider webviews are not native Outline / Go to Symbol hosts
+in the supported VS Code baseline, so the DocumentSymbolProvider registration
+was removed. Workbench uses Note Outline and **Go to Heading…**
+(Ctrl+Shift+O / Cmd+Shift+O) via the host Quick Pick adapter. Toggle Note
+Outline uses the view's `.removeView` / `.focus` commands. The window plugin
+publishes `markdownWorkbench.plugin.outline` for editor-scoped shortcuts;
+Toggle uses `scope: "workbench"` config gating like Quick Switcher.
+

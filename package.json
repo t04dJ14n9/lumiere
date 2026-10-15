@@ -353,8 +353,13 @@
       {
         "command": "markdownWorkbench.outline.toggle",
         "title": "Toggle Note Outline",
-        "category": "Markdown Workbench",
+        "category": "Markdown Workshop",
         "icon": "$(list-tree)"
+      },
+      {
+        "command": "markdownWorkbench.outline.goToHeading",
+        "title": "Go to Heading…",
+        "category": "Markdown Workshop"
       },
       {
         "command": "markdownWorkbench.addProperty",
@@ -588,10 +593,16 @@
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
       },
       {
+        "command": "markdownWorkbench.outline.goToHeading",
+        "key": "ctrl+shift+o",
+        "mac": "cmd+shift+o",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline"
+      },
+      {
         "command": "markdownWorkbench.outline.toggle",
         "key": "ctrl+alt+o",
         "mac": "ctrl+cmd+o",
-        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline"
+        "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled"
       },
       {
         "command": "markdownWorkbench.addProperty",
@@ -955,6 +966,10 @@
         },
         {
           "command": "markdownWorkbench.outline.toggle",
+          "when": "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled"
+        },
+        {
+          "command": "markdownWorkbench.outline.goToHeading",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline"
         },
         {
@@ -1352,7 +1367,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Outline view of the active note's headings, with expansion actions and optional cursor following. Registers a DocumentSymbolProvider so Go to Symbol and the native Outline list headings in the Markdown Workbench editor."
+          "description": "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workbench note's headings."
         },
         "markdownWorkbench.plugins.pagePreview.enabled": {
           "type": "boolean",

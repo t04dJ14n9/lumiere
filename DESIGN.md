@@ -1082,9 +1082,10 @@ Short specifications, beyond the source's tested behaviour:
   replaces `shared/match.ts`), with each CJK character its own token. Accepting
   closes `]]` (reusing an auto-inserted one) and inserts `vault.linkText`.
 - **outline**: a native Explorer tree view (like PDF Outline) of the active
-  editor's headings, with click to reveal and current-heading tracking, and a
-  `DocumentSymbolProvider` so VS Code's Outline and breadcrumbs also work in
-  the plain text editor. This removes the in-webview outline panel and its
+  editor's headings, with click to reveal and current-heading tracking, plus
+  a heading Quick Pick on Ctrl+Shift+O in Workbench. VS Code's built-in Markdown
+  provider supplies Outline and breadcrumbs in the plain text editor. This
+  removes the in-webview outline panel and its
   **Toggle Outline** title action.
 - **backlinks** and **outgoingLinks**: native views (an Explorer section, or a
   view container per §25). Group by file, one trimmed context line per

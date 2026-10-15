@@ -18,13 +18,13 @@ test("document symbols nest like Note Outline and keep heading labels", () => {
   const headings = metadata(text).headings;
   const symbols = outlineSymbols(headings);
   const outline = outlineOf(headings);
-  const symbolShape = (
-    nodes: typeof symbols,
-  ): [string, string, unknown][] =>
-    nodes.map((node) => [node.name, `h${node.level}`, symbolShape(node.children)]);
-  const outlineShape = (
-    nodes: typeof outline,
-  ): [string, string, unknown][] =>
+  const symbolShape = (nodes: typeof symbols): [string, string, unknown][] =>
+    nodes.map((node) => [
+      node.name,
+      `h${node.level}`,
+      symbolShape(node.children),
+    ]);
+  const outlineShape = (nodes: typeof outline): [string, string, unknown][] =>
     nodes.map((node) => [
       node.title,
       `h${node.level}`,
@@ -58,4 +58,51 @@ test("each symbol's selection is the heading line and its range covers the secti
 test("empty heading titles become a visible placeholder label", () => {
   const symbols = outlineSymbols(metadata("# \n").headings);
   assert.equal(symbols[0]?.name, "(empty)");
+});
+
+test("quoted parent ranges contain children outside the blockquote", () => {
+  const text = "> # Quoted\n> body\n\n## Outside\n### Deep\nbody\n# Next\n";
+  const symbols = outlineSymbols(metadata(text).headings);
+  const quoted = symbols[0]!;
+  const outside = quoted.children[0]!;
+  const deep = outside.children[0]!;
+  assert.equal(quoted.name, "Quoted");
+  assert.equal(outside.name, "Outside");
+  assert.equal(deep.name, "Deep");
+  assert.ok(quoted.end >= outside.end);
+  assert.ok(quoted.end >= deep.end);
+  assert.ok(quoted.end <= symbols[1]!.start);
+  assert.ok(text.slice(quoted.start, quoted.end).includes("### Deep"));
+});
+
+test("every ancestor contains descendant sections and selections with quoted and setext headings", () => {
+  for (const eol of ["\n", "\r\n"]) {
+    const text = [
+      "> # Quoted",
+      "> > ## Nested quote",
+      "> > body",
+      "",
+      "### Outside",
+      "body",
+      "Setext",
+      "------",
+      "#### Skipped level",
+      "body",
+      "# Next",
+    ].join(eol);
+    const verifyRanges = (nodes: ReturnType<typeof outlineSymbols>) => {
+      for (const node of nodes) {
+        assert.ok(node.start <= node.selectionStart, node.name);
+        assert.ok(node.end >= node.selectionEnd, node.name);
+        for (const child of node.children) {
+          assert.ok(node.start <= child.start, `${node.name} / ${child.name}`);
+          assert.ok(node.end >= child.end, `${node.name} / ${child.name}`);
+        }
+        verifyRanges(node.children);
+      }
+    };
+    const symbols = outlineSymbols(metadata(text).headings);
+    assert.equal(symbols[0]!.children[0]!.children[0]!.name, "Outside");
+    verifyRanges(symbols);
+  }
 });

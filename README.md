@@ -33,6 +33,11 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   search work within it. Without one, each workspace folder is a vault.
 - **Toggle Live Preview/Source Mode** switches modes; **Open as Text** opens
   VS Code's text editor on the same document.
+- **Go to Heading…** (Ctrl+Shift+O; Command+Shift+O on macOS) searches the
+  active Workbench note's headings. **Toggle Note Outline** (Ctrl+Alt+O;
+  Control+Command+O on macOS) shows or hides its heading tree, including after
+  moving the view to another sidebar or the panel. VS Code's native Outline
+  and breadcrumbs remain available in the plain text editor.
 - **Manage Plugins** opens the plugin switches
   (`markdownWorkbench.plugins.<id>.enabled`); **Show Plugin Status** lists
   every plugin and why one failed or is waiting.

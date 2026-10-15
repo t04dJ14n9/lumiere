@@ -4,18 +4,18 @@ import type { NoteMetadata } from "../../markdown/metadata";
 export interface OutlineSymbolNode {
   name: string;
   level: number;
-  /** Full section coverage (must contain the selection). */
+  /** Full section coverage (contains the selection and all children). */
   start: number;
   end: number;
-  /** Heading line only — Go to Symbol / Outline selection. */
+  /** Heading line only, used as the navigation target. */
   selectionStart: number;
   selectionEnd: number;
   children: OutlineSymbolNode[];
 }
 
 /**
- * Nest headings for {@link vscode.DocumentSymbolProvider} the same way
- * Note Outline nests them (`outlineOf`), keeping section and heading ranges.
+ * Nest heading symbols the same way Note Outline nests them (`outlineOf`),
+ * keeping section and heading ranges.
  */
 export function outlineSymbols(
   headings: NoteMetadata["headings"],
@@ -39,6 +39,11 @@ export function outlineSymbols(
       children: [],
     };
     (parent ? parent.children : roots).push(node);
+    // Metadata clips quoted sections to their blockquote. Level-based nesting
+    // can include headings outside that quote, so every ancestor must grow.
+    for (const ancestor of stack) {
+      ancestor.end = Math.max(ancestor.end, node.end);
+    }
     stack.push(node);
   }
   return roots;

@@ -3,6 +3,7 @@ import { Context } from "../../../src/kernel";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import { outlineHost } from "../../../src/plugins/outline/host";
 import {
+  COMMANDS_CONTEXT,
   FOLLOW_CURSOR_CONTEXT,
   FOLLOW_CURSOR_SETTING,
   VIEW_ID,
@@ -139,6 +140,9 @@ export async function outlineFixture(
     },
     get followsCursor() {
       return contexts.get(FOLLOW_CURSOR_CONTEXT);
+    },
+    get commandsAvailable() {
+      return contexts.get(COMMANDS_CONTEXT);
     },
     configure,
     panel(id: string, path = "A.md", head = 0) {

@@ -15,7 +15,7 @@ export default defineManifest({
   id: "outline",
   title: "Outline",
   description:
-    "Outline view of the active note's headings, with expansion actions and optional cursor following. Registers a DocumentSymbolProvider so Go to Symbol and the native Outline list headings in the Markdown Workbench editor.",
+    "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workbench note's headings.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
@@ -46,6 +46,14 @@ export default defineManifest({
         title: "Toggle Note Outline",
         icon: "$(list-tree)",
         palette: true,
+        scope: "workbench",
+      },
+      {
+        id: "outline.goToHeading",
+        title: "Go to Heading…",
+        palette: true,
+        key: "ctrl+shift+o",
+        mac: "cmd+shift+o",
       },
     ],
     keybindings: [
@@ -54,6 +62,7 @@ export default defineManifest({
         key: "ctrl+alt+o",
         // Match PDF Workshop: Control+Command+O on macOS.
         mac: "ctrl+cmd+o",
+        scope: "workbench",
       },
     ],
     menus: [

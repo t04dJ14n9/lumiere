@@ -1,6 +1,7 @@
 import type { Context } from "../../kernel";
 import type { TreeHandle, Workbench } from "../../shared/runtime";
 import {
+  COMMANDS_CONTEXT,
   DISABLE_FOLLOW_COMMAND,
   ENABLE_FOLLOW_COMMAND,
   EXPAND_ALL_COMMAND,
@@ -10,6 +11,19 @@ import {
   VIEW_ID,
 } from "./commands";
 import type { OutlineView } from "./view";
+
+export function registerOutlineCommandContext(ctx: Context): void {
+  // The editor populates contexts for panel plugins only. Outline runs once
+  // per window, so its own lifetime controls the generated command guards.
+  const workbench = ctx.workbench;
+  const enabled = workbench
+    .execute("setContext", COMMANDS_CONTEXT, true)
+    .catch((error) => ctx.logger.warn("Outline command context failed", error));
+  ctx.effect(() => async () => {
+    await enabled;
+    await workbench.execute("setContext", COMMANDS_CONTEXT, undefined);
+  });
+}
 
 export function followsCursor(
   workbench: Workbench,
@@ -34,10 +48,9 @@ export function registerOutlineActions(
   );
   ctx.effect(() =>
     ctx.workbench.command(TOGGLE_COMMAND, async () => {
-      // Same idea as PDF Outline: show/focus the tree so titles are visible,
-      // or hide the side bar when the outline is already showing.
       if (tree.visible) {
-        await ctx.workbench.execute("workbench.action.closeSidebar");
+        // VS Code resolves this view's current container after Move View.
+        await ctx.workbench.execute(`${VIEW_ID}.removeView`);
       } else {
         await ctx.workbench.execute(`${VIEW_ID}.focus`);
       }

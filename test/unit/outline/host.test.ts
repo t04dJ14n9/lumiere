@@ -26,6 +26,7 @@ test("the Note Outline shows and follows the first editor opened", async (t) => 
     focus: false,
   });
   assert.deepEqual(fixture.treeOptions, { showCollapseAll: true });
+  assert.equal(fixture.commandsAvailable, true);
   assert.deepEqual(fixture.warnings, []);
 });
 
@@ -280,10 +281,11 @@ test("stopping the plugin removes commands, view and follow context", async () =
   assert.equal(fixture.view.disposed, true);
   assert.equal(fixture.fake.commands.size, 0);
   assert.equal(fixture.followsCursor, undefined);
+  assert.equal(fixture.commandsAvailable, undefined);
   assert.deepEqual(fixture.warnings, []);
 });
 
-test("Toggle Note Outline focuses the view or closes the side bar", async (t) => {
+test("Toggle Note Outline targets the view's hide command and restores it with focus", async (t) => {
   const fixture = await outlineFixture();
   t.after(() => fixture.root.dispose());
   const { panel } = fixture.panel("one");
@@ -292,8 +294,12 @@ test("Toggle Note Outline focuses the view or closes the side bar", async (t) =>
   fixture.executed.length = 0;
   fixture.show(true);
   await fixture.fake.commands.get(TOGGLE_COMMAND)!();
-  assert.deepEqual(fixture.executed.at(-1), ["workbench.action.closeSidebar"]);
+  assert.deepEqual(fixture.executed.at(-1), [
+    "markdownWorkbench.outline.removeView",
+  ]);
   fixture.show(false);
   await fixture.fake.commands.get(TOGGLE_COMMAND)!();
-  assert.deepEqual(fixture.executed.at(-1), ["markdownWorkbench.outline.focus"]);
+  assert.deepEqual(fixture.executed.at(-1), [
+    "markdownWorkbench.outline.focus",
+  ]);
 });

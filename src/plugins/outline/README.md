@@ -2,10 +2,8 @@
 
 Shows the active note's headings beside this editor, with Collapse All,
 Expand All and an optional Follow Cursor toggle. Clicking a heading jumps to
-its section, like Obsidian's **Outline** core plugin. In the Markdown Workbench
-custom editor, a `DocumentSymbolProvider` feeds VS Code's Go to Symbol and the
-native Outline sidebar; the plain text editor still uses VS Code's built-in
-Markdown symbols.
+its section, like Obsidian's **Outline** core plugin. **Go to Heading…** searches
+these headings in a native Quick Pick while the Workbench editor is active.
 
 ## How it works
 
@@ -22,14 +20,23 @@ scrolls that offset to the vertical centre of the editor, as VS Code's Outline
 note the scroll range ends first, so the heading stays above or below the
 centre.
 
-Ctrl+Alt+O (Control+Command+O on macOS) toggles Note Outline while the
-Workbench editor is active, matching PDF Workshop's outline shortcut.
+Ctrl+Shift+O (Command+Shift+O on macOS), or **Markdown Workshop: Go to
+Heading…** in the command palette, opens a searchable heading picker. It reads
+the active panel's authoritative text, shows heading levels and parent titles,
+and navigates through the same path as the tree. Dismissed or stale picks
+(edited document, changed panel or stopped plugin) do not navigate.
+
+Ctrl+Alt+O (Control+Command+O on macOS) toggles Note Outline when the Outline
+window feature is enabled (`scope: "workbench"`, like Quick Switcher), matching
+PDF Workshop's outline shortcut. Hiding targets the view itself, including after
+moving it to the secondary sidebar or panel; showing restores and focuses it in
+its current location.
 
 ## Files
 
 - `host.ts`: the plugin registrations and editor/document event routing.
-- `document-symbols.ts`: `DocumentSymbolProvider` for the custom editor.
-- `symbols.ts`: nested heading symbols shared with Go to Symbol / Outline.
+- `symbol-picker.ts`: searchable headings and guarded navigation for Quick Pick.
+- `symbols.ts`: nested heading symbols with enclosing section ranges.
 - `tree.ts`: heading nodes, parent lookup and editor-to-source coordinates.
 - `view.ts`: refresh timing, cursor following and expansion traversal.
 - `actions.ts`: commands, configuration reads and the follow context key.
@@ -44,17 +51,23 @@ Workbench editor is active, matching PDF Workshop's outline shortcut.
   `editor/activeChanged`, `editor/selectionChanged` and `document/changed`,
   plus native configuration and tree visibility changes. Emits no events and
   provides no services.
+- Maintains `markdownWorkbench.plugin.outline` while the window plugin is
+  running, so editor-scoped guards (Go to Heading) reflect its lifetime. Toggle
+  Note Outline uses workbench/config gating instead.
 - Settings: `markdownWorkbench.plugins.outline.enabled` and
   `markdownWorkbench.outline.followCursor` (default `true`, resource-scoped).
 - Commands: `markdownWorkbench.outline.expandAll`,
   `markdownWorkbench.outline.enableFollowCursor`,
   `markdownWorkbench.outline.disableFollowCursor` and
-  `markdownWorkbench.outline.toggle`; internal navigation uses
+  `markdownWorkbench.outline.toggle` and `markdownWorkbench.outline.goToHeading`;
+  internal navigation uses
   `markdownWorkbench.outline.open`.
 
 ## Limits and differences from Obsidian
 
 - No drag-and-drop reordering of sections.
-- The DocumentSymbolProvider only answers while the Markdown Workbench custom
-  editor is the active tab, so the built-in Markdown provider still owns the
-  plain text editor alone.
+- VS Code's native Outline and breadcrumbs require an editor integration that
+  the supported CustomTextEditorProvider API does not supply. Workbench uses
+  Note Outline and Go to Heading. The plain text editor uses VS Code's built-in
+  Markdown symbols and Ctrl+Shift+O; this plugin registers no symbol provider,
+  so split editors cannot cache duplicate headings from Workbench.

@@ -6,9 +6,10 @@ import {
   followsCursor,
   registerFollowCursor,
   registerOutlineActions,
+  registerOutlineCommandContext,
 } from "./actions";
 import { OPEN_COMMAND, VIEW_ID } from "./commands";
-import { registerDocumentSymbols } from "./document-symbols";
+import { registerSymbolPicker } from "./symbol-picker";
 import { OutlineSource } from "./tree";
 import { OutlineView } from "./view";
 
@@ -35,13 +36,11 @@ export const outlineHost: Plugin = {
         followsCursor(workbench, editors.active()?.document.uri),
     });
     ctx.effect(() => () => view.dispose());
+    registerOutlineCommandContext(ctx);
     registerOutlineUpdates(ctx, view, tree);
     registerOutlineActions(ctx, view, tree);
     registerFollowCursor(ctx, view);
-    ctx.effect(() => {
-      const registration = registerDocumentSymbols();
-      return () => registration.dispose();
-    });
+    registerSymbolPicker(ctx, views);
     ctx.effect(() =>
       views.command(OPEN_COMMAND, (uri, offset) =>
         ctx.vaults.open(String(uri), { offset: Number(offset) }),
