@@ -68,9 +68,10 @@ export async function revertDisplayedHunk(input: RevertRun): Promise<void> {
   }
   const docText = input.docText();
   input.session.noteDocument(docText);
+  const previous = input.session.snapshot;
   publishIfDrifted(input, baseline, docText);
   const snap = input.session.snapshot;
-  const ref = input.session.refFor(input.hunk);
+  const ref = input.session.refAfterDrift(previous, input.hunk);
   if (!snap || !ref || !resolveExactHunk(snap, ref)) {
     return;
   }

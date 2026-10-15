@@ -4065,9 +4065,11 @@ Known issues: the five Chromium failures above; native suite not executed here.
 
 A nearest peek rematch moves the display anchor and keeps the disappeared hunk's
 ref, so Revert stays disabled and the gate aborts instead of editing the
-neighbor. The same baseline change (original range, deleted text, and kind)
-keeps its mutation ref when only context lines change its hunk id, so an edit
-above a peeked hunk still reverts that hunk. Production Revert reads the live
+neighbor. The same change payload (original range plus the non-context delete and add
+lines) keeps its mutation ref when only context lines change its hunk id, so
+an edit above a peeked hunk still reverts that hunk. A changed or grown added
+payload does not: rematch keeps the stale ref, and a click that republishes
+before the debounce does not mint a ref from the baseline alone. Production Revert reads the live
 document version and baseline at gate time and applies the validated snapshot
 hunk. An edit after the click and before execute changes that version and makes
 no edit. Show Diff opens at the mapped decoration, not the snapshot anchor from

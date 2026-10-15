@@ -172,7 +172,31 @@ export class DiffSession {
   }
 
   /**
-   * The current hunk with this baseline change. More than one match is
+   * Mutation ref after a click may have republished the buffer. A new id is
+   * minted only when that republish kept this change payload. A changed,
+   * grown, or missing payload does not get a fresh ref from the baseline.
+   */
+  refAfterDrift(
+    previous: DiffSnapshot | undefined,
+    hunk: DocHunk,
+  ): HunkRef | undefined {
+    const snap = this.snapshot;
+    if (!snap) {
+      return undefined;
+    }
+    if (previous === snap) {
+      return this.refFor(hunk);
+    }
+    const prior = this.hunkIn(previous, hunk);
+    const survived = prior ? this.uniqueSurvivor(prior) : undefined;
+    if (!survived) {
+      return undefined;
+    }
+    return { generationId: snap.generationId, hunkId: survived.hunkId };
+  }
+
+  /**
+   * The current hunk with this change payload. More than one match is
    * ambiguous, so the caller keeps the old ref and Revert stays off.
    */
   private uniqueSurvivor(prior: DiffHunk): DiffHunk | undefined {
@@ -187,7 +211,14 @@ export class DiffSession {
    * different change is not used: that would let a neighbor become the edit.
    */
   private hunkFor(hunk: DocHunk): DiffHunk | undefined {
-    const matches = (this.snapshot?.hunks ?? []).filter((candidate) =>
+    return this.hunkIn(this.snapshot, hunk);
+  }
+
+  private hunkIn(
+    snapshot: DiffSnapshot | undefined,
+    hunk: DocHunk,
+  ): DiffHunk | undefined {
+    const matches = (snapshot?.hunks ?? []).filter((candidate) =>
       sameBaseline(candidate, hunk),
     );
     return matches.length === 1 ? matches[0] : undefined;

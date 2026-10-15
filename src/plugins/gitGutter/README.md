@@ -26,10 +26,11 @@ for each added (green), modified (blue) or removed (red triangle) range, against
   stays rendered. ↑/↓ move to the adjacent change. **Revert** replaces that hunk
   with the baseline text as one undo step, and only when the shared mutation
   gate accepts that exact hunk and the buffer is still the snapshot it checked.
-  An edit that only changes surrounding context keeps that same baseline hunk,
-  so Revert stays available. When the change itself is gone, a nearest display
-  rematch keeps the original hunk id, Revert stays off, and the neighbor is
-  left alone. **Stage** stays disabled:
+  An edit that only changes surrounding context keeps that same deleted and
+  added text, so Revert stays available. A changed or grown payload, and a
+  nearest display rematch when the change is gone, keep the original hunk id.
+  Revert stays off and does not edit the neighbor or the newer text. **Stage**
+  stays disabled:
   there is no hunk-scoped stage API, and the button must not save or stage the
   whole file. **Open Full Diff** opens this comparison's base → target.
   Escape or ✕ closes the peek.

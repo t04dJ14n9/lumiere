@@ -92,6 +92,50 @@ test("an edit that only changes context keeps Revert on that baseline hunk", () 
   assert.equal(session.mutationAllowed(rematched), true);
 });
 
+test("a grown hunk after recompute is not reverted", async () => {
+  const session = new DiffSession("HEAD");
+  const baseline = "old\n";
+  const first = session.publish("file", baseline, "new\n");
+  const target = first.hunks[0];
+  assert.ok(target?.liveAnchor);
+  const open = {
+    at: target.liveAnchor.from,
+    ref: { generationId: first.generationId, hunkId: target.hunkId },
+  };
+  const next = session.publish("file", baseline, "new\nextra\n");
+  const grown = next.hunks[0];
+  assert.ok(grown);
+  assert.notEqual(grown.hunkId, target.hunkId);
+  const doc = EditorState.create({ doc: "new\nextra\n" }).doc;
+  const rematched = session.rematch(first, open, computeHunks(baseline, doc));
+  assert.ok(rematched);
+  assert.equal(peekRef(rematched)?.hunkId, target.hunkId);
+  assert.equal(peekRef(rematched)?.generationId, first.generationId);
+  assert.equal(session.mutationAllowed(rematched), false);
+  let executed = 0;
+  const ref = peekRef(rematched);
+  assert.ok(ref);
+  const result = await runGutterRevert(
+    session.gate,
+    "file",
+    {
+      generationId: ref.generationId,
+      hunkId: ref.hunkId,
+      sourceState: next.sourceState,
+      action: "revert",
+    },
+    {
+      ...liveRevertReaders(session),
+      applyRevert: async () => {
+        executed += 1;
+        return true;
+      },
+    },
+  );
+  assert.equal(result.status, "aborted");
+  assert.equal(executed, 0);
+});
+
 test("a shifted bar with different baseline text does not match", () => {
   const session = new DiffSession("HEAD");
   session.publish("live-document", "a\n\nold\n", "b\n\nnew\n");
