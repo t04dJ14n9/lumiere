@@ -194,3 +194,23 @@ test("descendant anchors are preserved for external aliases", () => {
   assert.deepEqual(values?.first, { child: "new" });
   assert.equal(values?.second, "old");
 });
+
+test("merge of an anchor and its alias does not overlap alias-preservation edits", () => {
+  const source = "---\nfirst: &a\n  x: old\nsecond: *a\n---\n";
+  const next = edit(source, {
+    type: "merge",
+    values: { first: { x: "new" }, second: { x: "new" } },
+  });
+  assert.deepEqual(frontmatter(next)?.values, {
+    first: { x: "new" },
+    second: { x: "new" },
+  });
+  assert.doesNotMatch(next, /\{x: old\}\{x: new\}/);
+});
+
+test("unrelated recursive aliases do not block editing other properties", () => {
+  const source = "---\nloop: &loop\n  - *loop\ntitle: old\n---\n";
+  const next = edit(source, { type: "set", key: "title", value: "new" });
+  assert.equal(frontmatter(next)?.values?.title, "new");
+  assert.ok(frontmatter(next)?.values?.loop);
+});

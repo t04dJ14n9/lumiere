@@ -127,7 +127,17 @@ class MergeEdits {
     if (!changes) {
       return false;
     }
-    this.changes.push(...changes);
+    // Explicit replacements win over earlier alias-preservation inserts on the
+    // same span (e.g. paste updates both an anchor and its alias).
+    for (const change of changes) {
+      for (let index = this.changes.length - 1; index >= 0; index--) {
+        const prior = this.changes[index]!;
+        if (!(prior.to <= change.from || prior.from >= change.to)) {
+          this.changes.splice(index, 1);
+        }
+      }
+      this.changes.push(change);
+    }
     return true;
   }
 

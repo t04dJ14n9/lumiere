@@ -459,3 +459,62 @@ test("YAML drafts reject invalid text and concurrent property conflicts without 
   assert.deepEqual(frontmatter(source)?.values?.generated, { by: "external" });
   assert.equal(frontmatter(source)?.values?.title, "Note");
 });
+
+test("idle property fields refresh conflict baselines after another property commits", (t) => {
+  const document = installPropertyDOM(t);
+  const row = new PropertyElement(document);
+  const container = new PropertyElement(document);
+  container.find = () => row;
+  const first = new PropertyNativeInput(document);
+  first.tagName = "TEXTAREA";
+  first.dataset = { propertyInput: "a", propertyKind: "yaml" };
+  first.value = 'x: "one"\n';
+  const second = new PropertyNativeInput(document);
+  second.tagName = "TEXTAREA";
+  second.dataset = { propertyInput: "b", propertyKind: "yaml" };
+  second.value = 'y: "two"\n';
+  let source = '---\na:\n  x: "one"\nb:\n  y: "two"\n---\n';
+  let writes = 0;
+  const editor = {
+    source: "current",
+    currentSource: () => source,
+    set: (
+      expected: string,
+      key: string,
+      value: string | number | boolean | null | object,
+    ) => {
+      const current = frontmatter(source)?.raw ?? "";
+      if (current.replace(/\r?\n$/, "") !== expected.replace(/\r?\n$/, "")) {
+        return false;
+      }
+      const operation = {
+        type: "set" as const,
+        key,
+        value: value as never,
+      };
+      if (!propertyChanges(source, operation)) {
+        return false;
+      }
+      writes++;
+      source = applySource(source, operation);
+      return true;
+    },
+  };
+  new PropertyField(html(container), html(first), source, editor);
+  new PropertyField(html(container), html(second), source, editor);
+
+  first.dispatchEvent(new Event("focus"));
+  first.value = 'x: "edited"\n';
+  first.dispatchEvent(new Event("input"));
+  first.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 1);
+  assert.deepEqual(frontmatter(source)?.values?.a, { x: "edited" });
+
+  second.dispatchEvent(new Event("focus"));
+  second.value = 'y: "next"\n';
+  second.dispatchEvent(new Event("input"));
+  second.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 2);
+  assert.deepEqual(frontmatter(source)?.values?.b, { y: "next" });
+  assert.deepEqual(frontmatter(source)?.values?.a, { x: "edited" });
+});

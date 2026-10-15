@@ -245,6 +245,43 @@ function newPropertyLine(edit: Extract<KeyEdit, { type: "add" }>): string {
     : `${yamlKey(edit.key)}: ${yamlValue(edit.value)}`;
 }
 
+function stableEqual(
+  left: unknown,
+  right: unknown,
+  seen = new WeakMap<object, object>(),
+): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (
+    !left ||
+    !right ||
+    typeof left !== "object" ||
+    typeof right !== "object" ||
+    Array.isArray(left) !== Array.isArray(right)
+  ) {
+    return false;
+  }
+  if (seen.get(left) === right) {
+    return true;
+  }
+  seen.set(left, right);
+  const leftEntries = Array.isArray(left)
+    ? left.map((value, index) => [String(index), value] as const)
+    : Object.entries(left);
+  const rightEntries = Array.isArray(right)
+    ? right.map((value, index) => [String(index), value] as const)
+    : Object.entries(right);
+  if (leftEntries.length !== rightEntries.length) {
+    return false;
+  }
+  const rightMap = new Map(rightEntries);
+  return leftEntries.every(
+    ([key, value]) =>
+      rightMap.has(key) && stableEqual(value, rightMap.get(key), seen),
+  );
+}
+
 function applyChanges(source: string, changes: PropertyChange[]): string {
   let candidate = source;
   for (const change of [...changes].sort((a, b) => b.from - a.from)) {
@@ -284,8 +321,7 @@ function verifyChanges(
     }
     const stable = Object.entries(before).every(
       ([key, value]) =>
-        editTouchesKey(edit, key) ||
-        JSON.stringify(after[key]) === JSON.stringify(value),
+        editTouchesKey(edit, key) || stableEqual(after[key], value),
     );
     return stable ? changes : undefined;
   } catch {

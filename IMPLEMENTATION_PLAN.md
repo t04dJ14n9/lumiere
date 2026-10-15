@@ -3820,7 +3820,7 @@ anchored value (including descendant anchors) strips `&anchor` and inlines the
 document-resolved prior value at aliases that `resolve()` to those nodes.
 Structured merge uses the same alias-safe set path. YAML drafts bind to the
 frontmatter bytes and property value at field bind time: invalid YAML and
-concurrent property/header changes reject without writing.
+concurrent property/header changes reject without writing. Idle fields refresh conflict baselines on focus. Merge drops overlapping alias-preservation spans when the paste also replaces those aliases. Verification uses cycle-safe equality.
 
 Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts
 (including empty Sources + custom), `propertyYamlInput`, set round-trips for
