@@ -55,3 +55,14 @@
   border-left-color: var(--mw-git-added);
   background: var(--mw-git-ins-line);
 }
+#app .mw-gi-show-diff {
+  font: inherit;
+  font-size: 0.75em;
+  margin-right: 6px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-button-secondaryForeground, inherit);
+  background: var(--vscode-button-secondaryBackground, var(--hover));
+  cursor: pointer;
+}

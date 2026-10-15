@@ -22,7 +22,9 @@ Off by default; **Markdown Workshop: Toggle Inline Git Changes** flips
   in HEAD", and **Restore**. The block's lines are tinted modified.
 - **Removed blocks.** A ghost struck through, labelled "Removed", with
   **Restore** (one undo step through `gitDiff.revert`).
-- **Added lines.** Tinted with the diff editor's inserted-line colour.
+- **Added lines.** Tinted with the diff editor's inserted-line colour. A
+  **Show Diff** control on a changed line opens the same raw peek as the gutter.
+  It does not take the click from a link, a checkbox, or a text selection.
 - Decorations are rebuilt when the bars recompute and mapped through edits in
   between. Colours come from `src/webview/styles/git-diff.css`.
 
@@ -32,5 +34,6 @@ Turning it off removes every decoration and widget; the note is untouched.
 
 - `manifest.ts`: switch (off by default).
 - `decorations.ts`: word marks, removed-word widgets and ghost blocks.
+- `open.ts`: Show Diff control and click precedence.
 - `webview.ts`: wiring.
 - `gitInline.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
