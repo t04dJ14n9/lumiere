@@ -5,11 +5,14 @@ import path from "node:path";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import {
+  BUTTON_UP_RELEASE_MS,
   isPointerSelecting,
+  onGestureEnd,
   pointerSelection,
   pointerSelectionToggled,
   revealRanges,
   setPointerSelection,
+  shouldApplyDeferredThaw,
   shouldStartPointerFreeze,
 } from "../../../src/webview/ui/pointer-selection";
 
@@ -73,7 +76,6 @@ test("pointer freeze skips native Mermaid SVG label mousedowns", () => {
   assert.equal(
     shouldStartPointerFreeze({
       button: 0,
-      alreadyFrozen: false,
       nativeSelectableLabel: false,
     }),
     true,
@@ -81,30 +83,117 @@ test("pointer freeze skips native Mermaid SVG label mousedowns", () => {
   assert.equal(
     shouldStartPointerFreeze({
       button: 0,
-      alreadyFrozen: false,
       nativeSelectableLabel: true,
     }),
     false,
   );
   assert.equal(
     shouldStartPointerFreeze({
-      button: 0,
-      alreadyFrozen: true,
-      nativeSelectableLabel: false,
-    }),
-    false,
-  );
-  assert.equal(
-    shouldStartPointerFreeze({
       button: 2,
-      alreadyFrozen: false,
       nativeSelectableLabel: false,
     }),
     false,
   );
 });
 
-test("pointer thaw is deferred with setTimeout so mouseup can run first", () => {
+test("a new primary press may refresh freeze even when a prior gesture is still frozen", () => {
+  // alreadyFrozen must not be a sole reject reason — the tracking plugin
+  // invalidates prior thaw/buttons-up timers and re-establishes freeze.
+  assert.equal(
+    shouldStartPointerFreeze({
+      button: 0,
+      nativeSelectableLabel: false,
+    }),
+    true,
+  );
+});
+
+test("deferred thaw is generation-scoped so an earlier gesture cannot clear a newer freeze", () => {
+  // release → new press before deferred thaw: old thaw must not clear it
+  assert.equal(
+    shouldApplyDeferredThaw({
+      scheduledGeneration: 1,
+      currentGeneration: 2,
+      stillFrozen: true,
+      aborted: false,
+      connected: true,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldApplyDeferredThaw({
+      scheduledGeneration: 2,
+      currentGeneration: 2,
+      stillFrozen: true,
+      aborted: false,
+      connected: true,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldApplyDeferredThaw({
+      scheduledGeneration: 2,
+      currentGeneration: 2,
+      stillFrozen: false,
+      aborted: false,
+      connected: true,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldApplyDeferredThaw({
+      scheduledGeneration: 2,
+      currentGeneration: 2,
+      stillFrozen: true,
+      aborted: true,
+      connected: true,
+    }),
+    false,
+  );
+});
+
+test("hover buttons-up timer does not arm while inactive; cancelPending drops a stale release", async () => {
+  // hover → press → stationary hold: a buttons-up timer from idle hover must
+  // not call end after the press. isActive gates arming; cancelPending covers
+  // any timer that was already scheduled for a prior active gesture.
+  const events = new AbortController();
+  let ended = 0;
+  let active = false;
+  const doc = new EventTarget() as Document;
+  const view = new EventTarget() as Window;
+  Object.defineProperty(doc, "defaultView", { value: view });
+
+  const handle = onGestureEnd(doc, () => {
+    ended += 1;
+  }, events.signal, () => active);
+
+  doc.dispatchEvent(
+    Object.assign(new Event("mousemove", { bubbles: true }), { buttons: 0 }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20));
+  assert.equal(ended, 0, "idle hover must not schedule a buttons-up release");
+
+  active = true;
+  doc.dispatchEvent(
+    Object.assign(new Event("mousemove", { bubbles: true }), { buttons: 0 }),
+  );
+  // New press takes ownership before the debounce elapses.
+  active = true;
+  handle.cancelPending();
+  await new Promise((resolve) => setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20));
+  assert.equal(ended, 0, "cancelPending must drop the prior buttons-up release");
+
+  // Sustained buttons-up while still active does end the gesture.
+  doc.dispatchEvent(
+    Object.assign(new Event("mousemove", { bubbles: true }), { buttons: 0 }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, BUTTON_UP_RELEASE_MS + 20));
+  assert.equal(ended, 1, "active sustained buttons-up must release");
+
+  events.abort();
+});
+
+test("pointer thaw is deferred with setTimeout and generation-scoped", () => {
   const root = new URL("../../../", import.meta.url).pathname;
   const src = readFileSync(
     path.join(root, "src/webview/ui/pointer-selection.ts"),
@@ -112,9 +201,14 @@ test("pointer thaw is deferred with setTimeout so mouseup can run first", () => 
   );
   assert.match(src, /shouldStartPointerFreeze/);
   assert.match(src, /isNativeSelectableLabelTarget/);
+  assert.match(src, /shouldApplyDeferredThaw/);
+  assert.match(src, /gestureGeneration/);
+  assert.match(src, /cancelPending/);
   assert.match(src, /setTimeout/);
   assert.doesNotMatch(
     src,
     /queueMicrotask\(\(\) => \{[\s\S]*press\.of\(null\)/,
   );
+  // alreadyFrozen must not be the sole reject path for a new press.
+  assert.doesNotMatch(src, /alreadyFrozen/);
 });

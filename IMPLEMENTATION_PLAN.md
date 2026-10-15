@@ -3737,3 +3737,20 @@ Files: `src/webview/ui/edge-scroll.ts`,
 `src/plugins/tables/{grid,selection,selection-drag,handles,controller}.ts`,
 `test/unit/webview/edge-scroll.test.ts`, `test/unit/tables/hit-test.test.ts`.
 
+
+## Pointer release timers scoped to gesture generation — 2026-10-15
+
+Addresses the remaining ChatGPT Pro P2 on PR #46 (r3): release timers could
+outlive their gesture and thaw a newly held drag.
+
+1. `onGestureEnd` only arms the buttons-up debounce while `isActive()` is true
+   (pointer freeze present), so idle hover cannot schedule a release that fires
+   after a later press. `cancelPending()` lets a new primary press drop any
+   in-flight buttons-up timer from a prior gesture.
+2. Each editor-selection press bumps a gesture generation, clears deferred thaw,
+   and re-establishes the frozen selection. Deferred thaw callbacks no-op when
+   their captured generation is stale, so release → new press before `setTimeout(0)`
+   cannot clear the second freeze. Native Mermaid SVG label bypass is unchanged.
+
+Files: `src/webview/ui/pointer-selection.ts`,
+`test/unit/webview/pointer-selection.test.ts`.

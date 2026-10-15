@@ -61,7 +61,12 @@ export function revealRanges(state: EditorState): readonly SelectionRange[] {
 }
 
 /** How long a buttons-up mousemove must last before we treat it as a release. */
-const BUTTON_UP_RELEASE_MS = 50;
+export const BUTTON_UP_RELEASE_MS = 50;
+
+/** Cancels a pending buttons-up release without ending the gesture. */
+export type GestureEndHandle = {
+  cancelPending(): void;
+};
 
 /**
  * Calls `end` when a mouse gesture in `doc` ends or is cancelled: a release
@@ -70,12 +75,18 @@ const BUTTON_UP_RELEASE_MS = 50;
  * A brief buttons===0 flicker (common on remote desktop during fast drags)
  * must not thaw reveal mid-gesture. The line-number drag and the reveal
  * freeze share this so their lifecycles agree.
+ *
+ * When `isActive` is provided, buttons-up release is scheduled only while the
+ * gesture is active (so idle hover cannot arm a timer that outlives a later
+ * press). Call `cancelPending()` when a newer press starts so any in-flight
+ * buttons-up timer from the previous gesture cannot fire.
  */
 export function onGestureEnd(
   doc: Document,
   end: () => void,
   signal: AbortSignal,
-): void {
+  isActive?: () => boolean,
+): GestureEndHandle {
   let buttonUpTimer: ReturnType<typeof setTimeout> | undefined;
   const clearButtonUp = () => {
     if (buttonUpTimer !== undefined) {
@@ -101,6 +112,10 @@ export function onGestureEnd(
         clearButtonUp();
         return;
       }
+      if (isActive && !isActive()) {
+        clearButtonUp();
+        return;
+      }
       if (buttonUpTimer !== undefined) {
         return;
       }
@@ -108,22 +123,41 @@ export function onGestureEnd(
     },
     { capture: true, signal },
   );
+  return { cancelPending: clearButtonUp };
 }
 
 /**
- * Whether a primary mousedown should start the reveal freeze. Native Mermaid
- * SVG label drags must not freeze: thaw dispatches a transaction that runs
- * CodeMirror `updateSelection()` and clears the browser's label selection.
+ * Whether a primary mousedown should start (or refresh) the reveal freeze.
+ * Native Mermaid SVG label drags must not freeze: thaw dispatches a
+ * transaction that runs CodeMirror `updateSelection()` and clears the
+ * browser's label selection. An already-frozen field does not block: a new
+ * editor-selection press must own the freeze and invalidate earlier release
+ * timers rather than return solely because a previous gesture is still frozen.
  */
 export function shouldStartPointerFreeze(input: {
   button: number;
-  alreadyFrozen: boolean;
   nativeSelectableLabel: boolean;
 }): boolean {
+  return input.button === 0 && !input.nativeSelectableLabel;
+}
+
+/**
+ * Whether a deferred thaw scheduled for `scheduledGeneration` should still
+ * clear the freeze. Stale callbacks from an earlier gesture (or idle time)
+ * must not thaw a newer press.
+ */
+export function shouldApplyDeferredThaw(input: {
+  scheduledGeneration: number;
+  currentGeneration: number;
+  stillFrozen: boolean;
+  aborted: boolean;
+  connected: boolean;
+}): boolean {
   return (
-    input.button === 0 &&
-    !input.alreadyFrozen &&
-    !input.nativeSelectableLabel
+    !input.aborted &&
+    input.connected &&
+    input.stillFrozen &&
+    input.scheduledGeneration === input.currentGeneration
   );
 }
 
@@ -139,6 +173,9 @@ export const pointerSelectionTracking: Extension = [
   ViewPlugin.define((view: EditorView) => {
     const events = new AbortController();
     const doc = view.dom.ownerDocument;
+    // Each primary editor-selection press owns a generation. Buttons-up and
+    // deferred-thaw callbacks capture it and no-op if a newer press has begun.
+    let gestureGeneration = 0;
     // pointerup can fire before mouseup in the same turn; a microtask would
     // thaw (and possibly reveal/destroy the widget) before click-to-edit's
     // mouseup. setTimeout(0) runs after that mouseup.
@@ -154,34 +191,49 @@ export const pointerSelectionTracking: Extension = [
       if (!view.state.field(pointerSelection, false) || thawTimer !== undefined) {
         return;
       }
+      const scheduledGeneration = gestureGeneration;
       thawTimer = setTimeout(() => {
         thawTimer = undefined;
         if (
-          !events.signal.aborted &&
-          view.dom.isConnected &&
-          view.state.field(pointerSelection, false)
+          !shouldApplyDeferredThaw({
+            scheduledGeneration,
+            currentGeneration: gestureGeneration,
+            stillFrozen: Boolean(view.state.field(pointerSelection, false)),
+            aborted: events.signal.aborted,
+            connected: view.dom.isConnected,
+          })
         ) {
-          view.dispatch({ effects: press.of(null) });
+          return;
         }
+        view.dispatch({ effects: press.of(null) });
       }, 0);
     };
+    const gestureEnd = onGestureEnd(
+      doc,
+      release,
+      events.signal,
+      () => isPointerSelecting(view.state),
+    );
     view.dom.addEventListener(
       "mousedown",
       (event) => {
         if (
           !shouldStartPointerFreeze({
             button: event.button,
-            alreadyFrozen: Boolean(view.state.field(pointerSelection, false)),
             nativeSelectableLabel: isNativeSelectableLabelTarget(event.target),
           })
         ) {
           return;
         }
+        // Invalidate idle buttons-up and deferred thaw from an earlier gesture
+        // before this press takes ownership of the freeze.
+        gestureEnd.cancelPending();
+        clearThaw();
+        gestureGeneration += 1;
         view.dispatch({ effects: press.of(view.state.selection) });
       },
       { capture: true, signal: events.signal },
     );
-    onGestureEnd(doc, release, events.signal);
     return { destroy: () => events.abort() };
   }),
 ];
