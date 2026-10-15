@@ -52,13 +52,13 @@ export async function useForMarkdownInWorkspace(
   }
   if (opensMarkdownHere(existing)) {
     workbench.inform?.(
-      "Markdown files in this workspace already open in Markdown Workbench.",
+      "Markdown files in this workspace already open in Markdown Workshop.",
     );
     return;
   }
   await workbench.editorAssociations.write(withMarkdownWorkbench(existing));
   workbench.inform?.(
-    "Markdown files in this workspace now open in Markdown Workbench. Use Open as Text or Reopen Editor With… for the text editor.",
+    "Markdown files in this workspace now open in Markdown Workshop. Use Open as Text or Reopen Editor With… for the text editor.",
   );
 }
 

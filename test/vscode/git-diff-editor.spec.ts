@@ -42,7 +42,7 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
     const page = workbenchPage(browser);
     await openWorkbench(page, NOTE);
     await frameWith(page, ".mw-git-gutter .mw-git-bar");
-    await command(page, "Markdown Workbench: Open Rendered Git Diff");
+    await command(page, "Markdown Workshop: Open Rendered Git Diff");
     const frame = await frameWith(page, ROWS);
     await expect(frame.locator(".mw-diff-label").first()).toContainText("HEAD");
     await expect(frame.locator(".mw-diff-label").nth(1)).toHaveText(

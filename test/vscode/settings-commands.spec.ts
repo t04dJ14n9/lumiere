@@ -38,7 +38,7 @@ async function askFontSize(page: Page) {
   await expect(page.locator(".quick-input-widget")).toBeHidden();
   await openPalette(page);
   const input = page.locator(QUICK_INPUT);
-  await input.fill(">Markdown Workbench: Set Note Font Size");
+  await input.fill(">Markdown Workshop: Set Note Font Size");
   await page
     .locator(".quick-input-list .monaco-list-row")
     .filter({ hasText: "Set Note Font Size" })
@@ -72,7 +72,7 @@ async function editorFrame(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workbench frame");
+  throw new Error("No Markdown Workshop frame");
 }
 
 test("Open Settings, and the commands for common settings read and write the Settings UI's own keys, live", async () => {
@@ -102,7 +102,7 @@ test("Open Settings, and the commands for common settings read and write the Set
       ).toBe(1);
 
     // Open Settings: the Settings UI, searching for this extension.
-    await command(page, "Markdown Workbench: Open Settings");
+    await command(page, "Markdown Workshop: Open Settings");
     const search = page.locator(".settings-editor .suggest-input-container");
     await expect(search).toBeVisible();
     await expect(search).toContainText(
@@ -127,12 +127,12 @@ test("Open Settings, and the commands for common settings read and write the Set
     const readable = () =>
       frame.locator(".cm-editor.is-readable-line-width").count();
     expect(await readable()).toBe(0);
-    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await command(page, "Markdown Workshop: Toggle Readable Line Width");
     await expect
       .poll(() => userKeys()[key("editor.readableLineLength")])
       .toBe(true);
     await expect.poll(readable).toBe(1);
-    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await command(page, "Markdown Workshop: Toggle Readable Line Width");
     await expect
       .poll(() => userKeys()[key("editor.readableLineLength")])
       .toBe(false);
@@ -144,7 +144,7 @@ test("Open Settings, and the commands for common settings read and write the Set
       JSON.stringify({ [key("editor.readableLineLength")]: true }),
     );
     await expect.poll(readable).toBe(1);
-    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await command(page, "Markdown Workshop: Toggle Readable Line Width");
     await expect
       .poll(() => folderKeys()[key("editor.readableLineLength")])
       .toBe(false);
@@ -156,7 +156,7 @@ test("Open Settings, and the commands for common settings read and write the Set
       JSON.stringify({ [key("editor.readableLineLength")]: true }),
     );
     await expect.poll(readable).toBe(1);
-    await command(page, "Markdown Workbench: Toggle Readable Line Width");
+    await command(page, "Markdown Workshop: Toggle Readable Line Width");
     await expect
       .poll(() => folderKeys()[key("editor.readableLineLength")])
       .toBe(false);
@@ -165,12 +165,12 @@ test("Open Settings, and the commands for common settings read and write the Set
     // Line numbers.
     const gutter = () => frame.locator(".cm-lineNumbers").count();
     await expect.poll(gutter).toBeGreaterThan(0);
-    await command(page, "Markdown Workbench: Toggle Line Numbers");
+    await command(page, "Markdown Workshop: Toggle Line Numbers");
     await expect
       .poll(() => userKeys()[key("plugins.lineNumbers.enabled")])
       .toBe(false);
     await expect.poll(gutter).toBe(0);
-    await command(page, "Markdown Workbench: Toggle Line Numbers");
+    await command(page, "Markdown Workshop: Toggle Line Numbers");
     await expect
       .poll(() => userKeys()[key("plugins.lineNumbers.enabled")])
       .toBe(true);
@@ -179,12 +179,12 @@ test("Open Settings, and the commands for common settings read and write the Set
     // Inline title.
     const title = () => frame.locator(".file-title").count();
     expect(await title()).toBe(0);
-    await command(page, "Markdown Workbench: Toggle Inline Title");
+    await command(page, "Markdown Workshop: Toggle Inline Title");
     await expect
       .poll(() => userKeys()[key("plugins.inlineTitle.enabled")])
       .toBe(true);
     await expect.poll(title).toBeGreaterThan(0);
-    await command(page, "Markdown Workbench: Toggle Inline Title");
+    await command(page, "Markdown Workshop: Toggle Inline Title");
     await expect
       .poll(() => userKeys()[key("plugins.inlineTitle.enabled")])
       .toBe(false);
@@ -195,12 +195,12 @@ test("Open Settings, and the commands for common settings read and write the Set
     await frame.getByRole("textbox", { name: "Markdown content" }).click();
     await page.keyboard.press("ControlOrMeta+End");
     await expect.poll(diagram, { timeout: 20000 }).toBeGreaterThan(0);
-    await command(page, "Markdown Workbench: Toggle Mermaid Diagrams");
+    await command(page, "Markdown Workshop: Toggle Mermaid Diagrams");
     await expect
       .poll(() => userKeys()[key("plugins.diagrams.enabled")])
       .toBe(false);
     await expect.poll(diagram).toBe(0);
-    await command(page, "Markdown Workbench: Toggle Mermaid Diagrams");
+    await command(page, "Markdown Workshop: Toggle Mermaid Diagrams");
     await expect
       .poll(() => userKeys()[key("plugins.diagrams.enabled")])
       .toBe(true);
@@ -209,10 +209,10 @@ test("Open Settings, and the commands for common settings read and write the Set
     // Vim.
     const vim = () => frame.locator(".cm-vim-panel, .cm-fat-cursor").count();
     expect(await vim()).toBe(0);
-    await command(page, "Markdown Workbench: Toggle Vim Mode");
+    await command(page, "Markdown Workshop: Toggle Vim Mode");
     await expect.poll(() => userKeys()[key("plugins.vim.enabled")]).toBe(true);
     await expect.poll(vim).toBeGreaterThan(0);
-    await command(page, "Markdown Workbench: Toggle Vim Mode");
+    await command(page, "Markdown Workshop: Toggle Vim Mode");
     await expect.poll(() => userKeys()[key("plugins.vim.enabled")]).toBe(false);
     await expect.poll(vim).toBe(0);
 
@@ -263,7 +263,7 @@ async function changeSetting(page: Page, query: string, row: string) {
   await expect(page.locator(".quick-input-widget")).toBeHidden();
   await openPalette(page);
   const input = page.locator(QUICK_INPUT);
-  await input.fill(">Markdown Workbench: Change Setting");
+  await input.fill(">Markdown Workshop: Change Setting");
   await page
     .locator(".quick-input-list .monaco-list-row")
     .filter({ hasText: "Change Setting" })
@@ -271,7 +271,7 @@ async function changeSetting(page: Page, query: string, row: string) {
     .click();
   await expect(input).toHaveAttribute(
     "placeholder",
-    /Change a Markdown Workbench setting/,
+    /Change a Markdown Workshop setting/,
   );
   await input.fill(query);
   const first = page.locator(".quick-input-list .monaco-list-row").first();
@@ -293,7 +293,7 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     // The whole list, grouped by plugin, each row with its value and description.
     await expect(page.locator(".quick-input-widget")).toBeHidden();
     await openPalette(page);
-    await page.locator(QUICK_INPUT).fill(">Markdown Workbench: Change Setting");
+    await page.locator(QUICK_INPUT).fill(">Markdown Workshop: Change Setting");
     await page
       .locator(".quick-input-list .monaco-list-row")
       .filter({ hasText: "Change Setting" })

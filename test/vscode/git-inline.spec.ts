@@ -30,7 +30,7 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
     const page = workbenchPage(browser);
     await openWorkbench(page, NOTE);
     await frameWith(page, ".mw-git-gutter .mw-git-bar");
-    await command(page, "Markdown Workbench: Toggle Inline Git Changes");
+    await command(page, "Markdown Workshop: Toggle Inline Git Changes");
     const frame = await frameWith(page, "del.mw-gi-removed");
     await expect(frame.locator("del.mw-gi-removed").first()).toHaveText(
       "shown",
@@ -80,7 +80,7 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
 
     // Toggled off, every mark goes and the text stays.
     const before = readGitNote();
-    await command(page, "Markdown Workbench: Toggle Inline Git Changes");
+    await command(page, "Markdown Workshop: Toggle Inline Git Changes");
     await expect(
       frame.locator(".mw-gi-ghost, del.mw-gi-removed, .mw-gi-inserted"),
     ).toHaveCount(0, {

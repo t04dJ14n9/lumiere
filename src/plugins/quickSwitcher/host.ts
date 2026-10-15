@@ -3,7 +3,7 @@ import type { Vault } from "../vault/api";
 import { switcherItems } from "./ranking";
 import type { SwitcherTarget } from "./ranking";
 
-/** **Markdown Workbench: Quick Switcher**: open or create a note by name. */
+/** **Markdown Workshop: Quick Switcher**: open or create a note by name. */
 export const quickSwitcherHost: Plugin = {
   name: "quickSwitcher",
   inject: { required: ["workbench", "vaults"] },

@@ -130,7 +130,7 @@ export async function useTheme(
   );
 }
 
-/** The frame holding the Markdown Workbench editor that shows `selector`. */
+/** The frame holding the Markdown Workshop editor that shows `selector`. */
 export async function frameWith(
   page: Page,
   selector: string,
