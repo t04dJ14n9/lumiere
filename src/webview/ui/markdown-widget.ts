@@ -78,11 +78,11 @@ export class MarkdownBlock extends WidgetType {
 
   /**
    * Let CodeMirror drive mouse selection through the block (so a drag keeps
-   * scroll stable and can cover diagram source). Buttons keep their own clicks.
+   * scroll stable and can cover diagram source). Buttons and native Mermaid
+   * label selection keep their own events.
    */
   override ignoreEvent(event: Event): boolean {
-    const target = event.target;
-    return target instanceof Element && Boolean(target.closest(interactive));
+    return markdownBlockIgnoresEvent(event);
   }
 
   override destroy(dom: HTMLElement): void {
@@ -95,7 +95,15 @@ export class MarkdownBlock extends WidgetType {
 const interactive =
   "a, button, input, select, textarea, summary, label, [contenteditable='true'], [data-href], .internal-link, .external-link";
 
-const CLICK_DRAG_PX = 3;
+/** Movement beyond this cancels click-to-edit for the active press. */
+export const CLICK_DRAG_PX = 3;
+
+/** Active click-to-edit press; `dragged` latches once the threshold is crossed. */
+export type ClickToEditPress = {
+  readonly x: number;
+  readonly y: number;
+  dragged: boolean;
+};
 
 /**
  * Reveal source on a true click, not on mousedown. Mousedown-to-edit jumped
@@ -107,39 +115,164 @@ function bindClickToEdit(
   shell: HTMLElement,
   signal: AbortSignal,
 ): void {
-  let origin: { x: number; y: number } | null = null;
+  let press: ClickToEditPress | null = null;
+  const clearPress = (): void => {
+    press = null;
+  };
+  const takePress = (): ClickToEditPress | null => {
+    const active = press;
+    clearPress();
+    return active;
+  };
+
   shell.addEventListener(
     "mousedown",
     (event) => {
       if (event.button !== 0 || isBlockControl(shell, event.target)) {
-        origin = null;
+        clearPress();
         return;
       }
-      origin = { x: event.clientX, y: event.clientY };
+      press = { x: event.clientX, y: event.clientY, dragged: false };
     },
     { signal },
   );
-  shell.addEventListener(
-    "mouseup",
+  watchClickToEditGesture({
+    view,
+    shell,
+    signal,
+    getPress: () => press,
+    takePress,
+  });
+}
+
+/** Document-level move / release / cancel for one click-to-edit gesture. */
+function watchClickToEditGesture(input: {
+  view: EditorView;
+  shell: HTMLElement;
+  signal: AbortSignal;
+  getPress: () => ClickToEditPress | null;
+  takePress: () => ClickToEditPress | null;
+}): void {
+  const { view, shell, signal, getPress, takePress } = input;
+  const doc = shell.ownerDocument;
+  const win = doc.defaultView;
+  doc.addEventListener(
+    "mousemove",
     (event) => {
-      if (
-        !origin ||
-        event.button !== 0 ||
-        isBlockControl(shell, event.target)
-      ) {
-        origin = null;
-        return;
-      }
-      const dragged =
-        Math.hypot(event.clientX - origin.x, event.clientY - origin.y) >
-        CLICK_DRAG_PX;
-      origin = null;
-      if (!dragged) {
-        editOnClick(view, shell);
+      const press = getPress();
+      if (press) {
+        latchClickDrag(press, event.clientX, event.clientY);
       }
     },
-    { signal },
+    { capture: true, signal },
   );
+  const onRelease = (event: Event): void => {
+    const active = takePress();
+    if (
+      active &&
+      event.type === "mouseup" &&
+      event instanceof MouseEvent &&
+      clickToEditReleaseCommits({
+        press: active,
+        button: event.button,
+        overWidget: eventTargetInside(shell, event.target),
+        onControl: isBlockControl(shell, event.target),
+      })
+    ) {
+      editOnClick(view, shell);
+    }
+  };
+  for (const target of [doc, win]) {
+    target?.addEventListener("mouseup", onRelease, { capture: true, signal });
+    target?.addEventListener("pointercancel", () => takePress(), {
+      capture: true,
+      signal,
+    });
+  }
+  win?.addEventListener("blur", () => takePress(), { signal });
+}
+
+/**
+ * Whether CodeMirror should leave this event to the widget (true) or drive
+ * mouse selection through it (false). `selectionchange` targets the Document;
+ * CM still asks the widget that owns the selection anchor, so returning true
+ * keeps native Mermaid/SVG label selections. Pointer ownership is bounded to
+ * the widget shell — never via unbounded `target.closest(interactive)`.
+ */
+export function markdownBlockIgnoresEvent(event: Event): boolean {
+  return markdownBlockIgnoresEventKind({
+    type: event.type,
+    targetIsElement: event.target instanceof Element,
+    controlInsideWidget: pointerControlInsideWidget(event.target),
+    nativeSelectableLabel: pointerNativeSelectableLabel(event.target),
+  });
+}
+
+/** Pure decision table for {@link markdownBlockIgnoresEvent} (unit-tested). */
+export function markdownBlockIgnoresEventKind(input: {
+  type: string;
+  targetIsElement: boolean;
+  controlInsideWidget: boolean;
+  nativeSelectableLabel: boolean;
+}): boolean {
+  if (input.type === "selectionchange") {
+    return true;
+  }
+  if (!input.targetIsElement) {
+    return false;
+  }
+  return input.controlInsideWidget || input.nativeSelectableLabel;
+}
+
+/** Latch drag once the press travels beyond the click threshold. */
+export function latchClickDrag(
+  press: ClickToEditPress,
+  clientX: number,
+  clientY: number,
+  threshold = CLICK_DRAG_PX,
+): void {
+  if (
+    !press.dragged &&
+    Math.hypot(clientX - press.x, clientY - press.y) > threshold
+  ) {
+    press.dragged = true;
+  }
+}
+
+/**
+ * Whether a mouseup should run click-to-edit. Requires an active matching
+ * press that never crossed the drag threshold, ending over the widget (not a
+ * control). Outside release / cancel clears the press without committing.
+ */
+export function clickToEditReleaseCommits(input: {
+  press: ClickToEditPress | null;
+  button: number;
+  overWidget: boolean;
+  onControl: boolean;
+}): boolean {
+  return (
+    input.press !== null &&
+    !input.press.dragged &&
+    input.button === 0 &&
+    input.overWidget &&
+    !input.onControl
+  );
+}
+
+function pointerControlInsideWidget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  const shell = target.closest(".hybrid-block");
+  return shell instanceof HTMLElement && isBlockControl(shell, target);
+}
+
+function pointerNativeSelectableLabel(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  const shell = target.closest(".hybrid-block");
+  return shell instanceof HTMLElement && isNativeSelectableLabel(shell, target);
 }
 
 function isBlockControl(
@@ -151,6 +284,33 @@ function isBlockControl(
   }
   const control = target.closest(interactive);
   return Boolean(control && control !== shell && shell.contains(control));
+}
+
+/**
+ * Mermaid labels are SVG `<text>` / `<tspan>` (see diagrams.css). Keep their
+ * mouse events so native selection can start; CM still owns blank diagram area.
+ */
+function isNativeSelectableLabel(shell: HTMLElement, target: Element): boolean {
+  let node: Element | null = target;
+  while (node && node !== shell) {
+    const tag = node.tagName.toLowerCase();
+    if (
+      (tag === "text" || tag === "tspan") &&
+      node.closest("svg") &&
+      shell.contains(node)
+    ) {
+      return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
+function eventTargetInside(
+  shell: HTMLElement,
+  target: EventTarget | null,
+): boolean {
+  return target instanceof Node && shell.contains(target);
 }
 
 /**

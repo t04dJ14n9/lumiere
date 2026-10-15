@@ -3685,3 +3685,20 @@ Files: `src/webview/ui/{pointer-selection,markdown-widget}.ts`,
 
 Validation: eslint on changed files; `tsx --test` pointer-selection + selection
 unit tests (7/7); `tsc` for webview, plugins webview, and test projects.
+
+## Review fixes for mouse selection / Mermaid widgets — 2026-10-15
+
+Addresses two P2 findings from the ChatGPT Pro review of PR #46:
+
+1. `ignoreEvent` no longer uses unbounded `target.closest(interactive)` (which
+   matched the outer `.cm-content[contenteditable]`). Ownership is bounded to
+   `.hybrid-block`; `selectionchange` stays with the widget so native Mermaid
+   SVG label selection is not remapped; SVG `<text>` / `<tspan>` keep native
+   mouse handling while blank diagram area still goes to CodeMirror.
+2. Click-to-edit uses a full gesture lifecycle: drag latches once the threshold
+   is crossed (even if the pointer returns), document-level mouseup only commits
+   when the matching press ends over the widget, and blur / pointercancel /
+   outside release clear the pending press without editing.
+
+Files: `src/webview/ui/markdown-widget.ts`,
+`test/unit/webview/markdown-widget.test.ts`.
