@@ -91,7 +91,7 @@ function registerSessionHandshake(
     rpc.handle(protocol, "ready", async (_request, token) => {
       owned.emit("editor/loading");
       await owned.settled();
-      await workbench.configuration?.prepare(shell.document.uri);
+      await workshop.configuration?.prepare(shell.document.uri);
       if (token.cancelled || !owned.isLive) {
         throw new RpcError("Cancelled", "Renderer replaced");
       }
