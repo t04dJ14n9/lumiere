@@ -16,11 +16,17 @@ const PINNED: Record<string, string> = {
   "src/shared/ide-context/gather.ts":
     "46b45260c9c00b44d49e169628bccafe437f1847e2b327ac809c35a76084b923",
   "src/shared/ide-context/index.ts":
-    "be5e842dd50d2d99e7d7dfc5c2c17d73ff92c38c6a08795b2524deacc80e010e",
+    "6749b7c5c12374e22f156c856c65bc4089fb37d5dee429861b6c3e748d7a6cbd",
   "src/shared/ide-context/render.ts":
     "64e4cea7fabc2da53e75d641b872b3647321f7c00e4870faf4191ad8b90d068d",
   "src/shared/ide-context/scrub.ts":
     "eb39d23e86b8bb02039abcd33236c237195a2a0fdad77464f24cfce5417e793b",
+  "src/shared/ide-context/temp-lease.ts":
+    "62d979701d1b8f76e0aa0b8757508211201e34caf26f900c7e470dcccbe4d142",
+  "src/shared/ide-context/temp-publish.ts":
+    "19e55a6d5932d5c50327ae7b2a6c7f9b97bf68ddc0eadc717a1945a25836d4a7",
+  "src/shared/ide-context/temp-reclaim.ts":
+    "c718d1a49e6e57d47edd52d531f31695f3bc85a78dabebfdf2f0406ac23b62d6",
   "src/shared/ide-context/truncate.ts":
     "1d3fbf4d5a295dff745aaddbb9ebc7b17a97c17c2a00c2b9224e3976b5dac880",
   "src/shared/ide-context/types.ts":

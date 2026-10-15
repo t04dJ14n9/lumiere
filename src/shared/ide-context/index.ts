@@ -24,3 +24,23 @@ export {
   type IdeContextHostApis,
   type ProductGatherSlice,
 } from "./gather";
+export {
+  leasePathFor,
+  parseLease,
+  readLease,
+  renewLeaseAtomic,
+  writeLeaseAtomic,
+  type LeaseSidecar,
+  type TempFs,
+} from "./temp-lease";
+export {
+  publishIdeContextTemp,
+  commitFinalPayload,
+  type PublishOpts,
+  type PublishResult,
+} from "./temp-publish";
+export {
+  reclaimEligible,
+  isReclaimablePayload,
+  type ReclaimCaps,
+} from "./temp-reclaim";
