@@ -92,3 +92,20 @@ export class Bypass {
     return true;
   }
 }
+
+/**
+ * Holds reclaim off for a URI until explicitly released. Used by cursorBridge
+ * so an open Cursor Edit session is never yanked by a timed bypass expiry.
+ */
+export class Lease {
+  private readonly held = new Set<string>();
+  acquire(uri: string): void {
+    this.held.add(uri);
+  }
+  release(uri: string): void {
+    this.held.delete(uri);
+  }
+  has(uri: string): boolean {
+    return this.held.has(uri);
+  }
+}

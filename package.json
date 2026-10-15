@@ -96,6 +96,16 @@
         "icon": "$(go-to-file)"
       },
       {
+        "command": "markdownWorkbench.cursorBridge.chat",
+        "title": "Cursor Chat with Selection",
+        "category": "Markdown Workbench"
+      },
+      {
+        "command": "markdownWorkbench.cursorBridge.edit",
+        "title": "Cursor Edit Selection",
+        "category": "Markdown Workbench"
+      },
+      {
         "command": "markdownWorkbench.jumpBack",
         "title": "Go Back in Note",
         "category": "Markdown Workbench",
@@ -549,6 +559,18 @@
     ],
     "keybindings": [
       {
+        "command": "markdownWorkbench.cursorBridge.chat",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+      },
+      {
+        "command": "markdownWorkbench.cursorBridge.edit",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+      },
+      {
         "command": "markdownWorkbench.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
@@ -564,7 +586,7 @@
         "command": "markdownWorkbench.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && !(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)"
       },
       {
         "command": "markdownWorkbench.gitGutter.nextChange",
@@ -743,6 +765,14 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
+          "command": "markdownWorkbench.cursorBridge.chat",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+        },
+        {
+          "command": "markdownWorkbench.cursorBridge.edit",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+        },
+        {
           "command": "markdownWorkbench.jumpBack",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
         },
@@ -807,7 +837,7 @@
         },
         {
           "command": "markdownWorkbench.insertLink",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && !(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)"
         },
         {
           "command": "markdownWorkbench.insertHorizontalRule",
@@ -1217,6 +1247,12 @@
           "default": true,
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
+        },
+        "markdownWorkbench.plugins.cursorBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "In Cursor, Cmd/Ctrl+L opens Chat and Cmd/Ctrl+K opens Edit on the Live Preview selection."
         },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",

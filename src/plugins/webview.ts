@@ -34,4 +34,5 @@ export { suggestWebview } from "./suggest/webview";
 export { searchWebview } from "./search/webview";
 export { pasteHtmlWebview } from "./pasteHtml/webview";
 export { agentBridgeWebview } from "./agentBridge/webview";
+export { cursorBridgeWebview } from "./cursorBridge/webview";
 export { markersWebview } from "./markers/webview";

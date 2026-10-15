@@ -1,4 +1,5 @@
 import agentBridge from "./agentBridge/manifest";
+import cursorBridge from "./cursorBridge/manifest";
 import pasteHtml from "./pasteHtml/manifest";
 import search from "./search/manifest";
 import suggest from "./suggest/manifest";
@@ -57,6 +58,7 @@ export const features: readonly Manifest[] = inPluginOrder(
     callouts,
     codeBlocks,
     agentBridge,
+    cursorBridge,
     diagrams,
     embeds,
     folding,

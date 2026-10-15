@@ -76,6 +76,8 @@ export interface Manifest {
       key: string;
       mac?: string;
       scope?: "editor" | "workbench";
+      /** Extra when-clause fragment, merged with plugin enablement. */
+      when?: string;
     }[];
     commands?: readonly {
       id: string;
@@ -92,6 +94,8 @@ export interface Manifest {
        * quick switcher.
        */
       scope?: "editor" | "workbench";
+      /** Extra when-clause fragment, merged with plugin enablement. */
+      when?: string;
     }[];
     /** Native views in the Explorer; `editor` views show only beside this editor. */
     views?: readonly {

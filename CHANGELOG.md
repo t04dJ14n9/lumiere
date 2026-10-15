@@ -2,6 +2,11 @@
 
 ## 0.1.0 (unreleased)
 
+- cursorBridge: in Cursor, Cmd/Ctrl+L opens Chat and Cmd/Ctrl+K opens Edit on
+  the Live Preview selection (native Cursor apply). A handoff lease suppresses
+  reclaim for the whole native Edit session; selection offsets are
+  version-checked after warm/open. Disabled bridge restores Insert Link.
+
 First packaged build, for the owner's acceptance testing. Not published.
 
 - Wiki, assets, scratch and Marp plugins, plus a versioned bridge

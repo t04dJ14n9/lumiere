@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {
   associatedWith,
   Bypass,
+  Lease,
   isReclaimableNote,
   reclaimEnabled,
   shouldReclaim,
@@ -14,6 +15,12 @@ const { viewType } = MARKDOWN_EDITOR;
 
 /** Notes this extension opens as text keep it (Open as Text, source commands). */
 export const textBypass = new Bypass();
+
+/**
+ * cursorBridge Edit/Chat handoff: suppress reclaim for the whole native
+ * session, not a fixed window. Released when the note leaves the text editor.
+ */
+export const handoffLease = new Lease();
 
 function kindOf(tab: vscode.Tab | undefined): TabKind {
   const input = tab?.input;
@@ -57,15 +64,27 @@ export function registerReclaim(): vscode.Disposable {
   };
   remember();
   return vscode.window.tabGroups.onDidChangeTabs((event) => {
+    for (const tab of event.closed ?? []) {
+      const uri = uriOf(tab) ?? labelUri(tab);
+      if (uri) {
+        handoffLease.release(uri);
+      }
+    }
     for (const tab of [...event.opened, ...event.changed]) {
       const uri = uriOf(tab) ?? labelUri(tab);
       if (!uri) {
         continue;
       }
+      const after = kindOf(tab);
+      // Leaving the native text editor ends the handoff session so a later
+      // Preview | Markdown switch can reclaim into Markdown Workbench.
+      if (handoffLease.has(uri) && after !== "text") {
+        handoffLease.release(uri);
+      }
       const swap = {
         uri,
         before: seen.get(key(tab, uri)) ?? "none",
-        after: kindOf(tab),
+        after,
       };
       if (shouldReclaim(swap, reclaimContext(uri))) {
         textBypass.allow(uri);
@@ -94,7 +113,8 @@ function reclaimContext(uri: string) {
         value,
         viewType,
       ),
-    bypassed: (value: string) => textBypass.has(value),
+    bypassed: (value: string) =>
+      textBypass.has(value) || handoffLease.has(value),
   };
 }
 
@@ -103,6 +123,10 @@ async function reopen(tab: vscode.Tab, uri: string): Promise<void> {
   const column = tab.group.viewColumn;
   const target = vscode.Uri.parse(uri);
   await warmMarkdownDocument(target);
+  // A handoff lease acquired while warming must cancel this reclaim.
+  if (handoffLease.has(uri)) {
+    return;
+  }
   // Cursor may finish its own transfer or close the tab while warming.
   const kind = kindOf(tab);
   if (
@@ -116,6 +140,10 @@ async function reopen(tab: vscode.Tab, uri: string): Promise<void> {
   // (including another editor of the same URI in this group).
   const active = vscode.window.tabGroups.activeTabGroup?.activeTab;
   if (active !== tab) {
+    return;
+  }
+  // Recheck lease immediately before openWith (queued reclaim honor).
+  if (handoffLease.has(uri)) {
     return;
   }
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {

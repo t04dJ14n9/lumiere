@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   associatedWith,
   Bypass,
+  Lease,
   isReclaimableNote,
   reclaimEnabled,
   shouldReclaim,
@@ -129,4 +130,16 @@ test("notes opened as text on purpose, or just reclaimed, keep the text editor",
   assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), false);
   now = 10_001;
   assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), true);
+});
+
+test("a handoff lease suppresses reclaim until released", () => {
+  const lease = new Lease();
+  lease.acquire(note);
+  const withLease = {
+    ...context,
+    bypassed: (uri: string) => lease.has(uri),
+  };
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  lease.release(note);
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
 });
