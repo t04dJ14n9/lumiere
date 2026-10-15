@@ -1,3 +1,8 @@
+import type {
+  GitBlameLineResult,
+  GitBlameSnapshot,
+  GitIdentity,
+} from "./git-blame";
 import type { Disposer } from "../kernel";
 
 /** What the git diff plugins compare a note with. */
@@ -24,6 +29,15 @@ export type GitBaselineResult =
  * never shell out; the host adapter owns the extension API.
  */
 export interface GitAccess {
+  /** Blame one 1-based editor-snapshot line against HEAD. */
+  blameLine(
+    uri: string,
+    line: number,
+    snapshot: GitBlameSnapshot,
+  ): Promise<GitBlameLineResult>;
+  identity(uri: string): Promise<GitIdentity | undefined>;
+  /** Advances once per underlying repo event, before onDidChange fan-out. */
+  repoGeneration(uri: string): number;
   baseline(uri: string, ref: GitRef): Promise<GitBaselineResult>;
   /** Repository state changed (commit, checkout, stage, a new repository). */
   onDidChange(listener: () => void): Disposer;

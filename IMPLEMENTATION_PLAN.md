@@ -4197,3 +4197,13 @@ No source suites ported. The pinned human-learning checkout is absent on this
 host; this feature is authored from the approved plan and local git patterns.
 Native checks await clarification because their harness builds/installs a VSIX,
 which the task explicitly prohibits.
+
+## gitBlame Task 2 — GitAccess contract, 2026-10-15
+
+Added required snapshot blame, identity and per-repository generation methods;
+updated the typed gutter fake. TDD: the contract compile failed on absent API
+members before the extension; its isolated compile now passes and all 20
+contract/gutter cases pass. As approved in Task 2, NativeGitAccess implements
+these methods in Task 3. Task 1 `pnpm check` passed 1,578 cases; the browser run
+received SIGTERM after 222 passing cases with no assertion failure. The full
+browser gate will be rerun after integration. No VSIX built or installed.
