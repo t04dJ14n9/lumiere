@@ -1,5 +1,5 @@
 /** The extension's id in the Settings UI search (`@ext:`). */
-export const EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workbench";
+export const EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workshop";
 
 /**
  * A command that flips one boolean setting. `key` is the same key the

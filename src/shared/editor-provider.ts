@@ -25,7 +25,7 @@ export interface EditorProvider {
 }
 
 export const MARKDOWN_EDITOR: EditorProvider = Object.freeze({
-  viewType: "markdownWorkbench.editor",
+  viewType: "markdownWorkshop.editor",
   displayName: "Markdown Workshop",
   filenamePatterns: Object.freeze(["*.md", "*.markdown"]),
   document: "text",

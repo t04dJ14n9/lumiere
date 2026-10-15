@@ -7,7 +7,7 @@ import type {
 
 import { SETTING_PREFIX, checkWrite } from "../shared/setting-schema";
 
-const EXTENSION_ID = "t04dj14n9.vscode-markdown-workbench";
+const EXTENSION_ID = "t04dj14n9.vscode-markdown-workshop";
 const PREFIX = SETTING_PREFIX;
 
 /**

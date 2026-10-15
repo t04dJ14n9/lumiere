@@ -114,8 +114,13 @@ export function validateValue(
   }
 }
 
-/** The `markdownWorkbench.` prefix of every key this extension contributes. */
-export const SETTING_PREFIX = "markdownWorkbench.";
+/** The `markdownWorkshop.` prefix of every key this extension contributes. */
+export const SETTING_PREFIX = "markdownWorkshop.";
+
+/** Full contributed command / view / context id from a local suffix. */
+export function contributionId(localId: string): string {
+  return `${SETTING_PREFIX}${localId}`;
+}
 
 /**
  * The gate in front of every settings write: `key` (without the prefix) must
