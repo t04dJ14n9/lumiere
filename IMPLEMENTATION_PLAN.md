@@ -4243,3 +4243,15 @@ TDD: missing-module red, then all 11 state/controller cases green, including
 late URI/disable ok, obsolete rejection preserving R2, same-line no-op, current
 reject/over-cap soft-hide and startup/re-entry behind the host. Scoped lint and
 webview plugin compilation pass. No VSIX built or installed.
+
+## gitBlame Task 6 — EOL ghost and formatting, 2026-10-15
+
+Added one non-block widget at the caret line end, using plain text, aria-hidden,
+and no pointer/selection capture. Description foreground/muted styling stays
+separate from diff tints, restores opacity under forced colors, and hides in
+Source mode. Formatting covers You by email/name, English relative buckets,
+first-line subjects capped at 48 graphemes plus ellipsis, and empty fallbacks.
+Identity responses have their own latest/lifetime guard and redraw current
+blame without another blame process. TDD: missing modules red; all 21 formatting,
+widget and epoch cases pass; scoped lint and webview compilation pass. No VSIX
+built or installed.

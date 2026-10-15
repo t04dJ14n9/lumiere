@@ -4,12 +4,18 @@ import type {} from "../editor/api";
 import { BlameController } from "./controller";
 import { blameField, docVersionField, setBlame } from "./state";
 import { protocol } from "./protocol";
+import {
+  blameDecorations,
+  blameIdentityField,
+  setBlameIdentity,
+} from "./blameWidget";
 
 export const gitBlameWebview: Plugin = {
   name: "gitBlame",
   inject: { required: ["editor", "rpc"] },
   apply(ctx) {
     registerBlameController(ctx);
+    registerIdentity(ctx);
   },
 };
 
@@ -39,6 +45,8 @@ function registerBlameController(ctx: Context): void {
     ctx.editor.extend([
       blameField,
       docVersionField,
+      blameIdentityField,
+      blameDecorations,
       EditorView.updateListener.of(() => controller.update()),
     ]),
   );
@@ -49,4 +57,30 @@ function registerBlameController(ctx: Context): void {
     ),
   );
   void controller.refresh();
+}
+
+function registerIdentity(ctx: Context): void {
+  let live = true;
+  let serial = 0;
+  const refresh = async (): Promise<void> => {
+    const request = ++serial;
+    const uri = ctx.editor.source;
+    const identity = await ctx.rpc
+      .call(protocol, "identity", {})
+      .catch(() => undefined);
+    if (!live || request !== serial || uri !== ctx.editor.source) {
+      return;
+    }
+    ctx.editor.view.dispatch({ effects: setBlameIdentity.of(identity) });
+  };
+  ctx.effect(() => () => {
+    live = false;
+    serial++;
+  });
+  ctx.effect(() =>
+    ctx.rpc.on(protocol, "changed", () => {
+      void refresh();
+    }),
+  );
+  void refresh();
 }
