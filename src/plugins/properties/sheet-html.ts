@@ -175,7 +175,8 @@ function hasCycle(value: unknown, ancestors = new Set<object>()): boolean {
 }
 
 function editableYaml(key: string, text: string): string {
-  return `<div class="metadata-input-longtext metadata-input-yaml" contenteditable="true" role="textbox" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</div>`;
+  // textarea keeps Enter as real newlines (contenteditable textContent does not).
+  return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
 }
 
 /** Undefined when the value cannot round-trip (e.g. recursive aliases). */
@@ -184,11 +185,12 @@ function yamlDraft(value: unknown): string | undefined {
     return "";
   }
   try {
-    return stringify(value, {
+    const draft = stringify(value, {
       lineWidth: 0,
       defaultKeyType: null,
       defaultStringType: "PLAIN",
-    }).trimEnd();
+    });
+    return draft.endsWith("\n") ? draft.slice(0, -1) : draft;
   } catch {
     return undefined;
   }

@@ -53,3 +53,22 @@ test("Properties can set generated maps and sources list-of-maps", () => {
   ]);
   assert.equal(frontmatter(withSources)?.values?.title, "Note");
 });
+
+test("YAML drafts keep significant trailing newlines on nested block scalars", () => {
+  const source =
+    "---\ntitle: Note\ngenerated:\n  by: old\n  notes: |+\n    a\n\n---\nBody\n";
+  const current = frontmatter(source)?.values?.generated as {
+    by: string;
+    notes: string;
+  };
+  assert.equal(current.notes, "a\n\n");
+  const next = edit(source, {
+    type: "set",
+    key: "generated",
+    value: { by: "new", notes: current.notes },
+  });
+  assert.deepEqual(frontmatter(next)?.values?.generated, {
+    by: "new",
+    notes: "a\n\n",
+  });
+});

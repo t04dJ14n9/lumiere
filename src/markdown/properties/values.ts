@@ -42,12 +42,11 @@ export function propertyInput(
 
 /** Parse a Properties YAML draft into a settable value, or undefined if invalid. */
 export function propertyYamlInput(text: string): PropertyValue | undefined {
-  const trimmed = text.trim();
-  if (!trimmed) {
+  if (!/[\S\u00A0]/.test(text)) {
     return null;
   }
   try {
-    const document = parseDocument(trimmed, { uniqueKeys: true });
+    const document = parseDocument(text, { uniqueKeys: true });
     if (document.errors.length) {
       return undefined;
     }
