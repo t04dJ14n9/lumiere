@@ -39,7 +39,8 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `source-edits.ts`: aligned source edits that preserve unchanged cell anchors.
 - `cell-editor.ts`: temporary raw Markdown cell view, input groups and Vim transfer.
 - `cell-source.ts`: session whitespace, alignment padding and source-range tracking.
-- `selection.ts`: grid selection and projected source selection.
+- `selection.ts`: grid selection, active-cell chrome and projected source selection.
+- `selection-chrome.test.ts`: selected-cell matrix and inset selection-box CSS unit tests.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
 - `wheel-scroll.ts`: vertical wheel routing, gesture guards and delta units.
 - `wheel-scroll.test.ts`: wheel directions, units, horizontal gestures and note limits.
@@ -70,6 +71,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
 - `tables-selection-colors.spec.ts` (browser): selected inline code, bold, links and math colors in dark and light themes.
+- `tables-selection-chrome.spec.ts` (browser): active-cell and row-handle selection box visibility.
 - `tables.css`: grid, handles, selection and cell editor appearance, bundled through
   `src/webview/styles/index.css`.
 
@@ -92,6 +94,8 @@ shows the full table source. HTML conversion is delegated
 to the paste pipeline rather than implemented by the table widget.
 Selected cells show their selection background through inline code while keeping
 its theme foreground and monospace styling; unselected code keeps its background.
+The open cell editor and rectangular grid selections share the same inset accent
+selection box; `.table-scroll` overflow would clip a CSS outline.
 
 HTML paste in a focused cell uses the outer editor capture pipeline; the table
 clipboard ignores already-handled events. Rectangular paste keeps TSV semantics.

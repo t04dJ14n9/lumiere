@@ -7,6 +7,10 @@
   Extension id `vscode-markdown-workbench` and settings keys
   `markdownWorkbench.*` are unchanged so existing installs keep working.
 
+- Tables: the open cell and rectangular selections draw an inset accent
+  selection box again. Opening a cell used to clear `.table-cell-selected`, and
+  CSS `outline` was clipped by `.table-scroll` overflow.
+
 First packaged build, for the owner's acceptance testing. Not published.
 
 - Wiki, assets, scratch and Marp plugins, plus a versioned bridge
