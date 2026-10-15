@@ -104,6 +104,7 @@ export function createDocumentWarmer(
 } {
   const gitLimit = options.gitLimit ?? 64;
   const pending = new Set<string>();
+  let gitDrain = Promise.resolve();
 
   const warm = (uri: string) => {
     if (!enabledFor(host, uri)) {
@@ -123,7 +124,10 @@ export function createDocumentWarmer(
       changeUris,
       host.textDocumentUris(),
     ).filter((uri) => enabledFor(host, uri));
-    void drainGitWarmTargets({ host, targets, gitLimit, pending, live });
+    // All repositories and change events share one concurrency budget.
+    gitDrain = gitDrain.then(() =>
+      drainGitWarmTargets({ host, targets, gitLimit, pending, live }),
+    );
   };
 
   return { warm, warmGitChanges };

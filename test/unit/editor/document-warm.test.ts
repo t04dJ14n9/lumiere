@@ -76,6 +76,7 @@ function fakeHost(options: {
   modeFor?: (uri: string) => "auto" | "on" | "off";
   open?: Set<string>;
   fail?: Set<string>;
+  beforeOpen?: (uri: string) => Promise<void>;
 }): DocumentWarmHost & {
   opened: string[];
   modeUris: string[];
@@ -94,6 +95,9 @@ function fakeHost(options: {
     },
     async openTextDocument(uri) {
       opened.push(uri);
+      if (options.beforeOpen) {
+        await options.beforeOpen(uri);
+      }
       if (fail.has(uri)) {
         throw new Error(`missing ${uri}`);
       }
@@ -183,6 +187,86 @@ test("git sweep drains more than one batch when many notes still need warming", 
   warmGitChanges(changes, () => true);
   await settle();
   assert.deepEqual(host.opened, changes);
+});
+
+for (const limit of [2, 64]) {
+  test(`overlapping git sweeps across repositories share the ${limit}-document cap`, async (t) => {
+    const releases = new Map<string, () => void>();
+    let peak = 0;
+    let live = true;
+    t.after(() => {
+      live = false;
+      for (const release of releases.values()) {
+        release();
+      }
+    });
+    const alreadyOpen = "file:///first/already-open.md";
+    const host = fakeHost({
+      open: new Set([alreadyOpen]),
+      beforeOpen: async (uri) => {
+        await new Promise<void>((resolve) => {
+          releases.set(uri, resolve);
+          peak = Math.max(peak, releases.size);
+        });
+        releases.delete(uri);
+      },
+    });
+    const { warmGitChanges } = createDocumentWarmer(
+      host,
+      limit === 64 ? {} : { gitLimit: limit },
+    );
+    const targets = ["first", "second", "third"].map((repo) =>
+      Array.from({ length: limit + 1 }, (_, i) => `file:///${repo}/n${i}.md`),
+    );
+    const [first, second, third] = targets as [string[], string[], string[]];
+    warmGitChanges(first, () => live);
+    await tick();
+    assert.equal(releases.size, limit);
+
+    warmGitChanges([alreadyOpen, ...first, ...second], () => live);
+    warmGitChanges([...second, ...third, ...third], () => live);
+    await tick();
+    assert.ok(releases.size <= limit, `${releases.size} concurrent opens`);
+    while (releases.size > 0) {
+      for (const release of releases.values()) {
+        release();
+      }
+      await tick();
+      assert.ok(releases.size <= limit, `${releases.size} concurrent opens`);
+    }
+    assert.equal(peak, limit);
+    assert.deepEqual([...host.opened].sort(), targets.flat().sort());
+  });
+}
+
+test("queued git sweeps recheck liveness, enablement and already-open notes", async () => {
+  let release = () => {};
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const first = "file:///first/Note.md";
+  const alreadyOpen = "file:///second/open.md";
+  const disabled = "file:///second/off.md";
+  const eligible = "file:///second/eligible.md";
+  const open = new Set<string>();
+  const off = new Set<string>();
+  const host = fakeHost({
+    open,
+    modeFor: (uri) => (off.has(uri) ? "off" : "on"),
+    beforeOpen: (uri) => (uri === first ? blocked : Promise.resolve()),
+  });
+  const { warmGitChanges } = createDocumentWarmer(host, { gitLimit: 1 });
+  warmGitChanges([first], () => true);
+  await tick();
+  warmGitChanges([alreadyOpen, disabled, eligible, eligible], () => true);
+  let live = true;
+  warmGitChanges(["file:///third/cancelled.md"], () => live);
+  open.add(alreadyOpen);
+  off.add(disabled);
+  live = false;
+  release();
+  await settle();
+  assert.deepEqual(host.opened, [first, eligible]);
 });
 
 test("foreground missing-file rejection does not throw", async () => {

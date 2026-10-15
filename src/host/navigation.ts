@@ -241,6 +241,9 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
   const before = new Set(panels().map((panel) => panel.id));
   if (/\.(md|markdown)$/i.test(uri.path)) {
     await warmMarkdownDocument(uri);
+    if (intent.token.cancelled) {
+      return;
+    }
     await vscode.commands.executeCommand(
       "vscode.openWith",
       uri,
