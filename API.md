@@ -20,7 +20,7 @@ Contents: [Getting the API](#getting-the-api) ·
 [Plugins](#plugins-and-settings) · [Events](#events) ·
 [External plugins](#external-plugins) · [Markers](#markers) ·
 [Actions](#actions) · [Code blocks](#code-block-processors) ·
-[Errors](#errors) · [Complete example](#complete-example)
+[Errors](#errors) · [Complete example](#complete-example) · [AGENT.md](AGENT.md)
 
 ## Getting the API
 
@@ -132,6 +132,9 @@ An external plugin is a real plugin with the same lifecycle as the built-in
 ones: it starts when enabled, stops when disabled, and everything it
 registered through its context is undone when it stops. A failure stays
 inside the plugin; **Show Plugin Status** shows it as failed with the error.
+Authoring guide for a separate consumer extension:
+[AGENT.md](AGENT.md) (complementary to [AGENTS.md](AGENTS.md) for Workshop
+core).
 
 ```ts
 const handle = api.plugin({
@@ -150,7 +153,7 @@ context.subscriptions.push(handle); // dispose() unregisters the plugin
 
 Rules:
 
-- `id` matches `[\w.-]{3,200}` and starts with the owner's publisher and a
+- `id` matches `/^[\w.-]{3,200}$/` (anchored full-string match, same as `validateDefinition`) and starts with the owner's publisher and a
   dot. It cannot repeat a registered or built-in ID
   (`DuplicateContribution`). The owner must be installed (`InvalidArgument`).
   Namespaces prevent accidents; they do not authenticate extensions sharing a
