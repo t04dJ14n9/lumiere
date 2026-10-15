@@ -224,7 +224,7 @@ export const inject = { required: ['vault', 'editors', 'workbench'] } as const;
 
 export function apply(ctx: Context, config: BacklinksConfig): void {
   const view = new BacklinksView(ctx.vault, ctx.editors, config);
-  ctx.effect(() => ctx.workbench.treeView('markdownWorkshop.backlinks', view));
+  ctx.effect(() => ctx.workshop.treeView('markdownWorkshop.backlinks', view));
   ctx.on('vault/resolved', () => view.refresh());
   ctx.on('editor/activeChanged', () => view.refresh());
 }
