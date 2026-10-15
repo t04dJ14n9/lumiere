@@ -25,10 +25,7 @@ export function registerOutlineCommandContext(ctx: Context): void {
   });
 }
 
-export function followsCursor(
-  workshop: Workshop,
-  resource?: string,
-): boolean {
+export function followsCursor(workshop: Workshop, resource?: string): boolean {
   const configured = workshop.settings?.inspect(
     FOLLOW_CURSOR_SETTING,
     resource,

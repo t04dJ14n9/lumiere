@@ -299,7 +299,5 @@ test("Toggle Note Outline targets the view's hide command and restores it with f
   ]);
   fixture.show(false);
   await fixture.fake.commands.get(TOGGLE_COMMAND)!();
-  assert.deepEqual(fixture.executed.at(-1), [
-    "markdownWorkshop.outline.focus",
-  ]);
+  assert.deepEqual(fixture.executed.at(-1), ["markdownWorkshop.outline.focus"]);
 });

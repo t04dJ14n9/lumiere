@@ -73,10 +73,9 @@ test("B1 rejects same-line old token beside allowlisted GitHub URL (false-green 
     repository: { url },
     stale: pkg,
   });
-  const { dir, allowlist } = initFixture(
-    { "package.json": poisoned },
-    [`package.json\t${url}`],
-  );
+  const { dir, allowlist } = initFixture({ "package.json": poisoned }, [
+    `package.json\t${url}`,
+  ]);
 
   const result = runGate(dir, allowlist);
   assert.notEqual(
@@ -91,10 +90,9 @@ test("B1 still allows a line whose only old token lies inside the approved URL",
   const pkg = oldPackageName();
   const url = `https://github.com/t04dJ14n9/${pkg}`;
   const clean = JSON.stringify({ repository: { url } });
-  const { dir, allowlist } = initFixture(
-    { "package.json": clean },
-    [`package.json\t${url}`],
-  );
+  const { dir, allowlist } = initFixture({ "package.json": clean }, [
+    `package.json\t${url}`,
+  ]);
 
   const result = runGate(dir, allowlist);
   assert.equal(
@@ -123,10 +121,9 @@ test("B1 bare-token allowlist row still requires an exact line match", () => {
 
 test("B1 bare-token allowlist row accepts an exact line", () => {
   const pkg = oldPackageName();
-  const { dir, allowlist } = initFixture(
-    { "notes.txt": pkg },
-    [`notes.txt\t${pkg}`],
-  );
+  const { dir, allowlist } = initFixture({ "notes.txt": pkg }, [
+    `notes.txt\t${pkg}`,
+  ]);
 
   const result = runGate(dir, allowlist);
   assert.equal(

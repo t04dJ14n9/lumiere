@@ -112,9 +112,7 @@ function registerStage(
       if (!git) {
         return false;
       }
-      return saveAndStage(panel, git, (message) =>
-        ctx.workshop.error(message),
-      );
+      return saveAndStage(panel, git, (message) => ctx.workshop.error(message));
     }),
   );
 }
