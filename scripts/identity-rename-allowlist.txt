@@ -141,9 +141,10 @@ IMPLEMENTATION_PLAN.md	`package.json` say `Markdown Workbench` while the generat
 IMPLEMENTATION_PLAN.md	/tmp/markdown-workbench-e2e-
 
 # Rename plan and design specs, quoted on purpose and not rewritten.
-# Six lines in the rename plan are only a searched token. The row is that
-# whole line, so another line in that plan which contains the same text is
-# exempt. The plan and the gate script stay unchanged.
+# Six lines in the rename plan are only a searched token. Those rows are
+# that whole line. The gate treats a substring that is exactly the searched
+# token as an exact-line match, so a longer line in the same file is not
+# exempt. The plan stays unchanged.
 docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	- Modify: `scripts/generate-contributions.ts` (use `contributionId` / `SETTING_PREFIX`; no hard-coded `` `markdownWorkbench.${…}` ``)
 docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	Generator **and** runtime command/view registration must both call `contributionId` (or read `MARKDOWN_EDITOR.viewType`) — do not leave independent `` `markdownWorkbench.${…}` `` / `` `markdownWorkshop.${…}` `` string templates in registration paths.
 docs/superpowers/plans/2026-10-15-complete-workshop-rename.md	In `scripts/generate-contributions.ts`, replace owned `` markdownWorkbench. `` string templates with `contributionId(...)` / `SETTING_PREFIX` (commands, view ids, menus, config keys, when-clauses). Leave the `whenEnabled(..., "workbench" | "editor")` **scope argument** alone — that is VS Code panel-vs-editor, not product identity.

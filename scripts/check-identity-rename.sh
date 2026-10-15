@@ -19,6 +19,11 @@ allowed_in_file() {
     [[ "$line" == *"$atoken"* ]] || continue
     # Exempt only when this allowlisted substring is what justifies the hit.
     [[ "$atoken" == *"$pat"* ]] || continue
+    # A substring that is exactly the searched token exempts only a line
+    # that is exactly that token. A longer phrase still matches by contains.
+    if [[ "$atoken" == "$pat" && "$line" != "$atoken" ]]; then
+      continue
+    fi
     return 0
   done < "$allowlist"
   return 1
