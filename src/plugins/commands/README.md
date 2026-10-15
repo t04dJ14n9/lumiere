@@ -14,9 +14,10 @@ fresh enablement check when invoked. Registrations stop with their owning contex
 Undo and redo are special: VS Code's webview shell always preventDefaults
 Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y and forwards them to the workbench.
 A capture-phase document listener owns those shortcuts for the note (flush, then
-native history), stops the shell from seeing them, and leaves INPUT/TEXTAREA to
-VS Code's DOM undo. Save stays on the CodeMirror keymap with `stopPropagation`
-so the forwarder cannot run a second Save.
+native history), stops the shell from seeing them, and leaves INPUT/TEXTAREA plus
+Properties `[data-property-input]` / `[data-property-list-input]` contenteditables
+to native DOM undo (not CodeMirror's contenteditable). Save stays on the
+CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Save.
 
 ## Files
 
@@ -28,7 +29,7 @@ so the forwarder cannot run a second Save.
 - `webview.ts`: registry, host actions, RPC and keyboard registrations.
 - `history-keys.ts`: capture-phase Ctrl/Cmd+Z / Shift+Z / Y ownership so VS Code's
   webview key forwarding cannot double-fire or swallow note undo/redo.
-- `history-keys.test.ts`: shortcut mapping, text-field exemption and listener disposal.
+- `history-keys.test.ts`: shortcut mapping, text-field and property-editor exemption, listener disposal.
 - `registry.ts`: per-editor unique-ID command map.
 - `registry.test.ts`: command results, duplicate rejection, removal and failures.
 

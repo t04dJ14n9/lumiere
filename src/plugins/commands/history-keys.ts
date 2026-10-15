@@ -51,12 +51,51 @@ export function isNativeTextField(target: EventTarget | null): boolean {
 }
 
 /**
+ * Properties text values and list drafts are contenteditable DIVs tagged with
+ * data-property-input / data-property-list-input. Leave their native undo alone.
+ * Do not treat every contenteditable as exempt — CodeMirror's surface is also
+ * contenteditable and must keep capture-phase note history.
+ */
+export function isPropertyNativeEditor(target: EventTarget | null): boolean {
+  const element = elementForClosest(target);
+  if (!element || typeof element.closest !== "function") {
+    return false;
+  }
+  return !!element.closest("[data-property-input], [data-property-list-input]");
+}
+
+/** True when the capture handler must not steal undo/redo from the target. */
+export function leavesNativeHistory(target: EventTarget | null): boolean {
+  return isNativeTextField(target) || isPropertyNativeEditor(target);
+}
+
+function elementForClosest(target: EventTarget | null): Element | null {
+  if (!target || typeof target !== "object") {
+    return null;
+  }
+  const node = target as Partial<Node> & {
+    nodeType?: number;
+    parentElement?: Element | null;
+    closest?: Element["closest"];
+  };
+  if (typeof node.closest === "function") {
+    return node as Element;
+  }
+  // Text nodes inside a contenteditable report as the event target in some
+  // browsers; walk to the owning element for closest().
+  if (node.nodeType === 3 && node.parentElement) {
+    return node.parentElement;
+  }
+  return null;
+}
+
+/**
  * VS Code's webview shell listens on the content window and always preventDefaults
  * then forwards undo/redo to the workbench, even when the note already handled the
  * key. Owning Mod/Ctrl+Z, Mod/Ctrl+Shift+Z and Mod/Ctrl+Y in capture phase runs
  * flush/grouped history once and stops the shell from seeing the event. Nested
  * surfaces (table cells, property chips) share this document, so one listener
- * covers them; native text fields are left alone.
+ * covers them; native text fields and property contenteditables are left alone.
  */
 export function keepHistoryKeysInEditor(
   target: Document,
@@ -66,7 +105,7 @@ export function keepHistoryKeysInEditor(
     target.defaultView?.navigator.platform ?? "",
   );
   const listener = (event: KeyboardEvent) => {
-    if (isNativeTextField(event.target)) {
+    if (leavesNativeHistory(event.target)) {
       return;
     }
     const action = historyActionFor(event, isMac);
