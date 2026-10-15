@@ -28,7 +28,7 @@ test("selectionchange is always kept by the widget (native Mermaid labels)", () 
   );
 });
 
-test("ordinary diagram mouse events are handed to CodeMirror", () => {
+test("blank-area mousedown stays with the widget (no CM caret in fence)", () => {
   assert.equal(
     markdownBlockIgnoresEventKind({
       type: "mousedown",
@@ -36,8 +36,15 @@ test("ordinary diagram mouse events are handed to CodeMirror", () => {
       controlInsideWidget: false,
       nativeSelectableLabel: false,
     }),
-    false,
+    true,
   );
+});
+
+test("ignoreEvent keeps blank Mermaid area so source is not revealed without edit", () => {
+  assert.match(widgetSrc, /markdownBlockIgnoresEvent/);
+  assert.match(widgetSrc, /replace range/);
+  assert.match(widgetSrc, /click-to-edit/);
+  assert.match(widgetSrc, /MouseSelection/);
 });
 
 test("widget-local controls keep their mouse events", () => {
