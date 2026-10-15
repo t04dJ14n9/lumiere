@@ -34,6 +34,8 @@ test("editor settings have application defaults and reconfigure without changing
     readableLineLength: false,
     // Auto: reclaims Cursor's text-editor switch only when running in Cursor.
     reclaimTextEditor: "auto",
+    // Auto: materialize TextDocuments early so Cursor can open our custom editor.
+    warmTextDocument: "auto",
     strictLineBreaks: false,
     rightToLeft: false,
     useTabs: true,

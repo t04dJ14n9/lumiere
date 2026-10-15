@@ -10,7 +10,7 @@ import type { Workbench } from "../shared/runtime";
 export function workbenchFeatures(
   root: Context,
   workbench: Workbench,
-  plugins: readonly { manifest: Manifest; plugin: Plugin }[],
+  plugins: readonly { manifest: Manifest; plugin: Plugin; config?: unknown }[],
 ): void {
   const views = workbench.views;
   if (!views) {
@@ -23,14 +23,14 @@ export function workbenchFeatures(
       .then(async () => {
         const isObsidian =
           views.setting<string>("preset", "obsidian") !== "minimal";
-        for (const { manifest, plugin } of plugins) {
+        for (const { manifest, plugin, config } of plugins) {
           const enabled =
             isObsidian &&
             views.setting(
               `plugins.${manifest.id}.enabled`,
               manifest.defaultEnabled,
             );
-          await toggle(root, active, plugin, enabled);
+          await toggle(root, active, { plugin, enabled, config });
         }
       })
       .catch((error) =>
@@ -48,15 +48,17 @@ export function workbenchFeatures(
 async function toggle(
   root: Context,
   active: Map<string, Fiber<unknown>>,
-  plugin: Plugin,
-  enabled: boolean,
+  entry: { plugin: Plugin; enabled: boolean; config?: unknown },
 ): Promise<void> {
-  const previous = active.get(plugin.name);
-  if (!enabled && previous) {
-    active.delete(plugin.name);
+  const previous = active.get(entry.plugin.name);
+  if (!entry.enabled && previous) {
+    active.delete(entry.plugin.name);
     await previous.dispose();
   }
-  if (enabled && !previous) {
-    active.set(plugin.name, root.plugin(plugin) as Fiber<unknown>);
+  if (entry.enabled && !previous) {
+    active.set(
+      entry.plugin.name,
+      root.plugin(entry.plugin, entry.config) as Fiber<unknown>,
+    );
   }
 }

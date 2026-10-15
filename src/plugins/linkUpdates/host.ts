@@ -2,7 +2,7 @@ import type { Plugin } from "../../kernel";
 import type { FileTextEdits, HostViews } from "../../shared/runtime";
 import type { Vault, Vaults } from "../vault/api";
 import { rewriteLinks } from "./rewrite";
-import type { LinkFormat } from "./rewrite";
+import type { LinkFormat, RewriteContext } from "./rewrite";
 
 /** Rewrites links in other notes when files are renamed in VS Code. */
 export const linkUpdatesHost: Plugin = {
@@ -57,14 +57,16 @@ async function linkEdits(
     return [];
   }
   const format = views.setting<LinkFormat>("links.newLinkFormat", "shortest");
-  const context = {
+  const context: RewriteContext = {
     renames: paths,
-    resolve: (linkpath: string, source: string) =>
-      vault.index.resolveLink(linkpath, source)?.path,
+    resolve: (linkpath, source, syntax) =>
+      vault.index.resolveLink(linkpath, source, syntax)?.path,
     pathsAfter: vault.index
       .files()
       .map((file) => paths.get(file.path) ?? file.path),
     format,
+    preferredText: (target: string, source: string) =>
+      vault.index.describeLink(target, source),
   };
   const sources = new Set<string>(paths.keys());
   for (const path of paths.keys()) {

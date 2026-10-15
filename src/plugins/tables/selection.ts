@@ -30,7 +30,7 @@ export class TableSelection {
     this.drag = new TableSelectionDrag(
       grid.root,
       grid.table,
-      grid.outer.scrollDOM,
+      { vertical: grid.outer.scrollDOM, horizontal: grid.scroll },
       {
         select: (anchor, head) => {
           this.select({ anchor, head });
@@ -156,23 +156,47 @@ export class TableSelection {
   }
 
   highlight(): void {
-    const area = this.range && rectangle(this.range);
+    const selected = selectedCells(
+      {
+        rows: this.grid.cells.length,
+        columns: this.grid.cells[0]?.length ?? 0,
+      },
+      this.range,
+      this.projection.active,
+    );
     this.grid.cells.forEach((row, rowIndex) =>
       row.forEach((cell, column) => {
-        const selected =
-          !!area &&
-          rowIndex >= area.top &&
-          rowIndex <= area.bottom &&
-          column >= area.left &&
-          column <= area.right;
-        cell.classList.toggle("table-cell-selected", selected);
-        cell.setAttribute("aria-selected", String(selected));
+        const on = selected[rowIndex]?.[column] ?? false;
+        cell.classList.toggle("table-cell-selected", on);
+        cell.setAttribute("aria-selected", String(on));
       }),
     );
     if (this.range) {
       this.grid.outer.state.facet(tableSelectionChanges)(true);
     }
   }
+}
+
+/** Grid range wins; otherwise the open cell editor still shows selection chrome. */
+export function selectedCells(
+  shape: { rows: number; columns: number },
+  range: CellRange | undefined,
+  active: CellPosition | undefined,
+): boolean[][] {
+  const area = range && rectangle(range);
+  return Array.from({ length: shape.rows }, (_, row) =>
+    Array.from({ length: shape.columns }, (_, column) => {
+      if (area) {
+        return (
+          row >= area.top &&
+          row <= area.bottom &&
+          column >= area.left &&
+          column <= area.right
+        );
+      }
+      return !!active && active.row === row && active.column === column;
+    }),
+  );
 }
 
 export function axisRange(

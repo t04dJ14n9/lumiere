@@ -3,7 +3,7 @@
 Quick access to the extension's settings from the Command Palette, for people
 who do not want to dig through the Settings UI.
 
-- **Markdown Workbench: Open Settings** opens the Settings UI filtered to this
+- **Markdown Workshop: Open Settings** opens the Settings UI filtered to this
   extension (`@ext:t04dj14n9.vscode-markdown-workbench`).
 - **Change Setting…** lists every setting this extension contributes, read
   from the installed package.json (so it cannot drift), grouped by plugin with

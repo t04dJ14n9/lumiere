@@ -9,7 +9,12 @@ interface EmbedOptions {
   pass: RenderPass;
   render: RenderService;
   resources: Resources;
-  open(target: string): void;
+  open(target: string, wiki: boolean): void;
+}
+
+/** True when the resource element came from a wikilink embed (`![[...]]`). */
+export function embedIsWiki(node: { dataset: { wiki?: string } }): boolean {
+  return node.dataset.wiki === "true";
 }
 
 /** Resolve placeholders with pass-owned cancellation and native source identity. */
@@ -93,11 +98,13 @@ class EmbedPass {
     if (/^data:image\//i.test(target)) {
       return Promise.resolve({ kind: "image", source: target, url: target });
     }
-    return resources.load(target, pass.documentUri);
+    const syntax = node.dataset.wiki === "true" ? "wikilink" : "markdown";
+    return resources.load(target, pass.documentUri, syntax);
   }
 
   private openButton(
     target: string,
+    wiki: boolean,
     label: string,
     className: "open-embed" | "attachment-open",
   ): HTMLButtonElement {
@@ -106,7 +113,7 @@ class EmbedPass {
     node.className = className;
     node.textContent = label;
     node.setAttribute("aria-label", `Open ${target}`);
-    node.addEventListener("click", () => this.options.open(target), {
+    node.addEventListener("click", () => this.options.open(target, wiki), {
       signal: this.events.signal,
     });
     return node;
@@ -120,14 +127,17 @@ class EmbedPass {
     if (!this.isActive) {
       return;
     }
+    const wiki = embedIsWiki(node);
     if (resource.kind === "image") {
-      this.showImage(node, target, resource);
+      this.showImage(node, target, resource, wiki);
     } else if (resource.kind === "audio" || resource.kind === "video") {
       this.showMedia(node, target, resource);
     } else if (resource.kind === "note" && resource.text !== undefined) {
-      await this.showNote(node, target, resource);
+      await this.showNote(node, target, resource, wiki);
     } else {
-      node.replaceChildren(this.openButton(target, target, "attachment-open"));
+      node.replaceChildren(
+        this.openButton(target, wiki, target, "attachment-open"),
+      );
     }
     if (this.isActive) {
       this.options.pass.measure();
@@ -138,6 +148,7 @@ class EmbedPass {
     node: HTMLElement,
     target: string,
     resource: Resource,
+    wiki: boolean,
   ): void {
     const { pass } = this.options;
     const image =
@@ -174,7 +185,7 @@ class EmbedPass {
     this.disposers.push(
       () => inspect.remove(),
       inspectImage(inspect, resource.url, image.alt, () =>
-        this.options.open(target),
+        this.options.open(target, wiki),
       ),
     );
   }
@@ -213,6 +224,7 @@ class EmbedPass {
     node: HTMLElement,
     target: string,
     resource: Resource,
+    wiki: boolean,
   ): Promise<void> {
     const { pass, render } = this.options;
     // apply admits note resources only after checking their text.
@@ -226,7 +238,7 @@ class EmbedPass {
     const section = document.createElement("section");
     section.className = "note-embed";
     const content = document.createElement("div");
-    section.append(this.openButton(target, "↗", "open-embed"), content);
+    section.append(this.openButton(target, wiki, "↗", "open-embed"), content);
     node.replaceChildren(section);
     const nested = await render.into(content, selection.text, {
       ...(pass.readOnly === undefined ? {} : { readOnly: pass.readOnly }),

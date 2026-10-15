@@ -16,7 +16,7 @@ export const resourcesHost: Plugin<{ panel: PanelShell }> = {
     ctx.provide("resources", resources);
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "load", (params) =>
-        resources.load(params.target, params.source),
+        resources.load(params.target, params.source, params.syntax),
       ),
     );
   },

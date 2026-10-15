@@ -1,7 +1,7 @@
 {
   "name": "tickets",
-  "displayName": "Markdown Workbench Sample: Tickets",
-  "description": "A sample external plugin for Markdown Workbench: TODO badges, ticket: links and tickets code blocks.",
+  "displayName": "Markdown Workshop Sample: Tickets",
+  "description": "A sample external plugin for Markdown Workshop: TODO badges, ticket: links and tickets code blocks.",
   "version": "0.0.1",
   "publisher": "mwsample",
   "license": "MIT",

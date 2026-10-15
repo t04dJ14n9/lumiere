@@ -40,7 +40,9 @@ The VS Code adapter is `src/host/vault-system.ts`; the worker is
 ## Services, events and settings
 
 - Injects `vaultSystem` (root) and `vaults` (panel). Provides `vaults` and
-  `vault`.
+  `vault`. `vaults.registerLinkPolicy` lets another plugin override resolution
+  and link text; the vault does not inject that plugin. Registering or
+  removing a policy re-resolves links.
 - Emits `vault/changed (root, change)` and `vault/resolved (root)`.
 - Settings: `markdownWorkbench.vault.rootMarkers` (default `[".obsidian"]`),
   `markdownWorkbench.vault.excludedFiles`, and from `links`: `folderNote` and

@@ -93,16 +93,19 @@ class LinkPreviews {
     this.body = elements.body;
     // Focus handlers must see the popup before opening it moves focus.
     mountPreviewPopup(this.root, link, elements, keyboard);
+    const wiki =
+      link.dataset.wiki === "true" || link.classList.contains("internal-link");
     this.reload = () => {
-      void this.load(base, href, source);
+      void this.load(base, href, source, wiki);
     };
-    await this.load(base, href, source);
+    await this.load(base, href, source, wiki);
   }
 
   private async load(
     base: PreviewContext,
     href: string,
-    source?: string,
+    source: string | undefined,
+    wiki: boolean,
   ): Promise<void> {
     const request = ++this.generation;
     if (this.body) {
@@ -111,7 +114,11 @@ class LinkPreviews {
       this.body.textContent = "Loading…";
     }
     try {
-      const resource = await base.resources.load(href, source);
+      const resource = await base.resources.load(
+        href,
+        source,
+        wiki ? "wikilink" : "markdown",
+      );
       if (!this.body || request !== this.generation) {
         return;
       }
@@ -123,6 +130,7 @@ class LinkPreviews {
         resource,
         href,
         ...(source === undefined ? {} : { source }),
+        wiki,
         render: base.render,
       });
       if (request !== this.generation) {

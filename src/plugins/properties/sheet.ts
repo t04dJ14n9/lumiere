@@ -30,7 +30,7 @@ export function reconcileProperties(
   if (!panel || header?.error) {
     return false;
   }
-  const nextRows = nextPropertyRows(source, context.propertyEditor);
+  const nextRows = nextPropertyRows(source, context);
   const list = panel.querySelector<HTMLElement>(".metadata-properties")!;
   const active = panel.contains(document.activeElement)
     ? document.activeElement
@@ -54,22 +54,31 @@ export function reconcileProperties(
   bindPropertyFields(container, source, context);
   bindPropertyLists(container, source, context);
   bindPropertyControls(container, source, context);
+  context.bindRenderedProperties?.(container);
 
   restoreReplacedFocus(active, activeRow, rows);
   return true;
 }
 
+/** Markup for a property sheet, including plugin renderers on the first paint. */
+export function propertyMarkup(
+  source: string,
+  context: PropertyContext,
+  allowEmpty: boolean,
+): string {
+  return renderProperties(source, context.propertyEditor?.types?.(), {
+    collapsed: context.propertyEditor?.collapsed?.() ?? false,
+    allowEmpty,
+    ...(context.renderProperty ? { renderValue: context.renderProperty } : {}),
+  });
+}
+
 function nextPropertyRows(
   source: string,
-  editor: PropertyContext["propertyEditor"],
+  context: PropertyContext,
 ): HTMLElement[] {
   const fresh = document.createElement("div");
-  fresh.innerHTML = sanitize(
-    renderProperties(source, editor?.types?.(), {
-      collapsed: editor?.collapsed?.() ?? false,
-      allowEmpty: true,
-    }),
-  );
+  fresh.innerHTML = sanitize(propertyMarkup(source, context, true));
   return [...fresh.querySelectorAll<HTMLElement>("[data-property-row]")];
 }
 

@@ -27,10 +27,10 @@ never open a real vault.
 
    For Cursor use `cursor` with the same flags. Delete `/tmp/mdwb-manual`
    and `/tmp/mdwb-vault` afterwards.
-4. Run **Markdown Workbench: Use Markdown Workbench for Markdown in This
+4. Run **Markdown Workshop: Use Markdown Workshop for Markdown in This
    Workspace** once, so `.md` files open in the workbench (see Editor below).
 5. Turn on `markdownWorkbench.debug.logging` while testing and keep the
-   **Markdown Workbench** output channel open; note any error lines in the
+   **Markdown Workshop** output channel open; note any error lines in the
    result.
 
 Change settings at workspace scope (or folder scope in a multi-root
@@ -97,11 +97,24 @@ Owns the text, saving and history; VS Code's TextDocument is the authority.
 
 The CodeMirror view in a webview panel, its commands and view state.
 
+Cursor Remote SSH handoff regression (use the disposable vault): associate
+`*.md` with Markdown Workshop and leave both `editor.warmTextDocument` and
+`editor.reclaimTextEditor` at `auto`. Have an agent edit a note on disk, open
+it with Cursor's built-in Markdown editor, and make an unsaved edit there.
+Let Cursor auto-transfer the note into Markdown Workshop, then repeat with
+**Reopen Editor With… → Markdown Workshop**. The custom editor opens without
+the `Argument is 'undefined' or 'null.'` assertion, the unsaved text survives,
+and native undo still restores the edit. Repeat with a `.markdown` note and
+the matching association, and after reloading with the dirty note already
+open. **Open as Text** still keeps the text editor during the bypass window.
+Setting warming to `off` must stop warm calls; record the Cursor result
+separately, since that explicitly disables the workaround.
+
 1. Copy, cut and paste Markdown with the keyboard; paste into a text
    editor: the exact source is copied.
 2. Give two panels different selections, scroll positions and modes; reload
    the window: each panel restores its own state.
-3. Run **Use Markdown Workbench for Markdown in This Workspace**: the
+3. Run **Use Markdown Workshop for Markdown in This Workspace**: the
    workspace `settings.json` gets `workbench.editorAssociations` entries for
    `*.md` and `*.markdown`, other associations stay, and running it again
    changes nothing. A note opened from the Explorer now opens in the
@@ -113,7 +126,7 @@ The CodeMirror view in a webview panel, its commands and view state.
    and `markdownWorkbench.editor.tabSize` with the note open: the editor
    updates without reopening and keeps text, folds and selection.
    `markdownWorkbench.editor.defaultMode` applies to newly opened panels.
-6. With `markdownWorkbench.debug.logging` on, the **Markdown Workbench**
+6. With `markdownWorkbench.debug.logging` on, the **Markdown Workshop**
    output channel shows debug lines from the host and the webview; with it
    off, only warnings and errors.
 
@@ -372,6 +385,15 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    Counts span cells; WORD motions include punctuation. At the table edges,
    repeated motions stop without edits. Check `dw` and visual `vw` remain in
    their current cell, and insert-mode letters still type normally.
+10. In a disposable note, put a wide, many-row table between several screens
+    of prose. Select a middle row with its grip and release the pointer. With
+    the pointer over the selected cells, wheel/trackpad up and down: the note
+    scrolls in both directions while the row stays selected. Repeat with Vim
+    in NORMAL mode, a selected column, a rectangle and an active cell editor.
+    Horizontal trackpad and Shift-wheel gestures move the table horizontally
+    without moving the note vertically. Drag selections and grips near all
+    four visible edges: vertical note and horizontal table EdgeScroll still
+    work; release stops auto-scrolling. Cell edits, handles and menus still work.
 
 ### callouts
 
@@ -698,7 +720,7 @@ Off by default.
 ### openCopiedAgentReference
 
 1. Copy `@Core.md#2-3` and run **Open Copied Agent Reference**, with no note
-   open. Confirm the prefilled reference: Markdown Workbench opens and
+   open. Confirm the prefilled reference: Markdown Workshop opens and
    selects those complete source lines. Repeat with a quoted reference and
    a one-line `#2` reference. A copied agent payload prefills only its first
    line; unrelated clipboard content leaves the prompt empty.
@@ -714,6 +736,58 @@ Off by default.
 4. Native chat-link clicks remain host-controlled. Use this command when a
    click opens a note without revealing its line range; do not count it as
    transparent chat-click support or global Back/Forward history.
+
+### sources (read-only)
+
+A note inside an OKF bundle, with a `sources` frontmatter list. Confirm light
+and dark themes.
+
+1. Rows stack in document order. The first eight are expanded. **Showing 8 of
+   N** reveals the rest. There is no Edit, Add or Apply control, and revealing
+   rows does not change the file.
+2. A row shows its title, or a resource-derived label, with the original
+   resource on its own line. `id` appears only when the entry has one. Copy id
+   copies that id. A missing `usage_count` is not shown as zero; zero is shown
+   as zero. An entry `usage_window` wins over the inherited one.
+3. An `https` resource opens in the browser. A bundle path opens that workspace
+   file. `command:`, `javascript:` and `data:` stay plain text and do not open.
+   Nothing is fetched to preview a title or a remote page.
+4. Edit the note so the clicked resource is gone, then activate the stale row.
+   The click does nothing. It does not open a different source by position.
+5. A note outside a bundle still shows the rows. A path that leaves the vault
+   does not open.
+
+### vault graph
+
+**Open Vault Graph** (`markdownWorkbench.graph.open`). One panel per window; running
+the command again reveals it. The panel is not tied to a Markdown document.
+
+1. With the active note inside one OKF bundle, the toolbar shows that bundle's
+   name and path. Notes are directed: a link from A to B is not the same edge
+   as B to A. `index.md` and `log.md` are not nodes. A note with no `type` is
+   still drawn. Clicking a node opens that note.
+2. Open a note that sits in no bundle, or in a workspace with several bundles,
+   and the command asks which bundle to use. Cancel leaves the previous scope.
+   It does not pick the first workspace folder. Switching notes does not move
+   the graph to the new note. **Choose Vault Graph Bundle**
+   (`markdownWorkbench.graph.chooseBundle`) asks again.
+3. Local mode draws the neighbourhood of the note that was active at open, or
+   of the last node you clicked. Depth is 1–3. If filters hide that note, the
+   panel says **Focus excluded by filters**. **Clear filters** brings it back
+   and does not jump to a different note.
+4. Orphans, type, tag, folder and text search narrow the drawing. A vault over
+   the node or edge cap shows the counts and draws nothing until the filters
+   fit. There is no sampled substitute. **Re-layout** runs after a large change;
+   filtering does not throw the remaining notes to new coordinates.
+5. Hide the panel and show it again. The layout worker does not keep running
+   while it is hidden. Close the panel. The worker stops. Repeat in light and
+   dark themes. The graph does not request remote images or URLs.
+6. Settings, all off in a minimal preset: `markdownWorkbench.plugins.graph.enabled`,
+   `markdownWorkbench.plugins.okfCore.enabled`,
+   `markdownWorkbench.plugins.sourcesProperty.enabled`,
+   `markdownWorkbench.graph.maxNodes`, `markdownWorkbench.graph.maxEdges`,
+   `markdownWorkbench.graph.defaultMode`, `markdownWorkbench.graph.localDepth`,
+   `markdownWorkbench.graph.colorBy`, `markdownWorkbench.okfCore.bundles`.
 
 ## External plugins
 
@@ -802,7 +876,7 @@ paths; a missing layout is the legacy preset.
    Marp for VS Code installed and the workspace trusted, the text editor
    opens and Marp's export follows. **Toggle Marp** flips only the `marp`
    flag. Set `markdownWorkbench.marp.open` to `textEditor`: the deck opens
-   in the text editor; **Keep Marp Deck in Workbench** brings it back.
+   in the text editor; **Keep Marp Deck in Workshop** brings it back.
    A deck saved inside the bundle without `type` and `generated` is
    reported and is not rewritten. **Move Marp Deck Outside Bundle** moves
    it under `exports/` and copies a Markdown link; the deck text is unchanged.
@@ -829,7 +903,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.jumpForward` — Go Forward in Note | unbound | On a disposable fixture, run Go Forward in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workbench for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workbench for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.useForMarkdownInWorkspace` — Use Markdown Workshop for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workshop for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertEmbed` — Insert Embed | unbound | On a disposable fixture, run Insert Embed; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.foldAll` — Fold All | unbound | On a disposable fixture, run Fold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.unfoldAll` — Unfold All | unbound | On a disposable fixture, run Unfold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -867,7 +941,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.marp.toggle` — Toggle Marp | unbound | On a disposable fixture, run Toggle Marp; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.marp.moveOutside` — Move Marp Deck Outside Bundle | unbound | On a disposable fixture, run Move Marp Deck Outside Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkbench.marp.keepInWorkbench` — Keep Marp Deck in Workbench | unbound | On a disposable fixture, run Keep Marp Deck in Workbench; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.marp.keepInWorkbench` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -961,6 +1035,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.reclaimTextEditor` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.editor.warmTextDocument` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

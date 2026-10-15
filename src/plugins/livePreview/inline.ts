@@ -10,6 +10,7 @@ import { metadata } from "../../markdown/metadata";
 import { linkDestination } from "../../markdown/html";
 import { documentTree } from "./document-tree";
 import { inlineRenderers, inlineRevealRange, revealed } from "./registry";
+import { isPointerSelecting } from "../../webview/ui/pointer-selection";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
 import { decorateBlockId } from "./block-id";
@@ -306,10 +307,9 @@ export const hybridInline = ViewPlugin.fromClass(
       this.decorations = inlineDecorations(view.state, view.visibleRanges);
     }
     update(update: ViewUpdate): void {
-      // Keep composition's DOM stable, then rebuild at compositionend.
-      // Pointer drags update live, as in Obsidian: CodeMirror maps each
-      // mousemove from coordinates, so revealed marks don't skew the drag.
-      if (update.view.composing) {
+      // Keep composition and pointer-drag DOM stable: reveal is frozen while
+      // the button is down, so rebuilding would only thrash widget heights.
+      if (update.view.composing || isPointerSelecting(update.state)) {
         this.decorations = this.decorations.map(update.changes);
         return;
       }

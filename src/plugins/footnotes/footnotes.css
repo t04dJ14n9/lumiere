@@ -32,10 +32,9 @@
   outline: none;
 }
 .footnote-preview {
-  position: absolute;
+  /* Fixed: absolute inside the reference was clipped by .cm-scroller overflow. */
+  position: fixed;
   z-index: 50;
-  top: calc(100% + 0.9em);
-  left: -0.5em;
   width: max-content;
   max-width: min(420px, calc(100vw - 16px));
   max-height: 40vh;
@@ -53,12 +52,7 @@
   vertical-align: baseline;
   white-space: normal;
 }
-/* Near the bottom of the webview the preview opens above the reference. */
-.footnote-preview.is-above {
-  top: auto;
-  bottom: calc(100% + 0.9em);
-}
-/* The gap above the preview still counts as hovering the reference. */
+/* The gap toward the reference still counts as hovering it. */
 .footnote-preview::before {
   content: "";
   position: absolute;

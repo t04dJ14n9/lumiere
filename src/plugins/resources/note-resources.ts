@@ -1,5 +1,6 @@
 import type { Workbench } from "../../shared/runtime";
 import { mediaKind } from "../../shared/media-kinds";
+import type { LinkSyntax } from "../../shared/vault-path";
 import type { VaultIndex } from "../vault/api";
 import type { Resource, Resources } from "./api";
 import { containedResource, contains } from "./containment";
@@ -22,7 +23,15 @@ export class NoteResources implements Resources {
     await this.containedStat(source);
   }
 
-  async load(target: string, source = this.options.source): Promise<Resource> {
+  async authorizeTarget(target: string): Promise<void> {
+    await this.containedStat(target);
+  }
+
+  async load(
+    target: string,
+    source = this.options.source,
+    syntax: LinkSyntax = "markdown",
+  ): Promise<Resource> {
     this.assertKnown(source);
     if (/^[a-z][a-z\d+.-]*:/i.test(target) || target.startsWith("//")) {
       throw new Error("Resource must be a vault link");
@@ -32,7 +41,7 @@ export class NoteResources implements Resources {
       decodeURIComponent(new URL(vault.root).pathname).replace(/\/$/, "")
         .length + 1,
     );
-    const file = vault.resolveLink(target, relativeSource);
+    const file = vault.resolveLink(target, relativeSource, syntax);
     if (!file) {
       throw new Error("Resource not found");
     }

@@ -47,7 +47,7 @@ async function textEditorFont(page: Page): Promise<Font> {
   });
 }
 
-/** The note's body line and its code line in Markdown Workbench. */
+/** The note's body line and its code line in Markdown Workshop. */
 async function workbenchFont(frame: Frame): Promise<Font & { code: string }> {
   return frame.evaluate(() => {
     const lines = [...document.querySelectorAll<HTMLElement>(".cm-line")];
@@ -76,7 +76,7 @@ async function editorFrame(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workbench frame");
+  throw new Error("No Markdown Workshop frame");
 }
 
 // The built-in text editor honours [markdown] font overrides; the note follows

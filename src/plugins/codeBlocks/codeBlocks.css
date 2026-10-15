@@ -3,12 +3,14 @@
   position: absolute;
   z-index: 2;
   top: 10px;
-  right: 52px;
+  /* Sit immediately left of .edit-block (right: 8px, ~40px wide). */
+  right: 56px;
   padding: 1px 6px;
   border: 1px solid var(--line);
   border-radius: 4px;
   color: var(--muted);
   background: var(--vscode-editor-background, transparent);
+  font: inherit;
   font-size: 0.6875em;
   line-height: 1.6;
   cursor: pointer;
@@ -29,7 +31,8 @@
   position: absolute;
   z-index: 1;
   top: 10px;
-  right: 12px;
+  /* Left of Copy (56px) + Edit (8px) so the label never sits under either. */
+  right: 104px;
   color: var(--muted);
   font-size: 0.6875em;
   line-height: 1.6;

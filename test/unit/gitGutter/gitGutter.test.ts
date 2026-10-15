@@ -9,7 +9,7 @@ import {
 } from "../../../src/shared/diff";
 import { Context } from "../../../src/kernel";
 import { createRenderer } from "../../../src/markdown/html";
-import { kindFor } from "../../../src/plugins/gitGutter/gutter";
+import { barTooltip, kindFor } from "../../../src/plugins/gitGutter/gutter";
 import {
   computeHunks,
   hunkAt,
@@ -20,9 +20,14 @@ import {
 } from "../../../src/plugins/gitGutter/hunks";
 import {
   adoptPass,
+  canPeek,
   endLifetime,
   peekContext,
+  peekedHunk,
   peekMarkdown,
+  peekState,
+  peekTargetAt,
+  setPeek,
 } from "../../../src/plugins/gitGutter/peek";
 import type { Lifetime } from "../../../src/plugins/gitGutter/peek";
 import { markdownLanguage } from "@codemirror/lang-markdown";
@@ -373,4 +378,54 @@ test("R2-B1: a held addition never retargets a different, larger fresh hunk", ()
   const after = revertHeld(state, baseline, mapped).doc.toString();
   assert.ok(after.startsWith("X\n"), `X was deleted: ${JSON.stringify(after)}`);
   assert.ok(["X\nA\nY\nA", "X\nA"].includes(after), after);
+});
+
+test("barTooltip names each gutter color", () => {
+  assert.equal(barTooltip("added"), "added");
+  assert.equal(barTooltip("modified"), "modified");
+  assert.equal(barTooltip("deleted"), "deleted");
+  assert.equal(barTooltip("deleted-end"), "deleted");
+});
+
+test("canPeek: added hunks have no peek; modified and deleted do", () => {
+  const doc = Text.of(after.split("\n"));
+  const hunks = computeHunks(before, doc);
+  assert.equal(canPeek(hunks.find((h) => h.kind === "added")!), false);
+  assert.equal(canPeek(hunks.find((h) => h.kind === "modified")!), true);
+  assert.equal(canPeek(hunks.find((h) => h.kind === "deleted")!), true);
+});
+
+test("peekedHunk: ignores a peek position on an added hunk", () => {
+  const doc = Text.of(after.split("\n"));
+  const hunks = computeHunks(before, doc);
+  const added = hunks.find((h) => h.kind === "added")!;
+  const modified = hunks.find((h) => h.kind === "modified")!;
+  let state = EditorState.create({
+    doc,
+    extensions: [hunkField, peekState],
+  });
+  state = state.update({
+    effects: [setHunks.of(hunks), setPeek.of(added.from)],
+  }).state;
+  assert.equal(peekedHunk(state), undefined);
+  state = state.update({ effects: setPeek.of(modified.from) }).state;
+  assert.equal(peekedHunk(state)?.kind, "modified");
+});
+
+test("peekTargetAt prefers a modified hunk when an added hunk overlaps the same block", () => {
+  const hunks: DocHunk[] = [
+    { kind: "added", from: 10, to: 20, old: "", oldLine: 2, atEnd: false },
+    {
+      kind: "modified",
+      from: 15,
+      to: 40,
+      old: "old row",
+      oldLine: 3,
+      atEnd: false,
+    },
+  ];
+  // hunkAt returns the earlier added row; the bar would show modified.
+  assert.equal(hunkAt(hunks, 10, 40)?.kind, "added");
+  assert.equal(peekTargetAt(hunks, 10, 40)?.kind, "modified");
+  assert.equal(peekTargetAt(hunks, 10, 14), undefined);
 });

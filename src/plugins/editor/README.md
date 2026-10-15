@@ -81,7 +81,7 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `host.ts`: panel registry, editor service and active-context registrations.
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
-- `associations.ts`: **Use Markdown Workbench for Markdown in This Workspace**.
+- `associations.ts`: **Use Markdown Workshop for Markdown in This Workspace**.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
 - `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
@@ -112,12 +112,12 @@ host through the editor channel. Core settings are `editor.useTabs` (true) and
 `editor.tabSize` (4, integer 1–16), under `markdownWorkbench`.
 
 Each panel kernel logs through the window's logger, tagged with the panel ID,
-to the **Markdown Workbench** output channel. The webview forwards its logs over
+to the **Markdown Workshop** output channel. The webview forwards its logs over
 the editor channel (`log`) at warn and above, and at debug too while
 `markdownWorkbench.debug.logging` (default false) is on; the host re-checks that
 setting before writing a forwarded debug line.
 
-**Use Markdown Workbench for Markdown in This Workspace** writes `*.md` and
+**Use Markdown Workshop for Markdown in This Workspace** writes `*.md` and
 `*.markdown` into the workspace's `workbench.editorAssociations`, keeping its
 other entries. The editor is otherwise only an option for Markdown (DESIGN
 §25.2), so it does not take over every README; this makes a workspace behave
@@ -125,9 +125,17 @@ like an Obsidian vault, where notes always open in the editor.
 
 `editor.reclaimTextEditor` (`auto`/`on`/`off`, auto meaning on in Cursor
 only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
-here that shows up in the plain text editor, as Cursor's **Preview |
-Markdown** switch does, is reopened in this editor and the text tab closed.
+here that shows up in the plain text or Cursor Markdown editor, as Cursor's
+**Preview | Markdown** switch does, is warmed and reopened in this editor.
+Clean text tabs are closed; dirty text tabs keep their native document and undo.
 **Open as Text** and a just-reclaimed note keep the text editor for 10 s.
+
+`editor.warmTextDocument` (`auto`/`on`/`off`, auto meaning on in Cursor) opens
+Markdown `TextDocument`s early: at activation for open notes, on document open,
+on file create/change and for git-dirty notes. Every extension-controlled
+`openWith` into this editor awaits another warm, even when Cursor's built-in
+editor already holds the dirty document. The workaround targets Cursor's
+custom-editor handoff assertion before `resolveCustomTextEditor` runs.
 
 ## Limits and differences from Obsidian
 

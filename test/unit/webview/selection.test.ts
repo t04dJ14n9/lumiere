@@ -41,3 +41,35 @@ test("the selection is a see-through accent tint: 33% on dark, 20% on light", ()
   );
   assert.doesNotMatch(base, /selectionBackground[^{]*\{\s*[^}]*opacity/);
 });
+
+test("Copy and Edit block actions share one row (top and typography)", () => {
+  const markdown = readFileSync(
+    path.join(root, "src/webview/styles/markdown.css"),
+    "utf8",
+  ).replace(/\s+/g, " ");
+  const code = readFileSync(
+    path.join(root, "src/plugins/codeBlocks/codeBlocks.css"),
+    "utf8",
+  ).replace(/\s+/g, " ");
+  const edit = /\.edit-block \{([^}]*)\}/.exec(markdown);
+  const copy = /\.copy-code \{([^}]*)\}/.exec(code);
+  assert.ok(edit, "edit-block rule");
+  assert.ok(copy, "copy-code rule");
+  assert.match(edit[1] ?? "", /top: 10px/);
+  assert.match(copy[1] ?? "", /top: 10px/);
+  assert.match(edit[1] ?? "", /font-size: 0\.6875em/);
+  assert.match(copy[1] ?? "", /font-size: 0\.6875em/);
+  assert.match(edit[1] ?? "", /line-height: 1\.6/);
+  assert.match(copy[1] ?? "", /line-height: 1\.6/);
+  assert.match(edit[1] ?? "", /right: 8px/);
+  assert.match(copy[1] ?? "", /right: 56px/);
+});
+
+test("Mermaid SVG labels opt into text selection", () => {
+  const css = readFileSync(
+    path.join(root, "src/plugins/diagrams/diagrams.css"),
+    "utf8",
+  );
+  assert.match(css, /user-select:\s*text/);
+  assert.match(css, /pre\[data-fence="mermaid"\] svg text/);
+});
