@@ -1,23 +1,43 @@
 import { syntaxTree } from "@codemirror/language";
 import { StateEffect, StateField } from "@codemirror/state";
 import type { EditorState, Extension } from "@codemirror/state";
-import { Decoration, EditorView, WidgetType, keymap } from "@codemirror/view";
+import { Decoration, EditorView, keymap } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import { alignBlocks, rowMarkdown } from "../../shared/diff";
-import type { RenderService } from "../render/api";
-import {
-  adoptPass,
-  endLifetime,
-  newLifetime,
-} from "../../shared/render-lifetime";
-import type { PassLifetime } from "../../shared/render-lifetime";
+import type { HunkRef } from "../../shared/git-diff";
 import type { DocHunk } from "./api";
-import { currentText, hunkAt, hunkField, revertChange } from "./hunks";
+import { hunkAt, hunkField, revertChange } from "./hunks";
+import { PeekWidget } from "./peek-widget";
+import type { PeekActions } from "./peek-widget";
 
-/** The open peek, as a document position inside its hunk. */
-export const setPeek = StateEffect.define<number | null>();
+export type { PeekActions };
 
-export const peekState = StateField.define<number | null>({
+/** An open peek: a document offset, optionally tied to a snapshot hunk. */
+export interface PeekOpen {
+  readonly at: number;
+  readonly ref: HunkRef;
+}
+
+export type PeekPosition = number | PeekOpen;
+
+export function peekAt(value: PeekPosition | null): number | null {
+  if (value === null) {
+    return null;
+  }
+  return typeof value === "number" ? value : value.at;
+}
+
+export function peekRef(value: PeekPosition | null): HunkRef | undefined {
+  if (value === null || typeof value === "number") {
+    return undefined;
+  }
+  return value.ref;
+}
+
+/** The open peek, as a document position inside its hunk (and its snapshot ref). */
+export const setPeek = StateEffect.define<PeekPosition | null>();
+
+export const peekState = StateField.define<PeekPosition | null>({
   create: () => null,
   update(value, tr) {
     for (const effect of tr.effects) {
@@ -25,64 +45,72 @@ export const peekState = StateField.define<number | null>({
         return effect.value;
       }
     }
-    return value === null ? null : tr.changes.mapPos(value, -1);
+    return value === null ? null : mapPeek(value, tr.changes);
   },
 });
 
-/** True when a hunk has an old side worth peeking (not pure additions). */
-export function canPeek(hunk: DocHunk): boolean {
-  return hunk.kind !== "added";
+function mapPeek(
+  value: PeekPosition,
+  changes: { mapPos(pos: number, assoc: number): number },
+): PeekPosition {
+  if (typeof value === "number") {
+    return changes.mapPos(value, -1);
+  }
+  return { ...value, at: changes.mapPos(value.at, -1) };
+}
+
+/** Every hunk can open a raw peek, including pure additions. */
+export function canPeek(_hunk: DocHunk): boolean {
+  return true;
+}
+
+const HUNK_RANK = { modified: 3, added: 2, deleted: 1 } as const;
+
+function hitsRange(hunk: DocHunk, from: number, to: number): boolean {
+  if (hunk.kind === "deleted") {
+    return (
+      hunk.from >= from &&
+      hunk.from <= to &&
+      (hunk.from < to || hunk.atEnd || from === to)
+    );
+  }
+  return hunk.from <= to && hunk.to >= from;
 }
 
 /**
- * Hunk to open for a gutter click spanning `from`..`to`. Prefers a peekable
- * (modified/deleted) hunk when a rendered block mixes kinds — `hunkAt` alone
- * can return an earlier added row while the bar shows modified.
+ * Hunk to open for a gutter click spanning `from`..`to`. Prefers the change the
+ * bar itself shows (modified over added over deleted) so a mixed block does
+ * not open an earlier added row.
  */
 export function peekTargetAt(
   hunks: readonly DocHunk[],
   from: number,
   to: number,
 ): DocHunk | undefined {
-  const hit = hunkAt(hunks, from, to);
-  if (hit && canPeek(hit)) {
-    return hit;
-  }
+  let best: DocHunk | undefined;
   for (const hunk of hunks) {
-    if (!canPeek(hunk)) {
+    if (!canPeek(hunk) || !hitsRange(hunk, from, to)) {
       continue;
     }
-    if (hunk.kind === "deleted") {
-      if (
-        hunk.from >= from &&
-        hunk.from <= to &&
-        (hunk.from < to || hunk.atEnd || from === to)
-      ) {
-        return hunk;
-      }
-    } else if (hunk.from <= to && hunk.to >= from) {
-      return hunk;
+    if (!best || HUNK_RANK[hunk.kind] > HUNK_RANK[best.kind]) {
+      best = hunk;
     }
   }
-  return undefined;
+  return best;
 }
 
-/** The hunk the peek shows, if it still exists and is peekable. */
+/** The hunk the peek shows, if it still exists. */
 export function peekedHunk(state: EditorState): DocHunk | undefined {
-  const at = state.field(peekState, false);
-  if (at === null || at === undefined) {
+  const stored = state.field(peekState, false);
+  if (stored === null || stored === undefined) {
+    return undefined;
+  }
+  const at = peekAt(stored);
+  if (at === null) {
     return undefined;
   }
   const hunk = hunkAt(state.field(hunkField).hunks, at, at);
   return hunk && canPeek(hunk) ? hunk : undefined;
-}
-
-export interface PeekActions {
-  render: RenderService;
-  label(): string;
-  move(view: EditorView, direction: 1 | -1): void;
-  revert(view: EditorView, hunk: DocHunk): void;
-  stage(): Promise<unknown>;
 }
 
 /** Old and new Markdown for each side of the peek, aligned by block. */
@@ -105,158 +133,8 @@ export interface PeekContext {
   readonly now: string;
 }
 
-interface PeekModel {
-  readonly hunk: DocHunk;
-  readonly current: string;
-  readonly context: PeekContext;
-  readonly index: number;
-  readonly total: number;
-  readonly line: number;
-}
-
 export { adoptPass, endLifetime } from "../../shared/render-lifetime";
 export type { PassLifetime as Lifetime } from "../../shared/render-lifetime";
-const lifetimes = new WeakMap<HTMLElement, PassLifetime>();
-const signals = new WeakMap<PassLifetime, AbortSignal>();
-
-class PeekWidget extends WidgetType {
-  readonly hunk: DocHunk;
-  readonly current: string;
-  readonly context: PeekContext;
-  readonly index: number;
-  readonly total: number;
-  readonly line: number;
-  constructor(
-    model: PeekModel,
-    private readonly actions: PeekActions,
-  ) {
-    super();
-    ({
-      hunk: this.hunk,
-      current: this.current,
-      context: this.context,
-      index: this.index,
-      total: this.total,
-      line: this.line,
-    } = model);
-  }
-  override eq(other: PeekWidget): boolean {
-    return (
-      other.hunk.from === this.hunk.from &&
-      other.hunk.to === this.hunk.to &&
-      other.hunk.old === this.hunk.old &&
-      other.hunk.kind === this.hunk.kind &&
-      other.current === this.current &&
-      other.context.old === this.context.old &&
-      other.context.now === this.context.now &&
-      other.index === this.index &&
-      other.total === this.total &&
-      other.line === this.line
-    );
-  }
-  override toDOM(view: EditorView): HTMLElement {
-    const root = document.createElement("div");
-    root.className = `mw-git-peek mw-git-peek-${this.hunk.kind}`;
-    root.setAttribute("role", "region");
-    root.setAttribute("aria-label", "Git change");
-    const abort = new AbortController();
-    const lifetime = newLifetime(undefined, () => abort.abort());
-    signals.set(lifetime, abort.signal);
-    lifetimes.set(root, lifetime);
-    root.append(this.header(view), this.body(view, lifetime));
-    return root;
-  }
-  private header(view: EditorView): HTMLElement {
-    const head = document.createElement("div");
-    head.className = "mw-git-peek-head";
-    const title = head.appendChild(document.createElement("span"));
-    title.className = "mw-git-peek-title";
-    title.textContent = `Line ${this.line} · ${this.hunk.kind}`;
-    const detail = head.appendChild(document.createElement("span"));
-    detail.className = "mw-git-peek-detail";
-    detail.textContent = `${this.index + 1} of ${this.total} changes · vs ${this.actions.label()}`;
-    head.appendChild(document.createElement("span")).className =
-      "mw-git-peek-space";
-    const button = (
-      label: string,
-      text: string,
-      run: () => void,
-      primary = false,
-    ) => {
-      const element = head.appendChild(document.createElement("button"));
-      element.type = "button";
-      element.className = `mw-git-peek-button${primary ? " is-primary" : ""}`;
-      element.title = label;
-      element.setAttribute("aria-label", label);
-      element.textContent = text;
-      element.addEventListener("mousedown", (event) => event.preventDefault());
-      element.addEventListener("click", (event) => {
-        event.preventDefault();
-        run();
-      });
-    };
-    button("Previous change", "↑", () => this.actions.move(view, -1));
-    button("Next change", "↓", () => this.actions.move(view, 1));
-    button("Revert this change", "Revert", () =>
-      this.actions.revert(view, this.hunk),
-    );
-    button("Stage the file", "Stage File", () => {
-      void this.actions.stage().catch(() => undefined);
-    });
-    button("Close", "✕", () => view.dispatch({ effects: setPeek.of(null) }));
-    return head;
-  }
-  private body(view: EditorView, lifetime: PassLifetime): HTMLElement {
-    const body = document.createElement("div");
-    body.className = "mw-git-peek-body";
-    const { before, after } = peekMarkdown(this.context.old, this.context.now);
-    const side = (label: string, source: string, cls: string) => {
-      const pane = body.appendChild(document.createElement("div"));
-      pane.className = `mw-git-peek-side ${cls}`;
-      const caption = pane.appendChild(document.createElement("div"));
-      caption.className = "mw-git-peek-caption";
-      caption.textContent = label;
-      const content = pane.appendChild(document.createElement("div"));
-      const pending = this.actions.render.into(content, source, {
-        signal: signals.get(lifetime)!,
-        readOnly: true,
-        measure: () => {
-          if (lifetime.live) {
-            view.requestMeasure();
-          }
-        },
-      });
-      void adoptPass(lifetime, pending)
-        .then((kept) => {
-          if (kept && lifetime.live) {
-            view.requestMeasure();
-          }
-        })
-        .catch(() => {
-          if (lifetime.live) {
-            content.textContent = source;
-          }
-        });
-    };
-    if (this.hunk.kind !== "added") {
-      side(this.actions.label(), before, "is-before");
-    }
-    if (this.hunk.kind !== "deleted") {
-      side("Working tree", after, "is-after");
-    }
-    return body;
-  }
-  override destroy(dom: HTMLElement): void {
-    const lifetime = lifetimes.get(dom);
-    if (!lifetime) {
-      return;
-    }
-    endLifetime(lifetime);
-  }
-  override ignoreEvent(): boolean {
-    return true;
-  }
-}
 
 /** The top-level Markdown blocks (and frontmatter) a range touches. */
 export function outerBlock(
@@ -344,8 +222,6 @@ function buildPeek(state: EditorState, actions: PeekActions): DecorationSet {
   const widget = new PeekWidget(
     {
       hunk,
-      current: currentText(state, hunk),
-      context: peekContext(state, hunk),
       index: hunks.indexOf(hunk),
       total: hunks.length,
       line:

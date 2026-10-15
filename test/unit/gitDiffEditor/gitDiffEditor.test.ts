@@ -5,6 +5,11 @@ import {
   gitDiffEditorHost,
   sideLabel,
 } from "../../../src/plugins/gitDiffEditor/host";
+import {
+  describedComparison,
+  titledComparison,
+  urisForSides,
+} from "../../../src/plugins/gitDiffEditor/comparison";
 import { alignBlocks, rowMarkdown } from "../../../src/shared/diff";
 import { createRenderer } from "../../../src/markdown/html";
 import { definitions, diffRows } from "../../../src/webview/diff/rows";
@@ -26,6 +31,25 @@ test("sideLabel names each side of a git diff", () => {
   assert.equal(sideLabel(gitUri("~")), "Index");
   assert.equal(sideLabel(gitUri("a".repeat(40))), "aaaaaaa");
   assert.equal(sideLabel("git:/n.md?not-json"), "Git");
+});
+
+test("SCM uris become structured sides and Open Full Diff keeps them", () => {
+  const described = describedComparison(gitUri("HEAD"), "file:///n.md");
+  assert.equal(described.base.kind, "HEAD");
+  assert.equal(described.target.kind, "WORKTREE");
+  assert.equal(described.sourceState.worktreeBytes, undefined);
+  assert.equal(
+    titledComparison("n.md", "HEAD", "Working tree"),
+    "n.md (HEAD → Working tree)",
+  );
+  const uris = urisForSides(
+    "file:///n.md",
+    { kind: "INDEX", fingerprint: "i" },
+    { kind: "WORKTREE" },
+    (uri, ref) => `git:${ref}:${uri}`,
+  );
+  assert.equal(uris?.original, "git:~:file:///n.md");
+  assert.equal(uris?.modified, "file:///n.md");
 });
 
 test("rowMarkdown keeps an unchanged frontmatter visible as lines", () => {

@@ -1,8 +1,11 @@
 import { prepareResources } from "./resources";
 import type {} from "../resources/api";
+import type {} from "../gitGutter/api";
 import type { Context, Plugin } from "../../kernel";
 import type { DiffPanel, DiffSide, OpenedDiff } from "../../shared/git";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { describedComparison, titledComparison } from "./comparison";
+import { openFullDiff } from "./open-snapshot";
 
 /** What a rendered diff compares: two URIs, the left one read-only. */
 interface Comparison {
@@ -86,6 +89,16 @@ export const gitDiffEditorHost: Plugin = {
         },
       ],
     );
+    ctx.on("git-diff:open-full", (request) => {
+      void openFullDiff({
+        ctx,
+        life,
+        request,
+        prepare: (comparison) => prepare(ctx, life, comparison),
+        present: (comparison, prepared) =>
+          present(ctx, life, comparison, prepared),
+      });
+    });
     ctx.effect(() =>
       diffViews.onDidOpenDiff((diff) => {
         if (
@@ -279,8 +292,18 @@ async function prepare(
   }
 }
 
-const title = (comparison: Comparison, sides: Prepared) =>
-  `${fileName(comparison.modified)} (${sides.left.label} ↔ ${sides.right.label})`;
+const title = (comparison: Comparison, sides: Prepared) => {
+  // Structured sides travel with the panel; human labels stay on the title.
+  const described = describedComparison(
+    comparison.original,
+    comparison.modified,
+  );
+  return titledComparison(
+    fileName(comparison.modified),
+    sides.left.label || described.base.kind,
+    sides.right.label || described.target.kind,
+  );
+};
 
 /** Show the panel and keep both sides current until it or the plugin ends. */
 function present(

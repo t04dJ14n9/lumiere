@@ -1,6 +1,6 @@
 /**
  * Git change bars in the real editor, against VS Code's own git extension:
- * bars from HEAD, the rendered peek with Revert and Stage, a commit clearing
+ * bars from HEAD, the raw peek with Revert, a commit clearing
  * the bars, and turning the plugin off.
  */
 import { test, expect, chromium } from "@playwright/test";
@@ -63,7 +63,7 @@ test("git change bars: HEAD diff, rendered peek, revert, stage, commit, off", as
       await frame.locator(".mw-git-bar-modified").nth(1).click();
       await expect(frame.locator(".mw-git-peek")).toBeVisible();
       await expect(
-        frame.locator(".mw-git-peek ins.mw-gd-ins").first(),
+        frame.locator(".mw-git-peek-line.is-add").first(),
       ).toBeVisible();
       await shoot(page, `peek-${theme}`);
       await frame.getByRole("button", { name: "Close" }).click();
@@ -80,12 +80,12 @@ test("git change bars: HEAD diff, rendered peek, revert, stage, commit, off", as
       .toContain("shown as a percentage. Report it monthly.");
     await expect.poll(() => kinds(frame)).toHaveLength(7);
 
-    // Stage File stages through the git extension.
+    // Hunk Stage stays disabled: there is no hunk-scoped stage backend.
     await frame.locator(".mw-git-bar-modified").first().click();
-    await frame.getByRole("button", { name: "Stage the file" }).click();
-    await expect
-      .poll(stagedNames, { timeout: 20000 })
-      .toContain("Gross margin.md");
+    await expect(
+      frame.getByRole("button", { name: "Stage this change" }),
+    ).toBeDisabled();
+    expect(stagedNames()).not.toContain("Gross margin.md");
 
     // A commit outside the editor clears the bars.
     commitAll();

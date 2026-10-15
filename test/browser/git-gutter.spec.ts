@@ -1,6 +1,6 @@
 /**
  * Git change bars against a baseline the fake host serves as the git
- * extension would: one bar per rendered block, a rendered peek with revert,
+ * extension would: one bar per rendered block, a raw unified peek with revert,
  * and next/previous change.
  */
 import { test, expect } from "@playwright/test";
@@ -48,18 +48,14 @@ test("clicking a bar opens a rendered peek; Revert restores the text as one undo
   await page.locator(".mw-git-bar-modified").first().click();
   const peek = page.locator(".mw-git-peek");
   await expect(peek).toBeVisible();
-  await expect(peek.locator("del.mw-gd-del")).toHaveText([
-    "shown",
-    "percentage",
-    "monthly",
-  ]);
-  await expect(peek.locator("ins.mw-gd-ins")).toHaveText([
-    "expressed",
-    "ratio",
-    "per region",
-  ]);
+  await expect(peek.locator(".mw-git-peek-line.is-delete")).toContainText(
+    "shown as a percentage",
+  );
+  await expect(peek.locator(".mw-git-peek-line.is-add")).toContainText(
+    "expressed as a ratio",
+  );
   await expect(peek.locator(".mw-git-peek-detail")).toContainText(
-    "1 of 5 changes · vs HEAD (abc1234)",
+    "1 of 5 · HEAD (abc1234) → Working tree",
   );
   await peek.getByRole("button", { name: "Next change" }).click();
   await expect(peek.locator(".mw-git-peek-title")).toHaveText(
@@ -85,8 +81,9 @@ test("a removed paragraph peeks the old text only, and Escape closes the peek", 
   await expect.poll(() => bars(page)).toHaveLength(6);
   await page.locator(".mw-git-bar-deleted").click();
   const peek = page.locator(".mw-git-peek");
-  await expect(peek.locator(".mw-git-peek-side")).toHaveCount(1);
-  await expect(peek).toContainText("Margins below 20% must be escalated.");
+  await expect(
+    peek.locator(".mw-git-peek-line.is-delete").first(),
+  ).toContainText("Margins below 20% must be escalated.");
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
   await page.keyboard.press("Escape");
   await expect(peek).toHaveCount(0);
@@ -110,8 +107,10 @@ test("next and previous change move the caret and wrap around", async ({
   await expect.poll(line).toBe(3);
   await page.evaluate(() => window.harness.run("editor:git-previous-change"));
   await expect.poll(line).toBe(14);
-  // Line 14 is a pure addition — Show Git Change must not open a Working Tree peek.
+  // Line 14 is a pure addition — Show Git Change opens the raw peek.
   await page.evaluate(() => window.harness.run("editor:git-show-change"));
+  await expect(page.locator(".mw-git-peek")).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(page.locator(".mw-git-peek")).toHaveCount(0);
   await page.locator(".mw-git-bar-modified").first().click();
   await expect(page.locator(".mw-git-peek")).toBeVisible();
@@ -167,15 +166,18 @@ test("B1: after an edit above, Revert in an open peek reverts its own lines, bef
   }
 });
 
-test("B2: added bars stay visible but never open a Working Tree peek", async ({
-  page,
-}) => {
+test("B2: added bars open a raw unified peek", async ({ page }) => {
   await open(page, "a\nnew\nz", "obsidian", { gitBaseline: "a\nz" });
   await expect.poll(() => bars(page)).toEqual(["added"]);
   const added = page.locator(".mw-git-bar-added");
   await expect(added).toHaveAttribute("title", "added");
   await added.click();
-  await expect(page.locator(".mw-git-peek")).toHaveCount(0);
+  const peek = page.locator(".mw-git-peek");
+  await expect(peek).toBeVisible();
+  await expect(peek.locator(".mw-git-peek-line.is-add")).toContainText("new");
+  await expect(
+    peek.getByRole("button", { name: "Stage this change" }),
+  ).toBeDisabled();
 });
 
 test("B2b: Revert on a modified change that was just undone by hand leaves the text alone", async ({
@@ -217,27 +219,29 @@ test("B5: either side past the line limit shows no bars; back under it, they ret
   await expect.poll(() => bars(page)).toEqual(["modified"]);
 });
 
-test("N1, N6: the peek renders the table it changes, with no vertical margins", async ({
+test("N1, N6: the peek shows the changed table as raw lines, with no vertical margins", async ({
   page,
 }) => {
   await open(page, NOW, "obsidian", { gitBaseline: BASE });
   await expect.poll(() => bars(page)).toHaveLength(6);
   await page.locator(".mw-git-bar-modified").nth(1).click();
   const peek = page.locator(".mw-git-peek");
-  await expect(peek.locator(".is-before table")).toHaveCount(1);
-  await expect(peek.locator(".is-after table")).toHaveCount(1);
-  await expect(peek.locator(".is-after table th").first()).toHaveText("Region");
+  await expect(peek.locator(".mw-git-peek-line.is-delete")).toContainText(
+    "26%",
+  );
+  await expect(peek.locator(".mw-git-peek-line.is-add")).toContainText("29%");
+  await expect(peek.locator("table")).toHaveCount(0);
   await expect(peek).toHaveCSS("margin-top", "0px");
   await expect(peek).toHaveCSS("margin-bottom", "0px");
 });
 
-test("R2-B1: added bars do not open peek; held-revert races stay unit-covered", async ({
+test("R2-B1: added bars open a raw peek; held-revert races stay unit-covered", async ({
   page,
 }) => {
   await open(page, "X\nA\nY", "obsidian", { gitBaseline: "A" });
   await expect.poll(() => bars(page)).toContain("added");
   await page.locator(".mw-git-bar-added").last().click();
-  await expect(page.locator(".mw-git-peek")).toHaveCount(0);
+  await expect(page.locator(".mw-git-peek")).toBeVisible();
   await expect(page.locator(".mw-git-bar-added").last()).toHaveAttribute(
     "title",
     "added",
