@@ -172,18 +172,29 @@
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='black' stroke-width='1.4'%3E%3Cpath d='M5 2H2v8h8V7M7 1.5h3.5V5M10.5 1.5 5.5 6.5'/%3E%3C/svg%3E")
     center / contain no-repeat;
 }
+/*
+ * Continuous underline across nested inline code chips. text-decoration only
+ * paints under glyphs, so .md-inline-code's horizontal padding punched gaps in
+ * the old line; border-bottom follows the whole anchor box instead.
+ */
 .md-link,
 .markdown-rendered a {
   color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  text-underline-offset: 2px;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   cursor: pointer;
 }
 .md-link:hover,
 .markdown-rendered a:hover {
   color: var(--accent-hover);
-  text-decoration-color: currentColor;
+  border-bottom-color: currentColor;
+}
+/* Keep opaque chip backgrounds inside the link's underline. Horizontal
+ * padding and rounded backgrounds still give linked code its chip shape. */
+.md-link .md-inline-code,
+.markdown-rendered a > code,
+.markdown-rendered a :not(pre) > code {
+  padding-block: 0;
 }
 /*
  * Lists: each level is one --list-indent step with a faint guide under the

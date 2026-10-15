@@ -2,5 +2,5 @@
 .md-link-rendered.is-unresolved,
 .markdown-rendered a.is-unresolved {
   opacity: 0.7;
-  text-decoration-style: dotted;
+  border-bottom-style: dotted;
 }
