@@ -10,14 +10,17 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-15-git-diff-vscode-ux-design.md` @ `76a21bc` (APPROVED; ChatGPT R4 @ `/workspace/plans/chatgpt-git-diff-ux-r4/ANSWER.md`)
 
+**Plan revision:** folds ChatGPT implementation-plan REQUEST CHANGES (`/workspace/plans/chatgpt-git-diff-plan/ANSWER.md`) — (B1) Stage/Unstage execute must be **hunk-scoped exact** (never whole-file `git.stage` after the exact-hunk gate); (B2) R4 fail-closed when a WORKTREE-backed snapshot lacks `worktreeBytes`; (B3) remove dirty-buffer “save then rebuild as disk and Stage” escape hatch — dirty ⇒ disable/ABORT Stage unless backend can stage the exact in-memory hunk.
+
 ## Global Constraints
 
 - Keep our viewer; **no** Monaco / VS Code DiffEditor source port.
 - Shared language = data model, navigation vocabulary, actions, visual tokens — **not** identical full-file rendering.
 - Comparison-side `originalRange`/`modifiedRange` always present; `liveAnchor`/`liveDocumentUri` optional (WORKTREE-backed only).
 - Mutations: **exact** fingerprint + matching `sourceState` (incl. `worktreeBytes`) or **ABORT**. Passive UI may nearest-rematch. Never nearest-retarget Stage/Unstage/Revert.
-- Dirty buffer vs disk: Stage/Revert **disabled/aborted** unless backend can mutate those exact in-memory bytes.
+- Dirty buffer vs disk: Stage/Revert **disabled/aborted** unless backend can mutate those exact in-memory bytes. Stage must **not** auto-save / reclassify as disk merely to pass the gate.
 - Per-file single-flight mutation pending — not a general SCM transaction layer.
+- Stage/Unstage of a selected hunk must apply an **exact hunk-scoped** patch/backend. Passing the exact-`hunkId` + `sourceState` gate does **not** authorize whole-file `git.stage` / `saveAndStage`. If no hunk-scoped backend exists, keep Stage/Unstage **disabled** (ABORT if invoked).
 - Ship behind existing plugin toggles; do **not** force-enable `gitInline`.
 - Preserve `diffEditor` setting `native` | `rendered`; do not remove `native`.
 - Prefer restyle + shared API over new editor architecture.
@@ -597,6 +600,33 @@ test("overlapping Stage is single-flight", async () => {
   assert.equal(started, 1);
 });
 
+test("WORKTREE snapshot missing worktreeBytes → Stage/Revert abort (R4 fail-closed)", async () => {
+  const gate = createMutationGate();
+  const missingWt: SourceState = {
+    baseOidOrFingerprint: "idx",
+    targetOidOrFingerprint: "wt-unknown",
+    // deliberately omit worktreeBytes
+  };
+  const intent: ActionIntent = {
+    generationId: "g1",
+    hunkId: "h1",
+    sourceState: missingWt,
+    action: "stage",
+  };
+  const snap = makeSnap(missingWt); // base INDEX, target WORKTREE
+  const result = await gate.run(fileKey, intent, {
+    readSnapshot: async () => snap,
+    readAuthoritativeSourceState: async () => missingWt,
+    backendWouldUseDiskBytes: true,
+    canApplyExactBufferHunk: false,
+    execute: async () => {
+      throw new Error("must not execute");
+    },
+  });
+  assert.equal(result.status, "aborted");
+  assert.match(result.reason ?? "", /worktreeBytes/i);
+});
+
 test("disk-backed WORKTREE fingerprint mismatch aborts", async () => {
   const gate = createMutationGate();
   const diskState: SourceState = {
@@ -635,7 +665,7 @@ pnpm exec tsx --test test/unit/git-diff/mutate.test.ts
 ```ts
 // src/shared/git-diff/mutate.ts
 import { resolveExactHunk, sourceStateEquals } from "./resolve";
-import type { ActionIntent, DiffSnapshot, SourceState } from "./types";
+import type { ActionIntent, DiffHunk, DiffSnapshot, SourceState } from "./types";
 
 export type MutationResult =
   | { readonly status: "ok" }
@@ -650,23 +680,40 @@ export interface MutationDeps {
   backendWouldUseDiskBytes: boolean;
   /** True when backend can apply the exact in-memory hunk / buffer content. */
   canApplyExactBufferHunk: boolean;
-  execute: () => Promise<{ ok: boolean }>;
+  /**
+   * Must mutate **only** the gate-validated hunk (exact patch / hunk-scoped API).
+   * Must **not** call whole-file `git.stage` / `saveAndStage`.
+   */
+  execute: (hunk: DiffHunk, snapshot: DiffSnapshot) => Promise<{ ok: boolean }>;
 }
 
 export function mutationsAllowedForWorktree(
   intentState: SourceState,
   authState: SourceState,
+  snapshot: DiffSnapshot,
   deps: Pick<MutationDeps, "backendWouldUseDiskBytes" | "canApplyExactBufferHunk">,
 ): { ok: true } | { ok: false; reason: string } {
   if (!sourceStateEquals(intentState, authState)) {
     return { ok: false, reason: "sourceState mismatch" };
   }
+  const worktreeBacked =
+    snapshot.base.kind === "WORKTREE" || snapshot.target.kind === "WORKTREE";
   const wt = intentState.worktreeBytes;
-  if (!wt) return { ok: true };
+  // R4 fail-closed: WORKTREE comparison side requires authoritative worktreeBytes.
+  if (worktreeBacked && !wt) {
+    return { ok: false, reason: "WORKTREE side missing worktreeBytes" };
+  }
+  if (!wt) return { ok: true }; // neither side is WORKTREE
   if (wt.origin === "document" && deps.backendWouldUseDiskBytes && !deps.canApplyExactBufferHunk) {
     return {
       ok: false,
       reason: "worktreeBytes document vs disk backend mismatch",
+    };
+  }
+  if (wt.origin === "document" && wt.isDirty && deps.backendWouldUseDiskBytes && !deps.canApplyExactBufferHunk) {
+    return {
+      ok: false,
+      reason: "dirty document buffer; no exact in-memory hunk backend",
     };
   }
   return { ok: true };
@@ -687,9 +734,9 @@ export function createMutationGate() {
       pending.add(fileKey);
       try {
         const auth = await deps.readAuthoritativeSourceState();
-        const allowed = mutationsAllowedForWorktree(intent.sourceState, auth, deps);
-        if (!allowed.ok) return { status: "aborted", reason: allowed.reason };
         const snapshot = await deps.readSnapshot();
+        const allowed = mutationsAllowedForWorktree(intent.sourceState, auth, snapshot, deps);
+        if (!allowed.ok) return { status: "aborted", reason: allowed.reason };
         if (snapshot.generationId !== intent.generationId) {
           return { status: "aborted", reason: "generation mismatch" };
         }
@@ -711,7 +758,8 @@ export function createMutationGate() {
         if (intent.action === "revert" && !hunk.capabilities.canRevert) {
           return { status: "aborted", reason: "cannot revert" };
         }
-        const executed = await deps.execute();
+        // Pass the validated hunk — execute must not widen to whole-file stage.
+        const executed = await deps.execute(hunk, snapshot);
         return executed.ok ? { status: "ok" } : { status: "aborted", reason: "execute failed" };
       } catch (error) {
         return { status: "error", error };
@@ -893,40 +941,55 @@ git commit -m "feat(gitGutter): raw unified peek via shared openHunk (mutations 
 **Files:**
 - Modify: `src/plugins/gitGutter/webview.ts`, `host.ts`, `protocol.ts`
 - Modify: peek header actions to call `createMutationGate().run(...)`
+- Modify / extend host git helpers **only** if a hunk-scoped stage/unstage API can be wired; otherwise leave Stage/Unstage disabled
 - Test: extend `test/unit/git-diff/mutate.test.ts` + gutter tests for “nearest UI rematch does not retarget Stage”
 
-**Interfaces:**
-- Today's host `saveAndStage` (save then `git.stage` whole file) is **whole-file** and disk-backed after save — for dirty divergent buffers, **keep Stage disabled** until a path can stage the exact buffer hunk OR the document is saved **and** `worktreeBytes` revalidated as disk with matching fingerprint after save.
-- Hunk-level Revert already edits the buffer via `revertChange` — route through gate with `backendWouldUseDiskBytes: false`, `canApplyExactBufferHunk: true`.
-- Unstage: only when comparison is HEAD→INDEX and capabilities allow (may be follow-up if host lacks unstage API — disable rather than fake).
+**Interfaces / mutation contract (locked):**
+- **Exact hunk only.** `deps.execute(hunk, snapshot)` must apply a patch derived from the gate-validated `DiffHunk` (exact cached patch / hunk-scoped backend). It must **never** call whole-file `git.stage`, `saveAndStage`, or any API that stages the entire file after the exact-`hunkId` gate has passed.
+- Today's host `saveAndStage` / `git.stage` are **whole-file** — they are **not** valid implementations of the hunk Stage button. If no hunk-scoped backend exists yet, set `capabilities.canStage` / UI enablement false and keep the action disabled (gate ABORTs if somehow invoked).
+- **Dirty buffer:** when `worktreeBytes.origin === "document" && isDirty`, Stage/Revert stay **disabled/ABORT** unless `canApplyExactBufferHunk` is true for an in-memory operand. Do **not** auto-save, rebuild the snapshot as disk, then Stage inside the Stage command. A later independent user save may produce a new disk-backed snapshot naturally; Stage itself must not manufacture that transition.
+- Hunk-level Revert already edits the buffer via `revertChange` — route through gate with `backendWouldUseDiskBytes: false`, `canApplyExactBufferHunk: true`, and pass the validated hunk into execute.
+- Unstage: only when comparison is HEAD→INDEX and a **hunk-scoped** unstage backend exists; otherwise disable rather than fake with whole-file unstage.
 
 - [ ] **Step 1: Centralize action entry**
 
 ```ts
 async function onStage(intent: ActionIntent) {
-  const result = await mutationGate.run(fileKey, intent, depsForStage);
+  const result = await mutationGate.run(fileKey, intent, {
+    ...depsForStage,
+    execute: async (hunk, snapshot) => {
+      // MUST be hunk-scoped. Forbidden: git.stage(uri) / saveAndStage whole file.
+      return applyExactHunkStage(hunk, snapshot);
+    },
+  });
   if (result.status !== "ok") {
-    refreshSnapshot(); // passive rematch
+    refreshSnapshot(); // passive rematch only — does not retarget ActionIntent
     report(result.status === "aborted" ? result.reason : "stage failed");
   }
 }
 ```
 
-Handlers must **not** call `git.stage` / revert except via `deps.execute` inside the gate.
+Handlers must **not** call `git.stage` / revert except via `deps.execute` inside the gate, and that execute must stay hunk-scoped.
 
-- [ ] **Step 2: Disable Stage when `worktreeBytes.origin === 'document' && isDirty` and execute would save+stage disk** unless you first save, rebuild snapshot from disk bytes, and only then stage with matching disk `worktreeBytes`.
+- [ ] **Step 2: Dirty / missing-backend disablement (no save-escape)**
+
+- If `worktreeBytes` is missing on a WORKTREE-backed snapshot → disable Stage **and** Revert (R4).
+- If `worktreeBytes.origin === "document" && isDirty` and no exact in-memory hunk backend → **disable** Stage (and Revert if it would touch disk). Do **not** offer “save then rebuild as disk and Stage” inside the Stage path.
+- If only whole-file `git.stage` exists → **disable** Stage regardless of clean/dirty; exact-hunk gate alone is insufficient.
 
 - [ ] **Step 3: Regression — nearest rematch then Stage aborts**
 
 Simulate: open hunk A; refresh replaces with nearest B (new generation); fire Stage with **old** intent → `aborted` / `hunk disappeared` / generation mismatch. Must not stage B.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Regression — exact gate must not widen to whole-file stage**
+
+Unit/integration: after exact `hunkId` + `sourceState` validation, assert `execute` receives that hunk and that the host staging helper is the hunk-scoped path (spy: whole-file `git.stage` / `saveAndStage` **not** called).
+
+- [ ] **Step 5: Commit**
 
 ```bash
-git commit -am "feat(gitGutter): Stage/Revert via shared mutation gate"
+git commit -am "feat(gitGutter): Stage/Revert via shared mutation gate (hunk-scoped)"
 ```
-
----
 
 ### Task 7: gitInline thin adapter (B5 precedence)
 
@@ -997,7 +1060,9 @@ git commit -am "feat(gitDiffEditor): shared hunk vocabulary and snapshot-sided O
 | Stale / mismatched `sourceState` | mutation abort |
 | Nearest UI rematch | does **not** retarget Stage/Revert |
 | Overlapping Stage | single-flight (`busy`) |
-| Dirty TextDocument + disk divergence | Stage disabled/aborted |
+| Dirty TextDocument + disk divergence | Stage disabled/aborted (no auto-save escape) |
+| WORKTREE snapshot without `worktreeBytes` | Stage **and** Revert disabled/ABORT |
+| Exact hunk gate + Stage | stages **only** that hunk — never whole-file `git.stage` |
 | Inline click | does not steal link/checkbox/selection |
 
 - [ ] **Step 2: Run**
@@ -1020,6 +1085,7 @@ git commit -am "test(git-diff): acceptance for peek, gate, and inline precedence
 - [ ] Shared layer exists with `fileUri` identity + `sourceState.worktreeBytes`
 - [ ] Exact vs nearest split enforced; mutations never nearest-fallback
 - [ ] Per-file single-flight gate; centralized validation
+- [ ] Stage/Unstage hunk-scoped only (no whole-file `git.stage` after exact gate); dirty → disable unless exact buffer hunk backend; WORKTREE without `worktreeBytes` fail-closed
 - [ ] Raw unified peek; pure adds open
 - [ ] `gitInline` thin adapter with B5 precedence
 - [ ] `gitDiffEditor` aligned; `native` preserved
@@ -1028,6 +1094,6 @@ git commit -am "test(git-diff): acceptance for peek, gate, and inline precedence
 
 ## Self-review (author)
 
-1. **Spec coverage:** Tasks 1–4 = build-order step 1; Task 5–6 = gitGutter peek + mutations; Task 7 = gitInline; Task 8 = gitDiffEditor; Task 9 = acceptance/tokens. R1–R4 and B1–B6 mapped.
-2. **Placeholders:** none intentional — host unstage API gap is explicitly “disable rather than fake”.
-3. **Type consistency:** `DiffSnapshot` / `DiffHunk` / `HunkRef` / `ActionIntent` / `WorktreeBytes` / `createMutationGate` used throughout.
+1. **Spec coverage:** Tasks 1–4 = build-order step 1; Task 5–6 = gitGutter peek + mutations; Task 7 = gitInline; Task 8 = gitDiffEditor; Task 9 = acceptance/tokens. R1–R4 and B1–B6 mapped. Plan REQUEST CHANGES B1–B3 folded (hunk-scoped Stage, R4 missing-`worktreeBytes` fail-closed, no dirty save-escape).
+2. **Placeholders:** none intentional — missing hunk-scoped stage/unstage backend is explicitly “disable rather than fake with whole-file `git.stage`”.
+3. **Type consistency:** `DiffSnapshot` / `DiffHunk` / `HunkRef` / `ActionIntent` / `WorktreeBytes` / `createMutationGate` used throughout; `execute(hunk, snapshot)` carries the validated hunk.
