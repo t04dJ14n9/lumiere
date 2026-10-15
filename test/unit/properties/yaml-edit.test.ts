@@ -304,3 +304,35 @@ test("YAML drafts reject colliding YAML mapping keys that collapse in JS", () =>
   assert.equal(propertyYamlInput('1: first\n"1": second'), undefined);
   assert.deepEqual(propertyYamlInput("a: 1\nb: 2"), { a: 1, b: 2 });
 });
+
+for (const [scalar, value] of [
+  [".nan", NaN],
+  [".inf", Infinity],
+  ["-.inf", -Infinity],
+] as const) {
+  test(`structured paste preserves an external alias to ${scalar}`, () => {
+    const source = `---\n# Keep the header comment\nlist: [&n ${scalar}]\nmirror: *n # Keep the alias comment\nuntouched: '01'\n---\nBody\n`;
+    const next = edit(source, { type: "merge", values: { list: [1] } });
+    assert.deepEqual(frontmatter(next)?.values, {
+      list: [value, 1],
+      mirror: value,
+      untouched: "01",
+    });
+    assert.equal(
+      next,
+      `---\n# Keep the header comment\nlist: [${scalar}, 1]\nmirror: ${scalar} # Keep the alias comment\nuntouched: '01'\n---\nBody\n`,
+    );
+  });
+}
+
+test("structured paste preserves YAML-only numbers and multiline strings inside aliased collections", () => {
+  const note = "first".repeat(10) + "\nsecond";
+  const prior = { nan: NaN, limits: [Infinity, -Infinity], note };
+  const source = `---\nlist: [&n {nan: .nan, limits: [.inf, -.inf], note: ${JSON.stringify(note)}}]\nmirror:\n  nested: [*n] # Keep the nested comment\n---\nBody\n`;
+  const next = edit(source, { type: "merge", values: { list: [1] } });
+  assert.deepEqual(frontmatter(next)?.values, {
+    list: [prior, 1],
+    mirror: { nested: [prior] },
+  });
+  assert.ok(next.endsWith(" # Keep the nested comment\n---\nBody\n"));
+});

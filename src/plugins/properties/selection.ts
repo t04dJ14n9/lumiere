@@ -174,6 +174,8 @@ export class PropertySelection {
     rows.forEach((row) => this.selected.add(row.dataset.propertyRow!));
     rows[0]!.focus({ preventScroll: true });
     this.sync();
+    // Explicit row actions must copy whole properties, even with text selected.
+    this.panel.ownerDocument.getSelection()?.removeAllRanges();
     // The native copy event supplies both YAML and structured properties.
     return this.panel.ownerDocument.execCommand("copy");
   }

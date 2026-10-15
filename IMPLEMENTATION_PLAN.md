@@ -3827,3 +3827,30 @@ Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts
 `generated` / `sources`, invalid YAML rejection, concurrent draft conflicts,
 quoted ids, and alias-safe nested/reused/descendant sets. `pnpm check` green.
 
+## Codex r12 Properties review fixes — 2026-10-15
+
+Explicit row Copy/Cut clears the DOM text selection before requesting the copy
+event, so menu cuts write the complete YAML and structured property payload
+before removal. Native copying of selected Sources ids and other row text keeps
+its existing bypass. Alias materialization now uses flow YAML with JSON-quoted
+strings, preserving `.nan`, `.inf` and `-.inf` even inside collections without
+introducing multiline inserts or anchors. Anchor targets are indexed by node in
+a Map; each external alias resolves once before lookup, including reused anchor
+names.
+
+Nine new unit regressions cover row Copy/Cut with selected id text, native
+Copy/Cut, the three non-finite scalars during structured paste, nested aliased
+collections with multiline strings, and one resolution per alias across many
+targets. Existing minimal YAML edits, unrelated comments/keys, invalid drafts
+and field conflict tests remain passing.
+
+Validation: Prettier, ESLint, all seven TypeScript projects and contributions
+check pass. Direct `node --import tsx <test-file>` runs pass 121 tests across 25
+Properties/YAML/Sources files (including ported property editing/order tests).
+A 7,579-byte header with 200 descendant anchors and 200 external aliases took
+109.04 ms in `propertyChanges`; all 201 edits and every mirror value were checked.
+
+Focused Properties/YAML/Sources unit tests pass (109). Broader `pnpm check`
+may hit sandbox `tsx` IPC `EPERM` in some environments; use
+`node --import tsx --test …` as the fallback. Browser/native suites not re-run
+for this review fix.

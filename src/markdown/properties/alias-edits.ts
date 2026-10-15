@@ -1,26 +1,20 @@
-import { isAlias, isNode, visit, type Document } from "yaml";
+import { isAlias, isNode, stringify, visit, type Document } from "yaml";
 import type { headerParts } from "./frontmatter";
-import {
-  setPropertyChange,
-  yamlValue,
-  type PropertyChange,
-} from "./yaml-value";
+import { setPropertyChange, type PropertyChange } from "./yaml-value";
 
 /** Alias sites are mid-line; keep inserts indentation-independent. */
 function inlineYamlValue(value: unknown): string {
-  if (typeof value === "string") {
-    return JSON.stringify(value);
-  }
-  if (
-    value === null ||
-    typeof value === "boolean" ||
-    (typeof value === "number" && Number.isFinite(value))
-  ) {
-    return yamlValue(value);
-  }
-  // Collections stay single-line JSON (valid YAML) so nested aliases do not
-  // inherit root-relative indentation from yaml.stringify.
-  return JSON.stringify(value);
+  // Quote strings as JSON to avoid multiline inserts at nested alias sites,
+  // while YAML serialization preserves non-finite numbers in collections too.
+  return stringify(value, {
+    collectionStyle: "flow",
+    flowCollectionPadding: false,
+    lineWidth: 0,
+    aliasDuplicateObjects: false,
+    defaultKeyType: "PLAIN",
+    defaultStringType: "QUOTE_DOUBLE",
+    doubleQuotedAsJSON: true,
+  }).trimEnd();
 }
 
 type Header = NonNullable<ReturnType<typeof headerParts>>;
@@ -34,22 +28,22 @@ type Anchored = {
 function rememberAnchored(
   document: Document,
   anchored: Anchored,
-  targets: Array<{ node: Anchored; insert: string }>,
+  targets: Map<Anchored, string>,
 ): void {
   if (!anchored.anchor || !anchored.range) {
     return;
   }
-  targets.push({
-    node: anchored,
-    insert: inlineYamlValue(anchored.toJS(document, { maxAliasCount: 100 })),
-  });
+  targets.set(
+    anchored,
+    inlineYamlValue(anchored.toJS(document, { maxAliasCount: 100 })),
+  );
 }
 
 function anchoredTargets(
   document: Document,
   node: Anchored,
-): Array<{ node: Anchored; insert: string }> {
-  const targets: Array<{ node: Anchored; insert: string }> = [];
+): Map<Anchored, string> {
+  const targets = new Map<Anchored, string>();
   rememberAnchored(document, node, targets);
   visit(node as never, {
     Node(_key, child) {
@@ -90,7 +84,7 @@ export function aliasPreservationChanges(
     return [];
   }
   const targets = anchoredTargets(document, node as Anchored);
-  if (!targets.length) {
+  if (!targets.size) {
     return [];
   }
   const replaced = node.range;
@@ -103,13 +97,10 @@ export function aliasPreservationChanges(
       if (alias.range[0] >= replaced[0] && alias.range[1] <= replaced[1]) {
         return;
       }
-      const target = targets.find(
-        (entry) => alias.resolve(document) === entry.node,
-      );
-      if (target) {
-        changes.push(
-          aliasReplacement(source, header, alias.range, target.insert),
-        );
+      const resolved = alias.resolve(document);
+      const insert = resolved && targets.get(resolved);
+      if (insert !== undefined) {
+        changes.push(aliasReplacement(source, header, alias.range, insert));
       }
     },
   });
