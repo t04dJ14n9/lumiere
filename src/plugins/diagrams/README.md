@@ -1,7 +1,9 @@
 # Diagrams
 
 Renders Mermaid code fences as diagrams, like Obsidian's Mermaid support in
-Live Preview. Moving the caret into a diagram reveals the editable fence.
+Live Preview. The diagram stays rendered until you explicitly edit it (click
+the diagram / Edit button, or move the caret into the fence). Clicking
+elsewhere in the note does not collapse it to raw source.
 
 ## How it works
 
