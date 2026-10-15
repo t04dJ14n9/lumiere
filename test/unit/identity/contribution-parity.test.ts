@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { Context, type Plugin } from "../../../src/kernel";
 import type { Okf } from "../../../src/plugins/okfCore/api";
+import type { Editors } from "../../../src/plugins/editor/api";
 import type { Vaults } from "../../../src/plugins/vault/api";
 import { commandsHost } from "../../../src/plugins/commands/host";
 import { assetsHost } from "../../../src/plugins/assets/host";
@@ -20,6 +21,14 @@ import { graphHost } from "../../../src/plugins/graph/host";
 import { livePreviewHost } from "../../../src/plugins/livePreview/host";
 import { marpHost } from "../../../src/plugins/marp/host";
 import { registerOutlineActions } from "../../../src/plugins/outline/actions";
+import { OPEN_COMMAND as outlineOpenCommand } from "../../../src/plugins/outline/commands";
+import { outlineHost } from "../../../src/plugins/outline/host";
+import { OPEN_COMMAND as backlinksOpenCommand } from "../../../src/plugins/backlinks/tree";
+import { backlinksHost } from "../../../src/plugins/backlinks/host";
+import { OPEN_COMMAND as outgoingOpenCommand } from "../../../src/plugins/outgoingLinks/tree";
+import { outgoingLinksHost } from "../../../src/plugins/outgoingLinks/host";
+import { SEARCH_COMMAND } from "../../../src/plugins/tags/tree";
+import { tagsViewHost } from "../../../src/plugins/tags/view";
 import { quickSwitcherHost } from "../../../src/plugins/quickSwitcher/host";
 import { scratchHost } from "../../../src/plugins/scratch/host";
 import { settingsHost } from "../../../src/plugins/settings/host";
@@ -77,6 +86,35 @@ test("runtime command registration matches contributes.commands", async () => {
   const missing = [...contributed].filter((id) => !captured.ids.has(id)).sort();
   const extra = [...captured.ids].filter((id) => !contributed.has(id)).sort();
   assert.deepEqual({ missing, extra }, { missing: [], extra: [] });
+});
+
+test("tree hosts register open and search commands outside contributes", async () => {
+  const captured = await captureTreeHostCommands();
+  assert.deepEqual(captured.problems, []);
+  const contributed = new Set(
+    contributes.commands.map((command) => command.command),
+  );
+  const outsideContributes = new Set([
+    outlineOpenCommand,
+    SEARCH_COMMAND,
+    backlinksOpenCommand,
+    outgoingOpenCommand,
+  ]);
+  const capturedOutside = [...captured.ids]
+    .filter((id) => !contributed.has(id))
+    .sort();
+  assert.deepEqual(capturedOutside, [...outsideContributes].sort());
+  for (const id of capturedOutside) {
+    assert.match(id, /^markdownWorkshop\./);
+    assert.doesNotMatch(id, /markdownWorkbench/);
+  }
+  const alsoContributed = [...captured.ids].filter(
+    (id) => !outsideContributes.has(id),
+  );
+  assert.ok(alsoContributed.length > 0);
+  for (const id of alsoContributed) {
+    assert.equal(contributed.has(id), true);
+  }
 });
 
 test("editor host passes MARKDOWN_EDITOR.viewType to registerEditor", async () => {
@@ -272,6 +310,87 @@ async function captureRegisteredCommands(): Promise<{
   const problems = pluginProblems(root);
   await root.dispose();
   return { ids, problems };
+}
+
+async function captureTreeHostCommands(): Promise<{
+  ids: Set<string>;
+  problems: string[];
+}> {
+  const ids = new Set<string>();
+  const root = Context.create();
+  root.provide("workbench", viewHostWorkbench(ids));
+  root.provide("vaults", idleVaults());
+  root.provide("editors", idleEditors());
+  root.plugin(outlineHost);
+  root.plugin(tagsViewHost);
+  root.plugin(backlinksHost);
+  root.plugin(outgoingLinksHost);
+  await root.settled();
+  await tick();
+  const problems = pluginProblems(root);
+  await root.dispose();
+  return { ids, problems };
+}
+
+/** Tree and status handles the four view hosts touch while registering. */
+function viewHostWorkbench(ids: Set<string>): Workbench {
+  const workbench = capturingWorkbench(ids, []);
+  const views = workbench.views;
+  if (!views) {
+    throw new Error("view hosts need workbench.views");
+  }
+  return {
+    ...workbench,
+    views: {
+      ...views,
+      tree: () => ({
+        refresh() {},
+        setMessage() {},
+        reveal: async () => {},
+        visible: false,
+        onVisibilityChanged: () => () => {},
+        dispose() {},
+      }),
+      status: () => ({
+        show() {},
+        hide() {},
+        dispose() {},
+      }),
+    },
+  };
+}
+
+/** Vault calls `apply` makes while refreshing; command callbacks are not run. */
+function idleVaults(): Vaults {
+  return {
+    async forDocument() {
+      throw new Error("unused");
+    },
+    async forWorkspace() {
+      return undefined;
+    },
+    async locate() {
+      return undefined;
+    },
+    async text() {
+      return "";
+    },
+    async open() {},
+    all: () => [],
+    registerLinkPolicy: () => () => {},
+    invalidateLinkResolution() {},
+  };
+}
+
+function idleEditors(): Editors {
+  return {
+    active: () => undefined,
+    all: () => [],
+    async capture() {
+      throw new Error("unused");
+    },
+    async restore() {},
+  };
 }
 
 function pluginProblems(root: Context): string[] {

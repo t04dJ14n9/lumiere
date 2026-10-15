@@ -1,4 +1,5 @@
 import { isMarpDocument, setMarpEnabled } from "../../markdown/marp";
+import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { portableMarkdownLink } from "../../shared/markdown-link";
 import { replaceAllEdit } from "../../shared/text-edit";
 import type { HostDocument, TextEdit } from "../../shared/runtime";
@@ -86,7 +87,7 @@ export async function keepDeck(
   uri: string,
 ): Promise<void> {
   await rememberDeck(actions.storage, uri);
-  await actions.execute("vscode.openWith", uri, "markdownWorkbench.editor");
+  await actions.execute("vscode.openWith", uri, MARKDOWN_EDITOR.viewType);
   actions.inform("This deck stays in Markdown Workshop.");
 }
 
