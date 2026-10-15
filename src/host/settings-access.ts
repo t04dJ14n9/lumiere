@@ -17,7 +17,7 @@ const PREFIX = SETTING_PREFIX;
  */
 /**
  * This extension's contributed settings, read from its package.json. Only
- * `markdownWorkbench.` keys with an object schema are listed; anything else
+ * `markdownWorkshop.` keys with an object schema are listed; anything else
  * in a damaged or unexpected manifest is dropped.
  */
 function contributed(): readonly ContributedSetting[] {
@@ -57,9 +57,11 @@ function own(key: string): ContributedSetting {
 }
 
 export function createSettingsAccess(): SettingsAccess {
+  // SETTING_PREFIX always ends with "."; VS Code wants the section without it.
+  const section = PREFIX.slice(0, -1);
   const configuration = (resource?: string) =>
     vscode.workspace.getConfiguration(
-      "markdownWorkbench",
+      section,
       resource ? vscode.Uri.parse(resource) : undefined,
     );
   const locate = (key: string, resource?: string) => {
