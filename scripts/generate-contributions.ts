@@ -31,7 +31,7 @@ export async function contributions() {
         { command: `markdownWorkbench.${command.id}` },
         command.palette === false
           ? "false"
-          : whenEnabled(manifest, command.scope),
+          : contributionWhen(manifest, command),
       ),
     ),
   );
@@ -69,7 +69,7 @@ export async function contributions() {
             key: command.key,
             ...(command.mac ? { mac: command.mac } : {}),
           },
-          whenEnabled(manifest, command.scope),
+          contributionWhen(manifest, command),
         ),
       ),
     ),
@@ -172,6 +172,16 @@ function withWhen<T extends object>(
   when: string,
 ): T & { when?: string } {
   return when ? { ...item, when } : item;
+}
+
+/** Plugin enablement plus an optional per-command `when` fragment (B3). */
+function contributionWhen(
+  manifest: Manifest,
+  contribution: { scope?: "editor" | "workbench"; when?: string },
+): string {
+  return [whenEnabled(manifest, contribution.scope), contribution.when]
+    .filter(Boolean)
+    .join(" && ");
 }
 
 function whenEnabled(

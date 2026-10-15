@@ -3922,6 +3922,29 @@ an alternate remote. HEAD remains `629e2a08c7484b5eba874c11ec4208badef5b428`;
 the parent must commit and push `fix/sources-editable` to update PR #49. No
 commit, push or merge occurred.
 
+## PR #57 cursorBridge B1/B2 review fixes — 2026-10-15
+
+Delivered: reclaim releases a handoff lease only when no native text tab for
+the URI remains across all tab groups. Same-URI Workbench tab activation and
+closure events cannot release it, and queued reclaim still honors it. Cursor
+command discovery runs before handoff. The host adapter exposes live document
+versions and selections and compares the mirrored native editor's identity to
+the active TextEditor. A pure synchronous confirmation checks that identity,
+URI, version, selected text and range again immediately before Cursor invocation.
+Failed validation and exceptions during handoff release the lease; successful
+command completion keeps it for the native session. Dirty buffers need no save.
+
+Coverage: unit regressions cover sibling tab events, the last text tab closing
+or switching to Markdown, text tabs in different groups, queued reclaim,
+command-discovery ordering, changes after handoff validation, live host adapter
+state and lease cleanup after failures/exceptions. No browser/native cases were
+added.
+
+Validation: focused handoff/reclaim unit tests
+(`test/unit/cursor-bridge/handoff.test.ts`, `host.test.ts`,
+`test/unit/editor/reclaim.test.ts`, `handoff-host.test.ts`) pass 56/56.
+Live Cursor Edit/Accept/Reject remains an owner manual check.
+
 ## Mermaid stays rendered until explicit edit — 2026-10-15
 
 Rendered Mermaid (and other `MarkdownBlock` widgets) collapsed to raw
@@ -3945,3 +3968,61 @@ Files: `src/webview/ui/markdown-widget.ts`,
 
 Validation: `pnpm exec tsx --test` markdown-widget + pointer-selection +
 selection unit tests.
+
+## PR #57 cursorBridge B1 pending-handoff clear race (r3) — 2026-10-15
+
+Delivered: each handoff acquires a distinct pending lease token before warming.
+Native editor confirmation promotes that token to an established session;
+failure releases only its own token, including the caller's final synchronous
+confirmation failure. Last-native-tab cleanup clears established tokens only,
+so overlapping handoffs still warming or opening text continue to suppress
+reclaim. Released or cleared tokens cannot affect a later retry. B2 command
+discovery ordering and synchronous confirmation immediately before Cursor
+invocation are unchanged; no B3 behavior changed.
+
+Coverage: pure regressions pause handoff B in warm, clear A's established
+session, then check reclaim suppression and B's success promotion or failure
+release. Lease tests cover overlapping owners, repeated clear, stale tokens and
+URI isolation. The host regression fires the last-native-tab close event while
+B is pending and verifies both fresh and queued reclaim stay suppressed, then
+checks that B's promoted session ends with its text tab. Existing sibling/custom
+tab, cross-group, failed-retry and B2 tests remain. New coverage is unit only.
+
+Validation: focused reclaim/handoff/host tests (`test/unit/editor/reclaim.test.ts`,
+`handoff-host.test.ts`, `test/unit/cursor-bridge/handoff.test.ts`, `host.test.ts`)
+pass 67/67. The two pure race cases failed before the fix and pass after it.
+The full pre-push `xvfb-run -a pnpm check:full` was run. Formatting, lint and
+all typecheck projects pass. Unit tests pass 1,393/1,394; the existing package
+contributions test fails because the two Cursor command categories in
+`package.json` say `Markdown Workbench` while the generator expects
+`Markdown Workshop`. The package, generator and manifests are unchanged from
+the starting HEAD; those two generated labels are outside this B1 fix.
+
+Browser and native suites were then run separately, sequentially, on private
+displays with the harness's isolated native profile:
+
+- `xvfb-run -a pnpm test:browser`: 275/276 pass. The unchanged
+  `Chinese punctuation: cell-local end, first nonblank and start` case in
+  `test/browser/vim-line-keys.spec.ts` captures table source before its pending
+  edit reaches the host, then compares against the later serialized table.
+  It failed an isolated retry and passed 1/3 focused repeats. A temporary
+  archive of the starting HEAD passed 4/4 focused runs; the browser harness
+  bundles are identical after normalizing dependency paths and source comments.
+  This is an intermittent synchronization assertion, with no browser or table
+  code changed here.
+- `xvfb-run -a pnpm test:vscode` (Code 1.142.0): the first 10 cases pass, then
+  native focus checks fail. The run was interrupted after repeated focus
+  failures and retried on a fresh private display with a window manager and
+  disposable configuration. That full retry passes 3/23; the renderer crashes
+  in `font-stack.spec.ts` and later cases report no live workbench page.
+  Native validation remains incomplete in this environment; no native tests
+  or harness code were changed.
+
+New test names: `pending handoff survives session clear during warm until
+success` / `failure`; `pending handoff survives the last text tab closing and
+suppresses queued reclaim`; `session clear preserves pending tokens until they
+are promoted`; `failed pending tokens release only themselves after session
+clear`; `released and cleared tokens cannot revive sessions or release newer
+owners`; `clearing one URI leaves other pending and established owners alone`.
+The existing suppression and overlap tests now use per-handoff tokens, and the
+failed-retry test also checks that no pending token remains after session clear.

@@ -11,6 +11,7 @@ import {
   codeBlocksHost,
   markersHost,
   agentBridgeHost,
+  cursorBridgeHost,
   documentHost,
   editorHost,
   dialectHost,
@@ -38,6 +39,8 @@ import {
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
 import { createOkfFacade } from "../plugins/okfCore/facade";
+import { createCursorHandoffSurface } from "./cursor-handoff";
+import * as vscode from "vscode";
 export async function bootstrap(
   workbench: Workbench,
   vaultSystem?: VaultSystem,
@@ -79,6 +82,10 @@ export async function bootstrap(
   root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
   root.plugin(agentBridgeHost);
+  root.plugin(cursorBridgeHost, {
+    appName: vscode.env?.appName ?? "",
+    surface: createCursorHandoffSurface(),
+  });
   root.plugin(dialectHost);
   root.plugin(commandsHost, { features });
   root.plugin(settingsHost);

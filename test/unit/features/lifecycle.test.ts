@@ -59,7 +59,11 @@ async function renderHooks(root: Context) {
 
 // Plugins that only post-process rendered HTML, or only contribute commands
 // and selection-menu items (Copy Link for Agent), add no editor extensions.
-const noEditorExtensions = new Set(["onlineVideos", "agentBridge"]);
+const noEditorExtensions = new Set([
+  "onlineVideos",
+  "agentBridge",
+  "cursorBridge",
+]);
 const hasExtensions = (f: ReturnType<typeof fixture>, id: string) =>
   noEditorExtensions.has(id) ? f.extensions === 0 : f.extensions > 0;
 
@@ -102,7 +106,10 @@ for (const manifest of features) {
     assert.equal(fiber.state, "active", String(fiber.error));
     assert.ok(hasExtensions(f, manifest.id));
     for (const command of manifest.contributes?.commands ?? []) {
-      assert.equal(f.handlers.has(command.editorCommand!), true);
+      if (!command.editorCommand) {
+        continue;
+      }
+      assert.equal(f.handlers.has(command.editorCommand), true);
     }
     const activeHooks = await renderHooks(f.root);
     const activeMenu = await f.root.pipeline("editor/selectionMenu", []);

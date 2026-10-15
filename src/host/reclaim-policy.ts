@@ -92,3 +92,58 @@ export class Bypass {
     return true;
   }
 }
+
+type LeaseState = "pending" | "established";
+
+/**
+ * Each handoff holds reclaim off while pending, then promotes its own token
+ * once a native editor is confirmed. Tab disappearance clears established
+ * sessions only: overlapping handoffs may still be warming or opening text.
+ */
+export class Lease {
+  private readonly owners = new Map<string, Map<symbol, LeaseState>>();
+
+  acquire(uri: string) {
+    const token = Symbol();
+    const owners = this.owners.get(uri) ?? new Map<symbol, LeaseState>();
+    owners.set(token, "pending");
+    this.owners.set(uri, owners);
+    return {
+      promote: () => this.promote(uri, token),
+      release: () => this.release(uri, token),
+    };
+  }
+
+  /** The last native text tab is gone; pending handoffs still own their tokens. */
+  clear(uri: string): void {
+    const owners = this.owners.get(uri);
+    if (!owners) {
+      return;
+    }
+    for (const [token, state] of owners) {
+      if (state === "established") {
+        this.release(uri, token);
+      }
+    }
+  }
+
+  has(uri: string): boolean {
+    return this.owners.has(uri);
+  }
+
+  private promote(uri: string, token: symbol): void {
+    const owners = this.owners.get(uri);
+    // A released or cleared token cannot revive a session or affect a retry.
+    if (owners?.has(token)) {
+      owners.set(token, "established");
+    }
+  }
+
+  private release(uri: string, token: symbol): void {
+    const owners = this.owners.get(uri);
+    owners?.delete(token);
+    if (owners?.size === 0) {
+      this.owners.delete(uri);
+    }
+  }
+}

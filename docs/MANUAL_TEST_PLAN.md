@@ -717,6 +717,16 @@ Off by default.
    button, context menu item or Mod+Alt+C binding (removed or renamed by
    owner decision; Ctrl+C copies plain text).
 
+### cursorBridge
+
+In **Cursor** only: select text in Live Preview, press Cmd/Ctrl+L (Chat) and
+Cmd/Ctrl+K (Edit). Edit should open Cursor’s native bar; Accept updates the note
+in Markdown Workbench without a custom apply-back. With no selection, both
+commands no-op with a short notice. Disable `markdownWorkbench.plugins.cursorBridge.enabled`
+and confirm Cmd/Ctrl+K is Insert Link again. On plain VS Code, Insert Link keeps
+Cmd/Ctrl+K. Leave `agentBridge` behaviour unchanged.
+
+
 ### openCopiedAgentReference
 
 1. Copy `@Core.md#2-3` and run **Open Copied Agent Reference**, with no note
@@ -909,6 +919,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
 | `markdownWorkbench.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
+| `markdownWorkbench.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
 | `markdownWorkbench.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1010,6 +1022,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Setting | Default | Procedure |
 | --- | --- | --- |
 | `markdownWorkbench.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.cursorBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

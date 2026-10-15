@@ -56,6 +56,8 @@ export const FEATURE_ORDER = [
   "formatting",
   "pasteHtml",
   "agentBridge",
+  // After agentBridge: Cursor Chat/Edit is a separate handoff surface.
+  "cursorBridge",
   // Match VS Code: line numbers to the left of fold markers.
   "lineNumbers",
   // Git change bars sit between line numbers and fold markers, as in VS Code.
