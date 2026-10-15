@@ -6,11 +6,9 @@ import {
   type PropertyChange,
 } from "./yaml-value";
 
-/** Alias sites are mid-line; multiline plain scalars would break indentation. */
+/** Alias sites are mid-line; quote strings so --- / ... stay flow-safe. */
 function inlineYamlValue(value: unknown): string {
-  return typeof value === "string" && /[\r\n]/.test(value)
-    ? JSON.stringify(value)
-    : yamlValue(value);
+  return typeof value === "string" ? JSON.stringify(value) : yamlValue(value);
 }
 
 type Header = NonNullable<ReturnType<typeof headerParts>>;

@@ -59,7 +59,12 @@ test("scalar Enter commits quoted text and focuses its row; untouched mismatches
       return true;
     },
   };
-  new PropertyField(html(container), html(field), source, editor);
+  new PropertyField({
+    container: html(container),
+    input: html(field),
+    source: source,
+    editor: editor,
+  });
   field.textContent = "a: b # c";
   field.dispatchEvent(new Event("input"));
   field.dispatchEvent(propertyKey("Enter"));
@@ -70,7 +75,12 @@ test("scalar Enter commits quoted text and focuses its row; untouched mismatches
   const mismatch = new PropertyNativeInput(document);
   mismatch.dataset = { propertyInput: "title", propertyKind: "number" };
   mismatch.type = "number";
-  new PropertyField(html(container), html(mismatch), source, editor);
+  new PropertyField({
+    container: html(container),
+    input: html(mismatch),
+    source: source,
+    editor: editor,
+  });
   mismatch.dispatchEvent(new Event("focus"));
   mismatch.dispatchEvent(new Event("blur"));
   mismatch.dispatchEvent(new Event("property-commit", { cancelable: true }));
@@ -433,7 +443,12 @@ test("YAML drafts reject invalid text and concurrent property conflicts without 
       return true;
     },
   };
-  new PropertyField(html(container), html(field), source, editor);
+  new PropertyField({
+    container: html(container),
+    input: html(field),
+    source: source,
+    editor: editor,
+  });
 
   field.value = "{";
   field.dispatchEvent(new Event("input"));
@@ -500,8 +515,18 @@ test("idle property fields refresh conflict baselines after another property com
       return true;
     },
   };
-  new PropertyField(html(container), html(first), source, editor);
-  new PropertyField(html(container), html(second), source, editor);
+  new PropertyField({
+    container: html(container),
+    input: html(first),
+    source: source,
+    editor: editor,
+  });
+  new PropertyField({
+    container: html(container),
+    input: html(second),
+    source: source,
+    editor: editor,
+  });
 
   first.dispatchEvent(new Event("focus"));
   first.value = 'x: "edited"\n';

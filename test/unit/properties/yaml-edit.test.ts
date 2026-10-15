@@ -245,3 +245,14 @@ test("replacing a map with a multiline string quotes the insert", () => {
   assert.deepEqual(frontmatter(next)?.values, { obj: "first\nsecond" });
   assert.match(next, /obj: "first\\nsecond"/);
 });
+
+test("inlining document-marker strings quotes them at alias sites", () => {
+  for (const prior of ["---", "..."]) {
+    const source = `---\nfirst: &a ${JSON.stringify(prior)}\nsecond: [*a]\n---\n`;
+    const next = edit(source, { type: "set", key: "first", value: "x" });
+    assert.deepEqual(frontmatter(next)?.values, {
+      first: "x",
+      second: [prior],
+    });
+  }
+});
