@@ -36,6 +36,8 @@ caret; a pending operator is detected in the input state, the prompt through
 `cm.state.dialog`, and `R` is insert mode with overwrite enabled. Note and table-cell extensions
 share this mode source and remove its listeners when they stop.
 
+While visual mode is active, Live Preview reveal stays frozen at the selection from when visual started, like the pointer-drag freeze, so extending the selection does not reflow blocks and jump the viewport.
+
 ## Files
 
 - `manifest.ts`: default enablement and host shortcut contributions.
@@ -52,6 +54,7 @@ share this mode source and remove its listeners when they stop.
 - `motion.test.ts`: source/display goals, folds, mappings, macro replay and disposal units.
 - `caret.ts`: pure detection of the normal, visual, insert, replace, operator-pending and prompt states.
 - `caret.test.ts`: mode, pending-operator, prompt and stale-state regression units.
+- `visual-reveal.ts`: freeze Live Preview reveal for the duration of visual mode.
 
 ## Services, events and settings
 
@@ -64,6 +67,7 @@ Vim mode chooses the caret shape in every mode but insert, regardless of
 and `editor.cursorWidth` apply there, as in VSCodeVim. Native blinking and smooth
 movement settings apply in every mode (`explicit` smooth movement animates a
 click but not a Vim motion, as VSCodeVim moves the cursor from code). Colours use VS Code's cursor theme tokens.
+
 
 ## Limits and differences from Obsidian
 

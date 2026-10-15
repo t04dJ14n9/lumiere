@@ -9,7 +9,8 @@ import { isNativeSelectableLabelTarget } from "./markdown-widget";
  * the source under the selection on release. While a pointer selection is in
  * progress this field holds the selection from before the press, and every
  * reveal test reads it instead of the live selection; CodeMirror still draws
- * the live selection.
+ * the live selection. Vim visual mode uses a separate freeze field the same
+ * way, so extending a visual selection does not reflow Live Preview.
  */
 const press = StateEffect.define<EditorSelection | null>();
 
@@ -42,13 +43,70 @@ export function pointerSelectionToggled(
 }
 
 /**
+ * Vim visual mode: freeze reveal at the selection when visual started, so
+ * extending the selection (j/k) does not reflow Live Preview under the range
+ * and jump the viewport. Cleared when visual ends.
+ */
+export const setVisualRevealFreeze =
+  StateEffect.define<EditorSelection | null>();
+
+export const visualRevealFreeze = StateField.define<EditorSelection | null>({
+  create: () => null,
+  update(value, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(setVisualRevealFreeze)) {
+        return effect.value;
+      }
+    }
+    return value && tr.docChanged ? value.map(tr.changes) : value;
+  },
+});
+
+function visualRevealFreezeToggled(
+  startState: EditorState,
+  state: EditorState,
+): boolean {
+  return (
+    ((startState.field(visualRevealFreeze, false) ?? null) === null) !==
+    ((state.field(visualRevealFreeze, false) ?? null) === null)
+  );
+}
+
+/**
+ * Whether a transaction starts or ends any reveal freeze (pointer or Vim
+ * visual). Call sites that rebuild decorations on freeze changes use this.
+ */
+export function revealFreezeToggled(
+  startState: EditorState,
+  state: EditorState,
+): boolean {
+  return (
+    pointerSelectionToggled(startState, state) ||
+    visualRevealFreezeToggled(startState, state)
+  );
+}
+
+/** Whether any reveal freeze (pointer or Vim visual) is active. */
+export function isRevealFrozen(state: EditorState): boolean {
+  return (
+    (state.field(pointerSelection, false) ?? null) !== null ||
+    (state.field(visualRevealFreeze, false) ?? null) !== null
+  );
+}
+
+/**
  * The ranges that decide what is revealed. A non-empty range that ends
  * exactly at a line start (a whole-line selection, its break included) does
  * not touch that next line, so a fence or widget there stays rendered.
+ * Pointer freeze wins over Vim visual freeze; either wins over the live
+ * selection so a growing selection does not reflow the note mid-gesture.
  */
 export function revealRanges(state: EditorState): readonly SelectionRange[] {
-  const ranges = (state.field(pointerSelection, false) ?? state.selection)
-    .ranges;
+  const ranges = (
+    state.field(pointerSelection, false) ??
+    state.field(visualRevealFreeze, false) ??
+    state.selection
+  ).ranges;
   return ranges.map((range) => {
     if (range.empty || range.to !== state.doc.lineAt(range.to).from) {
       return range;
@@ -170,6 +228,7 @@ export function setPointerSelection(
 
 export const pointerSelectionTracking: Extension = [
   pointerSelection,
+  visualRevealFreeze,
   ViewPlugin.define((view: EditorView) => {
     const events = new AbortController();
     const doc = view.dom.ownerDocument;
