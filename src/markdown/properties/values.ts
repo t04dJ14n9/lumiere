@@ -1,4 +1,4 @@
-import { parseDocument } from "yaml";
+import { isMap, isScalar, isSeq, parseDocument } from "yaml";
 import type { PropertyKind } from "./types";
 export type PropertyScalar = string | number | boolean | null;
 /** Scalars, scalar lists, and nested YAML maps/lists that Properties can set. */
@@ -40,6 +40,35 @@ export function propertyInput(
   return undefined;
 }
 
+/** True when distinct YAML keys would collapse to one JS property name. */
+function hasCollidingJsKeys(node: unknown): boolean {
+  if (isSeq(node)) {
+    return node.items.some((item) => hasCollidingJsKeys(item));
+  }
+  if (!isMap(node)) {
+    return false;
+  }
+  const seen = new Set<string>();
+  for (const pair of node.items) {
+    if (
+      !isScalar(pair.key) ||
+      pair.key.value === undefined ||
+      pair.key.value === null
+    ) {
+      return true;
+    }
+    const jsKey = String(pair.key.toJSON());
+    if (seen.has(jsKey)) {
+      return true;
+    }
+    seen.add(jsKey);
+    if (hasCollidingJsKeys(pair.value)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Parse a Properties YAML draft into a settable value, or undefined if invalid. */
 export function propertyYamlInput(text: string): PropertyValue | undefined {
   if (!/[\S\u00A0]/.test(text)) {
@@ -48,6 +77,9 @@ export function propertyYamlInput(text: string): PropertyValue | undefined {
   try {
     const document = parseDocument(text, { uniqueKeys: true });
     if (document.errors.length) {
+      return undefined;
+    }
+    if (hasCollidingJsKeys(document.contents)) {
       return undefined;
     }
     const value: unknown = document.toJS({ maxAliasCount: 100 });

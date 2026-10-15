@@ -299,3 +299,8 @@ test("hash characters inside quoted keys do not hide genuine anchors", () => {
     "second#tag": "fresh",
   });
 });
+
+test("YAML drafts reject colliding YAML mapping keys that collapse in JS", () => {
+  assert.equal(propertyYamlInput('1: first\n"1": second'), undefined);
+  assert.deepEqual(propertyYamlInput("a: 1\nb: 2"), { a: 1, b: 2 });
+});

@@ -103,6 +103,11 @@ export class PropertySelection {
         ) {
           return;
         }
+        // Selected Sources ids (and other in-row text) must copy natively.
+        const native = this.panel.ownerDocument.getSelection();
+        if (native && !native.isCollapsed && native.toString().length > 0) {
+          return;
+        }
         const keys = this.keys(document.activeElement as HTMLElement);
         const values = this.values(keys);
         if (!keys.length) {
