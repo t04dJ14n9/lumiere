@@ -1,6 +1,46 @@
 import type { MarkdownConfig } from "@lezer/markdown";
+
+/**
+ * Footnote markers and definitions.
+ *
+ * Definitions must be claimed before CommonMark LinkReference: a body that
+ * looks like a destination (`[title](url)`, `[[wiki]]`, bare URL, `<url>`)
+ * would otherwise become a LinkReference whose URL child is raw text, so Live
+ * Preview would never see FootnoteRef / Link / WikiLink on that line.
+ */
 export const footnotes: MarkdownConfig = {
   defineNodes: ["FootnoteRef", "InlineFootnote"],
+  parseBlock: [
+    {
+      name: "FootnoteDefinition",
+      before: "LinkReference",
+      parse(cx, line) {
+        if (!/^( {0,3})\[\^([^\]\s]+)\]:/.test(line.text.slice(line.pos))) {
+          return false;
+        }
+        const from = cx.lineStart + line.pos;
+        // `content` must stay a contiguous document slice from `from` so
+        // parseInline offsets match source (continuation lines keep indent).
+        let content = line.text.slice(line.pos);
+        let to = cx.lineStart + line.text.length;
+        for (;;) {
+          const nextText = cx.peekLine();
+          if (/^(?: {2,4}| {0,3}\t)/.test(nextText)) {
+            cx.nextLine();
+            content += "\n" + line.text.slice(line.basePos);
+            to = cx.lineStart + line.text.length;
+            continue;
+          }
+          break;
+        }
+        cx.nextLine();
+        cx.addElement(
+          cx.elt("Paragraph", from, to, cx.parser.parseInline(content, from)),
+        );
+        return true;
+      },
+    },
+  ],
   parseInline: [
     {
       name: "InlineFootnote",

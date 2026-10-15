@@ -196,7 +196,7 @@ test("explicit renderer ranges cover multiline definitions without overlapping l
 });
 
 test("a renderer claiming the start of a node leaves its later children to match", () => {
-  // Lezer parses consecutive footnote definitions as one paragraph.
+  // Consecutive footnote definitions are separate blocks; the second keeps its continuation.
   const text = "[^a]: first\n[^b]: second\n    continued";
   const second = text.indexOf("[^b]");
   const definitions = [
