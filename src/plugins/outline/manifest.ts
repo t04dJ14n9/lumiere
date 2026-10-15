@@ -61,8 +61,8 @@ export default defineManifest({
         id: "outline.toggle",
         key: "ctrl+alt+o",
         // Match PDF Workshop: Control+Command+O on macOS.
+        // Editor-scoped so the same keys do not steal PDF Workshop's outline toggle.
         mac: "ctrl+cmd+o",
-        scope: "workbench",
       },
     ],
     menus: [

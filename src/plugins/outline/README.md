@@ -26,11 +26,11 @@ the active panel's authoritative text, shows heading levels and parent titles,
 and navigates through the same path as the tree. Dismissed or stale picks
 (edited document, changed panel or stopped plugin) do not navigate.
 
-Ctrl+Alt+O (Control+Command+O on macOS) toggles Note Outline when the Outline
-window feature is enabled (`scope: "workbench"`, like Quick Switcher), matching
-PDF Workshop's outline shortcut. Hiding targets the view itself, including after
-moving it to the secondary sidebar or panel; showing restores and focuses it in
-its current location.
+Ctrl+Alt+O (Control+Command+O on macOS) toggles Note Outline while the Workbench
+editor is active (editor-scoped keybinding, so PDF Workshop keeps the same keys).
+The command palette entry is workbench/config-gated like Quick Switcher. Hiding
+targets the view itself, including after moving it to the secondary sidebar or
+panel; showing restores and focuses it in its current location.
 
 ## Files
 
@@ -52,8 +52,8 @@ its current location.
   plus native configuration and tree visibility changes. Emits no events and
   provides no services.
 - Maintains `markdownWorkbench.plugin.outline` while the window plugin is
-  running, so editor-scoped guards (Go to Heading) reflect its lifetime. Toggle
-  Note Outline uses workbench/config gating instead.
+  running, so editor-scoped shortcuts (Go to Heading, Ctrl+Alt+O) reflect its
+  lifetime. The Toggle Note Outline palette entry uses workbench/config gating.
 - Settings: `markdownWorkbench.plugins.outline.enabled` and
   `markdownWorkbench.outline.followCursor` (default `true`, resource-scoped).
 - Commands: `markdownWorkbench.outline.expandAll`,

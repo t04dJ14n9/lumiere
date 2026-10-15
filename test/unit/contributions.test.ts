@@ -117,13 +117,21 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
   );
 });
 
-test("Ctrl+Alt+O toggles Note Outline when the Outline window feature is enabled", async () => {
+test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
   const { keybindings, commands, menus } = await contributions();
   const command = commands.find(
     (entry) => entry.command === "markdownWorkbench.outline.toggle",
   );
   assert.equal(command?.title, "Toggle Note Outline");
   assert.equal(command?.category, "Markdown Workshop");
+  const paletteWhen =
+    "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled";
+  assert.equal(
+    menus.commandPalette.find(
+      (item) => item.command === "markdownWorkbench.outline.toggle",
+    )?.when,
+    paletteWhen,
+  );
   const toggle = keybindings.find(
     (binding) => binding.command === "markdownWorkbench.outline.toggle",
   );
@@ -132,13 +140,7 @@ test("Ctrl+Alt+O toggles Note Outline when the Outline window feature is enabled
   assert.equal(toggle.mac, "ctrl+cmd+o");
   assert.equal(
     toggle.when,
-    "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled",
-  );
-  assert.equal(
-    menus.commandPalette.find(
-      (item) => item.command === "markdownWorkbench.outline.toggle",
-    )?.when,
-    toggle.when,
+    "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline",
   );
 });
 
