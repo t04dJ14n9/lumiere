@@ -94,18 +94,33 @@ export class Bypass {
 }
 
 /**
- * Holds reclaim off for a URI until explicitly released. Used by cursorBridge
- * so an open Cursor Edit session is never yanked by a timed bypass expiry.
+ * Holds reclaim off for a URI until every overlapping handoff releases and
+ * (via clear) until the last native text tab for that URI is gone. Used by
+ * cursorBridge so an open Cursor Edit session is never yanked by a timed
+ * bypass expiry or by a failed same-URI retry.
  */
 export class Lease {
-  private readonly held = new Set<string>();
+  private readonly counts = new Map<string, number>();
   acquire(uri: string): void {
-    this.held.add(uri);
+    this.counts.set(uri, (this.counts.get(uri) ?? 0) + 1);
   }
+  /** Drop one overlapping acquisition; the URI stays leased while count > 0. */
   release(uri: string): void {
-    this.held.delete(uri);
+    const count = this.counts.get(uri);
+    if (count === undefined) {
+      return;
+    }
+    if (count <= 1) {
+      this.counts.delete(uri);
+      return;
+    }
+    this.counts.set(uri, count - 1);
+  }
+  /** Drop every acquisition (last native TabInputText for the URI is gone). */
+  clear(uri: string): void {
+    this.counts.delete(uri);
   }
   has(uri: string): boolean {
-    return this.held.has(uri);
+    return (this.counts.get(uri) ?? 0) > 0;
   }
 }

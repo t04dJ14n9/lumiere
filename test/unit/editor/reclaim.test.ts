@@ -143,3 +143,27 @@ test("a handoff lease suppresses reclaim until released", () => {
   lease.release(note);
   assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
 });
+
+test("overlapping acquires keep the lease until every release and clear drops all", () => {
+  const lease = new Lease();
+  lease.acquire(note);
+  lease.acquire(note);
+  const withLease = {
+    ...context,
+    bypassed: (uri: string) => lease.has(uri),
+  };
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  lease.release(note);
+  assert.equal(lease.has(note), true);
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  lease.release(note);
+  assert.equal(lease.has(note), false);
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
+
+  lease.acquire(note);
+  lease.acquire(note);
+  lease.clear(note);
+  assert.equal(lease.has(note), false);
+  lease.release(note);
+  assert.equal(lease.has(note), false);
+});

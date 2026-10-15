@@ -9,6 +9,7 @@ import type {
   NativeEditor,
 } from "../../../src/plugins/cursorBridge/handoff";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
+import { Lease } from "../../../src/host/reclaim-policy";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 
 async function fixture() {
@@ -16,7 +17,7 @@ async function fixture() {
   const handlers = new Map<string, () => unknown>();
   const events: string[] = [];
   const errors: string[] = [];
-  const leases = new Set<string>();
+  const lease = new Lease();
   const note = "file:///vault/Note.md";
   const state = {
     uri: note,
@@ -60,10 +61,10 @@ async function fixture() {
   const surface: HandoffSurface = {
     acquireLease(uri) {
       events.push("lease");
-      leases.add(uri);
+      lease.acquire(uri);
     },
     releaseLease(uri) {
-      leases.delete(uri);
+      lease.release(uri);
     },
     async warm() {
       events.push("warm");
@@ -138,7 +139,7 @@ async function fixture() {
   root.plugin(cursorBridgeHost, { appName: "Cursor", surface });
   await root.settled();
   events.length = 0;
-  return { root, handlers, events, errors, leases, state, note };
+  return { root, handlers, events, errors, lease, state, note };
 }
 
 for (const mode of ["chat", "edit"] as const) {
@@ -154,7 +155,7 @@ for (const mode of ["chat", "edit"] as const) {
     const pending = f.handlers.get(`markdownWorkbench.cursorBridge.${mode}`)!();
     await new Promise<void>((resolve) => setImmediate(resolve));
     assert.deepEqual(f.events, ["commands"]);
-    assert.equal(f.leases.size, 0);
+    assert.equal(f.lease.has(f.note), false);
     release();
     await pending;
     assert.deepEqual(f.events, [
@@ -164,7 +165,7 @@ for (const mode of ["chat", "edit"] as const) {
       "show",
       CURSOR_COMMANDS[mode],
     ]);
-    assert.equal(f.leases.has(f.note), true);
+    assert.equal(f.lease.has(f.note), true);
     assert.deepEqual(f.errors, []);
   });
 }
@@ -198,6 +199,24 @@ for (const change of [
     await f.handlers.get("markdownWorkbench.cursorBridge.edit")!();
     assert.deepEqual(f.events, ["commands", "lease", "warm", "show"]);
     assert.equal(f.errors.length, 1);
-    assert.equal(f.leases.size, 0);
+    assert.equal(f.lease.has(f.note), false);
   });
 }
+
+test("failed second same-URI Edit keeps the first handoff lease", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  await f.handlers.get("markdownWorkbench.cursorBridge.edit")!();
+  assert.equal(f.lease.has(f.note), true);
+  assert.deepEqual(f.errors, []);
+
+  f.state.version = 2;
+  f.state.text = "abXYef";
+  await f.handlers.get("markdownWorkbench.cursorBridge.edit")!();
+  assert.equal(f.errors.length, 1);
+  assert.equal(
+    f.lease.has(f.note),
+    true,
+    "overlapping failure must not drop the open Edit lease",
+  );
+});

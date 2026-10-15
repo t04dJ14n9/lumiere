@@ -7,6 +7,7 @@ import {
   type NativeDocument,
   type NativeEditor,
 } from "../../../src/plugins/cursorBridge/handoff";
+import { Lease } from "../../../src/host/reclaim-policy";
 
 function positionAt(text: string, offset: number) {
   let line = 0;
@@ -217,6 +218,37 @@ for (const stage of ["warm", "open", "show"] as const) {
     assert.deepEqual(f.released, [note]);
   });
 }
+
+test("failed second same-URI handoff keeps the first lease held", async () => {
+  const lease = new Lease();
+  const released: string[] = [];
+  const f = fixture("abcdef");
+  f.surface.acquireLease = (uri) => {
+    lease.acquire(uri);
+  };
+  f.surface.releaseLease = (uri) => {
+    lease.release(uri);
+    released.push(uri);
+  };
+  const selection = { from: 2, to: 4, text: "cd", version: 1 };
+  const first = await handOffSelection(f.surface, note, selection);
+  assert.equal(first.ok, true);
+  assert.equal(lease.has(note), true);
+
+  f.surface.warm = async () => {
+    f.state.version = 2;
+  };
+  f.surface.show = async () => {
+    assert.fail("show must not run after a version change");
+  };
+  const second = await handOffSelection(f.surface, note, {
+    ...selection,
+    version: 1,
+  });
+  assert.deepEqual(second, { ok: false, reason: "changed" });
+  assert.equal(lease.has(note), true, "first Edit session lease must survive");
+  assert.deepEqual(released, [note]);
+});
 
 for (const change of [
   "active editor",

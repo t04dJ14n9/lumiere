@@ -57,7 +57,7 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
     ),
   );
   if (!hasNativeTextTab) {
-    handoffLease.release(uri);
+    handoffLease.clear(uri);
   }
 }
 

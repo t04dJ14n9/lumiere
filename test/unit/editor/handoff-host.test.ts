@@ -457,6 +457,32 @@ test("a lease acquired during queued reclaim survives sibling tab changes", asyn
   assert.deepEqual(commands, [], "queued openWith must honor the lease");
 });
 
+test("failed second same-URI surface handoff keeps the first lease", async (t) => {
+  const document: TextEditor["document"] = {
+    uri: Uri.parse(note),
+    isDirty: true,
+    version: 1,
+    getText: () => "abcdef",
+    positionAt: (offset) => new Position(0, offset),
+  };
+  documents.push(document);
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  t.after(() => host.reclaim.handoffLease.clear(note));
+  const selection = { from: 2, to: 4, text: "cd", version: 1 };
+  const first = await handOffSelection(surface, note, selection);
+  assert.equal(first.ok, true);
+  assert.equal(host.reclaim.handoffLease.has(note), true);
+
+  document.version = 2;
+  const second = await handOffSelection(surface, note, selection);
+  assert.deepEqual(second, { ok: false, reason: "changed" });
+  assert.equal(
+    host.reclaim.handoffLease.has(note),
+    true,
+    "first native Edit lease must survive a failed retry",
+  );
+});
+
 test("Cursor handoff surface reads live editor state and checks native editor identity", async (t) => {
   const document: TextEditor["document"] = {
     uri: Uri.parse(note),
