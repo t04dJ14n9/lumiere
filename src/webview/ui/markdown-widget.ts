@@ -204,7 +204,7 @@ export function markdownBlockIgnoresEvent(event: Event): boolean {
     type: event.type,
     targetIsElement: event.target instanceof Element,
     controlInsideWidget: pointerControlInsideWidget(event.target),
-    nativeSelectableLabel: pointerNativeSelectableLabel(event.target),
+    nativeSelectableLabel: isNativeSelectableLabelTarget(event.target),
   });
 }
 
@@ -267,7 +267,10 @@ function pointerControlInsideWidget(target: EventTarget | null): boolean {
   return shell instanceof HTMLElement && isBlockControl(shell, target);
 }
 
-function pointerNativeSelectableLabel(target: EventTarget | null): boolean {
+/** True when the event target is Mermaid SVG label text inside a widget. */
+export function isNativeSelectableLabelTarget(
+  target: EventTarget | null,
+): boolean {
   if (!(target instanceof Element)) {
     return false;
   }

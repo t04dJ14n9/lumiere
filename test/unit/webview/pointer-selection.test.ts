@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import {
@@ -8,6 +10,7 @@ import {
   pointerSelectionToggled,
   revealRanges,
   setPointerSelection,
+  shouldStartPointerFreeze,
 } from "../../../src/webview/ui/pointer-selection";
 
 function stateWith(doc: string, selection: EditorSelection): EditorState {
@@ -64,4 +67,54 @@ test("growing a live selection while frozen does not change reveal ranges", () =
     to: range.to,
   }));
   assert.deepEqual(after, before);
+});
+
+test("pointer freeze skips native Mermaid SVG label mousedowns", () => {
+  assert.equal(
+    shouldStartPointerFreeze({
+      button: 0,
+      alreadyFrozen: false,
+      nativeSelectableLabel: false,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldStartPointerFreeze({
+      button: 0,
+      alreadyFrozen: false,
+      nativeSelectableLabel: true,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldStartPointerFreeze({
+      button: 0,
+      alreadyFrozen: true,
+      nativeSelectableLabel: false,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldStartPointerFreeze({
+      button: 2,
+      alreadyFrozen: false,
+      nativeSelectableLabel: false,
+    }),
+    false,
+  );
+});
+
+test("pointer thaw is deferred with setTimeout so mouseup can run first", () => {
+  const root = new URL("../../../", import.meta.url).pathname;
+  const src = readFileSync(
+    path.join(root, "src/webview/ui/pointer-selection.ts"),
+    "utf8",
+  );
+  assert.match(src, /shouldStartPointerFreeze/);
+  assert.match(src, /isNativeSelectableLabelTarget/);
+  assert.match(src, /setTimeout/);
+  assert.doesNotMatch(
+    src,
+    /queueMicrotask\(\(\) => \{[\s\S]*press\.of\(null\)/,
+  );
 });

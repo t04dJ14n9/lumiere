@@ -2,6 +2,7 @@ import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
 import type { EditorState, Extension, SelectionRange } from "@codemirror/state";
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
+import { isNativeSelectableLabelTarget } from "./markdown-widget";
 
 /**
  * Obsidian keeps a note rendered while the mouse button is down and reveals
@@ -109,6 +110,23 @@ export function onGestureEnd(
   );
 }
 
+/**
+ * Whether a primary mousedown should start the reveal freeze. Native Mermaid
+ * SVG label drags must not freeze: thaw dispatches a transaction that runs
+ * CodeMirror `updateSelection()` and clears the browser's label selection.
+ */
+export function shouldStartPointerFreeze(input: {
+  button: number;
+  alreadyFrozen: boolean;
+  nativeSelectableLabel: boolean;
+}): boolean {
+  return (
+    input.button === 0 &&
+    !input.alreadyFrozen &&
+    !input.nativeSelectableLabel
+  );
+}
+
 /** Test helper: start or end the pointer reveal freeze. */
 export function setPointerSelection(
   value: EditorSelection | null,
@@ -121,26 +139,42 @@ export const pointerSelectionTracking: Extension = [
   ViewPlugin.define((view: EditorView) => {
     const events = new AbortController();
     const doc = view.dom.ownerDocument;
-    const release = () => {
-      if (view.state.field(pointerSelection, false)) {
-        // Usually after CodeMirror's own mouseup handling (not guaranteed:
-        // pointerup can come first). The callback may outlive the tracker or
-        // the extension, so it checks both.
-        queueMicrotask(() => {
-          if (
-            !events.signal.aborted &&
-            view.dom.isConnected &&
-            view.state.field(pointerSelection, false)
-          ) {
-            view.dispatch({ effects: press.of(null) });
-          }
-        });
+    // pointerup can fire before mouseup in the same turn; a microtask would
+    // thaw (and possibly reveal/destroy the widget) before click-to-edit's
+    // mouseup. setTimeout(0) runs after that mouseup.
+    let thawTimer: ReturnType<typeof setTimeout> | undefined;
+    const clearThaw = () => {
+      if (thawTimer !== undefined) {
+        clearTimeout(thawTimer);
+        thawTimer = undefined;
       }
+    };
+    events.signal.addEventListener("abort", clearThaw);
+    const release = () => {
+      if (!view.state.field(pointerSelection, false) || thawTimer !== undefined) {
+        return;
+      }
+      thawTimer = setTimeout(() => {
+        thawTimer = undefined;
+        if (
+          !events.signal.aborted &&
+          view.dom.isConnected &&
+          view.state.field(pointerSelection, false)
+        ) {
+          view.dispatch({ effects: press.of(null) });
+        }
+      }, 0);
     };
     view.dom.addEventListener(
       "mousedown",
       (event) => {
-        if (event.button !== 0 || view.state.field(pointerSelection)) {
+        if (
+          !shouldStartPointerFreeze({
+            button: event.button,
+            alreadyFrozen: Boolean(view.state.field(pointerSelection, false)),
+            nativeSelectableLabel: isNativeSelectableLabelTarget(event.target),
+          })
+        ) {
           return;
         }
         view.dispatch({ effects: press.of(view.state.selection) });

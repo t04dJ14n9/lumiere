@@ -3702,3 +3702,21 @@ Addresses two P2 findings from the ChatGPT Pro review of PR #46:
 
 Files: `src/webview/ui/markdown-widget.ts`,
 `test/unit/webview/markdown-widget.test.ts`.
+
+## Pointer freeze skips native Mermaid label selection — 2026-10-15
+
+Addresses the remaining ChatGPT Pro P2 on PR #46 after the ignoreEvent /
+click-to-edit round:
+
+1. `pointerSelectionTracking` no longer freezes on primary mousedown over
+   Mermaid SVG `<text>` / `<tspan>`. Thaw was dispatching a transaction that
+   ran CodeMirror `updateSelection()` and cleared the browser's native label
+   selection. Ordinary Live Preview drags still freeze so tall blocks do not
+   reflow mid-selection.
+2. Thaw is deferred with `setTimeout(0)` instead of `queueMicrotask`, so a
+   `pointerup`-first gesture cannot reveal/destroy the widget before
+   click-to-edit's `mouseup`.
+
+Files: `src/webview/ui/{pointer-selection,markdown-widget}.ts`,
+`test/unit/webview/pointer-selection.test.ts`.
+

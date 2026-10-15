@@ -82,6 +82,7 @@ test("ignoreEvent bounds control detection to .hybrid-block (not outer contented
   assert.match(widgetSrc, /selectionchange/);
   assert.match(widgetSrc, /isBlockControl/);
   assert.match(widgetSrc, /isNativeSelectableLabel/);
+  assert.match(widgetSrc, /export function isNativeSelectableLabelTarget/);
   // Unbounded closest(interactive) was the P2 bug — must not be the ignore path.
   assert.doesNotMatch(
     widgetSrc,
