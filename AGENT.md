@@ -59,7 +59,7 @@ core contributors only. Copy the **sample external plugin** instead:
 ## 2. Prerequisites
 
 - Markdown Workshop installed (or under development) with **API version 1**.
-- Extension ID to depend on: `t04dj14n9.vscode-markdown-workbench`.
+- Extension ID to depend on: `t04dj14n9.vscode-markdown-workshop`.
 - Node.js tooling to bundle your extension (`esbuild` / `tsc` as you prefer).
 - For packaging: `@vscode/vsce`.
 - Local editor: VS Code or Cursor with
@@ -80,10 +80,10 @@ Read before coding:
 1. Create a new extension folder (or copy `test/fixtures/sample-plugin/`).
 2. Set `publisher` + `name` → extension ID `publisher.name`.
 3. In `package.json`:
-   - `"extensionDependencies": ["t04dj14n9.vscode-markdown-workbench"]`
+   - `"extensionDependencies": ["t04dj14n9.vscode-markdown-workshop"]`
    - Activation: at least
      `"onLanguage:markdown"` and
-     `"onCustomEditor:markdownWorkbench.editor"`
+     `"onCustomEditor:markdownWorkshop.editor"`
      (`onCustomEditor:<viewType>` is an **activation event**, not ownership of
      that custom editor — Workshop still owns the editor.)
    - Declare any commands under **your** `contributes.commands` (palette entries
@@ -93,7 +93,7 @@ Read before coding:
 4. Obtain types from Workshop `dist/api/` (`types.d.ts`, `plugin-types.d.ts`, …)
    after `pnpm build` in Workshop, or copy those declarations into your repo.
 5. In `activate`:
-   - `const ext = vscode.extensions.getExtension<MarkdownWorkbenchApi>("t04dj14n9.vscode-markdown-workbench")`
+   - `const ext = vscode.extensions.getExtension<MarkdownWorkshopApi>("t04dj14n9.vscode-markdown-workshop")`
    - `const api = await ext?.activate()`
    - Abort unless `api?.apiVersion === 1`
    - `context.subscriptions.push(api.plugin(yourDefinition))`
@@ -106,12 +106,11 @@ Read before coding:
      (`publisher.name`).
 7. Run locally on **local desktop** (see §8). Verify Show Plugin Status lists
    your plugin.
-8. Toggle `"markdownWorkbench.plugins.external": { "<your.id>": false }` and
+8. Toggle `"markdownWorkshop.plugins.external": { "<your.id>": false }` and
    confirm contributions disappear.
 
-**Settings namespace:** use `markdownWorkbench.*` (current product namespace). If
-the product formally renames to `markdownWorkshop.*`, update this file in
-**lockstep** with API.md — do not invent the rename early.
+**Settings namespace:** use `markdownWorkshop.*` (current product namespace after
+the Workshop identity rename). Keep this file in sync with [API.md](API.md).
 
 ---
 
@@ -119,7 +118,7 @@ the product formally renames to `markdownWorkshop.*`, update this file in
 
 ```ts
 api.plugin({
-  id: "acme.badges",                 // publisher.* ; /[\w.-]{3,200}/
+  id: "acme.badges",                 // publisher.* ; /^[\w.-]{3,200}$/
   ownerExtensionId: "acme.badges", // MUST equal YOUR exact extension id (publisher.name)
   title: "Badges",
   description: "…",
@@ -152,7 +151,7 @@ Hard rules:
 
 Enablement:
 
-- Setting map: `markdownWorkbench.plugins.external`
+- Setting map: `markdownWorkshop.plugins.external`
 - Example: `{ "acme.badges": false }`
 - Scopes: user / workspace / workspace folder (via API
   `setPluginEnabled` / Settings UI **Manage Plugins**)
@@ -281,10 +280,10 @@ Restricted Mode (see VS Code Workspace Trust extension guide).
 
 - Add or edit files under Workshop `src/plugins/` for a third-party feature.
 - Dynamic-import or `eval` vault / workspace scripts into Workshop.
-- Bundle or expect API v2 webview modules (`markdownWorkbench.webviewPlugins`)
+- Bundle or expect API v2 webview modules (`markdownWorkshop.webviewPlugins`)
   — designed, not the v1 custom-plugin path.
 - Register custom editors through Workshop API v1 (that is P7 / API v2 editor
-  plugins — separate design). Using `onCustomEditor:markdownWorkbench.editor`
+  plugins — separate design). Using `onCustomEditor:markdownWorkshop.editor`
   only **activates** your extension when that editor opens; it does not make
   you the editor owner.
 - Change Markdown parsing / CodeMirror extensions from outside.
@@ -350,7 +349,7 @@ Before claiming a custom plugin works (**API / lifecycle + manual integration**)
 3. At least one trivial contribution works (marker **or** command **or**
    claimed link **or** code-block language). Prefer proving **command + marker**
    when aiming at native E2E later.
-4. Disable via `markdownWorkbench.plugins.external` removes the contribution
+4. Disable via `markdownWorkshop.plugins.external` removes the contribution
    without breaking built-ins.
 5. Re-enable restores it.
 6. Disposing the handle / deactivating the extension cleans up.

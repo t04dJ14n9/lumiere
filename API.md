@@ -153,7 +153,7 @@ context.subscriptions.push(handle); // dispose() unregisters the plugin
 
 Rules:
 
-- `id` matches `[\w.-]{3,200}` and starts with the owner's publisher and a
+- `id` matches `/^[\w.-]{3,200}$/` (anchored full-string match, same as `validateDefinition`) and starts with the owner's publisher and a
   dot. It cannot repeat a registered or built-in ID
   (`DuplicateContribution`). The owner must be installed (`InvalidArgument`).
   Namespaces prevent accidents; they do not authenticate extensions sharing a
