@@ -75,9 +75,18 @@ test("unrelated modifiers and keys are not history shortcuts", () => {
 
 test("native text fields are left to VS Code's DOM undo", () => {
   assert.equal(isNativeTextField(null), false);
-  assert.equal(isNativeTextField({ tagName: "DIV" } as EventTarget), false);
-  assert.equal(isNativeTextField({ tagName: "input" } as EventTarget), true);
-  assert.equal(isNativeTextField({ tagName: "TEXTAREA" } as EventTarget), true);
+  assert.equal(
+    isNativeTextField({ tagName: "DIV" } as unknown as EventTarget),
+    false,
+  );
+  assert.equal(
+    isNativeTextField({ tagName: "input" } as unknown as EventTarget),
+    true,
+  );
+  assert.equal(
+    isNativeTextField({ tagName: "TEXTAREA" } as unknown as EventTarget),
+    true,
+  );
 });
 
 function propertyEditor(
@@ -119,7 +128,10 @@ test("property contenteditables leave native history; CodeMirror does not", () =
   assert.equal(leavesNativeHistory(textProperty), true);
   assert.equal(leavesNativeHistory(listDraft), true);
   assert.equal(leavesNativeHistory(codeMirrorSurface), false);
-  assert.equal(leavesNativeHistory({ tagName: "INPUT" } as EventTarget), true);
+  assert.equal(
+    leavesNativeHistory({ tagName: "INPUT" } as unknown as EventTarget),
+    true,
+  );
 });
 
 test("capture-phase history guard owns undo once and releases its listener", () => {
@@ -169,14 +181,14 @@ test("capture-phase history guard owns undo once and releases its listener", () 
   const fire = (overrides: Partial<HistoryKey> = {}) => {
     entry.listener({
       ...key(overrides),
-      target: { tagName: "DIV" } as EventTarget,
+      target: { tagName: "DIV" } as unknown as EventTarget,
       preventDefault() {
         prevented++;
       },
       stopPropagation() {
         stopped++;
       },
-    } as KeyboardEvent);
+    } as unknown as KeyboardEvent);
   };
   fire();
   fire({ key: "Z", shiftKey: true });
@@ -208,8 +220,8 @@ test("history guard does not steal undo from INPUT, TEXTAREA, or property editor
     actions.push(action);
   });
   const targets: EventTarget[] = [
-    { tagName: "INPUT" } as EventTarget,
-    { tagName: "TEXTAREA" } as EventTarget,
+    { tagName: "INPUT" } as unknown as EventTarget,
+    { tagName: "TEXTAREA" } as unknown as EventTarget,
     propertyEditor("data-property-input"),
     propertyEditor("data-property-list-input"),
   ];
@@ -229,7 +241,7 @@ test("history guard does not steal undo from INPUT, TEXTAREA, or property editor
           stopPropagation() {
             assert.fail("must not stopPropagation in a native editor");
           },
-        } as KeyboardEvent);
+        } as unknown as KeyboardEvent);
       }
     }
   }
@@ -271,7 +283,7 @@ test("history guard still owns undo on CodeMirror contenteditable", () => {
         prevented++;
       },
       stopPropagation() {},
-    } as KeyboardEvent);
+    } as unknown as KeyboardEvent);
   }
   assert.deepEqual(actions, ["undo"]);
   assert.equal(prevented, 1);
