@@ -11,6 +11,7 @@ import { propertyIcon, propertyFlairIcon } from "../../webview/ui/icons";
 import { validTag } from "../../markdown/tags/grammar";
 import { attr, escape } from "../../markdown/html/helpers";
 import { createRenderer } from "../../markdown/html";
+import { stringify } from "yaml";
 const { renderInline } = createRenderer();
 
 export function renderProperties(
@@ -60,9 +61,9 @@ function propertyRow(
 ): string {
   const { kind, editable } = options;
   const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
-  const body =
-    options.custom ??
-    (editable ? editableValue(key, value, kind) : propertyValue(value));
+  const body = editable
+    ? editableValue(key, value, kind)
+    : complexEditable(key, value, options.custom);
   return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
 }
 
@@ -139,6 +140,58 @@ function propertyInputText(value: unknown): string {
       : (JSON.stringify(value) ?? "");
   }
   return String(value);
+}
+
+function complexEditable(
+  key: string,
+  value: unknown,
+  custom: string | undefined,
+): string {
+  if (hasCycle(value)) {
+    return custom ?? propertyValue(value);
+  }
+  const text = yamlDraft(value);
+  if (text === undefined) {
+    return custom ?? propertyValue(value);
+  }
+  const editor = editableYaml(key, text);
+  return custom
+    ? `<div class="property-complex">${custom}${editor}</div>`
+    : editor;
+}
+
+function hasCycle(value: unknown, ancestors = new Set<object>()): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  if (ancestors.has(value)) {
+    return true;
+  }
+  ancestors.add(value);
+  const children = Array.isArray(value) ? value : Object.values(value);
+  const cyclic = children.some((item) => hasCycle(item, ancestors));
+  ancestors.delete(value);
+  return cyclic;
+}
+
+function editableYaml(key: string, text: string): string {
+  return `<div class="metadata-input-longtext metadata-input-yaml" contenteditable="true" role="textbox" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</div>`;
+}
+
+/** Undefined when the value cannot round-trip (e.g. recursive aliases). */
+function yamlDraft(value: unknown): string | undefined {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  try {
+    return stringify(value, {
+      lineWidth: 0,
+      defaultKeyType: null,
+      defaultStringType: "PLAIN",
+    }).trimEnd();
+  } catch {
+    return undefined;
+  }
 }
 
 function propertyValue(value: unknown, ancestors = new Set<object>()): string {

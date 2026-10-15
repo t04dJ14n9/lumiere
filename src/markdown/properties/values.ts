@@ -1,6 +1,11 @@
+import { parseDocument } from "yaml";
 import type { PropertyKind } from "./types";
 export type PropertyScalar = string | number | boolean | null;
-export type PropertyValue = PropertyScalar | readonly PropertyScalar[];
+/** Scalars, scalar lists, and nested YAML maps/lists that Properties can set. */
+export type PropertyValue =
+  | PropertyScalar
+  | readonly PropertyValue[]
+  | { readonly [key: string]: PropertyValue };
 
 export function propertyInput(
   kind: PropertyKind,
@@ -33,6 +38,49 @@ export function propertyInput(
       : undefined;
   }
   return undefined;
+}
+
+/** Parse a Properties YAML draft into a settable value, or undefined if invalid. */
+export function propertyYamlInput(text: string): PropertyValue | undefined {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const document = parseDocument(trimmed, { uniqueKeys: true });
+    if (document.errors.length) {
+      return undefined;
+    }
+    const value: unknown = document.toJS({ maxAliasCount: 100 });
+    return settablePropertyValue(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function settablePropertyValue(
+  value: unknown,
+  ancestors = new Set<object>(),
+): value is PropertyValue {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return true;
+  }
+  if (!value || typeof value !== "object" || ancestors.has(value)) {
+    return false;
+  }
+  ancestors.add(value);
+  const ok = Array.isArray(value)
+    ? value.every((item) => settablePropertyValue(item, ancestors))
+    : Object.values(value).every((item) =>
+        settablePropertyValue(item, ancestors),
+      );
+  ancestors.delete(value);
+  return ok;
 }
 
 export function matchesPropertyKind(

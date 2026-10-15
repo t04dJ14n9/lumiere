@@ -737,18 +737,20 @@ Off by default.
    click opens a note without revealing its line range; do not count it as
    transparent chat-click support or global Back/Forward history.
 
-### sources (read-only)
+### sources and nested Properties
 
-A note inside an OKF bundle, with a `sources` frontmatter list. Confirm light
-and dark themes.
+A note inside an OKF bundle, with a `sources` frontmatter list and a `generated`
+map. Confirm light and dark themes.
 
 1. Rows stack in document order. The first eight are expanded. **Showing 8 of
-   N** reveals the rest. There is no Edit, Add or Apply control, and revealing
-   rows does not change the file.
+   N** reveals the rest. Revealing rows does not change the file. Beneath the
+   rows, a YAML draft edits the whole `sources` value; committing it updates
+   frontmatter (undoable like other Properties).
 2. A row shows its title, or a resource-derived label, with the original
-   resource on its own line. `id` appears only when the entry has one. Copy id
-   copies that id. A missing `usage_count` is not shown as zero; zero is shown
-   as zero. An entry `usage_window` wins over the inherited one.
+   resource on its own line. `id` appears only when the entry has one, as plain
+   selectable text (no Copy id button). A missing `usage_count` is not shown as
+   zero; zero is shown as zero. An entry `usage_window` wins over the inherited
+   one.
 3. An `https` resource opens in the browser. A bundle path opens that workspace
    file. `command:`, `javascript:` and `data:` stay plain text and do not open.
    Nothing is fetched to preview a title or a remote page.
@@ -756,6 +758,9 @@ and dark themes.
    The click does nothing. It does not open a different source by position.
 5. A note outside a bundle still shows the rows. A path that leaves the vault
    does not open.
+6. `generated` (and any other nested map / list-of-maps) is editable as YAML in
+   Properties and writes back into the note. Scalar and scalar-list properties
+   keep their usual controls.
 
 ### vault graph
 

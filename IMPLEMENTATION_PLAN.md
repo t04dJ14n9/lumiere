@@ -3805,3 +3805,14 @@ Validation:
   test/browser/tables-scroll.spec.ts --workers=1`: 2/2 pass (vim on/off). The
   browser fixture reveals the table into the CodeMirror viewport before querying
   cells so the widget mounts.
+## Hand-editable Properties (nested + Sources) — 2026-10-15
+
+Every frontmatter value is editable in the Properties sheet. Scalars and scalar
+lists keep their existing controls. Nested maps and list-of-maps (including
+`generated` and `sources`) edit as YAML drafts that write back through
+`propertyChanges` / `set`. The Sources custom renderer still draws open links
+above that draft; the Copy id control is removed (id is selectable text).
+
+Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts,
+`propertyYamlInput`, and set round-trips for `generated` / `sources`.
+

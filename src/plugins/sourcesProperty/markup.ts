@@ -3,7 +3,7 @@ import { escape } from "../../markdown/html/helpers";
 
 const FIRST_ROWS = 8;
 
-/** Read-only stacked Sources rows. Disclosure never drops a row from the markup. */
+/** Stacked Sources rows with open links. Disclosure never drops a row from the markup. */
 export function renderSources(
   value: unknown,
   values: Record<string, unknown>,
@@ -41,7 +41,7 @@ function idLine(row: ReturnType<typeof sourceRows>[number]): string {
   if (!row.id) {
     return "";
   }
-  return `<p class="source-id"><span>${escape(row.id)}</span> <button type="button" data-source-copy${attr(row.id)}>Copy id</button></p>`;
+  return `<p class="source-id">${escape(row.id)}</p>`;
 }
 
 function usageLine(row: ReturnType<typeof sourceRows>[number]): string {

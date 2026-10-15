@@ -1,4 +1,9 @@
-import { frontmatter, propertyInput } from "../../markdown/properties";
+import {
+  frontmatter,
+  propertyInput,
+  propertyYamlInput,
+  type PropertyValue,
+} from "../../markdown/properties";
 import type { PropertyKind } from "../../markdown/properties/types";
 import type { PropertyEditor } from "./control-edits";
 import {
@@ -48,22 +53,35 @@ export class PropertyField {
     this.editor?.refresh?.();
   }
 
+  private parsedValue(): PropertyValue | undefined {
+    const kind = this.input.dataset.propertyKind ?? "text";
+    const text = inputText(this.input);
+    if (kind === "yaml") {
+      return propertyYamlInput(text);
+    }
+    return propertyInput(kind as PropertyKind, text);
+  }
+
+  private reject(message: string): false {
+    setInputValidity(this.input, message);
+    reportInputValidity(this.input);
+    return false;
+  }
+
   private commit(): boolean {
     if (!this.isDirty || this.input.dataset.propertyCommitting) {
       return true;
     }
-    const kind = (this.input.dataset.propertyKind ?? "text") as PropertyKind;
-    const value = propertyInput(kind, inputText(this.input));
-    if (
-      value === undefined ||
-      (isNativeInput(this.input) && !this.input.checkValidity())
-    ) {
-      setInputValidity(
-        this.input,
-        "Enter a valid value for this property type.",
+    const value = this.parsedValue();
+    const invalidNative =
+      isNativeInput(this.input) && !this.input.checkValidity();
+    if (value === undefined || invalidNative) {
+      const yaml = this.input.dataset.propertyKind === "yaml";
+      return this.reject(
+        yaml
+          ? "Enter valid YAML for this property."
+          : "Enter a valid value for this property type.",
       );
-      reportInputValidity(this.input);
-      return false;
     }
     this.input.dataset.propertyCommitting = "true";
     delete this.input.dataset.propertyEditing;
@@ -80,12 +98,7 @@ export class PropertyField {
     }
     if (!applied) {
       this.input.dataset.propertyEditing = "true";
-      setInputValidity(
-        this.input,
-        "The property changed. Reopen it and try again.",
-      );
-      reportInputValidity(this.input);
-      return false;
+      return this.reject("The property changed. Reopen it and try again.");
     }
     this.isDirty = false;
     delete this.input.dataset.propertyDirty;
@@ -149,26 +162,46 @@ export class PropertyField {
     if (event.isComposing) {
       return;
     }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.commit()) {
-        this.editor?.action?.("save");
-      }
+    if (this.saveShortcut(event) || this.enterCommit(event)) {
       return;
     }
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.commit()) {
-        this.row()?.focus();
-      }
+    if (event.key !== "Escape") {
+      return;
     }
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      this.cancel();
-      this.editor?.focusBody?.();
+    event.preventDefault();
+    event.stopPropagation();
+    this.cancel();
+    this.editor?.focusBody?.();
+  }
+
+  private saveShortcut(event: KeyboardEvent): boolean {
+    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") {
+      return false;
     }
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.commit()) {
+      this.editor?.action?.("save");
+    }
+    return true;
+  }
+
+  private enterCommit(event: KeyboardEvent): boolean {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return false;
+    }
+    // Multiline YAML drafts need Enter for newlines; commit with Ctrl/Cmd+Enter.
+    const yamlNewline =
+      this.input.dataset.propertyKind === "yaml" &&
+      !(event.metaKey || event.ctrlKey);
+    if (yamlNewline) {
+      return true;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.commit()) {
+      this.row()?.focus();
+    }
+    return true;
   }
 }

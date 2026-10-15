@@ -1,19 +1,13 @@
-/** Clicks on a read-only Sources block. Show-all only reveals rows already in the markup. */
+/** Clicks on a Sources block. Show-all only reveals rows already in the markup. */
 export function bindSources(
   root: ParentNode,
   signal: AbortSignal,
   open: (resource: string) => void,
-  copy: (text: string) => void,
 ): void {
   for (const button of root.querySelectorAll<HTMLButtonElement>(
     "[data-source-open]",
   )) {
     listen(button, signal, () => open(button.dataset.sourceValue ?? ""));
-  }
-  for (const button of root.querySelectorAll<HTMLButtonElement>(
-    "[data-source-copy]",
-  )) {
-    listen(button, signal, () => copy(button.dataset.sourceValue ?? ""));
   }
   for (const button of root.querySelectorAll<HTMLButtonElement>(
     "[data-source-more]",

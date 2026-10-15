@@ -1,8 +1,9 @@
-import { isMap, isNode, isScalar, isSeq, parseDocument, stringify } from "yaml";
-import { headerParts, frontmatter, editableList } from "./frontmatter";
+import { isMap, isNode, isScalar, parseDocument, stringify } from "yaml";
+import { headerParts, frontmatter } from "./frontmatter";
 import { orderPropertyBody } from "./order";
 import { validPropertyName } from "./types";
 import type { PropertyScalar, PropertyValue } from "./values";
+import { settablePropertyValue } from "./values";
 import { mergeProperties } from "./merge";
 export type PropertyEdit =
   | { type: "order"; keys: readonly string[] }
@@ -29,7 +30,7 @@ export const scalarValue = (value: unknown): value is PropertyScalar =>
   typeof value === "boolean" ||
   (typeof value === "number" && Number.isFinite(value));
 const propertyValue = (value: unknown): value is PropertyValue =>
-  scalarValue(value) || (Array.isArray(value) && value.every(scalarValue));
+  settablePropertyValue(value);
 
 export function setPropertyChange(
   source: string,
@@ -40,9 +41,7 @@ export function setPropertyChange(
   if (!isNode(node) || !node.range) {
     return undefined;
   }
-  if (Array.isArray(value) && isSeq(node) && !editableList(node)) {
-    return undefined;
-  }
+  // Complex sequences (list-of-maps) are replaced wholesale as YAML text.
   let insert = yamlValue(value);
   if (
     isScalar(node) &&
