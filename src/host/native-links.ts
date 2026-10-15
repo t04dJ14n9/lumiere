@@ -1,4 +1,5 @@
 import { nativeLineFragment } from "../shared/native-links";
+import { contributionId } from "../shared/setting-schema";
 import type { Navigation, NavigationIntent } from "../shared/runtime";
 import { contained } from "./navigation";
 import { registerSourceLinks, type LinkRun } from "./source-links";
@@ -6,7 +7,7 @@ import { registerSourceLinks, type LinkRun } from "./source-links";
 export function registerNativeLinks(navigation: Navigation) {
   const intents = new WeakMap<LinkRun, NavigationIntent>();
   return registerSourceLinks({
-    command: "markdownWorkbench.openNativeLink",
+    command: contributionId("openNativeLink"),
     accepts: (path, fragment) =>
       /\.(md|markdown)$/i.test(path) && !nativeLineFragment(fragment),
     authorize: contained,

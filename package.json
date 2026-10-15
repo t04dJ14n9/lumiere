@@ -1192,17 +1192,17 @@
       "view/title": [
         {
           "command": "markdownWorkshop.outline.expandAll",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkbench.outline",
+          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkshop.outline",
           "group": "navigation@1"
         },
         {
           "command": "markdownWorkshop.outline.enableFollowCursor",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkbench.outline && !markdownWorkbench.outline.followCursor",
+          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkshop.outline && !markdownWorkshop.outline.followCursor",
           "group": "outline@1"
         },
         {
           "command": "markdownWorkshop.outline.disableFollowCursor",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkbench.outline && markdownWorkbench.outline.followCursor",
+          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && view == markdownWorkshop.outline && markdownWorkshop.outline.followCursor",
           "group": "outline@1"
         }
       ],

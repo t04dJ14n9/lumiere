@@ -1,6 +1,7 @@
 import { frontmatter } from "../../markdown/properties";
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import type { HostDocument } from "../../shared/runtime";
 import { asString, asStrings } from "../../shared/values";
 import { baseName, containingFolder } from "../../shared/workspace-path";
@@ -22,9 +23,9 @@ export const scratchHost: Plugin = {
     };
     const report = (message: string) => ctx.workbench.error(message);
     registerReportedCommands(effect, views, report, [
-      { id: "markdownWorkbench.scratch.new", run: () => newScratch(ctx) },
+      { id: contributionId("scratch.new"), run: () => newScratch(ctx) },
       {
-        id: "markdownWorkbench.scratch.promote",
+        id: contributionId("scratch.promote"),
         run: () => promote(ctx),
       },
     ]);

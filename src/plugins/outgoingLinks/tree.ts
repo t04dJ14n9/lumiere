@@ -1,8 +1,9 @@
 import type { TreeNode, TreeSource } from "../../shared/runtime";
 import { folderOf, stemOf } from "../../shared/vault-path";
+import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
 
-export const OPEN_COMMAND = "markdownWorkbench.outgoingLinks.open";
+export const OPEN_COMMAND = contributionId("outgoingLinks.open");
 
 /**
  * The Outgoing links view for the active note: files it links to, with how

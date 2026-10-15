@@ -10,6 +10,7 @@ import {
 import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
 import type { Disposer } from "../kernel";
+import { contributionId } from "../shared/setting-schema";
 import type { DiffPanel, DiffSide, DiffViews, OpenedDiff } from "../shared/git";
 
 type ShowOptions = Parameters<DiffViews["show"]>[0];
@@ -106,7 +107,7 @@ function panelHtml(webview: vscode.Webview, dist: vscode.Uri): string {
 function showPanel(extensionUri: vscode.Uri, options: ShowOptions): DiffPanel {
   const dist = vscode.Uri.joinPath(extensionUri, "dist");
   const panel = vscode.window.createWebviewPanel(
-    "markdownWorkbench.renderedDiff",
+    contributionId("renderedDiff"),
     options.title,
     {
       viewColumn: options.column ?? vscode.ViewColumn.Active,

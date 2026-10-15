@@ -1,5 +1,6 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import { asString, asStrings } from "../../shared/values";
 import type { HostDocument } from "../../shared/runtime";
 import { containingFolder } from "../../shared/workspace-path";
@@ -24,7 +25,7 @@ export const assetsHost: Plugin = {
       (message) => ctx.workbench.error(message),
       [
         {
-          id: "markdownWorkbench.assets.import",
+          id: contributionId("assets.import"),
           run: () => importIntoProject(ctx),
         },
       ],

@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
 import { backlinksHost } from "../../../src/plugins/backlinks/host";
-import { BacklinksTree } from "../../../src/plugins/backlinks/tree";
+import {
+  BacklinksTree,
+  OPEN_COMMAND,
+} from "../../../src/plugins/backlinks/tree";
 import backlinks from "../../../src/plugins/backlinks/manifest";
 import { outgoingLinksHost } from "../../../src/plugins/outgoingLinks/host";
 import { OutgoingLinksTree } from "../../../src/plugins/outgoingLinks/tree";
@@ -136,10 +139,7 @@ test("view plugins follow the active note and their setting, and clean up when t
   assert.equal(view.message, undefined);
   assert.equal(status.text, "2 backlinks");
 
-  await fake.commands.get("markdownWorkbench.backlinks.open")!(
-    uriOf("A.md"),
-    6,
-  );
+  await fake.commands.get(OPEN_COMMAND)!(uriOf("A.md"), 6);
   assert.deepEqual(opened, [{ uri: uriOf("A.md"), offset: 6 }]);
 
   fake.settings["plugins.backlinks.enabled"] = false;

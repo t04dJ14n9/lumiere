@@ -1,8 +1,10 @@
 import type { Context, Plugin } from "../../kernel";
 import {
+  MARKDOWN_BRIDGE_COMMAND,
   PDF_BRIDGE_COMMAND,
   parseWikiContext,
 } from "../../shared/bridge/envelope";
+import { contributionId } from "../../shared/setting-schema";
 import type { BridgeWikiContext } from "../../shared/bridge/envelope";
 import type { Workbench } from "../../shared/runtime";
 import type { EditorPanel, SourceSelection } from "../editor/api";
@@ -18,10 +20,10 @@ export const bridgeHost: Plugin = {
       activeSelection: (wiki) => activeSelection(ctx, wiki),
     };
     ctx.provide("bridgeCapture", capture);
-    command(ctx, "markdownWorkbench.bridge.copyEnvelope", () =>
+    command(ctx, contributionId("bridge.copyEnvelope"), () =>
       copyEnvelope(ctx),
     );
-    command(ctx, "markdownWorkbench.bridge.envelope", (wiki) =>
+    command(ctx, MARKDOWN_BRIDGE_COMMAND, (wiki) =>
       activeSelection(ctx, parseWikiContext(wiki)),
     );
   },

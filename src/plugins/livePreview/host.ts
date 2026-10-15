@@ -1,4 +1,5 @@
 import type { Plugin } from "../../kernel";
+import { contributionId } from "../../shared/setting-schema";
 import type {} from "../editor/api";
 import { protocol } from "../commands/protocol";
 export const livePreviewHost: Plugin = {
@@ -6,7 +7,7 @@ export const livePreviewHost: Plugin = {
   inject: { required: ["workbench", "editors"] },
   apply(ctx) {
     ctx.effect(() =>
-      ctx.workbench.command("markdownWorkbench.toggleSourceMode", () =>
+      ctx.workbench.command(contributionId("toggleSourceMode"), () =>
         ctx.editors
           .active()
           ?.rpc.call(protocol, "run", { command: "editor:toggle-source" }),

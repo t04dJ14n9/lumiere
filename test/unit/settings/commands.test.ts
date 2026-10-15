@@ -5,6 +5,7 @@ import { commandsHost } from "../../../src/plugins/commands/host";
 import { livePreviewHost } from "../../../src/plugins/livePreview/host";
 import { features } from "../../../src/plugins/catalog";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
+import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeWorkbench, fakeDocument } from "../../support/vscode-fake";
 import { fixture } from "../features/fixture";
 
@@ -73,13 +74,13 @@ test("every editor manifest command routes to its registered webview ID", async 
         continue;
       }
       assert.ok(f.handlers.has(command.editorCommand), command.id);
-      const run = native.get(`markdownWorkbench.${command.id}`);
+      const run = native.get(contributionId(command.id));
       assert.ok(run, command.id);
       await run();
       assert.equal(calls.at(-1), command.editorCommand);
     }
   }
-  await native.get("markdownWorkbench.toggleSourceMode")!();
+  await native.get(contributionId("toggleSourceMode"))!();
   assert.equal(calls.at(-1), "editor:toggle-source");
   for (const command of [
     "save",
@@ -89,7 +90,7 @@ test("every editor manifest command routes to its registered webview ID", async 
     "saveClose",
     "openAsText",
   ]) {
-    await native.get(`markdownWorkbench.${command}`)!();
+    await native.get(contributionId(command))!();
     assert.equal(calls.at(-1), command);
   }
   await root.dispose();

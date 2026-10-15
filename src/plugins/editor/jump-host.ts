@@ -1,4 +1,5 @@
 import { CancelToken } from "../../shared/rpc/lifecycle";
+import { contributionId } from "../../shared/setting-schema";
 import type { Context, Disposer } from "../../kernel";
 import type { EditorPanel, Editors } from "./api";
 import type { SourceEdit } from "../../shared/runtime";
@@ -35,7 +36,7 @@ export function registerJumpHistory(ctx: Context, editors: Editors): void {
     ["jumpForward", 1],
   ] as const) {
     ctx.effect(() =>
-      ctx.workbench.command(`markdownWorkbench.${name}`, () =>
+      ctx.workbench.command(contributionId(name), () =>
         histories.move(direction),
       ),
     );

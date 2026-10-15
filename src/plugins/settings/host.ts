@@ -1,6 +1,6 @@
 import type { Plugin } from "../../kernel";
 import type { ContributedSetting } from "../../shared/runtime";
-import { validateValue } from "../../shared/setting-schema";
+import { contributionId, validateValue } from "../../shared/setting-schema";
 import { PREFIX, settingRows } from "./change";
 import {
   EXTENSION_FILTER,
@@ -46,7 +46,7 @@ export const settingsHost: Plugin = {
       error: (message) => ctx.workbench.error(message),
     };
     const command = (id: string, run: (...args: unknown[]) => unknown) =>
-      ctx.effect(() => views.command(`markdownWorkbench.${id}`, run));
+      ctx.effect(() => views.command(contributionId(id), run));
     command("openSettings", () => settings.openUi(EXTENSION_FILTER));
     command("changeSetting", (argument) => changeSetting(editing, argument));
     command("setNoteFontSize", (argument) => setFontSize(editing, argument));

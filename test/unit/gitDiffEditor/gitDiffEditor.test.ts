@@ -14,6 +14,7 @@ import { alignBlocks, rowMarkdown } from "../../../src/shared/diff";
 import { createRenderer } from "../../../src/markdown/html";
 import { definitions, diffRows } from "../../../src/webview/diff/rows";
 import { stepChange } from "../../../src/webview/diff/step";
+import { contributionId } from "../../../src/shared/setting-schema";
 import type {
   DiffPanel,
   DiffSide,
@@ -141,7 +142,7 @@ test("host: the command opens HEAD against the note and follows edits; off dispo
   root.provide("workbench", h.workbench as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
-  h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   await tick();
   assert.equal(h.shown.length, 1);
@@ -240,7 +241,7 @@ test("B1: an open still reading when the plugin is turned off creates nothing", 
   root.provide("workbench", h.workbench as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
-  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  void h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   await fiber.dispose();
   h.head.resolve({ getText: () => "# T\n\nold\n" });
@@ -256,7 +257,7 @@ test("B1: an update queued before its panel closes is dropped", async () => {
   root.provide("workbench", h.workbench as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
-  h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  h.commands.get(contributionId("gitDiffEditor.open"))!();
   await flush();
   assert.equal(h.shown.length, 1);
   h.texts["file:///n.md"] = "# T\n\nnewer\n";
@@ -276,7 +277,7 @@ test("B3: an edit while the baseline loads is in the first comparison", async ()
   root.provide("workbench", h.workbench as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
-  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  void h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   h.texts["file:///n.md"] = "# T\n\nedited\n";
   h.changes.forEach((listener) => listener({ uri: "file:///n.md" }));
@@ -476,7 +477,7 @@ test("R3 B1: disabling while a read is pending drops its change listener at once
   root.provide("workbench", h.workbench as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
-  void h.commands.get("markdownWorkbench.gitDiffEditor.open")!();
+  void h.commands.get(contributionId("gitDiffEditor.open"))!();
   await tick();
   assert.equal(h.changes.size, 1);
   await fiber.dispose();
@@ -539,7 +540,7 @@ test("R3: a failed command presentation releases its change listener", async () 
   root.plugin(gitDiffEditorHost);
   await root.settled();
   await Promise.resolve(
-    h.commands.get("markdownWorkbench.gitDiffEditor.open")!(),
+    h.commands.get(contributionId("gitDiffEditor.open"))!(),
   ).catch(() => {});
   await flush();
   assert.equal(errors.length, 1);

@@ -10,6 +10,7 @@ import type {
 } from "../../../src/plugins/cursorBridge/handoff";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
 import { Lease } from "../../../src/host/reclaim-policy";
+import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 
 async function fixture() {
@@ -149,7 +150,7 @@ for (const mode of ["chat", "edit"] as const) {
     });
     t.after(release);
     f.state.beforeDiscovery = () => discovery;
-    const pending = f.handlers.get(`markdownWorkbench.cursorBridge.${mode}`)!();
+    const pending = f.handlers.get(contributionId(`cursorBridge.${mode}`))!();
     await new Promise<void>((resolve) => setImmediate(resolve));
     assert.deepEqual(f.events, ["commands"]);
     assert.equal(f.lease.has(f.note), false);
@@ -193,7 +194,7 @@ for (const change of [
         };
       }
     };
-    await f.handlers.get("markdownWorkbench.cursorBridge.edit")!();
+    await f.handlers.get(contributionId("cursorBridge.edit"))!();
     assert.deepEqual(f.events, ["commands", "lease", "warm", "show"]);
     assert.equal(f.errors.length, 1);
     assert.equal(f.lease.has(f.note), false);
@@ -203,13 +204,13 @@ for (const change of [
 test("failed second same-URI Edit keeps the first handoff lease", async (t) => {
   const f = await fixture();
   t.after(() => f.root.dispose());
-  await f.handlers.get("markdownWorkbench.cursorBridge.edit")!();
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
   assert.equal(f.lease.has(f.note), true);
   assert.deepEqual(f.errors, []);
 
   f.state.version = 2;
   f.state.text = "abXYef";
-  await f.handlers.get("markdownWorkbench.cursorBridge.edit")!();
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
   assert.equal(f.errors.length, 1);
   assert.equal(
     f.lease.has(f.note),

@@ -1,4 +1,5 @@
 import type { Plugin } from "../../kernel";
+import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
 import { switcherItems } from "./ranking";
 import type { SwitcherTarget } from "./ranking";
@@ -40,7 +41,7 @@ export const quickSwitcherHost: Plugin = {
       }
     };
     ctx.effect(() =>
-      views.command("markdownWorkbench.quickSwitcher", async () => {
+      views.command(contributionId("quickSwitcher"), async () => {
         const active = views.activeNote();
         const vault = await switcherVault(ctx.vaults, active);
         if (!vault) {

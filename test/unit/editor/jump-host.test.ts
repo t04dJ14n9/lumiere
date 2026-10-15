@@ -6,9 +6,12 @@ import { protocol } from "../../../src/plugins/editor/jump-protocol";
 import type { JumpAnchor } from "../../../src/plugins/editor/jump-history";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import type { DocumentSession } from "../../../src/plugins/document/api";
+import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 import { rpcPair } from "../../support/rpc-pair";
 
+const jumpBack = contributionId("jumpBack");
+const jumpForward = contributionId("jumpForward");
 const anchor = (at: number): JumpAnchor => ({
   selection: { anchor: at, head: at },
   scroll: { from: at, offset: -2, left: 0, top: at },
@@ -119,9 +122,9 @@ test("host history keeps split cursors independent and ignores empty metadata ch
     after: anchor(8),
     version: 0,
   });
-  await f.commands.get("markdownWorkbench.jumpBack")!();
+  await f.commands.get(jumpBack)!();
   assert.equal(target, 4, "CRLF source offsets round-trip to editor offsets");
-  await f.commands.get("markdownWorkbench.jumpBack")!();
+  await f.commands.get(jumpBack)!();
   assert.equal(
     target,
     0,
@@ -129,7 +132,7 @@ test("host history keeps split cursors independent and ignores empty metadata ch
   );
   f.activate("right");
   target = -1;
-  await f.commands.get("markdownWorkbench.jumpBack")!();
+  await f.commands.get(jumpBack)!();
   assert.equal(target, -1);
   await f.dispose();
 });
@@ -159,7 +162,7 @@ test("switching panes during a capture cancels the old Back without restoring it
     after: anchor(4),
     version: 0,
   });
-  const pending = f.commands.get("markdownWorkbench.jumpBack")!();
+  const pending = f.commands.get(jumpBack)!();
   await started;
   f.activate("right");
   release();
@@ -191,10 +194,10 @@ test("an applied but unacknowledged Back retains its Forward destination", async
     after: anchor(8),
     version: 0,
   });
-  await f.commands.get("markdownWorkbench.jumpBack")!();
+  await f.commands.get(jumpBack)!();
   assert.equal(current.selection.head, 0);
-  await f.commands.get("markdownWorkbench.jumpBack")!();
-  await f.commands.get("markdownWorkbench.jumpForward")!();
+  await f.commands.get(jumpBack)!();
+  await f.commands.get(jumpForward)!();
   assert.equal(current.selection.head, 8);
   await f.dispose();
 });
@@ -225,10 +228,10 @@ test("an attempt rejected before movement refreshes the next departure from ordi
     after: anchor(8),
     version: 0,
   });
-  await f.commands.get("markdownWorkbench.jumpBack")!();
+  await f.commands.get(jumpBack)!();
   current = anchor(10);
-  await f.commands.get("markdownWorkbench.jumpBack")!();
-  await f.commands.get("markdownWorkbench.jumpForward")!();
+  await f.commands.get(jumpBack)!();
+  await f.commands.get(jumpForward)!();
   assert.equal(current.selection.head, 10);
   await f.dispose();
 });

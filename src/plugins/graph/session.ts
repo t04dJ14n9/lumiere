@@ -2,6 +2,7 @@ import type { Context, Infer } from "../../kernel";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { Clock, Transport } from "../../shared/rpc/endpoint";
 import type { HostViews, WorkbenchPanel } from "../../shared/runtime";
+import { contributionId } from "../../shared/setting-schema";
 import type { Vault } from "../vault/api";
 import { resolveScope } from "./choose";
 import type { HeldScope } from "./choose";
@@ -14,7 +15,7 @@ import { readGraphSettings } from "./settings";
 import { emptySnapshot, presentSnapshot } from "./snapshot";
 import type { GraphSnapshot } from "./snapshot";
 
-const VIEW_TYPE = "markdownWorkbench.graph";
+const VIEW_TYPE = contributionId("graph");
 const DEBOUNCE_MS = 300;
 
 type ViewParams = Infer<(typeof protocol.requests)["view"]["params"]>;

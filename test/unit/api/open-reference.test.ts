@@ -7,8 +7,9 @@ import { targetRange } from "../../../src/host/api/editors";
 import { SourceCoordinates } from "../../../src/shared/document/coordinates";
 import { fixture } from "./fixture";
 import { contributions } from "../../../scripts/generate-contributions";
+import { contributionId } from "../../../src/shared/setting-schema";
 
-const COMMAND = "markdownWorkbench.openCopiedAgentReference";
+const COMMAND = contributionId("openCopiedAgentReference");
 
 test("relative reference resolution stays inside workspace roots and escapes filenames once", async () => {
   const f = await fixture();

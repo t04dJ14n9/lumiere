@@ -9,6 +9,7 @@ import type { EditorActions } from "./actions-api";
 import { ActionRegistry } from "./actions";
 import { protocol } from "./actions-protocol";
 import { RpcError } from "../../shared/rpc/lifecycle";
+import { contributionId } from "../../shared/setting-schema";
 export function registerEditorActions(
   ctx: Context,
   editors: Editors,
@@ -41,7 +42,7 @@ export function registerEditorActions(
   registerActionPanels(ctx, editors, registry);
   for (const scope of ["title", "selection"] as const) {
     ctx.effect(() =>
-      ctx.workbench.command(`markdownWorkbench.${scope}Actions`, () =>
+      ctx.workbench.command(contributionId(`${scope}Actions`), () =>
         registry.pick(scope),
       ),
     );

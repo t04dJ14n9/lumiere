@@ -4,6 +4,7 @@ import type {} from "../gitGutter/api";
 import type { Context, Plugin } from "../../kernel";
 import type { DiffPanel, DiffSide, OpenedDiff } from "../../shared/git";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import { describedComparison, titledComparison } from "./comparison";
 import { openFullDiff } from "./open-snapshot";
 
@@ -84,7 +85,7 @@ export const gitDiffEditorHost: Plugin = {
       (message) => ctx.workbench.error(message),
       [
         {
-          id: "markdownWorkbench.gitDiffEditor.open",
+          id: contributionId("gitDiffEditor.open"),
           run: () => openActive(ctx, life),
         },
       ],

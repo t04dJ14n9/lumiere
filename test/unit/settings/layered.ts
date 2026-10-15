@@ -7,7 +7,7 @@ import type {
   SettingsAccess,
   SettingTarget,
 } from "../../../src/shared/runtime";
-import { checkWrite } from "../../../src/shared/setting-schema";
+import { checkWrite, contributionId } from "../../../src/shared/setting-schema";
 import { fakeViews, workbenchWith } from "../views/fakes";
 
 /** The contributed settings exactly as the generated package.json lists them. */
@@ -108,7 +108,7 @@ export async function run(
   root.plugin(settingsHost);
   await root.settled();
   const command = (id: string) => {
-    const run = fake.commands.get(`markdownWorkbench.${id}`);
+    const run = fake.commands.get(contributionId(id));
     if (!run) {
       throw new Error(`No command ${id}`);
     }

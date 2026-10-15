@@ -1,6 +1,7 @@
 import type { Uri } from "vscode";
 import type { Context } from "../../kernel";
 import type { PickItem } from "../../shared/runtime";
+import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";
 import type {
   MarkdownWorkbenchApi,
@@ -132,12 +133,12 @@ export function registerPluginManagement(
   platform: ApiPlatform,
 ): void {
   ctx.effect(() =>
-    ctx.workbench.command("markdownWorkbench.managePlugins", () =>
+    ctx.workbench.command(contributionId("managePlugins"), () =>
       api.openPluginSettings(api.getActiveEditor()?.uri),
     ),
   );
   ctx.effect(() =>
-    ctx.workbench.command("markdownWorkbench.showPluginStatus", () =>
+    ctx.workbench.command(contributionId("showPluginStatus"), () =>
       showPluginStatus(ctx, api, platform),
     ),
   );

@@ -1,5 +1,6 @@
 import type { Context } from "../../kernel";
 import { parseAgentReference } from "../../shared/agent-reference-input";
+import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";
 import type { MarkdownWorkbenchApi } from "./types";
 import { resolveReference } from "./reference-target";
@@ -12,7 +13,7 @@ export function registerOpenReference(
 ): void {
   ctx.effect(() =>
     ctx.workbench.command(
-      "markdownWorkbench.openCopiedAgentReference",
+      contributionId("openCopiedAgentReference"),
       async () => {
         try {
           await openReference(ctx, api, platform);

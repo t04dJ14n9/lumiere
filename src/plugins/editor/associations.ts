@@ -1,6 +1,7 @@
 import type { Context } from "../../kernel";
 import type { Workbench } from "../../shared/runtime";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
+import { contributionId } from "../../shared/setting-schema";
 
 const { viewType, filenamePatterns: markdownPatterns } = MARKDOWN_EDITOR;
 
@@ -64,7 +65,7 @@ export async function useForMarkdownInWorkspace(
 
 export function registerMarkdownAssociation(ctx: Context): void {
   ctx.effect(() =>
-    ctx.workbench.command("markdownWorkbench.useForMarkdownInWorkspace", () =>
+    ctx.workbench.command(contributionId("useForMarkdownInWorkspace"), () =>
       useForMarkdownInWorkspace(ctx.workbench),
     ),
   );

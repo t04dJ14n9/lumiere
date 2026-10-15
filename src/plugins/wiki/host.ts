@@ -1,5 +1,6 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import { asString, asStrings } from "../../shared/values";
 import { containingFolder } from "../../shared/workspace-path";
 import type { BridgeCapture } from "../bridge/api";
@@ -33,18 +34,18 @@ export const wikiHost: Plugin = {
     };
     registerReportedCommands(effect, views, report, [
       {
-        id: "markdownWorkbench.wiki.copyForAgent",
+        id: contributionId("wiki.copyForAgent"),
         run: () => copyReference(ctx, state, false),
       },
       {
-        id: "markdownWorkbench.wiki.copyEnvelope",
+        id: contributionId("wiki.copyEnvelope"),
         run: () => copyReference(ctx, state, true),
       },
       {
-        id: "markdownWorkbench.wiki.showLayout",
+        id: contributionId("wiki.showLayout"),
         run: () => showLayout(ctx, state),
       },
-      { id: "markdownWorkbench.wiki.refresh", run: () => reload() },
+      { id: contributionId("wiki.refresh"), run: () => reload() },
     ]);
     bindRefresh(ctx, reload, report);
   },

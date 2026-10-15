@@ -7,6 +7,7 @@ import {
   handOffSelection,
   type HandoffSurface,
 } from "./handoff";
+import { contributionId } from "../../shared/setting-schema";
 import { captureActiveSelection } from "./selection";
 
 const IS_CURSOR_HOST = "markdownWorkbench.isCursorHost";
@@ -33,12 +34,12 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
       await workbench.execute("setContext", IS_CURSOR_HOST, undefined);
     });
     ctx.effect(() =>
-      workbench.command("markdownWorkbench.cursorBridge.chat", () =>
+      workbench.command(contributionId("cursorBridge.chat"), () =>
         runBridge(ctx, bridgeConfig, "chat"),
       ),
     );
     ctx.effect(() =>
-      workbench.command("markdownWorkbench.cursorBridge.edit", () =>
+      workbench.command(contributionId("cursorBridge.edit"), () =>
         runBridge(ctx, bridgeConfig, "edit"),
       ),
     );

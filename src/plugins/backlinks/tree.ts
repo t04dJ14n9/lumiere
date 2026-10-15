@@ -2,9 +2,10 @@ import { folderOf, stemOf } from "../../shared/vault-path";
 import type { TreeNode, TreeSource } from "../../shared/runtime";
 import type { Vault, Vaults } from "../vault/api";
 import { linkedLines, unlinkedLines } from "./mentions";
+import { contributionId } from "../../shared/setting-schema";
 import type { MentionLine } from "./mentions";
 
-export const OPEN_COMMAND = "markdownWorkbench.backlinks.open";
+export const OPEN_COMMAND = contributionId("backlinks.open");
 
 interface Note {
   uri: string;

@@ -1,5 +1,6 @@
 import type { Context, Fiber } from "../../kernel";
 import type { Manifest } from "../../shared/manifest";
+import { contributionId } from "../../shared/setting-schema";
 import type {} from "../editor/api";
 import { protocol } from "./protocol";
 
@@ -70,7 +71,7 @@ function registerFeatureCommands(ctx: Context, manifest: Manifest): Fiber {
           continue;
         }
         owned.effect(() =>
-          ctx.workbench.command(`markdownWorkbench.${command.id}`, () =>
+          ctx.workbench.command(contributionId(command.id), () =>
             runFeatureCommand(ctx, manifest, command),
           ),
         );

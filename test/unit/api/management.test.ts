@@ -8,6 +8,7 @@ import type {
 } from "../../../src/host/api/types";
 import type { HostViews, PickItem } from "../../../src/shared/runtime";
 import { contributions } from "../../../scripts/generate-contributions";
+import { contributionId } from "../../../src/shared/setting-schema";
 
 const descriptor = (
   id: string,
@@ -81,7 +82,7 @@ test("plugin status lists problems first, says what a plugin waits for, and link
 
 test("Manage Plugins opens plugin settings for the active note", async () => {
   const f = await fixture();
-  await f.commands.get("markdownWorkbench.managePlugins")?.();
+  await f.commands.get(contributionId("managePlugins"))?.();
   assert.deepEqual(
     f.settings.map((resource) => String(resource)),
     [f.panel.document.uri],
@@ -95,7 +96,7 @@ test("Show Plugin Status picks from the active editor's states and opens the cho
   f.workbench.inform = (message) => messages.push(message);
   delete f.workbench.views;
   // Without native views (a minimal host) the command explains itself.
-  await f.commands.get("markdownWorkbench.showPluginStatus")?.();
+  await f.commands.get(contributionId("showPluginStatus"))?.();
   assert.equal(messages.length, 1);
 
   let offered: readonly PickItem<unknown>[] = [];
@@ -119,7 +120,7 @@ test("Show Plugin Status picks from the active editor's states and opens the cho
   f.platform.settings = async (...args) => {
     opened.push(args);
   };
-  await f.commands.get("markdownWorkbench.showPluginStatus")?.();
+  await f.commands.get(contributionId("showPluginStatus"))?.();
   assert.match(placeholder, /Note\.md/);
   const titles = (ids: readonly string[]) =>
     ids
@@ -146,7 +147,7 @@ test("management and association commands work in every preset", async () => {
     "showPluginStatus",
     "useForMarkdownInWorkspace",
   ]) {
-    const command = `markdownWorkbench.${id}`;
+    const command = contributionId(id);
     assert.ok(generated.commands.some((item) => item.command === command));
     const menu = generated.menus.commandPalette.find(
       (item) => item.command === command,

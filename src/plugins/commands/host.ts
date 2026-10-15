@@ -1,5 +1,6 @@
 import { featureCommands } from "./features";
 import type { Manifest } from "../../shared/manifest";
+import { contributionId } from "../../shared/setting-schema";
 import type { Context, Fiber, Plugin, Infer } from "../../kernel";
 import type { EditorPanel } from "../editor/api";
 import { protocol, type action as actionSchema } from "./protocol";
@@ -53,7 +54,7 @@ function registerHostPalette(ctx: Context): void {
     "openAsText",
   ] as const) {
     ctx.effect(() =>
-      ctx.workbench.command(`markdownWorkbench.${action}`, () =>
+      ctx.workbench.command(contributionId(action), () =>
         ctx.editors.active()?.rpc.call(protocol, "run", { command: action }),
       ),
     );

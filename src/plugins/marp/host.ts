@@ -1,6 +1,7 @@
 import type { Context, Disposer, Plugin } from "../../kernel";
 import { isMarpDocument } from "../../markdown/marp";
 import { registerReportedCommands } from "../../shared/reported-command";
+import { contributionId } from "../../shared/setting-schema";
 import type { HostDocument } from "../../shared/runtime";
 import { asString, asStrings } from "../../shared/values";
 import { containingFolder } from "../../shared/workspace-path";
@@ -31,15 +32,15 @@ export const marpHost: Plugin = {
     };
     const report = (message: string) => ctx.workbench.error(message);
     registerReportedCommands(effect, views, report, [
-      { id: "markdownWorkbench.marp.preview", run: () => previewActive(ctx) },
-      { id: "markdownWorkbench.marp.export", run: () => exportActive(ctx) },
-      { id: "markdownWorkbench.marp.toggle", run: () => toggleActive(ctx) },
+      { id: contributionId("marp.preview"), run: () => previewActive(ctx) },
+      { id: contributionId("marp.export"), run: () => exportActive(ctx) },
+      { id: contributionId("marp.toggle"), run: () => toggleActive(ctx) },
       {
-        id: "markdownWorkbench.marp.moveOutside",
+        id: contributionId("marp.moveOutside"),
         run: () => moveActive(ctx),
       },
       {
-        id: "markdownWorkbench.marp.keepInWorkbench",
+        id: contributionId("marp.keepInWorkbench"),
         run: () => keepActive(ctx),
       },
     ]);
