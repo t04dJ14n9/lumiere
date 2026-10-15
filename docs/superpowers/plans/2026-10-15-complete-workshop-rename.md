@@ -4,11 +4,13 @@
 
 **Goal:** Finish the breaking identity rename from Markdown Workbench → Markdown Workshop (extension id, package/VSIX name, contribution namespace, host façade, docs/tests/CI) with **no** backward-compat.
 
-**Architecture:** Change identity at the constants + contribution generator first, lock B3 parity tests against the new ids, then symbol-aware façade rename, then owned-namespace / full-id bulk replace, then package/CSS/docs/tests/CI (phase 1 keeps old GitHub URLs). Verify with B1 grep gate + fresh-install smoke; coordinate twin handoff fixtures. GitHub repo rename is **phase 2 after merge** — not in the code PR.
+**Architecture:** Change identity at the constants + contribution generator first (including a shared contribution-id helper), lock **B3** tests that assert **runtime registration ids / viewTypes ↔ manifest** (not generator self-consistency alone), then symbol-aware façade rename, then owned-namespace / full-id bulk replace, then package/CSS/docs/tests/CI (phase 1 keeps old GitHub URLs). Verify with B1 grep gate (**occurrence-scoped** allowlist) + fresh-install smoke; coordinate twin handoff fixtures; **re-run B1 + B3 + `pnpm check` after the Task 7 fixture commit**. GitHub repo rename is **phase 2 after merge** — not in the code PR.
 
 **Tech Stack:** TypeScript VS Code extension, `pnpm`, `tsx scripts/generate-contributions.ts`, `vsce package`, node:test / existing `test/unit`.
 
 **Spec:** `docs/superpowers/specs/2026-10-15-complete-workshop-rename-design.md` (APPROVED; ChatGPT B1–B6 @ `/workspace/plans/chatgpt-mw-rename-r2/ANSWER.md`)
+
+**Plan revision:** folds ChatGPT implementation-plan REQUEST CHANGES (`/workspace/plans/chatgpt-mw-rename-plan/ANSWER.md`) — plan-B1 runtime↔manifest B3 parity, plan-B2 occurrence-scoped B1 allowlist, plan-B3 re-verify after Task 7. Non-blocking Task-2 wording inconsistency resolved by the B3 rewrite.
 
 ## Global Constraints
 
@@ -36,7 +38,7 @@
 | Package / CI | `package.json` `name` only in phase 1 (keep `repository.url`); workflows/scripts that assume VSIX basename |
 | CSS/DOM | strings / data attrs `markdown-workbench` → `markdown-workshop`; leave `mw-*` |
 | Docs / fixtures | README, API.md, CHANGELOG note, `docs/agent-handoff-format.md`, `test/fixtures/agent-handoff-format.json`, sample plugin |
-| Gate | new small script + allowlist for B1 |
+| Gate | new small script + **occurrence-scoped** allowlist for B1 |
 | Out of PR | GitHub rename; phase-2 URL/badge commit |
 
 ---
@@ -44,21 +46,26 @@
 ### Task 1: Identity constants + contribution generator
 
 **Files:**
-- Modify: `src/shared/setting-schema.ts` (`SETTING_PREFIX`)
+- Modify: `src/shared/setting-schema.ts` (`SETTING_PREFIX` + shared `contributionId`)
 - Modify: `src/shared/editor-provider.ts` (`MARKDOWN_EDITOR.viewType`)
 - Modify: `src/host/settings-access.ts` (`EXTENSION_ID`)
 - Modify: `src/plugins/settings/commands.ts` (`EXTENSION_FILTER`)
-- Modify: `scripts/generate-contributions.ts` (every `` `markdownWorkbench.${…}` `` / `config.markdownWorkbench.` / when-prefix)
+- Modify: `scripts/generate-contributions.ts` (use `contributionId` / `SETTING_PREFIX`; no hard-coded `` `markdownWorkbench.${…}` ``)
 - Regenerate: `package.json` `contributes` only (do **not** change `name` / `repository` yet)
 
 **Interfaces:**
-- Produces: `SETTING_PREFIX = "markdownWorkshop."`; `MARKDOWN_EDITOR.viewType = "markdownWorkshop.editor"`; `EXTENSION_ID = "t04dj14n9.vscode-markdown-workshop"`; `EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workshop"`; generated contributes all use `markdownWorkshop.*`
+- Produces: `SETTING_PREFIX = "markdownWorkshop."`; `contributionId(localId)` → `` `markdownWorkshop.${localId}` `` (same module as `SETTING_PREFIX`, or a tiny adjacent export); `MARKDOWN_EDITOR.viewType = "markdownWorkshop.editor"`; `EXTENSION_ID = "t04dj14n9.vscode-markdown-workshop"`; `EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workshop"`; generated contributes all use `markdownWorkshop.*`
 
-- [ ] **Step 1: Flip the four identity constants**
+- [ ] **Step 1: Flip identity constants + add shared contribution id helper**
 
 ```ts
 // src/shared/setting-schema.ts
 export const SETTING_PREFIX = "markdownWorkshop.";
+
+/** Full contributed command / view / context id from a local suffix. */
+export function contributionId(localId: string): string {
+  return `${SETTING_PREFIX}${localId}`;
+}
 
 // src/shared/editor-provider.ts
 viewType: "markdownWorkshop.editor",
@@ -70,9 +77,11 @@ const EXTENSION_ID = "t04dj14n9.vscode-markdown-workshop";
 export const EXTENSION_FILTER = "@ext:t04dj14n9.vscode-markdown-workshop";
 ```
 
-- [ ] **Step 2: Update the generator prefix**
+Generator **and** runtime command/view registration must both call `contributionId` (or read `MARKDOWN_EDITOR.viewType`) — do not leave independent `` `markdownWorkbench.${…}` `` / `` `markdownWorkshop.${…}` `` string templates in registration paths.
 
-In `scripts/generate-contributions.ts`, replace owned `` markdownWorkbench. `` string templates with `` markdownWorkshop. `` (commands, view ids, menus, config keys, when-clauses). Leave the `whenEnabled(..., "workbench" | "editor")` **scope argument** alone — that is VS Code panel-vs-editor, not product identity.
+- [ ] **Step 2: Update the generator to use the helper**
+
+In `scripts/generate-contributions.ts`, replace owned `` markdownWorkbench. `` string templates with `contributionId(...)` / `SETTING_PREFIX` (commands, view ids, menus, config keys, when-clauses). Leave the `whenEnabled(..., "workbench" | "editor")` **scope argument** alone — that is VS Code panel-vs-editor, not product identity.
 
 - [ ] **Step 3: Regenerate contributes**
 
@@ -100,39 +109,62 @@ git commit -m "refactor(identity): Workshop constants and regenerated contribute
 
 ---
 
-### Task 2: B3 manifest ↔ runtime parity tests
+### Task 2: B3 manifest ↔ runtime registration parity tests
 
 **Files:**
 - Create: `test/unit/identity/contribution-parity.test.ts` (or nearest existing identity/contrib test folder)
-- Read: `package.json` contributes; `MARKDOWN_EDITOR`; plugin manifests under `src/plugins/*/manifest.ts`
+- Modify: runtime registration call sites that still build ids with independent templates — at least `src/plugins/commands/features.ts`, `src/plugins/commands/host.ts`, `src/plugins/editor/jump-host.ts`, `src/plugins/editor/actions-host.ts`, `src/plugins/settings/host.ts`, `src/plugins/editor/associations.ts`, `src/plugins/livePreview/host.ts`, `src/host/api/management.ts` (and any other `ctx.workbench.command(\`markdownWorkbench.${…}\`)` / hard-coded owned command id)
+- Read: `package.json` contributes; `MARKDOWN_EDITOR`; `contributionId` / `SETTING_PREFIX`; plugin manifests under `src/plugins/*/manifest.ts`
+
+**What B3 is (and is not):**
+- **Is:** every generated `contributes.commands[].command` agrees with the **id string actually passed** to runtime command registration; every `contributes.customEditors[].viewType` agrees with the id passed to `registerCustomEditorProvider` / `MARKDOWN_EDITOR.viewType`.
+- **Is not:** deep-equality of `contributions()` against `pkg.contributes` alone, or “rebuild ids the same way the generator does” without touching runtime. Those are generator self-checks — useful smoke, **insufficient for B3**.
+
+**Preferred mechanism (keep small):** shared `contributionId` from Task 1 used by **both** generator and runtime registration. Optionally record ids through a test double of `workbench.command` / `views.command` when invoking known `register*` helpers — compare the captured set to `contributes.commands[].command`. Do **not** instantiate every optional plugin or write a contribution taxonomy.
 
 **Interfaces:**
-- Consumes: new ids from Task 1
-- Produces: failing-until-later green checks that (1) every `contributes.commands[].command` uses `markdownWorkshop.` and matches the id the generator would build from manifests, (2) every `contributes.customEditors[].viewType` equals `MARKDOWN_EDITOR.viewType`, (3) contributed `when`/`enablement` strings have no `markdownWorkbench.` prefix
+- Consumes: `contributionId`, `MARKDOWN_EDITOR`, regenerated contributes from Task 1
+- Produces: green B3 asserts that fail if runtime still registers `markdownWorkbench.*` (or any id divergent from contributes)
 
-Interpret “registered at runtime” as: **the registration definition resolves to the same command id** (manifest id → `markdownWorkshop.${id}`), not that every optional plugin is enabled in one session.
+- [ ] **Step 1: Point runtime registration at `contributionId` / `MARKDOWN_EDITOR`**
 
-- [ ] **Step 1: Write the parity test**
+Replace independent templates at registration sites:
+
+```ts
+// before
+ctx.workbench.command(`markdownWorkbench.${command.id}`, ...)
+// after
+ctx.workbench.command(contributionId(command.id), ...)
+```
+
+Custom editor path already registers `provider.viewType` — confirm that path is fed by `MARKDOWN_EDITOR.viewType` (Task 1). Other owned viewTypes (`graph`, `renderedDiff`, …) must likewise come from the same helper/constant the generator emits — no parallel literals.
+
+Remaining non-registration string literals can wait for Task 4; **registration-id derivation must not**.
+
+- [ ] **Step 2: Write the B3 parity test (runtime ↔ manifest)**
 
 ```ts
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
+import { contributionId, SETTING_PREFIX } from "../../../src/shared/setting-schema";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const contributes = pkg.contributes;
 
-test("customEditors viewType matches MARKDOWN_EDITOR", () => {
+test("customEditors viewType matches MARKDOWN_EDITOR (runtime registration id)", () => {
   const viewTypes = contributes.customEditors.map((e: { viewType: string }) => e.viewType);
   assert.deepEqual(viewTypes, [MARKDOWN_EDITOR.viewType]);
-  assert.equal(MARKDOWN_EDITOR.viewType, "markdownWorkshop.editor");
+  assert.equal(MARKDOWN_EDITOR.viewType, contributionId("editor"));
 });
 
-test("contributed commands use markdownWorkshop. prefix only", () => {
+test("every contributed command id equals contributionId(local) and uses Workshop prefix", () => {
   for (const c of contributes.commands) {
     assert.match(c.command, /^markdownWorkshop\./);
     assert.doesNotMatch(c.command, /markdownWorkbench/);
+    const local = c.command.slice(SETTING_PREFIX.length);
+    assert.equal(c.command, contributionId(local));
   }
 });
 
@@ -142,24 +174,34 @@ test("owned when/enablement clauses do not use old prefix", () => {
 });
 ```
 
-Add a second assertion that rebuilds command ids from `src/plugins/*/manifest.ts` the same way the generator does (import `contributions()` from `scripts/generate-contributions.ts` if practical, or `pnpm contributions --check` as a companion script test). Prefer calling `contributions()` and deep-equal against `pkg.contributes` — that is the strongest cheap parity.
+Add a **runtime capture** (or equivalent) assert — this is the part that closes B3:
 
-- [ ] **Step 2: Run the new test**
+- Stub/fake `workbench.command` / `views.command` to push each `id` into a `Set`.
+- Invoke the known host registration helpers (palette actions, feature-command loop, settings host, jump/actions hosts, etc.) with minimal fixtures/manifests.
+- Assert: every captured id is in `contributes.commands[].command`, and every contributed command that those helpers are responsible for appears in the captured set.
+- Alternatively (also acceptable): a focused unit/source assert that registration modules import `contributionId` and have **zero** remaining `` `markdownWorkbench.${ `` / `` `markdownWorkshop.${ `` templates (helper-only construction). Prefer the capture test when cheap.
+
+Optional companion: `pnpm contributions --check` / `contributions()` deep-equal — **label it generator smoke**, not B3.
+
+- [ ] **Step 3: Run the new test — expect PASS after Step 1**
 
 ```bash
 pnpm exec tsx --test test/unit/identity/contribution-parity.test.ts
 ```
 
-Expected: PASS on contributes-derived asserts. (Full `pnpm check` will still fail until later tasks fix sources.)
+Expected: **PASS** on viewType + runtime command-id parity. Do **not** call this done if only the generator self-check is green while runtime still templates old/divergent ids. (Full `pnpm check` may still fail until later tasks fix remaining sources.)
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add test/unit/identity/contribution-parity.test.ts
-git commit -m "test(identity): B3 contributes parity for markdownWorkshop ids"
+git add test/unit/identity/contribution-parity.test.ts \
+  src/plugins/commands/features.ts src/plugins/commands/host.ts \
+  src/plugins/editor/jump-host.ts src/plugins/editor/actions-host.ts \
+  src/plugins/settings/host.ts src/plugins/editor/associations.ts \
+  src/plugins/livePreview/host.ts src/host/api/management.ts \
+  src/shared/setting-schema.ts
+git commit -m "test(identity): B3 runtime command/viewType parity with contributes"
 ```
-
----
 
 ### Task 3: Host façade rename (symbol-aware)
 
@@ -340,12 +382,13 @@ t04dj14n9.vscode-markdown-workbench
 
 Do **not** gate bare `Workbench` / `workbench`.
 
-Allowlist examples (reviewed):
-- CHANGELOG / design “renamed from …” lines
-- Historical handoff quotes
-- Phase-1 `repository.url` / badges still on old GitHub name
+Allowlist rules (**occurrence-scoped**, not whole-file):
+- Each entry exempts **one reviewed token occurrence** in one file — format `path<TAB>exact-substring`.
+- A `git grep` hit fails unless the hit line contains an allowlisted substring **for that same file** and the matched old token lies inside that substring (so other stale tokens in the same file still fail).
+- **Do not** whole-file allowlist `package.json` (or any critical file). Phase-1 may permit only the old GitHub URL substring; a stray old command id / package `name` / extension id in the same file must still fail B1.
+- Examples (reviewed): CHANGELOG / design “renamed from …” lines; historical handoff quotes; phase-1 `repository.url` / badges still on the old GitHub name — each as its own `path<TAB>substring` row.
 
-- [ ] **Step 1: Write the gate script**
+- [ ] **Step 1: Write the gate script (token/occurrence-scoped allowlist)**
 
 ```bash
 #!/usr/bin/env bash
@@ -360,22 +403,41 @@ patterns=(
 )
 allowlist="${1:-scripts/identity-rename-allowlist.txt}"
 fail=0
+allowed_in_file() {
+  local file="$1" line="$2" pat="$3"
+  local afile atoken
+  while IFS=$'\t' read -r afile atoken; do
+    [[ -z "${afile:-}" || "$afile" =~ ^# ]] && continue
+    [[ "$afile" == "$file" ]] || continue
+    [[ "$line" == *"$atoken"* ]] || continue
+    # Exempt only when this allowlisted substring is what justifies the hit.
+    [[ "$atoken" == *"$pat"* ]] || continue
+    return 0
+  done < "$allowlist"
+  return 1
+}
 for p in "${patterns[@]}"; do
   while IFS= read -r hit; do
     file="${hit%%:*}"
-    if ! grep -Fxq "$file" "$allowlist" 2>/dev/null; then
-      # finer-grained: allowlist may list 'file:line' or 'file:pattern'
-      if ! grep -Fq "$hit" "$allowlist" && ! grep -E "^${file}:" "$allowlist" | grep -Fq "$p"; then
-        echo "B1 HIT: $hit"
-        fail=1
-      fi
+    rest="${hit#*:}"
+    line="${rest#*:}"   # after line number
+    if ! allowed_in_file "$file" "$line" "$p"; then
+      echo "B1 HIT: $hit"
+      fail=1
     fi
   done < <(git grep -n "$p" || true)
 done
 exit "$fail"
 ```
 
-Tighten matching to whatever is easiest to maintain (file-level allowlist is enough for v1). Seed `scripts/identity-rename-allowlist.txt` with phase-1 `package.json` repository URL and the CHANGELOG note path.
+Seed `scripts/identity-rename-allowlist.txt` with **occurrence** rows only, e.g.:
+
+```text
+package.json	https://github.com/t04dJ14n9/vscode-markdown-workbench
+CHANGELOG.md	renamed from Markdown Workbench
+```
+
+Whole-file allowlisting is **rejected** for v1.
 
 - [ ] **Step 2: Run B1 until clean**
 
@@ -440,6 +502,21 @@ git add docs/agent-handoff-format.md test/fixtures/agent-handoff-format.json
 git commit -m "docs(handoff): Workshop naming in twin agent-handoff fixtures"
 ```
 
+- [ ] **Step 4: Final verification on phase-1 HEAD (order fix)**
+
+Task 6 ran B1 / `pnpm check` **before** this fixture commit. Re-verify the **final** branch tip so executed HEAD matches what passed the gates:
+
+```bash
+bash scripts/check-identity-rename.sh
+pnpm exec tsx --test test/unit/identity/contribution-parity.test.ts
+pnpm check
+sha256sum docs/agent-handoff-format.md test/fixtures/agent-handoff-format.json
+```
+
+Expected: B1 clean (occurrence allowlist only); B3 runtime↔manifest parity green; `pnpm check` green; twin-fixture hashes recorded for PDF match the committed bytes. Fresh-install smoke (B4) need **not** be repeated unless this task somehow touched packaged/runtime content (it should not).
+
+If anything fails, fix and commit again — do not treat Task 6’s earlier green as final.
+
 ---
 
 ### Task 8: Phase-2 GitHub cutover (NOTE ONLY — not this PR)
@@ -459,18 +536,18 @@ Alternative (also valid per spec): rename GitHub after PR approval but **before*
 
 ## Acceptance checklist (phase-1 PR)
 
-- [ ] B3 parity test green (commands + `MARKDOWN_EDITOR` viewType; no old prefix in contributes)
+- [ ] B3 parity test green: **runtime** command ids + `MARKDOWN_EDITOR` / custom editor viewTypes agree with contributes (not generator-only self-check)
 - [ ] B2 full-id / `@ext:` / deep-link consumers updated or confirmed absent
-- [ ] B1 gate clean except reviewed allowlist (includes phase-1 old `repository.url`)
+- [ ] B1 gate clean except **occurrence-scoped** reviewed allowlist (phase-1 old `repository.url` substring only — not whole-file `package.json`)
 - [ ] VSIX id = `t04dj14n9.vscode-markdown-workshop`; artifact `vscode-markdown-workshop-*.vsix`
-- [ ] `pnpm check` green
+- [ ] `pnpm check` green on **final** HEAD (re-run after Task 7 fixture commit)
 - [ ] B4 fresh-install smoke done (uninstall old → install new → empty state OK)
-- [ ] Twin fixtures updated; SHA handed to PDF rename; no cross-repo atomicity assumed
+- [ ] Twin fixtures updated; SHA handed to PDF rename; hashes re-confirmed after Task 7; no cross-repo atomicity assumed
 - [ ] **No** back-compat aliases / migrations
 - [ ] Phase-2 GitHub rename **not** attempted in this PR
 
 ## Self-review (author)
 
-1. **Spec coverage:** Tasks 1–7 map to design build order + B1–B4,B6; Task 8 records B5 without executing it.
+1. **Spec coverage:** Tasks 1–7 map to design build order + B1–B4,B6; Task 8 records B5 without executing it. ChatGPT plan review B1–B3 folded: runtime B3 parity, occurrence-scoped allowlist, post–Task-7 verify.
 2. **Placeholders:** none intentional — mechanical bulk replace is command-guided rather than a thousand pasted hunks.
-3. **Type consistency:** `Workshop` / `WorkshopPanel` / `createWorkshop*` / `MarkdownWorkshopApi` / `markdownWorkshop.*` / `t04dj14n9.vscode-markdown-workshop` used throughout.
+3. **Type consistency:** `Workshop` / `WorkshopPanel` / `createWorkshop*` / `MarkdownWorkshopApi` / `contributionId` / `markdownWorkshop.*` / `t04dj14n9.vscode-markdown-workshop` used throughout.
