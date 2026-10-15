@@ -28,6 +28,7 @@ click handlers, original text and late-result guards.
 - `webview.ts`: editable-source, block and post-processor registrations.
 - `post-process.ts`: rendered highlighting, copy controls and source reveal.
 - `code-source.ts`: viewport highlighting, cache and lazy-load lifecycle.
+- `code-source.test.ts`: unit tests for rebuilding while reveal is frozen.
 - `fence-flair.ts`: label and Copy button in the hidden opening fence line.
 - `processor-view.ts`: code processor rendering and its fence widgets.
 - `code-highlight.ts`: Prism HTML highlighting and UTF-16 token ranges.

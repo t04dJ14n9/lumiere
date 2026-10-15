@@ -24,7 +24,7 @@ interface CachedCode {
 }
 
 /** Use the same lazy highlighter in editable fences and rendered code. */
-class CodeSource {
+export class CodeSource {
   decorations: DecorationSet = Decoration.none;
   private readonly copy: (text: string) => void;
   private highlighter?: typeof CodeHighlighter;
@@ -179,18 +179,13 @@ class CodeSource {
   }
 
   update(update: ViewUpdate): void {
-    if (
-      update.view.composing ||
-      (isRevealFrozen(update.state) &&
-        !revealFreezeToggled(update.startState, update.state) &&
-        !update.docChanged)
-    ) {
+    if (update.view.composing) {
       this.decorations = this.decorations.map(update.changes);
       return;
     }
     if (
       update.docChanged ||
-      update.selectionSet ||
+      (update.selectionSet && !isRevealFrozen(update.state)) ||
       revealFreezeToggled(update.startState, update.state) ||
       update.viewportChanged ||
       syntaxTree(update.startState) !== syntaxTree(update.state) ||
