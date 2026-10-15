@@ -1,16 +1,15 @@
 import * as vscode from "vscode";
 import {
-  documentWarmEnabled,
-  isWarmableMarkdown,
-  shouldWarmUri,
-} from "./document-warm-policy";
+  createDocumentWarmer,
+  warmMarkdownDocumentFor,
+  type DocumentWarmHost,
+} from "./document-warm-core";
 
-/**
- * Cap how many notes one git-status sweep opens. Vaults can have many dirty
- * notes; explorer clicks only need the ones the user is about to open, and
- * the watcher covers the rest as they change.
- */
-const GIT_WARM_LIMIT = 64;
+export type { DocumentWarmHost } from "./document-warm-core";
+export {
+  createDocumentWarmer,
+  warmMarkdownDocumentFor,
+} from "./document-warm-core";
 
 /** The slice of vscode.git API 1 used to find dirty Markdown notes. */
 interface GitChange {
@@ -35,62 +34,53 @@ interface GitExtension {
   getAPI(version: 1): GitApi;
 }
 
-function warmSetting(): "auto" | "on" | "off" {
-  return vscode.workspace
-    .getConfiguration("markdownWorkbench")
-    .get<"auto" | "on" | "off">("editor.warmTextDocument", "auto");
-}
-
-function enabled(): boolean {
-  return documentWarmEnabled({
-    mode: warmSetting(),
+function vscodeWarmHost(): DocumentWarmHost {
+  return {
     appName: vscode.env.appName,
-  });
+    warmMode(resourceUri) {
+      return vscode.workspace
+        .getConfiguration("markdownWorkbench", vscode.Uri.parse(resourceUri))
+        .get<"auto" | "on" | "off">("editor.warmTextDocument", "auto");
+    },
+    openTextDocument(uri) {
+      return Promise.resolve(
+        vscode.workspace.openTextDocument(vscode.Uri.parse(uri)),
+      ).then(() => undefined);
+    },
+    textDocumentUris() {
+      return new Set(
+        vscode.workspace.textDocuments.map((document) =>
+          document.uri.toString(),
+        ),
+      );
+    },
+  };
 }
 
 /**
  * Cursor: keep Markdown TextDocuments materialized so a custom editor open
  * does not hit Cursor's uninitialized-document assertion. No-op when the
- * setting is off, or in auto mode outside Cursor.
+ * setting is off, or in auto mode outside Cursor. Resource-scoped overrides
+ * apply per target URI.
  */
 export function registerDocumentWarm(): vscode.Disposable {
-  const pending = new Set<string>();
-  const warm = (uri: vscode.Uri) => {
-    if (!enabled()) {
-      return;
-    }
-    const key = uri.toString();
-    const open = new Set(
-      vscode.workspace.textDocuments.map((document) => document.uri.toString()),
-    );
-    if (!shouldWarmUri(key, open) || pending.has(key)) {
-      return;
-    }
-    pending.add(key);
-    void Promise.resolve(vscode.workspace.openTextDocument(uri))
-      .then(
-        () => undefined,
-        () => undefined,
-      )
-      .finally(() => {
-        pending.delete(key);
-      });
-  };
+  const host = vscodeWarmHost();
+  const { warm, warmGitChanges } = createDocumentWarmer(host);
 
   const watcher =
     vscode.workspace.createFileSystemWatcher("**/*.{md,markdown}");
   const subscriptions: vscode.Disposable[] = [
     watcher,
-    watcher.onDidCreate(warm),
-    watcher.onDidChange(warm),
+    watcher.onDidCreate((uri) => warm(uri.toString())),
+    watcher.onDidChange((uri) => warm(uri.toString())),
     vscode.workspace.onDidCreateFiles((event) => {
       for (const file of event.files) {
-        warm(file);
+        warm(file.toString());
       }
     }),
   ];
 
-  const gitStop = watchGit(warm);
+  const gitStop = watchGit(warmGitChanges);
   if (gitStop) {
     subscriptions.push({ dispose: gitStop });
   }
@@ -99,22 +89,17 @@ export function registerDocumentWarm(): vscode.Disposable {
 }
 
 /**
- * Materialize the TextDocument before vscode.openWith to our editor. Safe to
- * call from any host; cheap when the document is already open.
+ * Materialize the TextDocument before vscode.openWith to our editor. Obeys
+ * the resource-scoped warm setting (including `off` and non-Cursor `auto`).
  */
 export async function warmMarkdownDocument(uri: vscode.Uri): Promise<void> {
-  if (!isWarmableMarkdown(uri.toString())) {
-    return;
-  }
-  try {
-    await vscode.workspace.openTextDocument(uri);
-  } catch {
-    // Missing or unreadable notes still go through openWith's own errors.
-  }
+  await warmMarkdownDocumentFor(uri.toString(), vscodeWarmHost());
 }
 
-/** Dirty and merge notes from every open repository, capped. */
-function watchGit(warm: (uri: vscode.Uri) => void): (() => void) | undefined {
+/** Dirty and merge notes from every open repository, drained in batches. */
+function watchGit(
+  warmGitChanges: (changeUris: readonly string[], live: () => boolean) => void,
+): (() => void) | undefined {
   let live = true;
   const seen = new Set<GitRepository>();
   const subscriptions: vscode.Disposable[] = [];
@@ -125,16 +110,10 @@ function watchGit(warm: (uri: vscode.Uri) => void): (() => void) | undefined {
       ...repository.state.indexChanges,
       ...(repository.state.mergeChanges ?? []),
     ];
-    let count = 0;
-    for (const change of changes) {
-      if (count >= GIT_WARM_LIMIT) {
-        break;
-      }
-      if (isWarmableMarkdown(change.uri.toString())) {
-        warm(change.uri);
-        count++;
-      }
-    }
+    warmGitChanges(
+      changes.map((change) => change.uri.toString()),
+      () => live,
+    );
   };
 
   const attach = (repository: GitRepository) => {

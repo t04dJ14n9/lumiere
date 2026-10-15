@@ -37,3 +37,36 @@ export function shouldWarmUri(
 ): boolean {
   return isWarmableMarkdown(uri) && !openUris.has(uri);
 }
+
+/**
+ * Deduplicated warmable change URIs that still need materialization.
+ * Already-open entries are omitted so they do not consume a warm budget.
+ */
+export function collectGitWarmTargets(
+  changeUris: readonly string[],
+  openUris: ReadonlySet<string>,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const uri of changeUris) {
+    if (seen.has(uri) || !shouldWarmUri(uri, openUris)) {
+      continue;
+    }
+    seen.add(uri);
+    out.push(uri);
+  }
+  return out;
+}
+
+/**
+ * Next concurrency batch from a drained target list. `limit` is a batch size,
+ * not a permanently selected prefix of the dirty set.
+ */
+export function nextWarmBatch(
+  targets: readonly string[],
+  offset: number,
+  limit: number,
+): { batch: readonly string[]; nextOffset: number } {
+  const batch = targets.slice(offset, offset + Math.max(0, limit));
+  return { batch, nextOffset: offset + batch.length };
+}
