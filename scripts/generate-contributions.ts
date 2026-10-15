@@ -21,7 +21,7 @@ export async function contributions() {
     (manifest.contributes?.commands ?? []).map((command) => ({
       command: `markdownWorkbench.${command.id}`,
       title: command.title,
-      category: "Markdown Workbench",
+      category: "Markdown Workshop",
       ...(command.icon ? { icon: command.icon } : {}),
     })),
   );
@@ -88,7 +88,7 @@ export async function contributions() {
       ],
     },
     configuration: {
-      title: "Markdown Workbench",
+      title: "Markdown Workshop",
       properties: {
         ...Object.fromEntries(
           manifests
@@ -140,7 +140,7 @@ export async function contributions() {
           default: false,
           scope: "window",
           description:
-            "Log plugin load/stop timings and debug messages in the Markdown Workbench output channel.",
+            "Log plugin load/stop timings and debug messages in the Markdown Workshop output channel.",
         },
         "markdownWorkbench.plugins.external": {
           type: "object",

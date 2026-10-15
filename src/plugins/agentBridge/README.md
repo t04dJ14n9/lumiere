@@ -47,7 +47,7 @@ to editor open/close and configuration changes; saving awaits
 ## Limits and differences from Obsidian
 
 An untitled document cannot supply a disk reference until saved and reopened as
-a file; Copy Text Only works without a disk path. Only Markdown Workbench panel
+a file; Copy Text Only works without a disk path. Only Markdown Workshop panel
 selections are supported. Saved line references do not export attachments,
 snapshots or chat messages.
 

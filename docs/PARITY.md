@@ -120,7 +120,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | The default,   `prompt`, shows a **Update links in N files?** dialog | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `always` and `never`   skip it | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Heading renames are a later enhancement. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **quickSwitcher**: **Markdown Workbench: Quick Switcher** opens a quick pick   over notes, aliases and unresolved links, with Obsidian's scoring | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **quickSwitcher**: **Markdown Workshop: Quick Switcher** opens a quick pick   over notes, aliases and unresolved links, with Obsidian's scoring | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Enter   opens | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | an unresolved or new name creates the note in the configured   new-note folder. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | **wordCount**: words and characters for the note or selection in the status   bar, counting CJK characters individually. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

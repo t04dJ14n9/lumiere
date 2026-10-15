@@ -54,7 +54,7 @@ export default defineManifest({
       { id: "selectionActions", title: "Selection Actions" },
       {
         id: "useForMarkdownInWorkspace",
-        title: "Use Markdown Workbench for Markdown in This Workspace",
+        title: "Use Markdown Workshop for Markdown in This Workspace",
         scope: "workbench",
       },
     ],

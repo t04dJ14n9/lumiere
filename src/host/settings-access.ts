@@ -51,7 +51,7 @@ function contributed(): readonly ContributedSetting[] {
 function own(key: string): ContributedSetting {
   const setting = contributed().find((item) => item.key === `${PREFIX}${key}`);
   if (!setting) {
-    throw new Error(`${PREFIX}${key} is not a Markdown Workbench setting.`);
+    throw new Error(`${PREFIX}${key} is not a Markdown Workshop setting.`);
   }
   return setting;
 }

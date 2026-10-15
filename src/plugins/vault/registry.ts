@@ -175,7 +175,7 @@ export class VaultRegistry implements Vaults {
       onResolved: () => this.events.resolved(root),
       onPartial: () =>
         this.system.warn(
-          `This vault has more than 50,000 files. Markdown Workbench indexes the first 50,000.`,
+          `This vault has more than 50,000 files. Markdown Workshop indexes the first 50,000.`,
         ),
       onError: (message, error) => this.events.error(message, error),
     });

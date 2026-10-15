@@ -136,3 +136,36 @@ test("definitions lead with their number; the caret on the marker shows its fain
     "2",
   ]);
 });
+
+test("definitions whose body is only a markdown or wiki link still lead with their number", () => {
+  const linkSource = [
+    "See[^overview] and [^w].",
+    "",
+    "[^overview]: [伽利略概述](https://example.com/overview)",
+    "[^w]: [[Target Note]]",
+  ].join("\n");
+  const state = EditorState.create({
+    doc: linkSource,
+    // Caret away from both definition lines so markers stay rendered.
+    selection: EditorSelection.single(0),
+    extensions: [
+      documentTree,
+      inlineRenderers.of(footnoteInline({} as RenderService)),
+    ],
+  });
+  const numbers: string[] = [];
+  const replaced: string[] = [];
+  inlineDecorations(state, [{ from: 0, to: linkSource.length }]).between(
+    0,
+    linkSource.length,
+    (from, to, value) => {
+      const widget = value.spec.widget;
+      if (widget instanceof DefinitionNumber) {
+        numbers.push(widget.text);
+        replaced.push(state.sliceDoc(from, to));
+      }
+    },
+  );
+  assert.deepEqual(numbers, ["1", "2"]);
+  assert.deepEqual(replaced, ["[^overview]: ", "[^w]: "]);
+});

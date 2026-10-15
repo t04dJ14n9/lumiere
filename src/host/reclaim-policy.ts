@@ -23,7 +23,7 @@ export interface TabSwap {
 
 /**
  * Whether an associated note arriving in the text or Cursor Markdown editor
- * should go back to Markdown Workbench. Cursor remembers that choice per
+ * should go back to Markdown Workshop. Cursor remembers that choice per
  * file, so later opens can arrive in either editor. Diffs, Git and untitled
  * files are excluded by the tab classifier and note predicate.
  * Notes this extension opened as text stay, as does a note reclaimed a

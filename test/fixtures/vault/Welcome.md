@@ -4,7 +4,7 @@ tags: [fixture]
 ---
 # Welcome
 
-A disposable test vault for Markdown Workbench. Copy this folder somewhere
+A disposable test vault for Markdown Workshop. Copy this folder somewhere
 else before testing; never test in a real vault. Each note covers one area of
 `docs/MANUAL_TEST_PLAN.md`.
 

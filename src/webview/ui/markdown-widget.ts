@@ -77,9 +77,11 @@ export class MarkdownBlock extends WidgetType {
   }
 
   /**
-   * Let CodeMirror drive mouse selection through the block (so a drag keeps
-   * scroll stable and can cover diagram source). Buttons and native Mermaid
-   * label selection keep their own events.
+   * Keep widget events (including blank diagram area) so CodeMirror does not
+   * park the caret inside the replaced fence on click — that would reveal
+   * Mermaid/math source without Edit / click-to-edit. Buttons and Mermaid SVG
+   * labels stay native; document-level MouseSelection still covers drags that
+   * start outside the widget.
    */
   override ignoreEvent(event: Event): boolean {
     return markdownBlockIgnoresEvent(event);
@@ -198,6 +200,12 @@ function watchClickToEditGesture(input: {
  * CM still asks the widget that owns the selection anchor, so returning true
  * keeps native Mermaid/SVG label selections. Pointer ownership is bounded to
  * the widget shell — never via unbounded `target.closest(interactive)`.
+ *
+ * Blank diagram/math/code area also stays with the widget. If CM handled
+ * mousedown it would place the caret inside the replace range and Live Preview
+ * would reveal source without Edit / click-to-edit (including when the press
+ * ends outside the widget). Selection drags that start outside still work:
+ * CodeMirror's MouseSelection listens on the document for move/up.
  */
 export function markdownBlockIgnoresEvent(event: Event): boolean {
   return markdownBlockIgnoresEventKind({
@@ -221,7 +229,14 @@ export function markdownBlockIgnoresEventKind(input: {
   if (!input.targetIsElement) {
     return false;
   }
-  return input.controlInsideWidget || input.nativeSelectableLabel;
+  // Controls and SVG labels keep native handling. Blank diagram/math/code area
+  // must also stay with the widget: handing mousedown to CM parks the caret in
+  // the replace range and reveals source without Edit / click-to-edit.
+  return (
+    input.controlInsideWidget ||
+    input.nativeSelectableLabel ||
+    input.targetIsElement
+  );
 }
 
 /** Latch drag once the press travels beyond the click threshold. */

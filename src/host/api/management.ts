@@ -92,7 +92,7 @@ async function showPluginStatus(
   const views = ctx.workbench.views;
   if (!editor || !views) {
     ctx.workbench.inform?.(
-      "Open a note in Markdown Workbench to see its plugin states.",
+      "Open a note in Markdown Workshop to see its plugin states.",
     );
     return;
   }

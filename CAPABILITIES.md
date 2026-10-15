@@ -1,6 +1,6 @@
 # Capabilities
 
-What Markdown Workbench does, plugin by plugin, and where it differs from
+What Markdown Workshop does, plugin by plugin, and where it differs from
 Obsidian. Each plugin's README (`src/plugins/<id>/README.md`) has the
 details. "Default" is the `obsidian` preset; the `minimal` preset loads only
 the core plugins. No row here is an Obsidian parity claim until the owner
@@ -69,9 +69,9 @@ records it in `docs/PARITY.md`.
 
 ## Workbench
 
-- **Manage Plugins**, **Show Plugin Status** and **Use Markdown Workbench
+- **Manage Plugins**, **Show Plugin Status** and **Use Markdown Workshop
   for Markdown in This Workspace**.
-- A **Markdown Workbench** log output channel;
+- A **Markdown Workshop** log output channel;
   `markdownWorkbench.debug.logging` adds debug lines from host and webview.
 - Untrusted workspaces: no remote images, media or frames, and no external
   code block processors.

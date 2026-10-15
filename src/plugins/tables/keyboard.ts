@@ -49,7 +49,10 @@ export class TableKeyboard {
       return;
     }
     if (!this.projection.inner && isUndoShortcut(event)) {
+      // Capture-phase history keys usually own this; keep stopPropagation when
+      // the grid handles it so VS Code's webview forwarder cannot double-fire.
       event.preventDefault();
+      event.stopPropagation();
       this.projection.hostAction(event.shiftKey ? "redo" : "undo");
     }
     if (gridSelected && (event.key === "Backspace" || event.key === "Delete")) {

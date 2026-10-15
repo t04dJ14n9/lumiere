@@ -1,7 +1,7 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
-import { fitPreview } from "./preview-position";
+import { placePreview } from "./preview-position";
 /**
  * The text a reference shows: its number in order of first reference, as
  * in a LaTeX paper. Named labels are numbered too.
@@ -93,15 +93,15 @@ class ReferenceControl {
     if (this.preview.hidden) {
       return;
     }
-    this.preview.style.translate = "";
-    this.preview.classList.remove("is-above");
     const root = this.sup.ownerDocument.documentElement;
-    const { shift, isAbove } = fitPreview(
-      this.preview.getBoundingClientRect(),
+    const box = this.preview.getBoundingClientRect();
+    const { left, top, isAbove } = placePreview(
+      { width: box.width, height: box.height },
       this.sup.getBoundingClientRect(),
       { width: root.clientWidth, height: root.clientHeight },
     );
-    this.preview.style.translate = shift ? `${shift}px 0` : "";
+    this.preview.style.left = `${left}px`;
+    this.preview.style.top = `${top}px`;
     this.preview.classList.toggle("is-above", isAbove);
   }
 
