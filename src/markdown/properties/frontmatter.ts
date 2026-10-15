@@ -1,4 +1,5 @@
 import { isMap, isScalar, isSeq, parseDocument } from "yaml";
+import { settablePropertyNode } from "./values";
 export function headerParts(source: string) {
   const opening = /^---\r?\n/.exec(source);
   if (!opening) {
@@ -28,6 +29,7 @@ export function frontmatter(source: string):
       values?: Record<string, unknown>;
       editableKeys?: string[];
       editableLists?: string[];
+      yaml?: { body: string; document: ReturnType<typeof parseDocument> };
       error?: string;
     }
   | undefined {
@@ -48,15 +50,7 @@ export function frontmatter(source: string):
       ? document.contents.items.flatMap((pair) =>
           isScalar(pair.key) &&
           typeof pair.key.value === "string" &&
-          isScalar(pair.value) &&
-          (pair.value.value === null ||
-            ["boolean", "string", "number"].includes(
-              typeof pair.value.value,
-            )) &&
-          !/BLOCK/.test(pair.value.type ?? "") &&
-          !/[\r\n]/.test(String(pair.value.value)) &&
-          (typeof pair.value.value !== "number" ||
-            Number.isFinite(pair.value.value))
+          editableScalar(pair.value)
             ? [pair.key.value]
             : [],
         )
@@ -65,6 +59,7 @@ export function frontmatter(source: string):
       raw: header.raw,
       end: header.end,
       values: (value as Record<string, unknown>) ?? {},
+      yaml: { body: header.body, document },
       editableKeys,
       editableLists: isMap(document.contents)
         ? document.contents.items.flatMap((pair) =>
@@ -80,9 +75,23 @@ export function frontmatter(source: string):
     return { raw: header.raw, end: header.end, error: String(error) };
   }
 }
+
+function editableScalar(node: unknown): boolean {
+  return (
+    isScalar(node) &&
+    settablePropertyNode(node) &&
+    (node.value === null ||
+      ["boolean", "string", "number"].includes(typeof node.value)) &&
+    !/BLOCK/.test(node.type ?? "") &&
+    !/[\r\n]/.test(String(node.value)) &&
+    (typeof node.value !== "number" || Number.isFinite(node.value))
+  );
+}
+
 export function editableList(node: unknown): boolean {
   return (
     isSeq(node) &&
+    !node.tag &&
     !node.anchor &&
     node.items.every(
       (item) =>

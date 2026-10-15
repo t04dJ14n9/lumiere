@@ -28,6 +28,7 @@ export { suggestHost } from "./suggest/host";
 export { searchHost } from "./search/host";
 export { tagsViewHost } from "./tags/view";
 export { agentBridgeHost } from "./agentBridge/host";
+export { cursorBridgeHost } from "./cursorBridge/host";
 export { markersHost } from "./markers/host";
 export { codeBlocksHost } from "./codeBlocks/host";
 

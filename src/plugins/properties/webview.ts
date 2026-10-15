@@ -328,7 +328,7 @@ function registerDraftFlush(ctx: Context): void {
   ctx.effect(() =>
     ctx.document.beforeFlush!(() => {
       const inputs = view.dom.querySelectorAll<HTMLElement>(
-        ".hybrid-properties input, .hybrid-properties [contenteditable]",
+        ".hybrid-properties input, .hybrid-properties textarea, .hybrid-properties [contenteditable]",
       );
       for (const input of inputs) {
         if (

@@ -135,6 +135,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkbench.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkbench.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
+| Command: markdownWorkbench.cursorBridge.edit | no Obsidian equivalent | Cursor Edit with MW selection; native apply | Unit tests in test/unit/cursor-bridge/ | not observed |
 | Command: markdownWorkbench.copyLinkForAgent | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `copyLinkForAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-link-for-agent/chat.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
 | Command: markdownWorkbench.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkbench.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -205,6 +207,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkbench.plugins.cursorBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.agentBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

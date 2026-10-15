@@ -2,6 +2,11 @@
 
 ## 0.1.0 (unreleased)
 
+- cursorBridge: in Cursor, Cmd/Ctrl+L opens Chat and Cmd/Ctrl+K opens Edit on
+  the Live Preview selection (native Cursor apply). A handoff lease suppresses
+  reclaim for the whole native Edit session; selection offsets are
+  version-checked after warm/open. Disabled bridge restores Insert Link.
+
 - Display name is **Markdown Workshop** (Marketplace, custom editor,
   command category, settings UI title, and other user-visible strings).
   Extension id `vscode-markdown-workbench` and settings keys

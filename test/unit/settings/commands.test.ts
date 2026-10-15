@@ -69,7 +69,10 @@ test("every editor manifest command routes to its registered webview ID", async 
   await new Promise<void>((resolve) => setImmediate(resolve));
   for (const manifest of features) {
     for (const command of manifest.contributes?.commands ?? []) {
-      assert.ok(f.handlers.has(command.editorCommand!), command.id);
+      if (!command.editorCommand) {
+        continue;
+      }
+      assert.ok(f.handlers.has(command.editorCommand), command.id);
       const run = native.get(`markdownWorkbench.${command.id}`);
       assert.ok(run, command.id);
       await run();

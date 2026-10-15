@@ -3805,6 +3805,145 @@ Validation:
   test/browser/tables-scroll.spec.ts --workers=1`: 2/2 pass (vim on/off). The
   browser fixture reveals the table into the CodeMirror viewport before querying
   cells so the widget mounts.
+## Hand-editable Properties (nested + Sources) — 2026-10-15
+
+Every frontmatter value is editable in the Properties sheet. Scalars and scalar
+lists keep their existing controls. Nested maps and list-of-maps (including
+`generated` and `sources`) edit as YAML drafts that write back through
+`propertyChanges` / `set`. The Sources custom renderer still draws open links
+above that draft; the Copy id control is removed (id is selectable text).
+
+Review follow-ups: YAML draft flush/focus include `textarea`; empty `sources: []`
+keeps the custom renderer + YAML draft; `yamlValue` sets `aliasDuplicateObjects:
+false`; string scalars keep YAML's needed quotes (e.g. ids like `"01"`); replacing an
+anchored value (including descendant anchors) strips `&anchor` and inlines the
+document-resolved prior value at aliases that `resolve()` to those nodes.
+Structured merge uses the same alias-safe set path. YAML drafts bind to the
+frontmatter bytes and property value at field bind time: invalid YAML and
+concurrent property/header changes reject without writing. Idle fields refresh conflict baselines on focus. Merge drops overlapping alias-preservation spans when the paste also replaces those aliases. Verification uses cycle-safe equality.
+
+Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts
+(including empty Sources + custom), `propertyYamlInput`, set round-trips for
+`generated` / `sources`, invalid YAML rejection, concurrent draft conflicts,
+quoted ids, and alias-safe nested/reused/descendant sets. `pnpm check` green.
+
+## Codex r12 Properties review fixes — 2026-10-15
+
+Explicit row Copy/Cut clears the DOM text selection before requesting the copy
+event, so menu cuts write the complete YAML and structured property payload
+before removal. Native copying of selected Sources ids and other row text keeps
+its existing bypass. Alias materialization now uses flow YAML with JSON-quoted
+strings, preserving `.nan`, `.inf` and `-.inf` even inside collections without
+introducing multiline inserts or anchors. Anchor targets are indexed by node in
+a Map; each external alias resolves once before lookup, including reused anchor
+names.
+
+Nine new unit regressions cover row Copy/Cut with selected id text, native
+Copy/Cut, the three non-finite scalars during structured paste, nested aliased
+collections with multiline strings, and one resolution per alias across many
+targets. Existing minimal YAML edits, unrelated comments/keys, invalid drafts
+and field conflict tests remain passing.
+
+Validation: Prettier, ESLint, all seven TypeScript projects and contributions
+check pass. Direct `node --import tsx <test-file>` runs pass 121 tests across 25
+Properties/YAML/Sources files (including ported property editing/order tests).
+A 7,579-byte header with 200 descendant anchors and 200 external aliases took
+109.04 ms in `propertyChanges`; all 201 edits and every mirror value were checked.
+
+Focused Properties/YAML/Sources unit tests pass (109). Broader `pnpm check`
+may hit sandbox `tsx` IPC `EPERM` in some environments; use
+`node --import tsx --test …` as the fallback. Browser/native suites not re-run
+for this review fix.
+
+## PR #49 GPT-5.6 review blockers — lossless YAML, 2026-10-15
+
+Nested YAML drafts now use the property's AST source range, with only outer
+indentation removed. The sheet passes that raw text through `PropertyField`,
+the editor adapter and `propertyChanges`; parsing validates the draft and its
+decoded projection, while the write uses the draft text. Comments from the
+original subtree and comments typed in the draft survive, along with scalar
+quoting, supported scalar tags, exact integer text, block-scalar newlines and
+CRLF. Source replacements retain unrelated frontmatter bytes and compose with
+alias preservation and displayed ordering in one transaction.
+
+Alias preservation reparses the original body with `intAsBigInt`, avoiding an
+already-rounded Number in the caller's AST. Materialized collections retain
+large integers and nested aliases as well as `.nan`, `.inf`, `-.inf` and negative
+zero. Original anchor nodes remain the lookup keys, so reused anchor names and
+one resolution per external alias retain their existing behavior.
+
+AST tag checks reject non-round-trip tagged collections before JS conversion,
+including `!!pairs` (also empty pairs), `!!map`, `!!set` and tagged timestamps,
+including through aliases. These values remain display-only and the set path
+rejects attempts to strip their tags. Standalone draft validation and existing
+recursive-alias / colliding-key guards remain in place.
+
+B2's field value snapshot and raw-header transaction baseline are unchanged.
+New units exercise the actual field-to-editor raw-text path, same-property and
+comment-only concurrent changes, save-flush rejection, body-only changes and
+combined displayed ordering. The Properties README and manual plan describe
+the lossless draft behavior and display-only limits. No browser/native tests
+were added, and the pinned source checkout remains unavailable and untouched.
+
+Validation:
+
+- Formatting, repository-wide ESLint and all seven TypeScript projects pass.
+- Sequential direct `node --import tsx <test-file>` runs pass **134/134 tests
+  across 23 Properties/YAML/Sources files**, including **43 YAML edit tests**
+  and the existing NaN/Inf, reused-anchor, descendant-anchor and alias-resolution
+  units. The B2 conflict regressions pass.
+- The full direct unit fallback runs 1,386 tests in 271 files: 1,367 pass and
+  19 fail in four unchanged subprocess-based test files. `protect-perf` child
+  probes return empty output; `gitInline` child probes time out; the Git cache
+  assertion in `gitDiffEditor/images` fails with `spawnSync git EPERM`; the
+  `layers` child compiler probes return empty output. Their tests and source
+  modules are unchanged by this patch.
+- `node --import tsx scripts/generate-contributions.ts --check` passes.
+  Production builds and native VSIX packaging pass.
+- `xvfb-run -a pnpm check:full` reaches the unit runner after successful
+  formatting/lint/types, then stops because `tsx` cannot create its IPC socket
+  (`listen EPERM /tmp/tsx-1000/...pipe`). The direct unit runs above are the
+  documented fallback; the full check is not green in this sandbox.
+- Existing Chromium suite attempted separately: all 272 tests fail to launch
+  Chromium before assertions (`sandbox_host_linux.cc`, `shutdown: Operation
+  not permitted`). Existing native suite attempted sequentially on a private
+  Xvfb display with the cached VS Code binary and its isolated `/tmp` profile:
+  VSIX packaging succeeds, then setup cannot bind `127.0.0.1` (`listen EPERM`),
+  before launching the test window. Neither suite is reported as passing.
+
+Logs: `/tmp/pr49-{properties-direct,all-units-direct,check-full,typecheck,
+contributions,browser,native}.log`. The full pre-push check remains required in
+an environment that permits IPC, browser startup and loopback listeners.
+
+Commit/push blocked: `git add` cannot create this worktree's `index.lock`
+because its shared Git metadata is mounted read-only. Per the owner's run
+instruction, the complete patch remains in this checkout, without stashing or
+an alternate remote. HEAD remains `629e2a08c7484b5eba874c11ec4208badef5b428`;
+the parent must commit and push `fix/sources-editable` to update PR #49. No
+commit, push or merge occurred.
+
+## PR #57 cursorBridge B1/B2 review fixes — 2026-10-15
+
+Delivered: reclaim releases a handoff lease only when no native text tab for
+the URI remains across all tab groups. Same-URI Workbench tab activation and
+closure events cannot release it, and queued reclaim still honors it. Cursor
+command discovery runs before handoff. The host adapter exposes live document
+versions and selections and compares the mirrored native editor's identity to
+the active TextEditor. A pure synchronous confirmation checks that identity,
+URI, version, selected text and range again immediately before Cursor invocation.
+Failed validation and exceptions during handoff release the lease; successful
+command completion keeps it for the native session. Dirty buffers need no save.
+
+Coverage: unit regressions cover sibling tab events, the last text tab closing
+or switching to Markdown, text tabs in different groups, queued reclaim,
+command-discovery ordering, changes after handoff validation, live host adapter
+state and lease cleanup after failures/exceptions. No browser/native cases were
+added.
+
+Validation: focused handoff/reclaim unit tests
+(`test/unit/cursor-bridge/handoff.test.ts`, `host.test.ts`,
+`test/unit/editor/reclaim.test.ts`, `handoff-host.test.ts`) pass 56/56.
+Live Cursor Edit/Accept/Reject remains an owner manual check.
 
 ## Mermaid stays rendered until explicit edit — 2026-10-15
 
@@ -3830,6 +3969,63 @@ Files: `src/webview/ui/markdown-widget.ts`,
 Validation: `pnpm exec tsx --test` markdown-widget + pointer-selection +
 selection unit tests.
 
+## PR #57 cursorBridge B1 pending-handoff clear race (r3) — 2026-10-15
+
+Delivered: each handoff acquires a distinct pending lease token before warming.
+Native editor confirmation promotes that token to an established session;
+failure releases only its own token, including the caller's final synchronous
+confirmation failure. Last-native-tab cleanup clears established tokens only,
+so overlapping handoffs still warming or opening text continue to suppress
+reclaim. Released or cleared tokens cannot affect a later retry. B2 command
+discovery ordering and synchronous confirmation immediately before Cursor
+invocation are unchanged; no B3 behavior changed.
+
+Coverage: pure regressions pause handoff B in warm, clear A's established
+session, then check reclaim suppression and B's success promotion or failure
+release. Lease tests cover overlapping owners, repeated clear, stale tokens and
+URI isolation. The host regression fires the last-native-tab close event while
+B is pending and verifies both fresh and queued reclaim stay suppressed, then
+checks that B's promoted session ends with its text tab. Existing sibling/custom
+tab, cross-group, failed-retry and B2 tests remain. New coverage is unit only.
+
+Validation: focused reclaim/handoff/host tests (`test/unit/editor/reclaim.test.ts`,
+`handoff-host.test.ts`, `test/unit/cursor-bridge/handoff.test.ts`, `host.test.ts`)
+pass 67/67. The two pure race cases failed before the fix and pass after it.
+The full pre-push `xvfb-run -a pnpm check:full` was run. Formatting, lint and
+all typecheck projects pass. Unit tests pass 1,393/1,394; the existing package
+contributions test fails because the two Cursor command categories in
+`package.json` say `Markdown Workbench` while the generator expects
+`Markdown Workshop`. The package, generator and manifests are unchanged from
+the starting HEAD; those two generated labels are outside this B1 fix.
+
+Browser and native suites were then run separately, sequentially, on private
+displays with the harness's isolated native profile:
+
+- `xvfb-run -a pnpm test:browser`: 275/276 pass. The unchanged
+  `Chinese punctuation: cell-local end, first nonblank and start` case in
+  `test/browser/vim-line-keys.spec.ts` captures table source before its pending
+  edit reaches the host, then compares against the later serialized table.
+  It failed an isolated retry and passed 1/3 focused repeats. A temporary
+  archive of the starting HEAD passed 4/4 focused runs; the browser harness
+  bundles are identical after normalizing dependency paths and source comments.
+  This is an intermittent synchronization assertion, with no browser or table
+  code changed here.
+- `xvfb-run -a pnpm test:vscode` (Code 1.142.0): the first 10 cases pass, then
+  native focus checks fail. The run was interrupted after repeated focus
+  failures and retried on a fresh private display with a window manager and
+  disposable configuration. That full retry passes 3/23; the renderer crashes
+  in `font-stack.spec.ts` and later cases report no live workbench page.
+  Native validation remains incomplete in this environment; no native tests
+  or harness code were changed.
+
+New test names: `pending handoff survives session clear during warm until
+success` / `failure`; `pending handoff survives the last text tab closing and
+suppresses queued reclaim`; `session clear preserves pending tokens until they
+are promoted`; `failed pending tokens release only themselves after session
+clear`; `released and cleared tokens cannot revive sessions or release newer
+owners`; `clearing one URI leaves other pending and established owners alone`.
+The existing suppression and overlap tests now use per-handoff tokens, and the
+failed-retry test also checks that no pending token remains after session clear.
 ## Outline Go to Heading (PR #45 review) — 2026-10-16
 
 CustomTextEditorProvider webviews are not native Outline / Go to Symbol hosts

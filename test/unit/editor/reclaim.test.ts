@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   associatedWith,
   Bypass,
+  Lease,
   isReclaimableNote,
   reclaimEnabled,
   shouldReclaim,
@@ -129,4 +130,112 @@ test("notes opened as text on purpose, or just reclaimed, keep the text editor",
   assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), false);
   now = 10_001;
   assert.equal(shouldReclaim(swap("workbench", "text"), withBypass), true);
+});
+
+test("a pending handoff lease suppresses reclaim until released", () => {
+  const lease = new Lease();
+  const pending = lease.acquire(note);
+  const withLease = {
+    ...context,
+    bypassed: (uri: string) => lease.has(uri),
+  };
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  pending.release();
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
+});
+
+test("overlapping tokens keep the lease until every owner releases", () => {
+  const lease = new Lease();
+  const first = lease.acquire(note);
+  first.promote();
+  const second = lease.acquire(note);
+  const withLease = {
+    ...context,
+    bypassed: (uri: string) => lease.has(uri),
+  };
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  second.release();
+  assert.equal(lease.has(note), true);
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), false);
+  first.release();
+  assert.equal(lease.has(note), false);
+  assert.equal(shouldReclaim(swap("workbench", "text"), withLease), true);
+});
+
+test("session clear preserves pending tokens until they are promoted", () => {
+  const lease = new Lease();
+  const established = lease.acquire(note);
+  established.promote();
+  const pending = lease.acquire(note);
+  lease.clear(note);
+  assert.equal(lease.has(note), true);
+  lease.clear(note);
+  assert.equal(
+    lease.has(note),
+    true,
+    "repeated tab events must keep pending owners",
+  );
+
+  pending.promote();
+  pending.promote();
+  lease.clear(note);
+  assert.equal(lease.has(note), false);
+});
+
+test("failed pending tokens release only themselves after session clear", () => {
+  const lease = new Lease();
+  lease.acquire(note).promote();
+  const firstPending = lease.acquire(note);
+  const secondPending = lease.acquire(note);
+  lease.clear(note);
+  firstPending.release();
+  firstPending.release();
+  assert.equal(
+    lease.has(note),
+    true,
+    "another pending handoff still owns the URI",
+  );
+  secondPending.release();
+  assert.equal(lease.has(note), false);
+});
+
+test("released and cleared tokens cannot revive sessions or release newer owners", () => {
+  const lease = new Lease();
+  const cancelled = lease.acquire(note);
+  cancelled.release();
+  cancelled.promote();
+  assert.equal(lease.has(note), false);
+
+  const expired = lease.acquire(note);
+  expired.promote();
+  lease.clear(note);
+  expired.promote();
+  assert.equal(lease.has(note), false);
+  const retry = lease.acquire(note);
+  cancelled.release();
+  expired.release();
+  expired.promote();
+  assert.equal(lease.has(note), true);
+  lease.clear(note);
+  assert.equal(
+    lease.has(note),
+    true,
+    "stale promotion must not establish the retry",
+  );
+  retry.release();
+  assert.equal(lease.has(note), false);
+});
+
+test("clearing one URI leaves other pending and established owners alone", () => {
+  const lease = new Lease();
+  const other = "file:///vault/Other.md";
+  lease.acquire(note).promote();
+  const pending = lease.acquire(other);
+  lease.acquire(other).promote();
+  lease.clear(note);
+  pending.release();
+  assert.equal(lease.has(note), false);
+  assert.equal(lease.has(other), true);
+  lease.clear(other);
+  assert.equal(lease.has(other), false);
 });

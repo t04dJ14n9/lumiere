@@ -8,10 +8,6 @@ export const protocol = defineProtocol("sourcesProperty", {
       }),
       result: Schema.object({ opened: Schema.boolean() }),
     },
-    copy: {
-      params: Schema.object({ text: Schema.string().max(1024) }),
-      result: Schema.object({ copied: Schema.boolean() }),
-    },
   },
   notifications: {},
 });

@@ -51,8 +51,8 @@ export class PropertyEditing {
           }
         });
       },
-      set: (expected, key, value) =>
-        this.edit(expected, { type: "set", key, value }),
+      set: (expected, key, value, yaml) =>
+        this.edit(expected, { type: "set", key, value, yaml }),
       edit: (expected, operation) => this.edit(expected, operation),
       types: () => this.preferences,
       setType: (key, kind) => {

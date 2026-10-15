@@ -735,6 +735,16 @@ Off by default.
    button, context menu item or Mod+Alt+C binding (removed or renamed by
    owner decision; Ctrl+C copies plain text).
 
+### cursorBridge
+
+In **Cursor** only: select text in Live Preview, press Cmd/Ctrl+L (Chat) and
+Cmd/Ctrl+K (Edit). Edit should open Cursor’s native bar; Accept updates the note
+in Markdown Workbench without a custom apply-back. With no selection, both
+commands no-op with a short notice. Disable `markdownWorkbench.plugins.cursorBridge.enabled`
+and confirm Cmd/Ctrl+K is Insert Link again. On plain VS Code, Insert Link keeps
+Cmd/Ctrl+K. Leave `agentBridge` behaviour unchanged.
+
+
 ### openCopiedAgentReference
 
 1. Copy `@Core.md#2-3` and run **Open Copied Agent Reference**, with no note
@@ -755,18 +765,20 @@ Off by default.
    click opens a note without revealing its line range; do not count it as
    transparent chat-click support or global Back/Forward history.
 
-### sources (read-only)
+### sources and nested Properties
 
-A note inside an OKF bundle, with a `sources` frontmatter list. Confirm light
-and dark themes.
+A note inside an OKF bundle, with a `sources` frontmatter list and a `generated`
+map. Confirm light and dark themes.
 
 1. Rows stack in document order. The first eight are expanded. **Showing 8 of
-   N** reveals the rest. There is no Edit, Add or Apply control, and revealing
-   rows does not change the file.
+   N** reveals the rest. Revealing rows does not change the file. Beneath the
+   rows, a YAML draft edits the whole `sources` value; committing it updates
+   frontmatter (undoable like other Properties).
 2. A row shows its title, or a resource-derived label, with the original
-   resource on its own line. `id` appears only when the entry has one. Copy id
-   copies that id. A missing `usage_count` is not shown as zero; zero is shown
-   as zero. An entry `usage_window` wins over the inherited one.
+   resource on its own line. `id` appears only when the entry has one, as plain
+   selectable text (no Copy id button). A missing `usage_count` is not shown as
+   zero; zero is shown as zero. An entry `usage_window` wins over the inherited
+   one.
 3. An `https` resource opens in the browser. A bundle path opens that workspace
    file. `command:`, `javascript:` and `data:` stay plain text and do not open.
    Nothing is fetched to preview a title or a remote page.
@@ -774,6 +786,24 @@ and dark themes.
    The click does nothing. It does not open a different source by position.
 5. A note outside a bundle still shows the rows. A path that leaves the vault
    does not open.
+6. `generated` (and any other nested map / list-of-maps) is editable as YAML in
+   Properties and writes back into the note. Scalar and scalar-list properties
+   keep their usual controls.
+7. Add a comment between `generated.by` and `generated.checksum`, and quote the
+   checksum. Open the YAML draft: its comments and quoting match the source.
+   Change only `by`, add another comment in the draft, and commit with
+   Ctrl/Cmd+Enter or Save. Both comments and the checksum's quoting survive.
+   Repeat with comments inside Sources entries and with a CRLF note. Undo once
+   restores the whole edit.
+8. In source, add `first: &a 9007199254740993` and `mirror: *a`. Edit `first`
+   through Properties. Inspect source: `mirror` becomes the exact decimal
+   `9007199254740993`. Repeat with that number inside an anchored collection.
+9. Add `pairs: !!pairs [a: 1, b: 2]` and an empty `!!pairs []`, plus nested
+   `!!pairs`, `!!set`, `!!map` and `!!timestamp` values. These rows remain
+   display-only. Editing another property leaves every tag unchanged.
+10. Start a YAML draft, then edit its property or a frontmatter comment from
+    another view before committing. The draft reports a conflict and preserves
+    the other edit. A body-only edit still permits the property commit.
 
 ### vault graph
 
@@ -907,6 +937,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
 | `markdownWorkbench.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
+| `markdownWorkbench.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
 | `markdownWorkbench.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1010,6 +1042,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | Setting | Default | Procedure |
 | --- | --- | --- |
 | `markdownWorkbench.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.cursorBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

@@ -1,4 +1,5 @@
 import { frontmatter, matchesPropertyKind } from "../../markdown/properties";
+import { propertyYamlDraft } from "../../markdown/properties/yaml-draft";
 import {
   inferPropertyKind,
   propertyKindLabels,
@@ -12,6 +13,13 @@ import { validTag } from "../../markdown/tags/grammar";
 import { attr, escape } from "../../markdown/html/helpers";
 import { createRenderer } from "../../markdown/html";
 const { renderInline } = createRenderer();
+
+interface PropertyRowOptions {
+  kind: PropertyKind;
+  editable: boolean;
+  custom: string | undefined;
+  draft: string | undefined;
+}
 
 export function renderProperties(
   source: string,
@@ -43,26 +51,41 @@ export function renderProperties(
           properties?.editableLists?.includes(key)
         ),
         custom: options.renderValue?.(key, value, values),
+        draft: propertyYamlDraft(
+          properties?.yaml?.body ?? "",
+          properties?.yaml?.document.get(key, true),
+          value,
+          properties?.yaml?.document,
+        ),
       }),
     )
     .join("");
   return `<div class="properties metadata-container${options.collapsed ? " is-collapsed" : ""}"><div class="metadata-properties-heading" data-properties-heading tabindex="0" role="button" aria-expanded="${!options.collapsed}"><span class="metadata-collapse-indicator">${propertyFlairIcon("collapse")}</span><span>Properties</span></div><div class="metadata-content"${options.collapsed ? " hidden" : ""}><div class="metadata-properties">${rows}</div><button type="button" data-property-add><span aria-hidden="true">＋</span> Add property</button></div><p class="property-message" aria-live="polite"></p></div>`;
 }
 
+function propertyBody(
+  key: string,
+  value: unknown,
+  options: PropertyRowOptions,
+): string {
+  // Custom renderers (e.g. Sources) keep structured YAML editing even for [].
+  if (options.custom) {
+    return complexEditable(key, value, options);
+  }
+  if (options.editable) {
+    return editableValue(key, value, options.kind);
+  }
+  return complexEditable(key, value, options);
+}
+
 function propertyRow(
   key: string,
   value: unknown,
-  options: {
-    kind: PropertyKind;
-    editable: boolean;
-    custom: string | undefined;
-  },
+  options: PropertyRowOptions,
 ): string {
-  const { kind, editable } = options;
+  const { kind } = options;
   const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
-  const body =
-    options.custom ??
-    (editable ? editableValue(key, value, kind) : propertyValue(value));
+  const body = propertyBody(key, value, options);
   return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
 }
 
@@ -139,6 +162,26 @@ function propertyInputText(value: unknown): string {
       : (JSON.stringify(value) ?? "");
   }
   return String(value);
+}
+
+function complexEditable(
+  key: string,
+  value: unknown,
+  options: Pick<PropertyRowOptions, "custom" | "draft">,
+): string {
+  const { custom, draft } = options;
+  if (draft === undefined) {
+    return custom ?? propertyValue(value);
+  }
+  const editor = editableYaml(key, draft);
+  return custom
+    ? `<div class="property-complex">${custom}${editor}</div>`
+    : editor;
+}
+
+function editableYaml(key: string, text: string): string {
+  // textarea keeps Enter as real newlines (contenteditable textContent does not).
+  return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
 }
 
 function propertyValue(value: unknown, ancestors = new Set<object>()): string {

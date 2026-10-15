@@ -96,6 +96,16 @@
         "icon": "$(go-to-file)"
       },
       {
+        "command": "markdownWorkbench.cursorBridge.chat",
+        "title": "Cursor Chat with Selection",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkbench.cursorBridge.edit",
+        "title": "Cursor Edit Selection",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkbench.jumpBack",
         "title": "Go Back in Note",
         "category": "Markdown Workshop",
@@ -560,6 +570,18 @@
     ],
     "keybindings": [
       {
+        "command": "markdownWorkbench.cursorBridge.chat",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+      },
+      {
+        "command": "markdownWorkbench.cursorBridge.edit",
+        "key": "ctrl+k",
+        "mac": "cmd+k",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+      },
+      {
         "command": "markdownWorkbench.toggleBold",
         "key": "ctrl+b",
         "mac": "cmd+b",
@@ -575,7 +597,7 @@
         "command": "markdownWorkbench.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && !(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)"
       },
       {
         "command": "markdownWorkbench.gitGutter.nextChange",
@@ -766,6 +788,14 @@
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.commands"
         },
         {
+          "command": "markdownWorkbench.cursorBridge.chat",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+        },
+        {
+          "command": "markdownWorkbench.cursorBridge.edit",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+        },
+        {
           "command": "markdownWorkbench.jumpBack",
           "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.editor"
         },
@@ -830,7 +860,7 @@
         },
         {
           "command": "markdownWorkbench.insertLink",
-          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting"
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.formatting && !(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)"
         },
         {
           "command": "markdownWorkbench.insertHorizontalRule",
@@ -1249,6 +1279,12 @@
           "scope": "resource",
           "description": "Highlight rendered and editable code fences; copy code."
         },
+        "markdownWorkbench.plugins.cursorBridge.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "In Cursor, Cmd/Ctrl+L opens Chat and Cmd/Ctrl+K opens Edit on the Live Preview selection."
+        },
         "markdownWorkbench.plugins.diagrams.enabled": {
           "type": "boolean",
           "default": true,
@@ -1415,7 +1451,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Show OKF sources as read-only stacked rows and open allowed resources."
+          "description": "Show OKF sources with open links; values edit as YAML beside other Properties."
         },
         "markdownWorkbench.plugins.spellcheck.enabled": {
           "type": "boolean",

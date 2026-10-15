@@ -1,4 +1,9 @@
-import { frontmatter, propertyInput } from "../../markdown/properties";
+import {
+  frontmatter,
+  propertyInput,
+  propertyYamlInput,
+  type PropertyValue,
+} from "../../markdown/properties";
 import type { PropertyKind } from "../../markdown/properties/types";
 import type { PropertyEditor } from "./control-edits";
 import {
@@ -10,24 +15,45 @@ import {
   setInputValidity,
 } from "./value-input";
 
+/** Parsed frontmatter snapshot shared across property field bindings. */
+export type PropertyBaseline = NonNullable<ReturnType<typeof frontmatter>>;
+
 /** Only an actual edit commits, so focusing a mismatched widget cannot erase YAML. */
 export class PropertyField {
   private original: string;
   private isDirty = false;
   private readonly key: string;
+  private readonly container: HTMLElement;
+  private readonly input: HTMLElement;
+  private readonly source: string;
+  private readonly editor: PropertyEditor;
+  /** Frontmatter bytes when editing started — reject commits if they change. */
+  private expectedRaw = "";
+  /** JSON snapshot of this property's value when editing started. */
+  private baselineValue = "";
 
-  constructor(
-    private readonly container: HTMLElement,
-    private readonly input: HTMLElement,
-    private readonly source: string,
-    private readonly editor: PropertyEditor,
-  ) {
-    this.key = input.dataset.propertyInput!;
-    this.original = inputText(input);
-    if (isNativeInput(input)) {
-      input.disabled = !editor;
+  constructor(options: {
+    container: HTMLElement;
+    input: HTMLElement;
+    source: string;
+    editor: PropertyEditor;
+    baseline?: PropertyBaseline;
+  }) {
+    this.container = options.container;
+    this.input = options.input;
+    this.source = options.source;
+    this.editor = options.editor;
+    this.key = options.input.dataset.propertyInput!;
+    if (options.baseline) {
+      this.applyBaseline(options.baseline);
     } else {
-      input.contentEditable = String(!!editor);
+      this.captureBaseline(options.source);
+    }
+    this.original = inputText(options.input);
+    if (isNativeInput(options.input)) {
+      options.input.disabled = !options.editor;
+    } else {
+      options.input.contentEditable = String(!!options.editor);
     }
     this.registerEvents();
     this.registerLink();
@@ -48,47 +74,83 @@ export class PropertyField {
     this.editor?.refresh?.();
   }
 
+  private parsedValue(): PropertyValue | undefined {
+    const kind = this.input.dataset.propertyKind ?? "text";
+    const text = inputText(this.input);
+    if (kind === "yaml") {
+      return propertyYamlInput(text);
+    }
+    return propertyInput(kind as PropertyKind, text);
+  }
+
+  private reject(message: string): false {
+    setInputValidity(this.input, message);
+    reportInputValidity(this.input);
+    return false;
+  }
+
+  private applyBaseline(header: PropertyBaseline | undefined): void {
+    this.expectedRaw = header?.raw ?? "";
+    try {
+      this.baselineValue = JSON.stringify(header?.values?.[this.key]);
+    } catch {
+      // Recursive aliases cannot stringify; treat as opaque until reopened.
+      this.baselineValue = "cycle";
+    }
+  }
+
+  private captureBaseline(
+    source = this.editor?.currentSource?.() ?? this.source,
+  ): void {
+    this.applyBaseline(frontmatter(source));
+  }
+
+  private invalidMessage(): string {
+    return this.input.dataset.propertyKind === "yaml"
+      ? "Enter valid YAML for this property."
+      : "Enter a valid value for this property type.";
+  }
+
+  private conflicted(): boolean {
+    const live = frontmatter(this.editor?.currentSource?.() ?? this.source);
+    try {
+      return JSON.stringify(live?.values?.[this.key]) !== this.baselineValue;
+    } catch {
+      return this.baselineValue !== "cycle";
+    }
+  }
+
+  private apply(value: PropertyValue): boolean {
+    this.input.dataset.propertyCommitting = "true";
+    delete this.input.dataset.propertyEditing;
+    try {
+      const yaml =
+        this.input.dataset.propertyKind === "yaml"
+          ? inputText(this.input)
+          : undefined;
+      return this.editor?.set(this.expectedRaw, this.key, value, yaml) ?? false;
+    } finally {
+      delete this.input.dataset.propertyCommitting;
+    }
+  }
+
   private commit(): boolean {
     if (!this.isDirty || this.input.dataset.propertyCommitting) {
       return true;
     }
-    const kind = (this.input.dataset.propertyKind ?? "text") as PropertyKind;
-    const value = propertyInput(kind, inputText(this.input));
-    if (
-      value === undefined ||
-      (isNativeInput(this.input) && !this.input.checkValidity())
-    ) {
-      setInputValidity(
-        this.input,
-        "Enter a valid value for this property type.",
-      );
-      reportInputValidity(this.input);
-      return false;
+    const value = this.parsedValue();
+    const invalidNative =
+      isNativeInput(this.input) && !this.input.checkValidity();
+    if (value === undefined || invalidNative) {
+      return this.reject(this.invalidMessage());
     }
-    this.input.dataset.propertyCommitting = "true";
-    delete this.input.dataset.propertyEditing;
-    let applied: boolean;
-    try {
-      applied =
-        this.editor?.set(
-          frontmatter(this.editor.currentSource?.() ?? this.source)?.raw ?? "",
-          this.key,
-          value,
-        ) ?? false;
-    } finally {
-      delete this.input.dataset.propertyCommitting;
-    }
-    if (!applied) {
+    if (this.conflicted() || !this.apply(value)) {
       this.input.dataset.propertyEditing = "true";
-      setInputValidity(
-        this.input,
-        "The property changed. Reopen it and try again.",
-      );
-      reportInputValidity(this.input);
-      return false;
+      return this.reject("The property changed. Reopen it and try again.");
     }
     this.isDirty = false;
     delete this.input.dataset.propertyDirty;
+    this.captureBaseline();
     this.original = inputText(this.input);
     return true;
   }
@@ -113,6 +175,12 @@ export class PropertyField {
 
   private registerEvents(): void {
     this.input.addEventListener("focus", () => {
+      // Retained idle rows keep their DOM input across reconciles; refresh the
+      // conflict baseline when a new edit begins so earlier edits do not block it.
+      if (!this.isDirty) {
+        this.captureBaseline();
+        this.original = inputText(this.input);
+      }
       this.input.dataset.propertyEditing = "true";
     });
     this.input.addEventListener("input", () => {
@@ -149,26 +217,46 @@ export class PropertyField {
     if (event.isComposing) {
       return;
     }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.commit()) {
-        this.editor?.action?.("save");
-      }
+    if (this.saveShortcut(event) || this.enterCommit(event)) {
       return;
     }
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.commit()) {
-        this.row()?.focus();
-      }
+    if (event.key !== "Escape") {
+      return;
     }
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      this.cancel();
-      this.editor?.focusBody?.();
+    event.preventDefault();
+    event.stopPropagation();
+    this.cancel();
+    this.editor?.focusBody?.();
+  }
+
+  private saveShortcut(event: KeyboardEvent): boolean {
+    if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s") {
+      return false;
     }
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.commit()) {
+      this.editor?.action?.("save");
+    }
+    return true;
+  }
+
+  private enterCommit(event: KeyboardEvent): boolean {
+    if (event.key !== "Enter" || event.shiftKey) {
+      return false;
+    }
+    // Multiline YAML drafts need Enter for newlines; commit with Ctrl/Cmd+Enter.
+    const yamlNewline =
+      this.input.dataset.propertyKind === "yaml" &&
+      !(event.metaKey || event.ctrlKey);
+    if (yamlNewline) {
+      return true;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.commit()) {
+      this.row()?.focus();
+    }
+    return true;
   }
 }

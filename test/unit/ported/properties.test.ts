@@ -19,17 +19,29 @@ test("recursive YAML properties render without throwing or mistaking shared alia
     "---\nfirst: &shared [one, two]\nsecond: *shared\n---\n",
   );
   assert.doesNotMatch(repeated, /Recursive YAML alias/);
-  assert.equal((repeated.match(/>one<\/span>/g) ?? []).length, 2);
+  assert.equal((repeated.match(/data-property-kind="yaml"/g) ?? []).length, 2);
+  assert.match(repeated, /one/);
+  assert.match(repeated, /two/);
 });
 
 test("nested property values preserve links, empty lists and multiline text", () => {
   const html = renderProperties(
     '---\nobject: {link: "[[Linked]]", missing: null, list: []}\ntext: |\n  first\n  second\n---\n',
   );
-  assert.match(html, /class="property-object"/);
-  assert.match(html, /href="Linked"/);
-  assert.match(html, /Empty list/);
-  assert.match(html, /first\nsecond\n/);
+  assert.match(
+    html,
+    /data-property-input="object"[^>]*data-property-kind="yaml"/,
+  );
+  assert.match(html, /\[\[Linked\]\]/);
+  assert.match(html, /list: \[\]/);
+  assert.match(
+    html,
+    /data-property-input="text"[^>]*data-property-kind="yaml"/,
+  );
+  assert.match(
+    html,
+    /data-property-input="text"[^>]*>\|\n {2}first\n {2}second\n<\/textarea>/,
+  );
 });
 
 test("boolean property edits preserve anchors, comments, flow syntax and CRLF", () => {

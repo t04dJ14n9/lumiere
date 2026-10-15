@@ -65,6 +65,10 @@ function registerFeatureCommands(ctx: Context, manifest: Manifest): Fiber {
     name: `commands:${manifest.id}`,
     apply(owned) {
       for (const command of manifest.contributes?.commands ?? []) {
+        // Host-only commands (no editorCommand) register themselves.
+        if (!command.editorCommand) {
+          continue;
+        }
         owned.effect(() =>
           ctx.workbench.command(`markdownWorkbench.${command.id}`, () =>
             runFeatureCommand(ctx, manifest, command),
