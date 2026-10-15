@@ -4220,3 +4220,14 @@ Watch subscriptions are released after the last observer/request exits.
 TDD: module-missing red, then 16 native/parser cases green; the production
 watcher helper proves mid-request stale and identical generations for two
 subscribers. Full typecheck and scoped lint pass. No VSIX built or installed.
+
+## gitBlame Task 4 — Validated host RPC, 2026-10-15
+
+Added the quiet, default-on manifest and panel-bound blame/identity RPC. Changed
+notifications carry required authoritative generation immediately; the host
+only reads that counter. Contents use MAX_DIFF_CHARS in both schema and handler.
+The local kernel has no `.int()` or schema-valued unions, so custom Schema
+validators enforce safe integer/version and required blame on ok responses.
+TDD: missing-module red followed by four host cases green, including real schema
+over-cap rejection, handler defense, immediate notify and disposal. Scoped lint
+and host plugin compilation pass. No VSIX built or installed.
