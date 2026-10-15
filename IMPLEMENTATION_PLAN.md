@@ -4276,3 +4276,14 @@ it explicitly named HEAD. Removed that revision only for the path-only route,
 so Git includes working-tree edits. The production snapshot route continues to
 send stdin against HEAD. TDD: the new dirty-disk case failed with ok, now returns
 uncommitted; all 47 focused cases pass. No VSIX built or installed.
+
+## gitBlame integration checks — Inventory and Node events, 2026-10-15
+
+The first final full check passed formatting/lint/typecheck but exposed two
+integration failures: the setting lacked a parity inventory row, and the event
+catalog audit interpreted literal Node EventEmitter events as kernel events.
+Added parity/capability rows and a Node-process event helper in the runner fake;
+the existing audit stays unchanged. All 58 focused blame/audit/settings cases
+now pass. Native packaging remains prohibited by this task. An unpackaged test
+harness option was prototyped and unit-checked but removed from the shared
+checkout externally; it is not part of this branch. No VSIX built or installed.

@@ -34,6 +34,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `folding` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `lineNumbers` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `gitDiffEditor` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `gitBlame` | No Obsidian core equivalent | Current-line authorship in Live Preview | Manual acceptance in docs/MANUAL_TEST_PLAN.md; snapshot/epoch/porcelain unit coverage | Intentional extension |
 | `gitInline` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `gitGutter` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `indentGuides` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -220,6 +221,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkshop.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.gitBlame.enabled | No Obsidian core equivalent | Default on; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
 | Setting: markdownWorkshop.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

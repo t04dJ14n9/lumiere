@@ -101,6 +101,15 @@ test("dirty argv forwards stdin and timeout; clean argv omits contents", async (
   assert.equal(calls[1]?.args.includes("--contents"), false);
 });
 
+// Node process/stream events are separate from the typed kernel event catalogue.
+function emitProcessEvent(
+  emitter: EventEmitter,
+  event: string,
+  ...args: unknown[]
+): void {
+  emitter.emit(event, ...args);
+}
+
 function fakeChild() {
   const child = new EventEmitter() as ChildProcess;
   const stdout = new EventEmitter();
@@ -150,8 +159,8 @@ test("production runner explicitly writes snapshot bytes and closes stdin", asyn
   });
   assert.deepEqual(fake.writes, ["α\n"]);
   assert.equal(fake.ended(), true);
-  fake.stdout.emit("data", porcelain());
-  fake.child.emit("close", 0);
+  emitProcessEvent(fake.stdout, "data", porcelain());
+  emitProcessEvent(fake.child, "close", 0);
   assert.equal((await promise).stdout, porcelain());
 });
 
@@ -174,9 +183,9 @@ test("production runner rejects excess output and stdin errors", async () => {
       maxBuffer: 4,
     });
     if (mode === "buffer") {
-      fake.stdout.emit("data", "too long");
+      emitProcessEvent(fake.stdout, "data", "too long");
     } else {
-      fake.stdin.emit("error", new Error("EPIPE"));
+      emitProcessEvent(fake.stdin, "error", new Error("EPIPE"));
     }
     await assert.rejects(pending);
     assert.equal(fake.killed(), true);
