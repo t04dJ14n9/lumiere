@@ -13,3 +13,4 @@ export {
 } from "./types";
 export { scrubDiagnosticMessage, scrubPacket, scrubUri } from "./scrub";
 export { truncatePacket } from "./truncate";
+export { renderMarkdown, serializeJson } from "./render";
