@@ -14,3 +14,13 @@ export {
 export { scrubDiagnosticMessage, scrubPacket, scrubUri } from "./scrub";
 export { truncatePacket } from "./truncate";
 export { renderMarkdown, serializeJson } from "./render";
+export {
+  resolveCanonicalActive,
+  type HostActiveSnapshot,
+  type ProductCanonicalSlice,
+} from "./canonical";
+export {
+  gatherIdeContext,
+  type IdeContextHostApis,
+  type ProductGatherSlice,
+} from "./gather";
