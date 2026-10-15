@@ -6,6 +6,7 @@ import {
   EXPAND_ALL_COMMAND,
   FOLLOW_CURSOR_SETTING,
   OPEN_COMMAND,
+  TOGGLE_COMMAND,
 } from "../../../src/plugins/outline/commands";
 import { deferred, outlineFixture, tick } from "./fixture";
 import { render, uriOf, wait } from "../views/fakes";
@@ -280,4 +281,19 @@ test("stopping the plugin removes commands, view and follow context", async () =
   assert.equal(fixture.fake.commands.size, 0);
   assert.equal(fixture.followsCursor, undefined);
   assert.deepEqual(fixture.warnings, []);
+});
+
+test("Toggle Note Outline focuses the view or closes the side bar", async (t) => {
+  const fixture = await outlineFixture();
+  t.after(() => fixture.root.dispose());
+  const { panel } = fixture.panel("one");
+  fixture.open(panel);
+  await tick();
+  fixture.executed.length = 0;
+  fixture.show(true);
+  await fixture.fake.commands.get(TOGGLE_COMMAND)!();
+  assert.deepEqual(fixture.executed.at(-1), ["workbench.action.closeSidebar"]);
+  fixture.show(false);
+  await fixture.fake.commands.get(TOGGLE_COMMAND)!();
+  assert.deepEqual(fixture.executed.at(-1), ["markdownWorkbench.outline.focus"]);
 });

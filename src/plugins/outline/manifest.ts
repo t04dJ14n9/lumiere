@@ -15,11 +15,11 @@ export default defineManifest({
   id: "outline",
   title: "Outline",
   description:
-    "Outline view of the active note's headings, with expansion actions and optional cursor following. VS Code's own Outline covers the text editor.",
+    "Outline view of the active note's headings, with expansion actions and optional cursor following. Registers a DocumentSymbolProvider so Go to Symbol and the native Outline list headings in the Markdown Workbench editor.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
-  capabilities: ["views", "navigation", "commands"],
+  capabilities: ["views", "navigation", "commands", "keybindings"],
   config,
   contributes: {
     commands: [
@@ -40,6 +40,20 @@ export default defineManifest({
         // Paired titles keep the checkmark visible in both native and rendered menus.
         title: "✓ Follow Cursor",
         palette: false,
+      },
+      {
+        id: "outline.toggle",
+        title: "Toggle Note Outline",
+        icon: "$(list-tree)",
+        palette: true,
+      },
+    ],
+    keybindings: [
+      {
+        id: "outline.toggle",
+        key: "ctrl+alt+o",
+        // Match PDF Workshop: Control+Command+O on macOS.
+        mac: "ctrl+cmd+o",
       },
     ],
     menus: [

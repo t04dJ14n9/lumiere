@@ -341,6 +341,12 @@
         "category": "Markdown Workbench"
       },
       {
+        "command": "markdownWorkbench.outline.toggle",
+        "title": "Toggle Note Outline",
+        "category": "Markdown Workbench",
+        "icon": "$(list-tree)"
+      },
+      {
         "command": "markdownWorkbench.addProperty",
         "title": "Add File Property",
         "category": "Markdown Workbench",
@@ -570,6 +576,12 @@
         "command": "markdownWorkbench.gitGutter.showChange",
         "key": "alt+f3",
         "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.gitGutter"
+      },
+      {
+        "command": "markdownWorkbench.outline.toggle",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline"
       },
       {
         "command": "markdownWorkbench.addProperty",
@@ -922,6 +934,10 @@
         {
           "command": "markdownWorkbench.outline.disableFollowCursor",
           "when": "false"
+        },
+        {
+          "command": "markdownWorkbench.outline.toggle",
+          "when": "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline"
         },
         {
           "command": "markdownWorkbench.addProperty",
@@ -1306,7 +1322,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Outline view of the active note's headings, with expansion actions and optional cursor following. VS Code's own Outline covers the text editor."
+          "description": "Outline view of the active note's headings, with expansion actions and optional cursor following. Registers a DocumentSymbolProvider so Go to Symbol and the native Outline list headings in the Markdown Workbench editor."
         },
         "markdownWorkbench.plugins.pagePreview.enabled": {
           "type": "boolean",

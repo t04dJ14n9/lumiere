@@ -115,3 +115,25 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
     ),
   );
 });
+
+test("Ctrl+Alt+O toggles Note Outline while the Workbench editor is active", async () => {
+  const { keybindings, commands } = await contributions();
+  assert.ok(
+    commands.some(
+      (command) =>
+        command.command === "markdownWorkbench.outline.toggle" &&
+        command.title === "Toggle Note Outline",
+    ),
+  );
+  const toggle = keybindings.find(
+    (binding) => binding.command === "markdownWorkbench.outline.toggle",
+  );
+  assert.ok(toggle);
+  assert.equal(toggle.key, "ctrl+alt+o");
+  assert.equal(toggle.mac, "ctrl+cmd+o");
+  assert.match(
+    toggle.when ?? "",
+    /activeCustomEditorId == 'markdownWorkbench\.editor'/,
+  );
+  assert.match(toggle.when ?? "", /markdownWorkbench\.plugin\.outline/);
+});

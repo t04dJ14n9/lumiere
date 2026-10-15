@@ -8,6 +8,7 @@ import {
   registerOutlineActions,
 } from "./actions";
 import { OPEN_COMMAND, VIEW_ID } from "./commands";
+import { registerDocumentSymbols } from "./document-symbols";
 import { OutlineSource } from "./tree";
 import { OutlineView } from "./view";
 
@@ -35,8 +36,12 @@ export const outlineHost: Plugin = {
     });
     ctx.effect(() => () => view.dispose());
     registerOutlineUpdates(ctx, view, tree);
-    registerOutlineActions(ctx, view);
+    registerOutlineActions(ctx, view, tree);
     registerFollowCursor(ctx, view);
+    ctx.effect(() => {
+      const registration = registerDocumentSymbols();
+      return () => registration.dispose();
+    });
     ctx.effect(() =>
       views.command(OPEN_COMMAND, (uri, offset) =>
         ctx.vaults.open(String(uri), { offset: Number(offset) }),

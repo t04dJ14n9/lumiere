@@ -36,6 +36,7 @@ export async function outlineFixture(
   const settingsWrites: unknown[][] = [];
   const resources = new Map<string, boolean>();
   const contexts = new Map<string, unknown>();
+  const executed: unknown[][] = [];
   const panels: EditorPanel[] = [];
   let active: EditorPanel | undefined;
   let visible = true;
@@ -64,6 +65,7 @@ export async function outlineFixture(
   const workbench = workbenchWith(fake.views);
   workbench.command = (id, run) => fake.views.command(id, run);
   workbench.execute = async (command, key, value) => {
+    executed.push([command, key, value].filter((part) => part !== undefined));
     if (command === "setContext") {
       contexts.set(String(key), value);
     }
@@ -130,6 +132,7 @@ export async function outlineFixture(
     warnings,
     resources,
     settingsWrites,
+    executed,
     view: fake.trees.get(VIEW_ID)!,
     get treeOptions() {
       return treeOptions;

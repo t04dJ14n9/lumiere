@@ -1,11 +1,13 @@
 import type { Context } from "../../kernel";
-import type { Workbench } from "../../shared/runtime";
+import type { TreeHandle, Workbench } from "../../shared/runtime";
 import {
   DISABLE_FOLLOW_COMMAND,
   ENABLE_FOLLOW_COMMAND,
   EXPAND_ALL_COMMAND,
   FOLLOW_CURSOR_CONTEXT,
   FOLLOW_CURSOR_SETTING,
+  TOGGLE_COMMAND,
+  VIEW_ID,
 } from "./commands";
 import type { OutlineView } from "./view";
 
@@ -22,9 +24,24 @@ export function followsCursor(
     : configured !== false;
 }
 
-export function registerOutlineActions(ctx: Context, view: OutlineView): void {
+export function registerOutlineActions(
+  ctx: Context,
+  view: OutlineView,
+  tree: TreeHandle,
+): void {
   ctx.effect(() =>
     ctx.workbench.command(EXPAND_ALL_COMMAND, () => view.expandAll()),
+  );
+  ctx.effect(() =>
+    ctx.workbench.command(TOGGLE_COMMAND, async () => {
+      // Same idea as PDF Outline: show/focus the tree so titles are visible,
+      // or hide the side bar when the outline is already showing.
+      if (tree.visible) {
+        await ctx.workbench.execute("workbench.action.closeSidebar");
+      } else {
+        await ctx.workbench.execute(`${VIEW_ID}.focus`);
+      }
+    }),
   );
   const setFollowCursor = async (enabled: boolean) => {
     const settings = ctx.workbench.settings;
