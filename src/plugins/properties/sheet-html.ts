@@ -200,13 +200,51 @@ function editableYaml(key: string, text: string): string {
   return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
 }
 
+function isPlainObject(value: object): value is Record<string, unknown> {
+  return (
+    !Array.isArray(value) &&
+    !(value instanceof Date) &&
+    !(value instanceof Map) &&
+    !(value instanceof Set)
+  );
+}
+
+/** Type-preserving equality so Date vs ISO string does not pass round-trip. */
+function yamlDraftEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (
+    left === null ||
+    right === null ||
+    typeof left !== "object" ||
+    typeof right !== "object"
+  ) {
+    return false;
+  }
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return (
+      left.length === right.length &&
+      left.every((item, i) => yamlDraftEqual(item, right[i]))
+    );
+  }
+  if (!isPlainObject(left) || !isPlainObject(right)) {
+    return false;
+  }
+  const keys = Object.keys(left);
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every((key) => yamlDraftEqual(left[key], right[key]))
+  );
+}
+
 /** Undefined when the value cannot round-trip (e.g. recursive aliases). */
 function yamlDraft(value: unknown): string | undefined {
   if (value === null || value === undefined) {
     return "";
   }
-  if (value instanceof Set || value instanceof Map) {
-    // Tagged collections (!!set / !!map) do not round-trip through plain YAML.
+  if (value instanceof Set || value instanceof Map || value instanceof Date) {
+    // Tagged collections / timestamps do not round-trip through plain YAML.
     return undefined;
   }
   try {
@@ -219,11 +257,7 @@ function yamlDraft(value: unknown): string | undefined {
       aliasDuplicateObjects: false,
     });
     const parsed = propertyYamlInput(text);
-    try {
-      if (JSON.stringify(parsed) !== JSON.stringify(value)) {
-        return undefined;
-      }
-    } catch {
+    if (!yamlDraftEqual(parsed, value)) {
       return undefined;
     }
     return text;

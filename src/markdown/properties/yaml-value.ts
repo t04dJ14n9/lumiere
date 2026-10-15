@@ -43,8 +43,23 @@ function valueStart(
     return start;
   }
   const token = `&${anchor}`;
-  const at = body.lastIndexOf(token, start);
-  return at >= 0 && at <= start ? at : start;
+  // Prefer the last real anchor token at or before start; skip comment text.
+  let at = -1;
+  for (let from = 0; from <= start;) {
+    const found = body.indexOf(token, from);
+    if (found < 0 || found > start) {
+      break;
+    }
+    const after = body[found + token.length];
+    const whole = !after || !/[A-Za-z0-9_-]/.test(after);
+    const lineStart = body.lastIndexOf("\n", found - 1) + 1;
+    const inComment = body.slice(lineStart, found).includes("#");
+    if (whole && !inComment) {
+      at = found;
+    }
+    from = found + 1;
+  }
+  return at >= 0 ? at : start;
 }
 
 export function setPropertyChange(

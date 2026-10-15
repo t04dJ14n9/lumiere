@@ -86,3 +86,13 @@ test("tagged YAML sets that cannot round-trip stay non-draft displays", () => {
     /data-property-input="value"[^>]*data-property-kind="yaml"/,
   );
 });
+
+test("tagged timestamps that do not round-trip stay non-draft displays", () => {
+  const html = renderProperties(
+    "---\ngenerated: {at: !!timestamp 2026-10-15, by: old}\n---\n",
+  );
+  assert.doesNotMatch(
+    html,
+    /data-property-input="generated"[^>]*data-property-kind="yaml"/,
+  );
+});

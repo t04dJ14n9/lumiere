@@ -256,3 +256,14 @@ test("inlining document-marker strings quotes them at alias sites", () => {
     });
   }
 });
+
+test("anchor mentions in comments do not retarget valueStart", () => {
+  const source = "---\ngenerated: &a # reuse &a\n  by: old\nkeep: yes\n---\n";
+  const next = edit(source, {
+    type: "set",
+    key: "generated",
+    value: { by: "new" },
+  });
+  assert.deepEqual(frontmatter(next)?.values?.generated, { by: "new" });
+  assert.equal(frontmatter(next)?.values?.keep, "yes");
+});
