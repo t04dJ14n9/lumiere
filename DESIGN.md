@@ -537,6 +537,10 @@ VS Code needs static `contributes`. `scripts/generate-contributions.ts` builds
 - `when` clauses are ANDed with `markdownWorkshop.plugin.<id>` (a context key
   the host sets while that plugin is active for the active editor) and, for
   editor commands, `activeCustomEditorId == 'markdownWorkshop.editor'`.
+  Their keybindings also need `markdownWorkshop.editorFocus` (the active
+  note's webview has focus): `activeCustomEditorId` stays set while focus is
+  elsewhere, and an extension binding outranks a built-in one for the same
+  key.
 - Editor commands (`editorCommand`) route to the active editor's webview
   (§14), so they need no host code.
 - A unit test fails when `package.json` differs from the generator's output.
@@ -1167,7 +1171,8 @@ Rules:
   (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
   (§13 outline).
 - The right-click menu uses VS Code's `webview/context` menu with
-  `webviewSection` for static commands (formatting, Copy Link for Agent).
+  `webviewSection` for static commands (formatting, Copy Link for Agent),
+  after VS Code's own Cut, Copy and Paste, as Obsidian's menu starts with them.
   Context-dependent items (tables, property chips) keep in-editor menus via
   the `menu` service and `editor/menu`.
 - Vim ex commands `:w`, `:q`, `:wq`, `:x`, `:u`, `:red` map to host actions

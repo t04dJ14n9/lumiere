@@ -30,6 +30,8 @@ import { indentationKeymap } from "./indentation";
 import { findExtension } from "./find";
 import { keepSelectAllInEditor } from "./select-all";
 import { caretExtension } from "./caret-view";
+import { menuSelectionContext } from "./menu-context";
+import { reportWebviewFocus } from "./focus-report";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -96,6 +98,16 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerJumpRecorder(ctx, editor, presentation);
     registerReveal(ctx, view);
     ctx.effect(() => keepSelectAllInEditor(view.dom.ownerDocument));
+    ctx.effect(() =>
+      reportWebviewFocus(window, (hasFocus) =>
+        ctx.rpc.notify(
+          protocol,
+          "focusChanged",
+          { hasFocus },
+          { coalesce: true },
+        ),
+      ),
+    );
     view.focus();
   },
 };
@@ -132,13 +144,16 @@ function createEditorView(
         caretExtension(),
         findExtension(),
         EditorView.lineWrapping,
+        // VS Code's own Cut, Copy and Paste stay in the menu, as in
+        // Obsidian's editor menu; they run the browser's clipboard commands,
+        // which CodeMirror and the paste plugins already handle.
         EditorView.contentAttributes.of({
           "aria-label": "Markdown content",
           "data-vscode-context": JSON.stringify({
             webviewSection: "markdownContent",
-            preventDefaultContextMenuItems: true,
           }),
         }),
+        menuSelectionContext,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
         Prec.low(keymap.of([...indentationKeymap, ...defaultKeymap])),
         EditorView.updateListener.of((update) => {

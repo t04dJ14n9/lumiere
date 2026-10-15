@@ -35,6 +35,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     };
     registerActiveContexts(ctx, config.features ?? [], active);
     registerSelectionContext(ctx, active);
+    const setFocus = registerFocusContext(ctx, active);
     provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
     ctx.effect(() =>
@@ -68,6 +69,9 @@ export const editorHost: Plugin<EditorHostConfig> = {
           notify(() =>
             ctx.emit("editor/selectionChanged", panel, hasSelection),
           ),
+        );
+        panel.rpc.on(protocol, "focusChanged", ({ hasFocus }) =>
+          notify(() => setFocus(panel, hasFocus)),
         );
         panel.rpc.on(protocol, "initialized", () =>
           notify(() => ctx.emit("editor/ready", panel)),
@@ -158,27 +162,56 @@ function registerSelectionContext(
   ctx: Context,
   active: () => EditorPanel | undefined,
 ): void {
-  const selections = new Map<string, boolean>();
+  const setSelection = registerPanelContextKey(
+    ctx,
+    active,
+    contributionId("hasSelection"),
+  );
+  ctx.on("editor/selectionChanged", setSelection);
+}
+
+/**
+ * `markdownWorkshop.editorFocus`: whether the active note's webview has
+ * focus. The note's keybindings require it (see `focus-report.ts`).
+ */
+function registerFocusContext(
+  ctx: Context,
+  active: () => EditorPanel | undefined,
+): (panel: { readonly id: string }, hasFocus: boolean) => void {
+  return registerPanelContextKey(ctx, active, contributionId("editorFocus"));
+}
+
+/**
+ * A boolean context key that follows the active panel: each panel keeps its
+ * own value, and the key shows the active one's (false when none is).
+ * Returns the setter for a panel's value.
+ */
+function registerPanelContextKey(
+  ctx: Context,
+  active: () => EditorPanel | undefined,
+  key: string,
+): (panel: { readonly id: string }, value: boolean) => void {
+  const values = new Map<string, boolean>();
   // Captured while live: the cleanup below runs after the context is disposed.
   const workshop = ctx.workshop;
   const refresh = () => {
     void workshop.execute(
       "setContext",
-      contributionId("hasSelection"),
-      selections.get(active()?.id ?? "") ?? false,
+      key,
+      values.get(active()?.id ?? "") ?? false,
     );
   };
-  ctx.on("editor/selectionChanged", (panel, hasSelection) => {
-    selections.set(panel.id, hasSelection);
-    refresh();
-  });
   ctx.on("editor/closed", (panel) => {
-    selections.delete(panel.id);
+    values.delete(panel.id);
     refresh();
   });
   ctx.on("editor/activeChanged", refresh);
   ctx.effect(() => async () => {
-    await workshop.execute("setContext", contributionId("hasSelection"), false);
+    await workshop.execute("setContext", key, false);
   });
   refresh();
+  return (panel, value) => {
+    values.set(panel.id, value);
+    refresh();
+  };
 }

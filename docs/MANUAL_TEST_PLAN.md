@@ -129,6 +129,11 @@ separately, since that explicitly disables the workaround.
 6. With `markdownWorkshop.debug.logging` on, the **Markdown Workshop**
    output channel shows debug lines from the host and the webview; with it
    off, only warnings and errors.
+7. Right-click a selection that spans hidden syntax (bold, a link): the
+   menu has Cut, Copy and Paste. Copy and Cut put the exact source on the
+   clipboard; Paste of a copied web page section arrives as Markdown, as
+   Mod+V does. Right-click in a table cell or a property chip: their own
+   menus open instead.
 
 ### dialect, render and livePreview
 
@@ -678,6 +683,12 @@ On by default.
    **Swap Line Down** act on all selected lines.
 2. Mod+B, Mod+I and Mod+K are bound; the others are unbound until checked
    against Obsidian's hotkeys.
+3. With a note as the active editor, focus the Explorer and press Mod+B:
+   the sidebar toggles and the note is unchanged. From the Explorer, Mod+K
+   Mod+S opens Keyboard Shortcuts; in Cursor, Mod+I and Mod+K from the chat
+   input do what Cursor binds them to. Click back into the note: Mod+B, Mod+I
+   and Mod+K format again, also inside a table cell. Repeat with the note
+   open in two panels, focusing each in turn.
 
 ### vim
 
@@ -686,7 +697,8 @@ Off by default.
 1. Normal, insert and visual modes; `:w`, `:q`, `:wq`, `:x`, `:u`, `:red`
    use VS Code's save, close and undo. IME in normal mode inserts nothing.
 2. With Vim on, Control+O, B, I, K, Shift+X, Shift+T, Shift+H and Alt+0–6 reach
-   Vim instead of VS Code; with Vim off they do not.
+   Vim instead of VS Code; with Vim off they do not. With focus outside the
+   note (Explorer, terminal, chat) they reach VS Code even with Vim on.
 3. In a plain paragraph in `Formatting.md`, compare with the built-in editor
    using a Vim extension. Escape and `v` show a full block over one character,
    with the glyph readable in `editorCursor.background` on
@@ -734,6 +746,13 @@ Off by default.
 3. There is no Copy for Agent or Ask Agent about Selection command, title
    button, context menu item or Mod+Alt+C binding (removed or renamed by
    owner decision; Ctrl+C copies plain text).
+4. On macOS, in VS Code and in Cursor, with only a caret in a paragraph,
+   two-finger click (then Ctrl-click) a word: the word is selected and the
+   first menu already lists Copy Link for Agent, which copies that word's
+   line. Two-finger click inside an existing multi-line selection, on plain
+   text and on a rendered link in it: the selection stays and the menu
+   lists the item. On Windows or Linux, right-click with only a caret: the
+   menu has no Copy Link for Agent.
 
 ### cursorBridge
 

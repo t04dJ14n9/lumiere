@@ -140,7 +140,7 @@ test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped o
   assert.equal(toggle.mac, "ctrl+cmd+o");
   assert.equal(
     toggle.when,
-    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline",
+    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus",
   );
 });
 
@@ -158,11 +158,30 @@ test("Go to Heading overrides the symbol shortcut only for enabled Workbench pan
   assert.equal(binding.mac, "cmd+shift+o");
   assert.equal(
     binding.when,
-    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline",
+    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus",
   );
+  // Palette stays without editorFocus — Go to Heading is offered whenever the
+  // panel is active and the outline plugin is on.
   assert.equal(
     menus.commandPalette.find((item) => item.command === GO_TO_HEADING_COMMAND)
       ?.when,
-    binding.when,
+    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline",
   );
+});
+
+test("a note's keybindings need the note to have focus, not only to be active", async () => {
+  // activeCustomEditorId stays set while focus is in the Explorer or a
+  // chat, where Cmd+B must toggle the sidebar rather than bold the note.
+  const { keybindings } = await contributions();
+  assert.ok(keybindings.length > 0);
+  for (const binding of keybindings) {
+    if (!/activeCustomEditorId/.test(binding.when ?? "")) {
+      continue;
+    }
+    assert.match(
+      binding.when ?? "",
+      /&& markdownWorkshop\.editorFocus$/,
+      binding.command,
+    );
+  }
 });
