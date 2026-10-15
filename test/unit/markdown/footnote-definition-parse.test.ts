@@ -152,3 +152,50 @@ test("continuation lines keep inline child offsets aligned with the source", () 
     },
   ]);
 });
+
+test("four-space indented [^x]: remains IndentedCode, not a footnote definition", () => {
+  const source = ["    [^x]: this is code", "    still code"].join("\n");
+  const names: string[] = [];
+  markdownParser.parse(source).iterate({
+    enter(node) {
+      names.push(node.name);
+    },
+  });
+  assert.ok(names.includes("CodeBlock"), names.join(","));
+  assert.equal(
+    names.includes("FootnoteRef"),
+    false,
+    "IndentedCode must not be claimed as FootnoteRef",
+  );
+  assert.equal(
+    names.filter((name) => name === "Paragraph").length,
+    0,
+    "IndentedCode must not become a footnote Paragraph",
+  );
+});
+
+test("list item - [^x]: is not claimed by FootnoteDefinition", () => {
+  // URL body: without FootnoteDefinition claiming, LinkReference leaf wins.
+  // If the block parser over-claims (basePos past list markup), the line
+  // becomes a footnote Paragraph with FootnoteRef instead.
+  const source = "- [^x]: https://example.com";
+  const tree = nodes(source);
+  assert.ok(
+    tree.some((node) => node.name === "LinkReference"),
+    "nested [^x]: must stay on LinkReference, not FootnoteDefinition",
+  );
+  assert.equal(
+    tree.some((node) => node.name === "FootnoteRef"),
+    false,
+    "FootnoteDefinition must not claim list-nested [^x]: lines",
+  );
+  const names: string[] = [];
+  markdownParser.parse(source).iterate({
+    enter(node) {
+      if (node.name === "BulletList" || node.name === "ListItem") {
+        names.push(node.name);
+      }
+    },
+  });
+  assert.deepEqual(names, ["BulletList", "ListItem"]);
+});

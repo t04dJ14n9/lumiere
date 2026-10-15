@@ -7,6 +7,11 @@ import type { MarkdownConfig } from "@lezer/markdown";
  * looks like a destination (`[title](url)`, `[[wiki]]`, bare URL, `<url>`)
  * would otherwise become a LinkReference whose URL child is raw text, so Live
  * Preview would never see FootnoteRef / Link / WikiLink on that line.
+ *
+ * Only true top-level defs (0–3 columns of indent, no list/blockquote base)
+ * are claimed. `line.pos` already skips whitespace, so matching
+ * `slice(line.pos)` with a leading-space regex would steal IndentedCode and
+ * nested list lines that happen to start with `[^label]:`.
  */
 export const footnotes: MarkdownConfig = {
   defineNodes: ["FootnoteRef", "InlineFootnote"],
@@ -15,7 +20,12 @@ export const footnotes: MarkdownConfig = {
       name: "FootnoteDefinition",
       before: "LinkReference",
       parse(cx, line) {
-        if (!/^( {0,3})\[\^([^\]\s]+)\]:/.test(line.text.slice(line.pos))) {
+        // Same scope as footnoteDefinitions metadata: physical line starts
+        // with 0–3 spaces then [^label]:, never inside a composite.
+        if (line.basePos !== 0 || line.indent > 3) {
+          return false;
+        }
+        if (!/^\[\^([^\]\s]+)\]:/.test(line.text.slice(line.pos))) {
           return false;
         }
         const from = cx.lineStart + line.pos;
