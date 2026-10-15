@@ -392,3 +392,70 @@ test("the native checkbox activation handler writes true and false without alter
     assert.ok(source.endsWith("Body"));
   }
 });
+
+test("YAML drafts reject invalid text and concurrent property conflicts without writing", (t) => {
+  const document = installPropertyDOM(t);
+  const row = new PropertyElement(document);
+  const container = new PropertyElement(document);
+  container.find = () => row;
+  const field = new PropertyNativeInput(document);
+  field.tagName = "TEXTAREA";
+  field.dataset = { propertyInput: "generated", propertyKind: "yaml" };
+  field.value = 'by: "old"\n';
+  let source = '---\ngenerated:\n  by: "old"\ntitle: Note\n---\nBody';
+  let writes = 0;
+  const editor = {
+    source: "current",
+    currentSource: () => source,
+    set: (
+      expected: string,
+      key: string,
+      value: string | number | boolean | null | object,
+    ) => {
+      const current = frontmatter(source)?.raw ?? "";
+      if (current.replace(/\r?\n$/, "") !== expected.replace(/\r?\n$/, "")) {
+        return false;
+      }
+      const next = propertyChanges(source, {
+        type: "set",
+        key,
+        value: value as never,
+      });
+      if (!next) {
+        return false;
+      }
+      writes++;
+      source = applySource(source, {
+        type: "set",
+        key,
+        value: value as never,
+      });
+      return true;
+    },
+  };
+  new PropertyField(html(container), html(field), source, editor);
+
+  field.value = "{";
+  field.dispatchEvent(new Event("input"));
+  field.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 0);
+  assert.equal(field.validityMessage, "Enter valid YAML for this property.");
+  assert.deepEqual(frontmatter(source)?.values?.generated, { by: "old" });
+
+  field.value = 'by: "fresh"\n';
+  field.dispatchEvent(new Event("input"));
+  // Concurrent edit of the same property while the draft is open.
+  source = applySource(source, {
+    type: "set",
+    key: "generated",
+    value: { by: "external" },
+  });
+  field.dispatchEvent(new Event("blur"));
+  assert.equal(writes, 0);
+  assert.equal(
+    field.validityMessage,
+    "The property changed. Reopen it and try again.",
+  );
+  assert.deepEqual(frontmatter(source)?.values?.generated, { by: "external" });
+  assert.equal(frontmatter(source)?.values?.title, "Note");
+});

@@ -128,3 +128,69 @@ test("setting a value does not invent anchors that collide with existing aliases
   assert.deepEqual(values?.target, { a: { z: 1 }, b: { z: 1 } });
   assert.doesNotMatch(next, /target:[^\n]*&/);
 });
+
+test("invalid YAML drafts are rejected without changing the document", () => {
+  const source = "---\ngenerated:\n  by: old\ntitle: Note\n---\nBody\n";
+  assert.equal(propertyYamlInput("{"), undefined);
+  assert.equal(propertyYamlInput("by: ["), undefined);
+  assert.equal(
+    propertyChanges(source, {
+      type: "set",
+      key: "generated",
+      value: undefined as never,
+    }),
+    undefined,
+  );
+  assert.equal(frontmatter(source)?.values?.title, "Note");
+});
+
+test("nested set preserves quoted string ids and unrelated keys", () => {
+  const source =
+    '---\ntitle: Note\nsources:\n  - resource: ../raw/a.pdf\n    id: "01"\n---\n';
+  const next = edit(source, {
+    type: "set",
+    key: "sources",
+    value: [{ resource: "../raw/b.pdf", id: "01" }],
+  });
+  assert.match(next, /id: "01"/);
+  assert.equal(frontmatter(next)?.values?.title, "Note");
+  assert.deepEqual(frontmatter(next)?.values?.sources, [
+    { resource: "../raw/b.pdf", id: "01" },
+  ]);
+});
+
+test("nested aliases resolve when inlining a replaced anchored value", () => {
+  const source =
+    "---\nother: &o\n  - 1\n  - 2\nfirst: &s\n  child: *o\nsecond: *s\n---\n";
+  const next = edit(source, {
+    type: "set",
+    key: "first",
+    value: { child: [9] },
+  });
+  const values = frontmatter(next)?.values;
+  assert.deepEqual(values?.first, { child: [9] });
+  assert.deepEqual(values?.second, { child: [1, 2] });
+  assert.deepEqual(values?.other, [1, 2]);
+});
+
+test("reused anchor names only rewrite aliases that resolve to the edited node", () => {
+  const source = "---\na: &x 1\nb: *x\nc: &x 2\nd: *x\n---\n";
+  const next = edit(source, { type: "set", key: "c", value: 9 });
+  const values = frontmatter(next)?.values;
+  assert.equal(values?.a, 1);
+  assert.equal(values?.b, 1);
+  assert.equal(values?.c, 9);
+  assert.equal(values?.d, 2);
+});
+
+test("descendant anchors are preserved for external aliases", () => {
+  const source = "---\nfirst:\n  child: &child old\nsecond: *child\n---\n";
+  const next = edit(source, {
+    type: "set",
+    key: "first",
+    value: { child: "new" },
+  });
+  const values = frontmatter(next)?.values;
+  assert.deepEqual(values?.first, { child: "new" });
+  assert.equal(values?.second, "old");
+});

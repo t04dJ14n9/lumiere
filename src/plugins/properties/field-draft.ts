@@ -20,6 +20,10 @@ export class PropertyField {
   private original: string;
   private isDirty = false;
   private readonly key: string;
+  /** Frontmatter bytes when this draft was bound — reject commits if they change. */
+  private readonly expectedRaw: string;
+  /** JSON snapshot of this property's value at bind time. */
+  private readonly baselineValue: string;
 
   constructor(
     private readonly container: HTMLElement,
@@ -28,6 +32,9 @@ export class PropertyField {
     private readonly editor: PropertyEditor,
   ) {
     this.key = input.dataset.propertyInput!;
+    const header = frontmatter(source);
+    this.expectedRaw = header?.raw ?? "";
+    this.baselineValue = JSON.stringify(header?.values?.[this.key]);
     this.original = inputText(input);
     if (isNativeInput(input)) {
       input.disabled = !editor;
@@ -68,6 +75,27 @@ export class PropertyField {
     return false;
   }
 
+  private invalidMessage(): string {
+    return this.input.dataset.propertyKind === "yaml"
+      ? "Enter valid YAML for this property."
+      : "Enter a valid value for this property type.";
+  }
+
+  private conflicted(): boolean {
+    const live = frontmatter(this.editor?.currentSource?.() ?? this.source);
+    return JSON.stringify(live?.values?.[this.key]) !== this.baselineValue;
+  }
+
+  private apply(value: PropertyValue): boolean {
+    this.input.dataset.propertyCommitting = "true";
+    delete this.input.dataset.propertyEditing;
+    try {
+      return this.editor?.set(this.expectedRaw, this.key, value) ?? false;
+    } finally {
+      delete this.input.dataset.propertyCommitting;
+    }
+  }
+
   private commit(): boolean {
     if (!this.isDirty || this.input.dataset.propertyCommitting) {
       return true;
@@ -76,27 +104,9 @@ export class PropertyField {
     const invalidNative =
       isNativeInput(this.input) && !this.input.checkValidity();
     if (value === undefined || invalidNative) {
-      const yaml = this.input.dataset.propertyKind === "yaml";
-      return this.reject(
-        yaml
-          ? "Enter valid YAML for this property."
-          : "Enter a valid value for this property type.",
-      );
+      return this.reject(this.invalidMessage());
     }
-    this.input.dataset.propertyCommitting = "true";
-    delete this.input.dataset.propertyEditing;
-    let applied: boolean;
-    try {
-      applied =
-        this.editor?.set(
-          frontmatter(this.editor.currentSource?.() ?? this.source)?.raw ?? "",
-          this.key,
-          value,
-        ) ?? false;
-    } finally {
-      delete this.input.dataset.propertyCommitting;
-    }
-    if (!applied) {
+    if (this.conflicted() || !this.apply(value)) {
       this.input.dataset.propertyEditing = "true";
       return this.reject("The property changed. Reopen it and try again.");
     }

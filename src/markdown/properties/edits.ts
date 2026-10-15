@@ -1,18 +1,22 @@
-import {
-  isAlias,
-  isMap,
-  isNode,
-  isScalar,
-  parseDocument,
-  stringify,
-  visit,
-} from "yaml";
+import { isMap, isNode, isScalar, parseDocument } from "yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import { orderPropertyBody } from "./order";
 import { validPropertyName } from "./types";
-import type { PropertyScalar, PropertyValue } from "./values";
+import type { PropertyValue } from "./values";
 import { settablePropertyValue } from "./values";
 import { mergeProperties } from "./merge";
+import { setPropertyChanges } from "./alias-edits";
+import {
+  yamlValue,
+  yamlKey,
+  scalarValue,
+  setPropertyChange,
+  type PropertyChange,
+} from "./yaml-value";
+
+export type { PropertyChange };
+export { yamlValue, yamlKey, scalarValue, setPropertyChange };
+
 export type PropertyEdit =
   | { type: "order"; keys: readonly string[] }
   | { type: "merge"; values: Record<string, unknown> }
@@ -20,108 +24,11 @@ export type PropertyEdit =
   | { type: "add"; key: string; value?: PropertyValue }
   | { type: "rename"; key: string; name: string }
   | { type: "remove"; keys: readonly string[] };
-export interface PropertyChange {
-  from: number;
-  to: number;
-  insert: string;
-}
 
 type Header = NonNullable<ReturnType<typeof headerParts>>;
 
-export const yamlValue = (value: unknown): string =>
-  stringify(value, {
-    collectionStyle: "flow",
-    flowCollectionPadding: false,
-    lineWidth: 0,
-    aliasDuplicateObjects: false,
-  }).trimEnd();
-export const scalarValue = (value: unknown): value is PropertyScalar =>
-  value === null ||
-  typeof value === "string" ||
-  typeof value === "boolean" ||
-  (typeof value === "number" && Number.isFinite(value));
 const propertyValue = (value: unknown): value is PropertyValue =>
   settablePropertyValue(value);
-
-export function setPropertyChange(
-  source: string,
-  header: NonNullable<ReturnType<typeof headerParts>>,
-  node: unknown,
-  value: unknown,
-): PropertyChange | undefined {
-  if (!isNode(node) || !node.range) {
-    return undefined;
-  }
-  // Complex sequences (list-of-maps) are replaced wholesale as YAML text.
-  let insert = yamlValue(value);
-  if (
-    isScalar(node) &&
-    typeof value === typeof node.value &&
-    typeof value === "string"
-  ) {
-    if (node.type === "QUOTE_SINGLE" && !/[\r\n]/.test(value)) {
-      insert = "'" + value.replaceAll("'", "''") + "'";
-    } else if (node.type === "QUOTE_DOUBLE" || /[\r\n]/.test(value)) {
-      insert = JSON.stringify(value);
-    }
-  }
-  const from =
-    header.offset + valueStart(header.body, node.range[0], node.anchor);
-  const to = header.offset + node.range[1];
-  if (source[from - 1] === ":") {
-    insert = " " + insert;
-  }
-  if (source.slice(from, to).endsWith("\n")) {
-    insert += header.eol;
-  }
-  return { from, to, insert };
-}
-
-/** Include a leading `&anchor` so replacement does not leave aliases retargeted. */
-function valueStart(
-  body: string,
-  start: number,
-  anchor: string | null | undefined,
-): number {
-  if (!anchor) {
-    return start;
-  }
-  const token = `&${anchor}`;
-  const at = body.lastIndexOf(token, start);
-  return at >= 0 && at <= start ? at : start;
-}
-
-function inlineAliasChanges(
-  source: string,
-  header: Header,
-  document: ReturnType<typeof parseDocument>,
-  node: { anchor?: string | null; range?: [number, number, number] | null },
-): PropertyChange[] {
-  if (!node.anchor || !node.range || !isNode(node)) {
-    return [];
-  }
-  // Preserve the pre-edit value at every alias that pointed at this anchor.
-  const insert = yamlValue(node.toJSON());
-  const changes: PropertyChange[] = [];
-  visit(document, {
-    Alias(_key, alias) {
-      if (!isAlias(alias) || alias.source !== node.anchor || !alias.range) {
-        return;
-      }
-      let text = insert;
-      const from = header.offset + alias.range[0];
-      const to = header.offset + alias.range[1];
-      if (source[from - 1] === ":") {
-        text = ` ${text}`;
-      }
-      if (source.slice(from, to).endsWith("\n")) {
-        text += header.eol;
-      }
-      changes.push({ from, to, insert: text });
-    },
-  });
-  return changes;
-}
 
 type KeyEdit = Exclude<PropertyEdit, { type: "order" | "merge" }>;
 
@@ -225,16 +132,13 @@ class PropertyMapEdits {
         const pair = this.items.find(
           (pair) => isScalar(pair.key) && pair.key.value === edit.key,
         );
-        const node = pair?.value;
-        const change = setPropertyChange(source, this.header, node, edit.value);
-        if (!change) {
-          return undefined;
-        }
-        const aliases =
-          isNode(node) && node.anchor
-            ? inlineAliasChanges(source, this.header, this.document, node)
-            : [];
-        return [change, ...aliases];
+        return setPropertyChanges({
+          source,
+          header: this.header,
+          document: this.document,
+          node: pair?.value,
+          value: edit.value,
+        });
       }
     }
   }
@@ -288,7 +192,7 @@ class PropertyMapEdits {
       {
         from: this.header.offset + pair.key.range[0],
         to: this.header.offset + pair.key.range[1],
-        insert: yamlValue(edit.name),
+        insert: yamlKey(edit.name),
       },
     ];
   }
@@ -337,8 +241,27 @@ class PropertyMapEdits {
 
 function newPropertyLine(edit: Extract<KeyEdit, { type: "add" }>): string {
   return edit.value === undefined || edit.value === null
-    ? `${yamlValue(edit.key)}:`
-    : `${yamlValue(edit.key)}: ${yamlValue(edit.value)}`;
+    ? `${yamlKey(edit.key)}:`
+    : `${yamlKey(edit.key)}: ${yamlValue(edit.value)}`;
+}
+
+function applyChanges(source: string, changes: PropertyChange[]): string {
+  let candidate = source;
+  for (const change of [...changes].sort((a, b) => b.from - a.from)) {
+    candidate =
+      candidate.slice(0, change.from) +
+      change.insert +
+      candidate.slice(change.to);
+  }
+  return candidate;
+}
+
+function editTouchesKey(edit: KeyEdit, key: string): boolean {
+  return (
+    (edit.type === "set" && key === edit.key) ||
+    (edit.type === "remove" && edit.keys.includes(key)) ||
+    (edit.type === "rename" && key === edit.key)
+  );
 }
 
 function verifyChanges(
@@ -347,24 +270,24 @@ function verifyChanges(
   changes: PropertyChange[],
 ): PropertyChange[] | undefined {
   try {
-    let candidate = source;
-    for (const change of [...changes].sort((a, b) => b.from - a.from)) {
-      candidate =
-        candidate.slice(0, change.from) +
-        change.insert +
-        candidate.slice(change.to);
-    }
-    const checked = frontmatter(candidate);
-    if (!checked?.values || checked.error) {
+    const before = frontmatter(source)?.values;
+    const checked = frontmatter(applyChanges(source, changes));
+    const after = checked?.values;
+    if (!before || !after || checked?.error) {
       return undefined;
     }
     if (
       edit.type === "set" &&
-      JSON.stringify(checked.values[edit.key]) !== JSON.stringify(edit.value)
+      JSON.stringify(after[edit.key]) !== JSON.stringify(edit.value)
     ) {
       return undefined;
     }
-    return changes;
+    const stable = Object.entries(before).every(
+      ([key, value]) =>
+        editTouchesKey(edit, key) ||
+        JSON.stringify(after[key]) === JSON.stringify(value),
+    );
+    return stable ? changes : undefined;
   } catch {
     return undefined;
   }

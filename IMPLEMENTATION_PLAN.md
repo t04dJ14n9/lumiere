@@ -3815,10 +3815,15 @@ above that draft; the Copy id control is removed (id is selectable text).
 
 Review follow-ups: YAML draft flush/focus include `textarea`; empty `sources: []`
 keeps the custom renderer + YAML draft; `yamlValue` sets `aliasDuplicateObjects:
-false`; replacing an anchored value strips `&anchor` and inlines the prior value
-at matching aliases so unrelated properties are not retargeted.
+false`; string scalars keep YAML's needed quotes (e.g. ids like `"01"`); replacing an
+anchored value (including descendant anchors) strips `&anchor` and inlines the
+document-resolved prior value at aliases that `resolve()` to those nodes.
+Structured merge uses the same alias-safe set path. YAML drafts bind to the
+frontmatter bytes and property value at field bind time: invalid YAML and
+concurrent property/header changes reject without writing.
 
 Validation: unit tests for Sources markup (no Copy id), sheet HTML YAML drafts
 (including empty Sources + custom), `propertyYamlInput`, set round-trips for
-`generated` / `sources`, and alias-safe nested sets. `pnpm check` green.
+`generated` / `sources`, invalid YAML rejection, concurrent draft conflicts,
+quoted ids, and alias-safe nested/reused/descendant sets. `pnpm check` green.
 
