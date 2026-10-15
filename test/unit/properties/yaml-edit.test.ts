@@ -267,3 +267,35 @@ test("anchor mentions in comments do not retarget valueStart", () => {
   assert.deepEqual(frontmatter(next)?.values?.generated, { by: "new" });
   assert.equal(frontmatter(next)?.values?.keep, "yes");
 });
+
+test("YAML drafts reject tagged timestamps instead of coercing to strings", () => {
+  assert.equal(propertyYamlInput("at: !!timestamp 2026-10-15"), undefined);
+  assert.equal(propertyYamlInput("{at: !!timestamp 2026-10-15}"), undefined);
+});
+
+test("nested alias sites keep multiline collection inserts indented", () => {
+  const long = "x".repeat(40) + "\n\nnext";
+  const source = "---\nfirst: &a\n  note: short\nmirror:\n  nested: *a\n---\n";
+  const next = edit(source, {
+    type: "set",
+    key: "first",
+    value: { note: long },
+  });
+  assert.deepEqual(frontmatter(next)?.values?.first, { note: long });
+  assert.deepEqual(frontmatter(next)?.values?.mirror, {
+    nested: { note: "short" },
+  });
+});
+
+test("hash characters inside quoted keys do not hide genuine anchors", () => {
+  const source = '---\nfirst: &a old\n"second#tag": &a second\n---\n';
+  const next = edit(source, {
+    type: "set",
+    key: "second#tag",
+    value: "fresh",
+  });
+  assert.deepEqual(frontmatter(next)?.values, {
+    first: "old",
+    "second#tag": "fresh",
+  });
+});

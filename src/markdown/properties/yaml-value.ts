@@ -33,6 +33,47 @@ export const scalarValue = (value: unknown): value is PropertyScalar =>
   typeof value === "boolean" ||
   (typeof value === "number" && Number.isFinite(value));
 
+/** True when a YAML `#` comment (outside quotes) begins before `pos` on the line. */
+function commentStartsBefore(
+  body: string,
+  lineStart: number,
+  pos: number,
+): boolean {
+  let inSingle = false;
+  let inDouble = false;
+  for (let i = lineStart; i < pos; i++) {
+    const ch = body[i]!;
+    if (inSingle) {
+      if (ch === "'") {
+        inSingle = false;
+      }
+      continue;
+    }
+    if (inDouble) {
+      if (ch === "\\") {
+        i++;
+        continue;
+      }
+      if (ch === '"') {
+        inDouble = false;
+      }
+      continue;
+    }
+    if (ch === "'") {
+      inSingle = true;
+      continue;
+    }
+    if (ch === '"') {
+      inDouble = true;
+      continue;
+    }
+    if (ch === "#" && (i === lineStart || /[ \t]/.test(body[i - 1]!))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Include a leading `&anchor` so replacement does not leave aliases retargeted. */
 function valueStart(
   body: string,
@@ -53,8 +94,7 @@ function valueStart(
     const after = body[found + token.length];
     const whole = !after || !/[A-Za-z0-9_-]/.test(after);
     const lineStart = body.lastIndexOf("\n", found - 1) + 1;
-    const inComment = body.slice(lineStart, found).includes("#");
-    if (whole && !inComment) {
+    if (whole && !commentStartsBefore(body, lineStart, found)) {
       at = found;
     }
     from = found + 1;

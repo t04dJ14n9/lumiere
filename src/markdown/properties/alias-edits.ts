@@ -6,9 +6,21 @@ import {
   type PropertyChange,
 } from "./yaml-value";
 
-/** Alias sites are mid-line; quote strings so --- / ... stay flow-safe. */
+/** Alias sites are mid-line; keep inserts indentation-independent. */
 function inlineYamlValue(value: unknown): string {
-  return typeof value === "string" ? JSON.stringify(value) : yamlValue(value);
+  if (typeof value === "string") {
+    return JSON.stringify(value);
+  }
+  if (
+    value === null ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return yamlValue(value);
+  }
+  // Collections stay single-line JSON (valid YAML) so nested aliases do not
+  // inherit root-relative indentation from yaml.stringify.
+  return JSON.stringify(value);
 }
 
 type Header = NonNullable<ReturnType<typeof headerParts>>;

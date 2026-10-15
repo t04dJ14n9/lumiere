@@ -69,7 +69,14 @@ export function settablePropertyValue(
   ) {
     return true;
   }
-  if (!value || typeof value !== "object" || ancestors.has(value)) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    ancestors.has(value) ||
+    value instanceof Date ||
+    value instanceof Map ||
+    value instanceof Set
+  ) {
     return false;
   }
   ancestors.add(value);
