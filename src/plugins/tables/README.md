@@ -10,6 +10,9 @@ clipboard and toolbar collaborator. The projection reserializes the entire table
 with column-aligned padding on each cell edit, in the existing native input group;
 it never owns undo history. The controller reconciles
 incoming snapshots, preserving the active cell editor across structural edits.
+Vertical wheel input over the widget is forwarded to the note scroller, while
+horizontal and Shift-wheel gestures stay with the table's overflow box. The
+selection and focus stay in place during scrolling.
 Grid Ctrl+C/Cmd+C snapshots the selected rectangle as TSV and writes through
 Editor's validated host clipboard service, preserving grid focus and selection.
 Native copy events and menu commands use the same TSV serialization; ordinary
@@ -38,6 +41,8 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `cell-source.ts`: session whitespace, alignment padding and source-range tracking.
 - `selection.ts`: grid selection and projected source selection.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
+- `wheel-scroll.ts`: vertical wheel routing, gesture guards and delta units.
+- `wheel-scroll.test.ts`: wheel directions, units, horizontal gestures and note limits.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
 - `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.
@@ -61,6 +66,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `clipboard.test.ts`: cell/grid clipboard, selection and stale-paste unit tests.
 - `webview.test.ts`: persistent widget, entry registrations and insertion unit tests.
 - `tables-copy.spec.ts` (browser): handle, row, rectangle and single-cell TSV shortcuts.
+- `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
 - `tables-vim.spec.ts` (browser): measured source entry, counts, row hops, operators, visual selection, search and Unicode word movement across cells.
 - `tables-selection-colors.spec.ts` (browser): selected inline code, bold, links and math colors in dark and light themes.
