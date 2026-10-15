@@ -8,6 +8,7 @@ import { createWorkbench } from "./workbench";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
+import { registerDocumentWarm } from "./document-warm";
 import { registerReclaim } from "./reclaim";
 import type { Context } from "../kernel";
 
@@ -22,10 +23,14 @@ export async function activate(
     context.workspaceState,
   );
   workbench.views = createHostViews(context.extensionUri);
-  const channel = window.createOutputChannel("Markdown Workbench", {
+  const channel = window.createOutputChannel("Markdown Workshop", {
     log: true,
   });
-  context.subscriptions.push(channel, registerReclaim());
+  context.subscriptions.push(
+    channel,
+    registerDocumentWarm(),
+    registerReclaim(),
+  );
   const logger = outputLogger(channel, () =>
     workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
   );

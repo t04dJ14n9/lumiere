@@ -161,7 +161,7 @@ test("our Vim carets sit where VSCodeVim's do: same whole-pixel offset and size 
       }
     }
 
-    await reopenWith(page, "Markdown Workbench");
+    await reopenWith(page, "Markdown Workshop");
     const frame = await workbenchFrame(page);
     const editor = frame.locator(".mw-editor");
     await frame.getByRole("textbox", { name: "Markdown content" }).click();

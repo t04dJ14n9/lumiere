@@ -317,13 +317,15 @@ input[type="checkbox"] {
 .edit-block {
   position: absolute;
   z-index: 2;
-  top: 6px;
-  right: 4px;
+  /* Match .copy-code so Copy and Edit sit on one row (Mermaid/math widgets). */
+  top: 10px;
+  right: 8px;
   padding: 1px 6px;
   border: 1px solid var(--line);
   border-radius: 4px;
   color: var(--muted);
   background: var(--vscode-editor-background, transparent);
+  font: inherit;
   font-size: 0.6875em;
   line-height: 1.6;
   cursor: pointer;

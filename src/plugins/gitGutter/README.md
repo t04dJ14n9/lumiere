@@ -20,12 +20,17 @@ for each added (green), modified (blue) or removed (red triangle) range, against
   `folding` (plugin-order.ts), so it sits where VS Code draws quick diff. A
   rendered block (table, properties, callout) gets one bar for the whole block,
   as it gets one line number; a removal inside it marks it modified.
-- **Peek.** Clicking a bar (or **Show Git Change**, Alt+F3) opens a block widget
-  below the change: the baseline and working-tree versions rendered through
-  `render`, aligned by block, with changed words in `<del>`/`<ins>` and changed
-  code lines tinted. ↑/↓ move to the adjacent change, **Revert** replaces the
-  hunk with the baseline text as one undo step, **Stage File** saves and stages
-  the file (the git API has no hunk staging), Escape or ✕ closes it.
+- **Peek.** Clicking a **modified** or **deleted** bar (or **Show Git Change**,
+  Alt+F3 on those hunks) opens a block widget below the change: the baseline and
+  working-tree versions rendered through `render`, aligned by block, with changed
+  words in `<del>`/`<ins>` and changed code lines tinted. ↑/↓ move to the adjacent
+  change, **Revert** replaces the hunk with the baseline text as one undo step,
+  **Stage File** saves and stages the file (the git API has no hunk staging),
+  Escape or ✕ closes it. Pure **added** hunks keep the green gutter bar (and
+  hover title `added`) but do not open a peek — the Working Tree pane would only
+  duplicate the note.
+- **Bar titles.** Each gutter bar's `title` / `aria-label` is `added`,
+  `modified`, or `deleted` so the color meaning is clear on hover.
 - **Navigation.** **Go to Next/Previous Git Change** (Alt+F5 / Shift+Alt+F5)
   move the caret, wrapping at the ends, and carry an open peek along.
 - **Service.** Provides `gitDiff` (`api.ts`): the hunk `StateField`, the

@@ -23,9 +23,11 @@ import {
 import { config } from "./manifest";
 import {
   outerBlock,
+  canPeek,
   peekContext,
   peekExtension,
   peekedHunk,
+  peekTargetAt,
   setPeek,
 } from "./peek";
 import { protocol } from "./protocol";
@@ -168,7 +170,9 @@ class GitDiffModel implements GitDiff {
         selection: EditorSelection.cursor(next.from),
         effects: [
           EditorView.scrollIntoView(next.from, { y: "center" }),
-          ...(peek || open ? [setPeek.of(next.from)] : []),
+          ...(peek || open
+            ? [setPeek.of(canPeek(next) ? next.from : null)]
+            : []),
         ],
       }),
     );
@@ -177,10 +181,18 @@ class GitDiffModel implements GitDiff {
 
   /** Open the peek for the change on these lines, or close it. */
   toggle = (target: EditorView, from: number, to: number): void => {
-    const hunk = hunkAt(target.state.field(hunkField).hunks, from, to);
+    const hunk = peekTargetAt(target.state.field(hunkField).hunks, from, to);
     const open = peekedHunk(target.state);
+    // Pure additions have no old side — keep the bar, never a Working Tree peek.
+    // Mixed blocks still peek the modified/deleted hunk under the same bar.
+    if (!hunk) {
+      if (open) {
+        target.dispatch({ effects: setPeek.of(null) });
+      }
+      return;
+    }
     target.dispatch({
-      effects: setPeek.of(!hunk || open === hunk ? null : hunk.from),
+      effects: setPeek.of(open === hunk ? null : hunk.from),
     });
   };
 

@@ -20,7 +20,7 @@ export async function copyWikiReference(input: {
   );
   if (!handoff) {
     input.error(
-      "Open the note in Markdown Workbench and select the passage to copy.",
+      "Open the note in Markdown Workshop and select the passage to copy.",
     );
     return;
   }

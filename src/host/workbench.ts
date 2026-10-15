@@ -10,6 +10,8 @@ import { createWorkspaceFiles } from "./workspace-files";
 import type { SettingsReader } from "./settings";
 import * as vscode from "vscode";
 import { textBypass } from "./reclaim";
+import { warmMarkdownDocument } from "./document-warm";
+import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import * as os from "node:os";
@@ -248,7 +250,14 @@ function commandOperations(): Pick<
       return () => stop.dispose();
     },
     async execute(id, ...args) {
-      return vscode.commands.executeCommand(id, ...commandArguments(id, args));
+      const nativeArgs = commandArguments(id, args);
+      if (
+        id === "vscode.openWith" &&
+        nativeArgs[1] === MARKDOWN_EDITOR.viewType
+      ) {
+        await warmMarkdownDocument(nativeArgs[0] as vscode.Uri);
+      }
+      return vscode.commands.executeCommand(id, ...nativeArgs);
     },
     clipboard: {
       read: async () => vscode.env.clipboard.readText(),

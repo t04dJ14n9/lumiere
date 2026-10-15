@@ -1,4 +1,4 @@
-# OKF plugin family for Markdown Workbench: design plan
+# OKF plugin family for Markdown Workshop: design plan
 
 Date: 2026-10-09 (SGT). Status: **plan only**, except the vault graph and read-only Sources
 noted below. The workbench clone
@@ -108,7 +108,7 @@ question Q1 (§11) asks whether to turn the umbrella on by default after accepta
 | Purpose | Bundle discovery and model, frontmatter normalisation, bundle-relative link index, trust and staleness derivation, and incremental updates, exposed as the `okf` service (host) and `okfView` (webview). |
 | Layers | `vault` (files, metadata incl. `frontmatter`, change events, DESIGN §12), `document` (unsaved text), `resources` (containment), `dialect` (one parse per note). Pure code in `src/markdown/okf/`. |
 | OKF deps | none |
-| UI | none (library). Logs to the Markdown Workbench output channel. |
+| UI | none (library). Logs to the Markdown Workshop output channel. |
 | Size | **M** (~900 lines plus tests) |
 
 ### 3.1 Bundle detection (in core, because every plugin needs `bundleFor`)
@@ -524,7 +524,7 @@ integration and one diff renderer.
 | Deps | none. Provides the `lint` service `{ registerRules(pack): Disposer; findings(uri); fix(uri, findingId) }`. |
 | Default | **on**, but generic rules start **off** until a `.markdownlint.{jsonc,json,yaml,yml}` is found or `lint.preset` is set. It costs nothing by default. The `okf/*` pack runs only inside bundles. |
 | Settings | `preset = "none" \| "recommended" \| "strict"` (`none`), `rules = {}` (`"MD013": false`, `"okf/orphan": "off"`, severity overrides), `configFile = "auto"` (search upward from the note to the workspace folder), `scope = "openFiles" \| "workspace"` (`openFiles`), `squiggles = true`, `runOn = "type" \| "save"` (`type`, 400 ms debounce) |
-| UI | Problems panel (one collection, source "Markdown Workbench"), wavy underline decorations in the webview with hover tooltip and **Fix** / **Disable rule for file** buttons, a status bar count, **Lint: Fix All in Note**, and a `CodeActionProvider` for the same diagnostics when the file is open in VS Code's text editor |
+| UI | Problems panel (one collection, source "Markdown Workshop"), wavy underline decorations in the webview with hover tooltip and **Fix** / **Disable rule for file** buttons, a status bar count, **Lint: Fix All in Note**, and a `CodeActionProvider` for the same diagnostics when the file is open in VS Code's text editor |
 | Engine | Generic rules come from the `markdownlint` library (MIT), run in the existing vault worker (`dist/workers/`) on file text, with its built-in `fixInfo` used for quick fixes. Rule packs registered through the service are pure functions over `{text, metadata, bundleContext}`. Only **declarative** config files (`.jsonc/.json/.yaml/.yml`) are read. `.markdownlint.cjs`/`.js` and `customRules` paths are **ignored, never required or run** (security). Inline `<!-- markdownlint-disable MD013 -->` comments are honoured. |
 | Tests | config discovery and merge order, rule toggles and severities, worker round-trip, squiggle mapping through edits (as markers do), quick fix producing the expected `WorkspaceEdit` and one undo group, `.cjs` config ignored, untrusted workspace (declarative config still read, no custom rules), rule pack registration and dedupe, composition (toggle off removes decorations and the collection) |
 | Size | **L** (engine M plus webview squiggles and fixes) |

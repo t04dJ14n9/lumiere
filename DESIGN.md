@@ -1,10 +1,10 @@
-# Markdown Workbench — design and architecture
+# Markdown Workshop — design and architecture
 
 Status: design, 7 October 2026. Audience: the agent implementing it (Codex)
 and the owner reviewing it. Read this document, then
 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), before writing code.
 
-Markdown Workbench is a VS Code and Cursor extension that edits Markdown the
+Markdown Workshop is a VS Code and Cursor extension that edits Markdown the
 way Obsidian does: one CodeMirror 6 surface in Live Preview, where Markdown
 renders in place and reveals its syntax around the caret. It is extracted from
 LLM Wiki for VS Code (`~/Code/human-learning`), as PDF Workbench
@@ -17,7 +17,7 @@ plugin**.
 
 | Topic | Decision |
 | --- | --- |
-| Identity | Display name **Markdown Workbench**; package `vscode-markdown-workbench`; publisher `t04dj14n9`; extension ID `t04dj14n9.vscode-markdown-workbench`; editor view type `markdownWorkbench.editor`; settings, commands and context keys under `markdownWorkbench.` |
+| Identity | Display name **Markdown Workshop**; package `vscode-markdown-workbench`; publisher `t04dj14n9`; extension ID `t04dj14n9.vscode-markdown-workbench`; editor view type `markdownWorkbench.editor`; settings, commands and context keys under `markdownWorkbench.` |
 | Source to extract | `claude/markdown-integration` at `ff3a902ef4ec50a136455c0cf2ccaff698682a06` in `~/Code/human-learning`. Not `main`, whose 4,900-line `webview-src/markdown-editor.ts` it supersedes |
 | Architecture | A small cordis-style kernel (`src/kernel`) runs in the extension host, in each webview and in unit tests. Every capability, the core ones included, is a plugin that injects services, provides services, owns effects and extends others through typed events |
 | Behaviour reference | Obsidian 1.13.7 as observed, plus the 1.12.7 source study. Implement behaviour independently; never copy Obsidian code |
@@ -327,7 +327,7 @@ array, object, record. That covers every setting in §15.
 - Kernel errors are `KernelError` with codes `UndeclaredService`,
   `DuplicateService`, `PluginFailed`, `PluginDisabled`, `Disposed`.
 - Each fiber has a `Logger` tagged with the plugin name. The host writes to the
-  **Markdown Workbench** output channel; webview logs are forwarded over RPC at
+  **Markdown Workshop** output channel; webview logs are forwarded over RPC at
   `warn` and above, plus all levels when `markdownWorkbench.debug.logging` is
   on. Load and stop timings are logged.
 - **Show Plugin Status** lists every fiber per open editor: active, pending
@@ -543,7 +543,7 @@ VS Code needs static `contributes`. `scripts/generate-contributions.ts` builds
 
 ### 6.5 Plugin management UI
 
-As in PDF Workbench: **Markdown Workbench: Manage Plugins** opens Settings
+As in PDF Workbench: **Markdown Workshop: Manage Plugins** opens Settings
 filtered to `markdownWorkbench.plugins`, and **Show Plugin Status** shows a
 quick pick of states for the active editor. `setPluginEnabled` and
 `resetPluginOverride` take an explicit scope (user, workspace, folder).
@@ -1100,7 +1100,7 @@ Short specifications, beyond the source's tested behaviour:
   `vault.backlinks`, keeping aliases, subpaths and the link style. The default,
   `prompt`, shows a **Update links in N files?** dialog; `always` and `never`
   skip it. Heading renames are a later enhancement.
-- **quickSwitcher**: **Markdown Workbench: Quick Switcher** opens a quick pick
+- **quickSwitcher**: **Markdown Workshop: Quick Switcher** opens a quick pick
   over notes, aliases and unresolved links, with Obsidian's scoring. Enter
   opens; an unresolved or new name creates the note in the configured
   new-note folder.
@@ -1174,7 +1174,7 @@ Rules:
 
 ## 15. Settings
 
-### 15.1 Editor settings (Obsidian → Markdown Workbench)
+### 15.1 Editor settings (Obsidian → Markdown Workshop)
 
 Defaults are Obsidian's application defaults, except where the owner decided
 otherwise (2026-10-09): line numbers on, readable line length off, Mermaid on.
@@ -1418,7 +1418,7 @@ become an external plugin that resolves its anchors and sets markers.
 ### 18.5 Webview modules (v2, designed now)
 
 The VS Code Markdown preview lets extensions add `markdown.markdownItPlugins`
-and `markdown.previewScripts`. Markdown Workbench v2 adds:
+and `markdown.previewScripts`. Markdown Workshop v2 adds:
 
 ```json
 "contributes": { "markdownWorkbench.webviewPlugins": [{ "id": "acme.wavedrom", "module": "./dist/wavedrom.js", "styles": ["./dist/wavedrom.css"] }] }
@@ -1600,10 +1600,10 @@ of `dist/` outputs and the docs.
 
 ## 25. Open questions (recommended defaults in bold)
 
-1. **Name.** **Markdown Workbench** (pairs with PDF Workbench). Changing it is a
+1. **Name.** **Markdown Workshop** (pairs with PDF Workbench). Changing it is a
    find-and-replace across these documents and the manifest.
 2. **Default editor for `*.md`.** **`priority: "option"`**, plus a command,
-   **Use Markdown Workbench for Markdown in This Workspace**, that writes the
+   **Use Markdown Workshop for Markdown in This Workspace**, that writes the
    workspace's `workbench.editorAssociations`. The alternative, `"default"`,
    would capture every README in code repositories.
 3. **Defaults.** **Obsidian's defaults** (Vim and line numbers off, readable
@@ -1611,7 +1611,7 @@ of `dist/` outputs and the docs.
    profile as product defaults.
 4. **Outline.** **Native view only**, or also keep the in-editor panel.
 5. **Where Backlinks, Outgoing links and Tags appear.** **Explorer sections**
-   (like PDF Outline), or a Markdown Workbench activity-bar container.
+   (like PDF Outline), or a Markdown Workshop activity-bar container.
 6. **Link updates on rename.** **`prompt`**, or Obsidian's always-update
    behaviour.
 7. **Kernel.** **In-house (decided; Cordis is a reference only, §5.9)**, or depend on the

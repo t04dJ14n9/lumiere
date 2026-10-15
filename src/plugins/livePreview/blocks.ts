@@ -1,5 +1,8 @@
 import { StateEffect, StateField, type EditorState } from "@codemirror/state";
-import { pointerSelectionToggled } from "../../webview/ui/pointer-selection";
+import {
+  isPointerSelecting,
+  pointerSelectionToggled,
+} from "../../webview/ui/pointer-selection";
 import type { Range } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
@@ -277,10 +280,12 @@ export function blockDecorations(report: (error: unknown) => void) {
       if (changesMetadata(tr) || !tr.startState.field(blockIndex, false)) {
         return build(tr.state);
       }
+      // Pointer-drag freezes reveal: keep widgets so tall blocks do not reflow.
+      const freeze = pointerSelectionToggled(tr.startState, tr.state);
       if (
         !tr.docChanged &&
-        !tr.selection &&
-        !pointerSelectionToggled(tr.startState, tr.state)
+        !freeze &&
+        (isPointerSelecting(tr.state) || !tr.selection)
       ) {
         return value;
       }

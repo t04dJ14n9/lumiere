@@ -42,7 +42,7 @@ async function editorFrame(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workbench frame");
+  throw new Error("No Markdown Workshop frame");
 }
 
 const scenarios: Record<string, Record<string, unknown>> = {

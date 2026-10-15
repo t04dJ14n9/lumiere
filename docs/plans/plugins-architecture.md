@@ -21,7 +21,7 @@ Sources read (read-only clones in `/workspace/repos/plan-plugins/`):
 ## 0. Summary
 
 **Recommendation: option (c), a hybrid that is mostly (a).** Ship **one extension**, built from the
-existing Markdown Workbench repo, with two **built-in editor plugins**, `markdown` (the current editor)
+existing Markdown Workshop repo, with two **built-in editor plugins**, `markdown` (the current editor)
 and `pdf` (Agent PDF Viewer moved in with its git history). Add an **"editor plugin"** concept to
 the kernel manifest so that a plugin can own a custom editor, its file types, webview assets,
 commands, views and settings. Then add a **public API v2 extension point** so that a third-party
@@ -73,7 +73,7 @@ custom editor never has one. Recommended handling:
 
 ### 1.1 What exists today
 
-| | Markdown Workbench | Agent PDF Viewer |
+| | Markdown Workshop | Agent PDF Viewer |
 |---|---|---|
 | ID / view type | `t04dj14n9.vscode-markdown-workbench` / `markdownWorkbench.editor` (CustomTextEditor, `priority: option`, `*.md`, `*.markdown`) | `t04dj14n9.vscode-embedpdf` / `vscodeEmbedPdf.viewer` (CustomReadonlyEditor, `priority: default`, `*.pdf`) |
 | Architecture | Cordis-style kernel (`src/kernel`): everything is a plugin (about 50), with manifests in `src/plugins/<id>/manifest.ts`. `package.json` contributions are **generated** from the manifests (`pnpm contributions --check`). Frozen public API v1 plus external host plugins. | Plain classes: `PdfPanels`, `PdfPanel`, outline view, 3 commands. React + EmbedPDF webview with a validated message schema. |
@@ -136,7 +136,7 @@ This gives the single host the user asked for without blocking a separately inst
   separate webview app. The rule "every capability is a plugin under `src/plugins/<id>/`; reach other
   capabilities through injected services" is preserved: the Markdown links plugin injects an optional
   `pdf` service and never imports PDF internals.
-- PDF code must then pass Markdown Workbench's `pnpm check` (Prettier, the readability limits,
+- PDF code must then pass Markdown Workshop's `pnpm check` (Prettier, the readability limits,
   `consistent-type-imports`, the layer `no-restricted-imports`):
   - Formatting goes in its own commit.
   - Any limit violations are fixed by behaviour-preserving rewrites in their own commits, never by
@@ -145,7 +145,7 @@ This gives the single host the user asked for without blocking a separately inst
   and `lint-rules.test.ts` pins that glob. The PDF viewer is `.tsx`. Leaving `.tsx` uncovered would
   be a loophole. Changing the glob to `src/**/*.{ts,tsx}` **tightens** the rules but edits a pinned
   test, so ask first (Q4). Also add `eslint-plugin-react-hooks` for the PDF webview only.
-- Testing policy: Markdown Workbench allows unit tests only plus small smoke suites. The PDF browser
+- Testing policy: Markdown Workshop allows unit tests only plus small smoke suites. The PDF browser
   spec is not part of "the source's suites" (that phrase refers to human-learning), but it is big.
   Proposed: keep it as `test/browser/pdf.spec.ts`, trimmed to a smoke set of about 6 scenarios. Move
   the rest into `docs/MANUAL_TEST_PLAN.md` and record it in `docs/TEST_LEDGER.md` (Q5). Never drop an
@@ -231,7 +231,7 @@ The build adds an IIFE entry `dist/webview-pdf/viewer.js` and copies `pdfium.was
   `plugins.*.enabled`, and when Manage File Types writes. It writes at the scope the user chose. It
   never writes user settings unprompted on first install: the defaults equal VS Code's static
   behaviour, so nothing needs writing until the user changes something.
-- **Use Markdown Workbench for Markdown in This Workspace** (`markdownWorkbench.useForMarkdownInWorkspace`,
+- **Use Markdown Workshop for Markdown in This Workspace** (`markdownWorkbench.useForMarkdownInWorkspace`,
   §25.2) keeps its ID and message. It becomes a shortcut that sets the workspace `fileTypes` for
   `*.md` and `*.markdown` to `markdown`. `withMarkdownWorkbench` and its unit tests stay valid as the
   reconciler's write step.
@@ -254,7 +254,7 @@ The build adds an IIFE entry `dist/webview-pdf/viewer.js` and copies `pdfium.was
 
 ### 2.4 UI
 
-- **Markdown Workbench: Manage File Types…** (new; also the first item of **Manage Plugins**). The
+- **Markdown Workshop: Manage File Types…** (new; also the first item of **Manage Plugins**). The
   palette is unrestricted.
   1. Pick the scope: "This workspace" or "All workspaces (user)".
   2. A multi-select quick pick grouped by editor plugin ("Markdown editor", "PDF viewer", external
@@ -278,7 +278,7 @@ The build adds an IIFE entry `dist/webview-pdf/viewer.js` and copies `pdfium.was
 ```ts
 editors?: readonly {
   id: string;                       // "markdown" | "pdf" → viewType markdownWorkbench.<id>
-  displayName: string;              // "Markdown Workbench", "Workbench PDF Viewer"
+  displayName: string;              // "Markdown Workshop", "Workbench PDF Viewer"
   document: "text" | "readonly" | "custom"; // CustomTextEditor | CustomReadonly | CustomEditor (future edit)
   candidatePatterns: readonly string[];      // static selector, priority "option"
   defaultPatterns?: readonly string[];       // default fileTypes entries
@@ -423,7 +423,7 @@ plugin is off, everything falls back to today's behaviour: a card plus `vscode.o
 2. **Setting:** `markdownWorkbench.marp.open: "workbench" (default) | "textEditor"`. With
    `textEditor`, `resolveCustomTextEditor` on a deck redirects with
    `vscode.openWith(uri, "default", column)`. A notification offers "Keep in Workbench for this
-   file" (session allow-list), so **Reopen With → Markdown Workbench** is not bounced forever. A
+   file" (session allow-list), so **Reopen With → Markdown Workshop** is not bounced forever. A
    filename convention also works statically: `fileTypes: { "*.marp.md": "text" }`.
 3. **Marp-aware Live Preview** (webview half, only while `isMarp`):
    - A `HorizontalRule` renders as a **slide divider widget** ("Slide 4", a thin rule with the
@@ -478,10 +478,10 @@ plugin is off, everything falls back to today's behaviour: a card plus `vscode.o
 ### P0: decisions and baselines (owner)
 
 - Answer Q1–Q8 (defaults are given, so work can start without answers).
-- Merge **Markdown Workbench PR #1** (`continue-handover`) and **embedPDF PR #1** (`test-and-fix-ui`)
+- Merge **Markdown Workshop PR #1** (`continue-handover`) and **embedPDF PR #1** (`test-and-fix-ui`)
   into their `main`s. Both are open and need the owner's approval.
 - Decide what happens to `pdf-workbench` (Q3).
-- Baselines: Markdown Workbench `pnpm check` 483/483, browser smoke 14/14, native 1/1 (per
+- Baselines: Markdown Workshop `pnpm check` 483/483, browser smoke 14/14, native 1/1 (per
   HANDOVER); embedPDF `pnpm check`, browser and native. Record the VSIX sizes (8.95 MB and 2.47 MB).
 
 ### P1: host generalisation and file types (Markdown only; no behaviour change)
@@ -568,7 +568,7 @@ git merge --allow-unrelated-histories --no-ff pdf-import/main -m "Import Agent P
 - **Commands:** hidden aliases `vscodeEmbedPdf.copyForAgent`, `vscodeEmbedPdf.openLocation` (argument
   contract unchanged) and `vscodeEmbedPdf.goToOutlineItem`, all with `commandPalette when: false`.
   Old context keys are set as well for one release.
-- **Settings:** embedPDF has none, so nothing to migrate. Markdown Workbench settings are unchanged
+- **Settings:** embedPDF has none, so nothing to migrate. Markdown Workshop settings are unchanged
   (namespace kept, Q1). If Q1 chooses a rename, add a one-shot `inspect()`-based copier for every
   `markdownWorkbench.*` key at each scope, plus aliases for every command, in its own phase.
 - **API:** v1 (`getExtension("t04dj14n9.vscode-markdown-workbench")`) stays frozen and identical. PDF
@@ -632,10 +632,10 @@ git merge --allow-unrelated-histories --no-ff pdf-import/main -m "Import Agent P
 
 - **Q1. Identity.** **Keep the extension ID `t04dj14n9.vscode-markdown-workbench` and the
   `markdownWorkbench.*` namespace.** That means zero migration, and API v1 stays valid. Change only
-  the display name, to "Markdown Workbench" or "Workbench: Markdown & PDF". The alternative is one
+  the display name, to "Markdown Workshop" or "Workbench: Markdown & PDF". The alternative is one
   neutral rename now, while nothing is published: 157 occurrences in 76 files, generator-driven, its
   own phase. Note that `workbench.*` is VS Code's own namespace and cannot be used.
-- **Q2. Repo.** **Import embedPDF into the Markdown Workbench repo with history (filter-repo)**, or
+- **Q2. Repo.** **Import embedPDF into the Markdown Workshop repo with history (filter-repo)**, or
   create a new neutral repo and import both.
 - **Q3. `pdf-workbench` branch** (status bar, page and zoom commands, draft PDF API, editing
   experiment). **Merge `test-and-fix-ui` first; port `pdf-workbench`'s finished pieces after P3 as

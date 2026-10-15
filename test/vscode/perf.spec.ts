@@ -30,7 +30,7 @@ async function frameOf(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workbench frame");
+  throw new Error("No Markdown Workshop frame");
 }
 
 async function sample(page: Page, file: string): Promise<Sample> {
@@ -108,7 +108,7 @@ function activation(): string {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) {
         walk(full);
-      } else if (/Markdown Workbench\.log$/.test(entry)) {
+      } else if (/Markdown Workshop\.log$/.test(entry)) {
         found.push(full);
       }
     }

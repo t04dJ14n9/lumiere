@@ -1,5 +1,8 @@
 import { syntaxTree } from "@codemirror/language";
-import { pointerSelectionToggled } from "../../webview/ui/pointer-selection";
+import {
+  isPointerSelecting,
+  pointerSelectionToggled,
+} from "../../webview/ui/pointer-selection";
 import type { SyntaxNodeRef } from "@lezer/common";
 import { StateEffect, type Range } from "@codemirror/state";
 import {
@@ -176,9 +179,16 @@ class CodeSource {
   }
 
   update(update: ViewUpdate): void {
-    if (update.view.composing) {
+    if (
+      update.view.composing ||
+      (isPointerSelecting(update.state) &&
+        !pointerSelectionToggled(update.startState, update.state) &&
+        !update.docChanged)
+    ) {
       this.decorations = this.decorations.map(update.changes);
-    } else if (
+      return;
+    }
+    if (
       update.docChanged ||
       update.selectionSet ||
       pointerSelectionToggled(update.startState, update.state) ||

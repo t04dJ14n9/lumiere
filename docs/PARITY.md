@@ -120,7 +120,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | The default,   `prompt`, shows a **Update links in N files?** dialog | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `always` and `never`   skip it | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Heading renames are a later enhancement. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **quickSwitcher**: **Markdown Workbench: Quick Switcher** opens a quick pick   over notes, aliases and unresolved links, with Obsidian's scoring | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **quickSwitcher**: **Markdown Workshop: Quick Switcher** opens a quick pick   over notes, aliases and unresolved links, with Obsidian's scoring | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Enter   opens | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | an unresolved or new name creates the note in the configured   new-note folder. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | **wordCount**: words and characters for the note or selection in the status   bar, counting CJK characters individually. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -243,6 +243,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
+| Setting: markdownWorkbench.editor.warmTextDocument | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; workaround for Cursor uninitialized custom-editor documents | not applicable |
 | Setting: markdownWorkbench.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

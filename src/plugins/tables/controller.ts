@@ -21,6 +21,7 @@ import { TableClipboard } from "./clipboard";
 import { TableToolbar } from "./toolbar";
 import { TableHandles } from "./handles";
 import { activeTables, tableSelectionChanges } from "./state";
+import { forwardTableWheel } from "./wheel-scroll";
 
 /** Wires table interactions and reconciles snapshots from the outer document. */
 export class TableController {
@@ -86,6 +87,7 @@ export class TableController {
     );
     this.registerEvents();
     this.registerFocus();
+    this.registerScrolling();
     this.grid.wrapper.append(this.toolbar.controls());
     this.grid.render();
     this.handles = this.createHandles();
@@ -222,11 +224,27 @@ export class TableController {
     );
   }
 
+  private registerScrolling(): void {
+    this.grid.root.addEventListener(
+      "wheel",
+      (event) =>
+        forwardTableWheel(
+          event,
+          this.grid.outer.scrollDOM,
+          this.grid.outer.defaultLineHeight,
+        ),
+      { passive: false, signal: this.events.signal },
+    );
+  }
+
   private createHandles(): TableHandles {
     return new TableHandles(
       this.grid.root,
       this.grid.table,
-      this.grid.outer.scrollDOM,
+      {
+        vertical: this.grid.outer.scrollDOM,
+        horizontal: this.grid.scroll,
+      },
       {
         select: (axis, index) => this.selected.selectAxis(axis, index),
         move: (axis, from, to) => {

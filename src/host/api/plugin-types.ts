@@ -89,7 +89,7 @@ export interface PublicServices {
     error(message: string, detail?: unknown): void;
   };
 }
-/** A link click in an editor, before Markdown Workbench opens it (DESIGN §16). */
+/** A link click in an editor, before Markdown Workshop opens it (DESIGN §16). */
 export interface LinkRequest {
   readonly editorId: string;
   readonly href: string;

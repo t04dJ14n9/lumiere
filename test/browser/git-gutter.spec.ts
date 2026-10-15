@@ -110,7 +110,10 @@ test("next and previous change move the caret and wrap around", async ({
   await expect.poll(line).toBe(3);
   await page.evaluate(() => window.harness.run("editor:git-previous-change"));
   await expect.poll(line).toBe(14);
+  // Line 14 is a pure addition — Show Git Change must not open a Working Tree peek.
   await page.evaluate(() => window.harness.run("editor:git-show-change"));
+  await expect(page.locator(".mw-git-peek")).toHaveCount(0);
+  await page.locator(".mw-git-bar-modified").first().click();
   await expect(page.locator(".mw-git-peek")).toBeVisible();
 });
 
@@ -164,12 +167,23 @@ test("B1: after an edit above, Revert in an open peek reverts its own lines, bef
   }
 });
 
-test("B2: Revert on a change that was just undone by hand leaves the text alone", async ({
+test("B2: added bars stay visible but never open a Working Tree peek", async ({
   page,
 }) => {
   await open(page, "a\nnew\nz", "obsidian", { gitBaseline: "a\nz" });
   await expect.poll(() => bars(page)).toEqual(["added"]);
-  await page.locator(".mw-git-bar-added").click();
+  const added = page.locator(".mw-git-bar-added");
+  await expect(added).toHaveAttribute("title", "added");
+  await added.click();
+  await expect(page.locator(".mw-git-peek")).toHaveCount(0);
+});
+
+test("B2b: Revert on a modified change that was just undone by hand leaves the text alone", async ({
+  page,
+}) => {
+  await open(page, "a\nnew\nz", "obsidian", { gitBaseline: "a\nold\nz" });
+  await expect.poll(() => bars(page)).toEqual(["modified"]);
+  await page.locator(".mw-git-bar-modified").click();
   const revert = page
     .locator(".mw-git-peek")
     .getByRole("button", { name: "Revert this change" });
@@ -178,14 +192,13 @@ test("B2: Revert on a change that was just undone by hand leaves the text alone"
   await page.keyboard.press("Control+Home");
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Shift+ArrowDown");
-  await page.keyboard.press("Delete");
-  await expect.poll(() => text(page)).toBe("a\nz");
-  // Before the debounced recompute, if the peek is still there.
+  await page.keyboard.type("old\n");
+  await expect.poll(() => text(page)).toBe("a\nold\nz");
   if (await revert.count()) {
     await revert.click();
   }
   await page.waitForTimeout(400);
-  expect(await text(page)).toBe("a\nz");
+  expect(await text(page)).toBe("a\nold\nz");
 });
 
 test("B5: either side past the line limit shows no bars; back under it, they return", async ({
@@ -218,22 +231,15 @@ test("N1, N6: the peek renders the table it changes, with no vertical margins", 
   await expect(peek).toHaveCSS("margin-bottom", "0px");
 });
 
-test("R2-B1: Revert held across a realigning edit never deletes an unrelated addition", async ({
+test("R2-B1: added bars do not open peek; held-revert races stay unit-covered", async ({
   page,
 }) => {
   await open(page, "X\nA\nY", "obsidian", { gitBaseline: "A" });
   await expect.poll(() => bars(page)).toContain("added");
   await page.locator(".mw-git-bar-added").last().click();
-  const revert = page
-    .locator(".mw-git-peek")
-    .getByRole("button", { name: "Revert this change" });
-  await expect(revert).toBeVisible();
-  // Append "\nA" and click before the 250 ms recompute lands.
-  await page.getByRole("textbox", { name: "Markdown content" }).focus();
-  await page.keyboard.press("Control+End");
-  await page.keyboard.press("Enter");
-  await page.keyboard.type("A");
-  await revert.click();
-  await page.waitForTimeout(400);
-  expect(["X\nA\nY\nA", "X\nA"]).toContain(await text(page));
+  await expect(page.locator(".mw-git-peek")).toHaveCount(0);
+  await expect(page.locator(".mw-git-bar-added").last()).toHaveAttribute(
+    "title",
+    "added",
+  );
 });
