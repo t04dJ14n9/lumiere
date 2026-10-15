@@ -14,6 +14,9 @@ export function bindPropertyFields(
     context.propertyEditor?.source === context.source
       ? context.propertyEditor
       : undefined;
+  // Parse once for every field on this sheet; each field would otherwise
+  // re-parse the same frontmatter during construction.
+  const baseline = frontmatter(source);
   container
     .querySelector(":scope > .properties")
     ?.querySelectorAll<HTMLElement>("[data-property-input]")
@@ -22,7 +25,13 @@ export function bindPropertyFields(
         return;
       }
       bound.add(input);
-      new PropertyField(container, input, source, editor);
+      new PropertyField({
+        container,
+        input,
+        source,
+        editor,
+        ...(baseline ? { baseline } : {}),
+      });
     });
 }
 

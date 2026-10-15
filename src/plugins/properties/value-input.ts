@@ -1,6 +1,8 @@
 /** Both native typed controls and editable text share draft/focus operations. */
-export function isNativeInput(input: HTMLElement): input is HTMLInputElement {
-  return input.tagName === "INPUT";
+export function isNativeInput(
+  input: HTMLElement,
+): input is HTMLInputElement | HTMLTextAreaElement {
+  return input.tagName === "INPUT" || input.tagName === "TEXTAREA";
 }
 
 export function inputText(input: HTMLElement): string {
@@ -40,7 +42,7 @@ export function focusInput(
 ): void {
   input.focus();
   if (isNativeInput(input)) {
-    if (input.type === "text") {
+    if (input instanceof HTMLTextAreaElement || input.type === "text") {
       input.setSelectionRange(
         selection === "end" ? input.value.length : 0,
         selection === "start" ? 0 : input.value.length,

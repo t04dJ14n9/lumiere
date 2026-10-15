@@ -1,7 +1,12 @@
 import { isMap, isScalar, parseDocument } from "yaml";
 import { headerParts, frontmatter } from "./frontmatter";
-import { scalarValue, yamlValue, setPropertyChange } from "./edits";
-import type { PropertyChange } from "./edits";
+import {
+  scalarValue,
+  yamlValue,
+  yamlKey,
+  type PropertyChange,
+} from "./yaml-value";
+import { setPropertyChanges } from "./alias-edits";
 import { validPropertyName } from "./types";
 function propertyObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -109,14 +114,38 @@ class MergeEdits {
       (pair) => isScalar(pair.key) && pair.key.value === key,
     );
     if (!pair) {
-      this.added += `${yamlValue(key)}: ${yamlValue(value)}${header.eol}`;
+      this.added += `${yamlKey(key)}: ${yamlValue(value)}${header.eol}`;
       return true;
     }
-    const change = setPropertyChange(source, header, pair.value, value);
-    if (!change) {
+    const changes = setPropertyChanges({
+      source,
+      header,
+      document,
+      node: pair.value,
+      value,
+    });
+    if (!changes) {
       return false;
     }
-    this.changes.push(change);
+    const [primary, ...aliases] = changes;
+    // Explicit replacement wins over any overlapping prior alias-preservation.
+    for (let index = this.changes.length - 1; index >= 0; index--) {
+      const prior = this.changes[index]!;
+      if (!(prior.to <= primary!.from || prior.from >= primary!.to)) {
+        this.changes.splice(index, 1);
+      }
+    }
+    this.changes.push(primary!);
+    for (const alias of aliases) {
+      if (
+        this.changes.some(
+          (prior) => !(prior.to <= alias.from || prior.from >= alias.to),
+        )
+      ) {
+        continue;
+      }
+      this.changes.push(alias);
+    }
     return true;
   }
 
