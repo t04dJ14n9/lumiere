@@ -65,7 +65,8 @@ function vscodeWarmHost(): DocumentWarmHost {
  */
 export function registerDocumentWarm(): vscode.Disposable {
   const host = vscodeWarmHost();
-  const { warm, warmGitChanges } = createDocumentWarmer(host);
+  const { warm, warmOpenedDocument, warmGitChanges } =
+    createDocumentWarmer(host);
 
   const watcher =
     vscode.workspace.createFileSystemWatcher("**/*.{md,markdown}");
@@ -73,12 +74,21 @@ export function registerDocumentWarm(): vscode.Disposable {
     watcher,
     watcher.onDidCreate((uri) => warm(uri.toString())),
     watcher.onDidChange((uri) => warm(uri.toString())),
+    vscode.workspace.onDidOpenTextDocument((document) => {
+      // Associations can transfer a built-in editor without our openWith path.
+      warmOpenedDocument(document.uri.toString());
+    }),
     vscode.workspace.onDidCreateFiles((event) => {
       for (const file of event.files) {
         warm(file.toString());
       }
     }),
   ];
+
+  // The document that activates onLanguage:markdown may already be open.
+  for (const document of vscode.workspace.textDocuments) {
+    warmOpenedDocument(document.uri.toString());
+  }
 
   const gitStop = watchGit(warmGitChanges);
   if (gitStop) {

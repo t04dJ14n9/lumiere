@@ -124,6 +124,13 @@ test("foreground warm with off never calls openTextDocument", async () => {
   assert.deepEqual(host.modeUris, ["file:///vault/Note.md"]);
 });
 
+test("foreground handoffs reissue the open even when Cursor already holds the document", async () => {
+  const note = "file:///vault/Note.md";
+  const host = fakeHost({ open: new Set([note]) });
+  await warmMarkdownDocumentFor(note, host);
+  assert.deepEqual(host.opened, [note]);
+});
+
 test("foreground warm with auto outside Cursor never calls openTextDocument", async () => {
   const host = fakeHost({
     appName: "Visual Studio Code",

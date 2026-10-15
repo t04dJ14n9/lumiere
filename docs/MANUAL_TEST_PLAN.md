@@ -97,6 +97,19 @@ Owns the text, saving and history; VS Code's TextDocument is the authority.
 
 The CodeMirror view in a webview panel, its commands and view state.
 
+Cursor Remote SSH handoff regression (use the disposable vault): associate
+`*.md` with Markdown Workbench and leave both `editor.warmTextDocument` and
+`editor.reclaimTextEditor` at `auto`. Have an agent edit a note on disk, open
+it with Cursor's built-in Markdown editor, and make an unsaved edit there.
+Let Cursor auto-transfer the note into Markdown Workbench, then repeat with
+**Reopen Editor With… → Markdown Workbench**. The custom editor opens without
+the `Argument is 'undefined' or 'null.'` assertion, the unsaved text survives,
+and native undo still restores the edit. Repeat with a `.markdown` note and
+the matching association, and after reloading with the dirty note already
+open. **Open as Text** still keeps the text editor during the bypass window.
+Setting warming to `off` must stop warm calls; record the Cursor result
+separately, since that explicitly disables the workaround.
+
 1. Copy, cut and paste Markdown with the keyboard; paste into a text
    editor: the exact source is copied.
 2. Give two panels different selections, scroll positions and modes; reload

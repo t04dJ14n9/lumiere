@@ -1,10 +1,8 @@
 /**
- * Cursor leaves agent-created or agent-edited Markdown notes without a fully
- * initialized TextDocument until they are opened once in the plain text
- * editor. Opening such a note straight into a CustomTextEditorProvider then
- * fails inside Cursor with "Assertion Failed: Argument is 'undefined' or
- * 'null.'" before resolveCustomTextEditor runs. Warming the document through
- * openTextDocument materializes it so the custom editor can resolve.
+ * Cursor can open dirty or agent-edited notes in its built-in Markdown editor
+ * yet fail when transferring them into a CustomTextEditorProvider. That handoff
+ * asserts "Argument is 'undefined' or 'null.'" before resolveCustomTextEditor.
+ * Reissuing openTextDocument before the handoff warms the host document model.
  *
  * See https://forum.cursor.com/t/assertion-error-when-using-custom-editors-incl-markdown-preview-editors/148578
  */
@@ -29,7 +27,8 @@ export function isWarmableMarkdown(uri: string): boolean {
 }
 
 /**
- * Whether a URI still needs warming. Already-open documents are initialized.
+ * Whether a watcher or Git target needs warming. Document-open events and
+ * foreground handoffs reissue the open even for an already-open document.
  */
 export function shouldWarmUri(
   uri: string,

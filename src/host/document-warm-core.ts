@@ -42,7 +42,8 @@ async function openOnce(
 
 /**
  * Materialize one note when the resource-scoped setting allows it. Safe to
- * call from any host; cheap when the document is already open.
+ * call from any host. Reissue the open even for a document already held by
+ * Cursor's built-in Markdown editor: the failing step is the view transfer.
  */
 export async function warmMarkdownDocumentFor(
   uri: string,
@@ -92,28 +93,35 @@ async function drainGitWarmTargets(options: {
 }
 
 /**
- * Background warmer: create/change and git sweeps. File-watcher and git
- * callers share the same enablement and pending-key rules.
+ * Background warmer: document opens, create/change and git sweeps. Callers
+ * share the same enablement and pending-key rules.
  */
 export function createDocumentWarmer(
   host: DocumentWarmHost,
   options: { gitLimit?: number } = {},
 ): {
   warm: (uri: string) => void;
+  warmOpenedDocument: (uri: string) => void;
   warmGitChanges: (changeUris: readonly string[], live: () => boolean) => void;
 } {
   const gitLimit = options.gitLimit ?? 64;
   const pending = new Set<string>();
   let gitDrain = Promise.resolve();
 
-  const warm = (uri: string) => {
-    if (!enabledFor(host, uri)) {
+  const warmOpenedDocument = (uri: string) => {
+    if (!isWarmableMarkdown(uri) || !enabledFor(host, uri)) {
       return;
     }
-    if (!shouldWarmUri(uri, host.textDocumentUris()) || pending.has(uri)) {
+    if (pending.has(uri)) {
       return;
     }
     void openOnce(host, uri, pending);
+  };
+
+  const warm = (uri: string) => {
+    if (shouldWarmUri(uri, host.textDocumentUris())) {
+      warmOpenedDocument(uri);
+    }
   };
 
   const warmGitChanges = (
@@ -130,5 +138,5 @@ export function createDocumentWarmer(
     );
   };
 
-  return { warm, warmGitChanges };
+  return { warm, warmOpenedDocument, warmGitChanges };
 }

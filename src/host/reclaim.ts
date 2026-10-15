@@ -21,7 +21,7 @@ function kindOf(tab: vscode.Tab | undefined): TabKind {
     return "none";
   }
   if (input instanceof vscode.TabInputCustom) {
-    return input.viewType === viewType ? "workbench" : "other";
+    return input.viewType === viewType ? "workbench" : "none";
   }
   if (input instanceof vscode.TabInputText) {
     return "text";
@@ -37,7 +37,8 @@ function uriOf(tab: vscode.Tab): string | undefined {
 
 /**
  * `markdownWorkbench.editor.reclaimTextEditor`: Cursor's Preview | Markdown
- * switch opens notes in the plain text editor; reopen them here instead.
+ * switch opens notes in the text or Cursor Markdown editor; warm them before
+ * transferring back to our CustomTextEditorProvider.
  */
 export function registerReclaim(): vscode.Disposable {
   const seen = new Map<string, TabKind>();
@@ -56,34 +57,17 @@ export function registerReclaim(): vscode.Disposable {
   };
   remember();
   return vscode.window.tabGroups.onDidChangeTabs((event) => {
-    const enabled = reclaimEnabled({
-      mode: vscode.workspace
-        .getConfiguration("markdownWorkbench")
-        .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
-      appName: vscode.env.appName,
-    });
     for (const tab of [...event.opened, ...event.changed]) {
-      const uri = uriOf(tab);
-      const before = uri ? seen.get(key(tab, uri)) : undefined;
+      const uri = uriOf(tab) ?? labelUri(tab);
+      if (!uri) {
+        continue;
+      }
       const swap = {
-        uri: uri ?? "",
-        before: before ?? "none",
+        uri,
+        before: seen.get(key(tab, uri)) ?? "none",
         after: kindOf(tab),
       };
-      const context = {
-        enabled,
-        isNote: isReclaimableNote,
-        associated: (value: string) =>
-          associatedWith(
-            vscode.workspace
-              .getConfiguration("workbench")
-              .get("editorAssociations"),
-            value,
-            viewType,
-          ),
-        bypassed: (value: string) => textBypass.has(value),
-      };
-      if (uri && shouldReclaim(swap, context)) {
+      if (shouldReclaim(swap, reclaimContext(uri))) {
         textBypass.allow(uri);
         void reopen(tab, uri);
       }
@@ -92,11 +76,42 @@ export function registerReclaim(): vscode.Disposable {
   });
 }
 
-/** Open the note here in the text tab's place, then close the text tab. */
+function reclaimContext(uri: string) {
+  const target = vscode.Uri.parse(uri);
+  return {
+    enabled: reclaimEnabled({
+      mode: vscode.workspace
+        .getConfiguration("markdownWorkbench", target)
+        .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
+      appName: vscode.env.appName,
+    }),
+    isNote: isReclaimableNote,
+    associated: (value: string) =>
+      associatedWith(
+        vscode.workspace
+          .getConfiguration("workbench", target)
+          .get("editorAssociations"),
+        value,
+        viewType,
+      ),
+    bypassed: (value: string) => textBypass.has(value),
+  };
+}
+
+/** Transfer after warming, keeping any dirty text tab and its native undo. */
 async function reopen(tab: vscode.Tab, uri: string): Promise<void> {
   const column = tab.group.viewColumn;
   const target = vscode.Uri.parse(uri);
   await warmMarkdownDocument(target);
+  // Cursor may finish its own transfer or close the tab while warming.
+  const kind = kindOf(tab);
+  if (
+    !tab.group.tabs.includes(tab) ||
+    (kind !== "text" && kind !== "other") ||
+    (uriOf(tab) ?? labelUri(tab)) !== uri
+  ) {
+    return;
+  }
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
     viewColumn: column,
     preview: tab.isPreview,
@@ -119,10 +134,11 @@ function labelUri(tab: vscode.Tab): string | undefined {
   if (tab.input !== undefined) {
     return undefined;
   }
-  const document = vscode.workspace.textDocuments.find(
+  const documents = vscode.workspace.textDocuments.filter(
     (candidate) =>
       candidate.uri.scheme === "file" &&
       candidate.uri.path.split("/").at(-1) === tab.label,
   );
-  return document?.uri.toString();
+  // Equal basenames in different folders cannot identify a tab safely.
+  return documents.length === 1 ? documents[0]?.uri.toString() : undefined;
 }
