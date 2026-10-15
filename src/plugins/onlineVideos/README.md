@@ -58,7 +58,7 @@ them up (`host.ts`, `details.ts`) when a trusted card asks over the
   and channel; the still stays the ID-derived `i.ytimg.com` image.
 
 The host refuses the RPC in an untrusted workspace (and the webview does not
-ask), checks the ID again, sends `User-Agent: MarkdownWorkbench (VS Code
+ask), checks the ID again, sends `User-Agent: MarkdownWorkshop (VS Code
 extension)` (Bilibili answers 412 to browser-like agents from non-browsers),
 refuses redirects, gives each lookup 5 s, runs at most four at once, caches
 answers for the window (200 videos) and remembers failures for 5 minutes.

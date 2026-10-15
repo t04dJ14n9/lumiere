@@ -152,7 +152,7 @@ test("copyLinkForAgent.target = codex attaches the passage as a file, and copies
       environment: environment(commands, true, { target: "codex" }),
       writeScratchFile: async (text) => {
         written.push(text);
-        return "file:///tmp/markdown-workbench-agent/A.md-1.md";
+        return "file:///tmp/markdown-workshop-agent/A.md-1.md";
       },
       codexRetryDelaysMs: [0],
     }),
@@ -165,12 +165,12 @@ test("copyLinkForAgent.target = codex attaches the passage as a file, and copies
     { id: "chatgpt.openSidebar", args: [] },
     {
       id: "chatgpt.addFileToThread",
-      args: ["file:///tmp/markdown-workbench-agent/A.md-1.md"],
+      args: ["file:///tmp/markdown-workshop-agent/A.md-1.md"],
     },
     // Repeated for a Codex view that was still loading (Codex adds a file once).
     {
       id: "chatgpt.addFileToThread",
-      args: ["file:///tmp/markdown-workbench-agent/A.md-1.md"],
+      args: ["file:///tmp/markdown-workshop-agent/A.md-1.md"],
     },
   ]);
 });

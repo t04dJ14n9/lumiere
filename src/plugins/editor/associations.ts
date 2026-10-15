@@ -10,7 +10,7 @@ const { viewType, filenamePatterns: markdownPatterns } = MARKDOWN_EDITOR;
  * Other patterns are kept; a value that is not an association map (an old
  * array form, or a hand-edited mistake) is replaced.
  */
-export function withMarkdownWorkbench(
+export function withMarkdownWorkshop(
   existing: unknown,
 ): Record<string, string> {
   const associations: Record<string, string> = {};
@@ -57,7 +57,7 @@ export async function useForMarkdownInWorkspace(
     );
     return;
   }
-  await workshop.editorAssociations.write(withMarkdownWorkbench(existing));
+  await workshop.editorAssociations.write(withMarkdownWorkshop(existing));
   workshop.inform?.(
     "Markdown files in this workspace now open in Markdown Workshop. Use Open as Text or Reopen Editor With… for the text editor.",
   );

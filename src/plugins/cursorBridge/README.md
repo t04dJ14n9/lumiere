@@ -3,7 +3,7 @@
 In Cursor, **Cmd/Ctrl+L** opens Cursor Chat and **Cmd/Ctrl+K** opens Cursor
 Edit on the Live Preview selection, using Cursor’s native Accept/Reject. Plain
 VS Code is unchanged. Obsidian has no built-in equivalent; this is Cursor muscle
-memory on Markdown Workbench’s custom editor.
+memory on Markdown Workshop’s custom editor.
 
 ## How it works
 
@@ -17,8 +17,8 @@ editor confirmation. Tab cleanup clears established sessions only, preserving
 overlapping handoffs still warming or opening text. A failed handoff releases
 only its own token. The lease suppresses reclaim for the whole native session
 and ends when the last native text tab for the note leaves the text editor.
-Same-URI Workbench tab changes keep the lease, and
-a later Preview | Markdown switch can restore Markdown Workbench. Apply stays
+Same-URI Workshop tab changes keep the lease, and
+a later Preview | Markdown switch can restore Markdown Workshop. Apply stays
 in Cursor; MW follows the document model. Dirty notes are allowed without
 autosave.
 

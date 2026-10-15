@@ -7,10 +7,11 @@
   reclaim for the whole native Edit session; selection offsets are
   version-checked after warm/open. Disabled bridge restores Insert Link.
 
-- Display name is **Markdown Workshop** (Marketplace, custom editor,
-  command category, settings UI title, and other user-visible strings).
-  Extension id `vscode-markdown-workbench` and settings keys
-  `markdownWorkbench.*` are unchanged so existing installs keep working.
+- Renamed from Markdown Workbench. The package name is
+  `vscode-markdown-workshop`; settings and commands use `markdownWorkshop.*`.
+  There is no compatibility alias. The display name stays **Markdown Workshop**
+  (Marketplace, custom editor, command category, settings UI title, and other
+  user-visible strings).
 
 - Tables: the open cell and rectangular selections draw an inset accent
   selection box again. Opening a cell used to clear `.table-cell-selected`, and
@@ -32,8 +33,8 @@ First packaged build, for the owner's acceptance testing. Not published.
   note it stays as close to the centre as the note's scroll range allows.
 
 - Review fixes (round 1): the Copy Link for Agent plugin is now
-  `agentBridge` (`markdownWorkbench.plugins.agentBridge.enabled`; the command
-  and `markdownWorkbench.copyLinkForAgent.target` keep their names); plugin
+  `agentBridge` (`markdownWorkshop.plugins.agentBridge.enabled`; the command
+  and `markdownWorkshop.copyLinkForAgent.target` keep their names); plugin
   start-up rolls back on failure and shutdown runs in reverse order; Live
   Preview redraws only the blocks an edit or caret move affects; selection
   state reaches the extension in batches. The handoff text format is shared
@@ -53,7 +54,7 @@ First packaged build, for the owner's acceptance testing. Not published.
 - Commands: **Manage Plugins**, **Show Plugin Status** and **Use Markdown
   Workshop for Markdown in This Workspace**.
 - Logging to the **Markdown Workshop** output channel;
-  `markdownWorkbench.debug.logging` adds debug lines.
+  `markdownWorkshop.debug.logging` adds debug lines.
 - Public API v1 for other extensions: editors, selections, vault queries,
   plugin catalog and states, and external plugins with markers, actions,
   link handlers and code block processors. See API.md.

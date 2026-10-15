@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   useForMarkdownInWorkspace,
-  withMarkdownWorkbench,
+  withMarkdownWorkshop,
 } from "../../../src/plugins/editor/associations";
 import { fakeWorkbench } from "../../support/vscode-fake";
 
 test("Markdown patterns route to this editor; other associations stay", () => {
   assert.deepEqual(
-    withMarkdownWorkbench({ "*.pdf": "pdf.preview", "*.md": "default" }),
+    withMarkdownWorkshop({ "*.pdf": "pdf.preview", "*.md": "default" }),
     {
       "*.pdf": "pdf.preview",
       "*.md": "markdownWorkshop.editor",
@@ -16,7 +16,7 @@ test("Markdown patterns route to this editor; other associations stay", () => {
     },
   );
   for (const malformed of [undefined, null, [], "x", { "*.txt": 3 }]) {
-    assert.deepEqual(withMarkdownWorkbench(malformed), {
+    assert.deepEqual(withMarkdownWorkshop(malformed), {
       "*.md": "markdownWorkshop.editor",
       "*.markdown": "markdownWorkshop.editor",
     });

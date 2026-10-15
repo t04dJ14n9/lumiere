@@ -18,7 +18,7 @@ The extension is not on the Marketplace. Build the VSIX and install it:
 ```sh
 pnpm install
 pnpm package
-code --install-extension vscode-markdown-workbench-0.1.0.vsix
+code --install-extension vscode-markdown-workshop-0.1.0.vsix
 ```
 
 To try it without touching your own setup, install it into a throwaway
@@ -39,12 +39,12 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   moving the view to another sidebar or the panel. VS Code's native Outline
   and breadcrumbs remain available in the plain text editor.
 - **Manage Plugins** opens the plugin switches
-  (`markdownWorkbench.plugins.<id>.enabled`); **Show Plugin Status** lists
+  (`markdownWorkshop.plugins.<id>.enabled`); **Show Plugin Status** lists
   every plugin and why one failed or is waiting.
 - **Copy Link for Agent** (right-click a selection) copies the passage
   and its `@Note.md#a-b` line link for your agent. It opens a chat only
   when the editor's own chat is the only agent, or when
-  `markdownWorkbench.copyLinkForAgent.target` picks one. Plain Ctrl/Cmd+C
+  `markdownWorkshop.copyLinkForAgent.target` picks one. Plain Ctrl/Cmd+C
   copies text.
 - **Copy Wiki Reference for Agent** copies that same wording for a wiki
   note and does not open a chat. **Copy Bridge Envelope** copies the
@@ -63,10 +63,10 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   one folder matches. Full note URIs also work, including remote files.
   This explicit command is the fallback when clicking an agent's link opens
   the note without its line range; it does not intercept native chat clicks.
-- `markdownWorkbench.editor.fontSize` (8 to 48, default 16, Obsidian's body
+- `markdownWorkshop.editor.fontSize` (8 to 48, default 16, Obsidian's body
   size) sets the note text size, replacing `editor.fontSize` for notes;
   headings, tables, code, properties, footnotes and line numbers scale with
-  it, live. `markdownWorkbench.editor.lineHeight` (1 to 3, default 1.5,
+  it, live. `markdownWorkshop.editor.lineHeight` (1 to 3, default 1.5,
   Obsidian's) is the line height as a multiple of that size, so lines scale
   with it too. The font family, weight, letter spacing and ligatures still
   follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
@@ -74,12 +74,12 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   extension. **Change Setting…** lists every setting of the extension (by
   plugin, with its value) and edits the one you pick by its type. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle
   Readable Line Width**, **Toggle Mermaid Diagrams**, **Toggle Inline Title**
-  and **Toggle Vim Mode** change the same `markdownWorkbench.*` settings the
+  and **Toggle Vim Mode** change the same `markdownWorkshop.*` settings the
   Settings UI shows, in the workspace settings when the workspace sets them
   and in the user settings otherwise. They keep no state of their own, so
   edits in the Settings UI or `settings.json` and the commands always agree.
-- `markdownWorkbench.preset: "minimal"` loads only the core editor.
-- `markdownWorkbench.debug.logging` writes debug lines to the **Markdown
+- `markdownWorkshop.preset: "minimal"` loads only the core editor.
+- `markdownWorkshop.debug.logging` writes debug lines to the **Markdown
   Workshop** output channel.
 
 ### In Cursor
@@ -91,7 +91,7 @@ takes precedence over Cursor's editor for notes opened afterwards; reopen
 tabs that were already open.
 
 Cursor's **Markdown** button opens the note in the plain text editor and
-remembers that per file. `markdownWorkbench.editor.reclaimTextEditor`
+remembers that per file. `markdownWorkshop.editor.reclaimTextEditor`
 (`auto`, on only in Cursor) reopens such a note in Markdown Workshop and
 closes the text tab, for notes the workspace association routes here.
 It leaves diffs, Git views, untitled files and anything opened with **Open
@@ -100,7 +100,7 @@ keeps it, which is how **Reopen Editor With… › Text Editor** still works.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless
-`markdownWorkbench.gitDiffEditor.diffEditor` is `rendered`; then they open as
+`markdownWorkshop.gitDiffEditor.diffEditor` is `rendered`; then they open as
 both versions rendered side by side. **Open Rendered Git Diff** opens one
 against HEAD for the active note either way.
 

@@ -207,7 +207,7 @@ function agentOperations(): Pick<
       };
     },
     async writeScratchFile(name, text) {
-      const folder = path.join(os.tmpdir(), "markdown-workbench-agent");
+      const folder = path.join(os.tmpdir(), "markdown-workshop-agent");
       await mkdir(folder, { recursive: true, mode: 0o700 });
       const file = path.join(folder, path.basename(name));
       await writeFile(file, text, { mode: 0o600 });

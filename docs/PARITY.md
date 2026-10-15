@@ -2,7 +2,7 @@
 
 Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. Never use the owner's vault. Record date, method, observed result and any issue link in each row. Automated checks do not establish visual or behavioral parity. All rows start not observed.
 
-| Action or behavior (DESIGN §13–§15) | Obsidian observation: date and method | Workbench result | How checked | Status |
+| Action or behavior (DESIGN §13–§15) | Obsidian observation: date and method | Workshop result | How checked | Status |
 | --- | --- | --- | --- | --- |
 | `document` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `editor` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -128,207 +128,207 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | **search**: query parsing and evaluation stay (`search/query.ts`,   `evaluate.ts`, worker) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | File discovery and reading use the vault index and   its content cache instead of `findFiles` per run | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Operators backed by the   index (`tag:`, `path:`, `file:`, `[property:value]`) skip reading files. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertCallout | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.save | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.undo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.redo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
-| Command: markdownWorkbench.cursorBridge.edit | no Obsidian equivalent | Cursor Edit with MW selection; native apply | Unit tests in test/unit/cursor-bridge/ | not observed |
-| Command: markdownWorkbench.copyLinkForAgent | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `copyLinkForAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-link-for-agent/chat.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
-| Command: markdownWorkbench.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.unfoldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleFold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertFootnote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleBold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleItalics | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleStrikethrough | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleHighlight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleCode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleComment | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertHorizontalRule | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleBulletList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleNumberedList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleBlockquote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.swapLineUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.swapLineDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading0 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading1 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading2 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading3 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading4 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading5 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setHeading6 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertWikilink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.followLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.openLinkToSide | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleSourceMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleInlineMath | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertMathBlock | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.addProperty | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.openSettings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.setNoteFontSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.changeSetting | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleLineNumbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.gitDiffEditor.open | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleInlineGitChanges | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.gitGutter.nextChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.gitGutter.previousChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.gitGutter.showChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleReadableLineWidth | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleMermaid | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleInlineTitle | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleVim | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.quickSwitcher | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.insertTable | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableInsertRowAbove | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableInsertRowBelow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableInsertColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableInsertColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableDeleteRow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableDeleteColumn | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableMoveRowUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableMoveRowDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableMoveColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableMoveColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableAlignLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableAlignCenter | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableAlignRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableSortAscending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.tableSortDescending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.toggleChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.cursorBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.agentBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.onlineVideos.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.folding.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.math.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.outgoingLinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.outline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.pagePreview.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.pasteHtml.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.properties.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.quickSwitcher.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.search.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.smartLists.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.spellcheck.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.suggest.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.tables.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.tags.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.tasks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.vim.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.plugins.wordCount.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.autoPair.brackets | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.autoPair.markdown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
-| Setting: markdownWorkbench.editor.warmTextDocument | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; workaround for Cursor uninitialized custom-editor documents | not applicable |
-| Setting: markdownWorkbench.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.tabSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.editor.fontSize | Obsidian 1.14.4 default body 16px; H1-H6 1.618/1.462/1.318/1.188/1.076/1em (docs/obsidian-measurements/font-size-results-16.json) | not manually observed | Browser and real VS Code specs: body size equals the setting, heading ratios, line-number alignment | matches at the default |
-| Setting: markdownWorkbench.editor.lineHeight | Obsidian 1.14.4 default 1.5 (24px at 16px) | not manually observed | Browser and real VS Code specs: line height equals the setting times the size, line-number alignment | matches at the default |
-| Setting: markdownWorkbench.folding.heading | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.folding.indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.linkUpdates.mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.links.newLinkFormat | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.links.useWikilinks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.links.folderNote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.files.newNoteFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.files.attachmentFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.properties.display | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.onlineVideos.bilibiliPlayer | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.tags.viewSort | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.tags.viewNested | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.vault.rootMarkers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.vault.excludedFiles | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkbench.preset | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertCallout | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.save | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.undo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.redo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
+| Command: markdownWorkshop.cursorBridge.edit | no Obsidian equivalent | Cursor Edit with MW selection; native apply | Unit tests in test/unit/cursor-bridge/ | not observed |
+| Command: markdownWorkshop.copyLinkForAgent | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `copyLinkForAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-link-for-agent/chat.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
+| Command: markdownWorkshop.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.unfoldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleFold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertFootnote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleBold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleItalics | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleStrikethrough | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleHighlight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleCode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleComment | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertHorizontalRule | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleBulletList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleNumberedList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleBlockquote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.swapLineUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.swapLineDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading0 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading1 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading2 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading3 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading4 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading5 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setHeading6 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertWikilink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.followLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.openLinkToSide | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleSourceMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleInlineMath | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertMathBlock | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.addProperty | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.openSettings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.setNoteFontSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.changeSetting | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleLineNumbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.gitDiffEditor.open | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleInlineGitChanges | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.gitGutter.nextChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.gitGutter.previousChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.gitGutter.showChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleReadableLineWidth | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleMermaid | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleInlineTitle | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleVim | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.quickSwitcher | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertTable | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableInsertRowAbove | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableInsertRowBelow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableInsertColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableInsertColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableDeleteRow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableDeleteColumn | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableMoveRowUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableMoveRowDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableMoveColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableMoveColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableAlignLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableAlignCenter | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableAlignRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableSortAscending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableSortDescending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.cursorBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.agentBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.onlineVideos.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.folding.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.math.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.outgoingLinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.outline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.pagePreview.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.pasteHtml.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.properties.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.quickSwitcher.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.search.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.smartLists.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.spellcheck.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.suggest.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.tables.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.tags.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.tasks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.vim.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.wordCount.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.autoPair.brackets | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.autoPair.markdown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
+| Setting: markdownWorkshop.editor.warmTextDocument | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; workaround for Cursor uninitialized custom-editor documents | not applicable |
+| Setting: markdownWorkshop.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.tabSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.fontSize | Obsidian 1.14.4 default body 16px; H1-H6 1.618/1.462/1.318/1.188/1.076/1em (docs/obsidian-measurements/font-size-results-16.json) | not manually observed | Browser and real VS Code specs: body size equals the setting, heading ratios, line-number alignment | matches at the default |
+| Setting: markdownWorkshop.editor.lineHeight | Obsidian 1.14.4 default 1.5 (24px at 16px) | not manually observed | Browser and real VS Code specs: line height equals the setting times the size, line-number alignment | matches at the default |
+| Setting: markdownWorkshop.folding.heading | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.folding.indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.linkUpdates.mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.links.newLinkFormat | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.links.useWikilinks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.links.folderNote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.files.newNoteFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.files.attachmentFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.properties.display | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.onlineVideos.bilibiliPlayer | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.tags.viewSort | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.tags.viewNested | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.vault.rootMarkers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.vault.excludedFiles | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.preset | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Add File Property and Open as Text title actions | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native static context menu; contextual table/property menus | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim host-collision keys only while Vim is enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim :w, :q, :wq, :x, :u and :red | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Verify bindings left unbound | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | VS Code owns save, undo/redo, hot exit and settings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Note line height is Obsidian's 1.5 times the note's own font size; family, weight, spacing and ligatures follow VS Code's editor settings for Markdown | Obsidian 1.14.4: body 1.5 (24px at 16px, 36px at 24px), headings 1.2/1.2/1.3/1.4/1.5/1.5, code and footnotes 1.5, table cells 1.3 (`docs/obsidian-measurements/font-size-results-16.json`, `-24.json`) | Owner decision, 2026-10-10: `markdownWorkbench.editor.lineHeight` (default 1.5, a multiple) replaces following `editor.lineHeight` and VS Code's 1.35 rule; table cells keep the note's ratio, not Obsidian's 1.3 | Browser `font-size.spec.ts`, `stable-blocks.spec.ts`; real VS Code `font-size.spec.ts`, `font.spec.ts` | not observed |
+| Note line height is Obsidian's 1.5 times the note's own font size; family, weight, spacing and ligatures follow VS Code's editor settings for Markdown | Obsidian 1.14.4: body 1.5 (24px at 16px, 36px at 24px), headings 1.2/1.2/1.3/1.4/1.5/1.5, code and footnotes 1.5, table cells 1.3 (`docs/obsidian-measurements/font-size-results-16.json`, `-24.json`) | Owner decision, 2026-10-10: `markdownWorkshop.editor.lineHeight` (default 1.5, a multiple) replaces following `editor.lineHeight` and VS Code's 1.35 rule; table cells keep the note's ratio, not Obsidian's 1.3 | Browser `font-size.spec.ts`, `stable-blocks.spec.ts`; real VS Code `font-size.spec.ts`, `font.spec.ts` | not observed |
 | Theme follows VS Code colors | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Rename link updates prompt by default | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native outline/backlinks/tags views | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Webview CSP (DESIGN §19): `default-src 'none'`, nonce scripts, `connect-src ${cspSource} blob:`, no remote content in untrusted workspaces | not applicable | not manually observed | Manual scenario pending; `test/unit/editor/webview-html.test.ts` | not observed |
 | External application schemes prompt; own application scheme opens directly | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkbench.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.copyLinkForAgent.target | no Obsidian equivalent | forces the agent Copy Link for Agent opens | Unit tests in test/unit/copy-link-for-agent/chat.test.ts | not observed |
-| Setting: markdownWorkbench.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
-| Command: markdownWorkbench.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
-| Command: markdownWorkbench.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |
-| Command: markdownWorkbench.assets.import | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.bridge.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.bridge.envelope | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.marp.preview | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.marp.export | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.marp.toggle | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.marp.moveOutside | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.marp.keepInWorkbench | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.scratch.new | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.scratch.promote | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.wiki.copyForAgent | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.wiki.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.wiki.showLayout | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.wiki.refresh | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.assets.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.bridge.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.marp.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.scratch.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.wiki.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.outline.toggle | not observed | not manually observed | Unit command routing and shortcut guard tests; relocated-view manual scenario pending | not observed |
-| Command: markdownWorkbench.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
-| Setting: markdownWorkbench.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkbench.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.graph.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.okfCore.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.sourcesProperty.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.graph.maxNodes | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.graph.maxEdges | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.graph.defaultMode | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.graph.localDepth | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkbench.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.copyLinkForAgent.target | no Obsidian equivalent | forces the agent Copy Link for Agent opens | Unit tests in test/unit/copy-link-for-agent/chat.test.ts | not observed |
+| Setting: markdownWorkshop.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
+| Command: markdownWorkshop.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
+| Command: markdownWorkshop.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |
+| Command: markdownWorkshop.assets.import | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.bridge.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.bridge.envelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.marp.preview | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.marp.export | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.marp.toggle | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.marp.moveOutside | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.marp.keepInWorkbench | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.scratch.new | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.scratch.promote | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.wiki.copyForAgent | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.wiki.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.wiki.showLayout | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.wiki.refresh | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.assets.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.bridge.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.marp.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.scratch.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.wiki.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.outline.toggle | not observed | not manually observed | Unit command routing and shortcut guard tests; relocated-view manual scenario pending | not observed |
+| Command: markdownWorkshop.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
+| Setting: markdownWorkshop.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.graph.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.okfCore.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.sourcesProperty.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.graph.maxNodes | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.graph.maxEdges | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.graph.defaultMode | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.graph.localDepth | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: markdownWorkshop.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |

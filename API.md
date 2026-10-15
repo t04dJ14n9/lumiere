@@ -28,16 +28,16 @@ Depend on the extension, then activate it:
 
 ```jsonc
 // package.json
-"extensionDependencies": ["t04dj14n9.vscode-markdown-workbench"],
-"activationEvents": ["onLanguage:markdown", "onCustomEditor:markdownWorkbench.editor"]
+"extensionDependencies": ["t04dj14n9.vscode-markdown-workshop"],
+"activationEvents": ["onLanguage:markdown", "onCustomEditor:markdownWorkshop.editor"]
 ```
 
 ```ts
 import * as vscode from "vscode";
-import type { MarkdownWorkbenchApi } from "./markdown-workbench/types";
+import type { MarkdownWorkshopApi } from "./markdown-workshop/types";
 
 const api = await vscode.extensions
-  .getExtension<MarkdownWorkbenchApi>("t04dj14n9.vscode-markdown-workbench")
+  .getExtension<MarkdownWorkshopApi>("t04dj14n9.vscode-markdown-workshop")
   ?.activate();
 if (api?.apiVersion !== 1) {
   return; // Not installed, or an API version this code does not know.
@@ -92,7 +92,7 @@ layout acknowledgment failures reject instead of claiming a completed reveal.
 ## Vault
 
 The vault is the folder holding a `.obsidian` marker (setting
-`markdownWorkbench.vault.rootMarkers`), or the workspace folder.
+`markdownWorkshop.vault.rootMarkers`), or the workspace folder.
 
 | Member | Behaviour |
 | --- | --- |
@@ -107,7 +107,7 @@ The vault is the folder holding a `.obsidian` marker (setting
 | --- | --- |
 | `getPluginCatalog()` | Every built-in plugin (`core` or `feature`) and every registered external plugin, with title, description, default and surfaces. |
 | `getPlugins(editorId)` | Each plugin's state in one editor: `active`, `loading`, `pending` (with `waitingFor`), `failed` (with `error`) or `disabled`. This is what **Markdown Workshop: Show Plugin Status** lists. |
-| `setPluginEnabled(id, enabled, scope)` | Writes `markdownWorkbench.plugins.<id>.enabled` (features) or an entry of `markdownWorkbench.plugins.external` (external plugins) at an explicit scope: `{ target: "global" }`, `{ target: "workspace" }` or `{ target: "workspaceFolder", resource }`. Resolves once open editors have applied it, with each editor's new states. Core plugins cannot be turned off (`InvalidArgument`). |
+| `setPluginEnabled(id, enabled, scope)` | Writes `markdownWorkshop.plugins.<id>.enabled` (features) or an entry of `markdownWorkshop.plugins.external` (external plugins) at an explicit scope: `{ target: "global" }`, `{ target: "workspace" }` or `{ target: "workspaceFolder", resource }`. Resolves once open editors have applied it, with each editor's new states. Core plugins cannot be turned off (`InvalidArgument`). |
 | `resetPluginOverride(id, scope)` | Removes that scope's value, so the next scope or the default applies. |
 | `openPluginSettings(resource?)` | Opens Settings at the plugin switches, as **Markdown Workshop: Manage Plugins** does. |
 | `plugin(definition)` | Runs an external plugin; see below. |
@@ -155,7 +155,7 @@ Rules:
   (`DuplicateContribution`). The owner must be installed (`InvalidArgument`).
   Namespaces prevent accidents; they do not authenticate extensions sharing a
   host.
-- **Enablement**: `markdownWorkbench.plugins.external` (`{ "acme.badges":
+- **Enablement**: `markdownWorkshop.plugins.external` (`{ "acme.badges":
   false }`) at user, workspace or folder scope, else `defaultEnabled`. A
   plugin enabled for some open notes but not others runs, and receives
   events and requests only for the notes where it is enabled.
@@ -285,8 +285,8 @@ blocks and registers a command. Build it with `pnpm sample`.
   "name": "tickets",
   "publisher": "mwsample",
   "main": "./dist/extension.js",
-  "extensionDependencies": ["t04dj14n9.vscode-markdown-workbench"],
-  "activationEvents": ["onLanguage:markdown", "onCustomEditor:markdownWorkbench.editor"],
+  "extensionDependencies": ["t04dj14n9.vscode-markdown-workshop"],
+  "activationEvents": ["onLanguage:markdown", "onCustomEditor:markdownWorkshop.editor"],
   "contributes": {
     "commands": [{ "command": "mwsample.tickets.refresh", "title": "Refresh TODO Badges", "category": "Sample Tickets" }],
     "configuration": {
@@ -302,12 +302,12 @@ blocks and registers a command. Build it with `pnpm sample`.
 
 ```ts
 import * as vscode from "vscode";
-import type { MarkdownWorkbenchApi } from "./markdown-workbench/types";
+import type { MarkdownWorkshopApi } from "./markdown-workshop/types";
 import { ticketsPlugin } from "./plugin";
 
 export async function activate(context: vscode.ExtensionContext) {
   const api = await vscode.extensions
-    .getExtension<MarkdownWorkbenchApi>("t04dj14n9.vscode-markdown-workbench")
+    .getExtension<MarkdownWorkshopApi>("t04dj14n9.vscode-markdown-workshop")
     ?.activate();
   if (api?.apiVersion !== 1) {
     void vscode.window.showWarningMessage(
@@ -330,7 +330,7 @@ import type {
   ExternalPlugin,
   ProcessorResult,
   SourceMarker,
-} from "./markdown-workbench/types";
+} from "./markdown-workshop/types";
 
 export type VSCode = Pick<typeof vscode, "workspace" | "window" | "env" | "Uri">;
 
@@ -427,11 +427,11 @@ export function ticketsPlugin(code: VSCode): ExternalPlugin {
 ```
 
 In the fixture the type imports point at `src/host/api/types` instead of a
-copied `markdown-workbench/types`.
+copied `markdown-workshop/types`.
 
 ## Bridge envelope
 
-`markdownWorkbench.bridge.envelope` returns the versioned selection envelope
+`markdownWorkshop.bridge.envelope` returns the versioned selection envelope
 described in [docs/bridge-envelope.md](docs/bridge-envelope.md). It is a VS
 Code command, not a method on API v1. Pass an optional wiki context
 (`preset`, `bundle`, `collection`, `type`); a malformed argument is ignored.

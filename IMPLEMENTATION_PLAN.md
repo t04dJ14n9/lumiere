@@ -1,4 +1,4 @@
-# Markdown Workbench — implementation plan
+# Markdown Workshop — implementation plan
 
 Companion to [DESIGN.md](DESIGN.md). It lists the phases in order, what each
 must deliver, how to check it, and where every source file goes. Section
