@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { panelIsActive } from "../../../src/host/active-panel";
 
-const expected = { viewType: "markdownWorkbench.editor", uri: "file:///a.md" };
+const expected = { viewType: "markdownWorkshop.editor", uri: "file:///a.md" };
 const tab = (over: Partial<Parameters<typeof panelIsActive>[1]> = {}) => ({
   groupColumn: 1,
   viewType: expected.viewType,

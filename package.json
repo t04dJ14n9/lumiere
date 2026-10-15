@@ -573,13 +573,13 @@
         "command": "markdownWorkshop.cursorBridge.chat",
         "key": "ctrl+l",
         "mac": "cmd+l",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
       },
       {
         "command": "markdownWorkshop.cursorBridge.edit",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
       },
       {
         "command": "markdownWorkshop.toggleBold",
@@ -597,7 +597,7 @@
         "command": "markdownWorkshop.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)"
       },
       {
         "command": "markdownWorkshop.gitGutter.nextChange",
@@ -789,11 +789,11 @@
         },
         {
           "command": "markdownWorkshop.cursorBridge.chat",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
         },
         {
           "command": "markdownWorkshop.cursorBridge.edit",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection"
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
         },
         {
           "command": "markdownWorkshop.jumpBack",
@@ -860,7 +860,7 @@
         },
         {
           "command": "markdownWorkshop.insertLink",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)"
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)"
         },
         {
           "command": "markdownWorkshop.insertHorizontalRule",
@@ -1150,12 +1150,12 @@
       "webview/context": [
         {
           "command": "markdownWorkshop.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.agentBridge && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.agentBridge && webviewSection == 'markdownContent' && markdownWorkshop.hasSelection",
           "group": "agent"
         },
         {
           "command": "markdownWorkshop.selectionActions",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && webviewSection == 'markdownContent' && markdownWorkbench.hasSelection && markdownWorkbench.hasSelectionActions",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && webviewSection == 'markdownContent' && markdownWorkshop.hasSelection && markdownWorkshop.hasSelectionActions",
           "group": "agent"
         },
         {
@@ -1209,17 +1209,17 @@
       "editor/title": [
         {
           "command": "markdownWorkshop.jumpBack",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkbench.canJumpBack",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkshop.canJumpBack",
           "group": "navigation@1"
         },
         {
           "command": "markdownWorkshop.jumpForward",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkbench.canJumpForward",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkshop.canJumpForward",
           "group": "navigation@2"
         },
         {
           "command": "markdownWorkshop.titleActions",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkbench.hasTitleActions",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.editor && markdownWorkshop.hasTitleActions",
           "group": "navigation"
         },
         {

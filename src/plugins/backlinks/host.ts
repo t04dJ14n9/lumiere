@@ -16,7 +16,7 @@ export const backlinksHost: Plugin = {
     }
     const source = new BacklinksTree(ctx.vaults);
     const tree = views.tree(VIEW_ID, source);
-    const status = views.status("markdownWorkbench.backlinks", 100);
+    const status = views.status("markdownWorkshop.backlinks", 100);
     ctx.effect(() => () => tree.dispose());
     ctx.effect(() => () => status.dispose());
 
@@ -32,7 +32,7 @@ export const backlinksHost: Plugin = {
         status.show(
           `${count} backlink${count === 1 ? "" : "s"}`,
           "Notes that link to this note",
-          "markdownWorkbench.backlinks.focus",
+          "markdownWorkshop.backlinks.focus",
         );
       } else {
         status.hide();

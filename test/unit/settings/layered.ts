@@ -24,7 +24,7 @@ export const contributed: readonly ContributedSetting[] = Object.entries(
 ).map(([key, schema]) => ({ key, schema }));
 
 export const contributedSetting = (key: string) =>
-  contributed.find((setting) => setting.key === `markdownWorkbench.${key}`)!;
+  contributed.find((setting) => setting.key === `markdownWorkshop.${key}`)!;
 
 /**
  * Layered settings, the workspace over the user's as in VS Code. `update` is
@@ -35,7 +35,7 @@ export function layered(
   list: readonly ContributedSetting[] = contributed,
   defaults: Record<string, unknown> = Object.fromEntries(
     list.map((setting) => [
-      setting.key.replace("markdownWorkbench.", ""),
+      setting.key.replace("markdownWorkshop.", ""),
       setting.schema?.default,
     ]),
   ),

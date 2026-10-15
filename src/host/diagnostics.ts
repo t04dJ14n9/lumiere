@@ -33,7 +33,7 @@ function collection(
     return existing;
   }
   const created = vscode.languages.createDiagnosticCollection(
-    `markdownWorkbench.${owner}`,
+    `markdownWorkshop.${owner}`,
   );
   collections.set(owner, created);
   return created;

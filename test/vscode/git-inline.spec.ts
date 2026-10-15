@@ -66,13 +66,13 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
     await expect(frame.locator(".mw-gi-ghost.is-removed")).toHaveCount(0);
 
     // Without the bars it waits; with them again it returns.
-    setUserSettings({ "markdownWorkbench.plugins.gitGutter.enabled": false });
+    setUserSettings({ "markdownWorkshop.plugins.gitGutter.enabled": false });
     await expect(frame.locator(".mw-gi-ghost")).toHaveCount(0, {
       timeout: 15000,
     });
     await expect(frame.locator("del.mw-gi-removed")).toHaveCount(0);
     setUserSettings({
-      "markdownWorkbench.plugins.gitGutter.enabled": undefined,
+      "markdownWorkshop.plugins.gitGutter.enabled": undefined,
     });
     await expect(frame.locator(".mw-gi-ghost")).toHaveCount(3, {
       timeout: 15000,
@@ -91,8 +91,8 @@ test("inline git changes: toggle, track changes, restore, waits for the bars", a
   } finally {
     setUserSettings({
       "workbench.colorTheme": undefined,
-      "markdownWorkbench.plugins.gitGutter.enabled": undefined,
-      "markdownWorkbench.plugins.gitInline.enabled": undefined,
+      "markdownWorkshop.plugins.gitGutter.enabled": undefined,
+      "markdownWorkshop.plugins.gitInline.enabled": undefined,
     });
     await closeBrowser(browser);
   }

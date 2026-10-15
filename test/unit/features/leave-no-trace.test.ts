@@ -81,7 +81,7 @@ for (const definition of definitions) {
     assert.deepEqual(root.runtime.ledger.snapshot(), baseline);
     assert.deepEqual(errors, [], "teardown logged errors");
     for (const [key, value] of contextKeys) {
-      if (key.startsWith("markdownWorkbench.has")) {
+      if (key.startsWith("markdownWorkshop.has")) {
         assert.equal(value, false, `${key} reset on stop`);
       }
     }

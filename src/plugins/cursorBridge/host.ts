@@ -10,7 +10,7 @@ import {
 import { contributionId } from "../../shared/setting-schema";
 import { captureActiveSelection } from "./selection";
 
-const IS_CURSOR_HOST = "markdownWorkbench.isCursorHost";
+const IS_CURSOR_HOST = contributionId("isCursorHost");
 
 export interface CursorBridgeConfig {
   readonly appName: string;

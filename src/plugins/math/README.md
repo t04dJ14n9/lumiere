@@ -23,7 +23,7 @@ renders. Editing commands wrap or unwrap the selection through CodeMirror.
 
 Injects `editor`, `commands`, `livePreview` and `render`; provides no services.
 Listens to `render/postProcess`; emits no events. Enabled by
-`markdownWorkbench.plugins.math.enabled` (default true). Commands are Toggle
+`markdownWorkshop.plugins.math.enabled` (default true). Commands are Toggle
 Inline Math and Insert Math Block; neither has a default keybinding.
 
 ## Limits and differences from Obsidian

@@ -12,6 +12,7 @@ import type { EditorPanel, Editors } from "./api";
 import { createPanel } from "./panel";
 import { protocol } from "./protocol";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
+import { contributionId } from "../../shared/setting-schema";
 interface EditorHostConfig {
   features?: readonly Manifest[];
   configure: (context: Context, panel: PanelShell) => void;
@@ -93,7 +94,7 @@ function registerActiveContexts(
     for (const manifest of features) {
       void ctx.workshop.execute(
         "setContext",
-        `markdownWorkbench.plugin.${manifest.id}`,
+        contributionId(`plugin.${manifest.id}`),
         Boolean(
           panel &&
           settings?.preset === "obsidian" &&
@@ -105,7 +106,7 @@ function registerActiveContexts(
     for (const id of ["editor", "commands", "livePreview"]) {
       void ctx.workshop.execute(
         "setContext",
-        `markdownWorkbench.plugin.${id}`,
+        contributionId(`plugin.${id}`),
         Boolean(
           active() && (id !== "livePreview" || settings?.preset === "obsidian"),
         ),
@@ -163,7 +164,7 @@ function registerSelectionContext(
   const refresh = () => {
     void workshop.execute(
       "setContext",
-      "markdownWorkbench.hasSelection",
+      contributionId("hasSelection"),
       selections.get(active()?.id ?? "") ?? false,
     );
   };
@@ -177,11 +178,7 @@ function registerSelectionContext(
   });
   ctx.on("editor/activeChanged", refresh);
   ctx.effect(() => async () => {
-    await workshop.execute(
-      "setContext",
-      "markdownWorkbench.hasSelection",
-      false,
-    );
+    await workshop.execute("setContext", contributionId("hasSelection"), false);
   });
   refresh();
 }

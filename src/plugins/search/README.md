@@ -34,7 +34,7 @@ live subscriptions. Result links use encoded relative paths and normal navigatio
 Host injects `rpc`, `vault`, `vaults` and `workbench`; webview injects `editor`,
 `rpc`, `render` and `livePreview`. Provides no service. Listens to `render/fence`
 and the index's resolution subscription. The `search/changed` RPC notification
-refreshes active queries. `markdownWorkbench.plugins.search.enabled` defaults to
+refreshes active queries. `markdownWorkshop.plugins.search.enabled` defaults to
 true; no assigned keybindings or palette command.
 
 ## Limits and differences from Obsidian

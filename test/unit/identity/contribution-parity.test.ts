@@ -72,10 +72,8 @@ test("every contributed command id equals contributionId(local) and uses Worksho
 });
 
 test("owned when/enablement clauses do not use old prefix", () => {
-  // Manifest `when` fragments still name old context keys until Task 4.
-  // Generator-owned ids (commands, views, viewTypes, configuration) must not.
-  const owned = JSON.stringify(omitWhen(contributes));
-  assert.equal(owned.includes("markdownWorkbench."), false);
+  const blob = JSON.stringify(contributes);
+  assert.equal(blob.includes("markdownWorkbench."), false);
 });
 
 test("runtime command registration matches contributes.commands", async () => {
@@ -150,24 +148,6 @@ test("editor host passes MARKDOWN_EDITOR.viewType to registerEditor", async () =
   assert.deepEqual(viewTypes, [MARKDOWN_EDITOR.viewType]);
   await root.dispose();
 });
-
-/** Drops contributed `when` text. Those fragments are Task 4, not registration ids. */
-function omitWhen(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => omitWhen(item));
-  }
-  if (!value || typeof value !== "object") {
-    return value;
-  }
-  const copy: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (key === "when") {
-      continue;
-    }
-    copy[key] = omitWhen(item);
-  }
-  return copy;
-}
 
 async function loadManifests(): Promise<Manifest[]> {
   const manifests: Manifest[] = [];

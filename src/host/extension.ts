@@ -35,7 +35,7 @@ export async function activate(
     registerReclaim(),
   );
   const logger = outputLogger(channel, () =>
-    workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
+    workspace.getConfiguration("markdownWorkshop").get("debug.logging", false),
   );
   root = await bootstrap(
     workshop,

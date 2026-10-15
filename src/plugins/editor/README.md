@@ -26,10 +26,10 @@ shows "N / M" for the selected match (counting stops at 1000), Enter and
 Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,
 Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
 Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
-The note has its own size, `markdownWorkbench.editor.fontSize` (8 to 48, default
+The note has its own size, `markdownWorkshop.editor.fontSize` (8 to 48, default
 16: Obsidian 1.14.4's body size, measured in
 `docs/obsidian-measurements/font-size.mjs`), and its own line height,
-`markdownWorkbench.editor.lineHeight` (a multiple of the size, 1 to 3, default
+`markdownWorkshop.editor.lineHeight` (a multiple of the size, 1 to 3, default
 1.5: Obsidian's 24px at 16px). They replace `editor.fontSize` and
 `editor.lineHeight` for notes, which have no effect on them. The line height is
 a unitless ratio, so every line scales with the size; headings keep Obsidian's
@@ -109,12 +109,12 @@ Host injects `workbench` and `documents`, provides `editors`, and emits/listens 
 `document/syncStatus`, calls `editor/projectSelection`, and emits
 `editor/clearProjection` and `editor/modeRestored`. Selection changes notify the
 host through the editor channel. Core settings are `editor.useTabs` (true) and
-`editor.tabSize` (4, integer 1–16), under `markdownWorkbench`.
+`editor.tabSize` (4, integer 1–16), under `markdownWorkshop`.
 
 Each panel kernel logs through the window's logger, tagged with the panel ID,
 to the **Markdown Workshop** output channel. The webview forwards its logs over
 the editor channel (`log`) at warn and above, and at debug too while
-`markdownWorkbench.debug.logging` (default false) is on; the host re-checks that
+`markdownWorkshop.debug.logging` (default false) is on; the host re-checks that
 setting before writing a forwarded debug line.
 
 **Use Markdown Workshop for Markdown in This Workspace** writes `*.md` and

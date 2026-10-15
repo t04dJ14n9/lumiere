@@ -123,7 +123,7 @@ export interface ExternalPlugin {
   readonly ownerExtensionId: string;
   readonly title: string;
   readonly description: string;
-  /** Overridden by `markdownWorkbench.plugins.external`. */
+  /** Overridden by `markdownWorkshop.plugins.external`. */
   readonly defaultEnabled: boolean;
   readonly inject?: {
     readonly required?: readonly (keyof PublicServices)[];

@@ -18,7 +18,7 @@ using VS Code colors. The decorations are an owned editor registration.
 ## Services, events and settings
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
-`markdownWorkbench.plugins.indentGuides.enabled` defaults to true. No commands
+`markdownWorkshop.plugins.indentGuides.enabled` defaults to true. No commands
 or keybindings; tab size belongs to Editor.
 
 ## Limits and differences from Obsidian

@@ -22,7 +22,7 @@ differ only in case are one entry, spelled as first seen. Counts are notes: a
 parent counts a note once however many of its descendants the note uses.
 Excluded files are left out, as in search. The view rebuilds 300 ms after the
 vault re-resolves, the active note changes or settings change, and only while
-it is visible. Both halves follow `markdownWorkbench.plugins.tags.enabled`.
+it is visible. Both halves follow `markdownWorkshop.plugins.tags.enabled`.
 
 ## Files
 
@@ -46,10 +46,10 @@ Webview injects `editor`, `livePreview` and `rpc`; the panel host injects `rpc`,
 `vault` and `workbench`; the view injects `workbench` and `vaults`. Provides no
 services. The webview listens to `render/postProcess`, and to `suggest/trigger`
 for its own completion syntax; the view listens to `vault/resolved`. Emits no
-kernel events. Settings: `markdownWorkbench.plugins.tags.enabled` (true),
-`markdownWorkbench.tags.viewSort` (`name` or `frequency`, default `name`) and
-`markdownWorkbench.tags.viewNested` (true). No palette command or keybinding;
-the view registers the internal `markdownWorkbench.tags.search` command for
+kernel events. Settings: `markdownWorkshop.plugins.tags.enabled` (true),
+`markdownWorkshop.tags.viewSort` (`name` or `frequency`, default `name`) and
+`markdownWorkshop.tags.viewNested` (true). No palette command or keybinding;
+the view registers the internal `markdownWorkshop.tags.search` command for
 its clicks.
 
 ## Limits and differences from Obsidian

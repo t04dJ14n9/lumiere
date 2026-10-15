@@ -51,17 +51,17 @@ panel; showing restores and focuses it in its current location.
   `editor/activeChanged`, `editor/selectionChanged` and `document/changed`,
   plus native configuration and tree visibility changes. Emits no events and
   provides no services.
-- Maintains `markdownWorkbench.plugin.outline` while the window plugin is
+- Maintains `markdownWorkshop.plugin.outline` while the window plugin is
   running, so editor-scoped shortcuts (Go to Heading, Ctrl+Alt+O) reflect its
   lifetime. The Toggle Note Outline palette entry uses workbench/config gating.
-- Settings: `markdownWorkbench.plugins.outline.enabled` and
-  `markdownWorkbench.outline.followCursor` (default `true`, resource-scoped).
-- Commands: `markdownWorkbench.outline.expandAll`,
-  `markdownWorkbench.outline.enableFollowCursor`,
-  `markdownWorkbench.outline.disableFollowCursor` and
-  `markdownWorkbench.outline.toggle` and `markdownWorkbench.outline.goToHeading`;
+- Settings: `markdownWorkshop.plugins.outline.enabled` and
+  `markdownWorkshop.outline.followCursor` (default `true`, resource-scoped).
+- Commands: `markdownWorkshop.outline.expandAll`,
+  `markdownWorkshop.outline.enableFollowCursor`,
+  `markdownWorkshop.outline.disableFollowCursor` and
+  `markdownWorkshop.outline.toggle` and `markdownWorkshop.outline.goToHeading`;
   internal navigation uses
-  `markdownWorkbench.outline.open`.
+  `markdownWorkshop.outline.open`.
 
 ## Limits and differences from Obsidian
 

@@ -15,7 +15,7 @@ export const wordCountHost: Plugin = {
     if (!views) {
       return;
     }
-    const status = views.status("markdownWorkbench.wordCount", 99);
+    const status = views.status("markdownWorkshop.wordCount", 99);
     ctx.effect(() => () => status.dispose());
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = async () => {

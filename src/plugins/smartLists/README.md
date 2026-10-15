@@ -22,7 +22,7 @@ the keymap without changing the document.
 ## Services, events and settings
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
-`markdownWorkbench.plugins.smartLists.enabled` defaults to true. Enter/Backspace
+`markdownWorkshop.plugins.smartLists.enabled` defaults to true. Enter/Backspace
 are the only bindings; no palette commands.
 
 ## Limits and differences from Obsidian

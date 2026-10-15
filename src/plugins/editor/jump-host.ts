@@ -144,12 +144,12 @@ class PaneHistories {
     const history = this.panes.get(this.editors.active()?.id ?? "")?.history;
     void this.workshop.execute(
       "setContext",
-      "markdownWorkbench.canJumpBack",
+      contributionId("canJumpBack"),
       history?.canBack ?? false,
     );
     void this.workshop.execute(
       "setContext",
-      "markdownWorkbench.canJumpForward",
+      contributionId("canJumpForward"),
       history?.canForward ?? false,
     );
   }

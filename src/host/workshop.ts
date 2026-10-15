@@ -188,7 +188,7 @@ function agentOperations(): Pick<
     async agentEnvironment() {
       return {
         target: vscode.workspace
-          .getConfiguration("markdownWorkbench")
+          .getConfiguration("markdownWorkshop")
           .get<CopyLinkTarget>("copyLinkForAgent.target", "auto"),
         agentExtensions: new Set(
           AGENT_EXTENSIONS.filter((id) => vscode.extensions.getExtension(id)),

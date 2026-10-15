@@ -68,14 +68,14 @@ test("plugin status lists problems first, says what a plugin waits for, and link
   assert.deepEqual(
     items.map((item) => item.value),
     [
-      { id: "acme.badges", setting: "markdownWorkbench.plugins.external" },
-      { id: "tables", setting: "markdownWorkbench.plugins.tables.enabled" },
+      { id: "acme.badges", setting: "markdownWorkshop.plugins.external" },
+      { id: "tables", setting: "markdownWorkshop.plugins.tables.enabled" },
       { id: "editor" },
       {
         id: "backlinks",
-        setting: "markdownWorkbench.plugins.backlinks.enabled",
+        setting: "markdownWorkshop.plugins.backlinks.enabled",
       },
-      { id: "vim", setting: "markdownWorkbench.plugins.vim.enabled" },
+      { id: "vim", setting: "markdownWorkshop.plugins.vim.enabled" },
     ],
   );
 });
@@ -135,7 +135,7 @@ test("Show Plugin Status picks from the active editor's states and opens the cho
   );
   assert.deepEqual(
     opened.map(([resource, setting]) => [String(resource), setting]),
-    [[f.panel.document.uri, "markdownWorkbench.plugins.tags.enabled"]],
+    [[f.panel.document.uri, "markdownWorkshop.plugins.tags.enabled"]],
   );
   await f.dispose();
 });

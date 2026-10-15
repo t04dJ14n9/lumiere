@@ -24,7 +24,7 @@ test("Open Settings filters the Settings UI to this extension", async () => {
   const store = layered();
   const { command, root } = await run(store);
   await command("openSettings")();
-  assert.deepEqual(store.opened, ["@ext:t04dj14n9.vscode-markdown-workbench"]);
+  assert.deepEqual(store.opened, ["@ext:t04dj14n9.vscode-markdown-workshop"]);
   assert.equal(EXTENSION_FILTER, store.opened[0]);
   await root.dispose();
 });

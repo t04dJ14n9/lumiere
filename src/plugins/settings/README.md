@@ -4,22 +4,22 @@ Quick access to the extension's settings from the Command Palette, for people
 who do not want to dig through the Settings UI.
 
 - **Markdown Workshop: Open Settings** opens the Settings UI filtered to this
-  extension (`@ext:t04dj14n9.vscode-markdown-workbench`).
+  extension (`@ext:t04dj14n9.vscode-markdown-workshop`).
 - **Change Setting…** lists every setting this extension contributes, read
   from the installed package.json (so it cannot drift), grouped by plugin with
   the current value and description, filtered as you type. Picking one edits
   it by its type: a boolean flips, an enum opens a pick list of its values, a
   number or integer opens an input box checked against the schema's minimum,
   maximum and integer type, a string opens an input box, and an array or
-  object opens the Settings UI on that key (`@id:markdownWorkbench.<key>`).
+  object opens the Settings UI on that key (`@id:markdownWorkshop.<key>`).
   Run with a key as its argument it skips the list.
-- **Set Note Font Size** asks for `markdownWorkbench.editor.fontSize` (8 to
+- **Set Note Font Size** asks for `markdownWorkshop.editor.fontSize` (8 to
   48). Run with a number argument it sets that size without asking.
-- **Toggle Line Numbers** flips `markdownWorkbench.plugins.lineNumbers.enabled`.
-- **Toggle Readable Line Width** flips `markdownWorkbench.editor.readableLineLength`.
-- **Toggle Mermaid Diagrams** flips `markdownWorkbench.plugins.diagrams.enabled`.
-- **Toggle Inline Title** flips `markdownWorkbench.plugins.inlineTitle.enabled`.
-- **Toggle Vim Mode** flips `markdownWorkbench.plugins.vim.enabled` (Vim also
+- **Toggle Line Numbers** flips `markdownWorkshop.plugins.lineNumbers.enabled`.
+- **Toggle Readable Line Width** flips `markdownWorkshop.editor.readableLineLength`.
+- **Toggle Mermaid Diagrams** flips `markdownWorkshop.plugins.diagrams.enabled`.
+- **Toggle Inline Title** flips `markdownWorkshop.plugins.inlineTitle.enabled`.
+- **Toggle Vim Mode** flips `markdownWorkshop.plugins.vim.enabled` (Vim also
   decides the caret shape; see the Vim plugin).
 
 ## How it works
@@ -39,7 +39,7 @@ is what the next command run reads.
 Nothing they are given. The list comes from the installed package.json, but a
 write passes `checkWrite` (`src/shared/setting-schema.ts`) twice, once in the
 command and once where the setting is written (`src/host/settings-access.ts`):
-the key must be one of this extension's own contributed `markdownWorkbench.*`
+the key must be one of this extension's own contributed `markdownWorkshop.*`
 settings (a key from another extension, a VS Code key or an unknown key is
 refused, whoever passes it, including a key argument from a keybinding or
 another extension), and the value must pass that setting's schema: type,

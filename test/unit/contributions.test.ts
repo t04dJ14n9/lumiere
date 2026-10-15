@@ -40,7 +40,7 @@ test("Note Outline title actions expose one checked or unchecked Follow Cursor i
       ?.title,
     "✓ Follow Cursor",
   );
-  assert.deepEqual(properties["markdownWorkbench.outline.followCursor"], {
+  assert.deepEqual(properties["markdownWorkshop.outline.followCursor"], {
     type: "boolean",
     default: true,
     scope: "resource",
@@ -95,23 +95,23 @@ test("manifest surfaces match the host and webview registries", async () => {
 test("macOS Vim consumes Control keys while preserving Command editor shortcuts", async () => {
   const { keybindings } = await contributions();
   const vim = keybindings.filter(
-    (binding) => binding.command === "markdownWorkbench.consumeVimHostShortcut",
+    (binding) => binding.command === "markdownWorkshop.consumeVimHostShortcut",
   );
   assert.ok(vim.some((binding) => binding.mac === "ctrl+o"));
   assert.ok(vim.some((binding) => binding.mac === "ctrl+i"));
   for (const binding of vim) {
     assert.equal(binding.mac, binding.key);
-    assert.match(binding.when ?? "", /markdownWorkbench\.plugin\.vim/);
+    assert.match(binding.when ?? "", /markdownWorkshop\.plugin\.vim/);
     assert.match(
       binding.when ?? "",
-      /activeCustomEditorId == 'markdownWorkbench\.editor'/,
+      /activeCustomEditorId == 'markdownWorkshop\.editor'/,
     );
     assert.ok(!binding.mac?.includes("cmd"));
   }
   assert.ok(
     keybindings.some(
       (binding) =>
-        binding.command === "markdownWorkbench.toggleItalics" &&
+        binding.command === "markdownWorkshop.toggleItalics" &&
         binding.mac === "cmd+i",
     ),
   );
@@ -120,27 +120,27 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
 test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
   const { keybindings, commands, menus } = await contributions();
   const command = commands.find(
-    (entry) => entry.command === "markdownWorkbench.outline.toggle",
+    (entry) => entry.command === "markdownWorkshop.outline.toggle",
   );
   assert.equal(command?.title, "Toggle Note Outline");
   assert.equal(command?.category, "Markdown Workshop");
   const paletteWhen =
-    "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled";
+    "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled";
   assert.equal(
     menus.commandPalette.find(
-      (item) => item.command === "markdownWorkbench.outline.toggle",
+      (item) => item.command === "markdownWorkshop.outline.toggle",
     )?.when,
     paletteWhen,
   );
   const toggle = keybindings.find(
-    (binding) => binding.command === "markdownWorkbench.outline.toggle",
+    (binding) => binding.command === "markdownWorkshop.outline.toggle",
   );
   assert.ok(toggle);
   assert.equal(toggle.key, "ctrl+alt+o");
   assert.equal(toggle.mac, "ctrl+cmd+o");
   assert.equal(
     toggle.when,
-    "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline",
+    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline",
   );
 });
 
@@ -158,7 +158,7 @@ test("Go to Heading overrides the symbol shortcut only for enabled Workbench pan
   assert.equal(binding.mac, "cmd+shift+o");
   assert.equal(
     binding.when,
-    "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline",
+    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline",
   );
   assert.equal(
     menus.commandPalette.find((item) => item.command === GO_TO_HEADING_COMMAND)

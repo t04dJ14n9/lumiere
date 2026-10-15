@@ -14,7 +14,7 @@ publishing.
 - **Command:** **Sample Tickets: Refresh TODO Badges**.
 
 The plugin is listed by **Markdown Workshop: Show Plugin Status** and turned
-off with `"markdownWorkbench.plugins.external": { "mwsample.tickets": false }`.
+off with `"markdownWorkshop.plugins.external": { "mwsample.tickets": false }`.
 
 ## Install into an isolated profile
 

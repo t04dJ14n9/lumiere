@@ -270,7 +270,7 @@ test("Vim carets match the built-in editor's block, line and underline in the re
     "editor.lineHeight": 24,
     "editor.cursorBlinking": "solid",
     "editor.cursorSmoothCaretAnimation": "off",
-    "markdownWorkbench.plugins.vim.enabled": true,
+    "markdownWorkshop.plugins.vim.enabled": true,
   };
   const style = (cursorStyle: string) =>
     writeFileSync(

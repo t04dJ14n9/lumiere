@@ -26,7 +26,7 @@ their render passes. Preview task controls cannot edit the source.
 Injects `editor`, `resources`, `render` and `rpc`; provides no service. Opens
 through the validated `links.open` RPC. Document changes close the popup.
 No kernel events are registered. The feature switch is
-`markdownWorkbench.plugins.pagePreview.enabled`; there is no separate config.
+`markdownWorkshop.plugins.pagePreview.enabled`; there is no separate config.
 
 ## Limits and differences from Obsidian
 

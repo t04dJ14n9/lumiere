@@ -4,7 +4,7 @@ Builds a versioned JSON envelope for the current selection: who the source is, h
 
 ## How it works
 
-The active Markdown Workshop selection becomes an envelope (`producer: markdown`). A saved file gets a durable `@path#lines` locator and a whole-source hash. A dirty or untitled note keeps the selection hash and a temporary view id, and omits the whole-source hash. When this editor has no selection, the plugin calls `vscodeEmbedPdf.bridge.envelope` only if that command is registered. A missing PDF extension returns nothing and does not throw. Other extensions can call the hidden command `markdownWorkbench.bridge.envelope`. The contract is `docs/bridge-envelope.md`.
+The active Markdown Workshop selection becomes an envelope (`producer: markdown`). A saved file gets a durable `@path#lines` locator and a whole-source hash. A dirty or untitled note keeps the selection hash and a temporary view id, and omits the whole-source hash. When this editor has no selection, the plugin calls `vscodeEmbedPdf.bridge.envelope` only if that command is registered. A missing PDF extension returns nothing and does not throw. Other extensions can call the hidden command `markdownWorkshop.bridge.envelope`. The contract is `docs/bridge-envelope.md`.
 
 ## Files
 
@@ -18,7 +18,7 @@ The active Markdown Workshop selection becomes an envelope (`producer: markdown`
 - Requires `workbench`. Optionally uses `editors` and `selections`.
 - Provides `bridgeCapture`.
 - Does not listen to events.
-- Setting: `markdownWorkbench.plugins.bridge.enabled`.
+- Setting: `markdownWorkshop.plugins.bridge.enabled`.
 
 ## Limits and differences from Obsidian
 

@@ -55,7 +55,7 @@ export const marpHost: Plugin = {
     // Captured while live: teardown runs after this context is disposed.
     const workshop = ctx.workshop;
     ctx.effect(() => async () => {
-      await workshop.execute("setContext", "markdownWorkbench.isMarp", false);
+      await workshop.execute("setContext", contributionId("isMarp"), false);
     });
     publishMarp(ctx);
   },
@@ -93,7 +93,7 @@ function publishMarp(ctx: Context): void {
   const text = activeNote(ctx)?.text;
   const isMarp = typeof text === "string" && isMarpDocument(text);
   void ctx.workshop
-    .execute("setContext", "markdownWorkbench.isMarp", isMarp)
+    .execute("setContext", contributionId("isMarp"), isMarp)
     .catch(() => undefined);
 }
 

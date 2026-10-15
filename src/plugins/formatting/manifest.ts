@@ -63,7 +63,7 @@ export default defineManifest({
         key: "ctrl+k",
         mac: "cmd+k",
         // B3: restore Insert Link when cursorBridge is off or there is no selection.
-        when: "!(markdownWorkbench.isCursorHost && markdownWorkbench.hasSelection && markdownWorkbench.plugin.cursorBridge)",
+        when: "!(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)",
       },
       {
         id: "insertHorizontalRule",

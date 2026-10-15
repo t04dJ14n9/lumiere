@@ -83,8 +83,8 @@ The host injects `rpc`, `vault` and `workbench`; the webview injects `editor`,
 Widgets bind sheet content; heading interactions call `editor/focusTitle`.
 Edits emit `render/changed` and `editor/clearProjection`; RPC receives type
 preferences and shared disclosure; name suggestions use indexed vault metadata.
-Settings are `markdownWorkbench.properties.display`
-(`visible`, `hidden`, `source`) and `markdownWorkbench.plugins.properties.enabled`.
+Settings are `markdownWorkshop.properties.display`
+(`visible`, `hidden`, `source`) and `markdownWorkshop.plugins.properties.enabled`.
 
 ## Limits and differences from Obsidian
 

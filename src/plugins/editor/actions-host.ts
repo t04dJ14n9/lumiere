@@ -111,7 +111,9 @@ async function publishActions(
     (["selection", "title"] as const).map((scope) =>
       workshop.execute(
         "setContext",
-        `markdownWorkbench.has${scope === "title" ? "Title" : "Selection"}Actions`,
+        contributionId(
+          `has${scope === "title" ? "Title" : "Selection"}Actions`,
+        ),
         values.some((value) => value.scope === scope),
       ),
     ),

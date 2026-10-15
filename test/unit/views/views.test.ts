@@ -108,7 +108,7 @@ test("Backlinks and Outgoing Links are off until turned on", async () => {
   await wait();
   assert.equal(fake.trees.has(backlinksViewId), false);
   assert.equal(fake.trees.has(outgoingLinksViewId), false);
-  assert.equal(fake.statuses.has("markdownWorkbench.backlinks"), false);
+  assert.equal(fake.statuses.has("markdownWorkshop.backlinks"), false);
   await root.dispose();
 });
 
@@ -133,7 +133,7 @@ test("view plugins follow the active note and their setting, and clean up when t
   ]);
   await root.settled();
   await wait();
-  const status = fake.statuses.get("markdownWorkbench.backlinks")!;
+  const status = fake.statuses.get("markdownWorkshop.backlinks")!;
   const view = fake.trees.get(backlinksViewId)!;
   assert.equal(view.message, "Open a note to see its backlinks.");
   assert.equal(status.text, undefined);

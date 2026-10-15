@@ -8,7 +8,7 @@ by default and follows `editor.lineNumbers` for Markdown files.
 
 The plugin registers its own CodeMirror gutter through Editor. Numbers use the
 note's font family, size, weight and line height (see the editor
-plugin's font settings: `markdownWorkbench.editor.fontSize` and `lineHeight`), VS Code's `editorLineNumber.foreground`
+plugin's font settings: `markdownWorkshop.editor.fontSize` and `lineHeight`), VS Code's `editorLineNumber.foreground`
 colour (`activeForeground` on the caret line), right-aligned in a column at least
 five digits wide, like VS Code's `lineNumbersMinChars`. Each number is centred on
 its text line; heading lines get the heading's padding and line height. The
@@ -43,7 +43,7 @@ Catalog rank places line numbers before folding.
 ## Services, events and settings
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
-`markdownWorkbench.plugins.lineNumbers.enabled` defaults to true;
+`markdownWorkshop.plugins.lineNumbers.enabled` defaults to true;
 `editor.lineNumbers` (VS Code's setting) picks the style. No commands or
 keybindings.
 

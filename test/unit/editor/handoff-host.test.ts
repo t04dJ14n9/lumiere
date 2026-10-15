@@ -274,7 +274,7 @@ test("an input-less dirty Cursor tab awaits warming before the custom-editor han
   assert.equal(documents[0]?.isDirty, true);
   assert.ok(
     scopes.some(
-      (scope) => scope.section === "markdownWorkbench" && scope.uri === note,
+      (scope) => scope.section === "markdownWorkshop" && scope.uri === note,
     ),
   );
 
@@ -614,7 +614,7 @@ test("ambiguous basenames, known previews and diffs are not reclaimed", async (t
 for (const gate of ["reclaim disabled", "unassociated", "bypassed"] as const) {
   test(`an input-less Cursor tab stays in place when ${gate}`, async (t) => {
     if (gate === "reclaim disabled") {
-      settings.set(`markdownWorkbench.editor.reclaimTextEditor:${note}`, "off");
+      settings.set(`markdownWorkshop.editor.reclaimTextEditor:${note}`, "off");
     } else if (gate === "unassociated") {
       settings.set(`workbench.editorAssociations:${note}`, {
         "*.md": "default",
@@ -651,7 +651,7 @@ test("document-open warming reissues an already-open dirty note and deduplicates
 
 test("activation warms already-open Markdown notes with per-URI settings", async (t) => {
   const disabled = note.replace(".md", ".markdown");
-  settings.set(`markdownWorkbench.editor.warmTextDocument:${disabled}`, "off");
+  settings.set(`markdownWorkshop.editor.warmTextDocument:${disabled}`, "off");
   for (const uri of [note, disabled, "file:///vault/a.ts", "git:/vault/a.md"]) {
     documents.push({ uri: Uri.parse(uri), isDirty: true });
   }
@@ -672,7 +672,7 @@ test("watcher warming does not recursively warm the document-open event it creat
 for (const gate of ["off", "non-Cursor auto"] as const) {
   test(`proactive document-open warming respects ${gate}`, async (t) => {
     if (gate === "off") {
-      settings.set("markdownWorkbench.editor.warmTextDocument", "off");
+      settings.set("markdownWorkshop.editor.warmTextDocument", "off");
     } else {
       vscode.env.appName = "Visual Studio Code";
     }

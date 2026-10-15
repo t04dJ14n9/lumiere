@@ -27,7 +27,7 @@ restores valid saved ranges.
 
 Injects `editor` and `commands`; provides `fold`. No kernel events. Contributes
 `folded` view state. `plugins.folding.enabled`, `folding.heading` and
-`folding.indent` under `markdownWorkbench` default to true. Commands: Fold All,
+`folding.indent` under `markdownWorkshop` default to true. Commands: Fold All,
 Unfold All and Toggle Fold; no default keybindings.
 
 ## Limits and differences from Obsidian

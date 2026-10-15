@@ -41,8 +41,8 @@ part of the editor bundle.
 
 Injects `workbench`, `vaults` and `okf`. Provides nothing. Listens to
 `vault/changed` and `vault/resolved`. Commands are
-`markdownWorkbench.graph.open` and `markdownWorkbench.graph.chooseBundle`.
-Settings: `markdownWorkbench.graph.maxNodes` (2000), `maxEdges` (20000),
+`markdownWorkshop.graph.open` and `markdownWorkshop.graph.chooseBundle`.
+Settings: `markdownWorkshop.graph.maxNodes` (2000), `maxEdges` (20000),
 `defaultMode` (`global`), `localDepth` (2) and `colorBy` (`type`).
 
 ## Limits and differences from Obsidian

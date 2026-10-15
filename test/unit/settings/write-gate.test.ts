@@ -16,7 +16,7 @@ test("the gate refuses keys that are not this extension's own contributed settin
   for (const key of [
     "files.autoSave",
     "editor.fontSizee",
-    "markdownWorkbench.editor.fontSize",
+    "markdownWorkshop.editor.fontSize",
     "../editor.fontSize",
     "__proto__",
     "constructor",
@@ -106,12 +106,12 @@ test("commands never write a key or value outside the gate, whatever they are gi
     "files.autoSave",
     "chat.disableAIFeatures",
     "editor.fontSize",
-    "markdownWorkbench.nothing",
-    "markdownWorkbench.__proto__",
+    "markdownWorkshop.nothing",
+    "markdownWorkshop.__proto__",
     42,
     null,
     {},
-    ["markdownWorkbench.editor.fontSize"],
+    ["markdownWorkshop.editor.fontSize"],
   ];
   for (const argument of hostile) {
     await command("changeSetting")(argument);
@@ -127,7 +127,7 @@ test("commands never write a key or value outside the gate, whatever they are gi
   assert.deepEqual(before(), []);
   // Only a valid key and value get through.
   await command("setNoteFontSize")(24);
-  await command("changeSetting")("markdownWorkbench.plugins.vim.enabled");
+  await command("changeSetting")("markdownWorkshop.plugins.vim.enabled");
   assert.equal(store.user.get("editor.fontSize"), 24);
   await root.dispose();
 });
@@ -136,7 +136,7 @@ test("with no contributed settings (a missing or damaged package.json) commands 
   const store = layered([], {});
   const { command, errors, picks, root } = await run(store);
   await command("changeSetting")();
-  await command("changeSetting")("markdownWorkbench.editor.fontSize");
+  await command("changeSetting")("markdownWorkshop.editor.fontSize");
   await command("setNoteFontSize")(20);
   for (const toggle of toggles) {
     await command(toggle.command)();
@@ -149,14 +149,14 @@ test("with no contributed settings (a missing or damaged package.json) commands 
 
 test("a setting with a damaged schema is listed but never written by Change Setting", async () => {
   const damaged: ContributedSetting = {
-    key: "markdownWorkbench.broken.thing",
+    key: "markdownWorkshop.broken.thing",
     schema: { description: "no type" },
   };
   const store = layered([...contributed, damaged], {});
   const { command, errors, root } = await run(store);
-  await command("changeSetting")("markdownWorkbench.broken.thing");
+  await command("changeSetting")("markdownWorkshop.broken.thing");
   // Not editable by a command: it opens the Settings UI on that key instead.
-  assert.deepEqual(store.opened, ["@id:markdownWorkbench.broken.thing"]);
+  assert.deepEqual(store.opened, ["@id:markdownWorkshop.broken.thing"]);
   assert.deepEqual(errors, []);
   assert.equal(store.user.has("broken.thing"), false);
   await root.dispose();

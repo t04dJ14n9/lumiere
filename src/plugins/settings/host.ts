@@ -19,7 +19,7 @@ import {
 /**
  * **Markdown Workshop: Open Settings**, **Change Setting…** and the commands
  * for the common settings. Each one reads and writes the same
- * `markdownWorkbench.*` key as the Settings UI, in the workspace when the
+ * `markdownWorkshop.*` key as the Settings UI, in the workspace when the
  * workspace sets it and in the user settings otherwise. They hold no state:
  * every run reads the setting as it is now, and the editors follow the
  * configuration change as they do for an edit in the Settings UI or

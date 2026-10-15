@@ -31,7 +31,7 @@ disposal cancel pending work.
 
 Provides `suggest.register`; webview injects `editor` and `rpc`, host injects
 `rpc`, `vault` and `workbench`. Emits the `suggest/trigger` bail event; Links and
-Tags listen independently. `markdownWorkbench.plugins.suggest.enabled` defaults
+Tags listen independently. `markdownWorkshop.plugins.suggest.enabled` defaults
 to true. No palette commands or assigned verify shortcuts.
 
 ## Limits and differences from Obsidian

@@ -50,10 +50,10 @@ function stateText(state: PluginState): string {
 
 function settingOf(descriptor: PluginDescriptor): string | undefined {
   if (descriptor.kind === "feature") {
-    return `markdownWorkbench.plugins.${descriptor.id}.enabled`;
+    return contributionId(`plugins.${descriptor.id}.enabled`);
   }
   if (descriptor.kind === "external") {
-    return "markdownWorkbench.plugins.external";
+    return contributionId("plugins.external");
   }
   return undefined;
 }

@@ -17,7 +17,7 @@ links from the vault index, refreshing when indexing settles.
 ## Services, events and settings
 
 - Injects `workbench` (views) and `vaults`. Listens to `vault/resolved`.
-- Setting: `markdownWorkbench.plugins.outgoingLinks.enabled`.
+- Setting: `markdownWorkshop.plugins.outgoingLinks.enabled`.
 
 ## Limits and differences from Obsidian
 
