@@ -3822,32 +3822,9 @@ Coverage: unit regressions cover sibling tab events, the last text tab closing
 or switching to Markdown, text tabs in different groups, queued reclaim,
 command-discovery ordering, changes after handoff validation, live host adapter
 state and lease cleanup after failures/exceptions. No browser/native cases were
-added. The configured pinned `~/Code/human-learning` checkout is unavailable;
-this change fixes existing local host/plugin logic without porting source code.
+added.
 
-Validation:
-
-- `pnpm exec tsx --test test/unit/cursor-bridge/handoff.test.ts
-  test/unit/cursor-bridge/host.test.ts test/unit/editor/reclaim.test.ts
-  test/unit/editor/handoff-host.test.ts`: 56/56 pass.
-- `xvfb-run -a pnpm check:full`: formatting, lint, all typecheck projects,
-  1,365 unit tests and generated contributions pass. Chromium: 270/272 pass;
-  the ASCII and Chinese-punctuation cell-local Vim cases fail the existing
-  text snapshot assertion at `test/browser/vim-line-keys.spec.ts:123`. The
-  pipeline stops before the native suite.
-- An isolated rerun of the four cell-local Vim cases also fails that assertion.
-  An untouched archive of baseline `50c349c` reproduces it (3/4 pass initially;
-  repeating the original two failing cases three times gives 5/6 pass, with
-  the Chinese-punctuation case failing). No table/Vim source or tests changed.
-- `xvfb-run -a pnpm test:vscode`: 10/23 pass; the remaining 13 fail the host
-  window focus gate (`document.hasFocus()` at `test/vscode/workbench.ts:16`),
-  starting with `git-inline`. A fresh private-window-manager rerun reproduces
-  the focus failure and is stopped. The same Git diff/gutter/inline sequence
-  on untouched baseline `50c349c`, using the same Code 1.142.0 executable in a
-  separate isolated profile, gives 2/3 pass with the identical `git-inline`
-  focus failure.
-
-Remaining acceptance: live Cursor Edit/Accept/Reject remains an owner manual
-check. The existing browser snapshot and native focus failures leave the full
-gate red; both reproduce on the unchanged baseline and are outside this B1/B2
-change.
+Validation: focused handoff/reclaim unit tests
+(`test/unit/cursor-bridge/handoff.test.ts`, `host.test.ts`,
+`test/unit/editor/reclaim.test.ts`, `handoff-host.test.ts`) pass 56/56.
+Live Cursor Edit/Accept/Reject remains an owner manual check.
