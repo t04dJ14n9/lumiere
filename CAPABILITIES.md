@@ -40,7 +40,7 @@ records it in `docs/PARITY.md`.
 | tags | Tag rendering and search, Explorer **Tags** view | Search results are a quick pick, not a search pane |
 | suggest | `[[`, `[[#`, `[[^` and `#` completions | At most 50 results |
 | search | `query` blocks with Obsidian's search syntax | No Dataview |
-| outline | Explorer **Note Outline** | No drag to reorder sections |
+| outline | Explorer **Note Outline** and **Go to Heading…** (Ctrl+Shift+O) | No drag to reorder sections; VS Code's native Outline and breadcrumbs apply to the plain text editor |
 | backlinks | Explorer **Backlinks** with unlinked mentions and a status bar count | Off by default (owner decision) |
 | outgoingLinks | Explorer **Outgoing Links** | Off by default; no unlinked mentions section |
 | quickSwitcher | **Quick Switcher** over notes, aliases and unresolved links | No key binding (Mod+O is VS Code's Open File); empty query lists recently modified notes |

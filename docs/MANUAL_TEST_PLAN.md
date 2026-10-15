@@ -517,6 +517,24 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    and confirm it selects the current panel's section after each change.
    A selection extending across sections follows its active end. Also check
    a CRLF note and a caret in the preamble before its first heading.
+6. Press **Ctrl+Shift+O** (**Command+Shift+O** on macOS), or run **Markdown
+   Workbench: Go to Heading…**. The Quick Pick shows parsed heading titles,
+   levels and parent titles in document order. Search a title and accept it:
+   the active Workbench panel navigates to that heading. Escape does not move
+   the caret. Check duplicate titles, quoted headings, Setext headings,
+   unsaved heading edits and a note with no headings. Fenced code and
+   frontmatter content do not appear as headings.
+7. Open the same note in a plain text split and switch repeatedly between
+   the two panels without editing. Workbench's shortcut opens Go to Heading;
+   the plain text shortcut and native Outline show built-in Markdown symbols
+   once. Workbench uses Note Outline; it does not populate the native Outline
+   or breadcrumbs. An open heading picker must not jump if the document is
+   edited or a different panel becomes active before accepting it.
+8. Press **Ctrl+Alt+O** (**Control+Command+O** on macOS) twice: Note Outline
+   hides, then reappears and receives focus. Use **Move View** to place Note
+   Outline in the secondary sidebar, then in the panel, and repeat. Each
+   toggle targets Note Outline at its current location and leaves the other
+   views visible. Also check a container containing only Note Outline.
 
 ### backlinks and outgoingLinks
 
@@ -981,6 +999,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.outline.toggle` — Toggle Note Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Note Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
+| `markdownWorkbench.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workbench; switch to a plain text split and confirm its native symbol shortcut remains available. |
 | `markdownWorkbench.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openCopiedAgentReference` — Open Copied Agent Reference | unbound | On a disposable fixture, run Open Copied Agent Reference; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |

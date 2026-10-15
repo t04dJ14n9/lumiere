@@ -1,13 +1,29 @@
 import type { Context } from "../../kernel";
-import type { Workbench } from "../../shared/runtime";
+import type { TreeHandle, Workbench } from "../../shared/runtime";
 import {
+  COMMANDS_CONTEXT,
   DISABLE_FOLLOW_COMMAND,
   ENABLE_FOLLOW_COMMAND,
   EXPAND_ALL_COMMAND,
   FOLLOW_CURSOR_CONTEXT,
   FOLLOW_CURSOR_SETTING,
+  TOGGLE_COMMAND,
+  VIEW_ID,
 } from "./commands";
 import type { OutlineView } from "./view";
+
+export function registerOutlineCommandContext(ctx: Context): void {
+  // The editor populates contexts for panel plugins only. Outline runs once
+  // per window, so its own lifetime controls the generated command guards.
+  const workbench = ctx.workbench;
+  const enabled = workbench
+    .execute("setContext", COMMANDS_CONTEXT, true)
+    .catch((error) => ctx.logger.warn("Outline command context failed", error));
+  ctx.effect(() => async () => {
+    await enabled;
+    await workbench.execute("setContext", COMMANDS_CONTEXT, undefined);
+  });
+}
 
 export function followsCursor(
   workbench: Workbench,
@@ -22,9 +38,23 @@ export function followsCursor(
     : configured !== false;
 }
 
-export function registerOutlineActions(ctx: Context, view: OutlineView): void {
+export function registerOutlineActions(
+  ctx: Context,
+  view: OutlineView,
+  tree: TreeHandle,
+): void {
   ctx.effect(() =>
     ctx.workbench.command(EXPAND_ALL_COMMAND, () => view.expandAll()),
+  );
+  ctx.effect(() =>
+    ctx.workbench.command(TOGGLE_COMMAND, async () => {
+      if (tree.visible) {
+        // VS Code resolves this view's current container after Move View.
+        await ctx.workbench.execute(`${VIEW_ID}.removeView`);
+      } else {
+        await ctx.workbench.execute(`${VIEW_ID}.focus`);
+      }
+    }),
   );
   const setFollowCursor = async (enabled: boolean) => {
     const settings = ctx.workbench.settings;

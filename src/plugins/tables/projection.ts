@@ -260,6 +260,16 @@ export class CellProjection {
       this.grid.model.alignments[this.active.column] ?? null,
     );
   }
+
+  /** Keep typing in the open cell after an outer rewrite remaps selection. */
+  retainFocus(): void {
+    const editor = this.cellEditor;
+    if (!editor || !this.active) {
+      return;
+    }
+    editor.view.focus();
+    this.deferOuterCaret(editor);
+  }
 }
 
 export function projectedChanges(

@@ -4026,7 +4026,6 @@ clear`; `released and cleared tokens cannot revive sessions or release newer
 owners`; `clearing one URI leaves other pending and established owners alone`.
 The existing suppression and overlap tests now use per-handoff tokens, and the
 failed-retry test also checks that no pending token remains after session clear.
-
 ## Git diff VS Code UX — 2026-10-15
 
 Delivered: one semantic snapshot and hunk model for the change bars, inline
@@ -4118,3 +4117,14 @@ the read-only fallback. No source tests were ported; the configured
 `~/Code/human-learning` checkout is absent in this environment.
 
 Validation: pending the required sequential local checks before commit/push.
+
+## Outline Go to Heading (PR #45 review) — 2026-10-16
+
+CustomTextEditorProvider webviews are not native Outline / Go to Symbol hosts
+in the supported VS Code baseline, so the DocumentSymbolProvider registration
+was removed. Workbench uses Note Outline and **Go to Heading…**
+(Ctrl+Shift+O / Cmd+Shift+O) via the host Quick Pick adapter. Toggle Note
+Outline uses the view's `.removeView` / `.focus` commands. The window plugin
+publishes `markdownWorkbench.plugin.outline` for editor-scoped shortcuts;
+Toggle uses `scope: "workbench"` config gating like Quick Switcher.
+

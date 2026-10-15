@@ -268,6 +268,10 @@ export class TableController {
   }
 
   update(block: RenderBlock, outer: EditorView): void {
+    const keepFocus =
+      !!this.editor?.hasFocus ||
+      (!!this.editor &&
+        this.editor.dom.contains(this.grid.root.ownerDocument.activeElement));
     if (block.source !== this.grid.block.source) {
       this.handles.cancel();
       this.selected.drag.cancel();
@@ -310,6 +314,8 @@ export class TableController {
       const next = this.requested;
       delete this.requested;
       this.projection.open(next, "all");
+    } else if (keepFocus) {
+      this.projection.retainFocus();
     }
     this.highlight();
     this.handles.refresh();

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { contributions } from "../../scripts/generate-contributions";
 import {
   FOLLOW_CURSOR_CONTEXT,
+  GO_TO_HEADING_COMMAND,
   VIEW_ID,
 } from "../../src/plugins/outline/commands";
 test("package contributions match the generator", async () => {
@@ -113,5 +114,55 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
         binding.command === "markdownWorkbench.toggleItalics" &&
         binding.mac === "cmd+i",
     ),
+  );
+});
+
+test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
+  const { keybindings, commands, menus } = await contributions();
+  const command = commands.find(
+    (entry) => entry.command === "markdownWorkbench.outline.toggle",
+  );
+  assert.equal(command?.title, "Toggle Note Outline");
+  assert.equal(command?.category, "Markdown Workshop");
+  const paletteWhen =
+    "config.markdownWorkbench.preset != 'minimal' && config.markdownWorkbench.plugins.outline.enabled";
+  assert.equal(
+    menus.commandPalette.find(
+      (item) => item.command === "markdownWorkbench.outline.toggle",
+    )?.when,
+    paletteWhen,
+  );
+  const toggle = keybindings.find(
+    (binding) => binding.command === "markdownWorkbench.outline.toggle",
+  );
+  assert.ok(toggle);
+  assert.equal(toggle.key, "ctrl+alt+o");
+  assert.equal(toggle.mac, "ctrl+cmd+o");
+  assert.equal(
+    toggle.when,
+    "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline",
+  );
+});
+
+test("Go to Heading overrides the symbol shortcut only for enabled Workbench panels", async () => {
+  const { commands, keybindings, menus } = await contributions();
+  assert.equal(
+    commands.find((command) => command.command === GO_TO_HEADING_COMMAND)
+      ?.title,
+    "Go to Heading…",
+  );
+  const binding = keybindings.find(
+    (binding) => binding.command === GO_TO_HEADING_COMMAND,
+  )!;
+  assert.equal(binding.key, "ctrl+shift+o");
+  assert.equal(binding.mac, "cmd+shift+o");
+  assert.equal(
+    binding.when,
+    "activeCustomEditorId == 'markdownWorkbench.editor' && markdownWorkbench.plugin.outline",
+  );
+  assert.equal(
+    menus.commandPalette.find((item) => item.command === GO_TO_HEADING_COMMAND)
+      ?.when,
+    binding.when,
   );
 });
