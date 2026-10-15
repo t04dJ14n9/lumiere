@@ -3767,3 +3767,41 @@ fragment preservation, unchanged HTTP(S) URLs, and malformed percent escapes
 that must not throw.
 
 Validation: `pnpm exec tsx --test test/unit/okf/authorize.test.ts` — 11 pass.
+
+## Selected table rows keep vertical wheel scrolling — 2026-10-15
+
+Static diagnosis: selecting a row focuses the persistent `.hybrid-table`
+widget. Its `.table-scroll` wrapper uses `overflow-x: auto`, which also
+computes vertical overflow to `auto`, creating a nested scrollport. Idle wheel
+input over the table depended entirely on Chromium's native scroll chaining;
+there was no vertical wheel handoff to the note. `TableWidget.ignoreEvent()`
+keeps widget input out of CodeMirror's handlers, and EdgeScroll owns active
+pointer drags only. No table wheel handler was cancelling input. The reported
+trap is consistent with wheel input remaining in that nested scrollport after
+grid focus. DOM reproduction could not be completed in this sandbox (below).
+
+The table controller now owns a non-passive wheel listener through its abort
+signal. `wheel-scroll.ts` forwards predominantly vertical input to the owning
+note scroller, normalizing pixels, lines and pages using note geometry. It
+only cancels the nested default when the note can scroll. Horizontal and
+Shift-wheel gestures, zoom modifiers, handled/noncancelable events and native
+chaining at note boundaries retain their defaults. Selection, focus, cell
+projection, horizontal overflow CSS and pointer/handle EdgeScroll are unchanged.
+
+Coverage: seven unit tests exercise both directions, fractional trackpad input,
+delta units, horizontal jitter, horizontal/Shift-wheel gestures, zoom/handled
+events and note limits. The owner-authorized browser regression exercises real
+wheel input with a selected row in a wide, tall table, with Vim on and off,
+checking both axes, Shift-wheel, retained selection/focus and unchanged text.
+The Tables manual plan also covers columns, rectangles, cell editing and edge
+drags. README file/flow documentation is updated. All fixtures are synthetic;
+the configured `~/Code/human-learning` source checkout is absent here.
+
+Validation:
+
+- `node --import tsx --test src/plugins/tables/wheel-scroll.test.ts`: 7/7 pass.
+- `pnpm typecheck` and Prettier on the touched files: pass.
+- `xvfb-run -a pnpm exec playwright test -c test/browser/playwright.config.ts
+  test/browser/tables-scroll.spec.ts --workers=1`: 2/2 pass (vim on/off). The
+  browser fixture reveals the table into the CodeMirror viewport before querying
+  cells so the widget mounts.

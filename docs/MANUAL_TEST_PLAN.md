@@ -385,6 +385,15 @@ title, then set `markdownWorkbench.plugins.inlineTitle.enabled` to true.
    Counts span cells; WORD motions include punctuation. At the table edges,
    repeated motions stop without edits. Check `dw` and visual `vw` remain in
    their current cell, and insert-mode letters still type normally.
+10. In a disposable note, put a wide, many-row table between several screens
+    of prose. Select a middle row with its grip and release the pointer. With
+    the pointer over the selected cells, wheel/trackpad up and down: the note
+    scrolls in both directions while the row stays selected. Repeat with Vim
+    in NORMAL mode, a selected column, a rectangle and an active cell editor.
+    Horizontal trackpad and Shift-wheel gestures move the table horizontally
+    without moving the note vertically. Drag selections and grips near all
+    four visible edges: vertical note and horizontal table EdgeScroll still
+    work; release stops auto-scrolling. Cell edits, handles and menus still work.
 
 ### callouts
 
