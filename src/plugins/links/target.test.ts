@@ -54,3 +54,22 @@ test("a wikilink still uses vault resolution when no policy claims it", () => {
   );
   assert.deepEqual(target, { uri: file.uri, passthrough: true });
 });
+
+test("unclaimed markdown does not use wikilink lookup outside OKF", () => {
+  let resolved = false;
+  const target = openedVaultTarget(
+    {
+      classifyLink: () => undefined,
+      resolveLink: () => {
+        resolved = true;
+        return file;
+      },
+      file: () => undefined,
+    } as unknown as Pick<VaultIndex, "classifyLink" | "resolveLink" | "file">,
+    "topic.md",
+    "notes/source.md",
+    false,
+  );
+  assert.deepEqual(target, { uri: undefined, passthrough: true });
+  assert.equal(resolved, false);
+});

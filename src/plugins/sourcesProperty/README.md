@@ -14,7 +14,8 @@ clickable; scope text is not. A click sends the resource string to the host.
 The host reads the owning document again, refuses a resource that is no longer
 there, strips a `#fragment` before the file lookup, and allows only `http`/`https`
 or a path that stays inside the vault. A heading or block fragment opens at
-that offset. The webview does not fetch the resource.
+that offset; a `#page=` or `#viewrect` fragment is forwarded to the native
+viewer. The webview does not fetch the resource.
 
 ## Files
 

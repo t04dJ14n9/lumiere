@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderSources } from "./markup";
-import { planSourceOpen, supportedFragmentOffset } from "./open";
+import {
+  planSourceOpen,
+  supportedFragmentOffset,
+  viewerFragment,
+} from "./open";
 
 test("sources markup is stacked, read-only, and keeps every row", () => {
   const entries = Array.from({ length: 9 }, (_, index) => ({
@@ -69,6 +73,23 @@ test("navigation stays on the owning document and rejects unsafe targets", () =>
   assert.equal(note.fragment, "#Details");
   assert.equal(supportedFragmentOffset(headed, note.fragment), 0);
   assert.equal(supportedFragmentOffset(headed, "#page=3"), undefined);
+  assert.equal(viewerFragment("#page=3"), "page=3");
+  assert.equal(viewerFragment("#viewrect=0,0,100,100"), "viewrect=0,0,100,100");
+  assert.equal(viewerFragment("#Details"), undefined);
+  assert.deepEqual(
+    planSourceOpen({
+      resource: "/raw/paper.pdf#page=3",
+      text: "---\nsources:\n  - resource: /raw/paper.pdf#page=3\n---\n",
+      documentPath: "bundle/concept/topic.md",
+      bundleRoot: "bundle",
+      live: true,
+    }),
+    {
+      action: "workspace",
+      path: "bundle/raw/paper.pdf",
+      fragment: "#page=3",
+    },
+  );
   assert.equal(
     planSourceOpen({
       resource: "https://example.com/missing",

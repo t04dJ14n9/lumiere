@@ -4,7 +4,11 @@ import { owningBundle } from "../../markdown/okf";
 import type {} from "../okfCore/api";
 import type {} from "../vault/api";
 import type {} from "../resources/api";
-import { planSourceOpen, supportedFragmentOffset } from "./open";
+import {
+  planSourceOpen,
+  supportedFragmentOffset,
+  viewerFragment,
+} from "./open";
 import { protocol } from "./protocol";
 
 /** Opens a Sources resource after host authorization. The webview never fetches it. */
@@ -66,8 +70,13 @@ async function openAuthorized(
   uri: string,
   fragment: string | undefined,
 ): Promise<void> {
-  if (!fragment || fragment.slice(1).startsWith("page=")) {
+  if (!fragment) {
     await ctx.vaults.open(uri);
+    return;
+  }
+  const viewer = viewerFragment(fragment);
+  if (viewer) {
+    await ctx.vaults.open(uri, { fragment: viewer });
     return;
   }
   const offset = supportedFragmentOffset(await ctx.vaults.text(uri), fragment);

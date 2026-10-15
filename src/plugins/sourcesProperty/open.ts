@@ -50,20 +50,34 @@ export function planSourceOpen(input: {
 
 /**
  * Heading and block fragments become an offset `vaults.open` already accepts.
- * A page fragment has no viewer here; the file still opens without one.
+ * Page and viewrect fragments are forwarded to the native viewer instead.
  */
 export function supportedFragmentOffset(
   text: string,
   fragment: string | undefined,
 ): number | undefined {
+  if (!fragment || fragment === "#" || viewerFragment(fragment)) {
+    return undefined;
+  }
+  const body = fragment.startsWith("#") ? fragment.slice(1) : fragment;
+  return noteFragment(text, body)?.from;
+}
+
+/**
+ * PDF open parameters the native viewer already understands. Strip the
+ * leading `#` so `vscode.open` receives the fragment body.
+ */
+export function viewerFragment(
+  fragment: string | undefined,
+): string | undefined {
   if (!fragment || fragment === "#") {
     return undefined;
   }
   const body = fragment.startsWith("#") ? fragment.slice(1) : fragment;
-  if (body.startsWith("page=")) {
-    return undefined;
+  if (body.startsWith("page=") || body.startsWith("viewrect")) {
+    return body;
   }
-  return noteFragment(text, body)?.from;
+  return undefined;
 }
 
 function listed(text: string, resource: string): boolean {

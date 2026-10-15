@@ -80,7 +80,7 @@ export class VaultRegistry implements Vaults {
 
   async open(
     uri: string,
-    options: { offset?: number; side?: boolean } = {},
+    options: { offset?: number; side?: boolean; fragment?: string } = {},
   ): Promise<void> {
     const located = await this.locate(uri);
     if (!located || !this.navigation) {
@@ -94,7 +94,7 @@ export class VaultRegistry implements Vaults {
     await this.navigation.open(
       located.vault.index.root,
       uri,
-      "",
+      options.fragment ?? "",
       options.side ?? false,
       at,
     );

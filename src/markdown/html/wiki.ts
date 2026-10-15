@@ -28,6 +28,6 @@ export function wiki(md: MarkdownIt): void {
   };
   md.renderer.rules.wiki_embed = (tokens, index) => {
     const link = tokens[index]!.meta as unknown as WikiTarget;
-    return `<span class="file-embed"${attr("data-resource", link.target)}${attr("data-width", link.width)}${attr("data-height", link.height)}>${escape(link.target)}</span>`;
+    return `<span class="file-embed" data-wiki="true"${attr("data-resource", link.target)}${attr("data-width", link.width)}${attr("data-height", link.height)}>${escape(link.target)}</span>`;
   };
 }

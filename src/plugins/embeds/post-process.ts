@@ -93,7 +93,8 @@ class EmbedPass {
     if (/^data:image\//i.test(target)) {
       return Promise.resolve({ kind: "image", source: target, url: target });
     }
-    return resources.load(target, pass.documentUri);
+    const syntax = node.dataset.wiki === "true" ? "wikilink" : "markdown";
+    return resources.load(target, pass.documentUri, syntax);
   }
 
   private openButton(

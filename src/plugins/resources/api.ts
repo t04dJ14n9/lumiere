@@ -1,3 +1,4 @@
+import type { LinkSyntax } from "../../shared/vault-path";
 import type { DiffSide } from "../../shared/git";
 export interface Resource {
   kind: "note" | "image" | "audio" | "video" | "pdf" | "file";
@@ -7,7 +8,7 @@ export interface Resource {
 }
 export interface Resources {
   authorize?(source: string): Promise<void>;
-  load(target: string, source?: string): Promise<Resource>;
+  load(target: string, source?: string, syntax?: LinkSyntax): Promise<Resource>;
 }
 declare module "../../kernel/types" {
   interface Services {

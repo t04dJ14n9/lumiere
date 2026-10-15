@@ -45,6 +45,11 @@ export function openedVaultTarget(
   if (decision?.status === "unresolved") {
     return { uri: undefined, passthrough: false };
   }
+  // Outside OKF, Markdown must use source-relative navigation — not the
+  // vault's wikilink-style index lookup that would prefer a vault-root twin.
+  if (!wiki) {
+    return { uri: undefined, passthrough: true };
+  }
   return {
     uri: vault.resolveLink(path, source, syntax)?.uri,
     passthrough: true,

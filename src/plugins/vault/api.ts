@@ -136,11 +136,12 @@ export interface Vaults {
   text(uri: string): Promise<string>;
   /**
    * Open a vault file in the editor, at an offset in its current text when
-   * given (for example a heading or a link found in that text).
+   * given (for example a heading or a link found in that text). A `fragment`
+   * is forwarded to the native viewer for non-Markdown files (PDF `#page=`).
    */
   open(
     uri: string,
-    options?: { offset?: number; side?: boolean },
+    options?: { offset?: number; side?: boolean; fragment?: string },
   ): Promise<void>;
   all(): readonly Vault[];
   /**

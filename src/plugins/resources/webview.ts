@@ -6,10 +6,11 @@ export const resourcesWebview: Plugin = {
   inject: { required: ["rpc"] },
   apply(ctx) {
     ctx.provide("resources", {
-      load: (target, source) =>
+      load: (target, source, syntax) =>
         ctx.rpc.call(protocol, "load", {
           target,
           ...(source === undefined ? {} : { source }),
+          ...(syntax === undefined ? {} : { syntax }),
         }),
     });
   },

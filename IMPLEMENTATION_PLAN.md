@@ -3640,3 +3640,11 @@ on dispose.
 
 Filter positions are still dropped when a filter hides a node, and this change
 does not add browser or native coverage for the Sources mount or the worker.
+
+## ChatGPT Pro r2 remaining blockers — 2026-10-15
+
+Resource loading now carries Markdown versus wikilink syntax so a Markdown
+image inside an OKF bundle resolves source-relative. Unclaimed Markdown links
+outside OKF fall through to source-relative navigation instead of wikilink
+index lookup. Sources `#page=` / `#viewrect` fragments are forwarded through
+`vaults.open` to the native viewer.
