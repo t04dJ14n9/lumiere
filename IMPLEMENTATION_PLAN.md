@@ -4231,3 +4231,15 @@ validators enforce safe integer/version and required blame on ok responses.
 TDD: missing-module red followed by four host cases green, including real schema
 over-cap rejection, handler defense, immediate notify and disposal. Scoped lint
 and host plugin compilation pass. No VSIX built or installed.
+
+## gitBlame Task 5 — Panel freshness controller, 2026-10-15
+
+Added B2 epoch helpers, transaction-owned blame/version fields and a panel-local
+controller with an injectable scheduler. Every invalidation clears immediately;
+only re-request is debounced 150ms. URI and disable invalidate serial as well as
+timers. Success/rejection share the current-request guard. A still-current
+response may adopt host generation; intervening changed cannot be adopted over.
+TDD: missing-module red, then all 11 state/controller cases green, including
+late URI/disable ok, obsolete rejection preserving R2, same-line no-op, current
+reject/over-cap soft-hide and startup/re-entry behind the host. Scoped lint and
+webview plugin compilation pass. No VSIX built or installed.
