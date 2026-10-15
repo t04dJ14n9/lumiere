@@ -148,7 +148,7 @@ test("view plugins follow the active note and their setting, and clean up when t
   await root.settled();
   assert.equal(view.disposed, true);
   assert.equal(status.disposed, true);
-  assert.equal(fake.commands.has("markdownWorkbench.backlinks.open"), false);
+  assert.equal(fake.commands.has(OPEN_COMMAND), false);
   assert.equal(
     fake.trees.get("markdownWorkbench.outgoingLinks")!.disposed,
     false,
