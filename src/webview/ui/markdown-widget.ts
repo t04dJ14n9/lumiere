@@ -44,11 +44,7 @@ export class MarkdownBlock extends WidgetType {
       { signal: events.signal },
     );
     if (this.clickToEdit) {
-      shell.addEventListener(
-        "mousedown",
-        (event) => editOnClick(view, shell, event),
-        { signal: events.signal },
-      );
+      bindClickToEdit(view, shell, events.signal);
     }
     this.lifetimes.set(shell, () => {
       live = false;
@@ -80,6 +76,15 @@ export class MarkdownBlock extends WidgetType {
     return shell;
   }
 
+  /**
+   * Let CodeMirror drive mouse selection through the block (so a drag keeps
+   * scroll stable and can cover diagram source). Buttons keep their own clicks.
+   */
+  override ignoreEvent(event: Event): boolean {
+    const target = event.target;
+    return target instanceof Element && Boolean(target.closest(interactive));
+  }
+
   override destroy(dom: HTMLElement): void {
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
@@ -90,32 +95,71 @@ export class MarkdownBlock extends WidgetType {
 const interactive =
   "a, button, input, select, textarea, summary, label, [contenteditable='true'], [data-href], .internal-link, .external-link";
 
+const CLICK_DRAG_PX = 3;
+
 /**
- * Clicking a rendered block (math, code, a callout, a diagram) reveals its
- * source with the caret at the end of the first line, as in Obsidian.
+ * Reveal source on a true click, not on mousedown. Mousedown-to-edit jumped
+ * the viewport (`scrollIntoView` to the fence start) and swallowed drags, so
+ * Mermaid/math blocks could not be selected without scrolling to the block top.
  */
-export function editOnClick(
+function bindClickToEdit(
   view: EditorView,
   shell: HTMLElement,
-  event: MouseEvent,
+  signal: AbortSignal,
 ): void {
-  const target = event.target;
-  // Only controls inside the block count (the editor content around it is
-  // contenteditable, and the editor marks the block itself as not editable).
-  const control =
-    target instanceof Element ? target.closest(interactive) : null;
-  if (
-    event.button !== 0 ||
-    (control && control !== shell && shell.contains(control))
-  ) {
-    return;
+  let origin: { x: number; y: number } | null = null;
+  shell.addEventListener(
+    "mousedown",
+    (event) => {
+      if (event.button !== 0 || isBlockControl(shell, event.target)) {
+        origin = null;
+        return;
+      }
+      origin = { x: event.clientX, y: event.clientY };
+    },
+    { signal },
+  );
+  shell.addEventListener(
+    "mouseup",
+    (event) => {
+      if (
+        !origin ||
+        event.button !== 0 ||
+        isBlockControl(shell, event.target)
+      ) {
+        origin = null;
+        return;
+      }
+      const dragged =
+        Math.hypot(event.clientX - origin.x, event.clientY - origin.y) >
+        CLICK_DRAG_PX;
+      origin = null;
+      if (!dragged) {
+        editOnClick(view, shell);
+      }
+    },
+    { signal },
+  );
+}
+
+function isBlockControl(
+  shell: HTMLElement,
+  target: EventTarget | null,
+): boolean {
+  if (!(target instanceof Element)) {
+    return false;
   }
-  // The editor's own mousedown handling would move the caret back out.
-  event.preventDefault();
-  event.stopPropagation();
+  const control = target.closest(interactive);
+  return Boolean(control && control !== shell && shell.contains(control));
+}
+
+/**
+ * Clicking a rendered block (math, code, a callout, a diagram) reveals its
+ * source with the caret at the end of the first line, as in Obsidian. The
+ * click was already on-screen, so do not force a scroll to the fence start.
+ */
+export function editOnClick(view: EditorView, shell: HTMLElement): void {
   const line = view.state.doc.lineAt(view.posAtDOM(shell));
-  // Focus first: focusing afterwards would restore the browser's old DOM
-  // selection, which the editor then reads back.
   view.focus();
-  view.dispatch({ selection: { anchor: line.to }, scrollIntoView: true });
+  view.dispatch({ selection: { anchor: line.to }, scrollIntoView: false });
 }

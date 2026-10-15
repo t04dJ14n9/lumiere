@@ -3656,3 +3656,32 @@ the target via `authorizeTarget`, so a PDF such as `/raw/paper.pdf#page=3` no
 longer fails the note-source allowlist. Embed "Open image file" passes each
 resource element's `data-wiki` intent into `links/open`, so a Markdown image
 opens the Markdown-resolved sibling rather than the wikilink vault-root twin.
+
+## Phase record — mouse selection scroll + Mermaid UI (15 October 2026)
+
+Live Preview mouse drags near tall blocks (images, Mermaid, ASCII fences) jumped
+the viewport. Root causes verified in code:
+
+1. `editOnClick` ran on **mousedown** with `scrollIntoView: true` and
+   `preventDefault`, so clicking/dragging a rendered Mermaid/math/code widget
+   scrolled to the fence start and blocked selection.
+2. A `mousemove` with a transient `buttons === 0` (common on remote desktop
+   during fast drags) thawed the pointer reveal freeze mid-gesture, so Live
+   Preview reflowed under the live selection and heights jumped.
+3. Block/inline/code-source decorations still rebuilt on every selection tick
+   while the freeze was active, thrashing widget DOM needlessly.
+
+Fix: defer click-to-edit until a non-drag mouseup without forced scroll; let
+CodeMirror handle mouse events through block widgets (buttons excluded);
+debounce buttons-up release by 50ms; skip decoration rebuilds while
+`isPointerSelecting`. Mermaid Copy/Edit share one row (`top: 10px`, aligned
+sizes); SVG labels opt into `user-select: text`.
+
+Files: `src/webview/ui/{pointer-selection,markdown-widget}.ts`,
+`src/plugins/livePreview/{blocks,inline}.ts`,
+`src/plugins/codeBlocks/{code-source.ts,codeBlocks.css}`,
+`src/plugins/diagrams/diagrams.css`, `src/webview/styles/markdown.css`,
+`test/unit/webview/{pointer-selection,selection}.test.ts`.
+
+Validation: eslint on changed files; `tsx --test` pointer-selection + selection
+unit tests (7/7); `tsc` for webview, plugins webview, and test projects.

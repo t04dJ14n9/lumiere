@@ -24,6 +24,11 @@ export const pointerSelection = StateField.define<EditorSelection | null>({
   },
 });
 
+/** Whether a pointer selection (mouse drag) is freezing reveal. */
+export function isPointerSelecting(state: EditorState): boolean {
+  return (state.field(pointerSelection, false) ?? null) !== null;
+}
+
 /** Whether `tr` starts or ends a pointer selection. */
 export function pointerSelectionToggled(
   startState: EditorState,
@@ -54,32 +59,61 @@ export function revealRanges(state: EditorState): readonly SelectionRange[] {
   });
 }
 
+/** How long a buttons-up mousemove must last before we treat it as a release. */
+const BUTTON_UP_RELEASE_MS = 50;
+
 /**
  * Calls `end` when a mouse gesture in `doc` ends or is cancelled: a release
  * (which may happen outside the frame and reach only the window), pointer
- * cancellation, window blur, or a move with the left button up. The line
- * number drag and the reveal freeze share this so their lifecycles agree.
+ * cancellation, window blur, or a sustained move with the left button up.
+ * A brief buttons===0 flicker (common on remote desktop during fast drags)
+ * must not thaw reveal mid-gesture. The line-number drag and the reveal
+ * freeze share this so their lifecycles agree.
  */
 export function onGestureEnd(
   doc: Document,
   end: () => void,
   signal: AbortSignal,
 ): void {
+  let buttonUpTimer: ReturnType<typeof setTimeout> | undefined;
+  const clearButtonUp = () => {
+    if (buttonUpTimer !== undefined) {
+      clearTimeout(buttonUpTimer);
+      buttonUpTimer = undefined;
+    }
+  };
+  const release = () => {
+    clearButtonUp();
+    end();
+  };
+  signal.addEventListener("abort", clearButtonUp);
   for (const target of [doc, doc.defaultView]) {
     for (const type of ["mouseup", "pointerup", "pointercancel"]) {
-      target?.addEventListener(type, end, { capture: true, signal });
+      target?.addEventListener(type, release, { capture: true, signal });
     }
   }
-  doc.defaultView?.addEventListener("blur", end, { signal });
+  doc.defaultView?.addEventListener("blur", release, { signal });
   doc.addEventListener(
     "mousemove",
     (event) => {
-      if ((event.buttons & 1) === 0) {
-        end();
+      if ((event.buttons & 1) !== 0) {
+        clearButtonUp();
+        return;
       }
+      if (buttonUpTimer !== undefined) {
+        return;
+      }
+      buttonUpTimer = setTimeout(release, BUTTON_UP_RELEASE_MS);
     },
     { capture: true, signal },
   );
+}
+
+/** Test helper: start or end the pointer reveal freeze. */
+export function setPointerSelection(
+  value: EditorSelection | null,
+): ReturnType<typeof press.of> {
+  return press.of(value);
 }
 
 export const pointerSelectionTracking: Extension = [
