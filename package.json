@@ -1350,6 +1350,12 @@
           "scope": "resource",
           "description": "Render TeX formulas with MathJax."
         },
+        "markdownWorkbench.plugins.obsidianCompat.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Use Obsidian property types and vault settings in Markdown Workbench."
+        },
         "markdownWorkbench.plugins.okfCore.enabled": {
           "type": "boolean",
           "default": true,
@@ -1674,6 +1680,12 @@
           ],
           "default": "workbench",
           "description": "Where a Marp deck opens. textEditor sends it to VS Code's text editor, where Marp's own preview and export run. Keep in Workshop remembers a deck.",
+          "scope": "resource"
+        },
+        "markdownWorkbench.obsidianCompat.configFolder": {
+          "type": "string",
+          "default": ".obsidian",
+          "description": "Obsidian configuration folder relative to the vault root, such as .obsidian-awesome. Root markers discover the vault; they do not select this folder.",
           "scope": "resource"
         },
         "markdownWorkbench.okfCore.bundles": {

@@ -965,6 +965,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.gitGutter.nextChange` — Go to Next Git Change | alt+f5 | On a disposable fixture, run Go to Next Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.gitGutter.previousChange` — Go to Previous Git Change | shift+alt+f5 | On a disposable fixture, run Go to Previous Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.gitGutter.showChange` — Show Git Change | alt+f3 | On a disposable fixture, run Show Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.graph.open` — Open Vault Graph | unbound | On a disposable fixture, run Open Vault Graph; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkbench.graph.chooseBundle` — Choose Vault Graph Bundle | unbound | On a disposable fixture, run Choose Vault Graph Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.insertWikilink` — Insert Wikilink | unbound | On a disposable fixture, run Insert Wikilink; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.followLink` — Follow Link | unbound | On a disposable fixture, run Follow Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkbench.openLinkToSide` — Open Link to Side | unbound | On a disposable fixture, run Open Link to Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1037,6 +1039,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.gitDiffEditor.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.gitGutter.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.gitInline.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.graph.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.inlineTitle.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1044,6 +1047,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.links.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.marp.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.math.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.obsidianCompat.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.okfCore.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.outgoingLinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.outline.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1054,6 +1059,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.plugins.scratch.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.search.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.plugins.sourcesProperty.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.suggest.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.plugins.tables.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1079,6 +1085,11 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.folding.indent` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.gitDiffEditor.diffEditor` | `"native"` | native / rendered; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.gitGutter.compareTo` | `"HEAD"` | HEAD / index; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.graph.maxNodes` | `2000` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.graph.maxEdges` | `20000` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.graph.defaultMode` | `"global"` | global / local; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.graph.localDepth` | `2` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.graph.colorBy` | `"type"` | type / folder / tag; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.linkUpdates.mode` | `"prompt"` | prompt / always / never; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.links.newLinkFormat` | `"shortest"` | shortest / relative / absolute; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.links.useWikilinks` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1086,6 +1097,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkbench.files.newNoteFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.files.attachmentFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.marp.open` | `"workbench"` | workbench / textEditor; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.obsidianCompat.configFolder` | `".obsidian"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkbench.okfCore.bundles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.outline.followCursor` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkbench.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
@@ -1133,3 +1146,40 @@ history and Vim Control+O/Control+I remain separate.
 
 Native/browser suites were not expanded for these cases. These are pending
 computer-use acceptance steps, not evidence of passed native behavior.
+
+## Obsidian compatibility (phase 1)
+
+Setup: copy `test/fixtures/vault` to two disposable workspace folders. Keep both
+`.obsidian` files; add `.git` as another root marker in one folder. Never use the
+owner's vault for these checks.
+
+1. In one vault's `app.json`, set Markdown links, relative link format, attachment
+   folder `/`, new-file location `current`, an `Archive/` ignore filter, hidden
+   properties, `livePreview: false` and `alwaysUpdateLinks: true`. Open a fresh
+   Workbench editor. It starts in Source mode; a fresh Live Preview view hides
+   properties; link insertion uses Markdown/relative text, new notes use the
+   originating folder, and archived notes leave switcher/search results but
+   remain linkable. Rename a referenced note: links update without a prompt.
+2. Set each corresponding Workbench setting explicitly in user, workspace,
+   folder and applicable Markdown language settings. That explicit value wins,
+   even when it equals the package default. Remove it to restore vault policy.
+   Confirm VS Code settings files never change when `app.json` changes.
+3. Give the second vault different app policies; open both and split one note
+   into two panels. Each panel and command uses its originating vault. Switching
+   focus during a new-note or rename action must not select another vault's
+   policy. `alwaysUpdateLinks: false` restores MW's default prompt.
+4. Externally edit and delete `app.json`; effective settings refresh or return to
+   package defaults. Temporarily write invalid JSON: the last good policies stay
+   in use and the output channel logs the read failure once. Fix the JSON to
+   resume updates. `editor.defaultMode` applies when opening a new view.
+5. Set `obsidianCompat.configFolder` to `.obsidian-awesome` and create that
+   folder's files. Its policies replace `.obsidian` immediately; changes to the
+   previous profile no longer apply. `.git` never becomes the config folder by
+   marker order. A path outside the vault or an escaping symlink is rejected
+   without blocking the Markdown editor or writing a file.
+6. Turn Obsidian Compatibility off, then on; policies disappear and return, and
+   closing/reloading the extension leaves no duplicate watchers. Inspect the
+   fixture `types.json`: aliases remains `aliases`, tags remains `tags`, and
+   cssclasses remains `multitext`. The properties UI still uses its existing
+   preference storage in this phase; scoped service edits/conflicts are unit
+   tested, with no new browser/native test suite or UI type-storage migration.

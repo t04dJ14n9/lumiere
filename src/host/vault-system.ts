@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import type { Configuration } from "../shared/configuration";
+import { createConfiguration } from "./configuration-access";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import type {
@@ -17,6 +19,7 @@ const STAT_CONCURRENCY = 32;
 /** The VS Code side of the vault plugin (DESIGN §12). */
 export function createVaultSystem(
   context: vscode.ExtensionContext,
+  configuration: Configuration = createConfiguration(),
 ): VaultSystem {
   return {
     workspaceFolder: (uri) =>
@@ -32,20 +35,8 @@ export function createVaultSystem(
     read: async (uri) => vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
     watch: watchVault,
     store: (root) => snapshotStore(context.storageUri, root),
-    settings: vaultSettings,
-    onSettingsChanged: (listener) =>
-      toDisposer(
-        vscode.workspace.onDidChangeConfiguration((event) => {
-          const keys = ["vault", "links.folderNote", "links.newLinkFormat"];
-          if (
-            keys.some((key) =>
-              event.affectsConfiguration(`markdownWorkbench.${key}`),
-            )
-          ) {
-            listener();
-          }
-        }),
-      ),
+    settings: (root) => vaultSettings(configuration, root),
+    onSettingsChanged: (listener) => configuration.onDidChange(listener),
     onDocumentChanged: (listener) =>
       toDisposer(
         vscode.workspace.onDidChangeTextDocument((event) => {
@@ -86,16 +77,15 @@ async function exists(uri: string): Promise<boolean> {
   }
 }
 
-function vaultSettings(root: string): VaultSettings {
-  const config = vscode.workspace.getConfiguration(
-    "markdownWorkbench",
-    vscode.Uri.parse(root),
-  );
+function vaultSettings(
+  configuration: Configuration,
+  root: string,
+): VaultSettings {
   return {
-    folderNote: config.get<string>("links.folderNote", ""),
-    linkFormat: config.get("links.newLinkFormat", "shortest"),
-    excludedFiles: config.get<string[]>("vault.excludedFiles", []),
-    rootMarkers: config.get<string[]>("vault.rootMarkers", [".obsidian"]),
+    folderNote: configuration.get("links.folderNote", "", root),
+    linkFormat: configuration.get("links.newLinkFormat", "shortest", root),
+    excludedFiles: configuration.get<string[]>("vault.excludedFiles", [], root),
+    rootMarkers: configuration.get("vault.rootMarkers", [".obsidian"], root),
   };
 }
 

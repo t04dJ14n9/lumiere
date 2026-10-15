@@ -5,6 +5,7 @@ import type { Disposer } from "../kernel";
 import type { Cancellation } from "./rpc/lifecycle";
 import type { Endpoint, Transport } from "./rpc/endpoint";
 import type { EditorProvider } from "./editor-provider";
+import type { Configuration } from "./configuration";
 import type { DiagnosticSink, WorkspaceFiles } from "./workspace-files";
 export interface HostDocument {
   readonly id: string;
@@ -67,6 +68,8 @@ export interface Workbench {
   onConfiguration?(listener: () => void): Disposer;
   /** Reading and writing `markdownWorkbench.*` settings like the Settings UI. */
   settings?: SettingsAccess;
+  /** Effective resource settings, including disposable feature overrides. */
+  configuration?: Configuration;
   /**
    * The workspace's own `workbench.editorAssociations`, not the user's or a
    * folder's. `read()` is undefined when no workspace is open.
@@ -346,7 +349,7 @@ export interface HostViews {
   /** The current text of an open document, saved or not. */
   documentText(uri: string): string | undefined;
   /** A window-level setting under `markdownWorkbench.`. */
-  setting<T>(key: string, fallback: T): T;
+  setting<T>(key: string, fallback: T, resource?: string): T;
   /**
    * A document-independent webview panel. One panel per view type; a second
    * call reveals the existing one.

@@ -1,6 +1,8 @@
 import { RevealRouter, chooseRevealPanel } from "./reveal-router";
 import linksManifest from "../plugins/links/manifest";
 import { pluginConfiguration } from "./settings";
+import type { Configuration } from "../shared/configuration";
+import { createConfiguration } from "./configuration-access";
 import * as vscode from "vscode";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
@@ -91,6 +93,7 @@ async function containedVirtualPath(
 
 export function createNavigation(
   panels: () => readonly PanelShell[],
+  configuration: Configuration = createConfiguration(),
 ): Navigation {
   const reveals = new RevealRouter();
   return {
@@ -104,7 +107,15 @@ export function createNavigation(
         { modal: true },
         "Open",
       )) === "Open",
-    resolve: resolveNavigation,
+    async resolve(request) {
+      await configuration.prepare(request.source);
+      return resolveNavigation({
+        ...request,
+        newNoteFolder:
+          request.newNoteFolder ??
+          configuredNewNoteFolder(configuration, request.source),
+      });
+    },
     open: (
       ...[root, target, fragment, side, at, intent]: Parameters<
         Navigation["open"]
@@ -193,7 +204,7 @@ async function createNote({
   folder: string | undefined;
   intent?: NavigationIntent;
 }): Promise<string | undefined> {
-  folder ??= configuredNewNoteFolder(sourceUri);
+  folder ??= "";
   let uri = candidate;
   if (!link.startsWith("/")) {
     const parent =
@@ -285,7 +296,13 @@ async function revealOpenedNote(
   await reveals.deliver(intent, panel.id, destination);
 }
 
-function configuredNewNoteFolder(source: vscode.Uri): string {
-  const config = vscode.workspace.getConfiguration("markdownWorkbench", source);
+function configuredNewNoteFolder(
+  configuration: Configuration,
+  source: string,
+): string {
+  const config = {
+    get: <T>(key: string, fallback?: T) =>
+      configuration.get(key, fallback, source),
+  };
   return String(pluginConfiguration(config, linksManifest).newNoteFolder);
 }

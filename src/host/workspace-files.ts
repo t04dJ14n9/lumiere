@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
 import type { WorkspaceFiles } from "../shared/workspace-files";
+import { contained } from "./navigation";
 
 /** VS Code file operations behind `Workbench.files`. Missing files are undefined, not throws. */
 export function createWorkspaceFiles(): WorkspaceFiles {
   return {
+    authorize: (root, target) => contained(parse(root), parse(target)),
     readText,
     writeText,
     list,

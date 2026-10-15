@@ -4074,3 +4074,21 @@ document version and baseline at gate time and applies the validated snapshot
 hunk. An edit after the click and before execute changes that version and makes
 no edit. Show Diff opens at the mapped decoration, not the snapshot anchor from
 before the edit.
+
+## Obsidian compatibility phase 1 — 15 October 2026
+
+Adds the host-only `obsidianCompat` feature and scoped registry API. Pro B1–B4
+are incorporated: aliases wire identity/unknown JSON preservation, last-good
+reads and serialized conflict-checked writes; document/language-scoped full
+inspect precedence; a separately configured contained profile folder; and
+vault-keyed caches, watchers and async writes. Eight ranked app policies feed
+the existing editor, index and commands through an in-memory provider, without
+VS Code settings writes. Properties preference storage remains unchanged.
+
+Unit tests and synthetic `.obsidian` fixtures cover the blockers and lifecycle;
+the plugin README, design and manual acceptance plan describe the contract.
+Plan 01 was updated at `/workspace/plans/pro-batch-2026-10-15/01-obsidian-compat.md`.
+The pinned `~/Code/human-learning` checkout is absent; no reference source or
+proprietary code/assets were copied. Work is isolated in
+`/tmp/mdwb-obsidian-compat` because another task switched the shared checkout.
+Validation results are recorded below before commit.

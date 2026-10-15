@@ -1,5 +1,5 @@
 import type { Plugin } from "../../kernel";
-import type { Vault } from "../vault/api";
+import type { Vault, Vaults } from "../vault/api";
 import { switcherItems } from "./ranking";
 import type { SwitcherTarget } from "./ranking";
 
@@ -12,16 +12,10 @@ export const quickSwitcherHost: Plugin = {
     if (!views) {
       return;
     }
-    const activeVault = async (): Promise<Vault | undefined> => {
-      const active = views.activeNote();
-      const located = active ? await ctx.vaults.locate(active) : undefined;
-      return located?.vault ?? (await ctx.vaults.forWorkspace());
-    };
-    const create = async (vault: Vault, name: string) => {
-      const active = views.activeNote();
+    const create = async (vault: Vault, name: string, source: string) => {
       const uri = await ctx.workbench.navigation?.resolve({
         root: vault.index.root,
-        source: active ?? `${vault.index.root}/`,
+        source,
         path: name,
         create: true,
         folderNote: "",
@@ -30,33 +24,50 @@ export const quickSwitcherHost: Plugin = {
         await ctx.vaults.open(uri);
       }
     };
-    const open = async (vault: Vault, target: SwitcherTarget) => {
+    const open = async (
+      vault: Vault,
+      target: SwitcherTarget,
+      source: string,
+    ) => {
       if (target.kind === "note") {
         await ctx.vaults.open(target.file.uri);
       } else {
         await create(
           vault,
           target.kind === "create" ? target.name : target.linkpath,
+          source,
         );
       }
     };
     ctx.effect(() =>
       views.command("markdownWorkbench.quickSwitcher", async () => {
-        const vault = await activeVault();
+        const active = views.activeNote();
+        const vault = await switcherVault(ctx.vaults, active);
         if (!vault) {
           ctx.workbench.error("Open a folder to use the quick switcher.");
           return;
         }
+        // Keep the initiating note through the picker, even if focus changes.
+        const source = active ?? `${vault.index.root}/`;
+        await ctx.workbench.configuration?.prepare(source);
         const result = await views.pick({
           placeholder: "Find or create a note…",
           items: (query) => switcherItems(vault.index, query),
         });
         if (result?.item) {
-          await open(vault, result.item.value);
+          await open(vault, result.item.value, source);
         } else if (result?.query.trim()) {
-          await create(vault, result.query.trim());
+          await create(vault, result.query.trim(), source);
         }
       }),
     );
   },
 };
+
+async function switcherVault(
+  vaults: Vaults,
+  active: string | undefined,
+): Promise<Vault | undefined> {
+  const located = active ? await vaults.locate(active) : undefined;
+  return located?.vault ?? (await vaults.forWorkspace());
+}
