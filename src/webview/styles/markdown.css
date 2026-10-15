@@ -189,6 +189,12 @@
   color: var(--accent-hover);
   border-bottom-color: currentColor;
 }
+/* Keep opaque chip backgrounds inside the link's underline. Horizontal
+ * padding and rounded backgrounds still give linked code its chip shape. */
+.md-link .md-inline-code,
+.markdown-rendered a :not(pre) > code {
+  padding-block: 0;
+}
 /*
  * Lists: each level is one --list-indent step with a faint guide under the
  * parent's bullet; markers are muted and wrapped text hangs under the text.

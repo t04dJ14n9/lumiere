@@ -36,12 +36,23 @@ test("links use a continuous border-bottom underline, not text-decoration", () =
   assert.match(hover, /border-bottom-color:\s*currentColor/);
 });
 
-test("inline code chips keep horizontal padding for the gray chip look", () => {
+test("linked code chips keep their look without painting over the underline", () => {
   const block = rule(
     markdownCss,
     ".md-inline-code,\n.markdown-rendered :not(pre) > code",
   );
   assert.match(block, /padding:\s*0\.1em\s+0\.25em/);
+  assert.match(block, /border-radius:\s*4px/);
+  assert.match(block, /background:\s*var\(--code\)/);
+
+  // The opaque chip must not extend vertically over the link's border.
+  // Include nested formatting in rendered links, such as <a><em><code>.
+  const linkedCode = rule(
+    markdownCss,
+    ".md-link .md-inline-code,\n.markdown-rendered a :not(pre) > code",
+  );
+  assert.match(linkedCode, /padding-block:\s*0\s*;/);
+  assert.doesNotMatch(linkedCode, /padding(?:-inline(?:-start|-end)?)?:/);
 });
 
 test("unresolved links keep a dotted underline via border-bottom-style", () => {
