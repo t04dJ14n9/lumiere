@@ -18,9 +18,7 @@ export const commandsWebview: Plugin = {
       ctx.rpc.handle(protocol, "run", ({ command }) => commands.run(command)),
     );
     registerHostKeys(ctx, host);
-    ctx.effect(() =>
-      keepHistoryKeysInEditor(ctx.editor.view.dom.ownerDocument),
-    );
+    registerHistoryKeys(ctx, host);
   },
 };
 
@@ -48,29 +46,45 @@ function registerHostActions(
   }
 }
 
+function trigger(
+  ctx: Context,
+  host: (action: Action) => Promise<boolean>,
+  action: Action,
+): boolean {
+  void host(action).catch((error) => ctx.logger.error("Command failed", error));
+  return true;
+}
+
 function registerHostKeys(
   ctx: Context,
   host: (action: Action) => Promise<boolean>,
 ): void {
-  const trigger = (action: Action): boolean => {
-    void host(action).catch((error) =>
-      ctx.logger.error("Command failed", error),
-    );
-    return true;
-  };
+  // Save stays on the CodeMirror keymap (with stopPropagation so VS Code's
+  // webview forwarder does not run a second Save). Undo/redo are owned in
+  // capture phase by registerHistoryKeys: the shell always preventDefaults and
+  // forwards those keys, which raced with a bubble-only guard.
   ctx.effect(() =>
     ctx.editor.extend(
       keymap.of([
-        { key: "Mod-s", run: () => trigger("save"), preventDefault: true },
-        { key: "Mod-z", run: () => trigger("undo"), preventDefault: true },
         {
-          key: "Mod-Shift-z",
-          run: () => trigger("redo"),
+          key: "Mod-s",
+          run: () => trigger(ctx, host, "save"),
           preventDefault: true,
+          stopPropagation: true,
         },
-        { key: "Mod-y", run: () => trigger("redo"), preventDefault: true },
       ]),
       { slot: "override" },
     ),
+  );
+}
+
+function registerHistoryKeys(
+  ctx: Context,
+  host: (action: Action) => Promise<boolean>,
+): void {
+  ctx.effect(() =>
+    keepHistoryKeysInEditor(ctx.editor.view.dom.ownerDocument, (action) => {
+      trigger(ctx, host, action);
+    }),
   );
 }

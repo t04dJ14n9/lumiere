@@ -11,6 +11,14 @@ document session and checks panel focus before native operations. Feature comman
 registrations follow active-panel settings, with queued reconciliation and a
 fresh enablement check when invoked. Registrations stop with their owning context.
 
+Undo and redo are special: VS Code's webview shell always preventDefaults
+Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y and forwards them to the workbench.
+A capture-phase document listener owns those shortcuts for the note (flush, then
+native history), stops the shell from seeing them, and leaves INPUT/TEXTAREA plus
+Properties `[data-property-input]` / `[data-property-list-input]` contenteditables
+to native DOM undo (not CodeMirror's contenteditable). Save stays on the
+CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Save.
+
 ## Files
 
 - `manifest.ts`: core identity and native action contributions.
@@ -19,9 +27,9 @@ fresh enablement check when invoked. Registrations stop with their owning contex
 - `host.ts`: per-panel host actions and native palette routing.
 - `features.ts`: feature command ownership, reconciliation and invocation guards.
 - `webview.ts`: registry, host actions, RPC and keyboard registrations.
-- `history-keys.ts`: keeps handled undo/redo shortcuts from running a second
-  native action through VS Code's webview key forwarding.
-- `history-keys.test.ts`: handled/unhandled platform shortcuts and listener disposal.
+- `history-keys.ts`: capture-phase Ctrl/Cmd+Z / Shift+Z / Y ownership so VS Code's
+  webview key forwarding cannot double-fire or swallow note undo/redo.
+- `history-keys.test.ts`: shortcut mapping, text-field and property-editor exemption, listener disposal.
 - `registry.ts`: per-editor unique-ID command map.
 - `registry.test.ts`: command results, duplicate rejection, removal and failures.
 
