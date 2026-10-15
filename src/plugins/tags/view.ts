@@ -14,9 +14,9 @@ const REFRESH_DELAY_MS = 300;
  */
 export const tagsViewHost: Plugin = {
   name: "tags",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
@@ -43,8 +43,8 @@ export const tagsViewHost: Plugin = {
     };
     ctx.effect(() => () => clearTimeout(timer));
     ctx.effect(() => views.onActiveNoteChanged(schedule));
-    if (ctx.workbench.onConfiguration) {
-      ctx.effect(() => ctx.workbench.onConfiguration!(schedule));
+    if (ctx.workshop.onConfiguration) {
+      ctx.effect(() => ctx.workshop.onConfiguration!(schedule));
     }
     ctx.effect(() =>
       tree.onVisibilityChanged((visible) => visible && void refresh()),

@@ -17,7 +17,7 @@ import {
 import { externalScheme, linkParts, openedVaultTarget } from "./target";
 export const linksHost: Plugin<{ panel: PanelShell }> = {
   name: "links",
-  inject: { required: ["rpc", "workbench", "vault", "resources"] },
+  inject: { required: ["rpc", "workshop", "vault", "resources"] },
   apply(ctx, { panel }) {
     registerNavigation(ctx, panel);
     registerUnresolvedLinks(ctx, panel);
@@ -80,7 +80,7 @@ async function openLink(
   request: Infer<typeof requestSchema>,
   token: Cancellation,
 ): Promise<boolean> {
-  const navigation = ctx.workbench.navigation;
+  const navigation = ctx.workshop.navigation;
   if (!navigation) {
     throw new Error("Navigation unavailable");
   }
@@ -125,7 +125,7 @@ async function openInternal(
   request: Infer<typeof requestSchema> & { source: string },
   intent?: NavigationIntent,
 ): Promise<boolean> {
-  const navigation = ctx.workbench.navigation;
+  const navigation = ctx.workshop.navigation;
   if (!navigation) {
     throw new Error("Navigation unavailable");
   }
@@ -143,11 +143,11 @@ async function openInternal(
       path,
       create: request.wiki,
       newNoteFolder: String(
-        ctx.workbench.config(panel.document).features?.links?.config
+        ctx.workshop.config(panel.document).features?.links?.config
           .newNoteFolder ?? "",
       ),
       folderNote: String(
-        ctx.workbench.config(panel.document).features?.links?.config
+        ctx.workshop.config(panel.document).features?.links?.config
           .folderNote ?? "",
       ),
     });

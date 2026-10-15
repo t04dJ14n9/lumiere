@@ -11,8 +11,8 @@ test("processor RPC enforces trust, source containment, feature enablement and o
   let enabled = true;
   const root = Context.create();
   root.provide("editors", f.editors);
-  root.provide("workbench", {
-    ...f.workbench,
+  root.provide("workshop", {
+    ...f.workshop,
     isTrusted: () => trusted,
     config: () => ({
       preset: "obsidian",

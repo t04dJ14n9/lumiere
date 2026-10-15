@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../kernel";
 import { Endpoint } from "../../shared/rpc/endpoint";
-import type { Navigation, PanelShell, Workbench } from "../../shared/runtime";
+import type { Navigation, PanelShell, Workshop } from "../../shared/runtime";
 import type { VaultIndex } from "../vault/api";
 import { linksHost } from "./host";
 import { protocol } from "./protocol";
@@ -66,10 +66,10 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     },
   });
   root.provide("rpc", host);
-  root.provide("workbench", {
+  root.provide("workshop", {
     navigation,
     config: () => ({ features: {} }),
-  } as unknown as Workbench);
+  } as unknown as Workshop);
   root.provide("vault", {
     root: "file:///vault",
     resolveLink: () => undefined,

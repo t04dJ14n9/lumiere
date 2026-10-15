@@ -2,9 +2,9 @@ import { window, workspace } from "vscode";
 import { outputLogger } from "./logging";
 import { createApi } from "./api/facade";
 import { nativePlatform } from "./api/native-platform";
-import type { MarkdownWorkbenchApi } from "./api/types";
+import type { MarkdownWorkshopApi } from "./api/types";
 import type { ExtensionContext } from "vscode";
-import { createWorkbench } from "./workbench";
+import { createWorkshop } from "./workshop";
 import { createConfiguration } from "./configuration-access";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
@@ -17,15 +17,15 @@ import type { Context } from "../kernel";
 let root: Context | undefined;
 export async function activate(
   context: ExtensionContext,
-): Promise<MarkdownWorkbenchApi> {
+): Promise<MarkdownWorkshopApi> {
   const started = performance.now();
   const configuration = createConfiguration();
-  const workbench = createWorkbench(
+  const workshop = createWorkshop(
     context.extensionUri,
     context.workspaceState,
     configuration,
   );
-  workbench.views = createHostViews(context.extensionUri, configuration);
+  workshop.views = createHostViews(context.extensionUri, configuration);
   const channel = window.createOutputChannel("Markdown Workshop", {
     log: true,
   });
@@ -38,7 +38,7 @@ export async function activate(
     workspace.getConfiguration("markdownWorkbench").get("debug.logging", false),
   );
   root = await bootstrap(
-    workbench,
+    workshop,
     createVaultSystem(context, configuration),
     logger,
   );

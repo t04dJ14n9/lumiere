@@ -3,7 +3,7 @@ import type { Context } from "../../kernel";
 import type {} from "../../plugins/codeBlocks/api";
 import type { ApiPlatform } from "./platform";
 import type {
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   EditorSnapshot,
   DocumentState,
   PluginState,
@@ -18,7 +18,7 @@ import { registerOpenReference } from "./open-reference";
 import { ExternalPlugins } from "./external-manager";
 import { ApiEvent } from "./event";
 import { documentSnapshot, editorSnapshot } from "./snapshots";
-function buildApi(root: Context, platform: ApiPlatform): MarkdownWorkbenchApi {
+function buildApi(root: Context, platform: ApiPlatform): MarkdownWorkshopApi {
   const events = createEvents(root);
   const changed = () => {
     for (const panel of root.editors.all()) {
@@ -33,7 +33,7 @@ function buildApi(root: Context, platform: ApiPlatform): MarkdownWorkbenchApi {
     api: () => api,
     changed,
   });
-  const api: MarkdownWorkbenchApi = Object.freeze({
+  const api: MarkdownWorkshopApi = Object.freeze({
     apiVersion: 1 as const,
     ...editorOperations(root, platform),
     ...vaultOperations(root, platform),
@@ -99,22 +99,22 @@ function bindEvents(
   root.on("vault/resolved", (vault) =>
     events.resolved.fire(Object.freeze({ vault: platform.uri(vault) })),
   );
-  // The workbench reports every text document; the API reports notes open
+  // The workshop reports every text document; the API reports notes open
   // in this editor.
   const fireDocument = (document: HostDocument) => {
     if (root.editors.all().some((panel) => panel.document.id === document.id)) {
       events.document.fire(documentSnapshot(document, platform));
     }
   };
-  root.effect(() => root.workbench.onChange(fireDocument));
-  root.effect(() => root.workbench.onSave(fireDocument));
+  root.effect(() => root.workshop.onChange(fireDocument));
+  root.effect(() => root.workshop.onSave(fireDocument));
 }
 
 export async function createApi(
   root: Context,
   platform: ApiPlatform,
-): Promise<MarkdownWorkbenchApi> {
-  let api: MarkdownWorkbenchApi | undefined;
+): Promise<MarkdownWorkshopApi> {
+  let api: MarkdownWorkshopApi | undefined;
   const fiber = root.plugin(publicApiHost, {
     create(ctx) {
       api = buildApi(ctx, platform);

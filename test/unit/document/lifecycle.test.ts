@@ -34,14 +34,14 @@ test("document actions serialize across panels and a rejected action does not po
 });
 test("a failed final document flush rejects native save despite event listener error isolation", async () => {
   let willSave!: (document: HostDocument) => Promise<void>;
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     onWillSave(listener) {
       willSave = listener;
       return () => {};
     },
   });
   const root = Context.create();
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   root.plugin(documentHost);
   await root.settled();
   const doc = fakeDocument();
@@ -55,7 +55,7 @@ test("a failed final document flush rejects native save despite event listener e
 test("overlapping saves wait for the actual saved event and release their listener", async () => {
   let saved!: (document: HostDocument) => void;
   let listeners = 0;
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     onSave(listener) {
       listeners++;
       saved = listener;
@@ -70,12 +70,12 @@ test("overlapping saves wait for the actual saved event and release their listen
       return false;
     },
   });
-  assert.equal(await saveDocument(doc, workbench), true);
+  assert.equal(await saveDocument(doc, workshop), true);
   assert.equal(listeners, 0);
 });
 test("save failure releases subscriptions without declaring the document saved", async () => {
   let listeners = 0;
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     onSave() {
       listeners++;
       return () => {
@@ -90,7 +90,7 @@ test("save failure releases subscriptions without declaring the document saved",
           throw new Error("disk error");
         },
       }),
-      workbench,
+      workshop,
     ),
     /disk error/,
   );

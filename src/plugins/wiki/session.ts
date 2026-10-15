@@ -31,12 +31,12 @@ export async function reloadWiki(
   state: WikiSession,
 ): Promise<void> {
   const stamp = ++state.generation;
-  const files = ctx.workbench.files;
+  const files = ctx.workshop.files;
   if (!files || typeof files.readText !== "function") {
     return;
   }
   const loaded = await loadProjects(
-    asStrings(ctx.workbench.workspaceFolders?.()),
+    asStrings(ctx.workshop.workspaceFolders?.()),
     files,
   );
   if (!stillCurrent(ctx, state, stamp)) {
@@ -44,8 +44,8 @@ export async function reloadWiki(
   }
   const notes = collectOpenNotes({
     panels: ctx.editors?.all(),
-    activeUri: ctx.workbench.views?.activeNote(),
-    read: (uri) => ctx.workbench.views?.documentText(uri),
+    activeUri: ctx.workshop.views?.activeNote(),
+    read: (uri) => ctx.workshop.views?.documentText(uri),
   });
   const problems = mergeDiagnostics([
     ...loaded.problems,
@@ -56,7 +56,7 @@ export async function reloadWiki(
   }
   state.projects = loaded.projects;
   state.problems = problems;
-  ctx.workbench.diagnostics?.replaceAll("wiki", problems);
+  ctx.workshop.diagnostics?.replaceAll("wiki", problems);
 }
 
 export function mergeDiagnostics(

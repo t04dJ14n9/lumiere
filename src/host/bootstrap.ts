@@ -4,7 +4,7 @@ import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
 import type { Logger, Plugin } from "../kernel";
 import { Context } from "../kernel";
-import type { Workbench } from "../shared/runtime";
+import type { Workshop } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
 import {
   inlineTitleHost,
@@ -38,12 +38,12 @@ import {
   obsidianCompatHost,
   graphHost,
 } from "../plugins/host";
-import { workbenchFeatures as startWorkbenchFeatures } from "./workbench-features";
+import { workbenchFeatures as startWorkbenchFeatures } from "./workshop-features";
 import { createOkfFacade } from "../plugins/okfCore/facade";
 import { createCursorHandoffSurface } from "./cursor-handoff";
 import * as vscode from "vscode";
 export async function bootstrap(
-  workbench: Workbench,
+  workshop: Workshop,
   vaultSystem?: VaultSystem,
   logger?: Logger,
 ) {
@@ -52,7 +52,7 @@ export async function bootstrap(
     ...(logger && { logger }),
     replaceable: ["vault", "resources", "markers"],
   });
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   if (vaultSystem) {
     root.provide("vaultSystem", vaultSystem);
   }
@@ -72,10 +72,10 @@ export async function bootstrap(
       context.on("links/open", (request) =>
         root.bail("links/open", { ...request, editorId: panel.id }),
       );
-      if (workbench.config(panel.document).preset === "obsidian") {
+      if (workshop.config(panel.document).preset === "obsidian") {
         context.plugin(vaultHost, { documentUri: panel.document.uri });
         context.plugin(resourcesHost, { panel });
-        hostFeatures(context, panel, workbench);
+        hostFeatures(context, panel, workshop);
       }
     },
   });
@@ -91,7 +91,7 @@ export async function bootstrap(
   root.plugin(commandsHost, { features });
   root.plugin(settingsHost);
   root.plugin(livePreviewHost);
-  startWindowFeatures(root, workbench, okf);
+  startWindowFeatures(root, workshop, okf);
   await root.settled();
   return root;
 }
@@ -99,7 +99,7 @@ export async function bootstrap(
 /** Window plugins, including the Tags view, which shares an editor-feature manifest. */
 function startWindowFeatures(
   root: Context,
-  workbench: Workbench,
+  workshop: Workshop,
   okf: ReturnType<typeof createOkfFacade>,
 ): void {
   const plugins = [
@@ -124,7 +124,7 @@ function startWindowFeatures(
   const manifests = [...workbenchFeatures, ...features];
   startWorkbenchFeatures(
     root,
-    workbench,
+    workshop,
     plugins.map((plugin) => ({
       manifest: manifests.find((item) => item.id === plugin.name)!,
       plugin: plugin as Plugin,

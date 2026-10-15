@@ -106,7 +106,7 @@ async function fixture() {
     validate: () => panel,
   });
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       command(id, run) {
         handlers.set(id, run);

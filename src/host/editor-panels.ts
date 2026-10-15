@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import type { EditorProvider } from "../shared/editor-provider";
 import type { PanelShell } from "../shared/runtime";
 import { panelIsActive } from "./active-panel";
-import type { NativeDocuments } from "./workbench";
+import type { NativeDocuments } from "./workshop";
 
 /**
  * The VS Code side of an editor panel: registration, the webview, its

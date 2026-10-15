@@ -138,7 +138,7 @@ test("search host cancels work on disable and registers again on enable", async 
     registerLinkPolicy: () => () => {},
     invalidateLinkResolution() {},
   });
-  root.provide("workbench", fakeWorkbench({ workerPath: () => path }));
+  root.provide("workshop", fakeWorkbench({ workerPath: () => path }));
   const start = () =>
     root.plugin(searchHost, {
       panel: {} as PanelShell,

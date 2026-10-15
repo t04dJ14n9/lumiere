@@ -37,7 +37,7 @@ test("host feature commands disappear when disabled and target the current panel
     async restore() {},
   });
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       command(id, run) {
         assert.equal(commands.has(id), false);

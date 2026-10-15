@@ -7,9 +7,9 @@ import { createGraphSession } from "./session";
 /** Window panel for one OKF bundle. It does not follow whichever note is active later. */
 export const graphHost: Plugin = {
   name: "graph",
-  inject: { required: ["workbench", "vaults", "okf"] },
+  inject: { required: ["workshop", "vaults", "okf"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
@@ -31,10 +31,8 @@ export const graphHost: Plugin = {
     );
     ctx.on("vault/changed", () => session.schedule());
     ctx.on("vault/resolved", () => session.schedule());
-    if (ctx.workbench.onConfiguration) {
-      ctx.effect(() =>
-        ctx.workbench.onConfiguration!(() => session.schedule()),
-      );
+    if (ctx.workshop.onConfiguration) {
+      ctx.effect(() => ctx.workshop.onConfiguration!(() => session.schedule()));
     }
   },
 };

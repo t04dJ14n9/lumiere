@@ -6,7 +6,7 @@ import type { EditorPanel } from "../editor/api";
 import { protocol, type action as actionSchema } from "./protocol";
 export const commandsHost: Plugin<{ features: readonly Manifest[] }> = {
   name: "commands",
-  inject: { required: ["workbench", "editors"] },
+  inject: { required: ["workshop", "editors"] },
   apply(ctx, config) {
     featureCommands(ctx, config.features);
     registerPanelActions(ctx);
@@ -54,7 +54,7 @@ function registerHostPalette(ctx: Context): void {
     "openAsText",
   ] as const) {
     ctx.effect(() =>
-      ctx.workbench.command(contributionId(action), () =>
+      ctx.workshop.command(contributionId(action), () =>
         ctx.editors.active()?.rpc.call(protocol, "run", { command: action }),
       ),
     );
@@ -81,7 +81,7 @@ function runPanelAction(
       await panel.session.history(action);
     }
     if (action === "openAsText") {
-      await ctx.workbench.execute(
+      await ctx.workshop.execute(
         "vscode.openWith",
         panel.document.uri,
         "default",
@@ -91,7 +91,7 @@ function runPanelAction(
       if (!panel.active()) {
         throw new Error("Editor no longer active");
       }
-      await ctx.workbench.execute("workbench.action.closeActiveEditor");
+      await ctx.workshop.execute("workbench.action.closeActiveEditor");
     }
     return true;
   });

@@ -20,7 +20,7 @@ async function fixture() {
   const root = Context.create();
   const commands = new Map<string, () => unknown>();
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       command: (id, run) => {
         commands.set(id, run);
@@ -64,7 +64,7 @@ async function fixture() {
   };
   root.plugin({
     name: "testHistory",
-    inject: { required: ["workbench"] },
+    inject: { required: ["workshop"] },
     apply(ctx) {
       registerJumpHistory(ctx, editors);
     },

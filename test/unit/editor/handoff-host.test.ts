@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import Module, { createRequire } from "node:module";
 import type * as Reclaim from "../../../src/host/reclaim";
 import type * as DocumentWarm from "../../../src/host/document-warm";
-import type * as Workbench from "../../../src/host/workbench";
+import type * as Workshop from "../../../src/host/workshop";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
 import type * as CursorHandoff from "../../../src/host/cursor-handoff";
 import type { Uri as NativeUri } from "vscode";
@@ -194,7 +194,7 @@ function loadHost() {
     return {
       reclaim: require("../../../src/host/reclaim.ts") as typeof Reclaim,
       warm: require("../../../src/host/document-warm.ts") as typeof DocumentWarm,
-      workbench: require("../../../src/host/workbench.ts") as typeof Workbench,
+      workshop: require("../../../src/host/workshop.ts") as typeof Workshop,
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
       cursorHandoff:
         require("../../../src/host/cursor-handoff.ts") as typeof CursorHandoff,
@@ -696,8 +696,8 @@ for (const route of [
     const open =
       route === "public API"
         ? host.api.nativePlatform().open(uri, { preserveFocus: true })
-        : host.workbench
-            .createWorkbench(uri)
+        : host.workshop
+            .createWorkshop(uri)
             .execute(
               "vscode.openWith",
               route === "workbench string" ? note : uri,
@@ -714,10 +714,10 @@ for (const route of [
 }
 
 test("Open as Text remains bypassed without warming", async () => {
-  const workbench = host.workbench.createWorkbench(
+  const workshop = host.workshop.createWorkshop(
     Uri.parse(note) as unknown as NativeUri,
   );
-  await workbench.execute("vscode.openWith", note, "default");
+  await workshop.execute("vscode.openWith", note, "default");
   assert.deepEqual(warmed, []);
   assert.equal(host.reclaim.textBypass.has(note), true);
 });

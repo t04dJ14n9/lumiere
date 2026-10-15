@@ -7,9 +7,9 @@ import type { LinkFormat, RewriteContext } from "./rewrite";
 /** Rewrites links in other notes when files are renamed in VS Code. */
 export const linkUpdatesHost: Plugin = {
   name: "linkUpdates",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }
@@ -17,7 +17,7 @@ export const linkUpdatesHost: Plugin = {
       views.onWillRename(async (renames) => {
         const resource = renames[0]?.oldUri;
         if (resource) {
-          await ctx.workbench.configuration?.prepare(resource);
+          await ctx.workshop.configuration?.prepare(resource);
         }
         const mode = views.setting<string>(
           "linkUpdates.mode",

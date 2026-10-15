@@ -19,7 +19,7 @@ export function registerSymbolPicker(ctx: Context, views: HostViews): void {
     disposed = true;
   });
   ctx.effect(() =>
-    ctx.workbench.command(GO_TO_HEADING_COMMAND, async () => {
+    ctx.workshop.command(GO_TO_HEADING_COMMAND, async () => {
       const panel = editors.active();
       if (!panel) {
         return;

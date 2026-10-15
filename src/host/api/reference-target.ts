@@ -1,12 +1,12 @@
 import type { Uri } from "vscode";
 import type { AgentReferenceInput } from "../../shared/agent-reference-input";
-import type { Workbench } from "../../shared/runtime";
+import type { Workshop } from "../../shared/runtime";
 import type { ApiPlatform } from "./platform";
 
 /** Relative references search workspace roots only; full URIs stay explicit. */
 export async function resolveReference(
   reference: AgentReferenceInput,
-  workbench: Workbench,
+  workshop: Workshop,
   platform: ApiPlatform,
 ): Promise<Uri | undefined> {
   if (reference.isUri) {
@@ -17,20 +17,20 @@ export async function resolveReference(
     validateMarkdownUri(uri);
     return uri;
   }
-  const roots = workbench.workspaceFolders?.() ?? [];
+  const roots = workshop.workspaceFolders?.() ?? [];
   if (!roots.length) {
     throw new Error("Open a workspace folder or use a full note URI.");
   }
   const candidates = await referenceCandidates(
     reference,
     roots,
-    workbench,
+    workshop,
     platform,
   );
   if (candidates.length === 1) {
-    return confirmCandidate(candidates[0]!, workbench, platform);
+    return confirmCandidate(candidates[0]!, workshop, platform);
   }
-  const picked = await workbench.views?.pick({
+  const picked = await workshop.views?.pick({
     placeholder:
       "This reference matches multiple workspace folders. Choose the note to open.",
     items: (query) =>
@@ -43,13 +43,13 @@ export async function resolveReference(
         })),
   });
   const selected = candidates.find(({ uri }) => uri === picked?.item?.value);
-  return selected && confirmCandidate(selected, workbench, platform);
+  return selected && confirmCandidate(selected, workshop, platform);
 }
 
 async function referenceCandidates(
   reference: AgentReferenceInput,
   roots: readonly string[],
-  workbench: Workbench,
+  workshop: Workshop,
   platform: ApiPlatform,
 ): Promise<{ root: string; uri: Uri }[]> {
   const candidates: { root: string; uri: Uri }[] = [];
@@ -64,7 +64,7 @@ async function referenceCandidates(
       containmentError ??= error;
       continue;
     }
-    if (await exists(workbench, uri)) {
+    if (await exists(workshop, uri)) {
       candidates.push({ root, uri });
     }
   }
@@ -81,10 +81,10 @@ async function referenceCandidates(
 
 async function confirmCandidate(
   candidate: { root: string; uri: Uri },
-  workbench: Workbench,
+  workshop: Workshop,
   platform: ApiPlatform,
 ): Promise<Uri> {
-  if (!workbench.workspaceFolders?.().includes(candidate.root)) {
+  if (!workshop.workspaceFolders?.().includes(candidate.root)) {
     throw new Error("The reference's workspace folder is no longer open.");
   }
   // A picker can stay open while folders or symlinks change. Check again
@@ -105,9 +105,9 @@ function validateMarkdownUri(uri: Uri): void {
   }
 }
 
-async function exists(workbench: Workbench, uri: Uri): Promise<boolean> {
+async function exists(workshop: Workshop, uri: Uri): Promise<boolean> {
   try {
-    await workbench.stat(uri.toString());
+    await workshop.stat(uri.toString());
     return true;
   } catch {
     return false;

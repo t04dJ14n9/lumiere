@@ -4,7 +4,7 @@ import type { PickItem } from "../../shared/runtime";
 import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";
 import type {
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   PluginDescriptor,
   PluginState,
 } from "./types";
@@ -86,13 +86,13 @@ export function pluginStatusItems(
 
 async function showPluginStatus(
   ctx: Context,
-  api: MarkdownWorkbenchApi,
+  api: MarkdownWorkshopApi,
   platform: ApiPlatform,
 ): Promise<void> {
   const editor = api.getActiveEditor();
-  const views = ctx.workbench.views;
+  const views = ctx.workshop.views;
   if (!editor || !views) {
-    ctx.workbench.inform?.(
+    ctx.workshop.inform?.(
       "Open a note in Markdown Workshop to see its plugin states.",
     );
     return;
@@ -129,16 +129,16 @@ function basename(uri: Uri): string {
 /** Manage Plugins and Show Plugin Status (DESIGN §6.5). */
 export function registerPluginManagement(
   ctx: Context,
-  api: MarkdownWorkbenchApi,
+  api: MarkdownWorkshopApi,
   platform: ApiPlatform,
 ): void {
   ctx.effect(() =>
-    ctx.workbench.command(contributionId("managePlugins"), () =>
+    ctx.workshop.command(contributionId("managePlugins"), () =>
       api.openPluginSettings(api.getActiveEditor()?.uri),
     ),
   );
   ctx.effect(() =>
-    ctx.workbench.command(contributionId("showPluginStatus"), () =>
+    ctx.workshop.command(contributionId("showPluginStatus"), () =>
       showPluginStatus(ctx, api, platform),
     ),
   );

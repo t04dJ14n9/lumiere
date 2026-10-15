@@ -26,8 +26,8 @@ test("the emitted dist/api declarations type-check a consumer on their own", () 
     writeFileSync(
       consumer,
       [
-        'import type { MarkdownWorkbenchApi, ExternalPlugin, SourceMarker } from "./types";',
-        "declare const api: MarkdownWorkbenchApi;",
+        'import type { MarkdownWorkshopApi, ExternalPlugin, SourceMarker } from "./types";',
+        "declare const api: MarkdownWorkshopApi;",
         "const marker: SourceMarker = { id: 'a', from: 0, to: 1, documentVersion: 1, label: 'A' };",
         "const plugin: ExternalPlugin = {",
         "  id: 'acme.badges', ownerExtensionId: 'acme.badges', title: 'Badges',",

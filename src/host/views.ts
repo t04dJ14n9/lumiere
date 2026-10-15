@@ -8,9 +8,9 @@ import type {
   TreeNode,
 } from "../shared/runtime";
 import { cleanEditedUris } from "./rename-save";
-import { createWorkbenchPanel } from "./panel-adapter";
+import { createWorkshopPanel } from "./panel-adapter";
 
-/** The VS Code side of `workbench.views` (DESIGN §7.1). */
+/** The VS Code side of `workshop.views` (DESIGN §7.1). */
 export function createHostViews(
   extensionUri: vscode.Uri,
   configuration: Configuration = createConfiguration(),
@@ -51,7 +51,7 @@ export function createHostViews(
         ?.getText(),
     setting: (key, fallback, resource) =>
       configuration.get(key, fallback, resource),
-    panel: createWorkbenchPanel(extensionUri),
+    panel: createWorkshopPanel(extensionUri),
     onWillRename: (listener) =>
       toDisposer(
         vscode.workspace.onWillRenameFiles((event) => {

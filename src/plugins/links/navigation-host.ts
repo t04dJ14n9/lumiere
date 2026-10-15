@@ -15,13 +15,13 @@ export function registerNavigation(ctx: Context, panel: PanelShell): void {
   ctx.effect(() => () => navigation.dispose());
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "missing", ({ fragment }) => {
-      ctx.workbench.inform?.(`Heading or block was not found: #${fragment}`);
+      ctx.workshop.inform?.(`Heading or block was not found: #${fragment}`);
       return true;
     }),
   );
-  if (ctx.workbench.navigation) {
+  if (ctx.workshop.navigation) {
     ctx.effect(() =>
-      ctx.workbench.navigation!.registerReveal({
+      ctx.workshop.navigation!.registerReveal({
         id: panel.id,
         uri: panel.document.uri,
         active: () => panel.active(),

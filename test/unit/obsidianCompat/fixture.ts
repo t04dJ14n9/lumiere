@@ -175,7 +175,7 @@ export async function compatFixture() {
       },
     },
   });
-  root.provide("workbench", workbench);
+  root.provide("workshop", workbench);
   root.provide("vaults", vaultService);
   const fiber = root.plugin(obsidianCompatHost);
   await root.settled();

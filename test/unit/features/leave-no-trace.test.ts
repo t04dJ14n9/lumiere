@@ -18,14 +18,14 @@ const idle = () => new Promise<void>((resolve) => setTimeout(resolve, 5));
 
 /** Answers the fakes cannot give: "no active note" instead of a fake one. */
 const overrides: Record<string, Record<string, unknown>> = {
-  backlinks: { "workbench.views.activeNote": () => undefined },
+  backlinks: { "workshop.views.activeNote": () => undefined },
   outline: { "editors.active": () => undefined },
 };
 
-/** Context keys the plugin set through `workbench.execute("setContext", …)`. */
+/** Context keys the plugin set through `workshop.execute("setContext", …)`. */
 const contextKeys = new Map<string, unknown>();
 const recordContextKeys = {
-  "workbench.execute": (command: string, key: string, value: unknown) => {
+  "workshop.execute": (command: string, key: string, value: unknown) => {
     if (command === "setContext") {
       contextKeys.set(key, value);
     }
@@ -104,18 +104,18 @@ test("every host plugin of a catalog feature is covered", () => {
 
 test("the check catches a registration made outside the plugin's context", async () => {
   const root = Context.create();
-  const { fake, tracker } = trackingFake<never>("workbench");
-  root.provide("workbench", fake);
+  const { fake, tracker } = trackingFake<never>("workshop");
+  root.provide("workshop", fake);
   const leaky = root.plugin({
     name: "leaky",
-    inject: { required: ["workbench"] },
+    inject: { required: ["workshop"] },
     apply(ctx) {
-      ctx.workbench.command("leaky.command", () => {});
-      ctx.effect(() => ctx.workbench.command("tidy.command", () => {}));
+      ctx.workshop.command("leaky.command", () => {});
+      ctx.effect(() => ctx.workshop.command("tidy.command", () => {}));
     },
   });
   await root.settled();
   await leaky.dispose();
-  assert.deepEqual(tracker.outstanding(), ["workbench.command"]);
+  assert.deepEqual(tracker.outstanding(), ["workshop.command"]);
   await root.dispose();
 });

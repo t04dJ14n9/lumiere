@@ -1,7 +1,7 @@
 import { features, workbenchFeatures } from "../plugins/catalog";
 import editor, { config as editorConfig } from "../plugins/editor/manifest";
 import type { Manifest } from "../shared/manifest";
-import type { Workbench } from "../shared/runtime";
+import type { Workshop } from "../shared/runtime";
 export interface SettingsReader {
   get<T>(key: string, fallback?: T): T | undefined;
 }
@@ -31,7 +31,7 @@ export function pluginConfiguration(
 export function readSettings(
   settings: SettingsReader,
   native?: SettingsReader,
-): ReturnType<Workbench["config"]> {
+): ReturnType<Workshop["config"]> {
   const options = editorConfig.parse(
     pluginConfiguration(settings, editor, native),
   );

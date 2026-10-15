@@ -153,7 +153,7 @@ test("suggest host enforces source feature switches and disposes RPC handlers", 
   root.provide("rpc", pair.host);
   root.provide("vault", index());
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       config: () => ({
         preset: "obsidian",

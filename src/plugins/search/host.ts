@@ -6,11 +6,11 @@ import { SearchWorker } from "./runner";
 import { searchVault } from "./query";
 export const searchHost: Plugin<{ panel: PanelShell }> = {
   name: "search",
-  inject: { required: ["rpc", "vault", "vaults", "workbench"] },
+  inject: { required: ["rpc", "vault", "vaults", "workshop"] },
   apply(ctx) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "query", async (request, token) => {
-        const path = ctx.workbench.workerPath?.("search");
+        const path = ctx.workshop.workerPath?.("search");
         if (!path) {
           throw new Error("Search worker is unavailable");
         }

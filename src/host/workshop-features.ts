@@ -1,6 +1,6 @@
 import type { Context, Fiber, Plugin } from "../kernel";
 import type { Manifest } from "../shared/manifest";
-import type { Workbench } from "../shared/runtime";
+import type { Workshop } from "../shared/runtime";
 
 /**
  * Window-level plugins (views, status bar, quick switcher, link updates)
@@ -9,10 +9,10 @@ import type { Workbench } from "../shared/runtime";
  */
 export function workbenchFeatures(
   root: Context,
-  workbench: Workbench,
+  workshop: Workshop,
   plugins: readonly { manifest: Manifest; plugin: Plugin; config?: unknown }[],
 ): void {
-  const views = workbench.views;
+  const views = workshop.views;
   if (!views) {
     return;
   }
@@ -38,8 +38,8 @@ export function workbenchFeatures(
       );
     root.runtime.track(queue);
   };
-  if (workbench.onConfiguration) {
-    root.effect(() => workbench.onConfiguration!(refresh));
+  if (workshop.onConfiguration) {
+    root.effect(() => workshop.onConfiguration!(refresh));
   }
   root.on("editor/configure", refresh);
   refresh();

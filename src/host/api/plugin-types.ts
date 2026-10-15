@@ -1,6 +1,6 @@
 import type { Disposable, CancellationToken, Uri } from "vscode";
 import type {
-  MarkdownWorkbenchApi,
+  MarkdownWorkshopApi,
   EditorSnapshot,
   SelectionSnapshot,
   PluginState,
@@ -69,14 +69,14 @@ export interface CodeProcessor {
  */
 export interface PublicServices {
   readonly editors: Pick<
-    MarkdownWorkbenchApi,
+    MarkdownWorkshopApi,
     "getEditors" | "getActiveEditor" | "open" | "reveal" | "getSelection"
   > & {
     registerSelectionAction(action: EditorAction): Disposable;
     registerTitleAction(action: EditorAction): Disposable;
   };
   readonly vault: Pick<
-    MarkdownWorkbenchApi,
+    MarkdownWorkshopApi,
     "resolveLink" | "getMetadata" | "getBacklinks" | "onDidResolveLinks"
   >;
   readonly markers: Markers;

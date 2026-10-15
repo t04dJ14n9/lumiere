@@ -37,7 +37,7 @@ import { registerPluginManagement } from "../../../src/host/api/management";
 import { registerOpenReference } from "../../../src/host/api/open-reference";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import type { Manifest } from "../../../src/shared/manifest";
-import type { Workbench } from "../../../src/shared/runtime";
+import type { Workshop } from "../../../src/shared/runtime";
 import {
   contributionId,
   SETTING_PREFIX,
@@ -129,7 +129,7 @@ test("editor host passes MARKDOWN_EDITOR.viewType to registerEditor", async () =
   const viewTypes: string[] = [];
   const root = Context.create();
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       registerEditor(provider) {
         viewTypes.push(provider.viewType);
@@ -206,7 +206,7 @@ function activePanel(): EditorPanel {
 function capturingWorkbench(
   ids: Set<string>,
   manifests: readonly Manifest[],
-): Workbench {
+): Workshop {
   const features = Object.fromEntries(
     manifests.map((manifest) => [manifest.id, { enabled: true, config: {} }]),
   );
@@ -231,7 +231,7 @@ function capturingWorkbench(
       activeNote: () => undefined,
       onActiveNoteChanged: () => () => {},
       documentText: () => undefined,
-    } as Workbench["views"],
+    } as Workshop["views"],
     settings: {
       inspect: () => ({ value: undefined, target: "user" }),
       async update() {
@@ -242,10 +242,10 @@ function capturingWorkbench(
     },
     files: {
       readText: async () => "",
-    } as NonNullable<Workbench["files"]>,
+    } as NonNullable<Workshop["files"]>,
     diffViews: {
       onDidOpenDiff: () => () => {},
-    } as NonNullable<Workbench["diffViews"]>,
+    } as NonNullable<Workshop["diffViews"]>,
     workspaceFolders: () => [],
   });
 }
@@ -254,7 +254,7 @@ function capturingWorkbench(
 function directRegistrations(selections: Selections): Plugin {
   return {
     name: "direct-command-registrations",
-    inject: { required: ["workbench", "editors"] },
+    inject: { required: ["workshop", "editors"] },
     apply(ctx) {
       registerMarkdownAssociation(ctx);
       registerJumpHistory(ctx, ctx.editors);
@@ -300,7 +300,7 @@ async function captureRegisteredCommands(): Promise<{
     },
     validate: () => panel,
   };
-  root.provide("workbench", capturingWorkbench(ids, manifests));
+  root.provide("workshop", capturingWorkbench(ids, manifests));
   root.provide("editors", {
     all: () => [panel],
     active: () => panel,
@@ -328,7 +328,7 @@ async function captureTreeHostCommands(): Promise<{
   const ids = new Set<string>();
   const treeIds = new Set<string>();
   const root = Context.create();
-  root.provide("workbench", viewHostWorkbench(ids, treeIds));
+  root.provide("workshop", viewHostWorkbench(ids, treeIds));
   root.provide("vaults", idleVaults());
   root.provide("editors", idleEditors());
   root.plugin(outlineHost);
@@ -343,14 +343,14 @@ async function captureTreeHostCommands(): Promise<{
 }
 
 /** Tree and status handles the four view hosts touch while registering. */
-function viewHostWorkbench(ids: Set<string>, treeIds: Set<string>): Workbench {
-  const workbench = capturingWorkbench(ids, []);
-  const views = workbench.views;
+function viewHostWorkbench(ids: Set<string>, treeIds: Set<string>): Workshop {
+  const workshop = capturingWorkbench(ids, []);
+  const views = workshop.views;
   if (!views) {
-    throw new Error("view hosts need workbench.views");
+    throw new Error("view hosts need workshop.views");
   }
   return {
-    ...workbench,
+    ...workshop,
     views: {
       ...views,
       tree: (viewId) => {

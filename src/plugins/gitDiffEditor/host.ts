@@ -60,9 +60,9 @@ interface Life {
 
 export const gitDiffEditorHost: Plugin = {
   name: "gitDiffEditor",
-  inject: { required: ["workbench"], optional: ["diffResources"] },
+  inject: { required: ["workshop"], optional: ["diffResources"] },
   apply(ctx) {
-    const { views, diffViews } = ctx.workbench;
+    const { views, diffViews } = ctx.workshop;
     if (!views || !diffViews) {
       return;
     }
@@ -82,7 +82,7 @@ export const gitDiffEditorHost: Plugin = {
     registerReportedCommands(
       effect,
       views,
-      (message) => ctx.workbench.error(message),
+      (message) => ctx.workshop.error(message),
       [
         {
           id: contributionId("gitDiffEditor.open"),
@@ -119,7 +119,7 @@ function report(ctx: Context, what: string, error: unknown): void {
   ctx.logger.warn(what, error);
   const reason = error instanceof Error ? error.message : String(error);
   try {
-    ctx.workbench.error(`${what}: ${reason}`);
+    ctx.workshop.error(`${what}: ${reason}`);
   } catch {
     // Reporting must not throw out of an event handler.
   }
@@ -132,8 +132,8 @@ function report(ctx: Context, what: string, error: unknown): void {
  */
 async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
   // Captured while the plugin is live: recovery after disposal must not
-  // look the workbench up again.
-  const diffViews = ctx.workbench.diffViews!;
+  // look the workshop up again.
+  const diffViews = ctx.workshop.diffViews!;
   const logger = ctx.logger;
   const prepared = await prepare(ctx, life, diff);
   if (!prepared || !life.live) {
@@ -174,10 +174,10 @@ async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
 }
 
 async function openActive(ctx: Context, life: Life): Promise<void> {
-  const note = ctx.workbench.views?.activeNote();
-  const original = note ? ctx.workbench.git?.toGitUri(note, "HEAD") : undefined;
+  const note = ctx.workshop.views?.activeNote();
+  const original = note ? ctx.workshop.git?.toGitUri(note, "HEAD") : undefined;
   if (!note || !original) {
-    ctx.workbench.error(
+    ctx.workshop.error(
       "Open a Markdown note in a git repository to compare it with HEAD.",
     );
     return;
@@ -207,9 +207,9 @@ async function openActive(ctx: Context, life: Life): Promise<void> {
 
 /** One side's text; a side that cannot be read is an error, not empty. */
 async function readSide(ctx: Context, uri: string): Promise<DiffSide> {
-  let text = ctx.workbench.views?.documentText(uri);
+  let text = ctx.workshop.views?.documentText(uri);
   if (text === undefined) {
-    const document = await ctx.workbench.openDocument?.(uri);
+    const document = await ctx.workshop.openDocument?.(uri);
     if (!document) {
       throw new Error(`${sideLabel(uri)} is not available`);
     }
@@ -223,7 +223,7 @@ interface Prepared {
   left: DiffSide;
   right: DiffSide;
   resources?: Parameters<
-    NonNullable<Context["workbench"]["diffViews"]>["show"]
+    NonNullable<Context["workshop"]["diffViews"]>["show"]
   >[0]["resources"];
   /** Stop following changes. */
   stop(): void;
@@ -313,9 +313,9 @@ function present(
   comparison: Comparison,
   prepared: Prepared,
 ): void {
-  const workbench = ctx.workbench;
+  const workshop = ctx.workshop;
   const name = title(comparison, prepared);
-  const panel = workbench.diffViews!.show({
+  const panel = workshop.diffViews!.show({
     left: prepared.left,
     right: prepared.right,
     title: name,
@@ -325,8 +325,8 @@ function present(
     onAction(action) {
       const done =
         action === "openFile"
-          ? workbench.execute("vscode.open", comparison.modified)
-          : workbench.diffViews!.openNative(
+          ? workshop.execute("vscode.open", comparison.modified)
+          : workshop.diffViews!.openNative(
               comparison.original,
               comparison.modified,
               name,
@@ -375,23 +375,23 @@ function followSources(
   comparison: Comparison,
   notify: () => void,
 ) {
-  const workbench = ctx.workbench;
+  const workshop = ctx.workshop;
   const uris = [comparison.original, comparison.modified];
   const subscriptions = [
-    workbench.onChange((document) => {
+    workshop.onChange((document) => {
       if (uris.includes(document.uri)) {
         notify();
       }
     }),
   ];
   if (uris.some((uri) => uri.startsWith("git:"))) {
-    const stop = workbench.git?.onDidChange?.(notify);
+    const stop = workshop.git?.onDidChange?.(notify);
     if (stop) {
       subscriptions.push(stop);
     }
   }
   for (const uri of new Set(uris.filter((uri) => !uri.startsWith("git:")))) {
-    const stop = workbench.watchFile?.(uri, notify);
+    const stop = workshop.watchFile?.(uri, notify);
     if (stop) {
       subscriptions.push(stop);
     }

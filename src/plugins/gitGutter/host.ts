@@ -63,9 +63,9 @@ async function saveAndStage(
 /** Reads the note's git baseline through VS Code's git extension; never shells out. */
 export const gitGutterHost: Plugin<{ panel: PanelShell }> = {
   name: "gitGutter",
-  inject: { required: ["workbench", "rpc"] },
+  inject: { required: ["workshop", "rpc"] },
   apply(ctx, { panel }) {
-    const git = ctx.workbench.git;
+    const git = ctx.workshop.git;
     const uri = panel.document.uri;
     registerBaseline(ctx, git, uri);
     registerStage(ctx, git, panel);
@@ -113,7 +113,7 @@ function registerStage(
         return false;
       }
       return saveAndStage(panel, git, (message) =>
-        ctx.workbench.error(message),
+        ctx.workshop.error(message),
       );
     }),
   );

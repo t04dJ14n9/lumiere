@@ -7,9 +7,9 @@ const REFRESH_DELAY_MS = 300;
 /** The Outgoing links view, following the active note. */
 export const outgoingLinksHost: Plugin = {
   name: "outgoingLinks",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }

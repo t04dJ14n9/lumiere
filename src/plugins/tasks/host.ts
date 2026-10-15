@@ -5,7 +5,7 @@ import { protocol } from "./protocol";
 import { taskEdit } from "./edits";
 export const tasksHost: Plugin<{ panel: PanelShell }> = {
   name: "tasks",
-  inject: { required: ["workbench", "rpc", "resources"] },
+  inject: { required: ["workshop", "rpc", "resources"] },
   apply(ctx, { panel }) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "toggle", async (request) => {
@@ -17,7 +17,7 @@ export const tasksHost: Plugin<{ panel: PanelShell }> = {
         const document =
           source === panel.document.uri
             ? panel.document
-            : await ctx.workbench.openDocument?.(source);
+            : await ctx.workshop.openDocument?.(source);
         if (!document) {
           throw new Error("Document unavailable");
         }
@@ -27,7 +27,7 @@ export const tasksHost: Plugin<{ panel: PanelShell }> = {
           request.expected,
           request.checked,
         );
-        return change ? ctx.workbench.apply(document, [change]) : false;
+        return change ? ctx.workshop.apply(document, [change]) : false;
       }),
     );
   },

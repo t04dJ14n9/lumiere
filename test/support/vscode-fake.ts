@@ -1,5 +1,5 @@
-import type { HostDocument, Workbench } from "../../src/shared/runtime";
-export function fakeWorkbench(overrides: Partial<Workbench> = {}): Workbench {
+import type { HostDocument, Workshop } from "../../src/shared/runtime";
+export function fakeWorkbench(overrides: Partial<Workshop> = {}): Workshop {
   return {
     fingerprint: (text) => text,
     apply: async () => false,

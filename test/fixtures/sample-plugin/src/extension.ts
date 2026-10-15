@@ -2,12 +2,12 @@
 // The plugin is in plugin.ts and receives `vscode` as a parameter, so unit
 // tests can run it against the real API facade.
 import * as vscode from "vscode";
-import type { MarkdownWorkbenchApi } from "../../../../src/host/api/types";
+import type { MarkdownWorkshopApi } from "../../../../src/host/api/types";
 import { ticketsPlugin } from "./plugin";
 
 export async function activate(context: vscode.ExtensionContext) {
   const api = await vscode.extensions
-    .getExtension<MarkdownWorkbenchApi>("t04dj14n9.vscode-markdown-workbench")
+    .getExtension<MarkdownWorkshopApi>("t04dj14n9.vscode-markdown-workshop")
     ?.activate();
   if (api?.apiVersion !== 1) {
     void vscode.window.showWarningMessage(

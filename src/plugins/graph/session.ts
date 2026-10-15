@@ -1,7 +1,7 @@
 import type { Context, Infer } from "../../kernel";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { Clock, Transport } from "../../shared/rpc/endpoint";
-import type { HostViews, WorkbenchPanel } from "../../shared/runtime";
+import type { HostViews, WorkshopPanel } from "../../shared/runtime";
 import { contributionId } from "../../shared/setting-schema";
 import type { Vault } from "../vault/api";
 import { resolveScope } from "./choose";
@@ -33,7 +33,7 @@ interface SessionState {
   ctx: Context;
   view: ViewState;
   scope: HeldScope | undefined;
-  panel: WorkbenchPanel | undefined;
+  panel: WorkshopPanel | undefined;
   endpoint: Endpoint | undefined;
   generation: number;
   admitted: Set<string>;
@@ -57,7 +57,7 @@ const clock: Clock = {
 
 /** One graph panel. Scope stays on the bundle chosen at open until the user picks again. */
 export function createGraphSession(ctx: Context): GraphSession {
-  const settings = readGraphSettings(ctx.workbench.views);
+  const settings = readGraphSettings(ctx.workshop.views);
   const state: SessionState = {
     ctx,
     view: {
@@ -86,7 +86,7 @@ async function openPanel(
   state: SessionState,
   explicit: boolean,
 ): Promise<void> {
-  const views = state.ctx.workbench.views;
+  const views = state.ctx.workshop.views;
   if (!views) {
     return;
   }
@@ -137,7 +137,7 @@ function ensurePanel(state: SessionState, views: HostViews): void {
 
 function registerPanel(
   state: SessionState,
-  panel: WorkbenchPanel,
+  panel: WorkshopPanel,
   endpoint: Endpoint,
 ): void {
   const ctx = state.ctx;
@@ -177,7 +177,7 @@ function registerPanel(
   ctx.effect(() => panel.onDispose(() => detach(state, endpoint)));
 }
 
-function panelTransport(panel: WorkbenchPanel): Transport {
+function panelTransport(panel: WorkshopPanel): Transport {
   return {
     send: (message) => panel.webview.post(message),
     listen: (receive) => panel.webview.onMessage(receive),
@@ -247,7 +247,7 @@ async function buildSnapshot(
     return undefined;
   }
   const collected = collectBundle(scope.vault, scope.bundle.root);
-  const settings = readGraphSettings(state.ctx.workbench.views);
+  const settings = readGraphSettings(state.ctx.workshop.views);
   return presentSnapshot({
     bundle: scope.bundle,
     notes: collected.notes,

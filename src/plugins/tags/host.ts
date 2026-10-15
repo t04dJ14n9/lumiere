@@ -5,12 +5,12 @@ import { protocol } from "./protocol";
 import { pickTaggedNote } from "./search";
 export const tagsHost: Plugin<{ panel: PanelShell }> = {
   name: "tags",
-  inject: { required: ["rpc", "vault", "workbench"] },
+  inject: { required: ["rpc", "vault", "workshop"] },
   apply(ctx) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "search", async ({ tag }, token) => {
-        const views = ctx.workbench.views;
-        const navigation = ctx.workbench.navigation;
+        const views = ctx.workshop.views;
+        const navigation = ctx.workshop.navigation;
         if (!views || !navigation) {
           throw new Error("Tag search is unavailable");
         }

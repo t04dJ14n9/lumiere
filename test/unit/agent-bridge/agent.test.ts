@@ -118,7 +118,7 @@ test("Copy Link for Agent host removes disabled handlers and restores them on en
   const root = Context.create();
   root.provide("editors", f.editors);
   root.provide("selections", f.selections);
-  root.provide("workbench", f.workbench);
+  root.provide("workshop", f.workshop);
   root.plugin(agentBridgeHost);
   await root.settled();
   assert.equal(await f.pair.client.call(protocol, "copy", {}), true);

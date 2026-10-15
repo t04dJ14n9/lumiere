@@ -1,4 +1,4 @@
-import type { Workbench } from "../../shared/runtime";
+import type { Workshop } from "../../shared/runtime";
 import { joinContained } from "../../shared/workspace-path";
 
 export type ConfigFile = "types.json" | "app.json";
@@ -12,7 +12,7 @@ export interface ConfigFiles {
 /** Strict reads distinguish missing files from permission, decoding and I/O failures. */
 export class ContainedConfigFiles implements ConfigFiles {
   constructor(
-    private readonly workbench: Workbench,
+    private readonly workshop: Workshop,
     private readonly vaultRoot: string,
     private readonly directory: string,
   ) {}
@@ -22,7 +22,7 @@ export class ContainedConfigFiles implements ConfigFiles {
     await this.authorize(uri);
     try {
       return new TextDecoder("utf-8", { fatal: true }).decode(
-        await this.workbench.read(uri),
+        await this.workshop.read(uri),
       );
     } catch (error) {
       if (isMissingFile(error)) {
@@ -45,7 +45,7 @@ export class ContainedConfigFiles implements ConfigFiles {
   }
 
   watch(file: ConfigFile, changed: () => void) {
-    return this.workbench.watchFile?.(this.target(file), changed) ?? (() => {});
+    return this.workshop.watchFile?.(this.target(file), changed) ?? (() => {});
   }
 
   private target(file: ConfigFile): string {
@@ -57,7 +57,7 @@ export class ContainedConfigFiles implements ConfigFiles {
   }
 
   private async authorize(uri: string): Promise<void> {
-    const check = this.workbench.files?.authorize;
+    const check = this.workshop.files?.authorize;
     if (!check) {
       throw new Error("Contained configuration file access is unavailable.");
     }

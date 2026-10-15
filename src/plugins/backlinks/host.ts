@@ -8,9 +8,9 @@ const REFRESH_DELAY_MS = 300;
 /** The Backlinks view and status bar count, following the active note. */
 export const backlinksHost: Plugin = {
   name: "backlinks",
-  inject: { required: ["workbench", "vaults"] },
+  inject: { required: ["workshop", "vaults"] },
   apply(ctx) {
-    const views = ctx.workbench.views;
+    const views = ctx.workshop.views;
     if (!views) {
       return;
     }

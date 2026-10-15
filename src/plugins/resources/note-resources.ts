@@ -1,4 +1,4 @@
-import type { Workbench } from "../../shared/runtime";
+import type { Workshop } from "../../shared/runtime";
 import { mediaKind } from "../../shared/media-kinds";
 import type { LinkSyntax } from "../../shared/vault-path";
 import type { VaultIndex } from "../vault/api";
@@ -8,7 +8,7 @@ import { containedResource, contains } from "./containment";
 interface ResourceOptions {
   source: string;
   vault: VaultIndex;
-  files: Pick<Workbench, "stat" | "read" | "openDocument">;
+  files: Pick<Workshop, "stat" | "read" | "openDocument">;
   resourceUrl(uri: string): string;
 }
 

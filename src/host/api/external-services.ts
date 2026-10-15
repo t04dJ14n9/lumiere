@@ -4,13 +4,13 @@ import type {
   EditorAction,
   CodeProcessor,
 } from "./plugin-types";
-import type { MarkdownWorkbenchApi } from "./types";
+import type { MarkdownWorkshopApi } from "./types";
 import type { ApiPlatform } from "./platform";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { publicCancellation } from "./cancellation";
 export interface ServiceBindings {
   host: Context;
-  api: MarkdownWorkbenchApi;
+  api: MarkdownWorkshopApi;
   platform: ApiPlatform;
   owner: string;
   available(editorId?: string): boolean;
@@ -56,7 +56,7 @@ export function externalServices(
   if (host.codeBlocks) {
     services.codeBlocks = processorServices(bindings, assertLive);
   }
-  if (host.workbench) {
+  if (host.workshop) {
     services.commands = commandServices(bindings, assertLive);
   }
   return revokeServices(services, assertLive);
@@ -124,7 +124,7 @@ function markerServices(
   const markers = host.markers;
   host.effect(
     () =>
-      host.workbench.onConfiguration?.(() => {
+      host.workshop.onConfiguration?.(() => {
         for (const panel of host.editors.all()) {
           if (!available(panel.id)) {
             markers.clear(panel.id);
@@ -202,7 +202,7 @@ function commandServices(
       }
       return ownedDisposable(
         host,
-        host.workbench.command(id, () => {
+        host.workshop.command(id, () => {
           assertLive(host.editors.active()?.id);
           return run();
         }),

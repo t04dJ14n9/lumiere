@@ -97,14 +97,14 @@ export async function run(
       return answers.input;
     },
   } as never;
-  const workbench = workbenchWith(views);
-  workbench.settings = store.access;
+  const workshop = workbenchWith(views);
+  workshop.settings = store.access;
   const informed: string[] = [];
   const errors: string[] = [];
-  workbench.inform = (message) => informed.push(message);
-  workbench.error = (message) => errors.push(message);
+  workshop.inform = (message) => informed.push(message);
+  workshop.error = (message) => errors.push(message);
   const root = Context.create({});
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   root.plugin(settingsHost);
   await root.settled();
   const command = (id: string) => {

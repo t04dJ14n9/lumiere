@@ -14,7 +14,7 @@ import {
   VIEW_ID as outgoingLinksViewId,
 } from "../../../src/plugins/outgoingLinks/tree";
 import outgoingLinks from "../../../src/plugins/outgoingLinks/manifest";
-import { workbenchFeatures } from "../../../src/host/workbench-features";
+import { workbenchFeatures } from "../../../src/host/workshop-features";
 import {
   fakeViews,
   memoryVaults,
@@ -98,9 +98,9 @@ test("Backlinks and Outgoing Links are off until turned on", async () => {
   const fake = fakeViews();
   const root = Context.create();
   root.provide("vaults", vaults);
-  const workbench = workbenchWith(fake.views);
-  root.provide("workbench", workbench);
-  workbenchFeatures(root, workbench, [
+  const workshop = workbenchWith(fake.views);
+  root.provide("workshop", workshop);
+  workbenchFeatures(root, workshop, [
     { manifest: backlinks, plugin: backlinksHost },
     { manifest: outgoingLinks, plugin: outgoingLinksHost },
   ]);
@@ -120,14 +120,14 @@ test("view plugins follow the active note and their setting, and clean up when t
   });
   const root = Context.create();
   root.provide("vaults", vaults);
-  const workbench = workbenchWith(fake.views);
+  const workshop = workbenchWith(fake.views);
   let configure = () => {};
-  workbench.onConfiguration = (listener) => {
+  workshop.onConfiguration = (listener) => {
     configure = listener;
     return () => {};
   };
-  root.provide("workbench", workbench);
-  workbenchFeatures(root, workbench, [
+  root.provide("workshop", workshop);
+  workbenchFeatures(root, workshop, [
     { manifest: backlinks, plugin: backlinksHost },
     { manifest: outgoingLinks, plugin: outgoingLinksHost },
   ]);

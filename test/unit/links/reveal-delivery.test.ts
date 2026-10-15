@@ -12,7 +12,7 @@ import {
 import type {
   PanelShell,
   RevealPanel,
-  Workbench,
+  Workshop,
 } from "../../../src/shared/runtime";
 import { rpcPair } from "../../support/rpc-pair";
 
@@ -49,14 +49,14 @@ async function fixture() {
     root: "file:///vault",
     onDidResolve: () => () => {},
   } as unknown as VaultIndex);
-  root.provide("workbench", {
+  root.provide("workshop", {
     navigation: {
       registerReveal(panel: RevealPanel) {
         registered = panel;
         return router.register(panel);
       },
     },
-  } as unknown as Workbench);
+  } as unknown as Workshop);
   const panel = {
     id: "pane",
     document: { uri: "file:///vault/Note.md" },

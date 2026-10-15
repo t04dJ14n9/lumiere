@@ -1,6 +1,6 @@
 import type { Context, Fiber } from "../kernel";
 import { features } from "../plugins/catalog";
-import type { PanelShell, Workbench } from "../shared/runtime";
+import type { PanelShell, Workshop } from "../shared/runtime";
 import {
   linksHost,
   tasksHost,
@@ -17,7 +17,7 @@ import {
 export function hostFeatures(
   root: Context,
   panel: PanelShell,
-  workbench: Workbench,
+  workshop: Workshop,
 ): void {
   const active = new Map<string, Fiber<{ panel: PanelShell }>>();
   let live = true;
@@ -31,7 +31,7 @@ export function hostFeatures(
         if (!live) {
           return;
         }
-        const config = workbench.config(panel.document);
+        const config = workshop.config(panel.document);
         for (const plugin of [
           linksHost,
           tasksHost,
@@ -65,8 +65,8 @@ export function hostFeatures(
       );
     root.runtime.track(queue);
   };
-  if (workbench.onConfiguration) {
-    root.effect(() => workbench.onConfiguration!(refresh));
+  if (workshop.onConfiguration) {
+    root.effect(() => workshop.onConfiguration!(refresh));
   }
   root.on("editor/configure", refresh);
   refresh();

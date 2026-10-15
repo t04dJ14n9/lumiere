@@ -2,17 +2,17 @@ import { pathToFileURL } from "node:url";
 import type { Plugin } from "../../kernel";
 import type { DiffSide } from "../../shared/git";
 import type { Vaults } from "../vault/api";
-import type { Workbench } from "../../shared/runtime";
+import type { Workshop } from "../../shared/runtime";
 import { NoteResources } from "./note-resources";
 
 import type {} from "./api";
 /** Reuse vault resolution and containment for independently owned diff sides. */
 export const diffResourcesHost: Plugin = {
   name: "resources",
-  inject: { required: ["vaults", "workbench"] },
+  inject: { required: ["vaults", "workshop"] },
   apply(ctx) {
     ctx.provide("diffResources", {
-      forSide: (side) => sideResources(ctx.vaults, ctx.workbench, side),
+      forSide: (side) => sideResources(ctx.vaults, ctx.workshop, side),
     });
   },
 };
@@ -38,7 +38,7 @@ export function diffSource(uri: string): { source: string; ref?: string } {
 
 export async function sideResources(
   vaults: Vaults,
-  files: Workbench,
+  files: Workshop,
   side: DiffSide,
 ) {
   const { source, ref } = diffSource(side.uri);

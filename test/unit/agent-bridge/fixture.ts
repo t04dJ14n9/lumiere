@@ -41,7 +41,7 @@ export function fixture() {
   };
   const views = fakeViews().views;
   views.ask = async () => state.choice;
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     views,
     workspaceFolders: () => ["file:///vault"],
     clipboard: {
@@ -60,7 +60,7 @@ export function fixture() {
       return () => {};
     },
   });
-  const session = new Session(document, workbench);
+  const session = new Session(document, workshop);
   const panel: EditorPanel = {
     id: "panel",
     column: undefined,
@@ -90,12 +90,12 @@ export function fixture() {
   });
   const selections = new SelectionSnapshots(
     (id) => editors.all().find((item) => item.id === id),
-    workbench,
+    workshop,
   );
   const agent = new AgentHandoff({
     editors,
     selections,
-    workbench,
+    workshop,
     beforeSave: async () => {
       beforeSave();
     },
@@ -108,7 +108,7 @@ export function fixture() {
     editors,
     selections,
     agent,
-    workbench,
+    workshop,
     changeConfig: () => changed(),
     beforeCapture: (run: () => void) => {
       beforeCapture = run;

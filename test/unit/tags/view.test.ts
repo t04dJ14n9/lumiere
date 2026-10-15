@@ -4,7 +4,7 @@ import { Context } from "../../../src/kernel";
 import tagsManifest from "../../../src/plugins/tags/manifest";
 import { SEARCH_COMMAND, VIEW_ID } from "../../../src/plugins/tags/tree";
 import { tagsViewHost } from "../../../src/plugins/tags/view";
-import { workbenchFeatures } from "../../../src/host/workbench-features";
+import { workbenchFeatures } from "../../../src/host/workshop-features";
 import {
   fakeViews,
   memoryVaults,
@@ -25,7 +25,7 @@ async function start(
     index.upsertFile({ ...index.file(path)!, excluded: true });
   }
   const root = Context.create();
-  root.provide("workbench", workbenchWith(fake.views));
+  root.provide("workshop", workbenchWith(fake.views));
   root.provide("vaults", vaults);
   root.plugin(tagsViewHost);
   await root.settled();
@@ -106,18 +106,18 @@ test("the Tags view follows the tags plugin's enabled setting", async () => {
   const fake = fakeViews({ "plugins.tags.enabled": false });
   const { vaults } = memoryVaults({ "A.md": "#tag" });
   const root = Context.create();
-  const workbench = workbenchWith(fake.views);
+  const workshop = workbenchWith(fake.views);
   const listeners = new Set<() => void>();
-  workbench.onConfiguration = (listener) => {
+  workshop.onConfiguration = (listener) => {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
     };
   };
   const reconfigure = () => listeners.forEach((listener) => listener());
-  root.provide("workbench", workbench);
+  root.provide("workshop", workshop);
   root.provide("vaults", vaults);
-  workbenchFeatures(root, workbench, [
+  workbenchFeatures(root, workshop, [
     { manifest: tagsManifest, plugin: tagsViewHost },
   ]);
   await wait();

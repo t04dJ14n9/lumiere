@@ -31,10 +31,10 @@ import {
  */
 export const settingsHost: Plugin = {
   name: "settings",
-  inject: { required: ["workbench"] },
+  inject: { required: ["workshop"] },
   apply(ctx) {
-    const settings = ctx.workbench.settings;
-    const views = ctx.workbench.views;
+    const settings = ctx.workshop.settings;
+    const views = ctx.workshop.views;
     if (!settings || !views) {
       return;
     }
@@ -42,8 +42,8 @@ export const settingsHost: Plugin = {
       settings,
       views,
       resource: () => views.activeNote(),
-      inform: (message) => ctx.workbench.inform?.(message),
-      error: (message) => ctx.workbench.error(message),
+      inform: (message) => ctx.workshop.inform?.(message),
+      error: (message) => ctx.workshop.error(message),
     };
     const command = (id: string, run: (...args: unknown[]) => unknown) =>
       ctx.effect(() => views.command(contributionId(id), run));

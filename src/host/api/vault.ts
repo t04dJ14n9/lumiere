@@ -1,13 +1,13 @@
 import type { Context } from "../../kernel";
 import type { ApiPlatform } from "./platform";
-import type { MarkdownWorkbenchApi } from "./types";
+import type { MarkdownWorkshopApi } from "./types";
 import { immutable } from "./snapshots";
 import { validateUri } from "./editors";
 import { RpcError } from "../../shared/rpc/lifecycle";
 export function vaultOperations(
   root: Context,
   platform: ApiPlatform,
-): Pick<MarkdownWorkbenchApi, "resolveLink" | "getMetadata" | "getBacklinks"> {
+): Pick<MarkdownWorkshopApi, "resolveLink" | "getMetadata" | "getBacklinks"> {
   const locate = (uri: string) => {
     for (const vault of root.vaults?.all() ?? []) {
       const path = vault.pathOf(uri);

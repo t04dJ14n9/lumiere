@@ -38,7 +38,7 @@ export interface PanelPort {
  * plain functions that return disposers, so plugins run against a fake in
  * unit tests. Optional members are absent in fakes and minimal hosts.
  */
-export interface Workbench {
+export interface Workshop {
   // Documents and saving.
   fingerprint(text: string): string;
   apply(document: HostDocument, edits: readonly TextEdit[]): Promise<boolean>;
@@ -66,7 +66,7 @@ export interface Workbench {
     open: (panel: PanelShell) => void,
   ): Disposer;
   onConfiguration?(listener: () => void): Disposer;
-  /** Reading and writing `markdownWorkbench.*` settings like the Settings UI. */
+  /** Reading and writing `markdownWorkshop.*` settings like the Settings UI. */
   settings?: SettingsAccess;
   /** Effective resource settings, including disposable feature overrides. */
   configuration?: Configuration;
@@ -142,7 +142,7 @@ export interface Workbench {
 declare module "../kernel/types" {
   interface Services {
     rpc: Endpoint;
-    workbench: Workbench;
+    workshop: Workshop;
   }
 }
 /** One editor panel as the VS Code adapter hands it to the editor host. */
@@ -268,7 +268,7 @@ export type SettingTarget = "workspaceFolder" | "workspace" | "user";
 
 /** One setting of the extension's `contributes.configuration`, as VS Code lists it. */
 export interface ContributedSetting {
-  /** The full key, such as `markdownWorkbench.editor.fontSize`. */
+  /** The full key, such as `markdownWorkshop.editor.fontSize`. */
   key: string;
   schema: {
     type?: string | readonly string[];
@@ -284,7 +284,7 @@ export interface ContributedSetting {
 
 /** The Settings UI's own keys and scopes, for commands that change settings. */
 export interface SettingsAccess {
-  /** A `markdownWorkbench.` key as it is now, and where a write to it goes. */
+  /** A `markdownWorkshop.` key as it is now, and where a write to it goes. */
   inspect(
     key: string,
     resource?: string,
@@ -302,7 +302,7 @@ export interface SettingsAccess {
 }
 
 /** A webview panel that is not tied to a text document. */
-export interface WorkbenchPanel {
+export interface WorkshopPanel {
   reveal(): void;
   setTitle(title: string): void;
   readonly visible: boolean;
@@ -348,13 +348,13 @@ export interface HostViews {
   onTextSelectionChanged(listener: () => void): Disposer;
   /** The current text of an open document, saved or not. */
   documentText(uri: string): string | undefined;
-  /** A window-level setting under `markdownWorkbench.`. */
+  /** A window-level setting under `markdownWorkshop.`. */
   setting<T>(key: string, fallback: T, resource?: string): T;
   /**
    * A document-independent webview panel. One panel per view type; a second
    * call reveals the existing one.
    */
-  panel(viewType: string, title: string): WorkbenchPanel;
+  panel(viewType: string, title: string): WorkshopPanel;
   /** Before files are renamed in VS Code; the edits apply with the rename. */
   onWillRename(
     listener: (
@@ -368,7 +368,7 @@ export interface SourceEdit {
   to: number;
   insert: string;
 }
-/** The `markdownWorkbench.copyLinkForAgent.target` setting. */
+/** The `markdownWorkshop.copyLinkForAgent.target` setting. */
 export type CopyLinkTarget =
   "auto" | "cursor" | "chat" | "claudeCode" | "codex" | "clipboard";
 

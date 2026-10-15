@@ -5,7 +5,7 @@ import type {} from "../vault/api";
 export const publicApiHost: Plugin<{ create(context: Context): void }> = {
   name: "publicApi",
   inject: {
-    required: ["workbench", "editors", "selections"],
+    required: ["workshop", "editors", "selections"],
     optional: ["vaults"],
   },
   apply(ctx, options) {

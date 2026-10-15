@@ -93,15 +93,15 @@ test("Manage Plugins opens plugin settings for the active note", async () => {
 test("Show Plugin Status picks from the active editor's states and opens the chosen switch", async () => {
   const f = await fixture();
   const messages: string[] = [];
-  f.workbench.inform = (message) => messages.push(message);
-  delete f.workbench.views;
+  f.workshop.inform = (message) => messages.push(message);
+  delete f.workshop.views;
   // Without native views (a minimal host) the command explains itself.
   await f.commands.get(contributionId("showPluginStatus"))?.();
   assert.equal(messages.length, 1);
 
   let offered: readonly PickItem<unknown>[] = [];
   let placeholder = "";
-  f.workbench.views = {
+  f.workshop.views = {
     pick: async (options: Parameters<HostViews["pick"]>[0]) => {
       placeholder = options.placeholder;
       offered = options.items("");

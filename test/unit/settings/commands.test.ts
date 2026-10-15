@@ -48,7 +48,7 @@ test("every editor manifest command routes to its registered webview ID", async 
     restore: async () => {},
   });
   root.provide(
-    "workbench",
+    "workshop",
     fakeWorkbench({
       config: () => ({
         preset: "obsidian",

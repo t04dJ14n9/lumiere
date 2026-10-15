@@ -15,7 +15,7 @@ import type { Plugin, Services } from "../kernel";
 
 /** Services the host or webview root provides, not a plugin. */
 export const ROOT_SERVICES: readonly (keyof Services)[] = [
-  "workbench",
+  "workshop",
   "vaultSystem",
   "rpc",
 ];

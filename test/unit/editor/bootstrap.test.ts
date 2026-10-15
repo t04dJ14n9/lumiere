@@ -54,20 +54,20 @@ test("the real host wiring starts every window and panel plugin", async () => {
   };
   try {
     let open: (panel: PanelShell) => void = () => {};
-    const workbench = fakeWorkbench({
+    const workshop = fakeWorkbench({
       config: () => ({ preset: "obsidian", mode: "source" }),
       registerEditor: (_provider, callback) => {
         open = callback;
         return () => {};
       },
     });
-    workbench.views = fakeViews().views;
-    workbench.storage = {
+    workshop.views = fakeViews().views;
+    workshop.storage = {
       get: (_key, fallback) => fallback,
       update: async () => {},
     };
     const fs = new MemoryFileSystem({ "A.md": "[[B]]", "B.md": "" });
-    const root = await bootstrap(workbench, memorySystem(fs).value);
+    const root = await bootstrap(workshop, memorySystem(fs).value);
     await wait();
     assert.deepEqual(stalled(root), []);
 
@@ -92,7 +92,7 @@ test("the editor provider registers once, so an editor opened during activation 
   let registrations = 0;
   let unregistrations = 0;
   let disposed = false;
-  const workbench = fakeWorkbench({
+  const workshop = fakeWorkbench({
     config: () => ({ preset: "obsidian", mode: "source" }),
     registerEditor: (provider, open) => {
       registrations++;
@@ -108,9 +108,9 @@ test("the editor provider registers once, so an editor opened during activation 
       };
     },
   });
-  workbench.views = fakeViews().views;
+  workshop.views = fakeViews().views;
   const fs = new MemoryFileSystem({ "A.md": "" });
-  const root = await bootstrap(workbench, memorySystem(fs).value);
+  const root = await bootstrap(workshop, memorySystem(fs).value);
   await wait();
   assert.equal(registrations, 1);
   assert.equal(unregistrations, 0);
