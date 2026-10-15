@@ -10,6 +10,7 @@ import type {
   NavigationIntent,
   PanelShell,
 } from "../shared/runtime";
+import { warmMarkdownDocument } from "./document-warm";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 
 /** All navigation paths are checked again in the native adapter, including symlinks. */
@@ -239,6 +240,7 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
   const column = side ? vscode.ViewColumn.Beside : activeColumn;
   const before = new Set(panels().map((panel) => panel.id));
   if (/\.(md|markdown)$/i.test(uri.path)) {
+    await warmMarkdownDocument(uri);
     await vscode.commands.executeCommand(
       "vscode.openWith",
       uri,

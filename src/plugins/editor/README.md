@@ -129,6 +129,8 @@ here that shows up in the plain text editor, as Cursor's **Preview |
 Markdown** switch does, is reopened in this editor and the text tab closed.
 **Open as Text** and a just-reclaimed note keep the text editor for 10 s.
 
+`editor.warmTextDocument` (`auto`/`on`/`off`, auto meaning on in Cursor) opens Markdown `TextDocument`s early (on create/change and for git-dirty notes) so Cursor can resolve this custom editor without the uninitialized-document assertion.
+
 ## Limits and differences from Obsidian
 
 VS Code owns text, saving and undo. The core editor cannot be disabled. Feature

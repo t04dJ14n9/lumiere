@@ -8,6 +8,7 @@ import {
 } from "./reclaim-policy";
 import type { TabKind } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
+import { warmMarkdownDocument } from "./document-warm";
 
 const { viewType } = MARKDOWN_EDITOR;
 
@@ -94,12 +95,12 @@ export function registerReclaim(): vscode.Disposable {
 /** Open the note here in the text tab's place, then close the text tab. */
 async function reopen(tab: vscode.Tab, uri: string): Promise<void> {
   const column = tab.group.viewColumn;
-  await vscode.commands.executeCommand(
-    "vscode.openWith",
-    vscode.Uri.parse(uri),
-    viewType,
-    { viewColumn: column, preview: tab.isPreview },
-  );
+  const target = vscode.Uri.parse(uri);
+  await warmMarkdownDocument(target);
+  await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
+    viewColumn: column,
+    preview: tab.isPreview,
+  });
   const group = vscode.window.tabGroups.all.find(
     (candidate) => candidate.viewColumn === column,
   );

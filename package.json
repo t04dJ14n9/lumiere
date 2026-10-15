@@ -1436,6 +1436,15 @@
           "default": "auto",
           "scope": "resource"
         },
+        "markdownWorkbench.editor.warmTextDocument": {
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "default": "auto",
+          "scope": "resource"
+        },
         "markdownWorkbench.editor.strictLineBreaks": {
           "type": "boolean",
           "default": false,

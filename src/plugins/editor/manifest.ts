@@ -6,6 +6,8 @@ export const config = Schema.object({
   readableLineLength: Schema.boolean().default(false),
   /** Reopen notes Cursor's Preview | Markdown switch sends to the text editor. */
   reclaimTextEditor: Schema.union(["auto", "on", "off"]).default("auto"),
+  /** Open TextDocuments early so Cursor can resolve our custom editor for agent-edited notes. */
+  warmTextDocument: Schema.union(["auto", "on", "off"]).default("auto"),
   strictLineBreaks: Schema.boolean().default(false),
   rightToLeft: Schema.boolean().default(false),
   useTabs: Schema.boolean().default(true),

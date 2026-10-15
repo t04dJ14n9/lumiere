@@ -243,6 +243,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkbench.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
+| Setting: markdownWorkbench.editor.warmTextDocument | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; workaround for Cursor uninitialized custom-editor documents | not applicable |
 | Setting: markdownWorkbench.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkbench.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
