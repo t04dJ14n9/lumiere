@@ -22,7 +22,7 @@ differ only in case are one entry, spelled as first seen. Counts are notes: a
 parent counts a note once however many of its descendants the note uses.
 Excluded files are left out, as in search. The view rebuilds 300 ms after the
 vault re-resolves, the active note changes or settings change, and only while
-it is visible. Both halves follow `markdownWorkshop.plugins.tags.enabled`.
+it is visible. Both halves follow `markdownWorkshop.plugins.tags.enabled`. The Explorer view is limited to `activeCustomEditorId == 'markdownWorkshop.editor'` so Tags hide when another editor is active; Outline's enter/leave focus also reveals Tags while Workshop is active.
 
 ## Files
 

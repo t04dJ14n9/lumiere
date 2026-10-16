@@ -32,6 +32,15 @@ The command palette entry is workbench/config-gated like Quick Switcher. Hiding
 targets the view itself, including after moving it to the secondary sidebar or
 panel; showing restores and focuses it in its current location.
 
+When a Markdown Workshop editor becomes active, the plugin hides VS Code's
+native **Outline**, shows **Note Outline** and **Tags**, then returns focus to
+the editor. Leaving the last Workshop editor restores the native Outline after a
+short debounce so switching to PDF Workshop does not flash Outline. Manual
+changes to Outline while a Workshop editor stays active are left alone until the
+next enter/leave. Tags also use the same `activeCustomEditorId` when-clause as
+Note Outline so they do not linger beside non-Workshop editors.
+
+
 ## Files
 
 - `host.ts`: the plugin registrations and editor/document event routing.
@@ -40,6 +49,7 @@ panel; showing restores and focuses it in its current location.
 - `tree.ts`: heading nodes, parent lookup and editor-to-source coordinates.
 - `view.ts`: refresh timing, cursor following and expansion traversal.
 - `actions.ts`: commands, configuration reads and the follow context key.
+- `focus.ts`: native Outline ↔ Note Outline/Tags enter/leave swap.
 - `commands.ts`: view, command, setting and context identifiers.
 - `headings.ts`: nesting headings and finding the caret's section.
 - `manifest.ts`: view/title actions, the view, keybinding and the follow setting.

@@ -9,6 +9,7 @@ import {
   registerOutlineCommandContext,
 } from "./actions";
 import { OPEN_COMMAND, VIEW_ID } from "./commands";
+import { createOutlineFocus } from "./focus";
 import { registerSymbolPicker } from "./symbol-picker";
 import { OutlineSource } from "./tree";
 import { OutlineView } from "./view";
@@ -41,6 +42,7 @@ export const outlineHost: Plugin = {
     registerOutlineActions(ctx, view, tree);
     registerFollowCursor(ctx, view);
     registerSymbolPicker(ctx, views);
+    registerOutlineFocus(ctx);
     ctx.effect(() =>
       views.command(OPEN_COMMAND, (uri, offset) =>
         ctx.vaults.open(String(uri), { offset: Number(offset) }),
@@ -77,4 +79,19 @@ function registerOutlineUpdates(
       }
     }),
   );
+}
+
+function registerOutlineFocus(ctx: Context): void {
+  const focus = createOutlineFocus({
+    execute: (command) => ctx.workshop.execute(command),
+    focusEditor: () =>
+      ctx.workshop.execute("workbench.action.focusActiveEditorGroup"),
+  });
+  ctx.effect(() => () => focus.dispose());
+  const sync = () => focus.sync(Boolean(ctx.editors.active()));
+  ctx.on("editor/opened", sync);
+  ctx.on("editor/closed", sync);
+  ctx.on("editor/activeChanged", sync);
+  // An already-active panel may not emit activeChanged at startup.
+  sync();
 }

@@ -117,6 +117,24 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
   );
 });
 
+test("Tags and Note Outline views require the Markdown Workshop editor", async () => {
+  const { views } = await contributions();
+  const outline = views.explorer.find(
+    (view) => view.id === "markdownWorkshop.outline",
+  );
+  const tags = views.explorer.find(
+    (view) => view.id === "markdownWorkshop.tags",
+  );
+  assert.match(
+    outline?.when ?? "",
+    /activeCustomEditorId == 'markdownWorkshop\.editor'/,
+  );
+  assert.match(
+    tags?.when ?? "",
+    /activeCustomEditorId == 'markdownWorkshop\.editor'/,
+  );
+});
+
 test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
   const { keybindings, commands, menus } = await contributions();
   const command = commands.find(

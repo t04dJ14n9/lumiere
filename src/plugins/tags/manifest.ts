@@ -1,4 +1,5 @@
 import { Schema } from "../../kernel";
+import { MARKDOWN_EDITOR, whenActive } from "../../shared/editor-provider";
 import { defineManifest } from "../../shared/manifest";
 export const config = Schema.object({
   viewSort: Schema.union(["name", "frequency"])
@@ -23,6 +24,13 @@ export default defineManifest({
   capabilities: ["syntax", "rendering", "vaultIndex", "views"],
   config,
   contributes: {
-    views: [{ id: "tags", name: "Tags", scope: "workbench" }],
+    views: [
+      {
+        id: "tags",
+        name: "Tags",
+        scope: "workbench",
+        when: whenActive(MARKDOWN_EDITOR),
+      },
+    ],
   },
 } as const);
