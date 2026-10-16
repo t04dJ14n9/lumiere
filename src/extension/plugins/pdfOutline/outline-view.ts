@@ -5,6 +5,7 @@ import { updateSetting } from '../../settings';
 import type { PdfPanel } from '../pdf/panel';
 import type { PdfPanels } from '../pdf/panels';
 import { OUTLINE_COMMAND_IDS } from '../pdf/registered-commands';
+import { createOutlineFocus } from './focus';
 
 const FOLLOW_SETTING = 'pdfWorkshop.outline.followCursor';
 const FOLLOW_CONTEXT = 'pdfWorkshop.outlineFollowCursor';
@@ -72,13 +73,23 @@ export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutpu
     if (!disposed) applyFollowSetting();
   };
 
+  const outlineFocus = createOutlineFocus({
+    execute: (command) => vscode.commands.executeCommand(command),
+    focusEditor: () => vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup'),
+    activeCustomEditorViewType: () => {
+      const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+      return input instanceof vscode.TabInputCustom ? input.viewType : undefined;
+    },
+  });
   const registration = vscode.Disposable.from(
     new vscode.Disposable(() => { disposed = true; }),
+    new vscode.Disposable(() => outlineFocus.dispose()),
     view,
     provider,
     panels.onDidChange(() => {
       if (provider.refresh()) followed = undefined;
       void follow();
+      outlineFocus.sync(Boolean(panels.active));
     }),
     view.onDidChangeVisibility(() => {
       followed = undefined;
@@ -116,6 +127,7 @@ export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutpu
     }),
   );
   applyFollowSetting();
+  outlineFocus.sync(Boolean(panels.active));
   return registration;
 }
 

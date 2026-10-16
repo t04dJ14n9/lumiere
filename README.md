@@ -38,6 +38,9 @@ is the only agent installed (or you pick one), that chat opens with it.
   and **Collapse All**. Turn on **Follow Cursor** in the **…** menu to select
   the bookmark for the current page and reading position without moving focus.
   This choice is saved as `pdfWorkshop.outline.followCursor` (off by default).
+  Opening a PDF Workshop editor hides VS Code's native **Outline** and shows
+  **PDF Outline**; leaving restores the native Outline after a short debounce,
+  skipped if Markdown Workshop already owns the active tab.
 - **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   button next to the selection, the right-click menu, the editor title

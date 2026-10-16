@@ -44,6 +44,7 @@ function harness(enabled = false, visible = true) {
   const reveals: Reveal[] = [];
   const warnings: string[] = [];
   const writes: { key: string; value: boolean }[] = [];
+  const executed: string[] = [];
   const navigations: { panel: Panel; page: number; top: number | undefined }[] = [];
   const view = {
     visible,
@@ -75,9 +76,12 @@ function harness(enabled = false, visible = true) {
         commands.set(id, callback);
         return new Disposable(() => { commands.delete(id); });
       },
-      executeCommand: async (id: string, key: string, value: unknown) => {
-        assert.equal(id, 'setContext');
-        contexts.set(key, value);
+      executeCommand: async (id: string, key?: string, value?: unknown) => {
+        if (id === 'setContext') {
+          contexts.set(String(key), value);
+          return;
+        }
+        executed.push(id);
       },
     },
   };
@@ -85,6 +89,12 @@ function harness(enabled = false, visible = true) {
     vscode: api,
     '../../../shared/outline': { findActiveOutlineItem },
     '../pdf/registered-commands': { OUTLINE_COMMAND_IDS },
+    './focus': {
+      createOutlineFocus: () => ({
+        sync() {},
+        dispose() {},
+      }),
+    },
     '../../settings': {
       updateSetting: async (key: string, value: boolean) => {
         writes.push({ key, value });
