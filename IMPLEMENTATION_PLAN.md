@@ -4381,3 +4381,21 @@ recorded in `/workspace/plans/chatgpt-ide-adapters-code/PR-STATUS.md`.
   under shared-host load passed unchanged with bounded workers.
 - `pnpm package` and the existing 10 MB VSIX size/file check passed (4.66 MB).
   The VSIX was only built locally; no installation, merge or publication occurred.
+
+## gitBlame follow-up — Live Preview panel host wiring, 2026-10-16
+
+The panel host feature list omitted `gitBlameHost`, despite its manifest and
+bundle export. The webview's default-on renderer therefore received
+`PluginDisabled` for its blame/identity requests and quietly hid the EOL chip.
+Registered the host beside `gitGutterHost` through the existing resource-scoped
+enablement path; no catalog-loader or rendering change is needed.
+
+Added a unit regression through the real `hostFeatures` entry point and paired
+RPC endpoints. It checks default startup, panel-document binding, disable and
+re-enable, repository subscription cleanup and the minimal preset. Before the
+fix it fails on `gitBlame/blameLine` with `PluginDisabled`; after the fix,
+focused gitBlame/git-blame units (48/48) and `pnpm check` (1,744 unit passes,
+23 intentional Cordis skips) are green under Node 22. Sample-vault GUI
+acceptance remains VERIFY-NEEDED for Grok Bot; the existing manual plan already
+covers the behavior. No source suites ported and no VSIX, merge or Marketplace
+publication.
