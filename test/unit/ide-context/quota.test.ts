@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { MemoryTempFs } from "./memory-temp-fs";
 import { publishIdeContextTemp } from "../../../src/shared/ide-context/temp-publish";
-import { writeLeaseAtomic, leasePathFor } from "../../../src/shared/ide-context/temp-lease";
+import {
+  writeLeaseAtomic,
+  leasePathFor,
+} from "../../../src/shared/ide-context/temp-lease";
 
 test("quota full of leased finals soft-fails new publish without unlinking leases", async () => {
   const fs = new MemoryTempFs();
@@ -18,7 +21,9 @@ test("quota full of leased finals soft-fails new publish without unlinking lease
       sessionId: `fill-${i}`,
     });
   }
-  const before = (await fs.readdir(dir)).filter((n) => n.endsWith(".json") && !n.includes(".partial"));
+  const before = (await fs.readdir(dir)).filter(
+    (n) => n.endsWith(".json") && !n.includes(".partial"),
+  );
   assert.equal(before.length, 8);
 
   const result = await publishIdeContextTemp(fs, {
@@ -37,7 +42,11 @@ test("quota full of leased finals soft-fails new publish without unlinking lease
   }
   assert.equal(fs.exists("ide-context-new.json"), false);
   for (let i = 0; i < 8; i++) {
-    assert.equal(fs.exists(`ide-context-filled-${i}.json`), true, `filled ${i} kept`);
+    assert.equal(
+      fs.exists(`ide-context-filled-${i}.json`),
+      true,
+      `filled ${i} kept`,
+    );
     assert.equal(fs.exists(`ide-context-filled-${i}.json.lease`), true);
   }
 });

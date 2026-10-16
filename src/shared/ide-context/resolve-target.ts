@@ -1,18 +1,10 @@
 /** Shared Send IDE Context target resolution — never silent-guess Claude vs Codex. */
 
 export type IdeContextTargetSetting =
-  | "auto"
-  | "claudeCode"
-  | "codex"
-  | "clipboard"
-  | "cursor"
-  | "chat";
+  "auto" | "claudeCode" | "codex" | "clipboard" | "cursor" | "chat";
 
 export type IdeContextSendResolution =
-  | "claudeCode"
-  | "codex"
-  | "clipboard"
-  | "picker";
+  "claudeCode" | "codex" | "clipboard" | "picker";
 
 export interface IdeContextSendEnvironment {
   /** Registered command ids. */

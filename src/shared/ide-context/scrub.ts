@@ -44,7 +44,10 @@ export function scrubDiagnosticMessage(msg: string, maxChars: number): string {
   return out;
 }
 
-function scrubDiagnosticItem(item: DiagnosticItem, maxMsg: number): DiagnosticItem {
+function scrubDiagnosticItem(
+  item: DiagnosticItem,
+  maxMsg: number,
+): DiagnosticItem {
   return {
     ...item,
     message: scrubDiagnosticMessage(item.message, maxMsg),
@@ -69,7 +72,9 @@ export function scrubPacket(packet: IdeContextPacket): IdeContextPacket {
     diagnostics: {
       ...packet.diagnostics,
       uri: scrubUri(packet.diagnostics.uri, maxUri),
-      items: packet.diagnostics.items.map((i) => scrubDiagnosticItem(i, maxMsg)),
+      items: packet.diagnostics.items.map((i) =>
+        scrubDiagnosticItem(i, maxMsg),
+      ),
     },
     warnings: [...packet.warnings],
     caps: packet.caps,

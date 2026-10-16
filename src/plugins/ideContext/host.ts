@@ -8,7 +8,10 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import * as fssync from "node:fs";
-import { publishIdeContextTemp, renewLeaseAtomic } from "../../shared/ide-context";
+import {
+  publishIdeContextTemp,
+  renewLeaseAtomic,
+} from "../../shared/ide-context";
 import type { TempFs } from "../../shared/ide-context";
 
 /** Node fs adapter for temp publish. */
@@ -53,7 +56,10 @@ async function gatherInput(ctx: Context) {
   }
   const selection = await ctx.selections.capture(panel.id);
   const host = {
-    listTabs: () => ({ visible: [panel.document.uri], open: [panel.document.uri] }),
+    listTabs: () => ({
+      visible: [panel.document.uri],
+      open: [panel.document.uri],
+    }),
     getDiagnostics: (_uri: string) => [] as never[],
     activeTextEditor: undefined,
   };

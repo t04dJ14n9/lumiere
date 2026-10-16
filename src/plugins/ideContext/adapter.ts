@@ -17,7 +17,9 @@ export interface MwIdeContextInput {
 }
 
 /** Build a markdownWorkshop IdeContextPacket (no pdf key). */
-export function buildMwIdeContextPacket(input: MwIdeContextInput): IdeContextPacket {
+export function buildMwIdeContextPacket(
+  input: MwIdeContextInput,
+): IdeContextPacket {
   const selection = input.selection
     ? {
         from: input.selection.from,

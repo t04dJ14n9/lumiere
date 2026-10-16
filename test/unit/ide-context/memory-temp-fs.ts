@@ -37,21 +37,38 @@ export class MemoryTempFs {
     return this.readFileSync(nameOrPath).toString("utf8");
   }
 
-  async mkdir(path: string, _opts?: { recursive?: boolean; mode?: number }): Promise<void> {
+  async mkdir(
+    path: string,
+    _opts?: { recursive?: boolean; mode?: number },
+  ): Promise<void> {
     const k = this.key(path);
     if (!this.store.has(k)) {
       this.store.set(k, { kind: "dir", mtimeMs: this.nowMs, mode: 0o700 });
     }
   }
 
-  async writeFile(path: string, data: string | Buffer, opts?: { mode?: number }): Promise<void> {
+  async writeFile(
+    path: string,
+    data: string | Buffer,
+    opts?: { mode?: number },
+  ): Promise<void> {
     this.writeFileSync(path, data, opts);
   }
 
-  writeFileSync(path: string, data: string | Buffer, opts?: { mode?: number }): void {
+  writeFileSync(
+    path: string,
+    data: string | Buffer,
+    opts?: { mode?: number },
+  ): void {
     const k = this.key(path);
-    const buf = typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
-    this.store.set(k, { kind: "file", data: buf, mtimeMs: this.nowMs, mode: opts?.mode });
+    const buf =
+      typeof data === "string" ? Buffer.from(data) : Buffer.from(data);
+    this.store.set(k, {
+      kind: "file",
+      data: buf,
+      mtimeMs: this.nowMs,
+      mode: opts?.mode,
+    });
     this.onAfterWrite?.(this.basename(k));
   }
 
@@ -77,7 +94,8 @@ export class MemoryTempFs {
     const found = this.findKey(path);
     if (!found) throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
     const entry = this.store.get(found)!;
-    if (entry.kind !== "file") throw Object.assign(new Error("EISDIR"), { code: "EISDIR" });
+    if (entry.kind !== "file")
+      throw Object.assign(new Error("EISDIR"), { code: "EISDIR" });
     return Buffer.from(entry.data);
   }
 
@@ -99,7 +117,12 @@ export class MemoryTempFs {
     return [...names];
   }
 
-  async stat(path: string): Promise<{ mtimeMs: number; size: number; isFile(): boolean; isDirectory(): boolean }> {
+  async stat(path: string): Promise<{
+    mtimeMs: number;
+    size: number;
+    isFile(): boolean;
+    isDirectory(): boolean;
+  }> {
     const found = this.findKey(path);
     if (!found) throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
     const entry = this.store.get(found)!;

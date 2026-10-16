@@ -11,7 +11,14 @@ test("URI mismatch omits host caret/selection/language/dirty and warns", () => {
         languageId: "typescript",
         isDirty: true,
         caret: { line: 1, character: 0 },
-        selection: { from: 0, to: 1, startLine: 1, endLine: 1, text: "x", truncated: false },
+        selection: {
+          from: 0,
+          to: 1,
+          startLine: 1,
+          endLine: 1,
+          text: "x",
+          truncated: false,
+        },
       },
     },
   );

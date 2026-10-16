@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_CAPS } from "../../../src/shared/ide-context/caps";
-import { renderMarkdown, serializeJson } from "../../../src/shared/ide-context/render";
+import {
+  renderMarkdown,
+  serializeJson,
+} from "../../../src/shared/ide-context/render";
 
 function baseMw() {
   return {
@@ -23,8 +26,12 @@ test("renderMarkdown stays within maxClipboardChars", () => {
     active: {
       uri: "file:///n.md",
       selection: {
-        from: 0, to: 100000, startLine: 1, endLine: 500,
-        text: "z".repeat(100_000), truncated: false,
+        from: 0,
+        to: 100000,
+        startLine: 1,
+        endLine: 500,
+        text: "z".repeat(100_000),
+        truncated: false,
       },
     },
   });
@@ -39,7 +46,11 @@ test("serializeJson stays within maxJsonChars and remains parseable", () => {
     markdown: undefined as never,
     pdf: {
       uri: "file:///a.pdf",
-      selection: { kind: "region", rects: [{ page: 1, x: 0, y: 0, w: 10, h: 10 }], rectsTruncated: false },
+      selection: {
+        kind: "region",
+        rects: [{ page: 1, x: 0, y: 0, w: 10, h: 10 }],
+        rectsTruncated: false,
+      },
     },
     active: { uri: "file:///a.pdf" },
     diagnostics: { uri: "file:///a.pdf", items: [], truncated: false },
@@ -58,7 +69,12 @@ const SECRET_SNIPPETS = [
   "access_token=leak",
 ];
 
-function assertNoSecrets(label: string, md: string, raw: string, extras: string[] = []) {
+function assertNoSecrets(
+  label: string,
+  md: string,
+  raw: string,
+  extras: string[] = [],
+) {
   for (const s of [...SECRET_SNIPPETS, ...extras]) {
     assert.equal(md.includes(s), false, `${label} markdown leaked: ${s}`);
     assert.equal(raw.includes(s), false, `${label} json leaked: ${s}`);
@@ -68,20 +84,28 @@ function assertNoSecrets(label: string, md: string, raw: string, extras: string[
 test("MW dirty packet: renderMarkdown + serializeJson omit Task-2 secrets via shared scrubPacket", () => {
   const dirtyMw = {
     ...baseMw(),
-    active: { uri: "file:///n.md?token=secret-token&page=1", languageId: "markdown" },
+    active: {
+      uri: "file:///n.md?token=secret-token&page=1",
+      languageId: "markdown",
+    },
     tabs: {
-      visible: ["file:///n.md?token=secret-token&page=1", "file:///other.md?access_token=leak"],
+      visible: [
+        "file:///n.md?token=secret-token&page=1",
+        "file:///other.md?access_token=leak",
+      ],
       open: [],
       truncated: false,
     },
     diagnostics: {
       uri: "file:///n.md?token=secret-token&page=1",
-      items: [{
-        severity: "error" as const,
-        message: "failed auth Bearer abcdef sk-SECRETVALUE ghp_SECRETVALUE",
-        startLine: 1,
-        startCharacter: 0,
-      }],
+      items: [
+        {
+          severity: "error" as const,
+          message: "failed auth Bearer abcdef sk-SECRETVALUE ghp_SECRETVALUE",
+          startLine: 1,
+          startCharacter: 0,
+        },
+      ],
       truncated: false,
     },
   };
@@ -103,18 +127,23 @@ test("PDF dirty packet: renderMarkdown + serializeJson omit secrets incl. pdf.ur
     },
     active: { uri: "file:///a.pdf?token=secret-token&page=1" },
     tabs: {
-      visible: ["file:///a.pdf?token=secret-token&page=1", "file:///b.pdf?access_token=leak"],
+      visible: [
+        "file:///a.pdf?token=secret-token&page=1",
+        "file:///b.pdf?access_token=leak",
+      ],
       open: [],
       truncated: false,
     },
     diagnostics: {
       uri: "file:///a.pdf?token=secret-token&page=1",
-      items: [{
-        severity: "error" as const,
-        message: "failed auth Bearer abcdef sk-SECRETVALUE ghp_SECRETVALUE",
-        startLine: 1,
-        startCharacter: 0,
-      }],
+      items: [
+        {
+          severity: "error" as const,
+          message: "failed auth Bearer abcdef sk-SECRETVALUE ghp_SECRETVALUE",
+          startLine: 1,
+          startCharacter: 0,
+        },
+      ],
       truncated: false,
     },
     warnings: [] as string[],
@@ -153,25 +182,40 @@ test("clipboard: JSON under 64K but Markdown over 32K uses structured truncation
   };
 
   const json = serializeJson(packet);
-  assert.ok(json.length <= DEFAULT_CAPS.maxJsonChars, `JSON ${json.length} should be under 64K`);
-  assert.ok(json.length > 32_000, `precondition: JSON ${json.length} should still be large`);
+  assert.ok(
+    json.length <= DEFAULT_CAPS.maxJsonChars,
+    `JSON ${json.length} should be under 64K`,
+  );
+  assert.ok(
+    json.length > 32_000,
+    `precondition: JSON ${json.length} should still be large`,
+  );
 
   const md = renderMarkdown(packet);
-  assert.ok(md.length <= DEFAULT_CAPS.maxClipboardChars, `markdown ${md.length} exceeds maxClipboardChars`);
+  assert.ok(
+    md.length <= DEFAULT_CAPS.maxClipboardChars,
+    `markdown ${md.length} exceeds maxClipboardChars`,
+  );
   assert.ok(/budget|truncat/i.test(md), "expected explicit budget warning");
 
   // Hard-slice fallback appends Warnings: last — checking only the last line misses a
   // mid-URI/mid-token cut on the content line immediately before Warnings:.
   const mdLines = md.split("\n");
   const warningsIdx = mdLines.findIndex((l) => l === "Warnings:");
-  assert.ok(warningsIdx > 0, "expected Warnings: section from budget truncation");
+  assert.ok(
+    warningsIdx > 0,
+    "expected Warnings: section from budget truncation",
+  );
   const lineBeforeWarnings = mdLines[warningsIdx - 1] ?? "";
   const contentBeforeWarnings =
-    lineBeforeWarnings === "" ? (mdLines[warningsIdx - 2] ?? "") : lineBeforeWarnings;
+    lineBeforeWarnings === ""
+      ? (mdLines[warningsIdx - 2] ?? "")
+      : lineBeforeWarnings;
   const hardCutBeforeWarnings =
-    (contentBeforeWarnings.startsWith("- file://") && !contentBeforeWarnings.endsWith(".md")) ||
+    (contentBeforeWarnings.startsWith("- file://") &&
+      !contentBeforeWarnings.endsWith(".md")) ||
     // mid-diagnostic / mid-token residue (e.g. hard-sliced "xxxx..." body)
-    (/^x{20,}$/.test(contentBeforeWarnings.trim())) ||
+    /^x{20,}$/.test(contentBeforeWarnings.trim()) ||
     (contentBeforeWarnings.includes("file://") &&
       !contentBeforeWarnings.endsWith(".md") &&
       !/budget|truncat|…truncated/i.test(contentBeforeWarnings));
@@ -186,7 +230,8 @@ test("clipboard: JSON under 64K but Markdown over 32K uses structured truncation
     .split("\n")
     .filter((l) => /^- (error|warning|information|hint) /.test(l));
   assert.ok(
-    diagItemLines.length < 20 || !md.includes("file:///workspace/project/module-100/"),
+    diagItemLines.length < 20 ||
+      !md.includes("file:///workspace/project/module-100/"),
     "structured truncate should drop diagnostics and/or lower-priority open tabs rather than hard-slice",
   );
 });
@@ -217,9 +262,15 @@ test("clipboard: budget warning crossing cap continues structured truncate (no h
   };
 
   const md = renderMarkdown(packet);
-  assert.ok(md.length <= maxClipboardChars, `markdown ${md.length} exceeds maxClipboardChars ${maxClipboardChars}`);
+  assert.ok(
+    md.length <= maxClipboardChars,
+    `markdown ${md.length} exceeds maxClipboardChars ${maxClipboardChars}`,
+  );
   // Exact equality to the cap is the hard-slice fingerprint (bodyBudget + notice === max).
-  assert.ok(md.length < maxClipboardChars, `hard-slice fingerprint: md.length === max (${md.length})`);
+  assert.ok(
+    md.length < maxClipboardChars,
+    `hard-slice fingerprint: md.length === max (${md.length})`,
+  );
   assert.ok(/budget|truncat/i.test(md), "expected explicit budget warning");
 
   const mdLines = md.split("\n");
@@ -227,9 +278,12 @@ test("clipboard: budget warning crossing cap continues structured truncate (no h
   assert.ok(warningsIdx > 0, "expected Warnings: section");
   const lineBeforeWarnings = mdLines[warningsIdx - 1] ?? "";
   const contentBeforeWarnings =
-    lineBeforeWarnings === "" ? (mdLines[warningsIdx - 2] ?? "") : lineBeforeWarnings;
+    lineBeforeWarnings === ""
+      ? (mdLines[warningsIdx - 2] ?? "")
+      : lineBeforeWarnings;
   assert.equal(
-    contentBeforeWarnings.startsWith("- file://") && !contentBeforeWarnings.endsWith(".md"),
+    contentBeforeWarnings.startsWith("- file://") &&
+      !contentBeforeWarnings.endsWith(".md"),
     false,
     `mid-URI hard-cut before Warnings: ${JSON.stringify(contentBeforeWarnings.slice(-80))}`,
   );
@@ -240,8 +294,12 @@ test("clipboard: budget warning crossing cap continues structured truncate (no h
   );
 
   // Structured drop must have removed lower-priority fields (open tabs and/or diagnostics).
-  const openTabLines = mdLines.filter((l) => /^- file:\/\/workspace\/project\/module-1\d+\//.test(l));
-  const diagItemLines = mdLines.filter((l) => /^- (error|warning|information|hint) /.test(l));
+  const openTabLines = mdLines.filter((l) =>
+    /^- file:\/\/workspace\/project\/module-1\d+\//.test(l),
+  );
+  const diagItemLines = mdLines.filter((l) =>
+    /^- (error|warning|information|hint) /.test(l),
+  );
   assert.ok(
     openTabLines.length < 20 || diagItemLines.length < 10,
     "structured truncate should drop open tabs and/or diagnostics rather than hard-slice",

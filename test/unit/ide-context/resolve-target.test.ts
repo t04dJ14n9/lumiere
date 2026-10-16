@@ -10,35 +10,57 @@ test("auto + both Claude and Codex available → picker (never silent open)", ()
   assert.equal(
     resolveIdeContextSendTarget(
       "auto",
-      envWith(["claude-vscode.editor.open", "chatgpt.openSidebar", "chatgpt.addFileToThread"]),
+      envWith([
+        "claude-vscode.editor.open",
+        "chatgpt.openSidebar",
+        "chatgpt.addFileToThread",
+      ]),
     ),
     "picker",
   );
 });
 
 test("auto + sole Claude → claudeCode", () => {
-  assert.equal(resolveIdeContextSendTarget("auto", envWith(["claude-vscode.editor.open"])), "claudeCode");
+  assert.equal(
+    resolveIdeContextSendTarget("auto", envWith(["claude-vscode.editor.open"])),
+    "claudeCode",
+  );
 });
 
 test("auto + sole Codex → codex", () => {
   assert.equal(
-    resolveIdeContextSendTarget("auto", envWith(["chatgpt.openSidebar", "chatgpt.addFileToThread"])),
+    resolveIdeContextSendTarget(
+      "auto",
+      envWith(["chatgpt.openSidebar", "chatgpt.addFileToThread"]),
+    ),
     "codex",
   );
 });
 
 test("forced claudeCode when available → claudeCode; when unavailable → clipboard", () => {
   assert.equal(
-    resolveIdeContextSendTarget("claudeCode", envWith(["claude-vscode.editor.open"])),
+    resolveIdeContextSendTarget(
+      "claudeCode",
+      envWith(["claude-vscode.editor.open"]),
+    ),
     "claudeCode",
   );
-  assert.equal(resolveIdeContextSendTarget("claudeCode", envWith([])), "clipboard");
+  assert.equal(
+    resolveIdeContextSendTarget("claudeCode", envWith([])),
+    "clipboard",
+  );
 });
 
 test("forced codex when available → codex; when unavailable → clipboard", () => {
   assert.equal(
-    resolveIdeContextSendTarget("codex", envWith(["chatgpt.openSidebar", "chatgpt.addFileToThread"])),
+    resolveIdeContextSendTarget(
+      "codex",
+      envWith(["chatgpt.openSidebar", "chatgpt.addFileToThread"]),
+    ),
     "codex",
   );
-  assert.equal(resolveIdeContextSendTarget("codex", envWith(["chatgpt.openSidebar"])), "clipboard");
+  assert.equal(
+    resolveIdeContextSendTarget("codex", envWith(["chatgpt.openSidebar"])),
+    "clipboard",
+  );
 });

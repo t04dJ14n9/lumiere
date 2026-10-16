@@ -5,16 +5,32 @@ export interface LeaseSidecar {
 }
 
 export interface TempFs {
-  mkdir(path: string, opts?: { recursive?: boolean; mode?: number }): Promise<void>;
-  writeFile(path: string, data: string | Buffer, opts?: { mode?: number }): Promise<void>;
+  mkdir(
+    path: string,
+    opts?: { recursive?: boolean; mode?: number },
+  ): Promise<void>;
+  writeFile(
+    path: string,
+    data: string | Buffer,
+    opts?: { mode?: number },
+  ): Promise<void>;
   rename(from: string, to: string): Promise<void>;
   readFile(path: string): Promise<Buffer>;
   unlink(path: string): Promise<void>;
   readdir(dir: string): Promise<string[]>;
-  stat(path: string): Promise<{ mtimeMs: number; size: number; isFile(): boolean; isDirectory(): boolean }>;
+  stat(path: string): Promise<{
+    mtimeMs: number;
+    size: number;
+    isFile(): boolean;
+    isDirectory(): boolean;
+  }>;
   /** Optional sync rename for non-yielding final commit */
   renameSync?(from: string, to: string): void;
-  writeFileSync?(path: string, data: string | Buffer, opts?: { mode?: number }): void;
+  writeFileSync?(
+    path: string,
+    data: string | Buffer,
+    opts?: { mode?: number },
+  ): void;
   readFileSync?(path: string): Buffer;
 }
 
@@ -24,7 +40,9 @@ export function leasePathFor(finalPayloadPath: string): string {
 
 export function parseLease(raw: string | Buffer): LeaseSidecar | undefined {
   try {
-    const obj = JSON.parse(typeof raw === "string" ? raw : raw.toString("utf8")) as LeaseSidecar;
+    const obj = JSON.parse(
+      typeof raw === "string" ? raw : raw.toString("utf8"),
+    ) as LeaseSidecar;
     if (
       typeof obj?.leaseUntil === "string" &&
       (obj.owner === "markdownWorkshop" || obj.owner === "pdfWorkshop") &&

@@ -33,8 +33,7 @@ export interface PublishOpts {
 }
 
 export type PublishResult =
-  | { finalPath: string }
-  | { skipped: true; warning: string };
+  { finalPath: string } | { skipped: true; warning: string };
 
 function join(dir: string, name: string): string {
   return `${dir.replace(/\/$/, "")}/${name}`;
@@ -50,7 +49,11 @@ async function ensureQuota(
   await reclaimEligible(fs, dir, now, caps);
   const names = await fs.readdir(dir).catch(() => [] as string[]);
   const payloads = names.filter(
-    (n) => n.startsWith("ide-context-") && n.endsWith(".json") && !n.includes(".partial") && !n.endsWith(".lease"),
+    (n) =>
+      n.startsWith("ide-context-") &&
+      n.endsWith(".json") &&
+      !n.includes(".partial") &&
+      !n.endsWith(".lease"),
   );
   let totalBytes = 0;
   for (const n of payloads) {
@@ -61,12 +64,19 @@ async function ensureQuota(
       // ignore
     }
   }
-  if (payloads.length >= caps.maxFiles || totalBytes + extraBytes > caps.maxBytes) {
+  if (
+    payloads.length >= caps.maxFiles ||
+    totalBytes + extraBytes > caps.maxBytes
+  ) {
     // Try reclaim again; if still full of protected siblings → soft-fail
     await reclaimEligible(fs, dir, now, caps);
     const names2 = await fs.readdir(dir).catch(() => [] as string[]);
     const payloads2 = names2.filter(
-      (n) => n.startsWith("ide-context-") && n.endsWith(".json") && !n.includes(".partial") && !n.endsWith(".lease"),
+      (n) =>
+        n.startsWith("ide-context-") &&
+        n.endsWith(".json") &&
+        !n.includes(".partial") &&
+        !n.endsWith(".lease"),
     );
     let total2 = 0;
     for (const n of payloads2) {
@@ -76,7 +86,10 @@ async function ensureQuota(
         /* */
       }
     }
-    if (payloads2.length >= caps.maxFiles || total2 + extraBytes > caps.maxBytes) {
+    if (
+      payloads2.length >= caps.maxFiles ||
+      total2 + extraBytes > caps.maxBytes
+    ) {
       return {
         skipped: true,
         warning:
@@ -175,7 +188,13 @@ export async function publishIdeContextTemp(
   const caps = opts.reclaimCaps ?? DEFAULT_RECLAIM_CAPS;
   await fs.mkdir(opts.dir, { recursive: true, mode: 0o700 });
 
-  const quota = await ensureQuota(fs, opts.dir, opts.now, caps, opts.bytes.length);
+  const quota = await ensureQuota(
+    fs,
+    opts.dir,
+    opts.now,
+    caps,
+    opts.bytes.length,
+  );
   if ("skipped" in quota) return quota;
 
   const finalPath = join(opts.dir, opts.basename);
@@ -213,7 +232,8 @@ export async function publishIdeContextTemp(
     // Soft-fail: leave orphan lease; no final payload
     return {
       skipped: true,
-      warning: "ide-context temp: final commit aborted after lease revalidation; skipped file attach",
+      warning:
+        "ide-context temp: final commit aborted after lease revalidation; skipped file attach",
     };
   }
 

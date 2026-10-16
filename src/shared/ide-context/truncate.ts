@@ -41,7 +41,10 @@ function pushBudgetWarning(warnings: string[], caps: IdeContextCaps): void {
   if (!warnings.includes(msg)) warnings.push(msg);
 }
 
-function applyPerStringCaps(packet: IdeContextPacket, caps: IdeContextCaps): boolean {
+function applyPerStringCaps(
+  packet: IdeContextPacket,
+  caps: IdeContextCaps,
+): boolean {
   let changed = false;
 
   if (packet.active) {
@@ -51,7 +54,10 @@ function applyPerStringCaps(packet: IdeContextPacket, caps: IdeContextCaps): boo
       changed = true;
     }
     if (packet.active.selection) {
-      const text = truncateStr(packet.active.selection.text, caps.maxSelectedChars);
+      const text = truncateStr(
+        packet.active.selection.text,
+        caps.maxSelectedChars,
+      );
       if (text !== packet.active.selection.text) {
         packet.active.selection.text = text;
         packet.active.selection.truncated = true;
@@ -87,7 +93,10 @@ function applyPerStringCaps(packet: IdeContextPacket, caps: IdeContextCaps): boo
     changed = true;
   }
   if (packet.diagnostics.items.length > caps.maxDiagnosticItems) {
-    packet.diagnostics.items = packet.diagnostics.items.slice(0, caps.maxDiagnosticItems);
+    packet.diagnostics.items = packet.diagnostics.items.slice(
+      0,
+      caps.maxDiagnosticItems,
+    );
     packet.diagnostics.truncated = true;
     changed = true;
   }
@@ -134,12 +143,18 @@ function applyPerStringCaps(packet: IdeContextPacket, caps: IdeContextCaps): boo
         changed = true;
       }
     }
-    packet.pdf.selection = truncatePdfSelection(packet.pdf.selection, caps, () => {
-      changed = true;
-    });
+    packet.pdf.selection = truncatePdfSelection(
+      packet.pdf.selection,
+      caps,
+      () => {
+        changed = true;
+      },
+    );
   }
 
-  packet.warnings = packet.warnings.map((w) => truncateStr(w, caps.maxWarningChars));
+  packet.warnings = packet.warnings.map((w) =>
+    truncateStr(w, caps.maxWarningChars),
+  );
   if (packet.warnings.length > caps.maxWarnings) {
     packet.warnings = packet.warnings.slice(-caps.maxWarnings);
     changed = true;
@@ -181,14 +196,20 @@ function truncatePdfSelection(
     mark();
   }
   let regionImagePath = sel.regionImagePath;
-  if (regionImagePath !== undefined && regionImagePath.length > caps.maxTempPathChars) {
+  if (
+    regionImagePath !== undefined &&
+    regionImagePath.length > caps.maxTempPathChars
+  ) {
     regionImagePath = truncateStr(regionImagePath, caps.maxTempPathChars);
     mark();
   }
   return { kind: "region", rects, rectsTruncated, regionImagePath };
 }
 
-function shrinkSelectionTexts(packet: IdeContextPacket, caps: IdeContextCaps): boolean {
+function shrinkSelectionTexts(
+  packet: IdeContextPacket,
+  caps: IdeContextCaps,
+): boolean {
   let changed = false;
   if (packet.active?.selection && packet.active.selection.text.length > 0) {
     // Further shrink toward 0 — for step 2 we may cut in half repeatedly;
@@ -256,7 +277,10 @@ function dropLowestSeverityDiagnostic(packet: IdeContextPacket): boolean {
   return true;
 }
 
-function dropTrailingTab(packet: IdeContextPacket, which: "open" | "visible"): boolean {
+function dropTrailingTab(
+  packet: IdeContextPacket,
+  which: "open" | "visible",
+): boolean {
   const arr = packet.tabs[which];
   if (arr.length === 0) return false;
   arr.pop();
@@ -271,7 +295,10 @@ function omitOptionalFields(packet: IdeContextPacket): boolean {
       delete packet.pdf.citeMarkdown;
       changed = true;
     }
-    if (packet.pdf.selection.kind === "region" && packet.pdf.selection.regionImagePath !== undefined) {
+    if (
+      packet.pdf.selection.kind === "region" &&
+      packet.pdf.selection.regionImagePath !== undefined
+    ) {
       delete packet.pdf.selection.regionImagePath;
       changed = true;
     }
@@ -297,14 +324,20 @@ function omitCaretAndSelectionBodies(packet: IdeContextPacket): boolean {
     delete packet.active.selection;
     changed = true;
   }
-  if (packet.product === "pdfWorkshop" && packet.pdf.selection.kind !== "none") {
+  if (
+    packet.product === "pdfWorkshop" &&
+    packet.pdf.selection.kind !== "none"
+  ) {
     packet.pdf.selection = { kind: "none" };
     changed = true;
   }
   return changed;
 }
 
-function defaultJsonUnderBudget(packet: IdeContextPacket, caps: IdeContextCaps): boolean {
+function defaultJsonUnderBudget(
+  packet: IdeContextPacket,
+  caps: IdeContextCaps,
+): boolean {
   // Default: field truncation must satisfy JSON cap; clipboard may supply its own predicate.
   return jsonLen(packet) <= caps.maxJsonChars;
 }
@@ -325,7 +358,9 @@ export function truncatePacket(
 ): IdeContextPacket {
   const out = clonePacket(packet);
   out.caps = { ...caps };
-  const isUnder = opts?.underBudget ?? ((p: IdeContextPacket) => defaultJsonUnderBudget(p, caps));
+  const isUnder =
+    opts?.underBudget ??
+    ((p: IdeContextPacket) => defaultJsonUnderBudget(p, caps));
 
   const perStringChanged = applyPerStringCaps(out, caps);
   let budgetFired = perStringChanged && !isUnder(out);

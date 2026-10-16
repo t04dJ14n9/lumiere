@@ -16,12 +16,15 @@ function renderBody(packet: IdeContextPacket): string {
   if (packet.active) {
     lines.push("## Active");
     lines.push(`- URI: ${packet.active.uri}`);
-    if (packet.active.languageId) lines.push(`- Language: ${packet.active.languageId}`);
+    if (packet.active.languageId)
+      lines.push(`- Language: ${packet.active.languageId}`);
     if (packet.active.isDirty !== undefined) {
       lines.push(`- Dirty: ${packet.active.isDirty ? "yes" : "no"}`);
     }
     if (packet.active.caret) {
-      lines.push(`- Caret: ${packet.active.caret.line}:${packet.active.caret.character}`);
+      lines.push(
+        `- Caret: ${packet.active.caret.line}:${packet.active.caret.character}`,
+      );
     }
     if (packet.active.selection) {
       const s = packet.active.selection;
@@ -40,7 +43,8 @@ function renderBody(packet: IdeContextPacket): string {
   if (packet.product === "markdownWorkshop") {
     lines.push("## Markdown");
     lines.push(`- Editor: ${packet.markdown.editorKind}`);
-    if (packet.markdown.panelId) lines.push(`- Panel: ${packet.markdown.panelId}`);
+    if (packet.markdown.panelId)
+      lines.push(`- Panel: ${packet.markdown.panelId}`);
     lines.push("");
   }
 
@@ -53,7 +57,9 @@ function renderBody(packet: IdeContextPacket): string {
 
   lines.push("## Diagnostics (active file, capped)");
   for (const d of packet.diagnostics.items) {
-    lines.push(`- ${d.severity} L${d.startLine}:C${d.startCharacter} ${d.message}`);
+    lines.push(
+      `- ${d.severity} L${d.startLine}:C${d.startCharacter} ${d.message}`,
+    );
   }
   if (packet.diagnostics.truncated) lines.push("- …truncated");
   lines.push("");
@@ -62,11 +68,15 @@ function renderBody(packet: IdeContextPacket): string {
     lines.push("## PDF");
     lines.push(`- URI: ${packet.pdf.uri}`);
     if (packet.pdf.page !== undefined) lines.push(`- Page: ${packet.pdf.page}`);
-    if (packet.pdf.citeMarkdown) lines.push(`- Source: ${packet.pdf.citeMarkdown}`);
+    if (packet.pdf.citeMarkdown)
+      lines.push(`- Source: ${packet.pdf.citeMarkdown}`);
     lines.push(`- Selection: ${packet.pdf.selection.kind}`);
     if (packet.pdf.selection.kind === "text") {
-      lines.push(`- Selected text:${packet.pdf.selection.truncated ? " [truncated]" : ""}`);
-      for (const line of packet.pdf.selection.text.split("\n")) lines.push(`> ${line}`);
+      lines.push(
+        `- Selected text:${packet.pdf.selection.truncated ? " [truncated]" : ""}`,
+      );
+      for (const line of packet.pdf.selection.text.split("\n"))
+        lines.push(`> ${line}`);
       if (packet.pdf.selection.rects?.length) {
         for (const r of packet.pdf.selection.rects) {
           lines.push(`- Rect: p${r.page} ${r.x},${r.y} ${r.w}x${r.h}`);
@@ -84,7 +94,8 @@ function renderBody(packet: IdeContextPacket): string {
       const v = packet.pdf.viewrect;
       lines.push(`- Viewport: ${v.x},${v.y} ${v.w}x${v.h}`);
     }
-    if (packet.pdf.sourceSha256) lines.push(`- SHA-256: ${packet.pdf.sourceSha256}`);
+    if (packet.pdf.sourceSha256)
+      lines.push(`- SHA-256: ${packet.pdf.sourceSha256}`);
     lines.push("");
   }
 
@@ -113,7 +124,10 @@ export function renderMarkdown(packet: IdeContextPacket): string {
   if (md.length > max) {
     // Impossible-minimum fallback only: keep an explicit budget warning; never silent mid-URI cut.
     if (!prepared.warnings.some((w) => /budget|truncat/i.test(w))) {
-      const msg = CLIPBOARD_BUDGET_WARNING.slice(0, prepared.caps.maxWarningChars);
+      const msg = CLIPBOARD_BUDGET_WARNING.slice(
+        0,
+        prepared.caps.maxWarningChars,
+      );
       prepared = {
         ...prepared,
         warnings: [...prepared.warnings, msg].slice(-prepared.caps.maxWarnings),

@@ -1,8 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { MemoryTempFs } from "./memory-temp-fs";
-import { renewLeaseAtomic, writeLeaseAtomic, leasePathFor } from "../../../src/shared/ide-context/temp-lease";
-import { isReclaimablePayload, reclaimEligible } from "../../../src/shared/ide-context/temp-reclaim";
+import {
+  renewLeaseAtomic,
+  writeLeaseAtomic,
+  leasePathFor,
+} from "../../../src/shared/ide-context/temp-lease";
+import {
+  isReclaimablePayload,
+  reclaimEligible,
+} from "../../../src/shared/ide-context/temp-reclaim";
 
 const DIR = "/tmp/agent-ide-context";
 const caps = { maxFiles: 8, maxBytes: 2 * 1024 * 1024 };
@@ -74,7 +81,15 @@ test("missing sidecar + payload age < 60s is NOT reclaimable", async () => {
   await fs.mkdir(DIR, { recursive: true });
   await fs.writeFile(`${DIR}/ide-context-young.json`, Buffer.from("{}"));
   fs.setMtime(`${DIR}/ide-context-young.json`, 1_000_000 - 10_000); // 10s old
-  assert.equal(await isReclaimablePayload(fs, DIR, "ide-context-young.json", () => 1_000_000), false);
+  assert.equal(
+    await isReclaimablePayload(
+      fs,
+      DIR,
+      "ide-context-young.json",
+      () => 1_000_000,
+    ),
+    false,
+  );
   await reclaimEligible(fs, DIR, () => 1_000_000, caps);
   assert.equal(fs.exists("ide-context-young.json"), true);
 });
@@ -85,7 +100,15 @@ test("missing sidecar + payload age >= 60s IS reclaimable", async () => {
   await fs.mkdir(DIR, { recursive: true });
   await fs.writeFile(`${DIR}/ide-context-old.json`, Buffer.from("{}"));
   fs.setMtime(`${DIR}/ide-context-old.json`, 1_000_000 - 60_000);
-  assert.equal(await isReclaimablePayload(fs, DIR, "ide-context-old.json", () => 1_000_000), true);
+  assert.equal(
+    await isReclaimablePayload(
+      fs,
+      DIR,
+      "ide-context-old.json",
+      () => 1_000_000,
+    ),
+    true,
+  );
   await reclaimEligible(fs, DIR, () => 1_000_000, caps);
   assert.equal(fs.exists("ide-context-old.json"), false);
 });

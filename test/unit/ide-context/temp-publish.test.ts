@@ -18,7 +18,10 @@ test("publish: final payload name is not visible until lease sidecar exists", as
   });
   const leaseIdx = observed.findIndex((n) => n.endsWith(".json.lease"));
   const finalIdx = observed.findIndex(
-    (n) => n.endsWith("ide-context-abc123.json") && !n.includes(".partial") && !n.endsWith(".lease"),
+    (n) =>
+      n.endsWith("ide-context-abc123.json") &&
+      !n.includes(".partial") &&
+      !n.endsWith(".lease"),
   );
   assert.ok(leaseIdx >= 0 && finalIdx >= 0);
   assert.ok(leaseIdx < finalIdx, "lease final name before payload final name");

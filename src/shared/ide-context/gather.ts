@@ -1,4 +1,8 @@
-import { resolveCanonicalActive, type HostActiveSnapshot, type ProductCanonicalSlice } from "./canonical";
+import {
+  resolveCanonicalActive,
+  type HostActiveSnapshot,
+  type ProductCanonicalSlice,
+} from "./canonical";
 import { DEFAULT_CAPS } from "./caps";
 import { scrubPacket } from "./scrub";
 import type {
@@ -22,7 +26,9 @@ export type ProductGatherSlice =
       product: "markdownWorkshop";
       uri: string;
       markdown: MarkdownContext;
-      selection?: ProductCanonicalSlice extends { selection?: infer S } ? S : never;
+      selection?: ProductCanonicalSlice extends { selection?: infer S }
+        ? S
+        : never;
     }
   | {
       product: "pdfWorkshop";
@@ -38,7 +44,7 @@ export function gatherIdeContext(
   const collectedAt = (hostApis.now?.() ?? new Date()).toISOString();
   const canonicalUri =
     productSlice.product === "pdfWorkshop"
-      ? productSlice.pdf.uri ?? productSlice.uri
+      ? (productSlice.pdf.uri ?? productSlice.uri)
       : productSlice.uri;
 
   const { active, warnings } = resolveCanonicalActive(

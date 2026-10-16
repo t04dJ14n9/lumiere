@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { copyIdeContext, sendIdeContext } from "../../../src/plugins/ideContext/delivery";
-import { DEFAULT_CAPS, type IdeContextPacket } from "../../../src/shared/ide-context";
+import {
+  copyIdeContext,
+  sendIdeContext,
+} from "../../../src/plugins/ideContext/delivery";
+import {
+  DEFAULT_CAPS,
+  type IdeContextPacket,
+} from "../../../src/shared/ide-context";
 import { MemoryTempFs } from "../ide-context/memory-temp-fs";
 import { AGENT_COMMANDS } from "../../../src/plugins/agentBridge/chat";
 
@@ -27,7 +33,11 @@ const both = new Set([
 
 test("copy command never enters send resolution", async () => {
   let executed = 0;
-  const md = await copyIdeContext(mwPacket(), async () => {}, () => {});
+  const md = await copyIdeContext(
+    mwPacket(),
+    async () => {},
+    () => {},
+  );
   assert.ok(md.includes("IDE context"));
   assert.equal(executed, 0);
 });
@@ -175,7 +185,8 @@ test("MW Codex: renewLeaseAtomic called before retry across renewal boundary", a
     codexRetryDelaysMs: [0, 0],
     renewLease: async (...args) => {
       renewCalls++;
-      const { renewLeaseAtomic } = await import("../../../src/shared/ide-context");
+      const { renewLeaseAtomic } =
+        await import("../../../src/shared/ide-context");
       return renewLeaseAtomic(...args);
     },
   });
@@ -209,7 +220,8 @@ test("MW Codex: on retry renew is after open prep and immediately before add-fil
     codexRetryDelaysMs: [0, 5],
     renewLease: async (...args) => {
       events.push("renew");
-      const { renewLeaseAtomic } = await import("../../../src/shared/ide-context");
+      const { renewLeaseAtomic } =
+        await import("../../../src/shared/ide-context");
       return renewLeaseAtomic(...args);
     },
   });
@@ -217,7 +229,11 @@ test("MW Codex: on retry renew is after open prep and immediately before add-fil
   assert.deepEqual(events, ["open", "addFile", "open", "renew", "addFile"]);
   const renewIdx = events.indexOf("renew");
   assert.equal(events[renewIdx - 1], "open", "renew after open prep on retry");
-  assert.equal(events[renewIdx + 1], "addFile", "renew immediately before add-file");
+  assert.equal(
+    events[renewIdx + 1],
+    "addFile",
+    "renew immediately before add-file",
+  );
 });
 
 test("MW Codex: temp publish {skipped:true} → clipboard kept; no invalid add-file; soft-fail", async () => {
@@ -233,7 +249,10 @@ test("MW Codex: temp publish {skipped:true} → clipboard kept; no invalid add-f
       executed.push(id);
     },
     showQuickPick: async () => undefined,
-    publishTemp: async () => ({ skipped: true as const, warning: "quota full; lease-protected" }),
+    publishTemp: async () => ({
+      skipped: true as const,
+      warning: "quota full; lease-protected",
+    }),
     tempFs: new MemoryTempFs(),
   });
   assert.ok(clipboard.includes("IDE context"));

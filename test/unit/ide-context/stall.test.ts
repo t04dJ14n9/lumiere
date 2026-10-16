@@ -39,11 +39,18 @@ test("Phase3 stall: pause AFTER successful final revalidation past leaseUntil; s
     maxBytes: 2 * 1024 * 1024,
   });
   assert.equal(fs.exists(basename), false, "final must not exist during stall");
-  assert.equal(fs.exists(basename + ".lease"), false, "expired lease reclaimed during stall");
+  assert.equal(
+    fs.exists(basename + ".lease"),
+    false,
+    "expired lease reclaimed during stall",
+  );
   // Resume publisher — must reacquire lease then publish (never unleased final)
   paused!();
   const result = await publish;
-  assert.ok("finalPath" in result, "expected reacquire→publish after disarming stall hook");
+  assert.ok(
+    "finalPath" in result,
+    "expected reacquire→publish after disarming stall hook",
+  );
   assert.equal(fs.exists(basename), true);
   assert.equal(fs.exists(basename + ".lease"), true);
   const lease = JSON.parse(fs.read(basename + ".lease"));

@@ -89,7 +89,11 @@ export async function sendIdeContext(
   }
 
   if (target === "claudeCode") {
-    await deps.executeCommand(AGENT_COMMANDS.claudeCodeOpen, undefined, `${md}\n\n`);
+    await deps.executeCommand(
+      AGENT_COMMANDS.claudeCodeOpen,
+      undefined,
+      `${md}\n\n`,
+    );
     return { markdown: md, opened: "claudeCode" };
   }
 
@@ -151,7 +155,11 @@ export async function sendIdeContext(
   }
   if (!attached) {
     deps.inform?.("IDE context copied; Codex attach failed");
-    return { markdown: md, opened: "clipboard", softFailWarning: "codex attach failed" };
+    return {
+      markdown: md,
+      opened: "clipboard",
+      softFailWarning: "codex attach failed",
+    };
   }
   return { markdown: md, opened: "codex" };
 }

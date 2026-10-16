@@ -1,7 +1,11 @@
 import type { ActiveResource } from "./types";
 
 export type ProductCanonicalSlice =
-  | { product: "markdownWorkshop"; uri: string; selection?: ActiveResource["selection"] }
+  | {
+      product: "markdownWorkshop";
+      uri: string;
+      selection?: ActiveResource["selection"];
+    }
   | { product: "pdfWorkshop"; uri: string };
 
 export interface HostActiveSnapshot {

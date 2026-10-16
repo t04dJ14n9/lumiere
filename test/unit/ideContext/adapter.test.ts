@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildMwIdeContextPacket, assertMwPacket } from "../../../src/plugins/ideContext/adapter";
+import {
+  buildMwIdeContextPacket,
+  assertMwPacket,
+} from "../../../src/plugins/ideContext/adapter";
 import { DEFAULT_CAPS } from "../../../src/shared/ide-context";
 
 test("adapter builds packet with product markdownWorkshop and no pdf key", () => {
@@ -16,6 +19,9 @@ test("adapter builds packet with product markdownWorkshop and no pdf key", () =>
   });
   assert.equal(packet.product, "markdownWorkshop");
   assert.equal(packet.markdown.editorKind, "livePreview");
-  assert.equal("pdf" in packet && (packet as { pdf?: unknown }).pdf !== undefined, false);
+  assert.equal(
+    "pdf" in packet && (packet as { pdf?: unknown }).pdf !== undefined,
+    false,
+  );
   assertMwPacket(packet);
 });
