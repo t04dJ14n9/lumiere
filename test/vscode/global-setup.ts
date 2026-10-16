@@ -1,7 +1,8 @@
 /**
  * Starts a real VS Code for the tests: an isolated profile and extensions
- * folder under /tmp, this extension installed from a freshly packaged VSIX,
- * and a workspace holding the fixture PDFs. Playwright then connects to
+ * folder under /tmp, this extension installed from a freshly packaged VSIX
+ * (or loaded from source with VSCODE_TEST_USE_SOURCE=1), and a workspace
+ * holding the fixture PDFs. Playwright then connects to
  * VS Code's window over the Chrome DevTools Protocol.
  *
  * Set VSCODE_EXECUTABLE to test another build: an installed VS Code, or a
@@ -20,6 +21,7 @@ import { paths, writeState } from './state';
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
   const restrictedMode = config.metadata.restrictedMode === true;
+  const useSource = process.env.VSCODE_TEST_USE_SOURCE === '1';
   const { executable, cli } = await resolveVsCode();
   rmSync(paths.root, { recursive: true, force: true });
   mkdirSync(path.join(paths.userData, 'User'), { recursive: true });
@@ -55,35 +57,29 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     }, null, 2));
   }
 
-  const vsix = path.join(paths.root, 'extension.vsix');
-  await createVSIX({ cwd: paths.repository, packagePath: vsix, dependencies: false });
   // A chat participant, as Copilot Chat declares, so VS Code's chat counts as
   // served and Copy Link for Agent opens it.
-  const participant = path.join(paths.root, 'chat-participant.vsix');
-  await createVSIX({
-    cwd: path.join(paths.repository, 'test', 'fixtures', 'chat-participant'),
-    packagePath: participant,
-    dependencies: false,
-    allowMissingRepository: true,
-    skipLicense: true,
-  });
-  const extensions = [vsix, participant];
+  const developmentPaths = [
+    paths.repository,
+    path.join(paths.repository, 'test', 'fixtures', 'chat-participant'),
+  ];
   if (restrictedMode) {
-    const probe = path.join(paths.root, 'restricted-probe.vsix');
-    await createVSIX({
-      cwd: path.join(paths.repository, 'test', 'fixtures', 'restricted-probe'),
-      packagePath: probe,
-      dependencies: false,
-      allowMissingRepository: true,
-      skipLicense: true,
-    });
-    extensions.push(probe);
+    developmentPaths.push(path.join(paths.repository, 'test', 'fixtures', 'restricted-probe'));
   }
-  for (const extension of extensions) {
-    execFileSync(cli, ['--user-data-dir', paths.userData, '--extensions-dir', paths.extensions, '--install-extension', extension, '--force'], {
-      stdio: 'ignore',
-      env: cleanEnvironment(),
-    });
+  if (!useSource) {
+    for (const [index, cwd] of developmentPaths.entries()) {
+      const extension = path.join(paths.root, `extension-${index}.vsix`);
+      await createVSIX({
+        cwd,
+        packagePath: extension,
+        dependencies: false,
+        ...(index > 0 ? { allowMissingRepository: true, skipLicense: true } : {}),
+      });
+      execFileSync(cli, ['--user-data-dir', paths.userData, '--extensions-dir', paths.extensions, '--install-extension', extension, '--force'], {
+        stdio: 'ignore',
+        env: cleanEnvironment(),
+      });
+    }
   }
 
   const port = await freePort();
@@ -101,6 +97,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     '--password-store=basic',
     `--user-data-dir=${paths.userData}`,
     `--extensions-dir=${paths.extensions}`,
+    ...(useSource ? developmentPaths.map(directory => `--extensionDevelopmentPath=${directory}`) : []),
     `--remote-debugging-port=${port}`,
     paths.workspace,
   ], { detached: true, stdio: 'ignore', env: cleanEnvironment() });

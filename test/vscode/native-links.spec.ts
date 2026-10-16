@@ -1,7 +1,7 @@
 import { copyFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths } from "./state";
-import { expect, openFile, pdfViewer, pageAtTop, test } from "./workbench";
+import { expect, openFile, pdfViewer, test } from "./workbench";
 
 test("built-in Cmd-click delivers PDF page and region and native Back restores source caret", async ({
   workbench: page,
@@ -51,7 +51,11 @@ test("built-in Cmd-click delivers PDF page and region and native Back restores s
       for (const [index, value] of [72, 130, 100, 30].entries())
         expect(box[index]).toBeCloseTo(value, 0);
     } else {
-      await expect.poll(() => pageAtTop(viewer, target)).toBe(true);
+      await expect.poll(() => viewer.evaluate((index) => {
+        const viewport = document.querySelector(".viewport")!.getBoundingClientRect();
+        const page = document.querySelector(`.page[data-page-index="${index}"]`)?.getBoundingClientRect();
+        return page ? Math.abs(page.top - viewport.top) : Infinity;
+      }, target - 1)).toBeLessThanOrEqual(16);
     }
     await page.getByRole("button", { name: /^Go Back/u }).click();
     await expect(

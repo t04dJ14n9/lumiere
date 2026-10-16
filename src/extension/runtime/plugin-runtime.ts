@@ -142,7 +142,11 @@ export class PluginScope<S> {
       return errors;
     })();
     const errors = await this.releasingHeld;
-    await Promise.all([...this.releasing]);
+    // A still-running activation can acquire another late resource while we
+    // await an earlier inverse. Keep joining until no release remains.
+    while (this.releasing.size) {
+      await Promise.allSettled([...this.releasing]);
+    }
     return errors;
   }
 }

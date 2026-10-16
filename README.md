@@ -338,6 +338,11 @@ with Playwright. It never touches your own VS Code settings or extensions. Set
 for example `…/usr/share/cursor/cursor` in an extracted AppImage). On Linux
 without a display, run it under `xvfb-run -a`.
 
+Set `VSCODE_TEST_USE_SOURCE=1` to load the built extension and test fixtures
+through VS Code's extension development paths without installing any VSIX.
+For example, `VSCODE_TEST_USE_SOURCE=1 xvfb-run -a pnpm check:full` runs all
+local checks in this mode; `pnpm package` separately verifies packaging.
+
 On macOS, an empty test home can prompt for Keychain access. For credential-free
 synthetic runs, `VSCODE_TEST_MOCK_KEYCHAIN=1` opts into Chromium's mock Keychain.
 It is off by default; never use it with real accounts or personal profiles.
@@ -363,7 +368,8 @@ pre-push check instead.
 
 On a shared machine, run one heavy suite at a time and use a private X display
 for the VS Code tests. The browser harness uses port 8990 and can reuse an
-existing server locally: check that the port is free before starting, or verify
+existing server locally: set `PORT` to isolate concurrent worktrees, check that
+the port is free before starting, or verify
 that its server belongs to this checkout and serves the current build. Do not
 stop another session's server or editor to free it.
 

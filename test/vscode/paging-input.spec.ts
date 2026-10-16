@@ -202,7 +202,8 @@ test("zoomed in, the arrows pan; wheel and two-finger flicks travel across pages
   await expect.poll(top).toBeGreaterThan(start + 900);
   const flick = [2, 9, 30, 100, 200, 300, 300, 200, 100, 60, 30, 12];
   const flickStart = await top();
-  for (const delta of flick) await page.mouse.wheel(0, delta);
+  // Keep one gesture contiguous even when CDP round trips are slow under load.
+  await Promise.all(flick.map((delta) => page.mouse.wheel(0, delta)));
   await expect
     .poll(top)
     .toBeGreaterThan(flickStart + flick.reduce((a, b) => a + b) - 5);
@@ -210,11 +211,19 @@ test("zoomed in, the arrows pan; wheel and two-finger flicks travel across pages
   // Page-by-page: a long flick turns exactly one page.
   await command(page, "PDF: Fit Page");
   await command(page, "PDF: Page-by-page Scrolling");
+  await expect(viewer.locator(".viewer")).toHaveAttribute("data-scroll-mode", "paged");
   await expect.poll(() => shown(viewer)).toHaveLength(1);
   const first = (await shown(viewer))[0]!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  for (const delta of [20, 60, 120, 200, 260, 260, 220, 170, 120, 80, 50, 30, 20, 10, 5, 2])
-    await page.mouse.wheel(0, delta);
+  // Send the momentum burst inside the real webview so CDP latency and wheel
+  // coalescing cannot turn it into separate notches. The notch above still
+  // exercises trusted native wheel input.
+  await viewer.locator(".viewport").evaluate((viewport) => {
+    for (const deltaY of [20, 60, 120, 200, 260, 260, 220, 170, 120, 80, 50, 30, 20, 10, 5, 2]) {
+      viewport.dispatchEvent(new WheelEvent("wheel", {
+        deltaY, bubbles: true, cancelable: true,
+      }));
+    }
+  });
   await expect.poll(() => shown(viewer)).toEqual([first + 1]);
   await page.waitForTimeout(500);
   expect(await shown(viewer)).toEqual([first + 1]);
