@@ -536,6 +536,25 @@ Known issues: <list, with the failing test or observation>.
 
 ## Phase records
 
+### Properties chip removal reconciliation — 2026-10-16
+
+Delivered: list rows retain focused add-input and chip-editor drafts only. A
+focused remove button no longer keeps stale chips after the authoritative YAML
+loses an item. `title` keeps its existing behavior.
+
+Coverage: a focused remove-button unit fails on the previous guard and passes
+with the fix, checking that reconciliation replaces two tag chips with one.
+Companion units preserve nonempty add-input and chip-editor drafts. No source
+tests were ported and no browser/native scenarios were added.
+
+Checks: Node 22 under the shared suite lock: `pnpm check` passes (1,794 unit
+passes, 23 intentional Cordis skips), the requested
+`properties-parity.spec.ts` passes (1/1), full Chromium passes (276/276), and
+native VS Code 1.142.0 passes (23/23) on a private Xvfb display with
+`MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1`. The first native attempt could not start
+because an incomplete cached runtime lacked `out/main.js`; retrying with a
+complete cached runtime passed. No VSIX, push, PR, merge or publication.
+
 ### Properties editability and click parity — 2026-10-16
 
 Delivered: nested maps/lists and block values keep their raw YAML drafts when

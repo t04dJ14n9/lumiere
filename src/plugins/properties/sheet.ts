@@ -99,10 +99,11 @@ function keepInput(active: Element | null, row: HTMLElement): boolean {
       !!active.dataset.propertyDirty
     );
   }
-  // A focused pill is not text being typed: it re-renders with the list.
+  // Keep list add-input / chip drafts while typing; pills and remove × re-render.
   return (
     !!active.closest("[data-property-list]") &&
-    !active.hasAttribute("data-property-chip") &&
+    (active.hasAttribute("data-property-list-input") ||
+      active.hasAttribute("data-property-chip-edit")) &&
     (!!inputText(active) || !!active.dataset.propertyEditing)
   );
 }
