@@ -10,6 +10,13 @@ export const config = Schema.object({
   warmTextDocument: Schema.union(["auto", "on", "off"]).default("auto"),
   strictLineBreaks: Schema.boolean().default(false),
   rightToLeft: Schema.boolean().default(false),
+  dragScrollSpeed: Schema.number()
+    .min(1)
+    .max(10)
+    .default(4)
+    .description(
+      "Speed multiplier for text-selection auto-scroll near the editor edges (1–10). Default: 4; 1 restores CodeMirror's original speed. Applies immediately in Live Preview and Source mode.",
+    ),
   useTabs: Schema.boolean().default(true),
   tabSize: new Schema<number>(
     (value) => {

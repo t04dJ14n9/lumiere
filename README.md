@@ -70,6 +70,11 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   Obsidian's) is the line height as a multiple of that size, so lines scale
   with it too. The font family, weight, letter spacing and ligatures still
   follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
+- `markdownWorkshop.editor.dragScrollSpeed` makes mouse text-selection
+  auto-scroll faster near the note's edges. It is a multiplier from 1 to 10
+  (default 4); 1 restores CodeMirror's original speed. Changes apply live in
+  Live Preview and Source mode. Table-cell selection and row/property
+  reordering keep their existing edge-scroll behavior.
 - **Markdown Workshop: Open Settings** opens the Settings UI filtered to this
   extension. **Change Setting…** lists every setting of the extension (by
   plugin, with its value) and edits the one you pick by its type. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle

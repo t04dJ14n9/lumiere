@@ -233,9 +233,10 @@ for (const vim of [false, true]) {
     expect(await copyText(page)).toBe("Before.\n");
     if (!vim) {
       await page.keyboard.press("Backspace");
-      expect(await page.evaluate(() => window.harness.text)).toBe(
-        FENCED.replace("Before.\n", ""),
-      );
+      // TextDocument authority arrives asynchronously after the local edit.
+      await expect
+        .poll(() => page.evaluate(() => window.harness.text))
+        .toBe(FENCED.replace("Before.\n", ""));
     }
   });
 }

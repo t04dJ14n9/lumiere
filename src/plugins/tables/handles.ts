@@ -41,7 +41,7 @@ export class TableHandles {
       viewports.vertical,
       table,
       (point) => this.updateTarget(point),
-      viewports.horizontal,
+      { horizontal: viewports.horizontal },
     );
     this.indicator.className = "table-drop-indicator";
     this.indicator.hidden = true;

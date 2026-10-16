@@ -32,6 +32,7 @@ import { keepSelectAllInEditor } from "./select-all";
 import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
+import { selectionDragScroll } from "./drag-scroll";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -141,6 +142,7 @@ function createEditorView(
         ctx.markdown.language(),
         drawSelection(),
         selectionLayer,
+        selectionDragScroll,
         caretExtension(),
         findExtension(),
         EditorView.lineWrapping,
