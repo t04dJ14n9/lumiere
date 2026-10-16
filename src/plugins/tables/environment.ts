@@ -4,6 +4,7 @@ import type { InputGrouping } from "../document/api";
 import type { MenuItem } from "../editor/api";
 import type { VimService } from "../vim/api";
 import type { LinksService } from "../links/api";
+import type { TableWheelEvent } from "./wheel-scroll";
 export type Action =
   "save" | "undo" | "redo" | "close" | "saveClose" | "openAsText";
 /** Services captured by one table plugin instance, shared with its cell views. */
@@ -30,4 +31,6 @@ export interface TableEnvironment {
   ): () => void;
   copy(text: string): void;
   paste(): Promise<string>;
+  /** Record vertical widget input and report whether the note can scroll farther. */
+  scrollNote(distance: number, event: TableWheelEvent): boolean;
 }

@@ -440,6 +440,27 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
     without moving the note vertically. Drag selections and grips near all
     four visible edges: vertical note and horizontal table EdgeScroll still
     work; release stops auto-scrolling. Cell edits, handles and menus still work.
+11. In that note, pause over a table, then turn the wheel one tick at a time,
+    followed by a rapid burst. The first tick and the later ticks animate
+    smoothly; no initial jump or lost burst distance. Pause and repeat in
+    both directions, with and without a selected row or active cell editor.
+    Repeat starting over prose and immediately after restoring a pane.
+    Scroll from the table into prose under a stationary pointer: there is no
+    abrupt change from jumping to smooth movement. Reverse during a burst,
+    then interrupt with a click, typing, a scrollbar drag or heading navigation:
+    the old table destination must not pull the note back. Check two panels
+    independently. With the OS reduced-motion preference on, forwarded table
+    ticks move immediately. Repeat a precise trackpad gesture and confirm that
+    small deltas accumulate, and that horizontal/Shift-wheel and zoom retain
+    their existing behavior.
+    Near either note edge, send a rapid outward burst while the note is still
+    animating toward that edge: later ticks retain native ancestor chaining
+    and the original animation finishes. Try tiny fractional trackpad movements
+    in both directions: intermediate motion must not cut the destination short.
+    Restore a pane with delayed image/font/math layout, immediately wheel over
+    a table, then let content above the saved anchor resize within 1.5 seconds:
+    saved-view correction must not pull the note back. Horizontal/Shift-wheel
+    and zoom over a table must not cancel that restore through the table hook.
 
 ### callouts
 

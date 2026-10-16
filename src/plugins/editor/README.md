@@ -109,6 +109,7 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `contributions.ts`: feature-owned view-state validation and restoration.
 - `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.
 - `view-state.ts`: geometric scroll anchoring and presentation restoration.
+- `view-state.test.ts`: widget scroll input cancels queued restore corrections per panel.
 - `view-transfer.ts`: flushed, version-checked native view transfers.
 - `extensions.test.ts`: ordering, owner tie-breaks and retained state units.
 - `settings.test.ts`: indentation settings and compartment preservation units.
@@ -120,7 +121,8 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 Host injects `workbench` and `documents`, provides `editors`, and emits/listens to
 `editor/opened`, `editor/closed` and `editor/activeChanged`. Webview injects
 `document`, `markdown` and `rpc`, provides `editor` and `menu`, listens to
-`document/syncStatus`, calls `editor/projectSelection`, and emits
+`document/syncStatus` and `editor/scrollInput` (widget scroll input cancels a
+pending saved-position restore), calls `editor/projectSelection`, and emits
 `editor/clearProjection` and `editor/modeRestored`. Selection and focus changes notify the
 host through the editor channel; the host keeps the
 `markdownWorkshop.hasSelection` and `markdownWorkshop.editorFocus` context

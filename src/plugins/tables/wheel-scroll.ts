@@ -1,4 +1,4 @@
-type TableWheelEvent = Pick<
+export type TableWheelEvent = Pick<
   WheelEvent,
   | "deltaX"
   | "deltaY"
@@ -11,16 +11,14 @@ type TableWheelEvent = Pick<
   | "preventDefault"
 >;
 
-type NoteViewport = Pick<
-  HTMLElement,
-  "scrollTop" | "scrollHeight" | "clientHeight"
-> & { scrollBy(options: ScrollToOptions): void };
+type NoteViewport = Pick<HTMLElement, "clientHeight">;
 
 /** Keep vertical wheel input out of the table's horizontal overflow box. */
 export function forwardTableWheel(
   event: TableWheelEvent,
   viewport: NoteViewport,
   lineHeight: number,
+  scroll: (distance: number, event: TableWheelEvent) => boolean,
 ): void {
   if (
     event.defaultPrevented ||
@@ -33,18 +31,15 @@ export function forwardTableWheel(
     return;
   }
   const top = verticalDistance(event, lineHeight, viewport.clientHeight);
-  const remaining =
-    top < 0
-      ? viewport.scrollTop
-      : viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
-  if (remaining <= 0) {
+  // The motion owner checks room at its pending destination, since the visible
+  // position can still be catching up with an earlier tick at the note's edge.
+  if (!scroll(top, event)) {
     return;
   }
   // overflow-x: auto also makes overflow-y auto. Chromium can keep wheel
   // input in that nested scrollport after grid selection focuses the widget.
   // Cancel its default only when forwarding to the note, to avoid double scroll.
   event.preventDefault();
-  viewport.scrollBy({ left: 0, top, behavior: "instant" });
 }
 
 function verticalDistance(

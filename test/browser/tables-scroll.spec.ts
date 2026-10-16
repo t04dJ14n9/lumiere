@@ -53,12 +53,12 @@ for (const vim of [false, true]) {
     await page.mouse.wheel(0, -160);
     await expect
       .poll(() => note.evaluate((element) => element.scrollTop))
-      .toBeLessThan(beforeScroll - 80);
+      .toBe(beforeScroll - 160);
     const above = await note.evaluate((element) => element.scrollTop);
     await page.mouse.wheel(0, 160);
     await expect
       .poll(() => note.evaluate((element) => element.scrollTop))
-      .toBeGreaterThan(above + 80);
+      .toBe(above + 160);
     await expect(table.locator(".table-cell-selected")).toHaveCount(20);
     await expect(table).toBeFocused();
     expect(await horizontal.evaluate((element) => element.scrollLeft)).toBe(0);

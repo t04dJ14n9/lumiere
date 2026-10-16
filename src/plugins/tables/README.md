@@ -10,9 +10,17 @@ clipboard and toolbar collaborator. The projection reserializes the entire table
 with column-aligned padding on each cell edit, in the existing native input group;
 it never owns undo history. The controller reconciles
 incoming snapshots, preserving the active cell editor across structural edits.
-Vertical wheel input over the widget is forwarded to the note scroller, while
-horizontal and Shift-wheel gestures stay with the table's overflow box. The
-selection and focus stay in place during scrolling.
+Vertical wheel input over the widget is forwarded to the note scroller using
+the browser's smooth animation from the first tick. All tables in one panel
+share a pending destination so rapid ticks retain their full distance. Other
+input or navigation cancels that motion, and reduced-motion preferences use
+immediate scrolling. A destination already at the note's edge lets further
+outward ticks chain while the animation finishes. Fractional destinations stay
+active through intermediate scroll events and release on arrival or `scrollend`.
+Real vertical table wheel input cancels saved-view scroll restoration through
+the editor's public input event, including when the tick chains at an edge.
+Horizontal and Shift-wheel gestures stay with the table's
+overflow box. The selection and focus stay in place during scrolling.
 Grid Ctrl+C/Cmd+C snapshots the selected rectangle as TSV and writes through
 Editor's validated host clipboard service, preserving grid focus and selection.
 Native copy events and menu commands use the same TSV serialization; ordinary
@@ -29,7 +37,7 @@ plugin registrations and widget lifetimes end when the plugin stops.
 ## Files
 
 - `manifest.ts`: settings identity and table command contributions.
-- `webview.ts`: named registrations for rendering, projection and commands.
+- `webview.ts`: named registrations for rendering, wheel motion, projection and commands.
 - `environment.ts`: injected capabilities available to table interactions.
 - `content.ts`: asynchronous render-pass ownership and cancellation.
 - `widget.ts`: Live Preview widget creation, reuse and disposal.
@@ -44,6 +52,8 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `selection-drag.ts`: pointer selection, capture and scrolling lifetime.
 - `wheel-scroll.ts`: vertical wheel routing, gesture guards and delta units.
 - `wheel-scroll.test.ts`: wheel directions, units, horizontal gestures and note limits.
+- `wheel-motion.ts`: per-panel smooth wheel destinations, reversal and cancellation.
+- `wheel-motion.test.ts`: first ticks, accumulated distance, interruption, boundaries and reduced motion.
 - `keyboard.ts`: grid shortcuts and movement between cells or out of the table.
 - `navigation.ts`: text boundaries, document entry and Vim arrows, counts and g-prefix interpretation.
 - `word-motion.ts`: Unicode word endpoints and counted navigation in table row order.
@@ -65,7 +75,8 @@ plugin registrations and widget lifetimes end when the plugin stops.
 - `vim-source.test.ts`: source-column ownership, delimiter entry, transaction/mode guards and deferred-entry cancellation unit tests.
 - `src/markdown/tables/model.ts`: pure table parsing, serialization and source-position mapping.
 - `clipboard.test.ts`: cell/grid clipboard, selection and stale-paste unit tests.
-- `webview.test.ts`: persistent widget, entry registrations and insertion unit tests.
+- `webview.test.ts`: persistent widget, entry, insertion and wheel lifetime unit tests.
+- `test/unit/features/table-wheel.test.ts`: table wheel restore cancellation and in-flight boundary chaining through plugin wiring.
 - `tables-copy.spec.ts` (browser): handle, row, rectangle and single-cell TSV shortcuts.
 - `tables-scroll.spec.ts` (browser): selected-row wheel scrolling on both axes, with and without Vim.
 - `tables-measured.spec.ts`, `tables-a11y.spec.ts` (browser) and `test/vscode/tables.spec.ts`: interactions measured in Obsidian 1.14.4, accessibility tree and keyboard traversal, and native undo in the real editor.
@@ -82,7 +93,8 @@ Injects `editor`, `document`, `markdown`, `livePreview`, `render`, `commands`,
 service follows Mod-Enter from the focused cell's own document and caret.
 Provides no service. Listens to
 `editor/clearProjection`, `editor/projectSelection` and `editor/activeView`;
-sends the validated editor `selectionChanged` notification. The feature switch
+emits `editor/scrollInput` for vertical table wheel input and sends the validated
+editor `selectionChanged` notification. The feature switch
 is `markdownWorkshop.plugins.tables.enabled`; it has no separate configuration.
 
 ## Limits and differences from Obsidian
@@ -92,6 +104,9 @@ Markdown offsets for consumers of the editor selection API. Live Preview always
 keeps tables rendered; only the focused cell reveals raw Markdown. Source mode
 shows the full table source. HTML conversion is delegated
 to the paste pipeline rather than implemented by the table widget.
+An external programmatic viewport change in the same direction as an unfinished
+wheel animation can retain its destination; there is no general ownership signal
+for that case. Pointer input, navigation and other wheel gestures cancel motion.
 Selected cells show their selection background through inline code while keeping
 its theme foreground and monospace styling; unselected code keeps its background.
 The open cell editor and rectangular grid selections share the same inset accent

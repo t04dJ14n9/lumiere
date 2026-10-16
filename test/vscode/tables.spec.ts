@@ -177,18 +177,19 @@ test("tables in the real editor: the add-row strip below and the add-column stri
       path: path.join(shots, "tables-add-column-vscode.png"),
     });
 
-    // Real pointer clicks: the row goes in below with its first cell focused,
-    // the column to the right with its header focused.
-    await page.mouse.move(below.x, below.y);
-    await page.mouse.down();
-    await page.mouse.up();
+    // Row insertion changes the strip geometry. Locator clicks wait for its
+    // current position, and typing waits for the new cell to receive focus.
+    await rowButton.click();
+    await expect(
+      table.getByRole("textbox", { name: "Table cell 4, 1", exact: true }),
+    ).toBeFocused();
     await page.keyboard.type("n", { delay: 40 });
     await page.keyboard.press("ControlOrMeta+s");
     await expect.poll(() => row(6)).toBe("| n   |     |     |");
-    const next = await centre(columnButton);
-    await page.mouse.move(next.x, next.y);
-    await page.mouse.down();
-    await page.mouse.up();
+    await columnButton.click();
+    await expect(
+      table.getByRole("textbox", { name: "Table cell 1, 4", exact: true }),
+    ).toBeFocused();
     await page.keyboard.type("h", { delay: 40 });
     await page.keyboard.press("ControlOrMeta+s");
     await expect.poll(() => row(2)).toMatch(/^\| a +\| +b +\| +c +\| h +\|$/);

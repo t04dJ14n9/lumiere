@@ -58,7 +58,7 @@ export const editorWebview: Plugin<EditorConfig> = {
     return true;
   },
   apply(ctx, config) {
-    const presentation = createViewState();
+    const presentation = createViewState(ctx);
     const pluginExtensions = new Compartment();
     const settings = new Compartment();
     const modeClass = new Compartment();

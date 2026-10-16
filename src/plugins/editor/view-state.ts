@@ -1,6 +1,7 @@
 import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { StateEffect } from "@codemirror/state";
-import type { Infer } from "../../kernel";
+import type { Context, Infer } from "../../kernel";
+import type {} from "./api";
 import type { viewState } from "./protocol";
 type EditorViewState = Infer<typeof viewState>;
 
@@ -17,15 +18,17 @@ interface PendingScroll {
   applied: boolean;
   settleUntil: number;
 }
-export function createViewState() {
-  return new ViewState();
+export function createViewState(ctx: Context) {
+  return new ViewState(ctx);
 }
 const SETTLE_MS = 1500;
 class ViewState {
   private readonly pendingScroll = new WeakMap<EditorView, PendingScroll>();
   readonly restoreScrollPosition;
 
-  constructor() {
+  constructor(ctx: Context) {
+    // Ignored widgets bypass CodeMirror's DOM handlers, even for real input.
+    ctx.on("editor/scrollInput", (view) => this.pendingScroll.delete(view));
     this.restoreScrollPosition = this.scrollExtensions();
   }
 
