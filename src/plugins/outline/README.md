@@ -35,7 +35,7 @@ panel; showing restores and focuses it in its current location.
 When a Markdown Workshop editor becomes active, the plugin hides VS Code's
 native **Outline**, shows **Note Outline** and **Tags**, then returns focus to
 the editor. Leaving the last Workshop editor restores the native Outline after a
-short debounce so switching to PDF Workshop does not flash Outline. Manual
+short debounce; restore is skipped if PDF Workshop (or another Workshop editor) already owns the active tab. Manual
 changes to Outline while a Workshop editor stays active are left alone until the
 next enter/leave. Tags also use the same `activeCustomEditorId` when-clause as
 Note Outline so they do not linger beside non-Workshop editors.

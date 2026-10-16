@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import type { Context, Plugin } from "../../kernel";
 import type { TreeHandle } from "../../shared/runtime";
 import type {} from "../editor/api";
@@ -86,6 +87,7 @@ function registerOutlineFocus(ctx: Context): void {
     execute: (command) => ctx.workshop.execute(command),
     focusEditor: () =>
       ctx.workshop.execute("workbench.action.focusActiveEditorGroup"),
+    activeCustomEditorViewType: activeCustomEditorViewType,
   });
   ctx.effect(() => () => focus.dispose());
   const sync = () => focus.sync(Boolean(ctx.editors.active()));
@@ -94,4 +96,12 @@ function registerOutlineFocus(ctx: Context): void {
   ctx.on("editor/activeChanged", sync);
   // An already-active panel may not emit activeChanged at startup.
   sync();
+}
+
+function activeCustomEditorViewType(): string | undefined {
+  const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+  if (input instanceof vscode.TabInputCustom) {
+    return input.viewType;
+  }
+  return undefined;
 }
