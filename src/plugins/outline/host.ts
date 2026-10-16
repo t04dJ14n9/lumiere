@@ -99,8 +99,12 @@ function registerOutlineFocus(ctx: Context): void {
 }
 
 function activeCustomEditorViewType(): string | undefined {
-  const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
-  if (input instanceof vscode.TabInputCustom) {
+  // Unit stubs resolve `vscode` to a forbidden placeholder without window APIs.
+  const input = vscode.window?.tabGroups?.activeTabGroup?.activeTab?.input;
+  if (
+    typeof vscode.TabInputCustom === "function" &&
+    input instanceof vscode.TabInputCustom
+  ) {
     return input.viewType;
   }
   return undefined;

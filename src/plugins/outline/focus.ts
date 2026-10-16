@@ -178,9 +178,18 @@ async function restoreNativeOutline(
     // Peer Workshop owns the swap; leave native Outline to them.
     return;
   }
-  await options.execute(`${NATIVE_OUTLINE_ID}.focus`);
-  if (reason === "leave") {
-    await options.focusEditor();
+  try {
+    await options.execute(`${NATIVE_OUTLINE_ID}.focus`);
+    if (reason === "leave") {
+      await options.focusEditor();
+    }
+  } catch (error) {
+    // Dispose runs from an effect cleanup; the queued restore can land after
+    // the host context has already rejected further execute calls.
+    if (reason === "dispose") {
+      return;
+    }
+    throw error;
   }
 }
 

@@ -119,6 +119,7 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
 
 test("Tags and Note Outline views require the Markdown Workshop editor", async () => {
   const { views } = await contributions();
+  assert.ok(views);
   const outline = views.explorer.find(
     (view) => view.id === "markdownWorkshop.outline",
   );
