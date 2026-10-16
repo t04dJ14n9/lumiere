@@ -664,8 +664,17 @@ On by default.
 
 ### indentGuides
 
-1. Nested lists in `Core.md` show guides that follow tab stops; they never
-   cover text.
+1. Nested lists in `Core.md` show one guide per ancestor list, aligned beneath
+   its marker. In a scratch copy, add an ordered parent with three-space child
+   indentation, tab-indented lists and task children: they use the same visual
+   nesting steps. Long items keep
+   guides through soft wraps without a second set at source tab stops. Separate
+   source continuation lines have no guides; indented code and non-list text
+   retain source-column guides.
+2. Toggle `markdownWorkshop.plugins.indentGuides.enabled` off: every guide
+   disappears while bullets and indentation stay in place. Turn it on and
+   switch to Source mode: guides follow source tab stops. Switch back: list
+   guides follow visual nesting again, with no text edits.
 
 ### spellcheck
 

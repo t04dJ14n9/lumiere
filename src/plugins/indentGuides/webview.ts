@@ -1,49 +1,22 @@
-import { Decoration, ViewPlugin } from "@codemirror/view";
-import type { DecorationSet, EditorView } from "@codemirror/view";
-import type { Range } from "@codemirror/state";
+import { EditorView, ViewPlugin } from "@codemirror/view";
 import type { Plugin } from "../../kernel";
 import type {} from "../editor/api";
+import type {} from "../livePreview/api";
+import { guideDecorations } from "./guides";
 
-export function indentation(text: string, tabSize: number): number {
-  let width = 0;
-  for (const char of text) {
-    if (char === " ") {
-      width++;
-    } else if (char === "\t") {
-      width += tabSize - (width % tabSize);
-    } else {
-      break;
-    }
-  }
-  return width;
-}
-function guides(view: EditorView): DecorationSet {
-  const ranges: Range<Decoration>[] = [];
-  for (const visible of view.visibleRanges) {
-    for (let at = visible.from; at <= visible.to;) {
-      const line = view.state.doc.lineAt(at);
-      const width = indentation(line.text, view.state.tabSize);
-      if (width) {
-        ranges.push(
-          Decoration.line({
-            attributes: {
-              style: `--indent-width:${width}ch;--indent-step:${view.state.tabSize}ch`,
-              class: "mw-indent-guide",
-            },
-          }).range(line.from),
-        );
-      }
-      at = line.to + 1;
-    }
-  }
-  return Decoration.set(ranges, true);
-}
 export const indentGuidesWebview: Plugin = {
   name: "indentGuides",
-  inject: { required: ["editor"] },
+  inject: { required: ["editor"], optional: ["livePreview"] },
   apply(ctx) {
+    const guides = (view: EditorView) =>
+      guideDecorations(
+        view.state,
+        view.visibleRanges,
+        ctx.livePreview?.mode === "livePreview",
+      );
     ctx.effect(() =>
       ctx.editor.extend([
+        EditorView.editorAttributes.of({ class: "mw-indent-guides" }),
         ViewPlugin.define(
           (view) => ({
             decorations: guides(view),

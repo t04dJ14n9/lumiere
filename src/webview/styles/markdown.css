@@ -197,8 +197,8 @@
   padding-block: 0;
 }
 /*
- * Lists: each level is one --list-indent step with a faint guide under the
- * parent's bullet; markers are muted and wrapped text hangs under the text.
+ * Lists: each level is one --list-indent step; markers are muted and wrapped
+ * text hangs under the text. The indentGuides plugin owns guide painting.
  */
 #app .cm-line.md-list-line {
   --list-hang: calc(
@@ -212,12 +212,6 @@
   width: calc(var(--list-depth, 0) * var(--list-indent));
   height: 1lh;
   vertical-align: top;
-  background: repeating-linear-gradient(
-    to right,
-    transparent 0 0.3em,
-    var(--list-guide) 0.3em calc(0.3em + 1px),
-    transparent calc(0.3em + 1px) var(--list-indent)
-  );
 }
 .list-bullet {
   display: inline-block;
