@@ -517,12 +517,12 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
 
 ### outline
 
-1. With a workbench note active, the Explorer's **Note Outline** lists its
+1. With a workbench note active, the Explorer's **Markdown Outline** lists its
    headings; clicking one moves the caret there, and the current section is
    selected as the caret moves.
-2. In the text editor, Note Outline hides; VS Code's Outline lists headings
+2. In the text editor, Markdown Outline hides; VS Code's Outline lists headings
    once.
-3. Use **Collapse All** in Note Outline's title bar, then **Expand All**.
+3. Use **Collapse All** in Markdown Outline's title bar, then **Expand All**.
    All branches expand, including a note nested from `#` through `######`.
    Expand All preserves the selected item without focusing a heading.
 4. Open the title's **...** menu. **Follow Cursor** starts checked. Turn it
@@ -545,14 +545,14 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
 7. Open the same note in a plain text split and switch repeatedly between
    the two panels without editing. Workbench's shortcut opens Go to Heading;
    the plain text shortcut and native Outline show built-in Markdown symbols
-   once. Workbench uses Note Outline; it does not populate the native Outline
+   once. Workbench uses Markdown Outline; it does not populate the native Outline
    or breadcrumbs. An open heading picker must not jump if the document is
    edited or a different panel becomes active before accepting it.
-8. Press **Ctrl+Alt+O** (**Control+Command+O** on macOS) twice: Note Outline
-   hides, then reappears and receives focus. Use **Move View** to place Note
+8. Press **Ctrl+Alt+O** (**Control+Command+O** on macOS) twice: Markdown Outline
+   hides, then reappears and receives focus. Use **Move View** to place Markdown
    Outline in the secondary sidebar, then in the panel, and repeat. Each
-   toggle targets Note Outline at its current location and leaves the other
-   views visible. Also check a container containing only Note Outline.
+   toggle targets Markdown Outline at its current location and leaves the other
+   views visible. Also check a container containing only Markdown Outline.
 
 ### backlinks and outgoingLinks
 
@@ -1033,7 +1033,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkshop.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.outline.toggle` — Toggle Note Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Note Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
+| `markdownWorkshop.outline.toggle` — Toggle Markdown Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Markdown Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
 | `markdownWorkshop.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workbench; switch to a plain text split and confirm its native symbol shortcut remains available. |
 | `markdownWorkshop.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |

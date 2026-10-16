@@ -120,7 +120,7 @@ docs/plans/scm-inline-routing.md	opening Markdown Workbench with
 IMPLEMENTATION_PLAN.md	editor protocol, `markdownWorkbench.debug.logging` gates debug lines on both
 IMPLEMENTATION_PLAN.md	  `markdownWorkbench.plugins.agentBridge.enabled`, renamed with no
 IMPLEMENTATION_PLAN.md	and it publishes `markdownWorkbench.bridge.envelope` without opening a chat.
-IMPLEMENTATION_PLAN.md	TreeView (`markdownWorkbench.outline`, **Note Outline**) for the active
+IMPLEMENTATION_PLAN.md	TreeView (`markdownWorkbench.outline`, **Markdown Outline**) for the active
 IMPLEMENTATION_PLAN.md	`markdownWorkbench.outline.followCursor`. The setting of the same name is
 IMPLEMENTATION_PLAN.md	panel (`markdownWorkbench.graph`) using graphology and Sigma in their own
 IMPLEMENTATION_PLAN.md	vscode-markdown-workbench/
@@ -754,7 +754,7 @@ scripts/identity-rename-allowlist.txt	opening Markdown Workbench with
 scripts/identity-rename-allowlist.txt	editor protocol, `markdownWorkbench.debug.logging` gates debug lines on both
 scripts/identity-rename-allowlist.txt	  `markdownWorkbench.plugins.agentBridge.enabled`, renamed with no
 scripts/identity-rename-allowlist.txt	and it publishes `markdownWorkbench.bridge.envelope` without opening a chat.
-scripts/identity-rename-allowlist.txt	TreeView (`markdownWorkbench.outline`, **Note Outline**) for the active
+scripts/identity-rename-allowlist.txt	TreeView (`markdownWorkbench.outline`, **Markdown Outline**) for the active
 scripts/identity-rename-allowlist.txt	`markdownWorkbench.outline.followCursor`. The setting of the same name is
 scripts/identity-rename-allowlist.txt	panel (`markdownWorkbench.graph`) using graphology and Sigma in their own
 scripts/identity-rename-allowlist.txt	vscode-markdown-workbench/

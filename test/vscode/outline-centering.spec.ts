@@ -54,9 +54,9 @@ async function geometry(frame: Frame, title: string) {
   }, title);
 }
 
-/** Clicks a heading in the Note Outline view of the Explorer, as a user does. */
+/** Clicks a heading in the Markdown Outline view of the Explorer, as a user does. */
 async function clickOutline(page: Page, title: string) {
-  const header = page.getByRole("button", { name: "Note Outline Section" });
+  const header = page.getByRole("button", { name: "Markdown Outline Section" });
   if ((await header.getAttribute("aria-expanded")) !== "true") {
     await header.click();
   }
@@ -76,7 +76,7 @@ async function expectCentred(page: Page, title: string) {
     .toBeLessThanOrEqual(TOLERANCE);
 }
 
-test("clicking a heading in the Note Outline centres it in the editor, clamping at both ends of the note", async () => {
+test("clicking a heading in the Markdown Outline centres it in the editor, clamping at both ends of the note", async () => {
   const note = path.join(paths.workspace, "Note.md");
   const original = readFileSync(note, "utf8");
   writeFileSync(note, NOTE);

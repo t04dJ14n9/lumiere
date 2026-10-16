@@ -374,7 +374,7 @@
       },
       {
         "command": "markdownWorkshop.outline.toggle",
-        "title": "Toggle Note Outline",
+        "title": "Toggle Markdown Outline",
         "category": "Markdown Workshop",
         "icon": "$(list-tree)"
       },
@@ -743,7 +743,7 @@
         },
         {
           "id": "markdownWorkshop.outline",
-          "name": "Note Outline",
+          "name": "Markdown Outline",
           "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled && activeCustomEditorId == 'markdownWorkshop.editor'"
         },
         {
@@ -1441,7 +1441,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings."
+          "description": "Markdown Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings."
         },
         "markdownWorkshop.plugins.pagePreview.enabled": {
           "type": "boolean",
@@ -1771,7 +1771,7 @@
         "markdownWorkshop.outline.followCursor": {
           "type": "boolean",
           "default": true,
-          "description": "Select and reveal the current heading in Note Outline as the cursor moves, without taking focus.",
+          "description": "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
           "scope": "resource"
         },
         "markdownWorkshop.properties.display": {

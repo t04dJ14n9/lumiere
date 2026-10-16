@@ -7,7 +7,7 @@ export const config = Schema.object({
   followCursor: Schema.boolean()
     .default(true)
     .description(
-      "Select and reveal the current heading in Note Outline as the cursor moves, without taking focus.",
+      "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
     ),
 });
 
@@ -15,7 +15,7 @@ export default defineManifest({
   id: "outline",
   title: "Outline",
   description:
-    "Note Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings.",
+    "Markdown Outline with expansion actions and optional cursor following. Go to Heading (Ctrl+Shift+O) searches the active Workshop note's headings.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
@@ -43,7 +43,7 @@ export default defineManifest({
       },
       {
         id: "outline.toggle",
-        title: "Toggle Note Outline",
+        title: "Toggle Markdown Outline",
         icon: "$(list-tree)",
         palette: true,
         scope: "workbench",
@@ -88,7 +88,7 @@ export default defineManifest({
     views: [
       {
         id: "outline",
-        name: "Note Outline",
+        name: "Markdown Outline",
         scope: "workbench",
         when: whenActive(MARKDOWN_EDITOR),
       },
