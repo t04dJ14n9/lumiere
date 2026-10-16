@@ -23,6 +23,7 @@ export class StickyScrollView {
   height = 0;
   private isDestroyed = false;
   private headings: readonly Heading[] = [];
+  private rowHeight = 0;
 
   constructor(
     private readonly view: EditorView,
@@ -34,6 +35,15 @@ export class StickyScrollView {
     this.dom.hidden = true;
     this.dom.addEventListener("wheel", (event) => this.scroll(event), {
       passive: false,
+    });
+    // Resolve the row from the event target (and Y as a fallback) so a click or
+    // tooltip always matches the visible pin, not a parent row under the pointer.
+    this.dom.addEventListener("click", (event) => this.activate(event));
+    this.dom.addEventListener("pointermove", (event) =>
+      this.syncHoverTitle(event),
+    );
+    this.dom.addEventListener("pointerleave", () => {
+      this.dom.removeAttribute("title");
     });
     view.dom.append(this.dom);
     this.schedule();
@@ -67,17 +77,30 @@ export class StickyScrollView {
     const content = view.contentDOM.getBoundingClientRect();
     const rowHeight = view.defaultLineHeight;
     const top = scroll.top + view.scrollDOM.clientTop;
-    const block = view.lineBlockAtHeight(Math.max(0, top - view.documentTop));
     const limit = Math.min(
       view.state.facet(stickyMaxLines),
       Math.floor(view.scrollDOM.clientHeight / (3 * rowHeight)),
     );
+    const index = view.state.field(headingIndex);
+    // Probe the first line still visible *below* the sticky chrome. The
+    // viewport top sits under the overlay (scroll margins keep the caret
+    // below it), so measuring there would pin the section hidden behind the
+    // chrome. Iterate until row count (and height) stabilize.
+    let height = 0;
+    let headings: readonly Heading[] = [];
+    for (let step = 0; step < 6; step++) {
+      const block = view.lineBlockAtHeight(
+        Math.max(0, top + height - view.documentTop),
+      );
+      headings = stickyHeadings(index, block.from, limit);
+      const nextHeight = headings.length * rowHeight;
+      if (nextHeight === height) {
+        break;
+      }
+      height = nextHeight;
+    }
     return {
-      headings: stickyHeadings(
-        view.state.field(headingIndex),
-        block.from,
-        limit,
-      ),
+      headings,
       top: top - editor.top,
       left: scroll.left - editor.left,
       width: view.scrollDOM.clientWidth,
@@ -98,6 +121,7 @@ export class StickyScrollView {
     dom.style.width = `${layout.width}px`;
     dom.style.setProperty("--sticky-inset", `${layout.inset}px`);
     dom.style.setProperty("--sticky-row-height", `${layout.rowHeight}px`);
+    this.rowHeight = layout.rowHeight;
     if (!sameHeadings(this.headings, layout.headings)) {
       dom.replaceChildren(
         ...layout.headings.map((heading) => this.button(heading)),
@@ -112,11 +136,70 @@ export class StickyScrollView {
     const button = this.dom.ownerDocument.createElement("button");
     button.type = "button";
     button.className = "mw-sticky-heading";
-    button.textContent = heading.label || "(Untitled heading)";
-    button.title = `Go to heading: ${button.textContent}`;
+    const label = heading.label || "(Untitled heading)";
+    button.textContent = label;
+    button.title = `Go to heading: ${label}`;
+    button.dataset.from = String(heading.from);
+    button.dataset.label = label;
     button.style.setProperty("--sticky-depth", String(heading.level - 1));
-    button.addEventListener("click", () => this.navigate(heading.from));
     return button;
+  }
+
+  private headingAt(event: MouseEvent): Heading | undefined {
+    const raw = event.target;
+    const target =
+      raw &&
+      typeof raw === "object" &&
+      "closest" in raw &&
+      typeof (raw as Element).closest === "function"
+        ? (raw as Element).closest<HTMLElement>("button.mw-sticky-heading")
+        : null;
+    if (target && this.dom.contains(target)) {
+      const from = Number(target.dataset.from);
+      return this.headings.find((heading) => heading.from === from);
+    }
+    if (this.rowHeight <= 0 || this.headings.length === 0) {
+      return undefined;
+    }
+    const index = Math.floor(
+      (event.clientY - this.dom.getBoundingClientRect().top) / this.rowHeight,
+    );
+    return this.headings[
+      Math.max(0, Math.min(this.headings.length - 1, index))
+    ];
+  }
+
+  private activate(event: MouseEvent): void {
+    const heading = this.headingAt(event);
+    if (!heading) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.navigate(heading.from);
+  }
+
+  private syncHoverTitle(event: MouseEvent): void {
+    const heading = this.headingAt(event);
+    if (!heading) {
+      this.dom.removeAttribute("title");
+      return;
+    }
+    const label = heading.label || "(Untitled heading)";
+    const title = `Go to heading: ${label}`;
+    this.dom.title = title;
+    // Keep the row's own title in sync for assistive tech and native fallbacks.
+    const raw = event.target;
+    const target =
+      raw &&
+      typeof raw === "object" &&
+      "closest" in raw &&
+      typeof (raw as Element).closest === "function"
+        ? (raw as Element).closest<HTMLElement>("button.mw-sticky-heading")
+        : null;
+    if (target && this.dom.contains(target) && target.title !== title) {
+      target.title = title;
+    }
   }
 
   private scroll(event: WheelEvent): void {

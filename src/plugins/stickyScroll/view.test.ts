@@ -12,9 +12,11 @@ class Element {
   type = "";
   hidden = false;
   removed = false;
+  parent: Element | null = null;
   children: Element[] = [];
   attributes = new Map<string, string>();
-  listeners = new Map<string, (event?: unknown) => void>();
+  dataset: Record<string, string> = {};
+  listeners = new Map<string, Array<(event?: unknown) => void>>();
   style = {
     top: "",
     left: "",
@@ -26,16 +28,56 @@ class Element {
   };
   constructor(readonly ownerDocument: { createElement(): Element }) {}
   append(element: Element) {
+    element.parent = this;
     this.children.push(element);
   }
   replaceChildren(...elements: Element[]) {
+    for (const child of this.children) {
+      child.parent = null;
+    }
     this.children = elements;
+    for (const child of elements) {
+      child.parent = this;
+    }
   }
   setAttribute(key: string, value: string) {
     this.attributes.set(key, value);
   }
+  removeAttribute(key: string) {
+    this.attributes.delete(key);
+    if (key === "title") {
+      this.title = "";
+    }
+  }
+  getAttribute(key: string) {
+    return this.attributes.get(key);
+  }
   addEventListener(event: string, listener: (event?: unknown) => void) {
-    this.listeners.set(event, listener);
+    const list = this.listeners.get(event) ?? [];
+    list.push(listener);
+    this.listeners.set(event, list);
+  }
+  contains(node: Element) {
+    let current: Element | null = node;
+    while (current) {
+      if (current === this) {
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+  closest(selector: string): Element | null {
+    if (
+      selector === "button.mw-sticky-heading" &&
+      this.className === "mw-sticky-heading"
+    ) {
+      return this;
+    }
+    return this.parent ? this.parent.closest(selector) : null;
+  }
+  getBoundingClientRect() {
+    return { top: 0, left: 0, bottom: 48, right: 800 };
   }
   remove() {
     this.removed = true;
@@ -76,7 +118,7 @@ function fixture() {
     defaultLineHeight: 24,
     documentTop: 42,
     visibleFrom: 0,
-    lineBlockAtHeight() {
+    lineBlockAtHeight(_height?: number) {
       return { from: view.visibleFrom };
     },
     requestMeasure(request: {
@@ -104,7 +146,30 @@ function fixture() {
     chrome.schedule();
     flush();
   };
-  return { view, chrome, dom: dom.children[0]!, jumps, flush, scrollTo, wheel };
+  const click = (button: Element) => {
+    let prevented = 0;
+    let stopped = 0;
+    for (const listener of f.dom.listeners.get("click") ?? []) {
+      listener({
+        target: button,
+        clientY: 30,
+        preventDefault: () => prevented++,
+        stopPropagation: () => stopped++,
+      });
+    }
+    return { prevented, stopped };
+  };
+  const f = {
+    view,
+    chrome,
+    dom: dom.children[0]!,
+    jumps,
+    flush,
+    scrollTo,
+    wheel,
+    click,
+  };
+  return f;
 }
 
 test("overlay is empty at the top, pins ancestors while scrolling and replaces the next section", () => {
@@ -142,12 +207,37 @@ test("overlay is empty at the top, pins ancestors while scrolling and replaces t
   );
 });
 
+test("each pinned row keeps its own tooltip and navigates to its own heading", () => {
+  const f = fixture();
+  f.scrollTo("child body");
+  const [root, child] = f.dom.children;
+  assert.equal(root!.type, "button");
+  assert.equal(child!.type, "button");
+  assert.equal(root!.title, "Go to heading: Root");
+  assert.equal(child!.title, "Go to heading: Child");
+  assert.equal(
+    root!.dataset.from,
+    String(f.view.state.doc.toString().indexOf("# Root")),
+  );
+  assert.equal(
+    child!.dataset.from,
+    String(f.view.state.doc.toString().indexOf("##")),
+  );
+  f.click(child!);
+  assert.deepEqual(f.jumps, [f.view.state.doc.toString().indexOf("##")]);
+  f.click(root!);
+  assert.deepEqual(f.jumps, [
+    f.view.state.doc.toString().indexOf("##"),
+    f.view.state.doc.toString().indexOf("# Root"),
+  ]);
+});
+
 test("plain heading buttons navigate and the row budget adapts to a small pane", () => {
   const f = fixture();
   f.scrollTo("child body");
   const button = f.dom.children[1]!;
   assert.equal(button.type, "button");
-  button.listeners.get("click")!();
+  f.click(button);
   assert.deepEqual(f.jumps, [f.view.state.doc.toString().indexOf("##")]);
   f.view.scrollDOM.clientHeight = 100;
   f.chrome.schedule();
@@ -191,14 +281,33 @@ test("wheel input over pinned rows scrolls the note with pixel, line and page un
     preventDefault: () => prevented++,
   };
   for (const deltaMode of [0, 1, 2]) {
-    f.dom.listeners.get("wheel")!({ ...event, deltaMode });
+    for (const listener of f.dom.listeners.get("wheel") ?? []) {
+      listener({ ...event, deltaMode });
+    }
   }
   assert.deepEqual(f.wheel, [
     [1, 2],
     [24, 48],
     [600, 1200],
   ]);
-  f.dom.listeners.get("wheel")!({ ...event, ctrlKey: true });
+  for (const listener of f.dom.listeners.get("wheel") ?? []) {
+    listener({ ...event, ctrlKey: true });
+  }
   assert.equal(prevented, 3, "Ctrl+wheel keeps the browser's zoom gesture");
   assert.equal(f.wheel.length, 3);
+});
+
+test("measurement probes below the sticky chrome height, not the hidden lines under it", () => {
+  const f = fixture();
+  f.scrollTo("child body");
+  assert.equal(f.chrome.height, 48);
+  const probed: number[] = [];
+  f.view.lineBlockAtHeight = (height: number) => {
+    probed.push(height);
+    return { from: f.view.visibleFrom };
+  };
+  f.chrome.schedule();
+  f.flush();
+  // Iterates from height 0 up to the pinned row count * line height (48).
+  assert.deepEqual(probed, [0, 48]);
 });
