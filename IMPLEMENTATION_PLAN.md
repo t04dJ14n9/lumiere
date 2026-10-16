@@ -4675,14 +4675,20 @@ Native prose already animated from its first tick. Immediate pane-restore cases
 showed the same table/prose distinction; EdgeScroll and a velocity warm-up were
 not involved in this reproduction.
 
-Focused checks pass: 61/61 affected feature, command and wheel units, plus the
-existing table wheel Chromium scenarios 2/2 (Vim on/off). The shared state-only
-feature fixture now models panel/scroller event targets for the owned listeners,
-preserving the existing lifecycle/composition and command-registration checks.
-`pnpm check` and the Chromium suite pass (1,752 unit passes, 23 intentional Cordis
-skips, 276 Chromium passes). Native startup exposed an incomplete pre-existing
-VS Code cache; the full gate is queued again using a verified complete private
-1.142.0 runtime, a private Xvfb display and unpackaged native loading.
+Checks: full `pnpm check:full` passed sequentially under the shared suite lock:
+1,752 unit passes with 23 intentional Cordis skips, Chromium 276/276, and native
+VS Code 1.142.0 23/23. The run used two unit workers, a private Xvfb display,
+unpackaged extension loading and a verified complete private VS Code runtime.
+Focused validation also passed 61/61 affected feature/command/wheel units, the
+existing table wheel Chromium cases 2/2 (Vim on/off), and three consecutive runs
+of the existing native table strip case.
+
+The shared state-only feature fixture models panel/scroller event targets for
+the owned listeners. Existing outline checks use a definite viewport height;
+native table strip clicks use current locator geometry and wait for the new
+cell's focus before typing. Geometry, focus and content assertions are retained.
+No browser/native scenario was added. The earlier incomplete VS Code cache was
+replaced only in the isolated test setup; production code needed no host repair.
 No source suites were ported. The configured pinned `~/Code/human-learning`
 checkout is absent on this host. This is separate from the scrollbar/preview
 follow-up and changes the table wheel handoff only; no sibling worktree or drag
