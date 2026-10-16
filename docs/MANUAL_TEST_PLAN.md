@@ -28,7 +28,7 @@ never open a real vault.
    For Cursor use `cursor` with the same flags. Delete `/tmp/mdwb-manual`
    and `/tmp/mdwb-vault` afterwards.
 4. Run **Markdown Workshop: Use Markdown Workshop for Markdown in This
-   Workspace** once, so `.md` files open in the workbench (see Editor below).
+   Workspace** once, so `.md` files open in Workshop (see Editor below).
 5. Turn on `markdownWorkshop.debug.logging` while testing and keep the
    **Markdown Workshop** output channel open; note any error lines in the
    result.
@@ -84,12 +84,12 @@ Owns the text, saving and history; VS Code's TextDocument is the authority.
    characters are not duplicated, save includes pending edits, and undo/redo
    follow VS Code's history. Typing without pausing undoes as one step;
    moving the caret starts a new one.
-2. Split `Core.md` into two workbench panels and open it as text in a third
+2. Split `Core.md` into two Workshop panels and open it as text in a third
    group (**Open as Text**). Edit in each; undo from another. All three show
    one document. Edit the file on disk while it is saved: the editors reload
    it without losing newer text.
 3. Save a copy of `Core.md` with CRLF line endings (text editor status bar).
-   Edit across lines in the workbench, save and undo: the file stays CRLF and
+   Edit across lines in Workshop, save and undo: the file stays CRLF and
    selections do not drift.
 4. Reload the window with unsaved changes: VS Code's hot exit restores them.
 
@@ -118,7 +118,7 @@ separately, since that explicitly disables the workaround.
    workspace `settings.json` gets `workbench.editorAssociations` entries for
    `*.md` and `*.markdown`, other associations stay, and running it again
    changes nothing. A note opened from the Explorer now opens in the
-   workbench. **Open as Text** still opens the text editor.
+   Workshop editor. **Open as Text** still opens the text editor.
 4. Run **Note Actions** and **Selection Actions** from the palette (with and
    without a selection): a quick pick lists the registered actions.
 5. Change `markdownWorkshop.editor.readableLineLength`,
@@ -517,12 +517,12 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
 
 ### outline
 
-1. With a workbench note active, the Explorer's **Note Outline** lists its
+1. With a Workshop note active, the Explorer's **Markdown Outline** lists its
    headings; clicking one moves the caret there, and the current section is
    selected as the caret moves.
-2. In the text editor, Note Outline hides; VS Code's Outline lists headings
+2. In the text editor, Markdown Outline hides; VS Code's Outline lists headings
    once.
-3. Use **Collapse All** in Note Outline's title bar, then **Expand All**.
+3. Use **Collapse All** in Markdown Outline's title bar, then **Expand All**.
    All branches expand, including a note nested from `#` through `######`.
    Expand All preserves the selected item without focusing a heading.
 4. Open the title's **...** menu. **Follow Cursor** starts checked. Turn it
@@ -536,23 +536,23 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
    A selection extending across sections follows its active end. Also check
    a CRLF note and a caret in the preamble before its first heading.
 6. Press **Ctrl+Shift+O** (**Command+Shift+O** on macOS), or run **Markdown
-   Workbench: Go to Heading…**. The Quick Pick shows parsed heading titles,
+   Workshop: Go to Heading…**. The Quick Pick shows parsed heading titles,
    levels and parent titles in document order. Search a title and accept it:
-   the active Workbench panel navigates to that heading. Escape does not move
+   the active Workshop panel navigates to that heading. Escape does not move
    the caret. Check duplicate titles, quoted headings, Setext headings,
    unsaved heading edits and a note with no headings. Fenced code and
    frontmatter content do not appear as headings.
 7. Open the same note in a plain text split and switch repeatedly between
-   the two panels without editing. Workbench's shortcut opens Go to Heading;
+   the two panels without editing. Workshop's shortcut opens Go to Heading;
    the plain text shortcut and native Outline show built-in Markdown symbols
-   once. Workbench uses Note Outline; it does not populate the native Outline
+   once. Workshop uses Markdown Outline; it does not populate the native Outline
    or breadcrumbs. An open heading picker must not jump if the document is
    edited or a different panel becomes active before accepting it.
-8. Press **Ctrl+Alt+O** (**Control+Command+O** on macOS) twice: Note Outline
-   hides, then reappears and receives focus. Use **Move View** to place Note
+8. Press **Ctrl+Alt+O** (**Control+Command+O** on macOS) twice: Markdown Outline
+   hides, then reappears and receives focus. Use **Move View** to place Markdown
    Outline in the secondary sidebar, then in the panel, and repeat. Each
-   toggle targets Note Outline at its current location and leaves the other
-   views visible. Also check a container containing only Note Outline.
+   toggle targets Markdown Outline at its current location and leaves the other
+   views visible. Also check a container containing only Markdown Outline.
 
 ### backlinks and outgoingLinks
 
@@ -651,7 +651,7 @@ Off by default; needs **gitGutter**. Turn it on with **Toggle Inline Git Changes
 
 On by default.
 
-1. Open `Formatting.md` in the workbench and, beside it, with **Open With >
+1. Open `Formatting.md` in Workshop and, beside it, with **Open With >
    Text Editor**, in a light and a dark theme: the numbers use the same font
    family, the note's own size (`markdownWorkshop.editor.fontSize`), colours (brighter on the caret line), right alignment and gutter
    width, with fold chevrons between numbers and text on hover. Each number
@@ -1027,14 +1027,14 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkshop.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.marp.toggle` — Toggle Marp | unbound | On a disposable fixture, run Toggle Marp; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.marp.moveOutside` — Move Marp Deck Outside Bundle | unbound | On a disposable fixture, run Move Marp Deck Outside Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.marp.keepInWorkbench` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkshop.marp.keepInWorkshop` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.outline.toggle` — Toggle Note Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Note Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
-| `markdownWorkshop.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workbench; switch to a plain text split and confirm its native symbol shortcut remains available. |
+| `markdownWorkshop.outline.toggle` — Toggle Markdown Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Markdown Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
+| `markdownWorkshop.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workshop; switch to a plain text split and confirm its native symbol shortcut remains available. |
 | `markdownWorkshop.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.openCopiedAgentReference` — Open Copied Agent Reference | unbound | On a disposable fixture, run Open Copied Agent Reference; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1211,11 +1211,11 @@ owner's vault for these checks.
 1. In one vault's `app.json`, set Markdown links, relative link format, attachment
    folder `/`, new-file location `current`, an `Archive/` ignore filter, hidden
    properties, `livePreview: false` and `alwaysUpdateLinks: true`. Open a fresh
-   Workbench editor. It starts in Source mode; a fresh Live Preview view hides
+   Workshop editor. It starts in Source mode; a fresh Live Preview view hides
    properties; link insertion uses Markdown/relative text, new notes use the
    originating folder, and archived notes leave switcher/search results but
    remain linkable. Rename a referenced note: links update without a prompt.
-2. Set each corresponding Workbench setting explicitly in user, workspace,
+2. Set each corresponding Workshop setting explicitly in user, workspace,
    folder and applicable Markdown language settings. That explicit value wins,
    even when it equals the package default. Remove it to restore vault policy.
    Confirm VS Code settings files never change when `app.json` changes.

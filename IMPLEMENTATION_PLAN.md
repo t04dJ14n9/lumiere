@@ -1697,7 +1697,7 @@ time and size, parsing in `dist/workers/vault.cjs` one note at a time, file and
 folder events, unsaved text of open notes, Obsidian's `getLinkpathDest` order,
 incremental re-resolution, excluded files and a 50,000-file limit. Host
 features: Backlinks (linked and unlinked mentions, status bar count), Outgoing
-Links, Note Outline (beside this editor, following the caret), Quick Switcher,
+Links, Markdown Outline (beside this editor, following the caret), Quick Switcher,
 Word Count and Link Updates (prompt/always/never, folder renames). The VS Code
 side is `src/host/vault-system.ts` and `src/host/views.ts`;
 `scripts/measure-vault.ts` (`pnpm measure:vault`) measures the budgets.
@@ -1716,7 +1716,7 @@ Deviations from DESIGN.md:
   (DESIGN §12.2 updated).
 - `vault/changed` and `vault/resolved` carry the vault root (DESIGN §7.3 updated).
 - No `DocumentSymbolProvider`: VS Code's Markdown support already provides one,
-  and a second would list headings twice. Note Outline shows only beside this
+  and a second would list headings twice. Markdown Outline shows only beside this
   editor.
 - Window-level plugins (views, switcher, word count, link updates) are listed in
   `workbenchFeatures` in the catalog, switched by `workbench-features.ts`, and
@@ -2285,7 +2285,7 @@ source exposure while a query is loading first.
 ### Phase 5 (completed) — Vault index and host features (Claude), 2026-10-08
 
 **Completed against the plan's automated acceptance criteria.** Part 1 (vault
-index, Backlinks, Outgoing Links, Note Outline, Quick Switcher, Word Count,
+index, Backlinks, Outgoing Links, Markdown Outline, Quick Switcher, Word Count,
 Link Updates, `scripts/measure-vault.ts`) is recorded above. Owner hands-on
 acceptance is not claimed.
 Delivered in part 2:
@@ -3562,10 +3562,10 @@ is `/tmp/vimdollar-browser-before.log` and `/tmp/vimdollar-caret-before.log`.
 No pnpm check, repository-wide lint, full unit/browser/native suite, commit,
 push or publication was run. Real macOS input-source acceptance remains manual.
 
-## Note Outline title actions and Follow Cursor — 2026-10-14
+## Markdown Outline title actions and Follow Cursor — 2026-10-14
 
 Previous mechanism: the `outline` window plugin supplied a custom Explorer
-TreeView (`markdownWorkbench.outline`, **Note Outline**) for the active
+TreeView (`markdownWorkbench.outline`, **Markdown Outline**) for the active
 Markdown Workbench panel. It read text through `vaults.text`, nested parsed
 headings by level and refreshed after editor/document events with a 300 ms
 debounce. Selection notifications captured the sorted selection start and
@@ -4158,8 +4158,8 @@ Validation: pending the required sequential local checks before commit/push.
 
 CustomTextEditorProvider webviews are not native Outline / Go to Symbol hosts
 in the supported VS Code baseline, so the DocumentSymbolProvider registration
-was removed. Workshop uses Note Outline and **Go to Heading…**
-(Ctrl+Shift+O / Cmd+Shift+O) via the host Quick Pick adapter. Toggle Note
+was removed. Workshop uses Markdown Outline and **Go to Heading…**
+(Ctrl+Shift+O / Cmd+Shift+O) via the host Quick Pick adapter. Toggle Markdown
 Outline uses the view's `.removeView` / `.focus` commands. The window plugin
 publishes `markdownWorkshop.plugin.outline` for editor-scoped shortcuts;
 Toggle uses `scope: "workbench"` config gating like Quick Switcher.
@@ -4462,3 +4462,47 @@ Follow-up hardening: directory (not file) watches so atomic `config` replaces
 keep firing; linked-worktree `commondir` watch; `identity` retains the watch
 lease; symlink roots use `canonicalPath` for containment. No VSIX or merge.
 
+### Markdown Outline display labels — 2026-10-16
+
+- Named the heading tree **Markdown Outline** and its command **Toggle Markdown
+  Outline**. Updated setting descriptions, generated contributions, documentation,
+  comments and existing test strings. Plugin, view, command and setting IDs remain
+  unchanged. Synced the identity allowlist with the updated documentation.
+- The contribution unit test also checks the view title under the existing
+  `markdownWorkshop.outline` ID; the existing native outline scenario uses the new
+  accessible section name. No browser or native scenarios were added.
+- Validation: `MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2
+  MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1 xvfb-run -a pnpm check:full` passed in
+  order under the shared suite lock: check (1,743 unit passes, 23 intentional
+  Cordis skips), Chromium (276 passes), native VS Code (23 passes). Native loading
+  used the cached VS Code 1.142.0 executable and a disposable profile; no VSIX was
+  built or installed. The generated package differs only in the four display
+  strings, and a case-insensitive search including wrapped lines found no old
+  panel-label references.
+- Post-PR GUI label confirmation and the PR link are tracked in
+  `/workspace/plans/mw-indent-guides/STATUS-outline-rename.md`.
+- Additional identity audit: `bash scripts/check-identity-rename.sh` reports one
+  unchanged baseline hit at `test/unit/gitBlame/coexistence.test.ts:41`, a negative
+  assertion that the old setting key is absent. That line is identical at base
+  `2e87720`; this label rename introduces no identity-audit hits.
+
+### Workshop product-copy sweep — 2026-10-16
+
+- Updated current product wording in the README, outline/wiki plugin READMEs,
+  manual test plan, parity/design docs, product comments and existing test titles.
+  The manual inventory generator now writes the current Workshop result header.
+- Renamed the Marp keep command to `markdownWorkshop.marp.keepInWorkshop` in its
+  manifest, runtime registration and command inventories. The displayed command
+  remains **Keep Marp Deck in Workshop**. There is no compatibility alias.
+- Generated contributions keep the **Markdown Workshop** configuration title and
+  command categories. The earlier Settings screenshot is consistent with a stale
+  installed extension. Grok Bot owns fresh host installs and GUI confirmation,
+  tracked as VERIFY-NEEDED in the external outline-rename status file.
+- Validation: `MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2
+  MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1 xvfb-run -a pnpm check:full` passed in
+  order under the shared suite lock: check (1,743 unit passes, 23 intentional
+  Cordis skips), Chromium (276 passes), native VS Code 1.142.0 (23 passes).
+  Native loading used the cached executable and a disposable profile. Existing
+  command-registration parity passed; no browser/native scenarios were added.
+  The generated package differs only in the Marp command ID and its palette entry;
+  configuration title and every command category are **Markdown Workshop**.

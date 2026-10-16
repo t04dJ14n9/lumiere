@@ -1,6 +1,6 @@
 import type { NoteMetadata } from "../../markdown/metadata";
 
-/** A heading symbol with document offsets, nested like Note Outline. */
+/** A heading symbol with document offsets, nested like Markdown Outline. */
 export interface OutlineSymbolNode {
   name: string;
   level: number;
@@ -14,7 +14,7 @@ export interface OutlineSymbolNode {
 }
 
 /**
- * Nest heading symbols the same way Note Outline nests them (`outlineOf`),
+ * Nest heading symbols the same way Markdown Outline nests them (`outlineOf`),
  * keeping section and heading ranges.
  */
 export function outlineSymbols(

@@ -284,7 +284,7 @@ test("an input-less dirty Cursor tab awaits warming before the custom-editor han
   assert.equal(commands.length, 1, "other → workbench must not loop");
 });
 
-test("switching an existing Workbench tab to Cursor Markdown is reclaimed", async (t) => {
+test("switching an existing Workshop tab to Cursor Markdown is reclaimed", async (t) => {
   const tab = cursorTab();
   tab.input = new TabInputCustom(Uri.parse(note), viewType);
   const stop = host.reclaim.registerReclaim();
@@ -357,7 +357,7 @@ test("selecting another same-URI editor during warming does not reopen", async (
   assert.deepEqual(commands, [], "same-URI custom tab must keep focus");
 });
 
-test("same-URI Workbench tab events keep the lease until the last text tab closes", async (t) => {
+test("same-URI Workshop tab events keep the lease until the last text tab closes", async (t) => {
   const workbench = cursorTab();
   workbench.input = new TabInputCustom(Uri.parse(note), viewType);
   const stop = host.reclaim.registerReclaim();
@@ -368,7 +368,7 @@ test("same-URI Workbench tab events keep the lease until the last text tab close
   const text = cursorTab();
   text.input = new TabInputText(Uri.parse(note));
 
-  // The Workbench tab becomes inactive as the handed-off text tab opens.
+  // The Workshop tab becomes inactive as the handed-off text tab opens.
   tabsChanged.fire({ opened: [text], changed: [workbench], closed: [] });
   assert.equal(host.reclaim.handoffLease.has(note), true);
 

@@ -143,7 +143,7 @@ function writeParity(generated: Awaited<ReturnType<typeof contributions>>) {
       "",
       "Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. Never use the owner's vault. Record date, method, observed result and any issue link in each row. Automated checks do not establish visual or behavioral parity. All rows start not observed.",
       "",
-      "| Action or behavior (DESIGN §13–§15) | Obsidian observation: date and method | Workbench result | How checked | Status |",
+      "| Action or behavior (DESIGN §13–§15) | Obsidian observation: date and method | Workshop result | How checked | Status |",
       "| --- | --- | --- | --- | --- |",
       ...rows,
       "",

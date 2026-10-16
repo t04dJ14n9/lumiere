@@ -44,7 +44,7 @@ export const ideContextHost: Plugin = {
   inject: { required: ["editors", "selections", "workshop"] },
   apply(ctx) {
     const workshop = ctx.workshop;
-    // Workbench host-only: editor registerActiveContexts does not cover us.
+    // Window plugin: editor registerActiveContexts does not cover us.
     const contextReady = workshop
       .execute("setContext", contributionId("plugin.ideContext"), true)
       .catch((error) =>

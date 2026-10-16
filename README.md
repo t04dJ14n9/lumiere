@@ -34,7 +34,7 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
 - **Toggle Live Preview/Source Mode** switches modes; **Open as Text** opens
   VS Code's text editor on the same document.
 - **Go to Heading…** (Ctrl+Shift+O; Command+Shift+O on macOS) searches the
-  active Workbench note's headings. **Toggle Note Outline** (Ctrl+Alt+O;
+  active Workshop note's headings. **Toggle Markdown Outline** (Ctrl+Alt+O;
   Control+Command+O on macOS) shows or hides its heading tree, including after
   moving the view to another sidebar or the panel. VS Code's native Outline
   and breadcrumbs remain available in the plain text editor.

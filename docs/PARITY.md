@@ -111,7 +111,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Scoring uses Obsidian's fuzzy formula (study §8 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `src/shared/fuzzy.ts`   replaces `shared/match.ts`), with each CJK character its own token | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Accepting   closes `]]` (reusing an auto-inserted one) and inserts `vault.linkText`. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **outline**: a native Explorer tree view (like PDF Outline) of the active editor's headings, with click to reveal and current-heading tracking, plus Go to Heading on Ctrl+Shift+O in Workbench; VS Code's built-in Markdown provider supplies Outline and breadcrumbs in the plain text editor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **outline**: a native Explorer tree view (like PDF Outline) of the active editor's headings, with click to reveal and current-heading tracking, plus Go to Heading on Ctrl+Shift+O in Workshop; VS Code's built-in Markdown provider supplies Outline and breadcrumbs in the plain text editor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | This removes the in-webview outline panel and its   **Toggle Outline** title action. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | **backlinks** and **outgoingLinks**: native views (an Explorer section, or a   view container per §25) | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | Group by file, one trimmed context line per   reference, collapsed **Unlinked mentions** section (basename occurrences   outside links, computed on demand), and a status bar count for the active   note (inverting `resolvedLinks`). | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -303,7 +303,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.marp.export | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkshop.marp.toggle | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkshop.marp.moveOutside | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.marp.keepInWorkbench | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.marp.keepInWorkshop | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkshop.scratch.new | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkshop.scratch.promote | not observed | not manually observed | Manual scenario pending | not observed |
 | Command: markdownWorkshop.wiki.copyForAgent | not observed | not manually observed | Manual scenario pending | not observed |

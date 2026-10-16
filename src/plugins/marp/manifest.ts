@@ -42,7 +42,7 @@ export default defineManifest({
         scope: "workbench",
       },
       {
-        id: "marp.keepInWorkbench",
+        id: "marp.keepInWorkshop",
         title: "Keep Marp Deck in Workshop",
         scope: "workbench",
       },

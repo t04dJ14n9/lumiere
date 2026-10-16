@@ -14,7 +14,7 @@ const text = [
   "## Four",
 ].join("\n");
 
-test("document symbols nest like Note Outline and keep heading labels", () => {
+test("document symbols nest like Markdown Outline and keep heading labels", () => {
   const headings = metadata(text).headings;
   const symbols = outlineSymbols(headings);
   const outline = outlineOf(headings);

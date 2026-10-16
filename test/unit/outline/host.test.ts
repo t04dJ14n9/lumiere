@@ -11,7 +11,7 @@ import {
 import { deferred, outlineFixture, tick } from "./fixture";
 import { render, uriOf, wait } from "../views/fakes";
 
-test("the Note Outline shows and follows the first editor opened", async (t) => {
+test("the Markdown Outline shows and follows the first editor opened", async (t) => {
   const fixture = await outlineFixture();
   t.after(() => fixture.root.dispose());
   assert.equal(fixture.view.message, "No headings.");
@@ -285,7 +285,7 @@ test("stopping the plugin removes commands, view and follow context", async () =
   assert.deepEqual(fixture.warnings, []);
 });
 
-test("Toggle Note Outline targets the view's hide command and restores it with focus", async (t) => {
+test("Toggle Markdown Outline targets the view's hide command and restores it with focus", async (t) => {
   const fixture = await outlineFixture();
   t.after(() => fixture.root.dispose());
   const { panel } = fixture.panel("one");

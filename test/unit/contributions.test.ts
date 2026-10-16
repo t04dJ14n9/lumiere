@@ -14,8 +14,14 @@ test("package contributions match the generator", async () => {
   );
 });
 
-test("Note Outline title actions expose one checked or unchecked Follow Cursor item", async () => {
+test("Markdown Outline title actions expose one checked or unchecked Follow Cursor item", async () => {
   const generated = await contributions();
+  assert.equal(
+    generated.views?.explorer.find(
+      (view) => view.id === "markdownWorkshop.outline",
+    )?.name,
+    "Markdown Outline",
+  );
   const properties: Record<string, unknown> =
     generated.configuration.properties;
   const actions = generated.menus["view/title"];
@@ -45,7 +51,7 @@ test("Note Outline title actions expose one checked or unchecked Follow Cursor i
     default: true,
     scope: "resource",
     description:
-      "Select and reveal the current heading in Note Outline as the cursor moves, without taking focus.",
+      "Select and reveal the current heading in Markdown Outline as the cursor moves, without taking focus.",
   });
 });
 test("the source ledger preserves the complete pinned inventory", () => {
@@ -117,7 +123,7 @@ test("macOS Vim consumes Control keys while preserving Command editor shortcuts"
   );
 });
 
-test("Tags and Note Outline views require the Markdown Workshop editor", async () => {
+test("Tags and Markdown Outline views require the Markdown Workshop editor", async () => {
   const { views } = await contributions();
   assert.ok(views);
   const outline = views.explorer.find(
@@ -136,12 +142,12 @@ test("Tags and Note Outline views require the Markdown Workshop editor", async (
   );
 });
 
-test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
+test("Toggle Markdown Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
   const { keybindings, commands, menus } = await contributions();
   const command = commands.find(
     (entry) => entry.command === "markdownWorkshop.outline.toggle",
   );
-  assert.equal(command?.title, "Toggle Note Outline");
+  assert.equal(command?.title, "Toggle Markdown Outline");
   assert.equal(command?.category, "Markdown Workshop");
   const paletteWhen =
     "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled";
@@ -163,7 +169,7 @@ test("Toggle Note Outline is workbench-scoped in the palette and editor-scoped o
   );
 });
 
-test("Go to Heading overrides the symbol shortcut only for enabled Workbench panels", async () => {
+test("Go to Heading overrides the symbol shortcut only for enabled Workshop panels", async () => {
   const { commands, keybindings, menus } = await contributions();
   assert.equal(
     commands.find((command) => command.command === GO_TO_HEADING_COMMAND)
