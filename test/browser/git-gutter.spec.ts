@@ -196,9 +196,13 @@ test("B2b: Revert on a modified change that was just undone by hand leaves the t
   await page.keyboard.press("Shift+ArrowDown");
   await page.keyboard.type("old\n");
   await expect.poll(() => text(page)).toBe("a\nold\nz");
-  if (await revert.count()) {
-    await revert.click();
-  }
+  // Recompute may remove the button before a locator click can finish.
+  // Check and click in one DOM turn; a removed peek is already a valid no-op.
+  await revert.evaluateAll((buttons) => {
+    for (const button of buttons) {
+      (button as HTMLButtonElement).click();
+    }
+  });
   await page.waitForTimeout(400);
   expect(await text(page)).toBe("a\nold\nz");
 });

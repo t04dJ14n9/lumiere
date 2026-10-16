@@ -41,23 +41,17 @@ The review additions keep the original cancellation and dependency/LIFO cases:
 - `meta.ts`: harness isolation meta-tests (F3 timeout/abort unwinding, bounded
   cleanup, listener removal, hung-case-then-control; F4 error aggregation;
   infrastructure errors never satisfy a known failure).
-- `cordis-adapter.ts`: public-API characterization adapter for exact
-  `cordis@4.0.0-rc.10` (devDependency). Adds no lifecycle mechanism of its own.
-- `cordis-expectations.ts`: per-scenario Passed / Known failure / Not evaluated.
-- `sync.py`: copies this README and the five TypeScript files into both repos.
+- `cordis-stub.ts`: unavailable adapter endpoint and an explicit skip reason for
+  every scenario. No Cordis dependency or runtime is installed.
+- `sync.py` (external): copies the canonical snapshot into both repos.
 
-Canonical source lives at `/workspace/plans/cordis-conformance`. Each repo commits
-a complete snapshot under `test/unit/lifecycle-conformance/shared`, so CI and
-`pnpm test` do not depend on an external directory. Modify canonical source, run
-Prettier with Markdown's defaults on it, then run:
-
-```sh
-python3 /workspace/plans/cordis-conformance/sync.py
-```
-
-The script only writes the named snapshot files. Repository-specific adapters
-and the top-level `test/unit/lifecycle-conformance.test.ts` entrypoint stay in
-their respective repos. The top-level entrypoint works with both existing test
+The original canonical source lives at `/workspace/plans/cordis-conformance`.
+Each repo commits a self-contained snapshot under
+`test/unit/lifecycle-conformance/shared`, so CI and `pnpm test` do not depend on
+an external directory. This branch keeps the Stage 1 stub; syncing later
+characterization work from the external directory requires a separate review.
+Repository-specific adapters and the top-level
+`test/unit/lifecycle-conformance.test.ts` entrypoint stay in their respective repos. The top-level entrypoint works with both existing test
 commands. To run just this suite, from either repo:
 
 ```sh
@@ -90,28 +84,14 @@ to run before pending-state assertions. Test timeouts only bound a broken test.
 Fixture teardown opens all gates and awaits all tracked callers and disposal,
 including when an assertion fails.
 
-## Cordis characterization (Stage 2a)
+## Cordis Stage 1 boundary
 
-The Stage 1 skip-all stub is retired. `cordis-adapter.ts` drives real
-`cordis@4.0.0-rc.10` through its public API. Outcomes:
+All 23 Cordis scenarios are skipped with a reason naming the pending invariant.
+The stub refuses activation, disable and restart instead of simulating lifecycle
+behaviour. A smoke test verifies that refusal and the inactive state. A real
+public-API adapter and any Cordis characterization belong in a separate change;
+this suite does not claim Cordis conformance.
 
-- **Passed**: the scenario executed and the harness completed cleanly.
-- **Known failure**: the scenario failed with an `AssertionError` whose first
-  message line matches the recorded assertion, and no infrastructure error
-  (scenario timeout, test abort, cleanup timeout, closed fixture) occurred.
-  A known failure that starts passing fails the suite.
-- **Not evaluated**: skipped with a reason.
-
-Scenarios that would block forever on a runtime that waits for an
-uncooperative activation use `reached(work, message)`, an explicit progress
-assertion bounded by `progressBoundMs`; it fails as an `AssertionError` naming
-the invariant, distinct from the harness timeout. Only the first violated
-invariant per scenario is evaluated on Cordis.
-
-`runScenario` always unwinds: the body races its own timer and
-`TestContext.signal`; expiry aborts the fixture (gates opened, new work
-refused), cleanup is idempotent and bounded, the `unhandledRejection` listener
-is always removed, and scenario/cleanup/rejection failures are reported
-together (one error as is, several as an `AggregateError` whose `cause` is the
-original scenario failure). Genuine runtime deadlocks leave abandoned promises
-pending in-process; process isolation is not implemented.
+The harness retains timeout and abort unwinding, bounded idempotent cleanup,
+listener removal and aggregated failure reporting. Its meta-tests exercise those
+failure paths against the native adapter. No production kernel is replaced.

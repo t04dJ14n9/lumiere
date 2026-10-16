@@ -38,6 +38,13 @@ sequentially and stops on the first failure. `check` already includes unit
 tests. Real-VS Code tests stay local; GitHub Actions does not run them.
 Packaging and the other CI jobs are separate checks, not part of `check:full`.
 
+On a busy shared host, `MARKDOWN_WORKBENCH_TEST_CONCURRENCY=1` limits unit-test
+workers without changing assertions or performance deadlines. To run the existing
+native scenarios without installing a VSIX, set
+`MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1`; the harness loads the built checkout with
+`--extensionDevelopmentPath` and keeps its disposable profile, home and extensions
+directory. The default native run still tests the packaged extension.
+
 On macOS, an empty test home can prompt for Keychain access. For credential-free
 synthetic runs, `VSCODE_TEST_MOCK_KEYCHAIN=1` opts into Chromium's mock Keychain.
 It is off by default; never use it with real accounts or personal profiles.
@@ -4347,3 +4354,30 @@ recorded in `/workspace/plans/chatgpt-ide-adapters-code/PR-STATUS.md`.
   Cordis skips); full `pnpm check` green (911 pass / 23 skip). Markdown runtime
   needed no code change for F1/F2; existing `Fiber.dispose()` barrier kept.
   Browser/native gates unchanged by this patch and not re-asserted here.
+
+
+### Cordis Stage 1 — PR #17 main rebase and local readiness, 2026-10-16
+
+- Rebased the five PR commits onto `origin/main` (`bbfea4f`), preserving both
+  histories' implementation records when resolving the documentation conflict.
+- Restored the Stage 1 skip-all Cordis stub, refusal smoke test and explicit
+  per-scenario reasons. Removed the Cordis dependency, characterization adapter,
+  expectation matrix and reference target. Kept all 23 lifecycle scenarios,
+  timeout/abort/error-reporting meta-tests and the `Fiber.dispose()` stop barrier.
+  Production continues to use the native kernel.
+- Added opt-in unit-worker limiting for busy shared hosts and unpackaged native
+  loading through `--extensionDevelopmentPath` in the isolated test profile.
+  Default test modes remain unchanged; no deadlines or assertions were weakened.
+- Repaired existing UI test synchronization: Revert lookup/click is atomic when
+  recomputation removes the peek; Vim table-motion tests await the authoritative
+  whitespace edit before capturing their baseline; native focus recovery clicks
+  neutral workbench chrome when window activation leaves its document unfocused.
+  No browser/native scenarios were added or ported.
+- Verification: `MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2
+  MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1 xvfb-run -a pnpm check:full` passed in order:
+  check (1,743 unit passes, 23 intentional Cordis skips), Chromium (276 passes),
+  native VS Code 1.142.0 (23 passes). Focused repairs also passed Revert 3/3,
+  Vim table variants 12/12, and the native Git sequence 2/2. Earlier fuzz deadlines
+  under shared-host load passed unchanged with bounded workers.
+- `pnpm package` and the existing 10 MB VSIX size/file check passed (4.66 MB).
+  The VSIX was only built locally; no installation, merge or publication occurred.

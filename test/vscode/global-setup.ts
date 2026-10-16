@@ -2,7 +2,9 @@
  * Starts a real VS Code for the tests: an isolated profile, extensions folder
  * and home folder under /tmp, this extension installed from a freshly
  * packaged VSIX and a workspace holding a generated Markdown fixture. Playwright then connects to VS Code's window over
- * the Chrome DevTools Protocol.
+ * the Chrome DevTools Protocol. MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1 instead
+ * loads the built checkout through --extensionDevelopmentPath without packaging
+ * or installing a VSIX; the disposable profile stays isolated in both modes.
  *
  * Set VSCODE_EXECUTABLE to test another build, for example an installed
  * VS Code or Cursor. Each host gets its own profile.
@@ -65,35 +67,38 @@ export default async function globalSetup(): Promise<void> {
     path.join(paths.workspace, "Note.md"),
     "# Native Markdown\n\nOriginal line",
   );
-  const vsix = path.join(paths.root, "extension.vsix");
-  const suppliedVsix = process.env.MARKDOWN_WORKBENCH_TEST_VSIX;
-  if (suppliedVsix) {
-    copyFileSync(path.resolve(suppliedVsix), vsix);
-  } else {
-    await createVSIX({
-      cwd: paths.repository,
-      packagePath: vsix,
-      dependencies: false,
-      rewriteRelativeLinks: false,
-    });
-  }
-  for (const extension of [vsix]) {
-    execFileSync(
-      host.cli,
-      [
-        "--user-data-dir",
-        paths.userData,
-        "--extensions-dir",
-        paths.extensions,
-        "--install-extension",
-        extension,
-        "--force",
-      ],
-      {
-        stdio: "ignore",
-        env: cleanEnvironment(),
-      },
-    );
+  const isUnpackaged = process.env.MARKDOWN_WORKBENCH_TEST_UNPACKAGED === "1";
+  if (!isUnpackaged) {
+    const vsix = path.join(paths.root, "extension.vsix");
+    const suppliedVsix = process.env.MARKDOWN_WORKBENCH_TEST_VSIX;
+    if (suppliedVsix) {
+      copyFileSync(path.resolve(suppliedVsix), vsix);
+    } else {
+      await createVSIX({
+        cwd: paths.repository,
+        packagePath: vsix,
+        dependencies: false,
+        rewriteRelativeLinks: false,
+      });
+    }
+    for (const extension of [vsix]) {
+      execFileSync(
+        host.cli,
+        [
+          "--user-data-dir",
+          paths.userData,
+          "--extensions-dir",
+          paths.extensions,
+          "--install-extension",
+          extension,
+          "--force",
+        ],
+        {
+          stdio: "ignore",
+          env: cleanEnvironment(),
+        },
+      );
+    }
   }
 
   const port = await freePort();
@@ -101,6 +106,9 @@ export default async function globalSetup(): Promise<void> {
     host.executable,
     [
       "--new-window",
+      ...(isUnpackaged
+        ? [`--extensionDevelopmentPath=${paths.repository}`]
+        : []),
       // Opt-in only for credential-free, disposable macOS test profiles.
       ...(process.platform === "darwin" &&
       process.env.VSCODE_TEST_MOCK_KEYCHAIN === "1"
