@@ -7,8 +7,13 @@ this follows GitLens current-line authorship alongside the Git change bars.
 ## How it works
 
 The webview sends the complete editor snapshot and main caret line to the host.
-NativeGitAccess resolves the repository and runs single-line porcelain blame
-against HEAD with real stdin for snapshot contents. Document, caret-line and
+NativeGitAccess prefers `vscode.git`'s open repository, then falls back to
+`git rev-parse --show-toplevel` when the API has not opened the work tree yet
+(empty window, parent-folder prompt, or scan lag). Discovered roots enroll in
+the same `RepositoryWatch` generation path via filesystem metadata watches on
+`.git` (HEAD/refs/config), so terminal amends without a note edit still bump
+generation and publish `changed`. It runs single-line porcelain blame against
+HEAD with real stdin for snapshot contents. Document, caret-line and
 repository changes clear the ghost immediately; only the next request waits
 150ms. A panel-local serial guards both success and rejection, including URI
 changes and disable. Current replies can adopt the host's authoritative

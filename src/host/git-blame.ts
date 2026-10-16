@@ -70,6 +70,25 @@ export function createSpawnBlameRunner(
     });
 }
 
+/** Resolve the work tree when vscode.git has not opened the repository yet. */
+export async function discoverGitRoot(
+  cwd: string,
+  runGit: GitBlameRunner,
+): Promise<string | undefined> {
+  try {
+    const { stdout } = await runGit({
+      args: ["rev-parse", "--show-toplevel"],
+      cwd,
+      timeoutMs: 5000,
+      maxBuffer: 4096,
+    });
+    const root = stdout.trim();
+    return root.length > 0 ? root : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 interface BlameOptions {
   cwd: string;
   relativePath: string;

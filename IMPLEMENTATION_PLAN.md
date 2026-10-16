@@ -4381,3 +4381,55 @@ recorded in `/workspace/plans/chatgpt-ide-adapters-code/PR-STATUS.md`.
   under shared-host load passed unchanged with bounded workers.
 - `pnpm package` and the existing 10 MB VSIX size/file check passed (4.66 MB).
   The VSIX was only built locally; no installation, merge or publication occurred.
+
+## gitBlame follow-up — Live Preview panel host wiring, 2026-10-16
+
+The panel host feature list omitted `gitBlameHost`, despite its manifest and
+bundle export. The webview's default-on renderer therefore received
+`PluginDisabled` for its blame/identity requests and quietly hid the EOL chip.
+Registered the host beside `gitGutterHost` through the existing resource-scoped
+enablement path; no catalog-loader or rendering change is needed.
+
+Added a unit regression through the real `hostFeatures` entry point and paired
+RPC endpoints. It checks default startup, panel-document binding, disable and
+re-enable, repository subscription cleanup and the minimal preset. Before the
+fix it fails on `gitBlame/blameLine` with `PluginDisabled`; after the fix,
+focused gitBlame/git-blame units (48/48) and `pnpm check` (1,744 unit passes,
+23 intentional Cordis skips) are green under Node 22. Sample-vault GUI
+acceptance remains VERIFY-NEEDED for Grok Bot; the existing manual plan already
+covers the behavior. No source suites ported and no VSIX, merge or Marketplace
+publication.
+
+## gitBlame follow-up — Filesystem root when vscode.git is empty, 2026-10-16
+
+GUI verify on tip `7d1c067` still painted no EOL chip. The Extension Host had
+registered `gitBlameHost`, but `vscode.git` logged `repositories (0)` for an
+empty window (`isEmptyWorkspaceTrusted`) while `00-home.md` was opened as a
+loose file. Default `git.openRepositoryInParentFolders: prompt` never opened
+sample-vault, so `getRepository` stayed null and blame soft-hid as
+`unavailable`.
+
+`NativeGitAccess` now falls back to `git rev-parse --show-toplevel`
+(`discoverGitRoot`) for blame and identity when the API has no repository.
+Prefer the open API root when present. Unit regression covers discovery from a
+nested path and blame using only that root. Focused gitBlame/git-blame units
+49/49; `pnpm check` 1,745 unit passes, 23 intentional Cordis skips (Node 22).
+No VSIX or merge.
+
+## gitBlame follow-up — Discovered-root RepositoryWatch enrollment, 2026-10-16
+
+Codex re-review of tip `a22ea91` REQUEST CHANGES'd one P2: discovered roots
+only wrote `rootsByUri` and never enrolled in `RepositoryWatch`, so an
+empty-window chip could keep stale attribution after a terminal amend without
+a note edit (no generation advance / `changed`), and identity cache keyed by
+generation stayed warm across disable/re-enable for that root.
+
+`RepositoryWatch.enrollDiscovered` plus `bindDiscoveredRoot` (Node `fs.watch`
+on `.git` HEAD/refs/config/logs) give discovered roots the same lifecycle-
+managed invalidation as API repositories. `NativeGitAccess` enrolls on
+discovery and clears FS bindings with API watches on detach/enablement.
+Unit regressions cover enroll/invalidate and a real amend without note edit.
+Follow-up hardening: directory (not file) watches so atomic `config` replaces
+keep firing; linked-worktree `commondir` watch; `identity` retains the watch
+lease; symlink roots use `canonicalPath` for containment. No VSIX or merge.
+

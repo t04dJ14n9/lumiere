@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Context } from "../../../src/kernel";
+import { hostFeatures } from "../../../src/host/features";
+import { features } from "../../../src/plugins/catalog";
 import type { GitAccess } from "../../../src/shared/git";
+import type { PanelShell } from "../../../src/shared/runtime";
 import { MAX_DIFF_CHARS } from "../../../src/shared/diff";
 import {
   gitBlameHost,
@@ -9,6 +12,7 @@ import {
 } from "../../../src/plugins/gitBlame/host";
 import { protocol } from "../../../src/plugins/gitBlame/protocol";
 import { rpcPair } from "../../support/rpc-pair";
+import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 
 function fakeGit() {
   let generation = 0;
@@ -64,6 +68,83 @@ async function setup(git?: GitAccess) {
     },
   };
 }
+
+test("panel host features start blame by default and follow resource settings", async (t) => {
+  const fake = fakeGit();
+  const pair = rpcPair();
+  const root = Context.create();
+  const document = fakeDocument();
+  const settings = Object.fromEntries(
+    features
+      .filter(({ id }) => id !== "gitBlame")
+      .map(({ id }) => [id, { enabled: false, config: {} }]),
+  );
+  let preset: "obsidian" | "minimal" = "obsidian";
+  let configurationChanged = () => {};
+  const workshop = fakeWorkbench({
+    git: fake.git,
+    config(resource) {
+      assert.equal(resource, document);
+      return { preset, mode: "livePreview", features: settings };
+    },
+    onConfiguration(listener) {
+      configurationChanged = listener;
+      return () => {
+        configurationChanged = () => {};
+      };
+    },
+  });
+  t.after(async () => {
+    await root.dispose();
+    await pair.dispose();
+  });
+  root.provide("workshop", workshop);
+  root.provide("rpc", pair.host);
+  hostFeatures(root, { document } as PanelShell, workshop);
+  await root.settled();
+
+  const request = { line: 1, contents: "note", version: 1 };
+  assert.deepEqual(await pair.client.call(protocol, "blameLine", request), {
+    status: "uncommitted",
+    repoGeneration: 0,
+  });
+  assert.deepEqual(fake.requests, [
+    { uri: document.uri, line: 1, snapshot: { contents: "note", version: 1 } },
+  ]);
+  assert.equal(
+    (await pair.client.call(protocol, "identity", {}))?.userName,
+    "Ada",
+  );
+  assert.equal(fake.listeners.size, 1);
+
+  settings.gitBlame = { enabled: false, config: {} };
+  configurationChanged();
+  await root.settled();
+  await assert.rejects(pair.client.call(protocol, "blameLine", request), {
+    code: "PluginDisabled",
+  });
+  await assert.rejects(pair.client.call(protocol, "identity", {}), {
+    code: "PluginDisabled",
+  });
+  assert.equal(fake.listeners.size, 0);
+
+  settings.gitBlame = { enabled: true, config: {} };
+  root.emit("editor/configure");
+  await root.settled();
+  assert.equal(
+    (await pair.client.call(protocol, "identity", {}))?.userName,
+    "Ada",
+  );
+  assert.equal(fake.listeners.size, 1);
+
+  preset = "minimal";
+  configurationChanged();
+  await root.settled();
+  await assert.rejects(pair.client.call(protocol, "identity", {}), {
+    code: "PluginDisabled",
+  });
+  assert.equal(fake.listeners.size, 0);
+});
 
 test("host changed is immediate, required generation, and never re-bumps", async (t) => {
   const fake = fakeGit();

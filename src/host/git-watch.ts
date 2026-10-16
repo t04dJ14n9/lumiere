@@ -17,6 +17,7 @@ export class RepositoryWatch {
     WatchedRepository,
     { dispose(): unknown }
   >();
+  private readonly discovered = new Map<string, { dispose(): unknown }>();
   private readonly sources = new Set<RepositorySource>();
   private readonly listeners = new Set<() => void>();
   private readonly generations = new Map<string, number>();
@@ -47,6 +48,27 @@ export class RepositoryWatch {
         this.repositories.get(repository)?.dispose();
         this.repositories.delete(repository);
         this.changed(repository);
+      }),
+    );
+  }
+
+  /**
+   * Enroll a root discovered without vscode.git so generation counters and
+   * `changed` fan-out share the same path as API repositories. Idempotent per
+   * root; does not publish until `onDidChange` fires.
+   */
+  enrollDiscovered(root: string, onDidChange: GitEvent<void>): void {
+    if (this.discovered.has(root)) {
+      return;
+    }
+    if (!this.generations.has(root)) {
+      this.generations.set(root, 0);
+    }
+    this.discovered.set(
+      root,
+      onDidChange(() => {
+        this.advance(root);
+        this.publish();
       }),
     );
   }
@@ -101,6 +123,8 @@ export class RepositoryWatch {
       .forEach((subscription) => subscription.dispose());
     this.repositories.forEach((subscription) => subscription.dispose());
     this.repositories.clear();
+    this.discovered.forEach((subscription) => subscription.dispose());
+    this.discovered.clear();
     this.sources.clear();
   }
   dispose(): void {

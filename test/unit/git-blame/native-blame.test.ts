@@ -1,17 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { execFileSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import type { ChildProcess, spawn } from "node:child_process";
 import {
   createSpawnBlameRunner,
+  discoverGitRoot,
   runBlameLine,
 } from "../../../src/host/git-blame";
 import type { GitBlameRunner } from "../../../src/host/git-blame";
 import { RepositoryWatch } from "../../../src/host/git-watch";
+import {
+  bindDiscoveredRoot,
+  canonicalPath,
+  resolveCommonDir,
+  resolveGitDir,
+  watchGitMetadata,
+} from "../../../src/host/git-discovered-watch";
 
 const oid = "a".repeat(40);
 const porcelain = (commit = oid) =>
@@ -348,6 +356,274 @@ test("known-identical-to-disk optimization still classifies dirty worktree lines
     });
     assert.equal(result.status, "uncommitted");
   } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("discoverGitRoot finds the work tree from a nested path without vscode.git", async () => {
+  const { root } = await repo();
+  try {
+    const runGit = createSpawnBlameRunner();
+    const nested = join(root, "notes");
+    await mkdir(nested, { recursive: true });
+    await writeFile(join(nested, "home.md"), "hello\n");
+    assert.equal(await discoverGitRoot(nested, runGit), root);
+    assert.equal(
+      await discoverGitRoot(join(nested, "missing-dir"), runGit),
+      undefined,
+    );
+    const outside = await mkdtemp(join(tmpdir(), "mw-blame-none-"));
+    try {
+      assert.equal(await discoverGitRoot(outside, runGit), undefined);
+    } finally {
+      await rm(outside, { recursive: true, force: true });
+    }
+    // Empty-window / parent-prompt path: blame using only the discovered root.
+    const discovered = await discoverGitRoot(nested, runGit);
+    assert.ok(discovered);
+    const contents = "alpha\nbeta-touched\ngamma\n";
+    const result = await runBlameLine({
+      ...options(runGit),
+      cwd: discovered!,
+      relativePath: "note.md",
+      line: 1,
+      snapshot: { contents, version: 1 },
+    });
+    assert.equal(result.status, "ok");
+    if (result.status === "ok") {
+      assert.equal(result.blame.authorName, "Dev");
+      assert.equal(result.blame.line, 1);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("enrollDiscovered advances generation and notifies like API onDidChange (B1)", () => {
+  const watch = new RepositoryWatch();
+  const change = changeSource();
+  const root = "file:///discovered-repo";
+  const seen: number[] = [];
+  watch.subscribe(() => seen.push(watch.repoGeneration(root)));
+  watch.enrollDiscovered(root, change.event);
+  assert.equal(watch.repoGeneration(root), 0);
+  assert.deepEqual(seen, []);
+  change.fire();
+  assert.deepEqual(seen, [1]);
+  assert.equal(watch.repoGeneration(root), 1);
+  watch.enrollDiscovered(root, change.event); // idempotent
+  change.fire();
+  assert.deepEqual(seen, [1, 2]);
+  watch.detach();
+  change.fire();
+  assert.deepEqual(seen, [1, 2]);
+  watch.dispose();
+});
+
+test("invalidate includes discovered roots for identity-cache epochs", () => {
+  const watch = new RepositoryWatch();
+  const change = changeSource();
+  const root = "file:///discovered-repo";
+  watch.enrollDiscovered(root, change.event);
+  const seen: number[] = [];
+  watch.subscribe(() => seen.push(watch.repoGeneration(root)));
+  watch.invalidate();
+  assert.deepEqual(seen, [1]);
+  watch.dispose();
+});
+
+test("bindDiscoveredRoot bumps generation after terminal amend without note edit (B1)", async () => {
+  const { root } = await repo();
+  const rootUri = `file://${root}`;
+  const watch = new RepositoryWatch();
+  try {
+    assert.equal(resolveGitDir(root), join(root, ".git"));
+    const binding = bindDiscoveredRoot(watch, rootUri, root);
+    assert.ok(binding);
+    assert.equal(watch.repoGeneration(rootUri), 0);
+    const seen: number[] = [];
+    watch.subscribe(() => seen.push(watch.repoGeneration(rootUri)));
+
+    // Amend author/subject from a "terminal" without touching the note text.
+    execFileSync(
+      "git",
+      [
+        "commit",
+        "--amend",
+        "--author=Amender <amender@example.com>",
+        "-m",
+        "Amended subject",
+      ],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          GIT_COMMITTER_NAME: "Amender",
+          GIT_COMMITTER_EMAIL: "amender@example.com",
+        },
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && watch.repoGeneration(rootUri) === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(
+      watch.repoGeneration(rootUri) >= 1,
+      "expected FS metadata watch to advance generation after amend",
+    );
+    assert.ok(seen.length >= 1);
+    assert.ok(seen[0]! >= 1);
+    binding!.dispose();
+    const after = watch.repoGeneration(rootUri);
+    // Production detachWatch closes FS + enroll together; after detach, further
+    // amends must not advance this root's generation.
+    watch.detach();
+    execFileSync("git", ["commit", "--amend", "-m", "Again"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(watch.repoGeneration(rootUri), after);
+  } finally {
+    watch.dispose();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("watchGitMetadata fires when HEAD is rewritten", async () => {
+  const { root } = await repo();
+  try {
+    const gitDir = resolveGitDir(root);
+    assert.ok(gitDir);
+    let fires = 0;
+    const watcher = watchGitMetadata(gitDir!, () => {
+      fires++;
+    });
+    execFileSync(
+      "git",
+      ["commit", "--amend", "-m", "Rewrite HEAD", "--no-edit"],
+      {
+        cwd: root,
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && fires === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(fires >= 1, "expected HEAD/refs watch to fire on amend");
+    watcher.dispose();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("directory metadata watch survives successive atomic config replaces", async () => {
+  const { root } = await repo();
+  const rootUri = `file://${root}`;
+  const watch = new RepositoryWatch();
+  try {
+    const binding = bindDiscoveredRoot(watch, rootUri, root);
+    assert.ok(binding);
+    execFileSync("git", ["config", "user.email", "one@example.com"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const firstDeadline = Date.now() + 3000;
+    while (Date.now() < firstDeadline && watch.repoGeneration(rootUri) === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    const afterFirst = watch.repoGeneration(rootUri);
+    assert.ok(afterFirst >= 1, "first config replace must advance generation");
+    execFileSync("git", ["config", "user.email", "two@example.com"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const secondDeadline = Date.now() + 3000;
+    while (
+      Date.now() < secondDeadline &&
+      watch.repoGeneration(rootUri) === afterFirst
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(
+      watch.repoGeneration(rootUri) > afterFirst,
+      "second config replace must advance generation after inode replace",
+    );
+    binding!.dispose();
+  } finally {
+    watch.dispose();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("canonicalPath keeps symlink alias notes inside the discovered root", async () => {
+  const { root } = await repo();
+  const parent = await mkdtemp(join(tmpdir(), "mw-blame-alias-"));
+  try {
+    const alias = join(parent, "alias");
+    await symlink(root, alias);
+    const noteViaAlias = join(alias, "note.md");
+    const relativePath = relative(
+      canonicalPath(root),
+      canonicalPath(noteViaAlias),
+    );
+    assert.equal(relativePath, "note.md");
+    assert.equal(
+      relative(root, noteViaAlias).startsWith("..") ||
+        isAbsolute(relative(root, noteViaAlias)),
+      true,
+    );
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("linked worktree watches shared commondir config changes", async () => {
+  const { root } = await repo();
+  const parent = await mkdtemp(join(tmpdir(), "mw-blame-wt-"));
+  const linked = join(parent, "linked");
+  try {
+    execFileSync("git", ["worktree", "add", linked, "HEAD"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const gitDir = resolveGitDir(linked);
+    assert.ok(gitDir);
+    const common = resolveCommonDir(gitDir!);
+    assert.ok(common, "linked worktree exposes commondir");
+    const rootUri = `file://${linked}`;
+    const watch = new RepositoryWatch();
+    const binding = bindDiscoveredRoot(watch, rootUri, linked);
+    assert.ok(binding);
+    // Config lives in the shared (common) git dir, not the private worktree dir.
+    execFileSync("git", ["config", "user.email", "wt@example.com"], {
+      cwd: linked,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && watch.repoGeneration(rootUri) === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(
+      watch.repoGeneration(rootUri) >= 1,
+      "commondir config change must invalidate the linked worktree root",
+    );
+    binding!.dispose();
+    watch.dispose();
+  } finally {
+    try {
+      execFileSync("git", ["worktree", "remove", "--force", linked], {
+        cwd: root,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+    } catch {
+      /* Best-effort cleanup. */
+    }
+    await rm(parent, { recursive: true, force: true });
     await rm(root, { recursive: true, force: true });
   }
 });

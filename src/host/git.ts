@@ -1,14 +1,19 @@
 import * as vscode from "vscode";
-import { relative, isAbsolute, sep } from "node:path";
+import { relative, isAbsolute, sep, dirname } from "node:path";
 import { MAX_DIFF_CHARS } from "../shared/diff";
 import type {
   GitBlameSnapshot,
   GitBlameLineResult,
   GitIdentity,
 } from "../shared/git-blame";
-import { runBlameLine, createSpawnBlameRunner } from "./git-blame";
+import {
+  runBlameLine,
+  createSpawnBlameRunner,
+  discoverGitRoot,
+} from "./git-blame";
 import type { GitBlameRunner } from "./git-blame";
 import { RepositoryWatch } from "./git-watch";
+import { bindDiscoveredRoot, canonicalPath } from "./git-discovered-watch";
 import { exceedsDiffLimits } from "../shared/diff";
 import type { GitAccess, GitBaselineResult, GitRef } from "../shared/git";
 
@@ -81,6 +86,8 @@ export class NativeGitAccess implements GitAccess {
   private readonly rootsByUri = new Map<string, string>();
   private currentApi: GitApi | undefined;
   private readonly watch = new RepositoryWatch();
+  /** FS metadata watches for roots discovered without vscode.git. */
+  private readonly discoveredFs = new Map<string, { dispose(): void }>();
   private enablement: vscode.Disposable | undefined;
   constructor(
     private readonly runGit: GitBlameRunner = createSpawnBlameRunner(),
@@ -113,7 +120,7 @@ export class NativeGitAccess implements GitAccess {
     this.enablement ??= gitExtension()?.onDidChangeEnablement?.(() => {
       this.api = undefined;
       this.currentApi = undefined;
-      this.watch.detach();
+      this.detachWatch();
       this.watch.invalidate();
       void this.load().catch(() => undefined);
     });
@@ -216,11 +223,20 @@ export class NativeGitAccess implements GitAccess {
     return () => {
       this.watchUsers--;
       if (this.watchUsers === 0) {
-        this.watch.detach();
+        this.detachWatch();
         this.enablement?.dispose();
         this.enablement = undefined;
       }
     };
+  }
+
+  /** Drop API and discovered-root watches together so generations stay paired. */
+  private detachWatch(): void {
+    this.watch.detach();
+    for (const disposable of this.discoveredFs.values()) {
+      disposable.dispose();
+    }
+    this.discoveredFs.clear();
   }
 
   repoGeneration(uri: string): number {
@@ -251,32 +267,42 @@ export class NativeGitAccess implements GitAccess {
     line: number,
     snapshot: GitBlameSnapshot,
   ): Promise<GitBlameLineResult> {
-    const repository = await this.repositoryFor(uri);
+    const target = vscode.Uri.parse(uri);
     const repoGeneration = this.repoGeneration(uri);
-    if (!repository || snapshot.contents.length > MAX_DIFF_CHARS) {
+    if (target.scheme !== "file" || snapshot.contents.length > MAX_DIFF_CHARS) {
       return { status: "unavailable", repoGeneration };
     }
+    const rootPath = await this.resolveRootPath(uri, target);
+    if (!rootPath) {
+      return {
+        status: "unavailable",
+        repoGeneration: this.repoGeneration(uri),
+      };
+    }
     const relativePath = relative(
-      repository.rootUri.fsPath,
-      vscode.Uri.parse(uri).fsPath,
+      canonicalPath(rootPath),
+      canonicalPath(target.fsPath),
     );
     if (
       isAbsolute(relativePath) ||
       relativePath === ".." ||
       relativePath.startsWith(`..${sep}`)
     ) {
-      return { status: "unavailable", repoGeneration };
+      return {
+        status: "unavailable",
+        repoGeneration: this.repoGeneration(uri),
+      };
     }
-    const root = repository.rootUri.toString();
+    const root = vscode.Uri.file(rootPath).toString();
     return runBlameLine({
-      cwd: repository.rootUri.fsPath,
+      cwd: rootPath,
       relativePath,
       line,
       snapshot,
       // RPC snapshots may include edits that have not reached the TextDocument yet.
       // Without proof of disk identity, always send the complete editor snapshot.
       knownClean: false,
-      generationAtStart: repoGeneration,
+      generationAtStart: this.repoGeneration(uri),
       getGeneration: () => this.watch.repoGeneration(root),
       runGit: this.runGit,
       timeoutMs: 5000,
@@ -284,22 +310,73 @@ export class NativeGitAccess implements GitAccess {
   }
 
   async identity(uri: string): Promise<GitIdentity | undefined> {
+    const release = this.retainWatch();
+    try {
+      const target = vscode.Uri.parse(uri);
+      if (target.scheme !== "file") {
+        return undefined;
+      }
+      const rootPath = await this.resolveRootPath(uri, target);
+      if (!rootPath) {
+        return undefined;
+      }
+      const root = vscode.Uri.file(rootPath).toString();
+      const generation = this.watch.repoGeneration(root);
+      const cached = this.identities.get(root);
+      if (cached?.generation === generation) {
+        return cached.pending;
+      }
+      const pending = this.readIdentity(rootPath);
+      if (this.identities.size >= 32) {
+        this.identities.clear();
+      }
+      this.identities.set(root, { generation, pending });
+      return pending;
+    } finally {
+      release();
+    }
+  }
+
+  /**
+   * Prefer vscode.git's open repository; fall back to `git rev-parse` so blame
+   * still works in an empty window, before the initial scan finishes, or when
+   * `git.openRepositoryInParentFolders` stays at prompt.
+   */
+  private async resolveRootPath(
+    uri: string,
+    target: vscode.Uri,
+  ): Promise<string | undefined> {
     const repository = await this.repositoryFor(uri);
-    if (!repository) {
+    if (repository) {
+      return repository.rootUri.fsPath;
+    }
+    const discovered = await discoverGitRoot(
+      dirname(target.fsPath),
+      this.runGit,
+    );
+    if (!discovered) {
       return undefined;
     }
-    const root = repository.rootUri.toString();
-    const generation = this.watch.repoGeneration(root);
-    const cached = this.identities.get(root);
-    if (cached?.generation === generation) {
-      return cached.pending;
+    const rootUri = vscode.Uri.file(discovered).toString();
+    this.rootsByUri.set(uri, rootUri);
+    this.ensureDiscoveredWatch(discovered, rootUri);
+    return discovered;
+  }
+
+  /**
+   * Empty-window / repositories(0) path: enroll the discovered root in
+   * RepositoryWatch via FS metadata so amend/checkout/config bump generation
+   * and publish `changed` like API `state.onDidChange`.
+   */
+  private ensureDiscoveredWatch(rootPath: string, rootUri: string): void {
+    // Only install while a lease is held so detachWatch always owns cleanup.
+    if (this.watchUsers === 0 || this.discoveredFs.has(rootUri)) {
+      return;
     }
-    const pending = this.readIdentity(repository.rootUri.fsPath);
-    if (this.identities.size >= 32) {
-      this.identities.clear();
+    const binding = bindDiscoveredRoot(this.watch, rootUri, rootPath);
+    if (binding) {
+      this.discoveredFs.set(rootUri, binding);
     }
-    this.identities.set(root, { generation, pending });
-    return pending;
   }
 
   private async readIdentity(cwd: string): Promise<GitIdentity> {
