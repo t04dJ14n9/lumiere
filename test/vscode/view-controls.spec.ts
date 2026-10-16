@@ -61,6 +61,9 @@ async function body(page: Page): Promise<void> {
   await command(page, "PDF: Two Pages (1–2, 3–4)");
   await command(page, "PDF: Fit Page");
   await command(page, "PDF: Page-by-page Scrolling");
+  // A tall window can show several pages at 100%, changing the native current
+  // page during fit/layout changes. Start the paging checks from a known page.
+  await showPage(page, viewer, 1);
   const indexes = () =>
     viewer.locator(".page").evaluateAll((pages) =>
       pages.map((element) => Number((element as HTMLElement).dataset.pageIndex)),

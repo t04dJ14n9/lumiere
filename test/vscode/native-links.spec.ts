@@ -53,9 +53,7 @@ test("built-in Cmd-click delivers PDF page and region and native Back restores s
     } else {
       await expect.poll(() => pageAtTop(viewer, target)).toBe(true);
     }
-    await page.keyboard.press(
-      process.platform === "darwin" ? "Control+-" : "Alt+Left",
-    );
+    await page.getByRole("button", { name: /^Go Back/u }).click();
     await expect(
       page
         .locator(".monaco-editor .detected-link")

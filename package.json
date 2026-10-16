@@ -1097,17 +1097,17 @@
     "@embedpdf/plugin-viewport": "2.15.1",
     "@embedpdf/plugin-zoom": "2.15.1",
     "@modelcontextprotocol/sdk": "1.32.1",
-    "@vscode/codicons": "0.0.36",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
-    "zod": "^4.6.5"
+    "@vscode/codicons": "0.0.45",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.0",
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.5",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/vscode": "1.90.0",
     "@vscode/test-electron": "^2.5.0",
     "@vscode/vsce": "^4.0.0",

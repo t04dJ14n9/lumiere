@@ -48,11 +48,16 @@ async function openFresh(page: Page): Promise<Frame> {
  */
 async function press(page: Page, viewer: Frame, key: string): Promise<void> {
   await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
-  // And the viewer is at rest: a key pressed while the last page turn is still
-  // being animated starts from a place the page turn has not reached yet.
+  await waitForScrollToStop(viewer);
+  await page.keyboard.press(key);
+}
+
+// A key pressed during a page-turn animation starts from an intermediate place.
+async function waitForScrollToStop(viewer: Frame): Promise<void> {
   const position = () =>
     viewer.locator(".viewport").evaluate((v) => `${v.scrollLeft},${v.scrollTop}`);
-  let last = await position();
+  // The first sample cannot establish rest; compare across a polling interval.
+  let last: string | undefined;
   await expect
     .poll(async () => {
       const now = await position();
@@ -61,7 +66,6 @@ async function press(page: Page, viewer: Frame, key: string): Promise<void> {
       return still;
     }, { intervals: [250] })
     .toBe(true);
-  await page.keyboard.press(key);
 }
 
 /** The webview has the keyboard: a click on empty space beside the pages. */
@@ -85,8 +89,12 @@ test("ArrowRight and ArrowLeft move between pages in the default view, right aft
   await focusViewer(page, viewer);
   await press(page, viewer, "ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
+  await waitForScrollToStop(viewer);
+  const top = () => viewer.locator(".viewport").evaluate((v) => v.scrollTop);
+  const beforePageDown = await top();
   await press(page, viewer, "PageDown");
-  await expect(pageEntry(page, 2)).toBeVisible();
+  // PageDown pans a screen: which page is current depends on the window height.
+  await expect.poll(top).toBeGreaterThan(beforePageDown);
   await press(page, viewer, "ArrowDown");
   // Left goes to the page before the one being read, which depends on the
   // window's height: press on until the first page.
