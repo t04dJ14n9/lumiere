@@ -23,7 +23,7 @@ import {
   foldingChanged,
 } from "../../../src/plugins/folding/webview";
 import { pairs } from "../../../src/plugins/autoPair/webview";
-import { indentation } from "../../../src/plugins/indentGuides/webview";
+import { indentation } from "../../../src/plugins/indentGuides/guides";
 import { fixture } from "./fixture";
 async function renderHooks(root: Context) {
   let reads = 0;

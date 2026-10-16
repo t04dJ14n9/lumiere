@@ -15,7 +15,7 @@ class Bullet extends WidgetType {
   }
 }
 
-/** A list item's indentation, drawn as fixed steps with an indent guide each. */
+/** A list item's indentation, drawn as fixed steps independent of source spacing. */
 class ListIndent extends WidgetType {
   constructor(readonly depth: number) {
     super();
@@ -55,7 +55,7 @@ export function markerWidth(marker: string, isTask: boolean): string {
 
 /**
  * List items as in Obsidian: each nesting level is a fixed indent step with
- * a guide, markers are muted, and wrapped text hangs under the item's text.
+ * muted markers, and wrapped text hangs under the item's text.
  * Items inside quotes keep the quote's own layout.
  */
 export function decorateListItem(node: SyntaxNodeRef, cx: InlineContext): void {

@@ -4525,3 +4525,33 @@ lease; symlink roots use `canonicalPath` for containment. No VSIX or merge.
   command-registration parity passed; no browser/native scenarios were added.
   The generated package differs only in the Marp command ID and its palette entry;
   configuration title and every command category are **Markdown Workshop**.
+
+### Nested-list indentation guides — 2026-10-16
+
+- Fixed competing guide systems: source-column `ch` backgrounds were painted
+  beneath list whitespace that Live Preview replaces with fixed `1.6em` steps,
+  while list spacer widgets painted another set. The indentGuides plugin now
+  owns list-row backgrounds using the renderer's existing depth/step variables,
+  including soft wraps, and its owned editor class gates all guide painting.
+- Source-column guides are excluded from parsed list prose in Live Preview,
+  including separate continuation lines, whose layout the renderer does not
+  normalize. Code blocks, quoted lists, non-list indentation and Source mode
+  retain their previous source-column behavior. No document edits or list-layout
+  changes are introduced.
+- Added six pure unit cases for tabs, ordered/task nesting, continuations and
+  code/quote preservation. One inexpensive regression in the existing Chromium
+  layout harness checks marker/guide geometry, soft wraps, Source-mode round
+  trips and disposal. It fails against the original production files with three
+  duplicate source-guide rows and passes with the fix. Manual acceptance and the
+  plugin README document the continuation-line limit.
+- The pinned `~/Code/human-learning` checkout is absent on this host. No source
+  suites or proprietary assets were copied; no ledger retirement is needed.
+- Validation: Node 22.20.0 with `MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2
+  MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1 xvfb-run -a pnpm check:full` passed in order:
+  check (1,749 unit passes, 23 intentional Cordis skips), Chromium (277 passes),
+  native VS Code 1.142.0 (23 passes, disposable profile). Focused units (9/9,
+  including existing list tests), scoped lint and Chromium layout tests (2/2)
+  also passed. Synthetic before/after screenshots are in
+  `docs/images/indent-guides-{before,after}.png`. The native suite's unrelated
+  regenerated screenshots were restored. No VSIX was installed; no Marketplace
+  publication or merge was performed.
