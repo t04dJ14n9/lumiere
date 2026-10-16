@@ -10,7 +10,6 @@ import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
 import { registerDocumentWarm } from "./document-warm";
-import { registerReclaim } from "./reclaim";
 import type { Context } from "../kernel";
 
 /** The window's kernel; `deactivate` awaits its teardown. */
@@ -29,11 +28,7 @@ export async function activate(
   const channel = window.createOutputChannel("Markdown Workshop", {
     log: true,
   });
-  context.subscriptions.push(
-    channel,
-    registerDocumentWarm(),
-    registerReclaim(),
-  );
+  context.subscriptions.push(channel, registerDocumentWarm());
   const logger = outputLogger(channel, () =>
     workspace.getConfiguration("markdownWorkshop").get("debug.logging", false),
   );

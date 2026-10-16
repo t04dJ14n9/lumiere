@@ -97,6 +97,26 @@ function cancelledResult(promise: Promise<boolean>): Promise<boolean> {
   });
 }
 
+test("a native hunk offset waits for its webview session and crosses the validated navigation RPC", async (t) => {
+  const setup = await fixture();
+  t.after(() => setup.dispose());
+  const delivery = setup.router.deliver(setup.router.begin(), "pane", {
+    fragment: "",
+    at: 9300,
+  });
+  setup.loading();
+  assert.equal(setup.calls.length, 0);
+  await setup.ready("hunk-session");
+  assert.equal(await delivery, true);
+  assert.equal(setup.calls.length, 1);
+  assert.deepEqual(setup.calls[0]?.target, {
+    fragment: "",
+    at: 9300,
+    requestId: 1,
+    session: "hunk-session",
+  });
+});
+
 test("cold first loading preserves the pending link reveal until its session is ready", async (t) => {
   const f = await fixture();
   t.after(() => f.dispose());

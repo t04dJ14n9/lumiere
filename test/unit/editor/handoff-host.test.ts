@@ -6,6 +6,8 @@ import type * as DocumentWarm from "../../../src/host/document-warm";
 import type * as Workshop from "../../../src/host/workshop";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
 import type * as CursorHandoff from "../../../src/host/cursor-handoff";
+import type * as HostNavigation from "../../../src/host/navigation";
+import type { PanelShell, RevealPanel } from "../../../src/shared/runtime";
 import type { Uri as NativeUri } from "vscode";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import {
@@ -67,10 +69,12 @@ interface Document {
   isDirty: boolean;
 }
 interface TextEditor {
+  viewColumn?: number;
   document: Document & {
     version: number;
     getText(): string;
     positionAt(offset: number): Position;
+    offsetAt?(position: Position): number;
   };
   selection: Range;
 }
@@ -96,11 +100,17 @@ const tabsChanged = new Emitter<{
   changed: Tab[];
   closed: Tab[];
 }>();
+const selectionChanged = new Emitter<{
+  textEditor: TextEditor;
+  kind?: number;
+}>();
+const activeEditorChanged = new Emitter<TextEditor | undefined>();
 const warmed: string[] = [];
 const commands: unknown[][] = [];
 const scopes: { section: string; uri: string | undefined }[] = [];
 const settings = new Map<string, unknown>();
 let beforeOpen: (() => Promise<void>) | undefined;
+let afterCommand: (() => void | Promise<void>) | undefined;
 let serial = 0;
 let note: string;
 const vscode = {
@@ -109,6 +119,7 @@ const vscode = {
   TabInputCustom,
   Position,
   Range,
+  TextEditorSelectionChangeKind: { Keyboard: 1, Mouse: 2, Command: 3 },
   ConfigurationTarget: { Global: 1, Workspace: 2, WorkspaceFolder: 3 },
   DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 },
   Disposable: {
@@ -156,6 +167,8 @@ const vscode = {
     }),
   },
   window: {
+    onDidChangeTextEditorSelection: selectionChanged.event,
+    onDidChangeActiveTextEditor: activeEditorChanged.event,
     activeTextEditor: undefined as TextEditor | undefined,
     async showTextDocument(
       document: TextEditor["document"],
@@ -178,6 +191,7 @@ const vscode = {
   commands: {
     async executeCommand(id: string, uri: Uri, ...args: unknown[]) {
       commands.push([id, uri.toString(), ...args]);
+      await afterCommand?.();
     },
   },
 };
@@ -193,6 +207,8 @@ function loadHost() {
   try {
     return {
       reclaim: require("../../../src/host/reclaim.ts") as typeof Reclaim,
+      navigation:
+        require("../../../src/host/navigation.ts") as typeof HostNavigation,
       warm: require("../../../src/host/document-warm.ts") as typeof DocumentWarm,
       workshop: require("../../../src/host/workshop.ts") as typeof Workshop,
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
@@ -217,6 +233,7 @@ beforeEach(() => {
   vscode.window.tabGroups.all = [group];
   vscode.window.activeTextEditor = undefined;
   beforeOpen = undefined;
+  afterCommand = undefined;
   vscode.env.appName = "Cursor";
   settings.clear();
   settings.set("workbench.editorAssociations", { "*.md": viewType });
@@ -226,6 +243,8 @@ beforeEach(() => {
     createdFile,
     createdFiles,
     tabsChanged,
+    selectionChanged,
+    activeEditorChanged,
   ]) {
     emitter.listeners.clear();
   }
@@ -721,3 +740,343 @@ test("Open as Text remains bypassed without warming", async () => {
   assert.deepEqual(warmed, []);
   assert.equal(host.reclaim.textBypass.has(note), true);
 });
+
+function nativeHunkEditor(tab: Tab, line = 929, eol = "\n"): TextEditor {
+  const lines = Array.from({ length: 1000 }, (_, index) => `Line ${index + 1}`);
+  const editor = {
+    viewColumn: tab.group.viewColumn,
+    document: {
+      uri: Uri.parse(note),
+      isDirty: true,
+      version: 1,
+      getText: () => lines.join(eol),
+      positionAt: (offset: number) => new Position(0, offset),
+      offsetAt: (position: Position) =>
+        lines
+          .slice(0, position.line)
+          .reduce((length, value) => length + value.length + eol.length, 0) +
+        position.character,
+    },
+    selection: new Range(new Position(line, 0), new Position(line + 2, 4)),
+  };
+  tab.input = new TabInputText(Uri.parse(note));
+  vscode.window.activeTextEditor = editor;
+  return editor;
+}
+
+function hunkDestination(tab: Tab, reused = false) {
+  const calls: number[] = [];
+  const shell = {
+    id: "destination",
+    column: 1,
+    document: { uri: note },
+    active: () => tab.input instanceof TabInputCustom,
+  } as PanelShell;
+  const sibling = { ...shell, id: "sibling", column: 2, active: () => false };
+  const panels = reused ? [sibling, shell] : [sibling];
+  const navigation = host.navigation.createNavigation(() => panels);
+  const reveal = {
+    id: shell.id,
+    uri: note,
+    active: shell.active,
+    async reveal(target, token) {
+      if (!token.cancelled) {
+        calls.push(target.at!);
+      }
+      return !token.cancelled;
+    },
+  } satisfies RevealPanel;
+  navigation.registerReveal({
+    ...reveal,
+    id: sibling.id,
+    reveal: async () => {
+      assert.fail("same-URI sibling received the reveal");
+    },
+  });
+  afterCommand = () => {
+    tab.input = new TabInputCustom(Uri.parse(note), viewType);
+    vscode.window.activeTextEditor = undefined;
+    if (!panels.includes(shell)) {
+      panels.push(shell);
+    }
+  };
+  return { navigation, calls, ready: () => navigation.registerReveal(reveal) };
+}
+
+for (const reused of [false, true]) {
+  test(`hunk open transfers the selection start into the ${reused ? "existing" : "new"} exact panel`, async (t) => {
+    const tab = cursorTab();
+    const destination = hunkDestination(tab, reused);
+    const stop = host.reclaim.registerReclaim(destination.navigation);
+    const editor = nativeHunkEditor(tab);
+    t.after(() => stop.dispose());
+    destination.ready();
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    await tick();
+    assert.deepEqual(destination.calls, [
+      editor.document.getText().indexOf("Line 930\n"),
+    ]);
+    assert.equal(commands.length, 1);
+    assert.ok(group.tabs.includes(tab), "dirty native document survives");
+  });
+}
+
+test("a cold hunk open waits for reveal registration and leaves no replay for recreation", async (t) => {
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  const editor = nativeHunkEditor(tab, 947, "\r\n");
+  t.after(() => stop.dispose());
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.deepEqual(destination.calls, []);
+  const unregister = destination.ready();
+  await tick();
+  assert.deepEqual(destination.calls, [
+    editor.document.getText().replaceAll("\r\n", "\n").indexOf("Line 948\n"),
+  ]);
+  unregister();
+  destination.ready();
+  await tick();
+  assert.equal(destination.calls.length, 1);
+});
+
+test("a hunk selection exposed by late native activation survives an in-flight openWith", async (t) => {
+  let finishOpen = () => {};
+  const opening = new Promise<void>((resolve) => {
+    finishOpen = resolve;
+  });
+  t.after(finishOpen);
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const completeOpen = afterCommand;
+  afterCommand = async () => {
+    await opening;
+    await completeOpen?.();
+  };
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  tab.input = new TabInputText(Uri.parse(note));
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+  const editor = nativeHunkEditor(tab, 947);
+  activeEditorChanged.fire(editor);
+  finishOpen();
+  await tick();
+  assert.deepEqual(destination.calls, [
+    editor.document.getText().indexOf("Line 948\n"),
+  ]);
+  assert.equal(commands.length, 1);
+});
+
+test("hunk transfer leaves another clean native tab of the same note open", async (t) => {
+  const tab = cursorTab();
+  const destination = hunkDestination(tab, true);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  nativeHunkEditor(tab);
+  const sibling: Tab = { ...tab, isDirty: false };
+  group.tabs.push(sibling);
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(destination.calls.length, 1);
+  assert.ok(
+    group.tabs.includes(sibling),
+    "only the transferred native tab may close",
+  );
+});
+
+test("command selection on a reused native tab reveals without a tab event, including repeated hunks", async (t) => {
+  const tab = cursorTab();
+  const editor = nativeHunkEditor(tab);
+  const destination = hunkDestination(tab, true);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  destination.ready();
+  selectionChanged.fire({ textEditor: editor, kind: 3 });
+  await tick();
+  const next = nativeHunkEditor(tab, 947);
+  selectionChanged.fire({ textEditor: next, kind: 3 });
+  await tick();
+  assert.deepEqual(destination.calls, [
+    editor.document.getText().indexOf("Line 930\n"),
+    next.document.getText().indexOf("Line 948\n"),
+  ]);
+  assert.equal(commands.length, 2);
+});
+
+test("a selection arriving during warming replaces the initial position without reopening twice", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  nativeHunkEditor(tab, 0);
+  t.after(() => stop.dispose());
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  const editor = nativeHunkEditor(tab, 947);
+  selectionChanged.fire({ textEditor: editor, kind: 3 });
+  release();
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.deepEqual(destination.calls, [
+    editor.document.getText().indexOf("Line 948\n"),
+  ]);
+});
+
+test("a reused preview tab can target another note while the first hunk is warming", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const navigation = host.navigation.createNavigation(() => []);
+  const stop = host.reclaim.registerReclaim(navigation);
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  nativeHunkEditor(tab);
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  note = `file:///vault/Next-${serial}.md`;
+  tab.label = `Next-${serial}.md`;
+  const next = nativeHunkEditor(tab, 947);
+  selectionChanged.fire({ textEditor: next, kind: 3 });
+  release();
+  await tick();
+  assert.deepEqual(
+    commands.map((command) => command[1]),
+    [note],
+  );
+});
+
+test("background tab notifications do not cancel the active panel's navigation", async (t) => {
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  nativeHunkEditor(tab);
+  const active = destination.navigation.begin();
+  cursorTab(`file:///vault/Other-${serial}.md`);
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(active.token.cancelled, false);
+  assert.deepEqual(commands, []);
+});
+
+test("Open as Text during warming cancels the queued hunk transfer", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  t.after(() => stop.dispose());
+  nativeHunkEditor(tab);
+  destination.ready();
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  assert.deepEqual(warmed, [note]);
+  host.reclaim.textBypass.allow(note);
+  release();
+  await tick();
+  assert.deepEqual(commands, []);
+  assert.deepEqual(destination.calls, []);
+});
+
+for (const cancelledBy of ["newer navigation", "disposal"] as const) {
+  test(`${cancelledBy} cancels a hunk open still warming its native document`, async (t) => {
+    const release = delayWarm();
+    t.after(release);
+    const tab = cursorTab();
+    const destination = hunkDestination(tab);
+    const stop = host.reclaim.registerReclaim(destination.navigation);
+    t.after(() => stop.dispose());
+    nativeHunkEditor(tab);
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    assert.deepEqual(warmed, [note]);
+    if (cancelledBy === "disposal") {
+      stop.dispose();
+    } else {
+      destination.navigation.begin();
+    }
+    release();
+    await tick();
+    assert.deepEqual(commands, []);
+    assert.deepEqual(destination.calls, []);
+  });
+
+  test(`${cancelledBy} cancels a hunk reveal pending panel readiness`, async (t) => {
+    const tab = cursorTab();
+    const destination = hunkDestination(tab);
+    const stop = host.reclaim.registerReclaim(destination.navigation);
+    nativeHunkEditor(tab);
+    t.after(() => stop.dispose());
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    await tick();
+    assert.equal(
+      commands.length,
+      1,
+      "the reveal is waiting after the native open",
+    );
+    if (cancelledBy === "disposal") {
+      stop.dispose();
+    } else {
+      destination.navigation.begin();
+    }
+    destination.ready();
+    await tick();
+    assert.deepEqual(destination.calls, []);
+  });
+}
+
+for (const ignored of [
+  "keyboard",
+  "mouse",
+  "background editor",
+  "other group",
+  "bypass",
+  "lease",
+  "diff",
+  "disabled",
+  "unassociated",
+] as const) {
+  test(`native hunk selection bridge ignores ${ignored}`, async (t) => {
+    const tab = cursorTab();
+    const editor = nativeHunkEditor(tab);
+    const destination = hunkDestination(tab);
+    const stop = host.reclaim.registerReclaim(destination.navigation);
+    t.after(() => stop.dispose());
+    let kind = 3;
+    if (ignored === "keyboard") {
+      kind = 1;
+    }
+    if (ignored === "mouse") {
+      kind = 2;
+    }
+    if (ignored === "background editor") {
+      vscode.window.activeTextEditor = { ...editor };
+    }
+    if (ignored === "other group") {
+      editor.viewColumn = 2;
+    }
+    if (ignored === "bypass") {
+      host.reclaim.textBypass.allow(note);
+    }
+    if (ignored === "lease") {
+      const lease = host.reclaim.handoffLease.acquire(note);
+      t.after(lease.release);
+    }
+    if (ignored === "diff") {
+      tab.input = { original: Uri.parse(note), modified: Uri.parse(note) };
+    }
+    if (ignored === "disabled") {
+      settings.set("markdownWorkshop.editor.reclaimTextEditor", "off");
+    }
+    if (ignored === "unassociated") {
+      settings.set("workbench.editorAssociations", {});
+    }
+    selectionChanged.fire({ textEditor: editor, kind });
+    await tick();
+    assert.deepEqual(commands, []);
+    assert.deepEqual(destination.calls, []);
+  });
+}

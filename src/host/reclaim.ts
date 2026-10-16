@@ -10,6 +10,9 @@ import {
 import type { TabKind } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
+import { SourceCoordinates } from "../shared/document/coordinates";
+import type { NativeNavigation } from "./navigation";
+import type { NavigationIntent } from "../shared/runtime";
 
 const { viewType } = MARKDOWN_EDITOR;
 
@@ -21,6 +24,12 @@ export const textBypass = new Bypass();
  * session, not a fixed window. Released when the note leaves the text editor.
  */
 export const handoffLease = new Lease();
+
+interface ReclaimRequest {
+  uri: string;
+  intent: NavigationIntent | undefined;
+  at: number | undefined;
+}
 
 function kindOf(tab: vscode.Tab | undefined): TabKind {
   const input = tab?.input;
@@ -67,8 +76,12 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
  * switch opens notes in the text or Cursor Markdown editor; warm them before
  * transferring back to our CustomTextEditorProvider.
  */
-export function registerReclaim(): vscode.Disposable {
+export function registerReclaim(
+  navigation?: NativeNavigation,
+): vscode.Disposable {
   const seen = new Map<string, TabKind>();
+  const recentTransfers = new Bypass();
+  const transfer = createReclaimTransfer(navigation, recentTransfers);
   const key = (tab: vscode.Tab, uri: string) =>
     `${tab.group.viewColumn}:${uri}`;
   const remember = () => {
@@ -83,7 +96,7 @@ export function registerReclaim(): vscode.Disposable {
     }
   };
   remember();
-  return vscode.window.tabGroups.onDidChangeTabs((event) => {
+  const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
     for (const tab of [...event.closed, ...event.opened, ...event.changed]) {
       releaseLeaseWithoutTextTab(tab);
     }
@@ -98,13 +111,123 @@ export function registerReclaim(): vscode.Disposable {
         before: seen.get(key(tab, uri)) ?? "none",
         after,
       };
-      if (shouldReclaim(swap, reclaimContext(uri))) {
-        textBypass.allow(uri);
-        void reopen(tab, uri);
+      if (
+        shouldReclaim(swap, reclaimContext(uri)) &&
+        !recentTransfers.has(uri)
+      ) {
+        transfer.open(tab, uri);
       }
     }
     remember();
   });
+  return vscode.Disposable.from(
+    tabs,
+    registerSelectionReclaim(transfer.open, transfer.capture),
+    transfer,
+  );
+}
+
+function createReclaimTransfer(
+  navigation: NativeNavigation | undefined,
+  recentTransfers: Bypass,
+) {
+  const pending = new Map<vscode.Tab, ReclaimRequest>();
+  const capture = (tab: vscode.Tab, uri: string) => {
+    const request = pending.get(tab);
+    if (request?.uri === uri && !request.intent?.token.cancelled) {
+      request.at = nativeSelectionStart(tab, uri) ?? request.at;
+    }
+  };
+  return {
+    capture,
+    open(tab: vscode.Tab, uri: string) {
+      if (vscode.window.tabGroups.activeTabGroup.activeTab !== tab) {
+        return;
+      }
+      const request = pending.get(tab);
+      if (request?.uri === uri && !request.intent?.token.cancelled) {
+        capture(tab, uri);
+        return;
+      }
+      recentTransfers.allow(uri);
+      const next: ReclaimRequest = {
+        uri,
+        intent: navigation?.begin(),
+        at: nativeSelectionStart(tab, uri),
+      };
+      pending.set(tab, next);
+      void reopen(tab, uri, next, navigation)
+        .catch((error) => {
+          console.error("Markdown Workshop editor transfer failed", error);
+        })
+        .finally(() => {
+          if (pending.get(tab) === next) {
+            pending.delete(tab);
+          }
+        });
+    },
+    dispose() {
+      for (const request of pending.values()) {
+        request.intent?.token.cancel();
+      }
+    },
+  };
+}
+
+/** Command jumps also arrive when Cursor reuses a native tab without a tab change. */
+function registerSelectionReclaim(
+  transfer: (tab: vscode.Tab, uri: string) => void,
+  capture: (tab: vscode.Tab, uri: string) => void,
+): vscode.Disposable {
+  const selections = vscode.window.onDidChangeTextEditorSelection((event) => {
+    if (
+      event.kind !== vscode.TextEditorSelectionChangeKind.Command ||
+      event.textEditor !== vscode.window.activeTextEditor
+    ) {
+      return;
+    }
+    const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+    const uri = event.textEditor.document.uri.toString();
+    if (
+      !tab ||
+      nativeSelectionStart(tab, uri) === undefined ||
+      !shouldReclaim(
+        { uri, before: "none", after: kindOf(tab) },
+        reclaimContext(uri),
+      )
+    ) {
+      return;
+    }
+    transfer(tab, uri);
+  });
+  // Tab notifications can precede the native editor snapshot. Its initial
+  // selection arrives with activation, without a separate selection event.
+  const activation = vscode.window.onDidChangeActiveTextEditor((editor) => {
+    const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+    if (editor && tab) {
+      capture(tab, editor.document.uri.toString());
+    }
+  });
+  return vscode.Disposable.from(selections, activation);
+}
+
+function nativeSelectionStart(
+  tab: vscode.Tab,
+  uri: string,
+): number | undefined {
+  const editor = vscode.window.activeTextEditor;
+  if (
+    !editor ||
+    editor.viewColumn !== tab.group.viewColumn ||
+    editor.document.uri.toString() !== uri ||
+    (uriOf(tab) ?? labelUri(tab)) !== uri
+  ) {
+    return undefined;
+  }
+  const document = editor.document;
+  return new SourceCoordinates(document.getText()).toEditor(
+    document.offsetAt(editor.selection.start),
+  );
 }
 
 function reclaimContext(uri: string) {
@@ -131,48 +254,56 @@ function reclaimContext(uri: string) {
 }
 
 /** Transfer after warming, keeping any dirty text tab and its native undo. */
-async function reopen(tab: vscode.Tab, uri: string): Promise<void> {
-  const column = tab.group.viewColumn;
+async function reopen(
+  tab: vscode.Tab,
+  uri: string,
+  request: ReclaimRequest,
+  navigation?: NativeNavigation,
+): Promise<void> {
   const target = vscode.Uri.parse(uri);
   await warmMarkdownDocument(target);
-  // A handoff lease acquired while warming must cancel this reclaim.
-  if (handoffLease.has(uri)) {
+  if (!canReopen(tab, uri, request)) {
     return;
   }
-  // Cursor may finish its own transfer or close the tab while warming.
-  const kind = kindOf(tab);
-  if (
-    !tab.group.tabs.includes(tab) ||
-    (kind !== "text" && kind !== "other") ||
-    (uriOf(tab) ?? labelUri(tab)) !== uri
-  ) {
-    return;
-  }
-  // Warm already ran; do not steal focus if the reader moved to another tab
-  // (including another editor of the same URI in this group).
-  const active = vscode.window.tabGroups.activeTabGroup?.activeTab;
-  if (active !== tab) {
-    return;
-  }
-  // Recheck lease immediately before openWith (queued reclaim honor).
-  if (handoffLease.has(uri)) {
-    return;
-  }
+  const column = tab.group.viewColumn;
+  request.at = nativeSelectionStart(tab, uri) ?? request.at;
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
     viewColumn: column,
     preview: tab.isPreview,
   });
+  if (navigation && request.intent && request.at !== undefined) {
+    await navigation.revealOpened(uri, column, request.at, request.intent);
+  }
   const group = vscode.window.tabGroups.all.find(
     (candidate) => candidate.viewColumn === column,
   );
   const text = group?.tabs.find(
     (candidate) =>
+      candidate === tab &&
       candidate.input instanceof vscode.TabInputText &&
       candidate.input.uri.toString() === uri,
   );
   if (text && !text.isDirty) {
     await vscode.window.tabGroups.close(text, true);
   }
+}
+
+/** Warming can outlive a handoff, a newer jump, or the reader leaving this tab. */
+function canReopen(
+  tab: vscode.Tab,
+  uri: string,
+  request: ReclaimRequest,
+): boolean {
+  const kind = kindOf(tab);
+  return (
+    !handoffLease.has(uri) &&
+    !textBypass.has(uri) &&
+    !request.intent?.token.cancelled &&
+    tab.group.tabs.includes(tab) &&
+    (kind === "text" || kind === "other") &&
+    (uriOf(tab) ?? labelUri(tab)) === uri &&
+    vscode.window.tabGroups.activeTabGroup.activeTab === tab
+  );
 }
 
 /** Cursor's editor exposes no input; its tabs are matched by their label. */

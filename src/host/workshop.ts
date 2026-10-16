@@ -1,6 +1,7 @@
 import { registerNativeLinks } from "./native-links";
 import { renameFile } from "./file-rename";
-import { createNavigation } from "./navigation";
+import { createNavigation, type NativeNavigation } from "./navigation";
+import type { EditorProvider } from "../shared/editor-provider";
 import { readSettings } from "./settings";
 import { createConfiguration } from "./configuration-access";
 import type { Configuration } from "../shared/configuration";
@@ -11,7 +12,7 @@ import { createDiffViews } from "./diff-views";
 import { createWorkspaceFiles } from "./workspace-files";
 import type { SettingsReader } from "./settings";
 import * as vscode from "vscode";
-import { textBypass } from "./reclaim";
+import { registerReclaim, textBypass } from "./reclaim";
 import { warmMarkdownDocument } from "./document-warm";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { createHash } from "node:crypto";
@@ -72,13 +73,39 @@ export function createWorkshop(
     revealTextEditor,
     hasExtension: (id) => Boolean(vscode.extensions.getExtension(id)),
     registerEditor: (provider, open) =>
-      registerEditor(provider, { extensionUri, documents }, (panel) => {
-        panels.set(panel.id, panel);
-        panel.onDispose(() => {
-          panels.delete(panel.id);
-        });
-        open(panel);
+      registerTrackedEditor({
+        provider,
+        extensionUri,
+        documents,
+        navigation,
+        panels,
+        open,
       }),
+  };
+}
+
+function registerTrackedEditor(options: {
+  provider: EditorProvider;
+  extensionUri: vscode.Uri;
+  documents: NativeDocuments;
+  navigation: NativeNavigation;
+  panels: Map<string, PanelShell>;
+  open: (panel: PanelShell) => void;
+}) {
+  const { provider, panels, navigation, open } = options;
+  const stopEditor = registerEditor(provider, options, (panel) => {
+    panels.set(panel.id, panel);
+    panel.onDispose(() => panels.delete(panel.id));
+    open(panel);
+  });
+  // The native selection bridge belongs to the editor provider's lifecycle.
+  const reclaim =
+    provider.viewType === MARKDOWN_EDITOR.viewType
+      ? registerReclaim(navigation)
+      : undefined;
+  return () => {
+    reclaim?.dispose();
+    stopEditor();
   };
 }
 
