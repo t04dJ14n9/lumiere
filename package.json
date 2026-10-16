@@ -749,7 +749,7 @@
         {
           "id": "markdownWorkshop.tags",
           "name": "Tags",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.tags.enabled"
+          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.tags.enabled && activeCustomEditorId == 'markdownWorkshop.editor'"
         }
       ]
     },

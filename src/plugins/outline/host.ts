@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import type { Context, Plugin } from "../../kernel";
 import type { TreeHandle } from "../../shared/runtime";
 import type {} from "../editor/api";
@@ -9,6 +10,7 @@ import {
   registerOutlineCommandContext,
 } from "./actions";
 import { OPEN_COMMAND, VIEW_ID } from "./commands";
+import { createOutlineFocus } from "./focus";
 import { registerSymbolPicker } from "./symbol-picker";
 import { OutlineSource } from "./tree";
 import { OutlineView } from "./view";
@@ -41,6 +43,7 @@ export const outlineHost: Plugin = {
     registerOutlineActions(ctx, view, tree);
     registerFollowCursor(ctx, view);
     registerSymbolPicker(ctx, views);
+    registerOutlineFocus(ctx);
     ctx.effect(() =>
       views.command(OPEN_COMMAND, (uri, offset) =>
         ctx.vaults.open(String(uri), { offset: Number(offset) }),
@@ -77,4 +80,32 @@ function registerOutlineUpdates(
       }
     }),
   );
+}
+
+function registerOutlineFocus(ctx: Context): void {
+  const focus = createOutlineFocus({
+    execute: (command) => ctx.workshop.execute(command),
+    focusEditor: () =>
+      ctx.workshop.execute("workbench.action.focusActiveEditorGroup"),
+    activeCustomEditorViewType: activeCustomEditorViewType,
+  });
+  ctx.effect(() => () => focus.dispose());
+  const sync = () => focus.sync(Boolean(ctx.editors.active()));
+  ctx.on("editor/opened", sync);
+  ctx.on("editor/closed", sync);
+  ctx.on("editor/activeChanged", sync);
+  // An already-active panel may not emit activeChanged at startup.
+  sync();
+}
+
+function activeCustomEditorViewType(): string | undefined {
+  // Unit stubs resolve `vscode` to a forbidden placeholder without window APIs.
+  const input = vscode.window?.tabGroups?.activeTabGroup?.activeTab?.input;
+  if (
+    typeof vscode.TabInputCustom === "function" &&
+    input instanceof vscode.TabInputCustom
+  ) {
+    return input.viewType;
+  }
+  return undefined;
 }
