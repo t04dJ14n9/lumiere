@@ -15,6 +15,8 @@ const manifestCommands = new Set<string>(
   contributes.commands.map((c: { command: string }) => c.command),
 );
 const runtimeCommands = new Set(RUNTIME_COMMAND_IDS);
+// Public peer API retains its original id across the product rename.
+const compatibilityCommand = [retiredPrefix, "bridge.envelope"].join(".");
 
 test("constants match locked PDF Workshop identity", () => {
   assert.equal(SETTING_PREFIX, "pdfWorkshop.");
@@ -30,8 +32,10 @@ test("customEditors viewType matches runtime VIEW_TYPE", () => {
 test("manifest commands ↔ runtime registration set (B3)", () => {
   for (const id of runtimeCommands) {
     assert.equal(manifestCommands.has(id), true, `runtime-only: ${id}`);
-    assert.match(id, /^pdfWorkshop\./);
-    assert.doesNotMatch(id, new RegExp(retiredPrefix));
+    if (id !== compatibilityCommand) {
+      assert.match(id, /^pdfWorkshop\./);
+      assert.doesNotMatch(id, new RegExp(retiredPrefix));
+    }
   }
   for (const id of manifestCommands) {
     assert.equal(runtimeCommands.has(id), true, `manifest-only: ${id}`);
@@ -40,7 +44,7 @@ test("manifest commands ↔ runtime registration set (B3)", () => {
 });
 
 test("owned when/enablement/config keys do not use old prefix", () => {
-  const blob = JSON.stringify(contributes);
+  const blob = JSON.stringify(contributes).replaceAll(compatibilityCommand, "pdfWorkshop.bridge.envelope");
   assert.equal(blob.includes(retiredPrefix), false);
   for (const key of Object.keys(contributes.configuration.properties)) {
     assert.equal(key.startsWith(SETTING_PREFIX), true);

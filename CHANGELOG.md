@@ -3,6 +3,12 @@
 ## Unreleased
 
 - The extension was renamed from Agent PDF Viewer (EmbedPDF) to PDF Workshop (package `vscode-pdf-workshop`).
+- `vscodeEmbedPdf.bridge.envelope` returns a Workbench v1 selection envelope
+  (`producer: "pdf"`) matching Markdown Workshop's `BridgeEnvelope`
+  (`capturedAt`, `source.identity` / `kind` / `media`, `locator`, `view`,
+  `selection`, `revision`). Workshop may call this command; this command does
+  not call Workshop back. Copy Link for Agent's clipboard text is unchanged.
+  See `docs/bridge-envelope.md`.
 - Memory-only, per-pane PDF location history: Back to Previous Location / Forward
   to Next Location restore page coordinates, zoom and view mode after deliberate
   jumps. Separate from page stepping and native file navigation; no keybindings changed.

@@ -10,6 +10,7 @@ import * as vscode from './support/fake-vscode';
 import { registerAgentBridge } from '../../src/extension/plugins/agentBridge/mcp/controller';
 import { routeLabel, startAgentBridge, type ServerOptions } from '../../src/extension/plugins/agentBridge/mcp/server';
 import type { AgentHandoff } from '../../src/extension/plugins/agentBridge/handoff';
+import { LastPdf } from '../../src/extension/plugins/agentBridge/last-pdf';
 import type { PdfPanels } from '../../src/extension/plugins/pdf/panels';
 
 /**
@@ -43,7 +44,7 @@ function options(extra: Partial<ServerOptions> = {}): ServerOptions {
   return {
     extensionUri: vscode.Uri.file('/nonexistent-extension') as never,
     shim: path.join(folder, 'shim', 'bridge-stdio.js'),
-    panels: panels(0),
+    lastPdf: new LastPdf(panels(0)),
     handoff,
     log,
     discoveryDir: path.join(folder, 'bridges'),
@@ -170,6 +171,7 @@ test('the controller disposed while the server starts leaves no listener, file o
     extensionUri: vscode.Uri.file('/nonexistent-extension') as never,
     globalStorageUri: vscode.Uri.file(folder) as never,
     panels: panels(1),
+    lastPdf: new LastPdf(panels(1)),
     handoff,
     log,
     discoveryDir: path.join(folder, 'bridges'),
@@ -188,6 +190,7 @@ test('the controller disposed while the bridge runs waits for it to stop', async
     extensionUri: vscode.Uri.file('/nonexistent-extension') as never,
     globalStorageUri: vscode.Uri.file(folder) as never,
     panels: panels(1),
+    lastPdf: new LastPdf(panels(1)),
     handoff,
     log,
     discoveryDir: path.join(folder, 'bridges'),

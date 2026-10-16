@@ -8,37 +8,13 @@ import * as vscode from 'vscode';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { notePayload, noteReference } from '../../../../shared/note-reference';
-import type { PdfPanel } from '../../pdf/panel';
-import type { PdfPanels } from '../../pdf/panels';
 import { OPEN_LOCATION_COMMAND_ID } from '../../pdf/registered-commands';
 import type { AgentHandoff } from '../handoff';
+import { LastPdf } from '../last-pdf';
 
 export const MARKDOWN_WORKBENCH_ID = 't04dj14n9.vscode-markdown-workbench';
 
-/**
- * Remembers the PDF editor the user last looked at. When they switch to an
- * agent's chat to ask about it, no PDF is the active tab any more.
- */
-export class LastPdf implements vscode.Disposable {
-  private last: PdfPanel | undefined;
-  private readonly subscription: vscode.Disposable;
-
-  constructor(private readonly panels: PdfPanels) {
-    this.subscription = panels.onDidChange(() => {
-      if (panels.active) this.last = panels.active;
-    });
-  }
-
-  get panel(): PdfPanel | undefined {
-    if (this.panels.active) return this.panels.active;
-    if (this.last && this.panels.all.includes(this.last)) return this.last;
-    return this.panels.all.find(panel => panel.selection);
-  }
-
-  dispose(): void {
-    this.subscription.dispose();
-  }
-}
+export { LastPdf };
 
 type Content =
   | { type: 'text'; text: string }

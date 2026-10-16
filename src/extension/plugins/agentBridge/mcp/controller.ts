@@ -18,6 +18,7 @@ import * as vscode from 'vscode';
 import type { PdfPanels } from '../../pdf/panels';
 import { AGENT_BRIDGE_COMMAND_IDS } from '../../pdf/registered-commands';
 import type { AgentHandoff } from '../handoff';
+import type { LastPdf } from '../last-pdf';
 import { SERVER_NAME } from './constants';
 import type { BridgeLog, RunningBridge } from './server';
 
@@ -30,6 +31,8 @@ export interface BridgeOptions {
   extensionUri: vscode.Uri;
   globalStorageUri: vscode.Uri;
   panels: PdfPanels;
+  /** Plugin-owned LastPdf shared with the envelope command. */
+  lastPdf: LastPdf;
   handoff: AgentHandoff;
   log: BridgeLog;
   /** See ServerOptions.discoveryDir. */

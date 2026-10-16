@@ -56,7 +56,7 @@ for (const plugin of plugins) {
 
 test('the whole catalog starts and stops without leaving a registration', async () => {
   const registered = await startAndStop();
-  for (const kind of ['customEditor:pdfWorkshop.viewer', 'command:pdfWorkshop.copyLinkForAgent', 'command:pdfWorkshop.copyMcpSetup']) {
+  for (const kind of ['customEditor:pdfWorkshop.viewer', 'command:pdfWorkshop.copyLinkForAgent', 'command:vscodeEmbedPdf.bridge.envelope', 'command:pdfWorkshop.copyMcpSetup']) {
     assert.ok(registered.includes(kind), kind);
   }
 });

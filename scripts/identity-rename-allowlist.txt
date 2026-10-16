@@ -9,3 +9,17 @@ CHANGELOG.md	renamed from Agent PDF Viewer
 docs/HANDOFF_OPENAI.md	https://github.com/t04dJ14n9/vscode-embedPDF
 docs/HANDOFF_OPENAI.md	| vscode-embedPDF | PDF viewer extension
 docs/HANDOFF_OPENAI.md	### vscode-embedPDF
+
+# Public bridge command is a compatibility contract with peer extensions.
+AGENTS.md	vscodeEmbedPdf.bridge.envelope
+CHANGELOG.md	vscodeEmbedPdf.bridge.envelope
+README.md	vscodeEmbedPdf.bridge.envelope
+docs/bridge-envelope.md	vscodeEmbedPdf.bridge.envelope
+package.json	vscodeEmbedPdf.bridge.envelope
+src/extension/plugins/agentBridge/envelope.ts	vscodeEmbedPdf.bridge.envelope
+src/extension/plugins/agentBridge/plugin.ts	vscodeEmbedPdf.bridge.envelope
+src/shared/bridge-envelope.ts	vscodeEmbedPdf.bridge.envelope
+test/unit/bridge-envelope-publish.test.ts	vscodeEmbedPdf.bridge.envelope
+test/unit/bridge-envelope.test.ts	vscodeEmbedPdf.bridge.envelope
+test/unit/contributions.test.ts	vscodeEmbedPdf.bridge.envelope
+test/unit/plugin-leaks.test.ts	vscodeEmbedPdf.bridge.envelope

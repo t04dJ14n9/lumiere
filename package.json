@@ -25,7 +25,8 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onCommand:vscodeEmbedPdf.bridge.envelope"
   ],
   "capabilities": {
     "untrustedWorkspaces": {
@@ -141,6 +142,11 @@
         "category": "PDF",
         "icon": "$(comment-discussion)",
         "enablement": "pdfWorkshop.hasSelection"
+      },
+      {
+        "command": "vscodeEmbedPdf.bridge.envelope",
+        "title": "Selection Envelope",
+        "category": "PDF"
       },
       {
         "command": "pdfWorkshop.openLocation",
@@ -540,6 +546,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "vscodeEmbedPdf.bridge.envelope",
+          "when": "false"
+        },
         {
           "command": "pdfWorkshop.expandOutline",
           "when": "false"

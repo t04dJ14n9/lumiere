@@ -15,6 +15,9 @@ with exact page-and-box locations. Read README.md for the layout.
   and the handoff format identical to Markdown Workbench's:
   `docs/agent-handoff-format.md` and `test/fixtures/agent-handoff-format.json`
   are byte-identical in both repositories (a test pins their hashes).
+  The structured selection envelope is a separate contract
+  (`docs/bridge-envelope.md`, command `vscodeEmbedPdf.bridge.envelope`) and
+  does not change that clipboard text.
 - Features are plugins (`src/extension/plugins/<id>/`, listed in
   `catalog.ts`). Register every VS Code resource through the plugin's scope
   so it is released when the plugin stops; `test/unit/plugin-leaks.test.ts`

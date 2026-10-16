@@ -20,6 +20,7 @@ import type { ViewSettings } from "../../../shared/view-settings";
 import { PdfNavigation } from "./navigation";
 import { PdfSelectionState, type SelectionSnapshot } from "./selection";
 import { PdfSource } from "./source";
+import { createPdfViewId } from "./view-id";
 import { viewerHtml } from "./webview-html";
 
 /** Messages the panel leaves to plugins (see `PdfPanels.handle`). */
@@ -52,6 +53,11 @@ export interface PanelOptions {
  * `PanelOptions.route`.
  */
 export class PdfPanel implements vscode.Disposable {
+  /**
+   * Temporary id of this pane. Not the file path and not a `#page=` locator:
+   * two panes can show the same PDF, and the id dies with this pane.
+   */
+  readonly viewId = createPdfViewId();
   /** The outline, or `undefined` while the viewer is still reading it. */
   outline: OutlineItem[] | undefined;
   /** Page and zoom as the viewer last reported them; `undefined` until it has the PDF. */

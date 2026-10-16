@@ -11,6 +11,13 @@ interface Contributes {
 
 const { contributes } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { contributes: Contributes };
 
+test('the selection envelope command is contributed and hidden from the palette', () => {
+  assert.ok(contributes.commands.some(entry => entry.command === 'vscodeEmbedPdf.bridge.envelope'));
+  const palette = (contributes.menus.commandPalette as { command: string; when?: string }[]).find(entry => entry.command === 'vscodeEmbedPdf.bridge.envelope');
+  assert.equal(palette?.when, 'false');
+  assert.equal((contributes.keybindings ?? []).some(entry => entry.command === 'vscodeEmbedPdf.bridge.envelope'), false);
+});
+
 test('Copy Link for Agent is the only agent command; Copy for Agent and Ask Agent are gone', () => {
   const commands = contributes.commands.map(entry => entry.command);
   assert.ok(commands.includes('pdfWorkshop.copyLinkForAgent'));

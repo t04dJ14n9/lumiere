@@ -16,11 +16,15 @@ class Uri {
   static joinPath(base: Uri, ...parts: string[]): Uri { return new Uri(path.join(base.path, ...parts)); }
   static parse(value: string): Uri {
     const url = new URL(value);
-    return new Uri(url.pathname, url.hash.slice(1));
+    // Decode %23 etc. so fsPath matches the real file (VS Code Uri does this).
+    return new Uri(decodeURIComponent(url.pathname), url.hash.slice(1));
   }
   get fsPath(): string { return this.path; }
   with(change: { fragment: string }): Uri { return new Uri(this.path, change.fragment); }
-  toString(): string { return `file://${this.path}${this.fragment ? `#${this.fragment}` : ''}`; }
+  toString(): string {
+    const encoded = this.path.replaceAll('#', '%23').replaceAll('?', '%3F');
+    return `file://${encoded}${this.fragment ? `#${this.fragment}` : ''}`;
+  }
 }
 
 class Disposable {
@@ -86,7 +90,15 @@ function harness() {
   const registration = register({
     waitFor: async (file: Uri) => ({ goTo: (location: { page: number }) => { jumps.push({ file: file.path, page: location.page }); } }),
   });
-  return { opened, jumps, warnings, registration, invoke: (file: string, page = 2) => invoke!(file, { page }) };
+  return {
+    opened,
+    jumps,
+    warnings,
+    registration,
+    invoke: (file: string, page = 2) => invoke!(file, { page }),
+    /** Open from a single durable link; page/box come from the URI fragment. */
+    invokeLink: (link: string) => invoke!(link),
+  };
 }
 
 async function microtasks(): Promise<void> {
@@ -139,5 +151,17 @@ test('a rejected older native open does not poison the queue for the newest requ
   assert.match(failed.message, /old editor failed/);
   assert.equal(await b, true);
   assert.deepEqual(state.jumps, [{ file: '/b.pdf', page: 7 }]);
+  state.registration.dispose();
+});
+
+test('a durable locator with # in the filename round-trips through openLocation', async () => {
+  const state = harness();
+  const link = 'file:///work/papers/report%23draft.pdf#page=3&viewrect=10,20,20,20';
+  const done = state.invokeLink(link);
+  await microtasks();
+  assert.deepEqual(state.opened.map(request => request.file), ['/work/papers/report#draft.pdf']);
+  state.opened[0]!.resolve();
+  assert.equal(await done, true);
+  assert.deepEqual(state.jumps, [{ file: '/work/papers/report#draft.pdf', page: 3 }]);
   state.registration.dispose();
 });

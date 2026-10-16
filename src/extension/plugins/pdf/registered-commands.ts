@@ -1,3 +1,5 @@
+import { PDF_BRIDGE_ENVELOPE_COMMAND } from '../../../shared/bridge-envelope';
+
 /**
  * Command ids passed to `vscode.commands.registerCommand`.
  * Each registration site imports from here. `contributes.commands` must
@@ -80,6 +82,7 @@ export const IDE_CONTEXT_COMMAND_IDS = {
 export const AGENT_BRIDGE_COMMAND_IDS = {
   copyLinkForAgent: "pdfWorkshop.copyLinkForAgent",
   copyMcpSetup: "pdfWorkshop.copyMcpSetup",
+  envelope: PDF_BRIDGE_ENVELOPE_COMMAND,
 } as const;
 
 export const RUNTIME_COMMAND_IDS: readonly string[] = [

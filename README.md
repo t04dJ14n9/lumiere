@@ -215,6 +215,17 @@ it at once; no reload is needed.
 This is a prototype: the Cursor registration uses an undocumented API, and
 only the on/off switch has an end-to-end test.
 
+## Selection envelope
+
+Other extensions can ask for the current PDF selection as data, without the
+clipboard. `vscodeEmbedPdf.bridge.envelope` returns a Workbench v1 envelope
+(`producer` `"pdf"`) for the PDF you last looked at: the same shape Markdown
+Workshop's `parseBridgeEnvelope` already consumes (`capturedAt`,
+`source.identity` / `kind` / `media`, `locator`, `view`, `selection`,
+`revision`). Markdown Workshop is the aggregator and may call this command;
+this command does not call Workshop back. Copy Link for Agent still copies
+the same source-link text. See [docs/bridge-envelope.md](docs/bridge-envelope.md).
+
 ## Opening a location from another extension
 
 ```ts

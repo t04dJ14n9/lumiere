@@ -32,10 +32,10 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { tokenScrubber } from './scrub';
-import type { PdfPanels } from '../../pdf/panels';
 import type { AgentHandoff } from '../handoff';
+import type { LastPdf } from '../last-pdf';
 import { DISCOVERY_DIR, PROVIDER_ID, SERVER_NAME, type BridgeInfo } from './constants';
-import { createBridgeServer, LastPdf } from './tools';
+import { createBridgeServer } from './tools';
 
 /** How long open connections get to finish when the bridge stops. */
 const SHUTDOWN_GRACE_MS = 2000;
@@ -56,7 +56,8 @@ export interface ServerOptions {
   extensionUri: vscode.Uri;
   /** Where the stable copy of the stdio shim goes. */
   shim: string;
-  panels: PdfPanels;
+  /** Plugin-owned tracker shared with the envelope command (do not dispose here). */
+  lastPdf: LastPdf;
   handoff: AgentHandoff;
   log: BridgeLog;
   /** Where to announce the bridge for the stdio shim; tests use a temp folder. */
@@ -107,15 +108,13 @@ export function routeLabel(url: string | undefined): string {
 }
 
 async function listen(options: ServerOptions, undo: Undo[], token: string, scrub: (text: string) => string): Promise<RunningBridge> {
-  const { panels, handoff, shim } = options;
+  const { lastPdf, handoff, shim } = options;
   const discoveryDir = options.discoveryDir ?? DISCOVERY_DIR;
   const log: BridgeLog = {
     info: message => options.log.info(scrub(message)),
     warn: message => options.log.warn(scrub(message)),
     error: message => options.log.error(scrub(message)),
   };
-  const lastPdf = new LastPdf(panels);
-  undo.push(() => lastPdf.dispose());
 
   const requests = new Set<Promise<void>>();
   const httpServer = http.createServer((req, res) => {

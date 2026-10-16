@@ -55,6 +55,7 @@ function regionPanel(image: string): PdfPanel {
   const snapshot: SelectionSnapshot = {
     selection: { kind: 'region', page: 9, rect: [92, 126, 519, 387], text: 'base 6 512 2048' },
     sha256: '9f86d0',
+    selectedAt: '2026-10-11T12:00:00.000Z',
     image,
   };
   const panel = { uri: vscode.Uri.file('/work/papers/attention.pdf'), selectionSnapshot: () => snapshot };
