@@ -19,7 +19,9 @@ import {
 import type { AgentTargetSetting } from "../../../shared/agent-target";
 
 const nodeTempFs: TempFs = {
-  mkdir: (p, o) => fs.mkdir(p, { recursive: true, mode: o?.mode }),
+  mkdir: async (p, o) => {
+    await fs.mkdir(p, { recursive: true, mode: o?.mode });
+  },
   writeFile: (p, data, o) => fs.writeFile(p, data, { mode: o?.mode }),
   rename: (a, b) => fs.rename(a, b),
   readFile: (p) => fs.readFile(p),
@@ -54,12 +56,14 @@ export const ideContextPlugin: PluginDefinition<PdfServices> = {
           const packet = buildPdfIdeContextPacket({
             uri: panel.uri.toString(),
             selection: selected?.selection,
-            sourceSha256: selected?.sha256,
+            ...(selected ? { sourceSha256: selected.sha256 } : {}),
             host: createVsCodeIdeContextHost(vscode),
           });
           await copyIdeContext(
             packet,
-            (t) => vscode.env.clipboard.writeText(t),
+            async (t) => {
+              await vscode.env.clipboard.writeText(t);
+            },
             (m) => {
               void vscode.window.showInformationMessage(m);
             },
@@ -81,7 +85,7 @@ export const ideContextPlugin: PluginDefinition<PdfServices> = {
           const packet = buildPdfIdeContextPacket({
             uri: panel.uri.toString(),
             selection: selected?.selection,
-            sourceSha256: selected?.sha256,
+            ...(selected ? { sourceSha256: selected.sha256 } : {}),
             host: createVsCodeIdeContextHost(vscode),
           });
           const setting = vscode.workspace
@@ -91,8 +95,10 @@ export const ideContextPlugin: PluginDefinition<PdfServices> = {
           await sendIdeContext(packet, {
             setting: setting as IdeContextTargetSetting,
             commands,
-            clipboardWrite: (t) => vscode.env.clipboard.writeText(t),
-            executeCommand: (id, ...args) =>
+            clipboardWrite: async (t) => {
+              await vscode.env.clipboard.writeText(t);
+            },
+            executeCommand: async (id, ...args) =>
               vscode.commands.executeCommand(id, ...args),
             showQuickPick: async (items) => {
               const pick = await vscode.window.showQuickPick(

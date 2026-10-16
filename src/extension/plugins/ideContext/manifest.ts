@@ -5,5 +5,5 @@ export default defineManifest({
   title: "IDE Context",
   capabilities: ["agentHandoff", "commands"],
   requires: ["pdf"],
-  optional: ["pdfRegions", "handoff"],
+  optional: ["pdfRegions", "agentBridge"],
 });
