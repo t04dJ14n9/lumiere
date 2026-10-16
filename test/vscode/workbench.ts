@@ -13,6 +13,11 @@ export const QUICK_INPUT =
 /** CDP can drive a background window whose native focus-dependent UI is hidden. */
 export async function focusWorkbench(page: Page) {
   await page.bringToFront();
+  // Closing the last editor can leave focus on Electron's window chrome.
+  // Activating the window alone does not return focus to its document.
+  if (!(await page.evaluate(() => document.hasFocus()))) {
+    await page.locator(".part.statusbar").click({ position: { x: 5, y: 5 } });
+  }
   await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(true);
 }
 /**

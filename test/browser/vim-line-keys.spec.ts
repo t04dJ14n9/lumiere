@@ -107,6 +107,11 @@ for (const input of inputs) {
     await page.keyboard.insertText("  ");
     await page.keyboard.press("Escape");
     const text = "  alpha beta";
+    // The host acknowledges cell edits asynchronously. Wait for this edit
+    // before snapshotting the source that subsequent motions must preserve.
+    await expect
+      .poll(() => page.evaluate(() => window.harness.text))
+      .toContain("|   alpha beta |");
     const editedSource = await page.evaluate(() => window.harness.text);
     await shiftedKey(page, input.end, "Digit4");
     await expect

@@ -160,7 +160,10 @@ export class Fiber<C = unknown> {
     }
     this.state = "disposed";
     this.runtime.fibers.delete(this as Fiber<unknown>);
+    // Detaching releases the parent's held fiber and re-enters dispose().
+    // Install the stop barrier first so that release joins this teardown.
+    const stopped = this.stop();
     void this.detach?.();
-    await this.stop();
+    await stopped;
   }
 }
