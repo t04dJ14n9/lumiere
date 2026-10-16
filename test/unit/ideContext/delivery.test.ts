@@ -32,7 +32,7 @@ const both = new Set([
 ]);
 
 test("copy command never enters send resolution", async () => {
-  let executed = 0;
+  const executed = 0;
   const md = await copyIdeContext(
     mwPacket(),
     async () => {},
@@ -44,7 +44,7 @@ test("copy command never enters send resolution", async () => {
 
 test("both agents → picker shown (never silent open)", async () => {
   let pickerShown = false;
-  let executed: string[] = [];
+  const executed: string[] = [];
   await sendIdeContext(mwPacket(), {
     setting: "auto",
     commands: both,
@@ -173,7 +173,9 @@ test("MW Codex: renewLeaseAtomic called before retry across renewal boundary", a
     executeCommand: async (id) => {
       if (id === AGENT_COMMANDS.codexAddFile) {
         addAttempts++;
-        if (addAttempts === 1) throw new Error("not ready");
+        if (addAttempts === 1) {
+          throw new Error("not ready");
+        }
       }
     },
     showQuickPick: async () => undefined,
@@ -208,7 +210,9 @@ test("MW Codex: on retry renew is after open prep and immediately before add-fil
       if (id === AGENT_COMMANDS.codexAddFile) {
         events.push("addFile");
         addAttempts++;
-        if (addAttempts === 1) throw new Error("not ready");
+        if (addAttempts === 1) {
+          throw new Error("not ready");
+        }
       }
     },
     showQuickPick: async () => undefined,

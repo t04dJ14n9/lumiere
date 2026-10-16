@@ -48,9 +48,15 @@ export function resolveCanonicalActive(
     return { active, warnings };
   }
 
-  if (host.languageId !== undefined) active.languageId = host.languageId;
-  if (host.isDirty !== undefined) active.isDirty = host.isDirty;
-  if (host.caret !== undefined) active.caret = host.caret;
+  if (host.languageId !== undefined) {
+    active.languageId = host.languageId;
+  }
+  if (host.isDirty !== undefined) {
+    active.isDirty = host.isDirty;
+  }
+  if (host.caret !== undefined) {
+    active.caret = host.caret;
+  }
   // Host selection only when product didn't already supply panel selection
   if (!active.selection && host.selection) {
     active.selection = host.selection;

@@ -19,7 +19,7 @@ export async function isReclaimablePayload(
 ): Promise<boolean> {
   const finalPath = join(dir, basename);
   const leasePath = leasePathFor(finalPath);
-  let mtimeMs = 0;
+  let mtimeMs: number;
   try {
     mtimeMs = (await fs.stat(finalPath)).mtimeMs;
   } catch {
@@ -34,69 +34,87 @@ export async function isReclaimablePayload(
   return age >= YOUNG_FILE_MS;
 }
 
-export async function reclaimEligible(
+async function reclaimLeaseStaging(
   fs: TempFs,
   dir: string,
+  names: string[],
   now: () => number,
-  _caps: ReclaimCaps,
 ): Promise<void> {
-  let names: string[] = [];
-  try {
-    names = await fs.readdir(dir);
-  } catch {
-    return;
-  }
-
   // Lease staging/renew leftovers (names like *.lease.staging-* / *.lease.renew-*
   // do NOT endsWith(".lease"), so this pass must run independently of that gate).
   for (const name of names) {
-    if (!name.includes(".lease.staging-") && !name.includes(".lease.renew-"))
+    if (!name.includes(".lease.staging-") && !name.includes(".lease.renew-")) {
       continue;
+    }
     try {
       const st = await fs.stat(join(dir, name));
-      if (now() - st.mtimeMs >= YOUNG_FILE_MS) await fs.unlink(join(dir, name));
+      if (now() - st.mtimeMs >= YOUNG_FILE_MS) {
+        await fs.unlink(join(dir, name));
+      }
     } catch {
       /* */
     }
   }
+}
 
-  // Orphan sidecars (no final payload)
+async function reclaimOrphanSidecars(
+  fs: TempFs,
+  dir: string,
+  names: string[],
+  now: () => number,
+): Promise<void> {
   for (const name of names) {
-    if (!name.endsWith(".lease")) continue;
-    const payloadName = name.slice(0, -".lease".length);
-    const payloadExists = names.includes(payloadName);
-    if (!payloadExists) {
-      // orphan sidecar: keep if valid future leaseUntil
-      try {
-        const raw = await fs.readFile(join(dir, name));
-        const lease = parseLease(raw);
-        if (!lease || Date.parse(lease.leaseUntil) <= now()) {
-          await fs.unlink(join(dir, name));
-        }
-      } catch {
-        try {
-          await fs.unlink(join(dir, name));
-        } catch {
-          /* */
-        }
-      }
+    if (!name.endsWith(".lease")) {
+      continue;
     }
-  }
-
-  // Stale staging payloads
-  for (const name of names) {
-    if (name.endsWith(".partial") || name.endsWith(".tmp")) {
+    const payloadName = name.slice(0, -".lease".length);
+    if (names.includes(payloadName)) {
+      continue;
+    }
+    // orphan sidecar: keep if valid future leaseUntil
+    try {
+      const raw = await fs.readFile(join(dir, name));
+      const lease = parseLease(raw);
+      if (!lease || Date.parse(lease.leaseUntil) <= now()) {
+        await fs.unlink(join(dir, name));
+      }
+    } catch {
       try {
-        const st = await fs.stat(join(dir, name));
-        if (now() - st.mtimeMs >= YOUNG_FILE_MS)
-          await fs.unlink(join(dir, name));
+        await fs.unlink(join(dir, name));
       } catch {
         /* */
       }
     }
   }
+}
 
-  // Reclaimable payloads (LRU by mtime among eligible)
+async function reclaimStalePartials(
+  fs: TempFs,
+  dir: string,
+  names: string[],
+  now: () => number,
+): Promise<void> {
+  for (const name of names) {
+    if (!name.endsWith(".partial") && !name.endsWith(".tmp")) {
+      continue;
+    }
+    try {
+      const st = await fs.stat(join(dir, name));
+      if (now() - st.mtimeMs >= YOUNG_FILE_MS) {
+        await fs.unlink(join(dir, name));
+      }
+    } catch {
+      /* */
+    }
+  }
+}
+
+async function reclaimPayloads(
+  fs: TempFs,
+  dir: string,
+  names: string[],
+  now: () => number,
+): Promise<void> {
   const payloads = names.filter(
     (n) =>
       n.startsWith("ide-context-") &&
@@ -106,15 +124,16 @@ export async function reclaimEligible(
   );
   const eligible: { name: string; mtimeMs: number }[] = [];
   for (const n of payloads) {
-    if (await isReclaimablePayload(fs, dir, n, now)) {
-      try {
-        eligible.push({
-          name: n,
-          mtimeMs: (await fs.stat(join(dir, n))).mtimeMs,
-        });
-      } catch {
-        /* */
-      }
+    if (!(await isReclaimablePayload(fs, dir, n, now))) {
+      continue;
+    }
+    try {
+      eligible.push({
+        name: n,
+        mtimeMs: (await fs.stat(join(dir, n))).mtimeMs,
+      });
+    } catch {
+      /* */
     }
   }
   eligible.sort((a, b) => a.mtimeMs - b.mtimeMs);
@@ -130,4 +149,23 @@ export async function reclaimEligible(
       /* */
     }
   }
+}
+
+export async function reclaimEligible(
+  fs: TempFs,
+  dir: string,
+  now: () => number,
+  _caps: ReclaimCaps,
+): Promise<void> {
+  let names: string[];
+  try {
+    names = await fs.listNames(dir);
+  } catch {
+    return;
+  }
+
+  await reclaimLeaseStaging(fs, dir, names, now);
+  await reclaimOrphanSidecars(fs, dir, names, now);
+  await reclaimStalePartials(fs, dir, names, now);
+  await reclaimPayloads(fs, dir, names, now);
 }

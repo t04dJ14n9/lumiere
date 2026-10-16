@@ -40,15 +40,25 @@ export function resolveIdeContextSendTarget(
   const claude = hasClaude(commands);
   const codex = hasCodex(commands);
 
-  if (setting === "claudeCode") return claude ? "claudeCode" : "clipboard";
-  if (setting === "codex") return codex ? "codex" : "clipboard";
+  if (setting === "claudeCode") {
+    return claude ? "claudeCode" : "clipboard";
+  }
+  if (setting === "codex") {
+    return codex ? "codex" : "clipboard";
+  }
   if (setting === "clipboard" || setting === "cursor" || setting === "chat") {
     return "clipboard";
   }
 
   // auto
-  if (claude && codex) return "picker";
-  if (claude && !codex) return "claudeCode";
-  if (codex && !claude) return "codex";
+  if (claude && codex) {
+    return "picker";
+  }
+  if (claude && !codex) {
+    return "claudeCode";
+  }
+  if (codex && !claude) {
+    return "codex";
+  }
   return "clipboard";
 }

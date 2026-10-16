@@ -1,11 +1,8 @@
-import {
-  resolveCanonicalActive,
-  type HostActiveSnapshot,
-  type ProductCanonicalSlice,
-} from "./canonical";
+import { resolveCanonicalActive, type HostActiveSnapshot } from "./canonical";
 import { DEFAULT_CAPS } from "./caps";
 import { scrubPacket } from "./scrub";
 import type {
+  ActiveResource,
   DiagnosticItem,
   IdeContextCaps,
   IdeContextPacket,
@@ -26,9 +23,7 @@ export type ProductGatherSlice =
       product: "markdownWorkshop";
       uri: string;
       markdown: MarkdownContext;
-      selection?: ProductCanonicalSlice extends { selection?: infer S }
-        ? S
-        : never;
+      selection?: ActiveResource["selection"];
     }
   | {
       product: "pdfWorkshop";
@@ -36,34 +31,74 @@ export type ProductGatherSlice =
       pdf: Omit<PdfContext, "uri"> & { uri?: string };
     };
 
+function canonicalUriFor(productSlice: ProductGatherSlice): string {
+  return productSlice.product === "pdfWorkshop"
+    ? (productSlice.pdf.uri ?? productSlice.uri)
+    : productSlice.uri;
+}
+
+function productCanonicalFor(
+  productSlice: ProductGatherSlice,
+  canonicalUri: string,
+) {
+  if (productSlice.product !== "markdownWorkshop") {
+    return { product: "pdfWorkshop" as const, uri: canonicalUri };
+  }
+  return {
+    product: "markdownWorkshop" as const,
+    uri: canonicalUri,
+    ...(productSlice.selection !== undefined
+      ? { selection: productSlice.selection }
+      : {}),
+  };
+}
+
+function assemblePacket(
+  productSlice: ProductGatherSlice,
+  canonicalUri: string,
+  base: Omit<IdeContextPacket, "product" | "markdown" | "pdf">,
+): IdeContextPacket {
+  if (productSlice.product === "markdownWorkshop") {
+    return {
+      ...base,
+      product: "markdownWorkshop",
+      markdown: productSlice.markdown,
+    };
+  }
+  return {
+    ...base,
+    product: "pdfWorkshop",
+    pdf: {
+      ...productSlice.pdf,
+      uri: canonicalUri,
+      selection: productSlice.pdf.selection,
+    },
+  };
+}
+
 export function gatherIdeContext(
   hostApis: IdeContextHostApis,
   productSlice: ProductGatherSlice,
   caps: IdeContextCaps = DEFAULT_CAPS,
 ): IdeContextPacket {
   const collectedAt = (hostApis.now?.() ?? new Date()).toISOString();
-  const canonicalUri =
-    productSlice.product === "pdfWorkshop"
-      ? (productSlice.pdf.uri ?? productSlice.uri)
-      : productSlice.uri;
-
+  const canonicalUri = canonicalUriFor(productSlice);
+  const hostSnapshot: HostActiveSnapshot =
+    hostApis.activeTextEditor !== undefined
+      ? { activeTextEditor: hostApis.activeTextEditor }
+      : {};
   const { active, warnings } = resolveCanonicalActive(
-    productSlice.product === "markdownWorkshop"
-      ? {
-          product: "markdownWorkshop",
-          uri: canonicalUri,
-          selection: productSlice.selection,
-        }
-      : { product: "pdfWorkshop", uri: canonicalUri },
-    { activeTextEditor: hostApis.activeTextEditor },
+    productCanonicalFor(productSlice, canonicalUri),
+    hostSnapshot,
   );
-
   const diagItems = gatherDiagnostics(hostApis, canonicalUri, warnings);
   const tabs = gatherTabs(hostApis, warnings);
   const base = {
     version: 1 as const,
     collectedAt,
-    workspace: hostApis.workspace,
+    ...(hostApis.workspace !== undefined
+      ? { workspace: hostApis.workspace }
+      : {}),
     active,
     tabs: {
       visible: tabs.visible,
@@ -78,26 +113,8 @@ export function gatherIdeContext(
     warnings,
     caps,
   };
-
-  const packet: IdeContextPacket =
-    productSlice.product === "markdownWorkshop"
-      ? {
-          ...base,
-          product: "markdownWorkshop",
-          markdown: productSlice.markdown,
-        }
-      : {
-          ...base,
-          product: "pdfWorkshop",
-          pdf: {
-            ...productSlice.pdf,
-            uri: canonicalUri,
-            selection: productSlice.pdf.selection,
-          },
-        };
-
   // Gathering may scrub; render still re-scrubs (idempotent).
-  return scrubPacket(packet);
+  return scrubPacket(assemblePacket(productSlice, canonicalUri, base));
 }
 
 function gatherTabs(

@@ -12,27 +12,29 @@ const PINNED: Record<string, string> = {
   "test/fixtures/ide-context-packet.json":
     "e679afc5445527f24a3483c3de53bd2e1ecd1256ef769c11067f7a0623002e15",
   "src/shared/ide-context/canonical.ts":
-    "a7c103d2288fe41dad334dd7577721762ac1fe588ac801157ac713c2d8138814",
+    "4d97b9adfb0a346e1cd66168abcf6115c9038913ca5443e26dc251d32d0cfc27",
   "src/shared/ide-context/caps.ts":
     "541258fc320412a4eeb30d7fba7cf779e50f8b7245a7907707b971ccdeb5e712",
   "src/shared/ide-context/gather.ts":
-    "c5ead66997ffe5053870dcfb572cd7eb5f645915ab6b86209d326634fc6de0dd",
+    "3ced13fa744c0f9691453bc434ae17f642a6fd0d7629cd96e1d357f32bcc983f",
   "src/shared/ide-context/index.ts":
     "4f8ddbe26ddc09edbccf30c33f3de3636b3842660b7ba52b8dce2672bfa88ae5",
   "src/shared/ide-context/render.ts":
-    "f06280ca2be861b2c094918a510f3a805ba6a4887e474b88bc2859a49d8d81f8",
+    "16415de8c6a06b174de5af1fb6eacfc3133d97c105dead745b6bf334a3d75c61",
   "src/shared/ide-context/resolve-target.ts":
-    "df2c67d3a76bda1eeaff10e0615f9b800581291105b4521189ad77658b2e0a30",
+    "8a5ec640d19b2818877101c53a67e0b71aa8d70bbb215c134e8166142415943b",
   "src/shared/ide-context/scrub.ts":
-    "fcc827400df54872f1055e47d63513bcac0d109781176928d7217e9c244fc0cb",
+    "fc6a726ea58a5aa502bf60dac56c8de2dcb27b0bbd00ddb1e5c01ec54d905f88",
   "src/shared/ide-context/temp-lease.ts":
-    "d6a945c18152e9597cf133e72db97e8d2ee9b49e401f8348b84497f9d2c4c732",
+    "e3bb7c3b4e3adf02fe31cd743b7f300b3437776fb5fcb7b174158681fb15010a",
   "src/shared/ide-context/temp-publish.ts":
-    "d8e95e41daf572e6b6c884b556dbb8c1dce717d52fbc2565bbd299cb7a8c045d",
+    "b85cba56f90bfb8143baa269585cbca82ba44b7d54ab5bcf1837c7348fb53f40",
   "src/shared/ide-context/temp-reclaim.ts":
-    "a958406589e1dd0adccc0c24a4ee0d6674cdfc3608d1e75e4f87256911f7ecd7",
+    "fad156c0eebca14812abb748ebc38afae9e0a0784af2904fc295a77fc0df5d6b",
   "src/shared/ide-context/truncate.ts":
-    "c303d1777c05636ae3f1532e0f296b16a8ffab6c88bb6e06694219d2d2bedab2",
+    "e0716ec68808af89702155b6d9bed7397bfe0dd1ad47371206950a6714d79c20",
+  "src/shared/ide-context/truncate-fields.ts":
+    "a529eabf733d4e7f5c130af94b1f5e24c973e88ac2df6b9a13d7f5a02e5397fa",
   "src/shared/ide-context/types.ts":
     "e6186c6d570840ca534cb3720c0d3cb1784d43ae86f34110dafe87449d4e7a22",
 };

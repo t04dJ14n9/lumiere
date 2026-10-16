@@ -77,11 +77,18 @@ export function scrubPacket(packet: IdeContextPacket): IdeContextPacket {
   const maxUri = packet.caps.maxUriChars;
   const maxMsg = packet.caps.maxDiagnosticMessageChars;
 
-  const next: IdeContextPacket = {
-    ...packet,
-    active: packet.active
-      ? { ...packet.active, uri: scrubUri(packet.active.uri, maxUri) }
-      : packet.active,
+  const shared = {
+    version: packet.version,
+    collectedAt: packet.collectedAt,
+    ...(packet.workspace !== undefined ? { workspace: packet.workspace } : {}),
+    ...(packet.active
+      ? {
+          active: {
+            ...packet.active,
+            uri: scrubUri(packet.active.uri, maxUri),
+          },
+        }
+      : {}),
     tabs: {
       ...packet.tabs,
       visible: packet.tabs.visible.map((u) => scrubUri(u, maxUri)),
@@ -100,19 +107,18 @@ export function scrubPacket(packet: IdeContextPacket): IdeContextPacket {
 
   if (packet.product === "markdownWorkshop") {
     return {
-      ...next,
-      product: "markdownWorkshop",
+      ...shared,
+      product: "markdownWorkshop" as const,
       markdown: { ...packet.markdown },
     };
   }
 
   return {
-    ...next,
-    product: "pdfWorkshop",
+    ...shared,
+    product: "pdfWorkshop" as const,
     pdf: {
       ...packet.pdf,
       uri: scrubUri(packet.pdf.uri, maxUri),
-      citeMarkdown: packet.pdf.citeMarkdown,
       selection: packet.pdf.selection,
     },
   };

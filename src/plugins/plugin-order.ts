@@ -56,8 +56,6 @@ export const FEATURE_ORDER = [
   "formatting",
   "pasteHtml",
   "agentBridge",
-  // After agentBridge, before cursorBridge: deeper IDE context for Claude/Codex.
-  "ideContext",
   // After agentBridge: Cursor Chat/Edit is a separate handoff surface.
   "cursorBridge",
   // Match VS Code: line numbers to the left of fold markers.
@@ -87,6 +85,8 @@ export const WORKBENCH_FEATURE_ORDER = [
   "linkUpdates",
   // Bridge before wiki: wiki copy reads the bridge, and does not inject back.
   "bridge",
+  // Host-only IDE context handoff (no webview half); sits with bridge.
+  "ideContext",
   "wiki",
   "assets",
   "scratch",

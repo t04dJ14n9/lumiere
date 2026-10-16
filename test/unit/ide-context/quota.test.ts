@@ -21,7 +21,7 @@ test("quota full of leased finals soft-fails new publish without unlinking lease
       sessionId: `fill-${i}`,
     });
   }
-  const before = (await fs.readdir(dir)).filter(
+  const before = (await fs.listNames(dir)).filter(
     (n) => n.endsWith(".json") && !n.includes(".partial"),
   );
   assert.equal(before.length, 8);

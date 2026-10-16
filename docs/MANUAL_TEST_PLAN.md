@@ -959,6 +959,8 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkshop.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
 | `markdownWorkshop.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
 | `markdownWorkshop.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `markdownWorkshop.ideContext.copy` — Copy IDE Context | unbound | On a disposable fixture, run Copy IDE Context; confirm clipboard markdown includes active/tabs/diagnostics and no agent opens. Repeat after disable/re-enable. |
+| `markdownWorkshop.ideContext.send` — Send IDE Context to Agent… | unbound | On a disposable fixture, run Send IDE Context to Agent…; confirm clipboard always updates and agent open follows forced/sole-agent/picker rules (never silent-guess). |
 | `markdownWorkshop.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 | `markdownWorkshop.insertCallout` — Insert Callout | unbound | On a disposable fixture, run Insert Callout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
@@ -1067,6 +1069,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkshop.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkshop.plugins.ideContext.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.plugins.callouts.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.plugins.codeBlocks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

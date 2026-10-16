@@ -20,16 +20,6 @@ export interface MwIdeContextInput {
 export function buildMwIdeContextPacket(
   input: MwIdeContextInput,
 ): IdeContextPacket {
-  const selection = input.selection
-    ? {
-        from: input.selection.from,
-        to: input.selection.to,
-        startLine: input.selection.startLine,
-        endLine: input.selection.endLine,
-        text: input.selection.text,
-        truncated: false,
-      }
-    : undefined;
   return gatherIdeContext(
     input.host,
     {
@@ -39,7 +29,18 @@ export function buildMwIdeContextPacket(
         editorKind: input.editorKind,
         ...(input.panelId ? { panelId: input.panelId } : {}),
       },
-      selection,
+      ...(input.selection
+        ? {
+            selection: {
+              from: input.selection.from,
+              to: input.selection.to,
+              startLine: input.selection.startLine,
+              endLine: input.selection.endLine,
+              text: input.selection.text,
+              truncated: false,
+            },
+          }
+        : {}),
     },
     input.caps ?? DEFAULT_CAPS,
   );

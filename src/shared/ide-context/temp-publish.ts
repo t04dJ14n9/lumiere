@@ -16,7 +16,7 @@ const DEFAULT_RECLAIM_CAPS: ReclaimCaps = {
 export interface PublishOpts {
   dir: string;
   basename: string;
-  bytes: Buffer;
+  bytes: Uint8Array;
   owner: LeaseSidecar["owner"];
   sessionId: string;
   now: () => number;
@@ -42,12 +42,11 @@ function join(dir: string, name: string): string {
 async function ensureQuota(
   fs: TempFs,
   dir: string,
-  now: () => number,
-  caps: ReclaimCaps,
-  extraBytes: number,
+  opts: { now: () => number; caps: ReclaimCaps; extraBytes: number },
 ): Promise<{ ok: true } | { skipped: true; warning: string }> {
+  const { now, caps, extraBytes } = opts;
   await reclaimEligible(fs, dir, now, caps);
-  const names = await fs.readdir(dir).catch(() => [] as string[]);
+  const names = await fs.listNames(dir).catch(() => [] as string[]);
   const payloads = names.filter(
     (n) =>
       n.startsWith("ide-context-") &&
@@ -70,7 +69,7 @@ async function ensureQuota(
   ) {
     // Try reclaim again; if still full of protected siblings → soft-fail
     await reclaimEligible(fs, dir, now, caps);
-    const names2 = await fs.readdir(dir).catch(() => [] as string[]);
+    const names2 = await fs.listNames(dir).catch(() => [] as string[]);
     const payloads2 = names2.filter(
       (n) =>
         n.startsWith("ide-context-") &&
@@ -120,13 +119,15 @@ export async function commitFinalPayload(
 ): Promise<"ok" | "abort"> {
   for (let attempt = 0; attempt < 8; attempt++) {
     const decision = await revalidateOrRenew(fs, args);
-    if (!decision.ok) return "abort";
+    if (!decision.ok) {
+      return "abort";
+    }
 
     if (args.onAfterFinalRevalidated) {
       // Suspension after successful revalidation — decision becomes stale
       const keep = await args.onAfterFinalRevalidated();
       if (keep === false) {
-        args.onAfterFinalRevalidated = undefined;
+        delete args.onAfterFinalRevalidated;
       }
       // MUST re-run precondition from scratch (stale decision forbidden)
       continue;
@@ -174,7 +175,9 @@ async function revalidateOrRenew(
     }
     // re-read to confirm
     const again = await readLease(fs, args.leasePath);
-    if (again && Date.parse(again.leaseUntil) > args.now()) return { ok: true };
+    if (again && Date.parse(again.leaseUntil) > args.now()) {
+      return { ok: true };
+    }
   } catch {
     return { ok: false };
   }
@@ -188,14 +191,14 @@ export async function publishIdeContextTemp(
   const caps = opts.reclaimCaps ?? DEFAULT_RECLAIM_CAPS;
   await fs.mkdir(opts.dir, { recursive: true, mode: 0o700 });
 
-  const quota = await ensureQuota(
-    fs,
-    opts.dir,
-    opts.now,
+  const quota = await ensureQuota(fs, opts.dir, {
+    now: opts.now,
     caps,
-    opts.bytes.length,
-  );
-  if ("skipped" in quota) return quota;
+    extraBytes: opts.bytes.length,
+  });
+  if ("skipped" in quota) {
+    return quota;
+  }
 
   const finalPath = join(opts.dir, opts.basename);
   const partialPath = `${finalPath}.partial`;
@@ -225,7 +228,9 @@ export async function publishIdeContextTemp(
     sessionId: opts.sessionId,
     now: opts.now,
     leaseMs: opts.leaseMs,
-    onAfterFinalRevalidated: opts.onAfterFinalRevalidated,
+    ...(opts.onAfterFinalRevalidated
+      ? { onAfterFinalRevalidated: opts.onAfterFinalRevalidated }
+      : {}),
   });
 
   if (committed !== "ok") {

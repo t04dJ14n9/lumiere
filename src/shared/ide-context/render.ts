@@ -7,103 +7,161 @@ function prepare(packet: IdeContextPacket): IdeContextPacket {
   return truncatePacket(scrubPacket(packet), packet.caps);
 }
 
-function renderBody(packet: IdeContextPacket): string {
-  const lines: string[] = [];
-  lines.push(`# IDE context (${packet.product}) v1`);
-  lines.push(`Collected: ${packet.collectedAt}`);
-  lines.push("");
-
-  if (packet.active) {
-    lines.push("## Active");
-    lines.push(`- URI: ${packet.active.uri}`);
-    if (packet.active.languageId)
-      lines.push(`- Language: ${packet.active.languageId}`);
-    if (packet.active.isDirty !== undefined) {
-      lines.push(`- Dirty: ${packet.active.isDirty ? "yes" : "no"}`);
-    }
-    if (packet.active.caret) {
-      lines.push(
-        `- Caret: ${packet.active.caret.line}:${packet.active.caret.character}`,
-      );
-    }
-    if (packet.active.selection) {
-      const s = packet.active.selection;
-      lines.push(
-        `- Selection: L${s.startLine}-L${s.endLine} (offsets ${s.from}-${s.to})${s.truncated ? " [truncated]" : ""}`,
-      );
-      if (s.text) {
-        for (const line of s.text.split("\n")) {
-          lines.push(`> ${line}`);
-        }
+function renderActive(packet: IdeContextPacket, lines: string[]): void {
+  if (!packet.active) {
+    return;
+  }
+  lines.push("## Active");
+  lines.push(`- URI: ${packet.active.uri}`);
+  if (packet.active.languageId) {
+    lines.push(`- Language: ${packet.active.languageId}`);
+  }
+  if (packet.active.isDirty !== undefined) {
+    lines.push(`- Dirty: ${packet.active.isDirty ? "yes" : "no"}`);
+  }
+  if (packet.active.caret) {
+    lines.push(
+      `- Caret: ${packet.active.caret.line}:${packet.active.caret.character}`,
+    );
+  }
+  if (packet.active.selection) {
+    const s = packet.active.selection;
+    lines.push(
+      `- Selection: L${s.startLine}-L${s.endLine} (offsets ${s.from}-${s.to})${s.truncated ? " [truncated]" : ""}`,
+    );
+    if (s.text) {
+      for (const line of s.text.split("\n")) {
+        lines.push(`> ${line}`);
       }
     }
-    lines.push("");
   }
-
-  if (packet.product === "markdownWorkshop") {
-    lines.push("## Markdown");
-    lines.push(`- Editor: ${packet.markdown.editorKind}`);
-    if (packet.markdown.panelId)
-      lines.push(`- Panel: ${packet.markdown.panelId}`);
-    lines.push("");
-  }
-
-  lines.push("## Tabs (visible)");
-  for (const u of packet.tabs.visible) lines.push(`- ${u}`);
-  lines.push("## Tabs (open, capped)");
-  for (const u of packet.tabs.open) lines.push(`- ${u}`);
-  if (packet.tabs.truncated) lines.push("- …truncated");
   lines.push("");
+}
 
+function renderMarkdownSection(
+  packet: IdeContextPacket,
+  lines: string[],
+): void {
+  if (packet.product !== "markdownWorkshop") {
+    return;
+  }
+  lines.push("## Markdown");
+  lines.push(`- Editor: ${packet.markdown.editorKind}`);
+  if (packet.markdown.panelId) {
+    lines.push(`- Panel: ${packet.markdown.panelId}`);
+  }
+  lines.push("");
+}
+
+function renderTabs(packet: IdeContextPacket, lines: string[]): void {
+  lines.push("## Tabs (visible)");
+  for (const u of packet.tabs.visible) {
+    lines.push(`- ${u}`);
+  }
+  lines.push("## Tabs (open, capped)");
+  for (const u of packet.tabs.open) {
+    lines.push(`- ${u}`);
+  }
+  if (packet.tabs.truncated) {
+    lines.push("- …truncated");
+  }
+  lines.push("");
+}
+
+function renderDiagnostics(packet: IdeContextPacket, lines: string[]): void {
   lines.push("## Diagnostics (active file, capped)");
   for (const d of packet.diagnostics.items) {
     lines.push(
       `- ${d.severity} L${d.startLine}:C${d.startCharacter} ${d.message}`,
     );
   }
-  if (packet.diagnostics.truncated) lines.push("- …truncated");
+  if (packet.diagnostics.truncated) {
+    lines.push("- …truncated");
+  }
   lines.push("");
+}
 
-  if (packet.product === "pdfWorkshop") {
-    lines.push("## PDF");
-    lines.push(`- URI: ${packet.pdf.uri}`);
-    if (packet.pdf.page !== undefined) lines.push(`- Page: ${packet.pdf.page}`);
-    if (packet.pdf.citeMarkdown)
-      lines.push(`- Source: ${packet.pdf.citeMarkdown}`);
-    lines.push(`- Selection: ${packet.pdf.selection.kind}`);
-    if (packet.pdf.selection.kind === "text") {
-      lines.push(
-        `- Selected text:${packet.pdf.selection.truncated ? " [truncated]" : ""}`,
-      );
-      for (const line of packet.pdf.selection.text.split("\n"))
-        lines.push(`> ${line}`);
-      if (packet.pdf.selection.rects?.length) {
-        for (const r of packet.pdf.selection.rects) {
-          lines.push(`- Rect: p${r.page} ${r.x},${r.y} ${r.w}x${r.h}`);
-        }
-      }
-    } else if (packet.pdf.selection.kind === "region") {
-      for (const r of packet.pdf.selection.rects) {
-        lines.push(`- Rect: p${r.page} ${r.x},${r.y} ${r.w}x${r.h}`);
-      }
-      if (packet.pdf.selection.regionImagePath) {
-        lines.push(`- Region image: ${packet.pdf.selection.regionImagePath}`);
-      }
-    }
-    if (packet.pdf.viewrect) {
-      const v = packet.pdf.viewrect;
-      lines.push(`- Viewport: ${v.x},${v.y} ${v.w}x${v.h}`);
-    }
-    if (packet.pdf.sourceSha256)
-      lines.push(`- SHA-256: ${packet.pdf.sourceSha256}`);
-    lines.push("");
+function renderPdfTextSelection(
+  packet: Extract<IdeContextPacket, { product: "pdfWorkshop" }>,
+  lines: string[],
+): void {
+  const sel = packet.pdf.selection;
+  if (sel.kind !== "text") {
+    return;
   }
-
-  if (packet.warnings.length > 0) {
-    lines.push("Warnings:");
-    for (const w of packet.warnings) lines.push(`- ${w}`);
+  lines.push(`- Selected text:${sel.truncated ? " [truncated]" : ""}`);
+  for (const line of sel.text.split("\n")) {
+    lines.push(`> ${line}`);
   }
+  if (sel.rects?.length) {
+    for (const r of sel.rects) {
+      lines.push(`- Rect: p${r.page} ${r.x},${r.y} ${r.w}x${r.h}`);
+    }
+  }
+}
 
+function renderPdfRegionSelection(
+  packet: Extract<IdeContextPacket, { product: "pdfWorkshop" }>,
+  lines: string[],
+): void {
+  const sel = packet.pdf.selection;
+  if (sel.kind !== "region") {
+    return;
+  }
+  for (const r of sel.rects) {
+    lines.push(`- Rect: p${r.page} ${r.x},${r.y} ${r.w}x${r.h}`);
+  }
+  if (sel.regionImagePath) {
+    lines.push(`- Region image: ${sel.regionImagePath}`);
+  }
+}
+
+function renderPdf(packet: IdeContextPacket, lines: string[]): void {
+  if (packet.product !== "pdfWorkshop") {
+    return;
+  }
+  lines.push("## PDF");
+  lines.push(`- URI: ${packet.pdf.uri}`);
+  if (packet.pdf.page !== undefined) {
+    lines.push(`- Page: ${packet.pdf.page}`);
+  }
+  if (packet.pdf.citeMarkdown) {
+    lines.push(`- Source: ${packet.pdf.citeMarkdown}`);
+  }
+  lines.push(`- Selection: ${packet.pdf.selection.kind}`);
+  renderPdfTextSelection(packet, lines);
+  renderPdfRegionSelection(packet, lines);
+  if (packet.pdf.viewrect) {
+    const v = packet.pdf.viewrect;
+    lines.push(`- Viewport: ${v.x},${v.y} ${v.w}x${v.h}`);
+  }
+  if (packet.pdf.sourceSha256) {
+    lines.push(`- SHA-256: ${packet.pdf.sourceSha256}`);
+  }
+  lines.push("");
+}
+
+function renderWarnings(packet: IdeContextPacket, lines: string[]): void {
+  if (packet.warnings.length === 0) {
+    return;
+  }
+  lines.push("Warnings:");
+  for (const w of packet.warnings) {
+    lines.push(`- ${w}`);
+  }
+}
+
+function renderBody(packet: IdeContextPacket): string {
+  const lines: string[] = [];
+  lines.push(`# IDE context (${packet.product}) v1`);
+  lines.push(`Collected: ${packet.collectedAt}`);
+  lines.push("");
+  renderActive(packet, lines);
+  renderMarkdownSection(packet, lines);
+  renderTabs(packet, lines);
+  renderDiagnostics(packet, lines);
+  renderPdf(packet, lines);
+  renderWarnings(packet, lines);
   return lines.join("\n");
 }
 

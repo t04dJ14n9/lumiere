@@ -11,13 +11,13 @@ export interface TempFs {
   ): Promise<void>;
   writeFile(
     path: string,
-    data: string | Buffer,
+    data: string | Uint8Array,
     opts?: { mode?: number },
   ): Promise<void>;
   rename(from: string, to: string): Promise<void>;
-  readFile(path: string): Promise<Buffer>;
+  readFile(path: string): Promise<Uint8Array>;
   unlink(path: string): Promise<void>;
-  readdir(dir: string): Promise<string[]>;
+  listNames(dir: string): Promise<string[]>;
   stat(path: string): Promise<{
     mtimeMs: number;
     size: number;
@@ -28,21 +28,23 @@ export interface TempFs {
   renameSync?(from: string, to: string): void;
   writeFileSync?(
     path: string,
-    data: string | Buffer,
+    data: string | Uint8Array,
     opts?: { mode?: number },
   ): void;
-  readFileSync?(path: string): Buffer;
+  readFileSync?(path: string): Uint8Array;
 }
 
 export function leasePathFor(finalPayloadPath: string): string {
   return `${finalPayloadPath}.lease`;
 }
 
-export function parseLease(raw: string | Buffer): LeaseSidecar | undefined {
+export function parseLease(raw: string | Uint8Array): LeaseSidecar | undefined {
   try {
-    const obj = JSON.parse(
-      typeof raw === "string" ? raw : raw.toString("utf8"),
-    ) as LeaseSidecar;
+    const text =
+      typeof raw === "string"
+        ? raw
+        : Array.from(raw, (b) => String.fromCharCode(b)).join("");
+    const obj = JSON.parse(text) as LeaseSidecar;
     if (
       typeof obj?.leaseUntil === "string" &&
       (obj.owner === "markdownWorkshop" || obj.owner === "pdfWorkshop") &&

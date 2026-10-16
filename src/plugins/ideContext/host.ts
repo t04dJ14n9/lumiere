@@ -8,6 +8,7 @@ import type { IdeContextTargetSetting } from "../../shared/ide-context";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
+const { readdir: readTempDir } = fs;
 import * as fssync from "node:fs";
 import {
   createVsCodeIdeContextHost,
@@ -18,12 +19,14 @@ import type { TempFs } from "../../shared/ide-context";
 
 /** Node fs adapter for temp publish. */
 const nodeTempFs: TempFs = {
-  mkdir: (p, o) => fs.mkdir(p, { recursive: true, mode: o?.mode }),
+  mkdir: async (p, o) => {
+    await fs.mkdir(p, { recursive: true, mode: o?.mode });
+  },
   writeFile: (p, data, o) => fs.writeFile(p, data, { mode: o?.mode }),
   rename: (a, b) => fs.rename(a, b),
   readFile: (p) => fs.readFile(p),
   unlink: (p) => fs.unlink(p),
-  readdir: (p) => fs.readdir(p),
+  listNames: (p) => readTempDir(p),
   stat: async (p) => {
     const s = await fs.stat(p);
     return {
@@ -41,6 +44,20 @@ export const ideContextHost: Plugin = {
   inject: { required: ["editors", "selections", "workshop"] },
   apply(ctx) {
     const workshop = ctx.workshop;
+    // Workbench host-only: editor registerActiveContexts does not cover us.
+    const contextReady = workshop
+      .execute("setContext", contributionId("plugin.ideContext"), true)
+      .catch((error) =>
+        ctx.logger.warn("ideContext command context failed", error),
+      );
+    ctx.effect(() => async () => {
+      await contextReady;
+      await workshop.execute(
+        "setContext",
+        contributionId("plugin.ideContext"),
+        undefined,
+      );
+    });
     ctx.effect(() =>
       workshop.command(contributionId("ideContext.copy"), () => runCopy(ctx)),
     );
@@ -62,7 +79,7 @@ async function gatherInput(ctx: Context) {
     uri: panel.document.uri,
     editorKind: "livePreview" as const,
     panelId: panel.id,
-    selection: selection ?? undefined,
+    ...(selection ? { selection } : {}),
     host,
   };
 }

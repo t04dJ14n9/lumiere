@@ -84,7 +84,6 @@ export async function bootstrap(
   root.plugin(codeBlocksHost);
   root.plugin(inlineTitleHost);
   root.plugin(agentBridgeHost);
-  root.plugin(ideContextHost);
   root.plugin(cursorBridgeHost, {
     appName: vscode.env?.appName ?? "",
     surface: createCursorHandoffSurface(),
@@ -113,6 +112,7 @@ function startWindowFeatures(
     wordCountHost,
     linkUpdatesHost,
     bridgeHost,
+    ideContextHost,
     wikiHost,
     assetsHost,
     scratchHost,
