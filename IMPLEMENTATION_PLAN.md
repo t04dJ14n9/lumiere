@@ -554,9 +554,12 @@ unsupported values, current-source control enablement, title visibility,
 long key identity and click routing. Updated the plugin README, parity inventory
 and owner manual scenarios. No browser/native coverage was added or ported.
 
-Checks: changed-file ESLint/Prettier and full typecheck pass; focused units and
-the existing full sequence are queued on the shared suite lock. Native checks
-use the isolated unpackaged harness (no VSIX). Final results pending.
+Checks: focused properties/YAML/Sources units pass (133/133). The committed
+implementation at `0377e84` passes `pnpm check:full` sequentially under the shared
+suite lock with Node 22.20.0: format/lint/typecheck/contributions green, 1,769 unit
+passes and 23 intentional Cordis skips, Chromium 276/276, native VS Code 1.142.0
+23/23. Native checks use a private Xvfb display and the isolated unpackaged
+harness (no VSIX). No browser/native scenarios were added.
 The pinned `~/Code/human-learning` checkout is unavailable; no source repository
 or other worktree was modified. GUI Obsidian↔MW side-by-side verification is
 VERIFY-NEEDED and owned by Grok Bot computerUse. A serialized fallback may lose
