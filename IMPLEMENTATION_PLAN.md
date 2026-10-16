@@ -4737,3 +4737,41 @@ with `MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1`; no VSIX was built or installed.
 Logs and exit records are `wheel-feel-p2-{baseline-regressions,affected-units,check-full}`
 under `/workspace/plans/mw-indent-guides/`. The baseline exit 1 is the expected
 three-test regression proof; affected units and the full gate both exited 0.
+
+### Cursor hunk navigation through native editor reclaim — 2026-10-16
+
+Native text-to-custom transfers now capture the native selection start and
+convert it to the editor's LF coordinates before delivering it to the exact
+opened panel through the existing reveal router and validated links RPC. Cold
+panels wait for registration and their webview session; newer navigation and
+provider disposal cancel pending delivery. Native activation snapshots also
+update in-flight transfers when a cold editor appears after the tab event.
+Native command selection changes cover reused text tabs and repeated hunk jumps during the tab cooldown.
+Explicit Open as Text bypasses and Cursor Edit leases continue to suppress
+reclaim. The bridge registration now belongs to the editor provider's lifecycle.
+
+Unit coverage adds new/existing destinations, same-URI split isolation, late
+selection during warming, CRLF, readiness/recreation, supersession/disposal,
+command-only selection handling and native bypass/lease/association gates. A
+links-host test carries a hunk offset across the validated navigation RPC after
+webview readiness. The owner-run Cursor gesture scenario is documented in
+`docs/MANUAL_TEST_PLAN.md`; no browser/native cases were added or source suites
+ported. Baseline regression and full-check logs are kept with the task status
+in `/workspace/plans/mw-indent-guides/STATUS-hunk-navigate.md`.
+
+Limit: the public CustomTextEditorProvider callback carries no selection. A
+direct custom-editor open that emits no native selection cannot be recovered
+by this bridge; the exact Cursor review-arrow gesture remains a manual
+acceptance item. The pinned human-learning checkout is absent on this host;
+no reference repository was changed. Validation uses the existing unpackaged
+native harness with an isolated profile, without generating or installing a
+VSIX. No merge or Marketplace publication is included.
+
+Validation: final `check:full` passed with 1,767 unit tests passing and 23
+existing Cordis stub skips, 276 Chromium cases and 23 native VS Code 1.142.0
+cases. Five reveal regressions fail against starting commit `2e87720`; the
+late-activation regression also fails against the preceding handoff
+implementation. All new automated coverage is unit tests. The full run used
+a complete private VS Code runtime and the isolated unpackaged harness; no
+VSIX was generated or installed locally. Generated documentation screenshots
+were restored after the run. The original Cursor gesture remains unverified.

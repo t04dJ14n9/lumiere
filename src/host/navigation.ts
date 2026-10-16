@@ -94,11 +94,22 @@ async function containedVirtualPath(
 export function createNavigation(
   panels: () => readonly PanelShell[],
   configuration: Configuration = createConfiguration(),
-): Navigation {
+): NativeNavigation {
   const reveals = new RevealRouter();
   return {
     begin: () => reveals.begin(),
     registerReveal: (panel) => reveals.register(panel),
+    async revealOpened(uri, column, at, intent) {
+      const current = panels();
+      const panel = chooseRevealPanel(
+        current,
+        new Set(current.map((panel) => panel.id)),
+        { uri, side: false, column },
+      );
+      if (panel) {
+        await reveals.deliver(intent, panel.id, { fragment: "", at });
+      }
+    },
     scheme: vscode.env.uriScheme,
     external: async (href) => vscode.env.openExternal(vscode.Uri.parse(href)),
     confirm: async (message) =>
@@ -132,6 +143,17 @@ export function createNavigation(
         intent: intent ?? reveals.begin(),
       }),
   };
+}
+
+/** Native text-to-custom transfers already opened the destination in this group. */
+export interface NativeNavigation extends Navigation {
+  begin(): NavigationIntent;
+  revealOpened(
+    uri: string,
+    column: number,
+    at: number,
+    intent: NavigationIntent,
+  ): Promise<void>;
 }
 
 async function resolveNavigation({

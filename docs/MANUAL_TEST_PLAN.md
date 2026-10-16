@@ -110,6 +110,21 @@ open. **Open as Text** still keeps the text editor during the bypass window.
 Setting warming to `off` must stop warm calls; record the Cursor result
 separately, since that explicitly disables the workaround.
 
+Cursor review hunk navigation (use a disposable note with at least 1,000 lines):
+associate Markdown with Workshop and leave reclaim at `auto`. Include a long
+rendered table spanning the first target. Ask an agent to edit passages near lines 930 and 948, then click each hunk card's blue file/open
+arrow. Test with the note closed, already open, and open in two groups with
+different caret positions. The requested group must focus, center the hunk start
+and place the caret there; the other panel must retain its position. Click the
+two cards within 10 seconds, repeat with CRLF, and navigate away during a cold
+open. Confirm the latest jump wins and no delayed jump steals focus. **Open as
+Text** and an active Cursor Edit session must remain native. Record the Cursor
+version and whether the gesture exposes a native text selection: direct custom
+opens that supply no selection through the public API remain a host limitation.
+For an unpackaged development check, launch Cursor with this built checkout's
+`--extensionDevelopmentPath` and fresh `--user-data-dir` / `--extensions-dir`;
+do not install a VSIX or use the owner's profile.
+
 1. Copy, cut and paste Markdown with the keyboard; paste into a text
    editor: the exact source is copied.
 2. Give two panels different selections, scroll positions and modes; reload

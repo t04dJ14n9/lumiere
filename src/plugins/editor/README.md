@@ -147,7 +147,19 @@ only) is read by the host (`src/host/reclaim.ts`): a note the workspace routes
 here that shows up in the plain text or Cursor Markdown editor, as Cursor's
 **Preview | Markdown** switch does, is warmed and reopened in this editor.
 Clean text tabs are closed; dirty text tabs keep their native document and undo.
-**Open as Text** and a just-reclaimed note keep the text editor for 10 s.
+**Open as Text** keeps the text editor for 10 s. A just-reclaimed note also
+ignores repeated tab notifications for 10 s; an explicit native command jump
+can still navigate to the next hunk during that interval.
+
+Native text-to-custom transfers carry the selection's start into the exact
+destination panel, using LF-normalized offsets for CRLF documents. Command
+selection changes also handle reused text tabs. Late native activation captures
+the initial selection even while `openWith` is in flight. Delivery waits for that panel's
+link-navigation readiness and uses its existing focus, centered scroll and
+caret path. A newer navigation or provider disposal cancels pending delivery;
+Cursor Edit handoff leases and explicit text bypasses suppress the bridge.
+The public custom-editor API supplies no range for a direct custom-editor open;
+when the host exposes no native text selection, there is no position to transfer.
 
 `editor.warmTextDocument` (`auto`/`on`/`off`, auto meaning on in Cursor) opens
 Markdown `TextDocument`s early: at activation for open notes, on document open,
