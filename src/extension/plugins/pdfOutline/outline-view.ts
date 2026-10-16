@@ -104,7 +104,9 @@ export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutpu
     }),
     vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.enableOutlineFollowCursor, () => setFollow(true)),
     vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.disableOutlineFollowCursor, () => setFollow(false)),
-    // Show the outline, or hide the side bar it is shown in.
+    // Toolbar / command palette: show the outline, or hide the side bar it is
+    // shown in. Ctrl+Alt+O uses separate keybindings (focus vs closeSidebar by
+    // focusedView) so it still reveals bookmark titles when the Explorer is open.
     vscode.commands.registerCommand(OUTLINE_COMMAND_IDS.toggleOutline, async () => {
       if (view.visible) await vscode.commands.executeCommand('workbench.action.closeSidebar');
       else await vscode.commands.executeCommand('pdfWorkshop.outline.focus');

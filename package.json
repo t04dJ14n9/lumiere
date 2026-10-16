@@ -1042,10 +1042,28 @@
         "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
       },
       {
-        "command": "pdfWorkshop.toggleOutline",
+        "command": "pdfWorkshop.outline.focus",
         "key": "ctrl+alt+o",
         "mac": "ctrl+cmd+o",
-        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && focusedView != 'pdfWorkshop.outline' && config.pdfWorkshop.keyboardShortcuts"
+      },
+      {
+        "command": "workbench.action.closeSidebar",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "focusedView == 'pdfWorkshop.outline' && sideBarFocus && config.pdfWorkshop.keyboardShortcuts"
+      },
+      {
+        "command": "workbench.action.closeAuxiliaryBar",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "focusedView == 'pdfWorkshop.outline' && auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+      },
+      {
+        "command": "workbench.action.closePanel",
+        "key": "ctrl+alt+o",
+        "mac": "ctrl+cmd+o",
+        "when": "focusedView == 'pdfWorkshop.outline' && panelFocus && config.pdfWorkshop.keyboardShortcuts"
       },
       {
         "command": "pdfWorkshop.selectTextTool",

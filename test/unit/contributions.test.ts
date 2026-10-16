@@ -33,6 +33,19 @@ test('every default shortcut is scoped to the PDF viewer, to non-input focus and
   assert.ok(bindings.length > 0);
   const seen = new Set<string>();
   for (const { key, mac, command, when } of bindings) {
+    // Outline Ctrl+Alt+O must win over Go to Symbol even when the webview or
+    // side bar has focus; it uses focusedView instead of the shared guards.
+    if (
+      command === 'pdfWorkshop.outline.focus'
+      || command === 'workbench.action.closeSidebar'
+      || command === 'workbench.action.closeAuxiliaryBar'
+      || command === 'workbench.action.closePanel'
+    ) {
+      assert.match(when ?? '', /config\.pdfWorkshop\.keyboardShortcuts/u);
+      assert.ok(key === 'ctrl+alt+o' || mac === 'ctrl+cmd+o', command);
+      for (const chord of new Set([key, mac ?? key])) { assert.ok(!seen.has(`${chord}|${when}`), `duplicate ${chord}`); seen.add(`${chord}|${when}`); }
+      continue;
+    }
     assert.ok(command.startsWith('pdfWorkshop.'), command);
     for (const clause of [
       "activeCustomEditorId == 'pdfWorkshop.viewer'",
@@ -49,6 +62,25 @@ test('every default shortcut is scoped to the PDF viewer, to non-input focus and
   }
   const setting = contributes.configuration.properties['pdfWorkshop.keyboardShortcuts'] as { default: boolean };
   assert.equal(setting.default, true);
+});
+
+test('Ctrl+Alt+O focuses PDF Outline with titles, and closes the chrome that hosts it when focused', () => {
+  const bindings = (contributes.keybindings ?? []) as { key: string; mac?: string; command: string; when?: string }[];
+  const outlineKeys = bindings.filter(entry => entry.key === 'ctrl+alt+o');
+  assert.deepEqual(
+    outlineKeys.map(entry => [entry.command, entry.mac, entry.when]).sort(),
+    [
+      ['pdfWorkshop.outline.focus', 'ctrl+cmd+o', "activeCustomEditorId == 'pdfWorkshop.viewer' && focusedView != 'pdfWorkshop.outline' && config.pdfWorkshop.keyboardShortcuts"],
+      ['workbench.action.closeAuxiliaryBar', 'ctrl+cmd+o', "focusedView == 'pdfWorkshop.outline' && auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"],
+      ['workbench.action.closePanel', 'ctrl+cmd+o', "focusedView == 'pdfWorkshop.outline' && panelFocus && config.pdfWorkshop.keyboardShortcuts"],
+      ['workbench.action.closeSidebar', 'ctrl+cmd+o', "focusedView == 'pdfWorkshop.outline' && sideBarFocus && config.pdfWorkshop.keyboardShortcuts"],
+    ].sort(),
+  );
+  // Title actions from expand/follow still hang off the outline view.
+  const menus = contributes.menus['view/title'] as { command: string; when: string }[];
+  assert.ok(menus.some(item => item.command === 'pdfWorkshop.expandOutline' && item.when === 'view == pdfWorkshop.outline'));
+  assert.ok(menus.some(item => item.command === 'pdfWorkshop.enableOutlineFollowCursor'));
+  assert.ok(menus.some(item => item.command === 'pdfWorkshop.disableOutlineFollowCursor'));
 });
 
 test('Look Up is a setting, hidden from the palette and offered on macOS when enabled, with the clicked word resolved by its command', () => {
