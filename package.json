@@ -1115,7 +1115,7 @@
     "eslint": "^9.30.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.8.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.71.1"
   },
   "packageManager": "pnpm@10.28.2"
