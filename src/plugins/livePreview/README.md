@@ -13,8 +13,10 @@ is discovered once per tree and reused across registrations; unrelated inline
 syntax and match predicates are skipped. Undeclared or inline node renderers
 retain complete discovery.
 The engine compartment switches presentation without replacing the document.
-Inline decorations map through IME and mouse drags, then rebuild; rendered clicks
-map visible text back to source before syntax is revealed.
+Inline decorations map through IME and selection-only mouse drag updates.
+Viewport changes during a drag or scrollbar press render newly visible text using
+the frozen reveal selection; rendered clicks map visible text back to source
+before syntax is revealed.
 
 ## Files
 
@@ -34,6 +36,8 @@ map visible text back to source before syntax is revealed.
 - `motion.ts`: Escape and vertical motion around rendered blocks, visible-widget queries and disjoint fold spans.
 - `core.test.ts`: reveal, motion, mode and lifecycle unit coverage.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
+- `inline-viewport.test.ts`: scrollbar and drag viewport rendering, frozen reveal,
+  selection-only stability and composition mapping units.
 - `code-lines.test.ts`: code and thematic break line classes and hidden text.
 - `invalidation.test.ts`: incremental index and decorations equal a full rebuild (randomised); invalidation reasons.
 - `decoration-cost.test.ts`: renderer matches and widgets built per caret move and edit on a 4,000-block note.

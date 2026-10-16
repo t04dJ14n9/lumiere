@@ -172,6 +172,19 @@ The Markdown syntax, the HTML renderer and Live Preview's reveal-at-caret.
    (`obsidian://`, `zotero://`) stay links in rendered blocks.
 5. `markdownWorkshop.editor.strictLineBreaks` on: single newlines in
    rendered blocks no longer break lines.
+6. In a disposable vault, repeat the contents of `Formatting.md` and `Code.md`
+   until the note spans at least five viewports. Leave the caret in plain text
+   near the start. Drag and hold the note's scrollbar thumb into previously
+   unseen content; hold its scroll arrows (where available) and page through its
+   track in both directions. Headings, emphasis, links and code fences keep their
+   Live Preview presentation even while the button stays down. The scrollbar must
+   not change the selection, document text or active editor. Release, then check
+   wheel scrolling and PageUp/PageDown; keyboard navigation may reveal syntax at
+   its new caret. Repeat with Vim on and off and in Cursor; its
+   Preview/Markdown chrome must not be mistaken for Workshop's Source mode.
+   Drag a text selection into a new viewport: syntax remains rendered until
+   release, then reveals under the selection. Explicit Toggle Live Preview/Source
+   still works, and scrolling in Source mode keeps Source mode.
 
 ### commands
 

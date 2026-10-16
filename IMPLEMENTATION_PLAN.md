@@ -4601,3 +4601,44 @@ used the existing unpackaged mode; no local VSIX was built or installed. Generat
 native screenshots were restored. Raw gate and diagnostic logs are in
 `/workspace/plans/mw-indent-guides/`. Default feel and Obsidian parity remain owner
 acceptance.
+## Scrollbar keeps Live Preview — 2026-10-16
+
+The confirmed path is missing viewport inline decorations while Live Preview
+remains active, rather than a mode or native-editor switch. The pointer tracker
+captures `mousedown` on the entire editor DOM, including the note scrollbar.
+`HybridInline.update` then mapped only the previous viewport's decorations for
+as long as the pointer reveal freeze stayed active. Newly visible headings,
+links, emphasis and fences therefore showed their Markdown syntax. Document-wide
+block decorations (including rendered tables) could remain, matching the mixed
+rendered/source appearance in the owner's screenshot. Reclaim, RevealRouter,
+scroll restoration and scroll persistence have no scrolling-to-Source call path.
+
+Allow viewport changes to rebuild inline decorations using the existing frozen
+reveal ranges. Selection-only pointer updates still map decorations, composition
+still maps even on viewport changes, and release reveals the live selection as
+before. Name the existing view-plugin class for direct unit coverage. No editor
+mode, native navigation, protocol, dependency or setting changes.
+
+Five unit cases cover held scrollbar paging in both directions, selection
+extension into a new viewport and release, selection-only decoration stability,
+ordinary viewport changes, and IME mapping. Update the Live Preview README and
+add the owner-run scrollbar/scroll-arrow/track, wheel, PageUp/PageDown, Vim and
+Cursor scenario to the manual plan. No browser/native tests or source suites
+were added or ported. The pinned `~/Code/human-learning` checkout is absent;
+only this checkout and its installed CodeMirror source were inspected.
+
+Validation: the original update gate failed the two new viewport/freeze cases
+(missing rendered heading); the other three cases passed. With the fix, the five
+regression cases pass. Under `/tmp/markdown-workshop-test-suites.lock`,
+`MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2 MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1
+xvfb-run -a pnpm check:full` passed in order: formatting, lint, all TypeScript
+projects, 1,748 unit passes (23 existing intentional Cordis skips), contributions
+check, 276 Chromium passes and 23 native VS Code 1.142.0 passes. Native tests used
+a complete private runtime in this worktree's ignored `.vscode-test`, a private
+Xvfb display and the harness's disposable home/profile/extensions directory.
+No VSIX was created or installed. Cursor-specific manual acceptance remains
+owner-run.
+
+Optional read-only local `codex review` (gpt-6.1-sol, xhigh) found no blocking
+correctness bugs in the viewport/freeze, release or composition paths. It ran no
+tests or builds and made no changes.
