@@ -10,9 +10,12 @@ retaining focused draft inputs. Edits use the pure YAML operations and become on
 outer-document transaction. List and chip drafts resolve the selected occurrence
 against current values before committing, so a stale render cannot replace a
 concurrently edited list. Save participants commit drafts and reject invalid
-input. Nested YAML drafts come from source node ranges and commit as text,
-retaining comments, quoting and exact numbers. Replaced anchors materialize their
-external aliases with exact integers. Types are a vault-wide registry keyed by
+input. Nested YAML drafts prefer source node ranges and commit as text,
+retaining comments, quoting and exact numbers. If a settable value's slice cannot
+parse independently, a serialized copy keeps it editable. Blank row/value space
+focuses the value editor; native field, pill and link clicks keep their own actions.
+Replaced anchors materialize their external aliases with exact integers.
+Types are a vault-wide registry keyed by
 property name, scoped by the injected vault root. Changing a type only changes
 that registry; a mismatched YAML value
 retains its warning until edited. Collapse is one persisted workspace preference
@@ -49,6 +52,9 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 - `row-name.ts`: quiet name validation and rename-to-value focus.
 - `row-menu.ts`: checked type submenu and row clipboard/removal actions.
 - `row-navigation.ts`: row keyboard routing and focus movement.
+- `row-click.ts`: blank row/value click routing that preserves controls and links.
+- `row-click.test.ts`: pointer focus, field/link actions and modifier selection units.
+- `field-bindings.test.ts`: current-source editing and embedded-source read-only controls.
 - `controls.test.ts`: removal focus and key-routing unit tests.
 - `form.ts`: inline pending rows, suggestion acceptance and shared heading collapse.
 - `form.test.ts`: retained drafts, quiet rejection and deferred YAML creation.
@@ -95,8 +101,10 @@ Add File Property can temporarily show the sheet when properties are hidden.
 Disclosure is shared within the VS Code workspace, rather than across unrelated
 workspaces. Native picker appearance depends on Chromium, OS and locale. Daily
 note links are not provided because the editor has no daily-note capability.
-YAML drafts must parse independently. Recursive aliases, tagged collections
-(including `!!pairs`, `!!map` and `!!set`) and timestamps remain display-only.
+YAML drafts must parse independently; external references use serialized copies,
+which may lose original formatting or precision when committed. Recursive aliases,
+tagged collections (including `!!pairs`, `!!map` and `!!set`) and timestamps remain
+display-only with a Source mode message.
 Concurrent frontmatter changes reject an active draft without overwriting source.
 
 ## The caret never enters the block

@@ -50,7 +50,8 @@
 }
 .property-row {
   display: grid;
-  grid-template-columns: minmax(80px, 8em) minmax(0, 1fr) auto;
+  /* Long names get room without squeezing values out of a narrow editor. */
+  grid-template-columns: minmax(0, min(40%, 18em)) minmax(0, 1fr) auto;
   gap: 8px;
   align-items: start;
   min-height: 1.75em;
@@ -90,6 +91,12 @@
 }
 .metadata-property-value {
   min-width: 0;
+  min-height: 1.75em;
+  align-self: stretch;
+}
+.property-key {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .metadata-input-longtext {
   white-space: pre-wrap;

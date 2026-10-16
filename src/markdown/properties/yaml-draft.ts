@@ -1,9 +1,31 @@
-import { isAlias, isNode, type Document } from "yaml";
-import { propertyYamlInput, settablePropertyNode } from "./values";
+import { isAlias, isNode, stringify, type Document } from "yaml";
+import {
+  propertyYamlInput,
+  settablePropertyNode,
+  settablePropertyValue,
+} from "./values";
 import { valueStart } from "./yaml-value";
 
-/** Remove only the property's outer indentation, keeping nested YAML verbatim. */
+/** Prefer verbatim YAML; keep settable values editable if the slice cannot stand alone. */
 export function propertyYamlDraft(
+  body: string,
+  node: unknown,
+  value: unknown,
+  document?: Document,
+): string | undefined {
+  if (!settablePropertyNode(node, document) || !settablePropertyValue(value)) {
+    return undefined;
+  }
+  // References outside this property are absent from its slice. Serialize a
+  // standalone copy only when the original text cannot be used as a draft.
+  return (
+    rawPropertyYamlDraft(body, node, value, document) ??
+    stringify(value, { aliasDuplicateObjects: false, lineWidth: 0 })
+  );
+}
+
+/** Remove only the property's outer indentation, keeping nested YAML verbatim. */
+function rawPropertyYamlDraft(
   body: string,
   node: unknown,
   value: unknown,
@@ -11,11 +33,7 @@ export function propertyYamlDraft(
 ): string | undefined {
   const isReference = isAlias(node);
   const valueNode = isReference && document ? node.resolve(document) : node;
-  if (
-    !isNode(valueNode) ||
-    !valueNode.range ||
-    !settablePropertyNode(valueNode, document)
-  ) {
+  if (!isNode(valueNode) || !valueNode.range) {
     return undefined;
   }
   // A top-level alias edits a copy of its target, without copying its anchor.
@@ -38,7 +56,7 @@ export function propertyYamlDraft(
     : undefined;
 }
 
-/** Preserve the guard against aliases or tagged values that cannot round-trip. */
+/** Reuse source text only when it parses independently to the same value. */
 function yamlDraftEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
     return true;

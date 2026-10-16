@@ -81,7 +81,7 @@ export function focusValue(
 ): void {
   row.querySelector<HTMLButtonElement>("[data-property-edit]")?.click();
   const input = row.querySelector<HTMLElement>(
-    ".metadata-property-value input:not([hidden]), .metadata-property-value textarea:not([hidden]), .metadata-property-value [contenteditable]:not([hidden])",
+    '.metadata-property-value input:not([hidden]):not(:disabled), .metadata-property-value textarea:not([hidden]):not(:disabled), .metadata-property-value [contenteditable="true"]:not([hidden])',
   );
   if (input) {
     focusInput(input, selection);

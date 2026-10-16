@@ -114,6 +114,9 @@ export class PropertyElement extends EventTarget {
 export class PropertyNativeInput extends PropertyElement {
   override tagName = "INPUT";
 }
+export class PropertyTextarea extends PropertyElement {
+  override tagName = "TEXTAREA";
+}
 export class PropertyDocument {
   activeElement: PropertyElement | null = null;
   querySelector() {
@@ -160,6 +163,7 @@ export function installPropertyDOM(t: TestContext): PropertyDocument {
     document,
     HTMLElement: PropertyElement,
     HTMLInputElement: PropertyNativeInput,
+    HTMLTextAreaElement: PropertyTextarea,
     Element: PropertyElement,
     CSS: { escape: (text: string) => text },
   };

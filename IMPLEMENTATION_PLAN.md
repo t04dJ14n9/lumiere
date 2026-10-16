@@ -536,6 +536,32 @@ Known issues: <list, with the failing test or observation>.
 
 ## Phase records
 
+### Properties editability and click parity — 2026-10-16
+
+Delivered: nested maps/lists and block values keep their raw YAML drafts when
+possible, with a standalone serialized fallback for settable values whose slices
+cannot parse independently (for example, aliases defined in another property).
+Tagged, recursive and unsupported values show a Source mode message instead of
+read-only chips. Blank row/value clicks focus the existing value editor while
+native caret placement, pill actions, links and row/text selection are preserved.
+The key column is wider and responsive, with constrained ellipsis and full-name
+tooltips. `title` remains an ordinary editable text property. Sources keeps its
+custom stacked rows above YAML, including an empty list.
+
+Coverage: unit regressions for maps/lists of maps, independent draft fallback,
+committing resolved aliases, raw comment/quote/exact-number preservation,
+unsupported values, current-source control enablement, title visibility,
+long key identity and click routing. Updated the plugin README, parity inventory
+and owner manual scenarios. No browser/native coverage was added or ported.
+
+Checks: changed-file ESLint/Prettier and full typecheck pass; focused units and
+the existing full sequence are queued on the shared suite lock. Native checks
+use the isolated unpackaged harness (no VSIX). Final results pending.
+The pinned `~/Code/human-learning` checkout is unavailable; no source repository
+or other worktree was modified. GUI Obsidian↔MW side-by-side verification is
+VERIFY-NEEDED and owned by Grok Bot computerUse. A serialized fallback may lose
+formatting or numeric precision on commit; verbatim drafts remain preferred.
+
 ### Phase 0 — Repository, 2026-10-07
 
 Delivered: single-package pnpm toolchain adapted from PDF Workbench, strict

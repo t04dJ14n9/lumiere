@@ -80,6 +80,23 @@ test("Sources YAML drafts retain comments inside lists of mappings", () => {
   );
 });
 
+test("fallback YAML drafts materialize external references and commit nested edits", () => {
+  const source =
+    "---\nfactors: &f [evidence, risk]\ndecision_conf:\n  score: 0.82\n  factors: *f\nkeep: '01' # untouched\n---\nBody";
+  const draft = yamlDraft(source, "decision_conf");
+  const next = editYaml(
+    source,
+    "decision_conf",
+    draft.replace("score: 0.82", "score: 0.95"),
+  );
+  assert.deepEqual(frontmatter(next)?.values?.decision_conf, {
+    score: 0.95,
+    factors: ["evidence", "risk"],
+  });
+  assert.match(next, /factors: &f \[evidence, risk\]/);
+  assert.match(next, /keep: '01' # untouched\n---\nBody$/);
+});
+
 test("anchored YAML drafts preserve leading comments and prior external alias values", () => {
   const source =
     "---\ngenerated: &a # generated comment\n  # before the first child\n  by: old\n  # checksum is external\n  checksum: 'abc'\nmirror: *a\n---\n";

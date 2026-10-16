@@ -10,6 +10,7 @@ import {
 } from "./control-edits";
 import { bindRowName } from "./row-name";
 import { bindRowNavigation } from "./row-navigation";
+import { bindRowValueFocus } from "./row-click";
 import { bindRowMenu, type PropertyMenuState } from "./row-menu";
 
 const boundRows = new WeakSet<HTMLElement>();
@@ -145,6 +146,9 @@ function bindRows(bindings: RowBindings): void {
       readClipboard,
     });
     bindRowNavigation({ row, container, panel, editor, apply: edits.apply });
+    if (editor) {
+      bindRowValueFocus(row);
+    }
   });
 }
 
