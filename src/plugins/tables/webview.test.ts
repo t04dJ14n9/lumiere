@@ -13,21 +13,36 @@ import type { EditorService } from "../editor/api";
 import type { MarkdownService } from "../dialect/api";
 import type { BlockRenderer } from "../livePreview/api";
 import { tablesWebview } from "./webview";
+import { TableWidget } from "./widget";
 
 test("tables always register a widget and own their document-entry keys and commands", async () => {
   const root = Context.create();
   const renderers: BlockRenderer[] = [];
   const extensions: Extension[] = [];
   const commands = new Map<string, () => boolean | Promise<boolean>>();
+  const scrolls: ScrollToOptions[] = [];
+  const viewport = Object.assign(new EventTarget(), {
+    scrollTop: 600,
+    scrollHeight: 2000,
+    clientHeight: 500,
+    scrollTo: (options: ScrollToOptions) => scrolls.push(options),
+  });
+  const dom = Object.assign(new EventTarget(), {
+    ownerDocument: {
+      defaultView: { matchMedia: () => ({ matches: false }) },
+    },
+  });
   let document = EditorState.create();
   const view = {
+    dom,
+    scrollDOM: viewport,
     get state() {
       return document;
     },
     dispatch(spec: TransactionSpec) {
       document = document.update(spec).state;
     },
-  } as EditorView;
+  } as unknown as EditorView;
   root.provide("editor", {
     view,
     extend(extension: Extension) {
@@ -104,7 +119,30 @@ test("tables always register a widget and own their document-entry keys and comm
     document.doc.toString(),
     "\n\n| Column 1 | Column 2 |\n| -------- | -------- |\n|          |          |\n\n",
   );
+  const widget = renderers[0]!.widget({
+    kind: "Table",
+    source: document.doc.toString(),
+    from: 0,
+    to: document.doc.length,
+  });
+  assert.ok(widget instanceof TableWidget);
+  const scrollNote = widget.environment.scrollNote;
+  for (const type of ["wheel", "pointerdown", "keydown", "touchstart"]) {
+    scrollNote(120);
+    assert.deepEqual(scrolls.at(-1), { top: 720, behavior: "smooth" });
+    dom.dispatchEvent(new Event(type));
+    assert.deepEqual(scrolls.at(-1), { top: 600, behavior: "instant" });
+  }
+  const forwardedWheel = new Event("wheel", { cancelable: true });
+  forwardedWheel.preventDefault();
+  scrollNote(120);
+  dom.dispatchEvent(forwardedWheel);
+  assert.equal(scrolls.at(-1)?.behavior, "smooth");
   await root.dispose();
+  assert.deepEqual(scrolls.at(-1), { top: 600, behavior: "instant" });
+  const afterDisposal = scrolls.length;
+  dom.dispatchEvent(new Event("wheel"));
+  assert.equal(scrolls.length, afterDisposal);
   rpc.dispose();
   assert.equal(renderers.length, 0);
   assert.equal(extensions.length, 0);

@@ -14,13 +14,14 @@ type TableWheelEvent = Pick<
 type NoteViewport = Pick<
   HTMLElement,
   "scrollTop" | "scrollHeight" | "clientHeight"
-> & { scrollBy(options: ScrollToOptions): void };
+>;
 
 /** Keep vertical wheel input out of the table's horizontal overflow box. */
 export function forwardTableWheel(
   event: TableWheelEvent,
   viewport: NoteViewport,
   lineHeight: number,
+  scroll: (distance: number) => void,
 ): void {
   if (
     event.defaultPrevented ||
@@ -44,7 +45,7 @@ export function forwardTableWheel(
   // input in that nested scrollport after grid selection focuses the widget.
   // Cancel its default only when forwarding to the note, to avoid double scroll.
   event.preventDefault();
-  viewport.scrollBy({ left: 0, top, behavior: "instant" });
+  scroll(top);
 }
 
 function verticalDistance(

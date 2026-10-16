@@ -4642,3 +4642,46 @@ owner-run.
 Optional read-only local `codex review` (gpt-6.1-sol, xhigh) found no blocking
 correctness bugs in the viewport/freeze, release or composition paths. It ran no
 tests or builds and made no changes.
+## Table wheel feel from the first tick — 2026-10-16
+
+The table widget's vertical wheel handoff used an immediate `scrollBy`, while
+ordinary prose used Chromium's native wheel scrolling. Forwarded ticks now use
+native smooth scrolling from their first event. One motion destination belongs
+to the tables plugin in each panel and is injected into its widgets, so rapid
+ticks accumulate their full distance even before the first frame. Reversals
+start at the visible position. Other wheel/input gestures, selection/document
+navigation and disposal cancel pending motion; reduced-motion preferences keep
+immediate movement. Existing gesture guards, delta units and note-edge chaining
+remain in the table router.
+
+Nine new unit cases cover first/later ticks, fractional bursts, reversal, limits,
+interruption, changing geometry, reduced motion and independent panels. The
+existing plugin lifecycle unit also exercises input interruption and disposal.
+The existing two selected-row browser scenarios await the full wheel distance
+before reversing or checking the horizontal axis; no browser/native scenario
+was added. The Tables README and manual acceptance steps cover the behavior.
+
+One-off measurements used the original `2e87720` build and the changed build in
+Chromium 156.0.8078.4 with native smooth scrolling enabled, on a private Xvfb
+display with OS wheel-button events.
+The original table tick moved 120 px synchronously, versus zero synchronous
+movement and a 3 px first animation step after the fix. Three isolated table
+ticks changed from three scroll samples to 30; a rapid three-tick burst retained
+all 360 px. A stationary-pointer table-to-prose crossing reproduced the original
+jump followed by native animation, and animated throughout after the change.
+Native prose already animated from its first tick. Immediate pane-restore cases
+showed the same table/prose distinction; EdgeScroll and a velocity warm-up were
+not involved in this reproduction.
+
+Focused checks pass: 61/61 affected feature, command and wheel units, plus the
+existing table wheel Chromium scenarios 2/2 (Vim on/off). The shared state-only
+feature fixture now models panel/scroller event targets for the owned listeners,
+preserving the existing lifecycle/composition and command-registration checks.
+`pnpm check` and the Chromium suite pass (1,752 unit passes, 23 intentional Cordis
+skips, 276 Chromium passes). Native startup exposed an incomplete pre-existing
+VS Code cache; the full gate is queued again using a verified complete private
+1.142.0 runtime, a private Xvfb display and unpackaged native loading.
+No source suites were ported. The configured pinned `~/Code/human-learning`
+checkout is absent on this host. This is separate from the scrollbar/preview
+follow-up and changes the table wheel handoff only; no sibling worktree or drag
+EdgeScroll implementation is part of this phase.

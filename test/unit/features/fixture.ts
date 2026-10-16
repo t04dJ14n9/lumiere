@@ -32,13 +32,15 @@ export function fixture() {
     ],
   });
   const view = {
+    dom: new EventTarget(),
+    scrollDOM: new EventTarget(),
     get state() {
       return state;
     },
     dispatch(spec: TransactionSpec) {
       state = state.update(spec).state;
     },
-  } as EditorView;
+  } as unknown as EditorView;
   let extensions = 0;
   root.provide("markdown", {
     language: () => [],

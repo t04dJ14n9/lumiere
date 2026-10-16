@@ -10,7 +10,7 @@ import type {} from "../formatting/api";
 import type {} from "../vim/api";
 import type {} from "../links/api";
 import { protocol as editorProtocol } from "../editor/protocol";
-import { keymap } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { TableWidget, enterTable } from "./widget";
 import {
   activeTables,
@@ -23,6 +23,7 @@ import { TableContent } from "./content";
 import { tableCommands } from "./manifest";
 import { tableOperation } from "./commands";
 import { vimTableEntry } from "./vim-entry";
+import { TableWheelMotion } from "./wheel-motion";
 export const tablesWebview: Plugin = {
   name: "tables",
   inject: {
@@ -39,7 +40,8 @@ export const tablesWebview: Plugin = {
     optional: ["vim", "formatting", "links"],
   },
   apply(ctx) {
-    const environment = createEnvironment(ctx);
+    const scrollNote = registerTableWheelMotion(ctx);
+    const environment = createEnvironment(ctx, scrollNote);
     registerTableExtensions(ctx);
     registerVimTableEntry(ctx);
     registerTableRenderer(ctx, environment);
@@ -52,10 +54,14 @@ function registerVimTableEntry(ctx: Context): void {
   ctx.effect(() => ctx.editor.extend(vimTableEntry(() => ctx.vim)));
 }
 
-function createEnvironment(ctx: Context): TableEnvironment {
+function createEnvironment(
+  ctx: Context,
+  scrollNote: TableEnvironment["scrollNote"],
+): TableEnvironment {
   const content = new TableContent(ctx.editor.view, ctx.render, ctx.logger);
   ctx.effect(() => () => content.dispose());
   return {
+    scrollNote,
     language: ctx.markdown.language(),
     vim: ctx.vim,
     links: ctx.links,
@@ -96,6 +102,62 @@ function createEnvironment(ctx: Context): TableEnvironment {
     },
     paste: () => ctx.editor.clipboard.read(),
   };
+}
+
+function registerTableWheelMotion(
+  ctx: Context,
+): TableEnvironment["scrollNote"] {
+  const view = ctx.editor.view;
+  const motion = new TableWheelMotion(
+    view.scrollDOM,
+    () =>
+      view.dom.ownerDocument.defaultView?.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches ?? false,
+  );
+  ctx.effect(() => {
+    const events = new AbortController();
+    const options = { passive: true, signal: events.signal };
+    view.scrollDOM.addEventListener(
+      "scroll",
+      () => motion.observeScroll(),
+      options,
+    );
+    view.dom.addEventListener(
+      "wheel",
+      (event) => {
+        // The table cancels its forwarded event before it bubbles here.
+        if (!event.defaultPrevented) {
+          motion.stop();
+        }
+      },
+      options,
+    );
+    for (const type of ["pointerdown", "keydown", "touchstart"]) {
+      view.dom.addEventListener(type, () => motion.stop(), {
+        ...options,
+        capture: true,
+      });
+    }
+    return () => {
+      events.abort();
+      motion.stop();
+    };
+  });
+  ctx.effect(() =>
+    ctx.editor.extend(
+      EditorView.updateListener.of((update) => {
+        if (
+          update.selectionSet ||
+          update.docChanged ||
+          update.transactions.some((transaction) => transaction.scrollIntoView)
+        ) {
+          motion.stop();
+        }
+      }),
+    ),
+  );
+  return (distance) => motion.scroll(distance);
 }
 
 function registerTableExtensions(ctx: Context): void {

@@ -30,4 +30,5 @@ export interface TableEnvironment {
   ): () => void;
   copy(text: string): void;
   paste(): Promise<string>;
+  scrollNote(distance: number): void;
 }

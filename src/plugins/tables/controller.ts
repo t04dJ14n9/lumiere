@@ -87,7 +87,7 @@ export class TableController {
     );
     this.registerEvents();
     this.registerFocus();
-    this.registerScrolling();
+    this.registerScrolling(environment.scrollNote);
     this.grid.wrapper.append(this.toolbar.controls());
     this.grid.render();
     this.handles = this.createHandles();
@@ -224,7 +224,7 @@ export class TableController {
     );
   }
 
-  private registerScrolling(): void {
+  private registerScrolling(scrollNote: TableEnvironment["scrollNote"]): void {
     this.grid.root.addEventListener(
       "wheel",
       (event) =>
@@ -232,6 +232,7 @@ export class TableController {
           event,
           this.grid.outer.scrollDOM,
           this.grid.outer.defaultLineHeight,
+          scrollNote,
         ),
       { passive: false, signal: this.events.signal },
     );
