@@ -31,6 +31,12 @@ interface ReclaimRequest {
   at: number | undefined;
   /** Once reveal delivery has started, later same-tab jumps must supersede. */
   delivering?: boolean;
+  /**
+   * Sticky: an Open as Text / Edit lease was observed while this transfer was
+   * still pending. textBypass TTL (10s) can expire before reveal readiness
+   * (up to 15s), so the decision must outlive `has()` alone.
+   */
+  keepNative?: boolean;
 }
 
 function kindOf(tab: vscode.Tab | undefined): TabKind {
@@ -281,12 +287,15 @@ async function reopen(
   if (navigation && request.intent && request.at !== undefined) {
     request.delivering = true;
     request.at = nativeSelectionStart(tab, uri) ?? request.at;
-    await navigation.revealOpened(uri, column, request.at, request.intent);
+    await revealOpenedWatchingOptOut(uri, request, () =>
+      navigation.revealOpened(uri, column, request.at!, request.intent!),
+    );
   }
   // Opt-outs or a superseding jump may land during the reveal wait. Do not
   // close a native tab the user just chose (Open as Text / Edit lease) or a
-  // transfer that navigation cancelled.
+  // transfer that navigation cancelled. keepNative is sticky across bypass TTL.
   if (
+    request.keepNative ||
     handoffLease.has(uri) ||
     textBypass.has(uri) ||
     request.intent?.token.cancelled
@@ -304,6 +313,40 @@ async function reopen(
   );
   if (text && !text.isDirty) {
     await vscode.window.tabGroups.close(text, true);
+  }
+}
+
+/**
+ * Reveal readiness can wait longer than textBypass TTL. Watch for an opt-out
+ * during the wait, sticky-mark keepNative, and cancel so delivery stops.
+ */
+async function revealOpenedWatchingOptOut(
+  uri: string,
+  request: ReclaimRequest,
+  deliver: () => Promise<void>,
+): Promise<void> {
+  const noteOptOut = () => {
+    if (handoffLease.has(uri) || textBypass.has(uri)) {
+      request.keepNative = true;
+      request.intent?.token.cancel();
+      return true;
+    }
+    return false;
+  };
+  if (noteOptOut()) {
+    return;
+  }
+  let timer: ReturnType<typeof setInterval> | undefined;
+  try {
+    timer = setInterval(() => {
+      noteOptOut();
+    }, 25);
+    await deliver();
+  } finally {
+    if (timer !== undefined) {
+      clearInterval(timer);
+    }
+    noteOptOut();
   }
 }
 

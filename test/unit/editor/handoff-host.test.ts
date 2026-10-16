@@ -991,6 +991,61 @@ for (const optOut of ["Open as Text", "Cursor Edit lease"] as const) {
   });
 }
 
+test("Open as Text keeps the native tab even after textBypass TTL expires during reveal wait", async (t) => {
+  const tab = cursorTab();
+  tab.isDirty = false;
+  documents.find((document) => document.uri.toString() === note)!.isDirty =
+    false;
+  let releaseReveal = () => {};
+  const held = new Promise<void>((resolve) => {
+    releaseReveal = resolve;
+  });
+  t.after(releaseReveal);
+  const shell = {
+    id: "destination",
+    column: 1,
+    document: { uri: note },
+    active: () => true,
+  } as PanelShell;
+  const panels = [shell];
+  const navigation = host.navigation.createNavigation(() => panels);
+  const stop = host.reclaim.registerReclaim(navigation);
+  t.after(() => stop.dispose());
+  nativeHunkEditor(tab);
+  tab.isDirty = false;
+  navigation.registerReveal({
+    id: shell.id,
+    uri: note,
+    active: () => true,
+    async reveal(_target, token) {
+      await held;
+      return !token.cancelled;
+    },
+  });
+  afterCommand = () => {
+    tab.input = new TabInputCustom(Uri.parse(note), viewType);
+    vscode.window.activeTextEditor = undefined;
+  };
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+  host.reclaim.textBypass.allow(note);
+  // Let the reveal-wait watcher observe the opt-out before the TTL expires.
+  await new Promise<void>((resolve) => setTimeout(resolve, 40));
+  assert.equal(host.reclaim.textBypass.has(note), true);
+  (
+    host.reclaim.textBypass as unknown as { until: Map<string, number> }
+  ).until.set(note, Date.now() - 1);
+  assert.equal(host.reclaim.textBypass.has(note), false);
+  tab.input = new TabInputText(Uri.parse(note));
+  releaseReveal();
+  await tick();
+  assert.ok(
+    group.tabs.includes(tab),
+    "sticky keepNative must outlive textBypass TTL",
+  );
+});
+
 test("a selection arriving during warming replaces the initial position without reopening twice", async (t) => {
   const release = delayWarm();
   t.after(release);
