@@ -28,7 +28,7 @@ interface RowMenuOptions {
 
 export function bindRowMenu(options: RowMenuOptions): void {
   const type = options.row.querySelector<HTMLButtonElement>(
-    "[data-property-type]",
+    "button[data-property-type]",
   )!;
   type.disabled = !options.editor?.setType;
   type.addEventListener("click", (event) => {

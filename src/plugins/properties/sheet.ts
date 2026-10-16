@@ -169,10 +169,10 @@ function reconcileRows(options: {
           keep.append(warning);
         }
         const type = keep.querySelector<HTMLButtonElement>(
-          "[data-property-type]",
+          "button[data-property-type]",
         )!;
         const nextType = row.querySelector<HTMLButtonElement>(
-          "[data-property-type]",
+          "button[data-property-type]",
         )!;
         type.innerHTML = nextType.innerHTML;
         type.setAttribute("aria-label", nextType.getAttribute("aria-label")!);

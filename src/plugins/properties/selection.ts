@@ -288,7 +288,7 @@ function selectableRow(event: MouseEvent): HTMLElement | undefined {
   if (
     row &&
     (event.target === row ||
-      event.target.closest("[data-property-type]") ||
+      event.target.closest("button[data-property-type]") ||
       ["DT", "DD"].includes(event.target.tagName))
   ) {
     return row;

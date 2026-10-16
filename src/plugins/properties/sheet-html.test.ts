@@ -197,3 +197,14 @@ for (const value of ["!!pairs [a: 1]", "!!map {a: 1}", ".inf", "[.inf]"]) {
     );
   });
 }
+
+test("type grip is a button distinct from value data-property-type", () => {
+  const html = renderProperties("---\na: 1\nb: 2\n---\n");
+  assert.match(html, /<button type="button"[^>]*data-property-type/);
+  assert.match(
+    html,
+    /class="metadata-property-value"[^>]*data-property-type="number"/,
+  );
+  // Order/selection drag and multi-select must target button[data-property-type]
+  // only — the value wrapper also carries data-property-type for Obsidian CSS.
+});
