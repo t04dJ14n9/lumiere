@@ -13,6 +13,11 @@ import {
 } from "../../../src/host/git-blame";
 import type { GitBlameRunner } from "../../../src/host/git-blame";
 import { RepositoryWatch } from "../../../src/host/git-watch";
+import {
+  bindDiscoveredRoot,
+  resolveGitDir,
+  watchGitMetadata,
+} from "../../../src/host/git-discovered-watch";
 
 const oid = "a".repeat(40);
 const porcelain = (commit = oid) =>
@@ -387,6 +392,127 @@ test("discoverGitRoot finds the work tree from a nested path without vscode.git"
       assert.equal(result.blame.authorName, "Dev");
       assert.equal(result.blame.line, 1);
     }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("enrollDiscovered advances generation and notifies like API onDidChange (B1)", () => {
+  const watch = new RepositoryWatch();
+  const change = changeSource();
+  const root = "file:///discovered-repo";
+  const seen: number[] = [];
+  watch.subscribe(() => seen.push(watch.repoGeneration(root)));
+  watch.enrollDiscovered(root, change.event);
+  assert.equal(watch.repoGeneration(root), 0);
+  assert.deepEqual(seen, []);
+  change.fire();
+  assert.deepEqual(seen, [1]);
+  assert.equal(watch.repoGeneration(root), 1);
+  watch.enrollDiscovered(root, change.event); // idempotent
+  change.fire();
+  assert.deepEqual(seen, [1, 2]);
+  watch.detach();
+  change.fire();
+  assert.deepEqual(seen, [1, 2]);
+  watch.dispose();
+});
+
+test("invalidate includes discovered roots for identity-cache epochs", () => {
+  const watch = new RepositoryWatch();
+  const change = changeSource();
+  const root = "file:///discovered-repo";
+  watch.enrollDiscovered(root, change.event);
+  const seen: number[] = [];
+  watch.subscribe(() => seen.push(watch.repoGeneration(root)));
+  watch.invalidate();
+  assert.deepEqual(seen, [1]);
+  watch.dispose();
+});
+
+test("bindDiscoveredRoot bumps generation after terminal amend without note edit (B1)", async () => {
+  const { root } = await repo();
+  const rootUri = `file://${root}`;
+  const watch = new RepositoryWatch();
+  try {
+    assert.equal(resolveGitDir(root), join(root, ".git"));
+    const binding = bindDiscoveredRoot(watch, rootUri, root);
+    assert.ok(binding);
+    assert.equal(watch.repoGeneration(rootUri), 0);
+    const seen: number[] = [];
+    watch.subscribe(() => seen.push(watch.repoGeneration(rootUri)));
+
+    // Amend author/subject from a "terminal" without touching the note text.
+    execFileSync(
+      "git",
+      [
+        "commit",
+        "--amend",
+        "--author=Amender <amender@example.com>",
+        "-m",
+        "Amended subject",
+      ],
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          GIT_COMMITTER_NAME: "Amender",
+          GIT_COMMITTER_EMAIL: "amender@example.com",
+        },
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && watch.repoGeneration(rootUri) === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(
+      watch.repoGeneration(rootUri) >= 1,
+      "expected FS metadata watch to advance generation after amend",
+    );
+    assert.ok(seen.length >= 1);
+    assert.ok(seen[0]! >= 1);
+    binding!.dispose();
+    const after = watch.repoGeneration(rootUri);
+    // Production detachWatch closes FS + enroll together; after detach, further
+    // amends must not advance this root's generation.
+    watch.detach();
+    execFileSync("git", ["commit", "--amend", "-m", "Again"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(watch.repoGeneration(rootUri), after);
+  } finally {
+    watch.dispose();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("watchGitMetadata fires when HEAD is rewritten", async () => {
+  const { root } = await repo();
+  try {
+    const gitDir = resolveGitDir(root);
+    assert.ok(gitDir);
+    let fires = 0;
+    const watcher = watchGitMetadata(gitDir!, () => {
+      fires++;
+    });
+    execFileSync(
+      "git",
+      ["commit", "--amend", "-m", "Rewrite HEAD", "--no-edit"],
+      {
+        cwd: root,
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && fires === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(fires >= 1, "expected HEAD/refs watch to fire on amend");
+    watcher.dispose();
   } finally {
     await rm(root, { recursive: true, force: true });
   }

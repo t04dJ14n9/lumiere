@@ -4415,3 +4415,19 @@ Prefer the open API root when present. Unit regression covers discovery from a
 nested path and blame using only that root. Focused gitBlame/git-blame units
 49/49; `pnpm check` 1,745 unit passes, 23 intentional Cordis skips (Node 22).
 No VSIX or merge.
+
+## gitBlame follow-up — Discovered-root RepositoryWatch enrollment, 2026-10-16
+
+Codex re-review of tip `a22ea91` REQUEST CHANGES'd one P2: discovered roots
+only wrote `rootsByUri` and never enrolled in `RepositoryWatch`, so an
+empty-window chip could keep stale attribution after a terminal amend without
+a note edit (no generation advance / `changed`), and identity cache keyed by
+generation stayed warm across disable/re-enable for that root.
+
+`RepositoryWatch.enrollDiscovered` plus `bindDiscoveredRoot` (Node `fs.watch`
+on `.git` HEAD/refs/config/logs) give discovered roots the same lifecycle-
+managed invalidation as API repositories. `NativeGitAccess` enrolls on
+discovery and clears FS bindings with API watches on detach/enablement.
+Unit regressions cover enroll/invalidate and a real amend without note edit.
+No VSIX or merge.
+

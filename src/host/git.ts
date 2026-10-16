@@ -13,6 +13,7 @@ import {
 } from "./git-blame";
 import type { GitBlameRunner } from "./git-blame";
 import { RepositoryWatch } from "./git-watch";
+import { bindDiscoveredRoot } from "./git-discovered-watch";
 import { exceedsDiffLimits } from "../shared/diff";
 import type { GitAccess, GitBaselineResult, GitRef } from "../shared/git";
 
@@ -85,6 +86,8 @@ export class NativeGitAccess implements GitAccess {
   private readonly rootsByUri = new Map<string, string>();
   private currentApi: GitApi | undefined;
   private readonly watch = new RepositoryWatch();
+  /** FS metadata watches for roots discovered without vscode.git. */
+  private readonly discoveredFs = new Map<string, { dispose(): void }>();
   private enablement: vscode.Disposable | undefined;
   constructor(
     private readonly runGit: GitBlameRunner = createSpawnBlameRunner(),
@@ -117,7 +120,7 @@ export class NativeGitAccess implements GitAccess {
     this.enablement ??= gitExtension()?.onDidChangeEnablement?.(() => {
       this.api = undefined;
       this.currentApi = undefined;
-      this.watch.detach();
+      this.detachWatch();
       this.watch.invalidate();
       void this.load().catch(() => undefined);
     });
@@ -220,11 +223,20 @@ export class NativeGitAccess implements GitAccess {
     return () => {
       this.watchUsers--;
       if (this.watchUsers === 0) {
-        this.watch.detach();
+        this.detachWatch();
         this.enablement?.dispose();
         this.enablement = undefined;
       }
     };
+  }
+
+  /** Drop API and discovered-root watches together so generations stay paired. */
+  private detachWatch(): void {
+    this.watch.detach();
+    for (const disposable of this.discoveredFs.values()) {
+      disposable.dispose();
+    }
+    this.discoveredFs.clear();
   }
 
   repoGeneration(uri: string): number {
@@ -337,8 +349,25 @@ export class NativeGitAccess implements GitAccess {
     if (!discovered) {
       return undefined;
     }
-    this.rootsByUri.set(uri, vscode.Uri.file(discovered).toString());
+    const rootUri = vscode.Uri.file(discovered).toString();
+    this.rootsByUri.set(uri, rootUri);
+    this.ensureDiscoveredWatch(discovered, rootUri);
     return discovered;
+  }
+
+  /**
+   * Empty-window / repositories(0) path: enroll the discovered root in
+   * RepositoryWatch via FS metadata so amend/checkout/config bump generation
+   * and publish `changed` like API `state.onDidChange`.
+   */
+  private ensureDiscoveredWatch(rootPath: string, rootUri: string): void {
+    if (this.discoveredFs.has(rootUri)) {
+      return;
+    }
+    const binding = bindDiscoveredRoot(this.watch, rootUri, rootPath);
+    if (binding) {
+      this.discoveredFs.set(rootUri, binding);
+    }
   }
 
   private async readIdentity(cwd: string): Promise<GitIdentity> {
