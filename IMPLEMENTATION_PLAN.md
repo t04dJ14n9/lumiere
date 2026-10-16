@@ -4775,3 +4775,41 @@ implementation. All new automated coverage is unit tests. The full run used
 a complete private VS Code runtime and the isolated unpackaged harness; no
 VSIX was generated or installed locally. Generated documentation screenshots
 were restored after the run. The original Cursor gesture remains unverified.
+## Sticky scroll — 2026-10-16
+
+Added the opt-in `stickyScroll` feature, following the existing resource-scoped
+plugin enablement setting. `markdownWorkshop.plugins.stickyScroll.enabled`
+defaults to false; `markdownWorkshop.stickyScroll.maxLines` defaults to five,
+with a range of one through six, rounded down. Both Live Preview and Source
+show document-level ATX/Setext ancestor headings after they scroll out of view.
+The overlay preserves document layout and panel isolation, forwards wheel
+input to the note, and uses editor navigation history for heading clicks.
+Config changes preserve the index and other plugins' state; disposal removes
+the overlay, index, listener and scroll margins. Rows use VS Code theme tokens
+and stay within one third of the editor's height.
+
+New unit coverage exercises syntax/section boundaries, skipped levels,
+duplicate/empty labels, full-document indexing and edits, measured chrome,
+row budgets, navigation, wheel units, queued-measure teardown, resource settings
+and feature lifecycle. Plugin README, generated settings, capabilities, design,
+parity inventory and owner-run manual scenarios describe the contract. This is
+an intentional extension beyond Obsidian's core features; lists, quotes and YAML
+keys do not add rows, and section switches have no push animation.
+
+The pinned `~/Code/human-learning` checkout is absent; implementation uses the
+current shared Markdown parser and editor APIs. No source suites were ported,
+so the existing retired source-test ledger is unchanged. No new browser/native
+scenarios were added. No VSIX is built or installed; native checks use the
+existing unpackaged development-path option with an isolated profile and
+private display. Empty ATX labels are normalized locally so a bare marker is
+shown as an untitled heading without changing other metadata consumers.
+
+Validation: focused sticky units 11/11. The sequential local full gate passed
+with two unit workers and unpackaged native loading: `pnpm check` (1,755 unit
+passes, 23 existing Cordis skips; format/lint/all TypeScript projects and generated
+contributions green), Chromium 276/276 and VS Code 1.142.0 23/23. The complete
+VS Code binary in the indent-guides worktree was used read-only, with this
+checkout's own disposable profile. Captures outside the repo show the enabled
+chrome in both modes and its removal on disable; the synthetic capture wrapper
+needed a bounded viewport. Owner-run visual acceptance remains in the manual
+plan. No VSIX, merge or Marketplace publication.

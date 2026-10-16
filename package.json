@@ -1497,6 +1497,12 @@
           "scope": "resource",
           "description": "Spellcheck in the Markdown editor."
         },
+        "markdownWorkshop.plugins.stickyScroll.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "resource",
+          "description": "Pin ancestor Markdown headings at the top while scrolling in Live Preview and Source mode. Click a pinned heading to return to it."
+        },
         "markdownWorkshop.plugins.suggest.enabled": {
           "type": "boolean",
           "default": true,
@@ -1795,6 +1801,14 @@
           "type": "string",
           "default": "scratch",
           "description": "Project-relative folder for scratch notes when the folder has no .wiki/layout.json. A loaded layout uses its scratch path. The folder is created when you create a note.",
+          "scope": "resource"
+        },
+        "markdownWorkshop.stickyScroll.maxLines": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 6,
+          "default": 5,
+          "description": "Maximum pinned heading rows. Keeps the nearest ancestors when the limit is exceeded; fractional values round down. Small editor panes may show fewer rows.",
           "scope": "resource"
         },
         "markdownWorkshop.tags.viewSort": {

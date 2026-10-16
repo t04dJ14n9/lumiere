@@ -68,6 +68,7 @@ export const FEATURE_ORDER = [
   // EOL authorship follows gutter/inline chrome and never owns gutter hit-testing.
   "gitBlame",
   "indentGuides",
+  "stickyScroll",
   "spellcheck",
   "autoPair",
   "smartLists",

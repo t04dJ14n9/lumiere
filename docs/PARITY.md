@@ -38,6 +38,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `gitInline` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `gitGutter` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `indentGuides` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `stickyScroll` | No Obsidian core equivalent | Opt-in pinned section headings in Live Preview and Source | Unit model/lifecycle/overlay coverage; owner-run stickyScroll manual scenarios pending | Intentional extension |
 | `vim` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `autoPair` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `smartLists` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -220,6 +221,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkshop.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.plugins.stickyScroll.enabled | No Obsidian core equivalent | Default false | Owner-run stickyScroll manual scenarios pending | Intentional extension |
+| Setting: markdownWorkshop.stickyScroll.maxLines | No Obsidian core equivalent | Default 5; 1–6, rounded down, with a pane-height limit | Unit row-budget coverage; owner-run stickyScroll manual scenarios pending | Intentional extension |
 | Setting: markdownWorkshop.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

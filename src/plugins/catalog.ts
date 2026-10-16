@@ -31,6 +31,7 @@ import gitGutter from "./gitGutter/manifest";
 import gitInline from "./gitInline/manifest";
 import gitBlame from "./gitBlame/manifest";
 import indentGuides from "./indentGuides/manifest";
+import stickyScroll from "./stickyScroll/manifest";
 import spellcheck from "./spellcheck/manifest";
 import autoPair from "./autoPair/manifest";
 import smartLists from "./smartLists/manifest";
@@ -71,6 +72,7 @@ export const features: readonly Manifest[] = inPluginOrder(
     gitInline,
     gitBlame,
     indentGuides,
+    stickyScroll,
     inlineTitle,
     lineNumbers,
     links,
