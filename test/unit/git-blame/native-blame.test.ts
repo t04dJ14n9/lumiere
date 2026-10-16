@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { execFileSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import type { ChildProcess, spawn } from "node:child_process";
@@ -15,6 +15,8 @@ import type { GitBlameRunner } from "../../../src/host/git-blame";
 import { RepositoryWatch } from "../../../src/host/git-watch";
 import {
   bindDiscoveredRoot,
+  canonicalPath,
+  resolveCommonDir,
   resolveGitDir,
   watchGitMetadata,
 } from "../../../src/host/git-discovered-watch";
@@ -514,6 +516,114 @@ test("watchGitMetadata fires when HEAD is rewritten", async () => {
     assert.ok(fires >= 1, "expected HEAD/refs watch to fire on amend");
     watcher.dispose();
   } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("directory metadata watch survives successive atomic config replaces", async () => {
+  const { root } = await repo();
+  const rootUri = `file://${root}`;
+  const watch = new RepositoryWatch();
+  try {
+    const binding = bindDiscoveredRoot(watch, rootUri, root);
+    assert.ok(binding);
+    execFileSync("git", ["config", "user.email", "one@example.com"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const firstDeadline = Date.now() + 3000;
+    while (Date.now() < firstDeadline && watch.repoGeneration(rootUri) === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    const afterFirst = watch.repoGeneration(rootUri);
+    assert.ok(afterFirst >= 1, "first config replace must advance generation");
+    execFileSync("git", ["config", "user.email", "two@example.com"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const secondDeadline = Date.now() + 3000;
+    while (
+      Date.now() < secondDeadline &&
+      watch.repoGeneration(rootUri) === afterFirst
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(
+      watch.repoGeneration(rootUri) > afterFirst,
+      "second config replace must advance generation after inode replace",
+    );
+    binding!.dispose();
+  } finally {
+    watch.dispose();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("canonicalPath keeps symlink alias notes inside the discovered root", async () => {
+  const { root } = await repo();
+  const parent = await mkdtemp(join(tmpdir(), "mw-blame-alias-"));
+  try {
+    const alias = join(parent, "alias");
+    await symlink(root, alias);
+    const noteViaAlias = join(alias, "note.md");
+    const relativePath = relative(
+      canonicalPath(root),
+      canonicalPath(noteViaAlias),
+    );
+    assert.equal(relativePath, "note.md");
+    assert.equal(
+      relative(root, noteViaAlias).startsWith("..") ||
+        isAbsolute(relative(root, noteViaAlias)),
+      true,
+    );
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("linked worktree watches shared commondir config changes", async () => {
+  const { root } = await repo();
+  const parent = await mkdtemp(join(tmpdir(), "mw-blame-wt-"));
+  const linked = join(parent, "linked");
+  try {
+    execFileSync("git", ["worktree", "add", linked, "HEAD"], {
+      cwd: root,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const gitDir = resolveGitDir(linked);
+    assert.ok(gitDir);
+    const common = resolveCommonDir(gitDir!);
+    assert.ok(common, "linked worktree exposes commondir");
+    const rootUri = `file://${linked}`;
+    const watch = new RepositoryWatch();
+    const binding = bindDiscoveredRoot(watch, rootUri, linked);
+    assert.ok(binding);
+    // Config lives in the shared (common) git dir, not the private worktree dir.
+    execFileSync("git", ["config", "user.email", "wt@example.com"], {
+      cwd: linked,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && watch.repoGeneration(rootUri) === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.ok(
+      watch.repoGeneration(rootUri) >= 1,
+      "commondir config change must invalidate the linked worktree root",
+    );
+    binding!.dispose();
+    watch.dispose();
+  } finally {
+    try {
+      execFileSync("git", ["worktree", "remove", "--force", linked], {
+        cwd: root,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+    } catch {
+      /* Best-effort cleanup. */
+    }
+    await rm(parent, { recursive: true, force: true });
     await rm(root, { recursive: true, force: true });
   }
 });

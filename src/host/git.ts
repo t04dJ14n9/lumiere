@@ -13,7 +13,7 @@ import {
 } from "./git-blame";
 import type { GitBlameRunner } from "./git-blame";
 import { RepositoryWatch } from "./git-watch";
-import { bindDiscoveredRoot } from "./git-discovered-watch";
+import { bindDiscoveredRoot, canonicalPath } from "./git-discovered-watch";
 import { exceedsDiffLimits } from "../shared/diff";
 import type { GitAccess, GitBaselineResult, GitRef } from "../shared/git";
 
@@ -279,7 +279,10 @@ export class NativeGitAccess implements GitAccess {
         repoGeneration: this.repoGeneration(uri),
       };
     }
-    const relativePath = relative(rootPath, target.fsPath);
+    const relativePath = relative(
+      canonicalPath(rootPath),
+      canonicalPath(target.fsPath),
+    );
     if (
       isAbsolute(relativePath) ||
       relativePath === ".." ||
@@ -307,26 +310,31 @@ export class NativeGitAccess implements GitAccess {
   }
 
   async identity(uri: string): Promise<GitIdentity | undefined> {
-    const target = vscode.Uri.parse(uri);
-    if (target.scheme !== "file") {
-      return undefined;
+    const release = this.retainWatch();
+    try {
+      const target = vscode.Uri.parse(uri);
+      if (target.scheme !== "file") {
+        return undefined;
+      }
+      const rootPath = await this.resolveRootPath(uri, target);
+      if (!rootPath) {
+        return undefined;
+      }
+      const root = vscode.Uri.file(rootPath).toString();
+      const generation = this.watch.repoGeneration(root);
+      const cached = this.identities.get(root);
+      if (cached?.generation === generation) {
+        return cached.pending;
+      }
+      const pending = this.readIdentity(rootPath);
+      if (this.identities.size >= 32) {
+        this.identities.clear();
+      }
+      this.identities.set(root, { generation, pending });
+      return pending;
+    } finally {
+      release();
     }
-    const rootPath = await this.resolveRootPath(uri, target);
-    if (!rootPath) {
-      return undefined;
-    }
-    const root = vscode.Uri.file(rootPath).toString();
-    const generation = this.watch.repoGeneration(root);
-    const cached = this.identities.get(root);
-    if (cached?.generation === generation) {
-      return cached.pending;
-    }
-    const pending = this.readIdentity(rootPath);
-    if (this.identities.size >= 32) {
-      this.identities.clear();
-    }
-    this.identities.set(root, { generation, pending });
-    return pending;
   }
 
   /**
@@ -361,7 +369,8 @@ export class NativeGitAccess implements GitAccess {
    * and publish `changed` like API `state.onDidChange`.
    */
   private ensureDiscoveredWatch(rootPath: string, rootUri: string): void {
-    if (this.discoveredFs.has(rootUri)) {
+    // Only install while a lease is held so detachWatch always owns cleanup.
+    if (this.watchUsers === 0 || this.discoveredFs.has(rootUri)) {
       return;
     }
     const binding = bindDiscoveredRoot(this.watch, rootUri, rootPath);

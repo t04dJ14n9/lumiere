@@ -3,6 +3,7 @@ import {
   existsSync,
   statSync,
   readFileSync,
+  realpathSync,
   type FSWatcher,
 } from "node:fs";
 import { join, isAbsolute, resolve } from "node:path";
@@ -10,6 +11,15 @@ import type { RepositoryWatch } from "./git-watch";
 
 /** Structural change event matching RepositoryWatch's GitEvent shape. */
 type GitEvent = (listener: () => void) => { dispose(): unknown };
+
+/** Resolve symlinks when present so containment checks match `git rev-parse`. */
+export function canonicalPath(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+}
 
 /**
  * Resolve the git directory for a work tree root (handles `.git` files used by
@@ -37,49 +47,106 @@ export function resolveGitDir(rootPath: string): string | undefined {
   }
 }
 
+/** Shared object/config directory for linked worktrees (`commondir`). */
+export function resolveCommonDir(gitDir: string): string | undefined {
+  try {
+    const text = readFileSync(join(gitDir, "commondir"), "utf8").trim();
+    if (!text) {
+      return undefined;
+    }
+    const common = isAbsolute(text) ? text : resolve(gitDir, text);
+    return existsSync(common) ? common : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function coalesce(onChange: () => void): {
+  fire(): void;
+  dispose(): void;
+} {
+  let disposed = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return {
+    fire() {
+      if (disposed) {
+        return;
+      }
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+      timer = setTimeout(() => {
+        timer = undefined;
+        if (disposed) {
+          return;
+        }
+        try {
+          onChange();
+        } catch {
+          /* Observers own their reporting. */
+        }
+      }, 0);
+    },
+    dispose() {
+      disposed = true;
+      if (timer !== undefined) {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+    },
+  };
+}
+
+function trackPath(
+  watchers: FSWatcher[],
+  target: string,
+  fire: () => void,
+  recursive = false,
+): void {
+  if (!existsSync(target)) {
+    return;
+  }
+  try {
+    watchers.push(
+      recursive
+        ? watch(target, { recursive: true }, fire)
+        : watch(target, fire),
+    );
+  } catch {
+    /* Missing or unwatchable paths are skipped; blame still works once. */
+  }
+}
+
+function trackMetadataTree(
+  watchers: FSWatcher[],
+  dir: string,
+  fire: () => void,
+): void {
+  // Directory watch keeps receiving events after Git replaces files in-place.
+  trackPath(watchers, dir, fire);
+  trackPath(watchers, join(dir, "refs"), fire, true);
+  trackPath(watchers, join(dir, "logs"), fire, true);
+}
+
 /**
  * Watch git metadata that changes on amend / checkout / config updates.
- * Uses Node fs.watch so `.git` exclusions in VS Code's FileSystemWatcher do not
- * silently drop HEAD/refs updates on the empty-window discovery path.
+ * Directory watches (not bare file watches) survive Git's atomic replace of
+ * `config` / `HEAD`. Linked worktrees also watch `commondir` shared metadata.
  */
 export function watchGitMetadata(
   gitDir: string,
   onChange: () => void,
 ): { dispose(): void } {
   const watchers: FSWatcher[] = [];
-  let disposed = false;
-  const fire = (): void => {
-    if (disposed) {
-      return;
-    }
-    try {
-      onChange();
-    } catch {
-      /* Observers own their reporting. */
-    }
-  };
-  const track = (target: string, recursive = false): void => {
-    if (!existsSync(target)) {
-      return;
-    }
-    try {
-      watchers.push(
-        recursive
-          ? watch(target, { recursive: true }, fire)
-          : watch(target, fire),
-      );
-    } catch {
-      /* Missing or unwatchable paths are skipped; blame still works once. */
-    }
-  };
-  track(join(gitDir, "HEAD"));
-  track(join(gitDir, "config"));
-  track(join(gitDir, "COMMIT_EDITMSG"));
-  track(join(gitDir, "refs"), true);
-  track(join(gitDir, "logs", "HEAD"));
+  const signals = coalesce(onChange);
+  trackMetadataTree(watchers, gitDir, () => signals.fire());
+  const common = resolveCommonDir(gitDir);
+  if (common && canonicalPath(common) !== canonicalPath(gitDir)) {
+    trackMetadataTree(watchers, common, () => signals.fire());
+  }
   return {
     dispose() {
-      disposed = true;
+      signals.dispose();
       for (const watcher of watchers.splice(0)) {
         try {
           watcher.close();

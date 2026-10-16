@@ -4429,5 +4429,7 @@ on `.git` HEAD/refs/config/logs) give discovered roots the same lifecycle-
 managed invalidation as API repositories. `NativeGitAccess` enrolls on
 discovery and clears FS bindings with API watches on detach/enablement.
 Unit regressions cover enroll/invalidate and a real amend without note edit.
-No VSIX or merge.
+Follow-up hardening: directory (not file) watches so atomic `config` replaces
+keep firing; linked-worktree `commondir` watch; `identity` retains the watch
+lease; symlink roots use `canonicalPath` for containment. No VSIX or merge.
 
