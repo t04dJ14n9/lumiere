@@ -1,0 +1,48 @@
+#app .mw-sticky-scroll {
+  position: absolute;
+  z-index: 5;
+  overflow: hidden;
+  padding: 0;
+  color: var(--vscode-editor-foreground, inherit);
+  background: var(
+    --vscode-editorStickyScroll-background,
+    var(--vscode-editor-background, #fff)
+  );
+  box-shadow: 0 3px 4px -3px
+    var(--vscode-editorStickyScroll-shadow, var(--vscode-widget-shadow));
+  border-bottom: 1px solid var(--vscode-editorStickyScroll-border, var(--line));
+  font-family: var(--text-font);
+  font-size: var(--text-size);
+}
+
+#app .mw-sticky-heading {
+  display: block;
+  width: 100%;
+  height: var(--sticky-row-height);
+  padding-block: 0;
+  padding-inline: calc(var(--sticky-inset) + 2px + var(--sticky-depth) * 0.75em)
+    16px;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  background: transparent;
+  font-weight: 600;
+  text-align: start;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+#app .mw-sticky-heading:hover {
+  background: var(--vscode-editorStickyScrollHover-background, var(--hover));
+}
+
+#app .mw-sticky-heading:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, var(--accent));
+  outline-offset: -1px;
+}
+
+#app .is-source-mode .mw-sticky-scroll {
+  font-family: var(--code-font);
+}

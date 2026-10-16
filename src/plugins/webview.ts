@@ -10,6 +10,7 @@ export { lineNumbersWebview } from "./lineNumbers/webview";
 export { gitGutterWebview } from "./gitGutter/webview";
 export { gitInlineWebview } from "./gitInline/webview";
 export { indentGuidesWebview } from "./indentGuides/webview";
+export { stickyScrollWebview } from "./stickyScroll/webview";
 export { spellcheckWebview } from "./spellcheck/webview";
 export { autoPairWebview } from "./autoPair/webview";
 export { smartListsWebview } from "./smartLists/webview";

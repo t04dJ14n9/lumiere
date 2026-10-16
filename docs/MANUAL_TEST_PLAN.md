@@ -663,6 +663,38 @@ Both are off by default (owner decision). Turn on
 2. `markdownWorkshop.linkUpdates.mode`: `always` skips the dialog,
    `never` changes nothing.
 
+### stickyScroll
+
+Use the disposable vault's `Core.md`. Under **Child heading**, paste enough
+paragraphs to fill two screens; add deeper headings through level 6 with more
+paragraphs. Keep **Formatting section** as a following sibling.
+
+1. With `markdownWorkshop.plugins.stickyScroll.enabled` unset/false, scroll:
+   no heading chrome appears. Enable it in Settings while the note is open:
+   scrolled-away **Core acceptance**, **Folding section** and **Child heading**
+   appear as compact rows at the top. At the document top there are no rows.
+2. Scroll into **Formatting section**: the previous child headings disappear.
+   Add a new level-1 heading and a Setext heading (`Title` followed by `=====`)
+   with paragraphs: each starts a new root section. Heading-looking text in a
+   fence, YAML, list or quote never adds sticky rows.
+3. Click a pinned heading, then use precise-jump Back: the heading is revealed
+   below the chrome, the editor has focus, and Back restores the prior place.
+   Tab to a heading button and press Enter: the same jump works.
+4. Change `markdownWorkshop.stickyScroll.maxLines` to 2 while deeply scrolled:
+   only the nearest two ancestors remain. Resize the editor to a short pane:
+   the chrome takes at most one third of its height. Toggle Source mode:
+   the same headings remain pinned; return to Live Preview.
+5. Rename/remove a heading, undo, fold/unfold sections, and apply an external
+   edit: labels and section ranges refresh without changing note text or undo.
+   Open the same note in two groups and scroll to different sections: each
+   panel shows its own ancestors.
+6. Check light, dark and high-contrast themes, readable line width, line
+   numbers on/off, right-to-left text and an open Find panel: rows stay legible,
+   fit the viewport and remain below Find. Long labels truncate to one row.
+   Wheel/trackpad input over the pinned rows still scrolls the note.
+7. Disable sticky scroll while scrolled: all rows disappear immediately. Enable
+   it again: the current ancestors return. The `minimal` preset has no rows.
+
 ### gitGutter
 
 On by default. Needs the built-in Git extension and a note in a repository.

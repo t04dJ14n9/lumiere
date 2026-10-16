@@ -1197,6 +1197,7 @@ default (§25).
 | Fold heading, Fold indent | `markdownWorkshop.folding.heading`, `.indent` | `true`, `true` |
 | Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |
+| (no built-in equivalent) Sticky headings | plugin `stickyScroll`; `markdownWorkshop.stickyScroll.maxLines` | off; 5 rows |
 | Right-to-left | `markdownWorkshop.editor.rightToLeft` | `false` |
 | Spellcheck | plugin `spellcheck` | on |
 | Auto pair brackets / Markdown syntax | `markdownWorkshop.autoPair.brackets`, `.markdown` | `true`, `true` |
