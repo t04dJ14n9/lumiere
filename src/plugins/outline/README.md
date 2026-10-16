@@ -3,7 +3,7 @@
 Shows the active note's headings beside this editor, with Collapse All,
 Expand All and an optional Follow Cursor toggle. Clicking a heading jumps to
 its section, like Obsidian's **Outline** core plugin. **Go to Heading…** searches
-these headings in a native Quick Pick while the Workbench editor is active.
+these headings in a native Quick Pick while the Workshop editor is active.
 
 ## How it works
 
@@ -26,7 +26,7 @@ the active panel's authoritative text, shows heading levels and parent titles,
 and navigates through the same path as the tree. Dismissed or stale picks
 (edited document, changed panel or stopped plugin) do not navigate.
 
-Ctrl+Alt+O (Control+Command+O on macOS) toggles Markdown Outline while the Workbench
+Ctrl+Alt+O (Control+Command+O on macOS) toggles Markdown Outline while the Workshop
 editor is active (editor-scoped keybinding, so PDF Workshop keeps the same keys).
 The command palette entry is workbench/config-gated like Quick Switcher. Hiding
 targets the view itself, including after moving it to the secondary sidebar or
@@ -77,7 +77,7 @@ Markdown Outline so they do not linger beside non-Workshop editors.
 
 - No drag-and-drop reordering of sections.
 - VS Code's native Outline and breadcrumbs require an editor integration that
-  the supported CustomTextEditorProvider API does not supply. Workbench uses
+  the supported CustomTextEditorProvider API does not supply. Workshop uses
   Markdown Outline and Go to Heading. The plain text editor uses VS Code's built-in
   Markdown symbols and Ctrl+Shift+O; this plugin registers no symbol provider,
-  so split editors cannot cache duplicate headings from Workbench.
+  so split editors cannot cache duplicate headings from Workshop.

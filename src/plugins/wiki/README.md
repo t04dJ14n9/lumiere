@@ -1,6 +1,6 @@
 # Wiki
 
-Reads a project's `.wiki/layout.json` and `.wiki/registry.json`, shows problems for pages inside the bundle, and copies a selection for an agent. This is the workbench side of an llm-wiki project. It does not run an agent.
+Reads a project's `.wiki/layout.json` and `.wiki/registry.json`, shows problems for pages inside the bundle, and copies a selection for an agent. This is the Workshop side of an llm-wiki project. It does not run an agent.
 
 ## How it works
 

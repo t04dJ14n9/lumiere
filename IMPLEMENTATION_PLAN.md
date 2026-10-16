@@ -4485,3 +4485,24 @@ lease; symlink roots use `canonicalPath` for containment. No VSIX or merge.
   unchanged baseline hit at `test/unit/gitBlame/coexistence.test.ts:41`, a negative
   assertion that the old setting key is absent. That line is identical at base
   `2e87720`; this label rename introduces no identity-audit hits.
+
+### Workshop product-copy sweep — 2026-10-16
+
+- Updated current product wording in the README, outline/wiki plugin READMEs,
+  manual test plan, parity/design docs, product comments and existing test titles.
+  The manual inventory generator now writes the current Workshop result header.
+- Renamed the Marp keep command to `markdownWorkshop.marp.keepInWorkshop` in its
+  manifest, runtime registration and command inventories. The displayed command
+  remains **Keep Marp Deck in Workshop**. There is no compatibility alias.
+- Generated contributions keep the **Markdown Workshop** configuration title and
+  command categories. The earlier Settings screenshot is consistent with a stale
+  installed extension. Grok Bot owns fresh host installs and GUI confirmation,
+  tracked as VERIFY-NEEDED in the external outline-rename status file.
+- Validation: `MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2
+  MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1 xvfb-run -a pnpm check:full` passed in
+  order under the shared suite lock: check (1,743 unit passes, 23 intentional
+  Cordis skips), Chromium (276 passes), native VS Code 1.142.0 (23 passes).
+  Native loading used the cached executable and a disposable profile. Existing
+  command-registration parity passed; no browser/native scenarios were added.
+  The generated package differs only in the Marp command ID and its palette entry;
+  configuration title and every command category are **Markdown Workshop**.

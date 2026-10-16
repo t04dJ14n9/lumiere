@@ -2,6 +2,9 @@
 
 ## 0.1.0 (unreleased)
 
+- **Keep Marp Deck in Workshop** now uses the command ID
+  `markdownWorkshop.marp.keepInWorkshop`. Product copy uses Workshop throughout.
+
 - The heading tree is now **Markdown Outline**, with **Toggle Markdown Outline**
   in the command palette. Existing command IDs, settings and shortcuts stay the same.
 

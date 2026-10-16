@@ -342,7 +342,7 @@
         "category": "Markdown Workshop"
       },
       {
-        "command": "markdownWorkshop.marp.keepInWorkbench",
+        "command": "markdownWorkshop.marp.keepInWorkshop",
         "title": "Keep Marp Deck in Workshop",
         "category": "Markdown Workshop"
       },
@@ -991,7 +991,7 @@
           "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
         },
         {
-          "command": "markdownWorkshop.marp.keepInWorkbench",
+          "command": "markdownWorkshop.marp.keepInWorkshop",
           "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.marp.enabled"
         },
         {

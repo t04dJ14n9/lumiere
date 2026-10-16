@@ -55,7 +55,7 @@ test("Go to Heading lists parsed headings in document order, filters them and ju
   ]);
 });
 
-test("switching between Workbench and a text split rechecks the active panel and rebuilds headings without an edit", async (t) => {
+test("switching between Workshop and a text split rechecks the active panel and rebuilds headings without an edit", async (t) => {
   const fixture = await outlineFixture({
     "A.md": "# A",
     "B.md": "# B\n## Nested",

@@ -19,6 +19,7 @@ The same check Marp uses decides whether the note is a deck, and sets `markdownW
 - Requires `workbench`. Optionally uses `editors` and `wikiLayout`.
 - Listens to `editor/opened` and `editor/activeChanged`.
 - Sets `markdownWorkshop.isMarp` (cleared when the plugin stops).
+- Command: `markdownWorkshop.marp.keepInWorkshop` (**Keep Marp Deck in Workshop**) remembers the deck and reopens it in this editor.
 - Setting: `markdownWorkshop.marp.open` (`workbench` or `textEditor`, default `workbench`).
 - Setting: `markdownWorkshop.plugins.marp.enabled`.
 

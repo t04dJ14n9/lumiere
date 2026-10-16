@@ -40,7 +40,7 @@ export const marpHost: Plugin = {
         run: () => moveActive(ctx),
       },
       {
-        id: contributionId("marp.keepInWorkbench"),
+        id: contributionId("marp.keepInWorkshop"),
         run: () => keepActive(ctx),
       },
     ]);

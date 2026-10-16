@@ -71,7 +71,7 @@ test("associated notes in Cursor's input-less Markdown editor are reclaimed", ()
   );
 });
 
-test("the handoff from Cursor Markdown into Workbench is left in place", () => {
+test("the handoff from Cursor Markdown into Workshop is left in place", () => {
   assert.equal(shouldReclaim(swap("other", "workbench"), context), false);
   assert.equal(shouldReclaim(swap("text", "workbench"), context), false);
   assert.equal(shouldReclaim(swap("workbench", "workbench"), context), false);

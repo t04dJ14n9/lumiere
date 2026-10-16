@@ -169,7 +169,7 @@ test("Toggle Markdown Outline is workbench-scoped in the palette and editor-scop
   );
 });
 
-test("Go to Heading overrides the symbol shortcut only for enabled Workbench panels", async () => {
+test("Go to Heading overrides the symbol shortcut only for enabled Workshop panels", async () => {
   const { commands, keybindings, menus } = await contributions();
   assert.equal(
     commands.find((command) => command.command === GO_TO_HEADING_COMMAND)
