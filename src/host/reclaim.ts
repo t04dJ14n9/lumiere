@@ -29,6 +29,8 @@ interface ReclaimRequest {
   uri: string;
   intent: NavigationIntent | undefined;
   at: number | undefined;
+  /** Once reveal delivery has started, later same-tab jumps must supersede. */
+  delivering?: boolean;
 }
 
 function kindOf(tab: vscode.Tab | undefined): TabKind {
@@ -146,8 +148,13 @@ function createReclaimTransfer(
       }
       const request = pending.get(tab);
       if (request?.uri === uri && !request.intent?.token.cancelled) {
-        capture(tab, uri);
-        return;
+        // Before delivery: refresh the selection only. After revealOpened has
+        // started, a later hunk must cancel and supersede that delivery.
+        if (!request.delivering) {
+          capture(tab, uri);
+          return;
+        }
+        request.intent?.token.cancel();
       }
       recentTransfers.allow(uri);
       const next: ReclaimRequest = {
@@ -272,7 +279,19 @@ async function reopen(
     preview: tab.isPreview,
   });
   if (navigation && request.intent && request.at !== undefined) {
+    request.delivering = true;
+    request.at = nativeSelectionStart(tab, uri) ?? request.at;
     await navigation.revealOpened(uri, column, request.at, request.intent);
+  }
+  // Opt-outs or a superseding jump may land during the reveal wait. Do not
+  // close a native tab the user just chose (Open as Text / Edit lease) or a
+  // transfer that navigation cancelled.
+  if (
+    handoffLease.has(uri) ||
+    textBypass.has(uri) ||
+    request.intent?.token.cancelled
+  ) {
+    return;
   }
   const group = vscode.window.tabGroups.all.find(
     (candidate) => candidate.viewColumn === column,

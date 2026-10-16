@@ -909,6 +909,88 @@ test("command selection on a reused native tab reveals without a tab event, incl
   assert.equal(commands.length, 2);
 });
 
+test("a second hunk during reveal readiness supersedes the in-flight offset", async (t) => {
+  const tab = cursorTab();
+  const destination = hunkDestination(tab);
+  const stop = host.reclaim.registerReclaim(destination.navigation);
+  const first = nativeHunkEditor(tab);
+  t.after(() => stop.dispose());
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1, "first transfer awaits reveal registration");
+  assert.deepEqual(destination.calls, []);
+  const next = nativeHunkEditor(tab, 947);
+  selectionChanged.fire({ textEditor: next, kind: 3 });
+  destination.ready();
+  await tick();
+  assert.deepEqual(destination.calls, [
+    next.document.getText().indexOf("Line 948\n"),
+  ]);
+  assert.equal(
+    destination.calls.includes(first.document.getText().indexOf("Line 930\n")),
+    false,
+    "superseded first offset must not apply",
+  );
+  assert.equal(commands.length, 2);
+});
+
+for (const optOut of ["Open as Text", "Cursor Edit lease"] as const) {
+  test(`${optOut} during reveal readiness keeps the clean native tab open`, async (t) => {
+    const tab = cursorTab();
+    tab.isDirty = false;
+    documents.find((document) => document.uri.toString() === note)!.isDirty =
+      false;
+    let releaseReveal = () => {};
+    const held = new Promise<void>((resolve) => {
+      releaseReveal = resolve;
+    });
+    t.after(releaseReveal);
+    const shell = {
+      id: "destination",
+      column: 1,
+      document: { uri: note },
+      active: () => true,
+    } as PanelShell;
+    const panels = [shell];
+    const navigation = host.navigation.createNavigation(() => panels);
+    const stop = host.reclaim.registerReclaim(navigation);
+    t.after(() => stop.dispose());
+    nativeHunkEditor(tab);
+    tab.isDirty = false;
+    navigation.registerReveal({
+      id: shell.id,
+      uri: note,
+      active: () => true,
+      async reveal(_target, token) {
+        await held;
+        return !token.cancelled;
+      },
+    });
+    afterCommand = () => {
+      tab.input = new TabInputCustom(Uri.parse(note), viewType);
+      vscode.window.activeTextEditor = undefined;
+    };
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    await tick();
+    assert.equal(commands.length, 1);
+    if (optOut === "Open as Text") {
+      host.reclaim.textBypass.allow(note);
+    } else {
+      const lease = host.reclaim.handoffLease.acquire(note);
+      lease.promote();
+      t.after(lease.release);
+    }
+    // Keep the native text tab present for cleanup to consider closing.
+    tab.input = new TabInputText(Uri.parse(note));
+    releaseReveal();
+    await tick();
+    assert.ok(
+      group.tabs.includes(tab),
+      "clean native tab must survive an opt-out during reveal wait",
+    );
+  });
+}
+
 test("a selection arriving during warming replaces the initial position without reopening twice", async (t) => {
   const release = delayWarm();
   t.after(release);
