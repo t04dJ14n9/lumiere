@@ -1,4 +1,5 @@
 import agentBridge from "./agentBridge/manifest";
+import ideContext from "./ideContext/manifest";
 import cursorBridge from "./cursorBridge/manifest";
 import pasteHtml from "./pasteHtml/manifest";
 import search from "./search/manifest";
@@ -101,6 +102,7 @@ export const workbenchFeatures: readonly Manifest[] = inPluginOrder(
     assets,
     backlinks,
     bridge,
+    ideContext,
     gitDiffEditor,
     linkUpdates,
     marp,

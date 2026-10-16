@@ -43,6 +43,12 @@ class FeatureController {
       return;
     }
     for (const manifest of features) {
+      // Host-only catalog entries (surfaces without webview) have no *Webview
+      // plugin; loading them would call root.plugin(undefined) and throw on
+      // `.inject` during browser/editor bootstrap.
+      if (!manifest.surfaces.includes("webview")) {
+        continue;
+      }
       const setting = settings[manifest.id];
       const enabled = setting?.enabled ?? (defaults && manifest.defaultEnabled);
       const config = manifest.config?.parse(setting?.config ?? {}) ?? {};
@@ -73,9 +79,11 @@ class FeatureController {
       });
     }
     if (enabled && !this.active.has(id)) {
-      const plugin = plugins[
-        `${id}Webview` as keyof typeof plugins
-      ] as Plugin<unknown>;
+      const plugin = plugins[`${id}Webview` as keyof typeof plugins] as
+        Plugin<unknown> | undefined;
+      if (!plugin) {
+        return;
+      }
       this.active.set(id, {
         fiber: this.root.plugin(plugin, config),
         signature,

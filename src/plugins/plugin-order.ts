@@ -85,6 +85,8 @@ export const WORKBENCH_FEATURE_ORDER = [
   "linkUpdates",
   // Bridge before wiki: wiki copy reads the bridge, and does not inject back.
   "bridge",
+  // Host-only IDE context handoff (no webview half); sits with bridge.
+  "ideContext",
   "wiki",
   "assets",
   "scratch",

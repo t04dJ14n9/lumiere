@@ -11,6 +11,7 @@ import { commandsHost } from "../../../src/plugins/commands/host";
 import { assetsHost } from "../../../src/plugins/assets/host";
 import { bridgeHost } from "../../../src/plugins/bridge/host";
 import { cursorBridgeHost } from "../../../src/plugins/cursorBridge/host";
+import { ideContextHost } from "../../../src/plugins/ideContext/host";
 import { registerMarkdownAssociation } from "../../../src/plugins/editor/associations";
 import { registerEditorActions } from "../../../src/plugins/editor/actions-host";
 import { editorHost } from "../../../src/plugins/editor/host";
@@ -257,6 +258,7 @@ function installHosts(
   root.plugin(settingsHost);
   root.plugin(livePreviewHost);
   root.plugin(cursorBridgeHost);
+  root.plugin(ideContextHost);
   root.plugin(graphHost);
   root.plugin(bridgeHost);
   root.plugin(wikiHost);

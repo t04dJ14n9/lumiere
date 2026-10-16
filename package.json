@@ -290,6 +290,18 @@
         "category": "Markdown Workshop"
       },
       {
+        "command": "markdownWorkshop.ideContext.copy",
+        "title": "Copy IDE Context",
+        "category": "Markdown Workshop",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "markdownWorkshop.ideContext.send",
+        "title": "Send IDE Context to Agent…",
+        "category": "Markdown Workshop",
+        "icon": "$(comment-discussion)"
+      },
+      {
         "command": "markdownWorkshop.insertWikilink",
         "title": "Insert Wikilink",
         "category": "Markdown Workshop"
@@ -939,6 +951,14 @@
           "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.graph.enabled"
         },
         {
+          "command": "markdownWorkshop.ideContext.copy",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.ideContext"
+        },
+        {
+          "command": "markdownWorkshop.ideContext.send",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.ideContext"
+        },
+        {
           "command": "markdownWorkshop.insertWikilink",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.links"
         },
@@ -1344,6 +1364,12 @@
           "default": true,
           "scope": "resource",
           "description": "Draw an OKF bundle as a directed graph of notes, in a panel of its own."
+        },
+        "markdownWorkshop.plugins.ideContext.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Copy or send a deeper IDE-context packet for Claude Code and Codex (clipboard-first; never silent-guess)."
         },
         "markdownWorkshop.plugins.indentGuides.enabled": {
           "type": "boolean",

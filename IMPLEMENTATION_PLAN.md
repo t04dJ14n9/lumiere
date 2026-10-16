@@ -4287,3 +4287,42 @@ the existing audit stays unchanged. All 58 focused blame/audit/settings cases
 now pass. Native packaging remains prohibited by this task. An unpackaged test
 harness option was prototyped and unit-checked but removed from the shared
 checkout externally; it is not part of this branch. No VSIX built or installed.
+
+## IDE context real host APIs and safe Codex attachment — 2026-10-15
+
+Replaced MW and PDF's tab/diagnostic stubs with the same injectable VS Code
+facade. It enumerates supported text/custom tabs, orders visible active tabs by
+focused group, deduplicates URIs, maps canonical diagnostics and snapshots native
+caret/language/dirty and workspace metadata. Panel selection stays authoritative.
+Tab/diagnostic failures are isolated; gather also records a throwing tab API as a
+bounded warning. All 13 shared IDE-context files, including `host-apis.ts`, are
+byte-identical with PDF and pinned in both suites.
+
+Codex now receives a file URI string on every attachment attempt. Drive and UNC
+paths work independently of the test host's platform; native paths use
+`node:url`. The file-URI helper lives beside each product's delivery code rather
+than under shared, because the pure-layer compiler and linter prohibit Node
+imports there. The two helpers are byte-identical. URI scrubbing now separates
+fragments from queries, handles encoded secret keys and malformed encodings, and
+escapes question marks in truncated tails so a second scrub cannot reinterpret a
+fragment. Existing diagnostic redaction remains stable, including empty messages.
+
+TDD reproduced missing adapter, fragment/query and Windows attachment failures
+before the fixes. Unit coverage adds mixed/duplicate/unsupported tabs, failure
+isolation, diagnostic mappings, native snapshots, URI encoding and scrub
+idempotence. Requested focused suites: MW 62/62; PDF 49/49. Prettier was applied
+to touched files. New adapter/helper code and changed host/gather/scrub pass scoped
+lint. No source tests were ported; the pinned human-learning checkout is absent.
+
+Broader checks are blocked by the starting branch: `xvfb-run -a pnpm check:full`
+stops at 70 lint errors. An archive of starting commit `0404792` has 79 lint errors and the
+same 16 pure-project TypeScript errors (optional fields, Buffer and
+structuredClone). Host-project compilation confirms the new facade accepts real
+VS Code types; the existing temp-FS/selection errors remain. The full existing
+Chromium suite finishes 5/276 passing, with feature startup failing on an undefined
+plugin (`reading 'inject'`). A focused unchanged browser case in the starting
+archive reproduces the identical stack. No browser/native tests were added.
+Native setup packages a VSIX, so it was excluded by the task's explicit no-VSIX
+constraint. No cursorBridge code, PDF bridge defaults, VSIX, merge or Marketplace
+publication is part of this phase. PDF check results and final pushed tips are
+recorded in `/workspace/plans/chatgpt-ide-adapters-code/PR-STATUS.md`.
