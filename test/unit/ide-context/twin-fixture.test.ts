@@ -5,6 +5,8 @@ import test from "node:test";
 
 /** Keep these files byte-identical with PDF Workshop. */
 const PINNED: Record<string, string> = {
+  "src/shared/ide-context/host-apis.ts":
+    "538488c9c6bae793bf25f78a81659213c98c0a0ae1a3cf58702ff6589fde9883",
   "docs/ide-context-packet.md":
     "9a769b58c9492d080e884acdf78d29edfd026b8ba9ec278bbcfd5f7d8807a761",
   "test/fixtures/ide-context-packet.json":
@@ -14,15 +16,15 @@ const PINNED: Record<string, string> = {
   "src/shared/ide-context/caps.ts":
     "541258fc320412a4eeb30d7fba7cf779e50f8b7245a7907707b971ccdeb5e712",
   "src/shared/ide-context/gather.ts":
-    "0fb27ce4328275dd1a65e3b1bbd981d9d4069b572ff3de63b55b90ac0e3cfd82",
+    "c5ead66997ffe5053870dcfb572cd7eb5f645915ab6b86209d326634fc6de0dd",
   "src/shared/ide-context/index.ts":
-    "15263a832e778057955a6cb0d4f9c5169309e20240349c281a22bf9102a1d079",
+    "4f8ddbe26ddc09edbccf30c33f3de3636b3842660b7ba52b8dce2672bfa88ae5",
   "src/shared/ide-context/render.ts":
     "f06280ca2be861b2c094918a510f3a805ba6a4887e474b88bc2859a49d8d81f8",
   "src/shared/ide-context/resolve-target.ts":
     "df2c67d3a76bda1eeaff10e0615f9b800581291105b4521189ad77658b2e0a30",
   "src/shared/ide-context/scrub.ts":
-    "bbd0b7ec08e023d3c338a0d62686a0fda528a7cdb7e990ae3580f59124019f03",
+    "fcc827400df54872f1055e47d63513bcac0d109781176928d7217e9c244fc0cb",
   "src/shared/ide-context/temp-lease.ts":
     "d6a945c18152e9597cf133e72db97e8d2ee9b49e401f8348b84497f9d2c4c732",
   "src/shared/ide-context/temp-publish.ts":

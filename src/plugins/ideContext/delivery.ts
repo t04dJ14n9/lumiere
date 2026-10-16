@@ -1,3 +1,4 @@
+import { pathToFileUriString } from "./file-uri";
 import { AGENT_COMMANDS } from "../agentBridge/chat";
 import {
   publishIdeContextTemp,
@@ -146,7 +147,10 @@ export async function sendIdeContext(
           sessionId,
         });
       }
-      await deps.executeCommand(AGENT_COMMANDS.codexAddFile, finalPath);
+      await deps.executeCommand(
+        AGENT_COMMANDS.codexAddFile,
+        pathToFileUriString(finalPath),
+      );
       attached = true;
       break;
     } catch {

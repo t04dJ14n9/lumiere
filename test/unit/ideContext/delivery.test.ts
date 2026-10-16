@@ -260,3 +260,27 @@ test("MW Codex: temp publish {skipped:true} → clipboard kept; no invalid add-f
   assert.equal(result.opened, "clipboard");
   assert.ok(result.softFailWarning);
 });
+
+test("Codex attaches Windows temp paths as file URI strings", async () => {
+  let attached: unknown;
+  await sendIdeContext(mwPacket(), {
+    setting: "codex",
+    commands: new Set([AGENT_COMMANDS.codexOpen, AGENT_COMMANDS.codexAddFile]),
+    clipboardWrite: async () => {},
+    showQuickPick: async () => undefined,
+    executeCommand: async (id, ...args) => {
+      if (id === AGENT_COMMANDS.codexAddFile) {
+        attached = args[0];
+      }
+    },
+    tempFs: new MemoryTempFs(),
+    publishTemp: async () => ({
+      finalPath:
+        "C:\\Users\\test\\AppData\\Local\\Temp\\agent-ide-context\\ide-context-x.json",
+    }),
+  });
+  assert.equal(
+    attached,
+    "file:///C:/Users/test/AppData/Local/Temp/agent-ide-context/ide-context-x.json",
+  );
+});

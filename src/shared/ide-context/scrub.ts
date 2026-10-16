@@ -7,32 +7,48 @@ const BEARER_RE = /bearer\s+\S+/gi;
 
 /** Prefer scheme + tail when truncating long URIs. */
 export function scrubUri(uri: string, maxChars: number): string {
+  // A question mark inside a fragment is fragment text, not a query.
+  const fragmentIndex = uri.indexOf("#");
+  const base = fragmentIndex < 0 ? uri : uri.slice(0, fragmentIndex);
+  const fragment = fragmentIndex < 0 ? "" : uri.slice(fragmentIndex);
+  const queryIndex = base.indexOf("?");
   let out = uri;
-  try {
-    const qIndex = uri.indexOf("?");
-    if (qIndex >= 0) {
-      const base = uri.slice(0, qIndex);
-      const query = uri.slice(qIndex + 1);
-      const kept: string[] = [];
-      for (const part of query.split("&")) {
-        if (!part) continue;
-        const eq = part.indexOf("=");
-        const key = eq >= 0 ? part.slice(0, eq) : part;
-        if (SECRET_QUERY_KEY.test(key)) continue;
-        kept.push(part);
-      }
-      out = kept.length > 0 ? `${base}?${kept.join("&")}` : base;
-    }
-  } catch {
-    // fail soft — keep original and still truncate
+  if (queryIndex >= 0) {
+    const kept = base
+      .slice(queryIndex + 1)
+      .split("&")
+      .filter(keepQueryPart);
+    out =
+      base.slice(0, queryIndex) +
+      (kept.length ? `?${kept.join("&")}` : "") +
+      fragment;
   }
-  if (out.length <= maxChars) return out;
+  if (out.length <= maxChars) {
+    return out;
+  }
   // Prefer scheme + tail
   const schemeMatch = /^([a-z][a-z0-9+.-]*:\/\/)/i.exec(out);
   const scheme = schemeMatch?.[1] ?? "";
   const tailBudget = Math.max(0, maxChars - scheme.length);
-  if (tailBudget <= 0) return out.slice(0, maxChars);
-  return scheme + out.slice(out.length - tailBudget);
+  if (tailBudget <= 0) {
+    return out.slice(0, maxChars);
+  }
+  // Truncation may remove a fragment delimiter. Escape question marks so a
+  // later scrub cannot reinterpret fragment text or a partial query as a query.
+  const tail = out.replace(/\?/g, "%3F").slice(-tailBudget);
+  return scheme + tail;
+}
+
+function keepQueryPart(part: string): boolean {
+  if (!part) {
+    return false;
+  }
+  const key = part.split("=", 1)[0] ?? "";
+  try {
+    return !SECRET_QUERY_KEY.test(decodeURIComponent(key));
+  } catch {
+    return !SECRET_QUERY_KEY.test(key);
+  }
 }
 
 export function scrubDiagnosticMessage(msg: string, maxChars: number): string {
@@ -40,7 +56,9 @@ export function scrubDiagnosticMessage(msg: string, maxChars: number): string {
     .replace(SK_RE, "[redacted]")
     .replace(GHP_RE, "[redacted]")
     .replace(BEARER_RE, "Bearer [redacted]");
-  if (out.length > maxChars) out = out.slice(0, maxChars);
+  if (out.length > maxChars) {
+    out = out.slice(0, maxChars);
+  }
   return out;
 }
 

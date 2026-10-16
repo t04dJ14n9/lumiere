@@ -52,3 +52,11 @@ export {
   type IdeContextSendResolution,
   type IdeContextSendEnvironment,
 } from "./resolve-target";
+
+export {
+  createVsCodeIdeContextHost,
+  enumerateTabUris,
+  mapVsCodeDiagnostic,
+  KNOWN_WORKSHOP_VIEW_TYPES,
+  type VsCodeIdeContextFacade,
+} from "./host-apis";

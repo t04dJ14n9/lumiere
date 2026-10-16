@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import { contributionId } from "../../shared/setting-schema";
@@ -9,6 +10,7 @@ import * as path from "node:path";
 import * as fs from "node:fs/promises";
 import * as fssync from "node:fs";
 import {
+  createVsCodeIdeContextHost,
   publishIdeContextTemp,
   renewLeaseAtomic,
 } from "../../shared/ide-context";
@@ -55,14 +57,7 @@ async function gatherInput(ctx: Context) {
     return undefined;
   }
   const selection = await ctx.selections.capture(panel.id);
-  const host = {
-    listTabs: () => ({
-      visible: [panel.document.uri],
-      open: [panel.document.uri],
-    }),
-    getDiagnostics: (_uri: string) => [] as never[],
-    activeTextEditor: undefined,
-  };
+  const host = createVsCodeIdeContextHost(vscode);
   return {
     uri: panel.document.uri,
     editorKind: "livePreview" as const,
@@ -74,7 +69,9 @@ async function gatherInput(ctx: Context) {
 
 async function runCopy(ctx: Context): Promise<void> {
   const input = await gatherInput(ctx);
-  if (!input) return;
+  if (!input) {
+    return;
+  }
   const packet = buildMwIdeContextPacket(input);
   await copyIdeContext(
     packet,
@@ -85,7 +82,9 @@ async function runCopy(ctx: Context): Promise<void> {
 
 async function runSend(ctx: Context): Promise<void> {
   const input = await gatherInput(ctx);
-  if (!input) return;
+  if (!input) {
+    return;
+  }
   const packet = buildMwIdeContextPacket(input);
   const environment = await ctx.workshop.agentEnvironment?.();
   const setting = (environment?.target ?? "auto") as IdeContextTargetSetting;
@@ -101,7 +100,9 @@ async function runSend(ctx: Context): Promise<void> {
         "Send IDE Context to…",
         labels,
       );
-      if (!choice) return undefined;
+      if (!choice) {
+        return undefined;
+      }
       return items.find((i) => i.label === choice)?.id;
     },
     inform: (m) => ctx.workshop.inform?.(m),

@@ -58,19 +58,8 @@ export function gatherIdeContext(
     { activeTextEditor: hostApis.activeTextEditor },
   );
 
-  // PDF: enforce active.uri === pdf.uri
-  if (productSlice.product === "pdfWorkshop") {
-    active.uri = canonicalUri;
-  }
-
-  let diagItems: DiagnosticItem[] = [];
-  try {
-    diagItems = hostApis.getDiagnostics(canonicalUri);
-  } catch {
-    warnings.push("diagnostics unavailable for canonical URI");
-  }
-
-  const tabs = hostApis.listTabs();
+  const diagItems = gatherDiagnostics(hostApis, canonicalUri, warnings);
+  const tabs = gatherTabs(hostApis, warnings);
   const base = {
     version: 1 as const,
     collectedAt,
@@ -109,4 +98,29 @@ export function gatherIdeContext(
 
   // Gathering may scrub; render still re-scrubs (idempotent).
   return scrubPacket(packet);
+}
+
+function gatherTabs(
+  host: Pick<IdeContextHostApis, "listTabs">,
+  warnings: string[],
+) {
+  try {
+    return host.listTabs();
+  } catch {
+    warnings.push("tab enumeration unavailable");
+    return { visible: [], open: [] };
+  }
+}
+
+function gatherDiagnostics(
+  host: Pick<IdeContextHostApis, "getDiagnostics">,
+  uri: string,
+  warnings: string[],
+): DiagnosticItem[] {
+  try {
+    return host.getDiagnostics(uri);
+  } catch {
+    warnings.push("diagnostics unavailable for canonical URI");
+    return [];
+  }
 }
