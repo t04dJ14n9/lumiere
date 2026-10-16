@@ -11,8 +11,10 @@
  *   pdfZen       zen mode: core Zen Mode, and a floating bar with Exit zen in the viewer
  *   pdfRegions   PNG snapshots of selected regions, for agents
  *   agentBridge  Copy Link for Agent, the AgentHandoff service, the opt-in MCP server
+ *   ideContext   Copy/Send IDE Context (clipboard-first; never silent-guess)
  */
 import { agentBridgePlugin } from './agentBridge/plugin';
+import { ideContextPlugin } from './ideContext/plugin';
 import { pdfPlugin } from './pdf/plugin';
 import { pdfLookUpPlugin } from './pdfLookUp/plugin';
 import { pdfSettingsPlugin } from './pdfSettings/plugin';
@@ -33,4 +35,5 @@ export const plugins: readonly PluginDefinition<PdfServices>[] = [
   pdfZenPlugin,
   pdfSettingsPlugin,
   agentBridgePlugin,
+  ideContextPlugin,
 ];

@@ -72,6 +72,11 @@ export const OUTLINE_COMMAND_IDS = {
   goToOutlineItem: "pdfWorkshop.goToOutlineItem",
 } as const;
 
+export const IDE_CONTEXT_COMMAND_IDS = {
+  copy: "pdfWorkshop.ideContext.copy",
+  send: "pdfWorkshop.ideContext.send",
+} as const;
+
 export const AGENT_BRIDGE_COMMAND_IDS = {
   copyLinkForAgent: "pdfWorkshop.copyLinkForAgent",
   copyMcpSetup: "pdfWorkshop.copyMcpSetup",
@@ -89,6 +94,7 @@ export const RUNTIME_COMMAND_IDS: readonly string[] = [
   ...Object.values(LOOK_UP_COMMAND_IDS),
   ...Object.values(OUTLINE_COMMAND_IDS),
   ...Object.values(AGENT_BRIDGE_COMMAND_IDS),
+  ...Object.values(IDE_CONTEXT_COMMAND_IDS),
 ];
 
 /** Full id for a view-options suffix (`singlePage`, …). Unknown suffixes are not registered. */
