@@ -56,6 +56,15 @@ test("selected type always renders its widget and a non-mutating mismatch warnin
   assert.doesNotMatch(html, /data-property-convert/);
 });
 
+test("title stays a visible editable text property alongside the file title", () => {
+  const html = renderProperties("---\ntitle: WorkVault note\n---\nBody");
+  assert.match(html, /data-property-row="title"/);
+  assert.match(
+    html,
+    /<div class="metadata-input-longtext" contenteditable="true"[^>]*data-property-input="title" data-property-kind="text">WorkVault note<\/div>/,
+  );
+});
+
 test("reserved aliases and cssclasses types cannot be overridden by preferences", () => {
   assert.equal(
     inferPropertyKind("aliases", "Other", { aliases: "number" }),

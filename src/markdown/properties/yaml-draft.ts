@@ -1,9 +1,31 @@
 import { isAlias, isNode, type Document } from "yaml";
-import { propertyYamlInput, settablePropertyNode } from "./values";
+import {
+  propertyYamlInput,
+  settablePropertyNode,
+  settablePropertyValue,
+} from "./values";
 import { valueStart } from "./yaml-value";
 
-/** Remove only the property's outer indentation, keeping nested YAML verbatim. */
+/**
+ * Prefer a verbatim YAML slice that round-trips on its own.
+ * When the slice cannot stand alone (external aliases, colliding keys,
+ * unsupported tags, …), return undefined so the sheet shows Source mode —
+ * never stringify collapsed/rounded JS (silent serial/key loss on commit).
+ */
 export function propertyYamlDraft(
+  body: string,
+  node: unknown,
+  value: unknown,
+  document?: Document,
+): string | undefined {
+  if (!settablePropertyNode(node, document) || !settablePropertyValue(value)) {
+    return undefined;
+  }
+  return rawPropertyYamlDraft(body, node, value, document);
+}
+
+/** Remove only the property's outer indentation, keeping nested YAML verbatim. */
+function rawPropertyYamlDraft(
   body: string,
   node: unknown,
   value: unknown,
@@ -11,11 +33,7 @@ export function propertyYamlDraft(
 ): string | undefined {
   const isReference = isAlias(node);
   const valueNode = isReference && document ? node.resolve(document) : node;
-  if (
-    !isNode(valueNode) ||
-    !valueNode.range ||
-    !settablePropertyNode(valueNode, document)
-  ) {
+  if (!isNode(valueNode) || !valueNode.range) {
     return undefined;
   }
   // A top-level alias edits a copy of its target, without copying its anchor.
@@ -38,7 +56,7 @@ export function propertyYamlDraft(
     : undefined;
 }
 
-/** Preserve the guard against aliases or tagged values that cannot round-trip. */
+/** Reuse source text only when it parses independently to the same value. */
 function yamlDraftEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) {
     return true;

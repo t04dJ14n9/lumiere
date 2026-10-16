@@ -34,6 +34,70 @@ test("generated and sources complex values render as editable YAML drafts", () =
   assert.match(html, /resource: \.\.\/raw\/a\.pdf/);
 });
 
+test("decision confidence maps and lists of maps always have YAML editors", () => {
+  const html = renderProperties(
+    "---\ndecision_conf:\n  score: 0.82\n  rationale: Evidence supports this\n  factors: [evidence, risk]\ndecisions:\n  - score: 0.9\n    factors: [review]\n---\n",
+  );
+  for (const key of ["decision_conf", "decisions"]) {
+    assert.match(
+      html,
+      new RegExp(
+        `<textarea[^>]*data-property-input="${key}"[^>]*data-property-kind="yaml"`,
+      ),
+    );
+  }
+  assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
+});
+
+test("nested references outside a property's raw slice stay Source-mode (no lossy stringify)", () => {
+  const html = renderProperties(
+    "---\nfactors: &f [evidence, risk]\ndecision_conf:\n  score: 0.82\n  factors: *f\n---\n",
+  );
+  assert.match(html, /data-property-key="decision_conf"[\s\S]*Source mode/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="decision_conf"[^>]*data-property-kind="yaml"/,
+  );
+  assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
+});
+
+test("external alias with unsafe integer stays Source-mode (no rounded serial draft)", () => {
+  const html = renderProperties(
+    "---\nfactors: &f [risk]\ndecision_conf:\n  score: 0.82\n  serial: 9007199254740993\n  factors: *f\n---\n",
+  );
+  assert.match(html, /data-property-key="decision_conf"[\s\S]*Source mode/);
+  assert.doesNotMatch(html, /9007199254740992/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="decision_conf"[^>]*data-property-kind="yaml"/,
+  );
+});
+
+test("colliding mapping keys stay Source-mode (no dropped entry draft)", () => {
+  const html = renderProperties(
+    '---\ngenerated:\n  1: first\n  "1": second\n  by: old\n---\n',
+  );
+  assert.match(html, /data-property-key="generated"[\s\S]*Source mode/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="generated"[^>]*data-property-kind="yaml"/,
+  );
+});
+
+test("long property names retain their full identity, accessible label and tooltip", () => {
+  const key = "decision_confidence_and_supporting_evidence";
+  const html = renderProperties(`---\n${key}: high\n---\n`);
+  for (const attribute of [
+    "data-property-key",
+    "data-property-name",
+    "value",
+    "title",
+  ]) {
+    assert.ok(html.includes(`${attribute}="${key}"`), attribute);
+  }
+  assert.ok(html.includes(`aria-label="Property name: ${key}"`));
+});
+
 test("registry property types retain mismatch warnings and choose the expected control", () => {
   const source = "---\ncount: abc\nflag: text\nempty:\n---\n";
   const normal = renderProperties(source, {
@@ -55,7 +119,11 @@ test("property rendering bounds recursive aliases and leaves absent frontmatter 
   const recursive = renderProperties(
     "---\nloop: &loop { child: *loop }\n---\n",
   );
-  assert.match(recursive, /Recursive YAML alias/);
+  assert.match(recursive, /Source mode/);
+  assert.doesNotMatch(
+    recursive,
+    /class="property-chip"|class="property-object"/,
+  );
   const empty = renderProperties("---\nvalue: null\n---\n");
   assert.match(empty, /data-placeholder="Empty"/);
 });
@@ -79,6 +147,28 @@ test("empty sources keeps custom renderer and YAML draft instead of scalar chips
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });
 
+test("Sources custom rows stay above Source-mode when entries reference external anchors", () => {
+  const html = renderProperties(
+    "---\nreference: &r {resource: ../raw/a.pdf, id: a1}\nsources: [*r]\n---\n",
+    {},
+    {
+      renderValue: (key) =>
+        key === "sources"
+          ? '<div class="source-rows"><button data-source-open>Open source</button></div>'
+          : undefined,
+    },
+  );
+  assert.match(
+    html,
+    /class="property-complex"><div class="source-rows">[\s\S]*data-source-open[\s\S]*Source mode/,
+  );
+  assert.doesNotMatch(
+    html,
+    /data-property-input="sources"[^>]*data-property-kind="yaml"/,
+  );
+  assert.doesNotMatch(html, /data-property-list="sources"/);
+});
+
 test("tagged YAML sets that cannot round-trip stay non-draft displays", () => {
   const html = renderProperties("---\nvalue: !!set {a: null, b: null}\n---\n");
   assert.doesNotMatch(
@@ -95,4 +185,26 @@ test("tagged timestamps that do not round-trip stay non-draft displays", () => {
     html,
     /data-property-input="generated"[^>]*data-property-kind="yaml"/,
   );
+});
+
+for (const value of ["!!pairs [a: 1]", "!!map {a: 1}", ".inf", "[.inf]"]) {
+  test(`unsupported ${value} explains Source mode without misleading chips`, () => {
+    const html = renderProperties(`---\nvalue: ${value}\n---\n`);
+    assert.match(html, /Source mode/);
+    assert.doesNotMatch(
+      html,
+      /data-property-kind="yaml"|class="property-chip"|class="property-object"/,
+    );
+  });
+}
+
+test("type grip is a button distinct from value data-property-type", () => {
+  const html = renderProperties("---\na: 1\nb: 2\n---\n");
+  assert.match(html, /<button type="button"[^>]*data-property-type/);
+  assert.match(
+    html,
+    /class="metadata-property-value"[^>]*data-property-type="number"/,
+  );
+  // Order/selection drag and multi-select must target button[data-property-type]
+  // only — the value wrapper also carries data-property-type for Obsidian CSS.
 });

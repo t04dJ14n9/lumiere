@@ -162,7 +162,7 @@ export class PropertyOrder {
   private begin(event: PointerEvent): void {
     const button =
       event.target instanceof Element
-        ? event.target.closest<HTMLButtonElement>("[data-property-type]")
+        ? event.target.closest<HTMLButtonElement>("button[data-property-type]")
         : null;
     if (
       !button ||

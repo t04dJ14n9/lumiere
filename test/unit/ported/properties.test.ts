@@ -10,15 +10,14 @@ import { renderProperties } from "../../../src/plugins/properties/sheet-html";
 
 test("recursive YAML properties render without throwing or mistaking shared aliases for cycles", () => {
   for (const yaml of ["items: &items [*items]", "item: &item {self: *item}"]) {
-    assert.match(
-      renderProperties(`---\n${yaml}\n---\n`),
-      /Recursive YAML alias/,
-    );
+    const html = renderProperties(`---\n${yaml}\n---\n`);
+    assert.match(html, /Source mode/);
+    assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
   }
   const repeated = renderProperties(
     "---\nfirst: &shared [one, two]\nsecond: *shared\n---\n",
   );
-  assert.doesNotMatch(repeated, /Recursive YAML alias/);
+  assert.doesNotMatch(repeated, /Source mode/);
   assert.equal((repeated.match(/data-property-kind="yaml"/g) ?? []).length, 2);
   assert.match(repeated, /one/);
   assert.match(repeated, /two/);

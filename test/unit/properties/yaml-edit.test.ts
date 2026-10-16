@@ -80,6 +80,18 @@ test("Sources YAML drafts retain comments inside lists of mappings", () => {
   );
 });
 
+test("external-alias properties stay Source-mode instead of a lossy stringify draft", () => {
+  const source =
+    "---\nfactors: &f [evidence, risk]\ndecision_conf:\n  score: 0.82\n  factors: *f\nkeep: '01' # untouched\n---\nBody";
+  const html = renderProperties(source);
+  assert.match(html, /data-property-key="decision_conf"[\s\S]*Source mode/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="decision_conf"[^>]*data-property-kind="yaml"/,
+  );
+  assert.match(html, /data-property-key="keep"/);
+});
+
 test("anchored YAML drafts preserve leading comments and prior external alias values", () => {
   const source =
     "---\ngenerated: &a # generated comment\n  # before the first child\n  by: old\n  # checksum is external\n  checksum: 'abc'\nmirror: *a\n---\n";

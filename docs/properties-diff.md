@@ -37,7 +37,7 @@ writable sandbox; this review is also copied to `/tmp/properties-diff.md`.
 | Collapse state: **per note** (measured in Obsidian 1.14.4 with `docs/obsidian-measurements/coll.mjs`: collapsing one note leaves another open, and a note keeps its state when reopened) | Native details defaults open; no persistence | fix — persist collapsed notes (by URI) in workspace state through validated host RPC; panels of the same note follow each other |
 | Collapse state shared across VS Code workspaces | Storage adapter is workspace state | reject+why — Obsidian's state is per vault; ours is per workspace, which is the same unit |
 | Text Enter writes quoted YAML when needed; checkbox click/Space writes boolean | YAML serializer and checkbox click already do this | fix — add regression tests that pin existing safe quoting/boolean behaviour |
-| Nested/anchored/recursive YAML beyond the measured scalar/list spec | Existing safe read-only rendering and guarded edits | defer+why — retain source-only support and recursion bounds; complex YAML editing is unmeasured and disproportionately costly |
+| Nested/anchored/recursive YAML beyond the measured scalar/list spec | Nested maps, lists of maps and block scalars use YAML drafts; independent raw slices can fail for external aliases | fix — keep raw drafts when possible, serialize settable values when needed, show a Source mode message for tagged/recursive/unsupported values; Sources keeps custom rows above its draft |
 
 Validation results and remaining manual checks are recorded in
 `IMPLEMENTATION_PLAN.md` and `docs/MANUAL_TEST_PLAN.md`.

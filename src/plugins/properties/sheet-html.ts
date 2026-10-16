@@ -1,4 +1,8 @@
-import { frontmatter, matchesPropertyKind } from "../../markdown/properties";
+import {
+  frontmatter,
+  matchesPropertyKind,
+  settablePropertyValue,
+} from "../../markdown/properties";
 import { propertyYamlDraft } from "../../markdown/properties/yaml-draft";
 import {
   inferPropertyKind,
@@ -46,10 +50,12 @@ export function renderProperties(
     .map(([key, value]) =>
       propertyRow(key, value, {
         kind: inferPropertyKind(key, value, types),
-        editable: !!(
-          properties?.editableKeys?.includes(key) ||
-          properties?.editableLists?.includes(key)
-        ),
+        editable:
+          settablePropertyValue(value) &&
+          !!(
+            properties?.editableKeys?.includes(key) ||
+            properties?.editableLists?.includes(key)
+          ),
         custom: options.renderValue?.(key, value, values),
         draft: propertyYamlDraft(
           properties?.yaml?.body ?? "",
@@ -70,12 +76,12 @@ function propertyBody(
 ): string {
   // Custom renderers (e.g. Sources) keep structured YAML editing even for [].
   if (options.custom) {
-    return complexEditable(key, value, options);
+    return complexEditable(key, options);
   }
   if (options.editable) {
     return editableValue(key, value, options.kind);
   }
-  return complexEditable(key, value, options);
+  return complexEditable(key, options);
 }
 
 function propertyRow(
@@ -86,7 +92,7 @@ function propertyRow(
   const { kind } = options;
   const warning = mismatchWarning(kind, !matchesPropertyKind(kind, value));
   const body = propertyBody(key, value, options);
-  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
+  return `<div class="property-row metadata-property" tabindex="0"${attr("data-property-row", key)}${attr("data-property-key", key)}><div class="metadata-property-key"><button type="button" tabindex="-1" data-property-type${attr("aria-label", `Type of ${key}: ${propertyKindLabels[kind]}`)}><span class="metadata-property-icon">${propertyIcon(key, value, kind)}</span></button><input class="property-key metadata-property-key-input" tabindex="-1"${attr("data-property-name", key)}${attr("aria-label", `Property name: ${key}`)}${attr("title", key)}${attr("value", key)}></div><div class="metadata-property-value"${attr("data-property-type", kind === "list" ? "multitext" : kind)}>${body}</div>${warning}</div>`;
 }
 
 export function pendingPropertyRow(): string {
@@ -166,14 +172,13 @@ function propertyInputText(value: unknown): string {
 
 function complexEditable(
   key: string,
-  value: unknown,
   options: Pick<PropertyRowOptions, "custom" | "draft">,
 ): string {
   const { custom, draft } = options;
-  if (draft === undefined) {
-    return custom ?? propertyValue(value);
-  }
-  const editor = editableYaml(key, draft);
+  const editor =
+    draft === undefined
+      ? '<span class="property-empty">Edit in Source mode: tagged, recursive or unsupported YAML.</span>'
+      : editableYaml(key, draft);
   return custom
     ? `<div class="property-complex">${custom}${editor}</div>`
     : editor;
@@ -182,39 +187,4 @@ function complexEditable(
 function editableYaml(key: string, text: string): string {
   // textarea keeps Enter as real newlines (contenteditable textContent does not).
   return `<textarea class="metadata-input-longtext metadata-input-yaml" rows="3" tabindex="-1" data-placeholder="Empty"${attr("aria-label", key)}${attr("data-property-input", key)} data-property-kind="yaml">${escape(text)}</textarea>`;
-}
-
-function propertyValue(value: unknown, ancestors = new Set<object>()): string {
-  if (typeof value === "object" && value !== null) {
-    return propertyObject(value, ancestors);
-  }
-  if (value === null || value === undefined || value === "") {
-    return '<span class="property-empty">Empty</span>';
-  }
-  const text = String(value);
-  return /^\[\[[^\n]+\]\]$/.test(text) || /^https?:\/\/[^\s<>]+$/.test(text)
-    ? renderInline(text)
-    : `<span class="property-text">${escape(text)}</span>`;
-}
-
-function propertyObject(value: object, ancestors: Set<object>): string {
-  if (ancestors.has(value)) {
-    return '<span class="property-empty">Recursive YAML alias</span>';
-  }
-  if (ancestors.size >= 64) {
-    return '<span class="property-empty">Further nesting is available in source</span>';
-  }
-  const path = new Set(ancestors).add(value);
-  if (Array.isArray(value)) {
-    return value.length
-      ? value
-          .map(
-            (item) =>
-              `<span class="property-chip">${propertyValue(item, path)}</span>`,
-          )
-          .join(" ")
-      : '<span class="property-empty">Empty list</span>';
-  }
-  const entries = Object.entries(value);
-  return `<details class="property-object"><summary>${entries.length} ${entries.length === 1 ? "field" : "fields"}</summary><dl>${entries.map(([name, item]) => `<div><dt>${escape(name)}</dt><dd>${propertyValue(item, path)}</dd></div>`).join("")}</dl></details>`;
 }

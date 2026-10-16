@@ -252,6 +252,19 @@ Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
    source/live-preview toggles keep the native document authoritative. Check
    menu clipboard permissions, native pickers/locales and actual IME with the
    owner's editor; these are not established by the DOM event unit fakes.
+10. Keep `title` as an ordinary editable text property (WorkVault uses the
+    filename stem). Add `decision_confidence_and_supporting_evidence: high` and
+    a nested `decision_conf` map with `score`, `rationale` and a `factors` list.
+    Add a list of maps too. Each complex value has an editable YAML textarea;
+    click blank row/value space and type immediately. Plain text stays inline,
+    lists retain pills and a trailing editor, and long keys stay within their
+    column with the full name on hover. Repeat in a narrow panel.
+11. Define `factors: &f [evidence, risk]`, then use `factors: *f` inside
+    `decision_conf`. Its YAML editor must show the resolved list and permit a
+    score edit. Commit with Ctrl/Cmd+Enter, save/reopen and undo; unrelated YAML
+    stays intact. Unsupported tagged/recursive values show a clear Source mode
+    message. Sources retains stacked rows above its YAML editor, including
+    `sources: []`; source links still open, and selecting source ids still copies.
 
 Daily-note links are deferred because this editor has no daily-note plugin;
 per-note collapse (as in Obsidian) and native picker appearance are deliberate limits.
