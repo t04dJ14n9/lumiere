@@ -15,6 +15,18 @@ import type { BlockRenderer } from "../livePreview/api";
 import { tablesWebview } from "./webview";
 import { TableWidget } from "./widget";
 
+function wheel(overrides: Partial<WheelEvent> = {}) {
+  return Object.assign(new Event("wheel", { cancelable: true }), {
+    deltaX: 0,
+    deltaY: 120,
+    deltaMode: 0,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    ...overrides,
+  });
+}
+
 test("tables always register a widget and own their document-entry keys and commands", async () => {
   const root = Context.create();
   const renderers: BlockRenderer[] = [];
@@ -128,16 +140,31 @@ test("tables always register a widget and own their document-entry keys and comm
   assert.ok(widget instanceof TableWidget);
   const scrollNote = widget.environment.scrollNote;
   for (const type of ["wheel", "pointerdown", "keydown", "touchstart"]) {
-    scrollNote(120);
+    scrollNote(120, wheel());
     assert.deepEqual(scrolls.at(-1), { top: 720, behavior: "smooth" });
     dom.dispatchEvent(new Event(type));
     assert.deepEqual(scrolls.at(-1), { top: 600, behavior: "instant" });
   }
   const forwardedWheel = new Event("wheel", { cancelable: true });
   forwardedWheel.preventDefault();
-  scrollNote(120);
+  scrollNote(120, wheel());
   dom.dispatchEvent(forwardedWheel);
   assert.equal(scrolls.at(-1)?.behavior, "smooth");
+  dom.dispatchEvent(new Event("pointerdown"));
+  scrollNote(0.25, wheel({ deltaY: 0.25 }));
+  viewport.scrollTop = 600.1;
+  viewport.dispatchEvent(new Event("scroll"));
+  assert.equal(scrolls.at(-1)?.behavior, "smooth");
+  viewport.scrollTop = 600;
+  viewport.dispatchEvent(new Event("scrollend"));
+  viewport.scrollTop = 900;
+  scrollNote(0.25, wheel({ deltaY: 0.25 }));
+  assert.equal(
+    scrolls.at(-1)?.top,
+    900.25,
+    "scrollend releases a rounded destination",
+  );
+  viewport.scrollTop = 600;
   await root.dispose();
   assert.deepEqual(scrolls.at(-1), { top: 600, behavior: "instant" });
   const afterDisposal = scrolls.length;

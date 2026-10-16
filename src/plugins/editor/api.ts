@@ -82,6 +82,8 @@ declare module "../../kernel/types" {
     editors: Editors;
   }
   interface Events {
+    /** Widget-handled user scroll input, including ticks chained at an edge. @mode emit */
+    "editor/scrollInput": (view: EditorView) => void;
     /** @mode pipeline */ "editor/selectionMenu": (
       items: readonly MenuItem[],
     ) => readonly MenuItem[] | Promise<readonly MenuItem[]>;

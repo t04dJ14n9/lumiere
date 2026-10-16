@@ -24,6 +24,7 @@ import { tableCommands } from "./manifest";
 import { tableOperation } from "./commands";
 import { vimTableEntry } from "./vim-entry";
 import { TableWheelMotion } from "./wheel-motion";
+import type { TableWheelEvent } from "./wheel-scroll";
 export const tablesWebview: Plugin = {
   name: "tables",
   inject: {
@@ -108,6 +109,7 @@ function registerTableWheelMotion(
   ctx: Context,
 ): TableEnvironment["scrollNote"] {
   const view = ctx.editor.view;
+  const tableWheels = new WeakSet<TableWheelEvent>();
   const motion = new TableWheelMotion(
     view.scrollDOM,
     () =>
@@ -115,35 +117,7 @@ function registerTableWheelMotion(
         "(prefers-reduced-motion: reduce)",
       ).matches ?? false,
   );
-  ctx.effect(() => {
-    const events = new AbortController();
-    const options = { passive: true, signal: events.signal };
-    view.scrollDOM.addEventListener(
-      "scroll",
-      () => motion.observeScroll(),
-      options,
-    );
-    view.dom.addEventListener(
-      "wheel",
-      (event) => {
-        // The table cancels its forwarded event before it bubbles here.
-        if (!event.defaultPrevented) {
-          motion.stop();
-        }
-      },
-      options,
-    );
-    for (const type of ["pointerdown", "keydown", "touchstart"]) {
-      view.dom.addEventListener(type, () => motion.stop(), {
-        ...options,
-        capture: true,
-      });
-    }
-    return () => {
-      events.abort();
-      motion.stop();
-    };
-  });
+  ctx.effect(() => listenForWheelMotion(view, motion, tableWheels));
   ctx.effect(() =>
     ctx.editor.extend(
       EditorView.updateListener.of((update) => {
@@ -157,7 +131,54 @@ function registerTableWheelMotion(
       }),
     ),
   );
-  return (distance) => motion.scroll(distance);
+  return (distance, event) => {
+    tableWheels.add(event);
+    ctx.emit("editor/scrollInput", view);
+    return motion.scroll(distance);
+  };
+}
+
+function listenForWheelMotion(
+  view: Pick<EditorView, "dom" | "scrollDOM">,
+  motion: TableWheelMotion,
+  tableWheels: WeakSet<TableWheelEvent>,
+): () => void {
+  const events = new AbortController();
+  const options = { passive: true, signal: events.signal };
+  view.scrollDOM.addEventListener(
+    "scroll",
+    () => motion.observeScroll(),
+    options,
+  );
+  view.scrollDOM.addEventListener(
+    "scrollend",
+    (event) => {
+      if (event.target === view.scrollDOM) {
+        motion.stop();
+      }
+    },
+    options,
+  );
+  view.dom.addEventListener(
+    "wheel",
+    (event) => {
+      // Boundary ticks chain without cancelling the animation toward that edge.
+      if (!event.defaultPrevented && !tableWheels.has(event)) {
+        motion.stop();
+      }
+    },
+    options,
+  );
+  for (const type of ["pointerdown", "keydown", "touchstart"]) {
+    view.dom.addEventListener(type, () => motion.stop(), {
+      ...options,
+      capture: true,
+    });
+  }
+  return () => {
+    events.abort();
+    motion.stop();
+  };
 }
 
 function registerTableExtensions(ctx: Context): void {

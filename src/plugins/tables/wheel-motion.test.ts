@@ -48,6 +48,28 @@ test("fractional trackpad deltas accumulate before the first animation frame", (
   );
 });
 
+test("intermediate fractional scroll events retain the full destination", () => {
+  for (const direction of [-1, 1]) {
+    const viewport = note();
+    const motion = new TableWheelMotion(viewport, () => false);
+    motion.scroll(direction * 0.25);
+    for (const progress of [0.1, 0.2]) {
+      viewport.scrollTop = 600 + direction * progress;
+      motion.observeScroll();
+      assert.deepEqual(viewport.calls, [
+        { top: 600 + direction * 0.25, behavior: "smooth" },
+      ]);
+    }
+    motion.scroll(direction * 0.25);
+    assert.equal(viewport.calls.at(-1)?.top, 600 + direction * 0.5);
+    viewport.scrollTop = 600 + direction * 0.5;
+    motion.observeScroll();
+    viewport.scrollTop = 900;
+    motion.scroll(direction * 0.25);
+    assert.equal(viewport.calls.at(-1)?.top, 900 + direction * 0.25);
+  }
+});
+
 test("reversing direction starts from the visible position", () => {
   for (const distance of [-120, 120]) {
     const viewport = note();
@@ -60,6 +82,22 @@ test("reversing direction starts from the visible position", () => {
       top: viewport.scrollTop - distance,
       behavior: "smooth",
     });
+  }
+});
+
+test("an outward reversal at a visible edge cancels unfinished inward motion and chains", () => {
+  for (const [edge, inward] of [
+    [0, 120],
+    [1500, -120],
+  ] as const) {
+    const viewport = note(edge);
+    const motion = new TableWheelMotion(viewport, () => false);
+    assert.equal(motion.scroll(inward), true);
+    assert.equal(viewport.scrollTop, edge);
+    assert.equal(motion.scroll(-inward), false);
+    assert.deepEqual(viewport.calls.at(-1), { top: edge, behavior: "instant" });
+    motion.scroll(inward);
+    assert.equal(viewport.calls.at(-1)?.top, edge + inward);
   }
 });
 

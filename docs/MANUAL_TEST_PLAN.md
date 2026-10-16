@@ -453,6 +453,14 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
     ticks move immediately. Repeat a precise trackpad gesture and confirm that
     small deltas accumulate, and that horizontal/Shift-wheel and zoom retain
     their existing behavior.
+    Near either note edge, send a rapid outward burst while the note is still
+    animating toward that edge: later ticks retain native ancestor chaining
+    and the original animation finishes. Try tiny fractional trackpad movements
+    in both directions: intermediate motion must not cut the destination short.
+    Restore a pane with delayed image/font/math layout, immediately wheel over
+    a table, then let content above the saved anchor resize within 1.5 seconds:
+    saved-view correction must not pull the note back. Horizontal/Shift-wheel
+    and zoom over a table must not cancel that restore through the table hook.
 
 ### callouts
 

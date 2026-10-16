@@ -4693,3 +4693,47 @@ No source suites were ported. The configured pinned `~/Code/human-learning`
 checkout is absent on this host. This is separate from the scrollbar/preview
 follow-up and changes the table wheel handoff only; no sibling worktree or drag
 EdgeScroll implementation is part of this phase.
+
+## PR #70 accepted wheel review findings — 2026-10-16
+
+Finding 1: the motion owner now reports whether a tick can extend its clamped
+destination before the router prevents the event. Further outward ticks chain
+when the destination has already reached an edge, even with the visible note
+still mid-animation. Recognized table ticks bypass the bubbling interruption
+listener so chaining does not stop the existing animation short of that edge.
+
+Finding 2: intermediate fractional scroll positions no longer count as arrival.
+Exact arrival still settles motion; the note's own `scrollend` also releases
+rounded CSSOM destinations without inferring completion from subpixel distance.
+
+Finding 4: recognized vertical table wheel input emits the public
+`editor/scrollInput` event. The editor owns its listener and clears only that
+panel's pending saved-position restore, including queued geometry corrections.
+The hook runs for vertical boundary ticks as well as forwarded motion; horizontal,
+Shift-wheel, zoom, already-handled and noncancelable events retain their guards.
+No plugin imports another plugin's implementation.
+
+New unit coverage exercises both in-flight note edges and reversal, intermediate
+fractional progress in both directions, public event wiring for table restore
+cancellation versus unrelated gestures, queued correction cancellation and panel
+isolation. The existing wheel lifetime unit checks rounded `scrollend` settlement.
+README and manual acceptance updates describe those behaviors; no browser/native
+scenario was added.
+
+Finding 3 remains deferred under the recorded judgment: an external viewport
+change in the same direction has no reliable ownership signal without a broader
+motion redesign. Section-click navigation and the unrelated gutter-selection
+Backspace assertion are unchanged. The pinned source checkout remains absent;
+no source was copied or modified. GUI verification of these new corrections is
+pending the parent owner's unpackaged DISPLAY :7 acceptance pass.
+
+Validation: all 144 affected unit tests passed. The three selected regression
+tests each failed against the old code, then passed with these corrections.
+Full `pnpm check:full` passed sequentially under
+`/tmp/markdown-workshop-test-suites.lock`: 1,808 unit passes with 23 intentional
+Cordis skips, Chromium 276/276 and native VS Code 1.142.0 23/23. The run used two
+unit workers, a private Xvfb display and the complete private VS Code runtime
+with `MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1`; no VSIX was built or installed.
+Logs and exit records are `wheel-feel-p2-{baseline-regressions,affected-units,check-full}`
+under `/workspace/plans/mw-indent-guides/`. The baseline exit 1 is the expected
+three-test regression proof; affected units and the full gate both exited 0.

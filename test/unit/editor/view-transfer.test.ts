@@ -12,6 +12,7 @@ import {
 } from "../../../src/plugins/editor/view-transfer";
 import { createViewState } from "../../../src/plugins/editor/view-state";
 import { viewState } from "../../../src/plugins/editor/protocol";
+import { Context } from "../../../src/kernel";
 
 const saved = viewState.parse({
   source: "old.md",
@@ -98,7 +99,9 @@ test("two panels keep independent transfer state and rename retains old disclosu
   assert.deepEqual(restored, [saved]);
 });
 
-test("restore clamps selection, replaces folds, and restores raw scroll without centering", () => {
+test("restore clamps selection, replaces folds, and restores raw scroll without centering", (t) => {
+  const root = Context.create();
+  t.after(() => root.dispose());
   let state = EditorState.create({
     doc: "one\ntwo\nthree",
     extensions: [foldState],
@@ -123,7 +126,7 @@ test("restore clamps selection, replaces folds, and restores raw scroll without 
     ],
   };
   foldedViewState.restore(view, restore.folded);
-  createViewState().restoreViewState(view, restore);
+  createViewState(root).restoreViewState(view, restore);
   assert.equal(state.selection.main.head, state.doc.length);
   const folds: number[][] = [];
   foldedRanges(state).between(0, state.doc.length, (from, to) => {
