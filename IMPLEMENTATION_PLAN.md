@@ -4659,7 +4659,9 @@ interruption, changing geometry, reduced motion and independent panels. The
 existing plugin lifecycle unit also exercises input interruption and disposal.
 The existing two selected-row browser scenarios await the full wheel distance
 before reversing or checking the horizontal axis; no browser/native scenario
-was added. The Tables README and manual acceptance steps cover the behavior.
+was added. The existing outline fixture now declares a definite viewport height
+before its unchanged centering assertions, preventing content-sized panel setup.
+The Tables README and manual acceptance steps cover the behavior.
 
 One-off measurements used the original `2e87720` build and the changed build in
 Chromium 156.0.8078.4 with native smooth scrolling enabled, on a private Xvfb

@@ -50,13 +50,14 @@ async function clickOutline(page: Page, offset: number) {
 /**
  * The harness mounts the editor in a plain block; the real webview gives it
  * the window's height. Constrain it the same way so the editor scrolls inside
- * its own viewport instead of growing to the height of the note.
+ * its own viewport instead of growing to the height of the note. Give the panel
+ * a definite height rather than relying on its content-sized initial flex basis.
  */
 async function open(page: Page, source: string) {
   await openNote(page, source);
   await page.addStyleTag({
     content:
-      ".panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }",
+      ".panel { height: 100vh; flex: 1; min-height: 0; display: flex; flex-direction: column; }",
   });
   await expect
     .poll(() =>
