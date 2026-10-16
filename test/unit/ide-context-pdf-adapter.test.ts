@@ -36,7 +36,7 @@ test("text selection maps to pdf.selection text with rects; not active.selection
     },
     caps: DEFAULT_CAPS,
   });
-  assert.ok(packet.pdf);
+  assert.equal(packet.product, "pdfWorkshop");
   assert.equal(packet.pdf.selection.kind, "text");
   if (packet.pdf.selection.kind === "text") {
     assert.equal(packet.pdf.selection.text, "hello");
@@ -72,6 +72,6 @@ test("active.uri === pdf.uri", () => {
       getDiagnostics: () => [],
     },
   });
-  assert.ok(packet.pdf);
+  assert.equal(packet.product, "pdfWorkshop");
   assert.equal(packet.active?.uri, packet.pdf.uri);
 });
