@@ -49,15 +49,39 @@ test("decision confidence maps and lists of maps always have YAML editors", () =
   assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
 });
 
-test("nested references outside a property's raw slice fall back to editable serialized YAML", () => {
+test("nested references outside a property's raw slice stay Source-mode (no lossy stringify)", () => {
   const html = renderProperties(
     "---\nfactors: &f [evidence, risk]\ndecision_conf:\n  score: 0.82\n  factors: *f\n---\n",
   );
-  assert.match(
+  assert.match(html, /data-property-key="decision_conf"[\s\S]*Source mode/);
+  assert.doesNotMatch(
     html,
-    /<textarea[^>]*data-property-input="decision_conf"[^>]*data-property-kind="yaml">score: 0.82\nfactors:\n {2}- evidence\n {2}- risk/,
+    /data-property-input="decision_conf"[^>]*data-property-kind="yaml"/,
   );
   assert.doesNotMatch(html, /class="property-chip"|class="property-object"/);
+});
+
+test("external alias with unsafe integer stays Source-mode (no rounded serial draft)", () => {
+  const html = renderProperties(
+    "---\nfactors: &f [risk]\ndecision_conf:\n  score: 0.82\n  serial: 9007199254740993\n  factors: *f\n---\n",
+  );
+  assert.match(html, /data-property-key="decision_conf"[\s\S]*Source mode/);
+  assert.doesNotMatch(html, /9007199254740992/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="decision_conf"[^>]*data-property-kind="yaml"/,
+  );
+});
+
+test("colliding mapping keys stay Source-mode (no dropped entry draft)", () => {
+  const html = renderProperties(
+    '---\ngenerated:\n  1: first\n  "1": second\n  by: old\n---\n',
+  );
+  assert.match(html, /data-property-key="generated"[\s\S]*Source mode/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="generated"[^>]*data-property-kind="yaml"/,
+  );
 });
 
 test("long property names retain their full identity, accessible label and tooltip", () => {
@@ -123,7 +147,7 @@ test("empty sources keeps custom renderer and YAML draft instead of scalar chips
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });
 
-test("Sources custom rows stay above editable YAML when entries reference external anchors", () => {
+test("Sources custom rows stay above Source-mode when entries reference external anchors", () => {
   const html = renderProperties(
     "---\nreference: &r {resource: ../raw/a.pdf, id: a1}\nsources: [*r]\n---\n",
     {},
@@ -136,7 +160,11 @@ test("Sources custom rows stay above editable YAML when entries reference extern
   );
   assert.match(
     html,
-    /class="property-complex"><div class="source-rows">[\s\S]*data-source-open[\s\S]*<textarea[^>]*data-property-input="sources"[^>]*data-property-kind="yaml">- resource: \.\.\/raw\/a\.pdf/,
+    /class="property-complex"><div class="source-rows">[\s\S]*data-source-open[\s\S]*Source mode/,
+  );
+  assert.doesNotMatch(
+    html,
+    /data-property-input="sources"[^>]*data-property-kind="yaml"/,
   );
   assert.doesNotMatch(html, /data-property-list="sources"/);
 });

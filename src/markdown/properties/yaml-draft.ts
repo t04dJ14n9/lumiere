@@ -1,4 +1,4 @@
-import { isAlias, isNode, stringify, type Document } from "yaml";
+import { isAlias, isNode, type Document } from "yaml";
 import {
   propertyYamlInput,
   settablePropertyNode,
@@ -6,7 +6,12 @@ import {
 } from "./values";
 import { valueStart } from "./yaml-value";
 
-/** Prefer verbatim YAML; keep settable values editable if the slice cannot stand alone. */
+/**
+ * Prefer a verbatim YAML slice that round-trips on its own.
+ * When the slice cannot stand alone (external aliases, colliding keys,
+ * unsupported tags, …), return undefined so the sheet shows Source mode —
+ * never stringify collapsed/rounded JS (silent serial/key loss on commit).
+ */
 export function propertyYamlDraft(
   body: string,
   node: unknown,
@@ -16,12 +21,7 @@ export function propertyYamlDraft(
   if (!settablePropertyNode(node, document) || !settablePropertyValue(value)) {
     return undefined;
   }
-  // References outside this property are absent from its slice. Serialize a
-  // standalone copy only when the original text cannot be used as a draft.
-  return (
-    rawPropertyYamlDraft(body, node, value, document) ??
-    stringify(value, { aliasDuplicateObjects: false, lineWidth: 0 })
-  );
+  return rawPropertyYamlDraft(body, node, value, document);
 }
 
 /** Remove only the property's outer indentation, keeping nested YAML verbatim. */

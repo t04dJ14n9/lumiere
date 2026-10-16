@@ -20,29 +20,61 @@ test("raw YAML drafts retain comments, quoting and exact integers", () => {
   );
 });
 
-test("an independent draft serializes nested aliases defined outside the property", () => {
+test("external alias plus unsafe integer has no fallback draft (no rounded serial)", () => {
+  const body =
+    "factors: &f [risk]\ndecision_conf:\n  score: 0.82\n  serial: 9007199254740993\n  factors: *f\n";
+  const document = parseDocument(body);
+  const value = document.toJS().decision_conf;
+  assert.equal(value.serial, 9007199254740992);
+  assert.equal(propertyYamlInput("score: 0.82\nfactors: *f\n"), undefined);
+  assert.equal(
+    propertyYamlDraft(
+      body,
+      document.get("decision_conf", true),
+      value,
+      document,
+    ),
+    undefined,
+  );
+});
+
+test("colliding mapping keys have no fallback draft (no dropped entry)", () => {
+  const body = 'generated:\n  1: first\n  "1": second\n  by: old\n';
+  const document = parseDocument(body);
+  const value = document.toJS().generated;
+  assert.deepEqual(value, { "1": "second", by: "old" });
+  assert.equal(
+    propertyYamlInput('1: first\n"1": second\nby: old\n'),
+    undefined,
+  );
+  assert.equal(
+    propertyYamlDraft(body, document.get("generated", true), value, document),
+    undefined,
+  );
+});
+
+test("external aliases without a standalone raw slice get no stringify fallback", () => {
   const body =
     "factors: &f [evidence, risk]\ndecision_conf:\n  score: 0.82\n  factors: *f\n";
   const document = parseDocument(body);
   const value = document.toJS().decision_conf;
   assert.equal(propertyYamlInput("score: 0.82\nfactors: *f\n"), undefined);
-  const draft = propertyYamlDraft(
-    body,
-    document.get("decision_conf", true),
-    value,
-    document,
+  assert.equal(
+    propertyYamlDraft(
+      body,
+      document.get("decision_conf", true),
+      value,
+      document,
+    ),
+    undefined,
   );
-  assert.equal(typeof draft, "string");
-  assert.deepEqual(propertyYamlInput(draft!), value);
 });
 
-test("a settable value gets a serialized draft when ranges or raw equality are unavailable", () => {
+test("a settable value without a usable raw slice has no YAML draft", () => {
   const value = { score: 0.82, factors: [{ name: "evidence" }] };
   const document = parseDocument("decision_conf: {score: 0.5}\n");
   for (const node of [document.get("decision_conf", true), undefined]) {
-    const draft = propertyYamlDraft("", node, value, document);
-    assert.equal(typeof draft, "string");
-    assert.deepEqual(propertyYamlInput(draft!), value);
+    assert.equal(propertyYamlDraft("", node, value, document), undefined);
   }
 });
 

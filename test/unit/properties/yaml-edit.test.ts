@@ -80,21 +80,16 @@ test("Sources YAML drafts retain comments inside lists of mappings", () => {
   );
 });
 
-test("fallback YAML drafts materialize external references and commit nested edits", () => {
+test("external-alias properties stay Source-mode instead of a lossy stringify draft", () => {
   const source =
     "---\nfactors: &f [evidence, risk]\ndecision_conf:\n  score: 0.82\n  factors: *f\nkeep: '01' # untouched\n---\nBody";
-  const draft = yamlDraft(source, "decision_conf");
-  const next = editYaml(
-    source,
-    "decision_conf",
-    draft.replace("score: 0.82", "score: 0.95"),
+  const html = renderProperties(source);
+  assert.match(html, /data-property-key="decision_conf"[\s\S]*Source mode/);
+  assert.doesNotMatch(
+    html,
+    /data-property-input="decision_conf"[^>]*data-property-kind="yaml"/,
   );
-  assert.deepEqual(frontmatter(next)?.values?.decision_conf, {
-    score: 0.95,
-    factors: ["evidence", "risk"],
-  });
-  assert.match(next, /factors: &f \[evidence, risk\]/);
-  assert.match(next, /keep: '01' # untouched\n---\nBody$/);
+  assert.match(html, /data-property-key="keep"/);
 });
 
 test("anchored YAML drafts preserve leading comments and prior external alias values", () => {
