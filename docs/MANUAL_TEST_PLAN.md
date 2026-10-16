@@ -135,6 +135,21 @@ separately, since that explicitly disables the workaround.
    Mod+V does. Right-click in a table cell or a property chip: their own
    menus open instead.
 
+8. Copy `Core.md` repeatedly into a disposable long note (at least 300 lines).
+   At the default `markdownWorkshop.editor.dragScrollSpeed: 4`, drag a text
+   selection to within 6 px of the top/bottom viewport edge and hold the
+   pointer still: scrolling and selection extension continue, substantially
+   faster than setting 1. Drag farther past the edge: speed increases. Try
+   1, 2.5 and 10 with the note open, including changing speed during a held
+   drag; text, selection anchor and folds survive. Repeat in Source mode,
+   with Shift-click extension and double/triple-click word/line selection.
+   Release inside/outside the webview, switch windows, and start dragging
+   existing selected text: extra scrolling stops. Open the same note in two
+   panels: only the pane where selection started scrolls. Confirm table
+   selection/handle drags and property reordering keep their prior behavior.
+   Reset the setting afterwards. Human assessment of the default feel is
+   part of this owner-run scenario.
+
 ### dialect, render and livePreview
 
 The Markdown syntax, the HTML renderer and Live Preview's reveal-at-caret.
@@ -1143,6 +1158,7 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 | `markdownWorkshop.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.editor.tabSize` | `4` | integer; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `markdownWorkshop.editor.dragScrollSpeed` | `4` | number 1–10; text-selection auto-scroll multiplier (1 = original CodeMirror speed); Editor scenario 8, then reset the override. |
 | `markdownWorkshop.editor.fontSize` | `16` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.editor.lineHeight` | `1.5` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 | `markdownWorkshop.folding.heading` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |

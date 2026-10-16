@@ -38,6 +38,7 @@ test("editor settings have application defaults and reconfigure without changing
     warmTextDocument: "auto",
     strictLineBreaks: false,
     rightToLeft: false,
+    dragScrollSpeed: 4,
     useTabs: true,
     tabSize: 4,
     // The note's own size: Obsidian's default body size, not editor.fontSize.
@@ -89,12 +90,14 @@ test("editor settings have application defaults and reconfigure without changing
         rightToLeft: true,
         readableLineLength: false,
         strictLineBreaks: true,
+        dragScrollSpeed: 7,
       }),
     ),
   }).state;
   assert.equal(state.doc, previous.doc);
   assert.equal(state.selection, previous.selection);
   assert.equal(state.facet(editorSettings).strictLineBreaks, true);
+  assert.equal(state.facet(editorSettings).dragScrollSpeed, 7);
   assert.deepEqual(state.facet(EditorView.editorAttributes).at(-1), {
     dir: "rtl",
   });
@@ -146,6 +149,7 @@ test("resource settings use manifest aliases and validate all editor fields", ()
     "files.newNoteFolder": "notes",
     "files.attachmentFolder": "./media",
     "editor.rightToLeft": true,
+    "editor.dragScrollSpeed": 2.5,
     "editor.defaultMode": "source",
     "plugins.vim.enabled": true,
   };
@@ -158,6 +162,7 @@ test("resource settings use manifest aliases and validate all editor fields", ()
   assert.equal(result.features?.links?.config.attachmentFolder, "./media");
   assert.equal(result.features?.vim?.enabled, true);
   assert.equal(result.editor?.rightToLeft, true);
+  assert.equal(result.editor?.dragScrollSpeed, 2.5);
   assert.equal(result.mode, "source");
   assert.equal(result.features?.lineNumbers?.enabled, true);
   assert.equal(result.features?.inlineTitle?.enabled, false);
@@ -184,6 +189,7 @@ test("required settings, title actions, native context menus and unbound verify 
     "editor.readableLineLength": false,
     "editor.strictLineBreaks": false,
     "editor.rightToLeft": false,
+    "editor.dragScrollSpeed": 4,
     "files.attachmentFolder": "",
     "files.newNoteFolder": "",
     "links.useWikilinks": true,

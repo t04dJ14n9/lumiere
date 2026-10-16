@@ -1202,6 +1202,7 @@ default (§25).
 | Auto pair brackets / Markdown syntax | `markdownWorkshop.autoPair.brackets`, `.markdown` | `true`, `true` |
 | Smart lists | plugin `smartLists` | on |
 | Indent using tabs, Tab indent size | `markdownWorkshop.editor.useTabs`, `.tabSize` | `true`, `4` |
+| (Workshop-specific) Text-selection edge-scroll speed | `markdownWorkshop.editor.dragScrollSpeed` (multiplier 1–10; 1 restores CodeMirror speed) | `4` |
 | Auto convert HTML | plugin `pasteHtml` | on |
 | Vim key bindings | plugin `vim` | off |
 

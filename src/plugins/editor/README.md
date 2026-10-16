@@ -18,6 +18,13 @@ compartment. Persistence captures source identity and feature-owned contribution
 transfers flush first and reject a moving document version. Scroll-settle and
 pagehide checkpoints also save geometric anchors without measuring every keypress. Settings update a
 separate compartment so user state survives reconfiguration.
+Text-selection edge scrolling uses `markdownWorkshop.editor.dragScrollSpeed`,
+a multiplier from 1 to 10 (default 4; 1 restores CodeMirror's original speed).
+A selection-style observer starts the shared `EdgeScroll` helper with only
+the additional velocity; CodeMirror's own timer continues extending the
+selection, preserving word/line drags, Shift/Mod selections and atomic ranges.
+The helper reads the current setting on every frame, in either editing mode,
+and releases its listeners and frames when the gesture or view ends.
 Tab and Shift+Tab never leave the note, as in Obsidian: on a list item they
 indent or outdent the item with its nested lines, with a selection they indent
 the selected lines, and otherwise Tab inserts one indent unit.
@@ -96,6 +103,8 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `service.ts`: shared editor facade with caller-bound extension ownership.
 - `extensions.ts`: deterministic ordered extension registry.
 - `settings.ts`: CodeMirror editor settings, indentation and font presentation.
+- `drag-scroll.ts`: configurable extra scroll motion for CodeMirror selection drags.
+- `drag-scroll.test.ts`: speed/schema validation, settings reconfiguration and gesture cleanup units.
 - `clipboard.ts`: validated clipboard RPC client.
 - `contributions.ts`: feature-owned view-state validation and restoration.
 - `persistence.ts`: view capture, restore and ordinary edit/scroll persistence.
@@ -115,8 +124,9 @@ Host injects `workbench` and `documents`, provides `editors`, and emits/listens 
 `editor/clearProjection` and `editor/modeRestored`. Selection and focus changes notify the
 host through the editor channel; the host keeps the
 `markdownWorkshop.hasSelection` and `markdownWorkshop.editorFocus` context
-keys for the active panel. Core settings are `editor.useTabs` (true) and
-`editor.tabSize` (4, integer 1–16), under `markdownWorkshop`.
+keys for the active panel. Core settings include `editor.useTabs` (true),
+`editor.tabSize` (4, integer 1–16) and `editor.dragScrollSpeed` (4, number 1–10),
+under `markdownWorkshop`.
 
 Each panel kernel logs through the window's logger, tagged with the panel ID,
 to the **Markdown Workshop** output channel. The webview forwards its logs over
@@ -150,6 +160,12 @@ VS Code owns text, saving and undo. The core editor cannot be disabled. Feature
 state belongs to its contributing plugin; inactive/unknown contribution keys
 are retained. Legacy top-level `folded`/`folds` fields remain readable compatibility
 inputs. Structured clipboard and HTML conversion are owned by their features.
+The drag-scroll multiplier covers mouse text selection in the main note editor;
+table selection/handles and property reordering retain their existing speed.
+The speed curve follows CodeMirror 6's 6 px trigger zone and accelerates further
+outside the viewport. CodeMirror
+continues selecting at its normal timer cadence while extra scroll motion uses
+animation frames.
 
 Editor config owns default mode, readable line length (700 px), strict rendered
 line breaks, right-to-left direction, tabs and tab size. Changing default mode

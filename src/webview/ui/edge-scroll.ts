@@ -9,6 +9,12 @@ export interface DragViewports {
   horizontal?: HTMLElement;
 }
 
+export interface EdgeScrollOptions {
+  horizontal?: HTMLElement | undefined;
+  /** Pixels per millisecond; callers may supply a different edge-speed curve. */
+  velocity?: typeof edgeVelocity;
+}
+
 /**
  * Scroll a captured drag without requiring another pointermove event.
  * Wide tables keep their own horizontal scroller (`.table-scroll`) while the
@@ -23,14 +29,17 @@ export class EdgeScroll {
   private resize?: ResizeObserver;
   private remainder = { x: 0, y: 0 };
   private readonly horizontal: HTMLElement;
+  private readonly velocity: typeof edgeVelocity;
 
   constructor(
     private readonly viewport: HTMLElement,
     private readonly content: HTMLElement,
     private readonly update: (point: PointerPoint) => void,
-    horizontal?: HTMLElement,
+    options: EdgeScrollOptions = {},
   ) {
+    const { horizontal } = options;
     this.horizontal = horizontal ?? viewport;
+    this.velocity = options.velocity ?? edgeVelocity;
   }
 
   move(point: PointerPoint): void {
@@ -83,12 +92,12 @@ export class EdgeScroll {
     this.previous = time;
     const x = this.distance(
       "x",
-      edgeVelocity(point.x, horizontalBounds.left, horizontalBounds.right),
+      this.velocity(point.x, horizontalBounds.left, horizontalBounds.right),
       elapsed,
     );
     const y = this.distance(
       "y",
-      edgeVelocity(point.y, verticalBounds.top, verticalBounds.bottom),
+      this.velocity(point.y, verticalBounds.top, verticalBounds.bottom),
       elapsed,
     );
     const beforeX = this.horizontal.scrollLeft;

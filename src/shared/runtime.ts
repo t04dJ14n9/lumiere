@@ -87,6 +87,7 @@ export interface Workshop {
       readableLineLength?: boolean;
       strictLineBreaks?: boolean;
       rightToLeft?: boolean;
+      dragScrollSpeed?: number;
       defaultMode?: "livePreview" | "source";
       /** The note's own body size in pixels and line height multiplier. */
       fontSize?: number;

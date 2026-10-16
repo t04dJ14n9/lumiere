@@ -256,6 +256,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkshop.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Setting: markdownWorkshop.editor.tabSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: markdownWorkshop.editor.dragScrollSpeed | not observed; Workshop-specific speed control | not manually observed | Unit speed/schema/lifecycle coverage; Editor manual scenario 8 | deliberate configurable default (4x CodeMirror) |
 | Setting: markdownWorkshop.editor.fontSize | Obsidian 1.14.4 default body 16px; H1-H6 1.618/1.462/1.318/1.188/1.076/1em (docs/obsidian-measurements/font-size-results-16.json) | not manually observed | Browser and real VS Code specs: body size equals the setting, heading ratios, line-number alignment | matches at the default |
 | Setting: markdownWorkshop.editor.lineHeight | Obsidian 1.14.4 default 1.5 (24px at 16px) | not manually observed | Browser and real VS Code specs: line height equals the setting times the size, line-number alignment | matches at the default |
 | Setting: markdownWorkshop.folding.heading | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

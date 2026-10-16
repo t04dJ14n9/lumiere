@@ -41,7 +41,7 @@ export class TableSelectionDrag {
       viewports.vertical,
       table,
       (point) => this.update(point),
-      viewports.horizontal,
+      { horizontal: viewports.horizontal },
     );
     this.registerEvents();
   }

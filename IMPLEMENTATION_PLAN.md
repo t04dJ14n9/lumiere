@@ -4555,3 +4555,49 @@ lease; symlink roots use `canonicalPath` for containment. No VSIX or merge.
   `docs/images/indent-guides-{before,after}.png`. The native suite's unrelated
   regenerated screenshots were restored. No VSIX was installed; no Marketplace
   publication or merge was performed.
+### Faster configurable text-selection drag scroll — 2026-10-16
+
+Investigated both drag paths: CodeMirror 6.43.14 owns main-note mouse selection
+and scrolls by 8 px per 50 ms near an edge (160 px/s), while tables and property
+ordering already use the faster shared `EdgeScroll` helper. Added resource-scoped
+`markdownWorkshop.editor.dragScrollSpeed` (number 1–10, default 4); 1 restores
+CodeMirror's original speed. The editor's validated config/RPC and settings
+compartment carry updates without recreating the view or selection.
+
+A public mouse-selection-style observer starts extra animation-frame scrolling
+using `EdgeScroll` with an injected velocity curve. It adds only the requested
+motion above 1x, leaving CodeMirror's timer responsible for selecting, including
+word/line, Shift/Mod and atomic-range behavior. Release, cancellation, blur,
+native text drag, typing and view disposal release the extra frames/listeners.
+Table selection/handles and property reordering keep their existing curve.
+README, editor documentation, settings/parity inventories and manual Editor
+scenario 8 describe the range, scope and owner-run feel/selection checks.
+
+New unit coverage checks config and RPC boundaries, curve scaling, stationary
+dragging, both axes, live changes without replacing text/selection, and gesture
+cleanup/isolation. Host settings coverage includes the shared settings contract,
+defaults, resource reads and generated scope. The existing gutter-selection
+Backspace assertion now waits for the authoritative host text, matching the
+other operations in that file; its failure snapshot showed the local deletion
+before the test read the host's previous text. No expected value or test deadline
+changed. No source tests were ported and no browser/native scenarios were added.
+The pinned `~/Code/human-learning` checkout is absent on this host;
+investigation used this checkout and the installed CodeMirror dependency.
+
+Validation: focused editor/settings/shared-helper units pass (27/27), and the
+existing fence/gutter scenarios pass five repeats per mode (10/10). A disposable
+Chromium diagnostic held the pointer still near the bottom edge for 0.8 s in
+Live Preview and Source mode: 1x moved 128 px, 4x moved 512 px, and 10x moved
+1,272–1,280 px. Selections extended with stable anchors, mouseup stopped scrolling,
+and no page errors occurred. This is automated evidence, not owner acceptance.
+The required sequential full gate passed with
+`MARKDOWN_WORKBENCH_TEST_CONCURRENCY=2 MARKDOWN_WORKBENCH_TEST_UNPACKAGED=1
+VSCODE_EXECUTABLE=/workspace/worktrees/mw-indent-guides/.vscode-test/vscode-linux-x64-1.142.0/code
+xvfb-run -a pnpm check:full`: check (1,757 unit passes, 23 intentional Cordis
+skips), Chromium (276 passes), native VS Code 1.142.0 (23 passes). The initial
+native launch used an incomplete cached host; the final run used a verified
+complete executable with the harness's private profile and display. Native checks
+used the existing unpackaged mode; no local VSIX was built or installed. Generated
+native screenshots were restored. Raw gate and diagnostic logs are in
+`/workspace/plans/mw-indent-guides/`. Default feel and Obsidian parity remain owner
+acceptance.
