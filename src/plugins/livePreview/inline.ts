@@ -300,38 +300,41 @@ const SYNTAX_MARKS = [
   "HighlightMark",
 ];
 
-export const hybridInline = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet;
-    constructor(view: EditorView) {
-      this.decorations = inlineDecorations(view.state, view.visibleRanges);
+export class HybridInline {
+  decorations: DecorationSet;
+  constructor(view: EditorView) {
+    this.decorations = inlineDecorations(view.state, view.visibleRanges);
+  }
+  update(update: ViewUpdate): void {
+    // Selection-only pointer updates keep the DOM stable. Scrollbar presses
+    // also freeze reveal, but new viewport content still needs decorations;
+    // revealRanges keeps those tied to the selection from before the press.
+    if (
+      update.view.composing ||
+      (isPointerSelecting(update.state) && !update.viewportChanged)
+    ) {
+      this.decorations = this.decorations.map(update.changes);
+      return;
     }
-    update(update: ViewUpdate): void {
-      // Keep composition and pointer-drag DOM stable: reveal is frozen while
-      // the button is down, so rebuilding would only thrash widget heights.
-      if (update.view.composing || isPointerSelecting(update.state)) {
-        this.decorations = this.decorations.map(update.changes);
-        return;
-      }
-      this.decorations = inlineDecorations(
-        update.view.state,
-        update.view.visibleRanges,
-      );
-    }
-  },
-  {
-    decorations: (plugin) => plugin.decorations,
-    eventHandlers: {
-      compositionend(_event, view) {
-        queueMicrotask(() => {
-          if (view.dom.isConnected) {
-            view.dispatch({});
-          }
-        });
-      },
+    this.decorations = inlineDecorations(
+      update.view.state,
+      update.view.visibleRanges,
+    );
+  }
+}
+
+export const hybridInline = ViewPlugin.fromClass(HybridInline, {
+  decorations: (plugin) => plugin.decorations,
+  eventHandlers: {
+    compositionend(_event, view) {
+      queueMicrotask(() => {
+        if (view.dom.isConnected) {
+          view.dispatch({});
+        }
+      });
     },
   },
-);
+});
 
 /**
  * A Markdown link's classes. A rendered label pointing outside the vault
