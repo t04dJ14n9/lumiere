@@ -23,6 +23,7 @@ test("pointerdown on row or value whitespace focuses the editor for immediate ty
   for (const kind of ["text", "number", "date", "checkbox", "yaml", "list"]) {
     const row = new PropertyElement(document);
     const value = new PropertyElement(document);
+    value.className = "metadata-property-value";
     const field =
       kind === "yaml"
         ? new PropertyTextarea(document)
@@ -74,6 +75,7 @@ test("widget-ancestor contenteditable=false does not block row value focus", (t)
   const blank = new PropertyElement(document);
   const field = new PropertyElement(document);
   wrapper.append(row);
+  blank.className = "metadata-property-value";
   row.append(blank);
   row.find = (selector) => (selector === "[data-property-edit]" ? null : field);
   // Simulate a buggy broad closest() hitting the CM wrapper; contains() must reject it.
@@ -83,6 +85,26 @@ test("widget-ancestor contenteditable=false does not block row value focus", (t)
   row.dispatchEvent(event);
   assert.equal(event.defaultPrevented, true);
   assert.equal(document.activeElement, field);
+});
+
+test("custom Sources text stays selectable without focusing the YAML editor", (t) => {
+  const document = installPropertyDOM(t);
+  const row = new PropertyElement(document);
+  const complex = new PropertyElement(document);
+  complex.className = "property-complex";
+  const sources = new PropertyElement(document);
+  sources.className = "source-id";
+  sources.textContent = "src-1";
+  const field = new PropertyTextarea(document);
+  complex.append(sources);
+  row.append(complex);
+  row.find = (selector) => (selector === "[data-property-edit]" ? null : field);
+  sources.nearest = () => null;
+  bindRowValueFocus(row as unknown as HTMLElement);
+  const event = pointer(sources);
+  row.dispatchEvent(event);
+  assert.equal(event.defaultPrevented, false);
+  assert.equal(field.focused, 0);
 });
 
 test("modifier and context pointerdowns keep row selection and menus", (t) => {

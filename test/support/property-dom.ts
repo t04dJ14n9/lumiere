@@ -24,7 +24,7 @@ export class PropertyElement extends EventTarget {
   validityMessage = "";
   readonly attributes = new Map<string, string>();
   readonly classList = {
-    contains: (_name: string) => false,
+    contains: (name: string) => ` ${this.className} `.includes(` ${name} `),
     toggle: () => {},
     add: () => {},
     remove: () => {},
