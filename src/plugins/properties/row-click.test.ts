@@ -51,6 +51,7 @@ test("row clicks preserve field caret placement, pills, links and custom source 
     "summary",
   ]) {
     const target = new PropertyElement(document);
+    row.append(target);
     target.nearest = (selector) =>
       selector.split(", ").includes(action) ? target : null;
     const click = new Event("click", { cancelable: true });
@@ -59,6 +60,27 @@ test("row clicks preserve field caret placement, pills, links and custom source 
     row.dispatchEvent(click);
     assert.equal(field.focused, 0, action);
   }
+});
+
+test("widget-ancestor contenteditable=false does not block row value focus", (t) => {
+  const document = installPropertyDOM(t);
+  const wrapper = new PropertyElement(document);
+  wrapper.contentEditable = "false";
+  const row = new PropertyElement(document);
+  const blank = new PropertyElement(document);
+  const field = new PropertyElement(document);
+  wrapper.append(row);
+  row.append(blank);
+  row.find = (selector) => (selector === "[data-property-edit]" ? null : field);
+  // Closest walks past the row to the CodeMirror widget wrapper.
+  blank.nearest = (selector) =>
+    selector.split(", ").includes("[contenteditable]") ? wrapper : null;
+  bindRowValueFocus(row as unknown as HTMLElement);
+  const click = new Event("click", { cancelable: true });
+  Object.assign(click, { button: 0 });
+  Object.defineProperty(click, "target", { value: blank });
+  row.dispatchEvent(click);
+  assert.equal(document.activeElement, field);
 });
 
 test("modifier clicks and context clicks keep row selection and menus", (t) => {
