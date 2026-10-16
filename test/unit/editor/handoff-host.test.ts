@@ -918,7 +918,7 @@ test("a second hunk during reveal readiness supersedes the in-flight offset", as
   tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   await tick();
   assert.equal(commands.length, 1, "first transfer awaits reveal registration");
-  assert.deepEqual(destination.calls, []);
+  assert.equal(destination.calls.length, 0);
   const next = nativeHunkEditor(tab, 947);
   selectionChanged.fire({ textEditor: next, kind: 3 });
   destination.ready();
