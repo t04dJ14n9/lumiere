@@ -8,7 +8,17 @@ import {
 } from "../../../test/support/property-dom";
 import { bindRowValueFocus } from "./row-click";
 
-test("clicking row or value whitespace focuses the editor for immediate typing", (t) => {
+function pointer(
+  target: EventTarget,
+  extras: Record<string, unknown> = {},
+): Event {
+  const event = new Event("pointerdown", { cancelable: true });
+  Object.assign(event, { button: 0, ...extras });
+  Object.defineProperty(event, "target", { value: target });
+  return event;
+}
+
+test("pointerdown on row or value whitespace focuses the editor for immediate typing", (t) => {
   const document = installPropertyDOM(t);
   for (const kind of ["text", "number", "date", "checkbox", "yaml", "list"]) {
     const row = new PropertyElement(document);
@@ -25,16 +35,13 @@ test("clicking row or value whitespace focuses the editor for immediate typing",
     value.nearest = () => null;
     bindRowValueFocus(row as unknown as HTMLElement);
     for (const target of [row, value]) {
-      const click = new Event("click", { cancelable: true });
-      Object.assign(click, { button: 0 });
-      Object.defineProperty(click, "target", { value: target });
-      row.dispatchEvent(click);
+      row.dispatchEvent(pointer(target));
       assert.equal(document.activeElement, field, kind);
     }
   }
 });
 
-test("row clicks preserve field caret placement, pills, links and custom source actions", (t) => {
+test("row pointerdown preserves field caret placement, pills, links and custom source actions", (t) => {
   const document = installPropertyDOM(t);
   const row = new PropertyElement(document);
   const field = new PropertyElement(document);
@@ -43,7 +50,7 @@ test("row clicks preserve field caret placement, pills, links and custom source 
   for (const action of [
     "input",
     "textarea",
-    "[contenteditable]",
+    "[contenteditable='true']",
     "[data-property-chip]",
     "button",
     "a",
@@ -54,10 +61,7 @@ test("row clicks preserve field caret placement, pills, links and custom source 
     row.append(target);
     target.nearest = (selector) =>
       selector.split(", ").includes(action) ? target : null;
-    const click = new Event("click", { cancelable: true });
-    Object.assign(click, { button: 0 });
-    Object.defineProperty(click, "target", { value: target });
-    row.dispatchEvent(click);
+    row.dispatchEvent(pointer(target));
     assert.equal(field.focused, 0, action);
   }
 });
@@ -72,18 +76,16 @@ test("widget-ancestor contenteditable=false does not block row value focus", (t)
   wrapper.append(row);
   row.append(blank);
   row.find = (selector) => (selector === "[data-property-edit]" ? null : field);
-  // Closest walks past the row to the CodeMirror widget wrapper.
-  blank.nearest = (selector) =>
-    selector.split(", ").includes("[contenteditable]") ? wrapper : null;
+  // Simulate a buggy broad closest() hitting the CM wrapper; contains() must reject it.
+  blank.nearest = () => wrapper;
   bindRowValueFocus(row as unknown as HTMLElement);
-  const click = new Event("click", { cancelable: true });
-  Object.assign(click, { button: 0 });
-  Object.defineProperty(click, "target", { value: blank });
-  row.dispatchEvent(click);
+  const event = pointer(blank);
+  row.dispatchEvent(event);
+  assert.equal(event.defaultPrevented, true);
   assert.equal(document.activeElement, field);
 });
 
-test("modifier clicks and context clicks keep row selection and menus", (t) => {
+test("modifier and context pointerdowns keep row selection and menus", (t) => {
   const document = installPropertyDOM(t);
   const row = new PropertyElement(document);
   const field = new PropertyElement(document);
@@ -97,13 +99,10 @@ test("modifier clicks and context clicks keep row selection and menus", (t) => {
     { metaKey: true },
     { button: 2 },
   ]) {
-    const click = new Event("click", { cancelable: true });
-    Object.assign(click, { button: 0, ...modifiers });
-    row.dispatchEvent(click);
+    row.dispatchEvent(pointer(row, modifiers));
     assert.equal(field.focused, 0);
   }
-  const cancelled = new Event("click", { cancelable: true });
-  Object.assign(cancelled, { button: 0 });
+  const cancelled = pointer(row);
   cancelled.preventDefault();
   row.dispatchEvent(cancelled);
   assert.equal(field.focused, 0);
@@ -117,8 +116,6 @@ test("selecting source text keeps its native selection without focusing the YAML
   const field = new PropertyElement(document);
   row.find = () => field;
   bindRowValueFocus(row as unknown as HTMLElement);
-  const click = new Event("click", { cancelable: true });
-  Object.assign(click, { button: 0 });
-  row.dispatchEvent(click);
+  row.dispatchEvent(pointer(row));
   assert.equal(field.focused, 0);
 });

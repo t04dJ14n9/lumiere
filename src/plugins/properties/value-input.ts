@@ -40,7 +40,7 @@ export function focusInput(
   input: HTMLElement,
   selection: "start" | "end" | "all" = "start",
 ): void {
-  input.focus();
+  input.focus({ preventScroll: true });
   if (isNativeInput(input)) {
     if (input instanceof HTMLTextAreaElement || input.type === "text") {
       input.setSelectionRange(

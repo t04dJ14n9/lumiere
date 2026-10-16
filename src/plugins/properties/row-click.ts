@@ -1,11 +1,13 @@
 import { focusValue } from "./control-edits";
 
 const interactiveSelector =
-  "input, textarea, [contenteditable], button, a, summary, [role=button], [data-property-chip]";
+  "input, textarea, [contenteditable='true'], button, a, summary, [role=button], [data-property-chip]";
 
 /** Blank row space is part of the value's hit target, as in Obsidian. */
 export function bindRowValueFocus(row: HTMLElement): void {
-  row.addEventListener("click", (event) => {
+  // pointerdown + preventDefault claims focus before cm-content keeps the caret
+  // (GUI: typing otherwise lands in the note body and caret-guard undoes it).
+  row.addEventListener("pointerdown", (event) => {
     if (
       event.defaultPrevented ||
       event.button !== 0 ||
@@ -18,8 +20,8 @@ export function bindRowValueFocus(row: HTMLElement): void {
       return;
     }
     // Keep native caret placement, pill actions and injected source links.
-    // Ignore ancestors outside the row (CodeMirror marks .hybrid-properties
-    // contenteditable=false on the widget wrapper).
+    // Only in-row controls count — CodeMirror sets the .hybrid-properties
+    // wrapper to contenteditable=false, which must not look "interactive".
     const interactive = event.target.closest(interactiveSelector);
     if (
       (interactive && row.contains(interactive)) ||
@@ -27,6 +29,7 @@ export function bindRowValueFocus(row: HTMLElement): void {
     ) {
       return;
     }
+    event.preventDefault();
     focusValue(row, "end");
   });
 }
