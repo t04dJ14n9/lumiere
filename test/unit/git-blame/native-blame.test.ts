@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -8,6 +8,7 @@ import { EventEmitter } from "node:events";
 import type { ChildProcess, spawn } from "node:child_process";
 import {
   createSpawnBlameRunner,
+  discoverGitRoot,
   runBlameLine,
 } from "../../../src/host/git-blame";
 import type { GitBlameRunner } from "../../../src/host/git-blame";
@@ -347,6 +348,45 @@ test("known-identical-to-disk optimization still classifies dirty worktree lines
       snapshot: { contents, version: 4 },
     });
     assert.equal(result.status, "uncommitted");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("discoverGitRoot finds the work tree from a nested path without vscode.git", async () => {
+  const { root } = await repo();
+  try {
+    const runGit = createSpawnBlameRunner();
+    const nested = join(root, "notes");
+    await mkdir(nested, { recursive: true });
+    await writeFile(join(nested, "home.md"), "hello\n");
+    assert.equal(await discoverGitRoot(nested, runGit), root);
+    assert.equal(
+      await discoverGitRoot(join(nested, "missing-dir"), runGit),
+      undefined,
+    );
+    const outside = await mkdtemp(join(tmpdir(), "mw-blame-none-"));
+    try {
+      assert.equal(await discoverGitRoot(outside, runGit), undefined);
+    } finally {
+      await rm(outside, { recursive: true, force: true });
+    }
+    // Empty-window / parent-prompt path: blame using only the discovered root.
+    const discovered = await discoverGitRoot(nested, runGit);
+    assert.ok(discovered);
+    const contents = "alpha\nbeta-touched\ngamma\n";
+    const result = await runBlameLine({
+      ...options(runGit),
+      cwd: discovered!,
+      relativePath: "note.md",
+      line: 1,
+      snapshot: { contents, version: 1 },
+    });
+    assert.equal(result.status, "ok");
+    if (result.status === "ok") {
+      assert.equal(result.blame.authorName, "Dev");
+      assert.equal(result.blame.line, 1);
+    }
   } finally {
     await rm(root, { recursive: true, force: true });
   }

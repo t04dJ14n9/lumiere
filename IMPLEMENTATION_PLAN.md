@@ -4399,3 +4399,19 @@ focused gitBlame/git-blame units (48/48) and `pnpm check` (1,744 unit passes,
 acceptance remains VERIFY-NEEDED for Grok Bot; the existing manual plan already
 covers the behavior. No source suites ported and no VSIX, merge or Marketplace
 publication.
+
+## gitBlame follow-up — Filesystem root when vscode.git is empty, 2026-10-16
+
+GUI verify on tip `7d1c067` still painted no EOL chip. The Extension Host had
+registered `gitBlameHost`, but `vscode.git` logged `repositories (0)` for an
+empty window (`isEmptyWorkspaceTrusted`) while `00-home.md` was opened as a
+loose file. Default `git.openRepositoryInParentFolders: prompt` never opened
+sample-vault, so `getRepository` stayed null and blame soft-hid as
+`unavailable`.
+
+`NativeGitAccess` now falls back to `git rev-parse --show-toplevel`
+(`discoverGitRoot`) for blame and identity when the API has no repository.
+Prefer the open API root when present. Unit regression covers discovery from a
+nested path and blame using only that root. Focused gitBlame/git-blame units
+49/49; `pnpm check` 1,745 unit passes, 23 intentional Cordis skips (Node 22).
+No VSIX or merge.
