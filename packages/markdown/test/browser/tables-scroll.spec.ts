@@ -42,6 +42,8 @@ for (const vim of [false, true]) {
     const horizontal = table.locator(".table-scroll");
     const cell = table.locator('td[data-row="15"][data-column="0"]');
     await cell.scrollIntoViewIfNeeded();
+    // Grips take the pointer only while the table is hovered.
+    await table.hover();
     await table.locator('.table-row-handle[data-index="15"]').click();
     await expect(table).toBeFocused();
     await expect(table.locator(".table-cell-selected")).toHaveCount(20);
@@ -70,14 +72,21 @@ for (const vim of [false, true]) {
       .toBeGreaterThan(80);
     expect(await note.evaluate((element) => element.scrollTop)).toBe(vertical);
 
-    const left = await horizontal.evaluate((element) => element.scrollLeft);
-    await page.keyboard.down("Shift");
-    await page.mouse.wheel(0, 180);
-    await page.keyboard.up("Shift");
-    await expect
-      .poll(() => horizontal.evaluate((element) => element.scrollLeft))
-      .toBeGreaterThan(left + 80);
-    expect(await note.evaluate((element) => element.scrollTop)).toBe(vertical);
+    // Chromium turns Shift and a vertical wheel into horizontal scrolling on
+    // Windows and Linux. On macOS the system does that for a real mouse, and
+    // a synthetic wheel event with Shift held stays vertical.
+    if (process.platform !== "darwin") {
+      const left = await horizontal.evaluate((element) => element.scrollLeft);
+      await page.keyboard.down("Shift");
+      await page.mouse.wheel(0, 180);
+      await page.keyboard.up("Shift");
+      await expect
+        .poll(() => horizontal.evaluate((element) => element.scrollLeft))
+        .toBeGreaterThan(left + 80);
+      expect(await note.evaluate((element) => element.scrollTop)).toBe(
+        vertical,
+      );
+    }
     await expect(table.locator(".table-cell-selected")).toHaveCount(20);
     expect(await page.evaluate(() => window.harness.text)).toBe(source);
   });

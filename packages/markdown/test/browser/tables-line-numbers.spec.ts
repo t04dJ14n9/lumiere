@@ -53,15 +53,22 @@ test("numbers around two tables stay aligned after an edit adds a row", async ({
     .first()
     .click({ force: true });
   await expect.poll(numbers).toEqual(["1", "5", "6", "7", "8", "11"]);
-  const boxes = await page.evaluate(() =>
-    [...document.querySelectorAll(".hybrid-table")].map((table) => {
-      const box = table.getBoundingClientRect();
-      return { top: box.top, bottom: box.bottom };
-    }),
-  );
-  const g = await geometry(page);
-  const first = g.numbers.find((n) => n.n === "1")!;
-  expect(Math.abs(first.top - boxes[0]!.top)).toBeLessThanOrEqual(2);
-  const after = g.numbers.find((n) => n.n === "5")!;
-  expect(Math.abs(after.top - boxes[0]!.bottom)).toBeLessThanOrEqual(2);
+  // The new row renders a frame after the numbers change; the editor then
+  // measures the taller table and moves the numbers below it.
+  const offsets = async () => {
+    const boxes = await page.evaluate(() =>
+      [...document.querySelectorAll(".hybrid-table")].map((table) => {
+        const box = table.getBoundingClientRect();
+        return { top: box.top, bottom: box.bottom };
+      }),
+    );
+    const g = await geometry(page);
+    const first = g.numbers.find((n) => n.n === "1")!;
+    const after = g.numbers.find((n) => n.n === "5")!;
+    return Math.max(
+      Math.abs(first.top - boxes[0]!.top),
+      Math.abs(after.top - boxes[0]!.bottom),
+    );
+  };
+  await expect.poll(offsets).toBeLessThanOrEqual(2);
 });

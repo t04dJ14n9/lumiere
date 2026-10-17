@@ -57,6 +57,8 @@ test("row handle selection keeps a visible inset selection box", async ({
     style.setProperty("--vscode-textLink-foreground", "#3794ff");
   });
   const table = page.locator(".hybrid-table");
+  // Grips take the pointer only while the table is hovered.
+  await table.hover();
   await table.locator('.table-row-handle[data-index="1"]').click();
   await expect(table.locator(".table-cell-selected")).toHaveCount(3);
   await expect(table.locator(".cm-editor")).toHaveCount(0);

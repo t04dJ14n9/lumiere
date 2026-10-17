@@ -70,6 +70,8 @@ for (const theme of [
     const originalCode = await colors(cells.nth(0).locator("code"));
     expect(originalCode.background).not.toBe(TRANSPARENT);
     const originalLink = await colors(cells.nth(0).locator("a"));
+    // Grips take the pointer only while the table is hovered.
+    await table.hover();
     await table.locator('.table-column-handle[data-index="0"]').click();
     await expect(table.locator(".table-cell-selected")).toHaveCount(2);
 
@@ -105,6 +107,8 @@ for (const theme of [
     expect(await colors(cells.nth(3).locator("code"))).toEqual(originalCode);
 
     // Moving selection restores the previously selected code's theme background.
+    // Grips take the pointer only while the table is hovered.
+    await table.hover();
     await table.locator('.table-column-handle[data-index="1"]').click();
     await expect(cells.nth(0)).toHaveAttribute("aria-selected", "false");
     expect(await colors(cells.nth(0).locator("code"))).toEqual(originalCode);
