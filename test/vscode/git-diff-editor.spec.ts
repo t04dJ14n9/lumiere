@@ -77,11 +77,18 @@ test("rendered git diff: HEAD against the note, Source Control takeover, off", a
     });
     await page.waitForTimeout(500);
     await openWorkbench(page, NOTE);
-    await page.keyboard.press("Control+Shift+G");
-    await page
+    // Show Source Control from the palette (Ctrl+Shift+G goes wherever focus
+    // is), again until git has found the change, and click the file once the
+    // list holds still: it redraws while git settles.
+    const changed = page
       .locator(".scm-view .monaco-list-row", { hasText: "Gross margin.md" })
-      .first()
-      .click();
+      .first();
+    await expect(async () => {
+      if (!(await changed.isVisible())) {
+        await command(page, "Source Control: Focus on Changes View");
+      }
+      await changed.click({ timeout: 2000 });
+    }).toPass({ timeout: 45000 });
     await expect.poll(() => panelFrames(page), { timeout: 20000 }).toBe(1);
     await expect(
       page.locator(".tab .monaco-icon-label", { hasText: "→" }),
