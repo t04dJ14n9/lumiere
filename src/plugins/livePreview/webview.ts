@@ -1,7 +1,9 @@
 import { bindCaller } from "../../kernel";
 import { pointerSelectionTracking } from "../../webview/ui/pointer-selection";
+import { fenceGuardSelectionSupport } from "../../webview/ui/markdown-widget";
 import type { CallerBound } from "../../kernel";
 import type { LivePreview } from "./api";
+import { clickPositionSync } from "./click-position";
 import { renderedPosition } from "./rendered-position";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
@@ -135,6 +137,8 @@ function engineExtensions(ctx: Context) {
     documentTree,
     renderRevision,
     pointerSelectionTracking,
+    fenceGuardSelectionSupport,
+    clickPositionSync,
     hybridInline,
     blockIndex,
     blockDecorations((error) =>

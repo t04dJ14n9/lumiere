@@ -74,16 +74,24 @@ class PanelNavigation {
     token: Cancellation,
   ): Promise<boolean> {
     const request = ++this.latest;
+    // Capture before wait: a reveal that started while cold and finds the pane
+    // inactive once ready means the user left during load — still cancel.
+    // An already-ready pane that is merely unfocused (Outline / sidebar) must
+    // still navigate; requiring active() made Outline clicks a silent no-op.
+    const waitedForReady = !this.ready;
     if (!this.ready && !(await waitUntilReady(this.waiters, token))) {
       return false;
     }
     if (
       !this.live ||
-      !this.panel.active() ||
       token.cancelled ||
-      request !== this.latest
+      request !== this.latest ||
+      (waitedForReady && !this.panel.active())
     ) {
       return false;
+    }
+    if (!this.panel.active()) {
+      this.panel.reveal();
     }
     this.delivery?.cancel();
     const local = new CancelToken();

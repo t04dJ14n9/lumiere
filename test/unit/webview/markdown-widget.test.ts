@@ -2,14 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { EditorSelection, EditorState } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import {
   CLICK_DRAG_PX,
   clickToEditReleaseCommits,
+  fenceGuardSelection,
   latchClickDrag,
   liveFenceOffsets,
   markdownBlockIgnoresEventKind,
+  ownsFenceGuardRelease,
+  resolveFenceGuardSelection,
+  setFenceGuardSelectionEffect,
   shouldGuardFenceMouseDown,
+  shouldRestoreFenceClick,
   type ClickToEditPress,
+  type FenceGuardPress,
 } from "../../../src/webview/ui/markdown-widget";
 
 const root = new URL("../../../", import.meta.url).pathname;
@@ -209,7 +217,7 @@ test("Mermaid uses double-click-to-edit; math/code keep single-click", () => {
   assert.match(embedsSrc, /new MarkdownBlock\(block, ctx\.render, false\)/);
 });
 
-test("fence click guard swallows only outside-shell hits that map into the block", () => {
+test("fence click guard arms only outside-shell hits that map into the block", () => {
   const base = {
     button: 0,
     onControl: false,
@@ -230,6 +238,51 @@ test("fence click guard swallows only outside-shell hits that map into the block
   );
   assert.equal(shouldGuardFenceMouseDown({ ...base, onControl: true }), false);
   assert.equal(shouldGuardFenceMouseDown({ ...base, button: 2 }), false);
+  // Shift/Cmd/chrome must not arm — CM keeps selection / scrollbar.
+  assert.equal(shouldGuardFenceMouseDown({ ...base, modified: true }), false);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, onChrome: true }), false);
+});
+
+test("fence click guard never preventDefaults the initial mousedown", () => {
+  // Robust restore path: let CM own mousedown; restore selection on plain click.
+  const start = widgetSrc.indexOf("function bindFenceClickGuard");
+  const end = widgetSrc.indexOf("function bindDoubleClickToEdit");
+  assert.ok(start >= 0 && end > start, "bindFenceClickGuard present");
+  assert.doesNotMatch(widgetSrc.slice(start, end), /event\.preventDefault/);
+  assert.match(widgetSrc, /shouldRestoreFenceClick/);
+  assert.match(widgetSrc, /Do not preventDefault/);
+  assert.match(widgetSrc, /isEditorChromeTarget/);
+  assert.match(widgetSrc, /isNativeSelectableLabel\(shell, event\.target\)/);
+});
+
+test("plain completed fence margin click restores pre-press selection", () => {
+  const press: FenceGuardPress = {
+    x: 0,
+    y: 0,
+    dragged: false,
+    selection: EditorSelection.single(3),
+    doc: { length: 10 },
+  };
+  assert.equal(
+    shouldRestoreFenceClick({ press, button: 0, modified: false }),
+    true,
+  );
+  assert.equal(
+    shouldRestoreFenceClick({
+      press: { ...press, dragged: true },
+      button: 0,
+      modified: false,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldRestoreFenceClick({ press, button: 0, modified: true }),
+    false,
+  );
+  assert.equal(
+    shouldRestoreFenceClick({ press: null, button: 0, modified: false }),
+    false,
+  );
 });
 
 test("Mermaid SVG CSS captures transparent gap clicks on the widget", () => {
@@ -260,7 +313,7 @@ test("fence click guard resolves live offsets from the shell, not captured from/
     blockFrom: 110,
     blockTo: 160,
   });
-  // Guard still swallows a margin hit that maps into the *live* fence.
+  // Guard still arms a margin hit that maps into the *live* fence.
   assert.equal(
     shouldGuardFenceMouseDown({
       button: 0,
@@ -303,5 +356,98 @@ test("fence click guard resolves live offsets from the shell, not captured from/
       ...liveFenceOffsets(view, shell, 50),
     }),
     true,
+  );
+});
+
+test("fence restore skips when doc identity changed and no mapped selection", () => {
+  const savedDoc = { length: 100 };
+  const currentDoc = { length: 110 };
+  const selection = EditorSelection.single(50);
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection,
+      savedDoc,
+      currentDoc,
+    }),
+    null,
+  );
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection,
+      savedDoc,
+      currentDoc: savedDoc,
+    }),
+    selection,
+  );
+});
+
+test("fence restore prefers mapped selection over stale snapshot", () => {
+  const savedDoc = { length: 100 };
+  const currentDoc = { length: 110 };
+  const stale = EditorSelection.single(50);
+  const mapped = EditorSelection.single(60);
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection: stale,
+      savedDoc,
+      currentDoc,
+      mapped,
+    }),
+    mapped,
+  );
+  // Explicit map callback when docs diverge.
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection: stale,
+      savedDoc,
+      currentDoc,
+      map: () => mapped,
+    }),
+    mapped,
+  );
+});
+
+test("fenceGuardSelection field maps through intervening doc changes", () => {
+  const extensions: Extension[] = [fenceGuardSelection];
+  let state = EditorState.create({
+    doc: "abcdefghij",
+    selection: EditorSelection.single(5),
+    extensions,
+  });
+  state = state.update({
+    effects: setFenceGuardSelectionEffect(EditorSelection.single(5)),
+  }).state;
+  assert.equal(state.field(fenceGuardSelection)?.main.head, 5);
+  state = state.update({
+    changes: { from: 0, to: 0, insert: "XXXX" },
+  }).state;
+  // Insert before the caret → mapped head advances by 4 (like pointerSelection).
+  assert.equal(state.field(fenceGuardSelection)?.main.head, 9);
+  assert.equal(state.doc.length, 14);
+});
+
+test("fence click guard arms mapped selection field and resolves via doc identity", () => {
+  assert.match(widgetSrc, /fenceGuardSelection/);
+  assert.match(widgetSrc, /resolveFenceGuardSelection/);
+  assert.match(widgetSrc, /armFenceGuardSelection/);
+  assert.match(widgetSrc, /ownsFenceGuardRelease/);
+});
+
+test("duplicate mouseup without release ownership does not clear mapped selection", () => {
+  // Second window/document mouseup: takePress already null — must not clear.
+  assert.equal(ownsFenceGuardRelease(null), false);
+  const press: FenceGuardPress = {
+    x: 0,
+    y: 0,
+    dragged: false,
+    selection: EditorSelection.single(5),
+    doc: { length: 10 },
+  };
+  assert.equal(ownsFenceGuardRelease(press), true);
+  // Owner path still clears on failed restore predicates; only null skips clear.
+  assert.match(widgetSrc, /if \(!ownsFenceGuardRelease\(active\)\)/);
+  assert.match(
+    widgetSrc,
+    /if \(!ownsFenceGuardRelease\(active\)\) \{\s*return;/s,
   );
 });

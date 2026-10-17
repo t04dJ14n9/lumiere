@@ -108,14 +108,17 @@ test("native side destinations use unique panel identity, not column arithmetic"
     chooseRevealPanel([original, right], new Set(["original", "side"]), target),
     right,
   );
+  // Unique side pane is accepted even when unfocused (Outline / sidebar focus).
+  const inactiveSide = shell("side", 4, false);
   assert.equal(
     chooseRevealPanel(
-      [shell("original", 1), shell("side", 4, false)],
+      [shell("original", 1), inactiveSide],
       new Set(["original", "side"]),
       target,
     ),
-    undefined,
+    inactiveSide,
   );
+  // Ambiguous same-URI pool (multiple side candidates) still refuses.
   assert.equal(
     chooseRevealPanel(
       [original, right, shell("third", 6, false)],
