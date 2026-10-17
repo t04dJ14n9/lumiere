@@ -1,21 +1,32 @@
-import { StateField, Transaction } from "@codemirror/state";
+import { StateField } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import { restoreCaret, snapshotCaret } from "../../webview/ui/preserve-caret";
+import {
+  caretPreserveAnnotation,
+  restoreCaret,
+  snapshotCaret,
+} from "../../webview/ui/preserve-caret";
 import { afterLayout } from "./layout";
 
-/** Unannotated decoration remaps must not supersede a pending restore. */
+/** Tagged restore / Live Preview remaps must not supersede a pending restore. */
 export const caretRestoreGeneration = StateField.define<number>({
   create: () => 0,
   update(generation, transaction) {
+    if (transaction.docChanged) {
+      return generation + 1;
+    }
     if (
-      transaction.docChanged ||
-      (transaction.selection && transaction.annotation(Transaction.userEvent))
+      transaction.selection &&
+      !transaction.annotation(caretPreserveAnnotation)
     ) {
+      // Vim motions and other unannotated selections supersede; LP remaps use
+      // caretPreserveAnnotation.of("livePreviewRemap").
       return generation + 1;
     }
     return generation;
   },
 });
+
+export { caretPreserveAnnotation };
 
 /**
  * Run a reconfigure (or similar) while keeping the caret and scroll put.

@@ -1,5 +1,14 @@
-import type { EditorSelection, Text } from "@codemirror/state";
+import {
+  Annotation,
+  type EditorSelection,
+  type Text,
+} from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
+
+/** Own restores and tagged Live Preview remaps must not supersede a pending restore. */
+export const caretPreserveAnnotation = Annotation.define<
+  "restore" | "livePreviewRemap"
+>();
 
 /** Snapshot of caret + scroll to restore across extension remounts. */
 export type CaretSnapshot = {
@@ -55,6 +64,7 @@ export function restoreCaret(
     view.dispatch({
       selection: snapshot.selection,
       scrollIntoView: false,
+      annotations: caretPreserveAnnotation.of("restore"),
     });
   }
   view.scrollDOM.scrollTop = snapshot.scrollTop;

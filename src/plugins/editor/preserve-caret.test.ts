@@ -6,7 +6,11 @@ import {
   type TransactionSpec,
 } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import { caretRestoreGeneration, withPreservedCaret } from "./preserve-caret";
+import {
+  caretPreserveAnnotation,
+  caretRestoreGeneration,
+  withPreservedCaret,
+} from "./preserve-caret";
 
 function fixture() {
   let state = EditorState.create({
@@ -62,12 +66,24 @@ test("withPreservedCaret restores selection and scroll after a synchronous jump"
   await f.finish();
 });
 
-test("after-layout restore still repairs an unannotated decoration remap", async () => {
+test("after-layout restore still repairs a tagged Live Preview remap", async () => {
   const f = fixture();
   f.preserve();
-  f.view.dispatch({ selection: EditorSelection.single(0) });
+  f.view.dispatch({
+    selection: EditorSelection.single(0),
+    annotations: caretPreserveAnnotation.of("livePreviewRemap"),
+  });
   await f.finish();
   assert.equal(f.view.state.selection.main.head, 5);
+});
+
+test("after-layout restore yields to an unannotated Vim-like motion", async () => {
+  // codemirror-vim 6.4.0 setCursor dispatches {selection} with no userEvent.
+  const f = fixture();
+  f.preserve();
+  f.view.dispatch({ selection: EditorSelection.single(9) });
+  await f.finish();
+  assert.equal(f.view.state.selection.main.head, 9);
 });
 
 for (const userEvent of [
