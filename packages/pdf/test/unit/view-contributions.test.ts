@@ -1,0 +1,58 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+import {
+  PAGE_LAYOUTS,
+  SCROLL_DIRECTIONS,
+  SCROLL_MODES,
+} from "../../src/shared/view-options";
+
+const { contributes } = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+) as {
+  contributes: {
+    commands: { command: string; enablement?: string }[];
+    menus: Record<string, { command: string; when?: string }[]>;
+    configuration: { properties: Record<string, { default: unknown }> };
+  };
+};
+
+test("every view choice has a PDF command, scoped menus and a contributed default setting", () => {
+  const names = [
+    "actualSize",
+    "selectView",
+    ...[...PAGE_LAYOUTS, ...SCROLL_MODES, ...SCROLL_DIRECTIONS].map(
+      (item) => item.command,
+    ),
+  ];
+  for (const name of names) {
+    const command = `pdfWorkshop.${name}`;
+    assert.equal(
+      contributes.commands.find((item) => item.command === command)?.enablement,
+      "pdfWorkshop.pdfActive",
+    );
+    for (const menu of ["commandPalette", "editor/title", "webview/context"]) {
+      assert.ok(
+        contributes.menus[menu]?.some(
+          (item) =>
+            item.command === command &&
+            item.when?.includes("pdfWorkshop.viewer"),
+        ),
+        `${menu}: ${command}`,
+      );
+    }
+  }
+  for (const [name, value] of Object.entries({
+    defaultZoom: "fitWidth",
+    pageLayout: "single",
+    scrollMode: "continuous",
+    scrollDirection: "vertical",
+    smoothScrolling: null,
+  })) {
+    assert.equal(
+      contributes.configuration.properties[`pdfWorkshop.view.${name}`]
+        ?.default,
+      value,
+    );
+  }
+});

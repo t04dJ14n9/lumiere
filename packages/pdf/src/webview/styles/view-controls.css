@@ -1,0 +1,84 @@
+.view-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--vscode-foreground, #ccc);
+  background: transparent;
+  cursor: pointer;
+}
+
+.view-button:hover {
+  background: var(--vscode-toolbar-hoverBackground, #5a5d5e50);
+}
+
+.view-button:focus-visible,
+.view-menu select:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, #007fd4);
+}
+
+/* Top-layer popovers remain outside a vertical floating bar's clipping area. */
+.view-menu {
+  inset: auto 14px 42px auto;
+  box-sizing: border-box;
+  width: min(330px, calc(100vw - 28px));
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--vscode-widget-border, #454545);
+  border-radius: 6px;
+  color: var(--vscode-editorWidget-foreground, #ccc);
+  background: var(--vscode-editorWidget-background, #252526);
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, #0008);
+  font-size: 12px;
+}
+
+.view-menu label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.view-menu select {
+  width: 205px;
+  max-width: 70%;
+  height: 25px;
+  border: 1px solid var(--vscode-dropdown-border, #454545);
+  border-radius: 3px;
+  color: var(--vscode-dropdown-foreground, #ccc);
+  background: var(--vscode-dropdown-background, #3c3c3c);
+  font: inherit;
+}
+
+.viewport.paged {
+  scrollbar-width: none;
+}
+
+.viewport.paged::-webkit-scrollbar {
+  display: none;
+}
+
+.smooth-motion .paged-page {
+  animation: page-reveal 140ms ease-out;
+}
+
+@keyframes page-reveal {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paged-page,
+  .floating-toolbar {
+    animation: none !important;
+    transition: none !important;
+  }
+}
