@@ -1,8 +1,10 @@
 # Math
 
 Renders inline and display TeX formulas with MathJax, like Obsidian's math in
-Live Preview. Moving the caret into a formula reveals its source (display math
-shows the $$ source only — no rendered duplicate underneath while editing).
+Live Preview. Moving the caret into a formula reveals its source, which reads
+as code with its `$` delimiters in the accent colour; a display formula keeps
+its rendered result below the source while you edit it. Clicking a formula
+reveals it with the formula selected, without its delimiters, as in Obsidian.
 
 ## How it works
 
@@ -16,8 +18,9 @@ renders. Editing commands wrap or unwrap the selection through CodeMirror.
 - `manifest.ts`: feature metadata and the two command contributions.
 - `webview.ts`: renderer, post-processor, cleanup and command registrations.
 - `commands.ts`: pure selection edits and delimiter placement.
+- `source.ts`: a formula's delimiters, and the span a click selects.
 - `mathjax.ts`: lazy TeX-to-SVG conversion with supported TeX packages.
-- `math.test.ts`: selection and delimiter unit tests.
+- `math.test.ts`: selection, delimiter and formula-span unit tests.
 - `math.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

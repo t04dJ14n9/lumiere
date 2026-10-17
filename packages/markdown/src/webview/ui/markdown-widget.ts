@@ -2,12 +2,61 @@ import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
-import {
-  bindClickToEdit,
-  bindDoubleClickToEdit,
-  markdownBlockIgnoresEvent,
-} from "./block-pointer";
+import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
+
+/** A span of a block's source, as offsets into it. */
+export interface SourceSpan {
+  from: number;
+  to: number;
+}
+
+/** How a rendered block hands over to its source. */
+export interface BlockEditing {
+  /**
+   * What reveals the source besides the caret moving in: a click on the
+   * block or its Edit button ("click", as for math and callouts), or only the
+   * Edit button ("button"), so that clicks reach the content of embeds and
+   * diagrams.
+   */
+  reveal: "click" | "button";
+  /** Also keep clicks in the editor margin beside the block from revealing it. */
+  guardMargin?: boolean;
+  /**
+   * The part of the source revealing selects; the whole block unless given.
+   * Obsidian selects a formula or a diagram's code without its delimiters.
+   */
+  select?: (source: string) => SourceSpan;
+}
+
+/**
+ * The body of a fenced block: its lines between the fences, or, when it has
+ * none, the end of the opening line.
+ */
+export function fenceBody(source: string): SourceSpan {
+  const open = source.indexOf("\n");
+  if (open < 0) {
+    return { from: source.length, to: source.length };
+  }
+  const close = source.lastIndexOf("\n");
+  if (!/^ {0,3}(`{3,}|~{3,})\s*$/u.test(source.slice(close + 1))) {
+    // Unclosed: the body runs to the end.
+    return { from: open + 1, to: source.length };
+  }
+  return close === open
+    ? { from: open, to: open }
+    : { from: open + 1, to: close };
+}
+
+/**
+ * Rendered fenced code (diagrams, queries, processed code): as in Obsidian,
+ * only the Edit button reveals it, selecting the code between the fences.
+ */
+export const FENCED_PREVIEW: BlockEditing = {
+  reveal: "button",
+  guardMargin: true,
+  select: fenceBody,
+};
 
 /** Own a render pass even when an async post-processor finishes after removal. */
 export class MarkdownBlock extends WidgetType {
@@ -16,13 +65,7 @@ export class MarkdownBlock extends WidgetType {
   constructor(
     readonly block: RenderBlock,
     private readonly render: RenderService,
-    /**
-     * Body click policy for revealing source:
-     * - `true` (default): single click, as for math / code / callouts.
-     * - `"dblclick"`: double-click only (Mermaid stays interactive on ordinary click).
-     * - `false`: Edit button / caret entry only (embeds keep content clicks).
-     */
-    private readonly clickToEdit: boolean | "dblclick" = true,
+    private readonly editing: BlockEditing = { reveal: "click" },
   ) {
     super();
   }
@@ -46,19 +89,12 @@ export class MarkdownBlock extends WidgetType {
     let live = true;
     let pass: RenderPass | undefined;
     const events = new AbortController();
-    edit.addEventListener(
-      "click",
-      () => {
-        const from = view.posAtDOM(shell);
-        view.dispatch({ selection: { anchor: from }, scrollIntoView: true });
-        view.focus();
-      },
-      { signal: events.signal },
-    );
-    if (this.clickToEdit === true) {
-      bindClickToEdit(view, shell, events.signal);
-    } else if (this.clickToEdit === "dblclick") {
-      bindDoubleClickToEdit(view, shell, events.signal);
+    const reveal = () => this.revealSource(view, shell);
+    edit.addEventListener("click", reveal, { signal: events.signal });
+    if (this.editing.reveal === "click") {
+      bindClickToEdit(shell, reveal, events.signal);
+    }
+    if (this.editing.guardMargin) {
       bindFenceClickGuard(view, shell, this.block, events.signal);
     }
     this.lifetimes.set(shell, () => {
@@ -92,6 +128,24 @@ export class MarkdownBlock extends WidgetType {
   }
 
   /**
+   * Reveal the source, selecting what `editing.select` names, with the head
+   * at its start as in Obsidian. The block was on screen, so do not scroll.
+   */
+  private revealSource(view: EditorView, shell: HTMLElement): void {
+    const { source } = this.block;
+    const start = sourceStart(view, shell, source);
+    const span = this.editing.select?.(source) ?? {
+      from: 0,
+      to: source.length,
+    };
+    view.focus();
+    view.dispatch({
+      selection: { anchor: start + span.to, head: start + span.from },
+      scrollIntoView: false,
+    });
+  }
+
+  /**
    * Keep widget events (including blank diagram area) so CodeMirror does not
    * park the caret inside the replaced fence on click — that would reveal
    * Mermaid/math source without Edit / click-to-edit. Buttons and Mermaid SVG
@@ -106,4 +160,21 @@ export class MarkdownBlock extends WidgetType {
     this.lifetimes.get(dom)?.();
     this.lifetimes.delete(dom);
   }
+}
+
+/**
+ * Where a block's source starts. Its widget either replaces the source, or
+ * follows it as the preview of a block being edited. The offsets captured
+ * when the widget was made go stale when text above changes, so read them
+ * from the document.
+ */
+function sourceStart(
+  view: EditorView,
+  shell: HTMLElement,
+  source: string,
+): number {
+  const at = view.posAtDOM(shell);
+  return view.state.sliceDoc(at, at + source.length) === source
+    ? at
+    : Math.max(0, at - source.length);
 }

@@ -9,7 +9,7 @@ import {
 
 /**
  * Whether a primary mousedown that missed the widget DOM maps into a replaced
- * fence and should arm the plain-click restore (diagram `clickToEdit: "dblclick"`).
+ * fence and should arm the plain-click restore (blocks with `guardMargin`).
  * Does not decide preventDefault — CodeMirror must own mousedown for focus,
  * Shift/Cmd selection, drag-scroll, and scrollbar.
  */
@@ -198,7 +198,7 @@ function isModified(event: MouseEvent): boolean {
 }
 
 /**
- * Keep margin / SVG pass-through plain clicks from revealing a dblclick-only
+ * Keep margin / SVG pass-through plain clicks from revealing a button-only
  * fence, without cancelling the initial mousedown.
  *
  * CodeMirror owns mousedown/move (focus, Shift/Cmd selection, drag-scroll).

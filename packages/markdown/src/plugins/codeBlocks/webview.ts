@@ -3,7 +3,10 @@ import type { Context, Disposer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../render/api";
 import type {} from "../livePreview/api";
-import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import {
+  FENCED_PREVIEW,
+  MarkdownBlock,
+} from "../../webview/ui/markdown-widget";
 import { codeSource } from "./code-source";
 import { codeBlockRange } from "./range";
 import { bindCodePass } from "./post-process";
@@ -65,6 +68,6 @@ function registerProcessedBlocks(
       return !!language && accepts(language);
     },
     range: codeBlockRange,
-    widget: (block) => new MarkdownBlock(block, ctx.render),
+    widget: (block) => new MarkdownBlock(block, ctx.render, FENCED_PREVIEW),
   });
 }

@@ -53,7 +53,8 @@ function registerEmbedRenderers(ctx: Context): void {
         );
       },
       // Embedded notes keep clicks for their content, as in Obsidian.
-      widget: (block) => new MarkdownBlock(block, ctx.render, false),
+      widget: (block) =>
+        new MarkdownBlock(block, ctx.render, { reveal: "button" }),
     }),
   );
   ctx.effect(() =>

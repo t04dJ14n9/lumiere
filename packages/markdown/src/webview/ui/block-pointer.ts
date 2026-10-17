@@ -1,5 +1,3 @@
-import type { EditorView } from "@codemirror/view";
-
 /** Controls inside a rendered block keep their own click behaviour. */
 const interactive =
   "a, button, input, select, textarea, summary, label, [contenteditable='true'], [data-href], .internal-link, .external-link";
@@ -20,8 +18,8 @@ export type ClickToEditPress = {
  * Mermaid/math blocks could not be selected without scrolling to the block top.
  */
 export function bindClickToEdit(
-  view: EditorView,
   shell: HTMLElement,
+  edit: () => void,
   signal: AbortSignal,
 ): void {
   let press: ClickToEditPress | null = null;
@@ -46,8 +44,8 @@ export function bindClickToEdit(
     { signal },
   );
   watchClickToEditGesture({
-    view,
     shell,
+    edit,
     signal,
     getPress: () => press,
     takePress,
@@ -56,13 +54,13 @@ export function bindClickToEdit(
 
 /** Document-level move / release / cancel for one click-to-edit gesture. */
 function watchClickToEditGesture(input: {
-  view: EditorView;
   shell: HTMLElement;
+  edit: () => void;
   signal: AbortSignal;
   getPress: () => ClickToEditPress | null;
   takePress: () => ClickToEditPress | null;
 }): void {
-  const { view, shell, signal, getPress, takePress } = input;
+  const { shell, edit, signal, getPress, takePress } = input;
   const doc = shell.ownerDocument;
   const win = doc.defaultView;
   doc.addEventListener(
@@ -88,7 +86,7 @@ function watchClickToEditGesture(input: {
         onControl: isBlockControl(shell, event.target),
       })
     ) {
-      editOnClick(view, shell);
+      edit();
     }
   };
   for (const target of [doc, win]) {
@@ -236,44 +234,4 @@ export function eventTargetInside(
   target: EventTarget | null,
 ): boolean {
   return target instanceof Node && shell.contains(target);
-}
-
-/**
- * Reveal a rendered block's source with the caret at the end of the first
- * line (math / code / callouts on single click; Mermaid on double-click or
- * Edit). The pointer was already on-screen, so do not force a scroll.
- */
-export function editOnClick(view: EditorView, shell: HTMLElement): void {
-  const line = view.state.doc.lineAt(view.posAtDOM(shell));
-  view.focus();
-  view.dispatch({ selection: { anchor: line.to }, scrollIntoView: false });
-}
-
-/**
- * Double-click reveals source for widgets that keep ordinary clicks
- * interactive (Mermaid). Ignores control targets and native-selectable SVG
- * labels so a label word-select is not torn down into fence edit.
- */
-export function bindDoubleClickToEdit(
-  view: EditorView,
-  shell: HTMLElement,
-  signal: AbortSignal,
-): void {
-  shell.addEventListener(
-    "dblclick",
-    (event) => {
-      if (event.button !== 0 || isBlockControl(shell, event.target)) {
-        return;
-      }
-      if (
-        event.target instanceof Element &&
-        isNativeSelectableLabel(shell, event.target)
-      ) {
-        return;
-      }
-      event.preventDefault();
-      editOnClick(view, shell);
-    },
-    { signal },
-  );
 }

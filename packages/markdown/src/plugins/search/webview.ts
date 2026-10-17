@@ -2,7 +2,10 @@ import type { Context, Plugin } from "@workshop/core";
 import type {} from "../livePreview/api";
 import type {} from "../render/api";
 import type {} from "../editor/api";
-import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import {
+  FENCED_PREVIEW,
+  MarkdownBlock,
+} from "../../webview/ui/markdown-widget";
 import { QueryClient } from "./client";
 import { bindSearchBlock } from "./blocks";
 import { protocol } from "./protocol";
@@ -34,7 +37,7 @@ function registerQueryBlocks(ctx: Context): void {
           isQuery(state.sliceDoc(info.from, info.to))
         );
       },
-      widget: (block) => new MarkdownBlock(block, ctx.render),
+      widget: (block) => new MarkdownBlock(block, ctx.render, FENCED_PREVIEW),
     }),
   );
 }

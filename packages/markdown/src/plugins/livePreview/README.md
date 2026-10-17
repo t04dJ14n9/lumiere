@@ -96,14 +96,19 @@ blocks without exposing renderer internals to marker providers.
 
 ### Reveal rules
 
-Follows the measured [Obsidian 1.14.4 rules](/workspace/plans/obsidian-reveal-rules.md).
+Follows the measured [Obsidian rules](../../../docs/OBSIDIAN_REVEAL_RULES.md).
 Any selection touching an inline element (inclusive endpoints) reveals its
 outermost ancestor and the transitive chain of directly abutting elements;
 one character or space breaks the chain. Escapes and heading/quote marks reveal
 on selected lines. Tasks reveal only through the checkbox end (columns 0–5
 for `- [ ]`). Both code fences reveal anywhere in the block. Callouts reveal
 source with quote marks per line and inline syntax per element. Definition
-markers reveal on their first line; math and HTML blocks reveal whole.
+markers reveal on their first line; math and HTML blocks reveal whole, and
+display math keeps its rendered formula below the source. A click on a
+rendered block reveals it as in Obsidian: math and callouts on a click,
+selecting the formula or the whole callout; rendered fenced code (diagrams,
+queries, processed code) only from its Edit button, selecting the code
+(`BlockEditing` in `src/webview/ui/markdown-widget.ts`).
 Tables and Properties retain their widgets; bullets, numbers, tags and comment
 markers stay visible. Footnote references deliberately retain superscript
 rendering except when a caret touches the reference itself.

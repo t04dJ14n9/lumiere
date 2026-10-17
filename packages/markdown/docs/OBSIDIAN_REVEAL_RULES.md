@@ -19,11 +19,14 @@ For every case the caret was moved to every character offset (`editor.setCursor`
 6. **Block-level exceptions** (revealed when the caret is anywhere in the block):
    - fenced code: the opening fence line (with language) and the closing fence are both shown; the body is always raw;
    - callouts: a rendered widget until the caret enters it; then every line becomes source (`> [!note] title`), with `>` shown only on the caret's line and inline elements still per-element;
-   - display math `$$ … $$` and HTML blocks: widget until the caret is inside, then the whole source.
+   - display math `$$ … $$`: widget until the caret is inside, then the whole source, with the rendered formula kept below it (measured 2026-10-17: same height as before, under the closing `$$`);
+   - HTML blocks: widget until the caret is inside, then the whole source.
 7. **Task items**: `- [ ]` is revealed only when the caret touches that range (columns 0 to 5 inclusive, so not after the space); the item text never changes.
 8. **Footnote definitions** `[^1]: text`: the `[^1]:` marker is revealed when the caret is on the line (a rendered number otherwise); inline elements in it follow rule 1.
 9. **Never hidden** (raw always visible): list bullets and numbers (drawn by CSS), tags `#tag`, comments `%%…%%` (the `%%` stay visible), footnote references `[^1]` and `^[inline]` (Obsidian shows them raw).
 10. **Never raw in Live Preview**: tables (a widget; the caret reveals the raw text of the *cell* it is in only) and frontmatter (Properties widget; raw only in Source mode or `propertiesInDocument: source`).
+
+11. **Clicking a rendered block** (measured 2026-10-17 in a throwaway vault, by mouse clicks over the DevTools protocol): display math and callouts reveal on a click, which selects the formula (without the `$$` lines) or the whole callout, with the selection's head at its start. Inline math selects the formula without its `$`. Mermaid and other rendered code blocks stay rendered on a click or double-click; their "Edit this block" button reveals them with the code between the fences selected. The button does the same for math (the formula) and callouts (the whole block).
 
 Decision for our editor: follow all of this, **except** footnote references: ours stay LaTeX-style superscript with raw text when the caret is inside (the user's preference).
 

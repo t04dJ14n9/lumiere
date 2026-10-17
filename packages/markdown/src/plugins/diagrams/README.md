@@ -1,11 +1,10 @@
 # Diagrams
 
 Renders Mermaid code fences as diagrams, like Obsidian's Mermaid support in
-Live Preview. The diagram stays rendered on ordinary clicks — including
-transparent gaps between nodes and empty chrome beside the SVG (no fence
-caret jump / re-render flash). Reveal source with a double-click, the Edit
-button, or by moving the caret into the fence. Clicking elsewhere in the note
-does not collapse it to raw source.
+Live Preview. As in Obsidian, the diagram stays rendered on clicks and
+double-clicks, including transparent gaps between nodes and the margin beside
+it. The Edit button reveals the source with the diagram's code selected, as
+does moving the caret into the fence.
 
 ## How it works
 
@@ -19,7 +18,7 @@ Pass and plugin disposal restore the source and prevent late results from writin
 - `manifest.ts`: feature metadata and default enablement.
 - `webview.ts`: language recognition, block and fence registrations.
 - `renderer.ts`: serial rendering queue, per-render cancellation and cleanup.
-- `diagrams.test.ts`: language recognition unit coverage.
+- `diagrams.test.ts`: language recognition and editing unit coverage.
 - `diagrams.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

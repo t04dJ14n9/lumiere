@@ -1,12 +1,13 @@
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
-import type {} from "../livePreview/api";
+import type { InlineContext } from "../livePreview/api";
 import type { RenderPass } from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { mathEdit } from "./commands";
+import { delimiters, mathBody, mathTokens } from "./source";
 import { errorMessage } from "../../shared/errors";
 export const mathWebview: Plugin = {
   name: "math",
@@ -20,36 +21,55 @@ export const mathWebview: Plugin = {
 };
 
 function registerMathRenderers(ctx: Context): void {
+  const editing = { reveal: "click", select: mathBody } as const;
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "math",
       nodes: ["MathBlock"],
       editing: "reveal",
       match: (node) => node.name === "MathBlock",
-      // Reveal source only (no rendered duplicate under the $$ while editing).
-      widget: (block) => new MarkdownBlock(block, ctx.render),
+      // As in Obsidian, editing keeps the rendered formula below its source.
+      editingPreview: { sourceClass: "md-math-source" },
+      widget: (block) => new MarkdownBlock(block, ctx.render, editing),
     }),
   );
   ctx.effect(() =>
     ctx.livePreview.inline({
-      nodes: ["InlineMath"],
+      // Block math too: its revealed source is marked like inline math.
+      nodes: ["InlineMath", "MathBlock"],
       decorate(node, cx) {
+        const source = cx.state.sliceDoc(node.from, node.to);
         if (cx.revealed(node.from, node.to)) {
-          // Revealed source reads as code, as in Obsidian.
-          cx.mark(node.from, node.to, "md-math-source-inline");
-        } else {
+          markMathSource(cx, node.from, source);
+        } else if (node.name === "InlineMath") {
           cx.replace(
             node.from,
             node.to,
-            new MarkdownInline(
-              cx.state.sliceDoc(node.from, node.to),
-              ctx.render,
-            ),
+            new MarkdownInline(source, ctx.render, mathBody),
           );
         }
       },
     }),
   );
+}
+
+/**
+ * Revealed math reads as highlighted code, its delimiters in the accent
+ * colour, as in Obsidian.
+ */
+function markMathSource(cx: InlineContext, from: number, source: string): void {
+  const { width, closed } = delimiters(source);
+  const end = from + source.length;
+  const bodyEnd = closed ? end - width : end;
+  cx.mark(from, from + width, "md-math md-math-delimiter");
+  cx.mark(from + width, bodyEnd, "md-math");
+  const body = from + width;
+  for (const token of mathTokens(source.slice(width, bodyEnd - from))) {
+    cx.mark(body + token.from, body + token.to, `md-math-${token.type}`);
+  }
+  if (closed) {
+    cx.mark(bodyEnd, end, "md-math md-math-delimiter");
+  }
 }
 
 function registerMathCleanup(ctx: Context): Set<() => void> {

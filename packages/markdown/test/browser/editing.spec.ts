@@ -71,19 +71,86 @@ test("Ctrl/Cmd+F opens a find bar with a match count and replace", async ({
     .toContain("!");
 });
 
-test("block math reveals its source on click and arrow entry without a ghost preview", async ({
+test("block math: a click selects the formula and keeps the preview below its source, as in Obsidian", async ({
   page,
 }) => {
+  // Offsets: "$$" at 8, the formula "x^2" at 11–14, "after" at 19.
   await open(page, "before\n\n$$\nx^2\n$$\n\nafter");
-  await expect(page.locator(".hybrid-math")).toHaveCount(1);
-  await page.locator(".hybrid-math").click();
-  // Source only — no second rendered formula under the $$ while editing.
-  await expect(page.locator(".hybrid-math")).toHaveCount(0);
+  const math = page.locator(".hybrid-math");
+  const source = page.locator(".cm-line.md-math-source");
+  await expect(math).toHaveCount(1);
+  await math.click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.capture()))
+    .toMatchObject({ from: 11, to: 14 });
+  await expect(source).toHaveCount(3);
+  await expect(math).toHaveCount(1);
+  const closing = (await source.last().boundingBox())!;
+  const preview = (await math.boundingBox())!;
+  expect(preview.y).toBeGreaterThanOrEqual(closing.y + closing.height - 1);
+  // The source reads as highlighted TeX, its $$ in the accent colour.
+  await expect(source.locator(".md-math-delimiter")).toHaveCount(2);
+  await expect(source.locator(".md-math-command")).toHaveText("^");
+  await expect(source.locator(".md-math-number")).toHaveText("2");
+  // Typing replaces the formula, and the preview follows.
+  await page.keyboard.insertText("y");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toBe("before\n\n$$\ny\n$$\n\nafter");
+  // Leaving hides the source; arrowing in from above shows it again.
   await page.evaluate(() => window.harness.reveal(0));
-  await expect(page.locator(".hybrid-math")).toHaveCount(1);
+  await expect(source).toHaveCount(0);
   await page.evaluate(() => window.harness.reveal(7));
   await page.keyboard.press("ArrowDown");
-  await expect(page.locator(".hybrid-math")).toHaveCount(0);
+  await expect(source).toHaveCount(3);
+  await expect(math).toHaveCount(1);
+});
+
+test("inline math: a click selects the formula without its dollar signs", async ({
+  page,
+}) => {
+  await open(page, "Before $x^2 + y$ after\n\nnext");
+  await page.evaluate(() => window.harness.reveal(26));
+  const formula = page.locator(".cm-content .md-inline-render").first();
+  await expect(formula).toBeVisible();
+  await formula.click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.capture()))
+    .toMatchObject({ from: 8, to: 15 });
+});
+
+test("a callout click reveals it with the whole callout selected", async ({
+  page,
+}) => {
+  const callout = "> [!note] Title here\n> body text one";
+  await open(page, `Before\n\n${callout}\n\nAfter`);
+  await expect(page.locator(".hybrid-callout")).toHaveCount(1);
+  await page.locator(".hybrid-callout").getByText("body text one").click();
+  await expect
+    .poll(() => page.evaluate(() => window.harness.capture()))
+    .toMatchObject({ from: 8, to: 8 + callout.length });
+});
+
+test("a Mermaid diagram stays rendered on click and double-click; its Edit button selects the code", async ({
+  page,
+}) => {
+  const code = "flowchart LR\nA --> B";
+  await open(page, `above\n\n\`\`\`mermaid\n${code}\n\`\`\`\n\nbelow`);
+  const diagram = page.locator(".hybrid-diagram");
+  await expect(page.locator('pre[data-fence="mermaid"] svg')).toBeVisible({
+    timeout: 15_000,
+  });
+  const box = (await diagram.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(diagram).toHaveCount(1);
+  await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
+  await diagram.hover();
+  await diagram.getByRole("button", { name: "Edit diagram source" }).click();
+  // "```mermaid\n" starts at 7, so the code starts at 18.
+  await expect
+    .poll(() => page.evaluate(() => window.harness.capture()))
+    .toMatchObject({ from: 18, to: 18 + code.length });
 });
 
 test("mermaid margin click stays rendered after inserting a line above", async ({

@@ -1,7 +1,10 @@
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../livePreview/api";
 import type {} from "../render/api";
-import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import {
+  FENCED_PREVIEW,
+  MarkdownBlock,
+} from "../../webview/ui/markdown-widget";
 import { DiagramRenderer } from "./renderer";
 export function diagramLanguage(info: string): boolean {
   return info.trim().split(/\s+/)[0]?.toLowerCase() === "mermaid";
@@ -30,9 +33,8 @@ function registerDiagramBlocks(ctx: Context): void {
           Boolean(info && diagramLanguage(state.sliceDoc(info.from, info.to)))
         );
       },
-      // Ordinary clicks stay on the SVG (no reveal flash / fence caret jump).
-      // Double-click or the Edit button reveals source, Obsidian-ish.
-      widget: (block) => new MarkdownBlock(block, ctx.render, "dblclick"),
+      // Clicks stay with the diagram; the Edit button reveals its source.
+      widget: (block) => new MarkdownBlock(block, ctx.render, FENCED_PREVIEW),
     }),
   );
 }
