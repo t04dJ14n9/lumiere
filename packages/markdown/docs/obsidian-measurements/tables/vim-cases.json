@@ -135,7 +135,7 @@
     "note": "$ 0 ^ inside cell then l"
   },
   {
-    "name": "E-insert-i-in-cell",
+    "name": "E-insert-i-before-in-cell",
     "caret": {
       "line": 5,
       "ch": 4
@@ -145,7 +145,7 @@
     "shots": [0]
   },
   {
-    "name": "E-insert-a-in-cell",
+    "name": "E-insert-a-after-in-cell",
     "caret": {
       "line": 5,
       "ch": 4
@@ -155,7 +155,7 @@
     "shots": [0]
   },
   {
-    "name": "E-insert-A-in-cell",
+    "name": "E-insert-A-end-in-cell",
     "caret": {
       "line": 5,
       "ch": 4
@@ -165,7 +165,7 @@
     "shots": [0]
   },
   {
-    "name": "E-insert-I-in-cell",
+    "name": "E-insert-I-start-in-cell",
     "caret": {
       "line": 5,
       "ch": 4

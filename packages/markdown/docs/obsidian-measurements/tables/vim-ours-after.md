@@ -200,7 +200,7 @@ l            normal  src=5:10 | IN-CELL Table cell 2, 2 "delta" head=0
 ```
   ✓  15 test/browser/vim-table-probe.spec.ts:39:7 › D-line-motions (2.2s)
 
-### E-insert-i-in-cell
+### E-insert-i-before-in-cell
 start: `5:4`
 
 ```
@@ -210,9 +210,9 @@ X            insert  src=5:2 | IN-CELL Table cell 2, 1 "gaXmma" head=3 [doc rewr
 Escape       normal  src=5:2 | IN-CELL Table cell 2, 1 "gaXmma" head=2 [doc rewritten]
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| gaXmma | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
-  ✓  16 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-i-in-cell (1.8s)
+  ✓  16 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-i-before-in-cell (1.8s)
 
-### E-insert-a-in-cell
+### E-insert-a-after-in-cell
 start: `5:4`
 
 ```
@@ -222,9 +222,9 @@ X            insert  src=5:2 | IN-CELL Table cell 2, 1 "gamXma" head=4 [doc rewr
 Escape       normal  src=5:2 | IN-CELL Table cell 2, 1 "gamXma" head=3 [doc rewritten]
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| gamXma | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
-  ✓  17 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-a-in-cell (1.8s)
+  ✓  17 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-a-after-in-cell (1.8s)
 
-### E-insert-A-in-cell
+### E-insert-A-end-in-cell
 start: `5:4`
 
 ```
@@ -234,9 +234,9 @@ X            insert  src=5:2 | IN-CELL Table cell 2, 1 "gammaX" head=6 [doc rewr
 Escape       normal  src=5:2 | IN-CELL Table cell 2, 1 "gammaX" head=5 [doc rewritten]
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| gammaX | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
-  ✓  18 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-A-in-cell (1.8s)
+  ✓  18 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-A-end-in-cell (1.8s)
 
-### E-insert-I-in-cell
+### E-insert-I-start-in-cell
 start: `5:4`
 
 ```
@@ -246,7 +246,7 @@ X            insert  src=5:2 | IN-CELL Table cell 2, 1 "Xgamma" head=1 [doc rewr
 Escape       normal  src=5:2 | IN-CELL Table cell 2, 1 "Xgamma" head=0 [doc rewritten]
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| Xgamma | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
-  ✓  19 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-I-in-cell (1.8s)
+  ✓  19 test/browser/vim-table-probe.spec.ts:39:7 › E-insert-I-start-in-cell (1.8s)
 
 ### E-insert-o-below-in-cell
 start: `5:4`

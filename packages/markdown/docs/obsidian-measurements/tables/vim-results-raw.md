@@ -199,7 +199,7 @@ $            normal  src=5:6 | IN-CELL r1c0 "gamma" head=4 cellMode=normal
 l            normal  src=5:10 | IN-CELL r1c1 "delta" head=0 cellMode=normal
 ```
 
-### E-insert-i-in-cell
+### E-insert-i-before-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -211,7 +211,7 @@ Escape       normal  src=5:4 | IN-CELL r1c0 "gaXmma" head=2 cellMode=normal [doc
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| gaXmma | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-a-in-cell
+### E-insert-a-after-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -223,7 +223,7 @@ Escape       normal  src=5:5 | IN-CELL r1c0 "gamXma" head=3 cellMode=normal [doc
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| gamXma | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-A-in-cell
+### E-insert-A-end-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -235,7 +235,7 @@ Escape       normal  src=5:7 | IN-CELL r1c0 "gammaX" head=5 cellMode=normal [doc
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| gammaX | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-I-in-cell
+### E-insert-I-start-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
