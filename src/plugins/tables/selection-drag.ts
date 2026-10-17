@@ -4,7 +4,7 @@ import {
   type DragViewports,
   type PointerPoint,
 } from "../../webview/ui/edge-scroll";
-import { cellAtPoint } from "./hit-test";
+import { cellAtPoint, cellUnderPoint } from "./hit-test";
 
 interface Gesture {
   pointer: number;
@@ -142,7 +142,15 @@ export class TableSelectionDrag {
     if (!gesture) {
       return;
     }
-    const head = cellAtPoint(this.table, point);
+    // Native cell-text drags must not clamp to the nearest cell once the
+    // pointer leaves the table — that turned paragraph selections near a
+    // table into whole-column grid selections. Strict hit-testing applies
+    // only until grid selection starts; afterwards nearest-cell clamping
+    // still supports edge-scroll multi-cell selection.
+    const head =
+      gesture.nativeText && !gesture.selected
+        ? cellUnderPoint(this.table, point)
+        : cellAtPoint(this.table, point);
     if (
       !head ||
       (head.row === gesture.head.row && head.column === gesture.head.column)

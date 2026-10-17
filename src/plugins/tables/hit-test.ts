@@ -36,3 +36,31 @@ export function cellAtPoint(
   const column = cells ? nearestEntry(cells, "column", point) : -1;
   return row < 0 || column < 0 ? undefined : { row, column };
 }
+
+/**
+ * Cell under the pointer only when the hit target is actually inside a cell.
+ * Unlike {@link cellAtPoint}, points past the table edge do not clamp to the
+ * nearest row/column — used so a text drag that leaves a cell is not converted
+ * into a grid/column selection.
+ */
+export function cellUnderPoint(
+  table: HTMLTableElement,
+  point: PointerPoint,
+): CellPosition | undefined {
+  const node =
+    typeof document !== "undefined"
+      ? document.elementFromPoint(point.x, point.y)
+      : null;
+  const cell =
+    node &&
+    typeof (node as Element).closest === "function"
+      ? (node as Element).closest<HTMLElement>("td[data-row], th[data-row]")
+      : null;
+  if (!cell || !table.contains(cell)) {
+    return undefined;
+  }
+  return {
+    row: Number(cell.dataset.row),
+    column: Number(cell.dataset.column),
+  };
+}

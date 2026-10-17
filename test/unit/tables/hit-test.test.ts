@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { nearestEntry } from "../../../src/plugins/tables/hit-test";
+import {
+  nearestEntry,
+  cellAtPoint,
+  cellUnderPoint,
+} from "../../../src/plugins/tables/hit-test";
 
 function fakeElement(
   left: number,
@@ -42,4 +46,74 @@ test("nearestEntry picks the closest row past the bottom edge", () => {
   ];
   assert.equal(nearestEntry(rows, "row", { x: 10, y: 30 }), 1);
   assert.equal(nearestEntry(rows, "row", { x: 10, y: 90 }), 2);
+});
+
+
+test("cellAtPoint still clamps to the nearest cell past an edge", () => {
+  const row0 = {
+    cells: [fakeElement(0, 40), fakeElement(40, 80)],
+    getBoundingClientRect: () => fakeElement(0, 80, 0, 20).getBoundingClientRect(),
+  };
+  const row1 = {
+    cells: [fakeElement(0, 40, 20, 40), fakeElement(40, 80, 20, 40)],
+    getBoundingClientRect: () =>
+      fakeElement(0, 80, 20, 40).getBoundingClientRect(),
+  };
+  const table = { rows: [row0, row1] } as unknown as HTMLTableElement;
+  assert.deepEqual(cellAtPoint(table, { x: 60, y: 10 }), {
+    row: 0,
+    column: 1,
+  });
+  assert.deepEqual(cellAtPoint(table, { x: 200, y: 100 }), {
+    row: 1,
+    column: 1,
+  });
+});
+
+test("cellUnderPoint ignores points that are not over a table cell", () => {
+  const previous = globalThis.document;
+  const cell = {
+    dataset: { row: "1", column: "0" },
+    closest(selector: string) {
+      return /td\[data-row\]|th\[data-row\]/.test(selector) ? this : null;
+    },
+  };
+  const table = {
+    contains(node: unknown) {
+      return node === cell;
+    },
+  } as HTMLTableElement;
+
+  Object.defineProperty(globalThis, "document", {
+    value: {
+      elementFromPoint: () => cell,
+    },
+    configurable: true,
+  });
+  try {
+    assert.deepEqual(cellUnderPoint(table, { x: 12, y: 8 }), {
+      row: 1,
+      column: 0,
+    });
+  } finally {
+    Object.defineProperty(globalThis, "document", {
+      value: previous,
+      configurable: true,
+    });
+  }
+
+  Object.defineProperty(globalThis, "document", {
+    value: {
+      elementFromPoint: () => null,
+    },
+    configurable: true,
+  });
+  try {
+    assert.equal(cellUnderPoint(table, { x: 12, y: 8 }), undefined);
+  } finally {
+    Object.defineProperty(globalThis, "document", {
+      value: previous,
+      configurable: true,
+    });
+  }
 });
