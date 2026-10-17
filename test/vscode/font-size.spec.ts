@@ -10,7 +10,7 @@ import {
   HEADING_SCALES,
   gutterOffsets,
   sizes,
-} from "../support/font-metrics";
+} from "../../packages/markdown/test/support/font-metrics";
 
 async function editorFrame(page: Page): Promise<Frame> {
   for (const frame of page.frames()) {

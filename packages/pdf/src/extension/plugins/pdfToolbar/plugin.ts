@@ -16,7 +16,7 @@ import { StatusBar } from './status-bar';
  */
 export const pdfToolbarPlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["pdfPanels", "extensionContext"] },
+  inject: { required: ["pdfPanels", "pdfSettings", "extensionContext"] },
   apply(ctx) {
     const panels = ctx.pdfPanels;
     const preferences = ctx.own(new ToolbarPreferences(ctx.extensionContext.globalState), 'preferences');
@@ -35,7 +35,7 @@ export const pdfToolbarPlugin: Plugin = {
       statusBar.update();
     };
     ctx.own(preferences.onDidChange(follow), 'listener');
-    ctx.own(vscode.commands.registerCommand(TOOLBAR_COMMAND_IDS.selectToolbarMode, selectToolbarMode), 'command');
+    ctx.own(vscode.commands.registerCommand(TOOLBAR_COMMAND_IDS.selectToolbarMode, () => selectToolbarMode(ctx.pdfSettings)), 'command');
     // Viewers opened before this plugin started got the default layout.
     follow();
   },

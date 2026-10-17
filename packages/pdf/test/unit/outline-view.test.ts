@@ -7,6 +7,7 @@ import type { OutlineItem } from '../../src/shared/messages';
 import { findActiveOutlineItem } from '../../src/shared/outline';
 import { OUTLINE_COMMAND_IDS } from '../../src/extension/plugins/pdf/registered-commands';
 import { Disposable, EventEmitter, TreeItem, TreeItemCollapsibleState } from './support/fake-vscode';
+import { pdfContributes } from './support/manifest';
 
 const SETTING = 'pdfWorkshop.outline.followCursor';
 const CONTEXT = 'pdfWorkshop.outlineFollowCursor';
@@ -95,19 +96,19 @@ function harness(enabled = false, visible = true) {
         dispose() {},
       }),
     },
-    '../../settings': {
-      updateSetting: async (key: string, value: boolean) => {
-        writes.push({ key, value });
-        saved = value;
-        configurationChanged.fire({ affectsConfiguration: candidate => candidate === key });
-      },
+  };
+  const settings = {
+    update: async (key: string, value: boolean) => {
+      writes.push({ key, value });
+      saved = value;
+      configurationChanged.fire({ affectsConfiguration: candidate => candidate === key });
     },
   };
   const source = readFileSync(new URL('../../src/extension/plugins/pdfOutline/outline-view.ts', import.meta.url), 'utf8');
   const output = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  const module = { exports: {} as { registerOutlineView(panels: unknown, log: unknown): Disposable } };
+  const module = { exports: {} as { registerOutlineView(panels: unknown, settings: unknown, log: unknown): Disposable } };
   const evaluate = runInNewContext(`(function(require,module,exports){${output}\n})`) as
     (require: (name: string) => unknown, module: unknown, exports: unknown) => void;
   evaluate(name => { assert.ok(name in modules, name); return modules[name]; }, module, module.exports);
@@ -139,7 +140,7 @@ function harness(enabled = false, visible = true) {
       assert.ok(command, id);
       return command(...args);
     },
-    start() { registration = module.exports.registerOutlineView(panels, { warn: (message: string) => warnings.push(message) }); },
+    start() { registration = module.exports.registerOutlineView(panels, settings, { warn: (message: string) => warnings.push(message) }); },
     dispose() { registration?.dispose(); },
   };
 }
@@ -297,13 +298,11 @@ test('disposal stops event reactions and a reveal in flight cannot follow anothe
 });
 
 test('outline actions contribute Expand All and mutually exclusive overflow Follow Cursor variants', () => {
-  const { contributes } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
-    contributes: {
-      commands: { command: string; title: string; icon?: string }[];
-      menus: Record<string, { command: string; when: string; group?: string }[]>;
-      configuration: { properties: Record<string, { type: string; default: boolean }> };
-    };
-  };
+  const contributes = pdfContributes<{
+    commands: { command: string; title: string; icon?: string }[];
+    menus: Record<string, { command: string; when: string; group?: string }[]>;
+    configuration: { properties: Record<string, { type: string; default: boolean }> };
+  }>();
   assert.deepEqual(contributes.configuration.properties[SETTING]?.default, false);
   assert.equal(contributes.configuration.properties[SETTING]?.type, 'boolean');
   const menus = contributes.menus['view/title']!;

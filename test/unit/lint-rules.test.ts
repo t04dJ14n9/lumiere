@@ -51,7 +51,7 @@ test("the readability limits apply to all source, unchanged", async () => {
   );
   assert.equal(blocks.length, 1, "one configuration block sets the limits");
   const [block] = blocks;
-  assert.deepEqual(block!.files, ["src/**/*.ts"]);
+  assert.deepEqual(block!.files, ["src/**/*.ts", "packages/*/src/**/*.ts"]);
   for (const [rule, setting] of Object.entries(readability)) {
     assert.deepEqual(
       (block!.rules as Record<string, unknown>)[rule],
@@ -66,13 +66,22 @@ test("the readability limits apply to all source, unchanged", async () => {
 const allowed = [
   "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
   "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
-  "src/markdown/html/index.ts: @typescript-eslint/triple-slash-reference",
-  "test/browser/fake-host.ts: @typescript-eslint/no-this-alias",
+  "packages/markdown/src/markdown/html/index.ts: @typescript-eslint/triple-slash-reference",
+  "packages/markdown/test/browser/fake-host.ts: @typescript-eslint/no-this-alias",
 ];
 
 test("inline lint exceptions are the reviewed ones, each with a reason", () => {
   const found: string[] = [];
-  for (const root of ["src", "test", "scripts", "packages/core"]) {
+  for (const root of [
+    "src",
+    "test",
+    "scripts",
+    "packages/core/src",
+    "packages/core/test",
+    "packages/markdown/src",
+    "packages/markdown/test",
+    "packages/markdown/scripts",
+  ]) {
     for (const path of readdirSync(root, {
       recursive: true,
       encoding: "utf8",

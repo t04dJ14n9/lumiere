@@ -1,7 +1,7 @@
 /**
  * Bundle size report: raw and gzip sizes of what the webview loads (the entry,
  * every lazy chunk, the CSS), the extension host and the workers, compared with
- * docs/perf/bundle-baseline.json. Markdown on stdout (CI appends it to the job
+ * scripts/bundle-baseline.json. Markdown on stdout (CI appends it to the job
  * summary); growth over the tolerance is a warning annotation, not a failure,
  * because a deliberate feature may grow the bundle. Refresh the baseline with
  * `node scripts/bundle-size.mjs --write-baseline` after a deliberate change.
@@ -10,7 +10,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 
-const baselineFile = "docs/perf/bundle-baseline.json";
+const baselineFile = "scripts/bundle-baseline.json";
 const tolerance = 0.1;
 
 function files(dir, pattern) {
@@ -30,13 +30,17 @@ const measure = (list) =>
   });
 const sum = (list, key) => list.reduce((total, item) => total + item[key], 0);
 
-const webview = measure(files("dist/webview", /\.(js|css)$/));
+const webview = measure(files("dist/markdown/webview", /\.(js|css)$/));
 const entry = webview.find((item) => item.file.endsWith("webview/editor.js"));
 const chunks = webview.filter(
   (item) => item.file.endsWith(".js") && item !== entry,
 );
 const host = measure(["dist/extension.js"]);
-const workers = measure(files("dist/workers", /\.(c?js)$/));
+const workers = measure(files("dist/markdown/workers", /\.(c?js)$/));
+const pdfViewer = measure(files("dist/pdf/webview", /\.(js|css|wasm)$/));
+const pdfBridge = measure(
+  files("dist/pdf", /^(agent-bridge-server|bridge-stdio)\.js$/),
+);
 
 const current = {
   "webview entry (editor.js)": entry.raw,
@@ -49,6 +53,8 @@ const current = {
   ),
   "extension host": sum(host, "raw"),
   workers: sum(workers, "raw"),
+  "pdf viewer (JS, CSS, WASM)": sum(pdfViewer, "raw"),
+  "pdf agent bridge": sum(pdfBridge, "raw"),
 };
 
 if (process.argv.includes("--write-baseline")) {

@@ -4,11 +4,5 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": [
-    "**/*.ts",
-    "../scripts/*.ts",
-    "../src/plugins/**/*.d.ts",
-    "../src/**/*.test.ts"
-  ],
-  "exclude": ["fixtures/layers"]
+  "include": ["**/*.ts"]
 }

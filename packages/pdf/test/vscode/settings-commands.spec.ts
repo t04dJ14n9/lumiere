@@ -7,7 +7,7 @@ import { paths } from "./state";
 // The settings commands read and write the keys the Settings editor shows:
 // no state of their own, so the two always agree.
 
-const EXTENSION_QUERY = "@ext:t04dj14n9.vscode-pdf-workshop";
+const EXTENSION_QUERY = "@ext:t04dj14n9.vscode-workshop";
 const userFile = path.join(paths.userData, "User", "settings.json");
 const workspaceFile = path.join(paths.workspace, ".vscode", "settings.json");
 

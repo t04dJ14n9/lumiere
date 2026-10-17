@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 import { RegionCacheFullError, RegionImages, RegionTooLargeError, regionCacheBytes, type CacheFiles } from '../../src/extension/plugins/pdfRegions/region-images';
+import { pdfContributes } from './support/manifest';
 
 let folder: string;
 beforeEach(async () => { folder = path.join(await mkdtemp(path.join(tmpdir(), 'region-images-')), 'regions'); });
@@ -105,8 +106,8 @@ test('saves made together never delete each other', async () => {
 });
 
 test('the setting\'s contributed default is the default used in code: 100 MB', async () => {
-  const manifest = JSON.parse(await readFile(path.join(import.meta.dirname, '../../package.json'), 'utf8')) as {
-    contributes: { configuration: { properties: Record<string, { default?: unknown; minimum?: unknown }> } };
+  const manifest = {
+    contributes: pdfContributes<{ configuration: { properties: Record<string, { default?: unknown; minimum?: unknown }> } }>(),
   };
   const setting = manifest.contributes.configuration.properties['pdfWorkshop.regionImageCache.maxSizeMB'];
   assert.equal(setting?.default, 100);

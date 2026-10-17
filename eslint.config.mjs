@@ -90,18 +90,16 @@ export default tseslint.config(
     ignores: [
       // Build output, including the sample plugin's.
       // Throw-away measurement scripts (not part of the product).
-      "docs/obsidian-measurements/**",
+      "packages/markdown/docs/obsidian-measurements/**",
       "**/dist/**",
       ".cache/**",
       "test-results/**",
       "playwright-report/**",
-      "artifacts/**",
+      "**/artifacts/**",
       // The VS Code build that `pnpm test:vscode` downloads when none is installed.
       ".vscode-test/**",
-      // Probe scripts for real Obsidian: they run page code via the DevTools protocol.
-      "docs/obsidian-measurements/**",
       // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
-      "docs/vim-caret-measurements/**",
+      "packages/markdown/docs/vim-caret-measurements/**",
       // Imported from PDF Workshop; it joins this configuration as it is
       // integrated into the shared packages.
       "packages/pdf/**",
@@ -145,13 +143,14 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: [
-          "./packages/core/tsconfig.json",
           "./tsconfig.json",
-          "./src/host/tsconfig.json",
-          "./src/webview/tsconfig.json",
-          "./src/plugins/tsconfig.host.json",
-          "./src/plugins/tsconfig.webview.json",
-          "./src/workers/tsconfig.json",
+          "./packages/core/tsconfig.json",
+          "./packages/markdown/tsconfig.json",
+          "./packages/markdown/src/host/tsconfig.json",
+          "./packages/markdown/src/webview/tsconfig.json",
+          "./packages/markdown/src/plugins/tsconfig.host.json",
+          "./packages/markdown/src/plugins/tsconfig.webview.json",
+          "./packages/markdown/src/workers/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },

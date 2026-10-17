@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { paths, readState } from "./state";
 import { closeBrowser, openWorkbench, workbenchPage } from "./workbench";
-import { note } from "../support/perf-note";
+import { note } from "../../packages/markdown/test/support/perf-note";
 
 interface Sample {
   /** Choosing the editor to its content on screen (first animation frame after the plugins are up). */
@@ -108,7 +108,7 @@ function activation(): string {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) {
         walk(full);
-      } else if (/Markdown Workshop\.log$/.test(entry)) {
+      } else if (/Workshop\.log$/.test(entry)) {
         found.push(full);
       }
     }
@@ -126,11 +126,12 @@ function bundles(): Record<string, number> {
       .filter((name) => pattern.test(name))
       .reduce((sum, name) => sum + statSync(path.join(dir, name)).size, 0);
   const dist = path.join(paths.repository, "dist");
+  const webview = path.join(dist, "markdown", "webview");
   return {
     extensionJs: statSync(path.join(dist, "extension.js")).size,
-    webviewEntryJs: statSync(path.join(dist, "webview", "editor.js")).size,
-    webviewAllJs: sizeOf(path.join(dist, "webview"), /\.js$/),
-    webviewCss: sizeOf(path.join(dist, "webview"), /\.css$/),
+    webviewEntryJs: statSync(path.join(webview, "editor.js")).size,
+    webviewAllJs: sizeOf(webview, /\.js$/),
+    webviewCss: sizeOf(webview, /\.css$/),
   };
 }
 

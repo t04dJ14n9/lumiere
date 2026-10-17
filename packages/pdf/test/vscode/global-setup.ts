@@ -60,7 +60,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   // A chat participant, as Copilot Chat declares, so VS Code's chat counts as
   // served and Copy Link for Agent opens it.
   const developmentPaths = [
-    paths.repository,
+    paths.extension,
     path.join(paths.repository, 'test', 'fixtures', 'chat-participant'),
   ];
   if (restrictedMode) {

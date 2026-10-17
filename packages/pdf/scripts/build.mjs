@@ -1,5 +1,5 @@
-// Builds the two halves of the extension:
-//   dist/extension.js         the VS Code host (Node, CommonJS)
+// Builds PDF Workshop's assets into this package's dist/ (the repository root
+// bundles the extension host and copies this dist/ into dist/pdf/):
 //   dist/agent-bridge-server.js  the agent bridge's MCP server, loaded by the
 //                             host only when the bridge starts (it carries the
 //                             MCP SDK and zod, which the host never loads otherwise)
@@ -8,7 +8,7 @@
 //   dist/webview/pdfium.wasm  the PDF engine, loaded by the viewer at runtime
 //
 // Usage: node scripts/build.mjs [--watch] [--production]
-import { copyFile, mkdir, rm } from 'node:fs/promises';
+import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import * as esbuild from 'esbuild';
@@ -22,38 +22,13 @@ const dist = path.join(root, 'dist');
 /** @type {import('esbuild').BuildOptions} */
 const shared = {
   bundle: true,
+  metafile: true,
   sourcemap: !production,
   minify: production,
   logLevel: 'info',
 };
 
 const bridgeServerEntry = path.join(root, 'src/extension/plugins/agentBridge/mcp/server.ts');
-
-/**
- * Keeps the bridge server out of dist/extension.js: the controller's
- * `import('./server')` becomes a require of dist/agent-bridge-server.js,
- * built separately below.
- */
-const lazyBridgeServer = {
-  name: 'lazy-agent-bridge-server',
-  setup(build) {
-    build.onResolve({ filter: /^\.\/server$/ }, args =>
-      path.join(args.resolveDir, 'server.ts') === bridgeServerEntry
-        ? { path: './agent-bridge-server.js', external: true }
-        : undefined);
-  },
-};
-
-const extension = {
-  ...shared,
-  entryPoints: [path.join(root, 'src/extension/extension.ts')],
-  outfile: path.join(dist, 'extension.js'),
-  platform: 'node',
-  format: 'cjs',
-  target: 'node20',
-  external: ['vscode'],
-  plugins: [lazyBridgeServer],
-};
 
 const bridgeServer = {
   ...shared,
@@ -100,8 +75,12 @@ async function copyEngine() {
 await rm(dist, { recursive: true, force: true });
 await copyEngine();
 if (watch) {
-  const contexts = await Promise.all([extension, bridgeServer, bridgeStdio, webview].map(options => esbuild.context(options)));
+  const contexts = await Promise.all([bridgeServer, bridgeStdio, webview].map(options => esbuild.context(options)));
   await Promise.all(contexts.map(context => context.watch()));
 } else {
-  await Promise.all([extension, bridgeServer, bridgeStdio, webview].map(options => esbuild.build(options)));
+  const results = await Promise.all([bridgeServer, bridgeStdio, webview].map(options => esbuild.build(options)));
+  // Every bundled source file; the repository's third-party notices read it.
+  const inputs = new Set(results.flatMap(result => Object.keys(result.metafile.inputs)));
+  await mkdir(path.join(root, 'artifacts'), { recursive: true });
+  await writeFile(path.join(root, 'artifacts/bundle-inputs.json'), JSON.stringify([...inputs].sort(), null, 1));
 }

@@ -74,7 +74,7 @@ jobs:
       - name: Committed files are unchanged by packaging
         run: git diff --exit-code
       - name: Check the VSIX size and file list
-        run: bash .github/scripts/check-vsix.sh "$(ls *.vsix)" 10
+        run: bash .github/scripts/check-vsix.sh "$(ls *.vsix)" 20
       - name: Bundle size report (job summary, warns on growth over 10%)
         run: node scripts/bundle-size.mjs | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload the VSIX

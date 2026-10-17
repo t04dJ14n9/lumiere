@@ -184,7 +184,7 @@ async function listen(options: ServerOptions, undo: Undo[], token: string, scrub
   // A stable copy of the shim, so `claude mcp add` survives extension updates.
   try {
     await mkdir(path.dirname(shim), { recursive: true });
-    await copyFile(vscode.Uri.joinPath(options.extensionUri, 'dist', 'bridge-stdio.js').fsPath, shim);
+    await copyFile(vscode.Uri.joinPath(options.extensionUri, "dist", "pdf", "bridge-stdio.js").fsPath, shim);
   } catch (error) {
     log.warn(`Could not copy the stdio shim: ${describe(error)}`);
   }

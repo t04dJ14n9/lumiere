@@ -8,10 +8,10 @@ import { registerOutlineView } from './outline-view';
 /** The PDF Outline view in the Explorer, and the viewer bar's outline button. */
 export const pdfOutlinePlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["pdfPanels", "pdfLog"] },
+  inject: { required: ["pdfPanels", "pdfSettings", "outputChannel"] },
   apply(ctx) {
     const panels = ctx.pdfPanels;
-    ctx.own(registerOutlineView(panels, ctx.pdfLog), 'treeView');
+    ctx.own(registerOutlineView(panels, ctx.pdfSettings, ctx.outputChannel), 'treeView');
     ctx.own(panels.handle('toggleOutline', () => vscode.commands.executeCommand(OUTLINE_COMMAND_IDS.toggleOutline)), 'message handler');
   },
 };

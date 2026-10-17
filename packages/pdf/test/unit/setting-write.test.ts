@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { type SchemaProperty, writeProblem } from '../../src/shared/setting-schema';
+import { pdfContributes } from './support/manifest';
 
-const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
-  contributes: { configuration: { properties: Record<string, SchemaProperty> } | { properties: Record<string, SchemaProperty> }[] };
+const manifest = {
+  contributes: pdfContributes<{ configuration: { properties: Record<string, SchemaProperty> } | { properties: Record<string, SchemaProperty> }[] }>(),
 };
 const configuration = manifest.contributes.configuration;
 const properties = Object.assign({}, ...(Array.isArray(configuration) ? configuration : [configuration]).map(section => section.properties)) as Record<string, SchemaProperty>;

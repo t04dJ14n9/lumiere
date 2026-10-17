@@ -5,8 +5,9 @@ test-results/
 playwright-report/
 .cache/
 pnpm-lock.yaml
-package.json
+**/package.json
+**/contributes.json
 *.md
-test/fixtures/
+**/test/fixtures/
 # Imported from PDF Workshop; formatted when it is integrated.
 packages/pdf/

@@ -104,7 +104,7 @@ export class PdfPanel implements vscode.Disposable {
     webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(options.extensionUri, "dist", "webview"),
+        vscode.Uri.joinPath(options.extensionUri, "dist", "pdf", "webview"),
       ],
     };
     this.navigation = new PdfNavigation((message) => this.post(message));

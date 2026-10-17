@@ -105,9 +105,7 @@ test("Open Settings, and the commands for common settings read and write the Set
     await command(page, "Markdown Workshop: Open Settings");
     const search = page.locator(".settings-editor .suggest-input-container");
     await expect(search).toBeVisible();
-    await expect(search).toContainText(
-      "@ext:t04dj14n9.vscode-markdown-workshop",
-    );
+    await expect(search).toContainText("@ext:t04dj14n9.vscode-workshop");
     await expect(
       page
         .locator(".settings-editor .settings-tree-container .monaco-list-row")

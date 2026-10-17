@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { formatValue, numberProblem, plainText, settingEntries, settingKind, type SchemaProperty } from "../../src/shared/setting-schema";
+import { pdfContributes } from './support/manifest';
 
-const manifest = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
-  contributes: { configuration: { properties: Record<string, SchemaProperty> } };
+const manifest = {
+  contributes: pdfContributes<{ configuration: { properties: Record<string, SchemaProperty> } }>(),
 };
 const properties = manifest.contributes.configuration.properties;
 const entries = settingEntries(properties);

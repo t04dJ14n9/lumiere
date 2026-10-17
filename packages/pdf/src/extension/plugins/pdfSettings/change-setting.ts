@@ -5,17 +5,17 @@ import {
   settingEntries,
   type SettingEntry,
 } from '../../../shared/setting-schema';
-import { contributedProperties, updateSetting } from '../../settings';
+import type { PdfSettings } from '../../settings';
 
 type Item = vscode.QuickPickItem & { entry?: SettingEntry };
 
 /**
  * PDF: Change Setting…: every contributed setting in one list, grouped, with its
  * current value; picking one edits it by its type. Values are read and written
- * under the keys of the Settings editor (see `updateSetting`).
+ * under the keys of the Settings editor (see `PdfSettings.update`).
  */
-export async function changeSetting(extensionId: string): Promise<void> {
-  const entries = settingEntries(contributedProperties(extensionId));
+export async function changeSetting(settings: PdfSettings): Promise<void> {
+  const entries = settingEntries(settings.properties());
   const config = vscode.workspace.getConfiguration();
   const items: Item[] = [];
   let group: string | undefined;
@@ -37,15 +37,15 @@ export async function changeSetting(extensionId: string): Promise<void> {
     matchOnDescription: true,
     matchOnDetail: true,
   });
-  if (picked?.entry) await edit(picked.entry);
+  if (picked?.entry) await edit(settings, picked.entry);
 }
 
-async function edit(entry: SettingEntry): Promise<void> {
+async function edit(settings: PdfSettings, entry: SettingEntry): Promise<void> {
   const config = vscode.workspace.getConfiguration();
   const current: unknown = config.get(entry.key);
   switch (entry.kind) {
     case 'boolean':
-      await updateSetting(entry.key, current !== true);
+      await settings.update(entry.key, current !== true);
       return;
     case 'tristate': {
       const choices: (vscode.QuickPickItem & { value: boolean | null })[] = [
@@ -54,7 +54,7 @@ async function edit(entry: SettingEntry): Promise<void> {
         { label: 'Follow the editor', value: null },
       ].map(choice => (choice.value === (current ?? null) ? { ...choice, description: 'current' } : choice));
       const choice = await vscode.window.showQuickPick(choices, { title: entry.title, placeHolder: entry.description });
-      if (choice) await updateSetting(entry.key, choice.value);
+      if (choice) await settings.update(entry.key, choice.value);
       return;
     }
     case 'enum': {
@@ -64,7 +64,7 @@ async function edit(entry: SettingEntry): Promise<void> {
         ...(choice.value === current ? { description: 'current' } : {}),
       }));
       const choice = await vscode.window.showQuickPick(choices, { title: entry.title, placeHolder: entry.description });
-      if (choice) await updateSetting(entry.key, choice.label);
+      if (choice) await settings.update(entry.key, choice.label);
       return;
     }
     case 'number': {
@@ -74,12 +74,12 @@ async function edit(entry: SettingEntry): Promise<void> {
         value: String(current ?? entry.defaultValue ?? ''),
         validateInput: value => numberProblem(value, entry),
       });
-      if (text !== undefined) await updateSetting(entry.key, Number(text));
+      if (text !== undefined) await settings.update(entry.key, Number(text));
       return;
     }
     case 'string': {
       const text = await vscode.window.showInputBox({ title: entry.title, prompt: entry.description, value: String(current ?? '') });
-      if (text !== undefined) await updateSetting(entry.key, text);
+      if (text !== undefined) await settings.update(entry.key, text);
       return;
     }
     case 'complex':

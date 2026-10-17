@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type { OutlineItem } from '../../../shared/messages';
 import { findActiveOutlineItem } from '../../../shared/outline';
-import { updateSetting } from '../../settings';
+import type { PdfSettings } from '../../settings';
 import type { PdfPanel } from '../pdf/panel';
 import type { PdfPanels } from '../pdf/panels';
 import { OUTLINE_COMMAND_IDS } from '../pdf/registered-commands';
@@ -14,7 +14,11 @@ const FOLLOW_CONTEXT = 'pdfWorkshop.outlineFollowCursor';
  * The "PDF Outline" view in the Explorer: the bookmarks of the PDF in the
  * active editor. Clicking an entry opens its page (Go to Outline Item).
  */
-export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutputChannel, 'warn'>): vscode.Disposable {
+export function registerOutlineView(
+  panels: PdfPanels,
+  settings: PdfSettings,
+  log: Pick<vscode.LogOutputChannel, 'warn'>,
+): vscode.Disposable {
   const provider = new OutlineProvider(panels);
   const view = vscode.window.createTreeView('pdfWorkshop.outline', {
     treeDataProvider: provider,
@@ -69,7 +73,7 @@ export function registerOutlineView(panels: PdfPanels, log: Pick<vscode.LogOutpu
     void follow();
   };
   const setFollow = async (enabled: boolean): Promise<void> => {
-    await updateSetting(FOLLOW_SETTING, enabled);
+    await settings.update(FOLLOW_SETTING, enabled);
     if (!disposed) applyFollowSetting();
   };
 

@@ -1,14 +1,12 @@
 import "../support/install-fake-vscode";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { SETTING_PREFIX } from "../../../src/shared/setting-schema";
-import { EXTENSION_ID } from "../../../src/extension/settings";
 import { VIEW_TYPE } from "../../../src/extension/plugins/pdf/panels";
 import { RUNTIME_COMMAND_IDS } from "../../../src/extension/plugins/pdf/registered-commands";
+import { pdfContributes } from "../support/manifest";
 
-const pkg = JSON.parse(readFileSync("package.json", "utf8"));
-const contributes = pkg.contributes;
+const contributes = pdfContributes<Record<string, any>>(); // eslint-disable-line @typescript-eslint/no-explicit-any -- loose JSON fixture
 // Joined so the identity gate's fixed-string search does not see a live retired id.
 const retiredPrefix = ["vscode", "EmbedPdf"].join("");
 const manifestCommands = new Set<string>(
@@ -20,7 +18,6 @@ const compatibilityCommand = [retiredPrefix, "bridge.envelope"].join(".");
 
 test("constants match locked PDF Workshop identity", () => {
   assert.equal(SETTING_PREFIX, "pdfWorkshop.");
-  assert.equal(EXTENSION_ID, "t04dj14n9.vscode-pdf-workshop");
   assert.equal(VIEW_TYPE, "pdfWorkshop.viewer");
 });
 

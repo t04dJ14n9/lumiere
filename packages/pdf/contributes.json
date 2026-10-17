@@ -1,0 +1,1057 @@
+{
+  "customEditors": [
+    {
+      "viewType": "pdfWorkshop.viewer",
+      "displayName": "PDF Workshop",
+      "selector": [
+        {
+          "filenamePattern": "*.pdf"
+        }
+      ],
+      "priority": "default"
+    }
+  ],
+  "views": {
+    "explorer": [
+      {
+        "id": "pdfWorkshop.outline",
+        "name": "PDF Outline",
+        "when": "pdfWorkshop.pdfActive"
+      }
+    ]
+  },
+  "viewsWelcome": [
+    {
+      "view": "pdfWorkshop.outline",
+      "contents": "Reading the outline…",
+      "when": "pdfWorkshop.outlineLoading"
+    },
+    {
+      "view": "pdfWorkshop.outline",
+      "contents": "This PDF has no outline.",
+      "when": "!pdfWorkshop.outlineLoading"
+    }
+  ],
+  "commands": [
+    {
+      "command": "pdfWorkshop.lookUp",
+      "title": "Look Up",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.openSettings",
+      "title": "Open Settings",
+      "category": "PDF",
+      "icon": "$(settings-gear)"
+    },
+    {
+      "command": "pdfWorkshop.changeSetting",
+      "title": "Change Setting…",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.toggleSmoothScrolling",
+      "title": "Toggle Smooth Scrolling",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.toggleKeyboardShortcuts",
+      "title": "Toggle Keyboard Shortcuts",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.setDefaultZoom",
+      "title": "Set Default Zoom…",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.setDefaultPageLayout",
+      "title": "Set Default Page Layout…",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.setDefaultScrollMode",
+      "title": "Set Default Scrolling…",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.enterZen",
+      "title": "Enter Zen Mode",
+      "category": "PDF",
+      "icon": "$(screen-full)"
+    },
+    {
+      "command": "pdfWorkshop.exitZen",
+      "title": "Exit Zen Mode",
+      "category": "PDF",
+      "icon": "$(screen-normal)"
+    },
+    {
+      "command": "pdfWorkshop.previousPageKeepingPlace",
+      "title": "Previous Page, Keeping Place",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.nextPageKeepingPlace",
+      "title": "Next Page, Keeping Place",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.copyLinkForAgent",
+      "title": "Copy Link for Agent",
+      "category": "PDF",
+      "icon": "$(comment-discussion)",
+      "enablement": "pdfWorkshop.hasSelection"
+    },
+    {
+      "command": "vscodeEmbedPdf.bridge.envelope",
+      "title": "Selection Envelope",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.openLocation",
+      "title": "Open Location…",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.openNativeLink",
+      "title": "Open PDF Link",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.goToOutlineItem",
+      "title": "Go to Outline Item",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.expandOutline",
+      "title": "Expand All",
+      "category": "PDF",
+      "icon": "$(expand-all)"
+    },
+    {
+      "command": "pdfWorkshop.enableOutlineFollowCursor",
+      "title": "Follow Cursor",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.disableOutlineFollowCursor",
+      "title": "Follow Cursor",
+      "category": "PDF",
+      "icon": "$(check)"
+    },
+    {
+      "command": "pdfWorkshop.copyMcpSetup",
+      "title": "Copy MCP Setup for Claude Code / Codex…",
+      "category": "PDF"
+    },
+    {
+      "command": "pdfWorkshop.previousPage",
+      "title": "Previous Page",
+      "category": "PDF",
+      "icon": "$(chevron-up)",
+      "enablement": "pdfWorkshop.pdfActive && pdfWorkshop.canGoBack"
+    },
+    {
+      "command": "pdfWorkshop.nextPage",
+      "title": "Next Page",
+      "category": "PDF",
+      "icon": "$(chevron-down)",
+      "enablement": "pdfWorkshop.pdfActive && pdfWorkshop.canGoForward"
+    },
+    {
+      "command": "pdfWorkshop.goToPage",
+      "title": "Go to Page…",
+      "category": "PDF",
+      "icon": "$(list-ordered)"
+    },
+    {
+      "command": "pdfWorkshop.zoomOut",
+      "title": "Zoom Out",
+      "category": "PDF",
+      "icon": "$(zoom-out)"
+    },
+    {
+      "command": "pdfWorkshop.zoomIn",
+      "title": "Zoom In",
+      "category": "PDF",
+      "icon": "$(zoom-in)"
+    },
+    {
+      "command": "pdfWorkshop.selectZoom",
+      "title": "Zoom…",
+      "category": "PDF",
+      "icon": "$(search-fuzzy)"
+    },
+    {
+      "command": "pdfWorkshop.fitWidth",
+      "title": "Fit Width",
+      "category": "PDF",
+      "icon": "$(arrow-both)"
+    },
+    {
+      "command": "pdfWorkshop.fitPage",
+      "title": "Fit Page",
+      "category": "PDF",
+      "icon": "$(screen-full)"
+    },
+    {
+      "command": "pdfWorkshop.find",
+      "title": "Find in PDF",
+      "category": "PDF",
+      "icon": "$(search)"
+    },
+    {
+      "command": "pdfWorkshop.toggleOutline",
+      "title": "Toggle Outline",
+      "category": "PDF",
+      "icon": "$(list-tree)"
+    },
+    {
+      "command": "pdfWorkshop.selectTextTool",
+      "title": "Select Text Tool",
+      "category": "PDF",
+      "icon": "$(whole-word)"
+    },
+    {
+      "command": "pdfWorkshop.selectRegionTool",
+      "title": "Select Region Tool",
+      "category": "PDF",
+      "icon": "$(inspect)"
+    },
+    {
+      "command": "pdfWorkshop.selectToolbarMode",
+      "title": "Choose Toolbar Location…",
+      "category": "PDF",
+      "icon": "$(layout)"
+    },
+    {
+      "command": "pdfWorkshop.actualSize",
+      "title": "Actual Size (100%)",
+      "category": "PDF",
+      "icon": "$(symbol-numeric)",
+      "enablement": "pdfWorkshop.pdfActive"
+    },
+    {
+      "command": "pdfWorkshop.selectView",
+      "title": "View…",
+      "category": "PDF",
+      "icon": "$(layout)",
+      "enablement": "pdfWorkshop.pdfActive"
+    },
+    {
+      "command": "pdfWorkshop.singlePage",
+      "title": "Single Page",
+      "category": "PDF",
+      "icon": "$(file)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.pageLayout == 'single'"
+    },
+    {
+      "command": "pdfWorkshop.twoPageSpread",
+      "title": "Two Pages (1–2, 3–4)",
+      "category": "PDF",
+      "icon": "$(book)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.pageLayout == 'spread'"
+    },
+    {
+      "command": "pdfWorkshop.twoPageCover",
+      "title": "Two Pages with Cover (1, 2–3)",
+      "category": "PDF",
+      "icon": "$(book)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.pageLayout == 'spreadCover'"
+    },
+    {
+      "command": "pdfWorkshop.continuousScroll",
+      "title": "Continuous Scrolling",
+      "category": "PDF",
+      "icon": "$(list-ordered)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.scrollMode == 'continuous'"
+    },
+    {
+      "command": "pdfWorkshop.pageByPage",
+      "title": "Page-by-page Scrolling",
+      "category": "PDF",
+      "icon": "$(file)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.scrollMode == 'paged'"
+    },
+    {
+      "command": "pdfWorkshop.verticalScroll",
+      "title": "Vertical Scrolling",
+      "category": "PDF",
+      "icon": "$(arrow-down)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.scrollDirection == 'vertical'"
+    },
+    {
+      "command": "pdfWorkshop.horizontalScroll",
+      "title": "Horizontal Scrolling",
+      "category": "PDF",
+      "icon": "$(arrow-right)",
+      "enablement": "pdfWorkshop.pdfActive",
+      "toggled": "pdfWorkshop.scrollDirection == 'horizontal'"
+    },
+    {
+      "command": "pdfWorkshop.historyBack",
+      "title": "Back to Previous Location",
+      "category": "PDF",
+      "icon": "$(arrow-left)",
+      "enablement": "pdfWorkshop.historyBack"
+    },
+    {
+      "command": "pdfWorkshop.historyForward",
+      "title": "Forward to Next Location",
+      "category": "PDF",
+      "icon": "$(arrow-right)",
+      "enablement": "pdfWorkshop.historyForward"
+    },
+    {
+      "command": "pdfWorkshop.ideContext.copy",
+      "title": "Copy IDE Context",
+      "category": "PDF Workshop"
+    },
+    {
+      "command": "pdfWorkshop.ideContext.send",
+      "title": "Send IDE Context to Agent…",
+      "category": "PDF Workshop"
+    }
+  ],
+  "menus": {
+    "view/title": [
+      {
+        "command": "pdfWorkshop.expandOutline",
+        "when": "view == pdfWorkshop.outline",
+        "group": "navigation@1"
+      },
+      {
+        "command": "pdfWorkshop.enableOutlineFollowCursor",
+        "when": "view == pdfWorkshop.outline && !pdfWorkshop.outlineFollowCursor",
+        "group": "1_outline@1"
+      },
+      {
+        "command": "pdfWorkshop.disableOutlineFollowCursor",
+        "when": "view == pdfWorkshop.outline && pdfWorkshop.outlineFollowCursor",
+        "group": "1_outline@1"
+      }
+    ],
+    "editor/title": [
+      {
+        "command": "pdfWorkshop.historyBack",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome'",
+        "group": "navigation@8"
+      },
+      {
+        "command": "pdfWorkshop.historyForward",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome'",
+        "group": "navigation@9"
+      },
+      {
+        "command": "pdfWorkshop.copyLinkForAgent",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
+        "group": "navigation@1"
+      },
+      {
+        "command": "pdfWorkshop.find",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu",
+        "group": "navigation@10"
+      },
+      {
+        "command": "pdfWorkshop.zoomOut",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu",
+        "group": "navigation@11"
+      },
+      {
+        "command": "pdfWorkshop.zoomIn",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu",
+        "group": "navigation@12"
+      },
+      {
+        "command": "pdfWorkshop.fitPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu && pdfWorkshop.fit == 'width'",
+        "group": "navigation@13"
+      },
+      {
+        "command": "pdfWorkshop.fitWidth",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu && pdfWorkshop.fit != 'width'",
+        "group": "navigation@13"
+      },
+      {
+        "command": "pdfWorkshop.selectRegionTool",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu && pdfWorkshop.tool != 'region'",
+        "group": "navigation@14"
+      },
+      {
+        "command": "pdfWorkshop.selectTextTool",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu && pdfWorkshop.tool == 'region'",
+        "group": "navigation@14"
+      },
+      {
+        "command": "pdfWorkshop.find",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "0_pdfFind@1"
+      },
+      {
+        "command": "pdfWorkshop.previousPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "1_pdfPage@1"
+      },
+      {
+        "command": "pdfWorkshop.nextPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "1_pdfPage@2"
+      },
+      {
+        "command": "pdfWorkshop.goToPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "1_pdfPage@3"
+      },
+      {
+        "command": "pdfWorkshop.zoomIn",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "2_pdfZoom@1"
+      },
+      {
+        "command": "pdfWorkshop.zoomOut",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "2_pdfZoom@2"
+      },
+      {
+        "command": "pdfWorkshop.selectZoom",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "2_pdfZoom@3"
+      },
+      {
+        "command": "pdfWorkshop.fitWidth",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "2_pdfZoom@4"
+      },
+      {
+        "command": "pdfWorkshop.fitPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "2_pdfZoom@5"
+      },
+      {
+        "command": "pdfWorkshop.selectTextTool",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfTool@1"
+      },
+      {
+        "command": "pdfWorkshop.selectRegionTool",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfTool@2"
+      },
+      {
+        "command": "pdfWorkshop.toggleOutline",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@1"
+      },
+      {
+        "command": "pdfWorkshop.selectToolbarMode",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@2"
+      },
+      {
+        "command": "pdfWorkshop.actualSize",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@3"
+      },
+      {
+        "command": "pdfWorkshop.selectView",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@4"
+      },
+      {
+        "command": "pdfWorkshop.singlePage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@5"
+      },
+      {
+        "command": "pdfWorkshop.twoPageSpread",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@6"
+      },
+      {
+        "command": "pdfWorkshop.twoPageCover",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@7"
+      },
+      {
+        "command": "pdfWorkshop.continuousScroll",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@8"
+      },
+      {
+        "command": "pdfWorkshop.pageByPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@9"
+      },
+      {
+        "command": "pdfWorkshop.verticalScroll",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@10"
+      },
+      {
+        "command": "pdfWorkshop.horizontalScroll",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'",
+        "group": "4_pdfView@11"
+      },
+      {
+        "command": "pdfWorkshop.selectView",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu",
+        "group": "navigation@15"
+      }
+    ],
+    "commandPalette": [
+      {
+        "command": "vscodeEmbedPdf.bridge.envelope",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.expandOutline",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.enableOutlineFollowCursor",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.disableOutlineFollowCursor",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.lookUp",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.copyLinkForAgent",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.goToOutlineItem",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.openNativeLink",
+        "when": "false"
+      },
+      {
+        "command": "pdfWorkshop.previousPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.enterZen",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inZenMode"
+      },
+      {
+        "command": "pdfWorkshop.exitZen",
+        "when": "inZenMode"
+      },
+      {
+        "command": "pdfWorkshop.previousPageKeepingPlace",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.nextPageKeepingPlace",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.nextPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.goToPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.zoomOut",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.zoomIn",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.selectZoom",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.fitWidth",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.fitPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.find",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.toggleOutline",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.selectTextTool",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.selectRegionTool",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.selectToolbarMode"
+      },
+      {
+        "command": "pdfWorkshop.actualSize",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.selectView",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.singlePage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.twoPageSpread",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.twoPageCover",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.continuousScroll",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.pageByPage",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.verticalScroll",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.horizontalScroll",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.historyBack",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.historyForward",
+        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+      },
+      {
+        "command": "pdfWorkshop.ideContext.copy"
+      },
+      {
+        "command": "pdfWorkshop.ideContext.send"
+      }
+    ],
+    "webview/context": [
+      {
+        "command": "pdfWorkshop.lookUp",
+        "when": "webviewId == 'pdfWorkshop.viewer' && isMac && config.pdfWorkshop.lookUp.enabled",
+        "group": "0_agent@2"
+      },
+      {
+        "command": "pdfWorkshop.copyLinkForAgent",
+        "when": "webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
+        "group": "0_agent@1"
+      },
+      {
+        "command": "pdfWorkshop.goToPage",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "1_pdfView@1"
+      },
+      {
+        "command": "pdfWorkshop.fitWidth",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "1_pdfView@2"
+      },
+      {
+        "command": "pdfWorkshop.fitPage",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "1_pdfView@3"
+      },
+      {
+        "command": "pdfWorkshop.selectRegionTool",
+        "when": "webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.tool != 'region'",
+        "group": "2_pdfTool@1"
+      },
+      {
+        "command": "pdfWorkshop.selectTextTool",
+        "when": "webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.tool == 'region'",
+        "group": "2_pdfTool@1"
+      },
+      {
+        "command": "pdfWorkshop.enterZen",
+        "when": "webviewId == 'pdfWorkshop.viewer' && !inZenMode",
+        "group": "4_pdfZen@1"
+      },
+      {
+        "command": "pdfWorkshop.openSettings",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "5_pdfSettings@1"
+      },
+      {
+        "command": "pdfWorkshop.exitZen",
+        "when": "webviewId == 'pdfWorkshop.viewer' && inZenMode",
+        "group": "4_pdfZen@1"
+      },
+      {
+        "command": "pdfWorkshop.actualSize",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@1"
+      },
+      {
+        "command": "pdfWorkshop.selectView",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@2"
+      },
+      {
+        "command": "pdfWorkshop.singlePage",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@3"
+      },
+      {
+        "command": "pdfWorkshop.twoPageSpread",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@4"
+      },
+      {
+        "command": "pdfWorkshop.twoPageCover",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@5"
+      },
+      {
+        "command": "pdfWorkshop.continuousScroll",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@6"
+      },
+      {
+        "command": "pdfWorkshop.pageByPage",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@7"
+      },
+      {
+        "command": "pdfWorkshop.verticalScroll",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@8"
+      },
+      {
+        "command": "pdfWorkshop.horizontalScroll",
+        "when": "webviewId == 'pdfWorkshop.viewer'",
+        "group": "3_pdfView@9"
+      }
+    ]
+  },
+  "configuration": {
+    "title": "PDF Workshop",
+    "properties": {
+      "pdfWorkshop.outline.followCursor": {
+        "type": "boolean",
+        "default": false,
+        "description": "Reveal and select the bookmark containing the current PDF page and reading position in PDF Outline, without moving focus. Toggle Follow Cursor in the outline's More Actions menu."
+      },
+      "pdfWorkshop.copyLinkForAgent.target": {
+        "type": "string",
+        "default": "auto",
+        "enum": [
+          "auto",
+          "cursor",
+          "chat",
+          "claudeCode",
+          "codex",
+          "clipboard"
+        ],
+        "enumDescriptions": [
+          "The editor's own chat (Cursor, or VS Code with a chat extension such as Copilot Chat) when it is the only agent installed; with Claude Code or Codex installed too, only copy, to paste into the agent you use.",
+          "Cursor's chat.",
+          "VS Code's chat.",
+          "Claude Code: a new conversation with the selection typed in.",
+          "Codex: the selection (and a region's snapshot) attached to the thread.",
+          "Only copy the selection."
+        ],
+        "markdownDescription": "Which agent chat, if any, **Copy Link for Agent** opens with a PDF selection. The link and selection are always copied. Extensions cannot see which agent you are working in, so `auto` only opens a chat when there is a single agent; pick one here to send the selection to it."
+      },
+      "pdfWorkshop.regionImageCache.maxSizeMB": {
+        "type": "number",
+        "default": 100,
+        "minimum": 1,
+        "markdownDescription": "The most disk space, in megabytes, that PNG snapshots of selected regions may use in the extension's storage. This is a hard limit: when a new snapshot takes them past it, the least recently used ones are deleted, and a single snapshot larger than the limit is not saved (Copy Link for Agent then copies the link without the image). Values below 1 count as 1."
+      },
+      "pdfWorkshop.toolbar.mode": {
+        "type": "string",
+        "default": "chrome",
+        "enum": [
+          "chrome",
+          "slim",
+          "floating",
+          "none"
+        ],
+        "enumDescriptions": [
+          "VS Code title actions and status bar entries for page, zoom and View (layout and scrolling).",
+          "A slim bar along the top of the viewer.",
+          "A bar floating over the pages, docked to an edge of the viewer; drag it by its grip to another edge.",
+          "No controls: keyboard shortcuts, the right-click menu and the command palette only."
+        ],
+        "markdownDescription": "Where the page, zoom, find and tool controls of the PDF viewer appear. Every control also has a command and a keyboard shortcut."
+      },
+      "pdfWorkshop.toolbar.statusBarButtons": {
+        "type": "string",
+        "default": "auto",
+        "enum": [
+          "auto",
+          "always",
+          "never"
+        ],
+        "enumDescriptions": [
+          "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
+          "Always show the buttons.",
+          "Only the page, zoom and View."
+        ],
+        "markdownDescription": "With `#pdfWorkshop.toolbar.mode#` set to `chrome`, whether the status bar also shows previous and next page, zoom out and in, and find buttons around the page and zoom."
+      },
+      "pdfWorkshop.agentBridge.enabled": {
+        "type": "boolean",
+        "default": false,
+        "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
+      },
+      "pdfWorkshop.view.defaultZoom": {
+        "type": [
+          "string",
+          "number"
+        ],
+        "default": "fitWidth",
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "fitWidth",
+              "fitPage",
+              "actual"
+            ]
+          },
+          {
+            "type": "number",
+            "minimum": 25,
+            "maximum": 400
+          }
+        ],
+        "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25–400)."
+      },
+      "pdfWorkshop.view.pageLayout": {
+        "type": "string",
+        "default": "single",
+        "enum": [
+          "single",
+          "spread",
+          "spreadCover"
+        ],
+        "enumDescriptions": [
+          "One page per row.",
+          "Pair pages 1–2, 3–4, and so on.",
+          "Cover page alone, then pair pages 2–3, 4–5, and so on."
+        ],
+        "markdownDescription": "Page layout for PDFs without a saved view."
+      },
+      "pdfWorkshop.view.scrollMode": {
+        "type": "string",
+        "default": "continuous",
+        "enum": [
+          "continuous",
+          "paged"
+        ],
+        "enumDescriptions": [
+          "Scroll through the document.",
+          "Show one page or spread at a time; use next/previous to change it."
+        ],
+        "markdownDescription": "Scrolling mode for PDFs without a saved view."
+      },
+      "pdfWorkshop.view.scrollDirection": {
+        "type": "string",
+        "default": "vertical",
+        "enum": [
+          "vertical",
+          "horizontal"
+        ],
+        "markdownDescription": "Reading direction for PDFs without a saved view."
+      },
+      "pdfWorkshop.lookUp.enabled": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "macOS only: look up the word under the pointer in the Dictionary app with a force click (hard press on the trackpad), or with **Look Up** in the right-click menu of a PDF. Has no effect on other systems."
+      },
+      "pdfWorkshop.keyboardShortcuts": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/⌘+G (Go to Line elsewhere), Ctrl/⌘+0 (focus the side bar), Ctrl/⌘+= and Ctrl/⌘+- (zoom the window) and Ctrl/⌘+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+      },
+      "pdfWorkshop.view.restoreOnReopen": {
+        "type": "boolean",
+        "default": true,
+        "markdownDescription": "Reopen each PDF at its last page, scroll position, zoom and view choices (layout, scrolling, direction). When off, every PDF opens with the defaults above."
+      },
+      "pdfWorkshop.view.smoothScrolling": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "default": null,
+        "markdownDescription": "Animate discrete mouse-wheel scrolling, page jumps and displayed zoom changes. `null` follows `#editor.smoothScrolling#`; `false` disables motion. Always disabled when the system prefers reduced motion."
+      }
+    }
+  },
+  "keybindings": [
+    {
+      "command": "pdfWorkshop.previousPageKeepingPlace",
+      "key": "ctrl+alt+left",
+      "mac": "alt+left",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.previousPageKeepingPlace",
+      "key": "ctrl+alt+up",
+      "mac": "alt+up",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.nextPageKeepingPlace",
+      "key": "ctrl+alt+right",
+      "mac": "alt+right",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.nextPageKeepingPlace",
+      "key": "ctrl+alt+down",
+      "mac": "alt+down",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.enterZen",
+      "key": "ctrl+alt+z",
+      "mac": "ctrl+cmd+z",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts && !inZenMode"
+    },
+    {
+      "command": "pdfWorkshop.exitZen",
+      "key": "ctrl+alt+z",
+      "mac": "ctrl+cmd+z",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts && inZenMode"
+    },
+    {
+      "command": "pdfWorkshop.exitZen",
+      "key": "escape escape",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts && inZenMode"
+    },
+    {
+      "command": "pdfWorkshop.previousPage",
+      "key": "alt+pageup",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.nextPage",
+      "key": "alt+pagedown",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.goToPage",
+      "key": "ctrl+g",
+      "mac": "ctrl+g",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.zoomIn",
+      "key": "ctrl+=",
+      "mac": "cmd+=",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.zoomIn",
+      "key": "ctrl+numpad_add",
+      "mac": "cmd+numpad_add",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.zoomOut",
+      "key": "ctrl+-",
+      "mac": "cmd+-",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.zoomOut",
+      "key": "ctrl+numpad_subtract",
+      "mac": "cmd+numpad_subtract",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.fitWidth",
+      "key": "ctrl+0",
+      "mac": "cmd+0",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.fitPage",
+      "key": "ctrl+alt+0",
+      "mac": "cmd+alt+0",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.find",
+      "key": "ctrl+f",
+      "mac": "cmd+f",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.outline.focus",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && focusedView != 'pdfWorkshop.outline' && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "workbench.action.closeSidebar",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "focusedView == 'pdfWorkshop.outline' && sideBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "workbench.action.closeAuxiliaryBar",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "focusedView == 'pdfWorkshop.outline' && auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "workbench.action.closePanel",
+      "key": "ctrl+alt+o",
+      "mac": "ctrl+cmd+o",
+      "when": "focusedView == 'pdfWorkshop.outline' && panelFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.selectTextTool",
+      "key": "ctrl+alt+t",
+      "mac": "ctrl+cmd+t",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    },
+    {
+      "command": "pdfWorkshop.selectRegionTool",
+      "key": "ctrl+alt+r",
+      "mac": "ctrl+cmd+r",
+      "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && !inputFocus && !sideBarFocus && !panelFocus && !auxiliaryBarFocus && config.pdfWorkshop.keyboardShortcuts"
+    }
+  ],
+  "mcpServerDefinitionProviders": [
+    {
+      "id": "pdfWorkshop.agentBridge",
+      "label": "PDF Workshop"
+    }
+  ]
+}

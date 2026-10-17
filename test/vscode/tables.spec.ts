@@ -8,7 +8,7 @@ import {
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { readState, paths } from "./state";
-import { geometry } from "../support/gutter-geometry";
+import { geometry } from "../../packages/markdown/test/support/gutter-geometry";
 import {
   closeBrowser,
   openWorkbench,

@@ -1,0 +1,53 @@
+{
+  "name": "@workshop/markdown",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Markdown Workshop: Obsidian-style Live Preview for VS Code and Cursor.",
+  "exports": {
+    "./host": "./src/host/extension.ts",
+    "./contributions": "./scripts/contributions.ts"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json && tsc -p src/host && tsc -p src/webview && tsc -p src/plugins/tsconfig.host.json && tsc -p src/plugins/tsconfig.webview.json && tsc -p src/workers && tsc -p test",
+    "test": "node scripts/test.mjs",
+    "test:browser": "node scripts/build.mjs && playwright test -c test/browser/playwright.config.ts",
+    "sample": "node scripts/build-sample.mjs",
+    "ledger": "node scripts/test-ledger.mjs",
+    "measure:vault": "node scripts/build.mjs && tsx scripts/measure-vault.ts"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "6.20.3",
+    "@codemirror/collab": "6.1.1",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-markdown": "6.5.2",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/search": "6.7.2",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.14",
+    "@lezer/common": "1.5.3",
+    "@lezer/highlight": "1.2.5",
+    "@lezer/markdown": "1.8.0",
+    "@mathjax/src": "4.1.3",
+    "@replit/codemirror-vim": "6.4.0",
+    "@workshop/core": "workspace:*",
+    "dompurify": "3.4.16",
+    "graphology": "0.26.0",
+    "lucide": "1.55.0",
+    "markdown-it": "15.0.2",
+    "markdown-it-footnote": "4.0.0",
+    "markdown-it-mark": "4.0.0",
+    "mermaid": "12.1.0",
+    "prismjs": "1.30.0",
+    "sigma": "3.0.2",
+    "turndown": "^7.2.4",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/markdown-it-footnote": "3.0.4",
+    "@types/prismjs": "1.26.6",
+    "@types/turndown": "^5.0.6",
+    "@types/vscode": "1.125.0"
+  }
+}

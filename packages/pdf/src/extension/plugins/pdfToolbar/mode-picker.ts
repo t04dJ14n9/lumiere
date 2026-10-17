@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { parseToolbarMode, type ToolbarMode } from '../../../shared/toolbar-settings';
-import { updateSetting } from '../../settings';
+import type { PdfSettings } from '../../settings';
 import { SECTION } from './preferences';
 
 const MODE_CHOICES: { mode: ToolbarMode; label: string; detail: string }[] = [
@@ -11,13 +11,13 @@ const MODE_CHOICES: { mode: ToolbarMode; label: string; detail: string }[] = [
 ];
 
 /** Ask where the controls go, and save the answer in the setting the Settings editor shows. */
-export async function selectToolbarMode(): Promise<void> {
+export async function selectToolbarMode(settings: PdfSettings): Promise<void> {
   const current = parseToolbarMode(vscode.workspace.getConfiguration(SECTION).get('mode'));
   const choice = await vscode.window.showQuickPick(
     MODE_CHOICES.map(choice => ({ ...choice, ...(choice.mode === current ? { description: 'current' } : {}) })),
     { title: 'PDF Viewer Controls', placeHolder: 'Where should the page, zoom and find controls be?' },
   );
   if (choice && choice.mode !== current) {
-    await updateSetting(`${SECTION}.mode`, choice.mode);
+    await settings.update(`${SECTION}.mode`, choice.mode);
   }
 }

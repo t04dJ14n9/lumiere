@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import { extensionManifest, pdfContributes } from './support/manifest';
 
 interface Contributes {
   commands: { command: string; title: string }[];
@@ -9,7 +9,7 @@ interface Contributes {
   keybindings?: { command: string; key?: string; mac?: string; when?: string }[];
 }
 
-const { contributes } = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { contributes: Contributes };
+const contributes = pdfContributes<Contributes>();
 
 test('the selection envelope command is contributed and hidden from the palette', () => {
   assert.ok(contributes.commands.some(entry => entry.command === 'vscodeEmbedPdf.bridge.envelope'));
@@ -142,16 +142,15 @@ test('settings commands: Open Settings and the common toggles are in the palette
 });
 
 test('the viewer declares limited Restricted Mode support, so PDFs render instead of opening as raw bytes', () => {
-  const manifest = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+  const manifest = extensionManifest<{
     capabilities?: { untrustedWorkspaces?: { supported?: unknown; restrictedConfigurations?: string[] } };
-    contributes: Contributes;
-  };
+  }>();
   const untrusted = manifest.capabilities?.untrustedWorkspaces;
   assert.equal(untrusted?.supported, 'limited');
   // The local MCP server must never be switched on by a workspace setting of an untrusted folder.
   assert.ok(untrusted?.restrictedConfigurations?.includes('pdfWorkshop.agentBridge.enabled'));
   assert.ok(untrusted?.restrictedConfigurations?.includes('pdfWorkshop.copyLinkForAgent.target'));
-  for (const key of untrusted?.restrictedConfigurations ?? []) assert.ok(key in manifest.contributes.configuration.properties, key);
+  for (const key of untrusted?.restrictedConfigurations ?? []) assert.ok(key in contributes.configuration.properties, key);
 });
 
 test('PDF location history has distinct commands and does not claim native or Vim shortcuts', () => {

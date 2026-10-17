@@ -29,7 +29,7 @@ function activation(): string {
     for (const entry of readdirSync(dir)) {
       const full = path.join(dir, entry);
       if (statSync(full).isDirectory()) walk(full);
-      else if (/PDF Workshop\.log$/.test(entry)) found.push(full);
+      else if (/Workshop\.log$/.test(entry)) found.push(full);
     }
   };
   walk(path.join(paths.userData, 'logs'));
@@ -71,11 +71,11 @@ test('load time: a small and a 600-page PDF', async ({ workbench: page }) => {
       resources: marks.resources,
     };
   }
-  const dist = path.join(paths.repository, 'dist');
+  const dist = path.join(paths.extension, 'dist');
   const size = (name: string) => statSync(path.join(dist, name)).size;
   const report = {
     activation: activation(),
-    bundles: { extensionJs: size('extension.js'), viewerJs: size('webview/viewer.js'), pdfiumWasm: size('webview/pdfium.wasm'), viewerCss: size('webview/viewer.css') },
+    bundles: { extensionJs: size('extension.js'), viewerJs: size('pdf/webview/viewer.js'), pdfiumWasm: size('pdf/webview/pdfium.wasm'), viewerCss: size('pdf/webview/viewer.css') },
     results,
   };
   console.log(`PERF ${JSON.stringify(report, null, 1)}`);

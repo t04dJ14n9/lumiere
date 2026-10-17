@@ -8,6 +8,7 @@ import manifest from "./manifest";
 import { PdfPanels, VIEW_TYPE } from "./panels";
 import { registerViewCommands } from "./view-commands";
 import { ViewPreferences } from "./view-preferences";
+import { PdfSettings } from "../../settings";
 import { registerViewControls } from "./view-controls";
 
 /**
@@ -17,7 +18,7 @@ import { registerViewControls } from "./view-controls";
 export const pdfPlugin: Plugin = {
   name: manifest.id,
   inject: { required: ["extensionContext"] },
-  provides: ["pdfPanels"],
+  provides: ["pdfPanels", "pdfSettings"],
   apply(ctx) {
     const { extensionUri } = ctx.extensionContext;
     const panels = ctx.own(new PdfPanels(), "panels");
@@ -42,5 +43,6 @@ export const pdfPlugin: Plugin = {
     ctx.own(registerViewCommands(panels), "commands");
     ctx.own(registerViewControls(panels), "view controls");
     ctx.provide("pdfPanels", panels);
+    ctx.provide("pdfSettings", new PdfSettings(ctx.extensionContext.extension));
   },
 };

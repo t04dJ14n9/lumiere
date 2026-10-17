@@ -25,12 +25,12 @@ const context = {
   storageUri: vscode.Uri.file('/storage/workspace'),
 };
 
-const rootServices: readonly ServiceName[] = ['extensionContext', 'pdfLog'];
+const rootServices: readonly ServiceName[] = ['extensionContext', 'outputChannel'];
 
 function startRoot(selected: readonly Plugin[]) {
   const root = createRoot({ logger: { debug() {}, warn() {}, error: (message) => void errors.push(message) } });
   root.provide('extensionContext', context as never);
-  root.provide('pdfLog', log as never);
+  root.provide('outputChannel', log as never);
   const handles = new Map(selected.map(plugin => [plugin.name, root.plugin(plugin)]));
   return { root, handles };
 }

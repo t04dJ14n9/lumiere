@@ -9,7 +9,7 @@ import type { ToolbarSettings } from '../../../shared/toolbar-settings';
  * layout; later changes arrive as messages.
  */
 export function viewerHtml(webview: vscode.Webview, extensionUri: vscode.Uri, toolbar: ToolbarSettings): string {
-  const asset = (name: string) => webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'webview', name));
+  const asset = (name: string) => webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", "pdf", "webview", name));
   const nonce = randomBytes(16).toString('base64');
   const csp = [
     "default-src 'none'",
