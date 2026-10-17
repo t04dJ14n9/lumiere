@@ -90,7 +90,7 @@ async function copyEnvelope(ctx: Context): Promise<void> {
   const envelope = await activeSelection(ctx);
   if (!envelope) {
     ctx.dialogs.error(
-      "No selection to copy. Install Agent PDF Viewer to capture a PDF selection.",
+      "No selection to copy. Select text in a note or a PDF first.",
     );
     return;
   }

@@ -4,7 +4,7 @@ import {
   buildPdfIdeContextPacket,
   mapPdfSelectionWire,
 } from "../../src/extension/plugins/ideContext/adapter";
-import { DEFAULT_CAPS } from "../../src/shared/ide-context";
+import { DEFAULT_CAPS } from "@workshop/agents/ide-context";
 
 test("no selection → pdf.selection kind none", () => {
   const packet = buildPdfIdeContextPacket({

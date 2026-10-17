@@ -11,7 +11,7 @@ import {
   type IdeContextTargetSetting,
   type TempFs,
   type LeaseSidecar,
-} from "../../../shared/ide-context";
+} from "@workshop/agents/ide-context";
 
 export type QuickPickChoice = "claudeCode" | "codex" | "clipboard" | undefined;
 

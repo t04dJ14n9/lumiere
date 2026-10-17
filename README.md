@@ -19,6 +19,7 @@ Code and Codex, Cursor Chat and Edit).
 | --- | --- |
 | `src/extension.ts` | The composition root: one plugin tree for both products |
 | `packages/core` | The plugin core, on [Cordis](https://github.com/cordiverse/cordis) |
+| `packages/agents` | What both products hand to agents: handoff text, IDE context |
 | `packages/markdown` | Markdown Workshop |
 | `packages/pdf` | PDF Workshop |
 | `scripts/` | Build, `package.json` contributions, third-party notices, tests |

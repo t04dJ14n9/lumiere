@@ -1,14 +1,11 @@
 /**
  * Clipboard text for a bridge envelope. Markdown matches the LLM Wiki
- * `@path#start-end` wording; PDF matches Agent PDF Viewer's Source link.
+ * `@path#start-end` wording; PDF matches PDF Workshop's Source link.
  * The structured envelope is separate and is not appended here.
  */
 
-export function markdownHandoffText(reference: string, text: string): string {
-  const lines = text.replace(/\r\n?/g, "\n").replace(/\n+$/, "").split("\n");
-  const quoted = lines.map((line) => (line ? `> ${line}` : ">")).join("\n");
-  return `${reference}\n\n${quoted}`;
-}
+/** The reference, a blank line, then the selection quoted line by line. */
+export { notePayload as markdownHandoffText } from "@workshop/agents/handoff";
 
 export interface PdfHandoffInput {
   readonly path: string;
@@ -23,7 +20,7 @@ export interface PdfHandoffInput {
   readonly text: string;
 }
 
-/** One-page Source link, the form Agent PDF Viewer already copies. */
+/** One-page Source link, the form PDF Workshop copies. */
 export function pdfHandoffText(input: PdfHandoffInput): string {
   const target = pdfTarget(input);
   const label = `${input.path} (page ${input.page})`;

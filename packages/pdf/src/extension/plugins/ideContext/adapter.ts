@@ -6,7 +6,7 @@ import {
   type IdeContextHostApis,
   type PdfSelectionWire,
   type PdfRect,
-} from "../../../shared/ide-context";
+} from "@workshop/agents/ide-context";
 import { selectedPages, type PdfSelection } from "../../../shared/selection";
 import type { PageRect } from "../../../shared/geometry";
 

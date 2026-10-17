@@ -198,7 +198,7 @@ for Claude Code / Codex…**, which offers to) and the extension starts a local
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_current_pdf_selection`  | The text or region selected in the PDF you last looked at: the same text Copy Link for Agent copies, and for a region its PNG snapshot.                                         |
 | `open_pdf_location`          | Opens a `path#page=N&viewrect=…` link in the viewer.                                                                                                                            |
-| `get_current_note_selection` | The selection in Markdown Workshop (the same extension), as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `docs/agent-handoff-format.md`). |
+| `get_current_note_selection` | The selection in Markdown Workshop (the same extension), as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `packages/agents/docs/agent-handoff-format.md`). |
 
 The server is off by default because it opens a port. When on, it listens on
 `127.0.0.1` only, on a random port, requires a random bearer token, and
@@ -259,7 +259,7 @@ src/
 │   ├── agent-text.ts     the text Copy Link for Agent hands over
 │   ├── agent-target.ts   which agent chat Copy Link for Agent opens
 │   ├── note-reference.ts the @note#lines text the agent bridge returns
-│   │                     (shared format: docs/agent-handoff-format.md)
+│   │                     (shared format: packages/agents/docs/agent-handoff-format.md)
 │   ├── region-text.ts    the text inside a region, line by line
 │   ├── zoom-steps.ts     the zoom levels the buttons and wheel step through
 │   ├── view-state.ts     page and zoom reported by the viewer; view actions

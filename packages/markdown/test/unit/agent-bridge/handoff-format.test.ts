@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { agentPayload } from "../../../src/plugins/agentBridge/reference";
@@ -7,17 +6,6 @@ import {
   formatMarkdownAgentReference,
   formatUriAgentReference,
 } from "../../../src/shared/agent-reference";
-
-/**
- * docs/agent-handoff-format.md and this fixture are byte-identical in Agent
- * PDF Viewer. If a hash changes, update both repositories together.
- */
-const PINNED = {
-  "test/fixtures/agent-handoff-format.json":
-    "1578be9c39029c78ca4be2306f025f43077584ac8a5d3484b62a5b9222b315fe",
-  "docs/agent-handoff-format.md":
-    "065c077095fa39f5befd543743efd891aef578cdefb5e55f079f99ddea08f5d8",
-};
 
 interface Fixture {
   noteReferences: {
@@ -29,18 +17,10 @@ interface Fixture {
   notePayloads: { reference: string; selection: string; text: string }[];
 }
 
-const fixture = JSON.parse(
-  readFileSync("test/fixtures/agent-handoff-format.json", "utf8"),
-) as Fixture;
+/** The one handoff format both products write: packages/agents/docs/agent-handoff-format.md. */
+const HANDOFF_FIXTURE = "../agents/test/fixtures/agent-handoff-format.json";
 
-test("the shared handoff format files match the copies in Agent PDF Viewer", () => {
-  for (const [file, hash] of Object.entries(PINNED)) {
-    const actual = createHash("sha256")
-      .update(readFileSync(file))
-      .digest("hex");
-    assert.equal(actual, hash, `${file} changed; update Agent PDF Viewer too`);
-  }
-});
+const fixture = JSON.parse(readFileSync(HANDOFF_FIXTURE, "utf8")) as Fixture;
 
 test("note references follow the shared handoff format", () => {
   for (const { path, startLine, endLine, text } of fixture.noteReferences) {

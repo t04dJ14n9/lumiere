@@ -23,5 +23,5 @@ The active Markdown Workshop selection becomes an envelope (`producer: markdown`
 ## Limits and differences from Obsidian
 
 - This is not an Obsidian feature. The envelope is a workbench protocol, not wiki metadata.
-- The plugin does not start an agent and does not share navigation history with Agent PDF Viewer or a browser.
+- The plugin does not start an agent and does not share navigation history with PDF Workshop or a browser.
 - Clipboard text for Copy Link for Agent stays the LLM Wiki `@path#lines` wording. The JSON envelope is a second command.

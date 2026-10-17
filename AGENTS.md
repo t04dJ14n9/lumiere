@@ -6,6 +6,7 @@ workspace. Everything is a plugin:
 | Path | What it is | Read first |
 | --- | --- | --- |
 | `packages/core` | The plugin core on Cordis | its README.md |
+| `packages/agents` | What both products hand to agents | its README.md |
 | `packages/markdown` | Markdown Workshop: Obsidian-like Live Preview | its DESIGN.md, IMPLEMENTATION_PLAN.md |
 | `packages/pdf` | PDF Workshop: EmbedPDF viewer with agent links | its README.md, AGENTS.md |
 | `src/extension.ts` | The composition root: one plugin tree for both | |
@@ -17,7 +18,8 @@ If the task is a user / third-party custom plugin, read
 ## Rules
 
 - Pure code runs anywhere, with no DOM, VS Code or Node APIs:
-  `packages/core/src`, and `src/shared` and `src/markdown` in each product.
+  `packages/core/src`, `packages/agents/src`, and `src/shared` and
+  `src/markdown` in each product.
   The tsconfig projects and the `architecture/boundaries` lint rule enforce
   this.
 - Every capability is a plugin (`packages/markdown/src/plugins/<id>/`,
@@ -40,8 +42,8 @@ If the task is a user / third-party custom plugin, read
   and its commands; one product's settings commands never show or write the
   other's.
 - Keep the Copy Link for Agent reference wording compatible with LLM Wiki
-  (`@path#start-end`), and the agent handoff format files byte-identical
-  between the products (tests pin their hashes).
+  (`@path#start-end`). What both products hand to agents (the handoff text,
+  the IDE context packet) is defined once, in `packages/agents`.
 - Obsidian is a behaviour reference only. Never copy its code, CSS or assets.
   Compare in a disposable vault, never the owner's.
 - Read the source from `~/Code/human-learning` at commit `ff3a902e`; never

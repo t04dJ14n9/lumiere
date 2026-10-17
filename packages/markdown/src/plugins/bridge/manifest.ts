@@ -4,7 +4,7 @@ export default defineManifest({
   id: "bridge",
   title: "Bridge",
   description:
-    "Build a versioned selection envelope for an agent. Agent PDF Viewer is used when it is installed. This does not open a chat.",
+    "Build a versioned selection envelope for an agent, from the note's selection or else the PDF's. This does not open a chat.",
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],

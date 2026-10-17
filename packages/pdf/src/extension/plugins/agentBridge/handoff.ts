@@ -31,7 +31,7 @@ export interface AgentSnapshot {
 
 /**
  * The `handoff` service: turns an editor's selection into the text an agent
- * receives (see `shared/agent-text.ts` and docs/agent-handoff-format.md), and
+ * receives (see `shared/agent-text.ts` and packages/agents/docs/agent-handoff-format.md), and
  * hands it over. Copy Link for Agent and the MCP bridge both go through it,
  * so an agent sees the same text either way.
  *

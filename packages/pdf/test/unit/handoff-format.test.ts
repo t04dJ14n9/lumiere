@@ -1,21 +1,9 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { agentText } from "../../src/shared/agent-text";
-import { notePayload, noteReference } from "../../src/shared/note-reference";
+import { notePayload, noteReference } from "@workshop/agents/handoff";
 import type { PdfSelection } from "../../src/shared/selection";
-
-/**
- * docs/agent-handoff-format.md and this fixture are byte-identical in
- * Markdown Workshop. If a hash changes, update both repositories together.
- */
-const PINNED: Record<string, string> = {
-  "test/fixtures/agent-handoff-format.json":
-    "4db5869bc1ba8a58872c0ffddfc3e9c316ab717fb32d50b039ab032c76c22e72",
-  "docs/agent-handoff-format.md":
-    "c2119f8b85867b2bc9a4c451bbb4915a4f3b22522c378f97e9872a7bd62fc4ec",
-};
 
 interface Fixture {
   noteReferences: {
@@ -32,19 +20,10 @@ interface Fixture {
   }[];
 }
 
-const fixture = JSON.parse(
-  readFileSync("test/fixtures/agent-handoff-format.json", "utf8"),
-) as Fixture;
+/** The one handoff format both products write: packages/agents/docs/agent-handoff-format.md. */
+const HANDOFF_FIXTURE = "../agents/test/fixtures/agent-handoff-format.json";
 
-test("the shared handoff format files match the copies in Markdown Workshop", () => {
-  for (const [file, hash] of Object.entries(PINNED)) {
-    assert.equal(
-      createHash("sha256").update(readFileSync(file)).digest("hex"),
-      hash,
-      `${file} changed; update Markdown Workshop too`,
-    );
-  }
-});
+const fixture = JSON.parse(readFileSync(HANDOFF_FIXTURE, "utf8")) as Fixture;
 
 test("note references and payloads follow the shared handoff format", () => {
   for (const { path, startLine, endLine, text } of fixture.noteReferences) {

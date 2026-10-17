@@ -17,7 +17,7 @@ interface Fixture {
 }
 
 const fixture = JSON.parse(
-  readFileSync("test/fixtures/agent-handoff-format.json", "utf8"),
+  readFileSync("../agents/test/fixtures/agent-handoff-format.json", "utf8"),
 ) as Fixture;
 
 test("markdown clipboard text matches the shared handoff fixture", () => {

@@ -7,8 +7,8 @@ import {
 import {
   DEFAULT_CAPS,
   type IdeContextPacket,
-} from "../../../src/shared/ide-context";
-import { MemoryTempFs } from "../ide-context/memory-temp-fs";
+} from "@workshop/agents/ide-context";
+import { MemoryTempFs } from "@workshop/agents/testing";
 import { AGENT_COMMANDS } from "../../../src/plugins/agentBridge/chat";
 
 function mwPacket(): IdeContextPacket {
@@ -187,8 +187,7 @@ test("MW Codex: renewLeaseAtomic called before retry across renewal boundary", a
     codexRetryDelaysMs: [0, 0],
     renewLease: async (...args) => {
       renewCalls++;
-      const { renewLeaseAtomic } =
-        await import("../../../src/shared/ide-context");
+      const { renewLeaseAtomic } = await import("@workshop/agents/ide-context");
       return renewLeaseAtomic(...args);
     },
   });
@@ -224,8 +223,7 @@ test("MW Codex: on retry renew is after open prep and immediately before add-fil
     codexRetryDelaysMs: [0, 5],
     renewLease: async (...args) => {
       events.push("renew");
-      const { renewLeaseAtomic } =
-        await import("../../../src/shared/ide-context");
+      const { renewLeaseAtomic } = await import("@workshop/agents/ide-context");
       return renewLeaseAtomic(...args);
     },
   });

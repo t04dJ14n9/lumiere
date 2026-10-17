@@ -4,7 +4,7 @@ import type {} from "../editor/api";
 import { contributionId } from "../../shared/setting-schema";
 import { buildMwIdeContextPacket } from "./adapter";
 import { copyIdeContext, sendIdeContext } from "./delivery";
-import type { IdeContextTargetSetting } from "../../shared/ide-context";
+import type { IdeContextTargetSetting } from "@workshop/agents/ide-context";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
@@ -14,8 +14,8 @@ import {
   createVsCodeIdeContextHost,
   publishIdeContextTemp,
   renewLeaseAtomic,
-} from "../../shared/ide-context";
-import type { TempFs } from "../../shared/ide-context";
+} from "@workshop/agents/ide-context";
+import type { TempFs } from "@workshop/agents/ide-context";
 
 /** Node fs adapter for temp publish. */
 const nodeTempFs: TempFs = {

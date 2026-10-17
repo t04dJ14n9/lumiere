@@ -21,7 +21,9 @@ const boundaries = {
       const target = source.startsWith(".")
         ? path.resolve(path.dirname(file), source).replaceAll("\\", "/")
         : source;
-      const pure = /\/src\/(kernel|shared|markdown)\//.test(file);
+      const pure =
+        /\/src\/(kernel|shared|markdown)\//.test(file) ||
+        /\/packages\/(core|agents)\/src\//.test(file);
       let invalid =
         pure &&
         (source === "vscode" ||
@@ -162,6 +164,7 @@ export default tseslint.config(
         project: [
           "./tsconfig.json",
           "./packages/core/tsconfig.json",
+          "./packages/agents/tsconfig.json",
           "./packages/markdown/tsconfig.json",
           "./packages/markdown/src/host/tsconfig.json",
           "./packages/markdown/src/webview/tsconfig.json",

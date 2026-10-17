@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { noteReference } from "../../src/shared/note-reference";
+import { noteReference } from "@workshop/agents/handoff";
 
 test("a saved note gets the @path#lines reference Markdown Workbench writes", () => {
   assert.equal(noteReference("notes/a.md", 12, 18, false), "@notes/a.md#12-18");

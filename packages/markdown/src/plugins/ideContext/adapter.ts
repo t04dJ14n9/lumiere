@@ -4,7 +4,7 @@ import {
   type IdeContextPacket,
   type IdeContextCaps,
   DEFAULT_CAPS,
-} from "../../shared/ide-context";
+} from "@workshop/agents/ide-context";
 import type { SourceSelection } from "../editor/api";
 
 export interface MwIdeContextInput {

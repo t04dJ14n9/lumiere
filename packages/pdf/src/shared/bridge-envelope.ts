@@ -2,7 +2,7 @@
  * Versioned selection envelope shared with Markdown Workshop.
  *
  * The clipboard text of Copy Link for Agent is unchanged (see
- * `docs/agent-handoff-format.md`). This object is what
+ * `packages/agents/docs/agent-handoff-format.md`). This object is what
  * `vscodeEmbedPdf.bridge.envelope` returns. It matches the Workbench v1
  * `BridgeEnvelope` contract that Markdown Workshop's `parseBridgeEnvelope`
  * already consumes (see that extension's `docs/bridge-envelope.md`):

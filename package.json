@@ -2168,7 +2168,7 @@
             "type": "boolean",
             "default": true,
             "scope": "resource",
-            "description": "Build a versioned selection envelope for an agent. Agent PDF Viewer is used when it is installed. This does not open a chat."
+            "description": "Build a versioned selection envelope for an agent, from the note's selection or else the PDF's. This does not open a chat."
           },
           "markdownWorkshop.plugins.callouts.enabled": {
             "type": "boolean",
@@ -2957,7 +2957,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
+    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -2971,6 +2971,7 @@
     "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links"
   },
   "dependencies": {
+    "@workshop/agents": "workspace:*",
     "@workshop/core": "workspace:*",
     "@workshop/markdown": "workspace:*",
     "@workshop/pdf": "workspace:*"

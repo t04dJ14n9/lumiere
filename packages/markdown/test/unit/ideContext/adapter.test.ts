@@ -4,7 +4,7 @@ import {
   buildMwIdeContextPacket,
   assertMwPacket,
 } from "../../../src/plugins/ideContext/adapter";
-import { DEFAULT_CAPS } from "../../../src/shared/ide-context";
+import { DEFAULT_CAPS } from "@workshop/agents/ide-context";
 
 test("adapter builds packet with product markdownWorkshop and no pdf key", () => {
   const packet = buildMwIdeContextPacket({

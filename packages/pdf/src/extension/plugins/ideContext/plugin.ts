@@ -16,7 +16,7 @@ import {
   renewLeaseAtomic,
   type TempFs,
   type IdeContextTargetSetting,
-} from "../../../shared/ide-context";
+} from "@workshop/agents/ide-context";
 import type { AgentTargetSetting } from "../../../shared/agent-target";
 
 const nodeTempFs: TempFs = {

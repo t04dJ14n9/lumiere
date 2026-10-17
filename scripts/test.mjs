@@ -1,5 +1,5 @@
 // Unit tests of every package, each run from its own directory: the core,
-// then Markdown Workshop, then PDF Workshop. Root scripts are tested too.
+// the agent formats, then Markdown Workshop, then PDF Workshop. Root scripts are tested too.
 import { readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
@@ -26,6 +26,16 @@ const failures = [
     "--test",
     ...options,
     ...testFiles("packages/core/test", "test/unit"),
+  ]),
+  run("packages/agents", "pnpm", [
+    "exec",
+    "tsx",
+    "--test",
+    ...options,
+    // From the package's directory, where its fixtures are.
+    ...testFiles("packages/agents/test").map((file) =>
+      file.replace("packages/agents/", ""),
+    ),
   ]),
   run("packages/markdown", "node", ["scripts/test.mjs"]),
   run("packages/pdf", "pnpm", ["test"]),

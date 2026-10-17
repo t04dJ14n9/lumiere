@@ -1,0 +1,12 @@
+{
+  "name": "@workshop/agents",
+  "version": "0.0.0",
+  "private": true,
+  "description": "What both products hand to coding agents: the IDE context packet and the agent handoff format.",
+  "type": "module",
+  "exports": {
+    "./ide-context": "./src/ide-context/index.ts",
+    "./handoff": "./src/handoff.ts",
+    "./testing": "./test/support/memory-temp-fs.ts"
+  }
+}

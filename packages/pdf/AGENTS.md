@@ -12,9 +12,8 @@ are specific to the PDF code. Read README.md for the layout.
 - Track editors per panel (`PdfPanels`), never by file path: the same PDF can
   be open twice.
 - Keep the Copy Link for Agent text wording compatible with LLM Wiki's agent
-  clipboard, and the handoff format identical to Markdown Workshop's:
-  `docs/agent-handoff-format.md` and `test/fixtures/agent-handoff-format.json`
-  are byte-identical in both packages (a test pins their hashes). The
+  clipboard. The handoff format both products write is defined once, in
+  `packages/agents` (`docs/agent-handoff-format.md` and its fixture). The
   structured selection envelope is a separate contract
   (`docs/bridge-envelope.md`, command `vscodeEmbedPdf.bridge.envelope`) and
   does not change that clipboard text.
