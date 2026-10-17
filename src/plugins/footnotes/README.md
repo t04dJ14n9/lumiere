@@ -44,10 +44,12 @@ remaining references, render passes, listeners and commands.
 - `preprocess.test.ts`: owning-note numbering, missing and repeated references.
 - `../../../test/unit/footnotes/inline.test.ts`: reference and definition
   numbers, the caret inside a reference, selections, definition markers.
-- `preview-position.ts`: places the fixed hover preview inside the webview
-  (moves it left at the right edge, opens it above near the bottom); unit-tested
-  in `preview-position.test.ts` and `test/browser/footnotes.spec.ts`.
-  Fixed positioning avoids `.cm-scroller` overflow clipping the tooltip.
+- `../../webview/ui/popover-position.ts` (shared with git blame): places the
+  fixed hover preview inside the webview (moves it left at the right edge,
+  opens it above near the bottom); unit-tested in
+  `test/unit/webview/popover-position.test.ts` and
+  `test/browser/footnotes.spec.ts`. Fixed positioning avoids `.cm-scroller`
+  overflow clipping the tooltip.
 - `footnotes.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings

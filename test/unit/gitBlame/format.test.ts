@@ -94,11 +94,7 @@ test("relative buckets, singular/plural and future timestamps", () => {
 
 test("empty subject omits leading comma clause", () => {
   assert.equal(
-    formatBlameGhost(
-      { ...blame, subject: "" },
-      undefined,
-      blame.authorDate,
-    ),
+    formatBlameGhost({ ...blame, subject: "" }, undefined, blame.authorDate),
     "Ada Lovelace (just now)",
   );
 });

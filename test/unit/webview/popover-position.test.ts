@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { placePreview } from "./preview-position";
+import { placePreview } from "../../../src/webview/ui/popover-position";
 
 const viewport = { width: 800, height: 600 };
 const reference = { left: 700, right: 708, top: 100, bottom: 112 };

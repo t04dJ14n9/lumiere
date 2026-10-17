@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { realpathSync } from "node:fs";
 import { mkdtemp, mkdir, writeFile, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative } from "node:path";
@@ -156,7 +157,7 @@ test("oversized body is character-sliced after a UTF-8-safe buffer", async () =>
   const result = await runBlameLine(options(runGit));
   assert.equal(result.status, "ok");
   if (result.status === "ok") {
-    assert.equal(result.blame.body.length, 8_000);
+    assert.equal(result.blame.body?.length, 8_000);
     assert.equal(result.blame.body, huge.slice(0, 8_000));
   }
 });
@@ -419,7 +420,8 @@ test("discoverGitRoot finds the work tree from a nested path without vscode.git"
     const nested = join(root, "notes");
     await mkdir(nested, { recursive: true });
     await writeFile(join(nested, "home.md"), "hello\n");
-    assert.equal(await discoverGitRoot(nested, runGit), root);
+    // git reports the real path (macOS tmp dirs live under /private/var).
+    assert.equal(await discoverGitRoot(nested, runGit), realpathSync(root));
     assert.equal(
       await discoverGitRoot(join(nested, "missing-dir"), runGit),
       undefined,

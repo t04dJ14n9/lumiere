@@ -1,6 +1,5 @@
 import type { GitBlameOk } from "./types";
 
-// src/shared/git-blame/porcelain.ts
 /** Synthetic uncommitted OID — length-agnostic (SHA-1 or SHA-256). */
 export function isZeroOid(oid: string): boolean {
   return oid.length > 0 && /^0+$/.test(oid);
@@ -30,43 +29,43 @@ export function parseBlamePorcelain(stdout: string, line: number): ParsedBlame {
   if (isZeroOid(oid)) {
     return { status: "uncommitted" };
   }
-  let authorName = "";
-  let authorEmail = "";
-  let authorDate = 0;
-  let committerDate: number | undefined;
-  let subject = "";
-  let boundary = false;
-  for (const row of lines.slice(1)) {
-    if (row.startsWith("author ")) {
-      authorName = row.slice(7);
-    } else if (row.startsWith("author-mail ")) {
-      authorEmail = row.slice(12).replace(/^<|>$/g, "");
-    } else if (row.startsWith("author-time ")) {
-      authorDate = Number(row.slice(12)) || 0;
-    } else if (row.startsWith("committer-time ")) {
-      const value = Number(row.slice(14)) || 0;
-      if (value > 0) {
-        committerDate = value;
-      }
-    } else if (row.startsWith("summary ")) {
-      subject = row.slice(8);
-    } else if (row === "boundary") {
-      boundary = true;
-    }
-  }
+  const fields = porcelainFields(lines.slice(1));
+  const authorDate = Number(fields.get("author-time")) || 0;
+  const committerDate = Number(fields.get("committer-time")) || 0;
   return {
     status: "ok",
     blame: {
       commit: oid,
       shortCommit: oid.slice(0, 7),
-      authorName,
-      authorEmail,
+      authorName: fields.get("author") ?? "",
+      authorEmail: (fields.get("author-mail") ?? "").replace(/^<|>$/g, ""),
       authorDate,
-      subject,
+      subject: fields.get("summary") ?? "",
       body: "",
       line,
-      ...(committerDate !== undefined ? { committerDate } : {}),
-      ...(boundary ? { boundary: true } : {}),
+      ...(committerDate > 0 ? { committerDate } : {}),
+      ...(fields.has("boundary") ? { boundary: true } : {}),
     },
   };
+}
+
+/**
+ * Header rows of one porcelain entry as key → value ("author Ada" → author:
+ * "Ada"; a bare "boundary" row → boundary: ""). The content row (tab-prefixed)
+ * is skipped.
+ */
+function porcelainFields(rows: readonly string[]): Map<string, string> {
+  const fields = new Map<string, string>();
+  for (const row of rows) {
+    if (!row || row.startsWith("\t")) {
+      continue;
+    }
+    const space = row.indexOf(" ");
+    if (space < 0) {
+      fields.set(row, "");
+    } else {
+      fields.set(row.slice(0, space), row.slice(space + 1));
+    }
+  }
+  return fields;
 }

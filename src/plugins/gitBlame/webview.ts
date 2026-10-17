@@ -1,6 +1,8 @@
 import { EditorView } from "@codemirror/view";
 import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
+import type {} from "../livePreview/api";
+import { sourceVisibility } from "./paintable";
 import { BlameController } from "./controller";
 import { blameField, docVersionField, setBlame } from "./state";
 import { protocol } from "./protocol";
@@ -12,7 +14,7 @@ import {
 
 export const gitBlameWebview: Plugin = {
   name: "gitBlame",
-  inject: { required: ["editor", "rpc"] },
+  inject: { required: ["editor", "rpc"], optional: ["livePreview"] },
   apply(ctx) {
     registerBlameController(ctx);
     registerIdentity(ctx);
@@ -45,11 +47,13 @@ function registerBlameController(ctx: Context): void {
       return () => clearTimeout(timer);
     },
   });
+  const sourceVisibleAt = ctx.livePreview?.sourceVisibleAt;
   ctx.effect(() =>
     ctx.editor.extend([
       blameField,
       docVersionField,
       blameIdentityField,
+      sourceVisibleAt ? sourceVisibility.of(sourceVisibleAt) : [],
       blameDecorations,
       EditorView.updateListener.of(() => controller.update()),
     ]),

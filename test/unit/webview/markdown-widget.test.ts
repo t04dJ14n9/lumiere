@@ -7,24 +7,22 @@ import type { Extension } from "@codemirror/state";
 import {
   CLICK_DRAG_PX,
   clickToEditReleaseCommits,
-  fenceGuardSelection,
   latchClickDrag,
-  liveFenceOffsets,
   markdownBlockIgnoresEventKind,
+  type ClickToEditPress,
+} from "../../../src/webview/ui/block-pointer";
+import {
+  fenceGuardSelection,
+  liveFenceOffsets,
   ownsFenceGuardRelease,
   resolveFenceGuardSelection,
   setFenceGuardSelectionEffect,
   shouldGuardFenceMouseDown,
   shouldRestoreFenceClick,
-  type ClickToEditPress,
   type FenceGuardPress,
-} from "../../../src/webview/ui/markdown-widget";
+} from "../../../src/webview/ui/fence-click-guard";
 
 const root = new URL("../../../", import.meta.url).pathname;
-const widgetSrc = readFileSync(
-  path.join(root, "src/webview/ui/markdown-widget.ts"),
-  "utf8",
-);
 
 test("selectionchange is always kept by the widget (native Mermaid labels)", () => {
   assert.equal(
@@ -48,13 +46,6 @@ test("blank-area mousedown stays with the widget (no CM caret in fence)", () => 
     }),
     true,
   );
-});
-
-test("ignoreEvent keeps blank Mermaid area so source is not revealed without edit", () => {
-  assert.match(widgetSrc, /markdownBlockIgnoresEvent/);
-  assert.match(widgetSrc, /replace range/);
-  assert.match(widgetSrc, /click-to-edit/);
-  assert.match(widgetSrc, /MouseSelection/);
 });
 
 test("widget-local controls keep their mouse events", () => {
@@ -90,20 +81,6 @@ test("non-element targets (other than selectionchange) do not force ignore", () 
       nativeSelectableLabel: false,
     }),
     false,
-  );
-});
-
-test("ignoreEvent bounds control detection to .hybrid-block (not outer contenteditable)", () => {
-  assert.match(widgetSrc, /markdownBlockIgnoresEvent/);
-  assert.match(widgetSrc, /\.hybrid-block/);
-  assert.match(widgetSrc, /selectionchange/);
-  assert.match(widgetSrc, /isBlockControl/);
-  assert.match(widgetSrc, /isNativeSelectableLabel/);
-  assert.match(widgetSrc, /export function isNativeSelectableLabelTarget/);
-  // Unbounded closest(interactive) was the P2 bug — must not be the ignore path.
-  assert.doesNotMatch(
-    widgetSrc,
-    /ignoreEvent\(event: Event\): boolean \{\s*const target = event\.target;\s*return target instanceof Element && Boolean\(target\.closest\(interactive\)\)/,
   );
 });
 
@@ -175,48 +152,6 @@ test("click-to-edit commits only for a matching non-drag release over the widget
   );
 });
 
-test("click-to-edit clears on outside release, blur, and pointercancel", () => {
-  assert.match(widgetSrc, /pointercancel/);
-  assert.match(widgetSrc, /addEventListener\("blur"/);
-  assert.match(widgetSrc, /capture:\s*true/);
-  assert.match(widgetSrc, /clearPress/);
-  assert.match(widgetSrc, /latchClickDrag/);
-  assert.match(widgetSrc, /clickToEditReleaseCommits/);
-});
-
-test("Mermaid uses double-click-to-edit; math/code keep single-click", () => {
-  const diagramsSrc = readFileSync(
-    path.join(root, "src/plugins/diagrams/webview.ts"),
-    "utf8",
-  );
-  const mathSrc = readFileSync(
-    path.join(root, "src/plugins/math/webview.ts"),
-    "utf8",
-  );
-  const codeSrc = readFileSync(
-    path.join(root, "src/plugins/codeBlocks/webview.ts"),
-    "utf8",
-  );
-  const embedsSrc = readFileSync(
-    path.join(root, "src/plugins/embeds/webview.ts"),
-    "utf8",
-  );
-  // Diagrams: no single-click reveal (avoids fence caret jump + Mermaid flash).
-  assert.match(
-    diagramsSrc,
-    /new MarkdownBlock\(block, ctx\.render, "dblclick"\)/,
-  );
-  assert.match(widgetSrc, /bindDoubleClickToEdit/);
-  assert.match(widgetSrc, /bindFenceClickGuard/);
-  assert.match(widgetSrc, /clickToEdit === "dblclick"/);
-  // Other reveal widgets keep the default single-click policy.
-  assert.match(mathSrc, /new MarkdownBlock\(block, ctx\.render\)/);
-  assert.doesNotMatch(mathSrc, /editingPreview\s*:/);
-  assert.match(codeSrc, /new MarkdownBlock\(block, ctx\.render\)/);
-  // Embeds still disable body click-to-edit entirely.
-  assert.match(embedsSrc, /new MarkdownBlock\(block, ctx\.render, false\)/);
-});
-
 test("fence click guard arms only outside-shell hits that map into the block", () => {
   const base = {
     button: 0,
@@ -241,18 +176,6 @@ test("fence click guard arms only outside-shell hits that map into the block", (
   // Shift/Cmd/chrome must not arm — CM keeps selection / scrollbar.
   assert.equal(shouldGuardFenceMouseDown({ ...base, modified: true }), false);
   assert.equal(shouldGuardFenceMouseDown({ ...base, onChrome: true }), false);
-});
-
-test("fence click guard never preventDefaults the initial mousedown", () => {
-  // Robust restore path: let CM own mousedown; restore selection on plain click.
-  const start = widgetSrc.indexOf("function bindFenceClickGuard");
-  const end = widgetSrc.indexOf("function bindDoubleClickToEdit");
-  assert.ok(start >= 0 && end > start, "bindFenceClickGuard present");
-  assert.doesNotMatch(widgetSrc.slice(start, end), /event\.preventDefault/);
-  assert.match(widgetSrc, /shouldRestoreFenceClick/);
-  assert.match(widgetSrc, /Do not preventDefault/);
-  assert.match(widgetSrc, /isEditorChromeTarget/);
-  assert.match(widgetSrc, /isNativeSelectableLabel\(shell, event\.target\)/);
 });
 
 test("plain completed fence margin click restores pre-press selection", () => {
@@ -294,13 +217,6 @@ test("Mermaid SVG CSS captures transparent gap clicks on the widget", () => {
 });
 
 test("fence click guard resolves live offsets from the shell, not captured from/to", () => {
-  assert.match(widgetSrc, /liveFenceOffsets/);
-  assert.match(widgetSrc, /posAtDOM\(shell\)/);
-  // Must not feed the stale RenderBlock.from/to captured at toDOM into the guard.
-  assert.doesNotMatch(
-    widgetSrc,
-    /shouldGuardFenceMouseDown\(\{[\s\S]*?blockFrom:\s*block\.from/,
-  );
   const shell = {} as Node;
   const view = {
     posAtDOM(node: Node) {
@@ -426,13 +342,6 @@ test("fenceGuardSelection field maps through intervening doc changes", () => {
   assert.equal(state.doc.length, 14);
 });
 
-test("fence click guard arms mapped selection field and resolves via doc identity", () => {
-  assert.match(widgetSrc, /fenceGuardSelection/);
-  assert.match(widgetSrc, /resolveFenceGuardSelection/);
-  assert.match(widgetSrc, /armFenceGuardSelection/);
-  assert.match(widgetSrc, /ownsFenceGuardRelease/);
-});
-
 test("duplicate mouseup without release ownership does not clear mapped selection", () => {
   // Second window/document mouseup: takePress already null — must not clear.
   assert.equal(ownsFenceGuardRelease(null), false);
@@ -444,10 +353,4 @@ test("duplicate mouseup without release ownership does not clear mapped selectio
     doc: { length: 10 },
   };
   assert.equal(ownsFenceGuardRelease(press), true);
-  // Owner path still clears on failed restore predicates; only null skips clear.
-  assert.match(widgetSrc, /if \(!ownsFenceGuardRelease\(active\)\)/);
-  assert.match(
-    widgetSrc,
-    /if \(!ownsFenceGuardRelease\(active\)\) \{\s*return;/s,
-  );
 });

@@ -2,7 +2,7 @@ import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
 import type { EditorState, Extension, SelectionRange } from "@codemirror/state";
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
-import { isNativeSelectableLabelTarget } from "./markdown-widget";
+import { isNativeSelectableLabelTarget } from "./block-pointer";
 
 /**
  * Obsidian keeps a note rendered while the mouse button is down and reveals

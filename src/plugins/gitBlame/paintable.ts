@@ -1,6 +1,13 @@
+import { Facet } from "@codemirror/state";
 import type { EditorState } from "@codemirror/state";
-import { blockIndex } from "../livePreview/blocks";
-import { revealed } from "../livePreview/registry";
+
+/**
+ * Says whether the source at a position is painted. Live Preview supplies it
+ * (through its service) because only it knows which ranges a rendered block
+ * replaces; without a provider all source is visible.
+ */
+export const sourceVisibility =
+  Facet.define<(state: EditorState, position: number) => boolean>();
 
 /**
  * Whether an EOL ghost at `position` would sit on visible source text.
@@ -9,24 +16,7 @@ import { revealed } from "../livePreview/registry";
  * anchors to a visible caret-line baseline).
  */
 export function canPaintBlameAt(state: EditorState, position: number): boolean {
-  const blocks = state.field(blockIndex, false);
-  if (!blocks) {
-    return true;
-  }
-  const block = blocks.find(
-    (entry) => entry.from <= position && position <= entry.to,
-  );
-  if (!block) {
-    return true;
-  }
-  if (block.renderer.showSource?.(state, block)) {
-    return true;
-  }
-  if (
-    block.renderer.editing === "reveal" &&
-    revealed(state, block.from, block.to)
-  ) {
-    return true;
-  }
-  return false;
+  return state
+    .facet(sourceVisibility)
+    .every((isVisible) => isVisible(state, position));
 }

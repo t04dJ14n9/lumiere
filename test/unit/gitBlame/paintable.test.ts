@@ -4,7 +4,11 @@ import { EditorState } from "@codemirror/state";
 import { blockIndex } from "../../../src/plugins/livePreview/blocks";
 import { blockRenderers } from "../../../src/plugins/livePreview/registry";
 import { documentTree } from "../../../src/plugins/livePreview/document-tree";
-import { canPaintBlameAt } from "../../../src/plugins/gitBlame/paintable";
+import { sourceVisibleAt } from "../../../src/plugins/livePreview/source-visibility";
+import {
+  canPaintBlameAt,
+  sourceVisibility,
+} from "../../../src/plugins/gitBlame/paintable";
 import {
   BlameEolWidget,
   blameDecorations,
@@ -23,9 +27,26 @@ const blame = {
   line: 2,
 };
 
-test("canPaintBlameAt is true without a livePreview block index", () => {
+test("canPaintBlameAt is true without a source visibility provider", () => {
   const state = EditorState.create({ doc: "a\nb\nc" });
   assert.equal(canPaintBlameAt(state, state.doc.line(2).to), true);
+});
+
+test("sourceVisibleAt is true without a livePreview block index", () => {
+  const state = EditorState.create({ doc: "a\nb\nc" });
+  assert.equal(sourceVisibleAt(state, state.doc.line(2).to), true);
+});
+
+test("canPaintBlameAt asks every source visibility provider", () => {
+  const state = EditorState.create({
+    doc: "a\nb",
+    extensions: [
+      sourceVisibility.of(() => true),
+      sourceVisibility.of((_state, position) => position !== 1),
+    ],
+  });
+  assert.equal(canPaintBlameAt(state, 0), true);
+  assert.equal(canPaintBlameAt(state, 1), false);
 });
 
 test("unrevealed widget replace covers interior positions", () => {
@@ -47,11 +68,11 @@ test("unrevealed widget replace covers interior positions", () => {
   });
   const table = state.field(blockIndex).find((block) => block.kind === "Table");
   assert.ok(table);
-  assert.equal(canPaintBlameAt(state, table!.from), false);
-  assert.equal(canPaintBlameAt(state, table!.from + 1), false);
+  assert.equal(sourceVisibleAt(state, table!.from), false);
+  assert.equal(sourceVisibleAt(state, table!.from + 1), false);
   // Final table source row EOL is at block.to; must stay covered.
-  assert.equal(canPaintBlameAt(state, table!.to), false);
-  assert.equal(canPaintBlameAt(state, 0), true);
+  assert.equal(sourceVisibleAt(state, table!.to), false);
+  assert.equal(sourceVisibleAt(state, 0), true);
 });
 
 test("revealed replace allows painting on the caret line again", () => {
@@ -74,9 +95,9 @@ test("revealed replace allows painting on the caret line again", () => {
   });
   const table = state.field(blockIndex).find((block) => block.kind === "Table");
   assert.ok(table);
-  assert.equal(canPaintBlameAt(state, table!.from + 1), true);
+  assert.equal(sourceVisibleAt(state, table!.from + 1), true);
   // Reveal-mode still allows the final-row EOL via revealed(...).
-  assert.equal(canPaintBlameAt(state, table!.to), true);
+  assert.equal(sourceVisibleAt(state, table!.to), true);
 });
 
 test("blame decorations omit the ghost inside an unrevealed replace", () => {
@@ -95,6 +116,7 @@ test("blame decorations omit the ghost inside an unrevealed replace", () => {
           throw new Error("not mounted");
         },
       }),
+      sourceVisibility.of(sourceVisibleAt),
       blameField,
       blameIdentityField,
       blameDecorations,
@@ -134,6 +156,7 @@ test("blame decorations omit the ghost on the final unrevealed table row", () =>
           throw new Error("not mounted");
         },
       }),
+      sourceVisibility.of(sourceVisibleAt),
       blameField,
       blameIdentityField,
       blameDecorations,

@@ -1,6 +1,6 @@
 import { bindCaller } from "../../kernel";
 import { pointerSelectionTracking } from "../../webview/ui/pointer-selection";
-import { fenceGuardSelectionSupport } from "../../webview/ui/markdown-widget";
+import { fenceGuardSelectionSupport } from "../../webview/ui/fence-click-guard";
 import type { CallerBound } from "../../kernel";
 import type { LivePreview } from "./api";
 import { clickPositionSync } from "./click-position";
@@ -30,6 +30,7 @@ import {
   renderedWidgets,
   foldedRanges,
 } from "./motion";
+import { sourceVisibleAt } from "./source-visibility";
 export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   name: "livePreview",
   inject: { required: ["editor", "commands", "render"] },
@@ -73,6 +74,7 @@ function registerEngine(
     verticalPosition: verticalBlock,
     renderedWidgets,
     foldedRanges,
+    sourceVisibleAt,
     block(renderer: Parameters<typeof blockRenderers.of>[0]) {
       return ctx.editor.extend(blockRenderers.of(renderer));
     },

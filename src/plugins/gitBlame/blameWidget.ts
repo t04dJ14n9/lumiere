@@ -3,7 +3,7 @@ import type { EditorState } from "@codemirror/state";
 import { Decoration, EditorView, WidgetType } from "@codemirror/view";
 import type { DecorationSet } from "@codemirror/view";
 import type { GitIdentity } from "../../shared/git-blame";
-import { placePreview } from "../footnotes/preview-position";
+import { placePreview } from "../../webview/ui/popover-position";
 import { blameField } from "./state";
 import { formatBlameGhost, formatBlameTooltip } from "./format";
 import { canPaintBlameAt } from "./paintable";

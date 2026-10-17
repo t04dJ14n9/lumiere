@@ -133,7 +133,7 @@ test("widget is decorative plain text, mounts tooltip host, and never captures e
   };
   const dom = widget.toDOM({
     dom: { ownerDocument },
-  } as never) as {
+  } as never) as unknown as {
     className: string;
     textContent: string;
     attributes: Record<string, string>;
@@ -156,10 +156,7 @@ test("widget is decorative plain text, mounts tooltip host, and never captures e
 
 test("quiet CSS matches VS Code blame decoration tokens and hover", () => {
   const css = readFileSync("src/plugins/gitBlame/gitBlame.css", "utf8");
-  assert.match(
-    css,
-    /--vscode-git-blame-editorDecorationForeground/,
-  );
+  assert.match(css, /--vscode-git-blame-editorDecorationForeground/);
   assert.match(css, /margin:\s*0 0 0 50px/);
   assert.doesNotMatch(css, /--mw-git-ins-line|diffEditor/);
   assert.doesNotMatch(css, /opacity:\s*0\.5/);

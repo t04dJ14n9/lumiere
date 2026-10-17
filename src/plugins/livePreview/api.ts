@@ -53,6 +53,8 @@ export interface LivePreview {
   /** Disjoint folded spans in source order, for source-line motion policy. */
   foldedRanges?(state: EditorState): readonly { from: number; to: number }[];
   verticalPosition?(state: EditorState, direction: -1 | 1): number | undefined;
+  /** False where a rendered block hides the source (inline decorations would be misplaced). */
+  sourceVisibleAt?(state: EditorState, position: number): boolean;
   visiblePosition?(
     state: EditorState,
     position: number,

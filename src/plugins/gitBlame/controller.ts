@@ -187,4 +187,3 @@ function sameBlameKey(left: BlameSource, right: BlameSource): boolean {
     left.caretLine === right.caretLine
   );
 }
-

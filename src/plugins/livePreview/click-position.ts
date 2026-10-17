@@ -1,10 +1,8 @@
 import { EditorSelection } from "@codemirror/state";
+import type { EditorState } from "@codemirror/state";
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
-import {
-  CLICK_DRAG_PX,
-  latchClickDrag,
-} from "../../webview/ui/markdown-widget";
+import { CLICK_DRAG_PX, latchClickDrag } from "../../webview/ui/block-pointer";
 
 /**
  * Map a screen point to a document offset via the browser caret API.
@@ -105,95 +103,108 @@ type Press = {
  * Skips cross-line jumps (widgets / gutters) and yields when another
  * selection owner has already moved the caret.
  */
-export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
-  let press: Press | null = null;
-  const doc = view.dom.ownerDocument;
-  const onDown = (event: MouseEvent): void => {
-    if (event.button !== 0) {
-      press = null;
-      return;
-    }
-    press = {
-      x: event.clientX,
-      y: event.clientY,
-      dragged: false,
-      candidate: null,
-    };
+class ClickPositionSync {
+  private press: Press | null = null;
+  private readonly doc: Document;
+
+  constructor(private readonly view: EditorView) {
+    this.doc = view.dom.ownerDocument;
+    view.dom.addEventListener("mousedown", this.onDown, true);
+    this.doc.addEventListener("mousemove", this.onMove, true);
+    this.doc.addEventListener("mouseup", this.onUp, true);
+  }
+
+  private readonly onDown = (event: MouseEvent): void => {
+    this.press =
+      event.button === 0
+        ? {
+            x: event.clientX,
+            y: event.clientY,
+            dragged: false,
+            candidate: null,
+          }
+        : null;
   };
-  const onMove = (event: MouseEvent): void => {
-    if (press) {
-      latchClickDrag(press, event.clientX, event.clientY, CLICK_DRAG_PX);
+
+  private readonly onMove = (event: MouseEvent): void => {
+    if (this.press) {
+      latchClickDrag(this.press, event.clientX, event.clientY, CLICK_DRAG_PX);
     }
   };
-  const applySettledCorrection = (active: Press): void => {
+
+  private readonly onUp = (): void => {
+    const active = this.press;
+    // Clear after the microtask so a same-turn select.pointer can still record
+    // a candidate, then apply only once the gesture is known to be a click.
+    queueMicrotask(() => {
+      this.press = null;
+      if (active && this.view.dom.isConnected) {
+        this.applySettledCorrection(active);
+      }
+    });
+  };
+
+  private applySettledCorrection(active: Press): void {
+    const selection = this.view.state.selection.main;
     if (
+      !active.candidate ||
       !shouldApplySettledPointerCorrection({
         dragged: active.dragged,
         candidate: active.candidate,
-        currentEmpty: view.state.selection.main.empty,
-        currentHead: view.state.selection.main.head,
-        currentDoc: view.state.doc,
+        currentEmpty: selection.empty,
+        currentHead: selection.head,
+        currentDoc: this.view.state.doc,
       })
     ) {
       return;
     }
-    const next = active.candidate!.domPos;
-    view.dispatch({
-      selection: EditorSelection.cursor(next),
+    this.view.dispatch({
+      selection: EditorSelection.cursor(active.candidate.domPos),
       scrollIntoView: false,
     });
-  };
-  const onUp = (): void => {
-    const active = press;
-    // Clear after the microtask so a same-turn select.pointer can still record
-    // a candidate, then apply only once the gesture is known to be a click.
-    queueMicrotask(() => {
-      press = null;
-      if (!active || !view.dom.isConnected) {
-        return;
-      }
-      applySettledCorrection(active);
+  }
+
+  update(update: ViewUpdate): void {
+    const active = this.press;
+    if (
+      !active ||
+      active.dragged ||
+      !update.selectionSet ||
+      !update.transactions.some((tr) => tr.isUserEvent("select.pointer"))
+    ) {
+      return;
+    }
+    // Record only — never dispatch here. CM mouse-selection still owns the
+    // mousedown anchor until release; correcting early makes a later drag
+    // snap back to the uncorrected offset.
+    active.candidate = this.recordCandidate(update.state, active);
+  }
+
+  private recordCandidate(
+    state: EditorState,
+    active: Press,
+  ): PointerClickCandidate | null {
+    if (!state.selection.main.empty) {
+      return null;
+    }
+    const head = state.selection.main.head;
+    const domPos = domCaretPosition(this.view, {
+      clientX: active.x,
+      clientY: active.y,
     });
-  };
-  view.dom.addEventListener("mousedown", onDown, true);
-  doc.addEventListener("mousemove", onMove, true);
-  doc.addEventListener("mouseup", onUp, true);
-  return {
-    update(update: ViewUpdate): void {
-      const active = press;
-      if (
-        !active ||
-        active.dragged ||
-        !update.selectionSet ||
-        !update.transactions.some((tr) => tr.isUserEvent("select.pointer"))
-      ) {
-        return;
-      }
-      // Record only — never dispatch here. CM mouse-selection still owns the
-      // mousedown anchor until release; correcting early makes a later drag
-      // snap back to the uncorrected offset.
-      if (!update.state.selection.main.empty) {
-        active.candidate = null;
-        return;
-      }
-      const head = update.state.selection.main.head;
-      const domPos = domCaretPosition(view, {
-        clientX: active.x,
-        clientY: active.y,
-      });
-      if (domPos === undefined) {
-        active.candidate = null;
-        return;
-      }
-      const sameLine =
-        update.state.doc.lineAt(domPos).number ===
-        update.state.doc.lineAt(head).number;
-      active.candidate = { head, domPos, sameLine, doc: update.state.doc };
-    },
-    destroy(): void {
-      view.dom.removeEventListener("mousedown", onDown, true);
-      doc.removeEventListener("mousemove", onMove, true);
-      doc.removeEventListener("mouseup", onUp, true);
-    },
-  };
-});
+    if (domPos === undefined) {
+      return null;
+    }
+    const sameLine =
+      state.doc.lineAt(domPos).number === state.doc.lineAt(head).number;
+    return { head, domPos, sameLine, doc: state.doc };
+  }
+
+  destroy(): void {
+    this.view.dom.removeEventListener("mousedown", this.onDown, true);
+    this.doc.removeEventListener("mousemove", this.onMove, true);
+    this.doc.removeEventListener("mouseup", this.onUp, true);
+  }
+}
+
+export const clickPositionSync = ViewPlugin.fromClass(ClickPositionSync);

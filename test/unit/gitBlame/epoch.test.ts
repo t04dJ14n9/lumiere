@@ -96,7 +96,8 @@ function harness() {
       // Same-line column nudge unlocks only-after-caret-move without line change.
       const line = state.doc.lineAt(state.selection.main.head);
       const head = state.selection.main.head;
-      const next = head <= line.from ? Math.min(line.to, line.from + 1) : line.from;
+      const next =
+        head <= line.from ? Math.min(line.to, line.from + 1) : line.from;
       state = state.update({ selection: { anchor: next } }).state;
       controller.update();
     },
@@ -135,7 +136,6 @@ function harness() {
     },
   };
 }
-
 
 test("no ghost until a real caret move (open/restored caret stays quiet)", async () => {
   const h = harness();

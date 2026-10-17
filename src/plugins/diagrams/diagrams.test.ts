@@ -16,4 +16,3 @@ test("diagrams reveal source on double-click, not single-click", () => {
   const src = readFileSync(join(dir, "webview.ts"), "utf8");
   assert.match(src, /new MarkdownBlock\(block, ctx\.render, "dblclick"\)/);
 });
-

@@ -1,7 +1,7 @@
 import { EditorView, WidgetType } from "@codemirror/view";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type { RenderPass, RenderService } from "../render/api";
-import { placePreview } from "./preview-position";
+import { placePreview } from "../../webview/ui/popover-position";
 /**
  * The text a reference shows: its number in order of first reference, as
  * in a LaTeX paper. Named labels are numbered too.
