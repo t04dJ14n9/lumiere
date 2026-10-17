@@ -49,6 +49,8 @@ export type PointerClickCandidate = {
   readonly head: number;
   readonly domPos: number;
   readonly sameLine: boolean;
+  /** Doc identity at record time; skip correction if the doc object changed. */
+  readonly doc: { readonly length: number };
 };
 
 /**
@@ -61,11 +63,14 @@ export function shouldApplySettledPointerCorrection(input: {
   candidate: PointerClickCandidate | null | undefined;
   currentEmpty: boolean;
   currentHead: number;
+  currentDoc: { readonly length: number };
 }): boolean {
   const { candidate } = input;
   if (
     input.dragged ||
     !candidate ||
+    // Intervening edit: head may be numerically unchanged while domPos is stale.
+    input.currentDoc !== candidate.doc ||
     !shouldCorrectPointerClick({
       empty: true,
       dragged: false,
@@ -108,7 +113,12 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
       press = null;
       return;
     }
-    press = { x: event.clientX, y: event.clientY, dragged: false, candidate: null };
+    press = {
+      x: event.clientX,
+      y: event.clientY,
+      dragged: false,
+      candidate: null,
+    };
   };
   const onMove = (event: MouseEvent): void => {
     if (press) {
@@ -122,6 +132,7 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
         candidate: active.candidate,
         currentEmpty: view.state.selection.main.empty,
         currentHead: view.state.selection.main.head,
+        currentDoc: view.state.doc,
       })
     ) {
       return;
@@ -177,7 +188,7 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
       const sameLine =
         update.state.doc.lineAt(domPos).number ===
         update.state.doc.lineAt(head).number;
-      active.candidate = { head, domPos, sameLine };
+      active.candidate = { head, domPos, sameLine, doc: update.state.doc };
     },
     destroy(): void {
       view.dom.removeEventListener("mousedown", onDown, true);

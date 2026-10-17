@@ -410,6 +410,18 @@ export function shouldRestoreFenceClick(input: {
 }
 
 /**
+ * Whether this release invocation owns fenceGuardSelection clear/consume.
+ * `onRelease` is registered on both window and document; the first mouseup
+ * takePress() wins and queues restore. The duplicate sees null and must
+ * return without clearing — otherwise the microtask reads a wiped field.
+ */
+export function ownsFenceGuardRelease(
+  active: FenceGuardPress | null,
+): active is FenceGuardPress {
+  return active !== null;
+}
+
+/**
  * Selection to restore after a plain fence-margin click.
  *
  * Prefer a selection already mapped through intervening changes (the
@@ -613,6 +625,10 @@ function bindFenceClickGuard(
   );
   const onRelease = (event: Event): void => {
     const active = takePress();
+    // Duplicate mouseup (window + document): do not clear shared mapped field.
+    if (!ownsFenceGuardRelease(active)) {
+      return;
+    }
     if (
       !(event instanceof MouseEvent) ||
       event.type !== "mouseup" ||
@@ -621,8 +637,7 @@ function bindFenceClickGuard(
         button: event.button,
         modified:
           event.shiftKey || event.metaKey || event.ctrlKey || event.altKey,
-      }) ||
-      !active
+      })
     ) {
       clearFenceGuardSelection(view);
       return;

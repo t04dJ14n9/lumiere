@@ -11,6 +11,7 @@ import {
   latchClickDrag,
   liveFenceOffsets,
   markdownBlockIgnoresEventKind,
+  ownsFenceGuardRelease,
   resolveFenceGuardSelection,
   setFenceGuardSelectionEffect,
   shouldGuardFenceMouseDown,
@@ -358,7 +359,6 @@ test("fence click guard resolves live offsets from the shell, not captured from/
   );
 });
 
-
 test("fence restore skips when doc identity changed and no mapped selection", () => {
   const savedDoc = { length: 100 };
   const currentDoc = { length: 110 };
@@ -430,4 +430,24 @@ test("fence click guard arms mapped selection field and resolves via doc identit
   assert.match(widgetSrc, /fenceGuardSelection/);
   assert.match(widgetSrc, /resolveFenceGuardSelection/);
   assert.match(widgetSrc, /armFenceGuardSelection/);
+  assert.match(widgetSrc, /ownsFenceGuardRelease/);
+});
+
+test("duplicate mouseup without release ownership does not clear mapped selection", () => {
+  // Second window/document mouseup: takePress already null — must not clear.
+  assert.equal(ownsFenceGuardRelease(null), false);
+  const press: FenceGuardPress = {
+    x: 0,
+    y: 0,
+    dragged: false,
+    selection: EditorSelection.single(5),
+    doc: { length: 10 },
+  };
+  assert.equal(ownsFenceGuardRelease(press), true);
+  // Owner path still clears on failed restore predicates; only null skips clear.
+  assert.match(widgetSrc, /if \(!ownsFenceGuardRelease\(active\)\)/);
+  assert.match(
+    widgetSrc,
+    /if \(!ownsFenceGuardRelease\(active\)\) \{\s*return;/s,
+  );
 });
