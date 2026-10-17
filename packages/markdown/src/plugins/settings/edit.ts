@@ -1,9 +1,9 @@
 import type {
   ContributedSetting,
-  HostViews,
+  Dialogs,
   SettingsAccess,
   SettingTarget,
-} from "../../shared/runtime";
+} from "../../shared/host";
 import {
   checkNumberText,
   editKind,
@@ -20,7 +20,7 @@ export const where: Record<SettingTarget, string> = {
 /** What editing a setting needs from the window. */
 export interface Editing {
   settings: SettingsAccess;
-  views: HostViews;
+  dialogs: Pick<Dialogs, "pick" | "input">;
   /** The note whose folder scope applies, if one is open. */
   resource(): string | undefined;
   inform(message: string): void;
@@ -103,7 +103,7 @@ async function editChoice(
 ): Promise<void> {
   const { schema } = setting;
   const values = schema.enum ?? [];
-  const picked = await editing.views.pick({
+  const picked = await editing.dialogs.pick({
     placeholder: relativeKey(setting.key),
     items: (query) =>
       values
@@ -129,7 +129,7 @@ export function askNumber(
   current: unknown,
   prompt: string,
 ): Promise<string | undefined> {
-  return editing.views.input({
+  return editing.dialogs.input({
     prompt,
     value: typeof current === "number" ? String(current) : "",
     validate: (text) => checkNumberText(text, setting.schema),
@@ -164,7 +164,7 @@ async function editText(
   current: unknown,
   write: Write,
 ): Promise<void> {
-  const typed = await editing.views.input({
+  const typed = await editing.dialogs.input({
     prompt: key,
     value: typeof current === "string" ? current : "",
     validate: () => undefined,

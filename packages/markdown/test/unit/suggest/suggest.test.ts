@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
@@ -14,8 +15,8 @@ import { metadata } from "../../../src/markdown/metadata";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import { createRoot } from "@workshop/core";
 import { suggestHost } from "../../../src/plugins/suggest/host";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
-import type { PanelShell } from "../../../src/shared/runtime";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
+import type { PanelShell } from "../../../src/shared/host";
 import { rpcPair } from "../../support/rpc-pair";
 
 function context(doc: string) {
@@ -152,14 +153,16 @@ test("suggest host enforces source feature switches and disposes RPC handlers", 
   let links = true;
   root.provide("rpc", pair.host);
   root.provide("vault", index());
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      config: () => ({
-        preset: "obsidian",
-        mode: "livePreview",
-        features: { links: { enabled: links, config: {} } },
-      }),
+  provideHostServices(
+    root,
+    fakeHost({
+      settings: {
+        forNote: () => ({
+          preset: "obsidian",
+          mode: "livePreview",
+          features: { links: { enabled: links, config: {} } },
+        }),
+      },
     }),
   );
   root.plugin(suggestHost, {

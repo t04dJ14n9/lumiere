@@ -1,4 +1,5 @@
-import type { PanelShell } from "../../../src/shared/runtime";
+import { provideHostServices } from "../../../src/shared/host";
+import type { PanelShell } from "../../../src/shared/host";
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import { build } from "esbuild";
@@ -107,7 +108,7 @@ test("search host cancels work on disable and registers again on enable", async 
   const { protocol } = await import("../../../src/plugins/search/protocol");
   const { MemoryVaultIndex } =
     await import("../../../src/plugins/vault/memory-index");
-  const { fakeWorkbench } = await import("../../support/vscode-fake");
+  const { fakeHost } = await import("../../support/vscode-fake");
   const { rpcPair } = await import("../../support/rpc-pair");
   const pair = rpcPair();
   const root = createRoot();
@@ -138,7 +139,10 @@ test("search host cancels work on disable and registers again on enable", async 
     registerLinkPolicy: () => () => {},
     invalidateLinkResolution() {},
   });
-  root.provide("workshop", fakeWorkbench({ workerPath: () => path }));
+  provideHostServices(
+    root,
+    fakeHost({ extensions: { workerPath: () => path } }),
+  );
   const start = () =>
     root.plugin(searchHost, {
       panel: {} as PanelShell,

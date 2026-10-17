@@ -5,7 +5,7 @@ import type {
   Navigation,
   NavigationIntent,
   PanelShell,
-} from "../../shared/runtime";
+} from "../../shared/host";
 import type { VaultIndex } from "../vault/api";
 import type {} from "./api";
 import type {} from "../resources/api";
@@ -17,7 +17,16 @@ import {
 import { externalScheme, linkParts, openedVaultTarget } from "./target";
 export const linksHost: Plugin<{ panel: PanelShell }> = {
   name: "links",
-  inject: { required: ["rpc", "workshop", "vault", "resources"] },
+  inject: {
+    required: [
+      "rpc",
+      "dialogs",
+      "settings",
+      "navigation",
+      "vault",
+      "resources",
+    ],
+  },
   apply(ctx, { panel }) {
     registerNavigation(ctx, panel);
     registerUnresolvedLinks(ctx, panel);
@@ -80,10 +89,7 @@ async function openLink(
   request: Infer<typeof requestSchema>,
   token: Cancellation,
 ): Promise<boolean> {
-  const navigation = ctx.workshop.navigation;
-  if (!navigation) {
-    throw new Error("Navigation unavailable");
-  }
+  const navigation = ctx.navigation;
   const intent = navigation.begin?.();
   const stop = token.onCancel(() => intent?.token.cancel());
   try {
@@ -125,10 +131,7 @@ async function openInternal(
   request: Infer<typeof requestSchema> & { source: string },
   intent?: NavigationIntent,
 ): Promise<boolean> {
-  const navigation = ctx.workshop.navigation;
-  if (!navigation) {
-    throw new Error("Navigation unavailable");
-  }
+  const navigation = ctx.navigation;
   const sourceUri = request.source;
   const { path, fragment } = linkParts(request.href);
   const root = ctx.vault.root;
@@ -143,11 +146,11 @@ async function openInternal(
       path,
       create: request.wiki,
       newNoteFolder: String(
-        ctx.workshop.config(panel.document).features?.links?.config
+        ctx.settings.forNote(panel.document).features?.links?.config
           .newNoteFolder ?? "",
       ),
       folderNote: String(
-        ctx.workshop.config(panel.document).features?.links?.config
+        ctx.settings.forNote(panel.document).features?.links?.config
           .folderNote ?? "",
       ),
     });

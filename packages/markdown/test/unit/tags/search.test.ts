@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { metadata } from "../../../src/markdown/metadata";
@@ -7,11 +8,12 @@ import { createRoot } from "@workshop/core";
 import { tagsHost } from "../../../src/plugins/tags/host";
 import { protocol } from "../../../src/plugins/tags/protocol";
 import type {
-  HostViews,
+  Dialogs,
   Navigation,
   PanelShell,
-} from "../../../src/shared/runtime";
-import { fakeWorkbench } from "../../support/vscode-fake";
+  PickItem,
+} from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import { rpcPair } from "../../support/rpc-pair";
 
 function index() {
@@ -58,20 +60,21 @@ test("tag RPC opens a matching indexed note and unregisters when disabled", asyn
   const pair = rpcPair();
   const root = createRoot();
   const opened: unknown[][] = [];
-  const views = {
-    pick: async (options) => ({ item: options.items("")[0], query: "" }),
-  } as HostViews;
   root.provide("rpc", pair.host);
   root.provide("vault", index());
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      views,
+  provideHostServices(
+    root,
+    fakeHost({
       navigation: {
         open: async (...args) => {
           opened.push(args);
         },
       } as Navigation,
+      dialogs: {
+        pick: (async (options: {
+          items(query: string): readonly PickItem<unknown>[];
+        }) => ({ item: options.items("")[0], query: "" })) as Dialogs["pick"],
+      },
     }),
   );
   const start = () => root.plugin(tagsHost, { panel: {} as PanelShell });

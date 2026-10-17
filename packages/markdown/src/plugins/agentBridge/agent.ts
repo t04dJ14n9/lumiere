@@ -4,7 +4,7 @@ import type {
   SourceSelection,
   EditorPanel,
 } from "../editor/api";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import { RpcError, type Cancellation } from "../../shared/rpc/lifecycle";
 import { agentPayload, agentReferenceText } from "./reference";
 import { openAgentChat } from "./chat";
@@ -25,7 +25,7 @@ export class AgentHandoff {
     private readonly options: {
       editors: Editors;
       selections: Selections;
-      workshop: Workshop;
+      host: HostServices;
       beforeSave(panel: EditorPanel): Promise<void>;
     },
   ) {}
@@ -42,7 +42,7 @@ export class AgentHandoff {
     return Object.freeze({
       text: agentReferenceText(
         uri,
-        this.options.workshop.workspaceFolders?.() ?? [],
+        this.options.host.workspace.folders() ?? [],
         selection.startLine,
         selection.endLine,
       ),
@@ -69,7 +69,7 @@ export class AgentHandoff {
     }
     this.assertActive(panel, token);
     if (panel.document.isDirty || panel.document.isUntitled) {
-      const choice = await this.options.workshop.views?.ask(
+      const choice = await this.options.host.dialogs.ask(
         "This note has unsaved changes. Save it so the reference matches the file?",
         ["Save and Copy", "Copy Text Only", "Cancel"],
       );
@@ -95,17 +95,17 @@ export class AgentHandoff {
     payload: string,
     reference: AgentReference,
   ): Promise<void> {
-    const { workshop } = this.options;
-    const environment = await workshop.agentEnvironment?.();
+    const { host } = this.options;
+    const environment = await host.agentHost.environment();
     const target = await openAgentChat(
-      (command, ...args) => workshop.execute(command, ...args),
-      (text) => workshop.clipboard.write(text),
+      (command, ...args) => host.hostCommands.execute(command, ...args),
+      (text) => host.clipboard.write(text),
       payload,
       {
         ...(environment && { environment }),
-        ...(workshop.writeScratchFile && {
+        ...(host.agentHost.writeScratchFile && {
           writeScratchFile: (text: string) =>
-            workshop.writeScratchFile!(
+            host.agentHost.writeScratchFile(
               scratchName(reference.text),
               scratchText(text, reference),
             ),
@@ -113,22 +113,22 @@ export class AgentHandoff {
       },
     );
     if (target === "chatWithClipboard") {
-      workshop.inform?.("Link and passage copied: paste them into the chat.");
+      host.dialogs.inform("Link and passage copied: paste them into the chat.");
     }
     if (target === "codex") {
-      workshop.inform?.(
+      host.dialogs.inform(
         "Link and passage copied and attached in Codex: type your question.",
       );
     }
     if (target === "clipboard") {
-      workshop.inform?.(
+      host.dialogs.inform(
         "Link and passage copied: paste them into your agent's chat.",
       );
     }
   }
   private async copyText(selection: SourceSelection): Promise<boolean> {
     this.options.selections.validate(selection);
-    await this.options.workshop.clipboard.write(selection.text);
+    await this.options.host.clipboard.write(selection.text);
     return true;
   }
   private async save(panel: EditorPanel): Promise<void> {
@@ -141,7 +141,7 @@ export class AgentHandoff {
     });
   }
   private assertEnabled(panel: EditorPanel): void {
-    const config = this.options.workshop.config(panel.document);
+    const config = this.options.host.settings.forNote(panel.document);
     if (
       !this.live ||
       config.preset !== "obsidian" ||

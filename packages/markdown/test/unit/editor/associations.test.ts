@@ -4,7 +4,7 @@ import {
   useForMarkdownInWorkspace,
   withMarkdownWorkshop,
 } from "../../../src/plugins/editor/associations";
-import { fakeWorkbench } from "../../support/vscode-fake";
+import { fakeHost } from "../../support/vscode-fake";
 
 test("Markdown patterns route to this editor; other associations stay", () => {
   assert.deepEqual(
@@ -23,32 +23,32 @@ test("Markdown patterns route to this editor; other associations stay", () => {
   }
 });
 
-function harness(initial: unknown, available = true) {
+function harness(initial: unknown) {
   let value = initial;
   const writes: unknown[] = [];
   const messages: string[] = [];
   const errors: string[] = [];
-  const workshop = fakeWorkbench({
-    error: (message) => errors.push(message),
-    inform: (message) => messages.push(message),
-    ...(available
-      ? {
-          editorAssociations: {
-            read: () => value,
-            write: async (next) => {
-              writes.push(next);
-              value = next;
-            },
-          },
-        }
-      : {}),
+  const host = fakeHost({
+    dialogs: {
+      error: (message) => errors.push(message),
+      inform: (message) => messages.push(message),
+    },
+    settings: {
+      editorAssociations: {
+        read: () => value,
+        write: async (next) => {
+          writes.push(next);
+          value = next as typeof value;
+        },
+      },
+    },
   });
-  return { workshop, writes, messages, errors };
+  return { host, writes, messages, errors };
 }
 
 test("the workspace command writes the workspace associations once", async () => {
   const h = harness({ "*.pdf": "pdf.preview" });
-  await useForMarkdownInWorkspace(h.workshop);
+  await useForMarkdownInWorkspace(h.host);
   assert.deepEqual(h.writes, [
     {
       "*.pdf": "pdf.preview",
@@ -56,7 +56,7 @@ test("the workspace command writes the workspace associations once", async () =>
       "*.markdown": "markdownWorkshop.editor",
     },
   ]);
-  await useForMarkdownInWorkspace(h.workshop);
+  await useForMarkdownInWorkspace(h.host);
   assert.equal(h.writes.length, 1, "an existing association is not rewritten");
   assert.equal(h.messages.length, 2);
   assert.match(h.messages[1]!, /already/);
@@ -64,8 +64,8 @@ test("the workspace command writes the workspace associations once", async () =>
 });
 
 test("without a workspace there is nothing to write", async () => {
-  for (const h of [harness(undefined), harness({}, false)]) {
-    await useForMarkdownInWorkspace(h.workshop);
+  for (const h of [harness(undefined)]) {
+    await useForMarkdownInWorkspace(h.host);
     assert.deepEqual(h.writes, []);
     assert.equal(h.errors.length, 1);
   }

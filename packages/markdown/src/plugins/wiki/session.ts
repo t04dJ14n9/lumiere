@@ -31,21 +31,18 @@ export async function reloadWiki(
   state: WikiSession,
 ): Promise<void> {
   const stamp = ++state.generation;
-  const files = ctx.workshop.files;
+  const files = ctx.workspace.files;
   if (!files || typeof files.readText !== "function") {
     return;
   }
-  const loaded = await loadProjects(
-    asStrings(ctx.workshop.workspaceFolders?.()),
-    files,
-  );
+  const loaded = await loadProjects(asStrings(ctx.workspace.folders()), files);
   if (!stillCurrent(ctx, state, stamp)) {
     return;
   }
   const notes = collectOpenNotes({
     panels: ctx.editors?.all(),
-    activeUri: ctx.workshop.views?.activeNote(),
-    read: (uri) => ctx.workshop.views?.documentText(uri),
+    activeUri: ctx.activeEditor.note(),
+    read: (uri) => ctx.hostDocuments.text(uri),
   });
   const problems = mergeDiagnostics([
     ...loaded.problems,
@@ -56,7 +53,7 @@ export async function reloadWiki(
   }
   state.projects = loaded.projects;
   state.problems = problems;
-  ctx.workshop.diagnostics?.replaceAll("wiki", problems);
+  ctx.workspace.diagnostics.replaceAll("wiki", problems);
 }
 
 export function mergeDiagnostics(

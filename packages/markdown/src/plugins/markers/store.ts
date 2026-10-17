@@ -1,5 +1,5 @@
 import { Schema, type Infer } from "@workshop/core";
-import type { HostDocument, SourceEdit } from "../../shared/runtime";
+import type { HostDocument, SourceEdit } from "../../shared/host";
 import type { EditorPanel } from "../editor/api";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import { RpcError } from "../../shared/rpc/lifecycle";

@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -5,10 +6,10 @@ import { Session } from "../../../src/plugins/document/session";
 import { saveDocument } from "../../../src/plugins/document/save";
 import { documentHost } from "../../../src/plugins/document/host";
 import type { Documents } from "../../../src/plugins/document/api";
-import type { HostDocument } from "../../../src/shared/runtime";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import type { HostDocument } from "../../../src/shared/host";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 test("document actions serialize across panels and a rejected action does not poison later actions", async () => {
-  const session = new Session(fakeDocument(), fakeWorkbench());
+  const session = new Session(fakeDocument(), fakeHost());
   const order: string[] = [];
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
@@ -34,14 +35,16 @@ test("document actions serialize across panels and a rejected action does not po
 });
 test("a failed final document flush rejects native save despite event listener error isolation", async () => {
   let willSave!: (document: HostDocument) => Promise<void>;
-  const workshop = fakeWorkbench({
-    onWillSave(listener) {
-      willSave = listener;
-      return () => {};
+  const host = fakeHost({
+    hostDocuments: {
+      onWillSave(listener) {
+        willSave = listener;
+        return () => {};
+      },
     },
   });
   const root = createRoot();
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   root.plugin(documentHost);
   await root.settled();
   const doc = fakeDocument();
@@ -55,13 +58,15 @@ test("a failed final document flush rejects native save despite event listener e
 test("overlapping saves wait for the actual saved event and release their listener", async () => {
   let saved!: (document: HostDocument) => void;
   let listeners = 0;
-  const workshop = fakeWorkbench({
-    onSave(listener) {
-      listeners++;
-      saved = listener;
-      return () => {
-        listeners--;
-      };
+  const host = fakeHost({
+    hostDocuments: {
+      onSave(listener) {
+        listeners++;
+        saved = listener;
+        return () => {
+          listeners--;
+        };
+      },
     },
   });
   const doc = fakeDocument({
@@ -70,17 +75,19 @@ test("overlapping saves wait for the actual saved event and release their listen
       return false;
     },
   });
-  assert.equal(await saveDocument(doc, workshop), true);
+  assert.equal(await saveDocument(doc, host), true);
   assert.equal(listeners, 0);
 });
 test("save failure releases subscriptions without declaring the document saved", async () => {
   let listeners = 0;
-  const workshop = fakeWorkbench({
-    onSave() {
-      listeners++;
-      return () => {
-        listeners--;
-      };
+  const host = fakeHost({
+    hostDocuments: {
+      onSave() {
+        listeners++;
+        return () => {
+          listeners--;
+        };
+      },
     },
   });
   await assert.rejects(
@@ -90,7 +97,7 @@ test("save failure releases subscriptions without declaring the document saved",
           throw new Error("disk error");
         },
       }),
-      workshop,
+      host,
     ),
     /disk error/,
   );

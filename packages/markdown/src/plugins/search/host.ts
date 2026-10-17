@@ -1,16 +1,16 @@
 import type { Plugin } from "@workshop/core";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import type {} from "../vault/api";
 import { protocol } from "./protocol";
 import { SearchWorker } from "./runner";
 import { searchVault } from "./query";
 export const searchHost: Plugin<{ panel: PanelShell }> = {
   name: "search",
-  inject: { required: ["rpc", "vault", "vaults", "workshop"] },
+  inject: { required: ["rpc", "vault", "vaults", "extensions"] },
   apply(ctx) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "query", async (request, token) => {
-        const path = ctx.workshop.workerPath?.("search");
+        const path = ctx.extensions.workerPath("search");
         if (!path) {
           throw new Error("Search worker is unavailable");
         }

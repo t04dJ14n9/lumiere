@@ -1,5 +1,5 @@
 import type { Disposer, Plugin } from "@workshop/core";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import type { EditorPanel, Editors } from "../editor/api";
 import type {} from "../editor/api";
 import { protocol } from "./protocol";
@@ -9,20 +9,26 @@ import { titleFromSource } from "./title";
 /** Root host half owns independent panel transfers across native recreation. */
 export const inlineTitleHost: Plugin = {
   name: "inlineTitle",
-  inject: { required: ["editors", "workshop"] },
+  inject: {
+    required: [
+      "editors",
+      "hostDocuments",
+      "hostCommands",
+      "dialogs",
+      "settings",
+    ],
+  },
   apply(ctx) {
     const titles = new InlineTitles({
       editors: ctx.editors,
-      workshop: ctx.workshop,
+      host: ctx,
       warn: (error) => ctx.logger.warn("Title view transfer failed", error),
     });
     ctx.effect(() => () => titles.dispose());
     ctx.on("editor/opened", () => titles.reconcile());
     ctx.on("editor/closed", (panel) => titles.closed(panel.id));
     ctx.on("editor/ready", (panel) => titles.ready(panel.id));
-    if (ctx.workshop.onConfiguration) {
-      ctx.effect(() => ctx.workshop.onConfiguration!(() => titles.reconcile()));
-    }
+    ctx.effect(() => ctx.settings.onChange(() => titles.reconcile()));
     titles.reconcile();
   },
 };
@@ -34,18 +40,18 @@ class InlineTitles {
   constructor(
     private readonly options: {
       editors: Editors;
-      workshop: Workshop;
+      host: HostServices;
       warn(error: unknown): void;
     },
   ) {
-    this.renames = new TitleRenames(options.editors, options.workshop, () =>
+    this.renames = new TitleRenames(options.editors, options.host, () =>
       this.restoreReady(),
     );
   }
 
   reconcile(): void {
     for (const panel of this.options.editors.all()) {
-      const config = this.options.workshop.config(panel.document);
+      const config = this.options.host.settings.forNote(panel.document);
       const enabled =
         config.preset === "obsidian" &&
         (config.features?.inlineTitle?.enabled ?? true);
@@ -75,7 +81,7 @@ class InlineTitles {
             error instanceof Error
               ? error.message
               : "The note could not be renamed.";
-          this.options.workshop.error(message);
+          this.options.host.dialogs.error(message);
           return {
             title: titleFromSource(panel.document.uri),
             error: message.slice(0, 4096),

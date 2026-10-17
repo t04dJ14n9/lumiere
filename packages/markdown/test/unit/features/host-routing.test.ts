@@ -1,9 +1,10 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { commandsHost } from "../../../src/plugins/commands/host";
 import { contributionId } from "../../../src/shared/setting-schema";
-import { fakeWorkbench, fakeDocument } from "../../support/vscode-fake";
+import { fakeHost, fakeDocument } from "../../support/vscode-fake";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
 import folding from "../../../src/plugins/folding/manifest";
 
@@ -36,26 +37,30 @@ test("host feature commands disappear when disabled and target the current panel
     },
     async restore() {},
   });
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      command(id, run) {
-        assert.equal(commands.has(id), false);
-        commands.set(id, run);
-        return () => {
-          commands.delete(id);
-        };
+  provideHostServices(
+    root,
+    fakeHost({
+      hostCommands: {
+        register(id, run) {
+          assert.equal(commands.has(id), false);
+          commands.set(id, run);
+          return () => {
+            commands.delete(id);
+          };
+        },
       },
-      config: () => ({
-        preset: "obsidian",
-        mode: "source",
-        features: { folding: { enabled, config: {} } },
-      }),
-      onConfiguration(listener) {
-        changed = listener;
-        return () => {
-          changed = () => {};
-        };
+      settings: {
+        forNote: () => ({
+          preset: "obsidian",
+          mode: "source",
+          features: { folding: { enabled, config: {} } },
+        }),
+        onChange(listener) {
+          changed = listener;
+          return () => {
+            changed = () => {};
+          };
+        },
       },
     }),
   );

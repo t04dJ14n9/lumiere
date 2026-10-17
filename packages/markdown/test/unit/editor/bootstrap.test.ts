@@ -3,8 +3,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { RuntimePluginState } from "../../../src/shared/plugin-state";
 import { bootstrap } from "../../../src/host/bootstrap";
-import type { PanelShell } from "../../../src/shared/runtime";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import type { PanelShell } from "../../../src/shared/host";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 import { fakeViews } from "../views/fakes";
 import { MemoryFileSystem, memorySystem, wait } from "../vault/memory-fs";
 
@@ -47,20 +47,22 @@ function shell(uri: string): PanelShell {
 test("the real host wiring starts every window and panel plugin", async () => {
   {
     let open: (panel: PanelShell) => void = () => {};
-    const workshop = fakeWorkbench({
-      config: () => ({ preset: "obsidian", mode: "source" }),
-      registerEditor: (_provider, callback) => {
-        open = callback;
-        return () => {};
+    const host = fakeHost({
+      settings: { forNote: () => ({ preset: "obsidian", mode: "source" }) },
+      customEditors: {
+        register: (_provider, callback) => {
+          open = callback;
+          return () => {};
+        },
       },
     });
-    workshop.views = fakeViews().views;
-    workshop.storage = {
+    host.views = fakeViews().views;
+    host.storage = {
       get: (_key, fallback) => fallback,
       update: async () => {},
     };
     const fs = new MemoryFileSystem({ "A.md": "[[B]]", "B.md": "" });
-    const root = await bootstrap(workshop, memorySystem(fs).value);
+    const root = await bootstrap(host, memorySystem(fs).value);
     await wait();
     assert.deepEqual(stalled(root.service("pluginStates")?.list() ?? []), []);
 
@@ -82,25 +84,27 @@ test("the editor provider registers once, so an editor opened during activation 
   let registrations = 0;
   let unregistrations = 0;
   let disposed = false;
-  const workshop = fakeWorkbench({
-    config: () => ({ preset: "obsidian", mode: "source" }),
-    registerEditor: (provider, open) => {
-      registrations++;
-      // The adapter learns everything about the editor from its provider.
-      assert.equal(provider, MARKDOWN_EDITOR);
-      const opened = shell("memory:///vault/A.md");
-      opened.dispose = () => {
-        disposed = true;
-      };
-      open(opened);
-      return () => {
-        unregistrations++;
-      };
+  const host = fakeHost({
+    settings: { forNote: () => ({ preset: "obsidian", mode: "source" }) },
+    customEditors: {
+      register: (provider, open) => {
+        registrations++;
+        // The adapter learns everything about the editor from its provider.
+        assert.equal(provider, MARKDOWN_EDITOR);
+        const opened = shell("memory:///vault/A.md");
+        opened.dispose = () => {
+          disposed = true;
+        };
+        open(opened);
+        return () => {
+          unregistrations++;
+        };
+      },
     },
   });
-  workshop.views = fakeViews().views;
+  host.views = fakeViews().views;
   const fs = new MemoryFileSystem({ "A.md": "" });
-  const root = await bootstrap(workshop, memorySystem(fs).value);
+  const root = await bootstrap(host, memorySystem(fs).value);
   await wait();
   assert.equal(registrations, 1);
   assert.equal(unregistrations, 0);

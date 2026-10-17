@@ -1,5 +1,5 @@
 import type { Logger } from "@workshop/core";
-import type { TreeHandle } from "../../shared/runtime";
+import type { TreeHandle } from "../../shared/host";
 import type { EditorPanel, Editors } from "../editor/api";
 import { protocol as editorProtocol } from "../editor/protocol";
 import type { OutlineSource } from "./tree";

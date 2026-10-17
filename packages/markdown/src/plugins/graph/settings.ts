@@ -1,4 +1,4 @@
-import type { HostViews } from "../../shared/runtime";
+import type { HostSettings } from "../../shared/host";
 import { HARD_MAX_EDGES, HARD_MAX_NODES } from "./admission";
 
 export interface GraphSettings {
@@ -10,24 +10,31 @@ export interface GraphSettings {
 }
 
 /** Window settings, clamped to the hard caps. A non-number falls back. */
-export function readGraphSettings(views: HostViews | undefined): GraphSettings {
+export function readGraphSettings(
+  settings: Pick<HostSettings, "get">,
+): GraphSettings {
   return {
     maxNodes: readNumber(
-      views,
+      settings,
       "graph.maxNodes",
       HARD_MAX_NODES,
       HARD_MAX_NODES,
     ),
     maxEdges: readNumber(
-      views,
+      settings,
       "graph.maxEdges",
       HARD_MAX_EDGES,
       HARD_MAX_EDGES,
     ),
-    mode: readChoice(views, "graph.defaultMode", ["global", "local"], "global"),
-    depth: readNumber(views, "graph.localDepth", 2, 3),
+    mode: readChoice(
+      settings,
+      "graph.defaultMode",
+      ["global", "local"],
+      "global",
+    ),
+    depth: readNumber(settings, "graph.localDepth", 2, 3),
     colorBy: readChoice(
-      views,
+      settings,
       "graph.colorBy",
       ["type", "folder", "tag"],
       "type",
@@ -36,12 +43,12 @@ export function readGraphSettings(views: HostViews | undefined): GraphSettings {
 }
 
 function readNumber(
-  views: HostViews | undefined,
+  settings: Pick<HostSettings, "get">,
   key: string,
   fallback: number,
   hard: number,
 ): number {
-  const value = views?.setting(key, fallback);
+  const value = settings.get(key, fallback);
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return fallback;
   }
@@ -49,12 +56,12 @@ function readNumber(
 }
 
 function readChoice<T extends string>(
-  views: HostViews | undefined,
+  settings: Pick<HostSettings, "get">,
   key: string,
   allowed: readonly T[],
   fallback: T,
 ): T {
-  const value = views?.setting(key, fallback);
+  const value = settings.get(key, fallback);
   for (const option of allowed) {
     if (value === option) {
       return option;

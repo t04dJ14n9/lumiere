@@ -3,7 +3,7 @@ import type {
   ContributedSetting,
   SettingsAccess,
   SettingTarget,
-} from "../shared/runtime";
+} from "../shared/host";
 
 import { SETTING_PREFIX, checkWrite } from "../shared/setting-schema";
 

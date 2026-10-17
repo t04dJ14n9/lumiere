@@ -1,5 +1,5 @@
 import type { Context, Disposer } from "@workshop/core";
-import type { NavigationTarget, PanelShell } from "../../shared/runtime";
+import type { NavigationTarget, PanelShell } from "../../shared/host";
 import { CancelToken, type Cancellation } from "../../shared/rpc/lifecycle";
 import type {} from "../editor/api";
 import { protocol } from "./protocol";
@@ -15,13 +15,13 @@ export function registerNavigation(ctx: Context, panel: PanelShell): void {
   ctx.effect(() => () => navigation.dispose());
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "missing", ({ fragment }) => {
-      ctx.workshop.inform?.(`Heading or block was not found: #${fragment}`);
+      ctx.dialogs.inform(`Heading or block was not found: #${fragment}`);
       return true;
     }),
   );
-  if (ctx.workshop.navigation) {
+  if (ctx.navigation) {
     ctx.effect(() =>
-      ctx.workshop.navigation!.registerReveal({
+      ctx.navigation!.registerReveal({
         id: panel.id,
         uri: panel.document.uri,
         active: () => panel.active(),

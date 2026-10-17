@@ -1,5 +1,5 @@
 import type { Context, Plugin } from "@workshop/core";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import { owningBundle } from "../../markdown/okf";
 import type {} from "../okfCore/api";
 import type {} from "../vault/api";
@@ -14,7 +14,7 @@ import { protocol } from "./protocol";
 /** Opens a Sources resource after host authorization. The webview never fetches it. */
 export const sourcesPropertyHost: Plugin<{ panel: PanelShell }> = {
   name: "sourcesProperty",
-  inject: { required: ["workshop", "rpc", "okf", "resources", "vaults"] },
+  inject: { required: ["hostCommands", "rpc", "okf", "resources", "vaults"] },
   apply(ctx, { panel }) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "open", async ({ resource }) => ({
@@ -44,7 +44,7 @@ async function openResource(
     live: ctx.okf.live,
   });
   if (plan.action === "external" && plan.url) {
-    await ctx.workshop.execute("vscode.open", plan.url);
+    await ctx.hostCommands.execute("vscode.open", plan.url);
     return true;
   }
   if (plan.action !== "workspace" || !plan.path) {

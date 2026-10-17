@@ -6,14 +6,24 @@ import {
 } from "../../shared/bridge/envelope";
 import { contributionId } from "../../shared/setting-schema";
 import type { BridgeWikiContext } from "../../shared/bridge/envelope";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import type { EditorPanel, SourceSelection } from "../editor/api";
 import type { BridgeCapture, MarkdownHandoff } from "./api";
 import { envelopeFromPdf, handoffFromSelection } from "./capture";
 
 export const bridgeHost: Plugin = {
   name: "bridge",
-  inject: { required: ["workshop"], optional: ["editors", "selections"] },
+  inject: {
+    required: [
+      "hostDocuments",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "workspace",
+      "agentHost",
+    ],
+    optional: ["editors", "selections"],
+  },
   apply(ctx) {
     const capture: BridgeCapture = {
       markdownSelection: (wiki) => markdownSelection(ctx, wiki),
@@ -49,13 +59,13 @@ async function markdownSelection(
       viewId: panel.id,
       selection,
       documentText: panel.document.getText(),
-      roots: roots(ctx.workshop),
+      roots: roots(ctx),
       capturedAt: new Date().toISOString(),
-      fingerprint: (text) => ctx.workshop.fingerprint(text),
+      fingerprint: (text) => ctx.hostDocuments.fingerprint(text),
       ...(wiki ? { wiki } : {}),
     });
   } catch (error) {
-    ctx.workshop.error(
+    ctx.dialogs.error(
       error instanceof Error
         ? error.message
         : "Could not build the bridge envelope.",
@@ -72,30 +82,30 @@ async function activeSelection(
   if (markdown) {
     return markdown.envelope;
   }
-  return pdfEnvelope(ctx.workshop);
+  return pdfEnvelope(ctx);
 }
 
 async function copyEnvelope(ctx: Context): Promise<void> {
   const envelope = await activeSelection(ctx);
   if (!envelope) {
-    ctx.workshop.error(
+    ctx.dialogs.error(
       "No selection to copy. Install Agent PDF Viewer to capture a PDF selection.",
     );
     return;
   }
-  await ctx.workshop.clipboard.write(JSON.stringify(envelope, null, 2));
-  ctx.workshop.inform?.("Copied the bridge envelope. No agent was started.");
+  await ctx.clipboard.write(JSON.stringify(envelope, null, 2));
+  ctx.dialogs.inform("Copied the bridge envelope. No agent was started.");
 }
 
 async function pdfEnvelope(
-  workshop: Workshop,
+  host: HostServices,
 ): Promise<MarkdownHandoff["envelope"] | undefined> {
-  const known = await workshop.agentEnvironment?.().catch(() => undefined);
+  const known = await host.agentHost.environment().catch(() => undefined);
   if (known?.commands && !known.commands.has(PDF_BRIDGE_COMMAND)) {
     return undefined;
   }
   try {
-    return envelopeFromPdf(await workshop.execute(PDF_BRIDGE_COMMAND));
+    return envelopeFromPdf(await host.hostCommands.execute(PDF_BRIDGE_COMMAND));
   } catch {
     return undefined;
   }
@@ -121,8 +131,8 @@ function isSelection(value: unknown): value is SourceSelection {
   );
 }
 
-function roots(workshop: Workshop): readonly string[] {
-  const listed = workshop.workspaceFolders?.();
+function roots(host: HostServices): readonly string[] {
+  const listed = host.workspace.folders();
   if (!Array.isArray(listed)) {
     return [];
   }
@@ -134,14 +144,10 @@ function command(
   id: string,
   run: (...args: unknown[]) => unknown,
 ): void {
-  const views = ctx.workshop.views;
-  if (!views) {
-    return;
-  }
   ctx.effect(() =>
-    views.command(id, (...args) => {
+    ctx.hostCommands.register(id, (...args) => {
       void Promise.resolve(run(...args)).catch((error: unknown) => {
-        ctx.workshop.error(
+        ctx.dialogs.error(
           error instanceof Error ? error.message : "Command failed",
         );
       });

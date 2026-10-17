@@ -4,12 +4,23 @@ import { AgentHandoff } from "./agent";
 import { protocol } from "./protocol";
 export const agentBridgeHost: Plugin = {
   name: "agentBridge",
-  inject: { required: ["editors", "selections", "workshop"] },
+  inject: {
+    required: [
+      "editors",
+      "selections",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "settings",
+      "workspace",
+      "agentHost",
+    ],
+  },
   apply(ctx) {
     const agent = new AgentHandoff({
       editors: ctx.editors,
       selections: ctx.selections,
-      workshop: ctx.workshop,
+      host: ctx,
       beforeSave: (panel) => ctx.serial("document/willSave", panel.session),
     });
     ctx.effect(() => () => agent.dispose());
@@ -22,7 +33,7 @@ function registerPanelHandlers(ctx: Context, agent: AgentHandoff): void {
     const panels = ctx.editors.all();
     for (const [id, stop] of handlers) {
       const panel = panels.find((item) => item.id === id);
-      const config = panel && ctx.workshop.config(panel.document);
+      const config = panel && ctx.settings.forNote(panel.document);
       if (
         !config ||
         config.preset !== "obsidian" ||
@@ -33,7 +44,7 @@ function registerPanelHandlers(ctx: Context, agent: AgentHandoff): void {
       }
     }
     for (const panel of panels) {
-      const config = ctx.workshop.config(panel.document);
+      const config = ctx.settings.forNote(panel.document);
       if (
         handlers.has(panel.id) ||
         config.preset !== "obsidian" ||
@@ -51,9 +62,7 @@ function registerPanelHandlers(ctx: Context, agent: AgentHandoff): void {
   };
   ctx.on("editor/opened", refresh);
   ctx.on("editor/closed", refresh);
-  if (ctx.workshop.onConfiguration) {
-    ctx.effect(() => ctx.workshop.onConfiguration!(refresh));
-  }
+  ctx.effect(() => ctx.settings.onChange(refresh));
   ctx.effect(() => () => {
     for (const stop of handlers.values()) {
       void stop();

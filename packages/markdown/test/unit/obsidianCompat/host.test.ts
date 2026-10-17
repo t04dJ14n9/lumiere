@@ -209,7 +209,8 @@ test("B2: effective editor settings inspect the originating document and obey ex
     '{"useMarkdownLinks":true,"newLinkFormat":"relative","attachmentFolderPath":"/","newFileLocation":"current","propertiesInDocument":"hidden","livePreview":false}',
   );
   await f.configuration.prepare(NOTE_A);
-  const read = () => f.workbench.config(fakeDocument({ uri: NOTE_A }));
+  const read = () =>
+    f.workbench.settings.forNote(fakeDocument({ uri: NOTE_A }));
   assert.equal(read().features?.links?.config.useWikilinks, false);
   assert.equal(read().features?.links?.config.newLinkFormat, "relative");
   assert.equal(read().features?.links?.config.newNoteFolder, ".");
@@ -319,7 +320,7 @@ test("disabling the feature removes overrides, joins work and disposes all watch
     "source",
   );
   assert.equal(
-    f.workbench.views?.setting("linkUpdates.mode", "prompt", NOTE_A),
+    f.workbench.settings.get("linkUpdates.mode", "prompt", NOTE_A),
     "always",
   );
   f.values.set("plugins.obsidianCompat.enabled", false);

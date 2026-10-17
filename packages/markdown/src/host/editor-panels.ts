@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import * as vscode from "vscode";
 import type { EditorProvider } from "../shared/editor-provider";
-import type { PanelShell } from "../shared/runtime";
+import type { PanelShell } from "../shared/host";
 import { panelIsActive } from "./active-panel";
-import type { NativeDocuments } from "./workshop";
+import type { NativeDocuments } from "./services/native-documents";
 
 /**
  * The VS Code side of an editor panel: registration, the webview, its

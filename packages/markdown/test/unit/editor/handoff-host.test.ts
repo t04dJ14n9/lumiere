@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import Module, { createRequire } from "node:module";
 import type * as Reclaim from "../../../src/host/reclaim";
 import type * as DocumentWarm from "../../../src/host/document-warm";
-import type * as Workshop from "../../../src/host/workshop";
+import type * as HostCommands from "../../../src/host/services/commands";
 import type * as NativePlatform from "../../../src/host/api/native-platform";
 import type * as CursorHandoff from "../../../src/host/cursor-handoff";
 import type * as HostNavigation from "../../../src/host/navigation";
-import type { PanelShell, RevealPanel } from "../../../src/shared/runtime";
+import type { PanelShell, RevealPanel } from "../../../src/shared/host";
 import type { Uri as NativeUri } from "vscode";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import {
@@ -210,7 +210,8 @@ function loadHost() {
       navigation:
         require("../../../src/host/navigation.ts") as typeof HostNavigation,
       warm: require("../../../src/host/document-warm.ts") as typeof DocumentWarm,
-      workshop: require("../../../src/host/workshop.ts") as typeof Workshop,
+      commands:
+        require("../../../src/host/services/commands.ts") as typeof HostCommands,
       api: require("../../../src/host/api/native-platform.ts") as typeof NativePlatform,
       cursorHandoff:
         require("../../../src/host/cursor-handoff.ts") as typeof CursorHandoff,
@@ -717,8 +718,8 @@ for (const route of [
         ? host.api
             .nativePlatform("test.workshop")
             .open(uri, { preserveFocus: true })
-        : host.workshop
-            .createWorkshop(testExtension(uri))
+        : host.commands
+            .createHostCommands()
             .execute(
               "vscode.openWith",
               route === "workbench string" ? note : uri,
@@ -735,22 +736,12 @@ for (const route of [
 }
 
 test("Open as Text remains bypassed without warming", async () => {
-  const workshop = host.workshop.createWorkshop(
-    testExtension(Uri.parse(note) as unknown as NativeUri),
-  );
-  await workshop.execute("vscode.openWith", note, "default");
+  await host.commands
+    .createHostCommands()
+    .execute("vscode.openWith", note, "default");
   assert.deepEqual(warmed, []);
   assert.equal(host.reclaim.textBypass.has(note), true);
 });
-
-/** The running extension, as the fake VS Code describes it. */
-function testExtension(extensionUri: NativeUri) {
-  return {
-    id: "test.workshop",
-    packageJSON: {},
-    extensionUri,
-  } as unknown as Parameters<typeof host.workshop.createWorkshop>[0];
-}
 
 function nativeHunkEditor(tab: Tab, line = 929, eol = "\n"): TextEditor {
   const lines = Array.from({ length: 1000 }, (_, index) => `Line ${index + 1}`);

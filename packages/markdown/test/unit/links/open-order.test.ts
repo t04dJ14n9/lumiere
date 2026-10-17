@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import { CancelToken } from "../../../src/shared/rpc/lifecycle";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -6,7 +7,8 @@ import { RevealRouter } from "../../../src/host/reveal-router";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
 import type { VaultIndex } from "../../../src/plugins/vault/api";
-import type { Workshop, PanelShell } from "../../../src/shared/runtime";
+import type { PanelShell } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import { rpcPair } from "../../support/rpc-pair";
 
 test("a slow earlier link resolution cannot open over a newer request", async () => {
@@ -32,28 +34,30 @@ test("a slow earlier link resolution cannot open over a newer request", async ()
     classifyLink: () => undefined,
     resolveLink: () => undefined,
   } as unknown as VaultIndex);
-  root.provide("workshop", {
-    config: () => ({ preset: "obsidian", mode: "livePreview" }),
-    navigation: {
-      scheme: "vscode",
-      external: async () => true,
-      confirm: async () => true,
-      begin: () => router.begin(),
-      registerReveal: (panel) => router.register(panel),
-      async resolve({ path }) {
-        if (path === "A.md") {
-          entered();
-          await new Promise<void>((resolve) => {
-            release = resolve;
-          });
-        }
-        return `memory:/vault/${path}`;
+  provideHostServices(
+    root,
+    fakeHost({
+      navigation: {
+        scheme: "vscode",
+        external: async () => true,
+        confirm: async () => true,
+        begin: () => router.begin(),
+        registerReveal: (panel) => router.register(panel),
+        async resolve({ path }) {
+          if (path === "A.md") {
+            entered();
+            await new Promise<void>((resolve) => {
+              release = resolve;
+            });
+          }
+          return `memory:/vault/${path}`;
+        },
+        async open(_root, uri) {
+          openings.push(uri);
+        },
       },
-      async open(_root, uri) {
-        openings.push(uri);
-      },
-    },
-  } as Partial<Workshop> as Workshop);
+    }),
+  );
   root.plugin(linksHost, {
     panel: {
       id: "pane",

@@ -1,4 +1,4 @@
-import type { TreeNode, TreeSource } from "../../shared/runtime";
+import type { TreeNode, TreeSource } from "../../shared/host";
 import { folderOf, stemOf } from "../../shared/vault-path";
 import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";

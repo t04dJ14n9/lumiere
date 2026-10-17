@@ -7,7 +7,7 @@ import { VaultConfigs } from "./vault-configs";
 
 export const obsidianCompatHost: Plugin = {
   name: "obsidianCompat",
-  inject: { required: ["workshop", "vaults"] },
+  inject: { required: ["settings", "workspace", "activeEditor", "vaults"] },
   apply(ctx) {
     const configs = createConfigs(ctx);
     registerService(ctx, configs);
@@ -18,15 +18,13 @@ export const obsidianCompatHost: Plugin = {
 };
 
 function createConfigs(ctx: Context): VaultConfigs {
-  const workshop = ctx.workshop;
-  const configuration = workshop.configuration;
+  const configuration = ctx.settings.effective;
   return new VaultConfigs({
     vaults: ctx.vaults,
     configFolder: (root) =>
-      configuration?.get("obsidianCompat.configFolder", ".obsidian", root) ??
+      configuration.get("obsidianCompat.configFolder", ".obsidian", root) ??
       ".obsidian",
-    files: (root, directory) =>
-      new ContainedConfigFiles(workshop, root, directory),
+    files: (root, directory) => new ContainedConfigFiles(ctx, root, directory),
     warn: (message, error) => ctx.logger.warn(message, error),
     changed(change) {
       if (ctx.isLive) {
@@ -47,7 +45,7 @@ function isEnabled(configuration: Configuration, resource: string): boolean {
   );
 }
 function registerOverrides(ctx: Context, configs: VaultConfigs): void {
-  const configuration = ctx.workshop.configuration;
+  const configuration = ctx.settings.effective;
   if (!configuration) {
     return;
   }
@@ -86,29 +84,23 @@ function registerOverrides(ctx: Context, configs: VaultConfigs): void {
   );
 }
 function registerConfigRefresh(ctx: Context, configs: VaultConfigs): void {
-  const workshop = ctx.workshop;
-  if (workshop.onConfiguration) {
-    ctx.effect(() =>
-      workshop.onConfiguration!(() => {
-        trackRefresh(ctx, configs.reconfigure());
-      }),
-    );
-  }
+  ctx.effect(() =>
+    ctx.settings.onChange(() => {
+      trackRefresh(ctx, configs.reconfigure());
+    }),
+  );
 }
 function registerVaultPreparation(ctx: Context, configs: VaultConfigs): void {
   const prepare = (uri: string) => trackRefresh(ctx, configs.prepare(uri));
   ctx.on("editor/opened", (panel) => prepare(panel.document.uri));
   ctx.on("vault/resolved", (root) => prepare(`${root}/`));
-  const views = ctx.workshop.views;
   const prepareActive = () => {
-    const uri = views?.activeNote();
+    const uri = ctx.activeEditor.note();
     if (uri) {
       prepare(uri);
     }
   };
-  if (views) {
-    ctx.effect(() => views.onActiveNoteChanged(prepareActive));
-  }
+  ctx.effect(() => ctx.activeEditor.onNoteChanged(prepareActive));
   for (const vault of ctx.vaults.all()) {
     prepare(`${vault.index.root}/`);
   }

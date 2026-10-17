@@ -1,5 +1,4 @@
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
-import { fakeViews } from "../views/fakes";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 import { rpcPair } from "../../support/rpc-pair";
 import { Session } from "../../../src/plugins/document/session";
 import { SelectionSnapshots } from "../../../src/plugins/editor/selection";
@@ -39,28 +38,28 @@ export function fixture() {
       return true;
     },
   };
-  const views = fakeViews().views;
-  views.ask = async () => state.choice;
-  const workshop = fakeWorkbench({
-    views,
-    workspaceFolders: () => ["file:///vault"],
+  const host = fakeHost({
+    dialogs: { ask: async () => state.choice },
+    workspace: { folders: () => ["file:///vault"] },
     clipboard: {
       read: async () => "",
       write: async (text) => {
         copied.push(text);
       },
     },
-    config: () => ({
-      preset: "obsidian",
-      mode: "livePreview",
-      features: { agentBridge: { enabled: state.enabled, config: {} } },
-    }),
-    onConfiguration: (listener) => {
-      changed = listener;
-      return () => {};
+    settings: {
+      forNote: () => ({
+        preset: "obsidian",
+        mode: "livePreview",
+        features: { agentBridge: { enabled: state.enabled, config: {} } },
+      }),
+      onChange: (listener) => {
+        changed = listener;
+        return () => {};
+      },
     },
   });
-  const session = new Session(document, workshop);
+  const session = new Session(document, host);
   const panel: EditorPanel = {
     id: "panel",
     column: undefined,
@@ -90,12 +89,12 @@ export function fixture() {
   });
   const selections = new SelectionSnapshots(
     (id) => editors.all().find((item) => item.id === id),
-    workshop,
+    host,
   );
   const agent = new AgentHandoff({
     editors,
     selections,
-    workshop,
+    host,
     beforeSave: async () => {
       beforeSave();
     },
@@ -108,7 +107,7 @@ export function fixture() {
     editors,
     selections,
     agent,
-    workshop,
+    host,
     changeConfig: () => changed(),
     beforeCapture: (run: () => void) => {
       beforeCapture = run;

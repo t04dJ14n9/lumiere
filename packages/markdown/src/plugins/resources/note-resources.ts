@@ -1,4 +1,4 @@
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import { mediaKind } from "../../shared/media-kinds";
 import type { LinkSyntax } from "../../shared/vault-path";
 import type { VaultIndex } from "../vault/api";
@@ -8,7 +8,7 @@ import { containedResource, contains } from "./containment";
 interface ResourceOptions {
   source: string;
   vault: VaultIndex;
-  files: Pick<Workshop, "stat" | "read" | "openDocument">;
+  host: Pick<HostServices, "workspace" | "hostDocuments">;
   resourceUrl(uri: string): string;
 }
 
@@ -66,19 +66,16 @@ export class NoteResources implements Resources {
   }
 
   private async containedStat(source: string) {
-    const { files, vault } = this.options;
-    const stat = await files.stat(source);
+    const { host, vault } = this.options;
+    const stat = await host.workspace.stat(source);
     await containedResource(vault.root, source, stat.symbolicLink, (uri) =>
-      files.stat(uri),
+      host.workspace.stat(uri),
     );
     return stat;
   }
 
   private async readNote(uri: string): Promise<string> {
-    const { files } = this.options;
-    const text = files.openDocument
-      ? (await files.openDocument(uri)).getText()
-      : new TextDecoder().decode(await files.read(uri));
+    const text = (await this.options.host.hostDocuments.open(uri)).getText();
     return text.replace(/\r\n/g, "\n");
   }
 }

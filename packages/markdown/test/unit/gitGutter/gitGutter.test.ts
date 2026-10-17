@@ -1,3 +1,5 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState, Text } from "@codemirror/state";
@@ -171,10 +173,13 @@ async function host(
   const root = createRoot();
   let saved = 0;
   const errors: string[] = [];
-  root.provide("workshop", {
-    git,
-    error: (message: string) => errors.push(message),
-  } as never);
+  provideHostServices(
+    root,
+    fakeHost({
+      ...(git ? { git } : {}),
+      dialogs: { error: (message) => void errors.push(message) },
+    }),
+  );
   root.provide("rpc", pair.host);
   const panel = {
     document: {

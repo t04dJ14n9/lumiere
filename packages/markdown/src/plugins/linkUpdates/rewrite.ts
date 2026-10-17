@@ -5,7 +5,7 @@ import {
   linkSyntax,
   vaultLinks,
 } from "../../markdown/metadata/linkpaths";
-import type { FileTextEdits } from "../../shared/runtime";
+import type { FileTextEdits } from "../../shared/host";
 import {
   folderOf,
   isMarkdownPath,

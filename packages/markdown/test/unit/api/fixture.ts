@@ -1,3 +1,5 @@
+import { withHost } from "../../support/vscode-fake";
+import { provideHostServices } from "../../../src/shared/host";
 import type { Uri } from "vscode";
 import { createRoot } from "@workshop/core";
 import { providePluginStates } from "../../../src/shared/plugin-state";
@@ -12,7 +14,7 @@ import { protocol as jumps } from "../../../src/plugins/editor/jump-protocol";
 import { protocol } from "../../../src/plugins/editor/protocol";
 import { createApi } from "../../../src/host/api/facade";
 import type { ApiPlatform } from "../../../src/host/api/platform";
-import type { HostDocument, Workshop } from "../../../src/shared/runtime";
+import type { HostDocument, HostServices } from "../../../src/shared/host";
 import { metadata } from "../../../src/markdown/metadata";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import type { Vault } from "../../../src/plugins/vault/api";
@@ -65,39 +67,44 @@ export async function fixture() {
   const featureOverrides: Record<string, boolean> = {};
   const externalOverrides = new Map<string, Record<string, boolean>>();
   let documentChanged = (_document: HostDocument) => {};
-  const workshop: Workshop = {
-    ...f.workshop,
-    isTrusted: () => true,
-    onChange: (listener) => {
-      documentChanged = listener;
-      return () => {};
+  const host: HostServices = withHost(f.host, {
+    workspace: { isTrusted: () => true },
+    hostDocuments: {
+      onChange: (listener) => {
+        documentChanged = listener;
+        return () => {};
+      },
     },
-    onConfiguration: (listener) => {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
+    settings: {
+      onChange: (listener) => {
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+        };
+      },
+      forNote: () => ({
+        preset: "obsidian",
+        mode: "livePreview",
+        features: Object.fromEntries(
+          Object.entries(featureOverrides).map(([id, enabled]) => [
+            id,
+            { enabled, config: {} },
+          ]),
+        ),
+      }),
     },
-    command: (id, run) => {
-      if (commands.has(id)) {
-        throw new Error("duplicate command");
-      }
-      commands.set(id, run);
-      return () => {
-        commands.delete(id);
-      };
+    hostCommands: {
+      register: (id, run) => {
+        if (commands.has(id)) {
+          throw new Error("duplicate command");
+        }
+        commands.set(id, run);
+        return () => {
+          commands.delete(id);
+        };
+      },
     },
-    config: () => ({
-      preset: "obsidian",
-      mode: "livePreview",
-      features: Object.fromEntries(
-        Object.entries(featureOverrides).map(([id, enabled]) => [
-          id,
-          { enabled, config: {} },
-        ]),
-      ),
-    }),
-  };
+  });
   const editors: Editors = {
     ...f.editors,
     all: () => panels,
@@ -105,14 +112,14 @@ export async function fixture() {
   };
   const selections = new SelectionSnapshots(
     (id) => panels.find((panel) => panel.id === id),
-    workshop,
+    host,
   );
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   root.provide("editors", editors);
   root.provide("selections", selections);
   root.plugin({
     name: "editor",
-    inject: { required: ["workshop"] },
+    inject: { required: ["hostCommands", "dialogs", "settings"] },
     apply(ctx) {
       registerEditorActions(ctx, editors, selections);
     },
@@ -196,7 +203,7 @@ export async function fixture() {
   const api = await createApi(root, platform);
   return {
     ...f,
-    workshop,
+    host,
     root,
     api,
     platform,

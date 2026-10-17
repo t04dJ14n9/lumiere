@@ -1,0 +1,45 @@
+import type { Disposer } from "@workshop/core";
+import type { EditorProvider } from "../editor-provider";
+import type { Endpoint, Transport } from "../rpc/endpoint";
+import type { HostDocument } from "./documents";
+
+/** One editor panel as the VS Code adapter hands it to the editor host. */
+export interface PanelShell {
+  /** VS Code's view column; undefined while the panel is in no editor group. */
+  readonly column: number | undefined;
+  readonly id: string;
+  readonly document: HostDocument;
+  readonly transport: Transport;
+  readonly cspSource: string;
+  readonly trusted: boolean;
+  active(): boolean;
+  reveal(): void;
+  dispose(): void;
+  setHTML(html: string): void;
+  asset(relative: string): string;
+  resource(uri: string): string;
+  onDispose(listener: () => void): Disposer;
+  onState(listener: () => void): Disposer;
+}
+
+/** An open editor panel, as other host code sees it. */
+export interface PanelPort {
+  /** VS Code's view column; undefined while the panel is in no editor group. */
+  readonly column: number | undefined;
+  readonly id: string;
+  readonly document: HostDocument;
+  readonly rpc: Endpoint;
+  active(): boolean;
+  reveal(): void;
+  /** Close the panel; resolves once its kernel and resources have stopped. */
+  dispose(): Promise<void>;
+}
+
+/** VS Code's custom editor registry. */
+export interface CustomEditors {
+  /** Register an editor (see `EditorProvider`); its panels go to `open`. */
+  register(
+    provider: EditorProvider,
+    open: (panel: PanelShell) => void,
+  ): Disposer;
+}

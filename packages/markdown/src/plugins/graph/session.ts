@@ -1,7 +1,7 @@
 import type { Context, Infer } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { Clock, Transport } from "../../shared/rpc/endpoint";
-import type { HostViews, WorkshopPanel } from "../../shared/runtime";
+import type { WorkbenchViews, WorkshopPanel } from "../../shared/host";
 import { contributionId } from "../../shared/setting-schema";
 import type { Vault } from "../vault/api";
 import { resolveScope } from "./choose";
@@ -57,7 +57,7 @@ const clock: Clock = {
 
 /** One graph panel. Scope stays on the bundle chosen at open until the user picks again. */
 export function createGraphSession(ctx: Context): GraphSession {
-  const settings = readGraphSettings(ctx.workshop.views);
+  const settings = readGraphSettings(ctx.settings);
   const state: SessionState = {
     ctx,
     view: {
@@ -86,14 +86,9 @@ async function openPanel(
   state: SessionState,
   explicit: boolean,
 ): Promise<void> {
-  const views = state.ctx.workshop.views;
-  if (!views) {
-    return;
-  }
-  ensurePanel(state, views);
+  ensurePanel(state, state.ctx.views);
   const chosen = await resolveScope({
     ctx: state.ctx,
-    views,
     explicit,
     ...(state.scope ? { current: state.scope } : {}),
   });
@@ -107,7 +102,7 @@ async function openPanel(
   await publish(state);
 }
 
-function ensurePanel(state: SessionState, views: HostViews): void {
+function ensurePanel(state: SessionState, views: WorkbenchViews): void {
   if (state.panel) {
     state.panel.reveal();
     return;
@@ -247,7 +242,7 @@ async function buildSnapshot(
     return undefined;
   }
   const collected = collectBundle(scope.vault, scope.bundle.root);
-  const settings = readGraphSettings(state.ctx.workshop.views);
+  const settings = readGraphSettings(state.ctx.settings);
   return presentSnapshot({
     bundle: scope.bundle,
     notes: collected.notes,

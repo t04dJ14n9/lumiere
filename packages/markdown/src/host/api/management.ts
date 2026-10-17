@@ -1,6 +1,6 @@
 import type { Uri } from "vscode";
 import type { Context } from "@workshop/core";
-import type { PickItem } from "../../shared/runtime";
+import type { PickItem } from "../../shared/host";
 import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";
 import type {
@@ -90,9 +90,8 @@ async function showPluginStatus(
   platform: ApiPlatform,
 ): Promise<void> {
   const editor = api.getActiveEditor();
-  const views = ctx.workshop.views;
-  if (!editor || !views) {
-    ctx.workshop.inform?.(
+  if (!editor) {
+    ctx.dialogs.inform(
       "Open a note in Markdown Workshop to see its plugin states.",
     );
     return;
@@ -101,7 +100,7 @@ async function showPluginStatus(
     api.getPluginCatalog(),
     api.getPlugins(editor.editorId),
   );
-  const chosen = await views.pick({
+  const chosen = await ctx.dialogs.pick({
     placeholder: `Plugins in ${basename(editor.uri)}: choose one to open its setting`,
     items: (query) => filterItems(items, query),
   });
@@ -133,12 +132,12 @@ export function registerPluginManagement(
   platform: ApiPlatform,
 ): void {
   ctx.effect(() =>
-    ctx.workshop.command(contributionId("managePlugins"), () =>
+    ctx.hostCommands.register(contributionId("managePlugins"), () =>
       api.openPluginSettings(api.getActiveEditor()?.uri),
     ),
   );
   ctx.effect(() =>
-    ctx.workshop.command(contributionId("showPluginStatus"), () =>
+    ctx.hostCommands.register(contributionId("showPluginStatus"), () =>
       showPluginStatus(ctx, api, platform),
     ),
   );

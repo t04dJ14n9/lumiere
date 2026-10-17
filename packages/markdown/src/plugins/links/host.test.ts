@@ -1,8 +1,10 @@
+import { provideHostServices } from "../../shared/host";
+import { fakeHost } from "../../../test/support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
-import type { Navigation, PanelShell, Workshop } from "../../shared/runtime";
+import type { Navigation, PanelShell } from "../../shared/host";
 import type { VaultIndex } from "../vault/api";
 import { linksHost } from "./host";
 import { protocol } from "./protocol";
@@ -44,6 +46,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
   const navigation: Navigation = {
     scheme: "vscode",
     registerReveal: () => () => {},
+    registerNativeLinks: () => () => {},
     external: async (href) => {
       opens.push(href);
       return true;
@@ -66,10 +69,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     },
   });
   root.provide("rpc", host);
-  root.provide("workshop", {
-    navigation,
-    config: () => ({ features: {} }),
-  } as unknown as Workshop);
+  provideHostServices(root, fakeHost({ navigation }));
   root.provide("vault", {
     root: "file:///vault",
     resolveLink: () => undefined,

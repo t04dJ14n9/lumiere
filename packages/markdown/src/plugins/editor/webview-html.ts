@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 const escape = (s: string) =>
   s.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 export function webviewHTML(panel: PanelShell): string {

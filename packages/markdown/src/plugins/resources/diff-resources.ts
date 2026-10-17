@@ -2,17 +2,17 @@ import { pathToFileURL } from "node:url";
 import type { Plugin } from "@workshop/core";
 import type { DiffSide } from "../../shared/git";
 import type { Vaults } from "../vault/api";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import { NoteResources } from "./note-resources";
 
 import type {} from "./api";
 /** Reuse vault resolution and containment for independently owned diff sides. */
 export const diffResourcesHost: Plugin = {
   name: "resources",
-  inject: { required: ["vaults", "workshop"] },
+  inject: { required: ["vaults", "workspace", "hostDocuments", "git"] },
   apply(ctx) {
     ctx.provide("diffResources", {
-      forSide: (side) => sideResources(ctx.vaults, ctx.workshop, side),
+      forSide: (side) => sideResources(ctx.vaults, ctx, side),
     });
   },
 };
@@ -38,7 +38,7 @@ export function diffSource(uri: string): { source: string; ref?: string } {
 
 export async function sideResources(
   vaults: Vaults,
-  files: Workshop,
+  host: Pick<HostServices, "workspace" | "hostDocuments" | "git">,
   side: DiffSide,
 ) {
   const { source, ref } = diffSource(side.uri);
@@ -47,7 +47,7 @@ export async function sideResources(
   const resources = new NoteResources({
     source,
     vault: vault.index,
-    files,
+    host,
     resourceUrl: (uri) => uri,
   });
   return {
@@ -60,7 +60,7 @@ export async function sideResources(
       if (ref === undefined) {
         return resource.url;
       }
-      const revision = files.git?.toGitUri(resource.source, ref);
+      const revision = host.git.toGitUri(resource.source, ref);
       if (!revision) {
         throw new Error("Image revision unavailable");
       }

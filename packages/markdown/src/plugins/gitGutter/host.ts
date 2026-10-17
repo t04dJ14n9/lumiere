@@ -1,5 +1,5 @@
 import type { Plugin } from "@workshop/core";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import { exceedsDiffLimits } from "../../shared/diff";
 import type { DiffSide } from "../../shared/git-diff";
 import type { GitAccess } from "../../shared/git";
@@ -63,31 +63,26 @@ async function saveAndStage(
 /** Reads the note's git baseline through VS Code's git extension; never shells out. */
 export const gitGutterHost: Plugin<{ panel: PanelShell }> = {
   name: "gitGutter",
-  inject: { required: ["workshop", "rpc"] },
+  inject: { required: ["dialogs", "git", "rpc"] },
   apply(ctx, { panel }) {
-    const git = ctx.workshop.git;
+    const git = ctx.git;
     const uri = panel.document.uri;
     registerBaseline(ctx, git, uri);
     registerStage(ctx, git, panel);
     registerMutationLock(ctx, uri);
     registerOpenFullDiff(ctx, uri);
-    if (!git) {
-      return;
-    }
     watchRepository(ctx, git);
   },
 };
 
 function registerBaseline(
   ctx: Parameters<NonNullable<typeof gitGutterHost.apply>>[0],
-  git: GitAccess | undefined,
+  git: GitAccess,
   uri: string,
 ): void {
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "baseline", async ({ ref }) => {
-      const result = git
-        ? await git.baseline(uri, ref)
-        : { status: "unavailable" as const };
+      const result = await git.baseline(uri, ref);
       if (result.status === "ok" && exceedsDiffLimits(result.baseline.text)) {
         return { status: "tooLarge" as const };
       }
@@ -104,15 +99,12 @@ function registerBaseline(
 
 function registerStage(
   ctx: Parameters<NonNullable<typeof gitGutterHost.apply>>[0],
-  git: GitAccess | undefined,
+  git: GitAccess,
   panel: PanelShell,
 ): void {
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "stage", async () => {
-      if (!git) {
-        return false;
-      }
-      return saveAndStage(panel, git, (message) => ctx.workshop.error(message));
+      return saveAndStage(panel, git, (message) => ctx.dialogs.error(message));
     }),
   );
 }

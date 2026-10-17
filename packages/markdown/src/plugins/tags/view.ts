@@ -1,5 +1,5 @@
 import type { Plugin } from "@workshop/core";
-import type { HostViews } from "../../shared/runtime";
+import type { ActiveEditor, Dialogs } from "../../shared/host";
 import type { Vault, Vaults } from "../vault/api";
 import { pickTaggedNote } from "./search";
 import { SEARCH_COMMAND, TagsTree, VIEW_ID } from "./tree";
@@ -14,22 +14,27 @@ const REFRESH_DELAY_MS = 300;
  */
 export const tagsViewHost: Plugin = {
   name: "tags",
-  inject: { required: ["workshop", "vaults"] },
+  inject: {
+    required: [
+      "settings",
+      "vaults",
+      "hostCommands",
+      "views",
+      "activeEditor",
+      "dialogs",
+    ],
+  },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views) {
-      return;
-    }
     const source = new TagsTree();
-    const tree = views.tree(VIEW_ID, source);
+    const tree = ctx.views.tree(VIEW_ID, source);
     ctx.effect(() => () => tree.dispose());
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = async () => {
-      const vault = await currentVault(views, ctx.vaults);
+      const vault = await currentVault(ctx.activeEditor, ctx.vaults);
       source.update(vault?.index, {
-        sort: views.setting("tags.viewSort", "name"),
-        nested: views.setting("tags.viewNested", true),
+        sort: ctx.settings.get("tags.viewSort", "name"),
+        nested: ctx.settings.get("tags.viewNested", true),
       });
       tree.setMessage(message(vault, source.isEmpty));
       tree.refresh();
@@ -42,17 +47,15 @@ export const tagsViewHost: Plugin = {
       }
     };
     ctx.effect(() => () => clearTimeout(timer));
-    ctx.effect(() => views.onActiveNoteChanged(schedule));
-    if (ctx.workshop.onConfiguration) {
-      ctx.effect(() => ctx.workshop.onConfiguration!(schedule));
-    }
+    ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
+    ctx.effect(() => ctx.settings.onChange(schedule));
     ctx.effect(() =>
       tree.onVisibilityChanged((visible) => visible && void refresh()),
     );
     ctx.on("vault/resolved", schedule);
     ctx.effect(() =>
-      views.command(SEARCH_COMMAND, (root, tag) =>
-        searchTag(views, ctx.vaults, String(root), String(tag)),
+      ctx.hostCommands.register(SEARCH_COMMAND, (root, tag) =>
+        searchTag(ctx.dialogs, ctx.vaults, String(root), String(tag)),
       ),
     );
     void refresh();
@@ -60,10 +63,10 @@ export const tagsViewHost: Plugin = {
 };
 
 async function currentVault(
-  views: HostViews,
+  activeEditor: ActiveEditor,
   vaults: Vaults,
 ): Promise<Vault | undefined> {
-  const active = views.activeNote();
+  const active = activeEditor.note();
   const located = active ? await vaults.locate(active) : undefined;
   return located?.vault ?? (await vaults.forWorkspace());
 }
@@ -77,13 +80,13 @@ function message(vault: Vault | undefined, isEmpty: boolean) {
 
 /** Clicking a tag: choose a note that uses it, then open that note. */
 async function searchTag(
-  views: HostViews,
+  dialogs: Dialogs,
   vaults: Vaults,
   root: string,
   tag: string,
 ): Promise<void> {
   const vault = vaults.all().find((item) => item.index.root === root);
-  const file = vault && (await pickTaggedNote(views, vault.index, tag));
+  const file = vault && (await pickTaggedNote(dialogs, vault.index, tag));
   if (file) {
     await vaults.open(file.uri);
   }

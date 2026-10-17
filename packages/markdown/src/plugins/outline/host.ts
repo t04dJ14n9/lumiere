@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type { Context, Plugin } from "@workshop/core";
-import type { TreeHandle } from "../../shared/runtime";
+import type { TreeHandle } from "../../shared/host";
 import type {} from "../editor/api";
 import type {} from "../vault/api";
 import {
@@ -18,16 +18,20 @@ import { OutlineView } from "./view";
 /** The active panel's headings, with native expansion actions and optional following. */
 export const outlineHost: Plugin = {
   name: "outline",
-  inject: { required: ["workshop", "vaults", "editors"] },
+  inject: {
+    required: [
+      "hostCommands",
+      "settings",
+      "vaults",
+      "editors",
+      "views",
+      "dialogs",
+    ],
+  },
   apply(ctx) {
-    const workshop = ctx.workshop;
     const editors = ctx.editors;
-    const views = workshop.views;
-    if (!views) {
-      return;
-    }
     const source = new OutlineSource();
-    const tree = views.tree(VIEW_ID, source, { showCollapseAll: true });
+    const tree = ctx.views.tree(VIEW_ID, source, { showCollapseAll: true });
     ctx.effect(() => () => tree.dispose());
     const view = new OutlineView({
       source,
@@ -35,17 +39,17 @@ export const outlineHost: Plugin = {
       editors,
       logger: ctx.logger,
       followsCursor: () =>
-        followsCursor(workshop, editors.active()?.document.uri),
+        followsCursor(ctx.settings, editors.active()?.document.uri),
     });
     ctx.effect(() => () => view.dispose());
     registerOutlineCommandContext(ctx);
     registerOutlineUpdates(ctx, view, tree);
     registerOutlineActions(ctx, view, tree);
     registerFollowCursor(ctx, view);
-    registerSymbolPicker(ctx, views);
+    registerSymbolPicker(ctx, ctx.dialogs);
     registerOutlineFocus(ctx);
     ctx.effect(() =>
-      views.command(OPEN_COMMAND, (uri, offset) =>
+      ctx.hostCommands.register(OPEN_COMMAND, (uri, offset) =>
         ctx.vaults.open(String(uri), { offset: Number(offset) }),
       ),
     );
@@ -84,9 +88,9 @@ function registerOutlineUpdates(
 
 function registerOutlineFocus(ctx: Context): void {
   const focus = createOutlineFocus({
-    execute: (command) => ctx.workshop.execute(command),
+    execute: (command) => ctx.hostCommands.execute(command),
     focusEditor: () =>
-      ctx.workshop.execute("workbench.action.focusActiveEditorGroup"),
+      ctx.hostCommands.execute("workbench.action.focusActiveEditorGroup"),
     activeCustomEditorViewType: activeCustomEditorViewType,
   });
   ctx.effect(() => () => focus.dispose());

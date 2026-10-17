@@ -1,6 +1,6 @@
 import { tagMatches } from "../../markdown/tags/grammar";
 import { fuzzyMatch } from "../../shared/fuzzy";
-import type { HostViews, PickItem } from "../../shared/runtime";
+import type { Dialogs, PickItem } from "../../shared/host";
 import type { VaultFile, VaultIndex } from "../vault/api";
 
 /** Metadata already includes YAML and footnote tags; no file reads are needed. */
@@ -52,13 +52,13 @@ export function filterTagNotes(
 
 /** Ask which note with the tag to open; `undefined` when dismissed. */
 export async function pickTaggedNote(
-  views: HostViews,
+  dialogs: Pick<Dialogs, "pick">,
   vault: VaultIndex,
   tag: string,
 ): Promise<VaultFile | undefined> {
   const items = taggedNotes(vault, tag);
   const noun = items.length === 1 ? "note" : "notes";
-  const selected = await views.pick({
+  const selected = await dialogs.pick({
     placeholder: `#${tag} — ${items.length} ${noun}`,
     items: (query) => filterTagNotes(items, query),
   });

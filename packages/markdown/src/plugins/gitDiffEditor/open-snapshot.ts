@@ -18,11 +18,7 @@ export async function openFullDiff<Prepared extends { stop(): void }>(input: {
   prepare(comparison: ComparisonShape): Promise<Prepared | undefined>;
   present(comparison: ComparisonShape, prepared: Prepared): void;
 }): Promise<void> {
-  const git = input.ctx.workshop.git;
-  const views = input.ctx.workshop.diffViews;
-  if (!git || !views) {
-    return;
-  }
+  const { git, diffViews: views } = input.ctx;
   const uris = urisForSides(
     input.request.fileUri,
     input.request.base,
@@ -32,7 +28,7 @@ export async function openFullDiff<Prepared extends { stop(): void }>(input: {
   if (!uris) {
     return;
   }
-  const mode = input.ctx.workshop.views?.setting<string>(
+  const mode = input.ctx.settings.get<string>(
     "gitDiffEditor.diffEditor",
     "native",
   );

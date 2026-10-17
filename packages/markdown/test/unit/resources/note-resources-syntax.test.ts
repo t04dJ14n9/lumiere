@@ -1,4 +1,5 @@
 import test from "node:test";
+import { fakeHost } from "../../support/vscode-fake";
 import assert from "node:assert/strict";
 import { metadata } from "../../../src/markdown/metadata";
 import { okfLinkPolicy } from "../../../src/plugins/okfCore/policy";
@@ -55,14 +56,12 @@ test("markdown images resolve source-relative inside an OKF bundle", async () =>
       onDidChange: (listener) => vault.onDidChange(listener),
       onDidResolve: (listener) => vault.onDidResolve(listener),
     } satisfies VaultIndex,
-    files: {
-      async stat() {
-        return { mtime: 1, symbolicLink: false };
+    host: fakeHost({
+      workspace: {
+        stat: async () => ({ mtime: 1, symbolicLink: false }),
+        read: async () => new Uint8Array(),
       },
-      async read() {
-        return new Uint8Array();
-      },
-    },
+    }),
     resourceUrl: (uri) => uri,
   });
   // Wikilink default would prefer vault-root image.png.

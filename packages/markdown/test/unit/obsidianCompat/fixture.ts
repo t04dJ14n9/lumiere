@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import { createRoot } from "@workshop/core";
 import { EffectiveConfiguration } from "../../../src/host/configuration";
 import { readSettings } from "../../../src/host/settings";
@@ -6,8 +7,7 @@ import type { ObsidianCompat } from "../../../src/plugins/obsidianCompat/api";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import type { Vault, Vaults } from "../../../src/plugins/vault/api";
 import type { ConfigurationInspection } from "../../../src/shared/configuration";
-import { fakeWorkbench } from "../../support/vscode-fake";
-import { fakeViews } from "../views/fakes";
+import { fakeHost } from "../../support/vscode-fake";
 
 export const ROOT_A = "file:///vault-a";
 export const ROOT_B = "file:///vault-b";
@@ -97,74 +97,75 @@ export async function compatFixture() {
     registerLinkPolicy: () => () => {},
     invalidateLinkResolution() {},
   };
-  const fake = fakeViews();
-  const workbench = fakeWorkbench({
-    configuration,
-    onConfiguration: (listener) => configuration.onDidChange(listener),
-    config: (document) =>
-      readSettings({
-        get: (key, fallback) => configuration.get(key, fallback, document.uri),
-      }),
-    views: {
-      ...fake.views,
-      activeNote: () => focus.uri,
-      setting: (key, fallback, resource) =>
+  const workbench = fakeHost({
+    settings: {
+      effective: configuration,
+      get: (key, fallback, resource) =>
         configuration.get(key, fallback, resource),
+      onChange: (listener) => configuration.onDidChange(listener),
+      forNote: (document) =>
+        readSettings({
+          get: (key, fallback) =>
+            configuration.get(key, fallback, document.uri),
+        }),
     },
-    async read(uri) {
-      reads.push(uri);
-      await hooks.beforeRead?.(uri);
-      const failure = failures.get(uri);
-      if (failure) {
-        throw failure;
-      }
-      const text = data.get(uri);
-      if (text === undefined) {
-        throw Object.assign(new Error("Missing"), { code: "FileNotFound" });
-      }
-      return new TextEncoder().encode(text);
-    },
-    files: {
-      async authorize(root, uri) {
-        authorizations.push({ root, uri });
-        if (
-          !uri.startsWith(`${root}/`) ||
-          [...symlinks].some(
-            (path) => uri === path || uri.startsWith(`${path}/`),
-          )
-        ) {
-          throw new Error("Path escapes the vault through a symlink");
+    workspace: {
+      async read(uri) {
+        reads.push(uri);
+        await hooks.beforeRead?.(uri);
+        const failure = failures.get(uri);
+        if (failure) {
+          throw failure;
         }
-      },
-      readText: async () => {
-        throw new Error("readText hides errors and must not be used");
-      },
-      async writeText(uri, text) {
-        await hooks.beforeWrite?.(uri);
-        writes.push({ uri, text });
-        data.set(uri, text);
-      },
-      mkdir: async () => {
-        await hooks.beforeMkdir?.();
-      },
-      list: async () => [],
-      copy: async () => {},
-      move: async () => {},
-      remove: async () => {},
-      isSymbolicLink: async (uri) => symlinks.has(uri),
-      pickFile: async () => undefined,
-    },
-    watchFile(uri, listener) {
-      const listeners = watchers.get(uri) ?? new Set<() => void>();
-      watchers.set(uri, listeners);
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-        if (!listeners.size) {
-          watchers.delete(uri);
+        const text = data.get(uri);
+        if (text === undefined) {
+          throw Object.assign(new Error("Missing"), { code: "FileNotFound" });
         }
-      };
+        return new TextEncoder().encode(text);
+      },
+      files: {
+        async authorize(root, uri) {
+          authorizations.push({ root, uri });
+          if (
+            !uri.startsWith(`${root}/`) ||
+            [...symlinks].some(
+              (path) => uri === path || uri.startsWith(`${path}/`),
+            )
+          ) {
+            throw new Error("Path escapes the vault through a symlink");
+          }
+        },
+        readText: async () => {
+          throw new Error("readText hides errors and must not be used");
+        },
+        async writeText(uri, text) {
+          await hooks.beforeWrite?.(uri);
+          writes.push({ uri, text });
+          data.set(uri, text);
+        },
+        mkdir: async () => {
+          await hooks.beforeMkdir?.();
+        },
+        list: async () => [],
+        copy: async () => {},
+        move: async () => {},
+        remove: async () => {},
+        isSymbolicLink: async (uri) => symlinks.has(uri),
+        pickFile: async () => undefined,
+      },
+      watch(uri, listener) {
+        const listeners = watchers.get(uri) ?? new Set<() => void>();
+        watchers.set(uri, listeners);
+        listeners.add(listener);
+        return () => {
+          listeners.delete(listener);
+          if (!listeners.size) {
+            watchers.delete(uri);
+          }
+        };
+      },
     },
+    activeEditor: { note: () => focus.uri },
   });
   const root = createRoot({
     logger: {
@@ -175,7 +176,7 @@ export async function compatFixture() {
       },
     },
   });
-  root.provide("workshop", workbench);
+  provideHostServices(root, workbench);
   root.provide("vaults", vaultService);
   const fiber = root.plugin(obsidianCompatHost);
   await root.settled();
@@ -203,7 +204,6 @@ export async function compatFixture() {
     hooks,
     focus,
     vaults: vaultService,
-    viewsFake: fake,
     service: root.service("obsidianCompat") as ObsidianCompat,
     async change(uri: string, text: string | undefined) {
       if (text === undefined) {

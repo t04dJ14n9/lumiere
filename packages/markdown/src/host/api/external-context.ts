@@ -16,13 +16,13 @@ const serviceDependencies: Record<
 > = {
   editors: ["editors", "editorActions", "selections"],
   vault: ["vaults"],
-  markers: ["markers"],
-  commands: ["workshop"],
+  markers: ["markers", "settings"],
+  commands: ["hostCommands"],
   codeBlocks: ["codeBlocks"],
   logger: [],
 };
 export function externalInjection(definition: ExternalPlugin) {
-  const required = new Set<keyof Services>(["workshop", "editors"]);
+  const required = new Set<keyof Services>(["hostCommands", "editors"]);
   const optional = new Set<keyof Services>();
   for (const key of definition.inject?.required ?? []) {
     for (const dependency of serviceDependencies[key]) {

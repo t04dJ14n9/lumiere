@@ -6,7 +6,7 @@ import type {
   PluginDescriptor,
   PluginState,
 } from "../../../src/host/api/types";
-import type { HostViews, PickItem } from "../../../src/shared/runtime";
+import type { Dialogs, PickItem } from "../../../src/shared/host";
 import { contributions } from "../../../scripts/contributions";
 import { contributionId } from "../../../src/shared/setting-schema";
 
@@ -92,30 +92,19 @@ test("Manage Plugins opens plugin settings for the active note", async () => {
 
 test("Show Plugin Status picks from the active editor's states and opens the chosen switch", async () => {
   const f = await fixture();
-  const messages: string[] = [];
-  f.workshop.inform = (message) => messages.push(message);
-  delete f.workshop.views;
-  // Without native views (a minimal host) the command explains itself.
-  await f.commands.get(contributionId("showPluginStatus"))?.();
-  assert.equal(messages.length, 1);
-
   let offered: readonly PickItem<unknown>[] = [];
   let placeholder = "";
-  f.workshop.views = {
-    pick: async (options: Parameters<HostViews["pick"]>[0]) => {
-      placeholder = options.placeholder;
-      offered = options.items("");
-      assert.ok(
-        options
-          .items("disabled")
-          .every((item) => item.description?.startsWith("Disabled")),
-      );
-      const item = offered.find((candidate) =>
-        candidate.label.endsWith(" Tags"),
-      );
-      return { item, query: "" } as never;
-    },
-  } as unknown as HostViews;
+  f.host.dialogs.pick = (async (options: Parameters<Dialogs["pick"]>[0]) => {
+    placeholder = options.placeholder;
+    offered = options.items("");
+    assert.ok(
+      options
+        .items("disabled")
+        .every((item) => item.description?.startsWith("Disabled")),
+    );
+    const item = offered.find((candidate) => candidate.label.endsWith(" Tags"));
+    return { item, query: "" } as never;
+  }) as Dialogs["pick"];
   const opened: unknown[][] = [];
   f.platform.settings = async (...args) => {
     opened.push(args);

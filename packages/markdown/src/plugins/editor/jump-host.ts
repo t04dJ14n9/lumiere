@@ -2,7 +2,7 @@ import { CancelToken } from "../../shared/rpc/lifecycle";
 import { contributionId } from "../../shared/setting-schema";
 import type { Context, Disposer } from "@workshop/core";
 import type { EditorPanel, Editors } from "./api";
-import type { SourceEdit } from "../../shared/runtime";
+import type { SourceEdit } from "../../shared/host";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import {
   JumpHistory,
@@ -12,6 +12,7 @@ import {
   type MarkdownLocation,
 } from "./jump-history";
 import { protocol } from "./jump-protocol";
+import type { Dialogs, HostCommands } from "../../shared/host";
 
 interface PaneHistory {
   history: JumpHistory;
@@ -36,7 +37,7 @@ export function registerJumpHistory(ctx: Context, editors: Editors): void {
     ["jumpForward", 1],
   ] as const) {
     ctx.effect(() =>
-      ctx.workshop.command(contributionId(name), () =>
+      ctx.hostCommands.register(contributionId(name), () =>
         histories.move(direction),
       ),
     );
@@ -50,13 +51,16 @@ export function registerJumpHistory(ctx: Context, editors: Editors): void {
 
 class PaneHistories {
   private readonly panes = new Map<string, PaneHistory>();
-  private readonly workshop;
+  // Captured while live: refresh also runs while the plugin stops.
+  private readonly dialogs: Dialogs;
+  private readonly commands: HostCommands;
 
   constructor(
     private readonly ctx: Context,
     private readonly editors: Editors,
   ) {
-    this.workshop = ctx.workshop;
+    this.dialogs = ctx.dialogs;
+    this.commands = ctx.hostCommands;
   }
 
   register(id: string): void {
@@ -132,7 +136,7 @@ class PaneHistories {
       await replay(pane, direction, live, token);
     } catch (error) {
       if (!token.cancelled) {
-        this.workshop.error(`Note navigation failed: ${String(error)}`);
+        this.dialogs.error(`Note navigation failed: ${String(error)}`);
       }
     } finally {
       pane.busy = false;
@@ -142,12 +146,12 @@ class PaneHistories {
 
   refresh(): void {
     const history = this.panes.get(this.editors.active()?.id ?? "")?.history;
-    void this.workshop.execute(
+    void this.commands.execute(
       "setContext",
       contributionId("canJumpBack"),
       history?.canBack ?? false,
     );
-    void this.workshop.execute(
+    void this.commands.execute(
       "setContext",
       contributionId("canJumpForward"),
       history?.canForward ?? false,

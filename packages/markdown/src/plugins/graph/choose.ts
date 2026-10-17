@@ -1,6 +1,5 @@
 import type { Context } from "@workshop/core";
 import { isInsideBundle } from "../../markdown/okf";
-import type { HostViews } from "../../shared/runtime";
 import type { OkfBundle } from "../okfCore/api";
 import type { Vault } from "../vault/api";
 import { selectScope } from "./scope";
@@ -14,11 +13,10 @@ export interface HeldScope {
 /** Resolve the bundle for this open. Dismissing the picker leaves the previous scope. */
 export async function resolveScope(input: {
   ctx: Context;
-  views: HostViews;
   explicit: boolean;
   current?: HeldScope;
 }): Promise<HeldScope | undefined | "dismissed"> {
-  const located = await locateNote(input.ctx, input.views);
+  const located = await locateNote(input.ctx);
   const reported = located
     ? input.ctx.okf.scope(located.vault, located.path)
     : undefined;
@@ -38,7 +36,7 @@ export async function resolveScope(input: {
   if (decision.kind === "use") {
     return hold(input.ctx, decision.bundle, located?.path);
   }
-  const picked = await input.views.pick({
+  const picked = await input.ctx.dialogs.pick({
     placeholder: "Choose an OKF bundle",
     items: (query) => bundleItems(decision.choices, query),
   });
@@ -61,8 +59,8 @@ function bundleItems(choices: readonly OkfBundle[], query: string) {
     }));
 }
 
-async function locateNote(ctx: Context, views: HostViews) {
-  const note = views.activeNote();
+async function locateNote(ctx: Context) {
+  const note = ctx.activeEditor.note();
   if (typeof note !== "string" || note.length === 0) {
     return undefined;
   }

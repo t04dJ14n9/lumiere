@@ -1,3 +1,5 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot, type Infer } from "@workshop/core";
@@ -9,11 +11,7 @@ import {
   CancelToken,
   type Cancellation,
 } from "../../../src/shared/rpc/lifecycle";
-import type {
-  PanelShell,
-  RevealPanel,
-  Workshop,
-} from "../../../src/shared/runtime";
+import type { PanelShell, RevealPanel } from "../../../src/shared/host";
 import { rpcPair } from "../../support/rpc-pair";
 
 type Target = Infer<typeof protocol.requests.navigate.params>;
@@ -49,14 +47,17 @@ async function fixture() {
     root: "file:///vault",
     onDidResolve: () => () => {},
   } as unknown as VaultIndex);
-  root.provide("workshop", {
-    navigation: {
-      registerReveal(panel: RevealPanel) {
-        registered = panel;
-        return router.register(panel);
+  provideHostServices(
+    root,
+    fakeHost({
+      navigation: {
+        registerReveal(panel: RevealPanel) {
+          registered = panel;
+          return router.register(panel);
+        },
       },
-    },
-  } as unknown as Workshop);
+    }),
+  );
   const panel = {
     id: "pane",
     document: { uri: "file:///vault/Note.md" },

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import path from "node:path";
-import type { HostDocument } from "../shared/runtime";
+import type { HostDocument } from "../shared/host";
 
 /** Native recheck: a title rename cannot move a note out of its current folder. */
 export async function renameFile(

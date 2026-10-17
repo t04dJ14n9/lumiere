@@ -13,7 +13,10 @@ import { ProcessorRegistry } from "./processors";
 import { RpcError } from "../../shared/rpc/lifecycle";
 export const codeBlocksHost: Plugin = {
   name: "codeBlocks",
-  inject: { required: ["editors", "workshop"], optional: ["vaults"] },
+  inject: {
+    required: ["editors", "settings", "workspace"],
+    optional: ["vaults"],
+  },
   apply(ctx) {
     const registry = new ProcessorRegistry(() => {
       for (const panel of ctx.editors.all()) {
@@ -49,19 +52,17 @@ export const codeBlocksHost: Plugin = {
     ctx.provide("codeBlocks", service);
     registerProcessorPanels(ctx, registry);
     ctx.effect(() => () => registry.dispose());
-    if (ctx.workshop.onConfiguration) {
-      ctx.effect(() =>
-        ctx.workshop.onConfiguration!(() => {
-          for (const panel of ctx.editors.all()) {
-            panel.rpc.notify(
-              protocol,
-              "changed",
-              availableProcessors(ctx, registry, panel.id),
-            );
-          }
-        }),
-      );
-    }
+    ctx.effect(() =>
+      ctx.settings.onChange(() => {
+        for (const panel of ctx.editors.all()) {
+          panel.rpc.notify(
+            protocol,
+            "changed",
+            availableProcessors(ctx, registry, panel.id),
+          );
+        }
+      }),
+    );
   },
 };
 function registerProcessorPanels(
@@ -113,7 +114,7 @@ function registerProcessorPanels(
 }
 
 function assertProcessorAccess(ctx: Context, id: string): void {
-  if (!ctx.workshop.isTrusted?.()) {
+  if (!ctx.workspace.isTrusted()) {
     throw new RpcError(
       "WorkspaceUntrusted",
       "Code processors require a trusted workspace",
@@ -123,7 +124,7 @@ function assertProcessorAccess(ctx: Context, id: string): void {
   if (!panel) {
     throw new RpcError("EditorNotFound", "Editor closed");
   }
-  const config = ctx.workshop.config(panel.document);
+  const config = ctx.settings.forNote(panel.document);
   if (
     config.preset !== "obsidian" ||
     config.features?.codeBlocks?.enabled === false

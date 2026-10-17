@@ -1,5 +1,5 @@
 import { fuzzyMatch } from "../../shared/fuzzy";
-import type { ContributedSetting, PickItem } from "../../shared/runtime";
+import type { ContributedSetting, PickItem } from "../../shared/host";
 import { SETTING_PREFIX, type Schema } from "../../shared/setting-schema";
 
 /** The `markdownWorkshop.` prefix of every key this extension contributes. */

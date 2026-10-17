@@ -1,11 +1,11 @@
 import type { Plugin } from "@workshop/core";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import type {} from "../resources/api";
 import { protocol } from "./protocol";
 import { taskEdit } from "./edits";
 export const tasksHost: Plugin<{ panel: PanelShell }> = {
   name: "tasks",
-  inject: { required: ["workshop", "rpc", "resources"] },
+  inject: { required: ["hostDocuments", "rpc", "resources"] },
   apply(ctx, { panel }) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "toggle", async (request) => {
@@ -17,7 +17,7 @@ export const tasksHost: Plugin<{ panel: PanelShell }> = {
         const document =
           source === panel.document.uri
             ? panel.document
-            : await ctx.workshop.openDocument?.(source);
+            : await ctx.hostDocuments.open(source);
         if (!document) {
           throw new Error("Document unavailable");
         }
@@ -27,7 +27,7 @@ export const tasksHost: Plugin<{ panel: PanelShell }> = {
           request.expected,
           request.checked,
         );
-        return change ? ctx.workshop.apply(document, [change]) : false;
+        return change ? ctx.hostDocuments.apply(document, [change]) : false;
       }),
     );
   },

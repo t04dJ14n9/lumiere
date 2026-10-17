@@ -1,5 +1,5 @@
 import { fuzzyMatch } from "../../shared/fuzzy";
-import type { PickItem } from "../../shared/runtime";
+import type { PickItem } from "../../shared/host";
 import { folderOf, stemOf } from "../../shared/vault-path";
 import type { VaultFile, VaultIndex } from "../vault/api";
 

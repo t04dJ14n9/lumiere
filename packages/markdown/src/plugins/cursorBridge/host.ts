@@ -1,5 +1,5 @@
 import type { Context, Plugin } from "@workshop/core";
-import type { HostDocument } from "../../shared/runtime";
+import type { HostDocument } from "../../shared/host";
 import type {} from "../editor/api";
 import { isCursorHost, openCursorChat, openCursorEdit } from "./cursor";
 import {
@@ -20,26 +20,36 @@ export interface CursorBridgeConfig {
 /** Host half: Cursor Chat (Cmd+L) and Edit (Cmd+K) on the Live Preview selection. */
 export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
   name: "cursorBridge",
-  inject: { required: ["editors", "selections", "workshop"] },
+  inject: {
+    required: [
+      "editors",
+      "selections",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "settings",
+      "agentHost",
+    ],
+  },
   apply(ctx, config) {
     const cursor = isCursorHost(config?.appName);
-    const workshop = ctx.workshop;
+    // Captured while live: the context-key reset runs after it is disposed.
+    const commands = ctx.hostCommands;
     const bridgeConfig = config ?? {
       appName: "",
       surface: unusedSurface,
     };
-    void workshop.execute("setContext", IS_CURSOR_HOST, cursor);
-    // Captured while live: teardown runs after this context is disposed.
+    void commands.execute("setContext", IS_CURSOR_HOST, cursor);
     ctx.effect(() => async () => {
-      await workshop.execute("setContext", IS_CURSOR_HOST, undefined);
+      await commands.execute("setContext", IS_CURSOR_HOST, undefined);
     });
     ctx.effect(() =>
-      workshop.command(contributionId("cursorBridge.chat"), () =>
+      commands.register(contributionId("cursorBridge.chat"), () =>
         runBridge(ctx, bridgeConfig, "chat"),
       ),
     );
     ctx.effect(() =>
-      workshop.command(contributionId("cursorBridge.edit"), () =>
+      commands.register(contributionId("cursorBridge.edit"), () =>
         runBridge(ctx, bridgeConfig, "edit"),
       ),
     );
@@ -60,7 +70,7 @@ async function runBridge(
   }
   const captured = await captureActiveSelection(ctx.editors, ctx.selections);
   if (!captured) {
-    ctx.workshop.inform?.("Select text in the note first");
+    ctx.dialogs.inform("Select text in the note first");
     return;
   }
   const commands = await commandSet(ctx);
@@ -78,7 +88,7 @@ async function runBridge(
     if (handoff.ok) {
       handoff.lease.release();
     }
-    ctx.workshop.error(
+    ctx.dialogs.error(
       confirmed.reason === "changed"
         ? "The note changed before Cursor could use the selection."
         : "Could not mirror the selection into Cursor’s editor.",
@@ -89,9 +99,9 @@ async function runBridge(
     await runChat(ctx, captured.selection.text, commands);
     return;
   }
-  const edited = await openCursorEdit(ctx.workshop.execute, commands);
+  const edited = await openCursorEdit(ctx.hostCommands.execute, commands);
   if (!edited) {
-    ctx.workshop.error("Cursor Edit is not available in this window.");
+    ctx.dialogs.error("Cursor Edit is not available in this window.");
   }
 }
 
@@ -101,24 +111,24 @@ async function runChat(
   commands: ReadonlySet<string> | undefined,
 ): Promise<void> {
   const target = await openCursorChat(
-    ctx.workshop.execute,
-    (value) => ctx.workshop.clipboard.write(value),
+    ctx.hostCommands.execute,
+    (value) => ctx.clipboard.write(value),
     text,
     commands,
   );
   if (target === "clipboard") {
-    ctx.workshop.inform?.("Selection copied. Paste it into Cursor Chat.");
+    ctx.dialogs.inform("Selection copied. Paste it into Cursor Chat.");
     return;
   }
   if (target === "chatFallback") {
-    ctx.workshop.inform?.(
+    ctx.dialogs.inform(
       "Opened Cursor Chat. Paste the selection if it was not attached.",
     );
   }
 }
 
 function pluginEnabled(ctx: Context, document: HostDocument): boolean {
-  const config = ctx.workshop.config(document);
+  const config = ctx.settings.forNote(document);
   return (
     config.preset === "obsidian" &&
     (config.features?.cursorBridge?.enabled ?? true)
@@ -128,7 +138,7 @@ function pluginEnabled(ctx: Context, document: HostDocument): boolean {
 async function commandSet(
   ctx: Context,
 ): Promise<ReadonlySet<string> | undefined> {
-  const environment = await ctx.workshop.agentEnvironment?.();
+  const environment = await ctx.agentHost.environment();
   return environment?.commands;
 }
 

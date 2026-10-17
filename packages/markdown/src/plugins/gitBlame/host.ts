@@ -1,5 +1,5 @@
 import type { Context, Plugin, Infer } from "@workshop/core";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import type { GitAccess } from "../../shared/git";
 import type { GitBlameLineResult } from "../../shared/git-blame";
 import { MAX_DIFF_CHARS } from "../../shared/diff";
@@ -9,12 +9,12 @@ type BlameRequest = Infer<typeof protocol.requests.blameLine.params>;
 
 /** Defense in depth for callers other than the schema-validated RPC channel. */
 export async function readBlameLine(
-  git: GitAccess | undefined,
+  git: GitAccess,
   uri: string,
   request: BlameRequest,
 ): Promise<GitBlameLineResult> {
-  const generation = () => git?.repoGeneration(uri) ?? 0;
-  if (!git || request.contents.length > MAX_DIFF_CHARS) {
+  const generation = () => git.repoGeneration(uri);
+  if (request.contents.length > MAX_DIFF_CHARS) {
     return { status: "unavailable", repoGeneration: generation() };
   }
   try {
@@ -29,7 +29,7 @@ export async function readBlameLine(
 
 export const gitBlameHost: Plugin<{ panel: PanelShell }> = {
   name: "gitBlame",
-  inject: { required: ["workshop", "rpc"] },
+  inject: { required: ["git", "rpc"] },
   apply(ctx, { panel }) {
     registerBlameRequests(ctx, panel);
     registerIdentityRequest(ctx, panel);
@@ -40,7 +40,7 @@ export const gitBlameHost: Plugin<{ panel: PanelShell }> = {
 function registerBlameRequests(ctx: Context, panel: PanelShell): void {
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "blameLine", (request) =>
-      readBlameLine(ctx.workshop.git, panel.document.uri, request),
+      readBlameLine(ctx.git, panel.document.uri, request),
     ),
   );
 }
@@ -48,19 +48,13 @@ function registerBlameRequests(ctx: Context, panel: PanelShell): void {
 function registerIdentityRequest(ctx: Context, panel: PanelShell): void {
   ctx.effect(() =>
     ctx.rpc.handle(protocol, "identity", async () => {
-      return ctx.workshop.git
-        ?.identity(panel.document.uri)
-        .catch(() => undefined);
+      return ctx.git.identity(panel.document.uri).catch(() => undefined);
     }),
   );
 }
 
 function registerRepositoryInvalidation(ctx: Context, panel: PanelShell): void {
-  const git = ctx.workshop.git;
-  if (!git) {
-    return;
-  }
-  const rpc = ctx.rpc;
+  const { git, rpc } = ctx;
   ctx.effect(() =>
     git.onDidChange(() => {
       // NativeGitAccess already advanced once before fan-out. Invalidation must

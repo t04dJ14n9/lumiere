@@ -1,5 +1,10 @@
 import type { Plugin } from "@workshop/core";
-import type { FileTextEdits, HostViews } from "../../shared/runtime";
+import type {
+  Dialogs,
+  FileTextEdits,
+  HostDocuments,
+  HostServices,
+} from "../../shared/host";
 import type { Vault, Vaults } from "../vault/api";
 import { rewriteLinks } from "./rewrite";
 import type { LinkFormat, RewriteContext } from "./rewrite";
@@ -7,19 +12,15 @@ import type { LinkFormat, RewriteContext } from "./rewrite";
 /** Rewrites links in other notes when files are renamed in VS Code. */
 export const linkUpdatesHost: Plugin = {
   name: "linkUpdates",
-  inject: { required: ["workshop", "vaults"] },
+  inject: { required: ["settings", "vaults", "hostDocuments", "dialogs"] },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views) {
-      return;
-    }
     ctx.effect(() =>
-      views.onWillRename(async (renames) => {
+      ctx.hostDocuments.onWillRename(async (renames) => {
         const resource = renames[0]?.oldUri;
         if (resource) {
-          await ctx.workshop.configuration?.prepare(resource);
+          await ctx.settings.effective.prepare(resource);
         }
-        const mode = views.setting<string>(
+        const mode = ctx.settings.get<string>(
           "linkUpdates.mode",
           "prompt",
           resource,
@@ -27,11 +28,11 @@ export const linkUpdatesHost: Plugin = {
         if (mode === "never") {
           return [];
         }
-        const edits = await linkEdits(ctx.vaults, views, renames);
+        const edits = await linkEdits(ctx.vaults, ctx, renames);
         if (edits.length === 0) {
           return [];
         }
-        if (mode === "prompt" && !(await confirm(views, edits.length))) {
+        if (mode === "prompt" && !(await confirm(ctx.dialogs, edits.length))) {
           return [];
         }
         return edits;
@@ -40,9 +41,9 @@ export const linkUpdatesHost: Plugin = {
   },
 };
 
-async function confirm(views: HostViews, files: number): Promise<boolean> {
+async function confirm(dialogs: Dialogs, files: number): Promise<boolean> {
   const update = "Update Links";
-  const answer = await views.ask(
+  const answer = await dialogs.ask(
     `Update links in ${files} file${files === 1 ? "" : "s"}?`,
     [update, "Don't Update"],
   );
@@ -52,7 +53,7 @@ async function confirm(views: HostViews, files: number): Promise<boolean> {
 /** Edits for every note in the renamed files' vault that links to them. */
 async function linkEdits(
   vaults: Vaults,
-  views: HostViews,
+  host: Pick<HostServices, "settings" | "hostDocuments">,
   renames: readonly { oldUri: string; newUri: string }[],
 ): Promise<FileTextEdits[]> {
   const first = renames[0] ? await vaults.locate(renames[0].oldUri) : undefined;
@@ -64,7 +65,7 @@ async function linkEdits(
   if (paths.size === 0) {
     return [];
   }
-  const format = views.setting<LinkFormat>(
+  const format = host.settings.get<LinkFormat>(
     "links.newLinkFormat",
     "shortest",
     renames[0]?.oldUri,
@@ -91,7 +92,7 @@ async function linkEdits(
       continue;
     }
     const edits = rewriteLinks(
-      await sourceText(vaults, views, file.uri),
+      await sourceText(vaults, host.hostDocuments, file.uri),
       source,
       context,
     );
@@ -109,10 +110,10 @@ async function linkEdits(
  */
 export async function sourceText(
   vaults: Pick<Vaults, "text">,
-  views: Pick<HostViews, "documentText">,
+  documents: Pick<HostDocuments, "text">,
   uri: string,
 ): Promise<string> {
-  return views.documentText(uri) ?? (await vaults.text(uri));
+  return documents.text(uri) ?? (await vaults.text(uri));
 }
 
 /**

@@ -2,12 +2,15 @@ import { metadata } from "../../../src/markdown/metadata";
 import type { Vault, Vaults } from "../../../src/plugins/vault/api";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import type {
-  HostViews,
+  ActiveEditor,
+  Dialogs,
+  HostDocuments,
+  HostServices,
   TreeNode,
   TreeSource,
-  Workshop,
-} from "../../../src/shared/runtime";
-import { fakeWorkbench } from "../../support/vscode-fake";
+  WorkbenchViews,
+} from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 
 export const ROOT = "memory:///vault";
 export const uriOf = (path: string) => `${ROOT}/${encodeURI(path)}`;
@@ -61,7 +64,10 @@ export function memoryVaults(notes: Record<string, string>) {
   return { vaults, index, texts, opened };
 }
 
-/** Host views that record what plugins create, with a settable active note. */
+/**
+ * Views, prompts, commands and the active note, recording what plugins
+ * create. `host` holds them as overrides for `fakeHost`.
+ */
 export function fakeViews(settings: Record<string, unknown> = {}) {
   const trees = new Map<
     string,
@@ -77,8 +83,8 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
   let active: string | undefined;
   const prompts: string[] = [];
   let answer: string | undefined;
-  let renameListener: Parameters<HostViews["onWillRename"]>[0] | undefined;
-  const views: HostViews = {
+  let renameListener: Parameters<HostDocuments["onWillRename"]>[0] | undefined;
+  const views: WorkbenchViews = {
     tree(id, source) {
       const record = {
         source,
@@ -104,30 +110,6 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
         dispose: () => (record.disposed = true),
       };
     },
-    pick: async () => undefined,
-    input: async () => undefined,
-    ask: async (message) => {
-      prompts.push(message);
-      return answer;
-    },
-    command(id, run) {
-      commands.set(id, run);
-      return () => {
-        commands.delete(id);
-      };
-    },
-    activeNote: () => active,
-    onActiveNoteChanged(listener) {
-      activeListeners.add(listener);
-      return () => {
-        activeListeners.delete(listener);
-      };
-    },
-    textEditor: () => undefined,
-    onTextSelectionChanged: () => () => {},
-    documentText: () => undefined,
-    setting: (key, fallback) =>
-      key in settings ? (settings[key] as never) : fallback,
     panel: () => ({
       reveal() {},
       setTitle() {},
@@ -143,15 +125,57 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
         onMessage: () => () => {},
       },
     }),
-    onWillRename: (listener) => {
-      renameListener = listener;
-      return () => {
-        renameListener = undefined;
-      };
+  };
+  const dialogs: Partial<Dialogs> = {
+    pick: async () => undefined,
+    input: async () => undefined,
+    ask: async (message) => {
+      prompts.push(message);
+      return answer;
     },
   };
-  return {
+  const register = (id: string, run: (...args: unknown[]) => unknown) => {
+    commands.set(id, run);
+    return () => {
+      commands.delete(id);
+    };
+  };
+  const activeEditor: ActiveEditor = {
+    note: () => active,
+    onNoteChanged(listener) {
+      activeListeners.add(listener);
+      return () => {
+        activeListeners.delete(listener);
+      };
+    },
+    textEditor: () => undefined,
+    onTextSelectionChanged: () => () => {},
+  };
+  const host = fakeHost({
     views,
+    dialogs,
+    activeEditor,
+    hostCommands: { register },
+    hostDocuments: {
+      text: () => undefined,
+      onWillRename: (listener) => {
+        renameListener = listener;
+        return () => {
+          renameListener = undefined;
+        };
+      },
+    },
+    settings: {
+      get: (key, fallback) =>
+        key in settings ? (settings[key] as never) : fallback,
+    },
+  });
+  return {
+    /** The fake host; replace a member on it to change what plugins see. */
+    host,
+    views: host.views,
+    dialogs: host.dialogs,
+    activeEditor: host.activeEditor,
     trees,
     statuses,
     commands,
@@ -170,10 +194,9 @@ export function fakeViews(settings: Record<string, unknown> = {}) {
   };
 }
 
-export function workbenchWith(views: HostViews): Workshop {
-  const workshop = fakeWorkbench();
-  workshop.views = views;
-  return workshop;
+/** The fake host whose views, prompts, commands and active note are `fake`'s. */
+export function hostWith(fake: { host: HostServices }): HostServices {
+  return fake.host;
 }
 
 /** Expand a tree fully into labels, for assertions. */

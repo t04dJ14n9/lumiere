@@ -1,6 +1,6 @@
 import type { EditorState, TransactionSpec } from "@codemirror/state";
 import { taskMarker } from "../../markdown/tasks";
-import type { TextEdit } from "../../shared/runtime";
+import type { TextEdit } from "../../shared/host";
 export function taskEdit(
   text: string,
   lineNumber: number,

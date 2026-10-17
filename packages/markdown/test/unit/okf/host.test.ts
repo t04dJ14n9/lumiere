@@ -1,3 +1,5 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -6,7 +8,6 @@ import type { Okf } from "../../../src/plugins/okfCore/api";
 import { okfCoreHost } from "../../../src/plugins/okfCore/host";
 import type { Vault, Vaults } from "../../../src/plugins/vault/api";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
-import type { Workshop } from "../../../src/shared/runtime";
 
 test("a vault-root bundle is registered and then removed", async () => {
   const index = new MemoryVaultIndex({
@@ -37,9 +38,7 @@ test("a vault-root bundle is registered and then removed", async () => {
       invalidated += 1;
     },
   } as unknown as Vaults);
-  root.provide("workshop", {
-    views: { setting: () => [] },
-  } as unknown as Workshop);
+  provideHostServices(root, fakeHost({ settings: { get: <T>() => [] as T } }));
   root.plugin(okfCoreHost, {});
   await root.settled();
   let service!: Okf;

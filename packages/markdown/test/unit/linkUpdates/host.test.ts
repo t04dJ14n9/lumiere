@@ -1,8 +1,9 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { linkUpdatesHost } from "../../../src/plugins/linkUpdates/host";
-import { fakeViews, memoryVaults, uriOf, workbenchWith } from "../views/fakes";
+import { fakeViews, memoryVaults, uriOf, hostWith } from "../views/fakes";
 
 const notes = {
   "Topic/Old.md": "",
@@ -16,10 +17,11 @@ async function start(settings: Record<string, unknown> = {}) {
   const fake = fakeViews(settings);
   const root = createRoot();
   root.provide("vaults", vaults);
-  root.provide("workshop", workbenchWith(fake.views));
+  const host = hostWith(fake);
+  provideHostServices(root, host);
   root.plugin(linkUpdatesHost);
   await root.settled();
-  return { root, fake };
+  return { root, fake, host };
 }
 
 const rename = [
@@ -78,9 +80,9 @@ test("renaming a folder updates links to every file in it", async () => {
 });
 
 test("edits are computed from the open document, not a stale vault copy", async () => {
-  const { root, fake } = await start({ "linkUpdates.mode": "always" });
+  const { root, fake, host } = await start({ "linkUpdates.mode": "always" });
   const open = '---\nrelated: "[[Old]]"\n---\nNew line [[Old|the old note]].';
-  fake.views.documentText = (uri) => (uri === uriOf("A.md") ? open : undefined);
+  host.hostDocuments.text = (uri) => (uri === uriOf("A.md") ? open : undefined);
   const edits = await fake.rename(rename);
   const a = edits.find((file) => file.uri === uriOf("A.md"));
   assert.deepEqual(

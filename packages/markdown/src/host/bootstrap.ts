@@ -4,8 +4,9 @@ import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
 import { createRoot } from "@workshop/core";
 import { providePluginStates } from "../shared/plugin-state";
+import { provideHostServices } from "../shared/host";
 import type { BaseContext, Plugin, RootContext } from "@workshop/core";
-import type { Workshop } from "../shared/runtime";
+import type { HostServices } from "../shared/host";
 import type { VaultSystem } from "../plugins/vault/api";
 import {
   inlineTitleHost,
@@ -49,11 +50,11 @@ import * as vscode from "vscode";
  * tests get a fresh one).
  */
 export async function bootstrap(
-  workshop: Workshop,
+  host: HostServices,
   vaultSystem?: VaultSystem,
   root: RootContext = createRoot({ rank: pluginRank }),
 ): Promise<RootContext> {
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   providePluginStates(root);
   if (vaultSystem) {
     root.provide("vaultSystem", vaultSystem);
@@ -69,15 +70,17 @@ export async function bootstrap(
   root.plugin(editorHost, {
     features,
     configure(context, panel) {
-      // Panel kernels are isolated. The facade stays put while okfCore binds it.
+      // Panel trees are isolated: hand them the host services explicitly.
+      provideHostServices(context, host);
+      // The facade stays put while okfCore binds it.
       context.provide("okf", okf);
       context.on("links/open", (request) =>
         root.bail("links/open", { ...request, editorId: panel.id }),
       );
-      if (workshop.config(panel.document).preset === "obsidian") {
+      if (host.settings.forNote(panel.document).preset === "obsidian") {
         context.plugin(vaultHost, { documentUri: panel.document.uri });
         context.plugin(resourcesHost, { panel });
-        hostFeatures(context, panel, workshop);
+        hostFeatures(context, panel, host);
       }
     },
   });
@@ -93,7 +96,7 @@ export async function bootstrap(
   root.plugin(commandsHost, { features });
   root.plugin(settingsHost);
   root.plugin(livePreviewHost);
-  startWindowFeatures(root, workshop, okf);
+  startWindowFeatures(root, host, okf);
   await root.settled();
   return root;
 }
@@ -101,7 +104,7 @@ export async function bootstrap(
 /** Window plugins, including the Tags view, which shares an editor-feature manifest. */
 function startWindowFeatures(
   root: BaseContext,
-  workshop: Workshop,
+  host: HostServices,
   okf: ReturnType<typeof createOkfFacade>,
 ): void {
   const plugins = [
@@ -127,7 +130,7 @@ function startWindowFeatures(
   const manifests = [...workbenchFeatures, ...features];
   startWorkbenchFeatures(
     root,
-    workshop,
+    host.settings,
     plugins.map((plugin) => ({
       manifest: manifests.find((item) => item.id === plugin.name)!,
       plugin: plugin as Plugin,

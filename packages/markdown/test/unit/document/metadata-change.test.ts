@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { ChangeSet } from "@codemirror/state";
 import { Session } from "../../../src/plugins/document/session";
 import { protocol } from "../../../src/plugins/document/protocol";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 import { rpcPair } from "../../support/rpc-pair";
 
 // Cursor sometimes reports a change event with no content (a dirty-state
@@ -13,17 +13,19 @@ test("a change event without content keeps a panel's pending edit its own", asyn
   let text = "Original line";
   const owner: { session?: Session } = {};
   const document = fakeDocument({ getText: () => text });
-  const workshop = fakeWorkbench({
-    apply: async (_doc, edits) => {
-      owner.session!.changed();
-      for (const edit of edits) {
-        text = text.slice(0, edit.from) + edit.insert + text.slice(edit.to);
-      }
-      owner.session!.changed();
-      return true;
+  const host = fakeHost({
+    hostDocuments: {
+      apply: async (_doc, edits) => {
+        owner.session!.changed();
+        for (const edit of edits) {
+          text = text.slice(0, edit.from) + edit.insert + text.slice(edit.to);
+        }
+        owner.session!.changed();
+        return true;
+      },
     },
   });
-  const session = new Session(document, workshop);
+  const session = new Session(document, host);
   owner.session = session;
   const pair = rpcPair();
   const received: string[] = [];

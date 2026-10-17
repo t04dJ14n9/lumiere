@@ -1,5 +1,5 @@
 import { SourceCoordinates } from "../../shared/document/coordinates";
-import type { Navigation } from "../../shared/runtime";
+import type { Navigation } from "../../shared/host";
 import { isMarkdownPath } from "../../shared/vault-path";
 import type {
   LinkPolicy,

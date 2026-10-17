@@ -1,3 +1,6 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
+import type { HostDocument } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -109,29 +112,35 @@ function harness(mode: "native" | "rendered") {
       return panel;
     },
   };
-  const workshop = {
+  const host = fakeHost({
     diffViews,
     git: { toGitUri: (_uri: string, ref: string) => gitUri(ref) },
-    views: {
-      command(id: string, run: (...args: unknown[]) => unknown) {
+    hostCommands: {
+      register(id, run) {
         commands.set(id, run);
-        return () => commands.delete(id);
+        return () => void commands.delete(id);
       },
-      setting: () => mode,
-      activeNote: () => "file:///n.md",
-      documentText: (uri: string) => texts[uri],
     },
-    onChange(listener: (document: { uri: string }) => void) {
-      changes.add(listener);
-      return () => changes.delete(listener);
+    settings: { get: <T>() => mode as T },
+    activeEditor: { note: () => "file:///n.md" },
+    hostDocuments: {
+      text: (uri) => texts[uri],
+      onChange(listener) {
+        // Tests announce a change with only the document's URI.
+        const forward = (document: { uri: string }) =>
+          listener(document as HostDocument);
+        changes.add(forward);
+        return () => void changes.delete(forward);
+      },
     },
-    error(message: string) {
-      throw new Error(message);
+    dialogs: {
+      error(message) {
+        throw new Error(message);
+      },
     },
-    async execute() {},
-  };
+  });
   const disposeShown = (index: number) => panels[index]!.dispose();
-  return { workshop, commands, opened, shown, changes, texts, disposeShown };
+  return { host, commands, opened, shown, changes, texts, disposeShown };
 }
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -139,7 +148,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 test("host: the command opens HEAD against the note and follows edits; off disposes panels", async () => {
   const h = harness("native");
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
   h.commands.get(contributionId("gitDiffEditor.open"))!();
@@ -181,7 +190,7 @@ test("host: the command opens HEAD against the note and follows edits; off dispo
 test("host: in rendered mode a Markdown text diff is replaced by the rendered panel", async () => {
   const h = harness("rendered");
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   let closed = false;
@@ -222,10 +231,8 @@ function slowHarness(mode: "native" | "rendered") {
   const errors: string[] = [];
   delete h.texts[gitUri("HEAD")];
   delete h.texts[gitUri("")];
-  Object.assign(h.workshop, {
-    openDocument: () => head.promise,
-    error: (message: string) => void errors.push(message),
-  });
+  h.host.hostDocuments.open = () => head.promise as never;
+  h.host.dialogs.error = (message) => void errors.push(message);
   return { ...h, head, errors };
 }
 
@@ -238,7 +245,7 @@ const flush = async () => {
 test("B1: an open still reading when the plugin is turned off creates nothing", async () => {
   const h = slowHarness("native");
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
   void h.commands.get(contributionId("gitDiffEditor.open"))!();
@@ -254,7 +261,7 @@ test("B1: an open still reading when the plugin is turned off creates nothing", 
 test("B1: an update queued before its panel closes is dropped", async () => {
   const h = harness("native");
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   h.commands.get(contributionId("gitDiffEditor.open"))!();
@@ -274,7 +281,7 @@ test("B1: an update queued before its panel closes is dropped", async () => {
 test("B3: an edit while the baseline loads is in the first comparison", async () => {
   const h = slowHarness("native");
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   void h.commands.get(contributionId("gitDiffEditor.open"))!();
@@ -316,7 +323,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
       const h = slowHarness("rendered");
       h.head.resolve({ getText: () => "# T\n\nold\n" });
       const root = createRoot();
-      root.provide("workshop", h.workshop as never);
+      provideHostServices(root, h.host);
       root.plugin(gitDiffEditorHost);
       await root.settled();
       h.opened.forEach((listener) => listener(opened(close)));
@@ -329,7 +336,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
       const h = slowHarness("rendered");
       h.head.reject(new Error("no such revision"));
       const root = createRoot();
-      root.provide("workshop", h.workshop as never);
+      provideHostServices(root, h.host);
       root.plugin(gitDiffEditorHost);
       await root.settled();
       let closed = false;
@@ -352,10 +359,8 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
       const h = harness("rendered");
       const natives: unknown[][] = [];
       const errors: string[] = [];
-      Object.assign(h.workshop, {
-        error: (message: string) => void errors.push(message),
-      });
-      Object.assign(h.workshop.diffViews, {
+      h.host.dialogs.error = (message) => void errors.push(message);
+      Object.assign(h.host.diffViews, {
         show() {
           throw new Error("webview failed");
         },
@@ -364,7 +369,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
         },
       });
       const root = createRoot();
-      root.provide("workshop", h.workshop as never);
+      provideHostServices(root, h.host);
       root.plugin(gitDiffEditorHost);
       await root.settled();
       h.opened.forEach((listener) => listener(opened(async () => true)));
@@ -474,7 +479,7 @@ test("R3 B4: the second of two adjacent footnote definitions is found", () => {
 test("R3 B1: disabling while a read is pending drops its change listener at once", async () => {
   const h = slowHarness("native");
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
   void h.commands.get(contributionId("gitDiffEditor.open"))!();
@@ -493,13 +498,13 @@ test("R3 B1: disabling while a read is pending drops its change listener at once
 test("R3 B2: disabling while the native tab closes restores the native diff", async () => {
   const h = harness("rendered");
   const natives: unknown[][] = [];
-  Object.assign(h.workshop.diffViews, {
+  Object.assign(h.host.diffViews, {
     async openNative(...args: unknown[]) {
       natives.push(args);
     },
   });
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
   const closing = deferred<boolean>();
@@ -527,16 +532,14 @@ test("R3 B2: disabling while the native tab closes restores the native diff", as
 test("R3: a failed command presentation releases its change listener", async () => {
   const h = harness("native");
   const errors: string[] = [];
-  Object.assign(h.workshop, {
-    error: (message: string) => void errors.push(message),
-  });
-  Object.assign(h.workshop.diffViews, {
+  h.host.dialogs.error = (message) => void errors.push(message);
+  Object.assign(h.host.diffViews, {
     show() {
       throw new Error("webview failed");
     },
   });
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   await Promise.resolve(
@@ -707,19 +710,19 @@ test("review: Git and file events refresh after both native documents close; dis
   const fileChanges = new Set<() => void>();
   const closedDocuments: { closed: boolean; uri: string; getText(): string }[] =
     [];
-  Object.assign(h.workshop.git, {
+  Object.assign(h.host.git, {
     onDidChange(listener: () => void) {
       gitChanges.add(listener);
       return () => gitChanges.delete(listener);
     },
   });
-  Object.assign(h.workshop, {
-    watchFile(uri: string, listener: () => void) {
-      assert.equal(uri, "file:///n.md");
-      fileChanges.add(listener);
-      return () => fileChanges.delete(listener);
-    },
-    async openDocument(uri: string) {
+  h.host.workspace.watch = (uri, listener) => {
+    assert.equal(uri, "file:///n.md");
+    fileChanges.add(listener);
+    return () => void fileChanges.delete(listener);
+  };
+  Object.assign(h.host.hostDocuments, {
+    async open(uri: string) {
       const text = h.texts[uri]!;
       const document = {
         uri,
@@ -737,9 +740,9 @@ test("review: Git and file events refresh after both native documents close; dis
       return document;
     },
   });
-  h.workshop.views.documentText = () => undefined as never;
+  h.host.hostDocuments.text = () => undefined;
   const root = createRoot();
-  root.provide("workshop", h.workshop as never);
+  provideHostServices(root, h.host);
   root.plugin(gitDiffEditorHost);
   await root.settled();
   for (const open of h.opened) {

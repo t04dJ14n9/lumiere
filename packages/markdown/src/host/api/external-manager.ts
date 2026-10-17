@@ -37,13 +37,11 @@ export class ExternalPlugins {
   ) {
     const { root } = options;
     root.effect(() => () => this.dispose());
-    if (root.workshop.onConfiguration) {
-      root.effect(() =>
-        root.workshop.onConfiguration!(() => {
-          void this.refresh();
-        }),
-      );
-    }
+    root.effect(() =>
+      root.settings.onChange(() => {
+        void this.refresh();
+      }),
+    );
     root.on("editor/opened", () => {
       void this.refresh();
     });

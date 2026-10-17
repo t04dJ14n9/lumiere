@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -6,7 +7,7 @@ import { livePreviewHost } from "../../../src/plugins/livePreview/host";
 import { features } from "../../../src/plugins/catalog";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
 import { contributionId } from "../../../src/shared/setting-schema";
-import { fakeWorkbench, fakeDocument } from "../../support/vscode-fake";
+import { fakeHost, fakeDocument } from "../../support/vscode-fake";
 import { fixture } from "../features/fixture";
 
 test("every editor manifest command routes to its registered webview ID", async () => {
@@ -47,20 +48,24 @@ test("every editor manifest command routes to its registered webview ID", async 
     },
     restore: async () => {},
   });
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      config: () => ({
-        preset: "obsidian",
-        mode: "livePreview",
-        features: settings,
-      }),
-      command: (id, run) => {
-        assert.ok(!native.has(id), id);
-        native.set(id, run);
-        return () => {
-          native.delete(id);
-        };
+  provideHostServices(
+    root,
+    fakeHost({
+      settings: {
+        forNote: () => ({
+          preset: "obsidian",
+          mode: "livePreview",
+          features: settings,
+        }),
+      },
+      hostCommands: {
+        register: (id, run) => {
+          assert.ok(!native.has(id), id);
+          native.set(id, run);
+          return () => {
+            native.delete(id);
+          };
+        },
       },
     }),
   );

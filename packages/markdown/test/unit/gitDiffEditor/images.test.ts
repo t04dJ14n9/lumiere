@@ -1,3 +1,5 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost, withHost } from "../../support/vscode-fake";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
@@ -21,7 +23,6 @@ import {
   diffUpdate,
 } from "../../../src/shared/diff-panel-protocol";
 import type { Vaults } from "../../../src/plugins/vault/api";
-import type { Workshop } from "../../../src/shared/runtime";
 
 const gitUri = (path: string, ref: string) =>
   `git:${path}?${encodeURIComponent(JSON.stringify({ path, ref }))}`;
@@ -82,19 +83,21 @@ for (const directory of ["100% done", "release%20notes"]) {
         };
       },
     } as unknown as Vaults;
-    const files = {
-      async stat(uri: string) {
-        assert.equal(uri, image);
-        return { mtime: 7, symbolicLink: false };
+    const files = fakeHost({
+      workspace: {
+        async stat(uri) {
+          assert.equal(uri, image);
+          return { mtime: 7, symbolicLink: false };
+        },
       },
       git: {
-        toGitUri(uri: string, ref: string) {
+        toGitUri(uri, ref) {
           assert.equal(uri, image);
           assert.equal(ref, "HEAD");
           return gitUri(fileURLToPath(uri), ref);
         },
       },
-    } as unknown as Workshop;
+    });
     const resource = await sideResources(vaults, files, {
       uri: gitUri(notePath, "HEAD"),
       label: "HEAD",
@@ -126,14 +129,12 @@ test("images resolve separately against each note and Git revision with existing
       };
     },
   } as unknown as Vaults;
-  const files = {
-    async read() {
-      return new Uint8Array();
+  const files = fakeHost({
+    workspace: {
+      read: async () => new Uint8Array(),
+      stat: async () => ({ mtime: 7, symbolicLink: false }),
     },
-    async stat() {
-      return { mtime: 7, symbolicLink: false };
-    },
-  } as unknown as Workshop;
+  });
   const resource = await sideResources(vaults, files, {
     uri: source,
     label: "Working tree",
@@ -167,15 +168,14 @@ test("images resolve separately against each note and Git revision with existing
         };
       },
     } as unknown as Vaults;
-    const revisionFiles = {
-      ...files,
+    const revisionFiles = withHost(files, {
       git: {
-        toGitUri(uri: string, ref: string) {
+        toGitUri(uri, ref) {
           revisions.push([uri, ref]);
           return gitUri(new URL(uri).pathname, ref);
         },
       },
-    } as unknown as Workshop;
+    });
     for (const [ref, target] of [
       ["HEAD", "old.png"],
       ["", "new.png"],
@@ -304,7 +304,7 @@ test("each side assigns resolved image sources and shows source fallback until l
 test("image resolution service is injected and withdrawn with its plugin", async () => {
   const root = createRoot();
   root.provide("vaults", {} as never);
-  root.provide("workshop", {} as never);
+  provideHostServices(root, fakeHost());
   const fiber = root.plugin(diffResourcesHost);
   await root.settled();
   let provided = false;

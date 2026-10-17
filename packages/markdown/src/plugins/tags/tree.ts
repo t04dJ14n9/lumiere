@@ -1,5 +1,5 @@
 import { tagTree, type TagNode } from "../../markdown/tags/tree";
-import type { TreeNode, TreeSource } from "../../shared/runtime";
+import type { TreeNode, TreeSource } from "../../shared/host";
 import { isMarkdownPath } from "../../shared/vault-path";
 import { contributionId } from "../../shared/setting-schema";
 import type { VaultIndex } from "../vault/api";

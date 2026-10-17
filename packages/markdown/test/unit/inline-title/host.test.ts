@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -5,7 +6,7 @@ import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import { inlineTitleHost } from "../../../src/plugins/inlineTitle/host";
 import { protocol } from "../../../src/plugins/inlineTitle/protocol";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function endpoints() {
   let hostReceive = (_value: unknown) => {};
@@ -54,22 +55,24 @@ test("inline title host owns resource-enabled RPC handlers and reports rename er
     },
     restore: async () => {},
   } satisfies Editors);
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      renameFile: async () => {},
-      config: () => ({
-        preset: "obsidian",
-        mode: "source",
-        features: { inlineTitle: { enabled, config: {} } },
-      }),
-      error: (message) => errors.push(message),
-      onConfiguration: (callback) => {
-        configurationChanged = callback;
-        return () => {
-          configurationChanged = () => {};
-        };
+  provideHostServices(
+    root,
+    fakeHost({
+      hostDocuments: { rename: async () => {} },
+      settings: {
+        forNote: () => ({
+          preset: "obsidian",
+          mode: "source",
+          features: { inlineTitle: { enabled, config: {} } },
+        }),
+        onChange: (callback) => {
+          configurationChanged = callback;
+          return () => {
+            configurationChanged = () => {};
+          };
+        },
       },
+      dialogs: { error: (message) => errors.push(message) },
     }),
   );
   const fiber = root.plugin(inlineTitleHost);

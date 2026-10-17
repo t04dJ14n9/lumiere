@@ -10,7 +10,7 @@ import type {
   ViewSnapshot,
 } from "../../../src/plugins/editor/api";
 import type { DocumentSession } from "../../../src/plugins/document/api";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function fixture() {
   let version = 3;
@@ -59,22 +59,26 @@ function fixture() {
     capture: async (id) => snapshots.get(id)!,
     restore: async () => {},
   };
-  const workshop = fakeWorkbench({
-    renameFile: async (_doc, target) => {
-      events.push(`rename:${target}`);
+  const host = fakeHost({
+    hostDocuments: {
+      rename: async (_doc, target) => {
+        events.push(`rename:${target}`);
+      },
     },
-    execute: async (_command, _uri, _type, options) => {
-      events.push(`open:${(options as { viewColumn: number }).viewColumn}`);
+    hostCommands: {
+      execute: async (_command, _uri, _type, options) => {
+        events.push(`open:${(options as { viewColumn: number }).viewColumn}`);
+      },
     },
   });
-  const renames = new TitleRenames(editors, workshop, async () => {
+  const renames = new TitleRenames(editors, host, async () => {
     events.push("restore");
   });
   return {
     panels,
     snapshots,
     editors,
-    workshop,
+    host,
     renames,
     events,
     change: () => {
@@ -139,7 +143,7 @@ test("rename refuses stale capture, cancellation and failed native edits without
   );
   assert.deepEqual(cancelled.events, ["flush"]);
   const failed = fixture();
-  failed.workshop.renameFile = async () => {
+  failed.host.hostDocuments.rename = async () => {
     throw new Error("exists");
   };
   await assert.rejects(

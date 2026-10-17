@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type { Disposer } from "@workshop/core";
-import type { WorkshopPanel } from "../shared/runtime";
+import type { WorkshopPanel } from "../shared/host";
 
 /** One webview panel per view type, independent of any Markdown document. */
 export function createWorkshopPanel(

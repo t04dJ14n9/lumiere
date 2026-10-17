@@ -1,10 +1,11 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { hostFeatures } from "../../../src/host/features";
 import { features } from "../../../src/plugins/catalog";
 import type { GitAccess } from "../../../src/shared/git";
-import type { PanelShell } from "../../../src/shared/runtime";
+import type { PanelShell } from "../../../src/shared/host";
 import { MAX_DIFF_CHARS } from "../../../src/shared/diff";
 import {
   gitBlameHost,
@@ -12,7 +13,7 @@ import {
 } from "../../../src/plugins/gitBlame/host";
 import { protocol } from "../../../src/plugins/gitBlame/protocol";
 import { rpcPair } from "../../support/rpc-pair";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function fakeGit() {
   let generation = 0;
@@ -52,7 +53,7 @@ async function setup(git?: GitAccess) {
   const pair = rpcPair();
   const root = createRoot();
   const document = { uri: "file:///note.md" };
-  root.provide("workshop", { git } as never);
+  provideHostServices(root, fakeHost(git ? { git } : {}));
   root.provide("rpc", pair.host);
   const fiber = root.plugin(gitBlameHost, { panel: { document } } as never);
   await root.settled();
@@ -81,26 +82,28 @@ test("panel host features start blame by default and follow resource settings", 
   );
   let preset: "obsidian" | "minimal" = "obsidian";
   let configurationChanged = () => {};
-  const workshop = fakeWorkbench({
+  const host = fakeHost({
     git: fake.git,
-    config(resource) {
-      assert.equal(resource, document);
-      return { preset, mode: "livePreview", features: settings };
-    },
-    onConfiguration(listener) {
-      configurationChanged = listener;
-      return () => {
-        configurationChanged = () => {};
-      };
+    settings: {
+      forNote(resource) {
+        assert.equal(resource, document);
+        return { preset, mode: "livePreview", features: settings };
+      },
+      onChange(listener) {
+        configurationChanged = listener;
+        return () => {
+          configurationChanged = () => {};
+        };
+      },
     },
   });
   t.after(async () => {
     await root.dispose();
     await pair.dispose();
   });
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   root.provide("rpc", pair.host);
-  hostFeatures(root, { document } as PanelShell, workshop);
+  hostFeatures(root, { document } as PanelShell, host);
   await root.settled();
 
   const request = { line: 1, contents: "note", version: 1 };

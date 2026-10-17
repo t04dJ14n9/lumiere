@@ -1,14 +1,17 @@
+import { provideHostServices } from "../../../src/shared/host";
 import { contributedProperties } from "../../support/manifest";
 import { createRoot } from "@workshop/core";
 import { settingsHost } from "../../../src/plugins/settings/host";
 import type {
   ContributedSetting,
+  Dialogs,
   PickItem,
   SettingsAccess,
   SettingTarget,
-} from "../../../src/shared/runtime";
+} from "../../../src/shared/host";
 import { checkWrite, contributionId } from "../../../src/shared/setting-schema";
-import { fakeViews, workbenchWith } from "../views/fakes";
+import { fakeViews, hostWith } from "../views/fakes";
+import { withHost } from "../../support/vscode-fake";
 
 /** The contributed settings exactly as the generated package.json lists them. */
 export const contributed: readonly ContributedSetting[] = Object.entries(
@@ -72,32 +75,31 @@ export async function run(
   const asked: { value: string; validate(text: string): string | undefined }[] =
     [];
   const picks: PickItem<unknown>[][] = [];
-  const views = {
-    ...fake.views,
-    pick: async (options: { items(query: string): PickItem<unknown>[] }) => {
-      const items = options.items("");
-      picks.push(items);
-      const chosen = answers.pick?.(items);
-      return chosen === undefined
-        ? undefined
-        : { item: items.find((item) => item.value === chosen), query: "" };
-    },
-    input: async (options: {
-      value: string;
-      validate(text: string): string | undefined;
-    }) => {
-      asked.push(options);
-      return answers.input;
-    },
-  } as never;
-  const workshop = workbenchWith(views);
-  workshop.settings = store.access;
   const informed: string[] = [];
   const errors: string[] = [];
-  workshop.inform = (message) => informed.push(message);
-  workshop.error = (message) => errors.push(message);
+  const host = withHost(hostWith(fake), {
+    settings: { access: store.access },
+    dialogs: {
+      pick: (async (options: {
+        items(query: string): readonly PickItem<unknown>[];
+      }) => {
+        const items = options.items("");
+        picks.push([...items]);
+        const chosen = answers.pick?.(items);
+        return chosen === undefined
+          ? undefined
+          : { item: items.find((item) => item.value === chosen), query: "" };
+      }) as Dialogs["pick"],
+      input: async (options) => {
+        asked.push(options);
+        return answers.input;
+      },
+      inform: (message) => void informed.push(message),
+      error: (message) => void errors.push(message),
+    },
+  });
   const root = createRoot({});
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   root.plugin(settingsHost);
   await root.settled();
   const command = (id: string) => {

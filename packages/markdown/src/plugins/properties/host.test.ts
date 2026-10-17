@@ -1,10 +1,11 @@
+import { provideHostServices } from "../../shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import type { VaultIndex } from "../vault/api";
-import { fakeWorkbench } from "../../../test/support/vscode-fake";
+import { fakeHost } from "../../../test/support/vscode-fake";
 import { propertiesHost } from "./host";
 import { protocol } from "./protocol";
 test("property RPC shares preferences, validates keys and disposes handlers on disable", async () => {
@@ -41,9 +42,9 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
       frontmatter: path === "One.md" ? { status: "done" } : { list: ["a"] },
     }),
   } as unknown as VaultIndex);
-  root.provide(
-    "workshop",
-    fakeWorkbench({
+  provideHostServices(
+    root,
+    fakeHost({
       storage: {
         get<T>(key: string, fallback: T): T {
           return (saved.get(key) as T) ?? fallback;

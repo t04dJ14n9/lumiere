@@ -1,5 +1,5 @@
-import type { PanelPort } from "../../shared/runtime";
-import type { HostDocument } from "../../shared/runtime";
+import type { PanelPort } from "../../shared/host";
+import type { HostDocument } from "../../shared/host";
 import type { ApiPlatform } from "./platform";
 import type { DocumentState, EditorSnapshot } from "./types";
 export function documentSnapshot(

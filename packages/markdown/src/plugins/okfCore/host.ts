@@ -13,7 +13,7 @@ export interface OkfCoreConfig {
 /** Window service for OKF bundles. It registers the link policy; the vault does not inject it. */
 export const okfCoreHost: Plugin<OkfCoreConfig> = {
   name: "okfCore",
-  inject: { required: ["workshop", "vaults"] },
+  inject: { required: ["settings", "vaults"] },
   apply(ctx, config) {
     const bundles = new Map<string, readonly string[]>();
     const service = createService(bundles);
@@ -30,9 +30,7 @@ export const okfCoreHost: Plugin<OkfCoreConfig> = {
     };
     ctx.on("vault/changed", refresh);
     ctx.on("vault/resolved", refresh);
-    if (ctx.workshop.onConfiguration) {
-      ctx.effect(() => ctx.workshop.onConfiguration!(refresh));
-    }
+    ctx.effect(() => ctx.settings.onChange(refresh));
   },
 };
 
@@ -133,7 +131,7 @@ function bundleFiles(vault: Vault) {
 }
 
 function manualBundles(ctx: Context): string[] {
-  const value = ctx.workshop.views?.setting<unknown>("okfCore.bundles", []);
+  const value = ctx.settings.get<unknown>("okfCore.bundles", []);
   if (!Array.isArray(value)) {
     return [];
   }

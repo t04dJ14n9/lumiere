@@ -41,28 +41,38 @@ const nodeTempFs: TempFs = {
 
 export const ideContextHost: Plugin = {
   name: "ideContext",
-  inject: { required: ["editors", "selections", "workshop"] },
+  inject: {
+    required: [
+      "editors",
+      "selections",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "agentHost",
+    ],
+  },
   apply(ctx) {
-    const workshop = ctx.workshop;
+    // Captured while live: the context-key reset runs after it is disposed.
+    const commands = ctx.hostCommands;
     // Window plugin: editor registerActiveContexts does not cover us.
-    const contextReady = workshop
+    const contextReady = commands
       .execute("setContext", contributionId("plugin.ideContext"), true)
       .catch((error) =>
         ctx.logger.warn("ideContext command context failed", error),
       );
     ctx.effect(() => async () => {
       await contextReady;
-      await workshop.execute(
+      await commands.execute(
         "setContext",
         contributionId("plugin.ideContext"),
         undefined,
       );
     });
     ctx.effect(() =>
-      workshop.command(contributionId("ideContext.copy"), () => runCopy(ctx)),
+      commands.register(contributionId("ideContext.copy"), () => runCopy(ctx)),
     );
     ctx.effect(() =>
-      workshop.command(contributionId("ideContext.send"), () => runSend(ctx)),
+      commands.register(contributionId("ideContext.send"), () => runSend(ctx)),
     );
   },
 };
@@ -70,7 +80,7 @@ export const ideContextHost: Plugin = {
 async function gatherInput(ctx: Context) {
   const panel = ctx.editors.active();
   if (!panel) {
-    ctx.workshop.inform?.("Open a Markdown Workshop note first");
+    ctx.dialogs.inform("Open a Markdown Workshop note first");
     return undefined;
   }
   const selection = await ctx.selections.capture(panel.id);
@@ -92,8 +102,8 @@ async function runCopy(ctx: Context): Promise<void> {
   const packet = buildMwIdeContextPacket(input);
   await copyIdeContext(
     packet,
-    (t) => ctx.workshop.clipboard.write(t),
-    (m) => ctx.workshop.inform?.(m),
+    (t) => ctx.clipboard.write(t),
+    (m) => ctx.dialogs.inform(m),
   );
 }
 
@@ -103,26 +113,23 @@ async function runSend(ctx: Context): Promise<void> {
     return;
   }
   const packet = buildMwIdeContextPacket(input);
-  const environment = await ctx.workshop.agentEnvironment?.();
+  const environment = await ctx.agentHost.environment();
   const setting = (environment?.target ?? "auto") as IdeContextTargetSetting;
   const commands = environment?.commands ?? new Set<string>();
   await sendIdeContext(packet, {
     setting,
     commands,
-    clipboardWrite: (t) => ctx.workshop.clipboard.write(t),
-    executeCommand: (id, ...args) => ctx.workshop.execute(id, ...args),
+    clipboardWrite: (t) => ctx.clipboard.write(t),
+    executeCommand: (id, ...args) => ctx.hostCommands.execute(id, ...args),
     showQuickPick: async (items) => {
       const labels = items.map((i) => i.label);
-      const choice = await ctx.workshop.views?.ask?.(
-        "Send IDE Context to…",
-        labels,
-      );
+      const choice = await ctx.dialogs.ask("Send IDE Context to…", labels);
       if (!choice) {
         return undefined;
       }
       return items.find((i) => i.label === choice)?.id;
     },
-    inform: (m) => ctx.workshop.inform?.(m),
+    inform: (m) => ctx.dialogs.inform(m),
     publishTemp: publishIdeContextTemp,
     renewLease: renewLeaseAtomic,
     tempFs: nodeTempFs,

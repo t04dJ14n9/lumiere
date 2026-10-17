@@ -1,8 +1,10 @@
+import { provideHostServices } from "../../shared/host";
+import { fakeHost } from "../../../test/support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
-import type { PanelShell, Workshop } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import { onlineVideosHost } from "./host";
 import { protocol } from "./protocol";
 
@@ -45,9 +47,10 @@ test("the host looks up details only in a trusted workspace", async (t) => {
   const { host, client } = pair();
   const root = createRoot();
   root.provide("rpc", host);
-  root.provide("workshop", {
-    isTrusted: () => trusted,
-  } as unknown as Workshop);
+  provideHostServices(
+    root,
+    fakeHost({ workspace: { isTrusted: () => trusted } }),
+  );
   root.plugin(onlineVideosHost, { panel: {} as PanelShell });
   await root.settled();
   const ask = () =>

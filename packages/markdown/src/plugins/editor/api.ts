@@ -7,7 +7,7 @@ import type { viewState } from "./protocol";
 import type { DocumentSession } from "../document/api";
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import type { PanelPort } from "../../shared/runtime";
+import type { PanelPort } from "../../shared/host";
 import type { CaretMode } from "./caret";
 export type { CaretMode } from "./caret";
 export interface CaretModeSource {

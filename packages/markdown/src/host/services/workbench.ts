@@ -1,23 +1,36 @@
 import * as vscode from "vscode";
-import type { Configuration } from "../shared/configuration";
-import { createConfiguration } from "./configuration-access";
 import type {
-  FileTextEdits,
-  HostViews,
+  ActiveEditor,
+  Clipboard,
+  Dialogs,
   StatusHandle,
   TreeNode,
-} from "../shared/runtime";
-import { cleanEditedUris } from "./rename-save";
-import { createWorkshopPanel } from "./panel-adapter";
+  WorkbenchViews,
+} from "../../shared/host";
+import { createWorkshopPanel } from "../panel-adapter";
+import { toDisposer } from "./documents";
 
-/** The VS Code side of `workshop.views` (DESIGN §7.1). */
-export function createHostViews(
-  extensionUri: vscode.Uri,
-  configuration: Configuration = createConfiguration(),
-): HostViews {
+export function createClipboard(): Clipboard {
   return {
-    tree: createTree,
-    status: createStatus,
+    read: async () => vscode.env.clipboard.readText(),
+    write: async (text) => vscode.env.clipboard.writeText(text),
+  };
+}
+
+export function createDialogs(): Dialogs {
+  return {
+    error(message) {
+      void vscode.window.showErrorMessage(message);
+    },
+    inform(message) {
+      void vscode.window.showInformationMessage(message);
+    },
+    ask: async (message, actions) =>
+      vscode.window.showInformationMessage(
+        message,
+        { modal: true },
+        ...actions,
+      ),
     pick,
     input: async (options) =>
       vscode.window.showInputBox({
@@ -25,15 +38,21 @@ export function createHostViews(
         value: options.value,
         validateInput: options.validate,
       }),
-    ask: async (message, actions) =>
-      vscode.window.showInformationMessage(
-        message,
-        { modal: true },
-        ...actions,
-      ),
-    command: (id, run) => toDisposer(vscode.commands.registerCommand(id, run)),
-    activeNote,
-    onActiveNoteChanged: (listener) => {
+  };
+}
+
+export function createWorkbenchViews(extensionUri: vscode.Uri): WorkbenchViews {
+  return {
+    tree: createTree,
+    status: createStatus,
+    panel: createWorkshopPanel(extensionUri),
+  };
+}
+
+export function createActiveEditor(): ActiveEditor {
+  return {
+    note: activeNote,
+    onNoteChanged: (listener) => {
       const subscriptions = [
         vscode.window.tabGroups.onDidChangeTabs(() => listener()),
         vscode.window.tabGroups.onDidChangeTabGroups(() => listener()),
@@ -45,57 +64,7 @@ export function createHostViews(
       toDisposer(
         vscode.window.onDidChangeTextEditorSelection(() => listener()),
       ),
-    documentText: (uri) =>
-      vscode.workspace.textDocuments
-        .find((document) => document.uri.toString() === uri)
-        ?.getText(),
-    setting: (key, fallback, resource) =>
-      configuration.get(key, fallback, resource),
-    panel: createWorkshopPanel(extensionUri),
-    onWillRename: (listener) =>
-      toDisposer(
-        vscode.workspace.onWillRenameFiles((event) => {
-          const renames = event.files.map(({ oldUri, newUri }) => ({
-            oldUri: oldUri.toString(),
-            newUri: newUri.toString(),
-          }));
-          event.waitUntil(
-            listener(renames).then((files) => {
-              saveAfterRename(files);
-              return workspaceEdit(files);
-            }),
-          );
-        }),
-      ),
   };
-}
-
-/**
- * Obsidian writes link updates straight to disk. Save the notes the update
- * edited once the rename lands, unless they already had unsaved changes, so
- * a closed editor's "Don't Save" can't leave a stale edited buffer behind.
- */
-function saveAfterRename(files: readonly FileTextEdits[]): void {
-  const uris = cleanEditedUris(files, (uri) =>
-    vscode.workspace.textDocuments.some(
-      (document) => document.uri.toString() === uri && document.isDirty,
-    ),
-  );
-  if (uris.length === 0) {
-    return;
-  }
-  const done = vscode.workspace.onDidRenameFiles(() => {
-    done.dispose();
-    for (const document of vscode.workspace.textDocuments) {
-      if (uris.includes(document.uri.toString()) && document.isDirty) {
-        void document.save();
-      }
-    }
-  });
-}
-
-function toDisposer(disposable: vscode.Disposable): () => void {
-  return () => disposable.dispose();
 }
 
 /** The note in the active tab, whether this extension's editor or a text editor. */
@@ -125,7 +94,7 @@ function textEditor(uri: string) {
   };
 }
 
-const createTree: HostViews["tree"] = (viewId, source, options) => {
+const createTree: WorkbenchViews["tree"] = (viewId, source, options) => {
   const changed = new vscode.EventEmitter<TreeNode | undefined>();
   const view = vscode.window.createTreeView<TreeNode>(viewId, {
     ...options,
@@ -215,7 +184,7 @@ function createStatus(id: string, priority: number): StatusHandle {
   };
 }
 
-const pick: HostViews["pick"] = (options) => {
+const pick: Dialogs["pick"] = (options) => {
   const quickPick = vscode.window.createQuickPick<
     vscode.QuickPickItem & { index: number }
   >();
@@ -225,28 +194,7 @@ const pick: HostViews["pick"] = (options) => {
   (quickPick as { sortByLabel?: boolean }).sortByLabel = false;
   let items = options.items("");
   const show = () => {
-    const shown: (vscode.QuickPickItem & { index: number })[] = [];
-    let group: string | undefined;
-    items.forEach((item, index) => {
-      if (item.group !== undefined && item.group !== group) {
-        shown.push({
-          label: item.group,
-          kind: vscode.QuickPickItemKind.Separator,
-          index: -1,
-        });
-      }
-      group = item.group;
-      shown.push({
-        label: item.label,
-        ...(item.description === undefined
-          ? {}
-          : { description: item.description }),
-        ...(item.detail === undefined ? {} : { detail: item.detail }),
-        alwaysShow: true,
-        index,
-      });
-    });
-    quickPick.items = shown;
+    quickPick.items = pickRows(items);
   };
   show();
   quickPick.onDidChangeValue((query) => {
@@ -267,21 +215,35 @@ const pick: HostViews["pick"] = (options) => {
   });
 };
 
-function workspaceEdit(files: readonly FileTextEdits[]): vscode.WorkspaceEdit {
-  const edit = new vscode.WorkspaceEdit();
-  for (const file of files) {
-    for (const change of file.edits) {
-      edit.replace(
-        vscode.Uri.parse(file.uri),
-        new vscode.Range(
-          change.start.line,
-          change.start.col,
-          change.end.line,
-          change.end.col,
-        ),
-        change.text,
-      );
+/** Quick pick rows, with a separator above each new group. */
+function pickRows(
+  items: readonly {
+    label: string;
+    description?: string;
+    detail?: string;
+    group?: string;
+  }[],
+): (vscode.QuickPickItem & { index: number })[] {
+  const shown: (vscode.QuickPickItem & { index: number })[] = [];
+  let group: string | undefined;
+  items.forEach((item, index) => {
+    if (item.group !== undefined && item.group !== group) {
+      shown.push({
+        label: item.group,
+        kind: vscode.QuickPickItemKind.Separator,
+        index: -1,
+      });
     }
-  }
-  return edit;
+    group = item.group;
+    shown.push({
+      label: item.label,
+      ...(item.description === undefined
+        ? {}
+        : { description: item.description }),
+      ...(item.detail === undefined ? {} : { detail: item.detail }),
+      alwaysShow: true,
+      index,
+    });
+  });
+  return shown;
 }

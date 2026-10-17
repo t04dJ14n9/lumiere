@@ -2,7 +2,7 @@ import type { Context } from "@workshop/core";
 import { metadata } from "../../markdown/metadata";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import { fuzzyMatch } from "../../shared/fuzzy";
-import type { HostViews, PickItem } from "../../shared/runtime";
+import type { Dialogs, PickItem } from "../../shared/host";
 import { GO_TO_HEADING_COMMAND } from "./commands";
 import { outlineSymbols, type OutlineSymbolNode } from "./symbols";
 
@@ -11,7 +11,7 @@ import { outlineSymbols, type OutlineSymbolNode } from "./symbols";
  * a webview: VS Code's native symbol UI needs a code editor. Use the supported
  * Quick Pick API instead of contributing a second provider to the text model.
  */
-export function registerSymbolPicker(ctx: Context, views: HostViews): void {
+export function registerSymbolPicker(ctx: Context, dialogs: Dialogs): void {
   const editors = ctx.editors;
   const vaults = ctx.vaults;
   let disposed = false;
@@ -19,7 +19,7 @@ export function registerSymbolPicker(ctx: Context, views: HostViews): void {
     disposed = true;
   });
   ctx.effect(() =>
-    ctx.workshop.command(GO_TO_HEADING_COMMAND, async () => {
+    ctx.hostCommands.register(GO_TO_HEADING_COMMAND, async () => {
       const panel = editors.active();
       if (!panel) {
         return;
@@ -29,7 +29,7 @@ export function registerSymbolPicker(ctx: Context, views: HostViews): void {
       const coordinates = new SourceCoordinates(document.getText());
       const headings = metadata(coordinates.editor).headings;
       const items = symbolItems(outlineSymbols(headings), coordinates);
-      const result = await views.pick({
+      const result = await dialogs.pick({
         placeholder: items.length
           ? "Go to heading…"
           : "No headings in this note.",

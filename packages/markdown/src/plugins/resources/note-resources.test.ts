@@ -33,14 +33,21 @@ test("resource loading defaults to markdown syntax", async () => {
         };
       },
     } as unknown as VaultIndex,
-    files: {
-      async stat() {
-        return { mtime: 1, symbolicLink: false };
+    host: {
+      workspace: {
+        async stat() {
+          return { mtime: 1, symbolicLink: false };
+        },
+        async read() {
+          return new Uint8Array();
+        },
       },
-      async read() {
-        return new Uint8Array();
+      hostDocuments: {
+        async open() {
+          throw new Error("unused");
+        },
       },
-    },
+    } as never,
     resourceUrl: (uri) => uri,
   });
   await resources.load("image.png");
@@ -57,14 +64,21 @@ test("authorizeTarget contains PDFs without requiring a known source note", asyn
         return undefined;
       },
     } as unknown as VaultIndex,
-    files: {
-      async stat() {
-        return { mtime: 1, symbolicLink: false };
+    host: {
+      workspace: {
+        async stat() {
+          return { mtime: 1, symbolicLink: false };
+        },
+        async read() {
+          return new Uint8Array();
+        },
       },
-      async read() {
-        return new Uint8Array();
+      hostDocuments: {
+        async open() {
+          throw new Error("unused");
+        },
       },
-    },
+    } as never,
     resourceUrl: (uri) => uri,
   });
   await assert.rejects(

@@ -1,10 +1,10 @@
 import type { Plugin } from "@workshop/core";
-import type { HostDocument } from "../../shared/runtime";
+import type { HostDocument } from "../../shared/host";
 import { Session } from "./session";
 import type { Documents } from "./api";
 export const documentHost: Plugin = {
   name: "document",
-  inject: { required: ["workshop"] },
+  inject: { required: ["hostDocuments", "hostCommands"] },
   apply(ctx) {
     const sessions = new Map<
       HostDocument,
@@ -15,7 +15,7 @@ export const documentHost: Plugin = {
         let entry = sessions.get(document);
         if (!entry) {
           entry = {
-            session: new Session(document, ctx.workshop),
+            session: new Session(document, ctx),
             references: 0,
           };
           sessions.set(document, entry);
@@ -33,7 +33,7 @@ export const documentHost: Plugin = {
     ctx.provide("documents", documents);
     ctx.on("document/willSave", (session) => session.flush());
     ctx.effect(() =>
-      ctx.workshop.onChange((document, changes) => {
+      ctx.hostDocuments.onChange((document, changes) => {
         const session = sessions.get(document)?.session;
         if (session) {
           session.changed();
@@ -42,7 +42,7 @@ export const documentHost: Plugin = {
       }),
     );
     ctx.effect(() =>
-      ctx.workshop.onWillSave(async (document) => {
+      ctx.hostDocuments.onWillSave(async (document) => {
         const session = sessions.get(document)?.session;
         if (session) {
           await ctx.serial("document/willSave", session);

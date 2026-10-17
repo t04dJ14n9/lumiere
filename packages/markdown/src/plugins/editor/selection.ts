@@ -1,6 +1,6 @@
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import { RpcError, type Cancellation } from "../../shared/rpc/lifecycle";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import type { EditorPanel, SourceSelection } from "./api";
 import { protocol } from "./protocol";
 interface Captured {
@@ -13,7 +13,7 @@ export class SelectionSnapshots {
   private sequence = 0;
   constructor(
     private readonly panel: (id: string) => EditorPanel | undefined,
-    private readonly workshop: Pick<Workshop, "fingerprint">,
+    private readonly host: HostServices,
   ) {}
   async capture(
     id: string,
@@ -54,7 +54,9 @@ export class SelectionSnapshots {
       if (range.from === range.to) {
         return undefined;
       }
-      const fingerprint = this.workshop.fingerprint(panel.document.getText());
+      const fingerprint = this.host.hostDocuments.fingerprint(
+        panel.document.getText(),
+      );
       const snapshot = Object.freeze({
         id: `${id}:${++this.sequence}`,
         editorId: id,
@@ -80,7 +82,7 @@ export class SelectionSnapshots {
     }
     if (
       panel.document.version !== selection.version ||
-      this.workshop.fingerprint(panel.document.getText()) !==
+      this.host.hostDocuments.fingerprint(panel.document.getText()) !==
         captured.fingerprint
     ) {
       throw new RpcError("StaleSelection", "The selection's source changed");

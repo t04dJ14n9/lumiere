@@ -1,4 +1,4 @@
-import type { ContributedSetting } from "./runtime";
+import type { ContributedSetting } from "./host";
 
 /**
  * What a command may write to a setting, decided from the setting's own

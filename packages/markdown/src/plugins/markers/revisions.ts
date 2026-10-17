@@ -1,4 +1,4 @@
-import type { SourceEdit } from "../../shared/runtime";
+import type { SourceEdit } from "../../shared/host";
 import { ChangeSet, Text, type ChangeDesc } from "@codemirror/state";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import type { SourceMarker } from "./api";

@@ -1,3 +1,5 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorSelection, EditorState } from "@codemirror/state";
@@ -15,7 +17,7 @@ import { inlineDecorations } from "../../../src/plugins/livePreview/inline";
 import { inlineRenderers } from "../../../src/plugins/livePreview/registry";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
-import type { PanelShell, Workshop } from "../../../src/shared/runtime";
+import type { PanelShell } from "../../../src/shared/host";
 
 test("an unresolved key is the link path as written, lower-cased, without subpath or alias", () => {
   assert.equal(unresolvedKey("New Note"), "new note");
@@ -111,7 +113,7 @@ test("the links host sends the note's unresolved set, then only its changes", as
   const root = createRoot();
   root.provide("rpc", host);
   root.provide("vault", index);
-  root.provide("workshop", { config: () => ({}) } as unknown as Workshop);
+  provideHostServices(root, fakeHost());
   root.provide("resources", {
     load: async () => {
       throw new Error("Unused");

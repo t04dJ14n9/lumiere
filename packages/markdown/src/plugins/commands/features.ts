@@ -30,9 +30,7 @@ export function featureCommands(
   ctx.on("editor/activeChanged", refresh);
   ctx.on("editor/opened", refresh);
   ctx.on("editor/closed", refresh);
-  if (ctx.workshop.onConfiguration) {
-    ctx.effect(() => ctx.workshop.onConfiguration!(refresh));
-  }
+  ctx.effect(() => ctx.settings.onChange(refresh));
   refresh();
 }
 
@@ -42,7 +40,7 @@ async function reconcileFeatureCommands(
   fibers: Map<string, PluginHandle>,
 ): Promise<void> {
   const panel = ctx.editors.active();
-  const settings = panel ? ctx.workshop.config(panel.document) : undefined;
+  const settings = panel ? ctx.settings.forNote(panel.document) : undefined;
   for (const manifest of manifests) {
     const enabled = Boolean(
       panel &&
@@ -74,7 +72,7 @@ function registerFeatureCommands(
           continue;
         }
         owned.effect(() =>
-          ctx.workshop.command(contributionId(command.id), () =>
+          ctx.hostCommands.register(contributionId(command.id), () =>
             runFeatureCommand(ctx, manifest, command),
           ),
         );
@@ -92,7 +90,7 @@ function runFeatureCommand(
   if (!active || !command.editorCommand) {
     return;
   }
-  const current = ctx.workshop.config(active.document);
+  const current = ctx.settings.forNote(active.document);
   if (
     current.preset !== "obsidian" ||
     !(current.features?.[manifest.id]?.enabled ?? manifest.defaultEnabled)

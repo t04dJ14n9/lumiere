@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -21,7 +22,7 @@ import {
   render,
   uriOf,
   wait,
-  workbenchWith,
+  hostWith,
 } from "./fakes";
 
 const notes = {
@@ -98,9 +99,9 @@ test("Backlinks and Outgoing Links are off until turned on", async () => {
   const fake = fakeViews();
   const root = createRoot();
   root.provide("vaults", vaults);
-  const workshop = workbenchWith(fake.views);
-  root.provide("workshop", workshop);
-  workbenchFeatures(root, workshop, [
+  const host = hostWith(fake);
+  provideHostServices(root, host);
+  workbenchFeatures(root, host.settings, [
     { manifest: backlinks, plugin: backlinksHost },
     { manifest: outgoingLinks, plugin: outgoingLinksHost },
   ]);
@@ -120,14 +121,14 @@ test("view plugins follow the active note and their setting, and clean up when t
   });
   const root = createRoot();
   root.provide("vaults", vaults);
-  const workshop = workbenchWith(fake.views);
+  const host = hostWith(fake);
   let configure = () => {};
-  workshop.onConfiguration = (listener) => {
+  host.settings.onChange = (listener) => {
     configure = listener;
     return () => {};
   };
-  root.provide("workshop", workshop);
-  workbenchFeatures(root, workshop, [
+  provideHostServices(root, host);
+  workbenchFeatures(root, host.settings, [
     { manifest: backlinks, plugin: backlinksHost },
     { manifest: outgoingLinks, plugin: outgoingLinksHost },
   ]);

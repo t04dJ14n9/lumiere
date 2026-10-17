@@ -4,6 +4,7 @@ import {
   type Context,
   type Disposer,
 } from "@workshop/core";
+import type { HostCommands } from "../../shared/host";
 import type { Editors, Selections } from "./api";
 import type { EditorActions } from "./actions-api";
 import { ActionRegistry } from "./actions";
@@ -16,9 +17,14 @@ export function registerEditorActions(
   selections: Selections,
 ): void {
   // Captured while live: the last publish runs after the context is disposed.
-  const workshop = ctx.workshop;
-  const publish = () => publishActions(workshop, editors, registry);
-  const registry = new ActionRegistry(editors, selections, workshop, publish);
+  const commands = ctx.hostCommands;
+  const publish = () => publishActions(commands, editors, registry);
+  const registry = new ActionRegistry(
+    editors,
+    selections,
+    ctx.dialogs,
+    publish,
+  );
   const service: EditorActions & CallerBound<EditorActions> = {
     register: (action) => registry.register("editor", action),
     [bindCaller](caller) {
@@ -42,7 +48,7 @@ export function registerEditorActions(
   registerActionPanels(ctx, editors, registry);
   for (const scope of ["title", "selection"] as const) {
     ctx.effect(() =>
-      ctx.workshop.command(contributionId(`${scope}Actions`), () =>
+      ctx.hostCommands.register(contributionId(`${scope}Actions`), () =>
         registry.pick(scope),
       ),
     );
@@ -51,9 +57,7 @@ export function registerEditorActions(
     registry.dispose();
     return publish();
   });
-  if (ctx.workshop.onConfiguration) {
-    ctx.effect(() => ctx.workshop.onConfiguration!(() => void publish()));
-  }
+  ctx.effect(() => ctx.settings.onChange(() => void publish()));
   ctx.on("editor/activeChanged", () => void publish());
   void publish();
 }
@@ -97,7 +101,7 @@ function registerActionPanels(
 
 /** Settles once VS Code has the new context keys; never rejects. */
 async function publishActions(
-  workshop: Context["workshop"],
+  commands: HostCommands,
   editors: Editors,
   registry: ActionRegistry,
 ): Promise<void> {
@@ -109,7 +113,7 @@ async function publishActions(
   }
   await Promise.allSettled(
     (["selection", "title"] as const).map((scope) =>
-      workshop.execute(
+      commands.execute(
         "setContext",
         contributionId(
           `has${scope === "title" ? "Title" : "Selection"}Actions`,

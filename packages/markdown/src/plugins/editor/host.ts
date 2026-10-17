@@ -4,7 +4,7 @@ import { registerMarkdownAssociation } from "./associations";
 import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import type { RootContext, Context, Plugin } from "@workshop/core";
 import type {} from "../document/api";
 import type {} from "../vault/api";
@@ -19,7 +19,18 @@ interface EditorHostConfig {
 }
 export const editorHost: Plugin<EditorHostConfig> = {
   name: "editor",
-  inject: { required: ["workshop", "documents"], optional: ["vaults"] },
+  inject: {
+    required: [
+      "hostDocuments",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "settings",
+      "customEditors",
+      "documents",
+    ],
+    optional: ["vaults"],
+  },
   apply(ctx, config) {
     const panels = new Map<string, EditorPanel>();
     // Panels whose shutdown has not finished, closed ones included: the
@@ -39,8 +50,8 @@ export const editorHost: Plugin<EditorHostConfig> = {
     provideEditorServices(ctx, panels, active);
     registerMarkdownAssociation(ctx);
     ctx.effect(() =>
-      ctx.workshop.registerEditor(MARKDOWN_EDITOR, (shell) => {
-        const panel = createPanel(shell, ctx.documents, ctx.workshop, {
+      ctx.customEditors.register(MARKDOWN_EDITOR, (shell) => {
+        const panel = createPanel(shell, ctx.documents, ctx, {
           onClose: () => {
             panels.delete(shell.id);
             // Inside the panel's shutdown: this joins it. Never rejects.
@@ -94,9 +105,9 @@ function registerActiveContexts(
 ): void {
   const contexts = () => {
     const panel = active();
-    const settings = panel ? ctx.workshop.config(panel.document) : undefined;
+    const settings = panel ? ctx.settings.forNote(panel.document) : undefined;
     for (const manifest of features) {
-      void ctx.workshop.execute(
+      void ctx.hostCommands.execute(
         "setContext",
         contributionId(`plugin.${manifest.id}`),
         Boolean(
@@ -108,7 +119,7 @@ function registerActiveContexts(
       );
     }
     for (const id of ["editor", "commands", "livePreview"]) {
-      void ctx.workshop.execute(
+      void ctx.hostCommands.execute(
         "setContext",
         contributionId(`plugin.${id}`),
         Boolean(
@@ -117,9 +128,7 @@ function registerActiveContexts(
       );
     }
   };
-  if (ctx.workshop.onConfiguration) {
-    ctx.effect(() => ctx.workshop.onConfiguration!(contexts));
-  }
+  ctx.effect(() => ctx.settings.onChange(contexts));
   ctx.on("editor/activeChanged", contexts);
   ctx.on("editor/opened", contexts);
   ctx.on("editor/closed", contexts);
@@ -149,10 +158,7 @@ function provideEditorServices(
     },
   };
   ctx.provide("editors", editors);
-  const selections = new SelectionSnapshots(
-    (id) => panels.get(id),
-    ctx.workshop,
-  );
+  const selections = new SelectionSnapshots((id) => panels.get(id), ctx);
   ctx.provide("selections", selections);
   registerEditorActions(ctx, editors, selections);
   registerJumpHistory(ctx, editors);
@@ -193,9 +199,9 @@ function registerPanelContextKey(
 ): (panel: { readonly id: string }, value: boolean) => void {
   const values = new Map<string, boolean>();
   // Captured while live: the cleanup below runs after the context is disposed.
-  const workshop = ctx.workshop;
+  const commands = ctx.hostCommands;
   const refresh = () => {
-    void workshop.execute(
+    void commands.execute(
       "setContext",
       key,
       values.get(active()?.id ?? "") ?? false,
@@ -207,7 +213,7 @@ function registerPanelContextKey(
   });
   ctx.on("editor/activeChanged", refresh);
   ctx.effect(() => async () => {
-    await workshop.execute("setContext", key, false);
+    await commands.execute("setContext", key, false);
   });
   refresh();
   return (panel, value) => {

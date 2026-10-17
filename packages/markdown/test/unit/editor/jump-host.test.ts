@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -7,7 +8,7 @@ import type { JumpAnchor } from "../../../src/plugins/editor/jump-history";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import type { DocumentSession } from "../../../src/plugins/document/api";
 import { contributionId } from "../../../src/shared/setting-schema";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 import { rpcPair } from "../../support/rpc-pair";
 
 const jumpBack = contributionId("jumpBack");
@@ -19,14 +20,16 @@ const anchor = (at: number): JumpAnchor => ({
 async function fixture() {
   const root = createRoot();
   const commands = new Map<string, () => unknown>();
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      command: (id, run) => {
-        commands.set(id, run);
-        return () => {
-          commands.delete(id);
-        };
+  provideHostServices(
+    root,
+    fakeHost({
+      hostCommands: {
+        register: (id, run) => {
+          commands.set(id, run);
+          return () => {
+            commands.delete(id);
+          };
+        },
       },
     }),
   );
@@ -64,7 +67,7 @@ async function fixture() {
   };
   root.plugin({
     name: "testHistory",
-    inject: { required: ["workshop"] },
+    inject: { required: ["hostCommands", "dialogs"] },
     apply(ctx) {
       registerJumpHistory(ctx, editors);
     },

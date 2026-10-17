@@ -1,10 +1,11 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { editorHost } from "../../../src/plugins/editor/host";
-import type { PanelShell } from "../../../src/shared/runtime";
+import type { PanelShell } from "../../../src/shared/host";
 import type { DocumentSession } from "../../../src/plugins/document/api";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function gate() {
   let open!: () => void;
@@ -33,12 +34,14 @@ async function hostWithPanel() {
     session: () => ({}) as DocumentSession,
     release: () => void order.push("document released"),
   });
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      registerEditor: (_provider, callback) => {
-        open = callback;
-        return () => {};
+  provideHostServices(
+    root,
+    fakeHost({
+      customEditors: {
+        register: (_provider, callback) => {
+          open = callback;
+          return () => {};
+        },
       },
     }),
   );

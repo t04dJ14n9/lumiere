@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -11,7 +12,7 @@ import type {
 import type { EditorPanel } from "../../../src/plugins/editor/api";
 import { Lease } from "../../../src/host/reclaim-policy";
 import { contributionId } from "../../../src/shared/setting-schema";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 async function fixture() {
   const root = createRoot();
@@ -105,32 +106,40 @@ async function fixture() {
     },
     validate: () => panel,
   });
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      command(id, run) {
-        handlers.set(id, run);
-        return () => {
-          handlers.delete(id);
-        };
+  provideHostServices(
+    root,
+    fakeHost({
+      hostCommands: {
+        register(id, run) {
+          handlers.set(id, run);
+          return () => {
+            handlers.delete(id);
+          };
+        },
+        async execute(id) {
+          events.push(id);
+        },
       },
-      async execute(id) {
-        events.push(id);
+      dialogs: {
+        error(message) {
+          errors.push(message);
+        },
       },
-      error(message) {
-        errors.push(message);
+      settings: {
+        forNote: () => ({ preset: "obsidian", mode: "livePreview" }),
       },
-      config: () => ({ preset: "obsidian", mode: "livePreview" }),
-      async agentEnvironment() {
-        events.push("commands");
-        await state.beforeDiscovery?.();
-        return {
-          target: "cursor",
-          agentExtensions: new Set(),
-          commands: new Set(Object.values(CURSOR_COMMANDS)),
-          hasChatParticipant: false,
-          chatDisabled: false,
-        };
+      agentHost: {
+        async environment() {
+          events.push("commands");
+          await state.beforeDiscovery?.();
+          return {
+            target: "cursor",
+            agentExtensions: new Set(),
+            commands: new Set(Object.values(CURSOR_COMMANDS)),
+            hasChatParticipant: false,
+            chatDisabled: false,
+          };
+        },
       },
     }),
   );

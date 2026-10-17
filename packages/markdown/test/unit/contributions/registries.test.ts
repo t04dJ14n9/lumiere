@@ -11,7 +11,7 @@ test("actions keep callbacks host-side, capture authentic selections and remove 
   const registry = new ActionRegistry(
     f.editors,
     f.selections,
-    f.workshop,
+    f.host.dialogs,
     () => {},
   );
   let invoked = 0;
@@ -63,7 +63,7 @@ test("action removal during selection capture prevents a late callback", async (
   const registry = new ActionRegistry(
     f.editors,
     f.selections,
-    f.workshop,
+    f.host.dialogs,
     () => {},
   );
   registry.register("a", {

@@ -1,8 +1,5 @@
 import type { Disposer } from "@workshop/core";
-
-export interface CommandViews {
-  command(id: string, run: (...args: unknown[]) => unknown): Disposer;
-}
+import type { HostCommands } from "./host";
 
 export interface ReportedCommand {
   readonly id: string;
@@ -15,23 +12,23 @@ export interface ReportedCommand {
  */
 export function registerReportedCommands(
   effect: (setup: () => Disposer) => void,
-  views: CommandViews,
+  host: Pick<HostCommands, "register">,
   report: (message: string) => void,
   commands: readonly ReportedCommand[],
 ): void {
   for (const command of commands) {
-    registerOne(effect, views, report, command);
+    registerOne(effect, host, report, command);
   }
 }
 
 function registerOne(
   effect: (setup: () => Disposer) => void,
-  views: CommandViews,
+  host: Pick<HostCommands, "register">,
   report: (message: string) => void,
   command: ReportedCommand,
 ): void {
   effect(() =>
-    views.command(command.id, (...args) => {
+    host.register(command.id, (...args) => {
       void Promise.resolve(command.run(...args)).catch((error: unknown) => {
         report(error instanceof Error ? error.message : "Command failed.");
       });

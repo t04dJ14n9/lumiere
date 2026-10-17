@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { RevealRouter } from "./reveal-router";
-import type { RevealPanel, PanelShell } from "../shared/runtime";
+import type { RevealPanel, PanelShell } from "../shared/host";
 
 function panel(id: string, calls: string[]): RevealPanel {
   return {

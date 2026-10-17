@@ -73,7 +73,7 @@ export function pluginOperations(
 }
 function builtinStates(root: Context, id: string): PluginState[] {
   const panel = panelById(root, id);
-  const config = root.workshop.config(panel.document);
+  const config = root.settings.forNote(panel.document);
   const states = [
     ...root.pluginStates.list(),
     ...(panel.pluginStates?.() ?? []),

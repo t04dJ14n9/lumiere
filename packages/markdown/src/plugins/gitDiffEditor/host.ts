@@ -7,6 +7,7 @@ import { registerReportedCommands } from "../../shared/reported-command";
 import { contributionId } from "../../shared/setting-schema";
 import { describedComparison, titledComparison } from "./comparison";
 import { openFullDiff } from "./open-snapshot";
+import type { DiffViews } from "../../shared/git";
 
 /** What a rendered diff compares: two URIs, the left one read-only. */
 interface Comparison {
@@ -60,12 +61,21 @@ interface Life {
 
 export const gitDiffEditorHost: Plugin = {
   name: "gitDiffEditor",
-  inject: { required: ["workshop"], optional: ["diffResources"] },
+  inject: {
+    required: [
+      "hostDocuments",
+      "hostCommands",
+      "dialogs",
+      "activeEditor",
+      "settings",
+      "workspace",
+      "git",
+      "diffViews",
+    ],
+    optional: ["diffResources"],
+  },
   apply(ctx) {
-    const { views, diffViews } = ctx.workshop;
-    if (!views || !diffViews) {
-      return;
-    }
+    const { diffViews } = ctx;
     const life: Life = { live: true, panels: new Set(), pending: new Set() };
     ctx.effect(() => () => {
       life.live = false;
@@ -81,8 +91,8 @@ export const gitDiffEditorHost: Plugin = {
     };
     registerReportedCommands(
       effect,
-      views,
-      (message) => ctx.workshop.error(message),
+      ctx.hostCommands,
+      (message) => ctx.dialogs.error(message),
       [
         {
           id: contributionId("gitDiffEditor.open"),
@@ -103,7 +113,7 @@ export const gitDiffEditorHost: Plugin = {
     ctx.effect(() =>
       diffViews.onDidOpenDiff((diff) => {
         if (
-          views.setting<string>("gitDiffEditor.diffEditor", "native") ===
+          ctx.settings.get<string>("gitDiffEditor.diffEditor", "native") ===
           "rendered"
         ) {
           takeOver(ctx, life, diff).catch((error: unknown) =>
@@ -119,7 +129,7 @@ function report(ctx: Context, what: string, error: unknown): void {
   ctx.logger.warn(what, error);
   const reason = error instanceof Error ? error.message : String(error);
   try {
-    ctx.workshop.error(`${what}: ${reason}`);
+    ctx.dialogs.error(`${what}: ${reason}`);
   } catch {
     // Reporting must not throw out of an event handler.
   }
@@ -133,7 +143,7 @@ function report(ctx: Context, what: string, error: unknown): void {
 async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
   // Captured while the plugin is live: recovery after disposal must not
   // look the workshop up again.
-  const diffViews = ctx.workshop.diffViews!;
+  const diffViews = ctx.diffViews;
   const logger = ctx.logger;
   const prepared = await prepare(ctx, life, diff);
   if (!prepared || !life.live) {
@@ -174,10 +184,10 @@ async function takeOver(ctx: Context, life: Life, diff: OpenedDiff) {
 }
 
 async function openActive(ctx: Context, life: Life): Promise<void> {
-  const note = ctx.workshop.views?.activeNote();
-  const original = note ? ctx.workshop.git?.toGitUri(note, "HEAD") : undefined;
+  const note = ctx.activeEditor.note();
+  const original = note ? ctx.git.toGitUri(note, "HEAD") : undefined;
   if (!note || !original) {
-    ctx.workshop.error(
+    ctx.dialogs.error(
       "Open a Markdown note in a git repository to compare it with HEAD.",
     );
     return;
@@ -207,9 +217,9 @@ async function openActive(ctx: Context, life: Life): Promise<void> {
 
 /** One side's text; a side that cannot be read is an error, not empty. */
 async function readSide(ctx: Context, uri: string): Promise<DiffSide> {
-  let text = ctx.workshop.views?.documentText(uri);
+  let text = ctx.hostDocuments.text(uri);
   if (text === undefined) {
-    const document = await ctx.workshop.openDocument?.(uri);
+    const document = await ctx.hostDocuments.open(uri);
     if (!document) {
       throw new Error(`${sideLabel(uri)} is not available`);
     }
@@ -222,9 +232,7 @@ async function readSide(ctx: Context, uri: string): Promise<DiffSide> {
 interface Prepared {
   left: DiffSide;
   right: DiffSide;
-  resources?: Parameters<
-    NonNullable<Context["workshop"]["diffViews"]>["show"]
-  >[0]["resources"];
+  resources?: Parameters<DiffViews["show"]>[0]["resources"];
   /** Stop following changes. */
   stop(): void;
   /** Called with each change after the sides were read. */
@@ -313,9 +321,10 @@ function present(
   comparison: Comparison,
   prepared: Prepared,
 ): void {
-  const workshop = ctx.workshop;
+  // Captured while live: panel actions can arrive while the plugin stops.
+  const { diffViews, hostCommands } = ctx;
   const name = title(comparison, prepared);
-  const panel = workshop.diffViews!.show({
+  const panel = diffViews.show({
     left: prepared.left,
     right: prepared.right,
     title: name,
@@ -325,8 +334,8 @@ function present(
     onAction(action) {
       const done =
         action === "openFile"
-          ? workshop.execute("vscode.open", comparison.modified)
-          : workshop.diffViews!.openNative(
+          ? hostCommands.execute("vscode.open", comparison.modified)
+          : diffViews.openNative(
               comparison.original,
               comparison.modified,
               name,
@@ -375,23 +384,23 @@ function followSources(
   comparison: Comparison,
   notify: () => void,
 ) {
-  const workshop = ctx.workshop;
+  const { hostDocuments, git, workspace } = ctx;
   const uris = [comparison.original, comparison.modified];
   const subscriptions = [
-    workshop.onChange((document) => {
+    hostDocuments.onChange((document) => {
       if (uris.includes(document.uri)) {
         notify();
       }
     }),
   ];
   if (uris.some((uri) => uri.startsWith("git:"))) {
-    const stop = workshop.git?.onDidChange?.(notify);
+    const stop = git.onDidChange(notify);
     if (stop) {
       subscriptions.push(stop);
     }
   }
   for (const uri of new Set(uris.filter((uri) => !uri.startsWith("git:")))) {
-    const stop = workshop.watchFile?.(uri, notify);
+    const stop = workspace.watch(uri, notify);
     if (stop) {
       subscriptions.push(stop);
     }

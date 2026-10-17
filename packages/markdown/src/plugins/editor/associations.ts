@@ -1,5 +1,5 @@
 import type { Context } from "@workshop/core";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { contributionId } from "../../shared/setting-schema";
 
@@ -42,31 +42,32 @@ function opensMarkdownHere(existing: unknown): boolean {
  * over every README; this makes it the default for one workspace, as a vault.
  */
 export async function useForMarkdownInWorkspace(
-  workshop: Workshop,
+  host: Pick<HostServices, "settings" | "dialogs">,
 ): Promise<void> {
-  const existing = workshop.editorAssociations?.read();
-  if (!workshop.editorAssociations || existing === undefined) {
-    workshop.error(
+  const associations = host.settings.editorAssociations;
+  const existing = associations.read();
+  if (existing === undefined) {
+    host.dialogs.error(
       "Open a folder or workspace first: the association is saved in the workspace settings.",
     );
     return;
   }
   if (opensMarkdownHere(existing)) {
-    workshop.inform?.(
+    host.dialogs.inform(
       "Markdown files in this workspace already open in Markdown Workshop.",
     );
     return;
   }
-  await workshop.editorAssociations.write(withMarkdownWorkshop(existing));
-  workshop.inform?.(
+  await associations.write(withMarkdownWorkshop(existing));
+  host.dialogs.inform(
     "Markdown files in this workspace now open in Markdown Workshop. Use Open as Text or Reopen Editor With… for the text editor.",
   );
 }
 
 export function registerMarkdownAssociation(ctx: Context): void {
   ctx.effect(() =>
-    ctx.workshop.command(contributionId("useForMarkdownInWorkspace"), () =>
-      useForMarkdownInWorkspace(ctx.workshop),
+    ctx.hostCommands.register(contributionId("useForMarkdownInWorkspace"), () =>
+      useForMarkdownInWorkspace(ctx),
     ),
   );
 }

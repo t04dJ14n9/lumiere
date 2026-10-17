@@ -1,11 +1,9 @@
+import { provideHostServices } from "../../../src/shared/host";
+import { fakeHost } from "../../support/vscode-fake";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
-import type {
-  HostDocument,
-  PanelShell,
-  Workshop,
-} from "../../../src/shared/runtime";
+import type { HostDocument, PanelShell } from "../../../src/shared/host";
 import type { Okf } from "../../../src/plugins/okfCore/api";
 import { NoteResources } from "../../../src/plugins/resources/note-resources";
 import type { Vault, Vaults } from "../../../src/plugins/vault/api";
@@ -44,14 +42,12 @@ test("Sources opens a PDF after containing the target, not the note-source allow
   const resources = new NoteResources({
     source: documentUri,
     vault: index,
-    files: {
-      async stat() {
-        return { mtime: 1, symbolicLink: false };
+    host: fakeHost({
+      workspace: {
+        stat: async () => ({ mtime: 1, symbolicLink: false }),
+        read: async () => new Uint8Array(),
       },
-      async read() {
-        return new Uint8Array();
-      },
-    },
+    }),
     resourceUrl: (uri) => uri,
   });
   // Reproduces the pre-fix failure: authorizing the PDF target throws.
@@ -83,15 +79,7 @@ test("Sources opens a PDF after containing the target, not the note-source allow
     },
     text: async () => "",
   } as unknown as Vaults);
-  ctx.provide("workshop", {
-    clipboard: {
-      async read() {
-        return "";
-      },
-      async write() {},
-    },
-    async execute() {},
-  } as unknown as Workshop);
+  provideHostServices(ctx, fakeHost());
   const panel = {
     document: {
       uri: documentUri,

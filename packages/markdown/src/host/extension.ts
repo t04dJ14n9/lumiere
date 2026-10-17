@@ -3,11 +3,10 @@ import type { RootContext } from "@workshop/core";
 import { createApi } from "./api/facade";
 import { nativePlatform } from "./api/native-platform";
 import type { MarkdownWorkshopApi } from "./api/types";
-import { createWorkshop } from "./workshop";
+import { createHostServices } from "./services";
 import { createConfiguration } from "./configuration-access";
 import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
-import { createHostViews } from "./views";
 import { registerDocumentWarm } from "./document-warm";
 
 export { pluginRank } from "../plugins/catalog";
@@ -23,13 +22,12 @@ export async function startMarkdown(
   context: ExtensionContext,
 ): Promise<MarkdownWorkshopApi> {
   const configuration = createConfiguration();
-  const workshop = createWorkshop(
+  const host = createHostServices(
     context.extension,
     context.workspaceState,
     configuration,
   );
-  workshop.views = createHostViews(context.extensionUri, configuration);
   context.subscriptions.push(registerDocumentWarm());
-  await bootstrap(workshop, createVaultSystem(context, configuration), root);
+  await bootstrap(host, createVaultSystem(context, configuration), root);
   return createApi(root, nativePlatform(context.extension.id));
 }

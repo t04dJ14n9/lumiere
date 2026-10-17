@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
@@ -8,9 +9,9 @@ import {
   FOLLOW_CURSOR_SETTING,
   VIEW_ID,
 } from "../../../src/plugins/outline/commands";
-import type { TreeHandle, TreeNode } from "../../../src/shared/runtime";
-import { fakeDocument } from "../../support/vscode-fake";
-import { fakeViews, memoryVaults, uriOf, workbenchWith } from "../views/fakes";
+import type { TreeHandle, TreeNode } from "../../../src/shared/host";
+import { fakeDocument, withHost } from "../../support/vscode-fake";
+import { fakeViews, memoryVaults, uriOf, hostWith } from "../views/fakes";
 
 export const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 
@@ -63,43 +64,51 @@ export async function outlineFixture(
       },
     };
   };
-  const workshop = workbenchWith(fake.views);
-  workshop.command = (id, run) => fake.views.command(id, run);
-  workshop.execute = async (command, key, value) => {
-    executed.push([command, key, value].filter((part) => part !== undefined));
-    if (command === "setContext") {
-      contexts.set(String(key), value);
-    }
-  };
-  workshop.onConfiguration = (listener) => {
-    configure = listener;
-    return () => {
-      configure = () => {};
-    };
-  };
-  workshop.settings = {
-    inspect(key, resource) {
-      assert.equal(key, FOLLOW_CURSOR_SETTING);
-      return {
-        value:
-          (resource && resources.get(resource)) ?? fake.settings[key] ?? true,
-        target: "user",
-      };
+  const host = withHost(hostWith(fake), {
+    hostCommands: {
+      execute: async (command, key, value) => {
+        executed.push(
+          [command, key, value].filter((part) => part !== undefined),
+        );
+        if (command === "setContext") {
+          contexts.set(String(key), value);
+        }
+      },
     },
-    async update(key, value, resource) {
-      settingsWrites.push([key, value, resource]);
-      if (resource && resources.has(resource)) {
-        resources.set(resource, Boolean(value));
-      } else {
-        fake.settings[key] = value;
-      }
-      configure();
-      return "user";
+    settings: {
+      onChange: (listener) => {
+        configure = listener;
+        return () => {
+          configure = () => {};
+        };
+      },
+      access: {
+        inspect(key, resource) {
+          assert.equal(key, FOLLOW_CURSOR_SETTING);
+          return {
+            value:
+              (resource && resources.get(resource)) ??
+              fake.settings[key] ??
+              true,
+            target: "user",
+          };
+        },
+        async update(key, value, resource) {
+          settingsWrites.push([key, value, resource]);
+          if (resource && resources.has(resource)) {
+            resources.set(resource, Boolean(value));
+          } else {
+            fake.settings[key] = value;
+          }
+          configure();
+          return "user";
+        },
+        searchFilter: "@ext:test.workshop",
+        contributed: () => [],
+        openUi: async () => {},
+      },
     },
-    searchFilter: "@ext:test.workshop",
-    contributed: () => [],
-    openUi: async () => {},
-  };
+  });
   const editors: Editors = {
     all: () => panels,
     active: () => active,
@@ -119,7 +128,7 @@ export async function outlineFixture(
       },
     },
   });
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   root.provide("vaults", vaults);
   root.provide("editors", editors);
   root.plugin(outlineHost);

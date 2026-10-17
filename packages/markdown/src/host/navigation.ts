@@ -11,8 +11,9 @@ import type {
   NavigationTarget,
   NavigationIntent,
   PanelShell,
-} from "../shared/runtime";
+} from "../shared/host";
 import { warmMarkdownDocument } from "./document-warm";
+import { registerNativeLinks } from "./native-links";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 
 /** All navigation paths are checked again in the native adapter, including symlinks. */
@@ -96,7 +97,7 @@ export function createNavigation(
   configuration: Configuration = createConfiguration(),
 ): NativeNavigation {
   const reveals = new RevealRouter();
-  return {
+  const navigation: NativeNavigation = {
     begin: () => reveals.begin(),
     registerReveal: (panel) => reveals.register(panel),
     async revealOpened(uri, column, at, intent) {
@@ -142,7 +143,12 @@ export function createNavigation(
         reveals,
         intent: intent ?? reveals.begin(),
       }),
+    registerNativeLinks() {
+      const links = registerNativeLinks(navigation);
+      return () => links.dispose();
+    },
   };
+  return navigation;
 }
 
 /** Native text-to-custom transfers already opened the destination in this group. */

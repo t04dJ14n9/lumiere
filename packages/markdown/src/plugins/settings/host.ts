@@ -1,5 +1,5 @@
 import type { Plugin } from "@workshop/core";
-import type { ContributedSetting } from "../../shared/runtime";
+import type { ContributedSetting } from "../../shared/host";
 import { contributionId, validateValue } from "../../shared/setting-schema";
 import { PREFIX, settingRows } from "./change";
 import { FONT_SIZE_KEY, toggles, type SettingToggle } from "./commands";
@@ -26,22 +26,20 @@ import {
  */
 export const settingsHost: Plugin = {
   name: "settings",
-  inject: { required: ["workshop"] },
+  inject: {
+    required: ["dialogs", "settings", "activeEditor", "hostCommands"],
+  },
   apply(ctx) {
-    const settings = ctx.workshop.settings;
-    const views = ctx.workshop.views;
-    if (!settings || !views) {
-      return;
-    }
+    const settings = ctx.settings.access;
     const editing: Editing = {
       settings,
-      views,
-      resource: () => views.activeNote(),
-      inform: (message) => ctx.workshop.inform?.(message),
-      error: (message) => ctx.workshop.error(message),
+      dialogs: ctx.dialogs,
+      resource: () => ctx.activeEditor.note(),
+      inform: (message) => ctx.dialogs.inform(message),
+      error: (message) => ctx.dialogs.error(message),
     };
     const command = (id: string, run: (...args: unknown[]) => unknown) =>
-      ctx.effect(() => views.command(contributionId(id), run));
+      ctx.effect(() => ctx.hostCommands.register(contributionId(id), run));
     command("openSettings", () => settings.openUi(settings.searchFilter));
     command("changeSetting", (argument) => changeSetting(editing, argument));
     command("setNoteFontSize", (argument) => setFontSize(editing, argument));
@@ -91,7 +89,7 @@ async function changeSetting(
       editing.error("The Markdown Workshop settings are not available.");
       return;
     }
-    const picked = await editing.views.pick({
+    const picked = await editing.dialogs.pick({
       placeholder: "Change a Markdown Workshop setting…",
       items: (query) =>
         settingRows(

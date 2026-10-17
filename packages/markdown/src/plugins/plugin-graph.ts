@@ -12,10 +12,11 @@
  * providers a running kernel records.
  */
 import type { Plugin, Services } from "@workshop/core";
+import { HOST_SERVICE_NAMES } from "../shared/host";
 
 /** Services the host or webview root provides, not a plugin. */
 export const ROOT_SERVICES: readonly (keyof Services)[] = [
-  "workshop",
+  ...HOST_SERVICE_NAMES,
   "vaultSystem",
   "rpc",
   "pluginStates",

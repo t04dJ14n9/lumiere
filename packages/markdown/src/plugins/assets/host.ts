@@ -2,7 +2,7 @@ import type { Context, Disposer, Plugin } from "@workshop/core";
 import { registerReportedCommands } from "../../shared/reported-command";
 import { contributionId } from "../../shared/setting-schema";
 import { asString, asStrings } from "../../shared/values";
-import type { HostDocument } from "../../shared/runtime";
+import type { HostDocument } from "../../shared/host";
 import { containingFolder } from "../../shared/workspace-path";
 import type { WikiLayout } from "../wiki/api";
 import { importAsset } from "./run";
@@ -10,10 +10,20 @@ import { importAsset } from "./run";
 /** Imports a file into the configured assets folder and inserts a portable link. */
 export const assetsHost: Plugin = {
   name: "assets",
-  inject: { required: ["workshop"], optional: ["editors", "wikiLayout"] },
+  inject: {
+    required: [
+      "hostDocuments",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "workspace",
+      "settings",
+      "activeEditor",
+    ],
+    optional: ["editors", "wikiLayout"],
+  },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views || typeof ctx.workshop.files?.readText !== "function") {
+    if (typeof ctx.workspace.files.readText !== "function") {
       return;
     }
     const effect = (setup: () => Disposer) => {
@@ -21,8 +31,8 @@ export const assetsHost: Plugin = {
     };
     registerReportedCommands(
       effect,
-      views,
-      (message) => ctx.workshop.error(message),
+      ctx.hostCommands,
+      (message) => ctx.dialogs.error(message),
       [
         {
           id: contributionId("assets.import"),
@@ -34,38 +44,34 @@ export const assetsHost: Plugin = {
 };
 
 async function importIntoProject(ctx: Context): Promise<void> {
-  const files = ctx.workshop.files;
-  const views = ctx.workshop.views;
-  if (!files || !views) {
+  const files = ctx.workspace.files;
+  if (!files) {
     return;
   }
   const sourceUri = await files.pickFile("Import an asset");
   if (typeof sourceUri !== "string") {
     return;
   }
-  const destination = await assetDestination(ctx, views);
+  const destination = await assetDestination(ctx);
   if (!destination) {
-    ctx.workshop.error("Open a folder before importing an asset.");
+    ctx.dialogs.error("Open a folder before importing an asset.");
     return;
   }
   await importAsset({
     files,
     sourceUri,
     ...destination,
-    ask: (message, actions) => views.ask(message, actions),
-    apply: (document, edits) => ctx.workshop.apply(document, edits),
-    clipboardWrite: (text) => ctx.workshop.clipboard.write(text),
-    inform: (message) => ctx.workshop.inform?.(message),
-    error: (message) => ctx.workshop.error(message),
+    ask: (message, actions) => ctx.dialogs.ask(message, actions),
+    apply: (document, edits) => ctx.hostDocuments.apply(document, edits),
+    clipboardWrite: (text) => ctx.clipboard.write(text),
+    inform: (message) => ctx.dialogs.inform(message),
+    error: (message) => ctx.dialogs.error(message),
   });
 }
 
-async function assetDestination(
-  ctx: Context,
-  views: NonNullable<Context["workshop"]["views"]>,
-) {
+async function assetDestination(ctx: Context) {
   const note = await activeDocument(ctx);
-  const roots = asStrings(ctx.workshop.workspaceFolders?.());
+  const roots = asStrings(ctx.workspace.folders());
   const folder = note ? containingFolder(note.uri, roots) : undefined;
   const rootUri = folder?.root ?? roots[0];
   if (!rootUri) {
@@ -76,7 +82,10 @@ async function assetDestination(
   )?.layout;
   return {
     rootUri,
-    assetsPath: assetsFolder(layout?.assets, views.setting("assets.path", "")),
+    assetsPath: assetsFolder(
+      layout?.assets,
+      ctx.settings.get("assets.path", ""),
+    ),
     ...(layout?.bundle ? { bundle: layout.bundle } : {}),
     ...(folder ? { notePath: folder.relative } : {}),
     ...(await noteFields(ctx, note)),

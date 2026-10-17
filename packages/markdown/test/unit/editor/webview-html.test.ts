@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { webviewHTML } from "../../../src/plugins/editor/webview-html";
-import type { PanelShell } from "../../../src/shared/runtime";
+import type { PanelShell } from "../../../src/shared/host";
 
 function shell(trusted: boolean): PanelShell {
   return {

@@ -1,6 +1,6 @@
 import type { BaseContext, PluginHandle } from "@workshop/core";
 import { features } from "../plugins/catalog";
-import type { PanelShell, Workshop } from "../shared/runtime";
+import type { PanelShell, HostServices } from "../shared/host";
 import {
   linksHost,
   tasksHost,
@@ -18,7 +18,7 @@ import {
 export function hostFeatures(
   root: BaseContext,
   panel: PanelShell,
-  workshop: Workshop,
+  host: HostServices,
 ): void {
   const active = new Map<string, PluginHandle<{ panel: PanelShell }>>();
   let live = true;
@@ -32,7 +32,7 @@ export function hostFeatures(
         if (!live) {
           return;
         }
-        const config = workshop.config(panel.document);
+        const config = host.settings.forNote(panel.document);
         for (const plugin of [
           linksHost,
           tasksHost,
@@ -67,9 +67,7 @@ export function hostFeatures(
       );
     root.track(queue);
   };
-  if (workshop.onConfiguration) {
-    root.effect(() => workshop.onConfiguration!(refresh));
-  }
+  root.effect(() => host.settings.onChange(refresh));
   root.on("editor/configure", refresh);
   refresh();
 }

@@ -1,12 +1,9 @@
+import { fakeHost } from "../support/vscode-fake";
 import { protocol as jumpProtocol } from "../../src/plugins/editor/jump-protocol";
 import { config as editorConfig } from "../../src/plugins/editor/manifest";
 import type { RootContext } from "@workshop/core";
 import { Endpoint } from "../../src/shared/rpc/endpoint";
-import type {
-  HostDocument,
-  Workshop,
-  PanelShell,
-} from "../../src/shared/runtime";
+import type { HostDocument, HostServices } from "../../src/shared/host";
 import { SourceCoordinates } from "../../src/shared/document/coordinates";
 import { Session } from "../../src/plugins/document/session";
 import {
@@ -89,58 +86,59 @@ export class BrowserHost {
         return true;
       },
     };
-    const workshop: Workshop = {
-      fingerprint: (text) => text,
-      read: async () => new Uint8Array(),
-      stat: async () => ({ mtime: 0, symbolicLink: false }),
-      async apply(_document, edits) {
-        const coordinates = new SourceCoordinates(self.text);
-        for (const edit of [...edits].sort((a, b) => b.from - a.from)) {
-          self.text =
-            self.text.slice(0, coordinates.toSource(edit.from)) +
-            edit.insert +
-            self.text.slice(coordinates.toSource(edit.to));
-        }
-        self.version++;
-        self.history.splice(self.cursor + 1);
-        self.history.push(self.text);
-        self.cursor++;
-        self.session.changed();
-        return true;
+    const host: HostServices = fakeHost({
+      hostDocuments: {
+        async apply(_document, edits) {
+          const coordinates = new SourceCoordinates(self.text);
+          for (const edit of [...edits].sort((a, b) => b.from - a.from)) {
+            self.text =
+              self.text.slice(0, coordinates.toSource(edit.from)) +
+              edit.insert +
+              self.text.slice(coordinates.toSource(edit.to));
+          }
+          self.version++;
+          self.history.splice(self.cursor + 1);
+          self.history.push(self.text);
+          self.cursor++;
+          self.session.changed();
+          return true;
+        },
+        onSave(listener) {
+          self.saves.add(listener);
+          return () => {
+            self.saves.delete(listener);
+          };
+        },
       },
-      async execute(action) {
-        if (action === "undo") {
-          self.cursor = Math.max(0, self.cursor - 1);
-        } else if (action === "redo") {
-          self.cursor = Math.min(self.history.length - 1, self.cursor + 1);
-        }
-        self.text = self.history[self.cursor]!;
-        self.version++;
-        self.session.changed();
+      hostCommands: {
+        async execute(action) {
+          if (action === "undo") {
+            self.cursor = Math.max(0, self.cursor - 1);
+          } else if (action === "redo") {
+            self.cursor = Math.min(self.history.length - 1, self.cursor + 1);
+          }
+          self.text = self.history[self.cursor]!;
+          self.version++;
+          self.session.changed();
+          return undefined;
+        },
       },
-      onChange: () => () => {},
-      onWillSave: () => () => {},
-      onSave(listener) {
-        self.saves.add(listener);
-        return () => {
-          self.saves.delete(listener);
-        };
-      },
-      command: () => () => {},
       clipboard: {
         read: async () => self.clipboard,
         write: async (value) => {
           self.clipboard = value;
         },
       },
-      error(message) {
-        throw new Error(message);
+      dialogs: {
+        error(message) {
+          throw new Error(message);
+        },
       },
-      registerEditor:
-        (_provider, _open: (panel: PanelShell) => void) => () => {},
-      config: () => ({ preset: "obsidian", mode: "livePreview" }),
-    };
-    this.session = new Session(this.document, workshop);
+      settings: {
+        forNote: () => ({ preset: "obsidian", mode: "livePreview" }),
+      },
+    });
+    this.session = new Session(this.document, host);
   }
   async open(
     preset: "minimal" | "obsidian" = "obsidian",

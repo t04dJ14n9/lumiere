@@ -1,5 +1,5 @@
 import type { Cancellation } from "../../shared/rpc/endpoint";
-import type { Workshop } from "../../shared/runtime";
+import type { HostServices } from "../../shared/host";
 import type { EditorPanel, Editors } from "../editor/api";
 import { renameTarget } from "./title";
 import { TitleTransfers } from "./transfers";
@@ -16,7 +16,7 @@ export class TitleRenames {
   readonly transfers = new TitleTransfers();
   constructor(
     private readonly editors: Editors,
-    private readonly workshop: Workshop,
+    private readonly host: HostServices,
     private readonly restoreReady: () => Promise<void>,
   ) {}
 
@@ -30,7 +30,7 @@ export class TitleRenames {
     focus,
     token,
   }: RenameOptions): Promise<string> {
-    if (panel.document.isUntitled || !this.workshop.renameFile) {
+    if (panel.document.isUntitled || !this.host.hostDocuments.rename) {
       throw new Error("Save the note before renaming it.");
     }
     const target = renameTarget(panel.document.uri, title);
@@ -52,13 +52,13 @@ export class TitleRenames {
       });
     }
     try {
-      await this.workshop.renameFile(panel.document, target);
+      await this.host.hostDocuments.rename(panel.document, target);
       // Optional custom editors may reopen as text after rename; reopen each group,
       // active last, then restore only panels whose webviews have initialized.
       for (const view of views.sort(
         (a, b) => Number(a.active) - Number(b.active),
       )) {
-        await this.workshop.execute(
+        await this.host.hostCommands.execute(
           "vscode.openWith",
           target,
           MARKDOWN_EDITOR.viewType,

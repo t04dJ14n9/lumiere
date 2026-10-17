@@ -6,7 +6,7 @@ import {
   editKind,
   validateValue,
 } from "../../../src/shared/setting-schema";
-import type { ContributedSetting } from "../../../src/shared/runtime";
+import type { ContributedSetting } from "../../../src/shared/host";
 import { toggles } from "../../../src/plugins/settings/commands";
 import { contributed, contributedSetting, layered, run } from "./layered";
 

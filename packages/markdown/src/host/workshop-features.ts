@@ -1,6 +1,6 @@
 import type { BaseContext, PluginHandle, Plugin } from "@workshop/core";
 import type { Manifest } from "../shared/manifest";
-import type { Workshop } from "../shared/runtime";
+import type { HostSettings } from "../shared/host";
 
 /**
  * Window-level plugins (views, status bar, quick switcher, link updates)
@@ -9,24 +9,20 @@ import type { Workshop } from "../shared/runtime";
  */
 export function workbenchFeatures(
   root: BaseContext,
-  workshop: Workshop,
+  settings: HostSettings,
   plugins: readonly { manifest: Manifest; plugin: Plugin; config?: unknown }[],
 ): void {
-  const views = workshop.views;
-  if (!views) {
-    return;
-  }
   const active = new Map<string, PluginHandle<unknown>>();
   let queue = Promise.resolve();
   const refresh = () => {
     queue = queue
       .then(async () => {
         const isObsidian =
-          views.setting<string>("preset", "obsidian") !== "minimal";
+          settings.get<string>("preset", "obsidian") !== "minimal";
         for (const { manifest, plugin, config } of plugins) {
           const enabled =
             isObsidian &&
-            views.setting(
+            settings.get(
               `plugins.${manifest.id}.enabled`,
               manifest.defaultEnabled,
             );
@@ -38,9 +34,7 @@ export function workbenchFeatures(
       );
     root.track(queue);
   };
-  if (workshop.onConfiguration) {
-    root.effect(() => workshop.onConfiguration!(refresh));
-  }
+  root.effect(() => settings.onChange(refresh));
   root.on("editor/configure", refresh);
   refresh();
 }

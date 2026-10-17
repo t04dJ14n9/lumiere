@@ -1,6 +1,6 @@
 import { metadata } from "../../markdown/metadata";
 import { SourceCoordinates } from "../../shared/document/coordinates";
-import type { TreeNode, TreeSource } from "../../shared/runtime";
+import type { TreeNode, TreeSource } from "../../shared/host";
 import { OPEN_COMMAND } from "./commands";
 import { headingAt, outlineOf } from "./headings";
 import type { OutlineHeading } from "./headings";

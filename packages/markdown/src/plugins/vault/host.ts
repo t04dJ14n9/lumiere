@@ -8,7 +8,7 @@ import { VaultRegistry } from "./registry";
  */
 export const vaultsHost: Plugin = {
   name: "vault",
-  inject: { required: ["vaultSystem"], optional: ["workshop"] },
+  inject: { required: ["vaultSystem"], optional: ["navigation"] },
   apply(ctx) {
     const system = ctx.vaultSystem;
     const registry = new VaultRegistry(
@@ -18,7 +18,7 @@ export const vaultsHost: Plugin = {
         resolved: (root) => ctx.emit("vault/resolved", root),
         error: (message, error) => ctx.logger.warn(message, error),
       },
-      ctx.workshop?.navigation,
+      ctx.navigation,
     );
     ctx.effect(() => () => registry.dispose());
     ctx.effect(() =>

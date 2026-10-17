@@ -15,12 +15,18 @@ const REFRESH_DELAY_MS = 200;
 /** Reads `.wiki` layout and registry. It copies references and never runs an agent. */
 export const wikiHost: Plugin = {
   name: "wiki",
-  inject: { required: ["workshop"], optional: ["editors", "bridgeCapture"] },
+  inject: {
+    required: [
+      "hostDocuments",
+      "hostCommands",
+      "clipboard",
+      "dialogs",
+      "activeEditor",
+      "workspace",
+    ],
+    optional: ["editors", "bridgeCapture"],
+  },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views) {
-      return;
-    }
     const state: WikiSession = { projects: [], problems: [], generation: 0 };
     const reload = () => reloadWiki(ctx, state);
     ctx.provide("wikiLayout", layoutService(state, reload));
@@ -29,10 +35,10 @@ export const wikiHost: Plugin = {
     };
     const report = (message: string) => {
       if (ctx.isLive) {
-        ctx.workshop.error(message);
+        ctx.dialogs.error(message);
       }
     };
-    registerReportedCommands(effect, views, report, [
+    registerReportedCommands(effect, ctx.hostCommands, report, [
       {
         id: contributionId("wiki.copyForAgent"),
         run: () => copyReference(ctx, state, false),
@@ -56,10 +62,6 @@ function bindRefresh(
   reload: () => Promise<void>,
   report: (message: string) => void,
 ): void {
-  const views = ctx.workshop.views;
-  if (!views) {
-    return;
-  }
   let timer: ReturnType<typeof setTimeout> | undefined;
   const run = () => {
     void reload().catch((error: unknown) => {
@@ -72,14 +74,14 @@ function bindRefresh(
     clearTimeout(timer);
     timer = setTimeout(run, REFRESH_DELAY_MS);
   };
-  ctx.effect(() => views.onActiveNoteChanged(schedule));
-  ctx.effect(() => ctx.workshop.onChange(schedule));
-  ctx.effect(() => ctx.workshop.onSave(schedule));
+  ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
+  ctx.effect(() => ctx.hostDocuments.onChange(schedule));
+  ctx.effect(() => ctx.hostDocuments.onSave(schedule));
   // Captured while live: teardown runs after this context is disposed.
-  const diagnostics = ctx.workshop.diagnostics;
+  const diagnostics = ctx.workspace.diagnostics;
   ctx.effect(() => () => {
     clearTimeout(timer);
-    diagnostics?.clear("wiki");
+    diagnostics.clear("wiki");
   });
   run();
 }
@@ -96,9 +98,9 @@ async function copyReference(
     place,
     noteText: note.text,
     json,
-    clipboard: ctx.workshop.clipboard,
-    inform: (message) => ctx.workshop.inform?.(message),
-    error: (message) => ctx.workshop.error(message),
+    clipboard: ctx.clipboard,
+    inform: (message) => ctx.dialogs.inform(message),
+    error: (message) => ctx.dialogs.error(message),
   });
 }
 
@@ -108,17 +110,15 @@ async function showLayout(ctx: Context, state: WikiSession): Promise<void> {
   const root =
     place?.project.rootUri ??
     (uri
-      ? containingFolder(uri, asStrings(ctx.workshop.workspaceFolders?.()))
-          ?.root
+      ? containingFolder(uri, asStrings(ctx.workspace.folders()))?.root
       : undefined);
-  ctx.workshop.inform?.(layoutSummary(place?.project, state.problems, root));
+  ctx.dialogs.inform(layoutSummary(place?.project, state.problems, root));
 }
 
 function activeNote(ctx: Context): { uri?: string; text?: string } {
   const panel = ctx.editors?.active();
   const uri =
-    asString(panel?.document?.uri) ??
-    asString(ctx.workshop.views?.activeNote());
+    asString(panel?.document?.uri) ?? asString(ctx.activeEditor.note());
   const read = panel?.document?.getText;
   const text = typeof read === "function" ? read() : undefined;
   return {

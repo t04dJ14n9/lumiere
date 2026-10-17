@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -118,7 +119,7 @@ test("Copy Link for Agent host removes disabled handlers and restores them on en
   const root = createRoot();
   root.provide("editors", f.editors);
   root.provide("selections", f.selections);
-  root.provide("workshop", f.workshop);
+  provideHostServices(root, f.host);
   root.plugin(agentBridgeHost);
   await root.settled();
   assert.equal(await f.pair.client.call(protocol, "copy", {}), true);

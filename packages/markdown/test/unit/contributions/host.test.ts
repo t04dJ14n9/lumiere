@@ -1,3 +1,5 @@
+import { withHost } from "../../support/vscode-fake";
+import { provideHostServices } from "../../../src/shared/host";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createRoot } from "@workshop/core";
@@ -12,15 +14,19 @@ test("processor RPC enforces trust, source containment, feature enablement and o
   let enabled = true;
   const root = createRoot();
   root.provide("editors", f.editors);
-  root.provide("workshop", {
-    ...f.workshop,
-    isTrusted: () => trusted,
-    config: () => ({
-      preset: "obsidian",
-      mode: "livePreview",
-      features: { codeBlocks: { enabled, config: {} } },
+  provideHostServices(
+    root,
+    withHost(f.host, {
+      workspace: { isTrusted: () => trusted },
+      settings: {
+        forNote: () => ({
+          preset: "obsidian",
+          mode: "livePreview",
+          features: { codeBlocks: { enabled, config: {} } },
+        }),
+      },
     }),
-  });
+  );
   root.plugin(codeBlocksHost);
   let retained: Services["codeBlocks"] | undefined;
   const owner = root.plugin({

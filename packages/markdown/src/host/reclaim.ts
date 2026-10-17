@@ -12,7 +12,7 @@ import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
 import { SourceCoordinates } from "../shared/document/coordinates";
 import type { NativeNavigation } from "./navigation";
-import type { NavigationIntent } from "../shared/runtime";
+import type { NavigationIntent } from "../shared/host";
 
 const { viewType } = MARKDOWN_EDITOR;
 

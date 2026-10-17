@@ -1,6 +1,6 @@
 import { nativeLineFragment } from "../shared/native-links";
 import { contributionId } from "../shared/setting-schema";
-import type { Navigation, NavigationIntent } from "../shared/runtime";
+import type { Navigation, NavigationIntent } from "../shared/host";
 import { contained } from "./navigation";
 import { registerSourceLinks, type LinkRun } from "./source-links";
 

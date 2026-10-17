@@ -12,13 +12,13 @@ export function registerOpenReference(
   platform: ApiPlatform,
 ): void {
   ctx.effect(() =>
-    ctx.workshop.command(
+    ctx.hostCommands.register(
       contributionId("openCopiedAgentReference"),
       async () => {
         try {
           await openReference(ctx, api, platform);
         } catch (error) {
-          ctx.workshop.error(
+          ctx.dialogs.error(
             error instanceof Error ? error.message : String(error),
           );
         }
@@ -32,15 +32,10 @@ async function openReference(
   api: MarkdownWorkshopApi,
   platform: ApiPlatform,
 ): Promise<void> {
-  const views = ctx.workshop.views;
-  if (!views) {
-    throw new Error("This host does not provide a reference input prompt.");
-  }
   // Copy Link for Agent includes a quoted passage below the reference. Only
   // prefill a valid first line; unrelated clipboard content stays private.
-  const firstLine =
-    (await ctx.workshop.clipboard.read()).split(/\r?\n/, 1)[0] ?? "";
-  const value = await views.input({
+  const firstLine = (await ctx.clipboard.read()).split(/\r?\n/, 1)[0] ?? "";
+  const value = await ctx.dialogs.input({
     prompt:
       "Open a Markdown source reference (@path/to/note.md#12-18 or a full URI)",
     value: referenceError(firstLine) ? "" : firstLine.trim(),
@@ -50,7 +45,7 @@ async function openReference(
     return;
   }
   const reference = parseAgentReference(value);
-  const uri = await resolveReference(reference, ctx.workshop, platform);
+  const uri = await resolveReference(reference, ctx, platform);
   if (uri) {
     await api.open(uri, {
       reveal: { startLine: reference.startLine, endLine: reference.endLine },

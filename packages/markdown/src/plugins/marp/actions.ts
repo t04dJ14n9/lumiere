@@ -2,7 +2,7 @@ import { isMarpDocument, setMarpEnabled } from "../../markdown/marp";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { portableMarkdownLink } from "../../shared/markdown-link";
 import { replaceAllEdit } from "../../shared/text-edit";
-import type { HostDocument, TextEdit } from "../../shared/runtime";
+import type { HostDocument, TextEdit } from "../../shared/host";
 import { uniqueFileName } from "../../shared/file-name";
 import { asStrings } from "../../shared/values";
 import type { WorkspaceFiles } from "../../shared/workspace-files";

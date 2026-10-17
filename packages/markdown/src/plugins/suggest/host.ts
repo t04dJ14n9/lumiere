@@ -1,11 +1,11 @@
 import type { Plugin } from "@workshop/core";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import type {} from "../vault/api";
 import { protocol } from "./protocol";
 import { SuggestionIndex } from "./sources";
 export const suggestHost: Plugin<{ panel: PanelShell }> = {
   name: "suggest",
-  inject: { required: ["rpc", "vault", "workshop"] },
+  inject: { required: ["rpc", "vault", "settings"] },
   apply(ctx, { panel }) {
     const index = new SuggestionIndex(ctx.vault);
     ctx.effect(() =>
@@ -21,7 +21,7 @@ export const suggestHost: Plugin<{ panel: PanelShell }> = {
         if (
           token.cancelled ||
           source === undefined ||
-          ctx.workshop.config(panel.document).features?.[feature]?.enabled ===
+          ctx.settings.forNote(panel.document).features?.[feature]?.enabled ===
             false
         ) {
           return [];
@@ -29,7 +29,7 @@ export const suggestHost: Plugin<{ panel: PanelShell }> = {
         return index.query(
           source,
           request,
-          ctx.workshop.config(panel.document).features?.links?.config
+          ctx.settings.forNote(panel.document).features?.links?.config
             .useWikilinks !== false,
         );
       }),

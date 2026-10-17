@@ -1,4 +1,4 @@
-import type { AgentEnvironment, CopyLinkTarget } from "../../shared/runtime";
+import type { AgentEnvironment, CopyLinkTarget } from "../../shared/host";
 
 /** Where Copy Link for Agent put the passage. */
 export type ChatTarget =

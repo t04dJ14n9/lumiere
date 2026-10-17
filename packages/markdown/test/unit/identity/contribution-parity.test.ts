@@ -1,3 +1,7 @@
+import {
+  HOST_SERVICE_NAMES,
+  provideHostServices,
+} from "../../../src/shared/host";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -45,12 +49,13 @@ import { registerPluginManagement } from "../../../src/host/api/management";
 import { registerOpenReference } from "../../../src/host/api/open-reference";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import type { Manifest } from "../../../src/shared/manifest";
-import type { HostViews, Workshop } from "../../../src/shared/runtime";
+import type { HostServices } from "../../../src/shared/host";
+import type { WorkspaceFiles } from "../../../src/shared/workspace-files";
 import {
   contributionId,
   SETTING_PREFIX,
 } from "../../../src/shared/setting-schema";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost, withHost } from "../../support/vscode-fake";
 import { extensionManifest } from "../../support/manifest";
 
 /** Markdown Workshop's own entries in the shipped manifest (PDF Workshop's sit beside them). */
@@ -146,12 +151,14 @@ test("tree hosts register the explorer view ids from package.json", async () => 
 test("editor host passes MARKDOWN_EDITOR.viewType to registerEditor", async () => {
   const viewTypes: string[] = [];
   const root = createRoot();
-  root.provide(
-    "workshop",
-    fakeWorkbench({
-      registerEditor(provider) {
-        viewTypes.push(provider.viewType);
-        return () => {};
+  provideHostServices(
+    root,
+    fakeHost({
+      customEditors: {
+        register(provider) {
+          viewTypes.push(provider.viewType);
+          return () => {};
+        },
       },
     }),
   );
@@ -206,48 +213,23 @@ function activePanel(): EditorPanel {
 function capturingWorkbench(
   ids: Set<string>,
   manifests: readonly Manifest[],
-): Workshop {
+): HostServices {
   const features = Object.fromEntries(
     manifests.map((manifest) => [manifest.id, { enabled: true, config: {} }]),
   );
-  return fakeWorkbench({
-    command(id) {
-      ids.add(id);
-      return () => {};
-    },
-    config: () => ({
-      preset: "obsidian",
-      mode: "source",
-      features,
-    }),
-    views: {
-      command(id: string) {
+  return fakeHost({
+    hostCommands: {
+      register(id) {
         ids.add(id);
         return () => {};
       },
-      setting<T>(_key: string, fallback: T): T {
-        return fallback;
-      },
-      activeNote: () => undefined,
-      onActiveNoteChanged: () => () => {},
-      documentText: () => undefined,
-    } as unknown as HostViews,
-    settings: {
-      inspect: () => ({ value: undefined, target: "user" }),
-      async update() {
-        return "user";
-      },
-      searchFilter: "@ext:test.workshop",
-      contributed: () => [],
-      async openUi() {},
     },
-    files: {
-      readText: async () => "",
-    } as unknown as NonNullable<Workshop["files"]>,
-    diffViews: {
-      onDidOpenDiff: () => () => {},
-    } as unknown as NonNullable<Workshop["diffViews"]>,
-    workspaceFolders: () => [],
+    settings: {
+      forNote: () => ({ preset: "obsidian", mode: "source", features }),
+    },
+    workspace: {
+      files: { readText: async () => "" } as unknown as WorkspaceFiles,
+    },
   });
 }
 
@@ -255,7 +237,7 @@ function capturingWorkbench(
 function directRegistrations(selections: Selections): Plugin {
   return {
     name: "direct-command-registrations",
-    inject: { required: ["workshop", "editors", "vaults"] },
+    inject: { required: [...HOST_SERVICE_NAMES, "editors", "vaults"] },
     apply(ctx) {
       registerMarkdownAssociation(ctx);
       registerJumpHistory(ctx, ctx.editors);
@@ -263,7 +245,7 @@ function directRegistrations(selections: Selections): Plugin {
       registerPluginManagement(ctx, {} as never, {} as never);
       registerOpenReference(ctx, {} as never, {} as never);
       registerOutlineActions(ctx, {} as never, {} as never);
-      registerSymbolPicker(ctx, ctx.workshop.views!);
+      registerSymbolPicker(ctx, ctx.dialogs);
     },
   };
 }
@@ -303,7 +285,7 @@ async function captureRegisteredCommands(): Promise<{
     },
     validate: () => panel,
   };
-  root.provide("workshop", capturingWorkbench(ids, manifests));
+  provideHostServices(root, capturingWorkbench(ids, manifests));
   root.provide("editors", {
     all: () => [panel],
     active: () => panel,
@@ -331,7 +313,7 @@ async function captureTreeHostCommands(): Promise<{
   const ids = new Set<string>();
   const treeIds = new Set<string>();
   const root = createRoot();
-  root.provide("workshop", viewHostWorkbench(ids, treeIds));
+  provideHostServices(root, viewHostWorkbench(ids, treeIds));
   root.provide("vaults", idleVaults());
   root.provide("editors", idleEditors());
   root.plugin(outlineHost);
@@ -346,16 +328,12 @@ async function captureTreeHostCommands(): Promise<{
 }
 
 /** Tree and status handles the four view hosts touch while registering. */
-function viewHostWorkbench(ids: Set<string>, treeIds: Set<string>): Workshop {
-  const workshop = capturingWorkbench(ids, []);
-  const views = workshop.views;
-  if (!views) {
-    throw new Error("view hosts need workshop.views");
-  }
-  return {
-    ...workshop,
+function viewHostWorkbench(
+  ids: Set<string>,
+  treeIds: Set<string>,
+): HostServices {
+  return withHost(capturingWorkbench(ids, []), {
     views: {
-      ...views,
       tree: (viewId) => {
         treeIds.add(viewId);
         return {
@@ -367,13 +345,8 @@ function viewHostWorkbench(ids: Set<string>, treeIds: Set<string>): Workshop {
           dispose() {},
         };
       },
-      status: () => ({
-        show() {},
-        hide() {},
-        dispose() {},
-      }),
     },
-  };
+  });
 }
 
 /** Vault calls `apply` makes while refreshing; command callbacks are not run. */

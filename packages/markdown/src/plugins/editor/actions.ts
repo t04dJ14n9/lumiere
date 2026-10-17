@@ -1,6 +1,6 @@
 import { type Infer } from "@workshop/core";
 import type { Editors, Selections, SourceSelection } from "./api";
-import type { Workshop } from "../../shared/runtime";
+import type { Dialogs } from "../../shared/host";
 import {
   CancelToken,
   RpcError,
@@ -19,7 +19,7 @@ export class ActionRegistry {
   constructor(
     private readonly editors: Editors,
     private readonly selections: Selections,
-    private readonly workshop: Workshop,
+    private readonly dialogs: Pick<Dialogs, "pick">,
     private readonly changed: () => void,
   ) {}
   register(owner: string, value: EditorAction): () => void {
@@ -108,8 +108,7 @@ export class ActionRegistry {
   }
   async pick(scope: EditorAction["scope"]): Promise<boolean> {
     const panel = this.editors.active();
-    const views = this.workshop.views;
-    if (!panel || !views) {
+    if (!panel) {
       return false;
     }
     const items = this.list(panel.id)
@@ -119,7 +118,7 @@ export class ActionRegistry {
         description: value.owner,
         value,
       }));
-    const picked = await views.pick({
+    const picked = await this.dialogs.pick({
       placeholder: scope === "selection" ? "Selection actions" : "Note actions",
       items: (query) =>
         items.filter((item) =>

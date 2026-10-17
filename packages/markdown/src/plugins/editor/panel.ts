@@ -7,7 +7,7 @@ import { taggedLogger, createRoot } from "@workshop/core";
 import type { Logger, RootContext } from "@workshop/core";
 import type { Documents } from "../document/api";
 import type { EditorPanel } from "./api";
-import type { PanelShell, Workshop } from "../../shared/runtime";
+import type { PanelShell, HostServices } from "../../shared/host";
 import { Endpoint, RpcError } from "../../shared/rpc/endpoint";
 import { config as editorConfig } from "./manifest";
 import { protocol } from "./protocol";
@@ -23,7 +23,7 @@ interface PanelOptions {
 export function createPanel(
   shell: PanelShell,
   documents: Documents,
-  workshop: Workshop,
+  host: Pick<HostServices, "settings" | "clipboard">,
   options: PanelOptions,
 ): EditorPanel {
   const { onClose, onState, configure, rank = () => 0 } = options;
@@ -35,15 +35,14 @@ export function createPanel(
   });
   const session = documents.session(shell.document);
   const rpc = createPanelEndpoint(shell.transport, owned.logger);
-  owned.provide("workshop", workshop);
   owned.provide("rpc", rpc);
   registerPanelLogging(
     owned,
     rpc,
-    () => workshop.config(shell.document).debugLogging ?? false,
+    () => host.settings.forNote(shell.document).debugLogging ?? false,
   );
   configure(owned, shell);
-  const reporting = panelReporting(owned, rpc, shell.document, workshop);
+  const reporting = panelReporting(owned, rpc, shell.document, host);
   const panel: EditorPanel = {
     ...reporting,
     get ready() {
@@ -67,9 +66,9 @@ export function createPanel(
   owned.effect(() => () => documents.release(shell.document));
   owned.effect(() => () => rpc.dispose());
   owned.effect(() => shell.onState(onState));
-  registerSessionHandshake(owned, { shell, session, rpc, workshop });
-  registerClipboard(owned, rpc, workshop.clipboard);
-  registerConfiguration(owned, rpc, shell.document, workshop);
+  registerSessionHandshake(owned, { shell, session, rpc, host });
+  registerClipboard(owned, rpc, host.clipboard);
+  registerConfiguration(owned, rpc, shell.document, host);
   shell.setHTML(webviewHTML(shell));
   return panel;
 }
@@ -80,17 +79,17 @@ function registerSessionHandshake(
     shell: PanelShell;
     session: EditorPanel["session"];
     rpc: Endpoint;
-    workshop: Workshop;
+    host: Pick<HostServices, "settings" | "clipboard">;
   },
 ): void {
-  const { shell, session, rpc, workshop } = options;
+  const { shell, session, rpc, host } = options;
   let detach: (() => void | Promise<void>) | undefined;
   owned.effect(() => () => detach?.());
   owned.effect(() =>
     rpc.handle(protocol, "ready", async (_request, token) => {
       owned.emit("editor/loading");
       await owned.settled();
-      await workshop.configuration?.prepare(shell.document.uri);
+      await host.settings.effective.prepare(shell.document.uri);
       if (token.cancelled || !owned.isLive) {
         throw new RpcError("Cancelled", "Renderer replaced");
       }
@@ -99,7 +98,7 @@ function registerSessionHandshake(
         throw new RpcError("Cancelled", "Renderer replaced");
       }
       detach = session.attach(shell.id, rpc);
-      const config = workshop.config(shell.document);
+      const config = host.settings.forNote(shell.document);
       return {
         text: session.text,
         version: session.version,
@@ -118,7 +117,7 @@ function registerSessionHandshake(
 function registerClipboard(
   owned: RootContext,
   rpc: Endpoint,
-  clipboard: Workshop["clipboard"],
+  clipboard: HostServices["clipboard"],
 ): void {
   owned.effect(() =>
     rpc.handle(protocol, "clipboardRead", () => clipboard.read()),
@@ -135,15 +134,13 @@ function registerConfiguration(
   owned: RootContext,
   rpc: Endpoint,
   document: PanelShell["document"],
-  workshop: Workshop,
+  host: Pick<HostServices, "settings" | "clipboard">,
 ): void {
-  if (workshop.onConfiguration) {
-    owned.effect(() =>
-      workshop.onConfiguration!(() => {
-        sendConfiguration(rpc, document, workshop);
-      }),
-    );
-  }
+  owned.effect(() =>
+    host.settings.onChange(() => {
+      sendConfiguration(rpc, document, host);
+    }),
+  );
 }
 
 function createPanelEndpoint(
@@ -170,7 +167,7 @@ function panelReporting(
   owned: RootContext,
   rpc: Endpoint,
   document: PanelShell["document"],
-  workshop: Workshop,
+  host: Pick<HostServices, "settings" | "clipboard">,
 ) {
   let initialized = () => {};
   let ready = new Promise<void>((resolve) => {
@@ -209,7 +206,7 @@ function panelReporting(
     async refreshPlugins() {
       await ready;
       owned.emit("editor/configure");
-      sendConfiguration(rpc, document, workshop);
+      sendConfiguration(rpc, document, host);
       await owned.settled();
       remote = await rpc.call(protocol, "plugins", {});
     },
@@ -218,9 +215,9 @@ function panelReporting(
 function sendConfiguration(
   rpc: Endpoint,
   document: PanelShell["document"],
-  workshop: Workshop,
+  host: Pick<HostServices, "settings" | "clipboard">,
 ): void {
-  const config = workshop.config(document);
+  const config = host.settings.forNote(document);
   rpc.notify(protocol, "configureLogging", config.debugLogging ?? false);
   rpc.notify(
     protocol,

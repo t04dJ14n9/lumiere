@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { PickItem } from "../../../src/shared/runtime";
+import type { PickItem } from "../../../src/shared/host";
 import { GO_TO_HEADING_COMMAND } from "../../../src/plugins/outline/commands";
 import { deferred, outlineFixture, tick } from "./fixture";
 import { uriOf } from "../views/fakes";
@@ -24,7 +24,7 @@ test("Go to Heading lists parsed headings in document order, filters them and ju
   const fixture = await outlineFixture({ "A.md": text });
   t.after(() => fixture.root.dispose());
   fixture.open(fixture.panel("one").panel);
-  fixture.fake.views.pick = async ({ placeholder, items }) => {
+  fixture.fake.dialogs.pick = async ({ placeholder, items }) => {
     assert.equal(placeholder, "Go to heading…");
     assert.deepEqual(
       items("").map(({ label, description, detail }) => ({
@@ -64,7 +64,7 @@ test("switching between Workshop and a text split rechecks the active panel and 
   const first = fixture.panel("one").panel;
   const second = fixture.panel("two", "B.md").panel;
   const shown: unknown[][] = [];
-  fixture.fake.views.pick = async ({ items }) => {
+  fixture.fake.dialogs.pick = async ({ items }) => {
     const choices = items("");
     shown.push(choices.map((item) => item.label));
     return { item: choices[0]!, query: "" };
@@ -89,7 +89,7 @@ test("cancel and an empty document never navigate", async (t) => {
   const fixture = await outlineFixture({ "A.md": "body without headings" });
   t.after(() => fixture.root.dispose());
   fixture.open(fixture.panel("one").panel);
-  fixture.fake.views.pick = async ({ items, placeholder }) => {
+  fixture.fake.dialogs.pick = async ({ items, placeholder }) => {
     assert.equal(placeholder, "No headings in this note.");
     assert.deepEqual(items(""), []);
     return undefined;
@@ -106,7 +106,7 @@ test("a pending picker cannot jump after an edit, panel switch, text split or pl
     fixture.open(first.panel);
     const accepted = deferred<void>();
     let choices: readonly PickItem<unknown>[] = [];
-    fixture.fake.views.pick = async ({ items }) => {
+    fixture.fake.dialogs.pick = async ({ items }) => {
       const snapshot = items("");
       choices = snapshot;
       await accepted.promise;
@@ -138,7 +138,7 @@ test("each picker invocation sees unsaved authoritative heading edits", async (t
   const { panel, cursor } = fixture.panel("one");
   fixture.open(panel);
   const shown: unknown[][] = [];
-  fixture.fake.views.pick = async ({ items }) => {
+  fixture.fake.dialogs.pick = async ({ items }) => {
     shown.push(items("").map((item) => item.label));
     return undefined;
   };

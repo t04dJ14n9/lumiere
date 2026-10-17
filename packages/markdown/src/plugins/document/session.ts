@@ -2,7 +2,7 @@ import { saveDocument } from "./save";
 import { Authority } from "../../shared/document/authority";
 import { textDocument } from "../../shared/document/wire";
 import type { Prepared } from "../../shared/document/authority";
-import type { HostDocument, Workshop, TextEdit } from "../../shared/runtime";
+import type { HostDocument, HostServices, TextEdit } from "../../shared/host";
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import { UndoGroups } from "./undo-groups";
 import { protocol } from "./protocol";
@@ -17,15 +17,15 @@ export class Session implements DocumentSession {
   private historyAction = false;
   constructor(
     readonly document: HostDocument,
-    private readonly workshop: Workshop,
+    private readonly host: HostServices,
   ) {
     this.authority = new Authority(document.getText());
   }
   private fingerprint(): string {
-    return this.workshop.fingerprint(this.text);
+    return this.host.hostDocuments.fingerprint(this.text);
   }
   save(): Promise<boolean> {
-    return saveDocument(this.document, this.workshop);
+    return saveDocument(this.document, this.host);
   }
   withAction<T>(action: () => Promise<T>): Promise<T> {
     const result = this.actions.then(action);
@@ -74,7 +74,7 @@ export class Session implements DocumentSession {
         });
         this.expected = prepared;
         try {
-          if (!(await this.workshop.apply(this.document, edits))) {
+          if (!(await this.host.hostDocuments.apply(this.document, edits))) {
             throw new Error("The host could not apply the edit.");
           }
           // Real workbenches fire change before apply resolves. Fakes may not.
@@ -138,7 +138,7 @@ export class Session implements DocumentSession {
       await this.groups.run(
         action,
         () => this.fingerprint(),
-        () => this.workshop.execute(action),
+        () => this.host.hostCommands.execute(action),
       );
     } finally {
       this.historyAction = false;

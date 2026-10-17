@@ -12,9 +12,9 @@ import {
 import { createPanel } from "../../../src/plugins/editor/panel";
 import { protocol } from "../../../src/plugins/editor/protocol";
 import type { Documents } from "../../../src/plugins/document/api";
-import type { PanelShell } from "../../../src/shared/runtime";
+import type { PanelShell } from "../../../src/shared/host";
 import { rpcPair } from "../../support/rpc-pair";
-import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
+import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
 function recordingChannel() {
   const lines: string[] = [];
@@ -158,7 +158,7 @@ test("panel kernels log through the window logger, tagged by panel", async () =>
     release() {},
   } as unknown as Documents;
   let owned: RootContext | undefined;
-  const panel = createPanel(shell, documents, fakeWorkbench(), {
+  const panel = createPanel(shell, documents, fakeHost(), {
     onClose() {},
     onState() {},
     configure(context) {

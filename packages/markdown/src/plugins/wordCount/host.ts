@@ -1,5 +1,5 @@
 import type { Plugin } from "@workshop/core";
-import type { HostViews } from "../../shared/runtime";
+import type { ActiveEditor } from "../../shared/host";
 import type { EditorPanel, Editors } from "../editor/api";
 import { protocol as editorProtocol } from "../editor/protocol";
 import { countText, formatCounts } from "./count";
@@ -9,17 +9,16 @@ const UPDATE_DELAY_MS = 200;
 /** The status bar word count for the active note or its selection. */
 export const wordCountHost: Plugin = {
   name: "wordCount",
-  inject: { required: ["workshop"], optional: ["editors"] },
+  inject: {
+    required: ["hostDocuments", "views", "activeEditor"],
+    optional: ["editors"],
+  },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views) {
-      return;
-    }
-    const status = views.status("markdownWorkshop.wordCount", 99);
+    const status = ctx.views.status("markdownWorkshop.wordCount", 99);
     ctx.effect(() => () => status.dispose());
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = async () => {
-      const text = await activeText(views, ctx.editors);
+      const text = await activeText(ctx.activeEditor, ctx.editors);
       if (text === undefined) {
         status.hide();
         return;
@@ -31,9 +30,9 @@ export const wordCountHost: Plugin = {
       timer = setTimeout(() => void update(), UPDATE_DELAY_MS);
     };
     ctx.effect(() => () => clearTimeout(timer));
-    ctx.effect(() => views.onActiveNoteChanged(schedule));
-    ctx.effect(() => views.onTextSelectionChanged(schedule));
-    ctx.effect(() => ctx.workshop.onChange(schedule));
+    ctx.effect(() => ctx.activeEditor.onNoteChanged(schedule));
+    ctx.effect(() => ctx.activeEditor.onTextSelectionChanged(schedule));
+    ctx.effect(() => ctx.hostDocuments.onChange(schedule));
     ctx.on("editor/selectionChanged", schedule);
     void update();
   },
@@ -41,10 +40,10 @@ export const wordCountHost: Plugin = {
 
 /** Counts for the active note: its selection when there is one. */
 async function activeText(
-  views: HostViews,
+  activeEditor: ActiveEditor,
   editors: Editors | undefined,
 ): Promise<ReturnType<typeof countText> | undefined> {
-  const uri = views.activeNote();
+  const uri = activeEditor.note();
   if (!uri) {
     return undefined;
   }
@@ -52,7 +51,7 @@ async function activeText(
   if (panel?.document.uri === uri) {
     return panelCounts(panel);
   }
-  const editor = views.textEditor(uri);
+  const editor = activeEditor.textEditor(uri);
   if (!editor) {
     return undefined;
   }

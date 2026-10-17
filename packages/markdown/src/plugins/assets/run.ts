@@ -1,6 +1,6 @@
 import { portableAssetLink as portableMarkdownLink } from "./link";
 import { insertEdit } from "../../shared/text-edit";
-import type { HostDocument, TextEdit } from "../../shared/runtime";
+import type { HostDocument, TextEdit } from "../../shared/host";
 import type { WorkspaceFiles } from "../../shared/workspace-files";
 import {
   baseName,

@@ -7,14 +7,19 @@ import type { SwitcherTarget } from "./ranking";
 /** **Markdown Workshop: Quick Switcher**: open or create a note by name. */
 export const quickSwitcherHost: Plugin = {
   name: "quickSwitcher",
-  inject: { required: ["workshop", "vaults"] },
+  inject: {
+    required: [
+      "dialogs",
+      "settings",
+      "navigation",
+      "vaults",
+      "hostCommands",
+      "activeEditor",
+    ],
+  },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views) {
-      return;
-    }
     const create = async (vault: Vault, name: string, source: string) => {
-      const uri = await ctx.workshop.navigation?.resolve({
+      const uri = await ctx.navigation.resolve({
         root: vault.index.root,
         source,
         path: name,
@@ -41,17 +46,17 @@ export const quickSwitcherHost: Plugin = {
       }
     };
     ctx.effect(() =>
-      views.command(contributionId("quickSwitcher"), async () => {
-        const active = views.activeNote();
+      ctx.hostCommands.register(contributionId("quickSwitcher"), async () => {
+        const active = ctx.activeEditor.note();
         const vault = await switcherVault(ctx.vaults, active);
         if (!vault) {
-          ctx.workshop.error("Open a folder to use the quick switcher.");
+          ctx.dialogs.error("Open a folder to use the quick switcher.");
           return;
         }
         // Keep the initiating note through the picker, even if focus changes.
         const source = active ?? `${vault.index.root}/`;
-        await ctx.workshop.configuration?.prepare(source);
-        const result = await views.pick({
+        await ctx.settings.effective.prepare(source);
+        const result = await ctx.dialogs.pick({
           placeholder: "Find or create a note…",
           items: (query) => switcherItems(vault.index, query),
         });

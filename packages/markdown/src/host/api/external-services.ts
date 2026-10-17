@@ -56,9 +56,7 @@ export function externalServices(
   if (host.codeBlocks) {
     services.codeBlocks = processorServices(bindings, assertLive);
   }
-  if (host.workshop) {
-    services.commands = commandServices(bindings, assertLive);
-  }
+  services.commands = commandServices(bindings, assertLive);
   return revokeServices(services, assertLive);
 }
 function editorServices(
@@ -122,15 +120,14 @@ function markerServices(
   assertLive: (id?: string) => void,
 ): PublicServices["markers"] {
   const markers = host.markers;
-  host.effect(
-    () =>
-      host.workshop.onConfiguration?.(() => {
-        for (const panel of host.editors.all()) {
-          if (!available(panel.id)) {
-            markers.clear(panel.id);
-          }
+  host.effect(() =>
+    host.settings.onChange(() => {
+      for (const panel of host.editors.all()) {
+        if (!available(panel.id)) {
+          markers.clear(panel.id);
         }
-      }) ?? (() => {}),
+      }
+    }),
   );
   return Object.freeze<PublicServices["markers"]>({
     set(id, values) {
@@ -202,7 +199,7 @@ function commandServices(
       }
       return ownedDisposable(
         host,
-        host.workshop.command(id, () => {
+        host.hostCommands.register(id, () => {
           assertLive(host.editors.active()?.id);
           return run();
         }),

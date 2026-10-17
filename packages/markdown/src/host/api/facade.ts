@@ -9,7 +9,7 @@ import type {
   PluginState,
 } from "./types";
 import type { Uri } from "vscode";
-import type { HostDocument } from "../../shared/runtime";
+import type { HostDocument } from "../../shared/host";
 import { editorOperations } from "./editors";
 import { vaultOperations } from "./vault";
 import { pluginOperations } from "./plugins";
@@ -106,8 +106,8 @@ function bindEvents(
       events.document.fire(documentSnapshot(document, platform));
     }
   };
-  root.effect(() => root.workshop.onChange(fireDocument));
-  root.effect(() => root.workshop.onSave(fireDocument));
+  root.effect(() => root.hostDocuments.onChange(fireDocument));
+  root.effect(() => root.hostDocuments.onSave(fireDocument));
 }
 
 export async function createApi(

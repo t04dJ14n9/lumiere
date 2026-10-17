@@ -3,7 +3,7 @@ import type {
   NavigationTarget,
   NavigationIntent,
   PanelShell,
-} from "../shared/runtime";
+} from "../shared/host";
 import { CancelToken } from "../shared/rpc/lifecycle";
 import type { Disposer } from "@workshop/core";
 

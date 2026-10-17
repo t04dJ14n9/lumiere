@@ -1,4 +1,4 @@
-import type { FileTextEdits } from "../shared/runtime";
+import type { FileTextEdits } from "../shared/host";
 
 /** Files a link update edits that had no unsaved changes of their own. */
 export function cleanEditedUris(

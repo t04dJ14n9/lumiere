@@ -33,7 +33,9 @@ test("external plugins are real isolated fibers with owned markers, actions, com
       for (const key of [
         "runtime",
         "rpc",
-        "workshop",
+        "hostCommands",
+        "hostDocuments",
+        "settings",
         "provide",
         "plugin",
         "__proto__",

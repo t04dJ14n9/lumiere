@@ -7,23 +7,29 @@ import { createGraphSession } from "./session";
 /** Window panel for one OKF bundle. It does not follow whichever note is active later. */
 export const graphHost: Plugin = {
   name: "graph",
-  inject: { required: ["workshop", "vaults", "okf"] },
+  inject: {
+    required: [
+      "settings",
+      "vaults",
+      "okf",
+      "hostCommands",
+      "views",
+      "dialogs",
+      "activeEditor",
+    ],
+  },
   apply(ctx) {
-    const views = ctx.workshop.views;
-    if (!views) {
-      return;
-    }
     const session = createGraphSession(ctx);
     ctx.effect(() => () => session.dispose());
     ctx.effect(() =>
-      views.command(contributionId("graph.open"), () => {
+      ctx.hostCommands.register(contributionId("graph.open"), () => {
         void session.open().catch((error) => {
           ctx.logger.error("Vault graph open failed", error);
         });
       }),
     );
     ctx.effect(() =>
-      views.command(contributionId("graph.chooseBundle"), () => {
+      ctx.hostCommands.register(contributionId("graph.chooseBundle"), () => {
         void session.choose().catch((error) => {
           ctx.logger.error("Vault graph bundle choice failed", error);
         });
@@ -31,8 +37,6 @@ export const graphHost: Plugin = {
     );
     ctx.on("vault/changed", () => session.schedule());
     ctx.on("vault/resolved", () => session.schedule());
-    if (ctx.workshop.onConfiguration) {
-      ctx.effect(() => ctx.workshop.onConfiguration!(() => session.schedule()));
-    }
+    ctx.effect(() => ctx.settings.onChange(() => session.schedule()));
   },
 };

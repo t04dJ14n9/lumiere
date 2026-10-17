@@ -1,8 +1,10 @@
+import { fakeHost } from "../../../test/support/vscode-fake";
+import { provideHostServices } from "../../shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
-import type { HostDocument, PanelShell, Workshop } from "../../shared/runtime";
+import type { HostDocument, PanelShell } from "../../shared/host";
 import { tasksHost } from "./host";
 import { protocol } from "./protocol";
 test("task RPC authorizes known notes, rejects stale lines and stops with its fiber", async () => {
@@ -52,14 +54,19 @@ test("task RPC authorizes known notes, rejects stale lines and stops with its fi
       authorized.push(source);
     },
   });
-  root.provide("workshop", {
-    async apply(doc, changes) {
-      assert.equal(doc, document);
-      assert.deepEqual(changes, [{ from: 3, to: 4, insert: "x" }]);
-      edits++;
-      return true;
-    },
-  } as Workshop);
+  provideHostServices(
+    root,
+    fakeHost({
+      hostDocuments: {
+        async apply(doc, changes) {
+          assert.equal(doc, document);
+          assert.deepEqual(changes, [{ from: 3, to: 4, insert: "x" }]);
+          edits++;
+          return true;
+        },
+      },
+    }),
+  );
   const enable = () =>
     root.plugin(tasksHost, { panel: { document } as PanelShell });
   let fiber = enable();

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { placement, settingRows } from "../../../src/plugins/settings/change";
-import type { ContributedSetting, PickItem } from "../../../src/shared/runtime";
+import type { ContributedSetting, PickItem } from "../../../src/shared/host";
 import {
   checkNumberText as checkNumber,
   editKind,

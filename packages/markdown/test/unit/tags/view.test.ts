@@ -1,3 +1,4 @@
+import { provideHostServices } from "../../../src/shared/host";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
@@ -11,7 +12,7 @@ import {
   render,
   uriOf,
   wait,
-  workbenchWith,
+  hostWith,
 } from "../views/fakes";
 
 async function start(
@@ -25,7 +26,7 @@ async function start(
     index.upsertFile({ ...index.file(path)!, excluded: true });
   }
   const root = createRoot();
-  root.provide("workshop", workbenchWith(fake.views));
+  provideHostServices(root, hostWith(fake));
   root.provide("vaults", vaults);
   root.plugin(tagsViewHost);
   await root.settled();
@@ -54,7 +55,7 @@ test("the Tags view lists the vault's tags and a click picks a note to open", as
   });
 
   const picks: string[][] = [];
-  fake.views.pick = async (options) => {
+  fake.dialogs.pick = async (options) => {
     const items = options.items("");
     picks.push(items.map((item) => item.label));
     const item = items[0];
@@ -106,18 +107,18 @@ test("the Tags view follows the tags plugin's enabled setting", async () => {
   const fake = fakeViews({ "plugins.tags.enabled": false });
   const { vaults } = memoryVaults({ "A.md": "#tag" });
   const root = createRoot();
-  const workshop = workbenchWith(fake.views);
+  const host = hostWith(fake);
   const listeners = new Set<() => void>();
-  workshop.onConfiguration = (listener) => {
+  host.settings.onChange = (listener) => {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
     };
   };
   const reconfigure = () => listeners.forEach((listener) => listener());
-  root.provide("workshop", workshop);
+  provideHostServices(root, host);
   root.provide("vaults", vaults);
-  workbenchFeatures(root, workshop, [
+  workbenchFeatures(root, host.settings, [
     { manifest: tagsManifest, plugin: tagsViewHost },
   ]);
   await wait();

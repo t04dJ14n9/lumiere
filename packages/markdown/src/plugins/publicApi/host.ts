@@ -6,7 +6,17 @@ import type {} from "../../shared/plugin-state";
 export const publicApiHost: Plugin<{ create(context: Context): void }> = {
   name: "publicApi",
   inject: {
-    required: ["workshop", "editors", "selections", "pluginStates"],
+    required: [
+      "editors",
+      "selections",
+      "pluginStates",
+      "clipboard",
+      "dialogs",
+      "hostCommands",
+      "hostDocuments",
+      "settings",
+      "workspace",
+    ],
     optional: ["vaults"],
   },
   apply(ctx, options) {

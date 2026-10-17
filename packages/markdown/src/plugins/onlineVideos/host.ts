@@ -1,6 +1,6 @@
 import type { Plugin } from "@workshop/core";
 import { RpcError } from "../../shared/rpc/lifecycle";
-import type { PanelShell } from "../../shared/runtime";
+import type { PanelShell } from "../../shared/host";
 import { VideoDetailsSource } from "./details";
 import { protocol } from "./protocol";
 
@@ -10,11 +10,11 @@ let source: VideoDetailsSource | undefined;
 /** Looks up titles and covers for video cards, only in a trusted workspace. */
 export const onlineVideosHost: Plugin<{ panel: PanelShell }> = {
   name: "onlineVideos",
-  inject: { required: ["rpc", "workshop"] },
+  inject: { required: ["rpc", "workspace"] },
   apply(ctx) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "details", ({ provider, id }) => {
-        if (!ctx.workshop.isTrusted?.()) {
+        if (!ctx.workspace.isTrusted()) {
           throw new RpcError(
             "WorkspaceUntrusted",
             "Video details need a trusted workspace",
