@@ -130,12 +130,15 @@ function usePrefetch(
       }
       const entry = { page: next, cancel: (): void => undefined };
       pending = entry;
-      entry.cancel = cache.request("low", next, wanted, 1, () => {
-        if (pending === entry) {
-          pending = undefined;
-        }
-        schedule();
-      });
+      entry.cancel = cache.request(
+        { quality: "low", page: next, scale: wanted, dpr: 1 },
+        () => {
+          if (pending === entry) {
+            pending = undefined;
+          }
+          schedule();
+        },
+      );
     };
     const schedule = (): void => {
       if (!frame) {
@@ -180,7 +183,12 @@ export function PageImage({
   const cache = useContext(BitmapContext);
   const [full, setFull] = useState<{ page: number; url: string } | undefined>(
     () => {
-      const url = cache?.peek("full", pageIndex, scale, dpr);
+      const url = cache?.peek({
+        quality: "full",
+        page: pageIndex,
+        scale: scale,
+        dpr: dpr,
+      });
       return url ? { page: pageIndex, url } : undefined;
     },
   );
@@ -201,26 +209,26 @@ export function PageImage({
     if (!lowUrl) {
       cancels.push(
         cache.request(
-          "low",
-          pageIndex,
-          lowScale(scale),
-          1,
+          { quality: "low", page: pageIndex, scale: lowScale(scale), dpr: 1 },
           (url) => live && setLow(url),
         ),
       );
     }
     cancels.push(
-      cache.request("full", pageIndex, scale, dpr, (url) => {
-        // Decode it off screen first, so the swap does not flash.
-        const image = new Image();
-        image.src = url;
-        const show = (): void => {
-          if (live) {
-            setFull({ page: pageIndex, url });
-          }
-        };
-        void image.decode().then(show, show);
-      }),
+      cache.request(
+        { quality: "full", page: pageIndex, scale: scale, dpr: dpr },
+        (url) => {
+          // Decode it off screen first, so the swap does not flash.
+          const image = new Image();
+          image.src = url;
+          const show = (): void => {
+            if (live) {
+              setFull({ page: pageIndex, url });
+            }
+          };
+          void image.decode().then(show, show);
+        },
+      ),
     );
     return () => {
       live = false;

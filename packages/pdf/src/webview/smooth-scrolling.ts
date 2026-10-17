@@ -94,8 +94,7 @@ export function useSmoothWheel(
           event.deltaMode,
           horizontal ? viewport.clientWidth : viewport.clientHeight,
         ),
-        limit.min,
-        limit.max,
+        limit,
       );
       if (!smooth) {
         viewport[axis] = target;

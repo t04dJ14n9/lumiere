@@ -22,6 +22,7 @@ import { PdfSelectionState, type SelectionSnapshot } from "./selection";
 import { PdfSource } from "./source";
 import { createPdfViewId } from "./view-id";
 import { viewerHtml } from "./webview-html";
+import { HistoryRequests } from "./history-requests";
 
 /** Messages the panel leaves to plugins (see `PdfPanels.handle`). */
 export type PluginMessage = Extract<
@@ -89,22 +90,15 @@ export class PdfPanel implements vscode.Disposable {
   private lookUp = false;
   private zen = false;
   private loads = 0;
-  private historyIncarnation = 0;
-  private lastRestore: { token: number; incarnation: number } | undefined;
   private patchVersion = 0;
   private loading = false;
   private position: ReadingPosition | undefined;
   private settings: ViewSettings;
   private toolbar: ToolbarSettings;
-  private historySequence = 0;
   private lastJump = 0;
-  private readonly historyRequests = new Map<
-    number,
-    {
-      kind: "historyCaptured" | "historyRestored";
-      finish(snapshot?: HistorySnapshot): void;
-    }
-  >();
+  private readonly history = new HistoryRequests((message) =>
+    this.post(message),
+  );
   private historyState = { back: false, forward: false };
 
   constructor(
@@ -144,7 +138,7 @@ export class PdfPanel implements vscode.Disposable {
 
   /** Show a page (and box), or with no box the page from `top` points below its top. */
   goTo(location: PdfLocation, top?: number): number {
-    const requestId = ++this.historySequence;
+    const requestId = this.history.nextId();
     this.navigation.goTo(location, top, requestId);
     return requestId;
   }
@@ -154,18 +148,15 @@ export class PdfPanel implements vscode.Disposable {
     location: PdfLocation,
     expectedIntent: number,
   ): { requestId: number; done: Promise<boolean> } {
-    const requestId = this.historySequence + 1;
-    const done = this.requestHistory(
-      "historyRestored",
-      undefined,
-      expectedIntent,
-      location,
-    ).then(Boolean);
+    const requestId = this.history.latest + 1;
+    const done = this.history
+      .request("historyRestored", undefined, expectedIntent, location)
+      .then(Boolean);
     return { requestId, done };
   }
 
   cancelNavigation(requestId: number): void {
-    if (requestId !== this.historySequence) {
+    if (requestId !== this.history.latest) {
       return;
     }
     this.navigation.cancel();
@@ -185,7 +176,7 @@ export class PdfPanel implements vscode.Disposable {
 
   cancelHistoryRestore(): void {
     this.post({ type: "historyCancel" });
-    this.cancelHistoryRequests();
+    this.history.cancelAll();
   }
 
   /** Flush a pending deliberate jump and read the viewport before leaving it. */
@@ -199,8 +190,8 @@ export class PdfPanel implements vscode.Disposable {
     if (this.loading || !this.view) {
       return undefined;
     }
-    const requestId = this.historySequence + 1;
-    return { requestId, done: this.requestHistory("historyCaptured") };
+    const requestId = this.history.latest + 1;
+    return { requestId, done: this.history.request("historyCaptured") };
   }
 
   /** A restore succeeds only when the current webview acknowledges it. */
@@ -212,51 +203,8 @@ export class PdfPanel implements vscode.Disposable {
       return undefined;
     }
     return (
-      await this.requestHistory("historyRestored", position, expectedIntent)
+      await this.history.request("historyRestored", position, expectedIntent)
     )?.position;
-  }
-
-  private requestHistory(
-    kind: "historyCaptured" | "historyRestored",
-    position?: ReadingPosition,
-    expectedIntent = 0,
-    location?: PdfLocation,
-  ): Promise<HistorySnapshot | undefined> {
-    const token = ++this.historySequence;
-    if (kind === "historyRestored" && !location) {
-      this.lastRestore = { token, incarnation: this.historyIncarnation };
-    }
-    return new Promise((resolve) => {
-      const timer = setTimeout(() => {
-        if (kind === "historyRestored") {
-          this.post(
-            location
-              ? { type: "historyCancel" }
-              : { type: "historyCancel", token },
-          );
-        }
-        finish();
-      }, 10_000);
-      const finish = (result?: HistorySnapshot): void => {
-        clearTimeout(timer);
-        this.historyRequests.delete(token);
-        resolve(result);
-      };
-      this.historyRequests.set(token, { kind, finish });
-      this.post(
-        location
-          ? { type: "goTo", location, requestId: token, expectedIntent }
-          : position
-            ? { type: "historyRestore", token, position, expectedIntent }
-            : { type: "historyCapture", token },
-      );
-    });
-  }
-
-  private cancelHistoryRequests(): void {
-    for (const request of [...this.historyRequests.values()]) {
-      request.finish();
-    }
   }
 
   /** Ask the viewer to page, zoom or find; ignored until it has the PDF. */
@@ -302,7 +250,7 @@ export class PdfPanel implements vscode.Disposable {
   }
 
   dispose(): void {
-    this.cancelHistoryRequests();
+    this.history.cancelAll();
     if (this.position) {
       this.options.savePosition(this.position);
     }
@@ -322,23 +270,10 @@ export class PdfPanel implements vscode.Disposable {
   private async apply(message: ViewerMessage): Promise<void> {
     switch (message.type) {
       case "ready":
-        this.historyIncarnation++;
-        // A new viewer page: its loads and patch versions start again.
-        this.loads = 0;
-        this.patchVersion = 0;
-        this.lastJump = 0;
-        await this.load();
+        await this.onReady();
         break;
       case "patch":
-        // Stale (an older version) or about the previous bytes: see shared/messages.ts.
-        if (
-          this.loading ||
-          !isCurrentPatch(message, this.patchVersion, this.loads)
-        ) {
-          return;
-        }
-        this.patchVersion = message.version;
-        this.applyPatch(message.patch);
+        this.onPatch(message);
         break;
       case "openExternal":
         await vscode.env.openExternal(vscode.Uri.parse(message.url));
@@ -347,49 +282,67 @@ export class PdfPanel implements vscode.Disposable {
         void vscode.window.showErrorMessage(`PDF viewer: ${message.message}`);
         break;
       case "historyCaptured":
-      case "historyRestored": {
-        if (this.loading || message.load !== this.loads) {
-          return;
-        }
-        const request = this.historyRequests.get(message.token);
-        if (request?.kind === message.type) {
-          request.finish(
-            message.ok
-              ? {
-                  position: message.position,
-                  intent: message.intent,
-                  ...(message.startedToken !== undefined &&
-                  this.lastRestore?.incarnation === this.historyIncarnation
-                    ? {
-                        previousRestoreStarted:
-                          message.startedToken >= this.lastRestore.token,
-                      }
-                    : {}),
-                }
-              : undefined,
-          );
-        }
+      case "historyRestored":
+        this.onHistoryReport(message);
         break;
-      }
       case "historyJump":
-        if (
-          this.loading ||
-          message.load !== this.loads ||
-          message.id <= this.lastJump
-        ) {
-          return;
-        }
-        this.lastJump = message.id;
-        await this.options.route(this, message);
+        await this.onHistoryJump(message);
         break;
       case "historyTraverse":
-        if (!this.loading && message.load === this.loads) {
+        if (this.isCurrentLoad(message.load)) {
           await this.options.route(this, message);
         }
         break;
       default:
         await this.options.route(this, message);
     }
+  }
+
+  /** A new viewer page: its loads and patch versions start again. */
+  private async onReady(): Promise<void> {
+    this.history.newViewer();
+    this.loads = 0;
+    this.patchVersion = 0;
+    this.lastJump = 0;
+    await this.load();
+  }
+
+  /** Stale (an older version) or about the previous bytes: see shared/messages.ts. */
+  private onPatch(message: Extract<ViewerMessage, { type: "patch" }>): void {
+    if (
+      this.loading ||
+      !isCurrentPatch(message, this.patchVersion, this.loads)
+    ) {
+      return;
+    }
+    this.patchVersion = message.version;
+    this.applyPatch(message.patch);
+  }
+
+  /** Whether a message is about the bytes the viewer shows now. */
+  private isCurrentLoad(load: number): boolean {
+    return !this.loading && load === this.loads;
+  }
+
+  private onHistoryReport(
+    message: Extract<
+      ViewerMessage,
+      { type: "historyCaptured" | "historyRestored" }
+    >,
+  ): void {
+    if (this.isCurrentLoad(message.load)) {
+      this.history.answer(message);
+    }
+  }
+
+  private async onHistoryJump(
+    message: Extract<ViewerMessage, { type: "historyJump" }>,
+  ): Promise<void> {
+    if (!this.isCurrentLoad(message.load) || message.id <= this.lastJump) {
+      return;
+    }
+    this.lastJump = message.id;
+    await this.options.route(this, message);
   }
 
   private applyPatch({ outline, selection, view }: ViewerPatch): void {
@@ -416,7 +369,7 @@ export class PdfPanel implements vscode.Disposable {
   /** Send the file to the viewer, which (re)opens it. */
   private async load(): Promise<void> {
     this.loading = true;
-    this.cancelHistoryRequests();
+    this.history.cancelAll();
     this.lastJump = 0;
     this.navigation.unload();
     this.outline = undefined;
@@ -435,7 +388,7 @@ export class PdfPanel implements vscode.Disposable {
       ...(this.position ? { position: this.position } : {}),
     });
     this.loads++;
-    this.historyIncarnation++;
+    this.history.newViewer();
     this.loading = false;
     this.navigation.loadedNow();
     // A rebuilt webview starts from the original HTML attributes. Rehydrate

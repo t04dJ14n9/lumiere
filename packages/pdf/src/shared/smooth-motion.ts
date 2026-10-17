@@ -34,12 +34,16 @@ export function isDiscreteWheel({
   );
 }
 
+/** A wheel delta in pixels: lines count as 40 pixels, pages as `pageSize`. */
 export function wheelPixels(
   delta: number,
   mode: number,
   pageSize: number,
 ): number {
-  return delta * (mode === 1 ? 40 : mode === 2 ? pageSize : 1);
+  if (mode === 1) {
+    return delta * 40;
+  }
+  return mode === 2 ? delta * pageSize : delta;
 }
 
 /** Adds wheel steps, but reversals start at the displayed position immediately. */
@@ -47,15 +51,14 @@ export function wheelTarget(
   position: number,
   target: number,
   delta: number,
-  min: number,
-  max: number,
+  limit: { min: number; max: number },
 ): number {
   const remaining = target - position;
   const from =
     remaining !== 0 && Math.sign(remaining) !== Math.sign(delta)
       ? position
       : target;
-  return Math.min(max, Math.max(min, from + delta));
+  return Math.min(limit.max, Math.max(limit.min, from + delta));
 }
 
 /** A pause this long (ms) between wheel events ends a gesture. */

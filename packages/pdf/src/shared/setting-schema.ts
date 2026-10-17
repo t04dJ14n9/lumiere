@@ -159,50 +159,56 @@ export function schemaProblem(
   value: unknown,
 ): string | undefined {
   if (property.anyOf) {
-    const branches = property.anyOf.filter(
-      (branch): branch is SchemaProperty =>
-        typeof branch === "object" && branch !== null,
-    );
-    const problems = branches.map((branch) => schemaProblem(branch, value));
-    return problems.some((problem) => problem === undefined)
-      ? undefined
-      : (problems[0] ?? "Not an allowed value.");
+    return anyOfProblem(property.anyOf, value);
   }
+  const types = ([] as string[]).concat(property.type ?? []);
   if (value === null) {
-    return ([] as string[]).concat(property.type ?? []).includes("null")
-      ? undefined
-      : "This setting cannot be null.";
+    return types.includes("null") ? undefined : "This setting cannot be null.";
   }
   if (property.enum && !property.enum.includes(value)) {
     return "Not one of the setting's values.";
   }
-  const types = ([] as string[])
-    .concat(property.type ?? [])
-    .filter((type) => type !== "null");
-  const fits = (type: string): boolean => {
-    switch (type) {
-      case "boolean":
-        return typeof value === "boolean";
-      case "string":
-        return typeof value === "string";
-      case "number":
-        return typeof value === "number" && Number.isFinite(value);
-      case "integer":
-        return typeof value === "number" && Number.isInteger(value);
-      default:
-        return false;
-    }
-  };
-  if (types.length === 0 || !types.some(fits)) {
+  const fits = types.some(
+    (type) => type !== "null" && TYPE_CHECKS[type]?.(value) === true,
+  );
+  if (!fits) {
     return "Not a value of the setting's type.";
   }
-  if (typeof value === "number") {
-    if (property.minimum !== undefined && value < property.minimum) {
-      return `At least ${property.minimum}.`;
-    }
-    if (property.maximum !== undefined && value > property.maximum) {
-      return `At most ${property.maximum}.`;
-    }
+  return typeof value === "number" ? rangeProblem(property, value) : undefined;
+}
+
+/** Allowed when any branch allows it; otherwise the first branch's reason. */
+function anyOfProblem(
+  anyOf: readonly unknown[],
+  value: unknown,
+): string | undefined {
+  const problems = anyOf
+    .filter(
+      (branch): branch is SchemaProperty =>
+        typeof branch === "object" && branch !== null,
+    )
+    .map((branch) => schemaProblem(branch, value));
+  return problems.some((problem) => problem === undefined)
+    ? undefined
+    : (problems[0] ?? "Not an allowed value.");
+}
+
+const TYPE_CHECKS: Readonly<Record<string, (value: unknown) => boolean>> = {
+  boolean: (value) => typeof value === "boolean",
+  string: (value) => typeof value === "string",
+  number: (value) => typeof value === "number" && Number.isFinite(value),
+  integer: (value) => typeof value === "number" && Number.isInteger(value),
+};
+
+function rangeProblem(
+  property: SchemaProperty,
+  value: number,
+): string | undefined {
+  if (property.minimum !== undefined && value < property.minimum) {
+    return `At least ${property.minimum}.`;
+  }
+  if (property.maximum !== undefined && value > property.maximum) {
+    return `At most ${property.maximum}.`;
   }
   return undefined;
 }

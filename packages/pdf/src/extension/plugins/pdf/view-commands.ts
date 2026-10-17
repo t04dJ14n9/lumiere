@@ -4,6 +4,7 @@ import {
   parseZoomInput,
   zoomLabel,
   type ViewerAction,
+  type ViewState,
 } from "../../../shared/view-state";
 import { ZOOM_STEPS } from "../../../shared/zoom-steps";
 import type { PdfPanels } from "./panels";
@@ -129,7 +130,15 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
     panel.act({ action: "setZoom", percent });
     return;
   }
-  const fixed: ZoomItem[] = [
+  const choice = await pickZoom(view, zoomItems(view));
+  if (choice && panels.active === panel) {
+    panel.act(choice.action);
+  }
+}
+
+/** The fits, actual size and the zoom levels, the current one marked. */
+function zoomItems(view: ViewState): ZoomItem[] {
+  return [
     {
       label: "$(arrow-both) Fit Width",
       ...current(view.fit === "width"),
@@ -156,6 +165,13 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
       action: { action: "setZoom", percent: level },
     })),
   ];
+}
+
+/** A quick pick over `fixed` that also offers a typed level first. */
+async function pickZoom(
+  view: ViewState,
+  fixed: ZoomItem[],
+): Promise<ZoomItem | undefined> {
   const picker = vscode.window.createQuickPick<ZoomItem>();
   picker.title = `Zoom (now ${zoomLabel(view)})`;
   picker.placeholder = "Pick a zoom, or type one such as 140";
@@ -163,7 +179,7 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
   picker.matchOnDescription = false;
   picker.onDidChangeValue((value) => {
     const typed = parseZoomInput(value);
-    // Offer the typed level first; the fixed entries still filter as usual.
+    // The fixed entries still filter as usual.
     picker.items =
       typed === undefined
         ? fixed
@@ -186,7 +202,5 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
     picker.show();
   });
   picker.dispose();
-  if (choice && panels.active === panel) {
-    panel.act(choice.action);
-  }
+  return choice;
 }

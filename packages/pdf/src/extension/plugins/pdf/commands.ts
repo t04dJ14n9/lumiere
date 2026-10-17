@@ -33,14 +33,11 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
       pending = cancellation;
       const request = ++generation;
       try {
-        return await openLocation(
-          panels,
-          target,
-          location,
-          () => request === generation,
-          cancellation.token,
+        return await openLocation(panels, target, location, {
+          current: () => request === generation,
+          token: cancellation.token,
           dispatch,
-        );
+        });
       } finally {
         if (pending === cancellation) {
           pending = undefined;
@@ -57,6 +54,17 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
   });
 }
 
+/** One Open Location request, superseded by the next. */
+interface OpenRequest {
+  /** False once a newer request has started. */
+  current(): boolean;
+  token: vscode.CancellationToken;
+  /** Runs the native open after any earlier one. */
+  dispatch(run: () => Promise<boolean>): Promise<boolean>;
+}
+
+type PdfDestination = ReturnType<typeof parsePdfLocation>;
+
 /**
  * Open a PDF at a page (and box). With no arguments, ask for a link such as
  * one an agent printed: `papers/paper.pdf#page=3&viewrect=72,83,134,21`.
@@ -68,26 +76,14 @@ async function openLocation(
   panels: PdfPanels,
   target: unknown,
   location: unknown,
-  current: () => boolean,
-  token: vscode.CancellationToken,
-  dispatch: (run: () => Promise<boolean>) => Promise<boolean>,
+  request: OpenRequest,
 ): Promise<boolean> {
-  const link =
-    target ??
-    (await vscode.window.showInputBox(
-      {
-        title: "Open PDF at Location",
-        prompt:
-          "A PDF path or link, optionally with #page=… and &viewrect=…, or a Source line copied for an agent",
-        placeHolder: "papers/paper.pdf#page=3&viewrect=72,83,134,21",
-      },
-      token,
-    ));
-  if (link === undefined || !current()) {
+  const link = target ?? (await askForLink(request.token));
+  if (link === undefined || !request.current()) {
     return false;
   }
-  const resolved = await resolvePdfUri(link, current, token);
-  if (!current() || resolved.status === "cancelled") {
+  const resolved = await resolvePdfUri(link, request);
+  if (!request.current() || resolved.status === "cancelled") {
     return false;
   }
   if (resolved.status !== "found") {
@@ -107,24 +103,47 @@ async function openLocation(
     );
     return false;
   }
-  const file = uri.with({ fragment: "" });
-  return dispatch(async () => {
-    if (!current()) {
-      return false;
-    }
-    await vscode.commands.executeCommand("vscode.openWith", file, VIEW_TYPE);
-    if (!current()) {
-      return false;
-    }
-    const panel = await panels.waitFor(file);
-    if (!panel || !current()) {
-      return false;
-    }
-    if (destination) {
-      panel.goTo(destination);
-    }
-    return true;
-  });
+  return request.dispatch(() =>
+    openAt(panels, uri.with({ fragment: "" }), destination, request),
+  );
+}
+
+function askForLink(
+  token: vscode.CancellationToken,
+): Thenable<string | undefined> {
+  return vscode.window.showInputBox(
+    {
+      title: "Open PDF at Location",
+      prompt:
+        "A PDF path or link, optionally with #page=… and &viewrect=…, or a Source line copied for an agent",
+      placeHolder: "papers/paper.pdf#page=3&viewrect=72,83,134,21",
+    },
+    token,
+  );
+}
+
+/** Open the viewer on `file` and go to `destination`, unless superseded. */
+async function openAt(
+  panels: PdfPanels,
+  file: vscode.Uri,
+  destination: PdfDestination,
+  request: OpenRequest,
+): Promise<boolean> {
+  if (!request.current()) {
+    return false;
+  }
+  await vscode.commands.executeCommand("vscode.openWith", file, VIEW_TYPE);
+  if (!request.current()) {
+    return false;
+  }
+  const panel = await panels.waitFor(file);
+  if (!panel || !request.current()) {
+    return false;
+  }
+  if (destination) {
+    panel.goTo(destination);
+  }
+  return true;
 }
 
 /**
@@ -133,73 +152,87 @@ async function openLocation(
  */
 async function resolvePdfUri(
   target: unknown,
-  current: () => boolean,
-  token: vscode.CancellationToken,
+  request: Pick<OpenRequest, "current" | "token">,
 ): Promise<
   { status: "found"; target: vscode.Uri } | { status: "missing" | "cancelled" }
 > {
-  let candidates: vscode.Uri[];
-  if (target instanceof vscode.Uri) {
-    candidates = [target];
-  } else {
-    if (typeof target !== "string" || !target.trim()) {
-      return { status: "missing" };
-    }
-    const text = extractPdfLink(target);
-    try {
-      if (/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) {
-        candidates = [vscode.Uri.parse(text)];
-      } else {
-        const hash = text.indexOf("#");
-        const file = hash < 0 ? text : text.slice(0, hash);
-        const fragment = hash < 0 ? "" : text.slice(hash + 1);
-        candidates = (
-          path.isAbsolute(file)
-            ? [vscode.Uri.file(file)]
-            : (vscode.workspace.workspaceFolders ?? []).map((folder) =>
-                vscode.Uri.joinPath(folder.uri, file),
-              )
-        ).map((uri) => uri.with({ fragment }));
-      }
-    } catch {
-      return { status: "missing" };
-    }
+  const candidates = candidatesFor(target);
+  if (!candidates) {
+    return { status: "missing" };
   }
   return resolvePdfCandidates(
     candidates,
     (uri) => uri.toString(),
-    async (uri) => {
-      if (!current() || !/\.pdf$/iu.test(uri.path)) {
-        return false;
-      }
-      try {
-        const stat = await vscode.workspace.fs.stat(uri.with({ fragment: "" }));
-        return (
-          (stat.type & vscode.FileType.File) !== 0 &&
-          (stat.type & vscode.FileType.Directory) === 0
-        );
-      } catch {
-        return false;
-      }
-    },
-    async (matches) => {
-      if (!current()) {
-        return undefined;
-      }
-      const choice = await vscode.window.showQuickPick(
-        matches.map((uri) => ({
-          label: path.basename(uri.path),
-          description: uri.fsPath,
-          uri,
-        })),
-        {
-          title: "Choose the PDF to open",
-          placeHolder:
-            "This relative path exists in more than one workspace folder",
-        },
-        token,
-      );
-      return choice?.uri;
-    },
+    (uri) => isPdfFile(uri, request.current),
+    (matches) => pickPdf(matches, request),
   );
+}
+
+/** The URIs `target` may mean; undefined when it cannot mean any. */
+function candidatesFor(target: unknown): vscode.Uri[] | undefined {
+  if (target instanceof vscode.Uri) {
+    return [target];
+  }
+  if (typeof target !== "string" || !target.trim()) {
+    return undefined;
+  }
+  const text = extractPdfLink(target);
+  try {
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) {
+      return [vscode.Uri.parse(text)];
+    }
+    const hash = text.indexOf("#");
+    const file = hash < 0 ? text : text.slice(0, hash);
+    const fragment = hash < 0 ? "" : text.slice(hash + 1);
+    const files = path.isAbsolute(file)
+      ? [vscode.Uri.file(file)]
+      : (vscode.workspace.workspaceFolders ?? []).map((folder) =>
+          vscode.Uri.joinPath(folder.uri, file),
+        );
+    return files.map((uri) => uri.with({ fragment }));
+  } catch {
+    return undefined;
+  }
+}
+
+async function isPdfFile(
+  uri: vscode.Uri,
+  current: () => boolean,
+): Promise<boolean> {
+  if (!current() || !/\.pdf$/iu.test(uri.path)) {
+    return false;
+  }
+  try {
+    const stat = await vscode.workspace.fs.stat(uri.with({ fragment: "" }));
+    return (
+      (stat.type & vscode.FileType.File) !== 0 &&
+      (stat.type & vscode.FileType.Directory) === 0
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Ask which folder's copy to open when a relative path exists in several. */
+async function pickPdf(
+  matches: readonly vscode.Uri[],
+  request: Pick<OpenRequest, "current" | "token">,
+): Promise<vscode.Uri | undefined> {
+  if (!request.current()) {
+    return undefined;
+  }
+  const choice = await vscode.window.showQuickPick(
+    matches.map((uri) => ({
+      label: path.basename(uri.path),
+      description: uri.fsPath,
+      uri,
+    })),
+    {
+      title: "Choose the PDF to open",
+      placeHolder:
+        "This relative path exists in more than one workspace folder",
+    },
+    request.token,
+  );
+  return choice?.uri;
 }

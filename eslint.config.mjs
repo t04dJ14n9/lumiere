@@ -128,9 +128,12 @@ export default tseslint.config(
     files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
     ignores: [
       "**/*.test.ts",
-      // Imported from PDF Workshop; its functions are being split to these
-      // limits (task: PDF size rules), then this exemption goes.
-      "packages/pdf/src/**",
+      // Imported from PDF Workshop and still being split to these limits:
+      // the viewer's React hooks, and the agent integration (reworked with
+      // the Markdown one). Then this exemption goes.
+      "packages/pdf/src/webview/**",
+      "packages/pdf/src/extension/plugins/agentBridge/**",
+      "packages/pdf/src/extension/plugins/ideContext/**",
     ],
     rules: size,
   },

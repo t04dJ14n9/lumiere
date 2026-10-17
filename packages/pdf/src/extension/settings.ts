@@ -27,12 +27,9 @@ export class PdfSettings {
     const manifest = this.extension.packageJSON as
       { contributes?: { configuration?: unknown } } | undefined;
     const configuration = manifest?.contributes?.configuration;
+    // A manifest lists one section or an array of them.
     const sections = (
-      Array.isArray(configuration)
-        ? configuration
-        : configuration
-          ? [configuration]
-          : []
+      configuration === undefined ? [] : [configuration].flat()
     ) as { properties?: Record<string, SchemaProperty> }[];
     return Object.assign(
       {},

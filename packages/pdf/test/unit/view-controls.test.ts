@@ -205,9 +205,9 @@ test("discrete wheel detection leaves fractional, small and diagonal trackpad pi
 });
 
 test("wheel animation accumulates, reverses promptly, clamps edges and finishes without overshoot", () => {
-  assert.equal(wheelTarget(20, 100, 100, 0, 500), 200);
-  assert.equal(wheelTarget(20, 100, -100, 0, 500), 0);
-  assert.equal(wheelTarget(400, 490, 100, 0, 500), 500);
+  assert.equal(wheelTarget(20, 100, 100, { min: 0, max: 500 }), 200);
+  assert.equal(wheelTarget(20, 100, -100, { min: 0, max: 500 }), 0);
+  assert.equal(wheelTarget(400, 490, 100, { min: 0, max: 500 }), 500);
   assert.equal(motionProgress(-5), 0);
   assert.equal(motionProgress(0), 0);
   assert.equal(motionProgress(70), 0.875);

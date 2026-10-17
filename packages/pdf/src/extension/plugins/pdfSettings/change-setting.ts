@@ -45,75 +45,94 @@ export async function changeSetting(settings: PdfSettings): Promise<void> {
 }
 
 async function edit(settings: PdfSettings, entry: SettingEntry): Promise<void> {
-  const config = vscode.workspace.getConfiguration();
-  const current: unknown = config.get(entry.key);
-  switch (entry.kind) {
-    case "boolean":
-      await settings.update(entry.key, current !== true);
-      return;
-    case "tristate": {
-      const choices: (vscode.QuickPickItem & { value: boolean | null })[] = [
-        { label: "On", value: true },
-        { label: "Off", value: false },
-        { label: "Follow the editor", value: null },
-      ].map((choice) =>
-        choice.value === (current ?? null)
-          ? { ...choice, description: "current" }
-          : choice,
-      );
-      const choice = await vscode.window.showQuickPick(choices, {
-        title: entry.title,
-        placeHolder: entry.description,
-      });
-      if (choice) {
-        await settings.update(entry.key, choice.value);
-      }
-      return;
-    }
-    case "enum": {
-      const choices: vscode.QuickPickItem[] = entry.choices.map((choice) => ({
-        label: choice.value,
-        ...(choice.description ? { detail: choice.description } : {}),
-        ...(choice.value === current ? { description: "current" } : {}),
-      }));
-      const choice = await vscode.window.showQuickPick(choices, {
-        title: entry.title,
-        placeHolder: entry.description,
-      });
-      if (choice) {
-        await settings.update(entry.key, choice.label);
-      }
-      return;
-    }
-    case "number": {
-      const text = await vscode.window.showInputBox({
-        title: entry.title,
-        prompt: entry.description,
-        value: String(current ?? entry.defaultValue ?? ""),
-        validateInput: (value) => numberProblem(value, entry),
-      });
-      if (text !== undefined) {
-        await settings.update(entry.key, Number(text));
-      }
-      return;
-    }
-    case "string": {
-      const text = await vscode.window.showInputBox({
-        title: entry.title,
-        prompt: entry.description,
-        value: String(current ?? ""),
-      });
-      if (text !== undefined) {
-        await settings.update(entry.key, text);
-      }
-      return;
-    }
-    case "complex":
-      // No simple editor for it: the Settings editor shows it with its description.
-      await vscode.commands.executeCommand(
-        "workbench.action.openSettings",
-        entry.key,
-      );
-      return;
+  const current: unknown = vscode.workspace.getConfiguration().get(entry.key);
+  if (entry.kind === "complex") {
+    // No simple editor for it: the Settings editor shows it with its description.
+    await vscode.commands.executeCommand(
+      "workbench.action.openSettings",
+      entry.key,
+    );
+    return;
   }
+  const answer = await askValue(entry, current);
+  if (answer) {
+    await settings.update(entry.key, answer.value);
+  }
+}
+
+/** The new value, asked for by the setting's kind; undefined when dismissed. */
+async function askValue(
+  entry: SettingEntry,
+  current: unknown,
+): Promise<{ value: unknown } | undefined> {
+  switch (entry.kind) {
+    case "complex":
+      return undefined;
+    case "boolean":
+      return { value: current !== true };
+    case "tristate":
+      return pickTristate(entry, current);
+    case "enum":
+      return pickEnum(entry, current);
+    case "number":
+      return askText(
+        entry,
+        String(current ?? entry.defaultValue ?? ""),
+        Number,
+      );
+    case "string":
+      return askText(entry, String(current ?? ""), (text) => text);
+  }
+}
+
+async function pickTristate(
+  entry: SettingEntry,
+  current: unknown,
+): Promise<{ value: boolean | null } | undefined> {
+  const choices: (vscode.QuickPickItem & { value: boolean | null })[] = [
+    { label: "On", value: true },
+    { label: "Off", value: false },
+    { label: "Follow the editor", value: null },
+  ].map((choice) =>
+    choice.value === (current ?? null)
+      ? { ...choice, description: "current" }
+      : choice,
+  );
+  const choice = await vscode.window.showQuickPick(choices, {
+    title: entry.title,
+    placeHolder: entry.description,
+  });
+  return choice && { value: choice.value };
+}
+
+async function pickEnum(
+  entry: SettingEntry,
+  current: unknown,
+): Promise<{ value: string } | undefined> {
+  const choices: vscode.QuickPickItem[] = entry.choices.map((choice) => ({
+    label: choice.value,
+    ...(choice.description ? { detail: choice.description } : {}),
+    ...(choice.value === current ? { description: "current" } : {}),
+  }));
+  const choice = await vscode.window.showQuickPick(choices, {
+    title: entry.title,
+    placeHolder: entry.description,
+  });
+  return choice && { value: choice.label };
+}
+
+async function askText(
+  entry: SettingEntry,
+  value: string,
+  parse: (text: string) => unknown,
+): Promise<{ value: unknown } | undefined> {
+  const text = await vscode.window.showInputBox({
+    title: entry.title,
+    prompt: entry.description,
+    value,
+    ...(entry.kind === "number"
+      ? { validateInput: (input: string) => numberProblem(input, entry) }
+      : {}),
+  });
+  return text === undefined ? undefined : { value: parse(text) };
 }

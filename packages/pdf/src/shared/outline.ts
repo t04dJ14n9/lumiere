@@ -9,30 +9,52 @@ export function findActiveOutlineItem(
   items: readonly OutlineItem[],
   position: { page: number; top?: number },
 ): OutlineItem | undefined {
-  let active: OutlineItem | undefined;
-  let activeDepth = -1;
+  let active: Candidate | undefined;
   const visit = (nodes: readonly OutlineItem[], depth: number): void => {
     for (const item of nodes) {
-      const top = item.top ?? 0;
+      const candidate =
+        item.page === undefined
+          ? undefined
+          : { item, page: item.page, top: item.top ?? 0, depth };
       if (
-        item.page !== undefined &&
-        (item.page < position.page ||
-          (item.page === position.page && top <= (position.top ?? 0)))
+        candidate &&
+        reached(candidate, position) &&
+        (!active || laterThan(candidate, active))
       ) {
-        if (
-          !active ||
-          item.page > active.page! ||
-          (item.page === active.page &&
-            (top > (active.top ?? 0) ||
-              (top === (active.top ?? 0) && depth >= activeDepth)))
-        ) {
-          active = item;
-          activeDepth = depth;
-        }
+        active = candidate;
       }
       visit(item.children, depth + 1);
     }
   };
   visit(items, 0);
-  return active;
+  return active?.item;
+}
+
+interface Candidate {
+  item: OutlineItem;
+  page: number;
+  top: number;
+  depth: number;
+}
+
+/** At or before the reading position. */
+function reached(
+  candidate: Candidate,
+  position: { page: number; top?: number },
+): boolean {
+  return (
+    candidate.page < position.page ||
+    (candidate.page === position.page && candidate.top <= (position.top ?? 0))
+  );
+}
+
+/** Further on than `active`; at the same destination, as deep or deeper. */
+function laterThan(candidate: Candidate, active: Candidate): boolean {
+  if (candidate.page !== active.page) {
+    return candidate.page > active.page;
+  }
+  if (candidate.top !== active.top) {
+    return candidate.top > active.top;
+  }
+  return candidate.depth >= active.depth;
 }

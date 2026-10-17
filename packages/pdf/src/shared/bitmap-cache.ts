@@ -28,6 +28,14 @@ export type RenderFn = (
 
 export type Quality = "low" | "full";
 
+/** One bitmap: a page at a quality, scale and device pixel ratio. */
+export interface BitmapSpec {
+  quality: Quality;
+  page: number;
+  scale: number;
+  dpr: number;
+}
+
 /** Full bitmaps kept after nothing displays them, for going back a page. */
 export const KEPT_FULL_BITMAPS = 6;
 /** Pages either side of the pages on screen that get a low bitmap. */
@@ -57,12 +65,8 @@ export function prefetchRange(
   ];
 }
 
-interface Entry {
+interface Entry extends BitmapSpec {
   key: string;
-  quality: Quality;
-  page: number;
-  scale: number;
-  dpr: number;
   url: string | undefined;
   task: RenderTask | undefined;
   listeners: Set<(url: string) => void>;
@@ -83,23 +87,13 @@ export class BitmapCache {
     },
   ) {}
 
-  private key(
-    quality: Quality,
-    page: number,
-    scale: number,
-    dpr: number,
-  ): string {
+  private key({ quality, page, scale, dpr }: BitmapSpec): string {
     return `${quality}:${page}@${scale.toFixed(3)}x${dpr.toFixed(2)}`;
   }
 
   /** The ready bitmap for exactly this request. */
-  peek(
-    quality: Quality,
-    page: number,
-    scale: number,
-    dpr: number,
-  ): string | undefined {
-    const entry = this.entries.get(this.key(quality, page, scale, dpr));
+  peek(spec: BitmapSpec): string | undefined {
+    const entry = this.entries.get(this.key(spec));
     if (entry?.url) {
       entry.used = ++this.clock;
     }
@@ -108,7 +102,8 @@ export class BitmapCache {
 
   /** Whether a low bitmap of the page is ready, at this scale. */
   hasLow(page: number, scale: number): boolean {
-    return this.entries.get(this.key("low", page, scale, 1))?.url !== undefined;
+    const key = this.key({ quality: "low", page, scale, dpr: 1 });
+    return this.entries.get(key)?.url !== undefined;
   }
 
   /** The newest ready low bitmap of a page, whatever scale it was rendered at. */
@@ -135,14 +130,8 @@ export class BitmapCache {
    * ready already. Returns a cancel function: when nobody wants a bitmap that
    * is still being rendered, its render is aborted.
    */
-  request(
-    quality: Quality,
-    page: number,
-    scale: number,
-    dpr: number,
-    onReady: (url: string) => void,
-  ): () => void {
-    const key = this.key(quality, page, scale, dpr);
+  request(spec: BitmapSpec, onReady: (url: string) => void): () => void {
+    const key = this.key(spec);
     let entry = this.entries.get(key);
     if (entry?.url) {
       entry.used = ++this.clock;
@@ -152,10 +141,10 @@ export class BitmapCache {
     if (!entry) {
       entry = {
         key,
-        quality,
-        page,
-        scale,
-        dpr,
+        quality: spec.quality,
+        page: spec.page,
+        scale: spec.scale,
+        dpr: spec.dpr,
         url: undefined,
         task: undefined,
         listeners: new Set(),

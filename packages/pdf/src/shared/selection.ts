@@ -37,44 +37,54 @@ export function parseSelection(value: unknown): PdfSelection | undefined {
     return undefined;
   }
   if (value.kind === "region") {
-    if (!isPageNumber(value.page) || !isPageRect(value.rect)) {
-      return undefined;
-    }
-    const text =
-      typeof value.text === "string"
-        ? value.text.trim().slice(0, MAX_TEXT_LENGTH)
-        : "";
-    return {
-      kind: "region",
-      page: value.page,
-      rect: value.rect,
-      ...(text ? { text } : {}),
-    };
+    return parseRegionSelection(value);
   }
-  if (value.kind !== "text") {
+  return value.kind === "text" ? parseTextSelection(value) : undefined;
+}
+
+function parseRegionSelection(
+  value: Record<string, unknown>,
+): PdfSelection | undefined {
+  if (!isPageNumber(value.page) || !isPageRect(value.rect)) {
     return undefined;
   }
+  const text =
+    typeof value.text === "string"
+      ? value.text.trim().slice(0, MAX_TEXT_LENGTH)
+      : "";
+  return {
+    kind: "region",
+    page: value.page,
+    rect: value.rect,
+    ...(text ? { text } : {}),
+  };
+}
+
+function parseTextSelection(
+  value: Record<string, unknown>,
+): PdfSelection | undefined {
   const text = typeof value.text === "string" ? value.text.trim() : "";
   if (!text || text.length > MAX_TEXT_LENGTH) {
     return undefined;
   }
-  if (
-    !Array.isArray(value.pages) ||
-    value.pages.length === 0 ||
-    value.pages.length > MAX_PAGES
-  ) {
+  const pages = parseSelectedPages(value.pages);
+  return pages ? { kind: "text", text, pages } : undefined;
+}
+
+/** One to MAX_PAGES distinct pages, sorted; undefined if any is invalid. */
+function parseSelectedPages(value: unknown): SelectedPage[] | undefined {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_PAGES) {
     return undefined;
   }
   const pages: SelectedPage[] = [];
-  for (const candidate of value.pages as unknown[]) {
+  for (const candidate of value as unknown[]) {
     const page = parseSelectedPage(candidate);
     if (!page || pages.some((existing) => existing.page === page.page)) {
       return undefined;
     }
     pages.push(page);
   }
-  pages.sort((left, right) => left.page - right.page);
-  return { kind: "text", text, pages };
+  return pages.sort((left, right) => left.page - right.page);
 }
 
 /** The pages a selection covers, first to last. */

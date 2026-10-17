@@ -86,69 +86,85 @@ export function parseViewState(value: unknown): ViewState | undefined {
   if (typeof value !== "object" || value === null) {
     return undefined;
   }
-  const {
-    page,
-    pageCount,
-    zoomPercent,
-    fit,
-    tool,
-    canGoBack,
-    canGoForward,
-    pageLayout,
-    scrollMode,
-    scrollDirection,
-    readingPage,
-    zoom,
-    top,
-    left,
-  } = value as Record<string, unknown>;
-  if (!isCount(pageCount) || !isCount(page) || page > pageCount) {
-    return undefined;
-  }
+  const report = value as Record<string, unknown>;
+  const { canGoBack, canGoForward, zoomPercent } = report;
   if (
-    typeof zoomPercent !== "number" ||
-    !Number.isFinite(zoomPercent) ||
-    zoomPercent <= 0 ||
-    zoomPercent > 100_000
+    !validPages(report) ||
+    !validZoomPercent(zoomPercent) ||
+    !validChoices(report) ||
+    typeof canGoBack !== "boolean" ||
+    typeof canGoForward !== "boolean"
   ) {
     return undefined;
   }
-  if (
-    !isPageLayout(pageLayout) ||
-    !isScrollMode(scrollMode) ||
-    !isScrollDirection(scrollDirection) ||
-    !isPageOffset(top) ||
-    !isPageOffset(left)
-  ) {
-    return undefined;
-  }
-  if (
-    !isCount(readingPage) ||
-    readingPage < 1 ||
-    readingPage > pageCount ||
-    !isZoomChoice(zoom)
-  ) {
-    return undefined;
-  }
-  if (typeof canGoBack !== "boolean" || typeof canGoForward !== "boolean") {
-    return undefined;
-  }
+  const { fit, tool } = report;
   return {
-    page,
-    pageCount,
+    page: report.page,
+    pageCount: report.pageCount,
     zoomPercent: Math.round(zoomPercent),
     fit: fit === "width" || fit === "page" ? fit : null,
     tool: tool === "region" ? "region" : "text",
-    pageLayout,
-    scrollMode,
-    scrollDirection,
+    pageLayout: report.pageLayout,
+    scrollMode: report.scrollMode,
+    scrollDirection: report.scrollDirection,
     canGoBack,
     canGoForward,
-    readingPage,
-    zoom: parseDefaultZoom(zoom),
-    top,
-    left,
+    readingPage: report.readingPage,
+    zoom: parseDefaultZoom(report.zoom),
+    top: report.top,
+    left: report.left,
   };
+}
+
+/** The page, the first visible page and the page count agree. */
+function validPages(report: Record<string, unknown>): report is Record<
+  string,
+  unknown
+> & {
+  page: number;
+  pageCount: number;
+  readingPage: number;
+} {
+  const { page, pageCount, readingPage } = report;
+  return (
+    isCount(pageCount) &&
+    isCount(page) &&
+    page <= pageCount &&
+    isCount(readingPage) &&
+    readingPage >= 1 &&
+    readingPage <= pageCount
+  );
+}
+
+function validZoomPercent(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value > 0 &&
+    value <= 100_000
+  );
+}
+
+/** Layout, scrolling, zoom choice and the place in the page are all valid. */
+function validChoices(report: Record<string, unknown>): report is Record<
+  string,
+  unknown
+> & {
+  pageLayout: PageLayout;
+  scrollMode: ScrollMode;
+  scrollDirection: ScrollDirection;
+  zoom: ZoomChoice;
+  top: number;
+  left: number;
+} {
+  return (
+    isPageLayout(report.pageLayout) &&
+    isScrollMode(report.scrollMode) &&
+    isScrollDirection(report.scrollDirection) &&
+    isZoomChoice(report.zoom) &&
+    isPageOffset(report.top) &&
+    isPageOffset(report.left)
+  );
 }
 
 /** Accept an action only if it is well-formed; numbers are clamped by the viewer. */
@@ -156,47 +172,46 @@ export function parseViewerAction(value: unknown): ViewerAction | undefined {
   if (typeof value !== "object" || value === null) {
     return undefined;
   }
-  const {
-    action,
-    page,
-    percent,
-    tool,
-    pageLayout,
-    scrollMode,
-    scrollDirection,
-  } = value as Record<string, unknown>;
+  const fields = value as Record<string, unknown>;
+  const action = fields.action;
   if (typeof action !== "string") {
     return undefined;
   }
   if (SIMPLE_ACTIONS.has(action)) {
     return { action } as ViewerAction;
   }
-  if (action === "goToPage") {
-    return isCount(page) && page >= 1 ? { action, page } : undefined;
-  }
-  if (action === "setZoom") {
-    return typeof percent === "number" &&
-      Number.isFinite(percent) &&
-      percent > 0
-      ? { action, percent }
-      : undefined;
-  }
-  if (action === "setTool") {
-    return tool === "text" || tool === "region" ? { action, tool } : undefined;
-  }
-  if (action === "setPageLayout") {
-    return isPageLayout(pageLayout) ? { action, pageLayout } : undefined;
-  }
-  if (action === "setScrollMode") {
-    return isScrollMode(scrollMode) ? { action, scrollMode } : undefined;
-  }
-  if (action === "setScrollDirection") {
-    return isScrollDirection(scrollDirection)
-      ? { action, scrollDirection }
-      : undefined;
-  }
-  return undefined;
+  return Object.hasOwn(ACTION_PARSERS, action)
+    ? ACTION_PARSERS[action]!(fields)
+    : undefined;
 }
+
+/** Parsers for the actions that carry a value. */
+const ACTION_PARSERS: Readonly<
+  Record<string, (fields: Record<string, unknown>) => ViewerAction | undefined>
+> = {
+  goToPage: ({ page }) =>
+    isCount(page) && page >= 1 ? { action: "goToPage", page } : undefined,
+  setZoom: ({ percent }) =>
+    typeof percent === "number" && Number.isFinite(percent) && percent > 0
+      ? { action: "setZoom", percent }
+      : undefined,
+  setTool: ({ tool }) =>
+    tool === "text" || tool === "region"
+      ? { action: "setTool", tool }
+      : undefined,
+  setPageLayout: ({ pageLayout }) =>
+    isPageLayout(pageLayout)
+      ? { action: "setPageLayout", pageLayout }
+      : undefined,
+  setScrollMode: ({ scrollMode }) =>
+    isScrollMode(scrollMode)
+      ? { action: "setScrollMode", scrollMode }
+      : undefined,
+  setScrollDirection: ({ scrollDirection }) =>
+    isScrollDirection(scrollDirection)
+      ? { action: "setScrollDirection", scrollDirection }
+      : undefined,
+};
 
 /**
  * A page number typed by the reader ("7", " 7 "), clamped to the document;

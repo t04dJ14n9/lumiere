@@ -168,97 +168,104 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
     return undefined;
   }
   const message = value as Record<string, unknown>;
-  switch (message.type) {
-    case "historyJump": {
-      const from = parseReadingPosition(message.from);
-      const to = parseReadingPosition(message.to);
-      if (
-        !validHistoryNumber(message.load, 0) ||
-        !validHistoryNumber(message.id, 1) ||
-        !from ||
-        !to
-      ) {
-        return undefined;
-      }
-      if (
-        message.requestId !== undefined &&
-        !validHistoryNumber(message.requestId, 1)
-      ) {
-        return undefined;
-      }
-      return {
-        type: "historyJump",
-        load: message.load,
-        id: message.id,
-        from,
-        to,
-        ...(message.requestId === undefined
-          ? {}
-          : { requestId: message.requestId as number }),
-      };
-    }
-    case "historyTraverse":
-      return validHistoryNumber(message.load, 0) &&
-        (message.direction === "back" || message.direction === "forward")
-        ? {
-            type: "historyTraverse",
-            load: message.load,
-            direction: message.direction,
-          }
-        : undefined;
-    case "historyCaptured":
-    case "historyRestored": {
-      const position = parseReadingPosition(message.position);
-      return validHistoryNumber(message.load, 0) &&
-        validHistoryNumber(message.token, 1) &&
-        validHistoryNumber(message.intent, 0) &&
-        position &&
-        typeof message.ok === "boolean" &&
-        (message.startedToken === undefined ||
-          validHistoryNumber(message.startedToken, 0))
-        ? {
-            type: message.type,
-            load: message.load,
-            token: message.token,
-            position,
-            intent: message.intent,
-            ok: message.ok,
-            ...(message.startedToken === undefined
-              ? {}
-              : { startedToken: message.startedToken as number }),
-          }
-        : undefined;
-    }
-    case "ready":
-    case "copyLinkForAgent":
-    case "toggleOutline":
-      return { type: message.type };
-    case "patch":
-      return parsePatchMessage(message);
-    case "floatingDock":
-      return isFloatingDock(message.dock)
-        ? { type: "floatingDock", dock: message.dock }
-        : undefined;
-    case "openExternal":
-      return isWebUrl(message.url)
-        ? { type: "openExternal", url: message.url }
-        : undefined;
-    case "lookUp":
-      return typeof message.open === "boolean" &&
-        (message.word === null || isLookUpWord(message.word))
-        ? { type: "lookUp", word: message.word, open: message.open }
-        : undefined;
-    case "zen":
-      return typeof message.exit === "boolean"
-        ? { type: "zen", exit: message.exit }
-        : undefined;
-    case "error":
-      return typeof message.message === "string"
-        ? { type: "error", message: message.message.slice(0, 1_000) }
-        : undefined;
-    default:
-      return undefined;
+  const parse =
+    typeof message.type === "string" ? VIEWER_PARSERS[message.type] : undefined;
+  return parse?.(message);
+}
+
+type Fields = Record<string, unknown>;
+
+/** One parser per viewer message type; each checks every field. */
+const VIEWER_PARSERS: Readonly<
+  Record<string, (message: Fields) => ViewerMessage | undefined>
+> = {
+  historyJump: parseHistoryJump,
+  historyTraverse: (message) =>
+    validHistoryNumber(message.load, 0) &&
+    (message.direction === "back" || message.direction === "forward")
+      ? {
+          type: "historyTraverse",
+          load: message.load,
+          direction: message.direction,
+        }
+      : undefined,
+  historyCaptured: parseHistoryReport,
+  historyRestored: parseHistoryReport,
+  ready: () => ({ type: "ready" }),
+  copyLinkForAgent: () => ({ type: "copyLinkForAgent" }),
+  toggleOutline: () => ({ type: "toggleOutline" }),
+  patch: (message) => parsePatchMessage(message),
+  floatingDock: (message) =>
+    isFloatingDock(message.dock)
+      ? { type: "floatingDock", dock: message.dock }
+      : undefined,
+  openExternal: (message) =>
+    isWebUrl(message.url)
+      ? { type: "openExternal", url: message.url }
+      : undefined,
+  lookUp: (message) =>
+    typeof message.open === "boolean" &&
+    (message.word === null || isLookUpWord(message.word))
+      ? { type: "lookUp", word: message.word, open: message.open }
+      : undefined,
+  zen: (message) =>
+    typeof message.exit === "boolean"
+      ? { type: "zen", exit: message.exit }
+      : undefined,
+  error: (message) =>
+    typeof message.message === "string"
+      ? { type: "error", message: message.message.slice(0, 1_000) }
+      : undefined,
+};
+
+function parseHistoryJump(message: Fields): ViewerMessage | undefined {
+  const from = parseReadingPosition(message.from);
+  const to = parseReadingPosition(message.to);
+  const requestId = message.requestId;
+  if (
+    !validHistoryNumber(message.load, 0) ||
+    !validHistoryNumber(message.id, 1) ||
+    !from ||
+    !to ||
+    (requestId !== undefined && !validHistoryNumber(requestId, 1))
+  ) {
+    return undefined;
   }
+  return {
+    type: "historyJump",
+    load: message.load,
+    id: message.id,
+    from,
+    to,
+    ...(requestId === undefined ? {} : { requestId }),
+  };
+}
+
+/** `historyCaptured` and `historyRestored` carry the same fields. */
+function parseHistoryReport(message: Fields): ViewerMessage | undefined {
+  const position = parseReadingPosition(message.position);
+  const startedToken = message.startedToken;
+  if (
+    (message.type !== "historyCaptured" &&
+      message.type !== "historyRestored") ||
+    !validHistoryNumber(message.load, 0) ||
+    !validHistoryNumber(message.token, 1) ||
+    !validHistoryNumber(message.intent, 0) ||
+    !position ||
+    typeof message.ok !== "boolean" ||
+    (startedToken !== undefined && !validHistoryNumber(startedToken, 0))
+  ) {
+    return undefined;
+  }
+  return {
+    type: message.type,
+    load: message.load,
+    token: message.token,
+    position,
+    intent: message.intent,
+    ok: message.ok,
+    ...(startedToken === undefined ? {} : { startedToken }),
+  };
 }
 
 function validHistoryNumber(value: unknown, minimum: number): value is number {

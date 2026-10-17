@@ -4,6 +4,7 @@ import {
   type ToolbarSettings,
 } from "../../../shared/toolbar-settings";
 import type { PdfPanel, PluginMessage } from "./panel";
+import type { ViewState } from "../../../shared/view-state";
 
 export const VIEW_TYPE = "pdfWorkshop.viewer";
 
@@ -186,60 +187,50 @@ export class PdfPanels implements vscode.Disposable {
   }
 
   private publish(): void {
-    const panel = this.current;
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.pdfActive",
-      Boolean(panel),
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.hasSelection",
-      Boolean(panel?.selection),
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.outlineLoading",
-      Boolean(panel && !panel.outline),
-    );
-    // For the editor title actions: which fit and tool buttons to show, and
-    // whether there is a page to go back or forward to.
-    const view = panel?.view;
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.fit",
-      view?.fit ?? "",
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.tool",
-      view?.tool ?? "text",
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.pageLayout",
-      view?.pageLayout ?? "single",
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.scrollMode",
-      view?.scrollMode ?? "continuous",
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.scrollDirection",
-      view?.scrollDirection ?? "vertical",
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.canGoBack",
-      view?.canGoBack ?? false,
-    );
-    void vscode.commands.executeCommand(
-      "setContext",
-      "pdfWorkshop.canGoForward",
-      view?.canGoForward ?? false,
-    );
+    for (const [key, value] of Object.entries(contextKeys(this.current))) {
+      void vscode.commands.executeCommand(
+        "setContext",
+        `pdfWorkshop.${key}`,
+        value,
+      );
+    }
     this.changed.fire();
   }
+}
+
+/**
+ * The context keys menus and keybindings read for the active PDF; for the
+ * editor title actions, which fit and tool buttons to show, and whether there
+ * is a page to go back or forward to.
+ */
+function contextKeys(panel: PdfPanel | undefined): Record<string, unknown> {
+  const view = panel?.view;
+  return {
+    pdfActive: Boolean(panel),
+    hasSelection: Boolean(panel?.selection),
+    outlineLoading: Boolean(panel && !panel.outline),
+    ...(view ? viewKeys(view) : NO_VIEW),
+  };
+}
+
+const NO_VIEW = {
+  fit: "",
+  tool: "text",
+  pageLayout: "single",
+  scrollMode: "continuous",
+  scrollDirection: "vertical",
+  canGoBack: false,
+  canGoForward: false,
+};
+
+function viewKeys(view: ViewState): typeof NO_VIEW {
+  return {
+    fit: view.fit ?? "",
+    tool: view.tool,
+    pageLayout: view.pageLayout,
+    scrollMode: view.scrollMode,
+    scrollDirection: view.scrollDirection,
+    canGoBack: view.canGoBack,
+    canGoForward: view.canGoForward,
+  };
 }
