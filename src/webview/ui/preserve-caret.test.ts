@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EditorSelection, EditorState } from "@codemirror/state";
+import {
+  EditorSelection,
+  EditorState,
+  type TransactionSpec,
+} from "@codemirror/state";
 import {
   restoreCaret,
   selectionFitsDoc,
@@ -29,14 +33,14 @@ function mockView(doc: string, head: number) {
       return state;
     },
     scrollDOM: scroll,
-    dispatch(spec: { selection?: EditorSelection; scrollIntoView?: boolean }) {
+    dispatch(spec: TransactionSpec) {
       state = state.update(spec).state;
     },
   } as unknown as EditorView;
   return { view, scroll, getHead: () => state.selection.main.head };
 }
 
-test("restoreCaret reapplies a snapshot and skips stale doc lengths", () => {
+test("restoreCaret reapplies a snapshot and skips changed documents", () => {
   const { view, getHead } = mockView("hello world", 2);
   const snap = snapshotCaret(view);
   view.dispatch({ selection: EditorSelection.single(8) });
@@ -44,8 +48,24 @@ test("restoreCaret reapplies a snapshot and skips stale doc lengths", () => {
   assert.equal(restoreCaret(view, snap), true);
   assert.equal(getHead(), 2);
 
-  const stale: CaretSnapshot = { ...snap, docLength: 3 };
+  const stale: CaretSnapshot = {
+    ...snap,
+    doc: EditorState.create({ doc: "bye" }).doc,
+  };
   view.dispatch({ selection: EditorSelection.single(4) });
   assert.equal(restoreCaret(view, stale), false);
   assert.equal(getHead(), 4);
+});
+
+test("restoreCaret rejects an intervening same-length replacement", () => {
+  const { view, scroll, getHead } = mockView("hello world", 2);
+  const snapshot = snapshotCaret(view);
+  view.dispatch({
+    changes: { from: 0, to: 5, insert: "HELLO" },
+    selection: EditorSelection.single(8),
+  });
+  scroll.scrollTop = 40;
+  assert.equal(restoreCaret(view, snapshot), false);
+  assert.equal(getHead(), 8);
+  assert.equal(scroll.scrollTop, 40);
 });

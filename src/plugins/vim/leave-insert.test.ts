@@ -118,6 +118,7 @@ function fixture() {
     },
   } as unknown as EditorView;
   const cm = new CodeMirror(view);
+  (view as EditorView & { cm: CodeMirror }).cm = cm;
   cm.scrollIntoView = () => {};
   cm.charCoords = (pos) => ({
     left: pos.ch * 10,
@@ -129,7 +130,7 @@ function fixture() {
     ch: pos.ch,
   });
   Vim.enterVimMode(cm);
-  const plugin = installKeepInsertExitCaret(view, cm);
+  let plugin = installKeepInsertExitCaret(view, cm);
   return {
     view,
     cm,
@@ -138,6 +139,10 @@ function fixture() {
         cm.curOp!.isVimOp = true;
         Vim.handleKey(cm, key, "user");
       });
+    },
+    reinstall() {
+      plugin.destroy();
+      plugin = installKeepInsertExitCaret(view, cm);
     },
     destroy() {
       plugin.destroy();
@@ -155,7 +160,7 @@ test("Esc from insert keeps the insert-mode column (CJK mid-line)", async () => 
   assert.equal(f.cm.state.vim?.insertMode, true);
   assert.equal(f.view.state.selection.main.head, insertAt);
   f.key("<Esc>");
-  await new Promise((r) => queueMicrotask(r));
+  await new Promise<void>((r) => queueMicrotask(r));
   assert.equal(f.cm.state.vim?.insertMode, false);
   assert.equal(
     f.view.state.selection.main.head,
@@ -163,6 +168,64 @@ test("Esc from insert keeps the insert-mode column (CJK mid-line)", async () => 
     "Esc must not left-shift off the insert column",
   );
   f.destroy();
+});
+
+test("R → type → Esc keeps the classic left-shift onto the replaced character", async () => {
+  const f = fixture();
+  const replaceAt = 7;
+  try {
+    f.view.dispatch({ selection: EditorSelection.single(replaceAt) });
+    f.key("R");
+    assert.equal(f.cm.state.vim?.insertMode, true);
+    assert.equal(f.cm.state.overwrite, true);
+    f.cm.overWriteSelection("x");
+    assert.equal(f.view.state.selection.main.head, replaceAt + 1);
+    f.key("<Esc>");
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    assert.equal(f.cm.state.vim?.insertMode, false);
+    assert.equal(f.view.state.selection.main.head, replaceAt);
+    f.key("v");
+    assert.equal(
+      f.view.state.sliceDoc(
+        f.view.state.selection.main.from,
+        f.view.state.selection.main.to,
+      ),
+      "x",
+    );
+  } finally {
+    f.destroy();
+  }
+});
+
+test("installing in Replace does not classify its insertMode flag as Insert", async () => {
+  const f = fixture();
+  try {
+    f.view.dispatch({ selection: EditorSelection.single(7) });
+    f.key("R");
+    f.reinstall();
+    f.cm.overWriteSelection("x");
+    f.key("<Esc>");
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    assert.equal(f.view.state.selection.main.head, 7);
+  } finally {
+    f.destroy();
+  }
+});
+
+test("switching from Insert to Replace clears the saved insert column", async () => {
+  const f = fixture();
+  try {
+    f.view.dispatch({ selection: EditorSelection.single(7) });
+    f.key("i");
+    f.key("<Ins>");
+    assert.equal(f.cm.state.overwrite, true);
+    f.cm.overWriteSelection("x");
+    f.key("<Esc>");
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    assert.equal(f.view.state.selection.main.head, 7);
+  } finally {
+    f.destroy();
+  }
 });
 
 test("exitInsertMode keepCursor true retains column (library contract)", () => {

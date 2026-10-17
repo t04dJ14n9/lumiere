@@ -4,5 +4,6 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": []
   },
-  "include": ["**/*.ts", "../plugins/**/*.d.ts"]
+  "include": ["**/*.ts", "../plugins/**/*.d.ts"],
+  "exclude": ["**/*.test.ts"]
 }

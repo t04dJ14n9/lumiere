@@ -56,10 +56,8 @@ export function installKeepInsertExitCaret(view: EditorView, cm: CodeMirror) {
         docLength: view.state.doc.length,
       })
     ) {
-      wasInsert = mode === "insert";
-      if (!wasInsert) {
-        saved = null;
-      }
+      wasInsert = false;
+      saved = null;
       return;
     }
     const restore = saved!;
@@ -68,14 +66,11 @@ export function installKeepInsertExitCaret(view: EditorView, cm: CodeMirror) {
     queueMicrotask(() => restoreInsertCaret(view, restore));
   };
   cm.on("vim-mode-change", onMode);
-  if (cm.state.vim?.insertMode) {
-    wasInsert = true;
-    saved = view.state.selection;
-  }
   return {
     update(update: ViewUpdate) {
-      if (getCM(update.view)?.state.vim?.insertMode) {
-        wasInsert = true;
+      // Only mode events identify Insert. The flag merely excludes Esc's
+      // left-shift dispatch, which precedes its normal-mode event.
+      if (wasInsert && cm.state.vim?.insertMode) {
         saved = update.state.selection;
       }
     },

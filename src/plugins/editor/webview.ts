@@ -33,7 +33,7 @@ import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
 import { selectionDragScroll } from "./drag-scroll";
-import { withPreservedCaret } from "./preserve-caret";
+import { caretRestoreGeneration, withPreservedCaret } from "./preserve-caret";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -147,6 +147,7 @@ function createEditorView(
         selectionLayer,
         selectionDragScroll,
         caretExtension(),
+        caretRestoreGeneration,
         findExtension(),
         EditorView.lineWrapping,
         // VS Code's own Cut, Copy and Paste stay in the menu, as in

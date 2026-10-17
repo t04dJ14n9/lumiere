@@ -4813,3 +4813,27 @@ checkout's own disposable profile. Captures outside the repo show the enabled
 chrome in both modes and its removal on disable; the synthetic capture wrapper
 needed a bounded viewport. Owner-run visual acceptance remains in the manual
 plan. No VSIX, merge or Marketplace publication.
+
+## PR #81 — Replace Esc and stale deferred caret restore, 2026-10-18
+
+Keep-column restoration now recognizes Insert only through Vim mode-change
+events. Replace retains the classic Esc left-shift, including when the tracker
+is installed during Replace or Insert switches to Replace. Updates refresh a
+saved Insert selection only while the library still considers input active;
+this excludes Esc's cursor shift before its normal-mode notification.
+
+Caret snapshots retain CodeMirror Text and reject unequal documents, including
+same-length edits. The editor keeps a panel-local generation for annotated user
+selections and document edits, captured after synchronous restoration. Deferred
+layout restoration yields to a newer generation or divergent scrolling, while
+unannotated Live Preview selection remaps remain eligible. Temporary scroll
+observation ends with the layout acknowledgement; a final scroll comparison
+also covers events that have not fired yet. The layout waiter is injectable for
+unit coverage of the deferred path.
+
+All new coverage is unit tests. The pinned ~/Code/human-learning checkout is
+absent on this host; only this repository and its installed Vim dependency were
+read. No source browser/native suites were ported, so the retired source-test
+ledger is unchanged. Full sequential validation is pending, using a private
+display and the isolated unpackaged native harness; no VSIX is generated or
+installed. PR #81 will be updated without merging or publishing.
