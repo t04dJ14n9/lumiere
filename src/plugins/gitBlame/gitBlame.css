@@ -4,7 +4,9 @@
   padding-inline-start: 1.5em;
   pointer-events: none;
   user-select: none;
-  opacity: 0.85;
+  white-space: nowrap;
+  /* Dim ghost vs body/heading; forced-colors below restores full opacity. */
+  opacity: 0.5;
 }
 .is-source-mode .mw-gb-eol {
   display: none;

@@ -94,4 +94,6 @@ test("quiet CSS consumes description foreground, supports forced colors, and hid
   assert.match(css, /is-source-mode/);
   assert.match(css, /pointer-events: none/);
   assert.match(css, /user-select: none/);
+  assert.match(css, /white-space:\s*nowrap/);
+  assert.match(css, /opacity:\s*0\.5/);
 });

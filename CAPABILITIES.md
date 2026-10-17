@@ -49,7 +49,7 @@ records it in `docs/PARITY.md`.
 | folding | Heading and list folding, restored on reload | — |
 | lineNumbers | Line numbers laid out like VS Code's gutter, following `editor.lineNumbers`; rendered blocks list all their source lines' numbers | On by default |
 | gitGutter | Git change bars (added, modified, deleted) beside the line numbers against HEAD or the index, through VS Code's git extension; click a bar for a rendered peek with Revert and Stage File; Alt+F5 / Shift+Alt+F5 move between changes | On by default |
-| gitBlame | Quiet EOL authorship on the caret line in Live Preview, against the exact editor snapshot; You for matching Git identity | On by default; works without change bars; uncommitted/unavailable lines hide |
+| gitBlame | Quiet dim EOL authorship on the caret line in Live Preview (no wrap), against the exact editor snapshot; You for matching Git identity | On by default; works without change bars; uncommitted/unavailable lines hide |
 | gitInline | Inline track changes over the git change bars' hunks: removed words struck through, added words tinted, a rendered ghost of changed tables, code and frontmatter, removed blocks with Restore; needs gitGutter | Off by default; Toggle Inline Git Changes |
 | gitDiffEditor | A side-by-side diff of two versions of a note, both rendered: blocks aligned, changed words and lines marked, read-only left side; Open Rendered Git Diff, or replaces Source Control's Markdown text diffs when diffEditor is rendered | On; diffEditor setting (native by default) |
 | indentGuides | Indentation guides | No active-guide highlight |

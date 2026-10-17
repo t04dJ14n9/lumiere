@@ -31,7 +31,7 @@ commits. Identity is resolved through Git config for the “You” label.
 - `webview.ts`: controller, editor extensions and guarded identity requests.
 - `format.ts`: author, relative time and grapheme-safe subject formatting.
 - `blameWidget.ts`: one decorative EOL widget and identity state.
-- `gitBlame.css`: quiet theme styling and Source-mode hiding.
+- `gitBlame.css`: quiet theme styling (opacity 0.5, no wrap) and Source-mode hiding.
 
 ## Services, events and settings
 
