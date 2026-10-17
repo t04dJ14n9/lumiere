@@ -1139,6 +1139,7 @@
     "@types/vscode": "1.90.0",
     "@vscode/test-electron": "^2.5.0",
     "@vscode/vsce": "^4.0.0",
+    "cordis": "4.0.0-rc.10",
     "esbuild": "^0.28.2",
     "eslint": "^9.30.0",
     "eslint-plugin-react-hooks": "^5.2.0",

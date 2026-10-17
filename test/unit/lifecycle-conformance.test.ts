@@ -4,21 +4,15 @@ import { defineManifest } from "../../src/extension/runtime/manifest";
 import { PluginRuntime } from "../../src/extension/runtime/plugin-runtime";
 import type { PluginScope } from "../../src/extension/runtime/plugin-runtime";
 import { createPdfHarness } from "./lifecycle-conformance/pdf-adapter";
-import { createCordisStub, cordisSkipReasons, cordisStubReason } from "./lifecycle-conformance/shared/cordis-stub";
+import { createCordisShimHarness } from "./lifecycle-conformance/cordis-shim-adapter";
 import type { BackingService } from "./lifecycle-conformance/shared/harness";
 import { runHarnessMetaTests } from "./lifecycle-conformance/shared/meta";
 import { runLifecycleSuite } from "./lifecycle-conformance/shared/run-suite";
 
 runLifecycleSuite({ name: "pdf", factory: createPdfHarness, earlyRelease: false });
 runHarnessMetaTests("pdf", createPdfHarness);
-runLifecycleSuite({ name: "cordis-stub", factory: createCordisStub, earlyRelease: true, skips: cordisSkipReasons });
-
-test("Cordis skeleton is runnable and explicitly refuses unsupported activation", async () => {
-  const stub = createCordisStub([{ id: "probe", activate() {} }]);
-  await assert.rejects(stub.enable("probe"), { message: cordisStubReason });
-  assert.equal(stub.state("probe"), "inactive");
-  await stub.dispose();
-});
+runLifecycleSuite({ name: "cordis-shim", factory: createCordisShimHarness, earlyRelease: true });
+runHarnessMetaTests("cordis-shim", createCordisShimHarness);
 
 /**
  * Adapter contract the PDF harness relies on: a reader captured from the
