@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { Compartment, EditorState } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
 import type { Extension, TransactionSpec } from "@codemirror/state";
 import { Context } from "../../../src/kernel";
 import { FEATURE_ORDER } from "../../../src/plugins/plugin-order";
@@ -57,7 +58,12 @@ function composition() {
       return state;
     },
     dispatch(spec: TransactionSpec) {
+      const startState = state;
       state = state.update(spec).state;
+      // Fake view: invoke updateListeners so blame's caret-move gate can unlock.
+      for (const listener of state.facet(EditorView.updateListener)) {
+        listener({ view, state, startState } as never);
+      }
     },
   };
   root.provide("editor", {
@@ -115,10 +121,15 @@ for (const withGutter of [false, true]) {
     await Promise.resolve();
     await Promise.resolve();
     assert.equal(fiber.state, "active");
+    // Open/restored caret must not paint until a real caret move.
+    assert.equal(f.view.state.field(blameField), null);
+    // Column nudge unlocks the gate; controller debounces 150ms.
+    f.view.dispatch({ selection: { anchor: 1 } });
+    await new Promise((resolve) => setTimeout(resolve, 180));
     assert.equal(f.view.state.field(blameField)?.line, 1);
     const decorations = f.view.state.field(blameDecorations);
     assert.equal(decorations.size, 1);
-    assert.match(decorations.iter().value?.spec.widget.text, /^You,/);
+    assert.match(decorations.iter().value?.spec.widget.text, /^Hello, You \(/);
     if (gutter) {
       assert.equal(gutter.state, "active");
       assert.equal(f.view.state.field(hunkField).hunks.length, 1);

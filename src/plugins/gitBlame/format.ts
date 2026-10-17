@@ -10,6 +10,8 @@ type GhostBlame = Pick<
   | "committerDate"
 >;
 const graphemes = new Intl.Segmenter("en", { granularity: "grapheme" });
+/** Match VS Code git.blame subject truncate (`_subjectMaxLength = 50`). */
+const SUBJECT_MAX_GRAPHEMES = 50;
 const relativeUnits = [
   [31536000, "year"],
   [2592000, "month"],
@@ -24,6 +26,11 @@ const absoluteFormat = new Intl.DateTimeFormat(undefined, {
   timeStyle: "short",
 });
 
+/**
+ * VS Code default `git.blame.editorDecoration.template`:
+ * `${subject}, ${authorName} (${authorDateAgo})`
+ * “You” for self is kept when identity matches (reads naturally in that shape).
+ */
 export function formatBlameGhost(
   blame: GhostBlame,
   identity: GitIdentity | undefined,
@@ -32,7 +39,10 @@ export function formatBlameGhost(
   const author = authorLabel(blame, identity);
   const relative = relativeTime(blame.authorDate, now);
   const subject = truncateSubject(blame.subject);
-  return `${author}, ${relative}${subject ? ` • ${subject}` : ""}`;
+  if (!subject) {
+    return `${author} (${relative})`;
+  }
+  return `${subject}, ${author} (${relative})`;
 }
 
 /**
@@ -98,7 +108,9 @@ function relativeTime(date: number, now: number): string {
 function truncateSubject(subject: string): string {
   const line = firstLine(subject);
   const parts = Array.from(graphemes.segment(line), ({ segment }) => segment);
-  return parts.length > 48 ? parts.slice(0, 48).join("") + "…" : line;
+  return parts.length > SUBJECT_MAX_GRAPHEMES
+    ? parts.slice(0, SUBJECT_MAX_GRAPHEMES).join("") + "…"
+    : line;
 }
 
 function firstLine(subject: string): string {
