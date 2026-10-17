@@ -24,6 +24,9 @@ export {
 
 export { expect };
 const modifier = process.platform === "darwin" ? "Meta" : "Control";
+
+/** Whether the tests drive Cursor rather than VS Code. */
+export const inCursor = /cursor/iu.test(process.env.VSCODE_EXECUTABLE ?? "");
 /** `workbench`: VS Code's main window, with every editor closed first. */
 export const test = base.extend<{ workbench: Page }>({
   // eslint-disable-next-line no-empty-pattern -- Playwright fixtures take their dependencies as an object pattern
@@ -33,6 +36,7 @@ export const test = base.extend<{ workbench: Page }>({
     await closeSettingsEditor(page);
     await closeSecondarySideBar(page);
     await closeAllEditors(page);
+    await dismissCorruptInstallWarning(page);
     await use(page);
     await browser.close();
   },
@@ -97,12 +101,18 @@ export async function openFile(
 
 /**
  * Click an editor title action: its button, or, where the editor keeps it in
- * the More Actions menu (Cursor does, for extension actions), that menu item.
+ * the More Actions menu, that menu item. Cursor keeps extension actions in
+ * that menu and draws it natively, out of the tests' reach, so there the
+ * action's command runs from the palette instead.
  */
 export async function editorTitleAction(
   page: Page,
   label: string,
 ): Promise<void> {
+  if (inCursor) {
+    await command(page, `PDF: ${label}`);
+    return;
+  }
   const actions = page.locator(".editor-actions");
   const button = actions.getByRole("button", { name: label });
   // The button appears once the editor reports the state that enables it.
@@ -133,23 +143,21 @@ export async function editorTitleAction(
  * or Cursor's agent chat input, where attached files are pills in the text.
  */
 export async function agentChatInput(page: Page): Promise<string> {
-  // Cursor's agent chat input: the prompt input (3.2x), or the older editor.
-  const cursor = page.locator(
-    ".ui-prompt-input:visible, .aislash-editor-input:visible",
-  );
-  if (await cursor.count()) {
-    return withoutSpaces(await cursor.last().innerText());
+  // Read without waiting: the poll that calls this retries until the chat opens.
+  if (inCursor) {
+    // The prompt input (3.2x) or the older editor. Cursor can open a second
+    // agent tab beside the one that got the text.
+    const inputs = page.locator(
+      ".ui-prompt-input:visible, .aislash-editor-input:visible",
+    );
+    return withoutSpaces((await inputs.allInnerTexts()).join(""));
   }
   const input = page.locator(".interactive-input-part:visible").last();
+  const [text = ""] = await input.locator(".monaco-editor").allInnerTexts();
   const attachments = await input
     .locator(".chat-attached-context-attachment")
     .allInnerTexts();
-  return withoutSpaces(
-    [
-      await input.locator(".monaco-editor").first().innerText(),
-      ...attachments,
-    ].join(""),
-  );
+  return withoutSpaces([text, ...attachments].join(""));
 }
 
 export function withoutSpaces(text: string): string {
@@ -193,6 +201,21 @@ async function closeSecondarySideBar(page: Page): Promise<void> {
     await page.keyboard.press(`Alt+${modifier}+b`);
     await expect(bar).toBeHidden();
   }
+}
+
+/**
+ * Cursor warns in a toast when its installation was modified (as on a machine
+ * that patched it), some seconds after start-up. It can cover the views a
+ * spec clicks in, so dismiss it whenever it is in the way.
+ */
+async function dismissCorruptInstallWarning(page: Page): Promise<void> {
+  await page.addLocatorHandler(
+    page.locator(".notification-toast", { hasText: "appears to be corrupt" }),
+    async (toast) => {
+      await toast.hover();
+      await toast.locator('[aria-label^="Clear Notification"]').click();
+    },
+  );
 }
 
 export async function closeAllEditors(page: Page): Promise<void> {

@@ -7,6 +7,7 @@ import {
   drag,
   editorTitleAction,
   expect,
+  inCursor,
   openFile,
   pageAtTop,
   pagePoint,
@@ -23,8 +24,6 @@ import {
 // viewer does with each action is covered by the browser tests.
 
 const PDF = "docs/outline.pdf";
-/** Cursor keeps extension title actions in the "…" menu, so the status bar gets buttons too. */
-const inCursor = /cursor/iu.test(process.env.VSCODE_EXECUTABLE ?? "");
 
 function zoomStatus(page: Page) {
   return statusBarEntry(page, ZOOM_STATUS);
@@ -147,7 +146,7 @@ test("the status bar shows the page and zoom, and opens a page or a zoom when cl
 test("editor title actions zoom, fit and switch the selection tool", async ({
   workbench: page,
 }) => {
-  // Cursor keeps these actions in the "…" menu: each one first waits for its button, then opens the menu.
+  // Cursor keeps these actions in its "…" menu: each one runs from the palette there.
   test.slow(inCursor);
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);

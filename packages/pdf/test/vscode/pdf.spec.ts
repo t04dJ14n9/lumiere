@@ -17,6 +17,7 @@ import {
   editorTitleAction,
   expect,
   fitPage,
+  inCursor,
   openFile,
   pageAtTop,
   pagePoint,
@@ -35,6 +36,25 @@ import {
 
 const PDF = "docs/outline.pdf";
 const TEXT_MIDLINE = 94;
+
+/**
+ * Copy Link for Agent from the editor title until the chat holds `text`. The
+ * action copies the selection the extension has: a new one only once the
+ * viewer's report of it has arrived, so a click right after a drag may still
+ * copy the selection from before.
+ */
+async function copyLinkUntilChatHas(page: Page, text: string): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        await editorTitleAction(page, "Copy Link for Agent");
+        await page.waitForTimeout(500);
+        return agentChatInput(page);
+      },
+      { timeout: 30_000, intervals: [250] },
+    )
+    .toContain(withoutSpaces(text));
+}
 
 /** The "PDF Outline" view in the Explorer, expanded. */
 async function outlineView(page: Page) {
@@ -112,24 +132,10 @@ test("Copy Link for Agent works from the selection menu and the editor title but
       .locator(".editor-actions")
       .getByRole("button", { name: /^(Copy for Agent|Ask Agent)/u }),
   ).toHaveCount(0);
-  // The title button acts on the selection the extension has: the region only
-  // once the viewer's report of it has arrived, so a click right after the drag
-  // may still copy the text selection from before. Click until the region's
-  // link is in the chat.
-  await expect
-    .poll(
-      async () => {
-        await editorTitleAction(page, "Copy Link for Agent");
-        await page.waitForTimeout(500);
-        return agentChatInput(page);
-      },
-      { timeout: 30_000, intervals: [250] },
-    )
-    .toContain(
-      withoutSpaces(
-        `Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=150,150,100,100>)`,
-      ),
-    );
+  await copyLinkUntilChatHas(
+    page,
+    `Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=150,150,100,100>)`,
+  );
 
   await page.keyboard.press("F1");
   await page
@@ -164,22 +170,25 @@ test("Copy Link for Agent from the context menu opens the agent chat with the re
   await expect(
     viewer.getByRole("toolbar", { name: "PDF region actions" }),
   ).toBeVisible();
-  // The context menu offers the selection's items only once the extension has
-  // the selection (the editor title action shows then); a right-click before
-  // that gets the plain menu and clears the selection.
-  await expect(
-    page
-      .locator(".editor-actions")
-      .getByRole("button", { name: /^Copy Link for Agent/u }),
-  ).toBeVisible();
-  await contextMenu(page, at(100, TEXT_MIDLINE), "Copy Link for Agent");
-  await expect
-    .poll(() => agentChatInput(page), { timeout: 15_000 })
-    .toContain(
-      withoutSpaces(
-        `Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`,
-      ),
-    );
+  const link = `Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`;
+  if (inCursor) {
+    // Cursor draws its context menu natively, out of the tests' reach: run
+    // the command the menu item runs.
+    await copyLinkUntilChatHas(page, link);
+  } else {
+    // The context menu offers the selection's items only once the extension
+    // has the selection (the editor title action shows then); a right-click
+    // before that gets the plain menu and clears the selection.
+    await expect(
+      page
+        .locator(".editor-actions")
+        .getByRole("button", { name: /^Copy Link for Agent/u }),
+    ).toBeVisible();
+    await contextMenu(page, at(100, TEXT_MIDLINE), "Copy Link for Agent");
+    await expect
+      .poll(() => agentChatInput(page), { timeout: 15_000 })
+      .toContain(withoutSpaces(link));
+  }
   // The snapshot: attached in VS Code's chat, a file pill in Cursor's.
   // The attachment lands after the text, so wait for it.
   await expect
