@@ -134,3 +134,56 @@ test("mermaid margin plain click keeps prior caret and stays rendered", async ({
   expect(after.from).toBe(before.from);
   expect(after.to).toBe(before.to);
 });
+test("click mid wrapped CJK inserts at the clicked character", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 420, height: 700 });
+  // Stress-like: markdown markers + long lead so CJK wraps onto later visual rows.
+  const source =
+    "Intro with **bold**, *italic*, `code`, and a [link](https://example.com). " +
+    "Latin lead words for wrapping. ".repeat(4) +
+    "中文段落用来检查点击是否落在字形中间而不是跳到别处。";
+  await open(page, source);
+  const targetIndex = source.indexOf("检");
+  expect(targetIndex).toBeGreaterThan(0);
+  // Locate the glyph via rendered text (markers hidden in Live Preview).
+  const point = await page.evaluate((ch) => {
+    const line = document.querySelector(".cm-content > .cm-line");
+    if (!line) {
+      return null;
+    }
+    const walk = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+    while (walk.nextNode()) {
+      const node = walk.currentNode as Text;
+      const local = node.data.indexOf(ch);
+      if (local < 0) {
+        continue;
+      }
+      const range = document.createRange();
+      range.setStart(node, local);
+      range.setEnd(node, local + 1);
+      const rect = range.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+      }
+    }
+    return null;
+  }, "检");
+  expect(point).toBeTruthy();
+  await page.mouse.click(point!.x, point!.y);
+  // Allow pointer-freeze thaw, click-position sync, and reveal to settle.
+  await page.waitForTimeout(80);
+  const clicked = await page.evaluate(() => window.harness.capture());
+  await page.keyboard.insertText("PROBE");
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toContain("PROBE");
+  const text = await page.evaluate(() => window.harness.text);
+  const probeAt = text.indexOf("PROBE");
+  // Insertion must land at the clicked document offset (not visual-line start).
+  expect(probeAt).toBe(clicked.from);
+  expect(Math.abs(clicked.from - targetIndex)).toBeLessThanOrEqual(2);
+});
