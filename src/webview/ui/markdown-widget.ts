@@ -10,7 +10,13 @@ export class MarkdownBlock extends WidgetType {
   constructor(
     readonly block: RenderBlock,
     private readonly render: RenderService,
-    private readonly clickToEdit = true,
+    /**
+     * Body click policy for revealing source:
+     * - `true` (default): single click, as for math / code / callouts.
+     * - `"dblclick"`: double-click only (Mermaid stays interactive on ordinary click).
+     * - `false`: Edit button / caret entry only (embeds keep content clicks).
+     */
+    private readonly clickToEdit: boolean | "dblclick" = true,
   ) {
     super();
   }
@@ -43,8 +49,11 @@ export class MarkdownBlock extends WidgetType {
       },
       { signal: events.signal },
     );
-    if (this.clickToEdit) {
+    if (this.clickToEdit === true) {
       bindClickToEdit(view, shell, events.signal);
+    } else if (this.clickToEdit === "dblclick") {
+      bindDoubleClickToEdit(view, shell, events.signal);
+      bindFenceClickGuard(view, shell, this.block, events.signal);
     }
     this.lifetimes.set(shell, () => {
       live = false;
@@ -332,12 +341,122 @@ function eventTargetInside(
 }
 
 /**
- * Clicking a rendered block (math, code, a callout, a diagram) reveals its
- * source with the caret at the end of the first line, as in Obsidian. The
- * click was already on-screen, so do not force a scroll to the fence start.
+ * Reveal a rendered block's source with the caret at the end of the first
+ * line (math / code / callouts on single click; Mermaid on double-click or
+ * Edit). The pointer was already on-screen, so do not force a scroll.
  */
 export function editOnClick(view: EditorView, shell: HTMLElement): void {
   const line = view.state.doc.lineAt(view.posAtDOM(shell));
   view.focus();
   view.dispatch({ selection: { anchor: line.to }, scrollIntoView: false });
+}
+
+/**
+ * Whether a mousedown that missed the widget DOM should still be swallowed
+ * because CodeMirror would map it into a replaced fence (typically column 0
+ * of the opening line) and Live Preview would reveal source. Used for diagram
+ * `clickToEdit: "dblclick"` so margin / SVG pass-through clicks stay inert.
+ */
+export function shouldGuardFenceMouseDown(input: {
+  button: number;
+  onControl: boolean;
+  targetInsideShell: boolean;
+  pos: number | null;
+  blockFrom: number;
+  blockTo: number;
+}): boolean {
+  if (
+    input.button !== 0 ||
+    input.onControl ||
+    input.targetInsideShell ||
+    input.pos == null
+  ) {
+    return false;
+  }
+  return input.pos >= input.blockFrom && input.pos <= input.blockTo;
+}
+
+/**
+ * Current fence offsets for a (possibly reused) widget shell.
+ *
+ * `MarkdownBlock.eq` / `GuardedWidget.eq` keep the same DOM when only text
+ * *above* the diagram changes, so `RenderBlock.from`/`to` captured in `toDOM`
+ * go stale. Resolve `from` live via `posAtDOM(shell)` and derive `to` from the
+ * unchanged source span length.
+ */
+export function liveFenceOffsets(
+  view: { posAtDOM(node: Node, offset?: number): number },
+  shell: Node,
+  spanLength: number,
+): { blockFrom: number; blockTo: number } {
+  const blockFrom = view.posAtDOM(shell);
+  return { blockFrom, blockTo: blockFrom + spanLength };
+}
+
+/**
+ * Stop CodeMirror from placing the caret inside a dblclick-only fence when the
+ * pointer missed the widget (transparent SVG / editor margin beside the block)
+ * but `posAtCoords` still resolves into the replace range.
+ *
+ * Offsets are read live on each event — not the from/to captured at widget
+ * creation — so margin clicks still guard after edits above an unchanged
+ * Mermaid block reuse the same DOM.
+ */
+function bindFenceClickGuard(
+  view: EditorView,
+  shell: HTMLElement,
+  block: { from: number; to: number },
+  signal: AbortSignal,
+): void {
+  // Length is stable while this DOM is reused (source-eq); absolute from/to are not.
+  const spanLength = block.to - block.from;
+  view.dom.addEventListener(
+    "mousedown",
+    (event) => {
+      let blockFrom: number;
+      let blockTo: number;
+      try {
+        ({ blockFrom, blockTo } = liveFenceOffsets(view, shell, spanLength));
+      } catch {
+        // Shell detached between abort and the event; let CM handle it.
+        return;
+      }
+      if (
+        !shouldGuardFenceMouseDown({
+          button: event.button,
+          onControl: isBlockControl(shell, event.target),
+          targetInsideShell: eventTargetInside(shell, event.target),
+          pos: view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? null,
+          blockFrom,
+          blockTo,
+        })
+      ) {
+        return;
+      }
+      event.preventDefault();
+    },
+    { capture: true, signal },
+  );
+}
+
+/**
+ * Double-click reveals source for widgets that keep ordinary clicks
+ * interactive (Mermaid). Ignores control targets so Edit / Copy stay native.
+ */
+function bindDoubleClickToEdit(
+  view: EditorView,
+  shell: HTMLElement,
+  signal: AbortSignal,
+): void {
+  shell.addEventListener(
+    "dblclick",
+    (event) => {
+      if (event.button !== 0 || isBlockControl(shell, event.target)) {
+        return;
+      }
+      event.preventDefault();
+      editOnClick(view, shell);
+    },
+    { signal },
+  );
 }

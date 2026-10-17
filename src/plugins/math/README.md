@@ -1,7 +1,8 @@
 # Math
 
 Renders inline and display TeX formulas with MathJax, like Obsidian's math in
-Live Preview. Moving the caret into a formula reveals its source.
+Live Preview. Moving the caret into a formula reveals its source (display math
+shows the $$ source only — no rendered duplicate underneath while editing).
 
 ## How it works
 
