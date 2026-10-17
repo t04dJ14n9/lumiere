@@ -1,60 +1,30 @@
 /**
  * The plugin dependency graph: which plugin needs which, derived from the
- * services each plugin half injects and the plugin that provides each
- * service. This is NOT precedence (plugin-order.ts) and NOT lifecycle: the
- * kernel gates and restarts plugins on services at run time; the graph is
- * the static picture of the same declarations, so it can be checked
- * (no cycles, no service without a provider) and asked questions such as
- * "what stops if this plugin is turned off?".
- *
- * Invariant: `SERVICE_PROVIDERS` names the plugin that really provides each
- * service; test/unit/features/lifecycle.test.ts checks it against the
- * providers a running kernel records.
+ * services each plugin half injects and provides. This is NOT precedence
+ * (plugin-order.ts) and NOT lifecycle: the kernel gates and restarts plugins
+ * on services at run time; the graph is the static picture of the same
+ * declarations, so it can be checked (no cycles, no service without a
+ * provider) and asked questions such as "what stops if this plugin is
+ * turned off?".
  */
 import type { Plugin, Services } from "@workshop/core";
 import { HOST_SERVICE_NAMES } from "../shared/host";
 
+type ServiceName = keyof Services;
+
 /** Services the host or webview root provides, not a plugin. */
-export const ROOT_SERVICES: readonly (keyof Services)[] = [
+export const ROOT_SERVICES: readonly ServiceName[] = [
   ...HOST_SERVICE_NAMES,
   "vaultSystem",
   "rpc",
   "pluginStates",
 ];
 
-/** Which plugin provides each plugin-provided service. */
-export const SERVICE_PROVIDERS: Readonly<
-  Partial<Record<keyof Services, string>>
-> = {
-  markdown: "dialect",
-  document: "document",
-  documents: "document",
-  editor: "editor",
-  editors: "editor",
-  selections: "editor",
-  menu: "editor",
-  editorActions: "editor",
-  commands: "commands",
-  livePreview: "livePreview",
-  render: "render",
-  resources: "resources",
-  diffResources: "resources",
-  vault: "vault",
-  vaults: "vault",
-  markers: "markers",
-  fold: "folding",
-  formatting: "formatting",
-  suggest: "suggest",
-  codeBlocks: "codeBlocks",
-  vim: "vim",
-  bridgeCapture: "bridge",
-  wikiLayout: "wiki",
-  links: "links",
-  gitDiff: "gitGutter",
-  okf: "okfCore",
-  obsidianCompat: "obsidianCompat",
-  propertyRenderers: "properties",
-};
+/** What the graph reads from a plugin definition. */
+export type PluginDeclaration = Pick<
+  Plugin<never>,
+  "name" | "inject" | "provides"
+>;
 
 export interface PluginNode {
   readonly id: string;
@@ -64,28 +34,14 @@ export interface PluginNode {
   readonly optional: ReadonlySet<string>;
 }
 
-/** The plugin ids behind `services`; a root service needs no plugin. */
-function providersOf(
-  services: readonly (keyof Services)[] | undefined,
-  owner: string,
-): string[] {
-  return (services ?? []).flatMap((service) => {
-    if (ROOT_SERVICES.includes(service)) {
-      return [];
-    }
-    const provider = SERVICE_PROVIDERS[service];
-    if (!provider) {
-      throw new Error(`${owner} injects ${service}, which no plugin provides`);
-    }
-    return provider === owner ? [] : [provider];
-  });
-}
-
 export class PluginGraph {
   readonly nodes: ReadonlyMap<string, PluginNode>;
+  /** The plugin that provides each plugin-provided service. */
+  readonly providers: ReadonlyMap<ServiceName, string>;
 
   /** Build from plugin definitions; a plugin's halves share its name. */
-  constructor(definitions: readonly Pick<Plugin<never>, "name" | "inject">[]) {
+  constructor(definitions: readonly PluginDeclaration[]) {
+    this.providers = providersOf(definitions);
     const nodes = new Map<
       string,
       { requires: Set<string>; optional: Set<string> }
@@ -95,10 +51,10 @@ export class PluginGraph {
         requires: new Set(),
         optional: new Set(),
       };
-      for (const id of providersOf(inject?.required, name)) {
+      for (const id of this.pluginsBehind(inject?.required, name)) {
         node.requires.add(id);
       }
-      for (const id of providersOf(inject?.optional, name)) {
+      for (const id of this.pluginsBehind(inject?.optional, name)) {
         node.optional.add(id);
       }
       nodes.set(name, node);
@@ -120,6 +76,25 @@ export class PluginGraph {
     };
     visit(id);
     return [...found].sort();
+  }
+
+  /** The plugins behind `services`; a root service needs no plugin. */
+  private pluginsBehind(
+    services: readonly ServiceName[] | undefined,
+    owner: string,
+  ): string[] {
+    return (services ?? []).flatMap((service) => {
+      if (ROOT_SERVICES.includes(service)) {
+        return [];
+      }
+      const provider = this.providers.get(service);
+      if (!provider) {
+        throw new Error(
+          `${owner} injects ${service}, which no plugin provides`,
+        );
+      }
+      return provider === owner ? [] : [provider];
+    });
   }
 
   /**
@@ -156,4 +131,21 @@ export class PluginGraph {
     }
     return order;
   }
+}
+
+/** Each declared service and its plugin; two plugins may not share one. */
+function providersOf(
+  definitions: readonly PluginDeclaration[],
+): Map<ServiceName, string> {
+  const providers = new Map<ServiceName, string>();
+  for (const { name, provides } of definitions) {
+    for (const service of provides ?? []) {
+      const other = providers.get(service);
+      if (other !== undefined && other !== name) {
+        throw new Error(`${service} is provided by both ${other} and ${name}`);
+      }
+      providers.set(service, name);
+    }
+  }
+  return providers;
 }

@@ -24,6 +24,7 @@ export const bridgeHost: Plugin = {
     ],
     optional: ["editors", "selections"],
   },
+  provides: ["bridgeCapture"],
   apply(ctx) {
     const capture: BridgeCapture = {
       markdownSelection: (wiki) => markdownSelection(ctx, wiki),

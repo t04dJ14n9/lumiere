@@ -25,6 +25,7 @@ const configurations = new WeakMap<
 >();
 export const propertiesWebview: Plugin<Infer<typeof config>> = {
   name: "properties",
+  provides: ["propertyRenderers"],
   config,
   reconfigure(ctx, settings) {
     const configure = configurations.get(ctx);

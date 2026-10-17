@@ -17,7 +17,10 @@ import {
 } from "../../../src/plugins/livePreview/registry";
 import type { RenderPass } from "../../../src/plugins/render/api";
 import { features } from "../../../src/plugins/catalog";
-import { SERVICE_PROVIDERS } from "../../../src/plugins/plugin-graph";
+import { PluginGraph } from "../../../src/plugins/plugin-graph";
+import type { PluginDeclaration } from "../../../src/plugins/plugin-graph";
+import * as hostPlugins from "../../../src/plugins/host";
+import * as webviewPlugins from "../../../src/plugins/webview";
 import {
   foldRange,
   foldingChanged,
@@ -162,12 +165,16 @@ for (const manifest of features) {
   });
 }
 
-test("plugin-graph's service providers are the plugins that really provide them", async () => {
+test("the graph's service providers are the plugins that really provide them", async () => {
   const f = fixture();
   await f.configure(settingsFor(new Set(features.map((item) => item.id))));
+  const graph = new PluginGraph([
+    ...Object.values(hostPlugins),
+    ...Object.values(webviewPlugins),
+  ] as PluginDeclaration[]);
   for (const [service, owner] of f.root.providers) {
     if (owner !== "root") {
-      assert.equal(SERVICE_PROVIDERS[service], owner, service);
+      assert.equal(graph.providers.get(service), owner, service);
     }
   }
   await f.root.dispose();

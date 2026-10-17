@@ -10,6 +10,7 @@ import type {} from "./api";
 export const diffResourcesHost: Plugin = {
   name: "resources",
   inject: { required: ["vaults", "workspace", "hostDocuments", "git"] },
+  provides: ["diffResources"],
   apply(ctx) {
     ctx.provide("diffResources", {
       forSide: (side) => sideResources(ctx.vaults, ctx, side),

@@ -32,6 +32,10 @@ what Cordis does not guarantee:
 - **Ownership is a tree.** A plugin's children are owned by its activation and
   start only after its `apply` succeeds. (Cordis fibers are all created on the
   tree's Cordis root; the tree is tracked here.)
+- **Declared dependencies.** A plugin reads only the services it `inject`s
+  and publishes only the services it lists in `provides`; anything else
+  throws. A root context provides anything. So the definitions alone say
+  which plugin needs which, and tools can check that graph without running it.
 
 `packages/core/test/conformance` holds 23 lifecycle scenarios (joined
 release, cancellation, rollback, dependency barriers, late drains) that the

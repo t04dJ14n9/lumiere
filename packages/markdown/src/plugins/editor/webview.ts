@@ -48,6 +48,7 @@ interface EditorConfig {
 export const editorWebview: Plugin<EditorConfig> = {
   name: "editor",
   inject: { required: ["document", "markdown", "rpc"] },
+  provides: ["editor", "menu"],
   reconfigure(ctx, config) {
     const settings = configurations.get(ctx);
     if (!settings) {

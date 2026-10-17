@@ -10,6 +10,7 @@ import type {} from "./api";
 export function dialectPlugin(options: RendererOptions = {}): Plugin {
   return {
     name: "dialect",
+    provides: ["markdown"],
     apply(ctx) {
       ctx.provide("markdown", {
         parser: markdownParser,

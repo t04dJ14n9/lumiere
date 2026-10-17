@@ -248,7 +248,7 @@ export class PluginHandleImpl<C> implements PluginHandle<C>, Settling {
     const context = new ContextImpl(this.runtime, activation, {
       owner: this.definition.name,
       ...(this.definition.inject && { inject: this.definition.inject }),
-      ...(this.definition.provides && { provides: this.definition.provides }),
+      provides: this.definition.provides ?? [],
       publish: (name, value) => cordis.provide(name, value) as Disposer,
       startChild: (child) =>
         isCommitted ? child.start() : commits.push(() => child.start()),

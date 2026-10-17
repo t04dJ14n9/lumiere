@@ -8,6 +8,7 @@ import { VaultConfigs } from "./vault-configs";
 export const obsidianCompatHost: Plugin = {
   name: "obsidianCompat",
   inject: { required: ["settings", "workspace", "activeEditor", "vaults"] },
+  provides: ["obsidianCompat"],
   apply(ctx) {
     const configs = createConfigs(ctx);
     registerService(ctx, configs);

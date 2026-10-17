@@ -13,6 +13,7 @@ import { protocol } from "./protocol";
 export const markersHost: Plugin = {
   name: "markers",
   inject: { required: ["editors"] },
+  provides: ["markers"],
   apply(ctx) {
     const store = new MarkerStore(
       () => ctx.editors.all(),

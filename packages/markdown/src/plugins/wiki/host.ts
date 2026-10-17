@@ -26,6 +26,7 @@ export const wikiHost: Plugin = {
     ],
     optional: ["editors", "bridgeCapture"],
   },
+  provides: ["wikiLayout"],
   apply(ctx) {
     const state: WikiSession = { projects: [], problems: [], generation: 0 };
     const reload = () => reloadWiki(ctx, state);

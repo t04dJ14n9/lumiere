@@ -1,4 +1,3 @@
-import { diffResourcesHost } from "../plugins/resources/diff-resources";
 import { nativeLinksHost } from "../plugins/links/native-host";
 import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
@@ -40,6 +39,7 @@ import {
   okfCoreHost,
   obsidianCompatHost,
   graphHost,
+  diffResourcesHost,
 } from "../plugins/host";
 import { workbenchFeatures as startWorkbenchFeatures } from "./workshop-features";
 import { createOkfFacade } from "../plugins/okfCore/facade";

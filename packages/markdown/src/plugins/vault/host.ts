@@ -9,6 +9,7 @@ import { VaultRegistry } from "./registry";
 export const vaultsHost: Plugin = {
   name: "vault",
   inject: { required: ["vaultSystem"], optional: ["navigation"] },
+  provides: ["vaults"],
   apply(ctx) {
     const system = ctx.vaultSystem;
     const registry = new VaultRegistry(
@@ -36,6 +37,7 @@ export const vaultsHost: Plugin = {
 export const vaultHost: Plugin<{ documentUri: string }> = {
   name: "vault",
   inject: { required: ["vaults"] },
+  provides: ["vault"],
   async apply(ctx, { documentUri }) {
     const vault = await ctx.vaults.forDocument(documentUri);
     ctx.provide("vault", vault.index);

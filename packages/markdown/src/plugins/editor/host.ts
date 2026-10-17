@@ -31,6 +31,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
     ],
     optional: ["vaults"],
   },
+  provides: ["editors", "selections", "editorActions"],
   apply(ctx, config) {
     const panels = new Map<string, EditorPanel>();
     // Panels whose shutdown has not finished, closed ones included: the

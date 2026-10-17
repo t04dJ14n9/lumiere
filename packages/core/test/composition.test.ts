@@ -24,6 +24,7 @@ test("caller-bound reads cache per context and refresh across provider replaceme
   });
   const original = root.plugin({
     name: "original",
+    provides: ["traced"],
     apply(ctx) {
       ctx.provide("traced", service("one:"));
     },
@@ -46,6 +47,7 @@ test("caller-bound reads cache per context and refresh across provider replaceme
   await original.dispose();
   root.plugin({
     name: "replacement",
+    provides: ["traced"],
     apply(ctx) {
       ctx.provide("traced", service("two:"));
     },

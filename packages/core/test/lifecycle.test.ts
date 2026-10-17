@@ -64,6 +64,7 @@ test("required services gate, withdraw, and resume independent of load order", a
   assert.deepEqual(consumer.waitingFor, ["value"]);
   const provider = root.plugin({
     name: "provider",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 1);
     },
@@ -76,6 +77,7 @@ test("required services gate, withdraw, and resume independent of load order", a
   assert.equal(consumer.state, "pending");
   root.plugin({
     name: "replacement",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 2);
     },
@@ -89,6 +91,7 @@ test("teardown mirrors activation: services withdraw and consumers stop first, t
   const root = createRoot();
   const parent = root.plugin({
     name: "parent",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 7);
       ctx.effect(() => () => {
@@ -128,6 +131,7 @@ test("a duplicate provider fails without affecting the first provider's consumer
   const root = createRoot();
   root.plugin({
     name: "first",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 1);
     },
@@ -135,6 +139,7 @@ test("a duplicate provider fails without affecting the first provider's consumer
   await root.settled();
   const duplicate = root.plugin({
     name: "duplicate",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 2);
     },
@@ -173,6 +178,7 @@ test("undeclared services throw; optional injection is allowed and refreshes on 
   assert.match(String((bad.error as Error).cause), /did not inject value/);
   root.plugin({
     name: "provider",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 3);
     },
@@ -255,6 +261,7 @@ test("disposal during async apply rejects late effects and never publishes a ser
   let lateSetup = false;
   const fiber = root.plugin({
     name: "slow",
+    provides: ["value"],
     async apply(ctx) {
       await gate.promise;
       ctx.effect(() => {
@@ -294,6 +301,7 @@ test("service withdrawal during loading invalidates the old activation and gates
   let cleanups = 0;
   const provider = root.plugin({
     name: "provider",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 1);
     },
@@ -322,6 +330,7 @@ test("service withdrawal during loading invalidates the old activation and gates
   assert.equal(cleanups, 1);
   root.plugin({
     name: "provider2",
+    provides: ["value"],
     apply(ctx) {
       ctx.provide("value", 2);
     },
@@ -367,7 +376,7 @@ test("effects undone early and child fibers disposed on their own are forgotten"
   assert.equal(undone.at(-1), "last");
 });
 
-test("a plugin that declares what it provides cannot publish anything else", async () => {
+test("a plugin publishes only the services it declares", async () => {
   const root = createRoot();
   const declared = root.plugin({
     name: "declared",
@@ -383,10 +392,18 @@ test("a plugin that declares what it provides cannot publish anything else", asy
       ctx.provide("replacement", 2);
     },
   });
+  const silent = root.plugin({
+    name: "silent",
+    apply(ctx) {
+      ctx.provide("other", 3);
+    },
+  });
   await root.settled();
   assert.equal(declared.state, "active");
   assert.equal(overreaching.state, "failed");
   assert.match(String(overreaching.error), /without declaring it/);
   assert.equal(root.service("replacement"), undefined);
+  assert.equal(silent.state, "failed");
+  assert.equal(root.service("other"), undefined);
   await root.dispose();
 });

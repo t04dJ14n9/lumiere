@@ -17,6 +17,7 @@ export const codeBlocksHost: Plugin = {
     required: ["editors", "settings", "workspace"],
     optional: ["vaults"],
   },
+  provides: ["codeBlocks"],
   apply(ctx) {
     const registry = new ProcessorRegistry(() => {
       for (const panel of ctx.editors.all()) {

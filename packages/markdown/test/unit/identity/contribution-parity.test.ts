@@ -238,6 +238,7 @@ function directRegistrations(selections: Selections): Plugin {
   return {
     name: "direct-command-registrations",
     inject: { required: [...HOST_SERVICE_NAMES, "editors", "vaults"] },
+    provides: ["editorActions"],
     apply(ctx) {
       registerMarkdownAssociation(ctx);
       registerJumpHistory(ctx, ctx.editors);

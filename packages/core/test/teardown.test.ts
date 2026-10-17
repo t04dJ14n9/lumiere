@@ -34,6 +34,7 @@ test("a provider waits for a consumer already stopping before releasing its back
   const consumerStop = gate();
   const provider = root.plugin({
     name: "provider",
+    provides: ["teardown.first"],
     apply(ctx) {
       ctx.provide("teardown.first", { read: () => "first" });
       ctx.effect(() => () => void order.push("provider released"));
@@ -71,6 +72,7 @@ test("two providers lost together both wait for their shared consumer", async ()
     (name) =>
       root.plugin({
         name,
+        provides: [name],
         apply(ctx) {
           ctx.provide(name, { read: () => name });
           ctx.effect(() => () => void order.push(`${name} released`));

@@ -3,12 +3,12 @@ import assert from "node:assert/strict";
 import * as hostPlugins from "../../../src/plugins/host";
 import * as webviewPlugins from "../../../src/plugins/webview";
 import { PluginGraph } from "../../../src/plugins/plugin-graph";
-import type { Plugin } from "@workshop/core";
+import type { PluginDeclaration } from "../../../src/plugins/plugin-graph";
 
 const definitions = [
   ...Object.values(hostPlugins),
   ...Object.values(webviewPlugins),
-] as Pick<Plugin<never>, "name" | "inject">[];
+] as PluginDeclaration[];
 
 test("the built-in plugins form an acyclic graph in which every injected service has a provider", () => {
   const graph = new PluginGraph(definitions);
@@ -36,17 +36,33 @@ test("dependencies come from injected services: tables needs the editor and opti
   assert.ok(graph.dependentsOf("livePreview").includes("tables"));
 });
 
-test("cycles and unknown providers are reported", () => {
+test("cycles, missing providers and shared services are reported", () => {
   assert.throws(
     () =>
       new PluginGraph([
-        { name: "vim", inject: { required: ["formatting"] } },
-        { name: "formatting", inject: { required: ["vim"] } },
+        {
+          name: "vim",
+          inject: { required: ["formatting"] },
+          provides: ["vim"],
+        },
+        {
+          name: "formatting",
+          inject: { required: ["vim"] },
+          provides: ["formatting"],
+        },
       ]),
     /cycle: (vim -> formatting -> vim|formatting -> vim -> formatting)/,
   );
   assert.throws(
     () => new PluginGraph([{ name: "tables", inject: { required: ["vim"] } }]),
-    /depends on vim, which is not a plugin/,
+    /tables injects vim, which no plugin provides/,
+  );
+  assert.throws(
+    () =>
+      new PluginGraph([
+        { name: "vim", provides: ["vim"] },
+        { name: "emacs", provides: ["vim"] },
+      ]),
+    /vim is provided by both vim and emacs/,
   );
 });

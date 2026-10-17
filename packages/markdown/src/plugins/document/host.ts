@@ -5,6 +5,7 @@ import type { Documents } from "./api";
 export const documentHost: Plugin = {
   name: "document",
   inject: { required: ["hostDocuments", "hostCommands"] },
+  provides: ["documents"],
   apply(ctx) {
     const sessions = new Map<
       HostDocument,

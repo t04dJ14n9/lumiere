@@ -6,6 +6,7 @@ import { protocol } from "./protocol";
 export const resourcesHost: Plugin<{ panel: PanelShell }> = {
   name: "resources",
   inject: { required: ["rpc", "vault", "workspace", "hostDocuments"] },
+  provides: ["resources"],
   apply(ctx, { panel }) {
     const resources = new NoteResources({
       source: panel.document.uri,

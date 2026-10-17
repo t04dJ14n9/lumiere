@@ -33,6 +33,7 @@ import { sourceVisibleAt } from "./source-visibility";
 export const livePreviewWebview: Plugin<{ mode: "source" | "livePreview" }> = {
   name: "livePreview",
   inject: { required: ["editor", "commands", "render"] },
+  provides: ["livePreview"],
   apply(ctx, config) {
     const service = registerEngine(ctx, config.mode);
     ctx.provide("livePreview", service);

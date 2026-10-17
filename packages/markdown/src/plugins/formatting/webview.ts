@@ -11,6 +11,7 @@ import { lineEdit, linkEdit } from "./lines";
 export const formattingWebview: Plugin = {
   name: "formatting",
   inject: { required: ["editor", "commands"] },
+  provides: ["formatting"],
   apply(ctx) {
     ctx.provide("formatting", {
       wrap: (marker, view) => wrapSelection(marker)(view),

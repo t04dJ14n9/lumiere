@@ -387,6 +387,7 @@ function debounce(model: GitDiffModel) {
 
 export const gitGutterWebview: Plugin<Options> = {
   name: "gitGutter",
+  provides: ["gitDiff"],
   config,
   inject: { required: ["editor", "commands", "render", "rpc"] },
   apply(ctx, options) {

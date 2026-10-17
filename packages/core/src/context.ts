@@ -22,7 +22,7 @@ export interface ContextScope {
   readonly owner: string;
   /** Services this context may read; a root context reads none. */
   readonly inject?: Inject;
-  /** Services this context may publish, when the plugin declares them. */
+  /** Services a plugin may publish; a root context publishes anything. */
   readonly provides?: readonly ServiceName[];
   /** Publish a service; returns its withdrawal. */
   publish(name: ServiceName, value: unknown): Disposer;

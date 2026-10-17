@@ -9,6 +9,7 @@ import type {} from "../editor/api";
 export const commandsWebview: Plugin = {
   name: "commands",
   inject: { required: ["rpc", "editor", "document"] },
+  provides: ["commands"],
   apply(ctx) {
     const commands = createCommands();
     ctx.provide("commands", commands);

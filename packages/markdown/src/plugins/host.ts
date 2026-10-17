@@ -5,6 +5,7 @@ export { commandsHost } from "./commands/host";
 export { livePreviewHost } from "./livePreview/host";
 export { vaultHost, vaultsHost } from "./vault/host";
 export { resourcesHost } from "./resources/host";
+export { diffResourcesHost } from "./resources/diff-resources";
 export { linksHost } from "./links/host";
 export { tasksHost } from "./tasks/host";
 export { gitGutterHost } from "./gitGutter/host";

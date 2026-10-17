@@ -21,6 +21,7 @@ import type {} from "../livePreview/api";
 export const vimWebview: Plugin = {
   name: "vim",
   inject: { required: ["editor", "commands"], optional: ["livePreview"] },
+  provides: ["vim"],
   apply(ctx) {
     registerVimService(ctx);
     registerShortcutConsumer(ctx);

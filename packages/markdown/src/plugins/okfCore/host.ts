@@ -14,6 +14,7 @@ export interface OkfCoreConfig {
 export const okfCoreHost: Plugin<OkfCoreConfig> = {
   name: "okfCore",
   inject: { required: ["settings", "vaults"] },
+  provides: ["okf"],
   apply(ctx, config) {
     const bundles = new Map<string, readonly string[]>();
     const service = createService(bundles);

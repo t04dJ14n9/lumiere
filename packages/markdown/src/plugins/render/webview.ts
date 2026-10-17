@@ -10,6 +10,7 @@ import { constrainRemoteContent } from "./security";
 export const renderWebview: Plugin<{ trusted: boolean }> = {
   name: "render",
   inject: { required: ["markdown", "editor"] },
+  provides: ["render"],
   apply(ctx, config) {
     const passes = new Set<RenderPass>();
     registerPassCleanup(ctx, passes);

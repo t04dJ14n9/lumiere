@@ -120,6 +120,7 @@ export async function fixture() {
   root.plugin({
     name: "editor",
     inject: { required: ["hostCommands", "dialogs", "settings"] },
+    provides: ["editorActions"],
     apply(ctx) {
       registerEditorActions(ctx, editors, selections);
     },

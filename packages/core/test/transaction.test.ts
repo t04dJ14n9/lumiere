@@ -20,6 +20,7 @@ test("a failing apply rolls back everything it acquired and never starts its chi
   let released = 0;
   const failing = root.plugin({
     name: "failing",
+    provides: ["backed"],
     apply(ctx) {
       ctx.effect(() => () => {
         released++;
@@ -61,6 +62,7 @@ test("an async apply publishes its services and starts its children only on comm
   let childStarted = false;
   root.plugin({
     name: "slow",
+    provides: ["backed"],
     async apply(ctx) {
       ctx.provide("backed", { read: () => "ready" });
       ctx.plugin({
@@ -88,6 +90,7 @@ test("consumers finish stopping before the resource backing a service is release
   let open = false;
   const provider = root.plugin({
     name: "provider",
+    provides: ["backed"],
     apply(ctx) {
       ctx.effect(() => {
         open = true;
@@ -128,6 +131,7 @@ test("the ledger names what each plugin holds and is empty after disposal", asyn
   const root = createRoot();
   const fiber = root.plugin({
     name: "holder",
+    provides: ["backed"],
     apply(ctx) {
       ctx.effect(() => () => {});
       ctx.on("transaction/ping", () => {});

@@ -16,6 +16,7 @@ export { linkAt } from "./caret-link";
 export const linksWebview: Plugin = {
   name: "links",
   inject: { required: ["editor", "livePreview", "commands", "rpc"] },
+  provides: ["links"],
   // Link options are consumed by the host on each request. Keep this view's
   // listeners and navigation-session lifetime when only those options change.
   reconfigure() {

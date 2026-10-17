@@ -34,7 +34,7 @@ export interface Inject {
 export interface Plugin<C = void> {
   readonly name: string;
   readonly inject?: Inject;
-  /** Services this plugin publishes; providing an undeclared one throws. */
+  /** Services this plugin publishes; providing any other one throws. */
   readonly provides?: readonly ServiceName[];
   /** Validates and defaults the configuration before `apply` sees it. */
   readonly config?: Schema<C>;

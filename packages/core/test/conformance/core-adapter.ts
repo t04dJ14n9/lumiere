@@ -84,6 +84,7 @@ function definition(spec: PluginSpec, specs: readonly PluginSpec[]): Plugin {
   return {
     name: spec.id,
     inject: { required },
+    provides: spec.provides ? [spec.provides] : [],
     apply: (ctx) =>
       spec.activate({
         acquire: (release) => ctx.acquire("conformance resource", release),

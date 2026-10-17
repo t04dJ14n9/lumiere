@@ -21,6 +21,7 @@ import { allowsSuggestions, completionEdit } from "./completion";
 export const suggestWebview: Plugin = {
   name: "suggest",
   inject: { required: ["editor", "rpc"] },
+  provides: ["suggest"],
   apply(ctx) {
     registerSources(ctx);
     registerCompletions(ctx);

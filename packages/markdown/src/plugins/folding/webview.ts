@@ -75,6 +75,7 @@ const foldingConfig = (options: Infer<typeof config>) =>
   foldService.of((state, start, end) => foldRange(state, start, end, options));
 export const foldingWebview: Plugin<Infer<typeof config>> = {
   name: "folding",
+  provides: ["fold"],
   config,
   inject: { required: ["editor", "commands"] },
   reconfigure(ctx, options) {

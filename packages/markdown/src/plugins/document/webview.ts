@@ -4,6 +4,7 @@ import { ViewConnection } from "./view-connection";
 export const documentWebview: Plugin<{ version: number; clientID: string }> = {
   name: "document",
   inject: { required: ["rpc"] },
+  provides: ["document"],
   apply(ctx, config) {
     const connection = new ViewConnection(config, ctx.rpc, (message) =>
       ctx.emit("document/syncStatus", message),
