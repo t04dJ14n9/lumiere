@@ -35,45 +35,22 @@ export function useNavigation(
 ) {
   const intent = useRef(new NavigationIntent()).current;
   const { provides: scroll, state } = useScrollState();
-  const [highlight, setHighlight] = useState<Highlight>();
-  const [pagedPage, setPagedPage] = useState(() => rememberedPosition().page);
-  const requestedPage = useRef(pagedPage);
-  useEffect(() => {
-    if (scrollMode === "continuous") {
-      requestedPage.current = state.currentPage;
-      setPagedPage(state.currentPage);
-    }
-  }, [state.currentPage, scrollMode]);
+  const {
+    page: pagedPage,
+    requested: requestedPage,
+    request: requestPage,
+  } = usePagedPage(scrollMode, state.currentPage);
   const layoutReady = useRef(false);
   const heldLocation = useRef<HeldLocation | undefined>(undefined);
   const animate = smooth && scrollMode === "continuous";
-
-  /**
-   * Show a location: its box near the top of the viewer, flashed; without a
-   * box, the page from `top` points below its top (where a link or outline
-   * entry points), or from its top.
-   */
-  const show = useCallback(
-    (location: PdfLocation, top?: number, left = 0, instant = false): void => {
-      if (!scroll || !layoutReady.current) {
-        const generation = intent.current();
-        heldLocation.current = { location, top, left, instant, generation };
-        return;
-      }
-      const page = Math.min(Math.max(1, location.page), scroll.getTotalPages());
-      requestedPage.current = page;
-      setPagedPage(page);
-      scroll.scrollToPage({
-        ...scrollTarget(scroll, { ...location, page }, top, left),
-        behavior: animate && !instant ? "smooth" : "instant",
-      });
-      if (location.viewRect) {
-        const rect = fromViewRect(location.viewRect);
-        setHighlight({ page, rect, key: Date.now() });
-      }
-    },
-    [scroll, animate, intent],
-  );
+  const { show, highlight } = useShowLocation({
+    scroll,
+    intent,
+    layoutReady,
+    heldLocation,
+    animate,
+    requestPage,
+  });
   const showRef = useRef(show);
   showRef.current = show;
   useHeldLocation({
@@ -85,23 +62,7 @@ export function useNavigation(
     show,
   });
   useNavigationInterrupts(intent, heldLocation);
-
-  /** Scroll a box (a search match) to the middle of the viewer, without flashing it. */
-  const reveal = useCallback(
-    (page: number, rect: PageRect, _deliberate = true): void => {
-      requestedPage.current = page;
-      setPagedPage(page);
-      const [left, top, right, bottom] = rect;
-      scroll?.scrollToPage({
-        pageNumber: page,
-        behavior: animate ? "smooth" : "instant",
-        pageCoordinates: { x: (left + right) / 2, y: (top + bottom) / 2 },
-        alignX: 50,
-        alignY: 50,
-      });
-    },
-    [scroll, animate],
-  );
+  const reveal = useRevealBox(scroll, animate, requestPage);
   const restore = useCallback(
     (position: ReadingPosition): void => {
       intent.advance();
@@ -114,19 +75,10 @@ export function useNavigation(
     },
     [intent],
   );
-  const currentPage = scrollMode === "paged" ? pagedPage : state.currentPage;
-  const item = state.virtualItems.find((item) =>
-    item.pageNumbers.includes(currentPage),
-  );
   return {
     intent,
     isReady: () => layoutReady.current && Boolean(scroll),
-    currentPage,
-    pageCount: state.totalPages,
-    canGoBack: Boolean(item && item !== state.virtualItems[0]),
-    canGoForward: Boolean(item && item !== state.virtualItems.at(-1)),
-    activePages:
-      scrollMode === "paged" ? (item?.pageNumbers ?? [currentPage]) : undefined,
+    ...pageStatus(state, scrollMode, pagedPage),
     highlight,
     show,
     restore,
@@ -134,6 +86,109 @@ export function useNavigation(
     goToPage: (page: number, top?: number) => show({ page }, top),
     step: (delta: 1 | -1, keepPlace = false): void =>
       step(scroll, requestedPage.current, show, { delta, keepPlace }),
+  };
+}
+
+/**
+ * Show a location: its box near the top of the viewer, flashed; without a
+ * box, the page from `top` points below its top (where a link or outline
+ * entry points), or from its top. Before the layout is ready, the location
+ * is held (`useHeldLocation` applies it).
+ */
+function useShowLocation(options: {
+  scroll: Scroll | null;
+  intent: NavigationIntent;
+  layoutReady: React.RefObject<boolean>;
+  heldLocation: React.RefObject<HeldLocation | undefined>;
+  animate: boolean;
+  requestPage: (page: number) => void;
+}) {
+  const { scroll, intent, layoutReady, heldLocation, animate, requestPage } =
+    options;
+  const [highlight, setHighlight] = useState<Highlight>();
+  const show = useCallback(
+    (location: PdfLocation, top?: number, left = 0, instant = false): void => {
+      if (!scroll || !layoutReady.current) {
+        const generation = intent.current();
+        heldLocation.current = { location, top, left, instant, generation };
+        return;
+      }
+      const page = Math.min(Math.max(1, location.page), scroll.getTotalPages());
+      requestPage(page);
+      scroll.scrollToPage({
+        ...scrollTarget(scroll, { ...location, page }, top, left),
+        behavior: animate && !instant ? "smooth" : "instant",
+      });
+      if (location.viewRect) {
+        const rect = fromViewRect(location.viewRect);
+        setHighlight({ page, rect, key: Date.now() });
+      }
+    },
+    [scroll, animate, intent, requestPage, layoutReady, heldLocation],
+  );
+  return { show, highlight };
+}
+
+/** Scroll a box (a search match) to the middle of the viewer, without flashing it. */
+function useRevealBox(
+  scroll: Scroll | null,
+  animate: boolean,
+  requestPage: (page: number) => void,
+) {
+  return useCallback(
+    (page: number, rect: PageRect, _deliberate = true): void => {
+      requestPage(page);
+      const [left, top, right, bottom] = rect;
+      scroll?.scrollToPage({
+        pageNumber: page,
+        behavior: animate ? "smooth" : "instant",
+        pageCoordinates: { x: (left + right) / 2, y: (top + bottom) / 2 },
+        alignX: 50,
+        alignY: 50,
+      });
+    },
+    [scroll, animate, requestPage],
+  );
+}
+
+/**
+ * The page paged mode shows, and the one last asked for (a quick second step
+ * counts from it, before the first has landed). In continuous mode both
+ * follow the page the scroll reports.
+ */
+function usePagedPage(scrollMode: ScrollMode, current: number) {
+  const [page, setPage] = useState(() => rememberedPosition().page);
+  const requested = useRef(page);
+  useEffect(() => {
+    if (scrollMode === "continuous") {
+      requested.current = current;
+      setPage(current);
+    }
+  }, [current, scrollMode]);
+  const request = useCallback((next: number): void => {
+    requested.current = next;
+    setPage(next);
+  }, []);
+  return { page, requested, request };
+}
+
+/** The page shown, and whether there are pages (or spreads) before and after it. */
+function pageStatus(
+  state: ReturnType<typeof useScrollState>["state"],
+  scrollMode: ScrollMode,
+  pagedPage: number,
+) {
+  const currentPage = scrollMode === "paged" ? pagedPage : state.currentPage;
+  const item = state.virtualItems.find((item) =>
+    item.pageNumbers.includes(currentPage),
+  );
+  return {
+    currentPage,
+    pageCount: state.totalPages,
+    canGoBack: Boolean(item && item !== state.virtualItems[0]),
+    canGoForward: Boolean(item && item !== state.virtualItems.at(-1)),
+    activePages:
+      scrollMode === "paged" ? (item?.pageNumbers ?? [currentPage]) : undefined,
   };
 }
 

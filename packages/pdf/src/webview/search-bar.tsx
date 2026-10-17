@@ -27,35 +27,21 @@ export function SearchBar({
   onPreviewEnd: () => void;
 }): React.JSX.Element {
   const [query, setQuery] = useState("");
-  const input = useRef<HTMLInputElement>(null);
   const { state, step } = useDocumentSearch(query, navigation);
-  useEffect(() => {
-    input.current?.focus();
-    input.current?.select();
-  }, [focusRequest]);
   useEffect(() => onPreviewEnd, [onPreviewEnd]);
   return (
     <div className="search-bar" role="search" aria-label="Find in PDF">
-      <input
-        type="search"
-        aria-label="Find in PDF"
-        placeholder="Find"
-        ref={input}
-        value={query}
-        onChange={(event) => {
-          const value = event.currentTarget.value;
+      <SearchField
+        query={query}
+        focusRequest={focusRequest}
+        onQuery={(value) => {
           if (!value.trim()) {
             onPreviewEnd();
           }
           setQuery(value);
         }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            step(event.shiftKey ? -1 : 1);
-          } else if (event.key === "Escape") {
-            onClose();
-          }
-        }}
+        onStep={step}
+        onClose={onClose}
       />
       <span className="search-count" aria-live="polite">
         {query.trim() ? matchCount(state) : ""}
@@ -81,6 +67,38 @@ export function SearchBar({
         <i className="codicon codicon-close" aria-hidden="true" />
       </button>
     </div>
+  );
+}
+
+/** The query field: Enter steps forward, Shift+Enter back, Escape closes. */
+function SearchField(props: {
+  query: string;
+  focusRequest: number;
+  onQuery: (query: string) => void;
+  onStep: (direction: 1 | -1) => void;
+  onClose: () => void;
+}): React.JSX.Element {
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    input.current?.focus();
+    input.current?.select();
+  }, [props.focusRequest]);
+  return (
+    <input
+      type="search"
+      aria-label="Find in PDF"
+      placeholder="Find"
+      ref={input}
+      value={props.query}
+      onChange={(event) => props.onQuery(event.currentTarget.value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          props.onStep(event.shiftKey ? -1 : 1);
+        } else if (event.key === "Escape") {
+          props.onClose();
+        }
+      }}
+    />
   );
 }
 
@@ -124,64 +142,14 @@ function useDocumentSearch(query: string, navigation: Navigation) {
   // Read when results arrive, without starting a new search on every scroll.
   const latestNavigation = useRef(navigation);
   latestNavigation.current = navigation;
-  const reveal = (
-    result: SearchResult | undefined,
-    deliberate = false,
-  ): void => {
-    const box = result?.rects[0];
-    if (result && box) {
-      latestNavigation.current.reveal(
-        result.pageIndex + 1,
-        [
-          box.origin.x,
-          box.origin.y,
-          box.origin.x + box.size.width,
-          box.origin.y + box.size.height,
-        ],
-        deliberate,
-      );
-    }
-  };
-  useEffect(() => {
-    if (!search) {
-      return;
-    }
-    let cancelled = false;
-    const intent = latestNavigation.current.intent;
-    const generation = intent.advance();
-    const isCurrent = () => !cancelled && intent.owns(generation);
-    const timer = window.setTimeout(() => {
-      if (!isCurrent()) {
-        return;
-      }
-      const text = query.trim();
-      if (!text) {
-        search.stopSearch();
-        return;
-      }
-      search.startSearch();
-      search.searchAllPages(text).wait(
-        ({ results }) => {
-          if (!isCurrent()) {
-            return;
-          }
-          const fromPage = latestNavigation.current.currentPage - 1;
-          const index = Math.max(
-            0,
-            results.findIndex((result) => result.pageIndex >= fromPage),
-          );
-          search.goToResult(index);
-          reveal(results[index]);
-        },
-        () => undefined,
-      );
-    }, SEARCH_DELAY_MS);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-    // `reveal` reads the latest navigation: only a new query starts a new search.
-  }, [search, query]);
+  useEffect(
+    () =>
+      search
+        ? searchSoon(search, query, () => latestNavigation.current)
+        : undefined,
+    // Only a new query starts a new search.
+    [search, query],
+  );
   useEffect(() => () => search?.stopSearch(), [search]);
   return {
     state,
@@ -191,7 +159,80 @@ function useDocumentSearch(query: string, navigation: Navigation) {
       }
       const index =
         direction > 0 ? search.nextResult() : search.previousResult();
-      reveal(search.getState().results[index], true);
+      revealMatch(
+        latestNavigation.current,
+        search.getState().results[index],
+        true,
+      );
     },
   };
+}
+
+type Search = NonNullable<ReturnType<typeof useSearch>["provides"]>;
+
+/**
+ * After a short pause, search the whole document and go to the first match
+ * on or after the current page. Returns the cancellation; a newer navigation
+ * also cancels it.
+ */
+function searchSoon(
+  search: Search,
+  query: string,
+  navigation: () => Navigation,
+): () => void {
+  let cancelled = false;
+  const intent = navigation().intent;
+  const generation = intent.advance();
+  const isCurrent = () => !cancelled && intent.owns(generation);
+  const timer = window.setTimeout(() => {
+    if (!isCurrent()) {
+      return;
+    }
+    const text = query.trim();
+    if (!text) {
+      search.stopSearch();
+      return;
+    }
+    search.startSearch();
+    search.searchAllPages(text).wait(
+      ({ results }) => {
+        if (!isCurrent()) {
+          return;
+        }
+        const fromPage = navigation().currentPage - 1;
+        const index = Math.max(
+          0,
+          results.findIndex((result) => result.pageIndex >= fromPage),
+        );
+        search.goToResult(index);
+        revealMatch(navigation(), results[index]);
+      },
+      () => undefined,
+    );
+  }, SEARCH_DELAY_MS);
+  return () => {
+    cancelled = true;
+    window.clearTimeout(timer);
+  };
+}
+
+/** Scroll a match to the middle of the viewer. */
+function revealMatch(
+  navigation: Navigation,
+  result: SearchResult | undefined,
+  deliberate = false,
+): void {
+  const box = result?.rects[0];
+  if (result && box) {
+    navigation.reveal(
+      result.pageIndex + 1,
+      [
+        box.origin.x,
+        box.origin.y,
+        box.origin.x + box.size.width,
+        box.origin.y + box.size.height,
+      ],
+      deliberate,
+    );
+  }
 }

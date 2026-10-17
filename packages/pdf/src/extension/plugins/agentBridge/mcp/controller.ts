@@ -56,87 +56,26 @@ export interface AgentBridgeController {
 export function registerAgentBridge(
   options: BridgeOptions,
 ): AgentBridgeController {
-  const { panels, log } = options;
   const shim = vscode.Uri.joinPath(
     options.globalStorageUri,
     "bridge-stdio.js",
   ).fsPath;
-  let running: RunningBridge | undefined;
-  // Used: a PDF editor was opened in this window, or Copy MCP Setup was run.
-  // Once used, the bridge stays up until the setting goes off, so an agent
-  // that connected does not lose it when the last PDF closes.
-  let used = panels.all.length > 0;
-  let stopped = false;
-  let queue = Promise.resolve();
-  const wanted = (): boolean => !stopped && used && agentBridgeEnabled();
-  const start = async (): Promise<void> => {
-    const { startAgentBridge } = await import("./server");
-    // Stopped, or turned off, while the server code loaded: do not listen.
-    if (!wanted()) {
-      return;
-    }
-    const bridge = await startAgentBridge({ ...options, shim });
-    // The setting may have changed, or the plugin stopped, while it started.
-    if (wanted()) {
-      running = bridge;
-    } else {
-      await bridge.dispose();
-    }
-  };
-  const stop = async (bridge: RunningBridge): Promise<void> => {
-    running = undefined;
-    await bridge.dispose();
-    log.info("Agent bridge stopped");
-  };
-  /** Queue one step towards the wanted state; the queue never rejects. */
-  const sync = (): Promise<void> => {
-    queue = queue.then(async () => {
-      if (wanted() && !running) {
-        await start().catch((error) =>
-          log.error(`Agent bridge failed to start: ${String(error)}`),
-        );
-      } else if (!wanted() && running) {
-        await stop(running).catch((error) =>
-          log.error(`Agent bridge failed to stop: ${String(error)}`),
-        );
-      }
-    });
-    return queue;
-  };
-  void sync();
+  const bridge = new BridgeController(options, shim);
+  void bridge.sync();
   const subscriptions = vscode.Disposable.from(
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (event.affectsConfiguration("pdfWorkshop.agentBridge.enabled")) {
-        void sync();
+        void bridge.sync();
       }
     }),
-    panels.onDidOpen(() => {
-      used = true;
-      void sync();
-    }),
+    options.panels.onDidOpen(() => bridge.use()),
     vscode.commands.registerCommand(
       AGENT_BRIDGE_COMMAND_IDS.copyMcpSetup,
       async () => {
-        if (!agentBridgeEnabled()) {
-          const turnOn = "Turn On";
-          const choice = await vscode.window.showInformationMessage(
-            "The agent bridge is off. It serves the PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected). Turn it on?",
-            turnOn,
-          );
-          if (choice !== turnOn) {
-            return;
-          }
-          await vscode.workspace
-            .getConfiguration("pdfWorkshop")
-            .update(
-              "agentBridge.enabled",
-              true,
-              vscode.ConfigurationTarget.Global,
-            );
+        if (await bridgeTurnedOn()) {
+          bridge.use();
+          await copyMcpSetup(shim);
         }
-        used = true;
-        void sync();
-        await copyMcpSetup(shim);
       },
     ),
   );
@@ -144,12 +83,101 @@ export function registerAgentBridge(
   return {
     dispose: () =>
       (disposing ??= (async () => {
-        stopped = true;
         subscriptions.dispose();
-        // Waits for a start in progress, then stops what it started.
-        await sync();
+        await bridge.stop();
       })()),
   };
+}
+
+/** Starts and stops the bridge, one step at a time, towards the wanted state. */
+class BridgeController {
+  private running: RunningBridge | undefined;
+  /**
+   * Used: a PDF editor was opened in this window, or Copy MCP Setup was run.
+   * Once used, the bridge stays up until the setting goes off, so an agent
+   * that connected does not lose it when the last PDF closes.
+   */
+  private used: boolean;
+  private stopped = false;
+  private queue = Promise.resolve();
+
+  constructor(
+    private readonly options: BridgeOptions,
+    private readonly shim: string,
+  ) {
+    this.used = options.panels.all.length > 0;
+  }
+
+  use(): void {
+    this.used = true;
+    void this.sync();
+  }
+
+  /** Stop for good; waits for a start in progress, then stops what it started. */
+  stop(): Promise<void> {
+    this.stopped = true;
+    return this.sync();
+  }
+
+  /** Queue one step towards the wanted state; the queue never rejects. */
+  sync(): Promise<void> {
+    const { log } = this.options;
+    this.queue = this.queue.then(async () => {
+      if (this.wanted() && !this.running) {
+        await this.start().catch((error) =>
+          log.error(`Agent bridge failed to start: ${String(error)}`),
+        );
+      } else if (!this.wanted() && this.running) {
+        const running = this.running;
+        this.running = undefined;
+        await running
+          .dispose()
+          .then(() => log.info("Agent bridge stopped"))
+          .catch((error) =>
+            log.error(`Agent bridge failed to stop: ${String(error)}`),
+          );
+      }
+    });
+    return this.queue;
+  }
+
+  private wanted(): boolean {
+    return !this.stopped && this.used && agentBridgeEnabled();
+  }
+
+  private async start(): Promise<void> {
+    const { startAgentBridge } = await import("./server");
+    // Stopped, or turned off, while the server code loaded: do not listen.
+    if (!this.wanted()) {
+      return;
+    }
+    const bridge = await startAgentBridge({ ...this.options, shim: this.shim });
+    // The setting may have changed, or the plugin stopped, while it started.
+    if (this.wanted()) {
+      this.running = bridge;
+    } else {
+      await bridge.dispose();
+    }
+  }
+}
+
+/** Whether the bridge is on, after offering to turn it on if it is off. */
+async function bridgeTurnedOn(): Promise<boolean> {
+  if (agentBridgeEnabled()) {
+    return true;
+  }
+  const turnOn = "Turn On";
+  const choice = await vscode.window.showInformationMessage(
+    "The agent bridge is off. It serves the PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected). Turn it on?",
+    turnOn,
+  );
+  if (choice !== turnOn) {
+    return false;
+  }
+  await vscode.workspace
+    .getConfiguration("pdfWorkshop")
+    .update("agentBridge.enabled", true, vscode.ConfigurationTarget.Global);
+  return true;
 }
 
 /** Let the user wire Claude Code / Codex (and any stdio MCP client) to the bridge. */

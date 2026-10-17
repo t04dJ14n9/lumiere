@@ -55,13 +55,8 @@ test("the readability limits apply to all source, unchanged", async () => {
     "src/**/*.{ts,tsx}",
     "packages/*/src/**/*.{ts,tsx}",
   ]);
-  // Only shrinks: PDF code still being split to the limits.
-  assert.deepEqual((block as { ignores?: string[] }).ignores, [
-    "**/*.test.ts",
-    "packages/pdf/src/webview/**",
-    "packages/pdf/src/extension/plugins/agentBridge/**",
-    "packages/pdf/src/extension/plugins/ideContext/**",
-  ]);
+  // Only tests are exempt: all product code meets the limits.
+  assert.deepEqual((block as { ignores?: string[] }).ignores, ["**/*.test.ts"]);
   for (const [rule, setting] of Object.entries(readability)) {
     assert.deepEqual(
       (block!.rules as Record<string, unknown>)[rule],

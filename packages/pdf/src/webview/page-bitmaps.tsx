@@ -92,73 +92,105 @@ function usePrefetch(
     if (!cache || !root) {
       return;
     }
-    let pending: { page: number; cancel: () => void } | undefined;
-    let frame = 0;
-    const update = (): void => {
-      frame = 0;
-      const pages = Array.from(
-        root.querySelectorAll<HTMLElement>(".page[data-page-index]"),
-      );
-      const shown = pages.map((page) => Number(page.dataset.pageIndex));
-      const range = prefetchRange(shown, pageCount);
-      const scale = Number(pages[0]?.dataset.scale);
-      if (!range || !Number.isFinite(scale)) {
-        return;
-      }
-      cache.retain(range, shown);
-      if (pending && (pending.page < range[0] || pending.page > range[1])) {
-        pending.cancel();
-        pending = undefined;
-      }
-      // The PDF engine renders one thing at a time: what is on screen goes first,
-      // so the prefetch waits until every page shown has its full picture, and
-      // then fetches one page at a time, the nearest first.
-      if (
-        pending ||
-        root.querySelector(".page-image-low") ||
-        pages.some((page) => !page.querySelector("img.page-image"))
-      ) {
-        return;
-      }
-      const wanted = lowScale(scale);
-      const next = [...Array(range[1] - range[0] + 1).keys()]
-        .map((offset) => range[0] + offset)
-        .filter((page) => !shown.includes(page) && !cache.hasLow(page, wanted))
-        .sort((a, b) => distance(a, shown) - distance(b, shown))[0];
-      if (next === undefined) {
-        return;
-      }
-      const entry = { page: next, cancel: (): void => undefined };
-      pending = entry;
-      entry.cancel = cache.request(
-        { quality: "low", page: next, scale: wanted, dpr: 1 },
-        () => {
-          if (pending === entry) {
-            pending = undefined;
-          }
-          schedule();
-        },
-      );
-    };
-    const schedule = (): void => {
-      if (!frame) {
-        frame = requestAnimationFrame(update);
-      }
-    };
-    const observer = new MutationObserver(schedule);
+    const prefetch = new Prefetch(cache, root, pageCount);
+    const observer = new MutationObserver(prefetch.schedule);
     observer.observe(root, {
       childList: true,
       subtree: true,
       attributes: true,
       attributeFilter: ["data-scale", "data-page-index", "class", "src"],
     });
-    schedule();
+    prefetch.schedule();
     return () => {
       observer.disconnect();
-      cancelAnimationFrame(frame);
-      pending?.cancel();
+      prefetch.dispose();
     };
   }, [cache, pageCount, scroller]);
+}
+
+/**
+ * The prefetch of one viewer. The PDF engine renders one thing at a time:
+ * what is on screen goes first, so the prefetch waits until every page shown
+ * has its full picture, and then fetches one page at a time, the nearest
+ * first.
+ */
+class Prefetch {
+  private pending: { page: number; cancel: () => void } | undefined;
+  private frame = 0;
+
+  constructor(
+    private readonly cache: BitmapCache,
+    private readonly root: HTMLElement,
+    private readonly pageCount: number,
+  ) {}
+
+  /** Look again on the next frame. */
+  readonly schedule = (): void => {
+    if (!this.frame) {
+      this.frame = requestAnimationFrame(this.update);
+    }
+  };
+
+  dispose(): void {
+    cancelAnimationFrame(this.frame);
+    this.pending?.cancel();
+  }
+
+  private readonly update = (): void => {
+    this.frame = 0;
+    const pages = Array.from(
+      this.root.querySelectorAll<HTMLElement>(".page[data-page-index]"),
+    );
+    const shown = pages.map((page) => Number(page.dataset.pageIndex));
+    const range = prefetchRange(shown, this.pageCount);
+    const scale = Number(pages[0]?.dataset.scale);
+    if (!range || !Number.isFinite(scale)) {
+      return;
+    }
+    this.cache.retain(range, shown);
+    if (
+      this.pending &&
+      (this.pending.page < range[0] || this.pending.page > range[1])
+    ) {
+      this.pending.cancel();
+      this.pending = undefined;
+    }
+    if (this.pending || this.drawing(pages)) {
+      return;
+    }
+    const wanted = lowScale(scale);
+    const next = [...Array(range[1] - range[0] + 1).keys()]
+      .map((offset) => range[0] + offset)
+      .filter(
+        (page) => !shown.includes(page) && !this.cache.hasLow(page, wanted),
+      )
+      .sort((a, b) => distance(a, shown) - distance(b, shown))[0];
+    if (next !== undefined) {
+      this.fetch(next, wanted);
+    }
+  };
+
+  /** Whether a page on screen still waits for its full picture. */
+  private drawing(pages: HTMLElement[]): boolean {
+    return (
+      this.root.querySelector(".page-image-low") !== null ||
+      pages.some((page) => !page.querySelector("img.page-image"))
+    );
+  }
+
+  private fetch(page: number, scale: number): void {
+    const entry = { page, cancel: (): void => undefined };
+    this.pending = entry;
+    entry.cancel = this.cache.request(
+      { quality: "low", page, scale, dpr: 1 },
+      () => {
+        if (this.pending === entry) {
+          this.pending = undefined;
+        }
+        this.schedule();
+      },
+    );
+  }
 }
 
 const distance = (page: number, shown: number[]): number =>
@@ -171,86 +203,103 @@ const distance = (page: number, shown: number[]): number =>
  * page between them. A full bitmap that is no longer wanted (another turn, a
  * zoom step) is cancelled.
  */
-export function PageImage({
-  pageIndex,
-  scale,
-  dpr,
-}: {
+export function PageImage(props: {
   pageIndex: number;
   scale: number;
   dpr: number;
 }): React.JSX.Element | null {
-  const cache = useContext(BitmapContext);
-  const [full, setFull] = useState<{ page: number; url: string } | undefined>(
-    () => {
-      const url = cache?.peek({
-        quality: "full",
-        page: pageIndex,
-        scale: scale,
-        dpr: dpr,
-      });
-      return url ? { page: pageIndex, url } : undefined;
-    },
-  );
-  const [low, setLow] = useState<string | undefined>(() =>
-    cache?.lowOf(pageIndex),
-  );
-
-  useEffect(() => {
-    if (!cache) {
-      return;
-    }
-    let live = true;
-    const cancels: (() => void)[] = [];
-    const lowUrl = cache.lowOf(pageIndex);
-    setLow(lowUrl);
-    // Without a low bitmap (a page the prefetch has not reached yet) ask for one
-    // first: it renders in a fraction of the time.
-    if (!lowUrl) {
-      cancels.push(
-        cache.request(
-          { quality: "low", page: pageIndex, scale: lowScale(scale), dpr: 1 },
-          (url) => live && setLow(url),
-        ),
-      );
-    }
-    cancels.push(
-      cache.request(
-        { quality: "full", page: pageIndex, scale: scale, dpr: dpr },
-        (url) => {
-          // Decode it off screen first, so the swap does not flash.
-          const image = new Image();
-          image.src = url;
-          const show = (): void => {
-            if (live) {
-              setFull({ page: pageIndex, url });
-            }
-          };
-          void image.decode().then(show, show);
-        },
-      ),
-    );
-    return () => {
-      live = false;
-      cancels.forEach((cancel) => cancel());
-    };
-  }, [cache, pageIndex, scale, dpr]);
-
-  // The full bitmap of the previous zoom stays until the new one is decoded: it
-  // is as good as the low one, and better.
-  const shownFull = full?.page === pageIndex ? full.url : undefined;
-  const src = shownFull ?? low;
+  const { full, low } = usePageBitmaps(props);
+  const src = full ?? low;
   if (!src) {
     return null;
   }
   return (
     <img
       src={src}
-      className={shownFull ? "page-image" : "page-image page-image-low"}
+      className={full ? "page-image" : "page-image page-image-low"}
       draggable={false}
       // Decoded with the frame it first shows in: no blank frame while it loads.
       decoding="sync"
       alt=""
     />
   );
+}
+
+interface PageRender {
+  pageIndex: number;
+  scale: number;
+  dpr: number;
+}
+
+/** The low and full bitmap URLs of a page, as they arrive. */
+function usePageBitmaps({ pageIndex, scale, dpr }: PageRender): {
+  full: string | undefined;
+  low: string | undefined;
+} {
+  const cache = useContext(BitmapContext);
+  const [full, setFull] = useState<{ page: number; url: string } | undefined>(
+    () => {
+      const url = cache?.peek({ quality: "full", page: pageIndex, scale, dpr });
+      return url ? { page: pageIndex, url } : undefined;
+    },
+  );
+  const [low, setLow] = useState<string | undefined>(() =>
+    cache?.lowOf(pageIndex),
+  );
+  useEffect(
+    () =>
+      cache &&
+      requestBitmaps(
+        cache,
+        { pageIndex, scale, dpr },
+        {
+          low: setLow,
+          full: (url) => setFull({ page: pageIndex, url }),
+        },
+      ),
+    [cache, pageIndex, scale, dpr],
+  );
+  // The full bitmap of the previous zoom stays until the new one is decoded: it
+  // is as good as the low one, and better.
+  return { full: full?.page === pageIndex ? full.url : undefined, low };
+}
+
+/**
+ * Ask for a page's bitmaps: a low one first when there is none yet (it
+ * renders in a fraction of the time), and the full one, decoded off screen so
+ * the swap does not flash. Returns the cancellation.
+ */
+function requestBitmaps(
+  cache: BitmapCache,
+  { pageIndex, scale, dpr }: PageRender,
+  show: { low: (url: string | undefined) => void; full: (url: string) => void },
+): () => void {
+  let live = true;
+  const cancels: (() => void)[] = [];
+  const lowUrl = cache.lowOf(pageIndex);
+  show.low(lowUrl);
+  if (!lowUrl) {
+    cancels.push(
+      cache.request(
+        { quality: "low", page: pageIndex, scale: lowScale(scale), dpr: 1 },
+        (url) => live && show.low(url),
+      ),
+    );
+  }
+  cancels.push(
+    cache.request({ quality: "full", page: pageIndex, scale, dpr }, (url) => {
+      const image = new Image();
+      image.src = url;
+      const reveal = (): void => {
+        if (live) {
+          show.full(url);
+        }
+      };
+      void image.decode().then(reveal, reveal);
+    }),
+  );
+  return () => {
+    live = false;
+    cancels.forEach((cancel) => cancel());
+  };
 }

@@ -26,7 +26,17 @@ export function createBridgeServer(
   notes?: NoteSelections,
 ): McpServer {
   const server = new McpServer({ name: "agent-pdf-viewer", version: "0.1.0" });
+  registerPdfSelection(server, lastPdf, handoff);
+  registerOpenLocation(server);
+  registerNoteSelection(server, notes);
+  return server;
+}
 
+function registerPdfSelection(
+  server: McpServer,
+  lastPdf: LastPdf,
+  handoff: AgentHandoff,
+): void {
   server.registerTool(
     "get_current_pdf_selection",
     {
@@ -46,48 +56,52 @@ export function createBridgeServer(
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ includeImage }) => {
-      const panel = lastPdf.panel;
-      const snapshot = panel && (await handoff.snapshot(panel));
-      if (!snapshot) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: panel
-                ? `No selection in ${vscode.workspace.asRelativePath(panel.uri, false)}. Ask the user to select text or drag a region in the PDF.`
-                : "No PDF is open in PDF Workshop.",
-            },
-          ],
-        };
-      }
-      const content: Content[] = [{ type: "text", text: snapshot.agentText }];
-      if (snapshot.regionImage && includeImage !== false) {
-        const png = await readFile(snapshot.regionImage).catch(() => undefined);
-        if (png) {
-          content.push({
-            type: "image",
-            data: png.toString("base64"),
-            mimeType: "image/png",
-          });
-        }
-      }
-      content.push({
-        type: "text",
-        text: JSON.stringify({
-          file: snapshot.file,
-          uri: snapshot.uri,
-          sha256: snapshot.sha256,
-          kind: snapshot.selection.kind,
-          ...(snapshot.regionImage
-            ? { regionImage: snapshot.regionImage }
-            : {}),
-        }),
-      });
-      return { content };
-    },
+    async ({ includeImage }) => ({
+      content: await pdfSelection(lastPdf, handoff, includeImage !== false),
+    }),
   );
+}
 
+/** The selection's agent text, a region's snapshot, and its facts as JSON. */
+async function pdfSelection(
+  lastPdf: LastPdf,
+  handoff: AgentHandoff,
+  includeImage: boolean,
+): Promise<Content[]> {
+  const panel = lastPdf.panel;
+  const snapshot = panel && (await handoff.snapshot(panel));
+  if (!snapshot) {
+    const text = panel
+      ? `No selection in ${vscode.workspace.asRelativePath(panel.uri, false)}. Ask the user to select text or drag a region in the PDF.`
+      : "No PDF is open in PDF Workshop.";
+    return [{ type: "text", text }];
+  }
+  const content: Content[] = [{ type: "text", text: snapshot.agentText }];
+  const png =
+    snapshot.regionImage && includeImage
+      ? await readFile(snapshot.regionImage).catch(() => undefined)
+      : undefined;
+  if (png) {
+    content.push({
+      type: "image",
+      data: png.toString("base64"),
+      mimeType: "image/png",
+    });
+  }
+  content.push({
+    type: "text",
+    text: JSON.stringify({
+      file: snapshot.file,
+      uri: snapshot.uri,
+      sha256: snapshot.sha256,
+      kind: snapshot.selection.kind,
+      ...(snapshot.regionImage ? { regionImage: snapshot.regionImage } : {}),
+    }),
+  });
+  return content;
+}
+
+function registerOpenLocation(server: McpServer): void {
   server.registerTool(
     "open_pdf_location",
     {
@@ -107,20 +121,18 @@ export function createBridgeServer(
         OPEN_LOCATION_COMMAND_ID,
         link,
       );
-      return {
-        content: [
-          {
-            type: "text",
-            text: opened
-              ? `Opened ${link}`
-              : `Could not open ${link}: no such PDF.`,
-          },
-        ],
-        isError: !opened,
-      };
+      const text = opened
+        ? `Opened ${link}`
+        : `Could not open ${link}: no such PDF.`;
+      return { content: [{ type: "text", text }], isError: !opened };
     },
   );
+}
 
+function registerNoteSelection(
+  server: McpServer,
+  notes: NoteSelections | undefined,
+): void {
   server.registerTool(
     "get_current_note_selection",
     {
@@ -135,8 +147,6 @@ export function createBridgeServer(
       content: [{ type: "text", text: await noteSelection(notes) }],
     }),
   );
-
-  return server;
 }
 
 /** The note selection as Copy Link for Agent writes it, or why there is none. */

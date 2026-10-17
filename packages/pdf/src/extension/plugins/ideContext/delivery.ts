@@ -56,103 +56,122 @@ export async function sendIdeContext(
   packet: IdeContextPacket,
   deps: SendIdeContextDeps,
 ): Promise<SendIdeContextResult> {
-  const md = renderMarkdown(packet);
-  await deps.clipboardWrite(md);
-
-  const resolved = resolveIdeContextSendTarget(deps.setting, {
-    commands: deps.commands,
-  });
-  let target: "claudeCode" | "codex" | "clipboard" | "cancelled";
-  if (resolved === "picker") {
-    const pick = await deps.showQuickPick([
-      { label: "Claude Code", id: "claudeCode" },
-      { label: "Codex", id: "codex" },
-      { label: "Copy only", id: "clipboard" },
-    ]);
-    if (pick === undefined) {
-      return { markdown: md, opened: "cancelled" };
-    }
-    target = pick;
-  } else {
-    target = resolved;
+  const markdown = renderMarkdown(packet);
+  await deps.clipboardWrite(markdown);
+  const target = await chooseTarget(deps);
+  if (target === "cancelled") {
+    return { markdown, opened: "cancelled" };
   }
-
   if (target === "clipboard") {
     deps.inform?.("IDE context copied");
-    return { markdown: md, opened: "clipboard" };
+    return { markdown, opened: "clipboard" };
   }
   if (target === "claudeCode") {
     await deps.executeCommand(
       AGENT_COMMANDS.claudeCodeOpen,
       undefined,
-      `${md}\n\n`,
+      `${markdown}\n\n`,
     );
-    return { markdown: md, opened: "claudeCode" };
+    return { markdown, opened: "claudeCode" };
   }
+  return { markdown, ...(await attachToCodex(packet, deps)) };
+}
 
-  const publish = deps.publishTemp ?? publishIdeContextTemp;
-  const renew = deps.renewLease ?? renewLeaseAtomic;
+type Target = "claudeCode" | "codex" | "clipboard" | "cancelled";
+
+/** The setting's target, or the user's pick when it asks. */
+async function chooseTarget(deps: SendIdeContextDeps): Promise<Target> {
+  const resolved = resolveIdeContextSendTarget(deps.setting, {
+    commands: deps.commands,
+  });
+  if (resolved !== "picker") {
+    return resolved;
+  }
+  const pick = await deps.showQuickPick([
+    { label: "Claude Code", id: "claudeCode" },
+    { label: "Codex", id: "codex" },
+    { label: "Copy only", id: "clipboard" },
+  ]);
+  return pick ?? "cancelled";
+}
+
+/** A leased temp file's owner, session and timing. */
+interface Lease {
+  dir: string;
+  now: () => number;
+  leaseMs: number;
+  owner: LeaseSidecar["owner"];
+  sessionId: string;
+}
+
+/**
+ * Codex takes files, not text: publish the packet as a leased temp file and
+ * attach it. Falls back to the clipboard (already written) with a warning.
+ */
+async function attachToCodex(
+  packet: IdeContextPacket,
+  deps: SendIdeContextDeps,
+): Promise<Omit<SendIdeContextResult, "markdown">> {
   const fs = deps.tempFs;
   if (!fs) {
-    return { markdown: md, opened: "clipboard", softFailWarning: "no temp fs" };
+    return { opened: "clipboard", softFailWarning: "no temp fs" };
   }
-  const dir = deps.tempDir ?? "/tmp/agent-ide-context";
   const now = deps.now ?? (() => Date.now());
-  const leaseMs = deps.leaseMs ?? 60_000;
-  const owner = deps.owner ?? "pdfWorkshop";
-  const sessionId = deps.sessionId ?? `pdf-${now()}`;
-  const basename = `ide-context-${sessionId}.json`;
-  const published = await publish(fs, {
-    dir,
-    basename,
-    bytes: Buffer.from(serializeJson(packet)),
-    owner,
-    sessionId,
+  const lease: Lease = {
+    dir: deps.tempDir ?? "/tmp/agent-ide-context",
     now,
-    leaseMs,
+    leaseMs: deps.leaseMs ?? 60_000,
+    owner: deps.owner ?? "pdfWorkshop",
+    sessionId: deps.sessionId ?? `pdf-${now()}`,
+  };
+  const publish = deps.publishTemp ?? publishIdeContextTemp;
+  const published = await publish(fs, {
+    ...lease,
+    basename: `ide-context-${lease.sessionId}.json`,
+    bytes: Buffer.from(serializeJson(packet)),
   });
   if ("skipped" in published && published.skipped) {
     deps.inform?.(published.warning);
-    return {
-      markdown: md,
-      opened: "clipboard",
-      softFailWarning: published.warning,
-    };
+    return { opened: "clipboard", softFailWarning: published.warning };
   }
   const finalPath = "finalPath" in published ? published.finalPath : "";
+  return (await attachWithRetries(fs, finalPath, lease, deps))
+    ? { opened: "codex" }
+    : { opened: "clipboard", softFailWarning: "codex attach failed" };
+}
+
+/** Open Codex and attach the file, retrying after the given delays. */
+async function attachWithRetries(
+  fs: TempFs,
+  finalPath: string,
+  lease: Lease,
+  deps: SendIdeContextDeps,
+): Promise<boolean> {
+  const renew = deps.renewLease ?? renewLeaseAtomic;
   const delays = deps.codexRetryDelaysMs ?? [0, 10];
-  let attached = false;
-  for (let i = 0; i < delays.length; i++) {
-    if (i > 0 && delays[i]! > 0) {
-      await new Promise((r) => setTimeout(r, delays[i]));
+  for (const [attempt, delay] of delays.entries()) {
+    if (attempt > 0 && delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
     try {
       // Delay + open first on retry; renew immediately before add-file so the
       // lease cannot expire during prep work after renewal.
       await deps.executeCommand(AGENT_COMMANDS.codexOpen);
-      if (i > 0) {
+      if (attempt > 0) {
         await renew(fs, leasePathFor(finalPath), {
-          leaseUntil: new Date(now() + leaseMs).toISOString(),
-          owner,
-          sessionId,
+          leaseUntil: new Date(lease.now() + lease.leaseMs).toISOString(),
+          owner: lease.owner,
+          sessionId: lease.sessionId,
         });
       }
       await deps.executeCommand(
         AGENT_COMMANDS.codexAddFile,
         pathToFileUriString(finalPath),
       );
-      attached = true;
-      break;
+      return true;
     } catch {
       /* retry */
     }
   }
-  if (!attached) {
-    return {
-      markdown: md,
-      opened: "clipboard",
-      softFailWarning: "codex attach failed",
-    };
-  }
-  return { markdown: md, opened: "codex" };
+  return false;
 }

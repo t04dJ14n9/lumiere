@@ -27,43 +27,71 @@ export function usePagedScroll(
   const scale = zoom.currentZoomLevel;
   const horizontal = state.strategy === ScrollStrategy.Horizontal;
   const bounds = useCallback<ScrollBounds>(
-    (viewport) => {
-      if (mode !== "paged" || !item) {
-        return {
-          x: {
-            min: 0,
-            max: Math.max(0, viewport.scrollWidth - viewport.clientWidth),
-          },
-          y: {
-            min: 0,
-            max: Math.max(0, viewport.scrollHeight - viewport.clientHeight),
-          },
-        };
-      }
-      const x = (item.x + (horizontal ? 0 : (width - item.width) / 2)) * scale;
-      const y =
-        (item.y + (horizontal ? (height - item.height) / 2 : 0)) * scale;
-      return {
-        x: pageAxisBounds(
-          x,
-          item.width * scale + 2 * PAGE_GAP,
-          viewport.clientWidth,
-          viewport.scrollWidth,
-        ),
-        y: pageAxisBounds(
-          y,
-          item.height * scale + 2 * PAGE_GAP,
-          viewport.clientHeight,
-          viewport.scrollHeight,
-        ),
-      };
-    },
-    [mode, item, width, height, scale, horizontal],
+    (viewport) =>
+      item
+        ? spreadBounds(viewport, { item, width, height, scale, horizontal })
+        : wholeBounds(viewport),
+    [item, width, height, scale, horizontal],
   );
+  useKeepInBounds(container, item ? bounds : undefined, scale);
+  return bounds;
+}
 
+type Item = ReturnType<typeof useScrollState>["state"]["virtualItems"][number];
+
+/** The whole document's scroll range. */
+function wholeBounds(viewport: HTMLElement): ReturnType<ScrollBounds> {
+  return {
+    x: {
+      min: 0,
+      max: Math.max(0, viewport.scrollWidth - viewport.clientWidth),
+    },
+    y: {
+      min: 0,
+      max: Math.max(0, viewport.scrollHeight - viewport.clientHeight),
+    },
+  };
+}
+
+/** The scroll range that keeps one page or spread (with its gaps) in view. */
+function spreadBounds(
+  viewport: HTMLElement,
+  layout: {
+    item: Item;
+    width: number;
+    height: number;
+    scale: number;
+    horizontal: boolean;
+  },
+): ReturnType<ScrollBounds> {
+  const { item, width, height, scale, horizontal } = layout;
+  const x = (item.x + (horizontal ? 0 : (width - item.width) / 2)) * scale;
+  const y = (item.y + (horizontal ? (height - item.height) / 2 : 0)) * scale;
+  return {
+    x: pageAxisBounds(
+      x,
+      item.width * scale + 2 * PAGE_GAP,
+      viewport.clientWidth,
+      viewport.scrollWidth,
+    ),
+    y: pageAxisBounds(
+      y,
+      item.height * scale + 2 * PAGE_GAP,
+      viewport.clientHeight,
+      viewport.scrollHeight,
+    ),
+  };
+}
+
+/** Pull every scroll back inside `bounds` (paged mode), at the shown scale. */
+function useKeepInBounds(
+  container: RefObject<HTMLElement | null>,
+  bounds: ScrollBounds | undefined,
+  scale: number,
+): void {
   useLayoutEffect(() => {
     const viewport = container.current?.querySelector<HTMLElement>(".viewport");
-    if (mode !== "paged" || !viewport || !item) {
+    if (!bounds || !viewport) {
       return;
     }
     const constrain = (): void => {
@@ -87,6 +115,5 @@ export function usePagedScroll(
     viewport.addEventListener("scroll", constrain, { capture: true });
     return () =>
       viewport.removeEventListener("scroll", constrain, { capture: true });
-  }, [container, mode, item, bounds, scale]);
-  return bounds;
+  }, [container, bounds, scale]);
 }

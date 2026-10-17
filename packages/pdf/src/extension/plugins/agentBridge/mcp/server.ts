@@ -130,90 +130,24 @@ async function listen(
   token: string,
   scrub: (text: string) => string,
 ): Promise<RunningBridge> {
-  const { lastPdf, handoff, notes, shim } = options;
-  const discoveryDir = options.discoveryDir ?? DISCOVERY_DIR;
   const log: BridgeLog = {
     info: (message) => options.log.info(scrub(message)),
     warn: (message) => options.log.warn(scrub(message)),
     error: (message) => options.log.error(scrub(message)),
   };
-
-  const requests = new Set<Promise<void>>();
-  const httpServer = http.createServer((req, res) => {
-    const request = handle(req, res).catch((error) =>
-      log.error(`Agent bridge request failed: ${describe(error)}`),
-    );
-    requests.add(request);
-    void request.finally(() => requests.delete(request));
-  });
-  async function handle(
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-  ): Promise<void> {
-    const route = routeLabel(req.url);
-    // Loopback only, token required, and no browser origins (DNS rebinding).
-    if (req.headers.origin) {
-      log.warn(
-        `Agent bridge rejected ${req.method} ${route}: requests from a browser origin are not served`,
-      );
-      res.writeHead(403).end();
-      return;
-    }
-    // Token in the Authorization header, or in the path (/mcp/<token>): Cursor 3.24 drops the
-    // headers of servers registered through vscode.cursor.mcp.registerServer.
-    const pathToken = req.url?.split("?")[0] === `/mcp/${token}`;
-    if (req.headers.authorization !== `Bearer ${token}` && !pathToken) {
-      log.warn(`Agent bridge rejected ${req.method} ${route}: no valid token`);
-      // 404 for OAuth discovery probes (/.well-known/...), so clients don't start an OAuth flow.
-      res.writeHead(route === "/mcp" ? 401 : 404).end();
-      return;
-    }
-    if (route !== "/mcp") {
-      res.writeHead(404).end();
-      return;
-    }
-    try {
-      const server = createBridgeServer(lastPdf, handoff, notes);
-      const transport = new StreamableHTTPServerTransport({
-        enableJsonResponse: true,
-      }); // no session id: stateless
-      res.on("close", () => {
-        transport
-          .close()
-          .catch((error) =>
-            log.warn(`Agent bridge transport close: ${describe(error)}`),
-          );
-        server
-          .close()
-          .catch((error) =>
-            log.warn(`Agent bridge server close: ${describe(error)}`),
-          );
-      });
-      // The SDK's own types disagree under exactOptionalPropertyTypes
-      // (its transport's optional callbacks); the object is the SDK's.
-      await server.connect(
-        transport as unknown as Parameters<typeof server.connect>[0],
-      );
-      await transport.handleRequest(req, res);
-    } catch (error) {
-      log.error(`Agent bridge request failed: ${describe(error)}`);
-      if (!res.headersSent) {
-        res.writeHead(500).end();
-      }
-    }
-  }
-  await new Promise<void>((resolve, reject) => {
-    httpServer.once("error", reject);
-    httpServer.listen(0, "127.0.0.1", () => resolve());
-  });
-  undo.push(() =>
-    closeServer(
-      httpServer,
-      requests,
-      options.shutdownGraceMs ?? SHUTDOWN_GRACE_MS,
-    ),
+  // The scrubbing log, never options.log: request errors may quote the token.
+  const context: RequestContext = {
+    token,
+    log,
+    lastPdf: options.lastPdf,
+    handoff: options.handoff,
+    ...(options.notes ? { notes: options.notes } : {}),
+  };
+  const port = await startHttp(
+    context,
+    undo,
+    options.shutdownGraceMs ?? SHUTDOWN_GRACE_MS,
   );
-  const { port } = httpServer.address() as AddressInfo;
   const info: BridgeInfo = {
     url: `http://127.0.0.1:${port}/mcp`,
     token,
@@ -227,64 +161,9 @@ async function listen(
   log.info(
     `Agent bridge listening on ${info.url} (AGENT_PDF_BRIDGE_PID ${info.pid} picks this window)`,
   );
-
-  // Discovery file for the stdio shim (Claude Code, Codex, any MCP client).
-  const discoveryFile = path.join(discoveryDir, `${port}.json`);
-  await mkdir(discoveryDir, { recursive: true, mode: 0o700 });
-  undo.push(() => rm(discoveryFile, { force: true }));
-  await writeFile(discoveryFile, JSON.stringify(info, null, 2), {
-    mode: 0o600,
-  });
-
-  // A stable copy of the shim, so `claude mcp add` survives extension updates.
-  try {
-    await mkdir(path.dirname(shim), { recursive: true });
-    await copyFile(
-      vscode.Uri.joinPath(
-        options.extensionUri,
-        "dist",
-        "pdf",
-        "bridge-stdio.js",
-      ).fsPath,
-      shim,
-    );
-  } catch (error) {
-    log.warn(`Could not copy the stdio shim: ${describe(error)}`);
-  }
-
-  const headers = { Authorization: `Bearer ${token}` };
-  // Cursor: its own API; vscode.lm.registerMcpServerDefinitionProvider only logs a warning there.
-  const apis = vscode as unknown as McpApis;
-  const cursorMcp = apis.cursor?.mcp;
-  if (cursorMcp) {
-    cursorMcp.registerServer({
-      name: SERVER_NAME,
-      server: { url: `${info.url}/${token}`, headers },
-    });
-    undo.push(() => cursorMcp.unregisterServer(SERVER_NAME));
-    log.info("Registered with Cursor (vscode.cursor.mcp.registerServer)");
-  } else {
-    // VS Code (1.101+): the MCP server definition provider API, used by Copilot Chat's agent mode.
-    const lm = apis.lm;
-    const HttpDefinition = apis.McpHttpServerDefinition;
-    if (lm?.registerMcpServerDefinitionProvider && HttpDefinition) {
-      const registration = lm.registerMcpServerDefinitionProvider(PROVIDER_ID, {
-        provideMcpServerDefinitions: () => [
-          new HttpDefinition(
-            "PDF Workshop",
-            vscode.Uri.parse(info.url),
-            headers,
-            "0.1.0",
-          ),
-        ],
-      });
-      undo.push(() => registration.dispose());
-      log.info(
-        "Registered with VS Code (vscode.lm.registerMcpServerDefinitionProvider)",
-      );
-    }
-  }
-
+  await announce(info, options.discoveryDir ?? DISCOVERY_DIR, port, undo);
+  await copyShim(options, log);
+  registerWithEditor(info, undo, log);
   const steps = undo.splice(0);
   let stopping: Promise<void> | undefined;
   return {
@@ -296,6 +175,180 @@ async function listen(
         }
       })()),
   };
+}
+
+/** What serving a request needs. */
+interface RequestContext {
+  token: string;
+  log: BridgeLog;
+  lastPdf: LastPdf;
+  handoff: AgentHandoff;
+  notes?: NoteSelections;
+}
+
+/** Listen on a random loopback port; returns it. Closing is added to `undo`. */
+async function startHttp(
+  context: RequestContext,
+  undo: Undo[],
+  graceMs: number,
+): Promise<number> {
+  const requests = new Set<Promise<void>>();
+  const httpServer = http.createServer((req, res) => {
+    const request = serve(req, res, context).catch((error) =>
+      context.log.error(`Agent bridge request failed: ${describe(error)}`),
+    );
+    requests.add(request);
+    void request.finally(() => requests.delete(request));
+  });
+  await new Promise<void>((resolve, reject) => {
+    httpServer.once("error", reject);
+    httpServer.listen(0, "127.0.0.1", () => resolve());
+  });
+  undo.push(() => closeServer(httpServer, requests, graceMs));
+  return (httpServer.address() as AddressInfo).port;
+}
+
+/** Serve one request: loopback only, token required, no browser origins (DNS rebinding). */
+async function serve(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  context: RequestContext,
+): Promise<void> {
+  const { token, log } = context;
+  const route = routeLabel(req.url);
+  if (req.headers.origin) {
+    log.warn(
+      `Agent bridge rejected ${req.method} ${route}: requests from a browser origin are not served`,
+    );
+    res.writeHead(403).end();
+    return;
+  }
+  // Token in the Authorization header, or in the path (/mcp/<token>): Cursor 3.24 drops the
+  // headers of servers registered through vscode.cursor.mcp.registerServer.
+  const pathToken = req.url?.split("?")[0] === `/mcp/${token}`;
+  if (req.headers.authorization !== `Bearer ${token}` && !pathToken) {
+    log.warn(`Agent bridge rejected ${req.method} ${route}: no valid token`);
+    // 404 for OAuth discovery probes (/.well-known/...), so clients don't start an OAuth flow.
+    res.writeHead(route === "/mcp" ? 401 : 404).end();
+    return;
+  }
+  if (route !== "/mcp") {
+    res.writeHead(404).end();
+    return;
+  }
+  try {
+    await serveMcp(req, res, context);
+  } catch (error) {
+    log.error(`Agent bridge request failed: ${describe(error)}`);
+    if (!res.headersSent) {
+      res.writeHead(500).end();
+    }
+  }
+}
+
+/** Answer an MCP request with a fresh, stateless server and transport. */
+async function serveMcp(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  { lastPdf, handoff, notes, log }: RequestContext,
+): Promise<void> {
+  const server = createBridgeServer(lastPdf, handoff, notes);
+  const transport = new StreamableHTTPServerTransport({
+    enableJsonResponse: true,
+  }); // no session id: stateless
+  res.on("close", () => {
+    transport
+      .close()
+      .catch((error) =>
+        log.warn(`Agent bridge transport close: ${describe(error)}`),
+      );
+    server
+      .close()
+      .catch((error) =>
+        log.warn(`Agent bridge server close: ${describe(error)}`),
+      );
+  });
+  // The SDK's own types disagree under exactOptionalPropertyTypes
+  // (its transport's optional callbacks); the object is the SDK's.
+  await server.connect(
+    transport as unknown as Parameters<typeof server.connect>[0],
+  );
+  await transport.handleRequest(req, res);
+}
+
+/** The discovery file for the stdio shim (Claude Code, Codex, any MCP client). */
+async function announce(
+  info: BridgeInfo,
+  discoveryDir: string,
+  port: number,
+  undo: Undo[],
+): Promise<void> {
+  const discoveryFile = path.join(discoveryDir, `${port}.json`);
+  await mkdir(discoveryDir, { recursive: true, mode: 0o700 });
+  undo.push(() => rm(discoveryFile, { force: true }));
+  await writeFile(discoveryFile, JSON.stringify(info, null, 2), {
+    mode: 0o600,
+  });
+}
+
+/** A stable copy of the shim, so `claude mcp add` survives extension updates. */
+async function copyShim(options: ServerOptions, log: BridgeLog): Promise<void> {
+  try {
+    await mkdir(path.dirname(options.shim), { recursive: true });
+    await copyFile(
+      vscode.Uri.joinPath(
+        options.extensionUri,
+        "dist",
+        "pdf",
+        "bridge-stdio.js",
+      ).fsPath,
+      options.shim,
+    );
+  } catch (error) {
+    log.warn(`Could not copy the stdio shim: ${describe(error)}`);
+  }
+}
+
+/**
+ * Register with the editor's own agent: Cursor through its API (it only
+ * warns on VS Code's), VS Code (1.101+) through the MCP server definition
+ * provider that Copilot Chat's agent mode reads.
+ */
+function registerWithEditor(
+  info: BridgeInfo,
+  undo: Undo[],
+  log: BridgeLog,
+): void {
+  const headers = { Authorization: `Bearer ${info.token}` };
+  const apis = vscode as unknown as McpApis;
+  const cursorMcp = apis.cursor?.mcp;
+  if (cursorMcp) {
+    cursorMcp.registerServer({
+      name: SERVER_NAME,
+      server: { url: `${info.url}/${info.token}`, headers },
+    });
+    undo.push(() => cursorMcp.unregisterServer(SERVER_NAME));
+    log.info("Registered with Cursor (vscode.cursor.mcp.registerServer)");
+    return;
+  }
+  const lm = apis.lm;
+  const HttpDefinition = apis.McpHttpServerDefinition;
+  if (lm?.registerMcpServerDefinitionProvider && HttpDefinition) {
+    const registration = lm.registerMcpServerDefinitionProvider(PROVIDER_ID, {
+      provideMcpServerDefinitions: () => [
+        new HttpDefinition(
+          "PDF Workshop",
+          vscode.Uri.parse(info.url),
+          headers,
+          "0.1.0",
+        ),
+      ],
+    });
+    undo.push(() => registration.dispose());
+    log.info(
+      "Registered with VS Code (vscode.lm.registerMcpServerDefinitionProvider)",
+    );
+  }
 }
 
 /**

@@ -47,35 +47,46 @@ export function ViewControls({
         aria-label="PDF view controls"
       >
         <ZoomControls menu={menu} act={act} run={run} />
-        <ChoiceSelect
-          label="Page layout"
-          name="Page layout"
-          value={choices.pageLayout}
-          options={PAGE_LAYOUTS}
-          onChange={(pageLayout) =>
-            act({ action: "setPageLayout", pageLayout })
-          }
-        />
-        <ChoiceSelect
-          label="Scrolling"
-          name="Scroll mode"
-          value={choices.scrollMode}
-          options={SCROLL_MODES}
-          onChange={(scrollMode) =>
-            act({ action: "setScrollMode", scrollMode })
-          }
-        />
-        <ChoiceSelect
-          label="Direction"
-          name="Scroll direction"
-          value={choices.scrollDirection}
-          options={SCROLL_DIRECTIONS}
-          onChange={(scrollDirection) =>
-            act({ action: "setScrollDirection", scrollDirection })
-          }
-        />
+        <LayoutControls choices={choices} act={act} />
       </div>
     </span>
+  );
+}
+
+/** Page layout, scrolling and direction. */
+function LayoutControls({
+  choices,
+  act,
+}: {
+  choices: ViewChoices;
+  act: (value: unknown) => void;
+}): React.JSX.Element {
+  return (
+    <>
+      <ChoiceSelect
+        label="Page layout"
+        name="Page layout"
+        value={choices.pageLayout}
+        options={PAGE_LAYOUTS}
+        onChange={(pageLayout) => act({ action: "setPageLayout", pageLayout })}
+      />
+      <ChoiceSelect
+        label="Scrolling"
+        name="Scroll mode"
+        value={choices.scrollMode}
+        options={SCROLL_MODES}
+        onChange={(scrollMode) => act({ action: "setScrollMode", scrollMode })}
+      />
+      <ChoiceSelect
+        label="Direction"
+        name="Scroll direction"
+        value={choices.scrollDirection}
+        options={SCROLL_DIRECTIONS}
+        onChange={(scrollDirection) =>
+          act({ action: "setScrollDirection", scrollDirection })
+        }
+      />
+    </>
   );
 }
 

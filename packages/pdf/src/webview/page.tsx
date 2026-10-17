@@ -68,20 +68,13 @@ export function Page({
       />
       <SearchLayer documentId={DOCUMENT_ID} {...layer} />
       <PageLinks pdf={pdf} {...layer} onOpenPage={onOpenPage} />
-      {highlight?.page === page && (
-        <Box
-          key={highlight.key}
-          className="location-highlight"
-          rect={highlight.rect}
-          scale={scale}
-        />
-      )}
-      {region?.page === page && (
-        <>
-          <Box className="region-selection" rect={region.rect} scale={scale} />
-          <RegionMenu rect={region.rect} scale={scale} selection={selection} />
-        </>
-      )}
+      <PageMarks
+        page={page}
+        scale={scale}
+        highlight={highlight}
+        region={region}
+        selection={selection}
+      />
       <TextSelection {...layer} selection={selection} />
     </PagePointerProvider>
   );
@@ -96,6 +89,40 @@ export function Page({
     >
       {layers}
     </RotatedPage>
+  );
+}
+
+/** A page's marks: a location's flashed box, and the selected region with its menu. */
+function PageMarks({
+  page,
+  scale,
+  highlight,
+  region,
+  selection,
+}: {
+  page: number;
+  scale: number;
+  highlight: PageProps["highlight"];
+  region: PageProps["region"];
+  selection: PageProps["selection"];
+}): React.JSX.Element {
+  return (
+    <>
+      {highlight?.page === page && (
+        <Box
+          key={highlight.key}
+          className="location-highlight"
+          rect={highlight.rect}
+          scale={scale}
+        />
+      )}
+      {region?.page === page && (
+        <>
+          <Box className="region-selection" rect={region.rect} scale={scale} />
+          <RegionMenu rect={region.rect} scale={scale} selection={selection} />
+        </>
+      )}
+    </>
   );
 }
 

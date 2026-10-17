@@ -49,53 +49,45 @@ function attach(
   engine: () => PdfEngine | null,
   pdf: PdfDocumentObject,
 ): { dispose(): void; open(): void } {
-  const glyphCache = new Map<
-    number,
-    Promise<readonly (WordGlyph | undefined)[] | undefined>
-  >();
-  let generation = 0;
-  let live = true;
-  let menuTarget = false;
-  let clicked: { x: number; y: number } | undefined;
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  return new LookUpBinding(new PageWords(engine, pdf));
+}
 
-  const wordAt = async (x: number, y: number): Promise<string | undefined> => {
-    const target = pageAt(pdf, x, y);
-    const eng = engine();
-    if (!target || !eng) {
+type Glyphs = readonly (WordGlyph | undefined)[];
+
+/** The words on the pages of one PDF, found under window points. */
+class PageWords {
+  private readonly glyphs = new Map<number, Promise<Glyphs | undefined>>();
+
+  constructor(
+    private readonly engine: () => PdfEngine | null,
+    private readonly pdf: PdfDocumentObject,
+  ) {}
+
+  /** The word under a window point, if the pointer is still on it. */
+  async at(x: number, y: number): Promise<string | undefined> {
+    const target = pageAt(this.pdf, x, y);
+    const engine = this.engine();
+    if (!target || !engine) {
       return undefined;
     }
     const { page, point } = target;
-    let glyphs = glyphCache.get(page.index);
-    if (!glyphs) {
-      glyphs = eng
-        .getPageGlyphs(pdf, page)
-        .toPromise()
-        .then(
-          (list) => Array.from(list, toWordGlyph),
-          () => undefined,
-        );
-      glyphCache.set(page.index, glyphs);
-    }
-    const list = await glyphs;
-    if (!list) {
-      return undefined;
-    }
-    const index = list.findIndex(
-      (glyph) =>
-        glyph?.box !== undefined &&
-        !glyph.isSpace &&
-        point.x >= glyph.box[0] - 0.5 &&
-        point.x <= glyph.box[2] + 0.5 &&
-        point.y >= glyph.box[1] - 0.5 &&
-        point.y <= glyph.box[3] + 0.5,
-    );
-    const range = index < 0 ? undefined : wordGlyphRange(list, index);
+    const list = await this.glyphsOf(engine, page);
+    const index =
+      list?.findIndex(
+        (glyph) =>
+          glyph?.box !== undefined &&
+          !glyph.isSpace &&
+          point.x >= glyph.box[0] - 0.5 &&
+          point.x <= glyph.box[2] + 0.5 &&
+          point.y >= glyph.box[1] - 0.5 &&
+          point.y <= glyph.box[3] + 0.5,
+      ) ?? -1;
+    const range = index < 0 ? undefined : wordGlyphRange(list!, index);
     if (!range) {
       return undefined;
     }
-    const texts = await eng
-      .getTextSlices(pdf, [
+    const texts = await engine
+      .getTextSlices(this.pdf, [
         {
           pageIndex: page.index,
           charIndex: range[0],
@@ -104,7 +96,8 @@ function attach(
       ])
       .toPromise()
       .catch(() => undefined);
-    const current = pageAt(pdf, x, y);
+    // The page may have scrolled or zoomed under the pointer meanwhile.
+    const current = pageAt(this.pdf, x, y);
     if (
       !current ||
       current.page.index !== page.index ||
@@ -114,88 +107,127 @@ function attach(
       return undefined;
     }
     return coreWord(texts?.[0] ?? "") || undefined;
+  }
+
+  private glyphsOf(
+    engine: PdfEngine,
+    page: PdfDocumentObject["pages"][number],
+  ): Promise<Glyphs | undefined> {
+    let glyphs = this.glyphs.get(page.index);
+    if (!glyphs) {
+      glyphs = engine
+        .getPageGlyphs(this.pdf, page)
+        .toPromise()
+        .then(
+          (list) => Array.from(list, toWordGlyph),
+          () => undefined,
+        );
+      this.glyphs.set(page.index, glyphs);
+    }
+    return glyphs;
+  }
+}
+
+/**
+ * Look Up's triggers on the document: the pointer, the context menu and a
+ * force click. The latest request wins; older answers are dropped.
+ */
+class LookUpBinding {
+  private generation = 0;
+  private live = true;
+  /** A context menu is open over a word: hovering no longer moves it. */
+  private menuTarget = false;
+  private clicked: { x: number; y: number } | undefined;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private readonly listeners: [
+    string,
+    EventListener,
+    boolean | AddEventListenerOptions,
+  ][] = [
+    ["pointerdown", this.clearTarget.bind(this), true],
+    [
+      "keydown",
+      ((event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          this.clearTarget();
+        }
+      }) as EventListener,
+      true,
+    ],
+    ["scroll", this.clearTarget.bind(this), true],
+    ["pointermove", this.onMove.bind(this) as EventListener, { passive: true }],
+    ["contextmenu", this.onContextMenu.bind(this) as EventListener, true],
+    // Keep Safari's own force-click preview from opening as well.
+    ["webkitmouseforcewillbegin", (event) => event.preventDefault(), true],
+    ["webkitmouseforcedown", this.onForceDown.bind(this), true],
+  ];
+
+  constructor(private readonly words: PageWords) {
+    for (const [type, listener, options] of this.listeners) {
+      document.addEventListener(type, listener, options);
+    }
+  }
+
+  /** Look up the word the context menu was opened on (bound: it is handed out). */
+  readonly open = (): void => {
+    if (this.clicked && this.live) {
+      this.report(this.clicked.x, this.clicked.y, true);
+    }
   };
 
-  const reportAt = (x: number, y: number, open: boolean): void => {
-    const request = ++generation;
-    void wordAt(x, y).then((word) => {
-      if (live && request === generation) {
+  readonly dispose = (): void => {
+    this.live = false;
+    this.generation++;
+    clearTimeout(this.timer);
+    for (const [type, listener, options] of this.listeners) {
+      document.removeEventListener(type, listener, options);
+    }
+  };
+
+  private report(x: number, y: number, open: boolean): void {
+    const request = ++this.generation;
+    void this.words.at(x, y).then((word) => {
+      if (this.live && request === this.generation) {
         postToHost({ type: "lookUp", word: word ?? null, open });
       }
     });
-  };
-  const onMove = (event: PointerEvent): void => {
-    if (menuTarget) {
+  }
+
+  private onMove(event: PointerEvent): void {
+    if (this.menuTarget) {
       return;
     }
-    clearTimeout(timer);
+    clearTimeout(this.timer);
     const { clientX, clientY } = event;
-    generation++;
-    timer = setTimeout(() => {
-      timer = undefined;
-      reportAt(clientX, clientY, false);
+    this.generation++;
+    this.timer = setTimeout(() => {
+      this.timer = undefined;
+      this.report(clientX, clientY, false);
     }, HOVER_MS);
-  };
-  const clearTarget = (): void => {
-    menuTarget = false;
-    clicked = undefined;
-    generation++;
-    clearTimeout(timer);
+  }
+
+  private clearTarget(): void {
+    this.menuTarget = false;
+    this.clicked = undefined;
+    this.generation++;
+    clearTimeout(this.timer);
     postToHost({ type: "lookUp", word: null, open: false });
-  };
+  }
+
   // Always resolve the clicked point. A nearby pointer or cached pre-scroll
   // word is not evidence for the word under this context menu.
-  const onContextMenu = (event: MouseEvent): void => {
-    clearTarget();
-    menuTarget = true;
-    clicked = { x: event.clientX, y: event.clientY };
-    reportAt(event.clientX, event.clientY, false);
-  };
-  const onForceWillBegin = (event: Event): void => event.preventDefault();
-  const onForceDown = (event: Event): void => {
+  private onContextMenu(event: MouseEvent): void {
+    this.clearTarget();
+    this.menuTarget = true;
+    this.clicked = { x: event.clientX, y: event.clientY };
+    this.report(event.clientX, event.clientY, false);
+  }
+
+  private onForceDown(event: Event): void {
     const { clientX, clientY } = event as MouseEvent;
-    clearTarget();
-    reportAt(clientX, clientY, true);
-  };
-  const onKey = (event: KeyboardEvent): void => {
-    if (event.key === "Escape") {
-      clearTarget();
-    }
-  };
-  document.addEventListener("pointerdown", clearTarget, true);
-  document.addEventListener("keydown", onKey, true);
-  document.addEventListener("scroll", clearTarget, true);
-  document.addEventListener("pointermove", onMove, { passive: true });
-  document.addEventListener("contextmenu", onContextMenu, true);
-  document.addEventListener(
-    "webkitmouseforcewillbegin",
-    onForceWillBegin,
-    true,
-  );
-  document.addEventListener("webkitmouseforcedown", onForceDown, true);
-  return {
-    open: () => {
-      if (clicked && live) {
-        reportAt(clicked.x, clicked.y, true);
-      }
-    },
-    dispose: () => {
-      live = false;
-      generation++;
-      clearTimeout(timer);
-      document.removeEventListener("pointerdown", clearTarget, true);
-      document.removeEventListener("keydown", onKey, true);
-      document.removeEventListener("scroll", clearTarget, true);
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("contextmenu", onContextMenu, true);
-      document.removeEventListener(
-        "webkitmouseforcewillbegin",
-        onForceWillBegin,
-        true,
-      );
-      document.removeEventListener("webkitmouseforcedown", onForceDown, true);
-    },
-  };
+    this.clearTarget();
+    this.report(clientX, clientY, true);
+  }
 }
 
 /** The page under a window point, and the point in the page's own points. */

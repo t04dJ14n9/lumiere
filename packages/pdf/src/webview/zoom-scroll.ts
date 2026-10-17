@@ -35,36 +35,20 @@ export function useZoomScrollSettle(
       /** Where this settle last left the viewer; elsewhere means someone else scrolled it. */
       let placed: { left: number; top: number } | undefined;
       const settle = (): void => {
-        if (!intent.owns(generation)) {
-          return;
-        }
         const viewport =
           container.current?.querySelector<HTMLElement>(".viewport");
-        if (!viewport) {
-          return;
-        }
         if (
-          placed &&
-          (Math.abs(viewport.scrollLeft - placed.left) > 1 ||
-            Math.abs(viewport.scrollTop - placed.top) > 1)
+          !intent.owns(generation) ||
+          !viewport ||
+          (placed && movedFrom(viewport, placed))
         ) {
           return;
         }
-        const left = Math.min(
-          event.desiredScrollLeft,
-          Math.max(0, viewport.scrollWidth - viewport.clientWidth),
-        );
-        const top = Math.min(
-          event.desiredScrollTop,
-          Math.max(0, viewport.scrollHeight - viewport.clientHeight),
-        );
-        const room =
-          left >= event.desiredScrollLeft - 1 &&
-          top >= event.desiredScrollTop - 1;
-        if (
-          Math.abs(viewport.scrollLeft - left) > 1 ||
-          Math.abs(viewport.scrollTop - top) > 1
-        ) {
+        const { left, top, room } = reachable(viewport, {
+          left: event.desiredScrollLeft,
+          top: event.desiredScrollTop,
+        });
+        if (movedFrom(viewport, { left, top })) {
           viewport.scrollTo({ left, top, behavior: "instant" });
         }
         placed = { left: viewport.scrollLeft, top: viewport.scrollTop };
@@ -79,4 +63,35 @@ export function useZoomScrollSettle(
       unsubscribe();
     };
   }, [container, provides, intent]);
+}
+
+/** Whether the viewer has scrolled away from a place (by more than a pixel). */
+function movedFrom(
+  viewport: HTMLElement,
+  place: { left: number; top: number },
+): boolean {
+  return (
+    Math.abs(viewport.scrollLeft - place.left) > 1 ||
+    Math.abs(viewport.scrollTop - place.top) > 1
+  );
+}
+
+/** The nearest place to `desired` the viewer can scroll to now, and whether it is there. */
+function reachable(
+  viewport: HTMLElement,
+  desired: { left: number; top: number },
+): { left: number; top: number; room: boolean } {
+  const left = Math.min(
+    desired.left,
+    Math.max(0, viewport.scrollWidth - viewport.clientWidth),
+  );
+  const top = Math.min(
+    desired.top,
+    Math.max(0, viewport.scrollHeight - viewport.clientHeight),
+  );
+  return {
+    left,
+    top,
+    room: left >= desired.left - 1 && top >= desired.top - 1,
+  };
 }

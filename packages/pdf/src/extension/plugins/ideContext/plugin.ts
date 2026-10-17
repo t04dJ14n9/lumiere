@@ -9,7 +9,11 @@ import type {} from "../services";
 import manifest from "./manifest";
 import { IDE_CONTEXT_COMMAND_IDS } from "../pdf/registered-commands";
 import { buildPdfIdeContextPacket } from "./adapter";
-import { copyIdeContext, sendIdeContext } from "./delivery";
+import {
+  copyIdeContext,
+  sendIdeContext,
+  type SendIdeContextDeps,
+} from "./delivery";
 import {
   createVsCodeIdeContextHost,
   publishIdeContextTemp,
@@ -18,6 +22,7 @@ import {
   type IdeContextTargetSetting,
 } from "@workshop/agents/ide-context";
 import type { AgentTargetSetting } from "../../../shared/agent-target";
+import type { PdfPanels } from "../pdf/panels";
 
 const nodeTempFs: TempFs = {
   mkdir: async (p, o) => {
@@ -52,27 +57,10 @@ export const ideContextPlugin: Plugin = {
       vscode.commands.registerCommand(
         IDE_CONTEXT_COMMAND_IDS.copy,
         async () => {
-          const panel = panels.active;
-          if (!panel) {
-            void vscode.window.showWarningMessage("Open a PDF first");
-            return;
+          const packet = activePacket(panels);
+          if (packet) {
+            await copyIdeContext(packet, writeClipboard, inform);
           }
-          const selected = panel.selectionSnapshot() ?? undefined;
-          const packet = buildPdfIdeContextPacket({
-            uri: panel.uri.toString(),
-            selection: selected?.selection,
-            ...(selected ? { sourceSha256: selected.sha256 } : {}),
-            host: createVsCodeIdeContextHost(vscode),
-          });
-          await copyIdeContext(
-            packet,
-            async (t) => {
-              await vscode.env.clipboard.writeText(t);
-            },
-            (m) => {
-              void vscode.window.showInformationMessage(m);
-            },
-          );
         },
       ),
       "command",
@@ -81,49 +69,64 @@ export const ideContextPlugin: Plugin = {
       vscode.commands.registerCommand(
         IDE_CONTEXT_COMMAND_IDS.send,
         async () => {
-          const panel = panels.active;
-          if (!panel) {
-            void vscode.window.showWarningMessage("Open a PDF first");
-            return;
+          const packet = activePacket(panels);
+          if (packet) {
+            await sendIdeContext(packet, await sendDeps());
           }
-          const selected = panel.selectionSnapshot() ?? undefined;
-          const packet = buildPdfIdeContextPacket({
-            uri: panel.uri.toString(),
-            selection: selected?.selection,
-            ...(selected ? { sourceSha256: selected.sha256 } : {}),
-            host: createVsCodeIdeContextHost(vscode),
-          });
-          const setting = vscode.workspace
-            .getConfiguration("pdfWorkshop")
-            .get<AgentTargetSetting>("copyLinkForAgent.target", "auto");
-          const commands = new Set(await vscode.commands.getCommands(true));
-          await sendIdeContext(packet, {
-            setting: setting as IdeContextTargetSetting,
-            commands,
-            clipboardWrite: async (t) => {
-              await vscode.env.clipboard.writeText(t);
-            },
-            executeCommand: async (id, ...args) =>
-              vscode.commands.executeCommand(id, ...args),
-            showQuickPick: async (items) => {
-              const pick = await vscode.window.showQuickPick(
-                items.map((i) => ({ label: i.label, id: i.id })),
-                { title: "Send IDE Context to…" },
-              );
-              return pick?.id;
-            },
-            inform: (m) => {
-              void vscode.window.showInformationMessage(m);
-            },
-            publishTemp: publishIdeContextTemp,
-            renewLease: renewLeaseAtomic,
-            tempFs: nodeTempFs,
-            tempDir: path.join(os.tmpdir(), "agent-ide-context"),
-            owner: "pdfWorkshop",
-          });
         },
       ),
       "command",
     );
   },
 };
+
+/** The IDE context of the active PDF and its selection; warns without one. */
+function activePacket(panels: PdfPanels) {
+  const panel = panels.active;
+  if (!panel) {
+    void vscode.window.showWarningMessage("Open a PDF first");
+    return undefined;
+  }
+  const selected = panel.selectionSnapshot() ?? undefined;
+  return buildPdfIdeContextPacket({
+    uri: panel.uri.toString(),
+    selection: selected?.selection,
+    ...(selected ? { sourceSha256: selected.sha256 } : {}),
+    host: createVsCodeIdeContextHost(vscode),
+  });
+}
+
+async function writeClipboard(text: string): Promise<void> {
+  await vscode.env.clipboard.writeText(text);
+}
+
+function inform(message: string): void {
+  void vscode.window.showInformationMessage(message);
+}
+
+/** Send IDE Context's target setting and its VS Code side. */
+async function sendDeps(): Promise<SendIdeContextDeps> {
+  const setting = vscode.workspace
+    .getConfiguration("pdfWorkshop")
+    .get<AgentTargetSetting>("copyLinkForAgent.target", "auto");
+  return {
+    setting: setting as IdeContextTargetSetting,
+    commands: new Set(await vscode.commands.getCommands(true)),
+    clipboardWrite: writeClipboard,
+    executeCommand: async (id, ...args) =>
+      vscode.commands.executeCommand(id, ...args),
+    showQuickPick: async (items) => {
+      const pick = await vscode.window.showQuickPick(
+        items.map((item) => ({ label: item.label, id: item.id })),
+        { title: "Send IDE Context to…" },
+      );
+      return pick?.id;
+    },
+    inform,
+    publishTemp: publishIdeContextTemp,
+    renewLease: renewLeaseAtomic,
+    tempFs: nodeTempFs,
+    tempDir: path.join(os.tmpdir(), "agent-ide-context"),
+    owner: "pdfWorkshop",
+  };
+}

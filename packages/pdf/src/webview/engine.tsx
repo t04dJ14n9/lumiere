@@ -87,34 +87,7 @@ function EngineSession({
   const { engine, error } = useSessionEngine(session, mode);
   const plugins = useMemo(() => viewerPlugins(session.buffer), [session]);
   const [opened, setOpened] = useState(false);
-
-  useEffect(() => {
-    if (!error) {
-      return;
-    }
-    if (worker) {
-      console.warn(
-        "The PDF engine could not start in a worker; using the main thread.",
-        error,
-      );
-      onWorkerFailure();
-    } else {
-      postToHost({
-        type: "error",
-        message: `The PDF engine failed: ${String(error)}`,
-      });
-    }
-  }, [error, onWorkerFailure, worker]);
-
-  // Treat a worker that never answers like one that failed.
-  useEffect(() => {
-    if (!worker || opened) {
-      return;
-    }
-    const timer = window.setTimeout(onWorkerFailure, WORKER_TIMEOUT_MS);
-    return () => window.clearTimeout(timer);
-  }, [onWorkerFailure, opened, worker]);
-
+  useEngineFailure({ error, worker, opened, onWorkerFailure });
   if (!engine) {
     return <Status text="Starting the PDF engine…" />;
   }
@@ -142,6 +115,49 @@ function EngineSession({
       </DocumentContent>
     </EmbedPDF>
   );
+}
+
+/**
+ * A worker engine that fails, or never opens the PDF, gives way to one on
+ * the main thread; a failing main-thread engine is reported to the host.
+ */
+function useEngineFailure({
+  error,
+  worker,
+  opened,
+  onWorkerFailure,
+}: {
+  error: unknown;
+  worker: boolean;
+  opened: boolean;
+  onWorkerFailure: () => void;
+}): void {
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+    if (worker) {
+      console.warn(
+        "The PDF engine could not start in a worker; using the main thread.",
+        error,
+      );
+      onWorkerFailure();
+    } else {
+      postToHost({
+        type: "error",
+        message: `The PDF engine failed: ${String(error)}`,
+      });
+    }
+  }, [error, onWorkerFailure, worker]);
+
+  // Treat a worker that never answers like one that failed.
+  useEffect(() => {
+    if (!worker || opened) {
+      return;
+    }
+    const timer = window.setTimeout(onWorkerFailure, WORKER_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [onWorkerFailure, opened, worker]);
 }
 
 function OnMount({

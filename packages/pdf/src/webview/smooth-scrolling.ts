@@ -40,87 +40,119 @@ export function useSmoothWheel(
     if (!element || !viewport) {
       return;
     }
-    const gesture = new WheelGesture();
-    let frame = 0;
-    let target = 0;
-    let axis: "scrollTop" | "scrollLeft" = "scrollTop";
-    const cancel = (): void => {
-      cancelAnimationFrame(frame);
-      frame = 0;
-    };
-    const interrupt = (): void => {
-      cancel();
-      viewport.scrollTo({
-        left: viewport.scrollLeft,
-        top: viewport.scrollTop,
-        behavior: "instant",
-      });
-    };
-    const wheel = (event: WheelEvent): void => {
-      if (
-        !(event.target instanceof Element) ||
-        !event.target.closest(".viewport")
-      ) {
-        return;
-      }
-      if (
-        !gesture.discrete(event, event.timeStamp) ||
-        event.ctrlKey ||
-        event.metaKey
-      ) {
-        interrupt();
-        return;
-      }
-      const horizontal = event.shiftKey || direction === "horizontal";
-      if (!smooth && !horizontal) {
-        interrupt();
-        return;
-      }
-      event.preventDefault();
-      const nextAxis = horizontal ? "scrollLeft" : "scrollTop";
-      if (nextAxis !== axis) {
-        cancel();
-      }
-      axis = nextAxis;
-      const from = viewport[axis];
-      const previous = frame ? target : from;
-      interrupt();
-      const limit = horizontal ? bounds(viewport).x : bounds(viewport).y;
-      target = wheelTarget(
-        from,
-        previous,
-        wheelPixels(
-          event.deltaY,
-          event.deltaMode,
-          horizontal ? viewport.clientWidth : viewport.clientHeight,
-        ),
-        limit,
-      );
-      if (!smooth) {
-        viewport[axis] = target;
-        return;
-      }
-      const start = performance.now();
-      const tick = (now: number): void => {
-        const progress = motionProgress(now - start);
-        viewport[axis] = from + (target - from) * progress;
-        frame = progress < 1 ? requestAnimationFrame(tick) : 0;
-      };
-      frame = requestAnimationFrame(tick);
-    };
+    const wheel = new SmoothWheel(viewport, { smooth, direction, bounds });
     // Native page/zoom requests supersede a wheel animation.
-    const unsubscribe = plugin?.onScrollRequest(DOCUMENT_ID, cancel);
-    element.addEventListener("wheel", wheel, { passive: false, capture: true });
-    for (const type of ["pointerdown", "touchstart", "keydown"]) {
-      element.addEventListener(type, interrupt, { capture: true });
+    const unsubscribe = plugin?.onScrollRequest(DOCUMENT_ID, wheel.cancel);
+    element.addEventListener("wheel", wheel.onWheel, {
+      passive: false,
+      capture: true,
+    });
+    for (const type of INTERRUPTING_INPUT) {
+      element.addEventListener(type, wheel.interrupt, { capture: true });
     }
     return () => {
-      interrupt();
+      wheel.interrupt();
       unsubscribe?.();
-      element.removeEventListener("wheel", wheel, { capture: true });
-      for (const type of ["pointerdown", "touchstart", "keydown"]) {
-        element.removeEventListener(type, interrupt, { capture: true });
+      element.removeEventListener("wheel", wheel.onWheel, { capture: true });
+      for (const type of INTERRUPTING_INPUT) {
+        element.removeEventListener(type, wheel.interrupt, { capture: true });
       }
     };
   }, [container, smooth, direction, bounds, plugin]);
+}
+
+/** Input that stops a wheel animation where it is. */
+const INTERRUPTING_INPUT = ["pointerdown", "touchstart", "keydown"];
+
+/** A mouse wheel's notches over one viewport, animated or stepped. */
+class SmoothWheel {
+  private readonly gesture = new WheelGesture();
+  private frame = 0;
+  private target = 0;
+  private axis: "scrollTop" | "scrollLeft" = "scrollTop";
+
+  constructor(
+    private readonly viewport: HTMLElement,
+    private readonly options: {
+      smooth: boolean;
+      direction: ScrollDirection;
+      bounds: ScrollBounds;
+    },
+  ) {}
+
+  readonly cancel = (): void => {
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
+  };
+
+  /** Stop where the viewport is now. */
+  readonly interrupt = (): void => {
+    this.cancel();
+    const { viewport } = this;
+    viewport.scrollTo({
+      left: viewport.scrollLeft,
+      top: viewport.scrollTop,
+      behavior: "instant",
+    });
+  };
+
+  readonly onWheel = (event: WheelEvent): void => {
+    if (
+      !(event.target instanceof Element) ||
+      !event.target.closest(".viewport")
+    ) {
+      return;
+    }
+    const { smooth, direction } = this.options;
+    const horizontal = event.shiftKey || direction === "horizontal";
+    const discrete =
+      this.gesture.discrete(event, event.timeStamp) &&
+      !event.ctrlKey &&
+      !event.metaKey;
+    if (!discrete || (!smooth && !horizontal)) {
+      this.interrupt();
+      return;
+    }
+    event.preventDefault();
+    this.step(event, horizontal);
+  };
+
+  /** Move one notch further along the axis, adding to a move in progress. */
+  private step(event: WheelEvent, horizontal: boolean): void {
+    const { viewport } = this;
+    const nextAxis = horizontal ? "scrollLeft" : "scrollTop";
+    if (nextAxis !== this.axis) {
+      this.cancel();
+    }
+    this.axis = nextAxis;
+    const from = viewport[this.axis];
+    const previous = this.frame ? this.target : from;
+    this.interrupt();
+    const limits = this.options.bounds(viewport);
+    this.target = wheelTarget(
+      from,
+      previous,
+      wheelPixels(
+        event.deltaY,
+        event.deltaMode,
+        horizontal ? viewport.clientWidth : viewport.clientHeight,
+      ),
+      horizontal ? limits.x : limits.y,
+    );
+    if (this.options.smooth) {
+      this.animate(from, this.axis);
+    } else {
+      viewport[this.axis] = this.target;
+    }
+  }
+
+  private animate(from: number, axis: "scrollTop" | "scrollLeft"): void {
+    const start = performance.now();
+    const tick = (now: number): void => {
+      const progress = motionProgress(now - start);
+      this.viewport[axis] = from + (this.target - from) * progress;
+      this.frame = progress < 1 ? requestAnimationFrame(tick) : 0;
+    };
+    this.frame = requestAnimationFrame(tick);
+  }
 }
