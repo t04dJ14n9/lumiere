@@ -11,7 +11,8 @@
   --accent: var(--vscode-textLink-foreground, #7c6fe0);
   --accent-hover: var(--vscode-textLink-activeForeground, var(--accent));
   --muted: var(--vscode-descriptionForeground, #8a8a96);
-  --list-indent: 1.6em;
+  /* One list level, as measured in Obsidian (36px at 16px). */
+  --list-indent: 2.25em;
   --list-guide: var(
     --vscode-editorIndentGuide-background1,
     color-mix(in srgb, var(--muted) 35%, transparent)
@@ -46,10 +47,11 @@
   --code-font: var(--vscode-editor-font-family, ui-monospace, monospace);
   --text-size: 16px;
   /*
-   * Code uses the same editor font as the text, so it keeps the text's size
-   * (as in the built-in editor) rather than Obsidian's smaller code.
+   * Code is set a size smaller than the proportional prose, as in Obsidian
+   * (14px at 16px, its lines 21px tall).
    */
-  --code-size: 1em;
+  --code-scale: 0.875;
+  --code-size: calc(var(--code-scale) * 1em);
   --file-line-width: 700px;
   --file-margins: 32px;
 }

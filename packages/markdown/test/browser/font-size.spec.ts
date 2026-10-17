@@ -39,20 +39,21 @@ test("the default body size is Obsidian's 16px and everything else is relative t
   measured.headings.forEach((size, index) => {
     expect(size, `H${index + 1}`).toBeCloseTo(16 * HEADING_SCALES[index]!, 2);
   });
-  expect(measured.inlineCode).toBe(16);
-  expect(measured.codeLine).toBe(16);
+  // Code is a size smaller than the prose, as in Obsidian.
+  expect(measured.inlineCode).toBe(14);
+  expect(measured.codeLine).toBe(14);
   expect(measured.tableCell).toBe(16);
   expect(measured.properties).toBe(16);
   expect(measured.footnoteRef).toBeCloseTo(16 * 0.7, 2);
   // The small code-block controls were fixed px sizes before they became em.
   expect(measured.copyCode).toBeCloseTo(16 * 0.6875, 2);
-  expect(measured.codeLanguage).toBeCloseTo(16 * 0.6875, 2);
+  expect(measured.codeLanguage).toBeCloseTo(16 * 0.75, 2);
   expect(measured.footnoteDefinition).toBeCloseTo(16 * 0.875, 2);
   // Obsidian keeps the gutter at its 12px UI size at every note size.
   expect(measured.lineNumber).toBe(12);
   // Obsidian's line heights: 1.5 for the body (24px) and code, each heading's own.
   expect(measured.bodyLineHeight).toBe(24);
-  expect(measured.codeLineHeight).toBe(24);
+  expect(measured.codeLineHeight).toBe(21);
   measured.headingLineHeights.forEach((height, index) => {
     expect(height, `H${index + 1} line height`).toBeCloseTo(
       measured.headings[index]! * HEADING_LINE_HEIGHTS[index]!,
@@ -86,19 +87,19 @@ for (const size of [8, 12, 20, 32, 48]) {
         2,
       );
     });
-    expect(measured.inlineCode).toBe(size);
-    expect(measured.codeLine).toBe(size);
+    expect(measured.inlineCode).toBeCloseTo(size * 0.875, 2);
+    expect(measured.codeLine).toBeCloseTo(size * 0.875, 2);
     expect(measured.tableCell).toBe(size);
     expect(measured.properties).toBe(size);
     expect(measured.footnoteRef / size).toBeCloseTo(0.7, 2);
     expect(measured.copyCode / size).toBeCloseTo(0.6875, 2);
-    expect(measured.codeLanguage / size).toBeCloseTo(0.6875, 2);
+    expect(measured.codeLanguage / size).toBeCloseTo(0.75, 2);
     expect(measured.footnoteDefinition / size).toBeCloseTo(0.875, 2);
     // Obsidian keeps the gutter at its 12px UI size whatever the note size.
     expect(measured.lineNumber).toBe(12);
     // The lines scale with the size: 1.5 times it, and headings' own ratios.
     expect(measured.bodyLineHeight).toBeCloseTo(size * 1.5, 2);
-    expect(measured.codeLineHeight).toBeCloseTo(size * 1.5, 2);
+    expect(measured.codeLineHeight).toBeCloseTo(size * 0.875 * 1.5, 2);
     measured.headingLineHeights.forEach((height, index) => {
       expect(height / measured.headings[index]!, `H${index + 1}`).toBeCloseTo(
         HEADING_LINE_HEIGHTS[index]!,
@@ -125,7 +126,7 @@ test("lineHeight is a multiple of the size, live, and out-of-range values fall b
       2,
     );
     expect(measured.codeLineHeight, `${size} x ${multiple} code`).toBeCloseTo(
-      size * multiple,
+      size * 0.875 * multiple,
       2,
     );
   }

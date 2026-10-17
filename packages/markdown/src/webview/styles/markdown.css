@@ -37,9 +37,10 @@
   --h6-letter-spacing: 0;
   --highlight: rgba(255, 208, 0, 0.35);
 }
+/* As in Obsidian: one body-text size of space above a heading, none below. */
 #app .cm-line.md-heading {
-  padding-top: 0.4em;
-  padding-bottom: 0.2em;
+  padding-top: var(--text-size);
+  padding-bottom: 0;
 }
 .md-h1,
 .markdown-rendered h1 {
@@ -205,6 +206,8 @@
     var(--list-depth, 0) * var(--list-indent) + var(--list-marker, 1.1em)
   );
   padding-inline-start: calc(2px + var(--list-hang));
+  /* List items sit a little apart, as in Obsidian (1.2px at 16px). */
+  padding-block: 0.075em;
   text-indent: calc(-1 * var(--list-hang));
 }
 .md-list-indent {
@@ -213,15 +216,18 @@
   height: 1lh;
   vertical-align: top;
 }
+/* Markers sit 0.75em into their hang, so the text starts where Obsidian's does. */
 .list-bullet {
   display: inline-block;
-  width: 1.1em;
+  width: var(--list-marker);
+  padding-inline-start: 0.75em;
   color: var(--muted);
   text-indent: 0;
 }
 .md-list-mark-source {
   display: inline-block;
-  min-width: 1.1em;
+  min-width: var(--list-marker);
+  padding-inline-start: 0.75em;
   color: var(--muted);
   text-indent: 0;
   white-space: pre;
@@ -229,6 +235,7 @@
 .md-list-number {
   display: inline-block;
   min-width: var(--list-marker);
+  padding-inline-start: 0.75em;
   color: var(--muted);
   text-indent: 0;
 }
@@ -273,29 +280,44 @@
   font-family: var(--code-font);
   font-size: var(--code-size);
 }
-/* One bar per quote level (--quote-depth), each indented 16px further. */
+/* One bar per quote level (--quote-depth), each 14px further in, as in Obsidian. */
 #app .cm-line.md-quote {
-  padding-left: calc(var(--quote-depth, 1) * 16px + 2px);
+  padding-left: calc(var(--quote-depth, 1) * 14px + 2px);
   background-image: repeating-linear-gradient(
     to right,
     var(--accent) 0 2px,
-    transparent 2px 16px
+    transparent 2px 14px
   );
   background-repeat: no-repeat;
-  background-size: calc(var(--quote-depth, 1) * 16px - 14px) 100%;
+  background-size: calc(var(--quote-depth, 1) * 14px - 12px) 100%;
 }
 /* Revealed: the dim `>` replaces the bar and the indent, as in Obsidian. */
 #app .cm-line.md-quote.is-revealed {
   padding-left: 2px;
   background-image: none;
 }
+/* A rounded box, filled with a check when done, at Obsidian's size and place. */
 input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
-  margin: 0 6px 0 0;
-  vertical-align: -2px;
-  accent-color: var(--accent);
+  appearance: none;
+  /* Inputs default to a smaller font: size the box from the text. */
+  font-size: inherit;
+  width: 1em;
+  height: 1em;
+  margin: 0 0.25em 0 0.4375em;
+  border: 1px solid var(--muted);
+  border-radius: 4px;
+  vertical-align: -0.15em;
+  background: transparent center / 80% no-repeat;
   cursor: pointer;
+}
+input[type="checkbox"]:checked {
+  border-color: var(--accent);
+  background-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+input[type="checkbox"]:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
 }
 
 /*
@@ -303,10 +325,10 @@ input[type="checkbox"] {
  * rendered HTML must not inherit it, or the newlines between tags become
  * blank lines (tall table rows, gaps in embeds).
  */
+/* As in Obsidian, a rendered block takes only its own height. */
 .hybrid-block {
   position: relative;
   max-width: 100%;
-  padding: 4px 0;
   white-space: normal;
 }
 .edit-block {

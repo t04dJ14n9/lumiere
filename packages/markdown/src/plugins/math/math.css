@@ -4,9 +4,10 @@
   max-width: 100%;
   vertical-align: middle;
 }
+/* A line of space above and below a display formula, as in Obsidian. */
 .math-display {
   display: block;
-  padding: 8px 0;
+  padding: 1em 0;
   overflow-x: auto;
   text-align: center;
 }

@@ -28,7 +28,10 @@ async function geometry(page: Page, title: string) {
     const line = [...document.querySelectorAll(".cm-line")].find(
       (candidate) => candidate.textContent?.replace(/^#+ /, "") === title,
     );
-    const rect = line?.getBoundingClientRect();
+    // The heading's text: its line also holds the space above the heading.
+    const text = line ? document.createRange() : undefined;
+    text?.selectNodeContents(line!);
+    const rect = text?.getBoundingClientRect();
     return {
       viewportCenter: box.top + box.height / 2,
       viewportTop: box.top,

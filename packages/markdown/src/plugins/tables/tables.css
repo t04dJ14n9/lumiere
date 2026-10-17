@@ -80,21 +80,23 @@
 }
 .table-cell-wrapper {
   position: relative;
-  min-height: 1.5em;
+  min-height: 1.3em;
 }
 .table-cell-content {
-  min-height: 1.5em;
+  min-height: 1.3em;
 }
+/* Cells set like Obsidian's: tighter lines, 4px by 8px of padding. */
 .hybrid-table table {
   grid-area: 1 / 1;
   border-collapse: collapse;
   margin: 0;
+  line-height: 1.3;
 }
 .hybrid-table th,
 .hybrid-table td {
   min-width: 60px;
   border: 1px solid var(--line);
-  padding: 3px 10px;
+  padding: 4px 8px;
   vertical-align: top;
 }
 .hybrid-table th {
@@ -173,7 +175,7 @@
 }
 #app .hybrid-table .cm-editor .cm-content {
   padding: 0;
-  min-height: 1.5em;
+  min-height: 1.3em;
   width: auto;
   max-width: none;
 }

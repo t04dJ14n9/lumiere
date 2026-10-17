@@ -1,31 +1,42 @@
 /*
- * Heading lines are taller than body text and padded above. Give their line
- * numbers the heading's padding and line height so each number sits level
- * with the heading text, as in Obsidian. Source mode has no heading sizes.
+ * Heading lines are taller than body text and padded above (one body-text
+ * size). Give their line numbers the heading's padding and line height so each
+ * number sits level with the heading text, as in Obsidian. Source mode has no
+ * heading sizes.
  */
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h1-gutter {
-  padding-top: calc(0.4 * var(--h1-scale) * var(--text-size));
+  padding-top: var(--text-size);
   line-height: calc(var(--h1-line-height) * var(--h1-scale) * var(--text-size));
 }
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h2-gutter {
-  padding-top: calc(0.4 * var(--h2-scale) * var(--text-size));
+  padding-top: var(--text-size);
   line-height: calc(var(--h2-line-height) * var(--h2-scale) * var(--text-size));
 }
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h3-gutter {
-  padding-top: calc(0.4 * var(--h3-scale) * var(--text-size));
+  padding-top: var(--text-size);
   line-height: calc(var(--h3-line-height) * var(--h3-scale) * var(--text-size));
 }
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h4-gutter {
-  padding-top: calc(0.4 * var(--h4-scale) * var(--text-size));
+  padding-top: var(--text-size);
   line-height: calc(var(--h4-line-height) * var(--h4-scale) * var(--text-size));
 }
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h5-gutter {
-  padding-top: calc(0.4 * var(--h5-scale) * var(--text-size));
+  padding-top: var(--text-size);
   line-height: calc(var(--h5-line-height) * var(--h5-scale) * var(--text-size));
 }
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-h6-gutter {
-  padding-top: calc(0.4 * var(--h6-scale) * var(--text-size));
+  padding-top: var(--text-size);
   line-height: calc(var(--h6-line-height) * var(--h6-scale) * var(--text-size));
+}
+/* List item lines are padded a little (markdown.css); so are their numbers. */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-list-gutter {
+  padding-top: calc(0.075 * var(--text-size));
+}
+/* Code lines are a size smaller (base.css); so is their line box. */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-code-gutter {
+  line-height: calc(
+    var(--line-height, 1.5) * var(--code-scale) * var(--text-size)
+  );
 }
 /*
  * Line numbers set like VS Code's gutter: the editor font and size, right
@@ -67,9 +78,13 @@
 }
 /*
  * A rendered table starts below its 16px grip padding (tables.css) and its
- * rows are taller than text lines; lower the number to centre it on the header
- * row (pinned by test/browser/tables-line-numbers.spec.ts).
+ * header row is 1.3 lines of text plus 8px of padding and a 1px border; lower
+ * the number (one line box) to centre it on that row (pinned by
+ * test/browser/tables-line-numbers.spec.ts and font-size.spec.ts).
  */
 #app .cm-lineNumbers .cm-gutterElement.mw-table-line-number {
-  padding-top: 24px;
+  padding-top: calc(
+    16px + (1.3 * var(--text-size) + 9px) / 2 - var(--line-height, 1.5) *
+      var(--text-size) / 2
+  );
 }

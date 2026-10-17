@@ -38,21 +38,23 @@ test("nested list items get one indent step per level and a hanging marker", () 
     "- one\n  - two\n    - three\n- four\n\n1. first\n   1. inner\n\nafter";
   const { lines, indents, numbers } = decorate(doc);
   assert.deepEqual(lines, [
-    "--list-depth: 0; --list-marker: 1.1em",
-    "--list-depth: 1; --list-marker: 1.1em",
-    "--list-depth: 2; --list-marker: 1.1em",
-    "--list-depth: 0; --list-marker: 1.1em",
-    "--list-depth: 0; --list-marker: 3ch",
-    "--list-depth: 1; --list-marker: 3ch",
+    "--list-depth: 0; --list-marker: calc(1.25em + 3px)",
+    "--list-depth: 1; --list-marker: calc(1.25em + 3px)",
+    "--list-depth: 2; --list-marker: calc(1.25em + 3px)",
+    "--list-depth: 0; --list-marker: calc(1.25em + 3px)",
+    "--list-depth: 0; --list-marker: calc(1.5em + 6px)",
+    "--list-depth: 1; --list-marker: calc(1.5em + 6px)",
   ]);
   assert.deepEqual(indents, [1, 2, 1]);
   assert.deepEqual(numbers, ["1. ", "1. "]);
 });
 
 test("marker widths cover bullets, numbers and task boxes", () => {
-  assert.equal(markerWidth("-", false), "1.1em");
-  assert.equal(markerWidth("10.", false), "4ch");
-  assert.equal(markerWidth("-", true), "calc(21px + 0.3em)");
+  // Where Obsidian starts the text: the same for every number's width.
+  assert.equal(markerWidth("-", false), "calc(1.25em + 3px)");
+  assert.equal(markerWidth("1.", false), "calc(1.5em + 6px)");
+  assert.equal(markerWidth("10.", false), "calc(1.5em + 6px)");
+  assert.equal(markerWidth("-", true), "calc(1.75em - 1px)");
 });
 
 test("list items inside quotes keep the quote layout", () => {
