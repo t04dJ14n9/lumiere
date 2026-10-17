@@ -3,7 +3,7 @@
  *
  *   host                              viewer
  *    │  ◄──────────── ready               the page has loaded
- *    │  load { data } ──────────►         the PDF bytes
+ *    │  load { load, data } ────►         the PDF bytes, numbered
  *    │  ◄──────────── patch { version, load, patch }
  *    │                                    what changed in the viewer's state:
  *    │                                    outline, selection (for a region,
@@ -33,9 +33,12 @@
  *   host always has the selection before a Copy Link for Agent that follows.
  * - Versions: patches are numbered 1, 2, 3… for the life of the page, and
  *   the host applies a patch only if its version is newer than the last one
- *   applied. `load` counts the `load` messages the viewer had received when
- *   it sent the patch; the host drops a patch from an earlier load, so state
- *   reported for the old bytes never lands on the new ones.
+ *   applied. `load` is the number of the last `load` message the viewer had
+ *   received when it sent the patch (the host numbers them 1, 2, 3… for the
+ *   life of the panel, across viewer pages); the host drops a patch from an
+ *   earlier load, so state reported for the old bytes never lands on the new
+ *   ones. The viewer echoes the number rather than counting for itself: a
+ *   load sent before a new page said `ready` can still reach that page.
  *
  * The viewer runs untrusted PDF content, so the host validates what it
  * receives with `parseViewerMessage`.
@@ -125,6 +128,8 @@ export type ViewerMessage =
 export type HostMessage =
   | {
       type: "load";
+      /** This load's number: see the invariants above. */
+      load: number;
       data: ArrayBuffer;
       settings: ViewSettings;
       position?: ReadingPosition;

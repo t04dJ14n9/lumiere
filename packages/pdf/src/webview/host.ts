@@ -52,7 +52,7 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
       if (message.type === "load") {
         inbox.beginLoad();
         const data = asArrayBuffer(message.data);
-        outbox.loaded();
+        outbox.loaded(message.load);
         prepareReadingPosition(message.settings, message.position);
         if (data) {
           onLoad(data);

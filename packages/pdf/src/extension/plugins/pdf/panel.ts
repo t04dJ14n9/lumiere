@@ -86,9 +86,9 @@ export class PdfPanel implements vscode.Disposable {
   private readonly selectionState = new PdfSelectionState();
   private readonly navigation: PdfNavigation;
   private readonly disposables: vscode.Disposable[] = [];
-  /** `load` messages sent to the current viewer page, and the last patch applied from it. */
   private lookUp = false;
   private zen = false;
+  /** The number of the last `load` sent, and the last patch version applied. */
   private loads = 0;
   private patchVersion = 0;
   private loading = false;
@@ -298,10 +298,9 @@ export class PdfPanel implements vscode.Disposable {
     }
   }
 
-  /** A new viewer page: its loads and patch versions start again. */
+  /** A new viewer page: its patch versions start again (load numbers do not). */
   private async onReady(): Promise<void> {
     this.history.newViewer();
-    this.loads = 0;
     this.patchVersion = 0;
     this.lastJump = 0;
     await this.load();
@@ -381,13 +380,14 @@ export class PdfPanel implements vscode.Disposable {
     if (!bytes) {
       return;
     }
+    this.loads++;
     this.post({
       type: "load",
+      load: this.loads,
       data: bytes.data,
       settings: this.settings,
       ...(this.position ? { position: this.position } : {}),
     });
-    this.loads++;
     this.history.newViewer();
     this.loading = false;
     this.navigation.loadedNow();

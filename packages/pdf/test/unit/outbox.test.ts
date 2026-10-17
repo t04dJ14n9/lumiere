@@ -36,7 +36,7 @@ const view = (page: number) => ({
 
 test("changes in one frame go out as one patch with the latest of each part", () => {
   const { box, sent, scheduled, frame } = outbox();
-  box.loaded();
+  box.loaded(1);
   box.report({ view: view(1) });
   box.report({ selection: { selection: null } });
   box.report({ view: view(2) });
@@ -57,7 +57,7 @@ test("changes in one frame go out as one patch with the latest of each part", ()
 
 test("a pending patch goes out before any other message, so the selection precedes Copy Link for Agent", () => {
   const { box, sent, frame } = outbox();
-  box.loaded();
+  box.loaded(1);
   const selection = {
     kind: "region" as const,
     page: 1,
@@ -75,12 +75,12 @@ test("a pending patch goes out before any other message, so the selection preced
 
 test("versions count up for the life of the page, and patches carry the load they belong to", () => {
   const { box, sent, frame } = outbox();
-  box.loaded();
+  box.loaded(1);
   box.report({ view: view(1) });
   frame();
   box.report({ view: view(3) });
   // The file changed: what was pending is sent first, under the old load.
-  box.loaded();
+  box.loaded(2);
   box.report({ outline: [] });
   frame();
   assert.deepEqual(
@@ -97,10 +97,10 @@ test("versions count up for the life of the page, and patches carry the load the
 
 test("history messages flush view state first and carry the current load generation", () => {
   const { box, sent } = outbox();
-  box.loaded();
+  box.loaded(1);
   box.report({ view: view(3) });
   box.post({ type: "historyTraverse", direction: "back" });
-  box.loaded();
+  box.loaded(2);
   box.post({ type: "historyTraverse", direction: "forward" });
   assert.deepEqual(
     sent.map((message) => [

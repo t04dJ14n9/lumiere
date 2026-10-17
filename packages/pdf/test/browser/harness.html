@@ -46,7 +46,13 @@
           JSON.parse(localStorage.getItem("pdf-view") ?? "null") ??
           savedPosition;
       window.__messages = [];
-      window.hostSend = (message) => window.postMessage(message, "*");
+      // Like the extension, number each load sent to the viewer.
+      let loads = 0;
+      window.hostSend = (message) =>
+        window.postMessage(
+          message?.type === "load" ? { load: ++loads, ...message } : message,
+          "*",
+        );
       window.acquireVsCodeApi = () => ({
         postMessage(message) {
           window.__messages.push(message);

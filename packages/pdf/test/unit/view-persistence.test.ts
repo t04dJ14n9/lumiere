@@ -164,6 +164,43 @@ test("recreated webviews receive the current toolbar mode and dock after loading
   assert.deepEqual(vscode.outstanding(), []);
 });
 
+test("loads are numbered for the life of the panel, so a new page that also got an earlier load still reports", async () => {
+  const preferences = new ViewPreferences(
+    memory() as never,
+    { all: [] } as never,
+  );
+  const viewer = open(preferences);
+  await viewer.receive({ type: "ready" });
+  // A new page (the webview was rebuilt) says ready; the load sent to the old
+  // page can reach it too, so it last received load 2, not 1.
+  await viewer.receive({ type: "ready" });
+  assert.deepEqual(
+    viewer.messages.flatMap((message) =>
+      message.type === "load" ? [message.load] : [],
+    ),
+    [1, 2],
+  );
+  await viewer.receive({
+    type: "patch",
+    version: 1,
+    load: 1,
+    patch: { view: report(3, 100) },
+  });
+  // Read through a function: an assertion would narrow the property's type.
+  const view = () => viewer.panel.view;
+  assert.equal(view(), undefined, "a patch about load 1 is stale");
+  await viewer.receive({
+    type: "patch",
+    version: 2,
+    load: 2,
+    patch: { view: report(4, 100) },
+  });
+  assert.equal(view()?.page, 4);
+  viewer.panel.dispose();
+  preferences.dispose();
+  assert.deepEqual(vscode.outstanding(), []);
+});
+
 test("saved positions carry a schema version; other versions and malformed values are ignored", async () => {
   const state = memory();
   const preferences = new ViewPreferences(state as never, { all: [] } as never);

@@ -5,7 +5,7 @@
  * `report` merges a change into the pending patch, latest value per part,
  * and schedules one send; `post` sends any other message, after the
  * pending patch; `loaded` marks the start of a new load, so later patches
- * carry its number.
+ * carry the number the host gave it.
  */
 import type { ViewerMessage, ViewerPatch } from "../shared/messages";
 
@@ -27,8 +27,8 @@ export type OutgoingMessage =
 export interface Outbox {
   report(patch: ViewerPatch): void;
   post(message: OutgoingMessage): void;
-  /** The viewer received new bytes: what was pending belongs to the old ones. */
-  loaded(): void;
+  /** The viewer received load `number`: what was pending belongs to the old bytes. */
+  loaded(number: number): void;
   flush(): void;
 }
 
@@ -67,9 +67,9 @@ export function createOutbox(
           : (message as ViewerMessage),
       );
     },
-    loaded() {
+    loaded(number) {
       flush();
-      load++;
+      load = number;
     },
     flush,
   };
