@@ -71,7 +71,9 @@ export function spreadGeometry(page: Page, indexes: number[]) {
         .querySelector(`.page[data-page-index="${index}"]`)
         ?.getBoundingClientRect(),
     );
-    if (boxes.some((box) => !box)) return undefined;
+    if (boxes.some((box) => !box)) {
+      return undefined;
+    }
     const pages = boxes.map((box) => box!);
     const frame = viewport.getBoundingClientRect();
     const left = Math.min(...pages.map((box) => box.left));
@@ -87,8 +89,7 @@ export function spreadGeometry(page: Page, indexes: number[]) {
         left >= frame.left - 1 &&
         right <= frame.left + viewport.clientWidth + 1,
       fitsHeight:
-        top >= frame.top - 1 &&
-        bottom <= frame.top + viewport.clientHeight + 1,
+        top >= frame.top - 1 && bottom <= frame.top + viewport.clientHeight + 1,
       fillsWidth: right - left >= viewport.clientWidth - 32,
       fillsHeight: bottom - top >= viewport.clientHeight - 32,
     };

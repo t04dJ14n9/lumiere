@@ -118,10 +118,12 @@ test("the floating bar starts at the remembered edge and follows the extension",
   await expect(bar).toHaveClass(/dock-bottom/);
   await expect(bar).toHaveAttribute("aria-orientation", "horizontal");
   // Controls may wrap. Test the docked bottom edge, not a fixed bar height.
-  await expect.poll(async () => {
-    const box = (await bar.boundingBox())!;
-    return page.viewportSize()!.height - box.y - box.height;
-  }).toBeCloseTo(26, 0); // 12px edge gap + 14px scrollbar clearance.
+  await expect
+    .poll(async () => {
+      const box = (await bar.boundingBox())!;
+      return page.viewportSize()!.height - box.y - box.height;
+    })
+    .toBeCloseTo(26, 0); // 12px edge gap + 14px scrollbar clearance.
   const box = (await bar.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.y).toBeGreaterThanOrEqual(0);

@@ -1,7 +1,19 @@
 import type { PdfDocumentObject } from "@embedpdf/models";
 import { useRenderCapability } from "@embedpdf/plugin-render/react";
-import React, { createContext, useContext, useEffect, useMemo, useState, type RefObject } from "react";
-import { BitmapCache, lowScale, prefetchRange, type RenderTask } from "../shared/bitmap-cache";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type RefObject,
+} from "react";
+import {
+  BitmapCache,
+  lowScale,
+  prefetchRange,
+  type RenderTask,
+} from "../shared/bitmap-cache";
 import { DOCUMENT_ID } from "./plugins";
 
 /**
@@ -49,7 +61,10 @@ export function PageBitmaps({
       provides
         ? new BitmapCache(
             (pageIndex, scaleFactor, dpr) =>
-              provides.forDocument(DOCUMENT_ID).renderPage({ pageIndex, options: { scaleFactor, dpr } }) as unknown as RenderTask,
+              provides.forDocument(DOCUMENT_ID).renderPage({
+                pageIndex,
+                options: { scaleFactor, dpr },
+              }) as unknown as RenderTask,
             urls,
           )
         : undefined,
@@ -57,7 +72,9 @@ export function PageBitmaps({
   );
   useEffect(() => () => cache?.dispose(), [cache]);
   usePrefetch(cache, pdf.pages.length, scroller);
-  return <BitmapContext.Provider value={cache}>{children}</BitmapContext.Provider>;
+  return (
+    <BitmapContext.Provider value={cache}>{children}</BitmapContext.Provider>
+  );
 }
 
 /**
@@ -65,19 +82,29 @@ export function PageBitmaps({
  * screen are read from the DOM (paged mode mounts only the ones shown), and the
  * prefetch follows them as they change.
  */
-function usePrefetch(cache: BitmapCache | undefined, pageCount: number, scroller: RefObject<HTMLElement | null>): void {
+function usePrefetch(
+  cache: BitmapCache | undefined,
+  pageCount: number,
+  scroller: RefObject<HTMLElement | null>,
+): void {
   useEffect(() => {
     const root = scroller.current;
-    if (!cache || !root) return;
+    if (!cache || !root) {
+      return;
+    }
     let pending: { page: number; cancel: () => void } | undefined;
     let frame = 0;
     const update = (): void => {
       frame = 0;
-      const pages = Array.from(root.querySelectorAll<HTMLElement>(".page[data-page-index]"));
-      const shown = pages.map(page => Number(page.dataset.pageIndex));
+      const pages = Array.from(
+        root.querySelectorAll<HTMLElement>(".page[data-page-index]"),
+      );
+      const shown = pages.map((page) => Number(page.dataset.pageIndex));
       const range = prefetchRange(shown, pageCount);
       const scale = Number(pages[0]?.dataset.scale);
-      if (!range || !Number.isFinite(scale)) return;
+      if (!range || !Number.isFinite(scale)) {
+        return;
+      }
       cache.retain(range, shown);
       if (pending && (pending.page < range[0] || pending.page > range[1])) {
         pending.cancel();
@@ -86,22 +113,34 @@ function usePrefetch(cache: BitmapCache | undefined, pageCount: number, scroller
       // The PDF engine renders one thing at a time: what is on screen goes first,
       // so the prefetch waits until every page shown has its full picture, and
       // then fetches one page at a time, the nearest first.
-      if (pending || root.querySelector(".page-image-low") || pages.some(page => !page.querySelector("img.page-image"))) return;
+      if (
+        pending ||
+        root.querySelector(".page-image-low") ||
+        pages.some((page) => !page.querySelector("img.page-image"))
+      ) {
+        return;
+      }
       const wanted = lowScale(scale);
       const next = [...Array(range[1] - range[0] + 1).keys()]
-        .map(offset => range[0] + offset)
-        .filter(page => !shown.includes(page) && !cache.hasLow(page, wanted))
+        .map((offset) => range[0] + offset)
+        .filter((page) => !shown.includes(page) && !cache.hasLow(page, wanted))
         .sort((a, b) => distance(a, shown) - distance(b, shown))[0];
-      if (next === undefined) return;
+      if (next === undefined) {
+        return;
+      }
       const entry = { page: next, cancel: (): void => undefined };
       pending = entry;
       entry.cancel = cache.request("low", next, wanted, 1, () => {
-        if (pending === entry) pending = undefined;
+        if (pending === entry) {
+          pending = undefined;
+        }
         schedule();
       });
     };
     const schedule = (): void => {
-      if (!frame) frame = requestAnimationFrame(update);
+      if (!frame) {
+        frame = requestAnimationFrame(update);
+      }
     };
     const observer = new MutationObserver(schedule);
     observer.observe(root, {
@@ -119,7 +158,8 @@ function usePrefetch(cache: BitmapCache | undefined, pageCount: number, scroller
   }, [cache, pageCount, scroller]);
 }
 
-const distance = (page: number, shown: number[]): number => Math.min(...shown.map(other => Math.abs(other - page)));
+const distance = (page: number, shown: number[]): number =>
+  Math.min(...shown.map((other) => Math.abs(other - page)));
 
 /**
  * A page's picture. It shows the low bitmap of the page at once when there is
@@ -138,35 +178,53 @@ export function PageImage({
   dpr: number;
 }): React.JSX.Element | null {
   const cache = useContext(BitmapContext);
-  const [full, setFull] = useState<{ page: number; url: string } | undefined>(() => {
-    const url = cache?.peek("full", pageIndex, scale, dpr);
-    return url ? { page: pageIndex, url } : undefined;
-  });
-  const [low, setLow] = useState<string | undefined>(() => cache?.lowOf(pageIndex));
+  const [full, setFull] = useState<{ page: number; url: string } | undefined>(
+    () => {
+      const url = cache?.peek("full", pageIndex, scale, dpr);
+      return url ? { page: pageIndex, url } : undefined;
+    },
+  );
+  const [low, setLow] = useState<string | undefined>(() =>
+    cache?.lowOf(pageIndex),
+  );
 
   useEffect(() => {
-    if (!cache) return;
+    if (!cache) {
+      return;
+    }
     let live = true;
     const cancels: (() => void)[] = [];
     const lowUrl = cache.lowOf(pageIndex);
     setLow(lowUrl);
     // Without a low bitmap (a page the prefetch has not reached yet) ask for one
     // first: it renders in a fraction of the time.
-    if (!lowUrl) cancels.push(cache.request("low", pageIndex, lowScale(scale), 1, url => live && setLow(url)));
+    if (!lowUrl) {
+      cancels.push(
+        cache.request(
+          "low",
+          pageIndex,
+          lowScale(scale),
+          1,
+          (url) => live && setLow(url),
+        ),
+      );
+    }
     cancels.push(
-      cache.request("full", pageIndex, scale, dpr, url => {
+      cache.request("full", pageIndex, scale, dpr, (url) => {
         // Decode it off screen first, so the swap does not flash.
         const image = new Image();
         image.src = url;
         const show = (): void => {
-          if (live) setFull({ page: pageIndex, url });
+          if (live) {
+            setFull({ page: pageIndex, url });
+          }
         };
         void image.decode().then(show, show);
       }),
     );
     return () => {
       live = false;
-      cancels.forEach(cancel => cancel());
+      cancels.forEach((cancel) => cancel());
     };
   }, [cache, pageIndex, scale, dpr]);
 
@@ -174,7 +232,9 @@ export function PageImage({
   // is as good as the low one, and better.
   const shownFull = full?.page === pageIndex ? full.url : undefined;
   const src = shownFull ?? low;
-  if (!src) return null;
+  if (!src) {
+    return null;
+  }
   return (
     <img
       src={src}

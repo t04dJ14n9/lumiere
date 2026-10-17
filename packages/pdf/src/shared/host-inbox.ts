@@ -21,24 +21,32 @@ export class HostInbox<T> {
 
   /** Keep at most the latest 512 pending messages, in arrival order. */
   receive(message: T): void {
-    if (this.queued.length >= MAX_QUEUED_MESSAGES) this.queued.shift();
+    if (this.queued.length >= MAX_QUEUED_MESSAGES) {
+      this.queued.shift();
+    }
     this.queued.push(message);
     this.drain();
   }
 
   /** Only a viewer created for the current load can receive its messages. */
   listen(listener: (message: T) => void, generation: number): () => void {
-    if (generation !== this.currentGeneration) return () => undefined;
+    if (generation !== this.currentGeneration) {
+      return () => undefined;
+    }
     const subscription = { listener };
     this.subscription = subscription;
     this.drain();
     return () => {
-      if (this.subscription === subscription) this.subscription = undefined;
+      if (this.subscription === subscription) {
+        this.subscription = undefined;
+      }
     };
   }
 
   private drain(): void {
-    if (this.draining) return;
+    if (this.draining) {
+      return;
+    }
     this.draining = true;
     try {
       // Read the active subscription each time: a callback may replace it,

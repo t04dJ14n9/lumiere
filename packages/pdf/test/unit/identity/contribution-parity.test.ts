@@ -22,7 +22,9 @@ test("constants match locked PDF Workshop identity", () => {
 });
 
 test("customEditors viewType matches runtime VIEW_TYPE", () => {
-  const viewTypes = contributes.customEditors.map((e: { viewType: string }) => e.viewType);
+  const viewTypes = contributes.customEditors.map(
+    (e: { viewType: string }) => e.viewType,
+  );
   assert.deepEqual(viewTypes, [VIEW_TYPE]);
 });
 
@@ -41,7 +43,10 @@ test("manifest commands ↔ runtime registration set (B3)", () => {
 });
 
 test("owned when/enablement/config keys do not use old prefix", () => {
-  const blob = JSON.stringify(contributes).replaceAll(compatibilityCommand, "pdfWorkshop.bridge.envelope");
+  const blob = JSON.stringify(contributes).replaceAll(
+    compatibilityCommand,
+    "pdfWorkshop.bridge.envelope",
+  );
   assert.equal(blob.includes(retiredPrefix), false);
   for (const key of Object.keys(contributes.configuration.properties)) {
     assert.equal(key.startsWith(SETTING_PREFIX), true);
@@ -49,7 +54,9 @@ test("owned when/enablement/config keys do not use old prefix", () => {
 });
 
 test("outline view id renamed", () => {
-  const views = Object.values(contributes.views ?? {}).flat() as { id: string }[];
+  const views = Object.values(contributes.views ?? {}).flat() as {
+    id: string;
+  }[];
   assert.ok(views.some((v) => v.id === "pdfWorkshop.outline"));
   assert.ok(!views.some((v) => v.id.includes(retiredPrefix)));
 });

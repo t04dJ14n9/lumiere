@@ -83,7 +83,9 @@ const SIMPLE_ACTIONS = new Set([
 
 /** Accept a view report only if it is well-formed (it comes from the untrusted viewer). */
 export function parseViewState(value: unknown): ViewState | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
   const {
     page,
     pageCount,
@@ -100,32 +102,37 @@ export function parseViewState(value: unknown): ViewState | undefined {
     top,
     left,
   } = value as Record<string, unknown>;
-  if (!isCount(pageCount) || !isCount(page) || page > pageCount)
+  if (!isCount(pageCount) || !isCount(page) || page > pageCount) {
     return undefined;
+  }
   if (
     typeof zoomPercent !== "number" ||
     !Number.isFinite(zoomPercent) ||
     zoomPercent <= 0 ||
     zoomPercent > 100_000
-  )
+  ) {
     return undefined;
+  }
   if (
     !isPageLayout(pageLayout) ||
     !isScrollMode(scrollMode) ||
     !isScrollDirection(scrollDirection) ||
     !isPageOffset(top) ||
     !isPageOffset(left)
-  )
+  ) {
     return undefined;
+  }
   if (
     !isCount(readingPage) ||
     readingPage < 1 ||
     readingPage > pageCount ||
     !isZoomChoice(zoom)
-  )
+  ) {
     return undefined;
-  if (typeof canGoBack !== "boolean" || typeof canGoForward !== "boolean")
+  }
+  if (typeof canGoBack !== "boolean" || typeof canGoForward !== "boolean") {
     return undefined;
+  }
   return {
     page,
     pageCount,
@@ -146,7 +153,9 @@ export function parseViewState(value: unknown): ViewState | undefined {
 
 /** Accept an action only if it is well-formed; numbers are clamped by the viewer. */
 export function parseViewerAction(value: unknown): ViewerAction | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
   const {
     action,
     page,
@@ -156,26 +165,36 @@ export function parseViewerAction(value: unknown): ViewerAction | undefined {
     scrollMode,
     scrollDirection,
   } = value as Record<string, unknown>;
-  if (typeof action !== "string") return undefined;
-  if (SIMPLE_ACTIONS.has(action)) return { action } as ViewerAction;
-  if (action === "goToPage")
+  if (typeof action !== "string") {
+    return undefined;
+  }
+  if (SIMPLE_ACTIONS.has(action)) {
+    return { action } as ViewerAction;
+  }
+  if (action === "goToPage") {
     return isCount(page) && page >= 1 ? { action, page } : undefined;
-  if (action === "setZoom")
+  }
+  if (action === "setZoom") {
     return typeof percent === "number" &&
       Number.isFinite(percent) &&
       percent > 0
       ? { action, percent }
       : undefined;
-  if (action === "setTool")
+  }
+  if (action === "setTool") {
     return tool === "text" || tool === "region" ? { action, tool } : undefined;
-  if (action === "setPageLayout")
+  }
+  if (action === "setPageLayout") {
     return isPageLayout(pageLayout) ? { action, pageLayout } : undefined;
-  if (action === "setScrollMode")
+  }
+  if (action === "setScrollMode") {
     return isScrollMode(scrollMode) ? { action, scrollMode } : undefined;
-  if (action === "setScrollDirection")
+  }
+  if (action === "setScrollDirection") {
     return isScrollDirection(scrollDirection)
       ? { action, scrollDirection }
       : undefined;
+  }
   return undefined;
 }
 
@@ -188,7 +207,9 @@ export function parsePageInput(
   pageCount: number,
 ): number | undefined {
   const trimmed = text.trim();
-  if (!/^\d{1,9}$/u.test(trimmed) || pageCount < 1) return undefined;
+  if (!/^\d{1,9}$/u.test(trimmed) || pageCount < 1) {
+    return undefined;
+  }
   return Math.min(Math.max(1, Number.parseInt(trimmed, 10)), pageCount);
 }
 
@@ -198,9 +219,13 @@ export function parsePageInput(
  */
 export function parseZoomInput(text: string): number | undefined {
   const match = /^(\d{1,5}(?:\.\d+)?)\s*%?$/u.exec(text.trim());
-  if (!match) return undefined;
+  if (!match) {
+    return undefined;
+  }
   const percent = Number.parseFloat(match[1]!);
-  if (!(percent > 0)) return undefined;
+  if (!(percent > 0)) {
+    return undefined;
+  }
   return Math.min(Math.max(percent, MIN_ZOOM * 100), MAX_ZOOM * 100);
 }
 
@@ -211,8 +236,12 @@ export function pageLabel(view: ViewState): string {
 
 /** "Fit Width (164%)", "Fit Page (80%)" or "125%". */
 export function zoomLabel(view: ViewState): string {
-  if (view.fit === "width") return `Fit Width (${view.zoomPercent}%)`;
-  if (view.fit === "page") return `Fit Page (${view.zoomPercent}%)`;
+  if (view.fit === "width") {
+    return `Fit Width (${view.zoomPercent}%)`;
+  }
+  if (view.fit === "page") {
+    return `Fit Page (${view.zoomPercent}%)`;
+  }
   return `${view.zoomPercent}%`;
 }
 

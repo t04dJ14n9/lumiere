@@ -25,8 +25,7 @@ export class PdfSettings {
   /** Every setting the extension contributes, by key, across its sections. */
   properties(): Record<string, SchemaProperty> {
     const manifest = this.extension.packageJSON as
-      | { contributes?: { configuration?: unknown } }
-      | undefined;
+      { contributes?: { configuration?: unknown } } | undefined;
     const configuration = manifest?.contributes?.configuration;
     const sections = (
       Array.isArray(configuration)

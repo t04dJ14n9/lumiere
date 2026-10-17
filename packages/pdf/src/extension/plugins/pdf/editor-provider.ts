@@ -32,6 +32,8 @@ export class PdfEditorProvider implements vscode.CustomReadonlyEditorProvider {
     this.panels.add(panel);
     // A link such as `paper.pdf#page=3` opens at that page.
     const location = parseLocationFragment(document.uri.fragment);
-    if (location) panel.goTo(location);
+    if (location) {
+      panel.goTo(location);
+    }
   }
 }

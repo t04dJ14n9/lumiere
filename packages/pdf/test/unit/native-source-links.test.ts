@@ -23,9 +23,8 @@ async function setup(
   authorize: () => Promise<void> = async () => {},
   opening: () => Promise<void> = async () => {},
 ) {
-  const { registerSourceLinks } = await import(
-    "../../src/extension/plugins/pdf/source-links"
-  );
+  const { registerSourceLinks } =
+    await import("../../src/extension/plugins/pdf/source-links");
   driver.reset();
   const opened: string[] = [];
   const registration = registerSourceLinks({

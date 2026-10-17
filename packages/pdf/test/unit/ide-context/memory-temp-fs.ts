@@ -22,9 +22,13 @@ export class MemoryTempFs {
 
   private findKey(nameOrPath: string): string | undefined {
     const k = this.key(nameOrPath);
-    if (this.store.has(k)) return k;
+    if (this.store.has(k)) {
+      return k;
+    }
     for (const key of this.store.keys()) {
-      if (this.basename(key) === nameOrPath) return key;
+      if (this.basename(key) === nameOrPath) {
+        return key;
+      }
     }
     return undefined;
   }
@@ -80,7 +84,9 @@ export class MemoryTempFs {
     const fk = this.key(from);
     const tk = this.key(to);
     const entry = this.store.get(fk);
-    if (!entry) throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    if (!entry) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
     this.store.delete(fk);
     this.store.set(tk, { ...entry, mtimeMs: this.nowMs });
     this.onAfterWrite?.(this.basename(tk));
@@ -92,16 +98,21 @@ export class MemoryTempFs {
 
   readFileSync(path: string): Buffer {
     const found = this.findKey(path);
-    if (!found) throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    if (!found) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
     const entry = this.store.get(found)!;
-    if (entry.kind !== "file")
+    if (entry.kind !== "file") {
       throw Object.assign(new Error("EISDIR"), { code: "EISDIR" });
+    }
     return Buffer.from(entry.data);
   }
 
   async unlink(path: string): Promise<void> {
     const found = this.findKey(path);
-    if (!found) throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    if (!found) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
     this.store.delete(found);
   }
 
@@ -111,7 +122,9 @@ export class MemoryTempFs {
     for (const key of this.store.keys()) {
       if (key.startsWith(prefix)) {
         const rest = key.slice(prefix.length);
-        if (!rest.includes("/")) names.add(rest);
+        if (!rest.includes("/")) {
+          names.add(rest);
+        }
       }
     }
     return [...names];
@@ -124,7 +137,9 @@ export class MemoryTempFs {
     isDirectory(): boolean;
   }> {
     const found = this.findKey(path);
-    if (!found) throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    if (!found) {
+      throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+    }
     const entry = this.store.get(found)!;
     const size = entry.kind === "file" ? entry.data.length : 0;
     return {
@@ -141,7 +156,9 @@ export class MemoryTempFs {
 
   setMtime(path: string, mtimeMs: number): void {
     const found = this.findKey(path);
-    if (!found) return;
+    if (!found) {
+      return;
+    }
     const entry = this.store.get(found)!;
     this.store.set(found, { ...entry, mtimeMs });
   }

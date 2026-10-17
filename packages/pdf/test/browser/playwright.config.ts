@@ -1,10 +1,10 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from "@playwright/test";
 
 const port = Number(process.env.PORT ?? 8990);
 
 export default defineConfig({
-  testDir: '.',
-  testMatch: '*.spec.ts',
+  testDir: ".",
+  testMatch: "*.spec.ts",
   timeout: 30_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
@@ -12,15 +12,15 @@ export default defineConfig({
   ...(process.env.CI ? {} : { workers: 1 }),
   // Timing-sensitive specs (animation, scrolling) can lose a race on a busy runner.
   retries: process.env.CI ? 2 : 0,
-  reporter: [['list']],
+  reporter: [["list"]],
   use: {
     baseURL: `http://localhost:${port}`,
     viewport: { width: 1000, height: 1200 },
-    trace: 'retain-on-failure',
+    trace: "retain-on-failure",
   },
   webServer: {
-    command: 'node test/browser/server.mjs',
-    cwd: '../..',
+    command: "node test/browser/server.mjs",
+    cwd: "../..",
     port,
     reuseExistingServer: !process.env.CI,
   },

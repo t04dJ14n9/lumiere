@@ -69,7 +69,9 @@ export async function sendIdeContext(
       { label: "Codex", id: "codex" },
       { label: "Copy only", id: "clipboard" },
     ]);
-    if (pick === undefined) return { markdown: md, opened: "cancelled" };
+    if (pick === undefined) {
+      return { markdown: md, opened: "cancelled" };
+    }
     target = pick;
   } else {
     target = resolved;

@@ -1,8 +1,12 @@
-import { useRegistry } from '@embedpdf/core/react';
-import { PdfAnnotationSubtype, type PdfDocumentObject, type Rect } from '@embedpdf/models';
-import React, { useEffect, useState } from 'react';
-import { postToHost } from './host';
-import { targetPage, targetTop, targetUrl } from './pdf-targets';
+import { useRegistry } from "@embedpdf/core/react";
+import {
+  PdfAnnotationSubtype,
+  type PdfDocumentObject,
+  type Rect,
+} from "@embedpdf/models";
+import React, { useEffect, useState } from "react";
+import { postToHost } from "./host";
+import { targetPage, targetTop, targetUrl } from "./pdf-targets";
 
 interface Link {
   id: string;
@@ -14,7 +18,12 @@ interface Link {
 }
 
 /** Clickable links on a page: contents entries, citations, figure references, URLs. */
-export function PageLinks({ pdf, pageIndex, scale, onOpenPage }: {
+export function PageLinks({
+  pdf,
+  pageIndex,
+  scale,
+  onOpenPage,
+}: {
   pdf: PdfDocumentObject;
   pageIndex: number;
   scale: number;
@@ -23,7 +32,7 @@ export function PageLinks({ pdf, pageIndex, scale, onOpenPage }: {
   const links = usePageLinks(pdf, pageIndex);
   return (
     <>
-      {links.map(link => (
+      {links.map((link) => (
         <a
           key={link.id}
           className="page-link"
@@ -36,10 +45,13 @@ export function PageLinks({ pdf, pageIndex, scale, onOpenPage }: {
             width: link.rect.size.width * scale,
             height: link.rect.size.height * scale,
           }}
-          onClick={event => {
+          onClick={(event) => {
             event.preventDefault();
-            if (link.page) onOpenPage(link.page, link.top);
-            else if (link.url) postToHost({ type: 'openExternal', url: link.url });
+            if (link.page) {
+              onOpenPage(link.page, link.top);
+            } else if (link.url) {
+              postToHost({ type: "openExternal", url: link.url });
+            }
           }}
         />
       ))}
@@ -52,20 +64,31 @@ function usePageLinks(pdf: PdfDocumentObject, pageIndex: number): Link[] {
   const [links, setLinks] = useState<Link[]>([]);
   useEffect(() => {
     const page = pdf.pages[pageIndex];
-    if (!registry || !page) return;
+    if (!registry || !page) {
+      return;
+    }
     const task = registry.getEngine().getPageAnnotations(pdf, page);
-    task.wait(annotations => {
-      setLinks(annotations.flatMap((annotation): Link[] => {
-        if (annotation.type !== PdfAnnotationSubtype.LINK) return [];
-        const target = {
-          page: targetPage(annotation.target),
-          top: targetTop(annotation.target, pdf),
-          url: targetUrl(annotation.target),
-        };
-        return target.page || target.url ? [{ id: annotation.id, rect: annotation.rect, ...target }] : [];
-      }));
-    }, () => setLinks([]));
-    return () => task.abort({ code: 1, message: 'The page closed' });
+    task.wait(
+      (annotations) => {
+        setLinks(
+          annotations.flatMap((annotation): Link[] => {
+            if (annotation.type !== PdfAnnotationSubtype.LINK) {
+              return [];
+            }
+            const target = {
+              page: targetPage(annotation.target),
+              top: targetTop(annotation.target, pdf),
+              url: targetUrl(annotation.target),
+            };
+            return target.page || target.url
+              ? [{ id: annotation.id, rect: annotation.rect, ...target }]
+              : [];
+          }),
+        );
+      },
+      () => setLinks([]),
+    );
+    return () => task.abort({ code: 1, message: "The page closed" });
   }, [pdf, pageIndex, registry]);
   return links;
 }

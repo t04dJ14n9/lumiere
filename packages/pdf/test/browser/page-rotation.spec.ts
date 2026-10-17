@@ -8,11 +8,16 @@ import { act, openView } from "./view-controls-support";
 const ROTATIONS = [0, 90, 180, 270];
 const PDF = "&pdf=rotated.pdf";
 
-async function boxes(page: Page): Promise<Map<number, { width: number; height: number }>> {
+async function boxes(
+  page: Page,
+): Promise<Map<number, { width: number; height: number }>> {
   const list = await page.locator(".page").evaluateAll((pages) =>
     pages.map((element) => {
       const { width, height } = element.getBoundingClientRect();
-      return [Number((element as HTMLElement).dataset.pageIndex), { width, height }] as const;
+      return [
+        Number((element as HTMLElement).dataset.pageIndex),
+        { width, height },
+      ] as const;
     }),
   );
   return new Map(list);
@@ -23,7 +28,9 @@ async function expectOrientation(page: Page): Promise<void> {
     .poll(async () => {
       const shown = await boxes(page);
       return [...shown].every(([index, { width, height }]) =>
-        ROTATIONS[index] === 90 || ROTATIONS[index] === 270 ? width > height : height > width,
+        ROTATIONS[index] === 90 || ROTATIONS[index] === 270
+          ? width > height
+          : height > width,
       );
     })
     .toBe(true);
@@ -47,7 +54,9 @@ for (const [name, settings] of [
     const fits = await page.locator(".page").evaluateAll((pages) =>
       pages.every((element) => {
         const image = element.querySelector("img");
-        if (!image) return true;
+        if (!image) {
+          return true;
+        }
         const box = element.getBoundingClientRect();
         const shown = image.getBoundingClientRect();
         return (
@@ -62,7 +71,9 @@ for (const [name, settings] of [
   });
 }
 
-test("the orientation holds through layout, scroll and zoom changes and a reopen", async ({ page }) => {
+test("the orientation holds through layout, scroll and zoom changes and a reopen", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1200, height: 900 });
   await open(page, { defaultZoom: "fitWidth" });
   await expectOrientation(page);
@@ -84,20 +95,39 @@ test("the orientation holds through layout, scroll and zoom changes and a reopen
   await expectOrientation(page);
 });
 
-test("search finds text on a rotated page and its hit lies on the page", async ({ page }) => {
+test("search finds text on a rotated page and its hit lies on the page", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1200, height: 900 });
   await open(page, { defaultZoom: "fitPage" });
   await page.getByRole("button", { name: "Find in PDF" }).click();
-  await page.getByRole("searchbox", { name: "Find in PDF" }).fill("Rotated page 2");
+  await page
+    .getByRole("searchbox", { name: "Find in PDF" })
+    .fill("Rotated page 2");
   await page.keyboard.press("Enter");
   await expect(page.locator(".search-count")).toHaveText("1 of 1");
   await page.waitForTimeout(800);
   const inside = await page.evaluate(() => {
-    const target = document.querySelector('.page[data-page-index="1"]')!.getBoundingClientRect();
-    const hits = Array.from(document.querySelectorAll('.page[data-page-index="1"] [style*="background"]'))
+    const target = document
+      .querySelector('.page[data-page-index="1"]')!
+      .getBoundingClientRect();
+    const hits = Array.from(
+      document.querySelectorAll(
+        '.page[data-page-index="1"] [style*="background"]',
+      ),
+    )
       .map((element) => element.getBoundingClientRect())
       .filter((rect) => rect.width > 4 && rect.width < target.width);
-    return hits.length > 0 && hits.every((rect) => rect.left >= target.left - 1 && rect.right <= target.right + 1 && rect.top >= target.top - 1 && rect.bottom <= target.bottom + 1);
+    return (
+      hits.length > 0 &&
+      hits.every(
+        (rect) =>
+          rect.left >= target.left - 1 &&
+          rect.right <= target.right + 1 &&
+          rect.top >= target.top - 1 &&
+          rect.bottom <= target.bottom + 1,
+      )
+    );
   });
   expect(inside).toBe(true);
 });

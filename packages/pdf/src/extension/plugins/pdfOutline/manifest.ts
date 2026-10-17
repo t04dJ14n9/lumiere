@@ -1,7 +1,7 @@
-import { defineManifest } from '../manifest';
+import { defineManifest } from "../manifest";
 
 export default defineManifest({
-  id: 'pdfOutline',
-  title: 'PDF Outline',
-  capabilities: ['treeView', 'commands'],
+  id: "pdfOutline",
+  title: "PDF Outline",
+  capabilities: ["treeView", "commands"],
 });

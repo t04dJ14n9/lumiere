@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 import path from "node:path";
 // Same baseline as PDF Workbench, with architecture boundaries for this project.
@@ -100,15 +101,14 @@ export default tseslint.config(
       ".vscode-test/**",
       // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
       "packages/markdown/docs/vim-caret-measurements/**",
-      // Imported from PDF Workshop; it joins this configuration as it is
-      // integrated into the shared packages.
-      "packages/pdf/**",
+      // PDFs generated for the PDF tests.
+      "packages/pdf/test/fixtures/generated/**",
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["**/*.ts"],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parserOptions: { tsconfigRootDir: import.meta.dirname },
     },
@@ -123,11 +123,25 @@ export default tseslint.config(
       eqeqeq: ["error", "always"],
     },
   },
-  { files: ["**/*.ts", "**/*.mjs"], rules: style },
+  { files: ["**/*.{ts,tsx}", "**/*.mjs"], rules: style },
   {
-    files: ["src/**/*.ts", "packages/*/src/**/*.ts"],
-    ignores: ["**/*.test.ts"],
+    files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
+    ignores: [
+      "**/*.test.ts",
+      // Imported from PDF Workshop; its functions are being split to these
+      // limits (task: PDF size rules), then this exemption goes.
+      "packages/pdf/src/**",
+    ],
     rules: size,
+  },
+  {
+    // The PDF viewer's React UI.
+    files: ["packages/pdf/src/webview/**/*.{ts,tsx}"],
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error",
+    },
   },
   {
     // Floating promises are lint errors: a promise is awaited, returned, or
@@ -138,7 +152,7 @@ export default tseslint.config(
     //   a function documented as never rejecting (it catches inside).
     // - Lifecycle work (stop, cleanup, dispose) is returned or awaited by its
     //   owner, or tracked by something that awaits it; never `void`ed.
-    files: ["src/**/*.ts", "packages/*/src/**/*.ts"],
+    files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}"],
     ignores: ["**/*.test.ts"],
     languageOptions: {
       parserOptions: {
@@ -151,6 +165,10 @@ export default tseslint.config(
           "./packages/markdown/src/plugins/tsconfig.host.json",
           "./packages/markdown/src/plugins/tsconfig.webview.json",
           "./packages/markdown/src/workers/tsconfig.json",
+          "./packages/pdf/tsconfig.json",
+          "./packages/pdf/src/extension/tsconfig.json",
+          "./packages/pdf/src/webview/tsconfig.json",
+          "./packages/pdf/src/bridge-stdio/tsconfig.json",
         ],
         tsconfigRootDir: import.meta.dirname,
       },

@@ -8,7 +8,9 @@ test("pinch scale is proportional to the delta: opposite deltas cancel, small de
   assert.ok(pinchFactor(-1, 0) > 1 && pinchFactor(-1, 0) < 1.011);
   // Many small events add up like one big one.
   let scale = 1;
-  for (let i = 0; i < 40; i++) scale *= pinchFactor(-2.5, 0);
+  for (let i = 0; i < 40; i++) {
+    scale *= pinchFactor(-2.5, 0);
+  }
   assert.ok(Math.abs(scale - Math.exp(1)) < 1e-9);
   assert.equal(pinchFactor(-1, 1), pinchFactor(-40, 0));
 });

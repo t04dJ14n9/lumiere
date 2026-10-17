@@ -11,8 +11,13 @@ const viewport = (page: Page) => page.locator(".viewport");
 const into = (page: Page, index: number) =>
   page.evaluate((index) => {
     const view = document.querySelector(".viewport")!.getBoundingClientRect();
-    const box = document.querySelector(`.page[data-page-index="${index}"]`)!.getBoundingClientRect();
-    return { top: Math.round(view.top - box.top), left: Math.round(view.left - box.left) };
+    const box = document
+      .querySelector(`.page[data-page-index="${index}"]`)!
+      .getBoundingClientRect();
+    return {
+      top: Math.round(view.top - box.top),
+      left: Math.round(view.left - box.left),
+    };
   }, index);
 
 for (const [name, settings] of [
@@ -21,13 +26,17 @@ for (const [name, settings] of [
   ["page by page single", { scrollMode: "paged", pageLayout: "single" }],
   ["page by page two pages", { scrollMode: "paged", pageLayout: "spread" }],
 ] as const) {
-  test(`${name}: next and previous keep the zoom and the place in the page`, async ({ page }) => {
+  test(`${name}: next and previous keep the zoom and the place in the page`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 700, height: 600 });
     await openView(page, { defaultZoom: 300, ...settings });
     await page.waitForTimeout(400);
     const zoom = (await lastView(page))!.zoomPercent;
     // Somewhere inside the first page or spread.
-    await viewport(page).evaluate((v) => v.scrollBy({ left: 120, top: 260, behavior: "instant" }));
+    await viewport(page).evaluate((v) =>
+      v.scrollBy({ left: 120, top: 260, behavior: "instant" }),
+    );
     await page.waitForTimeout(300);
     const reading = async () => ((await lastView(page))?.readingPage ?? 1) - 1;
     const first = await reading();
@@ -50,10 +59,14 @@ for (const [name, settings] of [
   });
 }
 
-test("the plain next page still goes to the top of the page", async ({ page }) => {
+test("the plain next page still goes to the top of the page", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 700, height: 600 });
   await openView(page, { defaultZoom: 300 });
-  await viewport(page).evaluate((v) => v.scrollBy({ top: 260, behavior: "instant" }));
+  await viewport(page).evaluate((v) =>
+    v.scrollBy({ top: 260, behavior: "instant" }),
+  );
   await page.waitForTimeout(300);
   await act(page, { action: "nextPage" });
   await expect.poll(async () => (await lastView(page))?.readingPage).toBe(2);

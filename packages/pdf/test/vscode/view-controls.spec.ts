@@ -65,9 +65,13 @@ async function body(page: Page): Promise<void> {
   // page during fit/layout changes. Start the paging checks from a known page.
   await showPage(page, viewer, 1);
   const indexes = () =>
-    viewer.locator(".page").evaluateAll((pages) =>
-      pages.map((element) => Number((element as HTMLElement).dataset.pageIndex)),
-    );
+    viewer
+      .locator(".page")
+      .evaluateAll((pages) =>
+        pages.map((element) =>
+          Number((element as HTMLElement).dataset.pageIndex),
+        ),
+      );
   await expect.poll(indexes).toEqual([0, 1]);
   await command(page, "PDF: Next Page");
   await expect.poll(indexes).toEqual([2, 3]);

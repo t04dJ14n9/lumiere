@@ -19,7 +19,9 @@ export function registerNativeLinks(panels: PdfPanels): vscode.Disposable {
       const run = {
         current: () => !cancelled,
         cancel: () => {
-          if (cancelled) return;
+          if (cancelled) {
+            return;
+          }
           cancelled = true;
           cancellations.get(run)?.();
         },
@@ -31,11 +33,17 @@ export function registerNativeLinks(panels: PdfPanels): vscode.Disposable {
       await vscode.commands.executeCommand("vscode.openWith", file, VIEW_TYPE, {
         viewColumn: column,
       });
-      if (!run.current()) return;
+      if (!run.current()) {
+        return;
+      }
       const panel = await panels.waitFor(file, 5000, column, run.current);
-      if (!panel || !run.current()) return;
+      if (!panel || !run.current()) {
+        return;
+      }
       const location = parseLocationFragment(target.fragment);
-      if (location) await deliverNativeLocation(panel, location, run, cancellations);
+      if (location) {
+        await deliverNativeLocation(panel, location, run, cancellations);
+      }
     },
   });
 }
@@ -45,8 +53,9 @@ async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
     root.scheme !== "file" ||
     target.scheme !== "file" ||
     root.authority !== target.authority
-  )
+  ) {
     throw new Error("Local workspace links only");
+  }
   const relative = path.relative(
     await realpath(root.fsPath),
     await realpath(target.fsPath),
@@ -55,7 +64,7 @@ async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
     relative === ".." ||
     relative.startsWith(".." + path.sep) ||
     path.isAbsolute(relative)
-  )
+  ) {
     throw new Error("Link escapes workspace folder");
+  }
 }
-

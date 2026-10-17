@@ -7,7 +7,9 @@ test("in zen the chrome and slim toolbars are a floating bar; floating and none 
   assert.equal(zenToolbarMode("slim", true), "floating");
   assert.equal(zenToolbarMode("floating", true), "floating");
   assert.equal(zenToolbarMode("none", true), "none");
-  for (const mode of ["chrome", "slim", "floating", "none"] as const) assert.equal(zenToolbarMode(mode, false), mode);
+  for (const mode of ["chrome", "slim", "floating", "none"] as const) {
+    assert.equal(zenToolbarMode(mode, false), mode);
+  }
 });
 
 test("full-screen zen ends when the window stops filling the screen, once", () => {

@@ -24,7 +24,7 @@
  *   previous one has stopped, so engines never overlap; a session replaced
  *   before its turn starts none.
  */
-export type EngineMode = 'worker' | 'main-thread';
+export type EngineMode = "worker" | "main-thread";
 
 /** What the session needs from the outside world; tests pass fakes. */
 export interface RenderSessionEnvironment<Engine> {
@@ -42,8 +42,8 @@ export interface RenderSessionEnvironment<Engine> {
 
 export class RenderSessionDisposedError extends Error {
   constructor() {
-    super('The PDF render session was disposed');
-    this.name = 'RenderSessionDisposedError';
+    super("The PDF render session was disposed");
+    this.name = "RenderSessionDisposedError";
   }
 }
 
@@ -80,13 +80,17 @@ export class PdfRenderSession<Engine> {
 
   /** The PDF's bytes; gone once the session is disposed. */
   get buffer(): ArrayBuffer {
-    if (!this.bytes) throw new RenderSessionDisposedError();
+    if (!this.bytes) {
+      throw new RenderSessionDisposedError();
+    }
     return this.bytes;
   }
 
   /** The engine for `mode`, started on first use. Rejects once disposed. */
   engine(mode: EngineMode): Promise<Engine> {
-    if (!this.live) return Promise.reject(new RenderSessionDisposedError());
+    if (!this.live) {
+      return Promise.reject(new RenderSessionDisposedError());
+    }
     let engine = this.engines.get(mode);
     if (!engine) {
       const attempt = Symbol(mode);
@@ -105,46 +109,65 @@ export class PdfRenderSession<Engine> {
     this.engines.delete(mode);
     this.attempts.delete(mode);
     const engine = this.started.get(mode);
-    if (!engine) return Promise.resolve();
+    if (!engine) {
+      return Promise.resolve();
+    }
     this.started.delete(mode);
     return this.stop(engine);
   }
 
   /** Let go of everything; resolves when every engine has stopped. Never rejects. */
   dispose(): Promise<void> {
-    if (this.disposing) return this.disposing;
+    if (this.disposing) {
+      return this.disposing;
+    }
     this.live = false;
     this.bytes = undefined;
     for (const url of this.objectUrls.splice(0)) {
       try {
         this.environment.revokeObjectUrl(url);
       } catch (error) {
-        this.environment.reportError('Could not revoke a PDF engine URL', error);
+        this.environment.reportError(
+          "Could not revoke a PDF engine URL",
+          error,
+        );
       }
     }
-    for (const mode of [...this.started.keys()]) void this.release(mode);
+    for (const mode of [...this.started.keys()]) {
+      void this.release(mode);
+    }
     this.engines.clear();
     this.attempts.clear();
-    this.disposing = Promise.all([this.after, ...this.stopping]).then(() => undefined);
+    this.disposing = Promise.all([this.after, ...this.stopping]).then(
+      () => undefined,
+    );
     return this.disposing;
   }
 
   /** Stop an engine, tracked until it has stopped; failures are reported, not thrown. */
   private stop(engine: Engine): Promise<void> {
     const stopping = (async () => this.environment.destroyEngine(engine))()
-      .catch((error: unknown) => this.environment.reportError('Could not stop the PDF engine', error))
+      .catch((error: unknown) =>
+        this.environment.reportError("Could not stop the PDF engine", error),
+      )
       .finally(() => this.stopping.delete(stopping));
     this.stopping.add(stopping);
     return stopping;
   }
 
   private async start(mode: EngineMode, attempt: symbol): Promise<Engine> {
-    const current = (): boolean => this.live && this.attempts.get(mode) === attempt;
+    const current = (): boolean =>
+      this.live && this.attempts.get(mode) === attempt;
     // An engine given up on (the worker) has stopped before another starts.
     await Promise.all([this.after, ...this.stopping]);
-    if (!current()) throw new RenderSessionDisposedError();
-    const wasmUrl = mode === 'worker' ? await this.workerWasmUrl() : this.wasmUrl;
-    if (!current()) throw new RenderSessionDisposedError();
+    if (!current()) {
+      throw new RenderSessionDisposedError();
+    }
+    const wasmUrl =
+      mode === "worker" ? await this.workerWasmUrl() : this.wasmUrl;
+    if (!current()) {
+      throw new RenderSessionDisposedError();
+    }
     const engine = await this.environment.createEngine(mode, wasmUrl);
     // Disposed, or this mode released, while the engine was starting.
     if (!current()) {
@@ -165,7 +188,9 @@ export class PdfRenderSession<Engine> {
   }
 
   private assertLive(): void {
-    if (!this.live) throw new RenderSessionDisposedError();
+    if (!this.live) {
+      throw new RenderSessionDisposedError();
+    }
   }
 }
 
@@ -180,9 +205,15 @@ export function replaceSession<Engine>(
   show: (session: PdfRenderSession<Engine>) => void,
 ): PdfRenderSession<Engine> {
   let previousStopped: () => void = () => undefined;
-  const next = create(new Promise<void>(resolve => { previousStopped = resolve; }));
+  const next = create(
+    new Promise<void>((resolve) => {
+      previousStopped = resolve;
+    }),
+  );
   show(next);
   // dispose() never rejects: failures go to reportError.
-  void (previous ? previous.dispose() : Promise.resolve()).then(previousStopped);
+  void (previous ? previous.dispose() : Promise.resolve()).then(
+    previousStopped,
+  );
   return next;
 }

@@ -115,7 +115,9 @@ test("each Ctrl+wheel notch zooms one step, and small trackpad movements zoom in
 
   // Small deltas are a pinch: the zoom follows exp(total / 100), here 90% x e^0.4.
   await page.keyboard.down("Control");
-  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -10);
+  for (let i = 0; i < 4; i++) {
+    await page.mouse.wheel(0, -10);
+  }
   await page.keyboard.up("Control");
   await expect
     .poll(async () => Number(await zoom.inputValue()), { timeout: 10_000 })

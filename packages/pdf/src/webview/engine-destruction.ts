@@ -11,7 +11,9 @@
 
 /** The part of a PDFium engine (EmbedPDF's PdfEngine) that stopping needs. */
 export interface StoppableEngine {
-  closeAllDocuments(): { wait(onResult: () => void, onError: (error: unknown) => void): void };
+  closeAllDocuments(): {
+    wait(onResult: () => void, onError: (error: unknown) => void): void;
+  };
   destroy?(): unknown;
 }
 
@@ -21,21 +23,37 @@ interface TaskLike {
 }
 
 function isTask(value: unknown): value is TaskLike {
-  return typeof value === 'object' && value !== null && typeof (value as TaskLike).wait === 'function';
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as TaskLike).wait === "function"
+  );
 }
 
-export function stopEngine(engine: StoppableEngine, deadlineMs: number): Promise<void> {
+export function stopEngine(
+  engine: StoppableEngine,
+  deadlineMs: number,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let destroying = false;
     const destroy = (): void => {
-      if (destroying) return;
+      if (destroying) {
+        return;
+      }
       destroying = true;
       clearTimeout(timer);
       try {
         const result = engine.destroy?.();
         // EmbedPDF's destroy() returns a task that settles at once.
-        if (isTask(result)) result.wait(resolve, error => reject(new Error(`The PDF engine could not stop: ${describe(error)}`)));
-        else resolve();
+        if (isTask(result)) {
+          result.wait(resolve, (error) =>
+            reject(
+              new Error(`The PDF engine could not stop: ${describe(error)}`),
+            ),
+          );
+        } else {
+          resolve();
+        }
       } catch (error) {
         reject(error instanceof Error ? error : new Error(describe(error)));
       }
@@ -50,7 +68,11 @@ export function stopEngine(engine: StoppableEngine, deadlineMs: number): Promise
 }
 
 function describe(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'object' && error !== null && 'message' in error) return String((error as { message: unknown }).message);
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
   return String(error);
 }

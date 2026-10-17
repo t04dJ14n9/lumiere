@@ -11,25 +11,25 @@
  */
 export type Capability =
   /** Registers a custom editor. */
-  | 'customEditor'
+  | "customEditor"
   /** Opens documents as bytes (read-only binary files), not as text. */
-  | 'binaryDocument'
+  | "binaryDocument"
   /** Reports a selection other plugins can read. */
-  | 'selectionProvider'
+  | "selectionProvider"
   /** Can open a document at a location (a page and box). */
-  | 'navigationTarget'
+  | "navigationTarget"
   /** Contributes commands. */
-  | 'commands'
+  | "commands"
   /** Contributes a tree view. */
-  | 'treeView'
+  | "treeView"
   /** Contributes status bar entries. */
-  | 'statusBar'
+  | "statusBar"
   /** Writes files in the extension's storage. */
-  | 'storage'
+  | "storage"
   /** Hands selections to agents. */
-  | 'agentHandoff'
+  | "agentHandoff"
   /** Opens a local network server; must be opt-in. */
-  | 'localServer';
+  | "localServer";
 
 export interface PluginManifest {
   /** Stable id, in camelCase: `pdf`, `pdfToolbar`, `agentBridge`. */

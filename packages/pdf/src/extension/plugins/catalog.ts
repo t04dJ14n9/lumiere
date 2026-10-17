@@ -12,17 +12,17 @@
  *   agentBridge  Copy Link for Agent, the selection envelope command, the AgentHandoff service, the opt-in MCP server
  *   ideContext   Copy/Send IDE Context (clipboard-first; never silent-guess)
  */
-import { agentBridgePlugin } from './agentBridge/plugin';
-import { ideContextPlugin } from './ideContext/plugin';
-import { pdfPlugin } from './pdf/plugin';
-import { pdfLookUpPlugin } from './pdfLookUp/plugin';
-import { pdfSettingsPlugin } from './pdfSettings/plugin';
-import { pdfOutlinePlugin } from './pdfOutline/plugin';
-import { pdfRegionsPlugin } from './pdfRegions/plugin';
-import { pdfToolbarPlugin } from './pdfToolbar/plugin';
-import { pdfZenPlugin } from './pdfZen/plugin';
-import { pdfHistoryPlugin } from './pdfHistory/plugin';
-import type { Plugin } from '@workshop/core';
+import { agentBridgePlugin } from "./agentBridge/plugin";
+import { ideContextPlugin } from "./ideContext/plugin";
+import { pdfPlugin } from "./pdf/plugin";
+import { pdfLookUpPlugin } from "./pdfLookUp/plugin";
+import { pdfSettingsPlugin } from "./pdfSettings/plugin";
+import { pdfOutlinePlugin } from "./pdfOutline/plugin";
+import { pdfRegionsPlugin } from "./pdfRegions/plugin";
+import { pdfToolbarPlugin } from "./pdfToolbar/plugin";
+import { pdfZenPlugin } from "./pdfZen/plugin";
+import { pdfHistoryPlugin } from "./pdfHistory/plugin";
+import type { Plugin } from "@workshop/core";
 
 export const plugins: readonly Plugin[] = [
   pdfPlugin,

@@ -1,4 +1,4 @@
-import { PDF_BRIDGE_ENVELOPE_COMMAND } from '../../../shared/bridge-envelope';
+import { PDF_BRIDGE_ENVELOPE_COMMAND } from "../../../shared/bridge-envelope";
 
 /**
  * Command ids passed to `vscode.commands.registerCommand`.
@@ -102,7 +102,11 @@ export const RUNTIME_COMMAND_IDS: readonly string[] = [
 
 /** Full id for a view-options suffix (`singlePage`, …). Unknown suffixes are not registered. */
 export function viewControlCommandId(suffix: string): string {
-  const id = (VIEW_CONTROL_COMMAND_IDS as Readonly<Record<string, string>>)[suffix];
-  if (id === undefined) throw new Error(`Unknown view control command: ${suffix}`);
+  const id = (VIEW_CONTROL_COMMAND_IDS as Readonly<Record<string, string>>)[
+    suffix
+  ];
+  if (id === undefined) {
+    throw new Error(`Unknown view control command: ${suffix}`);
+  }
   return id;
 }

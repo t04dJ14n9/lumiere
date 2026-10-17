@@ -27,10 +27,18 @@ export function wordGlyphRange(
   index: number,
 ): [number, number] | undefined {
   const here = glyphs[index];
-  if (!here || here.isSpace || !here.box) return undefined;
+  if (!here || here.isSpace || !here.box) {
+    return undefined;
+  }
   const joins = (from: WordGlyph, to: WordGlyph | undefined): boolean => {
-    if (!to || to.isSpace || !to.box || !from.box) return false;
-    const height = Math.max(from.box[3] - from.box[1], to.box[3] - to.box[1], 1);
+    if (!to || to.isSpace || !to.box || !from.box) {
+      return false;
+    }
+    const height = Math.max(
+      from.box[3] - from.box[1],
+      to.box[3] - to.box[1],
+      1,
+    );
     const sameLine =
       Math.min(from.box[3], to.box[3]) - Math.max(from.box[1], to.box[1]) >
       height * 0.4;
@@ -38,9 +46,13 @@ export function wordGlyphRange(
     return sameLine && gap <= height * MAX_GAP_IN_HEIGHTS;
   };
   let start = index;
-  while (joins(glyphs[start]!, glyphs[start - 1])) start--;
+  while (joins(glyphs[start]!, glyphs[start - 1])) {
+    start--;
+  }
   let end = index + 1;
-  while (joins(glyphs[end - 1]!, glyphs[end])) end++;
+  while (joins(glyphs[end - 1]!, glyphs[end])) {
+    end++;
+  }
   return [start, end];
 }
 

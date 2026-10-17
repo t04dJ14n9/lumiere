@@ -25,12 +25,20 @@ export function useViewLayout(
       : ScrollStrategy.Vertical;
   const { currentPage, show } = navigation;
   useEffect(() => {
-    if (!scroll || !spread) return;
+    if (!scroll || !spread) {
+      return;
+    }
     const pairingChanged = spread.getSpreadMode() !== spreadMode;
     const directionChanged = state.strategy !== strategy;
-    if (!pairingChanged && !directionChanged) return;
-    if (pairingChanged) spread.setSpreadMode(spreadMode);
-    if (directionChanged) scroll.setScrollStrategy(strategy);
+    if (!pairingChanged && !directionChanged) {
+      return;
+    }
+    if (pairingChanged) {
+      spread.setSpreadMode(spreadMode);
+    }
+    if (directionChanged) {
+      scroll.setScrollStrategy(strategy);
+    }
     show({ page: currentPage }, undefined, 0, true);
   }, [scroll, spread, spreadMode, state.strategy, strategy, currentPage, show]);
 }

@@ -12,7 +12,9 @@ function outbox() {
     (flush) => scheduled.push(flush),
   );
   const frame = (): void => {
-    for (const flush of scheduled.splice(0)) flush();
+    for (const flush of scheduled.splice(0)) {
+      flush();
+    }
   };
   return { box, sent, scheduled, frame };
 }
@@ -93,14 +95,22 @@ test("versions count up for the life of the page, and patches carry the load the
   );
 });
 
-test('history messages flush view state first and carry the current load generation', () => {
+test("history messages flush view state first and carry the current load generation", () => {
   const { box, sent } = outbox();
   box.loaded();
   box.report({ view: view(3) });
-  box.post({ type: 'historyTraverse', direction: 'back' });
+  box.post({ type: "historyTraverse", direction: "back" });
   box.loaded();
-  box.post({ type: 'historyTraverse', direction: 'forward' });
-  assert.deepEqual(sent.map(message => [message.type, 'load' in message ? message.load : undefined]), [
-    ['patch', 1], ['historyTraverse', 1], ['historyTraverse', 2],
-  ]);
+  box.post({ type: "historyTraverse", direction: "forward" });
+  assert.deepEqual(
+    sent.map((message) => [
+      message.type,
+      "load" in message ? message.load : undefined,
+    ]),
+    [
+      ["patch", 1],
+      ["historyTraverse", 1],
+      ["historyTraverse", 2],
+    ],
+  );
 });

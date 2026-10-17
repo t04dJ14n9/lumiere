@@ -26,9 +26,9 @@
  * The lines up to the selected text match LLM Wiki's agent clipboard, so
  * agents and skills that read one also read the other.
  */
-import { boundingRect, toViewRect } from './geometry';
-import { pdfLink } from './pdf-location';
-import { selectedPages, type PdfSelection } from './selection';
+import { boundingRect, toViewRect } from "./geometry";
+import { pdfLink } from "./pdf-location";
+import { selectedPages, type PdfSelection } from "./selection";
 
 export interface PdfSource {
   /** Workspace-relative path, or an absolute path for files outside it. */
@@ -38,9 +38,10 @@ export interface PdfSource {
 }
 
 const REGION_INSTRUCTION =
-  'Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.';
+  "Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.";
 
-const CITE_INSTRUCTION = 'When you answer, cite the Source link above so the reader can reopen this spot in the PDF.';
+const CITE_INSTRUCTION =
+  "When you answer, cite the Source link above so the reader can reopen this spot in the PDF.";
 
 /** Files saved alongside the selection. */
 export interface SelectionFiles {
@@ -48,32 +49,49 @@ export interface SelectionFiles {
   regionImage?: string;
 }
 
-export function agentText(selection: PdfSelection, source: PdfSource, files: SelectionFiles = {}): string {
-  const region = selection.kind === 'region';
+export function agentText(
+  selection: PdfSelection,
+  source: PdfSource,
+  files: SelectionFiles = {},
+): string {
+  const region = selection.kind === "region";
   const links = selectedPages(selection).map(({ page, rects }) => {
-    const label = `${source.path} (page ${page}${region ? ' region' : ''})`;
-    const href = pdfLink(source.path, { page, viewRect: toViewRect(boundingRect(rects)) });
+    const label = `${source.path} (page ${page}${region ? " region" : ""})`;
+    const href = pdfLink(source.path, {
+      page,
+      viewRect: toViewRect(boundingRect(rects)),
+    });
     return `[${escapeLinkLabel(label)}](<${href}>)`;
   });
   return [
-    ...(links.length === 1 ? [`Source: ${links[0]}`] : ['Sources:', ...links.map(link => `- ${link}`)]),
+    ...(links.length === 1
+      ? [`Source: ${links[0]}`]
+      : ["Sources:", ...links.map((link) => `- ${link}`)]),
     `PDF source SHA-256: \`${source.sha256}\``,
-    '',
-    ...(selection.kind === 'text'
-      ? ['Selected text:', selection.text]
+    "",
+    ...(selection.kind === "text"
+      ? ["Selected text:", selection.text]
       : [
-        REGION_INSTRUCTION,
-        ...(files.regionImage ? [`Region image: \`${files.regionImage}\``] : []),
-        ...(selection.text
-          ? ['', `Text in the region, line by line (table columns are not kept${files.regionImage ? '; see the image' : ''}):`, selection.text]
-          : []),
-      ]),
-    '',
-    links.length === 1 ? CITE_INSTRUCTION : CITE_INSTRUCTION.replace('the Source link', 'the Source links'),
-  ].join('\n');
+          REGION_INSTRUCTION,
+          ...(files.regionImage
+            ? [`Region image: \`${files.regionImage}\``]
+            : []),
+          ...(selection.text
+            ? [
+                "",
+                `Text in the region, line by line (table columns are not kept${files.regionImage ? "; see the image" : ""}):`,
+                selection.text,
+              ]
+            : []),
+        ]),
+    "",
+    links.length === 1
+      ? CITE_INSTRUCTION
+      : CITE_INSTRUCTION.replace("the Source link", "the Source links"),
+  ].join("\n");
 }
 
 /** Escape the characters that would end or format a Markdown link label. */
 function escapeLinkLabel(label: string): string {
-  return label.replace(/[\\[\]`*_{}<>&|~]/gu, '\\$&');
+  return label.replace(/[\\[\]`*_{}<>&|~]/gu, "\\$&");
 }

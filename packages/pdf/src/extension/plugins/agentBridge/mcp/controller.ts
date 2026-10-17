@@ -14,17 +14,21 @@
  * abandoned and undone first, and a start that has not yet opened its
  * listener never opens it.
  */
-import * as vscode from 'vscode';
-import type { PdfPanels } from '../../pdf/panels';
-import { AGENT_BRIDGE_COMMAND_IDS } from '../../pdf/registered-commands';
-import type { AgentHandoff } from '../handoff';
-import type { LastPdf } from '../last-pdf';
-import { SERVER_NAME } from './constants';
-import type { BridgeLog, RunningBridge } from './server';
+import * as vscode from "vscode";
+import type { PdfPanels } from "../../pdf/panels";
+import { AGENT_BRIDGE_COMMAND_IDS } from "../../pdf/registered-commands";
+import type { AgentHandoff } from "../handoff";
+import type { LastPdf } from "../last-pdf";
+import { SERVER_NAME } from "./constants";
+import type { BridgeLog, RunningBridge } from "./server";
 
 /** Whether the user has turned the bridge on. Off by default: it starts a local server. */
 export function agentBridgeEnabled(): boolean {
-  return vscode.workspace.getConfiguration('pdfWorkshop').get<boolean>('agentBridge.enabled', false) === true;
+  return (
+    vscode.workspace
+      .getConfiguration("pdfWorkshop")
+      .get<boolean>("agentBridge.enabled", false) === true
+  );
 }
 
 export interface BridgeOptions {
@@ -46,9 +50,14 @@ export interface AgentBridgeController {
 }
 
 /** Runs the bridge (see the invariants above) and registers Copy MCP Setup. */
-export function registerAgentBridge(options: BridgeOptions): AgentBridgeController {
+export function registerAgentBridge(
+  options: BridgeOptions,
+): AgentBridgeController {
   const { panels, log } = options;
-  const shim = vscode.Uri.joinPath(options.globalStorageUri, 'bridge-stdio.js').fsPath;
+  const shim = vscode.Uri.joinPath(
+    options.globalStorageUri,
+    "bridge-stdio.js",
+  ).fsPath;
   let running: RunningBridge | undefined;
   // Used: a PDF editor was opened in this window, or Copy MCP Setup was run.
   // Once used, the bridge stays up until the setting goes off, so an agent
@@ -58,76 +67,121 @@ export function registerAgentBridge(options: BridgeOptions): AgentBridgeControll
   let queue = Promise.resolve();
   const wanted = (): boolean => !stopped && used && agentBridgeEnabled();
   const start = async (): Promise<void> => {
-    const { startAgentBridge } = await import('./server');
+    const { startAgentBridge } = await import("./server");
     // Stopped, or turned off, while the server code loaded: do not listen.
-    if (!wanted()) return;
+    if (!wanted()) {
+      return;
+    }
     const bridge = await startAgentBridge({ ...options, shim });
     // The setting may have changed, or the plugin stopped, while it started.
-    if (wanted()) running = bridge;
-    else await bridge.dispose();
+    if (wanted()) {
+      running = bridge;
+    } else {
+      await bridge.dispose();
+    }
   };
   const stop = async (bridge: RunningBridge): Promise<void> => {
     running = undefined;
     await bridge.dispose();
-    log.info('Agent bridge stopped');
+    log.info("Agent bridge stopped");
   };
   /** Queue one step towards the wanted state; the queue never rejects. */
   const sync = (): Promise<void> => {
     queue = queue.then(async () => {
       if (wanted() && !running) {
-        await start().catch(error => log.error(`Agent bridge failed to start: ${String(error)}`));
+        await start().catch((error) =>
+          log.error(`Agent bridge failed to start: ${String(error)}`),
+        );
       } else if (!wanted() && running) {
-        await stop(running).catch(error => log.error(`Agent bridge failed to stop: ${String(error)}`));
+        await stop(running).catch((error) =>
+          log.error(`Agent bridge failed to stop: ${String(error)}`),
+        );
       }
     });
     return queue;
   };
   void sync();
   const subscriptions = vscode.Disposable.from(
-    vscode.workspace.onDidChangeConfiguration(event => {
-      if (event.affectsConfiguration('pdfWorkshop.agentBridge.enabled')) void sync();
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("pdfWorkshop.agentBridge.enabled")) {
+        void sync();
+      }
     }),
     panels.onDidOpen(() => {
       used = true;
       void sync();
     }),
-    vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.copyMcpSetup, async () => {
-      if (!agentBridgeEnabled()) {
-        const turnOn = 'Turn On';
-        const choice = await vscode.window.showInformationMessage(
-          'The agent bridge is off. It serves the PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected). Turn it on?',
-          turnOn,
-        );
-        if (choice !== turnOn) return;
-        await vscode.workspace.getConfiguration('pdfWorkshop').update('agentBridge.enabled', true, vscode.ConfigurationTarget.Global);
-      }
-      used = true;
-      void sync();
-      await copyMcpSetup(shim);
-    }),
+    vscode.commands.registerCommand(
+      AGENT_BRIDGE_COMMAND_IDS.copyMcpSetup,
+      async () => {
+        if (!agentBridgeEnabled()) {
+          const turnOn = "Turn On";
+          const choice = await vscode.window.showInformationMessage(
+            "The agent bridge is off. It serves the PDF selection to coding agents over a local MCP server (127.0.0.1, token-protected). Turn it on?",
+            turnOn,
+          );
+          if (choice !== turnOn) {
+            return;
+          }
+          await vscode.workspace
+            .getConfiguration("pdfWorkshop")
+            .update(
+              "agentBridge.enabled",
+              true,
+              vscode.ConfigurationTarget.Global,
+            );
+        }
+        used = true;
+        void sync();
+        await copyMcpSetup(shim);
+      },
+    ),
   );
   let disposing: Promise<void> | undefined;
   return {
-    dispose: () => disposing ??= (async () => {
-      stopped = true;
-      subscriptions.dispose();
-      // Waits for a start in progress, then stops what it started.
-      await sync();
-    })(),
+    dispose: () =>
+      (disposing ??= (async () => {
+        stopped = true;
+        subscriptions.dispose();
+        // Waits for a start in progress, then stops what it started.
+        await sync();
+      })()),
   };
 }
 
 /** Let the user wire Claude Code / Codex (and any stdio MCP client) to the bridge. */
 async function copyMcpSetup(shim: string): Promise<void> {
-  const node = 'node';
+  const node = "node";
   const options = [
-    { label: 'Claude Code', detail: `claude mcp add --scope user ${SERVER_NAME} -- ${node} ${shim}` },
-    { label: 'Codex', detail: `codex mcp add ${SERVER_NAME} -- ${node} ${shim}` },
-    { label: 'Codex (config.toml)', detail: `[mcp_servers.${SERVER_NAME}]\ncommand = "${node}"\nargs = ["${shim}"]` },
-    { label: 'Project .mcp.json (Claude Code)', detail: JSON.stringify({ mcpServers: { [SERVER_NAME]: { command: node, args: [shim] } } }, null, 2) },
+    {
+      label: "Claude Code",
+      detail: `claude mcp add --scope user ${SERVER_NAME} -- ${node} ${shim}`,
+    },
+    {
+      label: "Codex",
+      detail: `codex mcp add ${SERVER_NAME} -- ${node} ${shim}`,
+    },
+    {
+      label: "Codex (config.toml)",
+      detail: `[mcp_servers.${SERVER_NAME}]\ncommand = "${node}"\nargs = ["${shim}"]`,
+    },
+    {
+      label: "Project .mcp.json (Claude Code)",
+      detail: JSON.stringify(
+        { mcpServers: { [SERVER_NAME]: { command: node, args: [shim] } } },
+        null,
+        2,
+      ),
+    },
   ];
-  const picked = await vscode.window.showQuickPick(options, { title: 'Copy MCP setup for…' });
-  if (!picked) return;
+  const picked = await vscode.window.showQuickPick(options, {
+    title: "Copy MCP setup for…",
+  });
+  if (!picked) {
+    return;
+  }
   await vscode.env.clipboard.writeText(picked.detail);
-  void vscode.window.showInformationMessage(`Copied the ${picked.label} MCP setup. Run it in a terminal (or paste it into the config).`);
+  void vscode.window.showInformationMessage(
+    `Copied the ${picked.label} MCP setup. Run it in a terminal (or paste it into the config).`,
+  );
 }

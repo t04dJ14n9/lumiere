@@ -8,14 +8,19 @@
  * Workshop back, so the two cannot recurse. A missing selection returns
  * `undefined`.
  */
-import { createHash } from 'node:crypto';
-import type { PdfPanel } from '../pdf/panel';
-import { selectionCanonical, type PdfBridgeEnvelope } from '../../../shared/bridge-envelope';
-import type { PdfSelection } from '../../../shared/selection';
+import { createHash } from "node:crypto";
+import type { PdfPanel } from "../pdf/panel";
+import {
+  selectionCanonical,
+  type PdfBridgeEnvelope,
+} from "../../../shared/bridge-envelope";
+import type { PdfSelection } from "../../../shared/selection";
 
 /** SHA-256 of the selection only. Not the hash of the PDF bytes. */
 export function hashSelection(selection: PdfSelection): string {
-  return createHash('sha256').update(selectionCanonical(selection)).digest('hex');
+  return createHash("sha256")
+    .update(selectionCanonical(selection))
+    .digest("hex");
 }
 
 export interface EnvelopeCommandHost {
@@ -34,7 +39,9 @@ export class PdfEnvelopePublisher {
 
   async publish(): Promise<PdfBridgeEnvelope | undefined> {
     const panel = this.commands.panel();
-    if (!panel) return undefined;
+    if (!panel) {
+      return undefined;
+    }
     return this.source.envelope(panel);
   }
 }

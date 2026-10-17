@@ -1,13 +1,13 @@
 /** Built-in Explorer Outline view (`IOutlinePane.Id`). */
-export const NATIVE_OUTLINE_ID = 'outline';
+export const NATIVE_OUTLINE_ID = "outline";
 
-export const PDF_OUTLINE_VIEW_ID = 'pdfWorkshop.outline';
+export const PDF_OUTLINE_VIEW_ID = "pdfWorkshop.outline";
 
 /** PDF Workshop custom editor view type. */
-export const PDF_WORKSHOP_EDITOR = 'pdfWorkshop.viewer';
+export const PDF_WORKSHOP_EDITOR = "pdfWorkshop.viewer";
 
 /** Markdown Workshop custom editor view type (peer product). */
-export const MARKDOWN_WORKSHOP_EDITOR = 'markdownWorkshop.editor';
+export const MARKDOWN_WORKSHOP_EDITOR = "markdownWorkshop.editor";
 
 /**
  * Delay before restoring the native Outline after leaving a PDF Workshop
@@ -88,10 +88,12 @@ export function createOutlineFocus(options: OutlineFocusOptions): {
     dispose() {
       state.leave?.dispose();
       state.leave = undefined;
-      if (!state.engaged) return;
+      if (!state.engaged) {
+        return;
+      }
       state.engaged = false;
       enqueue(async () => {
-        await restoreNativeOutline(resolved, 'dispose');
+        await restoreNativeOutline(resolved, "dispose");
       });
     },
   };
@@ -116,7 +118,9 @@ function enterFocus(
 ): void {
   state.leave?.dispose();
   state.leave = undefined;
-  if (state.engaged) return;
+  if (state.engaged) {
+    return;
+  }
   state.engaged = true;
   enqueue(async () => {
     await options.execute(`${NATIVE_OUTLINE_ID}.removeView`);
@@ -130,34 +134,40 @@ function scheduleLeave(
   options: ResolvedFocus,
   enqueue: (task: () => Promise<void>) => void,
 ): void {
-  if (!state.engaged || state.leave) return;
+  if (!state.engaged || state.leave) {
+    return;
+  }
   state.leave = options.schedule(() => {
     state.leave = undefined;
-    if (!state.engaged) return;
+    if (!state.engaged) {
+      return;
+    }
     state.engaged = false;
     enqueue(async () => {
-      await restoreNativeOutline(options, 'leave');
+      await restoreNativeOutline(options, "leave");
     });
   }, options.leaveDelayMs);
 }
 
 async function restoreNativeOutline(
   options: ResolvedFocus,
-  reason: 'leave' | 'dispose',
+  reason: "leave" | "dispose",
 ): Promise<void> {
   const active = options.activeViewType();
-  if (reason === 'leave' && workshopEditorOwnsOutline(active)) {
+  if (reason === "leave" && workshopEditorOwnsOutline(active)) {
     return;
   }
   if (
-    reason === 'dispose' &&
+    reason === "dispose" &&
     workshopEditorOwnsOutline(active) &&
     active !== options.ownEditorViewType
   ) {
     return;
   }
   await options.execute(`${NATIVE_OUTLINE_ID}.focus`);
-  if (reason === 'leave') await options.focusEditor();
+  if (reason === "leave") {
+    await options.focusEditor();
+  }
 }
 
 function defaultSchedule(run: () => void, ms: number): { dispose: () => void } {

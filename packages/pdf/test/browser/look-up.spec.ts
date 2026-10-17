@@ -24,19 +24,27 @@ async function forceClick(page: Page, x: number, y: number): Promise<void> {
   );
 }
 
-test("with Look Up on, a force click on a word asks the host to look it up", async ({ page }) => {
+test("with Look Up on, a force click on a word asks the host to look it up", async ({
+  page,
+}) => {
   await open(page);
   await send(page, { type: "lookUp", enabled: true });
   const at = await pagePoint(page, 1);
   const [x, y] = at(SYNTHETIC, TEXT_MIDLINE);
   await forceClick(page, x, y);
-  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "Synthetic", open: true });
+  await expect
+    .poll(async () => (await lookUps(page)).at(-1))
+    .toEqual({ type: "lookUp", word: "Synthetic", open: true });
   const [x2, y2] = at(PAGE, TEXT_MIDLINE);
   await forceClick(page, x2, y2);
-  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "page", open: true });
+  await expect
+    .poll(async () => (await lookUps(page)).at(-1))
+    .toEqual({ type: "lookUp", word: "page", open: true });
 });
 
-test("the context menu reports the word under the pointer, and nothing when there is none", async ({ page }) => {
+test("the context menu reports the word under the pointer, and nothing when there is none", async ({
+  page,
+}) => {
   await open(page);
   await send(page, { type: "lookUp", enabled: true });
   const at = await pagePoint(page, 1);
@@ -44,18 +52,26 @@ test("the context menu reports the word under the pointer, and nothing when ther
   await page.mouse.move(x, y);
   await page.waitForTimeout(400);
   await page.mouse.click(x, y, { button: "right" });
-  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "Synthetic", open: false });
+  await expect
+    .poll(async () => (await lookUps(page)).at(-1))
+    .toEqual({ type: "lookUp", word: "Synthetic", open: false });
   await send(page, { type: "lookUpRequest" });
-  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: "Synthetic", open: true });
+  await expect
+    .poll(async () => (await lookUps(page)).at(-1))
+    .toEqual({ type: "lookUp", word: "Synthetic", open: true });
   // On empty page space the menu has no word to offer.
   const [ex, ey] = at(300, 500);
   await page.mouse.move(ex, ey);
   await page.waitForTimeout(400);
   await page.mouse.click(ex, ey, { button: "right" });
-  await expect.poll(async () => (await lookUps(page)).at(-1)).toEqual({ type: "lookUp", word: null, open: false });
+  await expect
+    .poll(async () => (await lookUps(page)).at(-1))
+    .toEqual({ type: "lookUp", word: null, open: false });
 });
 
-test("Look Up is off until the host turns it on, and off again when it says so", async ({ page }) => {
+test("Look Up is off until the host turns it on, and off again when it says so", async ({
+  page,
+}) => {
   await open(page);
   const at = await pagePoint(page, 1);
   const [x, y] = at(SYNTHETIC, TEXT_MIDLINE);
@@ -80,5 +96,7 @@ test("text selection still works with Look Up on", async ({ page }) => {
   await page.mouse.down();
   await page.mouse.move(x2, y2, { steps: 8 });
   await page.mouse.up();
-  await expect(page.getByRole("toolbar", { name: "PDF text selection actions" })).toBeVisible();
+  await expect(
+    page.getByRole("toolbar", { name: "PDF text selection actions" }),
+  ).toBeVisible();
 });

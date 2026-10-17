@@ -50,7 +50,9 @@ export function useViewReporting(
   const ready = scroll.virtualItems.length > 0;
   useEffect(() => {
     // Before the layout is ready there is no page yet.
-    if (!ready || pageCount < 1 || page < 1 || zoomPercent <= 0) return;
+    if (!ready || pageCount < 1 || page < 1 || zoomPercent <= 0) {
+      return;
+    }
     const view = {
       page,
       pageCount,
@@ -123,7 +125,10 @@ export function useViewActions(
   return useCallback((action: ViewerAction): void => {
     const { navigation, openSearch, setTool, setChoices, zoom, level } =
       latest.current;
-    const generation = action.action === 'find' ? navigation.intent.advance() : navigation.intent.interrupt();
+    const generation =
+      action.action === "find"
+        ? navigation.intent.advance()
+        : navigation.intent.interrupt();
     const from =
       requested.current ?? zoom?.getState().currentZoomLevel ?? level;
     const zoomTo = (next: number): void => {
@@ -169,7 +174,9 @@ export function useViewActions(
         const page = navigation.currentPage;
         zoom?.requestZoom(ZoomMode.FitPage);
         requestAnimationFrame(() => {
-          if (navigation.intent.owns(generation)) latest.current.navigation.show({ page });
+          if (navigation.intent.owns(generation)) {
+            latest.current.navigation.show({ page });
+          }
         });
         break;
       }
@@ -197,7 +204,11 @@ export function useViewActions(
 }
 
 export function fitMode(level: unknown): FitMode | null {
-  if (level === ZoomMode.FitWidth) return "width";
-  if (level === ZoomMode.FitPage) return "page";
+  if (level === ZoomMode.FitWidth) {
+    return "width";
+  }
+  if (level === ZoomMode.FitPage) {
+    return "page";
+  }
   return null;
 }

@@ -4,7 +4,12 @@
  */
 
 /** `[left, top, right, bottom]`. */
-export type PageRect = readonly [left: number, top: number, right: number, bottom: number];
+export type PageRect = readonly [
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+];
 
 /** The same box as RFC 8118's `viewrect`: its corner and size. */
 export interface ViewRect {
@@ -15,21 +20,29 @@ export interface ViewRect {
 }
 
 export function isPageRect(value: unknown): value is PageRect {
-  if (!Array.isArray(value) || value.length !== 4) return false;
+  if (!Array.isArray(value) || value.length !== 4) {
+    return false;
+  }
   const [left, top, right, bottom] = value as unknown[];
-  return [left, top, right, bottom].every(n => typeof n === 'number' && Number.isFinite(n))
-    && (right as number) > (left as number)
-    && (bottom as number) > (top as number);
+  return (
+    [left, top, right, bottom].every(
+      (n) => typeof n === "number" && Number.isFinite(n),
+    ) &&
+    (right as number) > (left as number) &&
+    (bottom as number) > (top as number)
+  );
 }
 
 /** The smallest rectangle containing all of `rects`. */
 export function boundingRect(rects: readonly PageRect[]): PageRect {
-  if (rects.length === 0) throw new RangeError('No rectangles to bound');
+  if (rects.length === 0) {
+    throw new RangeError("No rectangles to bound");
+  }
   return [
-    Math.min(...rects.map(rect => rect[0])),
-    Math.min(...rects.map(rect => rect[1])),
-    Math.max(...rects.map(rect => rect[2])),
-    Math.max(...rects.map(rect => rect[3])),
+    Math.min(...rects.map((rect) => rect[0])),
+    Math.min(...rects.map((rect) => rect[1])),
+    Math.max(...rects.map((rect) => rect[2])),
+    Math.max(...rects.map((rect) => rect[3])),
   ];
 }
 

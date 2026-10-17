@@ -79,7 +79,9 @@ export function registerViewCommands(panels: PdfPanels): vscode.Disposable {
 async function goToPage(panels: PdfPanels, page: unknown): Promise<void> {
   const panel = panels.active;
   const view = panel?.view;
-  if (!panel || !view) return;
+  if (!panel || !view) {
+    return;
+  }
   if (typeof page === "number" && Number.isSafeInteger(page) && page >= 1) {
     panel.act({ action: "goToPage", page });
     return;
@@ -97,8 +99,9 @@ async function goToPage(panels: PdfPanels, page: unknown): Promise<void> {
   const target =
     text === undefined ? undefined : parsePageInput(text, view.pageCount);
   // The editor may have closed while the box was open.
-  if (target !== undefined && panels.active === panel)
+  if (target !== undefined && panels.active === panel) {
     panel.act({ action: "goToPage", page: target });
+  }
 }
 
 type ZoomItem = vscode.QuickPickItem & { action: ViewerAction };
@@ -119,7 +122,9 @@ const PICKER_ZOOMS = ZOOM_STEPS.filter((step) => step >= 0.5).map((step) =>
 async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
   const panel = panels.active;
   const view = panel?.view;
-  if (!panel || !view) return;
+  if (!panel || !view) {
+    return;
+  }
   if (typeof percent === "number" && Number.isFinite(percent) && percent > 0) {
     panel.act({ action: "setZoom", percent });
     return;
@@ -145,13 +150,11 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
       kind: vscode.QuickPickItemKind.Separator,
       action: { action: "fitPage" },
     },
-    ...PICKER_ZOOMS.map(
-      (level): ZoomItem => ({
-        label: `${level}%`,
-        ...current(!view.fit && level === view.zoomPercent),
-        action: { action: "setZoom", percent: level },
-      }),
-    ),
+    ...PICKER_ZOOMS.map((level): ZoomItem => ({
+      label: `${level}%`,
+      ...current(!view.fit && level === view.zoomPercent),
+      action: { action: "setZoom", percent: level },
+    })),
   ];
   const picker = vscode.window.createQuickPick<ZoomItem>();
   picker.title = `Zoom (now ${zoomLabel(view)})`;
@@ -183,5 +186,7 @@ async function selectZoom(panels: PdfPanels, percent: unknown): Promise<void> {
     picker.show();
   });
   picker.dispose();
-  if (choice && panels.active === panel) panel.act(choice.action);
+  if (choice && panels.active === panel) {
+    panel.act(choice.action);
+  }
 }

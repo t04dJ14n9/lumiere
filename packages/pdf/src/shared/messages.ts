@@ -82,10 +82,33 @@ export interface ViewerPatch {
 
 export type ViewerMessage =
   | { type: "ready" }
-  | { type: "historyJump"; load: number; id: number; from: ReadingPosition; to: ReadingPosition; requestId?: number }
-  | { type: "historyTraverse"; load: number; direction: 'back' | 'forward' }
-  | { type: "historyCaptured"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean; startedToken?: number }
-  | { type: "historyRestored"; load: number; token: number; position: ReadingPosition; intent: number; ok: boolean; startedToken?: number }
+  | {
+      type: "historyJump";
+      load: number;
+      id: number;
+      from: ReadingPosition;
+      to: ReadingPosition;
+      requestId?: number;
+    }
+  | { type: "historyTraverse"; load: number; direction: "back" | "forward" }
+  | {
+      type: "historyCaptured";
+      load: number;
+      token: number;
+      position: ReadingPosition;
+      intent: number;
+      ok: boolean;
+      startedToken?: number;
+    }
+  | {
+      type: "historyRestored";
+      load: number;
+      token: number;
+      position: ReadingPosition;
+      intent: number;
+      ok: boolean;
+      startedToken?: number;
+    }
   | { type: "patch"; version: number; load: number; patch: ViewerPatch }
   | { type: "copyLinkForAgent" }
   /** The viewer's outline button: show or hide the PDF Outline view. */
@@ -107,11 +130,22 @@ export type HostMessage =
       position?: ReadingPosition;
     }
   /** `top`: with no box, show the page from this many points below its top. */
-  | { type: "goTo"; location: PdfLocation; top?: number | undefined; requestId?: number; expectedIntent?: number }
-  | { type: 'historyState'; back: boolean; forward: boolean }
-  | { type: 'historyCapture'; token: number }
-  | { type: 'historyCancel'; token?: number }
-  | { type: 'historyRestore'; token: number; position: ReadingPosition; expectedIntent: number }
+  | {
+      type: "goTo";
+      location: PdfLocation;
+      top?: number | undefined;
+      requestId?: number;
+      expectedIntent?: number;
+    }
+  | { type: "historyState"; back: boolean; forward: boolean }
+  | { type: "historyCapture"; token: number }
+  | { type: "historyCancel"; token?: number }
+  | {
+      type: "historyRestore";
+      token: number;
+      position: ReadingPosition;
+      expectedIntent: number;
+    }
   | { type: "action"; action: ViewerAction }
   | { type: "toolbar"; toolbar: ToolbarSettings }
   | { type: "lookUp"; enabled: boolean }
@@ -130,25 +164,70 @@ const MAX_IMAGE_LENGTH = 8_000_000;
 
 /** Accept a message from the viewer only if it is well-formed. */
 export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
   const message = value as Record<string, unknown>;
   switch (message.type) {
-    case 'historyJump': {
+    case "historyJump": {
       const from = parseReadingPosition(message.from);
       const to = parseReadingPosition(message.to);
-      if (!validHistoryNumber(message.load, 0) || !validHistoryNumber(message.id, 1) || !from || !to) return undefined;
-      if (message.requestId !== undefined && !validHistoryNumber(message.requestId, 1)) return undefined;
-      return { type: 'historyJump', load: message.load, id: message.id, from, to,
-        ...(message.requestId === undefined ? {} : { requestId: message.requestId as number }) };
+      if (
+        !validHistoryNumber(message.load, 0) ||
+        !validHistoryNumber(message.id, 1) ||
+        !from ||
+        !to
+      ) {
+        return undefined;
+      }
+      if (
+        message.requestId !== undefined &&
+        !validHistoryNumber(message.requestId, 1)
+      ) {
+        return undefined;
+      }
+      return {
+        type: "historyJump",
+        load: message.load,
+        id: message.id,
+        from,
+        to,
+        ...(message.requestId === undefined
+          ? {}
+          : { requestId: message.requestId as number }),
+      };
     }
-    case 'historyTraverse':
-      return validHistoryNumber(message.load, 0) && (message.direction === 'back' || message.direction === 'forward')
-        ? { type: 'historyTraverse', load: message.load, direction: message.direction } : undefined;
-    case 'historyCaptured':
-    case 'historyRestored': {
+    case "historyTraverse":
+      return validHistoryNumber(message.load, 0) &&
+        (message.direction === "back" || message.direction === "forward")
+        ? {
+            type: "historyTraverse",
+            load: message.load,
+            direction: message.direction,
+          }
+        : undefined;
+    case "historyCaptured":
+    case "historyRestored": {
       const position = parseReadingPosition(message.position);
-      return validHistoryNumber(message.load, 0) && validHistoryNumber(message.token, 1) && validHistoryNumber(message.intent, 0) && position && typeof message.ok === 'boolean' && (message.startedToken === undefined || validHistoryNumber(message.startedToken, 0))
-        ? { type: message.type, load: message.load, token: message.token, position, intent: message.intent, ok: message.ok, ...(message.startedToken === undefined ? {} : { startedToken: message.startedToken as number }) } : undefined;
+      return validHistoryNumber(message.load, 0) &&
+        validHistoryNumber(message.token, 1) &&
+        validHistoryNumber(message.intent, 0) &&
+        position &&
+        typeof message.ok === "boolean" &&
+        (message.startedToken === undefined ||
+          validHistoryNumber(message.startedToken, 0))
+        ? {
+            type: message.type,
+            load: message.load,
+            token: message.token,
+            position,
+            intent: message.intent,
+            ok: message.ok,
+            ...(message.startedToken === undefined
+              ? {}
+              : { startedToken: message.startedToken as number }),
+          }
+        : undefined;
     }
     case "ready":
     case "copyLinkForAgent":
@@ -170,7 +249,9 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
         ? { type: "lookUp", word: message.word, open: message.open }
         : undefined;
     case "zen":
-      return typeof message.exit === "boolean" ? { type: "zen", exit: message.exit } : undefined;
+      return typeof message.exit === "boolean"
+        ? { type: "zen", exit: message.exit }
+        : undefined;
     case "error":
       return typeof message.message === "string"
         ? { type: "error", message: message.message.slice(0, 1_000) }
@@ -181,7 +262,9 @@ export function parseViewerMessage(value: unknown): ViewerMessage | undefined {
 }
 
 function validHistoryNumber(value: unknown, minimum: number): value is number {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum;
+  return (
+    typeof value === "number" && Number.isSafeInteger(value) && value >= minimum
+  );
 }
 
 /**
@@ -200,9 +283,12 @@ function parsePatchMessage(
   message: Record<string, unknown>,
 ): ViewerMessage | undefined {
   const { version, load } = message;
-  if (!Number.isSafeInteger(version) || (version as number) < 1)
+  if (!Number.isSafeInteger(version) || (version as number) < 1) {
     return undefined;
-  if (!Number.isSafeInteger(load) || (load as number) < 0) return undefined;
+  }
+  if (!Number.isSafeInteger(load) || (load as number) < 0) {
+    return undefined;
+  }
   const patch = parsePatch(message.patch);
   return patch
     ? { type: "patch", version: version as number, load: load as number, patch }
@@ -211,15 +297,22 @@ function parsePatchMessage(
 
 /** A patch's parts; a malformed view rejects the patch, a malformed selection reads as none. */
 function parsePatch(value: unknown): ViewerPatch | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
   const { outline, selection, view } = value as Record<string, unknown>;
   const patch: ViewerPatch = {};
-  if (outline !== undefined) patch.outline = parseOutline(outline);
-  if (selection !== undefined)
+  if (outline !== undefined) {
+    patch.outline = parseOutline(outline);
+  }
+  if (selection !== undefined) {
     patch.selection = parseSelectionReport(selection);
+  }
   if (view !== undefined) {
     const parsed = parseViewState(view);
-    if (!parsed) return undefined;
+    if (!parsed) {
+      return undefined;
+    }
     patch.view = parsed;
   }
   return patch;
@@ -270,12 +363,18 @@ function isPageOffset(value: unknown): value is number {
 function parseOutline(value: unknown): OutlineItem[] {
   let budget = MAX_OUTLINE_ITEMS;
   const visit = (items: unknown, depth: number): OutlineItem[] => {
-    if (!Array.isArray(items) || depth > MAX_OUTLINE_DEPTH) return [];
+    if (!Array.isArray(items) || depth > MAX_OUTLINE_DEPTH) {
+      return [];
+    }
     const result: OutlineItem[] = [];
     for (const item of items as unknown[]) {
-      if (budget-- <= 0 || typeof item !== "object" || item === null) break;
+      if (budget-- <= 0 || typeof item !== "object" || item === null) {
+        break;
+      }
       const { title, page, top, children } = item as Record<string, unknown>;
-      if (typeof title !== "string") continue;
+      if (typeof title !== "string") {
+        continue;
+      }
       const hasPage = Number.isSafeInteger(page) && (page as number) >= 1;
       result.push({
         title:

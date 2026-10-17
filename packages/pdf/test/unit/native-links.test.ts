@@ -7,8 +7,9 @@ test("precise links retain source ranges, encoded filenames, Unicode, spaces and
     "[note](<目录/我的 note.md#middle-target>) [pdf](docs/a%20b.pdf#page=9&viewrect=72,130,100,30)";
   const links = nativeLinks(source);
   assert.equal(links.length, 2);
-  for (const link of links)
+  for (const link of links) {
     assert.equal(source.slice(link.from, link.to), link.href);
+  }
   assert.deepEqual(localFragment(links[0]!.href), {
     path: "目录/我的 note.md",
     fragment: "middle-target",
@@ -59,8 +60,9 @@ test("external, command, UNC, malformed encoding and control paths are never int
     "C:%5Ca.md#h",
     "a.md",
     "a.md#",
-  ])
+  ]) {
     assert.equal(localFragment(href), undefined, href);
+  }
 });
 
 test("opaque multiline Markdown contexts never create executable precise links", () => {

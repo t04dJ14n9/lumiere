@@ -1,7 +1,7 @@
-import { defineManifest } from '../manifest';
+import { defineManifest } from "../manifest";
 
 export default defineManifest({
-  id: 'pdfLookUp',
-  title: 'macOS Look Up',
-  capabilities: ['commands'],
+  id: "pdfLookUp",
+  title: "macOS Look Up",
+  capabilities: ["commands"],
 });

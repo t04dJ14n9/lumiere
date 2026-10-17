@@ -5,7 +5,8 @@ import { openView, pageIndexes } from "./view-controls-support";
 // spread, in two-page layouts), and a page zoomed beyond the viewer is panned to
 // its edge first.
 
-const shown = async (page: Page): Promise<string> => (await pageIndexes(page)).join();
+const shown = async (page: Page): Promise<string> =>
+  (await pageIndexes(page)).join();
 
 async function settled(page: Page): Promise<void> {
   await page.waitForTimeout(250);
@@ -23,7 +24,9 @@ async function hover(page: Page): Promise<void> {
 /** A trackpad swipe: ramping deltas, then momentum, sent as one stream. */
 async function swipe(page: Page, sign: 1 | -1): Promise<void> {
   const deltas = [10, 25, 50, 80, 120, 110, 90, 70, 50, 35, 25, 15, 8, 4, 2];
-  for (const delta of deltas) await page.mouse.wheel(0, sign * delta);
+  for (const delta of deltas) {
+    await page.mouse.wheel(0, sign * delta);
+  }
 }
 
 type Input = {
@@ -33,23 +36,29 @@ type Input = {
 };
 
 const inputs: Input[] = [
-  ...["ArrowRight/ArrowLeft", "ArrowDown/ArrowUp", "PageDown/PageUp"].map((pair) => {
-    const [next, previous] = pair.split("/") as [string, string];
-    return {
-      name: pair,
-      forward: (page: Page) => page.keyboard.press(next),
-      back: (page: Page) => page.keyboard.press(previous),
-    };
-  }),
+  ...["ArrowRight/ArrowLeft", "ArrowDown/ArrowUp", "PageDown/PageUp"].map(
+    (pair) => {
+      const [next, previous] = pair.split("/") as [string, string];
+      return {
+        name: pair,
+        forward: (page: Page) => page.keyboard.press(next),
+        back: (page: Page) => page.keyboard.press(previous),
+      };
+    },
+  ),
   {
     name: "mouse wheel notches",
     forward: async (page) => {
       await hover(page);
-      for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 100);
+      for (let i = 0; i < 4; i++) {
+        await page.mouse.wheel(0, 100);
+      }
     },
     back: async (page) => {
       await hover(page);
-      for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -100);
+      for (let i = 0; i < 4; i++) {
+        await page.mouse.wheel(0, -100);
+      }
     },
   },
   {
@@ -72,9 +81,16 @@ const inputs: Input[] = [
 
 for (const pageLayout of ["single", "spread", "spreadCover"] as const) {
   for (const input of inputs) {
-    test(`paged ${pageLayout}, fit page: ${input.name} turns the page forward and back`, async ({ page }) => {
+    test(`paged ${pageLayout}, fit page: ${input.name} turns the page forward and back`, async ({
+      page,
+    }) => {
       await page.setViewportSize({ width: 1000, height: 700 });
-      await openView(page, { defaultZoom: "fitPage", scrollMode: "paged", pageLayout, smoothScrolling: true });
+      await openView(page, {
+        defaultZoom: "fitPage",
+        scrollMode: "paged",
+        pageLayout,
+        smoothScrolling: true,
+      });
       await settled(page);
       const first = await shown(page);
       // From the first page or spread, forward goes on once, whatever the input.
@@ -96,9 +112,15 @@ for (const pageLayout of ["single", "spread", "spreadCover"] as const) {
 }
 
 for (const key of ["ArrowRight", "ArrowDown", "PageDown"]) {
-  test(`paged and zoomed: ${key} pans to the edge of the page, then turns it`, async ({ page }) => {
+  test(`paged and zoomed: ${key} pans to the edge of the page, then turns it`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 800, height: 600 });
-    await openView(page, { defaultZoom: 300, scrollMode: "paged", pageLayout: "single" });
+    await openView(page, {
+      defaultZoom: 300,
+      scrollMode: "paged",
+      pageLayout: "single",
+    });
     await settled(page);
     const viewport = page.locator(".viewport");
     const position = () => viewport.evaluate((v) => v.scrollLeft + v.scrollTop);

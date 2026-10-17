@@ -7,8 +7,11 @@ export class LookUpTargets<Panel extends object> {
 
   /** Remember the word under the pointer in `panel`, or forget it with null. */
   record(panel: Panel, word: string | null): void {
-    if (word === null) this.words.delete(panel);
-    else this.words.set(panel, word);
+    if (word === null) {
+      this.words.delete(panel);
+    } else {
+      this.words.set(panel, word);
+    }
   }
 
   word(panel: Panel | undefined): string | undefined {

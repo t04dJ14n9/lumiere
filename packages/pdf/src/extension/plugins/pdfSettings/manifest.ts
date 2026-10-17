@@ -1,7 +1,7 @@
-import { defineManifest } from '../manifest';
+import { defineManifest } from "../manifest";
 
 export default defineManifest({
-  id: 'pdfSettings',
-  title: 'Settings commands',
-  capabilities: ['commands'],
+  id: "pdfSettings",
+  title: "Settings commands",
+  capabilities: ["commands"],
 });

@@ -6,9 +6,16 @@ export type SettingTarget = "workspace" | "user";
  * workspace when the workspace already sets it (a user-level write would be
  * hidden behind that value), otherwise in the user settings.
  */
-export function settingTarget(inspected: {
-  workspaceValue?: unknown;
-  workspaceFolderValue?: unknown;
-} | undefined): SettingTarget {
-  return inspected?.workspaceValue !== undefined || inspected?.workspaceFolderValue !== undefined ? "workspace" : "user";
+export function settingTarget(
+  inspected:
+    | {
+        workspaceValue?: unknown;
+        workspaceFolderValue?: unknown;
+      }
+    | undefined,
+): SettingTarget {
+  return inspected?.workspaceValue !== undefined ||
+    inspected?.workspaceFolderValue !== undefined
+    ? "workspace"
+    : "user";
 }

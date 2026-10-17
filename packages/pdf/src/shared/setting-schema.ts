@@ -27,7 +27,8 @@ export interface SchemaProperty {
  *   string    free text
  *   complex   anything else: edited in the Settings editor or settings.json
  */
-export type SettingKind = "boolean" | "tristate" | "enum" | "number" | "string" | "complex";
+export type SettingKind =
+  "boolean" | "tristate" | "enum" | "number" | "string" | "complex";
 
 export interface SettingEntry {
   key: string;
@@ -64,19 +65,37 @@ export function plainText(markdown: string): string {
 
 export function settingKind(property: SchemaProperty): SettingKind {
   const types = ([] as string[]).concat(property.type ?? []);
-  if (property.anyOf) return "complex";
-  if (property.enum && types.length === 1 && types[0] === "string") return "enum";
-  if (types.length === 1) {
-    if (types[0] === "boolean") return "boolean";
-    if (types[0] === "number" || types[0] === "integer") return "number";
-    if (types[0] === "string") return "string";
+  if (property.anyOf) {
+    return "complex";
   }
-  if (types.length === 2 && types.includes("boolean") && types.includes("null")) return "tristate";
+  if (property.enum && types.length === 1 && types[0] === "string") {
+    return "enum";
+  }
+  if (types.length === 1) {
+    if (types[0] === "boolean") {
+      return "boolean";
+    }
+    if (types[0] === "number" || types[0] === "integer") {
+      return "number";
+    }
+    if (types[0] === "string") {
+      return "string";
+    }
+  }
+  if (
+    types.length === 2 &&
+    types.includes("boolean") &&
+    types.includes("null")
+  ) {
+    return "tristate";
+  }
   return "complex";
 }
 
 /** The settings, in the order of the manifest. */
-export function settingEntries(properties: Record<string, SchemaProperty>): SettingEntry[] {
+export function settingEntries(
+  properties: Record<string, SchemaProperty>,
+): SettingEntry[] {
   return Object.entries(properties).map(([key, property]) => {
     const rest = key.startsWith(PREFIX) ? key.slice(PREFIX.length) : key;
     const parts = rest.split(".");
@@ -86,11 +105,15 @@ export function settingEntries(properties: Record<string, SchemaProperty>): Sett
       group: parts.length > 1 ? words(parts[0]!) : "General",
       title: words(parts.slice(1).join(" ") || parts[0]!),
       kind,
-      description: plainText(property.markdownDescription ?? property.description ?? ""),
-      choices: (kind === "enum" ? (property.enum ?? []) : []).map((value, index) => ({
-        value: String(value),
-        description: plainText(property.enumDescriptions?.[index] ?? ""),
-      })),
+      description: plainText(
+        property.markdownDescription ?? property.description ?? "",
+      ),
+      choices: (kind === "enum" ? (property.enum ?? []) : []).map(
+        (value, index) => ({
+          value: String(value),
+          description: plainText(property.enumDescriptions?.[index] ?? ""),
+        }),
+      ),
       minimum: property.minimum,
       maximum: property.maximum,
       defaultValue: property.default,
@@ -100,31 +123,62 @@ export function settingEntries(properties: Record<string, SchemaProperty>): Sett
 
 /** A value as a short label: `on`, `off`, `paged`, `100`, `follows the editor` for null. */
 export function formatValue(value: unknown, kind: SettingKind): string {
-  if (value === null || value === undefined) return kind === "tristate" ? "follows the editor" : "not set";
-  if (typeof value === "boolean") return value ? "on" : "off";
-  if (typeof value === "string") return value === "" ? "empty" : value;
+  if (value === null || value === undefined) {
+    return kind === "tristate" ? "follows the editor" : "not set";
+  }
+  if (typeof value === "boolean") {
+    return value ? "on" : "off";
+  }
+  if (typeof value === "string") {
+    return value === "" ? "empty" : value;
+  }
   return typeof value === "number" ? String(value) : JSON.stringify(value);
 }
 
 /** What is wrong with `text` as the value of a number setting, or undefined when it is fine. */
-export function numberProblem(text: string, entry: Pick<SettingEntry, "minimum" | "maximum">): string | undefined {
+export function numberProblem(
+  text: string,
+  entry: Pick<SettingEntry, "minimum" | "maximum">,
+): string | undefined {
   const value = Number(text);
-  if (text.trim() === "" || !Number.isFinite(value)) return "Enter a number";
-  if (entry.minimum !== undefined && value < entry.minimum) return `Enter a number of at least ${entry.minimum}`;
-  if (entry.maximum !== undefined && value > entry.maximum) return `Enter a number of at most ${entry.maximum}`;
+  if (text.trim() === "" || !Number.isFinite(value)) {
+    return "Enter a number";
+  }
+  if (entry.minimum !== undefined && value < entry.minimum) {
+    return `Enter a number of at least ${entry.minimum}`;
+  }
+  if (entry.maximum !== undefined && value > entry.maximum) {
+    return `Enter a number of at most ${entry.maximum}`;
+  }
   return undefined;
 }
 
 /** Whether `value` is something the schema `property` allows; the reason when it is not. */
-export function schemaProblem(property: SchemaProperty, value: unknown): string | undefined {
+export function schemaProblem(
+  property: SchemaProperty,
+  value: unknown,
+): string | undefined {
   if (property.anyOf) {
-    const branches = property.anyOf.filter((branch): branch is SchemaProperty => typeof branch === "object" && branch !== null);
+    const branches = property.anyOf.filter(
+      (branch): branch is SchemaProperty =>
+        typeof branch === "object" && branch !== null,
+    );
     const problems = branches.map((branch) => schemaProblem(branch, value));
-    return problems.some((problem) => problem === undefined) ? undefined : (problems[0] ?? "Not an allowed value.");
+    return problems.some((problem) => problem === undefined)
+      ? undefined
+      : (problems[0] ?? "Not an allowed value.");
   }
-  if (value === null) return ([] as string[]).concat(property.type ?? []).includes("null") ? undefined : "This setting cannot be null.";
-  if (property.enum && !property.enum.includes(value)) return "Not one of the setting's values.";
-  const types = ([] as string[]).concat(property.type ?? []).filter((type) => type !== "null");
+  if (value === null) {
+    return ([] as string[]).concat(property.type ?? []).includes("null")
+      ? undefined
+      : "This setting cannot be null.";
+  }
+  if (property.enum && !property.enum.includes(value)) {
+    return "Not one of the setting's values.";
+  }
+  const types = ([] as string[])
+    .concat(property.type ?? [])
+    .filter((type) => type !== "null");
   const fits = (type: string): boolean => {
     switch (type) {
       case "boolean":
@@ -139,10 +193,16 @@ export function schemaProblem(property: SchemaProperty, value: unknown): string 
         return false;
     }
   };
-  if (types.length === 0 || !types.some(fits)) return "Not a value of the setting's type.";
+  if (types.length === 0 || !types.some(fits)) {
+    return "Not a value of the setting's type.";
+  }
   if (typeof value === "number") {
-    if (property.minimum !== undefined && value < property.minimum) return `At least ${property.minimum}.`;
-    if (property.maximum !== undefined && value > property.maximum) return `At most ${property.maximum}.`;
+    if (property.minimum !== undefined && value < property.minimum) {
+      return `At least ${property.minimum}.`;
+    }
+    if (property.maximum !== undefined && value > property.maximum) {
+      return `At most ${property.maximum}.`;
+    }
   }
   return undefined;
 }
@@ -153,8 +213,16 @@ export function schemaProblem(property: SchemaProperty, value: unknown): string 
  * extension contributes (not another extension's, not VS Code's, not unknown),
  * and the value must fit its schema. Returns the reason to refuse, or undefined.
  */
-export function writeProblem(properties: Record<string, SchemaProperty>, key: unknown, value: unknown): string | undefined {
-  if (typeof key !== "string" || !key.startsWith(SETTING_PREFIX) || !Object.hasOwn(properties, key)) {
+export function writeProblem(
+  properties: Record<string, SchemaProperty>,
+  key: unknown,
+  value: unknown,
+): string | undefined {
+  if (
+    typeof key !== "string" ||
+    !key.startsWith(SETTING_PREFIX) ||
+    !Object.hasOwn(properties, key)
+  ) {
     return `${String(key)} is not a setting of this extension.`;
   }
   const problem = schemaProblem(properties[key]!, value);

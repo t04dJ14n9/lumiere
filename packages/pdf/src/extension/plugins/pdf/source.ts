@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import { createHash } from "node:crypto";
+import * as path from "node:path";
+import * as vscode from "vscode";
 
 /** Let a file write settle before reloading the PDF. */
 const RELOAD_DELAY_MS = 150;
@@ -38,11 +38,15 @@ export class PdfSource implements vscode.Disposable {
     try {
       bytes = await vscode.workspace.fs.readFile(this.uri);
     } catch (error) {
-      void vscode.window.showErrorMessage(`Could not read ${displayPath(this.uri)}: ${String(error)}`);
+      void vscode.window.showErrorMessage(
+        `Could not read ${displayPath(this.uri)}: ${String(error)}`,
+      );
       return undefined;
     }
-    if (generation !== this.generation) return undefined;
-    this.sha256 = createHash('sha256').update(bytes).digest('hex');
+    if (generation !== this.generation) {
+      return undefined;
+    }
+    this.sha256 = createHash("sha256").update(bytes).digest("hex");
     return { data: standaloneBuffer(bytes), sha256: this.sha256 };
   }
 
@@ -54,31 +58,43 @@ export class PdfSource implements vscode.Disposable {
 }
 
 function watchFile(uri: vscode.Uri, onChange: () => void): vscode.Disposable {
-  if (uri.scheme !== 'file') return new vscode.Disposable(() => undefined);
+  if (uri.scheme !== "file") {
+    return new vscode.Disposable(() => undefined);
+  }
   const watcher = vscode.workspace.createFileSystemWatcher(
-    new vscode.RelativePattern(vscode.Uri.file(path.dirname(uri.fsPath)), path.basename(uri.fsPath)),
+    new vscode.RelativePattern(
+      vscode.Uri.file(path.dirname(uri.fsPath)),
+      path.basename(uri.fsPath),
+    ),
   );
   let timer: ReturnType<typeof setTimeout> | undefined;
   const reload = (): void => {
     clearTimeout(timer);
     timer = setTimeout(onChange, RELOAD_DELAY_MS);
   };
-  const subscriptions = [watcher.onDidChange(reload), watcher.onDidCreate(reload)];
+  const subscriptions = [
+    watcher.onDidChange(reload),
+    watcher.onDidCreate(reload),
+  ];
   return new vscode.Disposable(() => {
     clearTimeout(timer);
-    for (const subscription of subscriptions) subscription.dispose();
+    for (const subscription of subscriptions) {
+      subscription.dispose();
+    }
     watcher.dispose();
   });
 }
 
 /** The path agents should use: workspace-relative when possible. */
 export function displayPath(uri: vscode.Uri): string {
-  return vscode.workspace.asRelativePath(uri, false).replaceAll('\\', '/');
+  return vscode.workspace.asRelativePath(uri, false).replaceAll("\\", "/");
 }
 
 /** The bytes as an ArrayBuffer of their own, which the webview can take over. */
 function standaloneBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength && bytes.buffer instanceof ArrayBuffer
+  return bytes.byteOffset === 0 &&
+    bytes.byteLength === bytes.buffer.byteLength &&
+    bytes.buffer instanceof ArrayBuffer
     ? bytes.buffer
-    : bytes.slice().buffer as ArrayBuffer;
+    : (bytes.slice().buffer as ArrayBuffer);
 }

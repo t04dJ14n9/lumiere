@@ -19,23 +19,31 @@ const expect = baseExpect.configure({ timeout: 30_000 });
 const PDF = "docs/outline.pdf";
 const modifier = process.platform === "darwin" ? "Control+Meta" : "Control+Alt";
 
-const floating = (viewer: Frame) => viewer.getByRole("toolbar", { name: "PDF toolbar" });
-const exitButton = (viewer: Frame) => floating(viewer).getByRole("button", { name: "Exit zen mode" });
+const floating = (viewer: Frame) =>
+  viewer.getByRole("toolbar", { name: "PDF toolbar" });
+const exitButton = (viewer: Frame) =>
+  floating(viewer).getByRole("button", { name: "Exit zen mode" });
 
 /** Give the viewer the keyboard focus, so shortcuts reach it as a reader's would. */
 async function focusViewer(viewer: Frame): Promise<void> {
   await viewer.locator(".viewport").focus();
-  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  await expect
+    .poll(() => viewer.evaluate(() => document.hasFocus()))
+    .toBe(true);
 }
 
 async function leaveZen(page: Page): Promise<void> {
   // Core's own chord toggles zen: only when it is still on.
-  if (await page.locator(".part.statusbar").isVisible()) return;
+  if (await page.locator(".part.statusbar").isVisible()) {
+    return;
+  }
   await page.keyboard.press("Control+k");
   await page.keyboard.press("z");
 }
 
-test("Enter and Exit Zen Mode from the palette: the status bar goes, the floating bar with Exit zen comes, and both go back", async ({ workbench: page }) => {
+test("Enter and Exit Zen Mode from the palette: the status bar goes, the floating bar with Exit zen comes, and both go back", async ({
+  workbench: page,
+}) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
   await expect(viewer.locator(".page img").first()).toBeVisible();
@@ -53,12 +61,19 @@ test("Enter and Exit Zen Mode from the palette: the status bar goes, the floatin
     // Entering zen resizes the window and the pages are laid out again, which
     // can take a jump to a page with it: go to the page until it stays.
     await expect
-      .poll(async () => {
-        await field.fill("3");
-        await field.press("Enter");
-        await page.waitForTimeout(400);
-        return viewer.evaluate(() => document.querySelector<HTMLInputElement>('[aria-label="Page"]')?.value);
-      }, { timeout: 30_000, intervals: [200] })
+      .poll(
+        async () => {
+          await field.fill("3");
+          await field.press("Enter");
+          await page.waitForTimeout(400);
+          return viewer.evaluate(
+            () =>
+              document.querySelector<HTMLInputElement>('[aria-label="Page"]')
+                ?.value,
+          );
+        },
+        { timeout: 30_000, intervals: [200] },
+      )
       .toBe("3");
     // Exit zen from the bar.
     await exitButton(viewer).click();
@@ -69,7 +84,9 @@ test("Enter and Exit Zen Mode from the palette: the status bar goes, the floatin
   }
 });
 
-test("Ctrl+Alt+Z (Ctrl+Cmd+Z on macOS) enters zen from the PDF and leaves it; so does Escape Escape", async ({ workbench: page }) => {
+test("Ctrl+Alt+Z (Ctrl+Cmd+Z on macOS) enters zen from the PDF and leaves it; so does Escape Escape", async ({
+  workbench: page,
+}) => {
   await openFile(page, PDF);
   const viewer = await pdfViewer(page);
   await expect(viewer.locator(".page img").first()).toBeVisible();

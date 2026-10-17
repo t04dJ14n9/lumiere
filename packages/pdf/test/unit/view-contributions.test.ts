@@ -46,8 +46,7 @@ test("every view choice has a PDF command, scoped menus and a contributed defaul
     smoothScrolling: null,
   })) {
     assert.equal(
-      contributes.configuration.properties[`pdfWorkshop.view.${name}`]
-        ?.default,
+      contributes.configuration.properties[`pdfWorkshop.view.${name}`]?.default,
       value,
     );
   }

@@ -1,6 +1,6 @@
-import type { HostMessage } from '../../../shared/messages';
-import type { PdfLocation } from '../../../shared/pdf-location';
-import type { ViewerAction } from '../../../shared/view-state';
+import type { HostMessage } from "../../../shared/messages";
+import type { PdfLocation } from "../../../shared/pdf-location";
+import type { ViewerAction } from "../../../shared/view-state";
 
 /**
  * Where the reader is sent: pages, boxes and view actions for one editor.
@@ -12,15 +12,24 @@ import type { ViewerAction } from '../../../shared/view-state';
  */
 export class PdfNavigation {
   private loaded = false;
-  private pending: { location: PdfLocation; top?: number | undefined; requestId?: number } | undefined;
+  private pending:
+    | { location: PdfLocation; top?: number | undefined; requestId?: number }
+    | undefined;
 
   constructor(private readonly post: (message: HostMessage) => void) {}
 
   /** Show a page (and box), or with no box the page from `top` points below its top. */
   goTo(location: PdfLocation, top?: number, requestId?: number): void {
-    const target = { location, top, ...(requestId === undefined ? {} : { requestId }) };
-    if (this.loaded) this.post({ type: 'goTo', ...target });
-    else this.pending = target;
+    const target = {
+      location,
+      top,
+      ...(requestId === undefined ? {} : { requestId }),
+    };
+    if (this.loaded) {
+      this.post({ type: "goTo", ...target });
+    } else {
+      this.pending = target;
+    }
   }
 
   cancel(): void {
@@ -28,7 +37,9 @@ export class PdfNavigation {
   }
 
   act(action: ViewerAction): void {
-    if (this.loaded) this.post({ type: 'action', action });
+    if (this.loaded) {
+      this.post({ type: "action", action });
+    }
   }
 
   /** The viewer is about to receive new bytes. */
@@ -39,8 +50,10 @@ export class PdfNavigation {
   /** The viewer has the bytes: send the location that was waiting. */
   loadedNow(): void {
     this.loaded = true;
-    if (!this.pending) return;
-    this.post({ type: 'goTo', ...this.pending });
+    if (!this.pending) {
+      return;
+    }
+    this.post({ type: "goTo", ...this.pending });
     this.pending = undefined;
   }
 }

@@ -312,49 +312,128 @@ test("the host applies only newer patches about the bytes it sent last", () => {
   assert.equal(isCurrentPatch({ version: 5, load: 1 }, 4, 2), false);
 });
 
-test('a Look Up message carries one plain word, or none, and whether to open it', () => {
-  assert.deepEqual(parseViewerMessage({ type: 'lookUp', word: 'attention', open: true }), { type: 'lookUp', word: 'attention', open: true });
-  assert.deepEqual(parseViewerMessage({ type: 'lookUp', word: null, open: false }), { type: 'lookUp', word: null, open: false });
-  assert.equal(parseViewerMessage({ type: 'lookUp', word: 'two\nlines', open: true }), undefined);
-  assert.equal(parseViewerMessage({ type: 'lookUp', word: 'x'.repeat(200), open: true }), undefined);
-  assert.equal(parseViewerMessage({ type: 'lookUp', word: 'word' }), undefined);
-  assert.equal(parseViewerMessage({ type: 'lookUp', word: 7, open: false }), undefined);
+test("a Look Up message carries one plain word, or none, and whether to open it", () => {
+  assert.deepEqual(
+    parseViewerMessage({ type: "lookUp", word: "attention", open: true }),
+    { type: "lookUp", word: "attention", open: true },
+  );
+  assert.deepEqual(
+    parseViewerMessage({ type: "lookUp", word: null, open: false }),
+    { type: "lookUp", word: null, open: false },
+  );
+  assert.equal(
+    parseViewerMessage({ type: "lookUp", word: "two\nlines", open: true }),
+    undefined,
+  );
+  assert.equal(
+    parseViewerMessage({ type: "lookUp", word: "x".repeat(200), open: true }),
+    undefined,
+  );
+  assert.equal(parseViewerMessage({ type: "lookUp", word: "word" }), undefined);
+  assert.equal(
+    parseViewerMessage({ type: "lookUp", word: 7, open: false }),
+    undefined,
+  );
 });
 
-test('zen messages: the viewer says whether Exit zen was pressed', () => {
-  assert.deepEqual(parseViewerMessage({ type: 'zen', exit: true }), { type: 'zen', exit: true });
-  assert.deepEqual(parseViewerMessage({ type: 'zen', exit: false }), { type: 'zen', exit: false });
-  assert.equal(parseViewerMessage({ type: 'zen' }), undefined);
-  assert.equal(parseViewerMessage({ type: 'zen', exit: 'yes' }), undefined);
+test("zen messages: the viewer says whether Exit zen was pressed", () => {
+  assert.deepEqual(parseViewerMessage({ type: "zen", exit: true }), {
+    type: "zen",
+    exit: true,
+  });
+  assert.deepEqual(parseViewerMessage({ type: "zen", exit: false }), {
+    type: "zen",
+    exit: false,
+  });
+  assert.equal(parseViewerMessage({ type: "zen" }), undefined);
+  assert.equal(parseViewerMessage({ type: "zen", exit: "yes" }), undefined);
 });
 
-test('history jumps require valid origins, destinations, load generations and request ids', () => {
-  const position = { ...DEFAULT_VIEW_CHOICES, page: 2, top: 0, left: 12, zoom: 125 };
-  const message = { type: 'historyJump', load: 1, id: 1, from: position, to: { ...position, page: 4 }, requestId: 7 };
+test("history jumps require valid origins, destinations, load generations and request ids", () => {
+  const position = {
+    ...DEFAULT_VIEW_CHOICES,
+    page: 2,
+    top: 0,
+    left: 12,
+    zoom: 125,
+  };
+  const message = {
+    type: "historyJump",
+    load: 1,
+    id: 1,
+    from: position,
+    to: { ...position, page: 4 },
+    requestId: 7,
+  };
   assert.deepEqual(parseViewerMessage(message), message);
   for (const bad of [
-    { load: -1 }, { load: 1.2 }, { id: 0 }, { id: Infinity }, { requestId: '7' },
-    { from: { ...position, top: Infinity } }, { to: { ...position, page: 0 } },
-    { to: { ...position, zoom: 'arbitrary' } }, { from: null },
-  ]) assert.equal(parseViewerMessage({ ...message, ...bad }), undefined);
+    { load: -1 },
+    { load: 1.2 },
+    { id: 0 },
+    { id: Infinity },
+    { requestId: "7" },
+    { from: { ...position, top: Infinity } },
+    { to: { ...position, page: 0 } },
+    { to: { ...position, zoom: "arbitrary" } },
+    { from: null },
+  ]) {
+    assert.equal(parseViewerMessage({ ...message, ...bad }), undefined);
+  }
   // Do not accept a forged URI from the webview; the host supplies the document.
-  assert.deepEqual(parseViewerMessage({ ...message, uri: 'file:///other.pdf' }), message);
+  assert.deepEqual(
+    parseViewerMessage({ ...message, uri: "file:///other.pdf" }),
+    message,
+  );
 });
 
-test('history replay acknowledgements and toolbar requests are bounded and typed', () => {
-  const position = { ...DEFAULT_VIEW_CHOICES, page: 2, top: 0, left: 0, zoom: 100 };
-  for (const type of ['historyCaptured', 'historyRestored']) {
+test("history replay acknowledgements and toolbar requests are bounded and typed", () => {
+  const position = {
+    ...DEFAULT_VIEW_CHOICES,
+    page: 2,
+    top: 0,
+    left: 0,
+    zoom: 100,
+  };
+  for (const type of ["historyCaptured", "historyRestored"]) {
     const message = { type, load: 2, token: 3, position, intent: 4, ok: true };
     assert.deepEqual(parseViewerMessage(message), message);
-    for (const bad of [{ token: 0 }, { token: '3' }, { load: NaN }, { intent: -1 }, { intent: undefined }, { position: {} }, { ok: 'yes' }]) {
+    for (const bad of [
+      { token: 0 },
+      { token: "3" },
+      { load: NaN },
+      { intent: -1 },
+      { intent: undefined },
+      { position: {} },
+      { ok: "yes" },
+    ]) {
       assert.equal(parseViewerMessage({ ...message, ...bad }), undefined);
     }
   }
-  assert.deepEqual(parseViewerMessage({ type: 'historyTraverse', load: 1, direction: 'back' }), { type: 'historyTraverse', load: 1, direction: 'back' });
-  assert.equal(parseViewerMessage({ type: 'historyTraverse', load: 1, direction: 'sideways' }), undefined);
+  assert.deepEqual(
+    parseViewerMessage({ type: "historyTraverse", load: 1, direction: "back" }),
+    { type: "historyTraverse", load: 1, direction: "back" },
+  );
+  assert.equal(
+    parseViewerMessage({
+      type: "historyTraverse",
+      load: 1,
+      direction: "sideways",
+    }),
+    undefined,
+  );
 });
 
-test('an outline destination at exactly the top of its page keeps its coordinate', () => {
-  const result = parseViewerMessage({ type: 'patch', load: 1, version: 1, patch: { outline: [{ title: 'Top', page: 2, top: 0 }] } });
-  assert.deepEqual(result, { type: 'patch', load: 1, version: 1, patch: { outline: [{ title: 'Top', page: 2, top: 0, children: [] }] } });
+test("an outline destination at exactly the top of its page keeps its coordinate", () => {
+  const result = parseViewerMessage({
+    type: "patch",
+    load: 1,
+    version: 1,
+    patch: { outline: [{ title: "Top", page: 2, top: 0 }] },
+  });
+  assert.deepEqual(result, {
+    type: "patch",
+    load: 1,
+    version: 1,
+    patch: { outline: [{ title: "Top", page: 2, top: 0, children: [] }] },
+  });
 });

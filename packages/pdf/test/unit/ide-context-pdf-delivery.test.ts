@@ -154,7 +154,9 @@ test("PDF Codex: renewLeaseAtomic called before retry across renewal boundary", 
     executeCommand: async (id) => {
       if (id === AGENT_COMMANDS.codexAddFile) {
         addAttempts++;
-        if (addAttempts === 1) throw new Error("retry");
+        if (addAttempts === 1) {
+          throw new Error("retry");
+        }
       }
     },
     showQuickPick: async () => undefined,
@@ -188,7 +190,9 @@ test("PDF Codex: on retry renew is after open prep and immediately before add-fi
       if (id === AGENT_COMMANDS.codexAddFile) {
         events.push("addFile");
         addAttempts++;
-        if (addAttempts === 1) throw new Error("retry");
+        if (addAttempts === 1) {
+          throw new Error("retry");
+        }
       }
     },
     showQuickPick: async () => undefined,

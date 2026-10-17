@@ -16,8 +16,7 @@ export interface KeyContext {
 }
 
 export type KeyMove =
-  | { type: "pan"; x: number; y: number }
-  | { type: "page"; delta: 1 | -1 };
+  { type: "pan"; x: number; y: number } | { type: "page"; delta: 1 | -1 };
 
 const ARROWS: Record<string, { x: -1 | 0 | 1; y: -1 | 0 | 1 }> = {
   ArrowLeft: { x: -1, y: 0 },
@@ -48,16 +47,21 @@ export function keyMove(key: string, view: KeyContext): KeyMove | undefined {
           : arrow.y === 1
             ? view.room.down
             : view.room.up;
-    if (room > 1)
+    if (room > 1) {
       return {
         type: "pan",
         x: arrow.x * Math.min(ARROW_PIXELS, room),
         y: arrow.y * Math.min(ARROW_PIXELS, room),
       };
+    }
     const turns = arrow.x !== 0 ? paged || !view.overflowsX : paged;
-    return turns ? { type: "page", delta: (arrow.x || arrow.y) as 1 | -1 } : undefined;
+    return turns
+      ? { type: "page", delta: (arrow.x || arrow.y) as 1 | -1 }
+      : undefined;
   }
-  if (key !== "PageDown" && key !== "PageUp") return undefined;
+  if (key !== "PageDown" && key !== "PageUp") {
+    return undefined;
+  }
   const sign = key === "PageDown" ? 1 : -1;
   const horizontal = view.direction === "horizontal";
   const room = horizontal
@@ -69,8 +73,10 @@ export function keyMove(key: string, view: KeyContext): KeyMove | undefined {
       : view.room.up;
   if (room > 1) {
     const amount =
-      Math.min(room, (horizontal ? view.width : view.height) * PAGE_KEY_FRACTION) *
-      sign;
+      Math.min(
+        room,
+        (horizontal ? view.width : view.height) * PAGE_KEY_FRACTION,
+      ) * sign;
     return horizontal
       ? { type: "pan", x: amount, y: 0 }
       : { type: "pan", x: 0, y: amount };

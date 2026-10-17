@@ -84,8 +84,9 @@ test("a region drag released outside the viewer ends when the pointer comes back
   // In VS Code the viewer is an iframe: a release over the rest of the window never reaches it.
   await page.evaluate(() => {
     const swallow = (event: Event): void => event.stopImmediatePropagation();
-    for (const type of ["pointerup", "mouseup"])
+    for (const type of ["pointerup", "mouseup"]) {
       window.addEventListener(type, swallow, { capture: true, once: true });
+    }
   });
   await page.mouse.up();
   await expect(page.locator(".region-marquee")).toBeVisible();
@@ -114,8 +115,9 @@ test("a right-click keeps the selection, for the context menu, and later drags s
   await page.mouse.down({ button: "right" });
   await page.evaluate(() => {
     const swallow = (event: Event): void => event.stopImmediatePropagation();
-    for (const type of ["pointerup", "mouseup"])
+    for (const type of ["pointerup", "mouseup"]) {
       window.addEventListener(type, swallow, { capture: true, once: true });
+    }
   });
   await page.mouse.up({ button: "right" });
   await page.mouse.move(...at(150, 300), { steps: 4 });

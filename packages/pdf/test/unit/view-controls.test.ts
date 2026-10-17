@@ -87,15 +87,17 @@ test("new view actions accept only the supported choices", () => {
       action: "setScrollDirection",
       scrollDirection,
     })),
-  ])
+  ]) {
     assert.deepEqual(parseViewerAction({ ...action, extra: true }), action);
+  }
   for (const action of [
     { action: "setPageLayout", pageLayout: "book" },
     { action: "setScrollMode", scrollMode: true },
     { action: "setScrollDirection", scrollDirection: 0 },
     { action: "setPageLayout" },
-  ])
+  ]) {
     assert.equal(parseViewerAction(action), undefined);
+  }
 });
 
 test("view settings parse defaults, percentages and malformed configuration without coercion", () => {
@@ -112,12 +114,14 @@ test("view settings parse defaults, percentages and malformed configuration with
     smoothScrolling: false,
   };
   assert.deepEqual(parseViewSettings(settings), settings);
-  for (const value of ["fitWidth", "fitPage", "actual", 62.5] as const)
+  for (const value of ["fitWidth", "fitPage", "actual", 62.5] as const) {
     assert.equal(parseDefaultZoom(value), value);
+  }
   assert.equal(parseDefaultZoom(10), 25);
   assert.equal(parseDefaultZoom(500), 400);
-  for (const value of ["125", "fit-page", 0, -1, NaN, Infinity])
+  for (const value of ["125", "fit-page", 0, -1, NaN, Infinity]) {
     assert.equal(parseDefaultZoom(value), "fitWidth");
+  }
   assert.deepEqual(
     parseViewSettings({
       defaultZoom: {},
@@ -186,12 +190,14 @@ test("discrete wheel detection leaves fractional, small and diagonal trackpad pi
     deltaY,
     deltaMode,
   });
-  for (const delta of [100, -120, 240, -300])
+  for (const delta of [100, -120, 240, -300]) {
     assert.equal(isDiscreteWheel(wheel(delta)), true);
+  }
   assert.equal(isDiscreteWheel(wheel(3, 1)), true);
   assert.equal(isDiscreteWheel(wheel(1, 2)), true);
-  for (const delta of [0, 1.5, 24, 80, 101, NaN])
+  for (const delta of [0, 1.5, 24, 80, 101, NaN]) {
     assert.equal(isDiscreteWheel(wheel(delta)), false);
+  }
   assert.equal(isDiscreteWheel(wheel(100, 0, 1)), false);
   assert.equal(wheelPixels(3, 1, 600), 120);
   assert.equal(wheelPixels(-1, 2, 600), -600);

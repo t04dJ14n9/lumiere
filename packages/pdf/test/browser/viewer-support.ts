@@ -21,7 +21,9 @@ export async function messages(page: Page): Promise<Message[]> {
     () => (window as unknown as { __messages: Message[] }).__messages,
   );
   return sent.flatMap((message) => {
-    if (message.type !== "patch") return [message];
+    if (message.type !== "patch") {
+      return [message];
+    }
     const { outline, selection, view } = message.patch as Record<
       string,
       unknown

@@ -5,7 +5,7 @@
 import type { HostMessage, ViewerPatch } from "../shared/messages";
 import { createOutbox, type OutgoingMessage } from "./outbox";
 import { prepareReadingPosition } from "./reading-position";
-import { HostInbox } from '../shared/host-inbox';
+import { HostInbox } from "../shared/host-inbox";
 
 declare function acquireVsCodeApi(): { postMessage(message: unknown): void };
 
@@ -46,18 +46,22 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
     "message",
     (event: MessageEvent<HostMessage | undefined>) => {
       const message = event.data;
-      if (!message || typeof message !== "object") return;
+      if (!message || typeof message !== "object") {
+        return;
+      }
       if (message.type === "load") {
         inbox.beginLoad();
         const data = asArrayBuffer(message.data);
         outbox.loaded();
         prepareReadingPosition(message.settings, message.position);
-        if (data) onLoad(data);
-        else
+        if (data) {
+          onLoad(data);
+        } else {
           postToHost({
             type: "error",
             message: "The PDF data from the extension is not readable.",
           });
+        }
       } else {
         inbox.receive(message);
       }
@@ -67,8 +71,12 @@ export function connectToHost(onLoad: (data: ArrayBuffer) => void): void {
 }
 
 function asArrayBuffer(value: unknown): ArrayBuffer | undefined {
-  if (value instanceof ArrayBuffer) return value;
-  if (!ArrayBuffer.isView(value)) return undefined;
+  if (value instanceof ArrayBuffer) {
+    return value;
+  }
+  if (!ArrayBuffer.isView(value)) {
+    return undefined;
+  }
   return value.buffer.slice(
     value.byteOffset,
     value.byteOffset + value.byteLength,

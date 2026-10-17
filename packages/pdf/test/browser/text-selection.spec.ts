@@ -23,9 +23,7 @@ test("pressing Ctrl+C copies the selected text, and there is no Copy text button
     const target = window as unknown as { __copied?: string[] };
     target.__copied = [];
     document.addEventListener("copy", (event) => {
-      target.__copied!.push(
-        event.clipboardData?.getData("text/plain") ?? "",
-      );
+      target.__copied!.push(event.clipboardData?.getData("text/plain") ?? "");
     });
   });
   await page.keyboard.press("ControlOrMeta+c");

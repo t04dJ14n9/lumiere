@@ -26,7 +26,9 @@ export const configuration = new Map<string, unknown>();
 export class Disposable {
   static from(...items: ({ dispose(): unknown } | undefined)[]): Disposable {
     return new Disposable(() => {
-      for (const item of items) item?.dispose();
+      for (const item of items) {
+        item?.dispose();
+      }
     });
   }
   constructor(private callOnDispose?: () => unknown) {}
@@ -37,7 +39,10 @@ export class Disposable {
   }
 }
 
-function track<T extends object>(kind: string, value: T = {} as T): T & Disposable {
+function track<T extends object>(
+  kind: string,
+  value: T = {} as T,
+): T & Disposable {
   const handle = Object.assign(value, {
     dispose: () => {
       live.delete(handle);
@@ -59,7 +64,9 @@ export class EventEmitter<T> {
     return new Disposable(() => this.listeners.delete(listener));
   };
   fire(value: T): void {
-    for (const listener of [...this.listeners]) listener(value);
+    for (const listener of [...this.listeners]) {
+      listener(value);
+    }
   }
   dispose(): void {
     this.listeners.clear();
@@ -67,16 +74,19 @@ export class EventEmitter<T> {
 }
 
 export class Uri {
-  private constructor(readonly scheme: string, readonly path: string) {}
+  private constructor(
+    readonly scheme: string,
+    readonly path: string,
+  ) {}
   static file(path: string): Uri {
-    return new Uri('file', path);
+    return new Uri("file", path);
   }
   static parse(value: string): Uri {
-    const [scheme, rest = ''] = value.split(':', 2);
-    return new Uri(scheme ?? 'file', rest.replace(/^\/\//u, ''));
+    const [scheme, rest = ""] = value.split(":", 2);
+    return new Uri(scheme ?? "file", rest.replace(/^\/\//u, ""));
   }
   static joinPath(base: Uri, ...parts: string[]): Uri {
-    return new Uri(base.scheme, [base.path, ...parts].join('/'));
+    return new Uri(base.scheme, [base.path, ...parts].join("/"));
   }
   get fsPath(): string {
     return this.path;
@@ -87,10 +97,16 @@ export class Uri {
 }
 
 export class RelativePattern {
-  constructor(readonly base: unknown, readonly pattern: string) {}
+  constructor(
+    readonly base: unknown,
+    readonly pattern: string,
+  ) {}
 }
 export class TreeItem {
-  constructor(readonly label: string, readonly collapsibleState?: number) {}
+  constructor(
+    readonly label: string,
+    readonly collapsibleState?: number,
+  ) {}
 }
 export class ThemeIcon {
   constructor(readonly id: string) {}
@@ -103,24 +119,39 @@ export const ViewColumn = { Active: -1, Beside: -2, One: 1 };
 export const commands = {
   registerCommand: (id: string) => track(`command:${id}`),
   executeCommand: async (id: string, ...args: unknown[]) => {
-    if (id === 'setContext') contextKeys.set(String(args[0]), args[1]);
+    if (id === "setContext") {
+      contextKeys.set(String(args[0]), args[1]);
+    }
     return undefined;
   },
   getCommands: async () => [] as string[],
 };
 
 export const window = {
-  registerCustomEditorProvider: (viewType: string) => track(`customEditor:${viewType}`),
+  registerCustomEditorProvider: (viewType: string) =>
+    track(`customEditor:${viewType}`),
   createStatusBarItem: () =>
-    track('statusBarItem', { text: '', tooltip: '', command: undefined as unknown, show() {}, hide() {} }),
+    track("statusBarItem", {
+      text: "",
+      tooltip: "",
+      command: undefined as unknown,
+      show() {},
+      hide() {},
+    }),
   createTreeView: (id: string) =>
     track(`treeView:${id}`, {
       visible: false,
       message: undefined as string | undefined,
-      onDidChangeVisibility: event('treeView.visibility'),
+      onDidChangeVisibility: event("treeView.visibility"),
       reveal: async () => undefined,
     }),
-  createOutputChannel: () => track('outputChannel', { info() {}, warn() {}, error() {}, appendLine() {} }),
+  createOutputChannel: () =>
+    track("outputChannel", {
+      info() {},
+      warn() {},
+      error() {},
+      appendLine() {},
+    }),
   showInformationMessage: async (_message: string) => undefined,
   showWarningMessage: async (_message: string) => undefined,
   showErrorMessage: async () => undefined,
@@ -128,41 +159,60 @@ export const window = {
   showInputBox: async () => undefined,
   tabGroups: {
     all: [] as unknown[],
-    onDidChangeTabs: event('tabGroups.tabs'),
-    onDidChangeTabGroups: event('tabGroups.groups'),
+    onDidChangeTabs: event("tabGroups.tabs"),
+    onDidChangeTabGroups: event("tabGroups.groups"),
   },
 };
 
 export const workspace = {
   workspaceFolders: undefined as { uri: Uri }[] | undefined,
-  getConfiguration: (section = '') => ({
+  getConfiguration: (section = "") => ({
     get: <T>(key: string, fallback?: T) =>
-      (configuration.has(`${section}.${key}`) ? configuration.get(`${section}.${key}`) : fallback) as T,
+      (configuration.has(`${section}.${key}`)
+        ? configuration.get(`${section}.${key}`)
+        : fallback) as T,
     update: async (key: string, value: unknown) => {
       configuration.set(`${section}.${key}`, value);
     },
   }),
-  onDidChangeConfiguration: event('workspace.configuration'),
+  onDidChangeConfiguration: event("workspace.configuration"),
   createFileSystemWatcher: () =>
-    track('fileSystemWatcher', { onDidChange: event('watcher.change'), onDidCreate: event('watcher.create'), onDidDelete: event('watcher.delete') }),
+    track("fileSystemWatcher", {
+      onDidChange: event("watcher.change"),
+      onDidCreate: event("watcher.create"),
+      onDidDelete: event("watcher.delete"),
+    }),
   asRelativePath: (value: unknown) => String(value),
   fs: { readFile: async () => new Uint8Array() },
 };
 
 export const env = {
-  appName: 'Visual Studio Code',
-  clipboard: { readText: async () => '', writeText: async (_text: string) => undefined },
+  appName: "Visual Studio Code",
+  clipboard: {
+    readText: async () => "",
+    writeText: async (_text: string) => undefined,
+  },
   openExternal: async () => true,
 };
 
-export const extensions = { all: [] as { packageJSON: unknown }[], getExtension: (_id: string) => undefined };
+export const extensions = {
+  all: [] as { packageJSON: unknown }[],
+  getExtension: (_id: string) => undefined,
+};
 
 export const lm = {
-  registerMcpServerDefinitionProvider: (id: string) => track(`mcpProvider:${id}`),
+  registerMcpServerDefinitionProvider: (id: string) =>
+    track(`mcpProvider:${id}`),
 };
 
 export class McpHttpServerDefinition {
-  constructor(readonly label: string, readonly uri: Uri, readonly headers: Record<string, string> = {}) {}
+  constructor(
+    readonly label: string,
+    readonly uri: Uri,
+    readonly headers: Record<string, string> = {},
+  ) {}
 }
 
-export const languages = { registerDocumentLinkProvider: () => track("documentLinkProvider") };
+export const languages = {
+  registerDocumentLinkProvider: () => track("documentLinkProvider"),
+};

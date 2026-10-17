@@ -41,7 +41,7 @@ import { FloatingToolbar } from "./floating-toolbar";
 import { Toolbar } from "./toolbar";
 import { useViewActions, useViewReporting } from "./view-sync";
 import { useWheelZoom } from "./wheel-zoom";
-import { useJumpHistory } from './jump-history';
+import { useJumpHistory } from "./jump-history";
 
 /**
  * The open PDF: the slim or floating bar (unless the controls are in VS
@@ -69,10 +69,18 @@ export function Viewer({
   const history = useJumpHistory(rawNavigation, choices, setChoices);
   const navigation = {
     ...rawNavigation,
-    goToPage: (page: number, top?: number) => history.jump(() => rawNavigation.goToPage(page, top)),
-    reveal: (page: number, rect: Parameters<typeof rawNavigation.reveal>[1], deliberate = true) => {
-      if (deliberate) history.jump(() => rawNavigation.reveal(page, rect), undefined, true);
-      else history.preview(() => rawNavigation.reveal(page, rect));
+    goToPage: (page: number, top?: number) =>
+      history.jump(() => rawNavigation.goToPage(page, top)),
+    reveal: (
+      page: number,
+      rect: Parameters<typeof rawNavigation.reveal>[1],
+      deliberate = true,
+    ) => {
+      if (deliberate) {
+        history.jump(() => rawNavigation.reveal(page, rect), undefined, true);
+      } else {
+        history.preview(() => rawNavigation.reveal(page, rect));
+      }
     },
   };
   const selection = useSelectionReporting(DOCUMENT_ID, pdf);
@@ -124,20 +132,31 @@ export function Viewer({
   useEffect(
     () =>
       listenToHost((message) => {
-        if (handleHistory(message)) return;
-        if (message.type === "goTo") jumpHistory(() => show(message.location, message.top), message.requestId, false, message.expectedIntent);
-        else if (message.type === "action") {
+        if (handleHistory(message)) {
+          return;
+        }
+        if (message.type === "goTo") {
+          jumpHistory(
+            () => show(message.location, message.top),
+            message.requestId,
+            false,
+            message.expectedIntent,
+          );
+        } else if (message.type === "action") {
           const action = parseViewerAction(message.action);
-          if (action) runAction(action);
+          if (action) {
+            runAction(action);
+          }
         } else if (message.type === "viewSettings") {
           const previous = currentViewSettings();
           const settings = rememberViewSettings(message.settings);
           setMotionSetting(settings.smoothScrolling);
-          if (settings.pageLayout !== previous.pageLayout)
+          if (settings.pageLayout !== previous.pageLayout) {
             setChoices((current) => ({
               ...current,
               pageLayout: settings.pageLayout,
             }));
+          }
         } else if (message.type === "lookUpRequest") {
           requestLookUp();
         } else if (message.type === "lookUp") {
@@ -148,7 +167,15 @@ export function Viewer({
           setToolbar(rememberToolbarSettings(message.toolbar));
         }
       }, hostGeneration),
-    [show, runAction, setZen, handleHistory, jumpHistory, hostGeneration, requestLookUp],
+    [
+      show,
+      runAction,
+      setZen,
+      handleHistory,
+      jumpHistory,
+      hostGeneration,
+      requestLookUp,
+    ],
   );
 
   const latest = useRef({ selection, searching, tool, setTool });
@@ -161,11 +188,18 @@ export function Viewer({
         setFindRequest((request) => request + 1);
       } else if (event.key === "Escape") {
         const { searching, selection, tool, setTool } = latest.current;
-        if (document.querySelector(".view-menu:popover-open")) return;
-        if (searching) setSearching(false);
+        if (document.querySelector(".view-menu:popover-open")) {
+          return;
+        }
+        if (searching) {
+          setSearching(false);
+        }
         // With nothing selected, Escape puts down the Select Region tool.
-        else if (tool === "region" && !selection.region) setTool("text");
-        else selection.clear();
+        else if (tool === "region" && !selection.region) {
+          setTool("text");
+        } else {
+          selection.clear();
+        }
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -216,48 +250,52 @@ export function Viewer({
           />
         )}
         <PageBitmaps pdf={pdf} scroller={documentArea}>
-        <Viewport
-          documentId={DOCUMENT_ID}
-          className={`viewport${choices.scrollMode === "paged" ? " paged" : ""}`}
-          tabIndex={0}
-          style={{ display: "flex" }}
-        >
-          <ZoomGestureWrapper
+          <Viewport
             documentId={DOCUMENT_ID}
-            enableWheel={false}
-            style={{ position: "relative", margin: "auto" }}
+            className={`viewport${choices.scrollMode === "paged" ? " paged" : ""}`}
+            tabIndex={0}
+            style={{ display: "flex" }}
           >
-            <Scroller
+            <ZoomGestureWrapper
               documentId={DOCUMENT_ID}
-              data-pdf-scroller
-              renderPage={({ pageIndex, width, height }) =>
-                navigation.activePages &&
-                !navigation.activePages.includes(pageIndex + 1) ? null : (
-                  <div
-                    className={
-                      choices.scrollMode === "paged" ? "paged-page" : undefined
-                    }
-                  >
-                    <Page
-                      pdf={pdf}
-                      pageIndex={pageIndex}
-                      width={width}
-                      height={height}
-                      devicePixelRatio={devicePixelRatio}
-                      highlight={navigation.highlight}
-                      region={selection.region}
-                      selection={selection}
-                      onOpenPage={(page, top) => navigation.goToPage(page, top)}
-                    />
-                  </div>
-                )
-              }
-            />
-            {choices.scrollMode === "paged" && (
-              <PagedPadding direction={choices.scrollDirection} />
-            )}
-          </ZoomGestureWrapper>
-        </Viewport>
+              enableWheel={false}
+              style={{ position: "relative", margin: "auto" }}
+            >
+              <Scroller
+                documentId={DOCUMENT_ID}
+                data-pdf-scroller
+                renderPage={({ pageIndex, width, height }) =>
+                  navigation.activePages &&
+                  !navigation.activePages.includes(pageIndex + 1) ? null : (
+                    <div
+                      className={
+                        choices.scrollMode === "paged"
+                          ? "paged-page"
+                          : undefined
+                      }
+                    >
+                      <Page
+                        pdf={pdf}
+                        pageIndex={pageIndex}
+                        width={width}
+                        height={height}
+                        devicePixelRatio={devicePixelRatio}
+                        highlight={navigation.highlight}
+                        region={selection.region}
+                        selection={selection}
+                        onOpenPage={(page, top) =>
+                          navigation.goToPage(page, top)
+                        }
+                      />
+                    </div>
+                  )
+                }
+              />
+              {choices.scrollMode === "paged" && (
+                <PagedPadding direction={choices.scrollDirection} />
+              )}
+            </ZoomGestureWrapper>
+          </Viewport>
         </PageBitmaps>
       </div>
     </div>

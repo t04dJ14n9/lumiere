@@ -26,7 +26,11 @@
 }
 
 .page-link:hover {
-  background: color-mix(in srgb, var(--vscode-textLink-foreground, #3794ff) 15%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--vscode-textLink-foreground, #3794ff) 15%,
+    transparent
+  );
 }
 
 /* A location opened from a link flashes, then fades. */
@@ -41,8 +45,13 @@
 }
 
 @keyframes fade-highlight {
-  0%, 60% { opacity: 1; }
-  100% { opacity: 0; }
+  0%,
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .region-selection,

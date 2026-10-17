@@ -134,7 +134,10 @@ test("view defaults inherit editor smoothScrolling and explicit PDF false overri
 });
 
 test("recreated webviews receive the current toolbar mode and dock after loading bytes", async () => {
-  const preferences = new ViewPreferences(memory() as never, { all: [] } as never);
+  const preferences = new ViewPreferences(
+    memory() as never,
+    { all: [] } as never,
+  );
   const viewer = open(preferences);
   await viewer.receive({ type: "ready" });
   for (const toolbar of [
@@ -144,10 +147,17 @@ test("recreated webviews receive the current toolbar mode and dock after loading
     viewer.panel.setToolbar(toolbar);
     viewer.messages.length = 0;
     await viewer.receive({ type: "ready" });
-    const loadIndex = viewer.messages.findIndex(message => message.type === "load");
-    const toolbarIndex = viewer.messages.findIndex(message => message.type === "toolbar");
+    const loadIndex = viewer.messages.findIndex(
+      (message) => message.type === "load",
+    );
+    const toolbarIndex = viewer.messages.findIndex(
+      (message) => message.type === "toolbar",
+    );
     assert.ok(loadIndex >= 0 && toolbarIndex > loadIndex);
-    assert.deepEqual(viewer.messages[toolbarIndex], { type: "toolbar", toolbar });
+    assert.deepEqual(viewer.messages[toolbarIndex], {
+      type: "toolbar",
+      toolbar,
+    });
   }
   viewer.panel.dispose();
   preferences.dispose();
@@ -170,7 +180,10 @@ test("saved positions carry a schema version; other versions and malformed value
   preferences.save(uri, position);
   await new Promise((resolve) => setImmediate(resolve));
   const key = state.keys()[0]!;
-  assert.equal((state.get(key) as { version?: number }).version, SAVED_POSITION_VERSION);
+  assert.equal(
+    (state.get(key) as { version?: number }).version,
+    SAVED_POSITION_VERSION,
+  );
   assert.deepEqual(preferences.position(uri), position);
   for (const stored of [
     position, // saved by an older build, without a version

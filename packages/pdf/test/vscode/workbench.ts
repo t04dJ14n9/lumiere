@@ -63,7 +63,9 @@ async function quickInput(
   text: string,
 ): Promise<void> {
   const widget = page.locator(".quick-input-widget");
-  if (await widget.isVisible()) await page.keyboard.press("Escape");
+  if (await widget.isVisible()) {
+    await page.keyboard.press("Escape");
+  }
   await page.locator(".monaco-workbench").click({ position: { x: 20, y: 20 } });
   await page.keyboard.press(shortcut);
   await expect(widget).toBeVisible();
@@ -138,8 +140,9 @@ export async function editorTitleAction(
  */
 export async function agentChatInput(page: Page): Promise<string> {
   const cursor = page.locator(".aislash-editor-input:visible");
-  if (await cursor.count())
+  if (await cursor.count()) {
     return withoutSpaces(await cursor.last().innerText());
+  }
   const input = page.locator(".interactive-input-part:visible").last();
   const attachments = await input
     .locator(".chat-attached-context-attachment")
@@ -171,8 +174,9 @@ export async function contextMenu(
 }
 
 export async function closeAllEditors(page: Page): Promise<void> {
-  if (await page.locator(".tabs-container .tab").count())
+  if (await page.locator(".tabs-container .tab").count()) {
     await command(page, "View: Close All Editor Groups");
+  }
   await expect(page.locator(".tabs-container .tab")).toHaveCount(0);
 }
 
@@ -205,8 +209,14 @@ export async function pdfViewer(page: Page): Promise<Frame> {
 
 /** Retained custom editors can contain visible inner frames inside hidden webviews. */
 async function visibleFrameAncestors(frame: Frame): Promise<boolean> {
-  for (let current: Frame | null = frame; current?.parentFrame(); current = current.parentFrame()) {
-    if (!(await (await current.frameElement()).isVisible())) return false;
+  for (
+    let current: Frame | null = frame;
+    current?.parentFrame();
+    current = current.parentFrame()
+  ) {
+    if (!(await (await current.frameElement()).isVisible())) {
+      return false;
+    }
   }
   return true;
 }

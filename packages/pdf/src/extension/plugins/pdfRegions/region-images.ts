@@ -1,8 +1,15 @@
-import { createHash } from 'node:crypto';
-import { mkdir, readdir, stat, unlink, utimes, writeFile } from 'node:fs/promises';
-import * as path from 'node:path';
+import { createHash } from "node:crypto";
+import {
+  mkdir,
+  readdir,
+  stat,
+  unlink,
+  utimes,
+  writeFile,
+} from "node:fs/promises";
+import * as path from "node:path";
 
-const PNG_DATA_URL = 'data:image/png;base64,';
+const PNG_DATA_URL = "data:image/png;base64,";
 const MB = 1024 * 1024;
 /** `pdfWorkshop.regionImageCache.maxSizeMB`: its default and its floor. */
 const DEFAULT_MAX_MB = 100;
@@ -10,15 +17,23 @@ const MIN_MAX_MB = 1;
 
 /** The snapshot cap, in bytes, from the setting's value in megabytes. */
 export function regionCacheBytes(megabytes: unknown): number {
-  const value = typeof megabytes === 'number' && Number.isFinite(megabytes) ? megabytes : DEFAULT_MAX_MB;
+  const value =
+    typeof megabytes === "number" && Number.isFinite(megabytes)
+      ? megabytes
+      : DEFAULT_MAX_MB;
   return Math.max(value, MIN_MAX_MB) * MB;
 }
 
 /** A snapshot bigger than the whole cache: it is not saved at all. */
 export class RegionTooLargeError extends Error {
-  constructor(readonly bytes: number, readonly maxBytes: number) {
-    super(`The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (pdfWorkshop.regionImageCache.maxSizeMB)`);
-    this.name = 'RegionTooLargeError';
+  constructor(
+    readonly bytes: number,
+    readonly maxBytes: number,
+  ) {
+    super(
+      `The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (pdfWorkshop.regionImageCache.maxSizeMB)`,
+    );
+    this.name = "RegionTooLargeError";
   }
 }
 
@@ -28,9 +43,14 @@ function megabytes(bytes: number): string {
 
 /** The cache could not free enough room for a snapshot: nothing was written. */
 export class RegionCacheFullError extends Error {
-  constructor(readonly maxBytes: number, readonly causes: readonly unknown[]) {
-    super(`Could not free enough room in the ${megabytes(maxBytes)} region snapshot cache: ${causes.map(describe).join('; ')}`);
-    this.name = 'RegionCacheFullError';
+  constructor(
+    readonly maxBytes: number,
+    readonly causes: readonly unknown[],
+  ) {
+    super(
+      `Could not free enough room in the ${megabytes(maxBytes)} region snapshot cache: ${causes.map(describe).join("; ")}`,
+    );
+    this.name = "RegionCacheFullError";
   }
 }
 
@@ -85,12 +105,21 @@ export class RegionImages {
     return saved;
   }
 
-  private async write(pdfPath: string, page: number, image: string): Promise<string> {
-    const bytes = Buffer.from(image.slice(PNG_DATA_URL.length), 'base64');
+  private async write(
+    pdfPath: string,
+    page: number,
+    image: string,
+  ): Promise<string> {
+    const bytes = Buffer.from(image.slice(PNG_DATA_URL.length), "base64");
     const cap = this.maxBytes();
-    if (bytes.length > cap) throw new RegionTooLargeError(bytes.length, cap);
-    const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 12);
-    const file = path.join(this.folder, `${path.basename(pdfPath, '.pdf')}-p${page}-${hash}.png`);
+    if (bytes.length > cap) {
+      throw new RegionTooLargeError(bytes.length, cap);
+    }
+    const hash = createHash("sha256").update(bytes).digest("hex").slice(0, 12);
+    const file = path.join(
+      this.folder,
+      `${path.basename(pdfPath, ".pdf")}-p${page}-${hash}.png`,
+    );
     await mkdir(this.folder, { recursive: true });
     await this.reclaim(path.basename(file), cap - bytes.length, cap);
     try {
@@ -110,31 +139,50 @@ export class RegionImages {
    * others take at most `room` bytes; throws RegionCacheFullError if they
    * cannot be brought down that far.
    */
-  private async reclaim(target: string, room: number, cap: number): Promise<void> {
+  private async reclaim(
+    target: string,
+    room: number,
+    cap: number,
+  ): Promise<void> {
     const names = (await readdir(this.folder, { withFileTypes: true }))
-      .filter(entry => entry.isFile() && entry.name.endsWith('.png') && entry.name !== target)
-      .map(entry => entry.name);
-    const images = (await Promise.all(names.map(async name => {
-      const file = path.join(this.folder, name);
-      const info = await stat(file).catch(() => undefined);
-      return info ? { file, size: info.size, used: info.mtimeMs } : undefined;
-    }))).filter(image => image !== undefined);
+      .filter(
+        (entry) =>
+          entry.isFile() &&
+          entry.name.endsWith(".png") &&
+          entry.name !== target,
+      )
+      .map((entry) => entry.name);
+    const images = (
+      await Promise.all(
+        names.map(async (name) => {
+          const file = path.join(this.folder, name);
+          const info = await stat(file).catch(() => undefined);
+          return info
+            ? { file, size: info.size, used: info.mtimeMs }
+            : undefined;
+        }),
+      )
+    ).filter((image) => image !== undefined);
     let total = images.reduce((sum, image) => sum + image.size, 0);
     const failures: unknown[] = [];
     // Least recently used first.
     images.sort((a, b) => a.used - b.used);
     for (const image of images) {
-      if (total <= room) return;
+      if (total <= room) {
+        return;
+      }
       try {
         await this.files.unlink(image.file);
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
           failures.push(error);
           continue;
         }
       }
       total -= image.size;
     }
-    if (total > room) throw new RegionCacheFullError(cap, failures);
+    if (total > room) {
+      throw new RegionCacheFullError(cap, failures);
+    }
   }
 }

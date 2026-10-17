@@ -143,18 +143,26 @@ export class StatusBar implements vscode.Disposable {
         entry.hide();
         continue;
       }
-      if (item.id === "page") entry.text = pageLabel(view);
-      if (item.id === "zoom") entry.text = zoomLabel(view);
-      if (item.id === "previousPage")
+      if (item.id === "page") {
+        entry.text = pageLabel(view);
+      }
+      if (item.id === "zoom") {
+        entry.text = zoomLabel(view);
+      }
+      if (item.id === "previousPage") {
         entry.command = view.canGoBack ? item.command : undefined;
-      if (item.id === "nextPage")
+      }
+      if (item.id === "nextPage") {
         entry.command = view.canGoForward ? item.command : undefined;
+      }
       entry.show();
     }
   }
 
   dispose(): void {
     this.subscription.dispose();
-    for (const entry of this.items.values()) entry.dispose();
+    for (const entry of this.items.values()) {
+      entry.dispose();
+    }
   }
 }

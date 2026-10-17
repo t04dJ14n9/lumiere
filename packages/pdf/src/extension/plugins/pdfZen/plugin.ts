@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { ZEN_COMMAND_IDS } from '../pdf/registered-commands';
-import manifest from './manifest';
+import { ZEN_COMMAND_IDS } from "../pdf/registered-commands";
+import manifest from "./manifest";
 
 /**
  * Zen mode for PDFs: VS Code's own Zen Mode (hidden sidebar, status bar and
@@ -22,12 +22,14 @@ export const pdfZenPlugin: Plugin = {
     let on = false;
     const show = (next: boolean): void => {
       on = next;
-      for (const panel of panels.all) panel.setZen(next);
+      for (const panel of panels.all) {
+        panel.setZen(next);
+      }
     };
     const enter = async (): Promise<void> => {
       show(true);
       try {
-        await vscode.commands.executeCommand('workbench.action.toggleZenMode');
+        await vscode.commands.executeCommand("workbench.action.toggleZenMode");
       } catch (error) {
         show(false);
         throw error;
@@ -35,12 +37,26 @@ export const pdfZenPlugin: Plugin = {
     };
     const exit = async (): Promise<void> => {
       show(false);
-      await vscode.commands.executeCommand('workbench.action.exitZenMode');
+      await vscode.commands.executeCommand("workbench.action.exitZenMode");
     };
-    ctx.own(panels.onDidOpen(panel => panel.setZen(on)), 'listener');
-    ctx.own(panels.handle('zen', (_panel, message) => message.exit ? exit() : show(false)), 'message handler');
-    ctx.own(vscode.commands.registerCommand(ZEN_COMMAND_IDS.enterZen, enter), 'command');
-    ctx.own(vscode.commands.registerCommand(ZEN_COMMAND_IDS.exitZen, exit), 'command');
-    ctx.own({ dispose: () => show(false) }, 'viewer zen state');
+    ctx.own(
+      panels.onDidOpen((panel) => panel.setZen(on)),
+      "listener",
+    );
+    ctx.own(
+      panels.handle("zen", (_panel, message) =>
+        message.exit ? exit() : show(false),
+      ),
+      "message handler",
+    );
+    ctx.own(
+      vscode.commands.registerCommand(ZEN_COMMAND_IDS.enterZen, enter),
+      "command",
+    );
+    ctx.own(
+      vscode.commands.registerCommand(ZEN_COMMAND_IDS.exitZen, exit),
+      "command",
+    );
+    ctx.own({ dispose: () => show(false) }, "viewer zen state");
   },
 };

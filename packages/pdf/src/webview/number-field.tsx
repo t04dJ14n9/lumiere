@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
 /**
  * A number the reader can type over, such as the page or zoom. Enter always
@@ -6,7 +6,12 @@ import React, { useEffect, useRef, useState } from 'react';
  * top. Leaving the field commits only an edited value, so clicking away
  * never repeats a navigation.
  */
-export function NumberField({ label, value, suffix, onCommit }: {
+export function NumberField({
+  label,
+  value,
+  suffix,
+  onCommit,
+}: {
   label: string;
   value: number;
   suffix: string;
@@ -36,15 +41,19 @@ export function NumberField({ label, value, suffix, onCommit }: {
         aria-label={label}
         inputMode="decimal"
         value={draft}
-        onChange={event => {
+        onChange={(event) => {
           edited.current = true;
           setDraft(event.currentTarget.value);
         }}
         onBlur={() => {
-          if (edited.current) commit();
+          if (edited.current) {
+            commit();
+          }
         }}
-        onKeyDown={event => {
-          if (event.key === 'Enter') commit();
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            commit();
+          }
         }}
       />
       <span>{suffix}</span>

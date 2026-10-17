@@ -42,7 +42,10 @@ const nodeTempFs: TempFs = {
 
 export const ideContextPlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["pdfPanels"], optional: ["regionSnapshots", "pdfHandoff"] },
+  inject: {
+    required: ["pdfPanels"],
+    optional: ["regionSnapshots", "pdfHandoff"],
+  },
   apply(ctx) {
     const panels = ctx.pdfPanels;
     ctx.own(

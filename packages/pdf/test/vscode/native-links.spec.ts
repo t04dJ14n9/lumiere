@@ -48,14 +48,23 @@ test("built-in Cmd-click delivers PDF page and region and native Back restores s
           (value) => parseFloat(value) / scale,
         );
       });
-      for (const [index, value] of [72, 130, 100, 30].entries())
+      for (const [index, value] of [72, 130, 100, 30].entries()) {
         expect(box[index]).toBeCloseTo(value, 0);
+      }
     } else {
-      await expect.poll(() => viewer.evaluate((index) => {
-        const viewport = document.querySelector(".viewport")!.getBoundingClientRect();
-        const page = document.querySelector(`.page[data-page-index="${index}"]`)?.getBoundingClientRect();
-        return page ? Math.abs(page.top - viewport.top) : Infinity;
-      }, target - 1)).toBeLessThanOrEqual(16);
+      await expect
+        .poll(() =>
+          viewer.evaluate((index) => {
+            const viewport = document
+              .querySelector(".viewport")!
+              .getBoundingClientRect();
+            const page = document
+              .querySelector(`.page[data-page-index="${index}"]`)
+              ?.getBoundingClientRect();
+            return page ? Math.abs(page.top - viewport.top) : Infinity;
+          }, target - 1),
+        )
+        .toBeLessThanOrEqual(16);
     }
     await page.getByRole("button", { name: /^Go Back/u }).click();
     await expect(
@@ -66,8 +75,9 @@ test("built-in Cmd-click delivers PDF page and region and native Back restores s
     await expect(status).toContainText(target === 9 ? "Ln 1," : "Ln 3,");
     await expect(status).toHaveText(beforeClick);
     const caret = await status.innerText();
-    if (returnedCarets.has(target))
+    if (returnedCarets.has(target)) {
       expect(caret).toBe(returnedCarets.get(target));
+    }
     returnedCarets.set(target, caret);
   }
   await page

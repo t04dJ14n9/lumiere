@@ -33,7 +33,9 @@ export function mapPdfSelectionWire(
   selection: PdfSelection | null | undefined,
   regionImagePath?: string,
 ): PdfSelectionWire {
-  if (!selection) return { kind: "none" };
+  if (!selection) {
+    return { kind: "none" };
+  }
   if (selection.kind === "text") {
     const rects = selectedPages(selection).flatMap((p) =>
       p.rects.map((r) => toWireRect(p.page, r)),

@@ -1,15 +1,35 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BitmapCache, KEPT_FULL_BITMAPS, lowScale, prefetchRange, type RenderTask } from "../../src/shared/bitmap-cache";
+import {
+  BitmapCache,
+  KEPT_FULL_BITMAPS,
+  lowScale,
+  prefetchRange,
+  type RenderTask,
+} from "../../src/shared/bitmap-cache";
 
 /** Render tasks the test finishes by hand. */
 function harness() {
-  const tasks: { page: number; scale: number; dpr: number; done: (blob: string) => void; fail: () => void; aborted: boolean }[] = [];
+  const tasks: {
+    page: number;
+    scale: number;
+    dpr: number;
+    done: (blob: string) => void;
+    fail: () => void;
+    aborted: boolean;
+  }[] = [];
   const urls = new Set<string>();
   let next = 0;
   const cache = new BitmapCache(
     (page, scale, dpr) => {
-      const record = { page, scale, dpr, aborted: false, done: (_blob: string): void => undefined, fail: (): void => undefined };
+      const record = {
+        page,
+        scale,
+        dpr,
+        aborted: false,
+        done: (_blob: string): void => undefined,
+        fail: (): void => undefined,
+      };
       tasks.push(record);
       const task: RenderTask = {
         wait(ok, bad) {
@@ -23,12 +43,12 @@ function harness() {
       return task;
     },
     {
-      create: blob => {
+      create: (blob) => {
         const url = `blob:${String(blob)}#${next++}`;
         urls.add(url);
         return url;
       },
-      revoke: url => void urls.delete(url),
+      revoke: (url) => void urls.delete(url),
     },
   );
   return { cache, tasks, urls };
@@ -37,12 +57,12 @@ function harness() {
 test("a request is answered when the render finishes, and at once for a ready bitmap", () => {
   const { cache, tasks } = harness();
   const got: string[] = [];
-  cache.request("full", 3, 1, 2, url => void got.push(url));
+  cache.request("full", 3, 1, 2, (url) => void got.push(url));
   assert.equal(tasks.length, 1);
   assert.equal(got.length, 0);
   tasks[0]!.done("p3");
   assert.equal(got.length, 1);
-  cache.request("full", 3, 1, 2, url => void got.push(url));
+  cache.request("full", 3, 1, 2, (url) => void got.push(url));
   assert.equal(got.length, 2, "ready: answered synchronously");
   assert.equal(tasks.length, 1, "no second render");
   assert.equal(cache.peek("full", 3, 1, 2), got[0]);
@@ -58,13 +78,17 @@ test("two requests for one bitmap share one render, and it is aborted only when 
   b();
   assert.equal(tasks[0]!.aborted, true);
   cache.request("low", 1, 0.5, 1, () => undefined);
-  assert.equal(tasks.length, 2, "an aborted bitmap is rendered again when asked for");
+  assert.equal(
+    tasks.length,
+    2,
+    "an aborted bitmap is rendered again when asked for",
+  );
 });
 
 test("a render that finishes after its cancel is not shown or kept", () => {
   const { cache, tasks, urls } = harness();
   const got: string[] = [];
-  const cancel = cache.request("full", 0, 1, 1, url => void got.push(url));
+  const cancel = cache.request("full", 0, 1, 1, (url) => void got.push(url));
   cancel();
   tasks[0]!.done("late");
   assert.equal(got.length, 0);
@@ -105,11 +129,19 @@ test("only a few full bitmaps of pages that are not on screen are kept, the newe
   }
   cache.retain(undefined, [0]);
   const { full } = cache.size();
-  assert.equal(full, KEPT_FULL_BITMAPS + 1, "the ones on screen are kept besides");
+  assert.equal(
+    full,
+    KEPT_FULL_BITMAPS + 1,
+    "the ones on screen are kept besides",
+  );
   assert.equal(urls.size, full);
   assert.ok(cache.peek("full", 0, 1, 1), "on screen");
   assert.ok(cache.peek("full", count - 1, 1, 1), "newest");
-  assert.equal(cache.peek("full", 1, 1, 1), undefined, "oldest idle one is gone");
+  assert.equal(
+    cache.peek("full", 1, 1, 1),
+    undefined,
+    "oldest idle one is gone",
+  );
 });
 
 test("dispose revokes every URL and aborts every render", () => {
@@ -127,7 +159,11 @@ test("the low scale is half the displayed one in steps of a quarter, within limi
   assert.equal(lowScale(0.4), 0.25);
   assert.equal(lowScale(4), 0.75);
   assert.equal(lowScale(1.7), 0.75);
-  assert.equal(lowScale(1.1), 0.5, "zoom steps close to each other share the bitmap");
+  assert.equal(
+    lowScale(1.1),
+    0.5,
+    "zoom steps close to each other share the bitmap",
+  );
 });
 
 test("the prefetch range is the pages on screen and four either side, within the document", () => {

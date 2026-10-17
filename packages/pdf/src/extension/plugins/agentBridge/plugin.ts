@@ -1,12 +1,12 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import type { Plugin } from "@workshop/core";
 import type {} from "../services";
-import { AGENT_BRIDGE_COMMAND_IDS } from '../pdf/registered-commands';
-import { PdfEnvelopePublisher } from './envelope';
-import { AgentHandoff } from './handoff';
-import { LastPdf } from './last-pdf';
-import manifest from './manifest';
-import { registerAgentBridge } from './mcp/controller';
+import { AGENT_BRIDGE_COMMAND_IDS } from "../pdf/registered-commands";
+import { PdfEnvelopePublisher } from "./envelope";
+import { AgentHandoff } from "./handoff";
+import { LastPdf } from "./last-pdf";
+import manifest from "./manifest";
+import { registerAgentBridge } from "./mcp/controller";
 
 /**
  * Everything that hands a selection to an agent: Copy Link for Agent (the
@@ -21,32 +21,52 @@ import { registerAgentBridge } from './mcp/controller';
  */
 export const agentBridgePlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["pdfPanels", "extensionContext", "outputChannel"], optional: ["regionSnapshots"] },
+  inject: {
+    required: ["pdfPanels", "extensionContext", "outputChannel"],
+    optional: ["regionSnapshots"],
+  },
   provides: ["pdfHandoff"],
   apply(ctx) {
     const panels = ctx.pdfPanels;
     const context = ctx.extensionContext;
     const handoff = new AgentHandoff(() => ctx.regionSnapshots);
-    const lastPdf = ctx.own(new LastPdf(panels), 'last pdf');
+    const lastPdf = ctx.own(new LastPdf(panels), "last pdf");
     const envelopes = new PdfEnvelopePublisher(handoff, {
       panel: () => lastPdf.panel,
     });
-    ctx.own(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.copyLinkForAgent, () => {
-      const panel = panels.active;
-      return panel ? handoff.copyLinkForAgent(panel) : undefined;
-    }), 'command');
-    ctx.own(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.envelope, () => {
-      return envelopes.publish();
-    }), 'command');
-    ctx.own(panels.handle('copyLinkForAgent', panel => handoff.copyLinkForAgent(panel)), 'message handler');
-    ctx.own(registerAgentBridge({
-      extensionUri: context.extensionUri,
-      globalStorageUri: context.globalStorageUri,
-      panels,
-      lastPdf,
-      handoff,
-      log: ctx.outputChannel,
-    }), 'mcp controller');
+    ctx.own(
+      vscode.commands.registerCommand(
+        AGENT_BRIDGE_COMMAND_IDS.copyLinkForAgent,
+        () => {
+          const panel = panels.active;
+          return panel ? handoff.copyLinkForAgent(panel) : undefined;
+        },
+      ),
+      "command",
+    );
+    ctx.own(
+      vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.envelope, () => {
+        return envelopes.publish();
+      }),
+      "command",
+    );
+    ctx.own(
+      panels.handle("copyLinkForAgent", (panel) =>
+        handoff.copyLinkForAgent(panel),
+      ),
+      "message handler",
+    );
+    ctx.own(
+      registerAgentBridge({
+        extensionUri: context.extensionUri,
+        globalStorageUri: context.globalStorageUri,
+        panels,
+        lastPdf,
+        handoff,
+        log: ctx.outputChannel,
+      }),
+      "mcp controller",
+    );
     ctx.provide("pdfHandoff", handoff);
   },
 };

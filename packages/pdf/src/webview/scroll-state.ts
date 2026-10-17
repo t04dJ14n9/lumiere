@@ -32,7 +32,9 @@ export function useScrollState() {
     pageVisibilityMetrics: [],
   });
   useEffect(() => {
-    if (!scope || !provides || !plugin) return;
+    if (!scope || !provides || !plugin) {
+      return;
+    }
     setState({
       ...scope.getLayout(),
       ...scope.getMetrics(),

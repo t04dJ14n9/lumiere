@@ -4,26 +4,42 @@ import { NavigationIntent } from "../../src/shared/navigation-intent";
 
 function gate() {
   let release: () => void = () => undefined;
-  const ready = new Promise<void>(resolve => { release = resolve; });
+  const ready = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   return { ready, release };
 }
 
 /** Controlled layout and zoom callbacks; no browser, timers or render engine. */
-function restoration(intent: NavigationIntent, token: number, name: string, mutations: string[]) {
+function restoration(
+  intent: NavigationIntent,
+  token: number,
+  name: string,
+  mutations: string[],
+) {
   const layout = gate();
   const zoom = gate();
   const completed = (async () => {
     await layout.ready;
-    if (!intent.owns(token)) return false;
+    if (!intent.owns(token)) {
+      return false;
+    }
     mutations.push(`${name}:zoom`);
     await zoom.ready;
-    if (!intent.owns(token)) return false;
+    if (!intent.owns(token)) {
+      return false;
+    }
     mutations.push(`${name}:scroll`);
     return true;
   })();
   return {
-    layoutReady: async () => { layout.release(); await Promise.resolve(); },
-    zoomSettled: () => { zoom.release(); },
+    layoutReady: async () => {
+      layout.release();
+      await Promise.resolve();
+    },
+    zoomSettled: () => {
+      zoom.release();
+    },
     completed,
   };
 }
@@ -86,8 +102,15 @@ for (const input of ["wheel", "pointer", "key", "touch"]) {
     test(`${input} input during ${stage} cancels remaining restoration mutations`, async () => {
       const intent = new NavigationIntent();
       const mutations: string[] = [];
-      const startup = restoration(intent, intent.current(), "startup", mutations);
-      if (stage === "zoom settle") await startup.layoutReady();
+      const startup = restoration(
+        intent,
+        intent.current(),
+        "startup",
+        mutations,
+      );
+      if (stage === "zoom settle") {
+        await startup.layoutReady();
+      }
       intent.advance();
       await startup.layoutReady();
       startup.zoomSettled();
@@ -101,9 +124,19 @@ test("repeated reloads leave only the newest generation able to restore", async 
   const intent = new NavigationIntent();
   const mutations: string[] = [];
   const initial = restoration(intent, intent.current(), "initial", mutations);
-  const firstReload = restoration(intent, intent.advance(), "first reload", mutations);
+  const firstReload = restoration(
+    intent,
+    intent.advance(),
+    "first reload",
+    mutations,
+  );
   await firstReload.layoutReady();
-  const latestReload = restoration(intent, intent.advance(), "latest reload", mutations);
+  const latestReload = restoration(
+    intent,
+    intent.advance(),
+    "latest reload",
+    mutations,
+  );
   await latestReload.layoutReady();
   latestReload.zoomSettled();
   assert.equal(await latestReload.completed, true);
@@ -112,7 +145,11 @@ test("repeated reloads leave only the newest generation able to restore", async 
   firstReload.zoomSettled();
   assert.equal(await initial.completed, false);
   assert.equal(await firstReload.completed, false);
-  assert.deepEqual(mutations, ["first reload:zoom", "latest reload:zoom", "latest reload:scroll"]);
+  assert.deepEqual(mutations, [
+    "first reload:zoom",
+    "latest reload:zoom",
+    "latest reload:scroll",
+  ]);
 });
 
 test("a new replay cancels an older completion without canceling itself", async () => {
@@ -149,7 +186,12 @@ test("navigation in one webview does not cancel another webview's restoration", 
   const first = new NavigationIntent();
   const second = new NavigationIntent();
   const mutations: string[] = [];
-  const startup = restoration(second, second.current(), "second webview", mutations);
+  const startup = restoration(
+    second,
+    second.current(),
+    "second webview",
+    mutations,
+  );
   first.advance();
   await startup.layoutReady();
   startup.zoomSettled();

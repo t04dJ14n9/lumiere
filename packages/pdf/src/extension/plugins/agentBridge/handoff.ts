@@ -1,18 +1,21 @@
-import * as vscode from 'vscode';
-import type { AgentTarget } from '../../../shared/agent-target';
-import { agentText } from '../../../shared/agent-text';
-import { pdfBridgeEnvelope, type PdfBridgeEnvelope } from '../../../shared/bridge-envelope';
-import type { PdfSelection } from '../../../shared/selection';
-import type { PdfPanel } from '../pdf/panel';
-import { displayPath } from '../pdf/source';
-import type { RegionSnapshots } from '../pdfRegions/region-snapshots';
-import { openAgentChat } from './chat';
-import { hashSelection } from './envelope';
+import * as vscode from "vscode";
+import type { AgentTarget } from "../../../shared/agent-target";
+import { agentText } from "../../../shared/agent-text";
+import {
+  pdfBridgeEnvelope,
+  type PdfBridgeEnvelope,
+} from "../../../shared/bridge-envelope";
+import type { PdfSelection } from "../../../shared/selection";
+import type { PdfPanel } from "../pdf/panel";
+import { displayPath } from "../pdf/source";
+import type { RegionSnapshots } from "../pdfRegions/region-snapshots";
+import { openAgentChat } from "./chat";
+import { hashSelection } from "./envelope";
 
 /** What to tell the user when the chat could not take the text itself. */
 const PASTE_HINTS: Partial<Record<AgentTarget, string>> = {
-  codex: 'It is attached in Codex: type your question.',
-  clipboard: 'Paste it into your agent\'s chat and ask your question.',
+  codex: "It is attached in Codex: type your question.",
+  clipboard: "Paste it into your agent's chat and ask your question.",
 };
 
 /** A PDF selection for an agent: see `AgentHandoff.snapshot`. */
@@ -47,14 +50,22 @@ export class AgentHandoff {
   async copyLinkForAgent(panel: PdfPanel): Promise<boolean> {
     const snapshot = await this.snapshot(panel, { notify: true });
     if (!snapshot) {
-      void vscode.window.showWarningMessage('Select text or a region in the PDF to copy a link for an agent.');
+      void vscode.window.showWarningMessage(
+        "Select text or a region in the PDF to copy a link for an agent.",
+      );
       return false;
     }
     await vscode.env.clipboard.writeText(snapshot.agentText);
-    const image = snapshot.regionImage ? vscode.Uri.file(snapshot.regionImage) : undefined;
+    const image = snapshot.regionImage
+      ? vscode.Uri.file(snapshot.regionImage)
+      : undefined;
     const target = await openAgentChat(snapshot.agentText, image, panel.uri);
     const paste = PASTE_HINTS[target];
-    if (paste) void vscode.window.showInformationMessage(`Link and selection copied for agent. ${paste}`);
+    if (paste) {
+      void vscode.window.showInformationMessage(
+        `Link and selection copied for agent. ${paste}`,
+      );
+    }
     return true;
   }
 
@@ -65,8 +76,10 @@ export class AgentHandoff {
    */
   async envelope(panel: PdfPanel): Promise<PdfBridgeEnvelope | undefined> {
     const snapshot = await this.snapshot(panel);
-    if (!snapshot) return undefined;
-    const kind = panel.uri.scheme === 'file' ? 'file' : 'remote';
+    if (!snapshot) {
+      return undefined;
+    }
+    const kind = panel.uri.scheme === "file" ? "file" : "remote";
     return pdfBridgeEnvelope({
       capturedAt: snapshot.selectedAt,
       identity: snapshot.file,
@@ -87,9 +100,14 @@ export class AgentHandoff {
    * With `notify`, the user hears why a region has no image (too large for
    * the snapshot limit, or a failed save).
    */
-  async snapshot(panel: PdfPanel, options: { notify?: boolean } = {}): Promise<AgentSnapshot | undefined> {
+  async snapshot(
+    panel: PdfPanel,
+    options: { notify?: boolean } = {},
+  ): Promise<AgentSnapshot | undefined> {
     const selected = panel.selectionSnapshot();
-    if (!selected) return undefined;
+    if (!selected) {
+      return undefined;
+    }
     const image = await this.regions()?.save(panel, selected, options);
     const source = { path: displayPath(panel.uri), sha256: selected.sha256 };
     return {
@@ -98,7 +116,11 @@ export class AgentHandoff {
       sha256: selected.sha256,
       selectedAt: selected.selectedAt,
       selection: selected.selection,
-      agentText: agentText(selected.selection, source, image ? { regionImage: image.fsPath } : {}),
+      agentText: agentText(
+        selected.selection,
+        source,
+        image ? { regionImage: image.fsPath } : {},
+      ),
       ...(image ? { regionImage: image.fsPath } : {}),
     };
   }

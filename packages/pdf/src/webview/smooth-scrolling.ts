@@ -37,7 +37,9 @@ export function useSmoothWheel(
   useEffect(() => {
     const element = container.current;
     const viewport = element?.querySelector<HTMLElement>(".viewport");
-    if (!element || !viewport) return;
+    if (!element || !viewport) {
+      return;
+    }
     const gesture = new WheelGesture();
     let frame = 0;
     let target = 0;
@@ -58,8 +60,9 @@ export function useSmoothWheel(
       if (
         !(event.target instanceof Element) ||
         !event.target.closest(".viewport")
-      )
+      ) {
         return;
+      }
       if (
         !gesture.discrete(event, event.timeStamp) ||
         event.ctrlKey ||
@@ -75,7 +78,9 @@ export function useSmoothWheel(
       }
       event.preventDefault();
       const nextAxis = horizontal ? "scrollLeft" : "scrollTop";
-      if (nextAxis !== axis) cancel();
+      if (nextAxis !== axis) {
+        cancel();
+      }
       axis = nextAxis;
       const from = viewport[axis];
       const previous = frame ? target : from;
@@ -107,14 +112,16 @@ export function useSmoothWheel(
     // Native page/zoom requests supersede a wheel animation.
     const unsubscribe = plugin?.onScrollRequest(DOCUMENT_ID, cancel);
     element.addEventListener("wheel", wheel, { passive: false, capture: true });
-    for (const type of ["pointerdown", "touchstart", "keydown"])
+    for (const type of ["pointerdown", "touchstart", "keydown"]) {
       element.addEventListener(type, interrupt, { capture: true });
+    }
     return () => {
       interrupt();
       unsubscribe?.();
       element.removeEventListener("wheel", wheel, { capture: true });
-      for (const type of ["pointerdown", "touchstart", "keydown"])
+      for (const type of ["pointerdown", "touchstart", "keydown"]) {
         element.removeEventListener(type, interrupt, { capture: true });
+      }
     };
   }, [container, smooth, direction, bounds, plugin]);
 }

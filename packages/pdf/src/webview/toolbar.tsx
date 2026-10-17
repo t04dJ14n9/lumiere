@@ -22,7 +22,12 @@ export interface ToolbarProps {
   tool: ToolMode;
   choices: ViewChoices;
   run: (action: ViewerAction) => void;
-  history: { back: boolean; forward: boolean; onBack(): void; onForward(): void };
+  history: {
+    back: boolean;
+    forward: boolean;
+    onBack(): void;
+    onForward(): void;
+  };
 }
 
 function IconButton({
@@ -78,8 +83,18 @@ export function ToolbarControls({
   return (
     <>
       <span className="toolbar-group">
-        <IconButton icon="arrow-left" label="Back to previous location" disabled={!history.back} onClick={history.onBack} />
-        <IconButton icon="arrow-right" label="Forward to next location" disabled={!history.forward} onClick={history.onForward} />
+        <IconButton
+          icon="arrow-left"
+          label="Back to previous location"
+          disabled={!history.back}
+          onClick={history.onBack}
+        />
+        <IconButton
+          icon="arrow-right"
+          label="Forward to next location"
+          disabled={!history.forward}
+          onClick={history.onForward}
+        />
       </span>
       <span className="separator" />
       <span className="toolbar-group">
@@ -95,7 +110,9 @@ export function ToolbarControls({
           value={currentPage}
           suffix={compact ? `/ ${pageCount}` : `of ${pageCount}`}
           onCommit={(page) => {
-            if (!Number.isInteger(page)) return false;
+            if (!Number.isInteger(page)) {
+              return false;
+            }
             const target = Math.min(Math.max(1, page), pageCount);
             run({ action: "goToPage", page: target });
             return target;

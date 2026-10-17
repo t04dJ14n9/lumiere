@@ -11,7 +11,10 @@ import {
 } from "../shared/view-settings";
 import type { Navigation } from "./navigation";
 import { DOCUMENT_ID } from "./plugins";
-import { restoredZoomReady, restoreWhenZoomReady } from "../shared/restored-zoom";
+import {
+  restoredZoomReady,
+  restoreWhenZoomReady,
+} from "../shared/restored-zoom";
 
 let settings = parseViewSettings(undefined);
 let last: ReadingPosition | undefined;
@@ -87,13 +90,17 @@ export function useRestorePosition(
   latestNavigation.current = navigation;
   const { provides: zoom } = useZoom(DOCUMENT_ID);
   useEffect(() => {
-    if (!intent.owns(token.current)) return;
+    if (!intent.owns(token.current)) {
+      return;
+    }
     const position = {
       ...restoring.current,
       page: Math.min(restoring.current.page, pageCount),
     };
     const choice = position.zoom;
-    if (!zoom) return;
+    if (!zoom) {
+      return;
+    }
     if (choice === "fitWidth" || choice === "fitPage") {
       restore(position);
       return;
@@ -110,15 +117,26 @@ export function useRestorePosition(
       ownsIntent: () => intent.owns(token.current),
       ready: () => {
         const state = zoom.getState();
-        return restoredZoomReady(latestNavigation.current.isReady(), state.zoomLevel, state.currentZoomLevel, target);
+        return restoredZoomReady(
+          latestNavigation.current.isReady(),
+          state.zoomLevel,
+          state.currentZoomLevel,
+          target,
+        );
       },
       requestZoom: () => {
         const state = zoom.getState();
-        if (latestNavigation.current.isReady() && (typeof state.zoomLevel !== "number" || Math.abs(state.zoomLevel - target) > 0.001)) zoom.requestZoom(target);
+        if (
+          latestNavigation.current.isReady() &&
+          (typeof state.zoomLevel !== "number" ||
+            Math.abs(state.zoomLevel - target) > 0.001)
+        ) {
+          zoom.requestZoom(target);
+        }
       },
       restore: () => restore(position),
-      requestFrame: callback => requestAnimationFrame(callback),
-      cancelFrame: frame => cancelAnimationFrame(frame),
+      requestFrame: (callback) => requestAnimationFrame(callback),
+      cancelFrame: (frame) => cancelAnimationFrame(frame),
     });
     // Restore once per document: later zoom or layout changes are the reader's.
     // eslint-disable-next-line react-hooks/exhaustive-deps

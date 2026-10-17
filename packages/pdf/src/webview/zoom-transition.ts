@@ -20,7 +20,9 @@ export function useZoomTransition(
   );
   useEffect(() => {
     const element = container.current;
-    if (!smooth || !zoom || !scroll || !element) return;
+    if (!smooth || !zoom || !scroll || !element) {
+      return;
+    }
     let frame = 0;
     let animation: Animation | undefined;
     let animatedElement: HTMLElement | undefined;
@@ -31,7 +33,9 @@ export function useZoomTransition(
       cancelAnimationFrame(frame);
       animation?.cancel();
       animation = undefined;
-      if (animatedElement) animatedElement.style.pointerEvents = "";
+      if (animatedElement) {
+        animatedElement.style.pointerEvents = "";
+      }
       animatedElement = undefined;
     };
     const unsubscribe = zoom.onZoomChange((event) => {
@@ -96,7 +100,9 @@ export function useZoomTransition(
       // requestAnimationFrame would let one frame show the final scale first.
       let started = false;
       const start = (): void => {
-        if (started) return;
+        if (started) {
+          return;
+        }
         started = true;
         armed = undefined;
         cancel();
@@ -116,7 +122,9 @@ export function useZoomTransition(
         );
         animation = transition;
         transition.onfinish = () => {
-          if (animation !== transition) return;
+          if (animation !== transition) {
+            return;
+          }
           scroller.style.pointerEvents = "";
           animatedElement = undefined;
         };
@@ -132,10 +140,14 @@ export function useZoomTransition(
       const scroller = element.querySelector<HTMLElement>(
         "[data-pdf-scroller]",
       );
-      const now = scroller ? `${scroller.offsetWidth}x${scroller.offsetHeight}` : "";
+      const now = scroller
+        ? `${scroller.offsetWidth}x${scroller.offsetHeight}`
+        : "";
       const changed = now !== known;
       known = now;
-      if (changed) armed?.();
+      if (changed) {
+        armed?.();
+      }
     });
     // The scroller appears once the document has a layout: watch it from then.
     let watching = 0;
@@ -143,8 +155,11 @@ export function useZoomTransition(
       const scroller = element.querySelector<HTMLElement>(
         "[data-pdf-scroller]",
       );
-      if (scroller) sizes.observe(scroller);
-      else watching = requestAnimationFrame(watch);
+      if (scroller) {
+        sizes.observe(scroller);
+      } else {
+        watching = requestAnimationFrame(watch);
+      }
     };
     watch();
     // The zoom plugin asks for a scroll just before it reports its zoom change,
@@ -154,28 +169,30 @@ export function useZoomTransition(
     const stopOnScroll = viewport?.onScrollRequest(DOCUMENT_ID, () => {
       zoomed = false;
       queueMicrotask(() => {
-        if (!zoomed) cancel();
+        if (!zoomed) {
+          cancel();
+        }
       });
     });
     // Zooming with the wheel keeps its own animation; other input ends it.
     const cancelUnlessZoom = (event: Event): void => {
-      if (
-        event instanceof WheelEvent &&
-        (event.ctrlKey || event.metaKey)
-      )
+      if (event instanceof WheelEvent && (event.ctrlKey || event.metaKey)) {
         return;
+      }
       cancel();
     };
-    for (const type of ["pointerdown", "touchstart", "keydown", "wheel"])
+    for (const type of ["pointerdown", "touchstart", "keydown", "wheel"]) {
       element.addEventListener(type, cancelUnlessZoom, { capture: true });
+    }
     return () => {
       cancel();
       unsubscribe();
       cancelAnimationFrame(watching);
       sizes.disconnect();
       stopOnScroll?.();
-      for (const type of ["pointerdown", "touchstart", "keydown", "wheel"])
+      for (const type of ["pointerdown", "touchstart", "keydown", "wheel"]) {
         element.removeEventListener(type, cancelUnlessZoom, { capture: true });
+      }
     };
   }, [container, smooth, zoom, viewport, scroll]);
 }

@@ -61,12 +61,15 @@ export class PdfPanels implements vscode.Disposable {
     type: T,
     handler: Handler<T>,
   ): vscode.Disposable {
-    if (this.handlers.has(type))
+    if (this.handlers.has(type)) {
       throw new Error(`A plugin already handles ${type} messages`);
+    }
     const entry = handler as AnyHandler;
     this.handlers.set(type, entry);
     return new vscode.Disposable(() => {
-      if (this.handlers.get(type) === entry) this.handlers.delete(type);
+      if (this.handlers.get(type) === entry) {
+        this.handlers.delete(type);
+      }
     });
   }
 
@@ -78,8 +81,9 @@ export class PdfPanels implements vscode.Disposable {
   provideViewerToolbar(settings: () => ToolbarSettings): vscode.Disposable {
     this.toolbar = settings;
     return new vscode.Disposable(() => {
-      if (this.toolbar === settings)
+      if (this.toolbar === settings) {
         this.toolbar = () => DEFAULT_TOOLBAR_SETTINGS;
+      }
     });
   }
 
@@ -92,7 +96,9 @@ export class PdfPanels implements vscode.Disposable {
     this.panelSubscriptions.set(panel, [
       panel.webviewPanel.onDidChangeViewState(() => this.update()),
       panel.onDidChange(() => {
-        if (panel === this.current) this.publish();
+        if (panel === this.current) {
+          this.publish();
+        }
       }),
       panel.webviewPanel.onDidDispose(() => {
         this.forget(panel);
@@ -117,7 +123,9 @@ export class PdfPanels implements vscode.Disposable {
         (column === undefined || this.active.webviewPanel.viewColumn === column)
           ? this.active
           : undefined;
-      if (panel) return panel;
+      if (panel) {
+        return panel;
+      }
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     return undefined;
@@ -128,18 +136,25 @@ export class PdfPanels implements vscode.Disposable {
    * and stay open; they no longer talk to this extension.
    */
   dispose(): void {
-    for (const panel of [...this.panels]) this.forget(panel);
-    for (const disposable of this.disposables) disposable.dispose();
+    for (const panel of [...this.panels]) {
+      this.forget(panel);
+    }
+    for (const disposable of this.disposables) {
+      disposable.dispose();
+    }
     this.handlers.clear();
   }
 
   private forget(panel: PdfPanel): void {
-    for (const subscription of this.panelSubscriptions.get(panel) ?? [])
+    for (const subscription of this.panelSubscriptions.get(panel) ?? []) {
       subscription.dispose();
+    }
     this.panelSubscriptions.delete(panel);
     this.panels.delete(panel);
     panel.dispose();
-    if (this.current === panel) this.current = undefined;
+    if (this.current === panel) {
+      this.current = undefined;
+    }
   }
 
   /**
@@ -163,7 +178,9 @@ export class PdfPanels implements vscode.Disposable {
       next =
         candidates.find((panel) => panel.webviewPanel.active) ?? candidates[0];
     }
-    if (next === this.current) return;
+    if (next === this.current) {
+      return;
+    }
     this.current = next;
     this.publish();
   }

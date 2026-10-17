@@ -6,13 +6,19 @@
  */
 
 /** `@notes/a.md#12-18` (one line: `#12`), with the full URI outside the workspace folder. */
-export function noteReference(path: string, startLine: number, endLine: number, isDirty: boolean): string {
-  const lines = startLine === endLine ? String(startLine) : `${startLine}-${endLine}`;
+export function noteReference(
+  path: string,
+  startLine: number,
+  endLine: number,
+  isDirty: boolean,
+): string {
+  const lines =
+    startLine === endLine ? String(startLine) : `${startLine}-${endLine}`;
   return isDirty ? `${path} (unsaved, lines ${lines})` : `@${path}#${lines}`;
 }
 
 /** The reference, a blank line, then the selection quoted line by line with `> `. */
 export function notePayload(reference: string, text: string): string {
-  const lines = text.replace(/\r\n?/gu, '\n').replace(/\n+$/u, '').split('\n');
-  return `${reference}\n\n${lines.map(line => (line ? `> ${line}` : '>')).join('\n')}`;
+  const lines = text.replace(/\r\n?/gu, "\n").replace(/\n+$/u, "").split("\n");
+  return `${reference}\n\n${lines.map((line) => (line ? `> ${line}` : ">")).join("\n")}`;
 }

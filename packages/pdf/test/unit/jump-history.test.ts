@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { JumpHistory, MAX_JUMP_HISTORY_ENTRIES } from "../../src/shared/jump-history";
+import {
+  JumpHistory,
+  MAX_JUMP_HISTORY_ENTRIES,
+} from "../../src/shared/jump-history";
 
 interface Stop {
   kind: "pdf";
@@ -9,15 +12,25 @@ interface Stop {
   anchor: { page: number; top: number; left: number };
 }
 
-function stop(page: number, top = 0, uri = "file:///paper.pdf", paneId = "pane-1"): Stop {
+function stop(
+  page: number,
+  top = 0,
+  uri = "file:///paper.pdf",
+  paneId = "pane-1",
+): Stop {
   return { kind: "pdf", uri, paneId, anchor: { page, top, left: 0 } };
 }
 
 function history(capacity = MAX_JUMP_HISTORY_ENTRIES): JumpHistory<Stop> {
   return new JumpHistory({
-    equals: (a, b) => a.kind === b.kind && a.uri === b.uri && a.paneId === b.paneId &&
-      a.anchor.page === b.anchor.page && a.anchor.top === b.anchor.top && a.anchor.left === b.anchor.left,
-    clone: entry => ({ ...entry, anchor: { ...entry.anchor } }),
+    equals: (a, b) =>
+      a.kind === b.kind &&
+      a.uri === b.uri &&
+      a.paneId === b.paneId &&
+      a.anchor.page === b.anchor.page &&
+      a.anchor.top === b.anchor.top &&
+      a.anchor.left === b.anchor.left,
+    clone: (entry) => ({ ...entry, anchor: { ...entry.anchor } }),
     capacity,
   });
 }
@@ -192,7 +205,10 @@ test("commit saves a cloned actual destination after the host clamps or reopens 
   const actual = stop(20, 0, "file:///paper.pdf", "reopened-pane");
   assert.equal(h.commit(replay.token, actual), true);
   actual.anchor.page = 999;
-  assert.deepEqual(h.current, stop(20, 0, "file:///paper.pdf", "reopened-pane"));
+  assert.deepEqual(
+    h.current,
+    stop(20, 0, "file:///paper.pdf", "reopened-pane"),
+  );
   forwardTo(h, stop(5));
   backTo(h, stop(20, 0, "file:///paper.pdf", "reopened-pane"));
 });
@@ -312,13 +328,19 @@ test("all stored and exposed entries are defensively copied, including nested an
 test("the default host-session cap retains only the newest 100 stops", () => {
   const h = history();
   h.record(stop(1), stop(2));
-  for (let page = 3; page <= 150; page++) h.record(stop(page - 1), stop(page));
+  for (let page = 3; page <= 150; page++) {
+    h.record(stop(page - 1), stop(page));
+  }
   assert.equal(h.size, 100);
-  for (let page = 149; page >= 51; page--) backTo(h, stop(page));
+  for (let page = 149; page >= 51; page--) {
+    backTo(h, stop(page));
+  }
   assert.equal(h.canGoBack, false);
   assert.equal(h.prepareBack(), undefined);
   assert.deepEqual(h.current, stop(51));
-  for (let page = 52; page <= 150; page++) forwardTo(h, stop(page));
+  for (let page = 52; page <= 150; page++) {
+    forwardTo(h, stop(page));
+  }
   assert.equal(h.canGoForward, false);
 });
 
@@ -350,13 +372,23 @@ test("a one-entry cap stores the latest destination without replay", () => {
 });
 
 test("capacity must be a positive integer within the hard session limit", () => {
-  for (const capacity of [0, -1, 1.5, 101, Number.NaN, Number.POSITIVE_INFINITY]) {
+  for (const capacity of [
+    0,
+    -1,
+    1.5,
+    101,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ]) {
     assert.throws(() => history(capacity), RangeError);
   }
 });
 
 test("the model works with non-PDF primitive entries and caller-defined equality", () => {
-  const h = new JumpHistory<string>({ equals: (a, b) => a.toLowerCase() === b.toLowerCase(), clone: value => value });
+  const h = new JumpHistory<string>({
+    equals: (a, b) => a.toLowerCase() === b.toLowerCase(),
+    clone: (value) => value,
+  });
   assert.equal(h.record("one", "ONE"), false);
   assert.equal(h.record("one", "two"), true);
   const replay = h.prepareBack();
@@ -378,9 +410,12 @@ test("a replay cancelled after movement retains the original Forward destination
 });
 
 test("a proven unstarted replay can release its departure for later ordinary reading", () => {
-  const h = history(); h.record(stop(1), stop(8));
-  const rejected = h.prepareBack(stop(8))!; h.cancel(rejected.token);
+  const h = history();
+  h.record(stop(1), stop(8));
+  const rejected = h.prepareBack(stop(8))!;
+  h.cancel(rejected.token);
   h.releaseDeparture();
-  const retry = h.prepareBack(stop(10))!; h.commit(retry.token);
+  const retry = h.prepareBack(stop(10))!;
+  h.commit(retry.token);
   assert.deepEqual(h.prepareForward(stop(1))!.target, stop(10));
 });

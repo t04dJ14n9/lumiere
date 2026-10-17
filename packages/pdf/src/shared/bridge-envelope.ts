@@ -24,18 +24,19 @@
  * does not call Workshop back, so the two cannot recurse. See
  * `docs/bridge-envelope.md`.
  */
-import { boundingRect, toViewRect } from './geometry';
-import { pdfLink } from './pdf-location';
-import { selectedPages, type PdfSelection } from './selection';
+import { boundingRect, toViewRect } from "./geometry";
+import { pdfLink } from "./pdf-location";
+import { selectedPages, type PdfSelection } from "./selection";
 
 export const BRIDGE_ENVELOPE_VERSION = 1;
 
-export const PDF_BRIDGE_PRODUCER = 'pdf' as const;
+export const PDF_BRIDGE_PRODUCER = "pdf" as const;
 
-export const PDF_BRIDGE_ENVELOPE_COMMAND = 'vscodeEmbedPdf.bridge.envelope';
+export const PDF_BRIDGE_ENVELOPE_COMMAND = "vscodeEmbedPdf.bridge.envelope";
 
 /** Soft peer command. Renamed with Markdown Workshop; absent when it is not installed. */
-export const MARKDOWN_BRIDGE_ENVELOPE_COMMAND = 'markdownWorkshop.bridge.envelope';
+export const MARKDOWN_BRIDGE_ENVELOPE_COMMAND =
+  "markdownWorkshop.bridge.envelope";
 
 /** Workbench v1 view rectangle: corner and size in PDF points. */
 export interface BridgeViewRect {
@@ -56,8 +57,8 @@ export interface PdfBridgeEnvelope {
   readonly capturedAt: string;
   readonly source: {
     readonly identity: string;
-    readonly kind: 'file' | 'remote';
-    readonly media: 'pdf';
+    readonly kind: "file" | "remote";
+    readonly media: "pdf";
     readonly publishedAt?: string;
     readonly title?: string;
   };
@@ -83,23 +84,28 @@ export interface PdfBridgeEnvelope {
  * include the file bytes.
  */
 export function selectionCanonical(selection: PdfSelection): string {
-  if (selection.kind === 'text') {
+  if (selection.kind === "text") {
     return JSON.stringify({
       v: 1,
-      kind: 'text',
+      kind: "text",
       text: selection.text,
-      pages: selectedPages(selection).map(page => ({
+      pages: selectedPages(selection).map((page) => ({
         page: page.page,
-        rects: page.rects.map(rect => [rect[0], rect[1], rect[2], rect[3]]),
+        rects: page.rects.map((rect) => [rect[0], rect[1], rect[2], rect[3]]),
       })),
     });
   }
   return JSON.stringify({
     v: 1,
-    kind: 'region',
+    kind: "region",
     page: selection.page,
-    rect: [selection.rect[0], selection.rect[1], selection.rect[2], selection.rect[3]],
-    text: selection.text ?? '',
+    rect: [
+      selection.rect[0],
+      selection.rect[1],
+      selection.rect[2],
+      selection.rect[3],
+    ],
+    text: selection.text ?? "",
   });
 }
 
@@ -115,25 +121,36 @@ export function selectionCanonical(selection: PdfSelection): string {
  */
 export function durableLocatorBase(uriOrPath: string): string {
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/u.test(uriOrPath)) {
-    const query = uriOrPath.indexOf('?');
+    const query = uriOrPath.indexOf("?");
     if (query >= 0) {
-      return uriOrPath.slice(0, query).replaceAll('#', '%23') + uriOrPath.slice(query);
+      return (
+        uriOrPath.slice(0, query).replaceAll("#", "%23") +
+        uriOrPath.slice(query)
+      );
     }
-    return uriOrPath.replaceAll('#', '%23');
+    return uriOrPath.replaceAll("#", "%23");
   }
-  return uriOrPath.replaceAll('#', '%23').replaceAll('?', '%3F');
+  return uriOrPath.replaceAll("#", "%23").replaceAll("?", "%3F");
 }
 
 /** Primary durable `#page=` / `viewrect` link for a selection (first page). */
-export function pdfSelectionDurable(base: string, selection: PdfSelection): string {
+export function pdfSelectionDurable(
+  base: string,
+  selection: PdfSelection,
+): string {
   const pages = selectedPages(selection);
   const first = pages[0]!;
-  return pdfLink(durableLocatorBase(base), { page: first.page, viewRect: toViewRect(boundingRect(first.rects)) });
+  return pdfLink(durableLocatorBase(base), {
+    page: first.page,
+    viewRect: toViewRect(boundingRect(first.rects)),
+  });
 }
 
 function bridgeViewRect(selection: PdfSelection): BridgeViewRect {
   const pages = selectedPages(selection);
-  const { left, top, width, height } = toViewRect(boundingRect(pages[0]!.rects));
+  const { left, top, width, height } = toViewRect(
+    boundingRect(pages[0]!.rects),
+  );
   return { x: left, y: top, width, height };
 }
 
@@ -146,7 +163,7 @@ export function pdfBridgeEnvelope(input: {
    * Must not reuse a display path that can contain `#`.
    */
   durableBase: string;
-  kind?: 'file' | 'remote';
+  kind?: "file" | "remote";
   viewId: string;
   selection: PdfSelection;
   selectionSha256: string;
@@ -159,11 +176,14 @@ export function pdfBridgeEnvelope(input: {
   const page = pages[0]!.page;
   const viewRect = bridgeViewRect(input.selection);
   const durable = pdfSelectionDurable(input.durableBase, input.selection);
-  const kind = input.kind ?? 'file';
+  const kind = input.kind ?? "file";
   const isDirty = input.isDirty ?? false;
-  const text = input.selection.kind === 'text' ? input.selection.text : input.selection.text ?? '';
+  const text =
+    input.selection.kind === "text"
+      ? input.selection.text
+      : (input.selection.text ?? "");
   if (input.viewId === durable) {
-    throw new TypeError('A view id is not a durable locator.');
+    throw new TypeError("A view id is not a durable locator.");
   }
   return {
     version: BRIDGE_ENVELOPE_VERSION,
@@ -172,7 +192,7 @@ export function pdfBridgeEnvelope(input: {
     source: {
       identity: input.identity,
       kind,
-      media: 'pdf',
+      media: "pdf",
       ...(input.publishedAt ? { publishedAt: input.publishedAt } : {}),
       ...(input.title ? { title: input.title } : {}),
     },

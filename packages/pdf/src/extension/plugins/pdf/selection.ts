@@ -1,4 +1,4 @@
-import type { PdfSelection } from '../../../shared/selection';
+import type { PdfSelection } from "../../../shared/selection";
 
 /** A selection with the version of the file it was made in. */
 export interface SelectionSnapshot {
@@ -35,22 +35,28 @@ export class PdfSelectionState {
    * `now` is the selection time. Repeating the same selection in the same
    * bytes keeps the earlier time; a new selection or a new file hash does not.
    */
-  set(selection: PdfSelection | undefined, sha256: string | undefined, image?: string, now = new Date().toISOString()): void {
+  set(
+    selection: PdfSelection | undefined,
+    sha256: string | undefined,
+    image?: string,
+    now = new Date().toISOString(),
+  ): void {
     if (!selection || !sha256) {
       this.current = undefined;
       return;
     }
     const previous = this.current;
-    const selectedAt = previous !== undefined
-      && previous.sha256 === sha256
-      && JSON.stringify(previous.selection) === JSON.stringify(selection)
-      ? previous.selectedAt
-      : now;
+    const selectedAt =
+      previous !== undefined &&
+      previous.sha256 === sha256 &&
+      JSON.stringify(previous.selection) === JSON.stringify(selection)
+        ? previous.selectedAt
+        : now;
     this.current = {
       selection,
       sha256,
       selectedAt,
-      ...(selection.kind === 'region' && image ? { image } : {}),
+      ...(selection.kind === "region" && image ? { image } : {}),
     };
   }
 

@@ -39,16 +39,26 @@ export class JumpHistory<T> {
 
   constructor(options: JumpHistoryOptions<T>) {
     const capacity = options.capacity ?? MAX_JUMP_HISTORY_ENTRIES;
-    if (!Number.isInteger(capacity) || capacity < 1 || capacity > MAX_JUMP_HISTORY_ENTRIES) {
-      throw new RangeError(`Jump history capacity must be an integer from 1 to ${MAX_JUMP_HISTORY_ENTRIES}`);
+    if (
+      !Number.isInteger(capacity) ||
+      capacity < 1 ||
+      capacity > MAX_JUMP_HISTORY_ENTRIES
+    ) {
+      throw new RangeError(
+        `Jump history capacity must be an integer from 1 to ${MAX_JUMP_HISTORY_ENTRIES}`,
+      );
     }
     this.equals = options.equals;
     this.clone = options.clone;
     this.capacity = capacity;
   }
 
-  get hasDeparture(): boolean { return this.preserveDeparture; }
-  releaseDeparture(): void { this.preserveDeparture = false; }
+  get hasDeparture(): boolean {
+    return this.preserveDeparture;
+  }
+  releaseDeparture(): void {
+    this.preserveDeparture = false;
+  }
 
   get current(): T | undefined {
     return this.cursor < 0 ? undefined : this.clone(this.entries[this.cursor]!);
@@ -86,11 +96,15 @@ export class JumpHistory<T> {
         this.entries[this.cursor] = departing;
       }
     }
-    if (this.cursor >= 0 && this.equals(this.entries[this.cursor]!, arriving)) return false;
+    if (this.cursor >= 0 && this.equals(this.entries[this.cursor]!, arriving)) {
+      return false;
+    }
     this.entries.splice(this.cursor + 1);
     this.entries.push(arriving);
     const excess = this.entries.length - this.capacity;
-    if (excess > 0) this.entries.splice(0, excess);
+    if (excess > 0) {
+      this.entries.splice(0, excess);
+    }
     this.cursor = this.entries.length - 1;
     return true;
   }
@@ -100,7 +114,9 @@ export class JumpHistory<T> {
     this.preserveDeparture = false;
     const entry = this.clone(current);
     this.pending = undefined;
-    if (this.cursor >= 0) this.entries[this.cursor] = entry;
+    if (this.cursor >= 0) {
+      this.entries[this.cursor] = entry;
+    }
   }
 
   prepareBack(current?: T): JumpHistoryTransition<T> | undefined {
@@ -116,8 +132,12 @@ export class JumpHistory<T> {
    * if the host resolved a replacement pane or clamped a changed document.
    */
   commit(token: JumpHistoryToken, actualDestination?: T): boolean {
-    if (this.pending?.token !== token) return false;
-    if (actualDestination !== undefined) this.entries[this.pending.index] = this.clone(actualDestination);
+    if (this.pending?.token !== token) {
+      return false;
+    }
+    if (actualDestination !== undefined) {
+      this.entries[this.pending.index] = this.clone(actualDestination);
+    }
     this.cursor = this.pending.index;
     this.preserveDeparture = false;
     this.pending = undefined;
@@ -126,16 +146,25 @@ export class JumpHistory<T> {
 
   /** A failed replay leaves the cursor (and any refreshed departure point) intact. */
   cancel(token: JumpHistoryToken): boolean {
-    if (this.pending?.token !== token) return false;
+    if (this.pending?.token !== token) {
+      return false;
+    }
     this.pending = undefined;
     return true;
   }
 
-  private prepare(direction: -1 | 1, current: T | undefined): JumpHistoryTransition<T> | undefined {
+  private prepare(
+    direction: -1 | 1,
+    current: T | undefined,
+  ): JumpHistoryTransition<T> | undefined {
     this.pending = undefined;
-    if (current !== undefined && !this.preserveDeparture) this.refresh(current);
+    if (current !== undefined && !this.preserveDeparture) {
+      this.refresh(current);
+    }
     const index = this.cursor + direction;
-    if (this.cursor < 0 || index < 0 || index >= this.entries.length) return undefined;
+    if (this.cursor < 0 || index < 0 || index >= this.entries.length) {
+      return undefined;
+    }
     const target = this.clone(this.entries[index]!);
     const token = Symbol("jump-history-replay");
     // A cancelled restore may already have moved the viewer. Keep its origin

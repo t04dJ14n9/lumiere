@@ -8,9 +8,16 @@
   min-height: 30px;
   box-sizing: border-box;
   padding: 2px 6px;
-  border-bottom: 1px solid var(--vscode-editorGroupHeader-tabsBorder, var(--vscode-panel-border, #2b2b2b));
+  border-bottom: 1px solid
+    var(
+      --vscode-editorGroupHeader-tabsBorder,
+      var(--vscode-panel-border, #2b2b2b)
+    );
   color: var(--vscode-foreground, #ccc);
-  background: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background, #1f1f1f));
+  background: var(
+    --vscode-editorGroupHeader-tabsBackground,
+    var(--vscode-editor-background, #1f1f1f)
+  );
   font-size: 12px;
 }
 
@@ -103,8 +110,12 @@
   transform: translateX(-50%);
 }
 
-.floating-toolbar.dock-top { top: var(--edge-gap); }
-.floating-toolbar.dock-bottom { bottom: calc(var(--edge-gap) + var(--scrollbar)); }
+.floating-toolbar.dock-top {
+  top: var(--edge-gap);
+}
+.floating-toolbar.dock-bottom {
+  bottom: calc(var(--edge-gap) + var(--scrollbar));
+}
 
 .floating-toolbar.vertical {
   top: 50%;
@@ -116,8 +127,12 @@
   transform: translateY(-50%);
 }
 
-.floating-toolbar.dock-left { left: var(--edge-gap); }
-.floating-toolbar.dock-right { right: calc(var(--edge-gap) + var(--scrollbar)); }
+.floating-toolbar.dock-left {
+  left: var(--edge-gap);
+}
+.floating-toolbar.dock-right {
+  right: calc(var(--edge-gap) + var(--scrollbar));
+}
 
 .floating-toolbar.vertical .toolbar-group {
   flex-direction: column;
@@ -203,10 +218,30 @@
   pointer-events: none;
 }
 
-.dock-target-top { top: 4px; left: 25%; width: 50%; height: 40px; }
-.dock-target-bottom { bottom: 4px; left: 25%; width: 50%; height: 40px; }
-.dock-target-left { top: 25%; left: 4px; width: 40px; height: 50%; }
-.dock-target-right { top: 25%; right: 4px; width: 40px; height: 50%; }
+.dock-target-top {
+  top: 4px;
+  left: 25%;
+  width: 50%;
+  height: 40px;
+}
+.dock-target-bottom {
+  bottom: 4px;
+  left: 25%;
+  width: 50%;
+  height: 40px;
+}
+.dock-target-left {
+  top: 25%;
+  left: 4px;
+  width: 40px;
+  height: 50%;
+}
+.dock-target-right {
+  top: 25%;
+  right: 4px;
+  width: 40px;
+  height: 50%;
+}
 
 .number-field {
   display: inline-flex;

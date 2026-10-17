@@ -17,9 +17,13 @@ test.describe.configure({ retries: 2 });
 const PDF = "docs/outline.pdf";
 
 const shown = (viewer: Frame): Promise<number[]> =>
-  viewer.locator(".page").evaluateAll((pages) =>
-    pages.map((element) => Number((element as HTMLElement).dataset.pageIndex)),
-  );
+  viewer
+    .locator(".page")
+    .evaluateAll((pages) =>
+      pages.map((element) =>
+        Number((element as HTMLElement).dataset.pageIndex),
+      ),
+    );
 
 const pageEntry = (page: Page, number: number) =>
   statusBarEntry(page, new RegExp(`^Page ${number} / 12$`, "u"));
@@ -35,8 +39,9 @@ async function openFresh(page: Page): Promise<Frame> {
     "PDF: Single Page",
     "PDF: Vertical Scrolling",
     "PDF: Fit Width",
-  ])
+  ]) {
     await command(page, label);
+  }
   await expect(pageEntry(page, 1)).toBeVisible();
   return viewer;
 }
@@ -47,7 +52,9 @@ async function openFresh(page: Page): Promise<Frame> {
  * in that gap goes nowhere.
  */
 async function press(page: Page, viewer: Frame, key: string): Promise<void> {
-  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  await expect
+    .poll(() => viewer.evaluate(() => document.hasFocus()))
+    .toBe(true);
   await waitForScrollToStop(viewer);
   await page.keyboard.press(key);
 }
@@ -55,16 +62,21 @@ async function press(page: Page, viewer: Frame, key: string): Promise<void> {
 // A key pressed during a page-turn animation starts from an intermediate place.
 async function waitForScrollToStop(viewer: Frame): Promise<void> {
   const position = () =>
-    viewer.locator(".viewport").evaluate((v) => `${v.scrollLeft},${v.scrollTop}`);
+    viewer
+      .locator(".viewport")
+      .evaluate((v) => `${v.scrollLeft},${v.scrollTop}`);
   // The first sample cannot establish rest; compare across a polling interval.
   let last: string | undefined;
   await expect
-    .poll(async () => {
-      const now = await position();
-      const still = now === last;
-      last = now;
-      return still;
-    }, { intervals: [250] })
+    .poll(
+      async () => {
+        const now = await position();
+        const still = now === last;
+        last = now;
+        return still;
+      },
+      { intervals: [250] },
+    )
     .toBe(true);
 }
 
@@ -72,7 +84,9 @@ async function waitForScrollToStop(viewer: Frame): Promise<void> {
 async function focusViewer(page: Page, viewer: Frame): Promise<void> {
   const box = (await viewer.locator(".viewport").boundingBox())!;
   await page.mouse.click(box.x + 6, box.y + box.height / 2);
-  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  await expect
+    .poll(() => viewer.evaluate(() => document.hasFocus()))
+    .toBe(true);
 }
 
 test("ArrowRight and ArrowLeft move between pages in the default view, right after opening and after a click", async ({
@@ -81,7 +95,9 @@ test("ArrowRight and ArrowLeft move between pages in the default view, right aft
   const viewer = await openFresh(page);
   // Right after the commands, with no click on the page: they return the focus
   // to the viewer, which takes a moment.
-  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  await expect
+    .poll(() => viewer.evaluate(() => document.hasFocus()))
+    .toBe(true);
   await press(page, viewer, "ArrowRight");
   await expect(pageEntry(page, 2)).toBeVisible();
   await press(page, viewer, "ArrowLeft");
@@ -138,7 +154,9 @@ test("the arrows turn pages in page-by-page single, two-page and cover layouts, 
     .click();
   await expect(statusBarEntry(page, /^Fit Page/u)).toBeVisible();
   // The extension gives the keyboard back to the viewer, not the status bar.
-  await expect.poll(() => viewer.evaluate(() => document.hasFocus())).toBe(true);
+  await expect
+    .poll(() => viewer.evaluate(() => document.hasFocus()))
+    .toBe(true);
   await press(page, viewer, "ArrowRight");
   await expect.poll(() => shown(viewer)).toEqual([3, 4]);
   await press(page, viewer, "ArrowLeft");
@@ -149,7 +167,9 @@ test("the arrows turn pages in page-by-page single, two-page and cover layouts, 
   await focusViewer(page, viewer);
   const start = (await shown(viewer))[0]!;
   await press(page, viewer, "ArrowRight");
-  await expect.poll(async () => (await shown(viewer))[0]).toBeGreaterThan(start);
+  await expect
+    .poll(async () => (await shown(viewer))[0])
+    .toBeGreaterThan(start);
   await command(page, "PDF: Vertical Scrolling");
   await command(page, "PDF: Continuous Scrolling");
 });
@@ -171,19 +191,25 @@ test("zoomed in, the arrows pan; wheel and two-finger flicks travel across pages
   }
   await expect
     .poll(() =>
-      viewer.locator(".viewport").evaluate((v) => v.scrollWidth - v.clientWidth),
+      viewer
+        .locator(".viewport")
+        .evaluate((v) => v.scrollWidth - v.clientWidth),
     )
     .toBeGreaterThan(100);
   // The last zoom step has settled: the scrollable width no longer changes.
-  const width = () => viewer.locator(".viewport").evaluate((v) => v.scrollWidth);
+  const width = () =>
+    viewer.locator(".viewport").evaluate((v) => v.scrollWidth);
   let settled = await width();
   await expect
-    .poll(async () => {
-      const now = await width();
-      const same = now === settled;
-      settled = now;
-      return same;
-    }, { intervals: [400] })
+    .poll(
+      async () => {
+        const now = await width();
+        const same = now === settled;
+        settled = now;
+        return same;
+      },
+      { intervals: [400] },
+    )
     .toBe(true);
   await viewer.locator(".viewport").evaluate((v) => v.scrollTo({ left: 0 }));
   await press(page, viewer, "ArrowRight");
@@ -211,17 +237,26 @@ test("zoomed in, the arrows pan; wheel and two-finger flicks travel across pages
   // Page-by-page: a long flick turns exactly one page.
   await command(page, "PDF: Fit Page");
   await command(page, "PDF: Page-by-page Scrolling");
-  await expect(viewer.locator(".viewer")).toHaveAttribute("data-scroll-mode", "paged");
+  await expect(viewer.locator(".viewer")).toHaveAttribute(
+    "data-scroll-mode",
+    "paged",
+  );
   await expect.poll(() => shown(viewer)).toHaveLength(1);
   const first = (await shown(viewer))[0]!;
   // Send the momentum burst inside the real webview so CDP latency and wheel
   // coalescing cannot turn it into separate notches. The notch above still
   // exercises trusted native wheel input.
   await viewer.locator(".viewport").evaluate((viewport) => {
-    for (const deltaY of [20, 60, 120, 200, 260, 260, 220, 170, 120, 80, 50, 30, 20, 10, 5, 2]) {
-      viewport.dispatchEvent(new WheelEvent("wheel", {
-        deltaY, bubbles: true, cancelable: true,
-      }));
+    for (const deltaY of [
+      20, 60, 120, 200, 260, 260, 220, 170, 120, 80, 50, 30, 20, 10, 5, 2,
+    ]) {
+      viewport.dispatchEvent(
+        new WheelEvent("wheel", {
+          deltaY,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
     }
   });
   await expect.poll(() => shown(viewer)).toEqual([first + 1]);

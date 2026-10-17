@@ -1,4 +1,7 @@
-import { parseToolbarSettings, type ToolbarSettings } from '../shared/toolbar-settings';
+import {
+  parseToolbarSettings,
+  type ToolbarSettings,
+} from "../shared/toolbar-settings";
 
 /**
  * The toolbar settings: first those written into the page, then the latest
@@ -8,8 +11,11 @@ import { parseToolbarSettings, type ToolbarSettings } from '../shared/toolbar-se
 let latest: ToolbarSettings | undefined;
 
 export function currentToolbarSettings(): ToolbarSettings {
-  const root = document.getElementById('root');
-  latest ??= parseToolbarSettings({ mode: root?.dataset.toolbar, dock: root?.dataset.dock });
+  const root = document.getElementById("root");
+  latest ??= parseToolbarSettings({
+    mode: root?.dataset.toolbar,
+    dock: root?.dataset.dock,
+  });
   return latest;
 }
 

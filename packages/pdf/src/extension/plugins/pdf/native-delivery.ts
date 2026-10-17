@@ -3,8 +3,13 @@ import type { HistorySnapshot } from "../../../shared/pdf-history";
 import type { LinkRun } from "./source-links";
 
 interface NativeDestination {
-  prepareLocation(): { requestId: number; done: Promise<HistorySnapshot | undefined> } | undefined;
-  revealLocation(location: PdfLocation, expectedIntent: number): { requestId: number; done: Promise<boolean> };
+  prepareLocation():
+    | { requestId: number; done: Promise<HistorySnapshot | undefined> }
+    | undefined;
+  revealLocation(
+    location: PdfLocation,
+    expectedIntent: number,
+  ): { requestId: number; done: Promise<boolean> };
   cancelNavigation(requestId: number): void;
 }
 
@@ -18,14 +23,18 @@ export async function deliverNativeLocation(
   try {
     const captured = await readyPosition(panel, run, cancellations);
     if (!captured || !run.current()) {
-      if (run.current()) run.cancel();
+      if (run.current()) {
+        run.cancel();
+      }
       return;
     }
     const request = panel.revealLocation(location, captured.intent);
     cancellations.set(run, () => panel.cancelNavigation(request.requestId));
     const applied = await request.done;
     cancellations.delete(run);
-    if (!applied && run.current()) run.cancel();
+    if (!applied && run.current()) {
+      run.cancel();
+    }
   } finally {
     cancellations.delete(run);
   }
@@ -46,7 +55,7 @@ async function readyPosition(
       cancellations.delete(run);
       return captured;
     }
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
   run.cancel();
   return undefined;

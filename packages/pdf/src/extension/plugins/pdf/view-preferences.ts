@@ -25,10 +25,12 @@ export class ViewPreferences implements vscode.Disposable {
       if (
         !event.affectsConfiguration(SECTION) &&
         !event.affectsConfiguration("editor.smoothScrolling")
-      )
+      ) {
         return;
-      for (const panel of panels.all)
+      }
+      for (const panel of panels.all) {
         panel.setViewSettings(this.settings(panel.uri));
+      }
     });
   }
 
@@ -54,8 +56,9 @@ export class ViewPreferences implements vscode.Disposable {
       !vscode.workspace
         .getConfiguration(SECTION, uri)
         .get<boolean>("restoreOnReopen", true)
-    )
+    ) {
       return undefined;
+    }
     return parseSavedPosition(this.state.get(this.key(uri)));
   }
 

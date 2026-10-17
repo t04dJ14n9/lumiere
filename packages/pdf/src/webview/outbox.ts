@@ -7,11 +7,22 @@
  * pending patch; `loaded` marks the start of a new load, so later patches
  * carry its number.
  */
-import type { ViewerMessage, ViewerPatch } from '../shared/messages';
+import type { ViewerMessage, ViewerPatch } from "../shared/messages";
 
-type HistoryMessage = Extract<ViewerMessage, { type: 'historyJump' | 'historyTraverse' | 'historyCaptured' | 'historyRestored' }>;
-export type OutgoingMessage = Exclude<ViewerMessage, { type: 'patch' } | HistoryMessage>
-  | (HistoryMessage extends infer T ? T extends HistoryMessage ? Omit<T, 'load'> : never : never);
+type HistoryMessage = Extract<
+  ViewerMessage,
+  {
+    type:
+      "historyJump" | "historyTraverse" | "historyCaptured" | "historyRestored";
+  }
+>;
+export type OutgoingMessage =
+  | Exclude<ViewerMessage, { type: "patch" } | HistoryMessage>
+  | (HistoryMessage extends infer T
+      ? T extends HistoryMessage
+        ? Omit<T, "load">
+        : never
+      : never);
 
 export interface Outbox {
   report(patch: ViewerPatch): void;
@@ -26,26 +37,35 @@ export const PATCH_DELAY_MS = 16;
 
 export function createOutbox(
   send: (message: ViewerMessage) => void,
-  schedule: (flush: () => void) => void = flush => void setTimeout(flush, PATCH_DELAY_MS),
+  schedule: (flush: () => void) => void = (flush) =>
+    void setTimeout(flush, PATCH_DELAY_MS),
 ): Outbox {
   let pending: ViewerPatch | undefined;
   let version = 0;
   let load = 0;
   const flush = (): void => {
-    if (!pending) return;
+    if (!pending) {
+      return;
+    }
     const patch = pending;
     pending = undefined;
-    send({ type: 'patch', version: ++version, load, patch });
+    send({ type: "patch", version: ++version, load, patch });
   };
   return {
     report(patch) {
       const idle = !pending;
       pending = { ...pending, ...patch };
-      if (idle) schedule(flush);
+      if (idle) {
+        schedule(flush);
+      }
     },
     post(message) {
       flush();
-      send(message.type.startsWith('history') ? { ...message, load } as ViewerMessage : message as ViewerMessage);
+      send(
+        message.type.startsWith("history")
+          ? ({ ...message, load } as ViewerMessage)
+          : (message as ViewerMessage),
+      );
     },
     loaded() {
       flush();

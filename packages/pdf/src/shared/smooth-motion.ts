@@ -19,8 +19,12 @@ export function isDiscreteWheel({
   deltaY,
   deltaMode,
 }: WheelDelta): boolean {
-  if (!Number.isFinite(deltaY) || deltaY === 0 || deltaX !== 0) return false;
-  if (deltaMode === 1 || deltaMode === 2) return true;
+  if (!Number.isFinite(deltaY) || deltaY === 0 || deltaX !== 0) {
+    return false;
+  }
+  if (deltaMode === 1 || deltaMode === 2) {
+    return true;
+  }
   const amount = Math.abs(deltaY);
   return (
     deltaMode === 0 &&
@@ -69,9 +73,13 @@ export class WheelGesture {
 
   /** Whether this event is a discrete notch, to be animated rather than left to native scrolling. */
   discrete(event: WheelDelta, time: number): boolean {
-    if (time - this.last > WHEEL_GESTURE_GAP) this.trackpad = false;
+    if (time - this.last > WHEEL_GESTURE_GAP) {
+      this.trackpad = false;
+    }
     this.last = time;
-    if (!isDiscreteWheel(event)) this.trackpad = true;
+    if (!isDiscreteWheel(event)) {
+      this.trackpad = true;
+    }
     return !this.trackpad;
   }
 }
@@ -93,13 +101,19 @@ export class EdgeTurn {
 
   /** `delta` along the paging axis; `atEdge` whether the view is already at the edge it pushes toward. */
   push(delta: number, atEdge: boolean, time: number): -1 | 0 | 1 {
-    if (delta === 0) return 0;
+    if (delta === 0) {
+      return 0;
+    }
     const reversed = Math.sign(delta) !== Math.sign(this.previous);
     const size = Math.abs(delta);
     if (time - this.last > WHEEL_GESTURE_GAP || reversed) {
       this.locked = false;
       this.pending = 0;
-    } else if (this.locked && size > Math.abs(this.previous) * 2 && size >= 20) {
+    } else if (
+      this.locked &&
+      size > Math.abs(this.previous) * 2 &&
+      size >= 20
+    ) {
       this.locked = false;
     }
     this.last = time;
@@ -108,9 +122,13 @@ export class EdgeTurn {
       this.pending = 0;
       return 0;
     }
-    if (this.locked) return 0;
+    if (this.locked) {
+      return 0;
+    }
     this.pending += delta;
-    if (Math.abs(this.pending) < EDGE_TURN_PIXELS) return 0;
+    if (Math.abs(this.pending) < EDGE_TURN_PIXELS) {
+      return 0;
+    }
     this.pending = 0;
     this.locked = true;
     return delta > 0 ? 1 : -1;

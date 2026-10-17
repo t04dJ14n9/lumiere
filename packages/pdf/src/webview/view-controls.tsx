@@ -33,7 +33,9 @@ export function ViewControls({
           : "custom";
   const act = (value: unknown): void => {
     const action = parseViewerAction(value);
-    if (action) run(action);
+    if (action) {
+      run(action);
+    }
   };
   return (
     <span className="toolbar-group">
@@ -60,9 +62,11 @@ export function ViewControls({
             aria-label="Zoom mode"
             value={mode}
             onChange={(event) => {
-              if (event.target.value === "custom")
+              if (event.target.value === "custom") {
                 menu.current?.querySelector<HTMLInputElement>("input")?.focus();
-              else act({ action: event.target.value });
+              } else {
+                act({ action: event.target.value });
+              }
             }}
           >
             <option value="fitWidth">Fit width</option>

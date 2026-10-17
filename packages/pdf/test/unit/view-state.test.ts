@@ -144,8 +144,9 @@ test("a typed page is a whole number, clamped to the document", () => {
   assert.equal(parsePageInput(" 7 ", 12), 7);
   assert.equal(parsePageInput("0", 12), 1);
   assert.equal(parsePageInput("99", 12), 12);
-  for (const text of ["", "seven", "7.5", "-3", "1e3", "7 8"])
+  for (const text of ["", "seven", "7.5", "-3", "1e3", "7 8"]) {
     assert.equal(parsePageInput(text, 12), undefined, text);
+  }
   assert.equal(parsePageInput("1", 0), undefined);
 });
 
@@ -155,8 +156,9 @@ test("a typed zoom takes an optional percent sign and is clamped to the zoom ran
   assert.equal(parseZoomInput(" 62.5 % "), 62.5);
   assert.equal(parseZoomInput("5"), 25);
   assert.equal(parseZoomInput("900"), 400);
-  for (const text of ["", "0", "fit", "-50", "50%%", "1,5"])
+  for (const text of ["", "0", "fit", "-50", "50%%", "1,5"]) {
     assert.equal(parseZoomInput(text), undefined, text);
+  }
 });
 
 test("the status bar labels name the page and the zoom or fit", () => {

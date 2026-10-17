@@ -45,8 +45,9 @@ async function useTheme(
   colours: Record<string, string>,
 ): Promise<void> {
   await page.evaluate((colours) => {
-    for (const [name, value] of Object.entries(colours))
+    for (const [name, value] of Object.entries(colours)) {
       document.documentElement.style.setProperty(`--vscode-${name}`, value);
+    }
   }, colours);
 }
 

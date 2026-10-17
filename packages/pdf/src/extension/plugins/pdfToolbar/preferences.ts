@@ -1,8 +1,13 @@
-import * as vscode from 'vscode';
-import { parseFloatingDock, parseToolbarMode, type FloatingDock, type ToolbarSettings } from '../../../shared/toolbar-settings';
+import * as vscode from "vscode";
+import {
+  parseFloatingDock,
+  parseToolbarMode,
+  type FloatingDock,
+  type ToolbarSettings,
+} from "../../../shared/toolbar-settings";
 
-export const SECTION = 'pdfWorkshop.toolbar';
-const DOCK_KEY = 'pdfWorkshop.floatingDock';
+export const SECTION = "pdfWorkshop.toolbar";
+const DOCK_KEY = "pdfWorkshop.floatingDock";
 
 /**
  * The toolbar settings the viewers need: the mode from the settings, and
@@ -12,21 +17,29 @@ const DOCK_KEY = 'pdfWorkshop.floatingDock';
 export class ToolbarPreferences implements vscode.Disposable {
   private readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChange = this.changed.event;
-  private readonly subscription = vscode.workspace.onDidChangeConfiguration(event => {
-    if (event.affectsConfiguration(SECTION)) this.changed.fire();
-  });
+  private readonly subscription = vscode.workspace.onDidChangeConfiguration(
+    (event) => {
+      if (event.affectsConfiguration(SECTION)) {
+        this.changed.fire();
+      }
+    },
+  );
 
   constructor(private readonly state: vscode.Memento) {}
 
   get settings(): ToolbarSettings {
     return {
-      mode: parseToolbarMode(vscode.workspace.getConfiguration(SECTION).get('mode')),
+      mode: parseToolbarMode(
+        vscode.workspace.getConfiguration(SECTION).get("mode"),
+      ),
       dock: parseFloatingDock(this.state.get(DOCK_KEY)),
     };
   }
 
   async setDock(dock: FloatingDock): Promise<void> {
-    if (dock === this.settings.dock) return;
+    if (dock === this.settings.dock) {
+      return;
+    }
     await this.state.update(DOCK_KEY, dock);
     this.changed.fire();
   }
@@ -36,4 +49,3 @@ export class ToolbarPreferences implements vscode.Disposable {
     this.changed.dispose();
   }
 }
-

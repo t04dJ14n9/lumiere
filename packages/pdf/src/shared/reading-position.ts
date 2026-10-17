@@ -40,20 +40,25 @@ export function savedPosition(position: ReadingPosition): object {
 }
 
 /** Reads what `savedPosition` stored; anything else is not a position. */
-export function parseSavedPosition(value: unknown): ReadingPosition | undefined {
+export function parseSavedPosition(
+  value: unknown,
+): ReadingPosition | undefined {
   if (
     typeof value !== "object" ||
     value === null ||
     (value as { version?: unknown }).version !== SAVED_POSITION_VERSION
-  )
+  ) {
     return undefined;
+  }
   return parseReadingPosition(value);
 }
 
 export function parseReadingPosition(
   value: unknown,
 ): ReadingPosition | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
   const { page, top, left, zoom, pageLayout, scrollMode, scrollDirection } =
     value as Record<string, unknown>;
   if (
@@ -65,8 +70,9 @@ export function parseReadingPosition(
     !isPageLayout(pageLayout) ||
     !isScrollMode(scrollMode) ||
     !isScrollDirection(scrollDirection)
-  )
+  ) {
     return undefined;
+  }
   return {
     page: page as number,
     top,

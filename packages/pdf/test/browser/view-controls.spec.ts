@@ -127,9 +127,7 @@ for (const scrollDirection of ["vertical", "horizontal"] as const) {
     await act(page, { action: "setPageLayout", pageLayout: "spreadCover" });
     await expect.poll(() => pageIndexes(page)).toEqual([9, 10]);
     await act(page, { action: "nextPage" });
-    await expect
-      .poll(() => pageIndexes(page))
-      .toEqual([11]);
+    await expect.poll(() => pageIndexes(page)).toEqual([11]);
     await expect
       .poll(() => lastView(page))
       .toMatchObject({ canGoForward: false });
@@ -258,7 +256,10 @@ const SPREADS = [
   },
   {
     pdf: "landscape.pdf",
-    spread: [[0, 1], [2, 3]],
+    spread: [
+      [0, 1],
+      [2, 3],
+    ],
     spreadCover: [[0], [1, 2], [3]],
   },
 ] as const;

@@ -46,7 +46,9 @@ export function isZoomChoice(value: unknown): value is ZoomChoice {
 }
 
 export function parseDefaultZoom(value: unknown): ZoomChoice {
-  if (!isZoomChoice(value)) return "fitWidth";
+  if (!isZoomChoice(value)) {
+    return "fitWidth";
+  }
   return typeof value === "number"
     ? Math.min(MAX_ZOOM * 100, Math.max(MIN_ZOOM * 100, value))
     : value;

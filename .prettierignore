@@ -9,5 +9,3 @@ pnpm-lock.yaml
 **/contributes.json
 *.md
 **/test/fixtures/
-# Imported from PDF Workshop; formatted when it is integrated.
-packages/pdf/

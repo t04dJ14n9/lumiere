@@ -20,7 +20,11 @@ export class ZenWatch {
   private fullscreen = false;
 
   /** Feed the window and screen sizes; true once, when full-screen zen has ended. */
-  left(zen: boolean, window: { width: number; height: number }, screen: { width: number; height: number }): boolean {
+  left(
+    zen: boolean,
+    window: { width: number; height: number },
+    screen: { width: number; height: number },
+  ): boolean {
     const full = window.width >= screen.width && window.height >= screen.height;
     if (!zen) {
       this.fullscreen = false;
