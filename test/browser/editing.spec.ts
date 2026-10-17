@@ -111,3 +111,26 @@ test("mermaid margin click stays rendered after inserting a line above", async (
   await expect(diagram).toHaveCount(1);
   await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
 });
+
+test("mermaid margin plain click keeps prior caret and stays rendered", async ({
+  page,
+}) => {
+  const source =
+    "above the diagram\n\n```mermaid\nflowchart LR\nA --> B\n```\n\nbelow";
+  await open(page, source);
+  await expect(page.locator(".hybrid-diagram")).toHaveCount(1);
+  await expect(page.locator('pre[data-fence="mermaid"] svg')).toBeVisible({
+    timeout: 15_000,
+  });
+  // Park caret in "above" before the margin click.
+  await page.evaluate(() => window.harness.reveal(2));
+  const before = await page.evaluate(() => window.harness.capture());
+  const box = (await page.locator(".hybrid-diagram").boundingBox())!;
+  await page.mouse.click(box.x + box.width + 12, box.y + box.height / 2);
+  await expect(page.locator(".hybrid-diagram")).toHaveCount(1);
+  await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
+  const after = await page.evaluate(() => window.harness.capture());
+  // Plain margin click restores the pre-press selection (does not enter fence).
+  expect(after.from).toBe(before.from);
+  expect(after.to).toBe(before.to);
+});

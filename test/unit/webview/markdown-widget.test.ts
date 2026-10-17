@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { EditorSelection } from "@codemirror/state";
 import {
   CLICK_DRAG_PX,
   clickToEditReleaseCommits,
@@ -9,7 +10,9 @@ import {
   liveFenceOffsets,
   markdownBlockIgnoresEventKind,
   shouldGuardFenceMouseDown,
+  shouldRestoreFenceClick,
   type ClickToEditPress,
+  type FenceGuardPress,
 } from "../../../src/webview/ui/markdown-widget";
 
 const root = new URL("../../../", import.meta.url).pathname;
@@ -209,7 +212,7 @@ test("Mermaid uses double-click-to-edit; math/code keep single-click", () => {
   assert.match(embedsSrc, /new MarkdownBlock\(block, ctx\.render, false\)/);
 });
 
-test("fence click guard swallows only outside-shell hits that map into the block", () => {
+test("fence click guard arms only outside-shell hits that map into the block", () => {
   const base = {
     button: 0,
     onControl: false,
@@ -230,6 +233,50 @@ test("fence click guard swallows only outside-shell hits that map into the block
   );
   assert.equal(shouldGuardFenceMouseDown({ ...base, onControl: true }), false);
   assert.equal(shouldGuardFenceMouseDown({ ...base, button: 2 }), false);
+  // Shift/Cmd/chrome must not arm — CM keeps selection / scrollbar.
+  assert.equal(shouldGuardFenceMouseDown({ ...base, modified: true }), false);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, onChrome: true }), false);
+});
+
+test("fence click guard never preventDefaults the initial mousedown", () => {
+  // Robust restore path: let CM own mousedown; restore selection on plain click.
+  const start = widgetSrc.indexOf("function bindFenceClickGuard");
+  const end = widgetSrc.indexOf("function bindDoubleClickToEdit");
+  assert.ok(start >= 0 && end > start, "bindFenceClickGuard present");
+  assert.doesNotMatch(widgetSrc.slice(start, end), /event\.preventDefault/);
+  assert.match(widgetSrc, /shouldRestoreFenceClick/);
+  assert.match(widgetSrc, /Do not preventDefault/);
+  assert.match(widgetSrc, /isEditorChromeTarget/);
+  assert.match(widgetSrc, /isNativeSelectableLabel\(shell, event\.target\)/);
+});
+
+test("plain completed fence margin click restores pre-press selection", () => {
+  const press: FenceGuardPress = {
+    x: 0,
+    y: 0,
+    dragged: false,
+    selection: EditorSelection.single(3),
+  };
+  assert.equal(
+    shouldRestoreFenceClick({ press, button: 0, modified: false }),
+    true,
+  );
+  assert.equal(
+    shouldRestoreFenceClick({
+      press: { ...press, dragged: true },
+      button: 0,
+      modified: false,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldRestoreFenceClick({ press, button: 0, modified: true }),
+    false,
+  );
+  assert.equal(
+    shouldRestoreFenceClick({ press: null, button: 0, modified: false }),
+    false,
+  );
 });
 
 test("Mermaid SVG CSS captures transparent gap clicks on the widget", () => {
@@ -260,7 +307,7 @@ test("fence click guard resolves live offsets from the shell, not captured from/
     blockFrom: 110,
     blockTo: 160,
   });
-  // Guard still swallows a margin hit that maps into the *live* fence.
+  // Guard still arms a margin hit that maps into the *live* fence.
   assert.equal(
     shouldGuardFenceMouseDown({
       button: 0,
