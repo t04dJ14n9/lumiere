@@ -162,10 +162,83 @@ test("quiet CSS dims, nowraps with ellipsis, and styles the hover tooltip", () =
   assert.match(css, /is-source-mode/);
   assert.match(css, /user-select: none/);
   assert.match(css, /white-space:\s*nowrap/);
+  assert.match(css, /display:\s*inline-block/);
   assert.match(css, /opacity:\s*0\.5/);
   assert.match(css, /text-overflow:\s*ellipsis/);
   assert.match(css, /max-width:/);
   assert.match(css, /\.mw-gb-tooltip/);
   assert.match(css, /white-space:\s*pre-wrap/);
   assert.doesNotMatch(css, /pointer-events:\s*none/);
+});
+
+test("equal widget destroy cleans tooltip on reused DOM (eq ownership)", () => {
+  const tips: { className: string; textContent: string; remove(): void }[] = [];
+  const ownerDocument = {
+    documentElement: {
+      clientWidth: 800,
+      clientHeight: 600,
+      append(node: { className: string; textContent: string; remove(): void }) {
+        tips.push(node);
+      },
+    },
+    createElement(tag: string) {
+      if (tag === "div") {
+        return {
+          className: "",
+          textContent: "",
+          hidden: true,
+          style: {} as Record<string, string>,
+          classList: { toggle() {} },
+          setAttribute() {},
+          addEventListener() {},
+          remove() {
+            const index = tips.indexOf(this as never);
+            if (index >= 0) {
+              tips.splice(index, 1);
+            }
+          },
+          getBoundingClientRect: () => ({
+            width: 10,
+            height: 10,
+            left: 0,
+            right: 10,
+            top: 0,
+            bottom: 10,
+          }),
+        };
+      }
+      return {
+        className: "",
+        textContent: "",
+        attributes: {} as Record<string, string>,
+        ownerDocument,
+        setAttribute(key: string, value: string) {
+          this.attributes[key] = value;
+        },
+        addEventListener() {},
+        getBoundingClientRect: () => ({
+          width: 20,
+          height: 10,
+          left: 40,
+          right: 60,
+          top: 40,
+          bottom: 50,
+        }),
+      };
+    },
+  };
+  const a = new BlameEolWidget(
+    "Ada, just now · Hi",
+    "Ada\njust now\nHi\n\nBody",
+  );
+  const b = new BlameEolWidget(
+    "Ada, just now · Hi",
+    "Ada\njust now\nHi\n\nBody",
+  );
+  assert.equal(a.eq(b), true);
+  const dom = a.toDOM({ dom: { ownerDocument } } as never);
+  assert.equal(tips.length, 1);
+  // CodeMirror reuses A's DOM for equal B; only B.destroy runs on removal.
+  b.destroy(dom as never);
+  assert.equal(tips.length, 0);
 });

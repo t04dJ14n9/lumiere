@@ -175,7 +175,8 @@ async function commitBody(
       args: ["log", "-1", "--format=%b", commit],
       cwd: options.cwd,
       timeoutMs: Math.min(options.timeoutMs ?? 5000, 3000),
-      maxBuffer: MAX_BODY_CHARS + 64,
+      // Byte floor for UTF-8: up to 4 bytes/char, then slice by characters.
+      maxBuffer: MAX_BODY_CHARS * 4 + 64,
     });
     const body = stdout.replace(/\s+$/u, "");
     return body.length > MAX_BODY_CHARS ? body.slice(0, MAX_BODY_CHARS) : body;

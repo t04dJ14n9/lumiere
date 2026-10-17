@@ -21,8 +21,10 @@ export const blameIdentityField = StateField.define<GitIdentity | undefined>({
   },
 });
 
+/** DOM-scoped: CodeMirror reuses equal-widget DOM across instances. */
+const blameTooltipCleanups = new WeakMap<HTMLElement, () => void>();
+
 export class BlameEolWidget extends WidgetType {
-  private readonly cleanups = new WeakMap<HTMLElement, () => void>();
   constructor(
     readonly text: string,
     readonly tooltip: string,
@@ -38,13 +40,13 @@ export class BlameEolWidget extends WidgetType {
     span.textContent = this.text;
     span.setAttribute("aria-hidden", "true");
     if (this.tooltip) {
-      this.cleanups.set(span, mountBlameTooltip(span, this.tooltip));
+      blameTooltipCleanups.set(span, mountBlameTooltip(span, this.tooltip));
     }
     return span;
   }
   override destroy(dom: HTMLElement): void {
-    this.cleanups.get(dom)?.();
-    this.cleanups.delete(dom);
+    blameTooltipCleanups.get(dom)?.();
+    blameTooltipCleanups.delete(dom);
   }
   override ignoreEvent(): boolean {
     return true;

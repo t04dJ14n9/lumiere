@@ -49,7 +49,8 @@ test("unrevealed widget replace covers interior positions", () => {
   assert.ok(table);
   assert.equal(canPaintBlameAt(state, table!.from), false);
   assert.equal(canPaintBlameAt(state, table!.from + 1), false);
-  assert.equal(canPaintBlameAt(state, table!.to), true);
+  // Final table source row EOL is at block.to; must stay covered.
+  assert.equal(canPaintBlameAt(state, table!.to), false);
   assert.equal(canPaintBlameAt(state, 0), true);
 });
 
@@ -74,6 +75,8 @@ test("revealed replace allows painting on the caret line again", () => {
   const table = state.field(blockIndex).find((block) => block.kind === "Table");
   assert.ok(table);
   assert.equal(canPaintBlameAt(state, table!.from + 1), true);
+  // Reveal-mode still allows the final-row EOL via revealed(...).
+  assert.equal(canPaintBlameAt(state, table!.to), true);
 });
 
 test("blame decorations omit the ghost inside an unrevealed replace", () => {
@@ -113,4 +116,36 @@ test("blame decorations omit the ghost inside an unrevealed replace", () => {
     state.field(blameDecorations).iter().value?.spec.widget instanceof
       BlameEolWidget,
   );
+});
+
+test("blame decorations omit the ghost on the final unrevealed table row", () => {
+  const doc = "before\n\n| a | b |\n|---|---|\n| c | d |\n\nafter\n";
+  let state = EditorState.create({
+    doc,
+    selection: { anchor: 0 },
+    extensions: [
+      documentTree,
+      blockIndex,
+      blockRenderers.of({
+        kind: "Table",
+        editing: "widget",
+        match: (node) => node.name === "Table",
+        widget: () => {
+          throw new Error("not mounted");
+        },
+      }),
+      blameField,
+      blameIdentityField,
+      blameDecorations,
+    ],
+  });
+  const table = state.field(blockIndex).find((block) => block.kind === "Table");
+  assert.ok(table);
+  const finalRowLine = state.doc.lineAt(table!.to).number;
+  // line.to for the last source row equals block.to when the row ends there.
+  assert.equal(state.doc.line(finalRowLine).to, table!.to);
+  state = state.update({
+    effects: setBlame.of({ ...blame, line: finalRowLine }),
+  }).state;
+  assert.equal(state.field(blameDecorations).size, 0);
 });

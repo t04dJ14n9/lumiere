@@ -14,7 +14,7 @@ export function canPaintBlameAt(state: EditorState, position: number): boolean {
     return true;
   }
   const block = blocks.find(
-    (entry) => entry.from <= position && position < entry.to,
+    (entry) => entry.from <= position && position <= entry.to,
   );
   if (!block) {
     return true;
