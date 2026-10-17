@@ -1358,8 +1358,11 @@ Live Preview with `markdownWorkshop.plugins.gitBlame.enabled` on.
 1. Put the main caret on an unchanged committed line. Expect quiet EOL text
    `Author, relative time • subject`, with “You” for matching Git identity. A
    root/boundary commit must still appear; long subjects end in an ellipsis.
-   The ghost stays one visual line (no soft wrap) and is clearly dimmer than
+   The ghost stays one visual line (no soft wrap, ellipsis if long) and is clearly dimmer than
    body or heading text, while remaining readable.
+   Hover the EOL ghost: a tooltip shows author, relative and absolute time,
+   the full subject, and the commit body (not only the truncated ghost).
+
 2. Insert an unsaved line above paragraph 1, then put the caret on its shifted
    first line. Expect its original author/commit, rather than paragraph 2's
    author. On the newly inserted line, expect no ghost.

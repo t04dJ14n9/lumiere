@@ -51,3 +51,14 @@ test("malformed or incomplete porcelain is unavailable", () => {
     assert.equal(parseBlamePorcelain(stdout, 1).status, "unavailable");
   }
 });
+
+test("parseBlamePorcelain: committer-time is kept when present", () => {
+  const oid = "c".repeat(40);
+  const stdout = `${oid} 1 1 1\nauthor Ada\nauthor-mail <ada@example.com>\nauthor-time 1600000000\ncommitter-time 1600003600\nsummary Subject\n\tline\n`;
+  const result = parseBlamePorcelain(stdout, 1);
+  assert.equal(result.status, "ok");
+  if (result.status === "ok") {
+    assert.equal(result.blame.committerDate, 1600003600);
+    assert.equal(result.blame.body, "");
+  }
+});

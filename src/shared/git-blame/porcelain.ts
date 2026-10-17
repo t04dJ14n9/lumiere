@@ -33,6 +33,7 @@ export function parseBlamePorcelain(stdout: string, line: number): ParsedBlame {
   let authorName = "";
   let authorEmail = "";
   let authorDate = 0;
+  let committerDate: number | undefined;
   let subject = "";
   let boundary = false;
   for (const row of lines.slice(1)) {
@@ -42,6 +43,11 @@ export function parseBlamePorcelain(stdout: string, line: number): ParsedBlame {
       authorEmail = row.slice(12).replace(/^<|>$/g, "");
     } else if (row.startsWith("author-time ")) {
       authorDate = Number(row.slice(12)) || 0;
+    } else if (row.startsWith("committer-time ")) {
+      const value = Number(row.slice(14)) || 0;
+      if (value > 0) {
+        committerDate = value;
+      }
     } else if (row.startsWith("summary ")) {
       subject = row.slice(8);
     } else if (row === "boundary") {
@@ -57,7 +63,9 @@ export function parseBlamePorcelain(stdout: string, line: number): ParsedBlame {
       authorEmail,
       authorDate,
       subject,
+      body: "",
       line,
+      ...(committerDate !== undefined ? { committerDate } : {}),
       ...(boundary ? { boundary: true } : {}),
     },
   };

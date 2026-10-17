@@ -98,15 +98,24 @@ test("dirty argv forwards stdin and timeout; clean argv omits contents", async (
   const calls: Parameters<GitBlameRunner>[0][] = [];
   const runGit: GitBlameRunner = async (request) => {
     calls.push(request);
+    if (request.args[0] === "log") {
+      return { stdout: "- body line\n", stderr: "" };
+    }
     return { stdout: porcelain(), stderr: "" };
   };
-  await runBlameLine(options(runGit));
+  const dirty = await runBlameLine(options(runGit));
   assert.equal(calls[0]?.stdin, "alpha\n");
   assert.equal(calls[0]?.timeoutMs, 5000);
   assert.ok(calls[0]?.args.includes("--contents"));
+  assert.deepEqual(calls[1]?.args.slice(0, 3), ["log", "-1", "--format=%b"]);
+  assert.equal(dirty.status, "ok");
+  if (dirty.status === "ok") {
+    assert.equal(dirty.blame.body, "- body line");
+  }
+  const before = calls.length;
   await runBlameLine({ ...options(runGit), knownClean: true });
-  assert.equal(calls[1]?.stdin, undefined);
-  assert.equal(calls[1]?.args.includes("--contents"), false);
+  assert.equal(calls[before]?.stdin, undefined);
+  assert.equal(calls[before]?.args.includes("--contents"), false);
 });
 
 // Node process/stream events are separate from the typed kernel event catalogue.

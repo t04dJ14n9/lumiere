@@ -2,14 +2,52 @@
   color: var(--vscode-descriptionForeground, var(--muted));
   font-size: 0.85em;
   padding-inline-start: 1.5em;
-  pointer-events: none;
+  /* Hover opens the full-message tooltip; clicks still ignoreEvent to CM. */
   user-select: none;
+  cursor: default;
   white-space: nowrap;
+  /* Keep the ghost on the caret line; hover carries the full subject/body. */
+  max-width: min(36em, 42vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: baseline;
   /* Dim ghost vs body/heading; forced-colors below restores full opacity. */
   opacity: 0.5;
 }
 .is-source-mode .mw-gb-eol {
   display: none;
+}
+.mw-gb-tooltip {
+  position: fixed;
+  z-index: 50;
+  width: max-content;
+  max-width: min(480px, calc(100vw - 16px));
+  max-height: 40vh;
+  padding: 8px 12px;
+  overflow: auto;
+  border: 1px solid var(--vscode-editorHoverWidget-border, var(--line));
+  border-radius: 6px;
+  color: var(--vscode-editorHoverWidget-foreground, inherit);
+  background: var(--vscode-editorHoverWidget-background, var(--surface));
+  box-shadow: 0 4px 16px #0003;
+  font-size: 0.85em;
+  font-weight: normal;
+  line-height: 1.45;
+  text-align: start;
+  white-space: pre-wrap;
+  opacity: 1;
+}
+.mw-gb-tooltip::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 1em;
+}
+.mw-gb-tooltip.is-above::before {
+  top: 100%;
+  bottom: auto;
 }
 @media (forced-colors: active) {
   .mw-gb-eol {

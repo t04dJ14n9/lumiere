@@ -1,7 +1,10 @@
 // test/unit/gitBlame/format.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatBlameGhost } from "../../../src/plugins/gitBlame/format";
+import {
+  formatBlameGhost,
+  formatBlameTooltip,
+} from "../../../src/plugins/gitBlame/format";
 
 const blame = {
   authorName: "Ada Lovelace",
@@ -95,4 +98,26 @@ test("subject uses only the first line and preserves complete Unicode graphemes"
     blame.authorDate,
   );
   assert.equal(text.split(" • ")[1], grapheme.repeat(48) + "…");
+});
+
+test("tooltip keeps full subject and body with absolute time", () => {
+  const text = formatBlameTooltip(
+    {
+      ...blame,
+      subject: "feat: full subject that is longer than the ghost truncate",
+      body: "- bullet one\n- bullet two",
+      committerDate: blame.authorDate + 3600,
+    },
+    { userEmail: "ada@example.com" },
+    blame.authorDate + 7200,
+  );
+  assert.match(text, /^You\n/);
+  assert.match(text, /2 hours ago \(/);
+  assert.match(text, /committed 1 hour ago\)/);
+  assert.match(
+    text,
+    /feat: full subject that is longer than the ghost truncate/,
+  );
+  assert.match(text, /- bullet one\n- bullet two/);
+  assert.equal(text.includes("…"), false);
 });

@@ -33,6 +33,8 @@ const blameOk = Schema.object({
   authorEmail: Schema.string().max(320),
   authorDate: integer,
   subject: Schema.string().max(500),
+  body: Schema.string().max(8000).optional(),
+  committerDate: integer.optional(),
   line: integer.min(1),
   boundary: Schema.boolean().optional(),
 });
