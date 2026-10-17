@@ -1,10 +1,11 @@
 # Diagrams
 
 Renders Mermaid code fences as diagrams, like Obsidian's Mermaid support in
-Live Preview. The diagram stays rendered on ordinary clicks (no fence caret
-jump / re-render flash). Reveal source with a double-click, the Edit button,
-or by moving the caret into the fence. Clicking elsewhere in the note does
-not collapse it to raw source.
+Live Preview. The diagram stays rendered on ordinary clicks — including
+transparent gaps between nodes and empty chrome beside the SVG (no fence
+caret jump / re-render flash). Reveal source with a double-click, the Edit
+button, or by moving the caret into the fence. Clicking elsewhere in the note
+does not collapse it to raw source.
 
 ## How it works
 

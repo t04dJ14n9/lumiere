@@ -26,7 +26,7 @@ function registerMathRenderers(ctx: Context): void {
       nodes: ["MathBlock"],
       editing: "reveal",
       match: (node) => node.name === "MathBlock",
-      editingPreview: { sourceClass: "md-math-source" },
+      // Reveal source only (no rendered duplicate under the $$ while editing).
       widget: (block) => new MarkdownBlock(block, ctx.render),
     }),
   );

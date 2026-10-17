@@ -7,6 +7,7 @@ import {
   clickToEditReleaseCommits,
   latchClickDrag,
   markdownBlockIgnoresEventKind,
+  shouldGuardFenceMouseDown,
   type ClickToEditPress,
 } from "../../../src/webview/ui/markdown-widget";
 
@@ -192,12 +193,48 @@ test("Mermaid uses double-click-to-edit; math/code keep single-click", () => {
     "utf8",
   );
   // Diagrams: no single-click reveal (avoids fence caret jump + Mermaid flash).
-  assert.match(diagramsSrc, /new MarkdownBlock\(block, ctx\.render, "dblclick"\)/);
+  assert.match(
+    diagramsSrc,
+    /new MarkdownBlock\(block, ctx\.render, "dblclick"\)/,
+  );
   assert.match(widgetSrc, /bindDoubleClickToEdit/);
+  assert.match(widgetSrc, /bindFenceClickGuard/);
   assert.match(widgetSrc, /clickToEdit === "dblclick"/);
   // Other reveal widgets keep the default single-click policy.
   assert.match(mathSrc, /new MarkdownBlock\(block, ctx\.render\)/);
+  assert.doesNotMatch(mathSrc, /editingPreview\s*:/);
   assert.match(codeSrc, /new MarkdownBlock\(block, ctx\.render\)/);
   // Embeds still disable body click-to-edit entirely.
   assert.match(embedsSrc, /new MarkdownBlock\(block, ctx\.render, false\)/);
+});
+
+test("fence click guard swallows only outside-shell hits that map into the block", () => {
+  const base = {
+    button: 0,
+    onControl: false,
+    targetInsideShell: false,
+    pos: 10,
+    blockFrom: 5,
+    blockTo: 20,
+  };
+  assert.equal(shouldGuardFenceMouseDown(base), true);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, pos: 5 }), true);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, pos: 20 }), true);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, pos: 4 }), false);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, pos: 21 }), false);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, pos: null }), false);
+  assert.equal(
+    shouldGuardFenceMouseDown({ ...base, targetInsideShell: true }),
+    false,
+  );
+  assert.equal(shouldGuardFenceMouseDown({ ...base, onControl: true }), false);
+  assert.equal(shouldGuardFenceMouseDown({ ...base, button: 2 }), false);
+});
+
+test("Mermaid SVG CSS captures transparent gap clicks on the widget", () => {
+  const css = readFileSync(
+    path.join(root, "src/plugins/diagrams/diagrams.css"),
+    "utf8",
+  );
+  assert.match(css, /pointer-events:\s*all/);
 });

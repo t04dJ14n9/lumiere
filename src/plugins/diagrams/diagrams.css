@@ -8,6 +8,14 @@ pre[data-fence="mermaid"]:has(> svg) {
 pre[data-fence="mermaid"] svg {
   max-width: 100%;
   height: auto;
+  /*
+   * Transparent gaps / arrow shafts must still hit this SVG. Default SVG
+   * hit-testing skips unpainted pixels, so those clicks fall through to
+   * .cm-content, CodeMirror parks the caret at the fence start, and Live
+   * Preview reveals source. `all` keeps the whole diagram box on the widget
+   * (ignoreEvent + dblclick-to-edit); node labels stay selectable on top.
+   */
+  pointer-events: all;
   /* Labels are SVG text; allow selecting them when not click-to-editing. */
   user-select: text;
   -webkit-user-select: text;

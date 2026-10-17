@@ -53,6 +53,7 @@ export class MarkdownBlock extends WidgetType {
       bindClickToEdit(view, shell, events.signal);
     } else if (this.clickToEdit === "dblclick") {
       bindDoubleClickToEdit(view, shell, events.signal);
+      bindFenceClickGuard(view, shell, this.block, events.signal);
     }
     this.lifetimes.set(shell, () => {
       live = false;
@@ -348,6 +349,63 @@ export function editOnClick(view: EditorView, shell: HTMLElement): void {
   const line = view.state.doc.lineAt(view.posAtDOM(shell));
   view.focus();
   view.dispatch({ selection: { anchor: line.to }, scrollIntoView: false });
+}
+
+/**
+ * Whether a mousedown that missed the widget DOM should still be swallowed
+ * because CodeMirror would map it into a replaced fence (typically column 0
+ * of the opening line) and Live Preview would reveal source. Used for diagram
+ * `clickToEdit: "dblclick"` so margin / SVG pass-through clicks stay inert.
+ */
+export function shouldGuardFenceMouseDown(input: {
+  button: number;
+  onControl: boolean;
+  targetInsideShell: boolean;
+  pos: number | null;
+  blockFrom: number;
+  blockTo: number;
+}): boolean {
+  if (
+    input.button !== 0 ||
+    input.onControl ||
+    input.targetInsideShell ||
+    input.pos == null
+  ) {
+    return false;
+  }
+  return input.pos >= input.blockFrom && input.pos <= input.blockTo;
+}
+
+/**
+ * Stop CodeMirror from placing the caret inside a dblclick-only fence when the
+ * pointer missed the widget (transparent SVG / editor margin beside the block)
+ * but `posAtCoords` still resolves into the replace range.
+ */
+function bindFenceClickGuard(
+  view: EditorView,
+  shell: HTMLElement,
+  block: { from: number; to: number },
+  signal: AbortSignal,
+): void {
+  view.dom.addEventListener(
+    "mousedown",
+    (event) => {
+      if (
+        !shouldGuardFenceMouseDown({
+          button: event.button,
+          onControl: isBlockControl(shell, event.target),
+          targetInsideShell: eventTargetInside(shell, event.target),
+          pos: view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? null,
+          blockFrom: block.from,
+          blockTo: block.to,
+        })
+      ) {
+        return;
+      }
+      event.preventDefault();
+    },
+    { capture: true, signal },
+  );
 }
 
 /**
