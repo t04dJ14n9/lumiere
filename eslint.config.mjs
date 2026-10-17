@@ -136,6 +136,7 @@ export default tseslint.config(
       parserOptions: {
         project: [
           "./tsconfig.json",
+          "./src/kernel-cordis/tsconfig.json",
           "./src/host/tsconfig.json",
           "./src/webview/tsconfig.json",
           "./src/plugins/tsconfig.host.json",
