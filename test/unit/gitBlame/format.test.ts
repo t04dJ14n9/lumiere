@@ -13,6 +13,14 @@ const blame = {
   subject: "Clarify table rules and add a very long subject that must truncate",
 };
 
+test("VS Code template shape: subject, author (relative)", () => {
+  const text = formatBlameGhost(blame, undefined, 1_700_000_000 + 3600);
+  assert.equal(
+    text,
+    "Clarify table rules and add a very long subject th…, Ada Lovelace (1 hour ago)",
+  );
+});
+
 test("You matching is case-insensitive on email", () => {
   const text = formatBlameGhost(
     blame,
@@ -22,31 +30,33 @@ test("You matching is case-insensitive on email", () => {
     },
     1_700_000_000 + 120,
   );
-  assert.match(text, /^You,/);
-  assert.match(text, / • /);
-  assert.ok(text.length < 80);
+  assert.match(text, /, You \(/);
+  assert.match(text, /^Clarify table rules/);
+  assert.ok(text.length < 100);
 });
 
 test("no identity → never You", () => {
   const text = formatBlameGhost(blame, undefined, 1_700_000_000 + 3600);
-  assert.match(text, /^Ada Lovelace,/);
+  assert.match(text, /, Ada Lovelace \(/);
+  assert.doesNotMatch(text, /\bYou\b/);
 });
 
-test("subject truncated ~48 with ellipsis", () => {
+test("subject truncated ~50 graphemes with ellipsis", () => {
   const text = formatBlameGhost(blame, undefined, 1_700_000_000);
-  const subject = text.split(" • ")[1] ?? "";
+  const subject = text.split(", ")[0] ?? "";
   assert.ok(subject.endsWith("…") || subject.endsWith("..."));
-  assert.ok([...subject].length <= 50);
+  // 50 graphemes + ellipsis
+  assert.ok([...subject.replace(/…$/, "")].length <= 50);
 });
 
 test("name match, empty identity and author fallbacks", () => {
   assert.match(
     formatBlameGhost(blame, { userName: blame.authorName }, blame.authorDate),
-    /^You, just now/,
+    /, You \(just now\)$/,
   );
   assert.match(
     formatBlameGhost({ ...blame, authorName: "" }, {}, blame.authorDate),
-    /^ada,/,
+    /, ada \(/,
   );
   assert.match(
     formatBlameGhost(
@@ -54,7 +64,7 @@ test("name match, empty identity and author fallbacks", () => {
       { userName: "", userEmail: "" },
       blame.authorDate,
     ),
-    /^Unknown author,/,
+    /, Unknown author \(/,
   );
 });
 
@@ -73,13 +83,24 @@ test("relative buckets, singular/plural and future timestamps", () => {
   ] as const) {
     assert.equal(
       formatBlameGhost(
-        { ...blame, subject: "" },
+        { ...blame, subject: "Hi" },
         undefined,
         blame.authorDate + elapsed,
       ),
-      `Ada Lovelace, ${expected}`,
+      `Hi, Ada Lovelace (${expected})`,
     );
   }
+});
+
+test("empty subject omits leading comma clause", () => {
+  assert.equal(
+    formatBlameGhost(
+      { ...blame, subject: "" },
+      undefined,
+      blame.authorDate,
+    ),
+    "Ada Lovelace (just now)",
+  );
 });
 
 test("subject uses only the first line and preserves complete Unicode graphemes", () => {
@@ -89,7 +110,7 @@ test("subject uses only the first line and preserves complete Unicode graphemes"
       undefined,
       blame.authorDate,
     ),
-    "Ada Lovelace, just now • Hello",
+    "Hello, Ada Lovelace (just now)",
   );
   const grapheme = "👩🏽‍💻";
   const text = formatBlameGhost(
@@ -97,7 +118,7 @@ test("subject uses only the first line and preserves complete Unicode graphemes"
     undefined,
     blame.authorDate,
   );
-  assert.equal(text.split(" • ")[1], grapheme.repeat(48) + "…");
+  assert.equal(text.split(", ")[0], grapheme.repeat(50) + "…");
 });
 
 test("tooltip keeps full subject and body with absolute time", () => {

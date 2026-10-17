@@ -1,7 +1,11 @@
 .mw-gb-eol {
-  color: var(--vscode-descriptionForeground, var(--muted));
-  font-size: 0.85em;
-  padding-inline-start: 1.5em;
+  /* VS Code git.blame.editorDecorationForeground (+ quiet fallbacks). */
+  color: var(
+    --vscode-git-blame-editorDecorationForeground,
+    var(--vscode-descriptionForeground, var(--muted))
+  );
+  /* VS Code after.margin: '0 0 0 50px' */
+  margin: 0 0 0 50px;
   /* Hover opens the full-message tooltip; clicks still ignoreEvent to CM. */
   user-select: none;
   cursor: default;
@@ -13,8 +17,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   vertical-align: baseline;
-  /* Dim ghost vs body/heading; forced-colors below restores full opacity. */
-  opacity: 0.5;
 }
 .is-source-mode .mw-gb-eol {
   display: none;
@@ -53,6 +55,7 @@
 }
 @media (forced-colors: active) {
   .mw-gb-eol {
-    opacity: 1;
+    /* Theme color may be forced; keep ghost readable. */
+    forced-color-adjust: none;
   }
 }

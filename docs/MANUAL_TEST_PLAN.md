@@ -1356,7 +1356,7 @@ Change paragraph 2 in a second commit with a different author. Open the note in
 Live Preview with `markdownWorkshop.plugins.gitBlame.enabled` on.
 
 1. Put the main caret on an unchanged committed line. Expect quiet EOL text
-   `Author, relative time • subject`, with “You” for matching Git identity. A
+   `subject, author (relative time)` (VS Code default blame template), with “You” for matching Git identity. A
    root/boundary commit must still appear; long subjects end in an ellipsis.
    The ghost stays one visual line (no soft wrap, ellipsis if long) and is clearly dimmer than
    body or heading text, while remaining readable.

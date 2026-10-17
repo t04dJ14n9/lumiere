@@ -22,11 +22,15 @@ export const gitBlameWebview: Plugin = {
 function registerBlameController(ctx: Context): void {
   const view = ctx.editor.view;
   const controller = new BlameController({
-    read: () => ({
-      uri: ctx.editor.source,
-      docVersion: view.state.field(docVersionField, false) ?? 0,
-      caretLine: view.state.doc.lineAt(view.state.selection.main.head).number,
-    }),
+    read: () => {
+      const head = view.state.selection.main.head;
+      return {
+        uri: ctx.editor.source,
+        docVersion: view.state.field(docVersionField, false) ?? 0,
+        caretLine: view.state.doc.lineAt(head).number,
+        caretHead: head,
+      };
+    },
     contents: () => view.state.doc.toString(),
     request: (params) => ctx.rpc.call(protocol, "blameLine", params),
     paint: (blame) => {

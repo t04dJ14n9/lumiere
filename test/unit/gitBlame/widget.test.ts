@@ -42,7 +42,7 @@ test("one non-block EOL widget after the main caret line", () => {
   assert.equal(cursor.value?.spec.block, false);
   assert.ok(cursor.value?.spec.widget instanceof BlameEolWidget);
   const widget = cursor.value?.spec.widget as BlameEolWidget;
-  assert.match(widget.text, /^Ada,/);
+  assert.match(widget.text, /^Hi, Ada \(/);
   assert.match(widget.tooltip, /Ada\n/);
   assert.match(widget.tooltip, /Hi/);
   assert.match(widget.tooltip, /detail one/);
@@ -52,7 +52,7 @@ test("one non-block EOL widget after the main caret line", () => {
   assert.match(
     (editor.field(blameDecorations).iter().value?.spec.widget as BlameEolWidget)
       .text,
-    /^You,/,
+    /^Hi, You \(/,
   );
 });
 
@@ -154,19 +154,25 @@ test("widget is decorative plain text, mounts tooltip host, and never captures e
   assert.equal(tips.length, 0);
 });
 
-test("quiet CSS dims, nowraps with ellipsis, and styles the hover tooltip", () => {
+test("quiet CSS matches VS Code blame decoration tokens and hover", () => {
   const css = readFileSync("src/plugins/gitBlame/gitBlame.css", "utf8");
-  assert.match(css, /var\(--vscode-descriptionForeground, var\(--muted\)\)/);
+  assert.match(
+    css,
+    /--vscode-git-blame-editorDecorationForeground/,
+  );
+  assert.match(css, /margin:\s*0 0 0 50px/);
   assert.doesNotMatch(css, /--mw-git-ins-line|diffEditor/);
+  assert.doesNotMatch(css, /opacity:\s*0\.5/);
+  assert.doesNotMatch(css, /\.mw-gb-eol\s*\{[^}]*font-size:/s);
   assert.match(css, /forced-colors/);
   assert.match(css, /is-source-mode/);
   assert.match(css, /user-select: none/);
   assert.match(css, /white-space:\s*nowrap/);
   assert.match(css, /display:\s*inline-block/);
-  assert.match(css, /opacity:\s*0\.5/);
   assert.match(css, /text-overflow:\s*ellipsis/);
   assert.match(css, /max-width:/);
   assert.match(css, /\.mw-gb-tooltip/);
+  assert.match(css, /editorHoverWidget/);
   assert.match(css, /white-space:\s*pre-wrap/);
   assert.doesNotMatch(css, /pointer-events:\s*none/);
 });
