@@ -2,7 +2,9 @@
 
 Renders and follows wikilinks and Markdown links, with local heading/block
 navigation and side opens, like Obsidian's internal links. Wikilinks to notes
-that do not exist yet are dimmed with a dotted underline.
+that do not exist yet are dimmed with a dotted underline. Links to PDFs
+(`[[paper.pdf#page=3]]`, `[text](paper.pdf#page=3&viewrect=…)`) open in PDF
+Workshop at that page and box, through its Open Location command.
 
 ## How it works
 

@@ -290,6 +290,8 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
       column,
     );
     await revealOpenedNote(options, before, activeColumn);
+  } else if (/\.pdf$/i.test(uri.path)) {
+    await openPdf(uri, options.fragment, column);
   } else {
     await vscode.commands.executeCommand(
       "vscode.open",
@@ -297,6 +299,28 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
       column,
     );
   }
+}
+
+/** PDF Workshop's public command (in this extension): open a PDF at a location. */
+export const PDF_OPEN_LOCATION_COMMAND = "pdfWorkshop.openLocation";
+
+/**
+ * Open a PDF in PDF Workshop, at the page a link such as
+ * `[[paper.pdf#page=3]]` names. Any other fragment (Obsidian ignores those
+ * too) opens the PDF where it was left.
+ */
+async function openPdf(
+  uri: vscode.Uri,
+  fragment: string,
+  column: vscode.ViewColumn,
+): Promise<void> {
+  const location = /^page=\d+(&|$)/i.test(fragment) ? fragment : "";
+  await vscode.commands.executeCommand(
+    PDF_OPEN_LOCATION_COMMAND,
+    uri.with({ fragment: location }),
+    undefined,
+    { viewColumn: column },
+  );
 }
 
 async function revealOpenedNote(

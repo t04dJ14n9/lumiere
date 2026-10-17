@@ -26,7 +26,7 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
   };
   const command = vscode.commands.registerCommand(
     OPEN_LOCATION_COMMAND_ID,
-    async (target?: unknown, location?: unknown) => {
+    async (target?: unknown, location?: unknown, options?: unknown) => {
       pending?.cancel();
       pending?.dispose();
       const cancellation = new vscode.CancellationTokenSource();
@@ -37,6 +37,7 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
           current: () => request === generation,
           token: cancellation.token,
           dispatch,
+          column: viewColumnOf(options),
         });
       } finally {
         if (pending === cancellation) {
@@ -61,6 +62,16 @@ interface OpenRequest {
   token: vscode.CancellationToken;
   /** Runs the native open after any earlier one. */
   dispatch(run: () => Promise<boolean>): Promise<boolean>;
+  /** Where to open the PDF; the active group by default. */
+  column: vscode.ViewColumn | undefined;
+}
+
+/** `{ viewColumn }` from a caller such as a note's link; anything else is ignored. */
+function viewColumnOf(options: unknown): vscode.ViewColumn | undefined {
+  const column = (options as { viewColumn?: unknown } | undefined)?.viewColumn;
+  return typeof column === "number" && Number.isInteger(column) && column >= -2
+    ? column
+    : undefined;
 }
 
 type PdfDestination = ReturnType<typeof parsePdfLocation>;
@@ -71,6 +82,9 @@ type PdfDestination = ReturnType<typeof parsePdfLocation>;
  * Other extensions can pass a URI and a location:
  *
  *     vscode.commands.executeCommand('pdfWorkshop.openLocation', uri, { page: 3 })
+ *
+ * A third argument, `{ viewColumn }`, opens it in another editor group
+ * (`ViewColumn.Beside` for a link opened to the side).
  */
 async function openLocation(
   panels: PdfPanels,
@@ -132,7 +146,12 @@ async function openAt(
   if (!request.current()) {
     return false;
   }
-  await vscode.commands.executeCommand("vscode.openWith", file, VIEW_TYPE);
+  await vscode.commands.executeCommand(
+    "vscode.openWith",
+    file,
+    VIEW_TYPE,
+    ...(request.column === undefined ? [] : [request.column]),
+  );
   if (!request.current()) {
     return false;
   }

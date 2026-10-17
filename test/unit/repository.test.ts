@@ -33,3 +33,16 @@ test("no two tracked paths differ only by letter case", () => {
   }
   assert.deepEqual(collisions, []);
 });
+
+test("Markdown Workshop opens PDF links with PDF Workshop's Open Location command", async () => {
+  const { OPEN_LOCATION_COMMAND_ID } =
+    await import("../../packages/pdf/src/extension/plugins/pdf/registered-commands");
+  const navigation = readFileSync(
+    "packages/markdown/src/host/navigation.ts",
+    "utf8",
+  );
+  assert.match(
+    navigation,
+    new RegExp(`PDF_OPEN_LOCATION_COMMAND = "${OPEN_LOCATION_COMMAND_ID}"`),
+  );
+});

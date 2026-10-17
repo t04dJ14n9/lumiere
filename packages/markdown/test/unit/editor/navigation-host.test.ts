@@ -15,10 +15,15 @@ function loadNavigation(vscode: unknown) {
   const originalLoad = loader._load;
   loader._load = (id, ...args) =>
     id === "vscode" ? vscode : originalLoad.call(Module, id, ...args);
+  const require = createRequire(import.meta.url);
+  // Each test brings its own fake: load the host modules again for it.
+  for (const id of Object.keys(require.cache)) {
+    if (id.includes("/src/host/") || id.includes("/src/shared/")) {
+      delete require.cache[id];
+    }
+  }
   try {
-    return createRequire(import.meta.url)(
-      "../../../src/host/navigation.ts",
-    ) as typeof HostNavigation;
+    return require("../../../src/host/navigation.ts") as typeof HostNavigation;
   } finally {
     loader._load = originalLoad;
   }
@@ -89,5 +94,49 @@ test("navigation superseded during document warming does not open the old note",
   assert.deepEqual(warmed, [stale, current]);
   assert.deepEqual(commands, [
     ["vscode.openWith", current, MARKDOWN_EDITOR.viewType, 1],
+  ]);
+});
+
+test("a link to a PDF opens it in PDF Workshop at its page, beside when asked", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "mw-navigation-unit-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const root = pathToFileURL(directory).href;
+  const pdf = pathToFileURL(join(directory, "paper.pdf")).href;
+  const commands: unknown[][] = [];
+  const withFragment = (uri: string) =>
+    Object.assign(parseUri(uri), {
+      with: ({ fragment }: { fragment: string }) =>
+        withFragment(`${uri.split("#")[0]}${fragment ? `#${fragment}` : ""}`),
+    });
+  const { createNavigation, PDF_OPEN_LOCATION_COMMAND } = loadNavigation({
+    Uri: { parse: withFragment },
+    ViewColumn: { Beside: -2 },
+    env: { appName: "Visual Studio Code", uriScheme: "vscode" },
+    window: { tabGroups: { activeTabGroup: { viewColumn: 1 } } },
+    workspace: { getConfiguration: () => ({ get: () => "on" }) },
+    commands: {
+      async executeCommand(
+        command: string,
+        uri: ReturnType<typeof parseUri>,
+        ...args: unknown[]
+      ) {
+        commands.push([command, uri.toString(), ...args]);
+      },
+    },
+  });
+  const navigation = createNavigation(() => []);
+  await navigation.open(root, pdf, "page=3", false);
+  await navigation.open(root, pdf, "page=5&viewrect=1,2,3,4", true);
+  // Not a PDF location (a heading, say): open the PDF where it was left.
+  await navigation.open(root, pdf, "Introduction", false);
+  assert.deepEqual(commands, [
+    [PDF_OPEN_LOCATION_COMMAND, `${pdf}#page=3`, undefined, { viewColumn: 1 }],
+    [
+      PDF_OPEN_LOCATION_COMMAND,
+      `${pdf}#page=5&viewrect=1,2,3,4`,
+      undefined,
+      { viewColumn: -2 },
+    ],
+    [PDF_OPEN_LOCATION_COMMAND, pdf, undefined, { viewColumn: 1 }],
   ]);
 });

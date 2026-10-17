@@ -41,5 +41,5 @@ workspace trust from Render.
 
 Cycles and ancestry depth of twelve are refused. Local files remain host-contained;
 remote media requires a trusted workspace. PDF embeds open cards rather than an
-inline PDF viewer. WebM recovery supports VP8/VP9 and Opus/Vorbis when the host
+inline PDF viewer; a card opens the PDF in PDF Workshop at the embed's page. WebM recovery supports VP8/VP9 and Opus/Vorbis when the host
 MediaSource supports them. Visual and playback parity await owner comparison.
