@@ -1,4 +1,5 @@
-import { EditorSelection } from "@codemirror/state";
+import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderBlock } from "../../plugins/livePreview/api";
@@ -387,6 +388,8 @@ export type FenceGuardPress = {
   readonly y: number;
   dragged: boolean;
   readonly selection: EditorSelection;
+  /** Doc identity at mousedown; restore skips if the doc object changed. */
+  readonly doc: { readonly length: number };
 };
 
 /**
@@ -404,6 +407,81 @@ export function shouldRestoreFenceClick(input: {
     input.button === 0 &&
     !input.modified
   );
+}
+
+/**
+ * Selection to restore after a plain fence-margin click.
+ *
+ * Prefer a selection already mapped through intervening changes (the
+ * `fenceGuardSelection` field, analogous to `pointerSelection`). If the
+ * document object changed during the press and no mapped selection is
+ * available, return null — skipping is safer than writing stale absolute
+ * offsets into a concurrent edit.
+ */
+export function resolveFenceGuardSelection(input: {
+  selection: EditorSelection;
+  savedDoc: { readonly length: number };
+  currentDoc: { readonly length: number };
+  /** Already-mapped selection (e.g. from `fenceGuardSelection` field). */
+  mapped?: EditorSelection | null;
+  map?: (selection: EditorSelection) => EditorSelection;
+}): EditorSelection | null {
+  if (input.mapped != null) {
+    return input.mapped;
+  }
+  if (input.savedDoc === input.currentDoc) {
+    return input.selection;
+  }
+  if (input.map) {
+    return input.map(input.selection);
+  }
+  return null;
+}
+
+const setFenceGuardSelection = StateEffect.define<EditorSelection | null>();
+
+/** Test helper: arm or clear the mapped fence-restore selection. */
+export function setFenceGuardSelectionEffect(
+  value: EditorSelection | null,
+): ReturnType<typeof setFenceGuardSelection.of> {
+  return setFenceGuardSelection.of(value);
+}
+
+/**
+ * Armed fence-restore selection; mapped through `tr.changes` like
+ * `pointerSelection` so a concurrent edit during the press cannot restore
+ * stale absolute offsets.
+ */
+export const fenceGuardSelection = StateField.define<EditorSelection | null>({
+  create: () => null,
+  update(value, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(setFenceGuardSelection)) {
+        return effect.value;
+      }
+    }
+    return value && tr.docChanged ? value.map(tr.changes) : value;
+  },
+});
+
+/** Live Preview registers this so fence-margin restores map through edits. */
+export const fenceGuardSelectionSupport: Extension = fenceGuardSelection;
+
+function armFenceGuardSelection(
+  view: EditorView,
+  selection: EditorSelection,
+): void {
+  if (view.state.field(fenceGuardSelection, false) === undefined) {
+    return;
+  }
+  view.dispatch({ effects: setFenceGuardSelection.of(selection) });
+}
+
+function clearFenceGuardSelection(view: EditorView): void {
+  if (!view.state.field(fenceGuardSelection, false)) {
+    return;
+  }
+  view.dispatch({ effects: setFenceGuardSelection.of(null) });
 }
 
 /**
@@ -468,11 +546,14 @@ function bindFenceClickGuard(
   const spanLength = block.to - block.from;
   let press: FenceGuardPress | null = null;
   const clearPress = (): void => {
+    if (press) {
+      clearFenceGuardSelection(view);
+    }
     press = null;
   };
   const takePress = (): FenceGuardPress | null => {
     const active = press;
-    clearPress();
+    press = null;
     return active;
   };
 
@@ -506,12 +587,15 @@ function bindFenceClickGuard(
         return;
       }
       // Do not preventDefault — CM must start MouseSelection / focus / drag-scroll.
+      const selection = view.state.selection;
       press = {
         x: event.clientX,
         y: event.clientY,
         dragged: false,
-        selection: view.state.selection,
+        selection,
+        doc: view.state.doc,
       };
+      armFenceGuardSelection(view, selection);
     },
     { capture: true, signal },
   );
@@ -540,25 +624,48 @@ function bindFenceClickGuard(
       }) ||
       !active
     ) {
+      clearFenceGuardSelection(view);
       return;
     }
     // After CM's mouseup selection (sync) and before pointer-freeze thaw
     // (setTimeout 0): microtasks run in between, so Mermaid stays rendered.
     queueMicrotask(() => {
       if (!view.dom.isConnected) {
+        clearFenceGuardSelection(view);
         return;
       }
-      view.dispatch({ selection: active.selection, scrollIntoView: false });
+      const mapped = view.state.field(fenceGuardSelection, false) ?? null;
+      const selection = resolveFenceGuardSelection({
+        selection: active.selection,
+        savedDoc: active.doc,
+        currentDoc: view.state.doc,
+        mapped,
+      });
+      const clearEffect = view.state.field(fenceGuardSelection, false)
+        ? setFenceGuardSelection.of(null)
+        : null;
+      if (!selection) {
+        // Doc changed while held and no mapped selection — skip stale coords.
+        if (clearEffect) {
+          view.dispatch({ effects: clearEffect });
+        }
+        return;
+      }
+      view.dispatch(
+        clearEffect
+          ? { selection, scrollIntoView: false, effects: clearEffect }
+          : { selection, scrollIntoView: false },
+      );
     });
   };
   for (const target of [doc, win]) {
     target?.addEventListener("mouseup", onRelease, { capture: true, signal });
-    target?.addEventListener("pointercancel", () => takePress(), {
+    target?.addEventListener("pointercancel", () => clearPress(), {
       capture: true,
       signal,
     });
   }
-  win?.addEventListener("blur", () => takePress(), { signal });
+  win?.addEventListener("blur", () => clearPress(), { signal });
 }
 
 /**

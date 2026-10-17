@@ -44,12 +44,61 @@ export function shouldCorrectPointerClick(input: {
   );
 }
 
-type Press = { x: number; y: number; dragged: boolean };
+/** Candidate captured from a select.pointer update during an active press. */
+export type PointerClickCandidate = {
+  readonly head: number;
+  readonly domPos: number;
+  readonly sameLine: boolean;
+};
 
 /**
- * After a plain click, if CodeMirror's selection head disagrees with
- * `caretRangeFromPoint` on the same source line, adopt the browser offset.
- * Does not run for drags or cross-line jumps (widgets / gutters).
+ * Whether a completed (button-up) gesture should adopt the DOM caret.
+ * Correction must not run on the initial mousedown select.pointer — CM's
+ * mouse-selection still owns that uncorrected anchor for a later drag.
+ */
+export function shouldApplySettledPointerCorrection(input: {
+  dragged: boolean;
+  candidate: PointerClickCandidate | null | undefined;
+  currentEmpty: boolean;
+  currentHead: number;
+}): boolean {
+  const { candidate } = input;
+  if (
+    input.dragged ||
+    !candidate ||
+    !shouldCorrectPointerClick({
+      empty: true,
+      dragged: false,
+      domPos: candidate.domPos,
+      selectionHead: candidate.head,
+      sameLine: candidate.sameLine,
+    })
+  ) {
+    return false;
+  }
+  // Already at the DOM offset, or another owner (e.g. Mermaid fence restore)
+  // moved the selection away from the CM click head.
+  if (input.currentHead === candidate.domPos) {
+    return false;
+  }
+  return input.currentEmpty && input.currentHead === candidate.head;
+}
+
+type Press = {
+  x: number;
+  y: number;
+  dragged: boolean;
+  /** CM head / DOM caret from select.pointer; applied only after release. */
+  candidate: PointerClickCandidate | null;
+};
+
+/**
+ * After a plain click settles (button up, never dragged), if CodeMirror's
+ * selection head disagrees with `caretRangeFromPoint` on the same source
+ * line, adopt the browser offset. Does not correct on the initial mousedown
+ * select.pointer — that would leave CM's drag-selection anchor uncorrected.
+ * Skips cross-line jumps (widgets / gutters) and yields when another
+ * selection owner has already moved the caret.
  */
 export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
   let press: Press | null = null;
@@ -59,17 +108,40 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
       press = null;
       return;
     }
-    press = { x: event.clientX, y: event.clientY, dragged: false };
+    press = { x: event.clientX, y: event.clientY, dragged: false, candidate: null };
   };
   const onMove = (event: MouseEvent): void => {
     if (press) {
       latchClickDrag(press, event.clientX, event.clientY, CLICK_DRAG_PX);
     }
   };
+  const applySettledCorrection = (active: Press): void => {
+    if (
+      !shouldApplySettledPointerCorrection({
+        dragged: active.dragged,
+        candidate: active.candidate,
+        currentEmpty: view.state.selection.main.empty,
+        currentHead: view.state.selection.main.head,
+      })
+    ) {
+      return;
+    }
+    const next = active.candidate!.domPos;
+    view.dispatch({
+      selection: EditorSelection.cursor(next),
+      scrollIntoView: false,
+    });
+  };
   const onUp = (): void => {
-    // Keep `press` until the select.pointer update runs (same turn / microtask).
+    const active = press;
+    // Clear after the microtask so a same-turn select.pointer can still record
+    // a candidate, then apply only once the gesture is known to be a click.
     queueMicrotask(() => {
       press = null;
+      if (!active || !view.dom.isConnected) {
+        return;
+      }
+      applySettledCorrection(active);
     });
   };
   view.dom.addEventListener("mousedown", onDown, true);
@@ -80,9 +152,17 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
       const active = press;
       if (
         !active ||
+        active.dragged ||
         !update.selectionSet ||
         !update.transactions.some((tr) => tr.isUserEvent("select.pointer"))
       ) {
+        return;
+      }
+      // Record only — never dispatch here. CM mouse-selection still owns the
+      // mousedown anchor until release; correcting early makes a later drag
+      // snap back to the uncorrected offset.
+      if (!update.state.selection.main.empty) {
+        active.candidate = null;
         return;
       }
       const head = update.state.selection.main.head;
@@ -90,42 +170,14 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
         clientX: active.x,
         clientY: active.y,
       });
-      const sameLine =
-        domPos !== undefined &&
-        update.state.doc.lineAt(domPos).number ===
-          update.state.doc.lineAt(head).number;
-      if (
-        !shouldCorrectPointerClick({
-          empty: update.state.selection.main.empty,
-          dragged: active.dragged,
-          domPos,
-          selectionHead: head,
-          sameLine,
-        })
-      ) {
+      if (domPos === undefined) {
+        active.candidate = null;
         return;
       }
-      const next = domPos!;
-      // Defer: must not dispatch inside an update cycle.
-      queueMicrotask(() => {
-        if (!view.dom.isConnected) {
-          return;
-        }
-        if (view.state.selection.main.head === next) {
-          return;
-        }
-        // Only correct while the click selection is still empty at `head`.
-        if (
-          !view.state.selection.main.empty ||
-          view.state.selection.main.head !== head
-        ) {
-          return;
-        }
-        view.dispatch({
-          selection: EditorSelection.cursor(next),
-          scrollIntoView: false,
-        });
-      });
+      const sameLine =
+        update.state.doc.lineAt(domPos).number ===
+        update.state.doc.lineAt(head).number;
+      active.candidate = { head, domPos, sameLine };
     },
     destroy(): void {
       view.dom.removeEventListener("mousedown", onDown, true);

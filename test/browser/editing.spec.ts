@@ -187,3 +187,49 @@ test("click mid wrapped CJK inserts at the clicked character", async ({
   expect(probeAt).toBe(clicked.from);
   expect(Math.abs(clicked.from - targetIndex)).toBeLessThanOrEqual(2);
 });
+
+test("drag across wrapped CJK selects a range without click-position snap-back", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 420, height: 700 });
+  const source =
+    "Intro with **bold**, *italic*, `code`, and a [link](https://example.com). " +
+    "Latin lead words for wrapping. ".repeat(4) +
+    "中文段落用来检查点击是否落在字形中间而不是跳到别处。";
+  await open(page, source);
+  const point = await page.evaluate((ch) => {
+    const line = document.querySelector(".cm-content > .cm-line");
+    if (!line) {
+      return null;
+    }
+    const walk = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+    while (walk.nextNode()) {
+      const node = walk.currentNode as Text;
+      const local = node.data.indexOf(ch);
+      if (local < 0) {
+        continue;
+      }
+      const range = document.createRange();
+      range.setStart(node, local);
+      range.setEnd(node, local + 1);
+      const rect = range.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+      }
+    }
+    return null;
+  }, "检");
+  expect(point).toBeTruthy();
+  // down → move past drag threshold → up: must remain a range (correction
+  // must not fire on mousedown and snap the CM drag anchor afterward).
+  await page.mouse.move(point!.x, point!.y);
+  await page.mouse.down();
+  await page.mouse.move(point!.x + 72, point!.y, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForTimeout(80);
+  const sel = await page.evaluate(() => window.harness.capture());
+  expect(sel.from).not.toBe(sel.to);
+});

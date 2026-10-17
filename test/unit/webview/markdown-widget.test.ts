@@ -2,13 +2,17 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { EditorSelection } from "@codemirror/state";
+import { EditorSelection, EditorState } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import {
   CLICK_DRAG_PX,
   clickToEditReleaseCommits,
+  fenceGuardSelection,
   latchClickDrag,
   liveFenceOffsets,
   markdownBlockIgnoresEventKind,
+  resolveFenceGuardSelection,
+  setFenceGuardSelectionEffect,
   shouldGuardFenceMouseDown,
   shouldRestoreFenceClick,
   type ClickToEditPress,
@@ -256,6 +260,7 @@ test("plain completed fence margin click restores pre-press selection", () => {
     y: 0,
     dragged: false,
     selection: EditorSelection.single(3),
+    doc: { length: 10 },
   };
   assert.equal(
     shouldRestoreFenceClick({ press, button: 0, modified: false }),
@@ -351,4 +356,78 @@ test("fence click guard resolves live offsets from the shell, not captured from/
     }),
     true,
   );
+});
+
+
+test("fence restore skips when doc identity changed and no mapped selection", () => {
+  const savedDoc = { length: 100 };
+  const currentDoc = { length: 110 };
+  const selection = EditorSelection.single(50);
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection,
+      savedDoc,
+      currentDoc,
+    }),
+    null,
+  );
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection,
+      savedDoc,
+      currentDoc: savedDoc,
+    }),
+    selection,
+  );
+});
+
+test("fence restore prefers mapped selection over stale snapshot", () => {
+  const savedDoc = { length: 100 };
+  const currentDoc = { length: 110 };
+  const stale = EditorSelection.single(50);
+  const mapped = EditorSelection.single(60);
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection: stale,
+      savedDoc,
+      currentDoc,
+      mapped,
+    }),
+    mapped,
+  );
+  // Explicit map callback when docs diverge.
+  assert.equal(
+    resolveFenceGuardSelection({
+      selection: stale,
+      savedDoc,
+      currentDoc,
+      map: () => mapped,
+    }),
+    mapped,
+  );
+});
+
+test("fenceGuardSelection field maps through intervening doc changes", () => {
+  const extensions: Extension[] = [fenceGuardSelection];
+  let state = EditorState.create({
+    doc: "abcdefghij",
+    selection: EditorSelection.single(5),
+    extensions,
+  });
+  state = state.update({
+    effects: setFenceGuardSelectionEffect(EditorSelection.single(5)),
+  }).state;
+  assert.equal(state.field(fenceGuardSelection)?.main.head, 5);
+  state = state.update({
+    changes: { from: 0, to: 0, insert: "XXXX" },
+  }).state;
+  // Insert before the caret → mapped head advances by 4 (like pointerSelection).
+  assert.equal(state.field(fenceGuardSelection)?.main.head, 9);
+  assert.equal(state.doc.length, 14);
+});
+
+test("fence click guard arms mapped selection field and resolves via doc identity", () => {
+  assert.match(widgetSrc, /fenceGuardSelection/);
+  assert.match(widgetSrc, /resolveFenceGuardSelection/);
+  assert.match(widgetSrc, /armFenceGuardSelection/);
 });

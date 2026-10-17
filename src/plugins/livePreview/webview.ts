@@ -1,5 +1,6 @@
 import { bindCaller } from "../../kernel";
 import { pointerSelectionTracking } from "../../webview/ui/pointer-selection";
+import { fenceGuardSelectionSupport } from "../../webview/ui/markdown-widget";
 import type { CallerBound } from "../../kernel";
 import type { LivePreview } from "./api";
 import { clickPositionSync } from "./click-position";
@@ -136,6 +137,7 @@ function engineExtensions(ctx: Context) {
     documentTree,
     renderRevision,
     pointerSelectionTracking,
+    fenceGuardSelectionSupport,
     clickPositionSync,
     hybridInline,
     blockIndex,
