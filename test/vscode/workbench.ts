@@ -252,3 +252,14 @@ export const ORIGINAL_NOTE = "# Native Markdown\n\nOriginal line";
 export function resetNote() {
   writeFileSync(path.join(paths.workspace, "Note.md"), ORIGINAL_NOTE);
 }
+
+/**
+ * Where a screenshot the docs cite goes: the test output by default, and
+ * `docs/screenshots` only when UPDATE_DOC_SCREENSHOTS=1, so a test run does
+ * not rewrite tracked files.
+ */
+export function docScreenshot(name: string): string {
+  return process.env.UPDATE_DOC_SCREENSHOTS === "1"
+    ? path.resolve("docs/screenshots", name)
+    : path.resolve("test-results/screenshots", name);
+}
