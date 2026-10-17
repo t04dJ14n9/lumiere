@@ -4865,3 +4865,50 @@ Validation (macOS, isolated profiles): `pnpm check` green (core 74, agents 47,
 Markdown 1,794, PDF 378 unit tests); real VS Code 1.142: PDF 25/26 with one
 skipped performance spec, Markdown 22/23 (the git diff editor spec fails as
 before the merge); real Cursor 3.23: see the session report.
+
+## Obsidian, measured; one PDF load protocol; Cursor specs; size limits — 2026-10-17
+
+Behaviour was compared with real Obsidian in a throwaway vault and profile
+(never the owner's), driven over the DevTools protocol, by giving it and
+Workshop's editor the same note, selection and keys and comparing the note
+and selection after. 172 of 182 key cases now match; the rest are kept on
+purpose (Cmd+D, Alt+Up/Down and Cmd+Enter keep VS Code's meaning; removing a
+comment also removes its padding). `docs/OBSIDIAN_KEYS.md` lists them.
+
+- Lists and quotes: Backspace deletes one character; Home and Cmd+Left stop
+  at an item's text; Shift+Enter lines up with it; Tab indents the line
+  wherever the caret is; moving a numbered item renumbers both lists, and an
+  edit inside a list renumbers it (opening a note never does); Enter keeps
+  the space before the caret, steps out of an empty quoted line, and starts
+  an item from a continuation line.
+- Pairing and formatting: = ~ $ % wrap a selection; the third backtick
+  closes the fence on the next line; Cmd+/ comments the word or selection;
+  Cmd+K leaves the caret in the empty URL or label; Cmd+L toggles a checkbox
+  (Cursor keeps Cmd+L for its chat); pasting a URL over text links it.
+- Blocks: display math keeps its preview below its source while editing
+  (PR #76 had removed it) and its source is highlighted TeX; a click selects
+  the formula, the inline formula, or the whole callout; rendered fences
+  (Mermaid, queries, processed code) reveal only from their Edit button.
+- Layout (`docs/OBSIDIAN_LAYOUT.md`): heading, list, quote, code, checkbox,
+  math, callout and table spacing now match Obsidian's measurements within a
+  pixel; line numbers and indent guides follow.
+
+PDF: each `load` message carries its number and the viewer echoes it. A
+reload sent before a new viewer page said ready made the page count one load
+more than the extension, which then dropped every report (no page in the
+status bar, no outline, no selection); seen in real Cursor.
+
+Cursor: the PDF real-editor specs run in Cursor 3.23 (title actions and the
+context menu through the palette, where Cursor's menus are native), 23
+passing; the two zen specs still fail there.
+
+Size limits: the PDF viewer, the agent bridge and IDE context are split to
+the limits, and the last exemption is gone; only tests are exempt.
+
+The table specs pass on macOS (grips need a hover; Shift+wheel is a
+Windows and Linux step), and the Vim caret spec measures the caret itself.
+
+Validation (macOS, isolated profiles): `pnpm check` green; Markdown browser
+suite 284/287 with three timing flakes that pass alone; PDF browser 174/174;
+real VS Code 1.142: PDF 25 (+1 skipped), Markdown all but the git diff
+editor spec; real Cursor 3.23: PDF 23/25.
