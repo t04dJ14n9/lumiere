@@ -103,5 +103,8 @@ export function chooseRevealPanel(
       : panel.column === target.column,
   );
   const pool = created.length > 0 ? created : reused;
-  return pool.length === 1 && pool[0]?.active() ? pool[0] : undefined;
+  // Unique panel identity is enough. Requiring active() broke Outline clicks:
+  // focus is in the tree, so the webview is inactive even though this tab is
+  // still the only destination for the URI.
+  return pool.length === 1 ? pool[0] : undefined;
 }

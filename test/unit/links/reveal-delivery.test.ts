@@ -61,6 +61,7 @@ async function fixture() {
     id: "pane",
     document: { uri: "file:///vault/Note.md" },
     active: () => active,
+    reveal() {},
   } as unknown as PanelShell;
   const fiber = root.plugin(linksHost, { panel });
   await root.settled();
@@ -204,6 +205,24 @@ test("a newer native intent suppresses the older reveal while the exact pane ini
   assert.deepEqual(
     f.calls.map(({ target }) => target.fragment),
     ["Current heading"],
+  );
+});
+
+test("an already-ready pane still navigates when unfocused (Outline / sidebar)", async (t) => {
+  const f = await fixture();
+  t.after(() => f.dispose());
+  await f.ready("first-webview");
+  f.setActive(false);
+  assert.equal(
+    await f.reveal.reveal(
+      { fragment: "Heading from outline", requestId: 1 },
+      new CancelToken(),
+    ),
+    true,
+  );
+  assert.deepEqual(
+    f.calls.map(({ target }) => target.fragment),
+    ["Heading from outline"],
   );
 });
 
