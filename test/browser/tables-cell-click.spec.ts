@@ -57,11 +57,58 @@ test("hold-and-drag inside an open cell keeps a native text selection", async ({
   const box = (await editor.boundingBox())!;
   await page.mouse.move(box.x + 4, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + Math.min(box.width - 4, 80), box.y + box.height / 2, {
-    steps: 6,
-  });
+  await page.mouse.move(
+    box.x + Math.min(box.width - 4, 80),
+    box.y + box.height / 2,
+    {
+      steps: 6,
+    },
+  );
   await page.mouse.up();
   // Still editing the same cell — not converted into a grid/column selection.
+  await expect(editor).toBeFocused();
+  await expect(page.locator(".table-cell-selected")).toHaveCount(1);
+});
+
+test("native text drag onto a column grip does not start grid selection", async ({
+  page,
+}) => {
+  await open(page, DOC, "obsidian", {
+    features: { vim: { enabled: false, config: {} } },
+  });
+  // Open a body cell so :focus-within makes column grips pointer-hittable.
+  const notes = page.locator(".hybrid-table .table-cell-content").nth(11);
+  await notes.click();
+  const editor = page.getByRole("textbox", {
+    name: "Table cell 4, 3",
+    exact: true,
+  });
+  await expect(editor).toBeFocused();
+
+  const editorBox = (await editor.boundingBox())!;
+  // Header Notes column grip — absolute, above the header cell box, but DOM
+  // parented under that header's .table-cell-wrapper.
+  const grip = page.locator(
+    '.hybrid-table .table-column-handle[data-index="2"]',
+  );
+  await expect(grip).toBeVisible();
+  const gripBox = (await grip.boundingBox())!;
+
+  await page.mouse.move(
+    editorBox.x + Math.min(editorBox.width / 2, 40),
+    editorBox.y + editorBox.height / 2,
+  );
+  await page.mouse.down();
+  // Jump onto the grip in one pointermove so we do not sample intervening
+  // header/body cells (those would correctly start a grid selection). The
+  // regression is ancestry treating the grip as the header cell.
+  await page.mouse.move(
+    gripBox.x + gripBox.width / 2,
+    gripBox.y + gripBox.height / 2,
+    { steps: 1 },
+  );
+  await page.mouse.up();
+
   await expect(editor).toBeFocused();
   await expect(page.locator(".table-cell-selected")).toHaveCount(1);
 });
