@@ -30,7 +30,9 @@ function registerDiagramBlocks(ctx: Context): void {
           Boolean(info && diagramLanguage(state.sliceDoc(info.from, info.to)))
         );
       },
-      widget: (block) => new MarkdownBlock(block, ctx.render),
+      // Ordinary clicks stay on the SVG (no reveal flash / fence caret jump).
+      // Double-click or the Edit button reveals source, Obsidian-ish.
+      widget: (block) => new MarkdownBlock(block, ctx.render, "dblclick"),
     }),
   );
 }

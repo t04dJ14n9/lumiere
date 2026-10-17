@@ -10,7 +10,13 @@ export class MarkdownBlock extends WidgetType {
   constructor(
     readonly block: RenderBlock,
     private readonly render: RenderService,
-    private readonly clickToEdit = true,
+    /**
+     * Body click policy for revealing source:
+     * - `true` (default): single click, as for math / code / callouts.
+     * - `"dblclick"`: double-click only (Mermaid stays interactive on ordinary click).
+     * - `false`: Edit button / caret entry only (embeds keep content clicks).
+     */
+    private readonly clickToEdit: boolean | "dblclick" = true,
   ) {
     super();
   }
@@ -43,8 +49,10 @@ export class MarkdownBlock extends WidgetType {
       },
       { signal: events.signal },
     );
-    if (this.clickToEdit) {
+    if (this.clickToEdit === true) {
       bindClickToEdit(view, shell, events.signal);
+    } else if (this.clickToEdit === "dblclick") {
+      bindDoubleClickToEdit(view, shell, events.signal);
     }
     this.lifetimes.set(shell, () => {
       live = false;
@@ -332,12 +340,34 @@ function eventTargetInside(
 }
 
 /**
- * Clicking a rendered block (math, code, a callout, a diagram) reveals its
- * source with the caret at the end of the first line, as in Obsidian. The
- * click was already on-screen, so do not force a scroll to the fence start.
+ * Reveal a rendered block's source with the caret at the end of the first
+ * line (math / code / callouts on single click; Mermaid on double-click or
+ * Edit). The pointer was already on-screen, so do not force a scroll.
  */
 export function editOnClick(view: EditorView, shell: HTMLElement): void {
   const line = view.state.doc.lineAt(view.posAtDOM(shell));
   view.focus();
   view.dispatch({ selection: { anchor: line.to }, scrollIntoView: false });
+}
+
+/**
+ * Double-click reveals source for widgets that keep ordinary clicks
+ * interactive (Mermaid). Ignores control targets so Edit / Copy stay native.
+ */
+function bindDoubleClickToEdit(
+  view: EditorView,
+  shell: HTMLElement,
+  signal: AbortSignal,
+): void {
+  shell.addEventListener(
+    "dblclick",
+    (event) => {
+      if (event.button !== 0 || isBlockControl(shell, event.target)) {
+        return;
+      }
+      event.preventDefault();
+      editOnClick(view, shell);
+    },
+    { signal },
+  );
 }

@@ -173,3 +173,31 @@ test("click-to-edit clears on outside release, blur, and pointercancel", () => {
   assert.match(widgetSrc, /latchClickDrag/);
   assert.match(widgetSrc, /clickToEditReleaseCommits/);
 });
+
+test("Mermaid uses double-click-to-edit; math/code keep single-click", () => {
+  const diagramsSrc = readFileSync(
+    path.join(root, "src/plugins/diagrams/webview.ts"),
+    "utf8",
+  );
+  const mathSrc = readFileSync(
+    path.join(root, "src/plugins/math/webview.ts"),
+    "utf8",
+  );
+  const codeSrc = readFileSync(
+    path.join(root, "src/plugins/codeBlocks/webview.ts"),
+    "utf8",
+  );
+  const embedsSrc = readFileSync(
+    path.join(root, "src/plugins/embeds/webview.ts"),
+    "utf8",
+  );
+  // Diagrams: no single-click reveal (avoids fence caret jump + Mermaid flash).
+  assert.match(diagramsSrc, /new MarkdownBlock\(block, ctx\.render, "dblclick"\)/);
+  assert.match(widgetSrc, /bindDoubleClickToEdit/);
+  assert.match(widgetSrc, /clickToEdit === "dblclick"/);
+  // Other reveal widgets keep the default single-click policy.
+  assert.match(mathSrc, /new MarkdownBlock\(block, ctx\.render\)/);
+  assert.match(codeSrc, /new MarkdownBlock\(block, ctx\.render\)/);
+  // Embeds still disable body click-to-edit entirely.
+  assert.match(embedsSrc, /new MarkdownBlock\(block, ctx\.render, false\)/);
+});
