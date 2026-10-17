@@ -6,19 +6,33 @@
  * under plugins/ (listed in plugins/catalog.ts), activated in dependency
  * order, each in a transaction that rolls back if it fails, and torn down in
  * reverse order on deactivation.
+ *
+ * Stage B: host lifetime is selectable via pdfWorkshop.runtimeImpl (or
+ * PDF_WORKSHOP_RUNTIME_IMPL). Default remains native; cordis selects the
+ * Cordis+shim façade without changing plugin code.
  */
 import * as vscode from 'vscode';
 import { plugins } from './plugins/catalog';
 import type { PdfServices } from './plugins/services';
+import { CordisPluginRuntime } from './runtime/cordis-runtime';
 import { PluginRuntime } from './runtime/plugin-runtime';
+import { resolveRuntimeImpl, RUNTIME_IMPL_SETTING } from './runtime/runtime-impl';
 
-let runtime: PluginRuntime<PdfServices> | undefined;
+type HostRuntime = PluginRuntime<PdfServices> | CordisPluginRuntime<PdfServices>;
+
+let runtime: HostRuntime | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const started = performance.now();
   const log = vscode.window.createOutputChannel('PDF Workshop', { log: true });
   context.subscriptions.push(log);
-  runtime = new PluginRuntime<PdfServices>(plugins, log, { context, log });
+  const impl = resolveRuntimeImpl(
+    () => vscode.workspace.getConfiguration().get<string>(RUNTIME_IMPL_SETTING),
+  );
+  log.info(`runtimeImpl=${impl}`);
+  runtime = impl === 'cordis'
+    ? new CordisPluginRuntime<PdfServices>(plugins, log, { context, log })
+    : new PluginRuntime<PdfServices>(plugins, log, { context, log });
   await runtime.start();
   log.info(`Activated in ${Math.round(performance.now() - started)} ms`);
 }

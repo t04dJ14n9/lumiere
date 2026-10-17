@@ -13,6 +13,8 @@ export interface CordisScope<S> {
 export interface CordisDefinition<S> {
   readonly id: string;
   readonly requires?: readonly string[];
+  /** Ordering / teardown edges only; never injected (matches native optional). */
+  readonly optional?: readonly string[];
   readonly provides?: readonly (keyof S & string)[];
   apply(scope: CordisScope<S>): void | Promise<void>;
 }
@@ -30,7 +32,7 @@ interface Entry {
  * App-owned CHILD lifetime over unmodified cordis@4.0.0-rc.10 public APIs.
  * Cordis owns registry/DI/fiber transitions. The app owns cancellation,
  * resource completion, and barriers before provider fiber disposal. This is
- * an opt-in building block; extension.ts still constructs PluginRuntime.
+ * an opt-in building block; cordis-runtime.ts is the PluginRuntime façade.
  */
 export class CordisApplication<S> {
   private readonly app: Fiber;
@@ -212,7 +214,9 @@ export class CordisApplication<S> {
   }
 
   private dependsOn(id: string, target: string): boolean {
-    return (this.definition(id).requires ?? []).some((required) =>
+    const definition = this.definition(id);
+    const edges = [...(definition.requires ?? []), ...(definition.optional ?? [])];
+    return edges.some((required) =>
       required === target || this.dependsOn(required, target));
   }
 }

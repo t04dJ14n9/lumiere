@@ -802,6 +802,22 @@
           "default": false,
           "description": "Reveal and select the bookmark containing the current PDF page and reading position in PDF Outline, without moving focus. Toggle Follow Cursor in the outline's More Actions menu."
         },
+        "pdfWorkshop.runtimeImpl": {
+          "type": "string",
+          "default": "native",
+          "enum": [
+            "native",
+            "cordis"
+          ],
+          "enumDescriptions": [
+            "Native PluginRuntime (production default until Stage C).",
+            "Cordis + app-owned lifetime shim (Stage B selectable host path)."
+          ],
+          "markdownDescription": "**Internal migration flag.** Which host plugin runtime owns extension lifetime. Default `native`. Set to `cordis` to exercise the Stage B Cordis+shim path (requires Extension Host reload). Env override: `PDF_WORKSHOP_RUNTIME_IMPL=native|cordis` (wins over this setting).",
+          "tags": [
+            "experimental"
+          ]
+        },
         "pdfWorkshop.copyLinkForAgent.target": {
           "type": "string",
           "default": "auto",
@@ -1126,6 +1142,7 @@
     "@embedpdf/plugin-zoom": "2.15.1",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@vscode/codicons": "0.0.45",
+    "cordis": "4.0.0-rc.10",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"
@@ -1139,7 +1156,6 @@
     "@types/vscode": "1.90.0",
     "@vscode/test-electron": "^2.5.0",
     "@vscode/vsce": "^4.0.0",
-    "cordis": "4.0.0-rc.10",
     "esbuild": "^0.28.2",
     "eslint": "^9.30.0",
     "eslint-plugin-react-hooks": "^5.2.0",

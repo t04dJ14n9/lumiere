@@ -1,6 +1,6 @@
 import { defineManifest } from "../../../src/extension/runtime/manifest";
 import { PluginRuntime } from "../../../src/extension/runtime/plugin-runtime";
-import type { PluginDefinition, PluginScope } from "../../../src/extension/runtime/plugin-runtime";
+import type { PluginDefinition, PluginHostScope } from "../../../src/extension/runtime/plugin-runtime";
 import type { BackingService, HarnessFactory, PluginSpec } from "./shared/harness";
 
 interface Services {
@@ -11,7 +11,7 @@ interface Services {
 /** Delegates directly; captured scope.find observes the public service lookup. */
 export const createPdfHarness: HarnessFactory = (specs) => {
   const errors: string[] = [];
-  let probe: PluginScope<Services> | undefined;
+  let probe: PluginHostScope<Services> | undefined;
   const definitions: PluginDefinition<Services>[] = specs.map((spec: PluginSpec) => ({
     manifest: defineManifest({ id: spec.id, title: spec.id, capabilities: [], requires: [...(spec.requires ?? [])] }),
     activate(scope) {

@@ -41,9 +41,20 @@ export interface Resource {
 
 export type PluginState = 'inactive' | 'starting' | 'active' | 'stopping' | 'failed' | 'blocked';
 
+/**
+ * The public surface plugins use. Both the native PluginRuntime and the
+ * Cordis façade expose this; plugins do not depend on the implementation.
+ */
+export interface PluginHostScope<S> {
+  acquire<T extends Resource>(resource: T, kind?: string): T;
+  provide<K extends keyof S>(name: K, value: S[K]): void;
+  get<K extends keyof S>(name: K): S[K];
+  find<K extends keyof S>(name: K): S[K] | undefined;
+}
+
 export interface PluginDefinition<S> {
   readonly manifest: PluginManifest<keyof S & string>;
-  activate(scope: PluginScope<S>): void | Promise<void>;
+  activate(scope: PluginHostScope<S>): void | Promise<void>;
 }
 
 export interface RuntimeLog {
@@ -57,7 +68,7 @@ interface Held {
 }
 
 /** What one plugin's `activate` works with: its resources and services. */
-export class PluginScope<S> {
+export class PluginScope<S> implements PluginHostScope<S> {
   /** Resources in the order acquired; released in reverse. */
   readonly held: Held[] = [];
   readonly offered = new Map<keyof S, S[keyof S]>();

@@ -18,4 +18,4 @@ export interface PdfServices {
   handoff: AgentHandoff;
 }
 
-export type { PluginDefinition, PluginScope } from '../runtime/plugin-runtime';
+export type { PluginDefinition, PluginHostScope, PluginScope } from '../runtime/plugin-runtime';

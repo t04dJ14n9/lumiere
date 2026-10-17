@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { defineManifest } from "../../src/extension/runtime/manifest";
 import { PluginRuntime } from "../../src/extension/runtime/plugin-runtime";
-import type { PluginScope } from "../../src/extension/runtime/plugin-runtime";
+import type { PluginHostScope } from "../../src/extension/runtime/plugin-runtime";
 import { createPdfHarness } from "./lifecycle-conformance/pdf-adapter";
 import { createCordisShimHarness } from "./lifecycle-conformance/cordis-shim-adapter";
 import type { BackingService } from "./lifecycle-conformance/shared/harness";
@@ -24,7 +24,7 @@ test("pdf adapter contract: a captured stopped-scope reader tracks the live serv
     lifecycleBacking: BackingService;
   }
   let generation = 0;
-  const scopes: PluginScope<Services>[] = [];
+  const scopes: PluginHostScope<Services>[] = [];
   const runtime = new PluginRuntime<Services>(
     [
       {
