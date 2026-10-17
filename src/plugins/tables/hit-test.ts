@@ -36,3 +36,52 @@ export function cellAtPoint(
   const column = cells ? nearestEntry(cells, "column", point) : -1;
   return row < 0 || column < 0 ? undefined : { row, column };
 }
+
+function pointInBounds(point: PointerPoint, bounds: DOMRect): boolean {
+  return (
+    point.x >= bounds.left &&
+    point.x <= bounds.right &&
+    point.y >= bounds.top &&
+    point.y <= bounds.bottom
+  );
+}
+
+/**
+ * Cell under the pointer only when the hit target is actually inside a cell.
+ * Unlike {@link cellAtPoint}, points past the table edge do not clamp to the
+ * nearest row/column — used so a text drag that leaves a cell is not converted
+ * into a grid/column selection.
+ *
+ * Row/column grips (`.table-handle`) are absolutely positioned outside the
+ * cell box but live inside `.table-cell-wrapper`, so DOM ancestry alone would
+ * falsely claim the owning cell. Reject handle hits and require the point to
+ * lie in the resolved cell's layout box.
+ */
+export function cellUnderPoint(
+  table: HTMLTableElement,
+  point: PointerPoint,
+): CellPosition | undefined {
+  const node =
+    typeof document !== "undefined"
+      ? document.elementFromPoint(point.x, point.y)
+      : null;
+  if (!node || typeof (node as Element).closest !== "function") {
+    return undefined;
+  }
+  const el = node as Element;
+  // Grips / chrome inside the wrapper must not count as cell content.
+  if (el.closest(".table-handle")) {
+    return undefined;
+  }
+  const cell = el.closest<HTMLElement>("td[data-row], th[data-row]");
+  if (!cell || !table.contains(cell)) {
+    return undefined;
+  }
+  if (!pointInBounds(point, cell.getBoundingClientRect())) {
+    return undefined;
+  }
+  return {
+    row: Number(cell.dataset.row),
+    column: Number(cell.dataset.column),
+  };
+}

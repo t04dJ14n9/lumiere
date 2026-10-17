@@ -61,3 +61,25 @@ test("selected cells draw an inset accent box that survives overflow clipping", 
     /\.hybrid-table \.table-cell-selected \{[^}]*outline:/,
   );
 });
+
+test("row and column grips ignore pointer hits until the table is hovered or focused", () => {
+  assert.match(
+    css,
+    /\.table-handle \{[^}]*pointer-events: none;/,
+  );
+  assert.match(
+    css,
+    /\.hybrid-table:hover \.table-handle,\s*\.hybrid-table:focus-within \.table-handle \{[^}]*pointer-events: auto;/,
+  );
+});
+
+test("add-row and add-column strips do not fade in while already hittable", () => {
+  assert.match(
+    css,
+    /\.table-row-btn,\s*\.table-col-btn \{[^}]*opacity: 0;/,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.table-row-btn,\s*\.table-col-btn \{[^}]*transition:/,
+  );
+});

@@ -16,6 +16,10 @@
   cursor: grab;
   touch-action: none;
   opacity: 0;
+  /* Invisible grips must not steal presses in the top/side gutter (or a
+     paragraph drag above the table). Enable hit-testing only once the table
+     is hovered or focused, matching when grips become visible. */
+  pointer-events: none;
   /* fixed: the grip is a 14px strip, so its glyph is 14px at any note size */
   font-size: 14px;
   line-height: 1;
@@ -40,6 +44,7 @@
 .hybrid-table:hover .table-handle,
 .hybrid-table:focus-within .table-handle {
   opacity: 1;
+  pointer-events: auto;
 }
 .table-handle:hover,
 .table-handle:focus-visible {
@@ -48,6 +53,7 @@
 }
 .table-handle:focus-visible {
   outline: 1px solid var(--accent);
+  pointer-events: auto;
 }
 .table-dragging,
 .table-dragging .table-handle {
@@ -119,7 +125,9 @@
   justify-content: center;
   box-sizing: border-box;
   opacity: 0;
-  transition: opacity 0.1s;
+  /* No fade: a 0.1s transition left the strip hittable while still invisible,
+     so an edge press could insert a row/column (whole-table rewrite / dirty
+     buffer) before the + was visible. Opacity snaps on :hover instead. */
   border: 1px solid var(--line);
 }
 .table-row-btn:hover,

@@ -42,7 +42,18 @@ export class TableToolbar {
       action.title = label;
       // Keep the focus in the cell until the new one opens.
       action.addEventListener("mousedown", (event) => event.preventDefault());
-      action.addEventListener("click", run);
+      action.addEventListener("click", () => {
+        // Only insert when the strip is visibly armed (:hover / :focus-visible
+        // set opacity to 1). Blocks accidental edge presses that would
+        // serializeTable-rewrite the buffer while the + was still invisible.
+        if (
+          getComputedStyle(action).opacity !== "1" &&
+          !action.matches(":focus-visible")
+        ) {
+          return;
+        }
+        run();
+      });
       controls.append(action);
     };
     button("Add row below", "row", () => {
