@@ -10,8 +10,10 @@ memory on Markdown Workshop’s custom editor.
 Cursor's own Cmd/Ctrl+L and Cmd/Ctrl+K bindings outrank every extension's,
 so in Cursor the webview answers those keys itself when text is selected: it
 keeps them from VS Code and asks its panel's host half (`panel-host.ts`) to
-run Cursor Chat with Selection or Cursor Edit Selection. The commands and
-their keybindings stay for the palette and for hosts where they win.
+run Cursor Chat with Selection or Cursor Edit Selection. Without a selection,
+Cmd/Ctrl+L still opens Cursor's chat: the webview claims it from the note's
+Toggle checkbox status and lets it through. The commands and their
+keybindings stay for the palette and for hosts where they win.
 
 The host captures a flushed, version-checked selection from the active panel,
 discovers Cursor commands, acquires a reclaim handoff lease, warms the shared

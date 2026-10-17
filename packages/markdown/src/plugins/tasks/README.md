@@ -1,7 +1,10 @@
 # Tasks
 
 Makes Markdown task checkboxes clickable in Live Preview and embedded notes,
-like Obsidian. Commands toggle checklist status or cycle list/checklist form.
+like Obsidian. Commands toggle checklist status or cycle list/checklist form;
+Mod+L toggles the status, Obsidian's default (in Cursor, where Cmd/Ctrl+L
+opens the chat, the Cursor bridge keeps that key). A line without a list
+gets `- [ ] ` after its quotes and indentation.
 
 ## How it works
 

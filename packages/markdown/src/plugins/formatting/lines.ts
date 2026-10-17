@@ -30,15 +30,16 @@ export function lineEdit(state: EditorState, prefix: string): TransactionSpec {
   });
   return { changes, userEvent: "input" };
 }
+/**
+ * Insert Link, as in Obsidian: the selection becomes the label and the caret
+ * goes into the empty URL; with no selection, into the empty label.
+ */
 export function linkEdit(state: EditorState): TransactionSpec {
   const { from, to } = state.selection.main;
   const label = state.sliceDoc(from, to);
   return {
-    changes: { from, to, insert: `[${label}](url)` },
-    selection: {
-      anchor: from + label.length + 3,
-      head: from + label.length + 6,
-    },
+    changes: { from, to, insert: `[${label}]()` },
+    selection: { anchor: label ? from + label.length + 3 : from + 1 },
     userEvent: "input",
   };
 }

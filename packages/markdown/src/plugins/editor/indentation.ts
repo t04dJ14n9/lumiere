@@ -1,13 +1,13 @@
-import { EditorSelection } from "@codemirror/state";
 import type {
   ChangeSpec,
   EditorState,
   Line,
   Transaction,
 } from "@codemirror/state";
-import { getIndentUnit, indentString, indentUnit } from "@codemirror/language";
+import { getIndentUnit, indentString } from "@codemirror/language";
 import { indentLess, indentMore } from "@codemirror/commands";
 import type { KeyBinding } from "@codemirror/view";
+import { renumberAround } from "../../markdown/ordered-lists";
 
 interface Target {
   state: EditorState;
@@ -64,9 +64,14 @@ function reindent(target: Target, delta: number): boolean {
   if (changes.length === 0) {
     return true;
   }
+  // As in Obsidian, ordered lists the item leaves or joins count on again.
+  const indented = state.update({ changes }).state;
+  const numbers = indented.changes(
+    renumberAround(indented.doc, { first, last }, state.tabSize),
+  );
   target.dispatch(
     state.update({
-      changes,
+      changes: state.changes(changes).compose(numbers),
       scrollIntoView: true,
       userEvent: delta > 0 ? "input.indent" : "delete.dedent",
     }),
@@ -83,26 +88,15 @@ function onListItem(state: EditorState): boolean {
   );
 }
 
-/** Tab: indent a list item with its children or the selected lines; otherwise insert indentation. */
+/**
+ * Tab: indent a list item with its children; otherwise indent the lines the
+ * selection touches, even with the caret mid-line, as Obsidian does.
+ */
 export function indentTab(target: Target): boolean {
-  const { state } = target;
-  if (onListItem(state)) {
+  if (onListItem(target.state)) {
     return reindent(target, 1);
   }
-  if (state.selection.ranges.some((range) => !range.empty)) {
-    return indentMore(target);
-  }
-  const insert = state.facet(indentUnit);
-  target.dispatch(
-    state.update(
-      state.changeByRange((range) => ({
-        changes: { from: range.from, insert },
-        range: EditorSelection.cursor(range.from + insert.length),
-      })),
-      { scrollIntoView: true, userEvent: "input" },
-    ),
-  );
-  return true;
+  return indentMore(target);
 }
 
 /** Shift+Tab: outdent a list item with its children or the selected lines. */

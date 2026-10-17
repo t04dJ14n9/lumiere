@@ -1,4 +1,5 @@
 import type { EditorState, TransactionSpec } from "@codemirror/state";
+import { lineMarkup } from "../../markdown/list-markup";
 import { taskMarker } from "../../markdown/tasks";
 import type { TextEdit } from "../../shared/host";
 export function taskEdit(
@@ -52,12 +53,18 @@ export function checklistEdit(
         });
       }
     } else {
-      const list = /^(?:[ \t]*>[ \t]*)*[ \t]*(?:[-+*]|\d+[.)])[ \t]+/.exec(
-        line.text,
-      );
-      const at = line.from + (list?.[0].length ?? 0);
+      // After the list marker, or else after the quotes and indentation, as
+      // in Obsidian (a heading's # stays after the new box).
+      const { quotes, marker: list } = lineMarkup(line.text);
+      const at = line.from + quotes.length + list.length;
       changes.push({ from: at, to: at, insert: list ? "[ ] " : "- [ ] " });
     }
   }
-  return { changes, userEvent: "input.checklist" };
+  // A caret where the box goes ends up after it, as in Obsidian.
+  const set = state.changes(changes);
+  return {
+    changes: set,
+    selection: state.selection.map(set, 1),
+    userEvent: "input.checklist",
+  };
 }

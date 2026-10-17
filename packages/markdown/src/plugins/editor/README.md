@@ -26,8 +26,12 @@ selection, preserving word/line drags, Shift/Mod selections and atomic ranges.
 The helper reads the current setting on every frame, in either editing mode,
 and releases its listeners and frames when the gesture or view ends.
 Tab and Shift+Tab never leave the note, as in Obsidian: on a list item they
-indent or outdent the item with its nested lines, with a selection they indent
-the selected lines, and otherwise Tab inserts one indent unit.
+indent or outdent the item with its nested lines (renumbering the ordered
+lists it leaves and joins; an item that starts a new level counts from 1),
+and otherwise they indent or outdent the lines the selection touches, even
+with the caret mid-line. Home (Cmd+Left on macOS), with Shift to select, goes
+first to the start of a list item's, task's or quote's text, then to the line
+start (`line-start.ts`).
 Ctrl/Cmd+F opens an in-note find bar at the top right, like Obsidian's: it
 shows "N / M" for the selected match (counting stops at 1000), Enter and
 Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,

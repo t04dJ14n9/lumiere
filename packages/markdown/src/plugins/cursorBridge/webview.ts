@@ -27,8 +27,14 @@ export const cursorBridgeWebview: Plugin = {
         EditorView.domEventHandlers({
           keydown(event, view) {
             const mode = handOffMode(event);
-            if (!mode || view.state.selection.main.empty) {
+            if (!mode) {
               return false;
+            }
+            if (view.state.selection.main.empty) {
+              // Without a selection, Cmd/Ctrl+L still opens Cursor's chat:
+              // claim it from the note's Toggle checkbox status, and let it
+              // through to Cursor. Cmd/Ctrl+K stays Insert Link.
+              return mode === "chat";
             }
             // Keep the key from VS Code: Cursor would open an empty chat.
             event.preventDefault();

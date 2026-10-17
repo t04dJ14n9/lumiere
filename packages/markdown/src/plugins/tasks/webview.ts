@@ -1,3 +1,4 @@
+import { keymap } from "@codemirror/view";
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
@@ -75,4 +76,23 @@ function registerChecklistCommands(ctx: Context): void {
       }),
     );
   }
+  // Obsidian's default key for Toggle checkbox status. In Cursor, where
+  // Cmd/Ctrl+L opens the chat, the Cursor bridge takes the key first.
+  ctx.effect(() =>
+    ctx.editor.extend(
+      keymap.of([
+        {
+          key: "Mod-l",
+          run: (view) => {
+            if (view.state.readOnly) {
+              return false;
+            }
+            view.dispatch(checklistEdit(view.state, false));
+            return true;
+          },
+          stopPropagation: true,
+        },
+      ]),
+    ),
+  );
 }

@@ -5,6 +5,7 @@ import type { EditorView } from "@codemirror/view";
 import { markdownLanguageSupport } from "../../markdown/dialect";
 import { clearInlineFormatting, wrapSelection } from "./inline";
 import { lineEdit, linkEdit } from "./lines";
+import { toggleComment } from "./comment";
 
 test("formatting toggles exact markers while retaining selection and obeying read-only", () => {
   let state = EditorState.create({
@@ -51,17 +52,43 @@ test("line commands exclude a final column-zero line and numbered lists toggle a
   assert.equal(state.doc.toString(), "alpha\nbeta\ngamma");
 });
 
-test("insert link selects the URL while keeping the selected label", () => {
-  const state = EditorState.create({
-    doc: "label",
-    selection: { anchor: 0, head: 5 },
-  });
-  const next = state.update(linkEdit(state)).state;
-  assert.equal(next.doc.toString(), "[label](url)");
-  assert.equal(
-    next.sliceDoc(next.selection.main.from, next.selection.main.to),
-    "url",
-  );
+test("insert link puts the caret in the URL after a label, else in the label", () => {
+  const link = (doc: string, anchor: number, head: number) => {
+    const state = EditorState.create({ doc, selection: { anchor, head } });
+    const next = state.update(linkEdit(state)).state;
+    const at = next.selection.main.head;
+    return next.sliceDoc(0, at) + "|" + next.sliceDoc(at);
+  };
+  assert.equal(link("hello world", 6, 11), "hello [world](|)");
+  assert.equal(link("hello ", 6, 6), "hello [|]()");
+  assert.equal(link("hello world", 8, 8), "hello wo[|]()rld");
+});
+
+test("toggle comment wraps the selection or the word in %% … %%, as in Obsidian", () => {
+  const comment = (doc: string) => {
+    const anchor = doc.includes("‹") ? doc.indexOf("‹") : doc.indexOf("|");
+    const head = doc.includes("›") ? doc.indexOf("›") - 1 : anchor;
+    const state = EditorState.create({
+      doc: doc.replace(/[|‹›]/gu, ""),
+      selection: { anchor, head },
+      extensions: [markdownLanguageSupport()],
+    });
+    const next = state.update(toggleComment(state)).state;
+    const { from, to } = next.selection.main;
+    const out = next.doc.toString();
+    return from === to
+      ? out.slice(0, from) + "|" + out.slice(from)
+      : out.slice(0, from) + "‹" + out.slice(from, to) + "›" + out.slice(to);
+  };
+  assert.equal(comment("hello wo|rld"), "hello %% ‹world› %%");
+  assert.equal(comment("hello |world"), "hello %% ‹world› %%");
+  assert.equal(comment("hello ‹world›"), "hello %% ‹world› %%");
+  assert.equal(comment("hello |"), "hello %% | %%");
+  assert.equal(comment("|"), "%% | %%");
+  assert.equal(comment("‹a\nb›"), "%% ‹a\nb› %%");
+  // Inside a comment, the markers go (with the spaces inside them).
+  assert.equal(comment("hello %% wo|rld %%"), "hello wo|rld");
+  assert.equal(comment("a %%wo|rd%% b"), "a wo|rd b");
 });
 
 test("clearing inline formatting retains comment contents, links and escaped literals", () => {

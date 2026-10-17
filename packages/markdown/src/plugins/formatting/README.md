@@ -9,7 +9,11 @@ Inline toggling uses the shared dialect to locate enclosing syntax at the caret;
 otherwise it wraps the word or selection, or removes selected delimiters. Line
 commands edit each selected line, excluding a final column-zero line. Registered
 commands target the active projected editor (including table cells), and owned
-keymaps provide bold, italic and link shortcuts. Those keymaps stop the
+keymaps provide bold, italic, link and comment shortcuts. As in Obsidian,
+Insert Link leaves the caret in the empty URL after a selected label (else in
+the empty label), and Toggle Comment wraps the selection or the word at the
+caret in `%% … %%` with it selected, or inserts an empty comment
+(`comment.ts`). Those keymaps stop the
 keystroke there: VS Code forwards webview keystrokes that reach the window to
 its keybinding service, which would otherwise run the contributed binding a
 second time (Ctrl+B bolding then unbolding) or Cursor's own Ctrl+I. The
@@ -30,9 +34,12 @@ Read-only views reject edits.
 Injects `editor` and `commands`; provides `formatting` with wrap and clear
 operations. Queries the `editor/activeView` bail event for palette commands.
 `markdownWorkshop.plugins.formatting.enabled` defaults to true. Bold, italics
-and Insert Link use Mod+B, Mod+I and Mod+K. Verify bindings remain unbound.
+Insert Link and Toggle Comment use Mod+B, Mod+I, Mod+K and Mod+/.
 
 ## Limits and differences from Obsidian
+
+Removing a comment also removes the spaces just inside its `%%` markers, which
+Obsidian leaves behind.
 
 VS Code owns saves and undo. Formatting changes source directly, including table
 cell projections. No live-reference keybinding or visual-parity observation is

@@ -5,6 +5,7 @@ import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "./api";
+import { toggleComment } from "./comment";
 import { clearInlineFormatting, wrapSelection } from "./inline";
 import { lineEdit, linkEdit } from "./lines";
 
@@ -31,10 +32,16 @@ function formattingCommands(): Map<string, Command> {
     ["strikethrough", "~~"],
     ["highlight", "=="],
     ["code", "`"],
-    ["comments", "%%"],
   ]) {
     commands.set(`editor:toggle-${id}`, wrapSelection(marker!));
   }
+  commands.set("editor:toggle-comments", (view) => {
+    if (view.state.readOnly) {
+      return false;
+    }
+    view.dispatch(toggleComment(view.state));
+    return true;
+  });
   addLineCommands(commands);
   commands.set("editor:insert-link", (view) => {
     if (view.state.readOnly) {
@@ -95,6 +102,11 @@ function registerFormattingKeys(
         {
           key: "Mod-k",
           run: commands.get("editor:insert-link")!,
+          stopPropagation: true,
+        },
+        {
+          key: "Mod-/",
+          run: commands.get("editor:toggle-comments")!,
           stopPropagation: true,
         },
       ]),

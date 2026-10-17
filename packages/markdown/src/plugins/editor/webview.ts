@@ -26,6 +26,7 @@ import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
 import { indentationKeymap } from "./indentation";
+import { lineStartKeymap } from "./line-start";
 import { findExtension } from "./find";
 import { keepSelectAllInEditor } from "./select-all";
 import { caretExtension } from "./caret-view";
@@ -157,7 +158,13 @@ function createEditorView(
         }),
         menuSelectionContext,
         Prec.lowest(EditorView.contentAttributes.of({ spellcheck: "false" })),
-        Prec.low(keymap.of([...indentationKeymap, ...defaultKeymap])),
+        Prec.low(
+          keymap.of([
+            ...indentationKeymap,
+            ...lineStartKeymap,
+            ...defaultKeymap,
+          ]),
+        ),
         EditorView.updateListener.of((update) => {
           if (update.selectionSet || update.focusChanged) {
             ctx.rpc.notify(

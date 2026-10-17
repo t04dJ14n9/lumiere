@@ -5,7 +5,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Action or behavior (DESIGN §13–§15) | Obsidian observation: date and method | Workshop result | How checked | Status |
 | --- | --- | --- | --- | --- |
 | `document` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `editor` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `editor` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: Tab, Shift+Tab, Home and Cmd+Left measured | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `dialect` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `commands` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `vault` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -18,12 +18,12 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `links` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `embeds` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `tables` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `callouts` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `math` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `diagrams` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `callouts` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: a click selects the whole callout | Matches the measured behaviour (docs/OBSIDIAN_REVEAL_RULES.md rule 11) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
+| `math` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: preview kept below the source while editing; a click selects the formula; source highlighted | Matches the measured behaviour (docs/OBSIDIAN_REVEAL_RULES.md rule 6 and 11) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
+| `diagrams` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: click and double-click keep the diagram; Edit selects the code | Matches the measured behaviour (docs/OBSIDIAN_REVEAL_RULES.md rule 11) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `codeBlocks` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `footnotes` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `tasks` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `tasks` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: Cmd+L toggles the checkbox status | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `tags` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `suggest` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `pagePreview` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -40,25 +40,25 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `indentGuides` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `stickyScroll` | No Obsidian core equivalent | Opt-in pinned section headings in Live Preview and Source | Unit model/lifecycle/overlay coverage; owner-run stickyScroll manual scenarios pending | Intentional extension |
 | `vim` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `autoPair` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `smartLists` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `autoPair` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: pairs, wrap-only = ~ $ %, fence completion | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
+| `smartLists` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: Enter, Shift+Enter, Backspace and quotes | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `pasteHtml` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `spellcheck` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `formatting` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `formatting` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: Cmd+B, Cmd+I, Cmd+K and Cmd+/ | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `copyLinkForAgent` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `linkUpdates` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `settings` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `quickSwitcher` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `wordCount` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `toggleBold` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `toggleItalics` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `toggleBold` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: caret, word, selection and unwrap | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
+| `toggleItalics` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: caret, word, selection and unwrap | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `toggleStrikethrough` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `toggleHighlight` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `toggleCode` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `toggleComment` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `toggleComment` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: wraps the word or selection in %% … %%; unwrap also removes the padding (deliberate) | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `toggleInlineMath` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `insertMathBlock` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `insertLink` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `insertLink` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: [sel](|) and [|]() | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `insertWikilink` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `insertEmbed` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `insertTable` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -66,7 +66,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `insertFootnote` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `insertCallout` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `setHeading0`…`setHeading6` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `toggleChecklist` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `toggleChecklist` | 2026-10-17, behaviour measured over the DevTools protocol in a throwaway vault: text, bullet, number, quote and empty line | Matches the measured behaviour (docs/OBSIDIAN_KEYS.md) | Differential probe (Obsidian and the browser harness, same keys); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `cycleListChecklist` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `toggleBulletList`, `toggleNumberedList`, `toggleBlockquote` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `swapLineUp`, `swapLineDown` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

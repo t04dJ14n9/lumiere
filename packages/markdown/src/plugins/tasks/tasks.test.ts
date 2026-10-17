@@ -35,3 +35,30 @@ test("cycling a completed task without trailing text preserves the next line", (
     "- \nnext",
   );
 });
+
+test("toggling the checkbox status works as Obsidian's Cmd+L", () => {
+  const toggle = (doc: string) => {
+    const state = EditorState.create({
+      doc,
+      selection: { anchor: doc.length },
+    });
+    return state.update(checklistEdit(state, false)).newDoc.toString();
+  };
+  assert.equal(toggle("a"), "- [ ] a");
+  assert.equal(toggle(""), "- [ ] ");
+  assert.equal(toggle("- a"), "- [ ] a");
+  assert.equal(toggle("1. a"), "1. [ ] a");
+  assert.equal(toggle("- [ ] a"), "- [x] a");
+  assert.equal(toggle("- [x] a"), "- [ ] a");
+  assert.equal(toggle("> a"), "> - [ ] a");
+  assert.equal(toggle("> - [ ] a"), "> - [x] a");
+  assert.equal(toggle("\ta"), "\t- [ ] a");
+  assert.equal(toggle("# a"), "- [ ] # a");
+});
+
+test("toggling on an empty line leaves the caret after the new box", () => {
+  const state = EditorState.create({ doc: "" });
+  const next = state.update(checklistEdit(state, false)).state;
+  assert.equal(next.doc.toString(), "- [ ] ");
+  assert.equal(next.selection.main.head, 6);
+});
