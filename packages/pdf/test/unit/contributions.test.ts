@@ -163,13 +163,3 @@ test('PDF location history has distinct commands and does not claim native or Vi
   }
 });
 
-test('runtimeImpl migration flag defaults to native and is experimental', () => {
-  const setting = contributes.configuration.properties['pdfWorkshop.runtimeImpl'] as {
-    default: string;
-    enum: string[];
-    tags?: string[];
-  };
-  assert.equal(setting.default, 'native');
-  assert.deepEqual(setting.enum, ['native', 'cordis']);
-  assert.ok(setting.tags?.includes('experimental'));
-});

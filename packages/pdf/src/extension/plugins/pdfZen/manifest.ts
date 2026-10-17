@@ -1,8 +1,7 @@
-import { defineManifest } from '../../runtime/manifest';
+import { defineManifest } from '../manifest';
 
 export default defineManifest({
   id: 'pdfZen',
   title: 'Zen mode',
   capabilities: ['commands'],
-  requires: ['pdf'],
 });

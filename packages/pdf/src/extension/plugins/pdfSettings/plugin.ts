@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import { PAGE_LAYOUTS, SCROLL_MODES } from '../../../shared/view-options';
 import { parseDefaultZoom, resolveSmoothScrolling } from '../../../shared/view-settings';
 import { EXTENSION_ID, updateSetting } from '../../settings';
-import type { PluginDefinition, PdfServices } from '../services';
+import type { Plugin } from "@workshop/core";
+import type {} from "../services";
 import { changeSetting } from './change-setting';
 import manifest from './manifest';
 import { SETTINGS_COMMAND_IDS } from '../pdf/registered-commands';
@@ -26,11 +27,11 @@ async function choose<T>(title: string, choices: Pick<T>[], current: unknown): P
  * editor shows (see `updateSetting`) and keeps nothing of its own, so the two
  * agree at all times; the viewers follow through the configuration events.
  */
-export const pdfSettingsPlugin: PluginDefinition<PdfServices> = {
-  manifest,
-  activate(scope) {
+export const pdfSettingsPlugin: Plugin = {
+  name: manifest.id,
+  apply(ctx) {
     const command = (id: keyof typeof SETTINGS_COMMAND_IDS, run: () => Thenable<unknown> | void): void =>
-      void scope.acquire(vscode.commands.registerCommand(SETTINGS_COMMAND_IDS[id], run), 'command');
+      void ctx.own(vscode.commands.registerCommand(SETTINGS_COMMAND_IDS[id], run), 'command');
 
     command('openSettings', () => vscode.commands.executeCommand('workbench.action.openSettings', `@ext:${EXTENSION_ID}`));
 

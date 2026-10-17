@@ -1,6 +1,7 @@
 /**
- * What a plugin declares about itself. The runtime orders and gates plugins
- * from these fields alone, so no plugin needs its own detection logic.
+ * What a PDF plugin declares about itself for people, docs and tests: its
+ * name and the extension points it uses. What it injects and provides is on
+ * its plugin definition.
  */
 
 /**
@@ -30,17 +31,11 @@ export type Capability =
   /** Opens a local network server; must be opt-in. */
   | 'localServer';
 
-export interface PluginManifest<Service extends string = string> {
+export interface PluginManifest {
   /** Stable id, in camelCase: `pdf`, `pdfToolbar`, `agentBridge`. */
   readonly id: string;
   readonly title: string;
   readonly capabilities: readonly Capability[];
-  /** Plugins that must be active first; this plugin stops before them. */
-  readonly requires: readonly string[];
-  /** Plugins used when present: ordered before this one, never required. */
-  readonly optional?: readonly string[];
-  /** Services this plugin publishes on commit. */
-  readonly provides?: readonly Service[];
 }
 
 export function defineManifest<const M extends PluginManifest>(manifest: M): M {

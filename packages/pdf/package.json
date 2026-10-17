@@ -63,7 +63,7 @@
     "viewsWelcome": [
       {
         "view": "pdfWorkshop.outline",
-        "contents": "Reading the outline\u2026",
+        "contents": "Reading the outline…",
         "when": "pdfWorkshop.outlineLoading"
       },
       {
@@ -86,7 +86,7 @@
       },
       {
         "command": "pdfWorkshop.changeSetting",
-        "title": "Change Setting\u2026",
+        "title": "Change Setting…",
         "category": "PDF"
       },
       {
@@ -101,17 +101,17 @@
       },
       {
         "command": "pdfWorkshop.setDefaultZoom",
-        "title": "Set Default Zoom\u2026",
+        "title": "Set Default Zoom…",
         "category": "PDF"
       },
       {
         "command": "pdfWorkshop.setDefaultPageLayout",
-        "title": "Set Default Page Layout\u2026",
+        "title": "Set Default Page Layout…",
         "category": "PDF"
       },
       {
         "command": "pdfWorkshop.setDefaultScrollMode",
-        "title": "Set Default Scrolling\u2026",
+        "title": "Set Default Scrolling…",
         "category": "PDF"
       },
       {
@@ -150,7 +150,7 @@
       },
       {
         "command": "pdfWorkshop.openLocation",
-        "title": "Open Location\u2026",
+        "title": "Open Location…",
         "category": "PDF"
       },
       {
@@ -182,7 +182,7 @@
       },
       {
         "command": "pdfWorkshop.copyMcpSetup",
-        "title": "Copy MCP Setup for Claude Code / Codex\u2026",
+        "title": "Copy MCP Setup for Claude Code / Codex…",
         "category": "PDF"
       },
       {
@@ -201,7 +201,7 @@
       },
       {
         "command": "pdfWorkshop.goToPage",
-        "title": "Go to Page\u2026",
+        "title": "Go to Page…",
         "category": "PDF",
         "icon": "$(list-ordered)"
       },
@@ -219,7 +219,7 @@
       },
       {
         "command": "pdfWorkshop.selectZoom",
-        "title": "Zoom\u2026",
+        "title": "Zoom…",
         "category": "PDF",
         "icon": "$(search-fuzzy)"
       },
@@ -261,7 +261,7 @@
       },
       {
         "command": "pdfWorkshop.selectToolbarMode",
-        "title": "Choose Toolbar Location\u2026",
+        "title": "Choose Toolbar Location…",
         "category": "PDF",
         "icon": "$(layout)"
       },
@@ -274,7 +274,7 @@
       },
       {
         "command": "pdfWorkshop.selectView",
-        "title": "View\u2026",
+        "title": "View…",
         "category": "PDF",
         "icon": "$(layout)",
         "enablement": "pdfWorkshop.pdfActive"
@@ -289,7 +289,7 @@
       },
       {
         "command": "pdfWorkshop.twoPageSpread",
-        "title": "Two Pages (1\u20132, 3\u20134)",
+        "title": "Two Pages (1–2, 3–4)",
         "category": "PDF",
         "icon": "$(book)",
         "enablement": "pdfWorkshop.pdfActive",
@@ -297,7 +297,7 @@
       },
       {
         "command": "pdfWorkshop.twoPageCover",
-        "title": "Two Pages with Cover (1, 2\u20133)",
+        "title": "Two Pages with Cover (1, 2–3)",
         "category": "PDF",
         "icon": "$(book)",
         "enablement": "pdfWorkshop.pdfActive",
@@ -356,7 +356,7 @@
       },
       {
         "command": "pdfWorkshop.ideContext.send",
-        "title": "Send IDE Context to Agent\u2026",
+        "title": "Send IDE Context to Agent…",
         "category": "PDF Workshop"
       }
     ],
@@ -802,22 +802,6 @@
           "default": false,
           "description": "Reveal and select the bookmark containing the current PDF page and reading position in PDF Outline, without moving focus. Toggle Follow Cursor in the outline's More Actions menu."
         },
-        "pdfWorkshop.runtimeImpl": {
-          "type": "string",
-          "default": "native",
-          "enum": [
-            "native",
-            "cordis"
-          ],
-          "enumDescriptions": [
-            "Native PluginRuntime (production default until Stage C).",
-            "Cordis + app-owned lifetime shim (Stage B selectable host path)."
-          ],
-          "markdownDescription": "**Internal migration flag.** Which host plugin runtime owns extension lifetime. Default `native`. Set to `cordis` to exercise the Stage B Cordis+shim path (requires Extension Host reload). Env override: `PDF_WORKSHOP_RUNTIME_IMPL=native|cordis` (wins over this setting).",
-          "tags": [
-            "experimental"
-          ]
-        },
         "pdfWorkshop.copyLinkForAgent.target": {
           "type": "string",
           "default": "auto",
@@ -871,7 +855,7 @@
             "never"
           ],
           "enumDescriptions": [
-            "In Cursor, which keeps extension buttons in the editor title bar's \"\u2026\" menu: yes. In VS Code: no.",
+            "In Cursor, which keeps extension buttons in the editor title bar's \"…\" menu: yes. In VS Code: no.",
             "Always show the buttons.",
             "Only the page, zoom and View."
           ],
@@ -880,7 +864,7 @@
         "pdfWorkshop.agentBridge.enabled": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex\u2026** gives the command that connects those agents."
+          "markdownDescription": "**Experimental, off by default.** Serve the current PDF selection to coding agents (VS Code chat, Cursor, Claude Code, Codex) over a local MCP server: 127.0.0.1 only, a random port, a bearer token, no browser origins. It starts and stops when this changes. **PDF: Copy MCP Setup for Claude Code / Codex…** gives the command that connects those agents."
         },
         "pdfWorkshop.view.defaultZoom": {
           "type": [
@@ -903,7 +887,7 @@
               "maximum": 400
             }
           ],
-          "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25\u2013400)."
+          "markdownDescription": "Zoom for PDFs without a saved view: fit width, fit page, actual size (100%), or a numeric percentage (25–400)."
         },
         "pdfWorkshop.view.pageLayout": {
           "type": "string",
@@ -915,8 +899,8 @@
           ],
           "enumDescriptions": [
             "One page per row.",
-            "Pair pages 1\u20132, 3\u20134, and so on.",
-            "Cover page alone, then pair pages 2\u20133, 4\u20135, and so on."
+            "Pair pages 1–2, 3–4, and so on.",
+            "Cover page alone, then pair pages 2–3, 4–5, and so on."
           ],
           "markdownDescription": "Page layout for PDFs without a saved view."
         },
@@ -950,7 +934,7 @@
         "pdfWorkshop.keyboardShortcuts": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/\u2318+G (Go to Line elsewhere), Ctrl/\u2318+0 (focus the side bar), Ctrl/\u2318+= and Ctrl/\u2318+- (zoom the window) and Ctrl/\u2318+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
+          "markdownDescription": "Default keyboard shortcuts of the PDF viewer, active only while a PDF is the active editor and focus is not in an input, the side bar, the panel or the auxiliary bar. They take Ctrl/⌘+G (Go to Line elsewhere), Ctrl/⌘+0 (focus the side bar), Ctrl/⌘+= and Ctrl/⌘+- (zoom the window) and Ctrl/⌘+F in that situation. Turn off to leave every key to VS Code; each **PDF:** command can still be bound in Keyboard Shortcuts."
         },
         "pdfWorkshop.view.restoreOnReopen": {
           "type": "boolean",
@@ -1142,7 +1126,7 @@
     "@embedpdf/plugin-zoom": "2.15.1",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@vscode/codicons": "0.0.45",
-    "cordis": "4.0.0-rc.10",
+    "@workshop/core": "workspace:*",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"

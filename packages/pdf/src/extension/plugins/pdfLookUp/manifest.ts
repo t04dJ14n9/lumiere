@@ -1,8 +1,7 @@
-import { defineManifest } from '../../runtime/manifest';
+import { defineManifest } from '../manifest';
 
 export default defineManifest({
   id: 'pdfLookUp',
   title: 'macOS Look Up',
   capabilities: ['commands'],
-  requires: ['pdf'],
 });

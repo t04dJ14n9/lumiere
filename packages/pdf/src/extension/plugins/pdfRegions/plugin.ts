@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { PdfPanel } from '../pdf/panel';
-import type { PluginDefinition, PdfServices } from '../services';
+import type { Plugin } from "@workshop/core";
+import type {} from "../services";
 import manifest from './manifest';
 import { RegionImages, regionCacheBytes } from './region-images';
 import { RegionSnapshots } from './region-snapshots';
@@ -10,11 +11,13 @@ import { RegionSnapshots } from './region-snapshots';
  * `pdfWorkshop.regionImageCache.maxSizeMB`. Each region is saved as soon
  * as it is selected, so its file exists before anything is copied.
  */
-export const pdfRegionsPlugin: PluginDefinition<PdfServices> = {
-  manifest,
-  activate(scope) {
-    const context = scope.get('context');
-    const panels = scope.get('panels');
+export const pdfRegionsPlugin: Plugin = {
+  name: manifest.id,
+  inject: { required: ["pdfPanels", "extensionContext"] },
+  provides: ["regionSnapshots"],
+  apply(ctx) {
+    const context = ctx.extensionContext;
+    const panels = ctx.pdfPanels;
     const images = new RegionImages(
       vscode.Uri.joinPath(context.storageUri ?? context.globalStorageUri, 'regions').fsPath,
       // Read at every save, so a changed setting applies without a reload.
@@ -33,11 +36,11 @@ export const pdfRegionsPlugin: PluginDefinition<PdfServices> = {
       ));
     };
     for (const panel of panels.all) watch(panel);
-    scope.acquire(panels.onDidOpen(watch), 'listener');
-    scope.acquire(new vscode.Disposable(() => {
+    ctx.own(panels.onDidOpen(watch), 'listener');
+    ctx.own(new vscode.Disposable(() => {
       for (const subscription of watched.values()) subscription.dispose();
       watched.clear();
     }), 'panel listeners');
-    scope.provide('regions', snapshots);
+    ctx.provide("regionSnapshots", snapshots);
   },
 };

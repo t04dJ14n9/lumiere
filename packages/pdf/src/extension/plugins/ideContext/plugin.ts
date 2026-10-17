@@ -4,7 +4,8 @@ import * as path from "node:path";
 import * as fs from "node:fs/promises";
 const { readdir: readTempDir } = fs;
 import * as fssync from "node:fs";
-import type { PluginDefinition, PdfServices } from "../services";
+import type { Plugin } from "@workshop/core";
+import type {} from "../services";
 import manifest from "./manifest";
 import { IDE_CONTEXT_COMMAND_IDS } from "../pdf/registered-commands";
 import { buildPdfIdeContextPacket } from "./adapter";
@@ -39,11 +40,12 @@ const nodeTempFs: TempFs = {
   renameSync: (a, b) => fssync.renameSync(a, b),
 };
 
-export const ideContextPlugin: PluginDefinition<PdfServices> = {
-  manifest,
-  activate(scope) {
-    const panels = scope.get("panels");
-    scope.acquire(
+export const ideContextPlugin: Plugin = {
+  name: manifest.id,
+  inject: { required: ["pdfPanels"], optional: ["regionSnapshots", "pdfHandoff"] },
+  apply(ctx) {
+    const panels = ctx.pdfPanels;
+    ctx.own(
       vscode.commands.registerCommand(
         IDE_CONTEXT_COMMAND_IDS.copy,
         async () => {
@@ -72,7 +74,7 @@ export const ideContextPlugin: PluginDefinition<PdfServices> = {
       ),
       "command",
     );
-    scope.acquire(
+    ctx.own(
       vscode.commands.registerCommand(
         IDE_CONTEXT_COMMAND_IDS.send,
         async () => {

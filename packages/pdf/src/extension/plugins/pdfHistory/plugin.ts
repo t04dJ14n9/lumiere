@@ -3,7 +3,8 @@ import { JumpHistory } from '../../../shared/jump-history';
 import { cloneHistoryEntry, sameHistoryEntry, type PdfHistoryEntry } from '../../../shared/pdf-history';
 import type { ReadingPosition } from '../../../shared/reading-position';
 import type { PdfPanel } from '../pdf/panel';
-import type { PdfServices, PluginDefinition } from '../services';
+import type { Plugin } from '@workshop/core';
+import type {} from '../services';
 import { HISTORY_COMMAND_IDS } from '../pdf/registered-commands';
 import manifest from './manifest';
 
@@ -15,10 +16,11 @@ interface PanelHistory {
 }
 
 /** A separate memory-only stack for each editor, including split views of one PDF. */
-export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
-  manifest,
-  activate(scope) {
-    const panels = scope.get('panels');
+export const pdfHistoryPlugin: Plugin = {
+  name: manifest.id,
+  inject: { required: ["pdfPanels"] },
+  apply(ctx) {
+    const panels = ctx.pdfPanels;
     const states = new Map<PdfPanel, PanelHistory>();
     const stateFor = (panel: PdfPanel): PanelHistory => {
       let state = states.get(panel);
@@ -70,15 +72,15 @@ export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
         publish();
       }
     };
-    scope.acquire(panels.handle('historyJump', (panel, message) => {
+    ctx.own(panels.handle('historyJump', (panel, message) => {
       const state = stateFor(panel);
       state.generation++;
       delete state.inheritedDeparture;
       state.history.record(entry(panel, message.from), entry(panel, message.to));
       publish();
     }), 'jump handler');
-    scope.acquire(panels.handle('historyTraverse', (panel, message) => traverse(panel, message.direction)), 'traverse handler');
-    scope.acquire(panels.onDidChange(() => {
+    ctx.own(panels.handle('historyTraverse', (panel, message) => traverse(panel, message.direction)), 'traverse handler');
+    ctx.own(panels.onDidChange(() => {
       for (const [panel, state] of states) {
         if (state.busy && panels.active !== panel) {
           state.generation++;
@@ -87,9 +89,9 @@ export const pdfHistoryPlugin: PluginDefinition<PdfServices> = {
       }
       publish();
     }), 'listener');
-    scope.acquire(vscode.commands.registerCommand(HISTORY_COMMAND_IDS.historyBack, () => traverse(panels.active, 'back')), 'command');
-    scope.acquire(vscode.commands.registerCommand(HISTORY_COMMAND_IDS.historyForward, () => traverse(panels.active, 'forward')), 'command');
-    scope.acquire({ dispose: () => {
+    ctx.own(vscode.commands.registerCommand(HISTORY_COMMAND_IDS.historyBack, () => traverse(panels.active, 'back')), 'command');
+    ctx.own(vscode.commands.registerCommand(HISTORY_COMMAND_IDS.historyForward, () => traverse(panels.active, 'forward')), 'command');
+    ctx.own({ dispose: () => {
       for (const [panel, state] of states) {
         state.generation++;
         panel.cancelHistoryRestore();

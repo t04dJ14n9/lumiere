@@ -1,9 +1,7 @@
-import { defineManifest } from '../../runtime/manifest';
+import { defineManifest } from '../manifest';
 
 export default defineManifest({
   id: 'pdfRegions',
   title: 'Region Snapshots',
   capabilities: ['storage'],
-  requires: ['pdf'],
-  provides: ['regions'],
 });

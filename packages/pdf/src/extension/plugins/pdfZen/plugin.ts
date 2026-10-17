@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import type { PluginDefinition, PdfServices } from '../services';
+import type { Plugin } from "@workshop/core";
+import type {} from "../services";
 import { ZEN_COMMAND_IDS } from '../pdf/registered-commands';
 import manifest from './manifest';
 
@@ -13,10 +14,11 @@ import manifest from './manifest';
  * and keybindings; the viewer reports when full-screen zen ends without them
  * (Ctrl+K Z, the Command Palette).
  */
-export const pdfZenPlugin: PluginDefinition<PdfServices> = {
-  manifest,
-  activate(scope) {
-    const panels = scope.get('panels');
+export const pdfZenPlugin: Plugin = {
+  name: manifest.id,
+  inject: { required: ["pdfPanels"] },
+  apply(ctx) {
+    const panels = ctx.pdfPanels;
     let on = false;
     const show = (next: boolean): void => {
       on = next;
@@ -35,10 +37,10 @@ export const pdfZenPlugin: PluginDefinition<PdfServices> = {
       show(false);
       await vscode.commands.executeCommand('workbench.action.exitZenMode');
     };
-    scope.acquire(panels.onDidOpen(panel => panel.setZen(on)), 'listener');
-    scope.acquire(panels.handle('zen', (_panel, message) => message.exit ? exit() : show(false)), 'message handler');
-    scope.acquire(vscode.commands.registerCommand(ZEN_COMMAND_IDS.enterZen, enter), 'command');
-    scope.acquire(vscode.commands.registerCommand(ZEN_COMMAND_IDS.exitZen, exit), 'command');
-    scope.acquire({ dispose: () => show(false) }, 'viewer zen state');
+    ctx.own(panels.onDidOpen(panel => panel.setZen(on)), 'listener');
+    ctx.own(panels.handle('zen', (_panel, message) => message.exit ? exit() : show(false)), 'message handler');
+    ctx.own(vscode.commands.registerCommand(ZEN_COMMAND_IDS.enterZen, enter), 'command');
+    ctx.own(vscode.commands.registerCommand(ZEN_COMMAND_IDS.exitZen, exit), 'command');
+    ctx.own({ dispose: () => show(false) }, 'viewer zen state');
   },
 };

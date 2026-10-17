@@ -1,7 +1,6 @@
 /**
- * Every plugin of the extension. The order here is only the tie-break for
- * plugins that do not depend on each other; activation order comes from
- * each manifest's `requires` and `optional` (see runtime/plugin-runtime.ts).
+ * Every PDF plugin. Each starts once the services it injects exist (see
+ * @workshop/core), so this order only decides event and command precedence.
  *
  *   pdf          the viewer: custom editor, open editors, page/zoom/find, Open Location
  *   pdfToolbar   where the controls are: status bar entries, the mode setting
@@ -23,9 +22,9 @@ import { pdfRegionsPlugin } from './pdfRegions/plugin';
 import { pdfToolbarPlugin } from './pdfToolbar/plugin';
 import { pdfZenPlugin } from './pdfZen/plugin';
 import { pdfHistoryPlugin } from './pdfHistory/plugin';
-import type { PluginDefinition, PdfServices } from './services';
+import type { Plugin } from '@workshop/core';
 
-export const plugins: readonly PluginDefinition<PdfServices>[] = [
+export const plugins: readonly Plugin[] = [
   pdfPlugin,
   pdfHistoryPlugin,
   pdfToolbarPlugin,

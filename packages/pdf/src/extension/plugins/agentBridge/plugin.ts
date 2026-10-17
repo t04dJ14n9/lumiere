@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import type { PluginDefinition, PdfServices } from '../services';
+import type { Plugin } from "@workshop/core";
+import type {} from "../services";
 import { AGENT_BRIDGE_COMMAND_IDS } from '../pdf/registered-commands';
 import { PdfEnvelopePublisher } from './envelope';
 import { AgentHandoff } from './handoff';
@@ -18,32 +19,34 @@ import { registerAgentBridge } from './mcp/controller';
  * names. `vscodeEmbedPdf.bridge.envelope` is the Workbench v1 selection
  * envelope (docs/bridge-envelope.md), separate from that clipboard text.
  */
-export const agentBridgePlugin: PluginDefinition<PdfServices> = {
-  manifest,
-  activate(scope) {
-    const panels = scope.get('panels');
-    const context = scope.get('context');
-    const handoff = new AgentHandoff(() => scope.find('regions'));
-    const lastPdf = scope.acquire(new LastPdf(panels), 'last pdf');
+export const agentBridgePlugin: Plugin = {
+  name: manifest.id,
+  inject: { required: ["pdfPanels", "extensionContext", "pdfLog"], optional: ["regionSnapshots"] },
+  provides: ["pdfHandoff"],
+  apply(ctx) {
+    const panels = ctx.pdfPanels;
+    const context = ctx.extensionContext;
+    const handoff = new AgentHandoff(() => ctx.regionSnapshots);
+    const lastPdf = ctx.own(new LastPdf(panels), 'last pdf');
     const envelopes = new PdfEnvelopePublisher(handoff, {
       panel: () => lastPdf.panel,
     });
-    scope.acquire(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.copyLinkForAgent, () => {
+    ctx.own(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.copyLinkForAgent, () => {
       const panel = panels.active;
       return panel ? handoff.copyLinkForAgent(panel) : undefined;
     }), 'command');
-    scope.acquire(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.envelope, () => {
+    ctx.own(vscode.commands.registerCommand(AGENT_BRIDGE_COMMAND_IDS.envelope, () => {
       return envelopes.publish();
     }), 'command');
-    scope.acquire(panels.handle('copyLinkForAgent', panel => handoff.copyLinkForAgent(panel)), 'message handler');
-    scope.acquire(registerAgentBridge({
+    ctx.own(panels.handle('copyLinkForAgent', panel => handoff.copyLinkForAgent(panel)), 'message handler');
+    ctx.own(registerAgentBridge({
       extensionUri: context.extensionUri,
       globalStorageUri: context.globalStorageUri,
       panels,
       lastPdf,
       handoff,
-      log: scope.get('log'),
+      log: ctx.pdfLog,
     }), 'mcp controller');
-    scope.provide('handoff', handoff);
+    ctx.provide("pdfHandoff", handoff);
   },
 };
