@@ -6,11 +6,8 @@ import {
   type TransactionSpec,
 } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import {
-  caretPreserveAnnotation,
-  caretRestoreGeneration,
-  withPreservedCaret,
-} from "./preserve-caret";
+import { caretRestoreGeneration, withPreservedCaret } from "./preserve-caret";
+import { dispatchLivePreviewSelectionRemap } from "../../webview/ui/preserve-caret";
 
 function fixture() {
   let state = EditorState.create({
@@ -66,13 +63,12 @@ test("withPreservedCaret restores selection and scroll after a synchronous jump"
   await f.finish();
 });
 
-test("after-layout restore still repairs a tagged Live Preview remap", async () => {
+test("after-layout restore still repairs a Live Preview remap from the producer", async () => {
+  // Production remaps go through dispatchLivePreviewSelectionRemap (click-position
+  // correction; fence-guard restore in markdown-widget).
   const f = fixture();
   f.preserve();
-  f.view.dispatch({
-    selection: EditorSelection.single(0),
-    annotations: caretPreserveAnnotation.of("livePreviewRemap"),
-  });
+  dispatchLivePreviewSelectionRemap(f.view, EditorSelection.single(0));
   await f.finish();
   assert.equal(f.view.state.selection.main.head, 5);
 });

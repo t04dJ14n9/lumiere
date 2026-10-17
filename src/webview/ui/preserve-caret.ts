@@ -1,6 +1,7 @@
 import {
   Annotation,
   type EditorSelection,
+  type StateEffect,
   type Text,
 } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
@@ -43,6 +44,26 @@ export function selectionFitsDoc(
       range.head >= 0 &&
       range.head <= length,
   );
+}
+
+/**
+ * Live Preview decoration/pointer remaps that must not cancel a pending
+ * `withPreservedCaret` after-layout restore. Production call sites:
+ * click-position correction and fence-guard restore.
+ */
+export function dispatchLivePreviewSelectionRemap(
+  view: EditorView,
+  selection: EditorSelection,
+  options?: {
+    readonly effects?: StateEffect<unknown> | readonly StateEffect<unknown>[];
+  },
+): void {
+  view.dispatch({
+    selection,
+    scrollIntoView: false,
+    ...(options?.effects !== undefined ? { effects: options.effects } : {}),
+    annotations: caretPreserveAnnotation.of("livePreviewRemap"),
+  });
 }
 
 /**

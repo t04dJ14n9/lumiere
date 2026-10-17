@@ -2,6 +2,7 @@ import { StateField } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import {
   caretPreserveAnnotation,
+  dispatchLivePreviewSelectionRemap,
   restoreCaret,
   snapshotCaret,
 } from "../../webview/ui/preserve-caret";
@@ -19,14 +20,14 @@ export const caretRestoreGeneration = StateField.define<number>({
       !transaction.annotation(caretPreserveAnnotation)
     ) {
       // Vim motions and other unannotated selections supersede; LP remaps use
-      // caretPreserveAnnotation.of("livePreviewRemap").
+      // dispatchLivePreviewSelectionRemap (click-position, fence-guard).
       return generation + 1;
     }
     return generation;
   },
 });
 
-export { caretPreserveAnnotation };
+export { caretPreserveAnnotation, dispatchLivePreviewSelectionRemap };
 
 /**
  * Run a reconfigure (or similar) while keeping the caret and scroll put.

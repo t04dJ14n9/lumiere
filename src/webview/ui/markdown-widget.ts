@@ -2,6 +2,7 @@ import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
 import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
+import { dispatchLivePreviewSelectionRemap } from "./preserve-caret";
 import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 
@@ -666,10 +667,10 @@ function bindFenceClickGuard(
         }
         return;
       }
-      view.dispatch(
-        clearEffect
-          ? { selection, scrollIntoView: false, effects: clearEffect }
-          : { selection, scrollIntoView: false },
+      dispatchLivePreviewSelectionRemap(
+        view,
+        selection,
+        clearEffect ? { effects: clearEffect } : undefined,
       );
     });
   };

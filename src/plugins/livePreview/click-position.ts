@@ -1,4 +1,5 @@
 import { EditorSelection } from "@codemirror/state";
+import { dispatchLivePreviewSelectionRemap } from "../../webview/ui/preserve-caret";
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
 import {
@@ -138,10 +139,7 @@ export const clickPositionSync = ViewPlugin.define((view: EditorView) => {
       return;
     }
     const next = active.candidate!.domPos;
-    view.dispatch({
-      selection: EditorSelection.cursor(next),
-      scrollIntoView: false,
-    });
+    dispatchLivePreviewSelectionRemap(view, EditorSelection.cursor(next));
   };
   const onUp = (): void => {
     const active = press;
