@@ -1,5 +1,5 @@
 import { Compartment } from "@codemirror/state";
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { headingGutterClasses } from "./headings";
 import { lineNumberGutter } from "./gutter";

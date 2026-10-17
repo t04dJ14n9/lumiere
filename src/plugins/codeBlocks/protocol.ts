@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { offset } from "../editor/protocol";
 import type { ProcessorResult } from "./api";
 export const language = Schema.string()

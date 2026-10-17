@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { HostDocument, PanelShell, Workshop } from "../../shared/runtime";
 import { tasksHost } from "./host";
@@ -33,7 +33,7 @@ test("task RPC authorizes known notes, rejects stale lines and stops with its fi
     },
     clock,
   );
-  const root = Context.create();
+  const root = createRoot();
   const document = {
     uri: "file:///vault/Note.md",
     getText: () => "- [ ] task\r\nnext",

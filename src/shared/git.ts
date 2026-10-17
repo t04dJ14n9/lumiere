@@ -3,7 +3,7 @@ import type {
   GitBlameSnapshot,
   GitIdentity,
 } from "./git-blame";
-import type { Disposer } from "../kernel";
+import type { Disposer } from "@workshop/core";
 
 /** What the git diff plugins compare a note with. */
 export type GitRef = "HEAD" | "index";

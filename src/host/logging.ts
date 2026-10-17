@@ -1,5 +1,5 @@
 import type { LogOutputChannel } from "vscode";
-import type { Logger } from "../kernel";
+import type { Logger } from "@workshop/core";
 import { logText } from "../shared/logging";
 
 export function outputLogger(

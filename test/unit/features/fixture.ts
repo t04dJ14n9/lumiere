@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { Compartment, EditorState } from "@codemirror/state";
 import type { TransactionSpec } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import { Context, bindCaller } from "../../../src/kernel";
-import type { CallerBound } from "../../../src/kernel";
+import { createRoot, bindCaller } from "@workshop/core";
+import type { CallerBound } from "@workshop/core";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import { featureController } from "../../../src/webview/features";
 import { pluginRank } from "../../../src/plugins/catalog";
@@ -22,7 +22,7 @@ import {
   inlineRenderers,
 } from "../../../src/plugins/livePreview/registry";
 export function fixture() {
-  const root = Context.create({ rank: pluginRank });
+  const root = createRoot({ rank: pluginRank });
   const compartment = new Compartment();
   let state = EditorState.create({
     doc: "# Heading\n\nbody",
@@ -86,7 +86,7 @@ export function fixture() {
       throw new Error("unbound renderer");
     },
     [bindCaller](caller) {
-      const owner = caller.fiber!.definition.name;
+      const owner = caller.owner;
       return {
         ...preview,
         block: (renderer) =>
@@ -148,7 +148,7 @@ export function fixture() {
         ...editor,
         extend: (extension, options) =>
           registry.register(
-            options?.owner ?? caller.fiber!.definition.name,
+            options?.owner ?? caller.owner,
             extension,
             options?.slot,
           ),

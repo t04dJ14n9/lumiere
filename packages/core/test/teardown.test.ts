@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 
-declare module "../../../src/kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     "teardown.first": { read(): string };
     "teardown.second": { read(): string };
@@ -29,7 +29,7 @@ const errorsOf = () => {
 };
 
 test("a provider waits for a consumer already stopping before releasing its backing", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const order: string[] = [];
   const consumerStop = gate();
   const provider = root.plugin({
@@ -60,11 +60,11 @@ test("a provider waits for a consumer already stopping before releasing its back
   await Promise.all([consumerDisposed, providerDisposed]);
   assert.deepEqual(order, ["consumer stopped", "provider released"]);
   await root.dispose();
-  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+  assert.deepEqual(root.ledger.snapshot(), {});
 });
 
 test("two providers lost together both wait for their shared consumer", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const order: string[] = [];
   const consumerStop = gate();
   const providers = (["teardown.first", "teardown.second"] as const).map(
@@ -99,7 +99,7 @@ test("two providers lost together both wait for their shared consumer", async ()
 });
 
 test("concurrent disposals of a context both wait for the whole teardown", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const release = gate();
   let released = false;
   root.effect(() => async () => {
@@ -119,7 +119,7 @@ test("concurrent disposals of a context both wait for the whole teardown", async
 
 test("a failed cleanup leaves evidence in the ledger instead of a clean snapshot", async () => {
   const { errors, logger } = errorsOf();
-  const root = Context.create({ logger });
+  const root = createRoot({ logger });
   const fiber = root.plugin({
     name: "broken",
     apply(ctx) {
@@ -130,19 +130,19 @@ test("a failed cleanup leaves evidence in the ledger instead of a clean snapshot
   });
   await root.settled();
   await fiber.dispose();
-  assert.deepEqual(root.runtime.ledger.snapshot(), {
+  assert.deepEqual(root.ledger.snapshot(), {
     broken: { "failed effect": 1 },
   });
-  assert.deepEqual(errors, ["[broken] Effect disposal failed"]);
+  assert.deepEqual(errors, ["[broken] Disposal failed"]);
   await root.dispose();
 });
 
 test("a resource stays in the ledger until its cleanup has finished", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const release = gate();
   const stop = root.effect(() => () => release.opened);
   const stopped = stop();
-  assert.deepEqual(root.runtime.ledger.snapshot(), { root: { effect: 1 } });
+  assert.deepEqual(root.ledger.snapshot(), { root: { effect: 1 } });
   // A second release joins the first rather than reporting it done.
   let joined = false;
   const again = Promise.resolve(stop()).then(() => (joined = true));
@@ -150,18 +150,20 @@ test("a resource stays in the ledger until its cleanup has finished", async () =
   assert.equal(joined, false);
   release.open();
   await Promise.all([stopped, again]);
-  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+  assert.deepEqual(root.ledger.snapshot(), {});
   await root.dispose();
 });
 
-test("a rejected tracked job reaches settled() and is never an unhandled rejection", async () => {
+test("a rejected tracked job is logged, settled() still resolves, and nothing is unhandled", async () => {
   const unhandled: unknown[] = [];
   const record = (reason: unknown) => void unhandled.push(reason);
   process.on("unhandledRejection", record);
   try {
-    const root = Context.create();
-    root.runtime.track(Promise.reject(new Error("job failed")));
-    await assert.rejects(root.settled(), /job failed/);
+    const { errors, logger } = errorsOf();
+    const root = createRoot({ logger });
+    root.track(Promise.reject(new Error("job failed")));
+    await root.settled();
+    assert.deepEqual(errors, ["[root] Tracked work failed"]);
     await new Promise<void>((resolve) => setImmediate(resolve));
     assert.deepEqual(unhandled, []);
   } finally {
@@ -172,7 +174,7 @@ test("a rejected tracked job reaches settled() and is never an unhandled rejecti
 for (const outcome of ["resolves", "rejects"] as const) {
   test(`dispose waits for a release started before it (the inverse ${outcome})`, async () => {
     const { errors, logger } = errorsOf();
-    const root = Context.create({ logger });
+    const root = createRoot({ logger });
     const release = gate();
     const stop = root.effect(() => async () => {
       await release.opened;
@@ -194,7 +196,7 @@ for (const outcome of ["resolves", "rejects"] as const) {
     // The early caller got the error; teardown does not log it again.
     assert.deepEqual(errors, []);
     assert.deepEqual(
-      root.runtime.ledger.snapshot(),
+      root.ledger.snapshot(),
       outcome === "resolves" ? {} : { root: { "failed effect": 1 } },
     );
   });

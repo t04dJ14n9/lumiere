@@ -1,6 +1,6 @@
 import { Prec } from "@codemirror/state";
 import type { Extension } from "@codemirror/state";
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 
 export type ExtensionSlot = "override" | "suggest" | "keymap" | "base";
 const slots = { override: 0, suggest: 1, keymap: 2, base: 3 };

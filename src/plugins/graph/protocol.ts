@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 
 const node = Schema.object({
   id: Schema.string().max(1024),

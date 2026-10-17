@@ -100,7 +100,7 @@ for (const [name, text] of Object.entries(LINES)) {
     await page.evaluate((end) => window.harness.reveal(end), doc.length - 1);
     await dragFirstLine(page);
     const sel = await page.evaluate(() => {
-      const view = [...window.harness.views[0]!.runtime.fibers].find(
+      const view = [...window.harness.views[0]!.plugins].find(
         (fiber) => fiber.definition.name === "livePreview",
       )!.context!.editor.view;
       return view.state.selection.main;
@@ -204,7 +204,7 @@ test("a partial selection across bidirectional text keeps disjoint runs apart", 
   const from = text.indexOf("לום");
   await page.evaluate(
     ([anchor, head]) => {
-      const view = [...window.harness.views[0]!.runtime.fibers].find(
+      const view = [...window.harness.views[0]!.plugins].find(
         (fiber) => fiber.definition.name === "livePreview",
       )!.context!.editor.view;
       view.dispatch({ selection: { anchor: anchor!, head: head! } });

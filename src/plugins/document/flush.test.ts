@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { ViewDocument } from "./api";
 import { documentWebview } from "./webview";
 
 test("document flush rejects draft errors before transport and unregisters stopped participants", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const rpc = new Endpoint(
     {
       send() {},

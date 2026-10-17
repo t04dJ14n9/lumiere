@@ -37,7 +37,7 @@ const end = (n: number) => start(n) + lines[n - 1]!.length;
 async function select(page: Page, anchor: number, head: number) {
   await page.evaluate(
     ([anchor, head]) => {
-      const view = [...window.harness.views[0]!.runtime.fibers].find(
+      const view = [...window.harness.views[0]!.plugins].find(
         (fiber) => fiber.definition.name === "livePreview",
       )!.context!.editor.view;
       view.focus();
@@ -471,7 +471,7 @@ for (const mode of ["hidden", "below", "above"] as const) {
       expect(isAbove).toBe(mode === "above");
     }
     const sel = await page.evaluate(() => {
-      const view = [...window.harness.views[0]!.runtime.fibers].find(
+      const view = [...window.harness.views[0]!.plugins].find(
         (fiber) => fiber.definition.name === "livePreview",
       )!.context!.editor.view;
       return view.state.selection.main;

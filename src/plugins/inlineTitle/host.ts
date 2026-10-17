@@ -1,4 +1,4 @@
-import type { Disposer, Plugin } from "../../kernel";
+import type { Disposer, Plugin } from "@workshop/core";
 import type { Workshop } from "../../shared/runtime";
 import type { EditorPanel, Editors } from "../editor/api";
 import type {} from "../editor/api";

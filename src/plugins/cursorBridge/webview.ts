@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 
 /** Host-only plugin: no CodeMirror half. */
 export const cursorBridgeWebview: Plugin = {

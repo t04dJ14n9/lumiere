@@ -1,6 +1,6 @@
 import type { EditorView } from "@codemirror/view";
 type Element = EditorView["dom"];
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 export interface RenderPass {
   readOnly?: boolean;
   source: string;
@@ -38,7 +38,7 @@ export interface Fence {
   source: string;
   element: Element;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     render: RenderService;
   }

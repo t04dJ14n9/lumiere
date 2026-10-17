@@ -83,7 +83,7 @@ test("disposing the livePreview fiber removes its widgets and decorations", asyn
   await expect(rule).not.toContainText("---");
   await page.evaluate(async () => {
     const root = window.harness.views[0]!;
-    const fiber = [...root.runtime.fibers].find(
+    const fiber = [...root.plugins].find(
       (f) => f.definition.name === "livePreview",
     )!;
     await fiber.dispose();

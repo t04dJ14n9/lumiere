@@ -8,7 +8,7 @@ import {
   foldService,
 } from "@codemirror/language";
 import { EditorView as ViewFacets, keymap } from "@codemirror/view";
-import type { Context } from "../../../src/kernel";
+import type { RootContext } from "@workshop/core";
 import { markdownParser } from "../../../src/markdown/dialect";
 import { headings } from "../../../src/markdown/metadata/headings";
 import {
@@ -25,7 +25,7 @@ import {
 import { pairs } from "../../../src/plugins/autoPair/webview";
 import { indentation } from "../../../src/plugins/indentGuides/guides";
 import { fixture } from "./fixture";
-async function renderHooks(root: Context) {
+async function renderHooks(root: RootContext) {
   let reads = 0;
   const container = {
     innerHTML: "code",
@@ -93,14 +93,14 @@ for (const manifest of features) {
       (manifest.config?.parse({}) as Record<string, unknown>) ?? {};
     const required = settingsOf(providers[manifest.id] ?? []);
     await f.configure(required);
-    const baseline = f.root.runtime.ledger.snapshot();
+    const baseline = f.root.ledger.snapshot();
     const baseExtensions = f.extensions;
     const baseHandlers = f.handlers.size;
     await f.configure({
       ...required,
       [manifest.id]: { enabled: true, config },
     });
-    const fiber = [...f.root.runtime.fibers].find(
+    const fiber = [...f.root.plugins].find(
       (fiber) => fiber.definition.name === manifest.id,
     )!;
     assert.equal(fiber.state, "active", String(fiber.error));
@@ -148,7 +148,7 @@ for (const manifest of features) {
     assert.equal(f.extensions, baseExtensions);
     assert.equal(f.handlers.size, baseHandlers);
     // Every effect, listener, child plugin and service it held is gone.
-    assert.deepEqual(f.root.runtime.ledger.snapshot(), baseline);
+    assert.deepEqual(f.root.ledger.snapshot(), baseline);
     await f.configure({
       ...required,
       [manifest.id]: { enabled: true, config },
@@ -158,16 +158,15 @@ for (const manifest of features) {
     await f.root.dispose();
     assert.equal(f.extensions, 0);
     assert.equal(f.handlers.size, 0);
-    assert.deepEqual(f.root.runtime.ledger.snapshot(), {});
+    assert.deepEqual(f.root.ledger.snapshot(), {});
   });
 }
 
 test("plugin-graph's service providers are the plugins that really provide them", async () => {
   const f = fixture();
   await f.configure(settingsFor(new Set(features.map((item) => item.id))));
-  for (const [service, stack] of f.root.runtime.providers) {
-    const owner = (stack.at(-1)?.ctx as Context | undefined)?.owner;
-    if (owner && owner !== "root") {
+  for (const [service, owner] of f.root.providers) {
+    if (owner !== "root") {
       assert.equal(SERVICE_PROVIDERS[service], owner, service);
     }
   }
@@ -222,9 +221,9 @@ function settingsFor(enabled: Set<string>) {
 }
 function owners(f: ReturnType<typeof fixture>) {
   const running = new Set(
-    [...f.root.runtime.fibers].map((fiber) => fiber.definition.name),
+    [...f.root.plugins].map((fiber) => fiber.definition.name),
   );
-  for (const fiber of f.root.runtime.fibers) {
+  for (const fiber of f.root.plugins) {
     // A feature whose provider is off waits for it, as declared.
     const waiting = (providers[fiber.definition.name] ?? []).some(
       (id) => !running.has(id),
@@ -363,7 +362,7 @@ test("folding owns ranges, restores late and preserves folds across configuratio
   assert.equal(f.view.state.field(foldState, false), undefined);
   await f.configure({ folding: { enabled: true, config: {} } });
   assert.equal(f.view.state.field(foldState).size, 1);
-  const fiber = [...f.root.runtime.fibers].find(
+  const fiber = [...f.root.plugins].find(
     (item) => item.definition.name === "folding",
   )!;
   const originalContext = fiber.context;
@@ -401,16 +400,14 @@ test("catalog configuration changes preserve fresh-start ordered owners", async 
         config[key] = "index";
       }
     }
-    const fiber = [...f.root.runtime.fibers].find(
+    const fiber = [...f.root.plugins].find(
       (item) => item.definition.name === manifest.id,
     )!;
     const context = fiber.context;
     const foldIdentity = f.view.state.field(foldState);
     await f.configure(settings);
     assert.equal(
-      [...f.root.runtime.fibers].find(
-        (item) => item.definition.name === manifest.id,
-      ),
+      [...f.root.plugins].find((item) => item.definition.name === manifest.id),
       fiber,
     );
     assert.equal(

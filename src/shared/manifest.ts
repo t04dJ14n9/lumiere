@@ -1,4 +1,4 @@
-import type { Schema } from "../kernel";
+import type { Schema } from "@workshop/core";
 
 /**
  * What a plugin does, in terms an editor host can reason about without

@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 /** Window half: native text-editor links remain available before any custom pane opens. */
 export const nativeLinksHost: Plugin = {
   name: "links",

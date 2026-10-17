@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { Vaults } from "../vault/api";
 import type { ConfigFiles } from "./config-files";
 import type {

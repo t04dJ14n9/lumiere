@@ -1,5 +1,5 @@
 import type { Uri } from "vscode";
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { PickItem } from "../../shared/runtime";
 import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";

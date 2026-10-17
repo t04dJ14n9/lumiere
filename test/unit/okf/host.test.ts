@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { metadata } from "../../../src/markdown/metadata";
 import type { Okf } from "../../../src/plugins/okfCore/api";
 import { okfCoreHost } from "../../../src/plugins/okfCore/host";
@@ -29,7 +29,7 @@ test("a vault-root bundle is registered and then removed", async () => {
     settled: async () => {},
     pathOf: () => undefined,
   } as Vault;
-  const root = Context.create();
+  const root = createRoot();
   root.provide("vaults", {
     all: () => [vault],
     registerLinkPolicy: () => () => {},

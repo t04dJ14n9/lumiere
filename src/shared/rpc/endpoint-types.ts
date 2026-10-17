@@ -1,5 +1,5 @@
-import type { Protocol } from "../../kernel/protocol";
-import type { Schema } from "../schema";
+import type { Protocol } from "./protocol";
+import type { Schema } from "@workshop/core";
 import type { Message } from "./envelope";
 import type { Cancellation } from "./lifecycle";
 

@@ -1,4 +1,4 @@
-import type { Schema } from "../shared/schema";
+import type { Schema } from "@workshop/core";
 export interface Method<P = unknown, R = unknown> {
   params: Schema<P>;
   result: Schema<R>;

@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import { metadata } from "../../markdown/metadata";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import { fuzzyMatch } from "../../shared/fuzzy";

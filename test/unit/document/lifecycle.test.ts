@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { Session } from "../../../src/plugins/document/session";
 import { saveDocument } from "../../../src/plugins/document/save";
 import { documentHost } from "../../../src/plugins/document/host";
@@ -40,12 +40,12 @@ test("a failed final document flush rejects native save despite event listener e
       return () => {};
     },
   });
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", workshop);
   root.plugin(documentHost);
   await root.settled();
   const doc = fakeDocument();
-  const session = (root.runtime.value("documents") as Documents).session(doc);
+  const session = (root.service("documents") as Documents).session(doc);
   session.flush = async () => {
     throw new Error("still syncing");
   };

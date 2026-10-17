@@ -1,4 +1,4 @@
-import type { Context, Infer, Logger } from "../../kernel";
+import type { BaseContext, Infer, Logger } from "@workshop/core";
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import { logText } from "../../shared/logging";
 import type { logRecord } from "./protocol";
@@ -36,7 +36,7 @@ export function webviewLogging(
 }
 
 export function registerPanelLogging(
-  context: Context,
+  context: BaseContext,
   rpc: Endpoint,
   debugEnabled: () => boolean,
 ): void {

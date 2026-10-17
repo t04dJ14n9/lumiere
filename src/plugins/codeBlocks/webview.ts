@@ -1,5 +1,5 @@
 import { registerProcessors } from "./processor-view";
-import type { Context, Disposer, Plugin } from "../../kernel";
+import type { Context, Disposer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../render/api";
 import type {} from "../livePreview/api";

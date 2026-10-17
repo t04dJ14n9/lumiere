@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { NoteMetadata } from "../../markdown/metadata";
 import type { LinkSyntax } from "../../shared/vault-path";
 export interface VaultFile {
@@ -177,7 +177,7 @@ export interface LinkPolicy {
     targetPath: string;
   }): string | undefined;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     vault: VaultIndex;
     vaults: Vaults;

@@ -10,9 +10,8 @@ import {
 } from "@codemirror/language";
 import { Compartment } from "@codemirror/state";
 import { foldedViewState } from "./view-state";
-import type { Context } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type { EditorState } from "@codemirror/state";
-import type { Infer, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import { headingFold } from "./heading-fold";

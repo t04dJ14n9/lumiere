@@ -18,7 +18,7 @@ export interface VimService {
   /** Route remaining mapped/replayed keys until the source adapter is destroyed. */
   handoff(from: EditorView, to: EditorView): () => void;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     vim: VimService;
   }

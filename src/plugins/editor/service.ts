@@ -1,7 +1,7 @@
 import { afterLayout } from "./layout";
 import { observeNavigation, runNavigation } from "./navigation";
 import { editorSettings } from "./settings";
-import { bindCaller, type CallerBound, type Context } from "../../kernel";
+import { bindCaller, type CallerBound, type Context } from "@workshop/core";
 import type { EditorService } from "./api";
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import type { ExtensionRegistry } from "./extensions";
@@ -70,7 +70,7 @@ function bindEditorExtensions(
           options?: Parameters<EditorService["extend"]>[1],
         ) =>
           registry.register(
-            options?.owner ?? caller.fiber!.definition.name,
+            options?.owner ?? caller.owner,
             extension,
             options?.slot,
           );

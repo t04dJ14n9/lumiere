@@ -7,7 +7,7 @@ import {
   MAX_DIFF_LINES,
   exceedsDiffLimits,
 } from "../../../src/shared/diff";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { createRenderer } from "../../../src/markdown/html";
 import { barTooltip, kindFor } from "../../../src/plugins/gitGutter/gutter";
 import {
@@ -168,7 +168,7 @@ async function host(
   save: () => Promise<boolean> = async () => true,
 ) {
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   let saved = 0;
   const errors: string[] = [];
   root.provide("workshop", {

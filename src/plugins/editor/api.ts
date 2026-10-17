@@ -2,12 +2,11 @@ import type { RuntimePluginState } from "../../shared/plugin-state";
 import type { config as editorConfig } from "./manifest";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import type { ViewStateContributions } from "./contributions";
-import type { Infer } from "../../kernel";
+import type { Infer, Disposer } from "@workshop/core";
 import type { viewState } from "./protocol";
 import type { DocumentSession } from "../document/api";
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import type { Disposer } from "../../kernel";
 import type { PanelPort } from "../../shared/runtime";
 import type { CaretMode } from "./caret";
 export type { CaretMode } from "./caret";
@@ -75,7 +74,7 @@ export interface Editors {
   all(): readonly EditorPanel[];
   active(): EditorPanel | undefined;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     editor: EditorService;
     menu: Menu;
@@ -130,7 +129,7 @@ export interface Selections {
   ): Promise<SourceSelection | undefined>;
   validate(selection: SourceSelection): EditorPanel;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     selections: Selections;
   }

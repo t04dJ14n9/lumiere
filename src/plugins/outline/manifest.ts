@@ -1,6 +1,6 @@
 import { defineManifest } from "../../shared/manifest";
 import { MARKDOWN_EDITOR, whenActive } from "../../shared/editor-provider";
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import { FOLLOW_CURSOR_CONTEXT, VIEW_ID } from "./commands";
 
 export const config = Schema.object({

@@ -1,4 +1,4 @@
-import type { Context, Fiber, Infer, Plugin } from "../kernel";
+import type { BaseContext, PluginHandle, Infer, Plugin } from "@workshop/core";
 import type { featureSettings } from "../shared/features";
 import { features } from "../plugins/catalog";
 import * as plugins from "../plugins/webview";
@@ -6,7 +6,7 @@ import * as plugins from "../plugins/webview";
 type FeatureSettings = Infer<typeof featureSettings>;
 
 /** Serialize reconciliation so a slow stop cannot race a newer setting. */
-export function featureController(root: Context) {
+export function featureController(root: BaseContext) {
   const controller = new FeatureController(root);
   root.effect(() => () => controller.dispose());
   return (settings: FeatureSettings, defaults = false): Promise<void> =>
@@ -16,12 +16,12 @@ export function featureController(root: Context) {
 class FeatureController {
   private readonly active = new Map<
     string,
-    { fiber: Fiber<unknown>; signature: string }
+    { fiber: PluginHandle<unknown>; signature: string }
   >();
   private queue = Promise.resolve();
   private isDisposed = false;
 
-  constructor(private readonly root: Context) {}
+  constructor(private readonly root: BaseContext) {}
 
   dispose(): void {
     this.isDisposed = true;

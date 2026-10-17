@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { propertyKinds } from "../../markdown/properties/types";
 const kind = Schema.union(propertyKinds);
 export const types = Schema.record(kind);

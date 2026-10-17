@@ -1,4 +1,4 @@
-import type { Context, Infer } from "../../kernel";
+import type { Context, Infer } from "@workshop/core";
 import type {} from "./api";
 import { protocol, type action } from "./actions-protocol";
 /** Contextual table/widget menus can show provider labels without receiving callbacks. */

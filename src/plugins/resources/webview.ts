@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "./api";
 import { protocol } from "./protocol";
 export const resourcesWebview: Plugin = {

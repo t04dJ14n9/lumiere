@@ -38,7 +38,7 @@ async function centre(page: Page, n: number) {
 
 const selection = (page: Page) =>
   page.evaluate(() => {
-    const context = [...window.harness.views[0]!.runtime.fibers].find(
+    const context = [...window.harness.views[0]!.plugins].find(
       (fiber) => fiber.definition.name === "livePreview",
     )!.context!;
     const main = context.editor.view.state.selection.main;
@@ -461,7 +461,7 @@ test("a queued pointer release after the tracker is removed does not throw", asy
     }
   });
   await page.evaluate(async () => {
-    const view = [...window.harness.views[0]!.runtime.fibers].find(
+    const view = [...window.harness.views[0]!.plugins].find(
       (fiber) => fiber.definition.name === "livePreview",
     )!.context!.editor.view;
     view.contentDOM.dispatchEvent(

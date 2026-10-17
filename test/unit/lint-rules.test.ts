@@ -64,17 +64,15 @@ test("the readability limits apply to all source, unchanged", async () => {
 // Each reviewed exception, by file and the rules it disables. Adding one
 // needs a reason in the comment and an entry here, in the same review.
 const allowed = [
-  "src/kernel/context.ts: @typescript-eslint/no-empty-object-type, @typescript-eslint/no-unsafe-declaration-merging",
-  "src/kernel/context.ts: @typescript-eslint/no-unsafe-declaration-merging",
-  "src/kernel/types.ts: @typescript-eslint/no-empty-object-type",
-  "src/kernel/types.ts: @typescript-eslint/no-empty-object-type",
+  "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
+  "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
   "src/markdown/html/index.ts: @typescript-eslint/triple-slash-reference",
   "test/browser/fake-host.ts: @typescript-eslint/no-this-alias",
 ];
 
 test("inline lint exceptions are the reviewed ones, each with a reason", () => {
   const found: string[] = [];
-  for (const root of ["src", "test", "scripts"]) {
+  for (const root of ["src", "test", "scripts", "packages/core"]) {
     for (const path of readdirSync(root, {
       recursive: true,
       encoding: "utf8",

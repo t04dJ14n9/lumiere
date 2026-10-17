@@ -1,4 +1,4 @@
-import type { Context, Fiber } from "../../kernel";
+import type { Context, PluginHandle as StartedPlugin } from "@workshop/core";
 import type { ApiPlatform } from "./platform";
 import type {
   MarkdownWorkshopApi,
@@ -19,7 +19,7 @@ import { RpcError } from "../../shared/rpc/lifecycle";
 import { builtinCatalog } from "./catalog";
 interface Entry {
   definition: ExternalPlugin;
-  fiber?: Fiber<void>;
+  fiber?: StartedPlugin<void>;
   services?: Partial<PublicServices>;
   live: boolean;
 }

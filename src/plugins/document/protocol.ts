@@ -1,5 +1,6 @@
 import { ChangeSet } from "@codemirror/state";
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 const change = new Schema<unknown[]>(
   (value) => {
     ChangeSet.fromJSON(value);

@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 export const action = Schema.object({
   owner: Schema.string().min(1).max(256),
   id: Schema.string().min(1).max(256),

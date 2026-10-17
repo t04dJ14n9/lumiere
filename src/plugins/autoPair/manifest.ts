@@ -1,5 +1,5 @@
 import { defineManifest } from "../../shared/manifest";
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 export const config = Schema.object({
   brackets: Schema.boolean().default(true),
   markdown: Schema.boolean().default(true),

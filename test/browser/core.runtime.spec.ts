@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { build } from "esbuild";
-test("the unchanged pure kernel runs and disposes in Chromium", async ({
+test("the plugin core (on Cordis) runs and disposes in Chromium", async ({
   page,
 }) => {
   const bundle = await build({
     stdin: {
       contents: `
-    import { Context } from './src/kernel';
-    const root = Context.create();
+    import { createRoot } from '@workshop/core';
+    const root = createRoot();
     const order = [];
     root.plugin({ name: 'browser', apply(ctx) {
       ctx.effect(() => () => order.push('disposed'));

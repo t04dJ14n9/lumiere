@@ -1,4 +1,4 @@
-import type { Disposer } from "../kernel";
+import type { Disposer } from "@workshop/core";
 
 export interface CommandViews {
   command(id: string, run: (...args: unknown[]) => unknown): Disposer;

@@ -1,4 +1,4 @@
-import type { Context, Fiber, Plugin } from "../kernel";
+import type { BaseContext, PluginHandle, Plugin } from "@workshop/core";
 import type { Manifest } from "../shared/manifest";
 import type { Workshop } from "../shared/runtime";
 
@@ -8,7 +8,7 @@ import type { Workshop } from "../shared/runtime";
  * preset, like editor plugins follow theirs per panel.
  */
 export function workbenchFeatures(
-  root: Context,
+  root: BaseContext,
   workshop: Workshop,
   plugins: readonly { manifest: Manifest; plugin: Plugin; config?: unknown }[],
 ): void {
@@ -16,7 +16,7 @@ export function workbenchFeatures(
   if (!views) {
     return;
   }
-  const active = new Map<string, Fiber<unknown>>();
+  const active = new Map<string, PluginHandle<unknown>>();
   let queue = Promise.resolve();
   const refresh = () => {
     queue = queue
@@ -36,7 +36,7 @@ export function workbenchFeatures(
       .catch((error) =>
         root.logger.error("Workshop feature update failed", error),
       );
-    root.runtime.track(queue);
+    root.track(queue);
   };
   if (workshop.onConfiguration) {
     root.effect(() => workshop.onConfiguration!(refresh));
@@ -46,8 +46,8 @@ export function workbenchFeatures(
 }
 
 async function toggle(
-  root: Context,
-  active: Map<string, Fiber<unknown>>,
+  root: BaseContext,
+  active: Map<string, PluginHandle<unknown>>,
   entry: { plugin: Plugin; enabled: boolean; config?: unknown },
 ): Promise<void> {
   const previous = active.get(entry.plugin.name);
@@ -58,7 +58,7 @@ async function toggle(
   if (entry.enabled && !previous) {
     active.set(
       entry.plugin.name,
-      root.plugin(entry.plugin, entry.config) as Fiber<unknown>,
+      root.plugin(entry.plugin, entry.config) as PluginHandle<unknown>,
     );
   }
 }

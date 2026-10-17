@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
 import { outlineHost } from "../../../src/plugins/outline/host";
 import {
@@ -107,7 +107,7 @@ export async function outlineFixture(
     },
     restore: async () => {},
   };
-  const root = Context.create({
+  const root = createRoot({
     logger: {
       debug() {},
       error: (_message, error) => {

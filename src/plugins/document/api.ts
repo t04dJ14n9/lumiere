@@ -2,7 +2,7 @@ import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import type { HostDocument, SourceEdit } from "../../shared/runtime";
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 export interface DocumentSession {
   readonly document: HostDocument;
   readonly text: string;
@@ -36,7 +36,7 @@ export interface ViewDocument {
   pump(): void;
   readonly error: string | undefined;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     documents: Documents;
     document: ViewDocument;

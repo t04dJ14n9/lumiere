@@ -1,7 +1,7 @@
 import { Compartment, EditorState } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { config } from "./manifest";
 export function pairs(options: Infer<typeof config>): string[] {

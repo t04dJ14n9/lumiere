@@ -1,12 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context, Schema, Service } from "../../../src/kernel";
-import type { Logger } from "../../../src/kernel";
-declare module "../../../src/kernel/types" {
+import { createRoot, Schema } from "@workshop/core";
+import type { Logger } from "@workshop/core";
+declare module "@workshop/core" {
   interface Services {
     value: number;
     replacement: number;
-    asynchronous: AsyncService;
   }
 }
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
@@ -19,14 +18,14 @@ function deferred() {
 }
 
 test("parent disposal joins a child that detached while its cleanup is still running", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const entered = deferred();
   const finish = deferred();
   let released = 0;
   const child = root.plugin({
     name: "detaching-child",
     apply(ctx) {
-      ctx.acquire("gated resource", async () => {
+      ctx.effect(() => async () => {
         entered.resolve();
         await finish.promise;
         released++;
@@ -49,18 +48,10 @@ test("parent disposal joins a child that detached while its cleanup is still run
     await Promise.all([childStop, parentStop]);
   }
   assert.equal(released, 1);
-  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+  assert.deepEqual(root.ledger.snapshot(), {});
 });
-class AsyncService extends Service {
-  constructor(ctx: Context) {
-    super(ctx, "asynchronous", undefined);
-  }
-  protected override async start() {
-    await tick();
-  }
-}
 test("required services gate, withdraw, and resume independent of load order", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const seen: number[] = [];
   const consumer = root.plugin({
     name: "consumer",
@@ -95,7 +86,7 @@ test("required services gate, withdraw, and resume independent of load order", a
 });
 test("teardown mirrors activation: services withdraw and consumers stop first, then effects and children LIFO; disposal errors are isolated", async () => {
   const order: string[] = [];
-  const root = Context.create();
+  const root = createRoot();
   const parent = root.plugin({
     name: "parent",
     apply(ctx) {
@@ -133,13 +124,12 @@ test("teardown mirrors activation: services withdraw and consumers stop first, t
   assert.equal(dependent.state, "pending");
   await root.dispose();
 });
-test("duplicate providers fail without affecting consumers; replacement stacks restore the prior provider", async () => {
-  const root = Context.create({ replaceable: ["replacement"] });
+test("a duplicate provider fails without affecting the first provider's consumers", async () => {
+  const root = createRoot();
   root.plugin({
     name: "first",
     apply(ctx) {
       ctx.provide("value", 1);
-      ctx.provide("replacement", 10);
     },
   });
   await root.settled();
@@ -152,27 +142,18 @@ test("duplicate providers fail without affecting consumers; replacement stacks r
   const seen: number[] = [];
   root.plugin({
     name: "consumer",
-    inject: { required: ["replacement"] },
+    inject: { required: ["value"] },
     apply(ctx) {
-      seen.push(ctx.replacement);
+      seen.push(ctx.value);
     },
   });
   await root.settled();
   assert.equal(duplicate.state, "failed");
-  const replacement = root.plugin({
-    name: "replacement",
-    apply(ctx) {
-      ctx.provide("replacement", 20);
-    },
-  });
-  await root.settled();
-  await replacement.dispose();
-  await root.settled();
-  assert.deepEqual(seen, [10, 20, 10]);
+  assert.deepEqual(seen, [1]);
   await root.dispose();
 });
 test("undeclared services throw; optional injection is allowed and refreshes on availability", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const seen: (number | undefined)[] = [];
   const bad = root.plugin({
     name: "bad",
@@ -201,7 +182,7 @@ test("undeclared services throw; optional injection is allowed and refreshes on 
   await root.dispose();
 });
 test("update reconfigures or restarts with validated config; failed apply retries and rolls back", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let runs = 0;
   let cleanups = 0;
   let config = 0;
@@ -249,7 +230,7 @@ test("update reconfigures or restarts with validated config; failed apply retrie
   await assert.rejects(plugin.update(1), /config/);
 });
 test("async failure rolls back effects and does not fail siblings", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let cleaned = false;
   const failing = root.plugin({
     name: "async",
@@ -269,7 +250,7 @@ test("async failure rolls back effects and does not fail siblings", async () => 
   await root.dispose();
 });
 test("disposal during async apply rejects late effects and never publishes a service", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const gate = deferred();
   let lateSetup = false;
   const fiber = root.plugin({
@@ -288,17 +269,7 @@ test("disposal during async apply rejects late effects and never publishes a ser
   await root.settled();
   assert.equal(fiber.state, "disposed");
   assert.equal(lateSetup, false);
-  assert.equal(root.runtime.value("value"), undefined);
-  await root.dispose();
-});
-test("Service class publishes only after async start and is withdrawn on stop", async () => {
-  const root = Context.create();
-  const fiber = root.plugin(AsyncService);
-  assert.equal(root.runtime.value("asynchronous"), undefined);
-  await root.settled();
-  assert.ok(root.runtime.value("asynchronous") instanceof AsyncService);
-  await fiber.dispose();
-  assert.equal(root.runtime.value("asynchronous"), undefined);
+  assert.equal(root.service("value"), undefined);
   await root.dispose();
 });
 test("logs identify plugin and record load and stop timings", async () => {
@@ -310,14 +281,14 @@ test("logs identify plugin and record load and stop timings", async () => {
     warn() {},
     error() {},
   };
-  const root = Context.create({ logger });
+  const root = createRoot({ logger });
   root.plugin({ name: "timed", apply() {} });
   await root.settled();
   await root.dispose();
   assert.deepEqual(logs, ["[timed] Loaded", "[timed] Stopped"]);
 });
 test("service withdrawal during loading invalidates the old activation and gates before restarting", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const gate = deferred();
   let runs = 0;
   let cleanups = 0;
@@ -341,6 +312,10 @@ test("service withdrawal during loading invalidates the old activation and gates
       }
     },
   });
+  // Let the consumer's first apply start and block on the gate.
+  await tick();
+  assert.equal(consumer.state, "loading");
+  assert.equal(runs, 1);
   await provider.dispose();
   await tick();
   assert.equal(consumer.state, "pending");
@@ -359,7 +334,7 @@ test("service withdrawal during loading invalidates the old activation and gates
   assert.equal(cleanups, 2);
 });
 test("contexts can cross async boundaries without being mistaken for thenables", async () => {
-  const root = Context.create();
+  const root = createRoot();
   assert.equal(await Promise.resolve(root), root);
   const fiber = root.plugin({ name: "plain", apply() {} });
   await root.settled();
@@ -368,7 +343,7 @@ test("contexts can cross async boundaries without being mistaken for thenables",
 });
 
 test("effects undone early and child fibers disposed on their own are forgotten", async () => {
-  const ctx = Context.create();
+  const ctx = createRoot();
   const undone: string[] = [];
   for (let i = 0; i < 100; i++) {
     const dispose = ctx.effect(() => () => {
@@ -379,17 +354,39 @@ test("effects undone early and child fibers disposed on their own are forgotten"
   ctx.effect(() => () => {
     undone.push("last");
   });
-  // White-box: the list a long-lived context keeps must not grow per effect.
-  assert.equal((ctx as unknown as { held: unknown[] }).held.length, 1);
+  // A long-lived context holds only what is still live.
+  assert.deepEqual(ctx.ledger.snapshot(), { root: { effect: 1 } });
   for (let i = 0; i < 100; i++) {
     await ctx.plugin({ name: `child${i}`, apply() {} }).dispose();
   }
   ctx.plugin({ name: "kept", apply() {} });
-  assert.deepEqual(
-    ctx.children.map((fiber) => fiber.definition.name),
-    ["kept"],
-  );
+  await ctx.settled();
+  assert.deepEqual(ctx.ledger.snapshot(), { root: { effect: 1, plugin: 1 } });
   await ctx.dispose();
   assert.equal(undone.length, 101);
   assert.equal(undone.at(-1), "last");
+});
+
+test("a plugin that declares what it provides cannot publish anything else", async () => {
+  const root = createRoot();
+  const declared = root.plugin({
+    name: "declared",
+    provides: ["value"],
+    apply(ctx) {
+      ctx.provide("value", 1);
+    },
+  });
+  const overreaching = root.plugin({
+    name: "overreaching",
+    provides: ["value"],
+    apply(ctx) {
+      ctx.provide("replacement", 2);
+    },
+  });
+  await root.settled();
+  assert.equal(declared.state, "active");
+  assert.equal(overreaching.state, "failed");
+  assert.match(String(overreaching.error), /without declaring it/);
+  assert.equal(root.service("replacement"), undefined);
+  await root.dispose();
 });

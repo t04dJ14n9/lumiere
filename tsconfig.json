@@ -8,9 +8,5 @@
       "node:*": ["./test/fixtures/layers/forbidden.ts"]
     }
   },
-  "include": [
-    "src/kernel/**/*.ts",
-    "src/shared/**/*.ts",
-    "src/markdown/**/*.ts"
-  ]
+  "include": ["src/shared/**/*.ts", "src/markdown/**/*.ts"]
 }

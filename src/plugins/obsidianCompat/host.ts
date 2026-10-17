@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type { Configuration } from "../../shared/configuration";
 import { OVERRIDE_KEYS } from "./app-settings";
 import { ContainedConfigFiles } from "./config-files";
@@ -115,7 +115,7 @@ function registerVaultPreparation(ctx: Context, configs: VaultConfigs): void {
   prepareActive();
 }
 function trackRefresh(ctx: Context, work: Promise<void>): void {
-  ctx.runtime.track(
+  ctx.track(
     work.catch((error) => {
       if (ctx.isLive) {
         ctx.logger.warn("Could not load Obsidian vault configuration.", error);

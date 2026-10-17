@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { MAX_DIFF_CHARS } from "../../shared/diff";
 export const baselineResult = Schema.object({
   status: Schema.union(["ok", "untracked", "unavailable", "tooLarge"]),

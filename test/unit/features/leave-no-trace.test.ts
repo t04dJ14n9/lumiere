@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
-import type { Plugin, Services } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import type { Plugin, Services } from "@workshop/core";
 import * as hostPlugins from "../../../src/plugins/host";
 import {
   features,
@@ -45,7 +45,7 @@ const definitions = Object.values(hostPlugins).filter(
 for (const definition of definitions) {
   test(`${definition.name} (host): stopping it leaves no trace`, async () => {
     const errors: string[] = [];
-    const root = Context.create({
+    const root = createRoot({
       rank: pluginRank,
       logger: {
         debug() {},
@@ -70,7 +70,7 @@ for (const definition of definitions) {
     }
     const { fake: panel } = trackingFake<never>("panel");
     const config = configs[definition.name] ?? { panel };
-    const baseline = root.runtime.ledger.snapshot();
+    const baseline = root.ledger.snapshot();
     const fiber = root.plugin(definition, config);
     await root.settled();
     await idle();
@@ -78,7 +78,7 @@ for (const definition of definitions) {
     await fiber.dispose();
     await root.settled();
     await idle();
-    assert.deepEqual(root.runtime.ledger.snapshot(), baseline);
+    assert.deepEqual(root.ledger.snapshot(), baseline);
     assert.deepEqual(errors, [], "teardown logged errors");
     for (const [key, value] of contextKeys) {
       if (key.startsWith("markdownWorkshop.has")) {
@@ -89,7 +89,7 @@ for (const definition of definitions) {
       assert.deepEqual(tracker.outstanding(), [], `${service} registrations`);
     }
     await root.dispose();
-    assert.deepEqual(root.runtime.ledger.snapshot(), {});
+    assert.deepEqual(root.ledger.snapshot(), {});
   });
 }
 
@@ -103,7 +103,7 @@ test("every host plugin of a catalog feature is covered", () => {
 });
 
 test("the check catches a registration made outside the plugin's context", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const { fake, tracker } = trackingFake<never>("workshop");
   root.provide("workshop", fake);
   const leaky = root.plugin({

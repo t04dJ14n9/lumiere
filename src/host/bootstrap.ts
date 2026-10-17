@@ -2,8 +2,10 @@ import { diffResourcesHost } from "../plugins/resources/diff-resources";
 import { nativeLinksHost } from "../plugins/links/native-host";
 import { features, pluginRank, workbenchFeatures } from "../plugins/catalog";
 import { hostFeatures } from "./features";
-import type { Logger, Plugin } from "../kernel";
-import { Context } from "../kernel";
+import { createRoot } from "@workshop/core";
+import type { BaseContext } from "@workshop/core";
+import { providePluginStates } from "../shared/plugin-state";
+import type { Logger, Plugin } from "@workshop/core";
 import type { Workshop } from "../shared/runtime";
 import type { VaultSystem } from "../plugins/vault/api";
 import {
@@ -48,12 +50,12 @@ export async function bootstrap(
   vaultSystem?: VaultSystem,
   logger?: Logger,
 ) {
-  const root = Context.create({
+  const root = createRoot({
     rank: pluginRank,
     ...(logger && { logger }),
-    replaceable: ["vault", "resources", "markers"],
   });
   root.provide("workshop", workshop);
+  providePluginStates(root);
   if (vaultSystem) {
     root.provide("vaultSystem", vaultSystem);
   }
@@ -99,7 +101,7 @@ export async function bootstrap(
 
 /** Window plugins, including the Tags view, which shares an editor-feature manifest. */
 function startWindowFeatures(
-  root: Context,
+  root: BaseContext,
   workshop: Workshop,
   okf: ReturnType<typeof createOkfFacade>,
 ): void {

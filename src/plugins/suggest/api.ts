@@ -1,5 +1,5 @@
 import type { EditorState } from "@codemirror/state";
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { Query } from "./protocol";
 export interface SuggestionContext {
   state: EditorState;
@@ -15,7 +15,7 @@ export type SuggestionSource = (
 export interface Suggest {
   register(source: SuggestionSource): Disposer;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     suggest: Suggest;
   }

@@ -1,4 +1,5 @@
-import { Context, type Services } from "../../kernel";
+import { createRoot } from "@workshop/core";
+import type { Context, Services, Disposer } from "@workshop/core";
 import type {
   ExternalPlugin,
   ExternalContext,
@@ -9,7 +10,6 @@ import type { ServiceBindings } from "./external-services";
 import { externalServices, ownedDisposable } from "./external-services";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { editorSnapshot } from "./snapshots";
-import type { Disposer } from "../../kernel";
 const serviceDependencies: Record<
   keyof PublicServices,
   readonly (keyof Services)[]
@@ -54,7 +54,7 @@ export async function applyExternal(
 ): Promise<void> {
   const services = externalServices(bindings);
   capture(services);
-  const isolated = Context.create({ logger: bindings.host.logger });
+  const isolated = createRoot({ logger: bindings.host.logger });
   bindings.host.effect(() => () => isolated.dispose());
   for (const [key, value] of Object.entries(services)) {
     if (key !== "logger") {

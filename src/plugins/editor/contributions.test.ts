@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { EditorView } from "@codemirror/view";
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import { ViewContributions } from "./contributions";
 
 test("late view-state contributors restore validated data and carry unknown keys", async () => {

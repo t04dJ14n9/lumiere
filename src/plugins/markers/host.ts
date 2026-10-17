@@ -4,7 +4,7 @@ import {
   type Context,
   type Disposer,
   type Plugin,
-} from "../../kernel";
+} from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../document/api";
 import type { Markers } from "./api";
@@ -22,7 +22,7 @@ export const markersHost: Plugin = {
     const service: Markers & CallerBound<Markers> = {
       ...store.service("markers"),
       [bindCaller](caller) {
-        const owner = caller.fiber?.definition.name ?? "root";
+        const owner = caller.owner;
         let live = true;
         caller.effect(() => () => {
           live = false;

@@ -1,4 +1,5 @@
-import { Schema, defineProtocol, type Infer } from "../../kernel";
+import { Schema, type Infer } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 export const query = Schema.object({
   kind: Schema.union(["link", "heading", "block", "tag"]),
   query: Schema.string().max(4096),

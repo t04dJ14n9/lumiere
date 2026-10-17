@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { PanelShell, Workshop } from "../../shared/runtime";
 import { onlineVideosHost } from "./host";
@@ -43,7 +43,7 @@ test("the host looks up details only in a trusted workspace", async (t) => {
   });
   let trusted = false;
   const { host, client } = pair();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("rpc", host);
   root.provide("workshop", {
     isTrusted: () => trusted,

@@ -3,7 +3,7 @@ import {
   type CallerBound,
   type Context,
   type Disposer,
-} from "../../kernel";
+} from "@workshop/core";
 import type { Editors, Selections } from "./api";
 import type { EditorActions } from "./actions-api";
 import { ActionRegistry } from "./actions";
@@ -22,7 +22,7 @@ export function registerEditorActions(
   const service: EditorActions & CallerBound<EditorActions> = {
     register: (action) => registry.register("editor", action),
     [bindCaller](caller) {
-      const owner = caller.fiber?.definition.name ?? "root";
+      const owner = caller.owner;
       let live = true;
       caller.effect(() => () => {
         live = false;

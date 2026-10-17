@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { commandsHost } from "../../../src/plugins/commands/host";
 import { livePreviewHost } from "../../../src/plugins/livePreview/host";
 import { features } from "../../../src/plugins/catalog";
@@ -38,7 +38,7 @@ test("every editor manifest command routes to its registered webview ID", async 
       },
     },
   } as unknown as EditorPanel;
-  const root = Context.create();
+  const root = createRoot();
   root.provide("editors", {
     all: () => [],
     active: () => panel,

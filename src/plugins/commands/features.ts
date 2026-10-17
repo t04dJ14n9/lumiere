@@ -1,4 +1,4 @@
-import type { Context, Fiber } from "../../kernel";
+import type { Context, PluginHandle } from "@workshop/core";
 import type { Manifest } from "../../shared/manifest";
 import { contributionId } from "../../shared/setting-schema";
 import type {} from "../editor/api";
@@ -9,7 +9,7 @@ export function featureCommands(
   ctx: Context,
   manifests: readonly Manifest[],
 ): void {
-  const fibers = new Map<string, Fiber>();
+  const fibers = new Map<string, PluginHandle>();
   let queue = Promise.resolve();
   let live = true;
   ctx.effect(() => () => {
@@ -39,7 +39,7 @@ export function featureCommands(
 async function reconcileFeatureCommands(
   ctx: Context,
   manifests: readonly Manifest[],
-  fibers: Map<string, Fiber>,
+  fibers: Map<string, PluginHandle>,
 ): Promise<void> {
   const panel = ctx.editors.active();
   const settings = panel ? ctx.workshop.config(panel.document) : undefined;
@@ -61,7 +61,10 @@ async function reconcileFeatureCommands(
   }
 }
 
-function registerFeatureCommands(ctx: Context, manifest: Manifest): Fiber {
+function registerFeatureCommands(
+  ctx: Context,
+  manifest: Manifest,
+): PluginHandle {
   return ctx.plugin({
     name: `commands:${manifest.id}`,
     apply(owned) {

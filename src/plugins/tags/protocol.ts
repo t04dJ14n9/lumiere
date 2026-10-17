@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { validTag } from "../../markdown/tags/grammar";
 export const tagName = new Schema<string>(
   (value) => {

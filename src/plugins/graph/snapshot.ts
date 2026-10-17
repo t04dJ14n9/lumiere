@@ -1,4 +1,4 @@
-import type { Infer } from "../../kernel";
+import type { Infer } from "@workshop/core";
 import { isInsideBundle } from "../../markdown/okf";
 import type { OkfBundle } from "../okfCore/api";
 import { HARD_MAX_PAYLOAD_BYTES } from "./admission";

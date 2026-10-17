@@ -1,4 +1,4 @@
-import { Schema } from "../schema";
+import { Schema } from "@workshop/core";
 /**
  * One message between the extension host and a webview. `batch` carries
  * coalesced notifications (see `Endpoint.notify`): its `version` grows by

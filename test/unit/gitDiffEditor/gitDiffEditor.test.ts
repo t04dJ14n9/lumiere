@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import {
   gitDiffEditorHost,
   sideLabel,
@@ -138,7 +138,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 test("host: the command opens HEAD against the note and follows edits; off disposes panels", async () => {
   const h = harness("native");
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -180,7 +180,7 @@ test("host: the command opens HEAD against the note and follows edits; off dispo
 
 test("host: in rendered mode a Markdown text diff is replaced by the rendered panel", async () => {
   const h = harness("rendered");
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -237,7 +237,7 @@ const flush = async () => {
 
 test("B1: an open still reading when the plugin is turned off creates nothing", async () => {
   const h = slowHarness("native");
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -253,7 +253,7 @@ test("B1: an open still reading when the plugin is turned off creates nothing", 
 
 test("B1: an update queued before its panel closes is dropped", async () => {
   const h = harness("native");
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -273,7 +273,7 @@ test("B1: an update queued before its panel closes is dropped", async () => {
 
 test("B3: an edit while the baseline loads is in the first comparison", async () => {
   const h = slowHarness("native");
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -315,7 +315,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
     ]) {
       const h = slowHarness("rendered");
       h.head.resolve({ getText: () => "# T\n\nold\n" });
-      const root = Context.create();
+      const root = createRoot();
       root.provide("workshop", h.workshop as never);
       root.plugin(gitDiffEditorHost);
       await root.settled();
@@ -328,7 +328,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
     {
       const h = slowHarness("rendered");
       h.head.reject(new Error("no such revision"));
-      const root = Context.create();
+      const root = createRoot();
       root.provide("workshop", h.workshop as never);
       root.plugin(gitDiffEditorHost);
       await root.settled();
@@ -363,7 +363,7 @@ test("B2: takeover keeps the native diff when it cannot be closed or replaced", 
           natives.push(args);
         },
       });
-      const root = Context.create();
+      const root = createRoot();
       root.provide("workshop", h.workshop as never);
       root.plugin(gitDiffEditorHost);
       await root.settled();
@@ -473,7 +473,7 @@ test("R3 B4: the second of two adjacent footnote definitions is found", () => {
 
 test("R3 B1: disabling while a read is pending drops its change listener at once", async () => {
   const h = slowHarness("native");
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -498,7 +498,7 @@ test("R3 B2: disabling while the native tab closes restores the native diff", as
       natives.push(args);
     },
   });
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   const fiber = root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -535,7 +535,7 @@ test("R3: a failed command presentation releases its change listener", async () 
       throw new Error("webview failed");
     },
   });
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();
@@ -738,7 +738,7 @@ test("review: Git and file events refresh after both native documents close; dis
     },
   });
   h.workshop.views.documentText = () => undefined as never;
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", h.workshop as never);
   root.plugin(gitDiffEditorHost);
   await root.settled();

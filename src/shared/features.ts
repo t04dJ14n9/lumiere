@@ -1,4 +1,4 @@
-import { Schema } from "../kernel";
+import { Schema } from "@workshop/core";
 export const featureSettings = Schema.record(
   Schema.object({
     enabled: Schema.boolean(),

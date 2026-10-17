@@ -1,7 +1,7 @@
 import type {} from "../editor/api";
 import createDOMPurify from "dompurify";
 import { sanitizerOptions } from "./sanitizer-options";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../dialect/api";
 import type { RenderPass, RenderService } from "./api";
 import { createRenderPass } from "./pass";

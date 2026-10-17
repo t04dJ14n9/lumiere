@@ -1,4 +1,5 @@
-import { Schema, defineProtocol, type Infer } from "../../kernel";
+import { Schema, type Infer } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 export const result = Schema.object({
   path: Schema.string().max(8192),
   href: Schema.string().max(32768),

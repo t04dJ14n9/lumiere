@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import { asStrings } from "../../shared/values";
 import type { DiagnosticEntry } from "../../shared/workspace-files";
 import type { WorkspaceFiles } from "../../shared/workspace-files";

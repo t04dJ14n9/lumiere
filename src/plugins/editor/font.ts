@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 
 /**
  * A native editor setting read for Markdown files: an invalid value (from a

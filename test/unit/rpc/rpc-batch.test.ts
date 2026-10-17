@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { defineProtocol, Schema } from "../../../src/kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../../src/shared/rpc/protocol";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import { parseEnvelope } from "../../../src/shared/rpc/envelope";
 

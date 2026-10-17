@@ -1,4 +1,4 @@
-import type { Logger } from "../../kernel";
+import type { Logger } from "@workshop/core";
 import type { EditorService } from "../editor/api";
 import type { RenderPass } from "../render/api";
 import { codePosition } from "./code-selection";

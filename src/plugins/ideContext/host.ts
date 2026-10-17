@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { contributionId } from "../../shared/setting-schema";
 import { buildMwIdeContextPacket } from "./adapter";

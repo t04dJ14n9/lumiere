@@ -2,7 +2,7 @@ import { observeReader } from "./navigation";
 import { afterLayout } from "./layout";
 import { getSyncedVersion } from "@codemirror/collab";
 import { EditorView } from "@codemirror/view";
-import type { Context, Infer } from "../../kernel";
+import type { Context, Infer } from "@workshop/core";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import type { EditorService } from "./api";
 import { mapAnchor, type JumpAnchor } from "./jump-history";

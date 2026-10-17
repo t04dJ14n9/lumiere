@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import { isInsideBundle } from "../../markdown/okf";
 import type { HostViews } from "../../shared/runtime";
 import type { OkfBundle } from "../okfCore/api";

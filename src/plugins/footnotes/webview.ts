@@ -1,6 +1,6 @@
 import { protocol as links } from "../links/protocol";
 import { EditorView } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import { footnotes } from "../../markdown/metadata/footnotes";
 import type { Footnote } from "../../markdown/metadata/footnotes";
 import type {} from "../editor/api";

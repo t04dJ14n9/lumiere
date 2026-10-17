@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { registerJumpHistory } from "../../../src/plugins/editor/jump-host";
 import { protocol } from "../../../src/plugins/editor/jump-protocol";
 import type { JumpAnchor } from "../../../src/plugins/editor/jump-history";
@@ -17,7 +17,7 @@ const anchor = (at: number): JumpAnchor => ({
   scroll: { from: at, offset: -2, left: 0, top: at },
 });
 async function fixture() {
-  const root = Context.create();
+  const root = createRoot();
   const commands = new Map<string, () => unknown>();
   root.provide(
     "workshop",

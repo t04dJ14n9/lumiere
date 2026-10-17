@@ -1,4 +1,4 @@
-import type { Context, Fiber } from "../kernel";
+import type { BaseContext, PluginHandle } from "@workshop/core";
 import { features } from "../plugins/catalog";
 import type { PanelShell, Workshop } from "../shared/runtime";
 import {
@@ -16,11 +16,11 @@ import {
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
 export function hostFeatures(
-  root: Context,
+  root: BaseContext,
   panel: PanelShell,
   workshop: Workshop,
 ): void {
-  const active = new Map<string, Fiber<{ panel: PanelShell }>>();
+  const active = new Map<string, PluginHandle<{ panel: PanelShell }>>();
   let live = true;
   let queue = Promise.resolve();
   root.effect(() => () => {
@@ -65,7 +65,7 @@ export function hostFeatures(
       .catch((error) =>
         root.logger.error("Host feature configuration failed", error),
       );
-    root.runtime.track(queue);
+    root.track(queue);
   };
   if (workshop.onConfiguration) {
     root.effect(() => workshop.onConfiguration!(refresh));

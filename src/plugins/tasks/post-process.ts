@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import { frontmatter } from "../../markdown/properties";
 import type { RenderPass } from "../render/api";
 import type { EditorService } from "../editor/api";

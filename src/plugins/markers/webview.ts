@@ -1,5 +1,5 @@
 import { getSyncedVersion, sendableUpdates } from "@codemirror/collab";
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../livePreview/api";
 import { protocol as documentProtocol } from "../document/protocol";

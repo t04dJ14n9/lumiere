@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { markersHost } from "../../../src/plugins/markers/host";
 import { protocol } from "../../../src/plugins/markers/protocol";
 import type { Markers } from "../../../src/plugins/markers/api";
 import { fixture } from "../agent-bridge/fixture";
 test("markers isolate owners, validate atomically and revoke disposed providers and actions", async () => {
   const f = fixture();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("editors", f.editors);
   const host = root.plugin(markersHost);
   await root.settled();

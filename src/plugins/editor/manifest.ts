@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import { fontFields, fontNativeKeys, fontSize, lineHeight } from "./font";
 import { caretFields, caretNativeKeys } from "./caret-settings";
 export const config = Schema.object({

@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { Fence, RenderPass } from "../render/api";
 import type {} from "../editor/api";
 import { CancelToken } from "../../shared/rpc/lifecycle";

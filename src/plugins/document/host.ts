@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type { HostDocument } from "../../shared/runtime";
 import { Session } from "./session";
 import type { Documents } from "./api";

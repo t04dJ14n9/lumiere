@@ -1,5 +1,5 @@
 import { keymap } from "@codemirror/view";
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { continueList, removeMarker } from "./commands";
 export const smartListsWebview: Plugin = {

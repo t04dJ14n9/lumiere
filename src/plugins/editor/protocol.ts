@@ -1,7 +1,8 @@
 import { runtimePluginStates } from "../../shared/plugin-state";
 import { config as editorConfig } from "./manifest";
 import { featureSettings } from "../../shared/features";
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 export const logRecord = Schema.object({
   level: Schema.union(["debug", "warn", "error"]),
   message: Schema.string().max(8000),

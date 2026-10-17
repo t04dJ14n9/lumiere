@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import type { Context } from "@workshop/core";
 
-declare module "../../../src/kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     backed: { read(): string };
   }
@@ -14,7 +15,7 @@ declare module "../../../src/kernel/types" {
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 
 test("a failing apply rolls back everything it acquired and never starts its children", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let childStarted = false;
   let released = 0;
   const failing = root.plugin({
@@ -23,11 +24,14 @@ test("a failing apply rolls back everything it acquired and never starts its chi
       ctx.effect(() => () => {
         released++;
       });
-      ctx.acquire("registration", {
-        dispose() {
-          released++;
+      ctx.own(
+        {
+          dispose() {
+            released++;
+          },
         },
-      });
+        "registration",
+      );
       ctx.provide("backed", { read: () => "never" });
       ctx.plugin({
         name: "child",
@@ -42,14 +46,14 @@ test("a failing apply rolls back everything it acquired and never starts its chi
   assert.equal(failing.state, "failed");
   assert.equal(childStarted, false);
   assert.equal(released, 2);
-  assert.equal(root.runtime.value("backed"), undefined);
-  assert.deepEqual(root.runtime.ledger.snapshot(), { root: { fiber: 1 } });
+  assert.equal(root.service("backed"), undefined);
+  assert.deepEqual(root.ledger.snapshot(), { root: { plugin: 1 } });
   await root.dispose();
-  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+  assert.deepEqual(root.ledger.snapshot(), {});
 });
 
 test("an async apply publishes its services and starts its children only on commit", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let resolve!: () => void;
   const gate = new Promise<void>((r) => {
     resolve = r;
@@ -69,17 +73,17 @@ test("an async apply publishes its services and starts its children only on comm
     },
   });
   await tick();
-  assert.equal(root.runtime.value("backed"), undefined);
+  assert.equal(root.service("backed"), undefined);
   assert.equal(childStarted, false);
   resolve();
   await root.settled();
   assert.equal(childStarted, true);
-  assert.ok(root.runtime.value("backed"));
+  assert.ok(root.service("backed"));
   await root.dispose();
 });
 
 test("consumers finish stopping before the resource backing a service is released", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const order: string[] = [];
   let open = false;
   const provider = root.plugin({
@@ -121,31 +125,31 @@ test("consumers finish stopping before the resource backing a service is release
 });
 
 test("the ledger names what each plugin holds and is empty after disposal", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const fiber = root.plugin({
     name: "holder",
     apply(ctx) {
       ctx.effect(() => () => {});
       ctx.on("transaction/ping", () => {});
-      ctx.acquire("watcher", { dispose() {} });
+      ctx.own({ dispose() {} }, "watcher");
       ctx.provide("backed", { read: () => "x" });
     },
   });
   await root.settled();
-  assert.deepEqual(root.runtime.ledger.snapshot().holder, {
+  assert.deepEqual(root.ledger.snapshot().holder, {
     effect: 1,
     listener: 1,
     watcher: 1,
     service: 1,
   });
   await fiber.dispose();
-  assert.equal(root.runtime.ledger.snapshot().holder, undefined);
+  assert.equal(root.ledger.snapshot().holder, undefined);
   await root.dispose();
-  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+  assert.deepEqual(root.ledger.snapshot(), {});
 });
 
 test("a resource handed to a disposed context is released at once", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let ctxRef: Context | undefined;
   const fiber = root.plugin({
     name: "late",
@@ -157,11 +161,14 @@ test("a resource handed to a disposed context is released at once", async () => 
   await fiber.dispose();
   let released = false;
   assert.throws(() =>
-    ctxRef!.acquire("socket", {
-      dispose() {
-        released = true;
+    ctxRef!.own(
+      {
+        dispose() {
+          released = true;
+        },
       },
-    }),
+      "socket",
+    ),
   );
   assert.equal(released, true);
   await root.dispose();

@@ -1,4 +1,4 @@
-import { Schema, type Infer } from "../../kernel";
+import { Schema, type Infer } from "@workshop/core";
 import type { HostDocument, SourceEdit } from "../../shared/runtime";
 import type { EditorPanel } from "../editor/api";
 import { SourceCoordinates } from "../../shared/document/coordinates";

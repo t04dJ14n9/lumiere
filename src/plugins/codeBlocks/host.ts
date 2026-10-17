@@ -4,7 +4,7 @@ import {
   type Context,
   type Disposer,
   type Plugin,
-} from "../../kernel";
+} from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../vault/api";
 import type { CodeBlocks } from "./api";
@@ -27,7 +27,7 @@ export const codeBlocksHost: Plugin = {
     const service: CodeBlocks & CallerBound<CodeBlocks> = {
       register: (processor) => registry.register("codeBlocks", processor),
       [bindCaller](caller) {
-        const owner = caller.fiber?.definition.name ?? "root";
+        const owner = caller.owner;
         let live = true;
         caller.effect(() => () => {
           live = false;

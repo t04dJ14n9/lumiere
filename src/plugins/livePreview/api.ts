@@ -1,7 +1,7 @@
 import type { Extension, EditorState } from "@codemirror/state";
 import type { SyntaxNodeRef } from "@lezer/common";
 import type { EditorView, WidgetType } from "@codemirror/view";
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 export interface RenderBlock {
   from: number;
   to: number;
@@ -70,7 +70,7 @@ export interface LivePreview {
   readonly mode: "source" | "livePreview";
   setMode(mode: "source" | "livePreview"): void;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     livePreview: LivePreview;
   }

@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { EditorPanel } from "../../plugins/editor/api";
 import { protocol as jumps } from "../../plugins/editor/jump-protocol";
 import { protocol } from "../../plugins/editor/protocol";

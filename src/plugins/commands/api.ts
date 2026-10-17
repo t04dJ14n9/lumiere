@@ -1,9 +1,9 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 export interface Commands {
   register(id: string, run: () => boolean | Promise<boolean>): Disposer;
   run(id: string): Promise<boolean>;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     commands: Commands;
   }

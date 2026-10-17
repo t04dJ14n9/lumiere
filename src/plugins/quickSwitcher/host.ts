@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import { contributionId } from "../../shared/setting-schema";
 import type { Vault, Vaults } from "../vault/api";
 import { switcherItems } from "./ranking";

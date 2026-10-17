@@ -1,6 +1,6 @@
 import type { Endpoint } from "../../shared/rpc/endpoint";
 import type { CancelToken } from "../../shared/rpc/lifecycle";
-import type { Infer } from "../../kernel";
+import type { Infer } from "@workshop/core";
 import { protocol, type processors } from "./protocol";
 import type { ProcessorResult } from "./api";
 export class ProcessorClient {

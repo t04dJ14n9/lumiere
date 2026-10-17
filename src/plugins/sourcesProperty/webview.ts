@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "../properties/api";
 import { bindSources } from "./bind";
 import { renderSources } from "./markup";

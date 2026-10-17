@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context, Schema, defineProtocol } from "../../../src/kernel";
+import { createRoot, Schema } from "@workshop/core";
+import { defineProtocol } from "../../../src/shared/rpc/protocol";
 import { registerEditorSettings } from "../../../src/webview/editor-settings";
 import { pluginReporting } from "../../../src/webview/plugin-reporting";
 import { protocol } from "../../../src/plugins/editor/protocol";
@@ -24,7 +25,7 @@ const probe = defineProtocol("test.probe", {
 
 test("a request after configureEditor sees the settings applied, however long the update takes", async () => {
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   const applied = gate();
   const initial = editorConfig.parse({});
   const editor = {
@@ -46,7 +47,7 @@ test("a request after configureEditor sees the settings applied, however long th
 
 test("a request after configure sees the feature settings applied", async () => {
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   const applied = gate();
   let current = "old";
   pluginReporting(root, pair.client, async () => {

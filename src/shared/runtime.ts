@@ -1,7 +1,6 @@
 import type { DiffViews, GitAccess } from "./git";
-import type { Infer } from "../kernel";
+import type { Infer, Disposer } from "@workshop/core";
 import type { featureSettings } from "./features";
-import type { Disposer } from "../kernel";
 import type { Cancellation } from "./rpc/lifecycle";
 import type { Endpoint, Transport } from "./rpc/endpoint";
 import type { EditorProvider } from "./editor-provider";
@@ -140,7 +139,7 @@ export interface Workshop {
   git?: GitAccess;
   diffViews?: DiffViews;
 }
-declare module "../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     rpc: Endpoint;
     workshop: Workshop;

@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 export const startup = Schema.object({ query: Schema.string().max(4096) });
 export const submission = Schema.object({
   id: Schema.number().min(1),

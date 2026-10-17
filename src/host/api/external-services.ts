@@ -1,4 +1,4 @@
-import type { Context, Disposer } from "../../kernel";
+import type { Context, Disposer } from "@workshop/core";
 import type {
   PublicServices,
   EditorAction,

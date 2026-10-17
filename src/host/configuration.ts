@@ -1,4 +1,4 @@
-import type { Disposer } from "../kernel";
+import type { Disposer } from "@workshop/core";
 import type {
   Configuration,
   ConfigurationInspection,

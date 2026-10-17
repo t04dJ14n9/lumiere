@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import type {
   HostDocument,
   PanelShell,
@@ -58,7 +58,7 @@ test("Sources opens a PDF after containing the target, not the note-source allow
   await assert.rejects(resources.authorize(pdfUri), /Unknown note source/);
 
   const { host, client, dispose } = rpcPair();
-  const ctx = Context.create();
+  const ctx = createRoot();
   ctx.provide("rpc", host);
   ctx.provide("resources", resources);
   ctx.provide("okf", {

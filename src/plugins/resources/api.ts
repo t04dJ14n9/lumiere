@@ -13,7 +13,7 @@ export interface Resources {
   authorizeTarget?(target: string): Promise<void>;
   load(target: string, source?: string, syntax?: LinkSyntax): Promise<Resource>;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     resources: Resources;
   }
@@ -25,7 +25,7 @@ export interface DiffResources {
     load(target: string): Promise<string>;
   }>;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     diffResources: DiffResources;
   }

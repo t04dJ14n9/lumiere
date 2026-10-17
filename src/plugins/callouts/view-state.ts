@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import type { EditorView } from "@codemirror/view";
 
 /** Per-plugin disclosure memory; live bindings also support explicit view transfer. */

@@ -102,12 +102,18 @@ export default tseslint.config(
       "docs/obsidian-measurements/**",
       // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
       "docs/vim-caret-measurements/**",
+      // Imported from PDF Workshop; it joins this configuration as it is
+      // integrated into the shared packages.
+      "packages/pdf/**",
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
     files: ["**/*.ts"],
+    languageOptions: {
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
+    },
     plugins: { architecture: { rules: { boundaries } } },
     rules: {
       "@typescript-eslint/consistent-type-imports": "error",
@@ -120,7 +126,11 @@ export default tseslint.config(
     },
   },
   { files: ["**/*.ts", "**/*.mjs"], rules: style },
-  { files: ["src/**/*.ts"], ignores: ["**/*.test.ts"], rules: size },
+  {
+    files: ["src/**/*.ts", "packages/*/src/**/*.ts"],
+    ignores: ["**/*.test.ts"],
+    rules: size,
+  },
   {
     // Floating promises are lint errors: a promise is awaited, returned, or
     // explicitly discarded with `void`. `void` only records the decision; it
@@ -130,11 +140,12 @@ export default tseslint.config(
     //   a function documented as never rejecting (it catches inside).
     // - Lifecycle work (stop, cleanup, dispose) is returned or awaited by its
     //   owner, or tracked by something that awaits it; never `void`ed.
-    files: ["src/**/*.ts"],
+    files: ["src/**/*.ts", "packages/*/src/**/*.ts"],
     ignores: ["**/*.test.ts"],
     languageOptions: {
       parserOptions: {
         project: [
+          "./packages/core/tsconfig.json",
           "./tsconfig.json",
           "./src/host/tsconfig.json",
           "./src/webview/tsconfig.json",

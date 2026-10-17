@@ -1,5 +1,6 @@
-import { Schema, defineProtocol } from "../../kernel";
-import type { Infer } from "../../kernel";
+import { Schema } from "@workshop/core";
+import type { Infer } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 export const videoDetails = Schema.object({
   title: Schema.string().max(300).optional(),
   author: Schema.string().max(100).optional(),

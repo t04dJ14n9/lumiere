@@ -1,5 +1,6 @@
 import { offset } from "../editor/protocol";
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 export const navigationTarget = Schema.object({
   fragment: Schema.string().max(8192),
   at: offset.optional(),

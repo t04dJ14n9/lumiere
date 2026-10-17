@@ -1,7 +1,7 @@
 import { prepareResources } from "./resources";
 import type {} from "../resources/api";
 import type {} from "../gitGutter/api";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type { DiffPanel, DiffSide, OpenedDiff } from "../../shared/git";
 import { registerReportedCommands } from "../../shared/reported-command";
 import { contributionId } from "../../shared/setting-schema";

@@ -6,7 +6,7 @@ import {
   type CodeMirrorV,
 } from "@replit/codemirror-vim";
 import { EditorView } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "./api";
 import type {} from "../commands/api";

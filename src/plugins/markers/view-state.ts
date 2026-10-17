@@ -1,6 +1,6 @@
 import { ChangeSet, StateEffect, StateField } from "@codemirror/state";
 import type { SourceMarker } from "./api";
-import type { Infer } from "../../kernel";
+import type { Infer } from "@workshop/core";
 import type { snapshot } from "./protocol";
 import { mapMarker } from "./revisions";
 export interface OwnedMarker {

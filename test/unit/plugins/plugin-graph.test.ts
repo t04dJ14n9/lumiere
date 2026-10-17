@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import * as hostPlugins from "../../../src/plugins/host";
 import * as webviewPlugins from "../../../src/plugins/webview";
 import { PluginGraph } from "../../../src/plugins/plugin-graph";
-import type { Plugin } from "../../../src/kernel";
+import type { Plugin } from "@workshop/core";
 
 const definitions = [
   ...Object.values(hostPlugins),

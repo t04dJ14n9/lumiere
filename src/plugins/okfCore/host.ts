@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import { detectBundles, owningBundle } from "../../markdown/okf";
 import { isMarkdownPath } from "../../shared/vault-path";
 import type { Vault } from "../vault/api";

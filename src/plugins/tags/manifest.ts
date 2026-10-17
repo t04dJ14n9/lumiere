@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import { MARKDOWN_EDITOR, whenActive } from "../../shared/editor-provider";
 import { defineManifest } from "../../shared/manifest";
 export const config = Schema.object({

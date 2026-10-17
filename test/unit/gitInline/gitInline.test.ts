@@ -130,9 +130,7 @@ test("inline changes wait for the change bars and leave with them", async () => 
   const on = { enabled: true, config: {} };
   await f.configure({ gitInline: on });
   const inline = () =>
-    [...f.root.runtime.fibers].find(
-      (fiber) => fiber.definition.name === "gitInline",
-    )!;
+    [...f.root.plugins].find((fiber) => fiber.definition.name === "gitInline")!;
   assert.equal(inline().state, "pending");
   await f.configure({
     gitInline: on,

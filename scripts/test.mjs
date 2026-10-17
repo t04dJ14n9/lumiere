@@ -1,6 +1,6 @@
 import { readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-const tests = ["src", "test/unit"].flatMap((root) =>
+const tests = ["src", "test/unit", "packages/core/test"].flatMap((root) =>
   readdirSync(root, { recursive: true })
     .filter((p) => p.endsWith(".test.ts"))
     .map((p) => `${root}/${p}`),

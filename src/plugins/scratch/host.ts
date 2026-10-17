@@ -1,5 +1,5 @@
 import { frontmatter } from "../../markdown/properties";
-import type { Context, Disposer, Plugin } from "../../kernel";
+import type { Context, Disposer, Plugin } from "@workshop/core";
 import { registerReportedCommands } from "../../shared/reported-command";
 import { contributionId } from "../../shared/setting-schema";
 import type { HostDocument } from "../../shared/runtime";

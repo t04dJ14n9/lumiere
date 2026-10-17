@@ -1,6 +1,6 @@
 import { Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { config } from "./manifest";
 import { stickyMaxLines, stickyScrollExtension } from "./view";

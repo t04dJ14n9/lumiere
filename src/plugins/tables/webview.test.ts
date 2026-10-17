@@ -7,7 +7,7 @@ import {
   type Extension,
   type TransactionSpec,
 } from "@codemirror/state";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { EditorService } from "../editor/api";
 import type { MarkdownService } from "../dialect/api";
@@ -28,7 +28,7 @@ function wheel(overrides: Partial<WheelEvent> = {}) {
 }
 
 test("tables always register a widget and own their document-entry keys and commands", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const renderers: BlockRenderer[] = [];
   const extensions: Extension[] = [];
   const commands = new Map<string, () => boolean | Promise<boolean>>();

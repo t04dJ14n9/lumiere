@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import { isMarkdownPath } from "../../shared/vault-path";
 import { exclusionMatcher, isIgnoredPath } from "./exclusion";
 import type { FileEntry } from "./file-table";

@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { ApiPlatform } from "./platform";
 import type { MarkdownWorkshopApi } from "./types";
 import { immutable } from "./snapshots";

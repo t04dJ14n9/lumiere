@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { RenderPass, RenderService } from "./api";
 
 export type RenderContext = NonNullable<Parameters<RenderService["into"]>[2]>;

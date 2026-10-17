@@ -1,6 +1,6 @@
 import { protocol as jumpProtocol } from "../../src/plugins/editor/jump-protocol";
 import { config as editorConfig } from "../../src/plugins/editor/manifest";
-import type { Context } from "../../src/kernel";
+import type { RootContext } from "@workshop/core";
 import { Endpoint } from "../../src/shared/rpc/endpoint";
 import type {
   HostDocument,
@@ -31,7 +31,7 @@ export class BrowserHost {
   readonly endpoints: Endpoint[] = [];
   private readonly navigationSessions = new Map<string, string>();
   private navigationRequest = 0;
-  readonly views: Context[] = [];
+  readonly views: RootContext[] = [];
   readonly session: Session;
   clipboard = "";
   propertyTypes: PropertyTypes = {};

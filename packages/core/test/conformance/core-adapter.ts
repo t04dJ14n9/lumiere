@@ -1,24 +1,24 @@
-import { Context } from "../../../src/kernel";
-import type { Fiber, Plugin } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import type { Plugin, PluginHandle } from "@workshop/core";
 import type {
   BackingService,
   HarnessFactory,
   LifecycleState,
   PluginSpec,
   ServiceName,
-} from "./shared/harness";
+} from "./harness";
 
-declare module "../../../src/kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     lifecycleBacking: BackingService;
     lifecycleDerived: BackingService;
   }
 }
 
-/** Named enable retains a fiber while it loads; all barriers are kernel APIs. */
-export const createMarkdownHarness: HarnessFactory = (specs) => {
+/** Named enable retains a plugin handle; every barrier is the core's own. */
+export const createCoreHarness: HarnessFactory = (specs) => {
   const errors: string[] = [];
-  const root = Context.create({
+  const root = createRoot({
     logger: {
       debug() {},
       warn() {},
@@ -27,13 +27,13 @@ export const createMarkdownHarness: HarnessFactory = (specs) => {
       },
     },
   });
-  const fibers = new Map<string, Fiber<void>>();
+  const handles = new Map<string, PluginHandle<void>>();
   const definitions = new Map(
     specs.map((spec) => [spec.id, definition(spec, specs)]),
   );
 
-  function fiber(id: string): Fiber<void> {
-    const current = fibers.get(id);
+  function handle(id: string): PluginHandle<void> {
+    const current = handles.get(id);
     if (!current) {
       throw new Error(`No enabled plugin ${id}`);
     }
@@ -43,24 +43,24 @@ export const createMarkdownHarness: HarnessFactory = (specs) => {
   return {
     errors,
     async enable(id) {
-      const current = fibers.get(id);
+      const current = handles.get(id);
       if (!current || current.state === "disposed") {
         const plugin = definitions.get(id);
         if (!plugin) {
           throw new Error(`No plugin ${id}`);
         }
-        fibers.set(id, root.plugin(plugin));
+        handles.set(id, root.plugin(plugin));
       }
       await root.settled();
     },
-    disable: (id) => fiber(id).dispose(),
+    disable: (id) => handle(id).dispose(),
     async restart(id) {
-      await fiber(id).update(undefined);
+      await handle(id).update(undefined);
       await root.settled();
     },
     dispose: () => root.dispose(),
     state(id): LifecycleState {
-      const state = fibers.get(id)?.state;
+      const state = handles.get(id)?.state;
       if (state === "loading") {
         return "starting";
       }
@@ -69,14 +69,11 @@ export const createMarkdownHarness: HarnessFactory = (specs) => {
       }
       return "inactive";
     },
-    service: (name) => root.runtime.value(name) as BackingService | undefined,
+    service: (name) => root.service(name),
   };
 };
 
-function definition(
-  spec: PluginSpec,
-  specs: readonly PluginSpec[],
-): Plugin<void> {
+function definition(spec: PluginSpec, specs: readonly PluginSpec[]): Plugin {
   const required = (spec.requires ?? []).map((id): ServiceName => {
     const service = specs.find((candidate) => candidate.id === id)?.provides;
     if (!service) {

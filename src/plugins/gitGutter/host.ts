@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type { PanelShell } from "../../shared/runtime";
 import { exceedsDiffLimits } from "../../shared/diff";
 import type { DiffSide } from "../../shared/git-diff";

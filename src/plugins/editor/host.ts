@@ -5,7 +5,7 @@ import { SelectionSnapshots } from "./selection";
 import type { Manifest } from "../../shared/manifest";
 import { captureView, restoreView } from "./view-transfer";
 import type { PanelShell } from "../../shared/runtime";
-import type { Context, Plugin } from "../../kernel";
+import type { RootContext, Context, Plugin } from "@workshop/core";
 import type {} from "../document/api";
 import type {} from "../vault/api";
 import type { EditorPanel, Editors } from "./api";
@@ -15,7 +15,7 @@ import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { contributionId } from "../../shared/setting-schema";
 interface EditorHostConfig {
   features?: readonly Manifest[];
-  configure: (context: Context, panel: PanelShell) => void;
+  configure: (context: RootContext, panel: PanelShell) => void;
 }
 export const editorHost: Plugin<EditorHostConfig> = {
   name: "editor",
@@ -56,7 +56,7 @@ export const editorHost: Plugin<EditorHostConfig> = {
             }
             config.configure(context, panel);
           },
-          rank: ctx.runtime.rank,
+          rank: ctx.rankOf,
           logger: ctx.logger,
         });
         panels.set(panel.id, panel);

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { agentBridgeHost } from "../../../src/plugins/agentBridge/host";
 import { protocol } from "../../../src/plugins/agentBridge/protocol";
 import {
@@ -115,7 +115,7 @@ test("Copy Link for Agent on an unsaved note: cancel, copy text only, or save an
 });
 test("Copy Link for Agent host removes disabled handlers and restores them on enable", async () => {
   const f = fixture();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("editors", f.editors);
   root.provide("selections", f.selections);
   root.provide("workshop", f.workshop);

@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { DiffSide } from "../../shared/git";
 import type {} from "../resources/api";
 export async function prepareResources(

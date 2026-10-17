@@ -1,5 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import type { Logger } from "../../kernel";
+import type { Logger } from "@workshop/core";
 import type { RenderPass, RenderService } from "../render/api";
 
 /** Cancels stale cell renders before a cell editor takes ownership of its DOM. */

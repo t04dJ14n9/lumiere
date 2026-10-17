@@ -1,6 +1,6 @@
 import { EditorView, keymap } from "@codemirror/view";
 import { Prec } from "@codemirror/state";
-import type { Context, Plugin, Infer } from "../../kernel";
+import type { Context, Plugin, Infer } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../document/api";
 import type {} from "../commands/api";

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Schema } from "../../../src/kernel";
-import type { Infer } from "../../../src/kernel";
+import { Schema } from "@workshop/core";
+import type { Infer } from "@workshop/core";
 test("schemas validate every setting type, apply independent defaults and emit JSON Schema", () => {
   const schema = Schema.object({
     enabled: Schema.boolean().default(true),

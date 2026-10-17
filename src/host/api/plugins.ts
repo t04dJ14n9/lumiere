@@ -1,6 +1,5 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { EditorPanel } from "../../plugins/editor/api";
-import { runtimeStates } from "../../shared/plugin-state";
 import type { ApiPlatform } from "./platform";
 import type { ExternalPlugins } from "./external-manager";
 import type {
@@ -75,7 +74,10 @@ export function pluginOperations(
 function builtinStates(root: Context, id: string): PluginState[] {
   const panel = panelById(root, id);
   const config = root.workshop.config(panel.document);
-  const states = [...runtimeStates(root), ...(panel.pluginStates?.() ?? [])];
+  const states = [
+    ...root.pluginStates.list(),
+    ...(panel.pluginStates?.() ?? []),
+  ];
   return builtinCatalog.map((descriptor) => {
     const candidates = states.filter((state) => state.id === descriptor.id);
     const enabled =

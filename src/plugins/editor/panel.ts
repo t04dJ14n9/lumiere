@@ -3,9 +3,8 @@ import {
   type RuntimePluginState,
 } from "../../shared/plugin-state";
 import { registerPanelLogging } from "./logging";
-import { taggedLogger } from "../../kernel/logger";
-import type { Logger } from "../../kernel";
-import { Context } from "../../kernel";
+import { taggedLogger, createRoot } from "@workshop/core";
+import type { Logger, RootContext } from "@workshop/core";
 import type { Documents } from "../document/api";
 import type { EditorPanel } from "./api";
 import type { PanelShell, Workshop } from "../../shared/runtime";
@@ -16,7 +15,7 @@ import { webviewHTML } from "./webview-html";
 interface PanelOptions {
   onClose(): void;
   onState(): void;
-  configure(context: Context, shell: PanelShell): void;
+  configure(context: RootContext, shell: PanelShell): void;
   logger?: Logger;
   rank?: (owner: string) => number;
 }
@@ -28,7 +27,7 @@ export function createPanel(
   options: PanelOptions,
 ): EditorPanel {
   const { onClose, onState, configure, rank = () => 0 } = options;
-  const owned = Context.create({
+  const owned = createRoot({
     rank,
     ...(options.logger && {
       logger: taggedLogger(options.logger, shell.id),
@@ -76,7 +75,7 @@ export function createPanel(
 }
 
 function registerSessionHandshake(
-  owned: Context,
+  owned: RootContext,
   options: {
     shell: PanelShell;
     session: EditorPanel["session"];
@@ -117,7 +116,7 @@ function registerSessionHandshake(
 }
 
 function registerClipboard(
-  owned: Context,
+  owned: RootContext,
   rpc: Endpoint,
   clipboard: Workshop["clipboard"],
 ): void {
@@ -133,7 +132,7 @@ function registerClipboard(
 }
 
 function registerConfiguration(
-  owned: Context,
+  owned: RootContext,
   rpc: Endpoint,
   document: PanelShell["document"],
   workshop: Workshop,
@@ -168,7 +167,7 @@ function createPanelEndpoint(
 }
 
 function panelReporting(
-  owned: Context,
+  owned: RootContext,
   rpc: Endpoint,
   document: PanelShell["document"],
   workshop: Workshop,
@@ -247,7 +246,7 @@ function sendConfiguration(
  * synchronous close event can still see the panel's kernel alive.
  */
 function panelShutdown(
-  owned: Context,
+  owned: RootContext,
   shell: PanelShell,
   onClose: () => void,
 ): () => Promise<void> {

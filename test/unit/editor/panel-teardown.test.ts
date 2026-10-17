@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { editorHost } from "../../../src/plugins/editor/host";
 import type { PanelShell } from "../../../src/shared/runtime";
 import type { DocumentSession } from "../../../src/plugins/document/api";
@@ -20,7 +20,7 @@ async function hostWithPanel() {
   const errors: string[] = [];
   const order: string[] = [];
   const cleanup = gate();
-  const root = Context.create({
+  const root = createRoot({
     logger: {
       debug() {},
       warn() {},
@@ -104,7 +104,7 @@ test("stopping the editor host closes an open panel and waits for its whole clea
   // The host is stopping: no event through its dead context.
   assert.ok(!order.includes("closed event"));
   assert.equal(shellDisposed(), 1);
-  assert.deepEqual(root.runtime.ledger.snapshot(), {});
+  assert.deepEqual(root.ledger.snapshot(), {});
 });
 
 test("VS Code closing a panel while the host stops shares one panel shutdown", async () => {

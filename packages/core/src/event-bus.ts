@@ -1,4 +1,5 @@
-import type { Disposer, EventFunction, Events } from "./types";
+import type { Disposer } from "./activation";
+import type { EventFunction, Events } from "./types";
 import type { Logger } from "./logger";
 type Listener = {
   run: (...args: never[]) => unknown;

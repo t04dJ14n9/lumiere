@@ -1,5 +1,5 @@
 import { publicApiHost } from "../../plugins/publicApi/host";
-import type { Context } from "../../kernel";
+import type { Context, RootContext } from "@workshop/core";
 import type {} from "../../plugins/codeBlocks/api";
 import type { ApiPlatform } from "./platform";
 import type {
@@ -111,7 +111,7 @@ function bindEvents(
 }
 
 export async function createApi(
-  root: Context,
+  root: RootContext,
   platform: ApiPlatform,
 ): Promise<MarkdownWorkshopApi> {
   let api: MarkdownWorkshopApi | undefined;

@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "../vault/api";
 import { BacklinksTree, OPEN_COMMAND, VIEW_ID } from "./tree";
 

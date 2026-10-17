@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import { defineManifest } from "../../shared/manifest";
 
 export const config = Schema.object({

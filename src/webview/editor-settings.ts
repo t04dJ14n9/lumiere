@@ -1,4 +1,4 @@
-import type { Context, Infer } from "../kernel";
+import type { BaseContext, Infer } from "@workshop/core";
 import type { Endpoint } from "../shared/rpc/endpoint";
 import type { config as editorConfig } from "../plugins/editor/manifest";
 import { protocol } from "../plugins/editor/protocol";
@@ -17,7 +17,7 @@ interface Reconfigurable<C> {
  */
 export function registerEditorSettings<
   C extends { editor?: Infer<typeof editorConfig> },
->(root: Context, rpc: Endpoint, editor: Reconfigurable<C>): void {
+>(root: BaseContext, rpc: Endpoint, editor: Reconfigurable<C>): void {
   root.effect(() =>
     rpc.on(protocol, "configureEditor", (settings) =>
       editor

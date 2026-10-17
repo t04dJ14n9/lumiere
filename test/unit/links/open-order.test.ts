@@ -1,7 +1,7 @@
 import { CancelToken } from "../../../src/shared/rpc/lifecycle";
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { RevealRouter } from "../../../src/host/reveal-router";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
@@ -10,7 +10,7 @@ import type { Workshop, PanelShell } from "../../../src/shared/runtime";
 import { rpcPair } from "../../support/rpc-pair";
 
 test("a slow earlier link resolution cannot open over a newer request", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const pair = rpcPair();
   const router = new RevealRouter();
   let release!: () => void;

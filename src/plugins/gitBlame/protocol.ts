@@ -1,4 +1,5 @@
-import { Schema, ValidationError, defineProtocol } from "../../kernel";
+import { Schema, ValidationError } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { MAX_DIFF_CHARS } from "../../shared/diff";
 import type { GitBlameLineResult } from "../../shared/git-blame";
 

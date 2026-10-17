@@ -3,7 +3,7 @@ export interface Folding {
   unfoldAll(): boolean;
   toggle(): boolean;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     fold: Folding;
   }

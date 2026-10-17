@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import {
   MARKDOWN_BRIDGE_COMMAND,
   PDF_BRIDGE_COMMAND,

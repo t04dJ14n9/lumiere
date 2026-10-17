@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import type { Services } from "@workshop/core";
 import { codeBlocksHost } from "../../../src/plugins/codeBlocks/host";
 import { protocol } from "../../../src/plugins/codeBlocks/protocol";
 import { fixture } from "../agent-bridge/fixture";
@@ -9,7 +10,7 @@ test("processor RPC enforces trust, source containment, feature enablement and o
   const f = fixture();
   let trusted = false;
   let enabled = true;
-  const root = Context.create();
+  const root = createRoot();
   root.provide("editors", f.editors);
   root.provide("workshop", {
     ...f.workshop,
@@ -21,7 +22,7 @@ test("processor RPC enforces trust, source containment, feature enablement and o
     }),
   });
   root.plugin(codeBlocksHost);
-  let retained: Context["codeBlocks"] | undefined;
+  let retained: Services["codeBlocks"] | undefined;
   const owner = root.plugin({
     name: "example",
     inject: { required: ["codeBlocks"] },

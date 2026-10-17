@@ -1,4 +1,4 @@
-import type { Context, Infer } from "../../kernel";
+import type { Context, Infer } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { Clock, Transport } from "../../shared/rpc/endpoint";
 import type { HostViews, WorkshopPanel } from "../../shared/runtime";

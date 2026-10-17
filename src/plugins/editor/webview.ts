@@ -18,11 +18,10 @@ import { Compartment, EditorState, Prec } from "@codemirror/state";
 import { EditorView, drawSelection, keymap } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
 import { getSyncedVersion, sendableUpdates } from "@codemirror/collab";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin, Infer } from "@workshop/core";
 import type {} from "../document/api";
 import type {} from "../dialect/api";
 import { protocol, type viewState } from "./protocol";
-import type { Infer } from "../../kernel";
 import { createEditorService } from "./service";
 import { registerViewPersistence } from "./persistence";
 import { createViewState } from "./view-state";
@@ -71,7 +70,7 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerSettings(ctx, view, settings);
     ctx.effect(() => ctx.document.attach(view));
     const contributions = new ViewContributions(view);
-    const registry = new ExtensionRegistry(ctx.runtime.rank, (extensions) => {
+    const registry = new ExtensionRegistry(ctx.rankOf, (extensions) => {
       view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
     });
     const editor = createEditorService({

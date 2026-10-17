@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
-declare module "../../../src/kernel/types" {
+import { createRoot } from "@workshop/core";
+declare module "@workshop/core" {
   interface Events {
     /** @mode emit */ signal: (value: number) => void;
     /** @mode serial */ sequence: () => void | Promise<void>;
@@ -13,7 +13,7 @@ declare module "../../../src/kernel/types" {
   }
 }
 test("emit uses registration order, prepend, listener isolation, and effect cleanup", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const order: number[] = [];
   const fiber = root.plugin({
     name: "events",
@@ -42,7 +42,7 @@ test("emit uses registration order, prepend, listener isolation, and effect clea
   await root.dispose();
 });
 test("serial awaits listeners; parallel starts all before awaiting", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const order: string[] = [];
   root.on("sequence", async () => {
     await Promise.resolve();
@@ -69,7 +69,7 @@ test("serial awaits listeners; parallel starts all before awaiting", async () =>
   await root.dispose();
 });
 test("bail skips throwing listeners and stops at first non-undefined; pipeline awaits transformations", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let late = false;
   root.on("claim", () => {
     throw new Error("skip");

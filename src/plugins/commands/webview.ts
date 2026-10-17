@@ -1,5 +1,5 @@
 import { keymap } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import { protocol } from "./protocol";
 import type { Commands } from "./api";
 import { createCommands } from "./registry";

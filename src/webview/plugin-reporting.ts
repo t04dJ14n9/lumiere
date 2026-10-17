@@ -1,11 +1,11 @@
 import type { Endpoint } from "../shared/rpc/endpoint";
-import type { Context } from "../kernel";
+import type { RootContext } from "@workshop/core";
 import { runtimeStates } from "../shared/plugin-state";
 import { protocol } from "../plugins/editor/protocol";
 import { featureController } from "./features";
 /** The RPC response waits for queued reconfiguration, so API writes report applied states. */
 export function pluginReporting(
-  root: Context,
+  root: RootContext,
   rpc: Endpoint,
   configure = featureController(root),
 ) {

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import type { RootContext } from "@workshop/core";
 import { editorHost } from "../../../src/plugins/editor/host";
 import type { PanelShell } from "../../../src/shared/runtime";
 import type { DocumentSession } from "../../../src/plugins/document/api";
@@ -8,9 +9,9 @@ import type { Vaults } from "../../../src/plugins/vault/api";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 
 test("independent panel kernels share the injected vault registry before feature configuration", async () => {
-  const root = Context.create();
+  const root = createRoot();
   let open: (panel: PanelShell) => void = () => {};
-  const contexts: Context[] = [];
+  const contexts: RootContext[] = [];
   const vaults = {
     forDocument: async () => {
       throw new Error("Unused");
@@ -32,7 +33,7 @@ test("independent panel kernels share the injected vault registry before feature
   );
   root.plugin(editorHost, {
     configure: (context) => {
-      assert.equal(context.runtime.value("vaults"), vaults);
+      assert.equal(context.service("vaults"), vaults);
       contexts.push(context);
     },
   });
@@ -63,11 +64,8 @@ test("independent panel kernels share the injected vault registry before feature
   });
   shells.forEach(open);
   assert.equal(contexts.length, 2);
-  assert.notEqual(contexts[0]?.runtime, contexts[1]?.runtime);
-  assert.notEqual(contexts[0]?.runtime, root.runtime);
-  assert.notEqual(
-    contexts[0]?.runtime.value("rpc"),
-    contexts[1]?.runtime.value("rpc"),
-  );
+  assert.notEqual(contexts[0], contexts[1]);
+  assert.notEqual(contexts[0], root);
+  assert.notEqual(contexts[0]?.service("rpc"), contexts[1]?.service("rpc"));
   await root.dispose();
 });

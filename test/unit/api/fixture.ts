@@ -1,5 +1,6 @@
 import type { Uri } from "vscode";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import { providePluginStates } from "../../../src/shared/plugin-state";
 import { fixture as selectionFixture } from "../agent-bridge/fixture";
 import { rpcPair } from "../../support/rpc-pair";
 import type { EditorPanel, Editors } from "../../../src/plugins/editor/api";
@@ -25,7 +26,7 @@ export function uri(value: string): Uri {
 }
 export async function fixture() {
   const f = selectionFixture();
-  const root = Context.create();
+  const root = createRoot();
   const second = rpcPair();
   let active = "panel";
   const panels: EditorPanel[] = [
@@ -190,6 +191,7 @@ export async function fixture() {
       }
     },
   };
+  providePluginStates(root);
   await root.settled();
   const api = await createApi(root, platform);
   return {

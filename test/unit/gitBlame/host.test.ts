@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { hostFeatures } from "../../../src/host/features";
 import { features } from "../../../src/plugins/catalog";
 import type { GitAccess } from "../../../src/shared/git";
@@ -50,7 +50,7 @@ function fakeGit() {
 
 async function setup(git?: GitAccess) {
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   const document = { uri: "file:///note.md" };
   root.provide("workshop", { git } as never);
   root.provide("rpc", pair.host);
@@ -72,7 +72,7 @@ async function setup(git?: GitAccess) {
 test("panel host features start blame by default and follow resource settings", async (t) => {
   const fake = fakeGit();
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   const document = fakeDocument();
   const settings = Object.fromEntries(
     features

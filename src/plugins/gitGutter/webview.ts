@@ -1,7 +1,7 @@
 import { EditorSelection } from "@codemirror/state";
 import type { EditorState } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";

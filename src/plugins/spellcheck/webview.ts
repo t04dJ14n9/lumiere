@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 export const spellcheckWebview: Plugin = {
   name: "spellcheck",

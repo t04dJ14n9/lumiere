@@ -1,6 +1,6 @@
 import { CancelToken } from "../../shared/rpc/lifecycle";
 import { contributionId } from "../../shared/setting-schema";
-import type { Context, Disposer } from "../../kernel";
+import type { Context, Disposer } from "@workshop/core";
 import type { EditorPanel, Editors } from "./api";
 import type { SourceEdit } from "../../shared/runtime";
 import { SourceCoordinates } from "../../shared/document/coordinates";

@@ -1,7 +1,7 @@
 import { keymap } from "@codemirror/view";
 import { moveLineUp, moveLineDown } from "@codemirror/commands";
 import type { Command } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "./api";

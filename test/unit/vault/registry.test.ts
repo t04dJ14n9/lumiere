@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import type { VaultChange, Vaults } from "../../../src/plugins/vault/api";
 import { vaultHost, vaultsHost } from "../../../src/plugins/vault/host";
 import { MemoryFileSystem, memorySystem, wait } from "./memory-fs";
@@ -9,14 +9,14 @@ const counts = (map: ReadonlyMap<string, number>) => Object.fromEntries(map);
 
 async function start(fs: MemoryFileSystem, markers: string[] = []) {
   const host = memorySystem(fs, markers);
-  const root = Context.create();
+  const root = createRoot();
   root.provide("vaultSystem", host.value);
   root.plugin(vaultsHost);
   await root.settled();
   return {
     root,
     host,
-    vaults: root.runtime.value("vaults") as Vaults,
+    vaults: root.service("vaults") as Vaults,
   };
 }
 
@@ -101,7 +101,7 @@ test("each panel's vault service is the shared index of its note's vault", async
   await root.settled();
   assert.equal(panel.state, "active");
   assert.equal(
-    panel.context!.runtime.value("vault"),
+    root.service("vault"),
     (await vaults.forDocument("memory:///vault/A.md")).index,
   );
   await root.dispose();

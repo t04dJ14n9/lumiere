@@ -1906,7 +1906,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
-    "typecheck": "tsc -p tsconfig.json && tsc -p src/host && tsc -p src/webview && tsc -p src/plugins/tsconfig.host.json && tsc -p src/plugins/tsconfig.webview.json && tsc -p src/workers && tsc -p test",
+    "typecheck": "tsc -p packages/core && tsc -p tsconfig.json && tsc -p src/host && tsc -p src/webview && tsc -p src/plugins/tsconfig.host.json && tsc -p src/plugins/tsconfig.webview.json && tsc -p src/workers && tsc -p test",
     "lint": "eslint . --max-warnings=0",
     "test": "node scripts/test.mjs",
     "test:browser": "pnpm build && playwright test -c test/browser/playwright.config.ts",
@@ -1936,6 +1936,7 @@
     "@lezer/markdown": "1.8.0",
     "@mathjax/src": "4.1.3",
     "@replit/codemirror-vim": "6.4.0",
+    "@workshop/core": "workspace:*",
     "dompurify": "3.4.16",
     "graphology": "0.26.0",
     "lucide": "1.55.0",

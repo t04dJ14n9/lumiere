@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import tagsManifest from "../../../src/plugins/tags/manifest";
 import { SEARCH_COMMAND, VIEW_ID } from "../../../src/plugins/tags/tree";
 import { tagsViewHost } from "../../../src/plugins/tags/view";
@@ -24,7 +24,7 @@ async function start(
   for (const path of excluded) {
     index.upsertFile({ ...index.file(path)!, excluded: true });
   }
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", workbenchWith(fake.views));
   root.provide("vaults", vaults);
   root.plugin(tagsViewHost);
@@ -105,7 +105,7 @@ test("an empty vault says so", async () => {
 test("the Tags view follows the tags plugin's enabled setting", async () => {
   const fake = fakeViews({ "plugins.tags.enabled": false });
   const { vaults } = memoryVaults({ "A.md": "#tag" });
-  const root = Context.create();
+  const root = createRoot();
   const workshop = workbenchWith(fake.views);
   const listeners = new Set<() => void>();
   workshop.onConfiguration = (listener) => {

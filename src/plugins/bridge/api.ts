@@ -28,7 +28,7 @@ export interface BridgeCapture {
   ): Promise<BridgeEnvelope | undefined>;
 }
 
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     bridgeCapture: BridgeCapture;
   }

@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import { EditorView, ViewPlugin } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import { markdownFromHtml } from "./conversion";
 import { acceptsHtml, pasteTransformed } from "./paste";

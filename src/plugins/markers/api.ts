@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 export interface SourceMarker {
   id: string;
   from: number;
@@ -19,7 +19,7 @@ export interface Markers {
     }) => void | Promise<void>,
   ): Disposer;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     markers: Markers;
   }

@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../livePreview/api";

@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel/types";
+import type { Disposer } from "@workshop/core";
 export interface Transport {
   send(message: unknown): void;
   listen(receive: (message: unknown) => void): Disposer;

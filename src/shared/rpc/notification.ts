@@ -1,5 +1,5 @@
 import type { Handler, Notify } from "./endpoint-types";
-import type { Logger } from "../../kernel/logger";
+import type { Logger } from "@workshop/core";
 import { CancelToken } from "./lifecycle";
 
 export async function deliverNotification(

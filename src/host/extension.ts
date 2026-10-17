@@ -10,10 +10,10 @@ import { bootstrap } from "./bootstrap";
 import { createVaultSystem } from "./vault-system";
 import { createHostViews } from "./views";
 import { registerDocumentWarm } from "./document-warm";
-import type { Context } from "../kernel";
+import type { RootContext } from "@workshop/core";
 
 /** The window's kernel; `deactivate` awaits its teardown. */
-let root: Context | undefined;
+let root: RootContext | undefined;
 export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkshopApi> {

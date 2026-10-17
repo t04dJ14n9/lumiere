@@ -11,13 +11,14 @@
  * service; test/unit/features/lifecycle.test.ts checks it against the
  * providers a running kernel records.
  */
-import type { Plugin, Services } from "../kernel";
+import type { Plugin, Services } from "@workshop/core";
 
 /** Services the host or webview root provides, not a plugin. */
 export const ROOT_SERVICES: readonly (keyof Services)[] = [
   "workshop",
   "vaultSystem",
   "rpc",
+  "pluginStates",
 ];
 
 /** Which plugin provides each plugin-provided service. */

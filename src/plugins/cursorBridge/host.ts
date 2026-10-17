@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type { HostDocument } from "../../shared/runtime";
 import type {} from "../editor/api";
 import { isCursorHost, openCursorChat, openCursorEdit } from "./cursor";

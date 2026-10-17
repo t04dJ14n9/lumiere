@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 export type ProcessorResult =
   { markdown: string; html?: never } | { html: string; markdown?: never };
@@ -14,7 +14,7 @@ export interface CodeProcessor {
 export interface CodeBlocks {
   register(processor: CodeProcessor): Disposer;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     codeBlocks: CodeBlocks;
   }

@@ -4,7 +4,7 @@ import type { Cancellation } from "../../shared/rpc/lifecycle";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import { startup, submission, workerReply } from "./worker-protocol";
 import { errorMessage } from "../../shared/errors";
-import type { Disposer } from "../../kernel/types";
+import type { Disposer } from "@workshop/core";
 interface Pending {
   resolve(value: boolean): void;
   reject(error: Error): void;

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { defineProtocol, Schema } from "../../../src/kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../../src/shared/rpc/protocol";
 import { Endpoint, CancelToken } from "../../../src/shared/rpc/endpoint";
 import type { Clock, Transport } from "../../../src/shared/rpc/endpoint";
 const protocol = defineProtocol("example", {

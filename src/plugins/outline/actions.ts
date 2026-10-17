@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { TreeHandle, Workshop } from "../../shared/runtime";
 import {
   COMMANDS_CONTEXT,

@@ -1,6 +1,6 @@
 import type { EditorView } from "@codemirror/view";
 import { ViewPlugin } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../resources/api";
 import type {} from "../render/api";

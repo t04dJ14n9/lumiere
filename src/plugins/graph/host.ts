@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "../okfCore/api";
 import type {} from "../vault/api";
 import { contributionId } from "../../shared/setting-schema";

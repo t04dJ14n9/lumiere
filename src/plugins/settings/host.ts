@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type { ContributedSetting } from "../../shared/runtime";
 import { contributionId, validateValue } from "../../shared/setting-schema";
 import { PREFIX, settingRows } from "./change";

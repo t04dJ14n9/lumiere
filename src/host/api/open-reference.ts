@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import { parseAgentReference } from "../../shared/agent-reference-input";
 import { contributionId } from "../../shared/setting-schema";
 import type { ApiPlatform } from "./platform";

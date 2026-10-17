@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import { serializeTable } from "../../markdown/tables/model";
 import type {} from "../editor/api";
 import type {} from "../document/api";

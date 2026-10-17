@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context, type Infer } from "../../../src/kernel";
+import { createRoot, type Infer } from "@workshop/core";
 import { RevealRouter } from "../../../src/host/reveal-router";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
@@ -28,7 +28,7 @@ function gate() {
 }
 
 async function fixture() {
-  const root = Context.create();
+  const root = createRoot();
   const pair = rpcPair();
   const router = new RevealRouter();
   const calls: { target: Target; token: Cancellation }[] = [];

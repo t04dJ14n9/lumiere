@@ -1,7 +1,7 @@
 import { indentUnit } from "@codemirror/language";
 import { EditorState, Facet } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import type { Infer } from "../../kernel";
+import type { Infer } from "@workshop/core";
 import { config } from "./manifest";
 import { fontVariables } from "./font";
 import type { Platform } from "./font";

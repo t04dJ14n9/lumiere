@@ -1,7 +1,7 @@
 import { featureCommands } from "./features";
 import type { Manifest } from "../../shared/manifest";
 import { contributionId } from "../../shared/setting-schema";
-import type { Context, Fiber, Plugin, Infer } from "../../kernel";
+import type { Context, PluginHandle, Plugin, Infer } from "@workshop/core";
 import type { EditorPanel } from "../editor/api";
 import { protocol, type action as actionSchema } from "./protocol";
 export const commandsHost: Plugin<{ features: readonly Manifest[] }> = {
@@ -15,7 +15,7 @@ export const commandsHost: Plugin<{ features: readonly Manifest[] }> = {
 };
 
 function registerPanelActions(ctx: Context): void {
-  const panels = new Map<string, Fiber>();
+  const panels = new Map<string, PluginHandle>();
   function bind(panel: EditorPanel): void {
     const fiber = ctx.plugin({
       name: `commands:${panel.id}`,

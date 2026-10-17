@@ -33,7 +33,7 @@ test("enable, reconfigure and disable preserve other panel state and leave no st
   t.after(() => Promise.all([first.root.dispose(), second.root.dispose()]));
   await first.configure({ stickyScroll: { enabled: true, config: {} } });
   const headings = first.view.state.field(headingIndex);
-  const fiber = [...first.root.runtime.fibers].find(
+  const fiber = [...first.root.plugins].find(
     (item) => item.definition.name === "stickyScroll",
   )!;
   const context = fiber.context;

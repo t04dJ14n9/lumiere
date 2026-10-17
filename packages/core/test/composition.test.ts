@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context, bindCaller } from "../../../src/kernel";
-import type { CallerBound, Plugin } from "../../../src/kernel";
+import { bindCaller, createRoot } from "@workshop/core";
+import type { Context, CallerBound, Plugin } from "@workshop/core";
 
-declare module "../../../src/kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     traced: { owner: string } & Partial<CallerBound<{ owner: string }>>;
   }
@@ -13,16 +13,21 @@ declare module "../../../src/kernel/types" {
 }
 
 test("caller-bound reads cache per context and refresh across provider replacement", async () => {
-  const root = Context.create({ replaceable: ["traced"] });
+  const root = createRoot();
   const calls: Context[] = [];
   const service = (prefix: string) => ({
     owner: "provider",
     [bindCaller](caller: Context) {
       calls.push(caller);
-      return { owner: prefix + caller.fiber!.definition.name };
+      return { owner: prefix + caller.owner };
     },
   });
-  root.provide("traced", service("one:"));
+  const original = root.plugin({
+    name: "original",
+    apply(ctx) {
+      ctx.provide("traced", service("one:"));
+    },
+  });
   const seen: string[] = [];
   const consumer = (name: string): Plugin => ({
     name,
@@ -38,7 +43,8 @@ test("caller-bound reads cache per context and refresh across provider replaceme
   assert.deepEqual(seen, ["one:a", "one:b"]);
   assert.equal(calls.length, 2);
   assert.notEqual(calls[0], calls[1]);
-  const replacement = root.plugin({
+  await original.dispose();
+  root.plugin({
     name: "replacement",
     apply(ctx) {
       ctx.provide("traced", service("two:"));
@@ -46,15 +52,12 @@ test("caller-bound reads cache per context and refresh across provider replaceme
   });
   await root.settled();
   assert.deepEqual(seen.slice(2), ["two:a", "two:b"]);
-  await replacement.dispose();
-  await root.settled();
-  assert.deepEqual(seen.slice(4), ["one:a", "one:b"]);
-  assert.equal(calls.length, 6);
+  assert.equal(calls.length, 4);
   await root.dispose();
 });
 
 test("event slots and owner rank survive reversed loading, update and toggles", async () => {
-  const root = Context.create({ rank: (id) => ({ a: 0, b: 1 })[id] ?? 2 });
+  const root = createRoot({ rank: (id) => ({ a: 0, b: 1 })[id] ?? 2 });
   const plugin = (name: string): Plugin => ({
     name,
     apply(ctx) {
@@ -79,7 +82,7 @@ test("event slots and owner rank survive reversed loading, update and toggles", 
 });
 
 test("equal-rank event owners keep lexical order across restart", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const plugin = (name: string): Plugin => ({
     name,
     apply(ctx) {

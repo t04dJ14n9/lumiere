@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { cursorBridgeHost } from "../../../src/plugins/cursorBridge/host";
 import { CURSOR_COMMANDS } from "../../../src/plugins/cursorBridge/cursor";
 import type {
@@ -14,7 +14,7 @@ import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 
 async function fixture() {
-  const root = Context.create();
+  const root = createRoot();
   const handlers = new Map<string, () => unknown>();
   const events: string[] = [];
   const errors: string[] = [];

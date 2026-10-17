@@ -1,4 +1,4 @@
-import type { Logger } from "../../kernel";
+import type { Logger } from "@workshop/core";
 import type { Fence, RenderPass } from "../render/api";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { errorMessage } from "../../shared/errors";

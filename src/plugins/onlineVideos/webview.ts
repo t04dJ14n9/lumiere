@@ -1,4 +1,4 @@
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import { protocol as links } from "../links/protocol";
 import type { RenderPass } from "../render/api";
 import type {} from "../render/api";

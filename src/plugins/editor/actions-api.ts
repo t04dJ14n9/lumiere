@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { SourceSelection } from "./api";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 export interface EditorAction {
@@ -14,7 +14,7 @@ export interface EditorAction {
 export interface EditorActions {
   register(action: EditorAction): Disposer;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     editorActions: EditorActions;
   }

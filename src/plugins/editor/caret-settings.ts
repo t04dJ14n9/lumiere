@@ -1,4 +1,4 @@
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 import type { CaretSettings } from "./caret";
 
 /** Invalid hand-edited native settings must not prevent the editor opening. */

@@ -1,5 +1,5 @@
 import { defineManifest } from "../../shared/manifest";
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 export const config = Schema.object({
   /** Follows VS Code's `editor.lineNumbers` for Markdown files. */
   style: Schema.union(["on", "off", "relative", "interval"]).default("on"),

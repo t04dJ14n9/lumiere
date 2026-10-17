@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { settingsHost } from "../../../src/plugins/settings/host";
 import type {
   ContributedSetting,
@@ -103,7 +103,7 @@ export async function run(
   const errors: string[] = [];
   workshop.inform = (message) => informed.push(message);
   workshop.error = (message) => errors.push(message);
-  const root = Context.create({});
+  const root = createRoot({});
   root.provide("workshop", workshop);
   root.plugin(settingsHost);
   await root.settled();

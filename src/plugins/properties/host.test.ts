@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { PanelShell } from "../../shared/runtime";
 import type { VaultIndex } from "../vault/api";
@@ -32,7 +32,7 @@ test("property RPC shares preferences, validates keys and disposes handlers on d
     clock,
   );
   const saved = new Map<string, unknown>();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("rpc", host);
   root.provide("vault", {
     root: "file:///vault",

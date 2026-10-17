@@ -12,7 +12,7 @@ import {
 } from "../../../src/plugins/editor/view-transfer";
 import { createViewState } from "../../../src/plugins/editor/view-state";
 import { viewState } from "../../../src/plugins/editor/protocol";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 
 const saved = viewState.parse({
   source: "old.md",
@@ -100,7 +100,7 @@ test("two panels keep independent transfer state and rename retains old disclosu
 });
 
 test("restore clamps selection, replaces folds, and restores raw scroll without centering", (t) => {
-  const root = Context.create();
+  const root = createRoot();
   t.after(() => root.dispose());
   let state = EditorState.create({
     doc: "one\ntwo\nthree",

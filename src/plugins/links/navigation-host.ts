@@ -1,4 +1,4 @@
-import type { Context, Disposer } from "../../kernel";
+import type { Context, Disposer } from "@workshop/core";
 import type { NavigationTarget, PanelShell } from "../../shared/runtime";
 import { CancelToken, type Cancellation } from "../../shared/rpc/lifecycle";
 import type {} from "../editor/api";

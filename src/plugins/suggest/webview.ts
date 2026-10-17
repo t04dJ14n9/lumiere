@@ -12,7 +12,7 @@ import {
   type CallerBound,
   type Context,
   type Plugin,
-} from "../../kernel";
+} from "@workshop/core";
 import type {} from "../editor/api";
 import type { Suggest, SuggestionTrigger } from "./api";
 import { CancelToken } from "../../shared/rpc/lifecycle";

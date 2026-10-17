@@ -24,7 +24,7 @@ export interface Okf {
   scope(vault: Vault, path: string | undefined): OkfScope;
 }
 
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     okf: Okf;
   }

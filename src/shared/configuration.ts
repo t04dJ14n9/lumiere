@@ -1,4 +1,4 @@
-import type { Disposer } from "../kernel";
+import type { Disposer } from "@workshop/core";
 
 /** Raw inspect fields, including local/remote and language-specific layers. */
 export type ConfigurationInspection = Readonly<Record<string, unknown>>;

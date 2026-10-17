@@ -1,24 +1,24 @@
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import type { RuntimePluginState } from "../../../src/shared/plugin-state";
 import { bootstrap } from "../../../src/host/bootstrap";
 import type { PanelShell } from "../../../src/shared/runtime";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 import { fakeViews } from "../views/fakes";
 import { MemoryFileSystem, memorySystem, wait } from "../vault/memory-fs";
 
-/** Fibers that never started, with what each is still waiting for. */
-function stalled(context: Context): string[] {
-  return [...context.runtime.fibers]
-    .filter((fiber) => fiber.state !== "active")
+/** Plugins that never started, with what each is still waiting for. */
+function stalled(states: readonly RuntimePluginState[]): string[] {
+  return states
+    .filter((plugin) => plugin.state !== "active")
     .map(
-      (fiber) =>
-        `${fiber.definition.name} is ${fiber.state}` +
-        (fiber.waitingFor.length
-          ? `, waiting for ${fiber.waitingFor.join(", ")}`
+      (plugin) =>
+        `${plugin.id} is ${plugin.state}` +
+        (plugin.waitingFor.length
+          ? `, waiting for ${plugin.waitingFor.join(", ")}`
           : "") +
-        (fiber.error ? `: ${String(fiber.error)}` : ""),
+        (plugin.error ? `: ${plugin.error}` : ""),
     );
 }
 
@@ -45,14 +45,7 @@ function shell(uri: string): PanelShell {
 // provides reaches a panel only when it is handed over explicitly. A missing
 // handover leaves the panel's plugins waiting forever without any error.
 test("the real host wiring starts every window and panel plugin", async () => {
-  const panels: Context[] = [];
-  const create = Context.create;
-  Context.create = (...args) => {
-    const context = create.apply(Context, args);
-    panels.push(context);
-    return context;
-  };
-  try {
+  {
     let open: (panel: PanelShell) => void = () => {};
     const workshop = fakeWorkbench({
       config: () => ({ preset: "obsidian", mode: "source" }),
@@ -69,18 +62,15 @@ test("the real host wiring starts every window and panel plugin", async () => {
     const fs = new MemoryFileSystem({ "A.md": "[[B]]", "B.md": "" });
     const root = await bootstrap(workshop, memorySystem(fs).value);
     await wait();
-    assert.deepEqual(stalled(root), []);
+    assert.deepEqual(stalled(root.service("pluginStates")?.list() ?? []), []);
 
-    panels.length = 0;
     open(shell("memory:///vault/A.md"));
-    const panel = panels[0];
-    assert.ok(panel, "opening an editor creates a panel kernel");
-    await panel.settled();
+    const panel = root.service("editors")?.all()[0];
+    assert.ok(panel, "opening an editor creates a panel");
+    await root.settled();
     await wait();
-    assert.deepEqual(stalled(panel), []);
+    assert.deepEqual(stalled(panel.pluginStates?.() ?? []), []);
     await root.dispose();
-  } finally {
-    Context.create = create;
   }
 });
 

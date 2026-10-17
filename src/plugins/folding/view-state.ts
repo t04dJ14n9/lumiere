@@ -1,7 +1,7 @@
 import { foldEffect, foldedRanges, unfoldEffect } from "@codemirror/language";
 import type { StateEffect } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 
 export const foldedSchema = Schema.array(
   new Schema<{ from: number; to: number }>(

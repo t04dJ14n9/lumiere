@@ -1,4 +1,4 @@
-import type { Context, Disposer, Plugin } from "../../kernel";
+import type { Context, Disposer, Plugin } from "@workshop/core";
 import type {} from "../document/api";
 import { AgentHandoff } from "./agent";
 import { protocol } from "./protocol";

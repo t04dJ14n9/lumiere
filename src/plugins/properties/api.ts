@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 
 /**
  * The rendered property subtree. Named without a DOM type so the host project,
@@ -25,7 +25,7 @@ export interface PropertyRenderers {
   bind(root: PropertyRoot): void;
 }
 
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     propertyRenderers: PropertyRenderers;
   }

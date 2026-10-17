@@ -1,5 +1,5 @@
 import { EditorView } from "@codemirror/view";
-import type { Context, Infer, Logger } from "../../kernel";
+import type { Context, Infer, Logger } from "@workshop/core";
 import type { ViewContributions } from "./contributions";
 import type { EditorService } from "./api";
 import { protocol, viewState } from "./protocol";

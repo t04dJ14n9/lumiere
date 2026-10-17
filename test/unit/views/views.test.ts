@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { backlinksHost } from "../../../src/plugins/backlinks/host";
 import {
   BacklinksTree,
@@ -96,7 +96,7 @@ test("outgoing links list resolved files with counts, then links not created yet
 test("Backlinks and Outgoing Links are off until turned on", async () => {
   const { vaults } = memoryVaults(notes);
   const fake = fakeViews();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("vaults", vaults);
   const workshop = workbenchWith(fake.views);
   root.provide("workshop", workshop);
@@ -118,7 +118,7 @@ test("view plugins follow the active note and their setting, and clean up when t
     "plugins.backlinks.enabled": true,
     "plugins.outgoingLinks.enabled": true,
   });
-  const root = Context.create();
+  const root = createRoot();
   root.provide("vaults", vaults);
   const workshop = workbenchWith(fake.views);
   let configure = () => {};

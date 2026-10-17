@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { metadata } from "../../../src/markdown/metadata";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 import { taggedNotes, filterTagNotes } from "../../../src/plugins/tags/search";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { tagsHost } from "../../../src/plugins/tags/host";
 import { protocol } from "../../../src/plugins/tags/protocol";
 import type {
@@ -56,7 +56,7 @@ test("tag search uses hierarchical case-insensitive metadata and skips excluded 
 
 test("tag RPC opens a matching indexed note and unregisters when disabled", async () => {
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   const opened: unknown[][] = [];
   const views = {
     pick: async (options) => ({ item: options.items("")[0], query: "" }),

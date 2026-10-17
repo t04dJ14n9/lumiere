@@ -1,9 +1,8 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin, Infer } from "@workshop/core";
 import type { PanelShell } from "../../shared/runtime";
 import type { GitAccess } from "../../shared/git";
 import type { GitBlameLineResult } from "../../shared/git-blame";
 import { MAX_DIFF_CHARS } from "../../shared/diff";
-import type { Infer } from "../../kernel";
 import { protocol } from "./protocol";
 
 type BlameRequest = Infer<typeof protocol.requests.blameLine.params>;

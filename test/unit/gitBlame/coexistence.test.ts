@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import type { Extension, TransactionSpec } from "@codemirror/state";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { FEATURE_ORDER } from "../../../src/plugins/plugin-order";
 import { features } from "../../../src/plugins/catalog";
 import { gitBlameWebview } from "../../../src/plugins/gitBlame/webview";
@@ -45,7 +45,7 @@ test("gitBlame is registered after gutter/inline, chrome only, and default-on", 
 });
 
 function composition() {
-  const root = Context.create();
+  const root = createRoot();
   const compartment = new Compartment();
   const extensions = new Map<number, Extension>();
   let next = 0;

@@ -10,7 +10,7 @@ export interface MarkdownService {
   metadata: typeof metadata;
   renderer: ReturnType<typeof createRenderer>;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     markdown: MarkdownService;
   }

@@ -184,7 +184,7 @@ test("the caret layer follows the Vim plugin and the panel: no duplicates, no de
   // Turning Vim off hands the layer back to the native caret, in place.
   await page.evaluate(async () => {
     const root = window.harness.views[0]!;
-    const vim = [...root.runtime.fibers].find(
+    const vim = [...root.plugins].find(
       (fiber) => fiber.definition.name === "vim",
     )!;
     await vim.dispose();

@@ -1,6 +1,6 @@
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import { registerNavigation } from "./navigation-host";
-import type { Context, Infer, Plugin } from "../../kernel";
+import type { Context, Infer, Plugin } from "@workshop/core";
 import type {
   Navigation,
   NavigationIntent,

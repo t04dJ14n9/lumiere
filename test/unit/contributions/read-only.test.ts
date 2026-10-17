@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { bindRenderedTasks } from "../../../src/plugins/tasks/post-process";
 import type { RenderPass } from "../../../src/plugins/render/api";
-import type { Context } from "../../../src/kernel";
+import type { Context } from "@workshop/core";
 
 test("generated read-only task controls cannot edit their source note", () => {
   let click = () => {};

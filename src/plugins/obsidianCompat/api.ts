@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 
 /** Serialized Obsidian types, distinct from editable UI kinds. */
 export type WirePropertyType =
@@ -34,7 +34,7 @@ export interface ObsidianCompat {
   ): Disposer;
 }
 
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     obsidianCompat: ObsidianCompat;
   }

@@ -38,7 +38,7 @@ export interface WikiLayout {
   reload(): Promise<void>;
 }
 
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     wikiLayout: WikiLayout;
   }

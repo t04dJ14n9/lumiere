@@ -2,7 +2,7 @@ export interface PasteData {
   text: string;
   html: string;
 }
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Events {
     /** @mode pipeline */ "paste/transform": (
       data: PasteData,

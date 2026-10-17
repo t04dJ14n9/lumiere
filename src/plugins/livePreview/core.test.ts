@@ -5,7 +5,7 @@ import { Compartment, EditorState, StateEffect } from "@codemirror/state";
 import type { Extension, TransactionSpec } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { WidgetType } from "@codemirror/view";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import type { EditorService } from "../editor/api";
 import type { BlockRenderer, LivePreview } from "./api";
 import { livePreviewWebview } from "./webview";
@@ -77,7 +77,7 @@ function livePreviewKernel(doc: string) {
       state = state.update(spec).state;
     },
   } as EditorView;
-  const root = Context.create();
+  const root = createRoot();
   root.provide("editor", {
     view,
     navigate: (jump) => jump(),
@@ -125,7 +125,7 @@ test("kernel disposal and Source mode remove the engine; registry effects add an
   const { root, fiber } = kernel;
   await root.settled();
   assert.equal(fiber.state, "active");
-  const preview = root.runtime.value("livePreview") as LivePreview;
+  const preview = root.service("livePreview") as LivePreview;
   assert.equal(kernel.state().field(blockIndex).length, 1);
   const remove = preview.block({
     kind: "paragraph",

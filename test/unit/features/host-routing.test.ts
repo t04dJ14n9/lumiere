@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { commandsHost } from "../../../src/plugins/commands/host";
 import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeWorkbench, fakeDocument } from "../../support/vscode-fake";
@@ -11,7 +11,7 @@ const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 const foldAll = contributionId("foldAll");
 
 test("host feature commands disappear when disabled and target the current panel after switching", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const commands = new Map<string, () => unknown>();
   const calls: string[] = [];
   const panel = (id: string) =>

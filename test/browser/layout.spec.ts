@@ -92,7 +92,7 @@ test("nested list guides follow rendered bullet columns and the guide setting", 
   expect(geometry[1]!.height).toBeGreaterThan(geometry[1]!.lineHeight * 2);
 
   await page.evaluate(() => {
-    const fiber = [...window.harness.views[0]!.runtime.fibers].find(
+    const fiber = [...window.harness.views[0]!.plugins].find(
       (value) => value.definition.name === "indentGuides",
     )!;
     fiber.context!.livePreview.setMode("source");
@@ -100,14 +100,14 @@ test("nested list guides follow rendered bullet columns and the guide setting", 
   await expect(rows).toHaveCount(0);
   await expect(page.locator(".mw-indent-guide")).toHaveCount(5);
   await page.evaluate(() => {
-    const fiber = [...window.harness.views[0]!.runtime.fibers].find(
+    const fiber = [...window.harness.views[0]!.plugins].find(
       (value) => value.definition.name === "indentGuides",
     )!;
     fiber.context!.livePreview.setMode("livePreview");
   });
   await expect(rows).toHaveCount(4);
   await page.evaluate(async () => {
-    await [...window.harness.views[0]!.runtime.fibers]
+    await [...window.harness.views[0]!.plugins]
       .find((value) => value.definition.name === "indentGuides")!
       .dispose();
   });

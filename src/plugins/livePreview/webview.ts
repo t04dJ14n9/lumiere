@@ -1,13 +1,12 @@
-import { bindCaller } from "../../kernel";
+import { bindCaller } from "@workshop/core";
+import type { CallerBound, Context, Plugin } from "@workshop/core";
 import { pointerSelectionTracking } from "../../webview/ui/pointer-selection";
 import { fenceGuardSelectionSupport } from "../../webview/ui/fence-click-guard";
-import type { CallerBound } from "../../kernel";
 import type { LivePreview } from "./api";
 import { clickPositionSync } from "./click-position";
 import { renderedPosition } from "./rendered-position";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
-import type { Context, Plugin } from "../../kernel";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "./api";
@@ -56,7 +55,7 @@ function registerEngine(
   );
   const service: LivePreview & CallerBound<LivePreview> = {
     [bindCaller](caller) {
-      const owner = caller.fiber!.definition.name;
+      const owner = caller.owner;
       return {
         ...service,
         get mode() {

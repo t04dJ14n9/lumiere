@@ -1,10 +1,9 @@
 import { receiveResponse } from "./response";
 import { PeerSession, cancelPeer } from "./peer-session";
 import { deliverNotification } from "./notification";
-import type { Protocol } from "../../kernel/protocol";
-import type { Infer, Schema } from "../schema";
-import type { Disposer } from "../../kernel/types";
-import { silentLogger, type Logger } from "../../kernel/logger";
+import type { Protocol } from "./protocol";
+import { silentLogger } from "@workshop/core";
+import type { Infer, Schema, Disposer, Logger } from "@workshop/core";
 import { ApplyQueue, CoalescingQueue } from "./queues";
 import {
   addressEnvelope,

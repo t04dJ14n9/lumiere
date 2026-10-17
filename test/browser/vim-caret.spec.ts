@@ -174,7 +174,7 @@ test("caret matches Vim modes and native typing styles, colours, blinking and mo
 
   await page.evaluate(async () => {
     const root = window.harness.views[0]!;
-    const vim = [...root.runtime.fibers].find(
+    const vim = [...root.plugins].find(
       (fiber) => fiber.definition.name === "vim",
     )!;
     await vim.dispose();

@@ -1,4 +1,4 @@
-import { Schema } from "../kernel";
+import { Schema } from "@workshop/core";
 
 const side = Schema.object({
   uri: Schema.string(),

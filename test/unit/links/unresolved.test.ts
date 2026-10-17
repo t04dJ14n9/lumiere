@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorSelection, EditorState } from "@codemirror/state";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { metadata } from "../../../src/markdown/metadata";
 import { linksHost } from "../../../src/plugins/links/host";
 import { protocol } from "../../../src/plugins/links/protocol";
@@ -108,7 +108,7 @@ test("the links host sends the note's unresolved set, then only its changes", as
   index.notifyResolved();
 
   const { host, client } = connectedEndpoints();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("rpc", host);
   root.provide("vault", index);
   root.provide("workshop", { config: () => ({}) } as unknown as Workshop);

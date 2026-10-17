@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type { TreeHandle } from "../../shared/runtime";
 import type {} from "../editor/api";
 import type {} from "../vault/api";

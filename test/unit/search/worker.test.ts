@@ -102,7 +102,7 @@ after(async () => {
 });
 
 test("search host cancels work on disable and registers again on enable", async () => {
-  const { Context } = await import("../../../src/kernel");
+  const { createRoot } = await import("@workshop/core");
   const { searchHost } = await import("../../../src/plugins/search/host");
   const { protocol } = await import("../../../src/plugins/search/protocol");
   const { MemoryVaultIndex } =
@@ -110,7 +110,7 @@ test("search host cancels work on disable and registers again on enable", async 
   const { fakeWorkbench } = await import("../../support/vscode-fake");
   const { rpcPair } = await import("../../support/rpc-pair");
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   const vault = new MemoryVaultIndex({
     root: "file:///vault",
     folderNote: "",

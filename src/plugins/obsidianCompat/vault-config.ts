@@ -1,4 +1,4 @@
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { ConfigFiles } from "./config-files";
 import type { ObsidianOverrides } from "./api";
 import { mapAppSettings } from "./app-settings";

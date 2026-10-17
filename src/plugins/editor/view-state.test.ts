@@ -3,7 +3,7 @@ import test from "node:test";
 import { EditorSelection, EditorState } from "@codemirror/state";
 import type { TransactionSpec } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { createViewState } from "./view-state";
 import { viewState } from "./protocol";
 
@@ -73,7 +73,7 @@ function restoredPanel(presentation: ReturnType<typeof createViewState>) {
 }
 
 test("widget scroll input cancels applied restore and queued layout correction only in its panel", async () => {
-  const root = Context.create();
+  const root = createRoot();
   const presentation = createViewState(root);
   const first = restoredPanel(presentation);
   const second = restoredPanel(presentation);

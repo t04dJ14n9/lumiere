@@ -1,5 +1,5 @@
 import { defineManifest } from "../../shared/manifest";
-import { Schema } from "../../kernel";
+import { Schema } from "@workshop/core";
 export const config = Schema.object({
   heading: Schema.boolean().default(true),
   indent: Schema.boolean().default(true),

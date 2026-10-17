@@ -2,9 +2,9 @@ import { webviewLogging } from "../plugins/editor/logging";
 import { pluginRank } from "../plugins/catalog";
 import { pluginReporting } from "./plugin-reporting";
 import { registerEditorSettings } from "./editor-settings";
-import type { Infer } from "../kernel";
+import { createRoot } from "@workshop/core";
+import type { Infer } from "@workshop/core";
 import type { viewState } from "../plugins/editor/protocol";
-import { Context } from "../kernel";
 import type { Endpoint } from "../shared/rpc/endpoint";
 import { protocol } from "../plugins/editor/protocol";
 import {
@@ -29,10 +29,9 @@ export async function bootstrap(
   const init = await rpc.call(protocol, "ready", {});
   performance.mark("mw:ready");
   logging.configure(init.debugLogging);
-  const root = Context.create({
+  const root = createRoot({
     logger: logging.logger,
     rank: pluginRank,
-    replaceable: ["resources", "markers"],
   });
   root.provide("rpc", rpc);
   root.effect(() => rpc.on(protocol, "configureLogging", logging.configure));
@@ -55,9 +54,7 @@ export async function bootstrap(
   const configure = pluginReporting(root, rpc);
   await configure(init.features, init.preset === "obsidian");
   await root.settled();
-  const failed = [...root.runtime.fibers].find(
-    (fiber) => fiber.state === "failed",
-  );
+  const failed = [...root.plugins].find((fiber) => fiber.state === "failed");
   if (failed) {
     throw failed.error;
   }

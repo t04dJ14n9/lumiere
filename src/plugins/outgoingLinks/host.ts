@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type {} from "../vault/api";
 import { OPEN_COMMAND, OutgoingLinksTree, VIEW_ID } from "./tree";
 

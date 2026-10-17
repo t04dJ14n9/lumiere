@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type { PanelShell, Workshop } from "../../shared/runtime";
 import type {} from "../vault/api";
 import type {} from "./api";

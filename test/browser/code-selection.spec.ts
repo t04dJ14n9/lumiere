@@ -50,7 +50,7 @@ for (const dark of [false, true]) {
         } else {
           const points = await page.evaluate(
             ({ from, to }) => {
-              const context = [...window.harness.views[0]!.runtime.fibers].find(
+              const context = [...window.harness.views[0]!.plugins].find(
                 (fiber) => fiber.definition.name === "livePreview",
               )!.context!;
               const view = context.editor.view;

@@ -3,7 +3,13 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
-import { Context, type Plugin } from "../../../src/kernel";
+import {
+  createRoot,
+  type BaseContext,
+  type Plugin,
+  type PluginHandle,
+  type RootContext,
+} from "@workshop/core";
 import type { Okf } from "../../../src/plugins/okfCore/api";
 import type { Editors } from "../../../src/plugins/editor/api";
 import type { Vaults } from "../../../src/plugins/vault/api";
@@ -127,7 +133,7 @@ test("tree hosts register the explorer view ids from package.json", async () => 
 
 test("editor host passes MARKDOWN_EDITOR.viewType to registerEditor", async () => {
   const viewTypes: string[] = [];
-  const root = Context.create();
+  const root = createRoot();
   root.provide(
     "workshop",
     fakeWorkbench({
@@ -250,7 +256,7 @@ function directRegistrations(selections: Selections): Plugin {
 }
 
 function installHosts(
-  root: Context,
+  root: BaseContext,
   manifests: readonly Manifest[],
   selections: Selections,
 ): void {
@@ -276,7 +282,7 @@ async function captureRegisteredCommands(): Promise<{
 }> {
   const ids = new Set<string>();
   const manifests = await loadManifests();
-  const root = Context.create();
+  const root = createRoot();
   const panel = activePanel();
   const selections: Selections = {
     async capture() {
@@ -311,7 +317,7 @@ async function captureTreeHostCommands(): Promise<{
 }> {
   const ids = new Set<string>();
   const treeIds = new Set<string>();
-  const root = Context.create();
+  const root = createRoot();
   root.provide("workshop", viewHostWorkbench(ids, treeIds));
   root.provide("vaults", idleVaults());
   root.provide("editors", idleEditors());
@@ -390,11 +396,11 @@ function idleEditors(): Editors {
   };
 }
 
-function pluginProblems(root: Context): string[] {
-  return root.children.flatMap((child) => describePlugin(child));
+function pluginProblems(root: RootContext): string[] {
+  return root.plugins.flatMap((child) => describePlugin(child));
 }
 
-function describePlugin(child: Context["children"][number]): string[] {
+function describePlugin(child: PluginHandle): string[] {
   if (child.state === "failed") {
     return [`${child.definition.name} failed: ${String(child.error)}`];
   }
@@ -403,8 +409,5 @@ function describePlugin(child: Context["children"][number]): string[] {
       `${child.definition.name} waiting for ${child.waitingFor.join(", ")}`,
     ];
   }
-  const nested = child.context?.children.flatMap((item) =>
-    describePlugin(item),
-  );
-  return nested ?? [];
+  return [];
 }

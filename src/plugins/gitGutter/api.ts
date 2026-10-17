@@ -1,5 +1,5 @@
 import type { EditorState, StateField } from "@codemirror/state";
-import type { Disposer } from "../../kernel";
+import type { Disposer } from "@workshop/core";
 import type { DiffSide, HunkRef, LineRecord } from "../../shared/git-diff";
 
 /** One change between the git baseline and the editor text, in document offsets. */
@@ -65,7 +65,7 @@ export interface FullDiffRequest {
   readonly target: DiffSide;
 }
 
-declare module "../../kernel/types" {
+declare module "@workshop/core" {
   interface Services {
     gitDiff: GitDiff;
   }

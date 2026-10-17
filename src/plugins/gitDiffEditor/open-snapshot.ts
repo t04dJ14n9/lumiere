@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { FullDiffRequest } from "../gitGutter/api";
 import { titledComparison, urisForSides } from "./comparison";
 import { fileName } from "./host";

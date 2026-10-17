@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import { RpcError } from "../../shared/rpc/lifecycle";
 import type { PanelShell } from "../../shared/runtime";
 import { VideoDetailsSource } from "./details";

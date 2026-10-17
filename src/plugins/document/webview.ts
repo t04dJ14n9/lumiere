@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import { protocol } from "./protocol";
 import { ViewConnection } from "./view-connection";
 export const documentWebview: Plugin<{ version: number; clientID: string }> = {

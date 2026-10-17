@@ -12,7 +12,7 @@ import { suggestions } from "../../../src/plugins/suggest/sources";
 import { protocol } from "../../../src/plugins/suggest/protocol";
 import { metadata } from "../../../src/markdown/metadata";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { suggestHost } from "../../../src/plugins/suggest/host";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 import type { PanelShell } from "../../../src/shared/runtime";
@@ -148,7 +148,7 @@ test("suggestion RPC rejects extra fields and oversized results", () => {
 });
 test("suggest host enforces source feature switches and disposes RPC handlers", async () => {
   const pair = rpcPair();
-  const root = Context.create();
+  const root = createRoot();
   let links = true;
   root.provide("rpc", pair.host);
   root.provide("vault", index());

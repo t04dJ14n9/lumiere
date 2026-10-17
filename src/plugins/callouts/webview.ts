@@ -1,6 +1,6 @@
 import { StateEffect } from "@codemirror/state";
 import { DisclosureState } from "./view-state";
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
 import type {} from "../render/api";

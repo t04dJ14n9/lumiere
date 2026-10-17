@@ -1,5 +1,5 @@
 import type { EditorView } from "@codemirror/view";
-import type { Disposer, Schema } from "../../kernel";
+import type { Disposer, Schema } from "@workshop/core";
 
 export interface ViewStateContribution<T> {
   schema: Schema<T>;

@@ -1,4 +1,4 @@
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { EffectiveConfiguration } from "../../../src/host/configuration";
 import { readSettings } from "../../../src/host/settings";
 import { obsidianCompatHost } from "../../../src/plugins/obsidianCompat/host";
@@ -166,7 +166,7 @@ export async function compatFixture() {
       };
     },
   });
-  const root = Context.create({
+  const root = createRoot({
     logger: {
       debug() {},
       error() {},
@@ -204,7 +204,7 @@ export async function compatFixture() {
     focus,
     vaults: vaultService,
     viewsFake: fake,
-    service: root.runtime.value("obsidianCompat") as ObsidianCompat,
+    service: root.service("obsidianCompat") as ObsidianCompat,
     async change(uri: string, text: string | undefined) {
       if (text === undefined) {
         data.delete(uri);

@@ -1,4 +1,5 @@
-import { Schema, defineProtocol, type Infer } from "../../kernel";
+import { Schema, type Infer } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { viewState } from "../editor/protocol";
 export const focusTarget = Schema.union(["body", "properties"]);
 export const titleValue = Schema.object({

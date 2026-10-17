@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { Plugin } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
+import type { Plugin, RootContext } from "@workshop/core";
 import { logText } from "../../../src/shared/logging";
 import { outputLogger } from "../../../src/host/logging";
 import { readSettings } from "../../../src/host/settings";
@@ -12,7 +13,6 @@ import { createPanel } from "../../../src/plugins/editor/panel";
 import { protocol } from "../../../src/plugins/editor/protocol";
 import type { Documents } from "../../../src/plugins/document/api";
 import type { PanelShell } from "../../../src/shared/runtime";
-import { Context } from "../../../src/kernel";
 import { rpcPair } from "../../support/rpc-pair";
 import { fakeDocument, fakeWorkbench } from "../../support/vscode-fake";
 
@@ -108,7 +108,7 @@ test("a webview logger survives a transport that cannot send", () => {
 test("the host writes forwarded webview logs and re-checks the debug policy", async () => {
   const pair = rpcPair();
   const { logger, lines } = recordingLogger();
-  const context = Context.create({ logger });
+  const context = createRoot({ logger });
   let debug = false;
   registerPanelLogging(context, pair.host, () => debug);
   const send = (level: "debug" | "warn" | "error", message: string) =>
@@ -157,7 +157,7 @@ test("panel kernels log through the window logger, tagged by panel", async () =>
     session: () => ({}),
     release() {},
   } as unknown as Documents;
-  let owned: Context | undefined;
+  let owned: RootContext | undefined;
   const panel = createPanel(shell, documents, fakeWorkbench(), {
     onClose() {},
     onState() {},

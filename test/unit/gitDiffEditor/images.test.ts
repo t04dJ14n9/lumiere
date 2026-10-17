@@ -6,7 +6,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import {
   sideResources,
   diffSource,
@@ -304,7 +304,7 @@ test("each side assigns resolved image sources and shows source fallback until l
 });
 
 test("image resolution service is injected and withdrawn with its plugin", async () => {
-  const root = Context.create();
+  const root = createRoot();
   root.provide("vaults", {} as never);
   root.provide("workshop", {} as never);
   const fiber = root.plugin(diffResourcesHost);

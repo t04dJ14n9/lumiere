@@ -1,4 +1,4 @@
-import { type Infer } from "../../kernel";
+import { type Infer } from "@workshop/core";
 import type { Editors, Selections, SourceSelection } from "./api";
 import type { Workshop } from "../../shared/runtime";
 import {

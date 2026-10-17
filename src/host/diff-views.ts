@@ -9,7 +9,7 @@ import {
 } from "../shared/diff-panel-protocol";
 import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
-import type { Disposer } from "../kernel";
+import type { Disposer } from "@workshop/core";
 import { contributionId } from "../shared/setting-schema";
 import type { DiffPanel, DiffSide, DiffViews, OpenedDiff } from "../shared/git";
 

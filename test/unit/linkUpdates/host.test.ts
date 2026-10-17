@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { linkUpdatesHost } from "../../../src/plugins/linkUpdates/host";
 import { fakeViews, memoryVaults, uriOf, workbenchWith } from "../views/fakes";
 
@@ -14,7 +14,7 @@ const notes = {
 async function start(settings: Record<string, unknown> = {}) {
   const { vaults } = memoryVaults(notes);
   const fake = fakeViews(settings);
-  const root = Context.create();
+  const root = createRoot();
   root.provide("vaults", vaults);
   root.provide("workshop", workbenchWith(fake.views));
   root.plugin(linkUpdatesHost);

@@ -1,4 +1,4 @@
-import type { Context } from "../../kernel";
+import type { Context } from "@workshop/core";
 import type { Workshop } from "../../shared/runtime";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { contributionId } from "../../shared/setting-schema";

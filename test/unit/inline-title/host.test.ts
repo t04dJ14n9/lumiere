@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../../src/kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../../src/shared/rpc/endpoint";
 import { inlineTitleHost } from "../../../src/plugins/inlineTitle/host";
 import { protocol } from "../../../src/plugins/inlineTitle/protocol";
@@ -36,7 +36,7 @@ function endpoints() {
 
 test("inline title host owns resource-enabled RPC handlers and reports rename errors", async () => {
   const { host, client } = endpoints();
-  const root = Context.create();
+  const root = createRoot();
   let enabled = true;
   let configurationChanged = () => {};
   const errors: string[] = [];

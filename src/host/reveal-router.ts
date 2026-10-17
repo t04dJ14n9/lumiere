@@ -5,7 +5,7 @@ import type {
   PanelShell,
 } from "../shared/runtime";
 import { CancelToken } from "../shared/rpc/lifecycle";
-import type { Disposer } from "../kernel";
+import type { Disposer } from "@workshop/core";
 
 /** No URI mailbox: the native opener assigns one exact panel before delivery. */
 export class RevealRouter {

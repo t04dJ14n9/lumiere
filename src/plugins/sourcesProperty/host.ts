@@ -1,4 +1,4 @@
-import type { Context, Plugin } from "../../kernel";
+import type { Context, Plugin } from "@workshop/core";
 import type { PanelShell } from "../../shared/runtime";
 import { owningBundle } from "../../markdown/okf";
 import type {} from "../okfCore/api";

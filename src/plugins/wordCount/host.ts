@@ -1,4 +1,4 @@
-import type { Plugin } from "../../kernel";
+import type { Plugin } from "@workshop/core";
 import type { HostViews } from "../../shared/runtime";
 import type { EditorPanel, Editors } from "../editor/api";
 import { protocol as editorProtocol } from "../editor/protocol";

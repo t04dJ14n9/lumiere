@@ -1,4 +1,5 @@
-import { Schema, defineProtocol } from "../../kernel";
+import { Schema } from "@workshop/core";
+import { defineProtocol } from "../../shared/rpc/protocol";
 import { offset } from "../editor/protocol";
 export const marker = Schema.object({
   id: Schema.string().min(1).max(256),

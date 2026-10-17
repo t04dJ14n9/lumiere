@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { Context } from "../../kernel";
+import { createRoot } from "@workshop/core";
 import { Endpoint } from "../../shared/rpc/endpoint";
 import type { Navigation, PanelShell, Workshop } from "../../shared/runtime";
 import type { VaultIndex } from "../vault/api";
@@ -38,7 +38,7 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
       },
     },
   );
-  const root = Context.create();
+  const root = createRoot();
   const opens: unknown[] = [];
   const confirms: string[] = [];
   const navigation: Navigation = {
