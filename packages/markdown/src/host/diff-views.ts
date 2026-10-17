@@ -76,12 +76,38 @@ function openedDiff(
     column: tab.group.viewColumn,
     preview: tab.isPreview,
     close: async () => {
-      if (tab.isDirty) {
+      // The tab as it is now: Cursor replaces tab objects while a diff
+      // settles, and refuses to close the one the open event reported.
+      const current = currentDiffTab(tab, input) ?? tab;
+      if (current.isDirty) {
         return false;
       }
-      return vscode.window.tabGroups.close(tab, true);
+      return vscode.window.tabGroups.close(current, true);
     },
   };
+}
+
+/** The open tab showing the same diff, in the tab's group first. */
+export function currentDiffTab(
+  tab: Pick<vscode.Tab, "group">,
+  input: { original: vscode.Uri; modified: vscode.Uri },
+  groups: readonly vscode.TabGroup[] = vscode.window.tabGroups.all,
+): vscode.Tab | undefined {
+  const same = (candidate: vscode.Tab) =>
+    candidate.input instanceof vscode.TabInputTextDiff &&
+    candidate.input.original.toString() === input.original.toString() &&
+    candidate.input.modified.toString() === input.modified.toString();
+  const ordered = [
+    ...groups.filter((group) => group.viewColumn === tab.group.viewColumn),
+    ...groups.filter((group) => group.viewColumn !== tab.group.viewColumn),
+  ];
+  for (const group of ordered) {
+    const match = group.tabs.find(same);
+    if (match) {
+      return match;
+    }
+  }
+  return undefined;
 }
 
 function panelHtml(webview: vscode.Webview, dist: vscode.Uri): string {
