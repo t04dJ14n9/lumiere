@@ -49,11 +49,12 @@ function targetDestination(
   if (!target) {
     return undefined;
   }
-  return target.type === "destination"
-    ? target.destination
-    : target.action.type === PdfActionType.Goto
-      ? target.action.destination
-      : undefined;
+  if (target.type === "destination") {
+    return target.destination;
+  }
+  return target.action.type === PdfActionType.Goto
+    ? target.action.destination
+    : undefined;
 }
 
 /** The height a destination names, in PDF points up from the page bottom. */

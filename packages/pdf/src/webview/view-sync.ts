@@ -1,8 +1,13 @@
 import { useScrollState } from "./scroll-state";
 import { ZoomMode, useZoom } from "@embedpdf/plugin-zoom/react";
 import { useCallback, useEffect, useRef } from "react";
-import type { FitMode, ToolMode, ViewerAction } from "../shared/view-state";
-import type { ViewChoices, ZoomChoice } from "../shared/view-settings";
+import type {
+  FitMode,
+  ToolMode,
+  ViewerAction,
+  ViewState,
+} from "../shared/view-state";
+import type { ViewChoices } from "../shared/view-settings";
 import { positionFromView } from "../shared/reading-position";
 import { rememberPosition } from "./reading-position";
 import { nextZoomStep } from "../shared/zoom-steps";
@@ -21,9 +26,39 @@ export function useViewReporting(
 ): void {
   const { state: scroll } = useScrollState();
   const { state: zoom } = useZoom(DOCUMENT_ID);
-  const { currentPage: page, pageCount } = navigation;
-  const { canGoBack, canGoForward } = navigation;
+  const view = currentView({ navigation, tool, choices, scroll, zoom });
+  const latest = useRef(view);
+  latest.current = view;
+  // Report each distinct view once.
+  const key = view && JSON.stringify(view);
+  useEffect(() => {
+    const view = latest.current;
+    if (view) {
+      rememberPosition(positionFromView(view));
+      reportToHost({ view });
+    }
+  }, [key]);
+}
+
+/** The view to report, once the layout has a page; undefined before. */
+function currentView(state: {
+  navigation: Navigation;
+  tool: ToolMode;
+  choices: ViewChoices;
+  scroll: ReturnType<typeof useScrollState>["state"];
+  zoom: ReturnType<typeof useZoom>["state"];
+}): ViewState | undefined {
+  const { navigation, tool, choices, scroll, zoom } = state;
+  const { currentPage: page, pageCount, canGoBack, canGoForward } = navigation;
   const zoomPercent = Math.round(zoom.currentZoomLevel * 100);
+  if (
+    !scroll.virtualItems.length ||
+    pageCount < 1 ||
+    page < 1 ||
+    zoomPercent <= 0
+  ) {
+    return undefined;
+  }
   const fit = fitMode(zoom.zoomLevel);
   const metric =
     choices.scrollMode === "paged"
@@ -31,64 +66,83 @@ export function useViewReporting(
           (metric) => metric.pageNumber === page,
         )
       : scroll.pageVisibilityMetrics[0];
-  const readingPage = metric?.pageNumber ?? page;
-  const choice: ZoomChoice =
-    fit === "width"
-      ? "fitWidth"
-      : fit === "page"
-        ? "fitPage"
-        : zoom.currentZoomLevel * 100;
-  const top = Math.max(
-    0,
-    (metric?.original.pageY ?? 0) - PAGE_GAP / zoom.currentZoomLevel,
-  );
-  const left = Math.max(
-    0,
-    (metric?.original.pageX ?? 0) - PAGE_GAP / zoom.currentZoomLevel,
-  );
-  const { pageLayout, scrollMode, scrollDirection } = choices;
-  const ready = scroll.virtualItems.length > 0;
-  useEffect(() => {
-    // Before the layout is ready there is no page yet.
-    if (!ready || pageCount < 1 || page < 1 || zoomPercent <= 0) {
-      return;
-    }
-    const view = {
-      page,
-      pageCount,
-      zoomPercent,
-      fit,
-      tool,
-      pageLayout,
-      scrollMode,
-      scrollDirection,
-      canGoBack,
-      canGoForward,
-      readingPage,
-      zoom: choice,
-      top,
-      left,
-    };
-    rememberPosition(positionFromView(view));
-    reportToHost({ view });
-  }, [
+  const inset = PAGE_GAP / zoom.currentZoomLevel;
+  return {
     page,
     pageCount,
     zoomPercent,
     fit,
     tool,
-    pageLayout,
-    scrollMode,
-    scrollDirection,
+    pageLayout: choices.pageLayout,
+    scrollMode: choices.scrollMode,
+    scrollDirection: choices.scrollDirection,
     canGoBack,
     canGoForward,
-    readingPage,
-    choice,
-    top,
-    left,
-    ready,
-  ]);
+    readingPage: metric?.pageNumber ?? page,
+    zoom: fit ? FIT_CHOICES[fit] : zoom.currentZoomLevel * 100,
+    top: Math.max(0, (metric?.original.pageY ?? 0) - inset),
+    left: Math.max(0, (metric?.original.pageX ?? 0) - inset),
+  };
 }
+
+/** What an action works with. */
+interface ActionContext {
+  navigation: Navigation;
+  openSearch: () => void;
+  setTool: (tool: ToolMode) => void;
+  setChoices: (choices: Partial<ViewChoices>) => void;
+  /** Zoom to a level, within the viewer's range. */
+  zoomTo: (level: number) => void;
+  /** Zoom to a fit mode. */
+  fit: (mode: ZoomMode) => void;
+  /** The level zoom steps go from: the one asked for last, else the shown one. */
+  from: number;
+  /** The navigation generation this action started. */
+  generation: number;
+  /** The latest navigation, after this action's own updates. */
+  latest: () => Navigation;
+}
+
+type Handlers = {
+  [K in ViewerAction["action"]]: (
+    action: Extract<ViewerAction, { action: K }>,
+    context: ActionContext,
+  ) => void;
+};
+
+/** What each of the extension's commands does in the viewer. */
+const ACTIONS: Handlers = {
+  previousPage: (_, { navigation }) => navigation.step(-1),
+  nextPage: (_, { navigation }) => navigation.step(1),
+  previousPageKeepingPlace: (_, { navigation }) => navigation.step(-1, true),
+  nextPageKeepingPlace: (_, { navigation }) => navigation.step(1, true),
+  goToPage: ({ page }, { navigation }) => navigation.goToPage(page),
+  zoomIn: (_, { zoomTo, from }) => zoomTo(nextZoomStep(from, 1)),
+  zoomOut: (_, { zoomTo, from }) => zoomTo(nextZoomStep(from, -1)),
+  setZoom: ({ percent }, { zoomTo }) => zoomTo(percent / 100),
+  actualSize: (_, { zoomTo }) => zoomTo(1),
+  fitWidth: (_, { fit }) => fit(ZoomMode.FitWidth),
+  fitPage: (_, { navigation, fit, generation, latest }) => {
+    // Fitting a page keeps the reader on it: the zoom change alone would
+    // keep the old vertical centre, which can land on a later page.
+    const page = navigation.currentPage;
+    fit(ZoomMode.FitPage);
+    requestAnimationFrame(() => {
+      if (navigation.intent.owns(generation)) {
+        latest().show({ page });
+      }
+    });
+  },
+  setPageLayout: ({ pageLayout }, { setChoices }) => setChoices({ pageLayout }),
+  setScrollMode: ({ scrollMode }, { navigation, setChoices }) => {
+    navigation.show({ page: navigation.currentPage });
+    setChoices({ scrollMode });
+  },
+  setScrollDirection: ({ scrollDirection }, { setChoices }) =>
+    setChoices({ scrollDirection }),
+  find: (_, { openSearch }) => openSearch(),
+  setTool: ({ tool }, { setTool }) => setTool(tool),
+};
 
 /**
  * Carry out what the extension's commands ask: page, zoom, find or tool.
@@ -101,15 +155,7 @@ export function useViewActions(
   setChoices: (choices: Partial<ViewChoices>) => void,
 ): (action: ViewerAction) => void {
   const { provides: zoom, state } = useZoom(DOCUMENT_ID);
-  const latest = useRef({
-    navigation,
-    openSearch,
-    setTool,
-    setChoices,
-    zoom,
-    level: state.currentZoomLevel,
-  });
-  latest.current = {
+  const current = {
     navigation,
     openSearch,
     setTool,
@@ -117,89 +163,40 @@ export function useViewActions(
     zoom,
     level: state.currentZoomLevel,
   };
+  const latest = useRef(current);
+  latest.current = current;
   // Quick zoom repeats add up before React receives the native state change.
   const requested = useRef<number | undefined>(undefined);
   useEffect(() => {
     requested.current = undefined;
   }, [state.currentZoomLevel]);
   return useCallback((action: ViewerAction): void => {
-    const { navigation, openSearch, setTool, setChoices, zoom, level } =
-      latest.current;
+    const { navigation, zoom, level } = latest.current;
     const generation =
       action.action === "find"
         ? navigation.intent.advance()
         : navigation.intent.interrupt();
-    const from =
-      requested.current ?? zoom?.getState().currentZoomLevel ?? level;
-    const zoomTo = (next: number): void => {
-      requested.current = Math.min(
-        ZOOM_RANGE.max,
-        Math.max(ZOOM_RANGE.min, next),
-      );
-      zoom?.requestZoom(requested.current);
+    const context: ActionContext = {
+      ...latest.current,
+      generation,
+      from: requested.current ?? zoom?.getState().currentZoomLevel ?? level,
+      zoomTo: (next) => {
+        requested.current = Math.min(
+          ZOOM_RANGE.max,
+          Math.max(ZOOM_RANGE.min, next),
+        );
+        zoom?.requestZoom(requested.current);
+      },
+      fit: (mode) => {
+        requested.current = undefined;
+        zoom?.requestZoom(mode);
+      },
+      latest: () => latest.current.navigation,
     };
-    switch (action.action) {
-      case "previousPage":
-        navigation.step(-1);
-        break;
-      case "nextPage":
-        navigation.step(1);
-        break;
-      case "previousPageKeepingPlace":
-        navigation.step(-1, true);
-        break;
-      case "nextPageKeepingPlace":
-        navigation.step(1, true);
-        break;
-      case "goToPage":
-        navigation.goToPage(action.page);
-        break;
-      case "zoomIn":
-        zoomTo(nextZoomStep(from, 1));
-        break;
-      case "zoomOut":
-        zoomTo(nextZoomStep(from, -1));
-        break;
-      case "setZoom":
-        zoomTo(action.percent / 100);
-        break;
-      case "fitWidth":
-        requested.current = undefined;
-        zoom?.requestZoom(ZoomMode.FitWidth);
-        break;
-      case "fitPage": {
-        requested.current = undefined;
-        // Fitting a page keeps the reader on it: the zoom change alone would
-        // keep the old vertical centre, which can land on a later page.
-        const page = navigation.currentPage;
-        zoom?.requestZoom(ZoomMode.FitPage);
-        requestAnimationFrame(() => {
-          if (navigation.intent.owns(generation)) {
-            latest.current.navigation.show({ page });
-          }
-        });
-        break;
-      }
-      case "actualSize":
-        zoomTo(1);
-        break;
-      case "setPageLayout":
-        setChoices({ pageLayout: action.pageLayout });
-        break;
-      case "setScrollMode":
-        navigation.show({ page: navigation.currentPage });
-        setChoices({ scrollMode: action.scrollMode });
-        break;
-      case "setScrollDirection":
-        setChoices({ scrollDirection: action.scrollDirection });
-        break;
-      case "find":
-        openSearch();
-        break;
-      case "setTool":
-        setTool(action.tool);
-        break;
-    }
+    (ACTIONS[action.action] as (a: ViewerAction, c: ActionContext) => void)(
+      action,
+      context,
+    );
   }, []);
 }
 
@@ -212,3 +209,6 @@ export function fitMode(level: unknown): FitMode | null {
   }
   return null;
 }
+
+/** The zoom choice for each fit mode. */
+const FIT_CHOICES = { width: "fitWidth", page: "fitPage" } as const;

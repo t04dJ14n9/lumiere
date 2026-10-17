@@ -48,11 +48,11 @@ export function Page({
   const page = pageIndex + 1;
   const scale = width / Math.max(1, pdf.pages[pageIndex]?.size.width ?? width);
   const rotation = pageRotation(pdf, pageIndex);
+  const layer = { pageIndex, scale };
   const layers = (
     <PagePointerProvider
       documentId={DOCUMENT_ID}
-      pageIndex={pageIndex}
-      scale={scale}
+      {...layer}
       {...(rotation === 0
         ? {
             className: "page",
@@ -63,21 +63,11 @@ export function Page({
       style={{ width, height }}
     >
       <PageImage
-        pageIndex={pageIndex}
-        scale={scale}
+        {...layer}
         dpr={renderPixelRatio(scale, devicePixelRatio, width, height)}
       />
-      <SearchLayer
-        documentId={DOCUMENT_ID}
-        pageIndex={pageIndex}
-        scale={scale}
-      />
-      <PageLinks
-        pdf={pdf}
-        pageIndex={pageIndex}
-        scale={scale}
-        onOpenPage={onOpenPage}
-      />
+      <SearchLayer documentId={DOCUMENT_ID} {...layer} />
+      <PageLinks pdf={pdf} {...layer} onOpenPage={onOpenPage} />
       {highlight?.page === page && (
         <Box
           key={highlight.key}
@@ -92,28 +82,69 @@ export function Page({
           <RegionMenu rect={region.rect} scale={scale} selection={selection} />
         </>
       )}
-      <SelectionLayer
-        documentId={DOCUMENT_ID}
-        pageIndex={pageIndex}
-        scale={scale}
-        textStyle={{ background: "var(--selection-fill)" }}
-        marqueeStyle={{
-          background: "var(--selection-soft)",
-          borderColor: "var(--selection-edge)",
-          borderStyle: "solid",
-        }}
-        marqueeClassName="region-marquee"
-        selectionMenu={(props) => (
-          <TextSelectionMenu {...props} selection={selection} />
-        )}
-      />
+      <TextSelection {...layer} selection={selection} />
     </PagePointerProvider>
   );
-  if (rotation === 0) {
-    return layers;
-  }
-  // The page's own /Rotate: PDFium draws it, and every position EmbedPDF reports
-  // (text, search hits, links), unrotated; the layers are turned as one.
+  return rotation === 0 ? (
+    layers
+  ) : (
+    <RotatedPage
+      pageIndex={pageIndex}
+      scale={scale}
+      size={{ width, height }}
+      rotation={rotation}
+    >
+      {layers}
+    </RotatedPage>
+  );
+}
+
+/** EmbedPDF's text selection, which also draws the region being dragged. */
+function TextSelection({
+  pageIndex,
+  scale,
+  selection,
+}: {
+  pageIndex: number;
+  scale: number;
+  selection: SelectionReporting;
+}): React.JSX.Element {
+  return (
+    <SelectionLayer
+      documentId={DOCUMENT_ID}
+      pageIndex={pageIndex}
+      scale={scale}
+      textStyle={{ background: "var(--selection-fill)" }}
+      marqueeStyle={{
+        background: "var(--selection-soft)",
+        borderColor: "var(--selection-edge)",
+        borderStyle: "solid",
+      }}
+      marqueeClassName="region-marquee"
+      selectionMenu={(props) => (
+        <TextSelectionMenu {...props} selection={selection} />
+      )}
+    />
+  );
+}
+
+/**
+ * The page's own /Rotate: PDFium draws it, and every position EmbedPDF
+ * reports (text, search hits, links), unrotated; the layers are turned as one.
+ */
+function RotatedPage({
+  pageIndex,
+  scale,
+  size: { width, height },
+  rotation,
+  children,
+}: {
+  pageIndex: number;
+  scale: number;
+  size: { width: number; height: number };
+  rotation: number;
+  children: React.ReactNode;
+}): React.JSX.Element {
   const [boxWidth, boxHeight] =
     rotation % 2 === 1 ? [height, width] : [width, height];
   return (
@@ -131,7 +162,7 @@ export function Page({
           transform: ROTOR[rotation]?.(boxWidth, boxHeight),
         }}
       >
-        {layers}
+        {children}
       </div>
     </div>
   );

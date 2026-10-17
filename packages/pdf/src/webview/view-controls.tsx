@@ -21,16 +21,6 @@ export function ViewControls({
 }): React.JSX.Element {
   const id = useId();
   const menu = useRef<HTMLDivElement>(null);
-  const { state: zoom } = useZoom(DOCUMENT_ID);
-  const fit = fitMode(zoom.zoomLevel);
-  const mode =
-    fit === "width"
-      ? "fitWidth"
-      : fit === "page"
-        ? "fitPage"
-        : zoom.currentZoomLevel === 1
-          ? "actualSize"
-          : "custom";
   const act = (value: unknown): void => {
     const action = parseViewerAction(value);
     if (action) {
@@ -56,93 +46,129 @@ export function ViewControls({
         role="group"
         aria-label="PDF view controls"
       >
-        <label>
-          Zoom mode
-          <select
-            aria-label="Zoom mode"
-            value={mode}
-            onChange={(event) => {
-              if (event.target.value === "custom") {
-                menu.current?.querySelector<HTMLInputElement>("input")?.focus();
-              } else {
-                act({ action: event.target.value });
-              }
-            }}
-          >
-            <option value="fitWidth">Fit width</option>
-            <option value="fitPage">Fit page</option>
-            <option value="actualSize">Actual size (100%)</option>
-            <option value="custom">Custom percentage</option>
-          </select>
-        </label>
-        <label>
-          Percentage
-          <NumberField
-            label="Custom zoom"
-            value={Math.round(zoom.currentZoomLevel * 100)}
-            suffix="%"
-            onCommit={(percent) => {
-              const target = Math.min(
-                ZOOM_RANGE.max * 100,
-                Math.max(ZOOM_RANGE.min * 100, percent),
-              );
-              run({ action: "setZoom", percent: target });
-              return target;
-            }}
-          />
-        </label>
-        <label>
-          Page layout
-          <select
-            aria-label="Page layout"
-            value={choices.pageLayout}
-            onChange={(event) =>
-              act({ action: "setPageLayout", pageLayout: event.target.value })
-            }
-          >
-            {PAGE_LAYOUTS.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Scrolling
-          <select
-            aria-label="Scroll mode"
-            value={choices.scrollMode}
-            onChange={(event) =>
-              act({ action: "setScrollMode", scrollMode: event.target.value })
-            }
-          >
-            {SCROLL_MODES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Direction
-          <select
-            aria-label="Scroll direction"
-            value={choices.scrollDirection}
-            onChange={(event) =>
-              act({
-                action: "setScrollDirection",
-                scrollDirection: event.target.value,
-              })
-            }
-          >
-            {SCROLL_DIRECTIONS.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ZoomControls menu={menu} act={act} run={run} />
+        <ChoiceSelect
+          label="Page layout"
+          name="Page layout"
+          value={choices.pageLayout}
+          options={PAGE_LAYOUTS}
+          onChange={(pageLayout) =>
+            act({ action: "setPageLayout", pageLayout })
+          }
+        />
+        <ChoiceSelect
+          label="Scrolling"
+          name="Scroll mode"
+          value={choices.scrollMode}
+          options={SCROLL_MODES}
+          onChange={(scrollMode) =>
+            act({ action: "setScrollMode", scrollMode })
+          }
+        />
+        <ChoiceSelect
+          label="Direction"
+          name="Scroll direction"
+          value={choices.scrollDirection}
+          options={SCROLL_DIRECTIONS}
+          onChange={(scrollDirection) =>
+            act({ action: "setScrollDirection", scrollDirection })
+          }
+        />
       </div>
     </span>
   );
+}
+
+/** The zoom mode, and a custom percentage. */
+function ZoomControls({
+  menu,
+  act,
+  run,
+}: {
+  menu: React.RefObject<HTMLDivElement | null>;
+  act: (value: unknown) => void;
+  run: (action: ViewerAction) => void;
+}): React.JSX.Element {
+  const { state: zoom } = useZoom(DOCUMENT_ID);
+  const mode = zoomMode(fitMode(zoom.zoomLevel), zoom.currentZoomLevel);
+  return (
+    <>
+      <label>
+        Zoom mode
+        <select
+          aria-label="Zoom mode"
+          value={mode}
+          onChange={(event) => {
+            if (event.target.value === "custom") {
+              menu.current?.querySelector<HTMLInputElement>("input")?.focus();
+            } else {
+              act({ action: event.target.value });
+            }
+          }}
+        >
+          <option value="fitWidth">Fit width</option>
+          <option value="fitPage">Fit page</option>
+          <option value="actualSize">Actual size (100%)</option>
+          <option value="custom">Custom percentage</option>
+        </select>
+      </label>
+      <label>
+        Percentage
+        <NumberField
+          label="Custom zoom"
+          value={Math.round(zoom.currentZoomLevel * 100)}
+          suffix="%"
+          onCommit={(percent) => {
+            const target = Math.min(
+              ZOOM_RANGE.max * 100,
+              Math.max(ZOOM_RANGE.min * 100, percent),
+            );
+            run({ action: "setZoom", percent: target });
+            return target;
+          }}
+        />
+      </label>
+    </>
+  );
+}
+
+/** One labelled select of the View menu: page layout, scrolling or direction. */
+function ChoiceSelect(props: {
+  label: string;
+  /** The accessible name. */
+  name: string;
+  value: string;
+  options: readonly { value: string; label: string }[];
+  onChange: (value: string) => void;
+}): React.JSX.Element {
+  return (
+    <label>
+      {props.label}
+      <select
+        aria-label={props.name}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+      >
+        {props.options.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** Which of the View menu's zoom entries the current zoom is. */
+function zoomMode(
+  fit: ReturnType<typeof fitMode>,
+  level: number,
+): "fitWidth" | "fitPage" | "actualSize" | "custom" {
+  if (fit === "width") {
+    return "fitWidth";
+  }
+  if (fit === "page") {
+    return "fitPage";
+  }
+  return level === 1 ? "actualSize" : "custom";
 }

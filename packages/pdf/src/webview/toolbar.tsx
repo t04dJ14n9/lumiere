@@ -77,116 +77,17 @@ export function ToolbarControls({
   /** Shorter page suffix ("/ 12"), for the floating bar. */
   compact?: boolean;
 }): React.JSX.Element {
-  const { state } = useZoom(DOCUMENT_ID);
-  const { currentPage, pageCount } = navigation;
-  const fit = fitMode(state.zoomLevel);
   return (
     <>
-      <span className="toolbar-group">
-        <IconButton
-          icon="arrow-left"
-          label="Back to previous location"
-          disabled={!history.back}
-          onClick={history.onBack}
-        />
-        <IconButton
-          icon="arrow-right"
-          label="Forward to next location"
-          disabled={!history.forward}
-          onClick={history.onForward}
-        />
-      </span>
+      <HistoryGroup history={history} />
       <span className="separator" />
-      <span className="toolbar-group">
-        <IconButton
-          icon="chevron-up"
-          label="Previous page"
-          keys="Alt+PageUp"
-          disabled={!navigation.canGoBack}
-          onClick={() => run({ action: "previousPage" })}
-        />
-        <NumberField
-          label="Page"
-          value={currentPage}
-          suffix={compact ? `/ ${pageCount}` : `of ${pageCount}`}
-          onCommit={(page) => {
-            if (!Number.isInteger(page)) {
-              return false;
-            }
-            const target = Math.min(Math.max(1, page), pageCount);
-            run({ action: "goToPage", page: target });
-            return target;
-          }}
-        />
-        <IconButton
-          icon="chevron-down"
-          label="Next page"
-          keys="Alt+PageDown"
-          disabled={!navigation.canGoForward}
-          onClick={() => run({ action: "nextPage" })}
-        />
-      </span>
+      <PageGroup navigation={navigation} run={run} compact={compact} />
       <span className="separator" />
-      <span className="toolbar-group">
-        <IconButton
-          icon="zoom-out"
-          label="Zoom out"
-          keys={shortcut("⌘-", "Ctrl+-")}
-          onClick={() => run({ action: "zoomOut" })}
-        />
-        <NumberField
-          label="Zoom"
-          value={Math.round(state.currentZoomLevel * 100)}
-          suffix="%"
-          onCommit={(percent) => {
-            const level = Math.min(
-              ZOOM_RANGE.max,
-              Math.max(ZOOM_RANGE.min, percent / 100),
-            );
-            run({ action: "setZoom", percent: level * 100 });
-            return Math.round(level * 100);
-          }}
-        />
-        <IconButton
-          icon="zoom-in"
-          label="Zoom in"
-          keys={shortcut("⌘=", "Ctrl+=")}
-          onClick={() => run({ action: "zoomIn" })}
-        />
-        <IconButton
-          icon="arrow-both"
-          label="Fit width"
-          keys={shortcut("⌘0", "Ctrl+0")}
-          pressed={fit === "width"}
-          onClick={() => run({ action: "fitWidth" })}
-        />
-        <IconButton
-          icon="screen-full"
-          label="Fit page"
-          keys={shortcut("⌥⌘0", "Ctrl+Alt+0")}
-          pressed={fit === "page"}
-          onClick={() => run({ action: "fitPage" })}
-        />
-      </span>
+      <ZoomGroup run={run} />
       <span className="separator" />
       <ViewControls choices={choices} run={run} />
       <span className="separator" />
-      <span className="toolbar-group">
-        <IconButton
-          icon="whole-word"
-          label="Select text"
-          keys={shortcut("⌃⌘T", "Ctrl+Alt+T")}
-          pressed={tool === "text"}
-          onClick={() => run({ action: "setTool", tool: "text" })}
-        />
-        <IconButton
-          icon="inspect"
-          label="Select region"
-          keys={shortcut("⌃⌘R", "Ctrl+Alt+R")}
-          pressed={tool === "region"}
-          onClick={() => run({ action: "setTool", tool: "region" })}
-        />
-      </span>
+      <ToolGroup tool={tool} run={run} />
       <span className="spacer" />
       <span className="toolbar-group">
         <IconButton
@@ -203,6 +104,147 @@ export function ToolbarControls({
         />
       </span>
     </>
+  );
+}
+
+type Run = ToolbarProps["run"];
+
+function HistoryGroup({
+  history,
+}: Pick<ToolbarProps, "history">): React.JSX.Element {
+  return (
+    <span className="toolbar-group">
+      <IconButton
+        icon="arrow-left"
+        label="Back to previous location"
+        disabled={!history.back}
+        onClick={history.onBack}
+      />
+      <IconButton
+        icon="arrow-right"
+        label="Forward to next location"
+        disabled={!history.forward}
+        onClick={history.onForward}
+      />
+    </span>
+  );
+}
+
+function PageGroup({
+  navigation,
+  run,
+  compact,
+}: {
+  navigation: Navigation;
+  run: Run;
+  compact: boolean;
+}): React.JSX.Element {
+  const { currentPage, pageCount } = navigation;
+  return (
+    <span className="toolbar-group">
+      <IconButton
+        icon="chevron-up"
+        label="Previous page"
+        keys="Alt+PageUp"
+        disabled={!navigation.canGoBack}
+        onClick={() => run({ action: "previousPage" })}
+      />
+      <NumberField
+        label="Page"
+        value={currentPage}
+        suffix={compact ? `/ ${pageCount}` : `of ${pageCount}`}
+        onCommit={(page) => {
+          if (!Number.isInteger(page)) {
+            return false;
+          }
+          const target = Math.min(Math.max(1, page), pageCount);
+          run({ action: "goToPage", page: target });
+          return target;
+        }}
+      />
+      <IconButton
+        icon="chevron-down"
+        label="Next page"
+        keys="Alt+PageDown"
+        disabled={!navigation.canGoForward}
+        onClick={() => run({ action: "nextPage" })}
+      />
+    </span>
+  );
+}
+
+function ZoomGroup({ run }: { run: Run }): React.JSX.Element {
+  const { state } = useZoom(DOCUMENT_ID);
+  const fit = fitMode(state.zoomLevel);
+  return (
+    <span className="toolbar-group">
+      <IconButton
+        icon="zoom-out"
+        label="Zoom out"
+        keys={shortcut("⌘-", "Ctrl+-")}
+        onClick={() => run({ action: "zoomOut" })}
+      />
+      <NumberField
+        label="Zoom"
+        value={Math.round(state.currentZoomLevel * 100)}
+        suffix="%"
+        onCommit={(percent) => {
+          const level = Math.min(
+            ZOOM_RANGE.max,
+            Math.max(ZOOM_RANGE.min, percent / 100),
+          );
+          run({ action: "setZoom", percent: level * 100 });
+          return Math.round(level * 100);
+        }}
+      />
+      <IconButton
+        icon="zoom-in"
+        label="Zoom in"
+        keys={shortcut("⌘=", "Ctrl+=")}
+        onClick={() => run({ action: "zoomIn" })}
+      />
+      <IconButton
+        icon="arrow-both"
+        label="Fit width"
+        keys={shortcut("⌘0", "Ctrl+0")}
+        pressed={fit === "width"}
+        onClick={() => run({ action: "fitWidth" })}
+      />
+      <IconButton
+        icon="screen-full"
+        label="Fit page"
+        keys={shortcut("⌥⌘0", "Ctrl+Alt+0")}
+        pressed={fit === "page"}
+        onClick={() => run({ action: "fitPage" })}
+      />
+    </span>
+  );
+}
+
+function ToolGroup({
+  tool,
+  run,
+}: {
+  tool: ToolMode;
+  run: Run;
+}): React.JSX.Element {
+  return (
+    <span className="toolbar-group">
+      <IconButton
+        icon="whole-word"
+        label="Select text"
+        keys={shortcut("⌃⌘T", "Ctrl+Alt+T")}
+        pressed={tool === "text"}
+        onClick={() => run({ action: "setTool", tool: "text" })}
+      />
+      <IconButton
+        icon="inspect"
+        label="Select region"
+        keys={shortcut("⌃⌘R", "Ctrl+Alt+R")}
+        pressed={tool === "region"}
+        onClick={() => run({ action: "setTool", tool: "region" })}
+      />
+    </span>
   );
 }
 

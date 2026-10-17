@@ -1,5 +1,5 @@
 import { restoredZoomReady } from "../shared/restored-zoom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useZoom, ZoomMode } from "@embedpdf/plugin-zoom/react";
 import type { HostMessage } from "../shared/messages";
 import type { ReadingPosition } from "../shared/reading-position";
@@ -10,6 +10,18 @@ import type { Navigation } from "./navigation";
 import { DOCUMENT_ID } from "./plugins";
 import { nativeZoom, rememberedPosition } from "./reading-position";
 
+import type {
+  Dependencies,
+  PendingJump,
+  Replay,
+  Zoom,
+} from "./jump-history-types";
+
+/** Frames a jump or replay may take before it is given up. */
+const MAX_FRAMES = 180;
+/** Frames the position must stay the same to count as settled. */
+const STEADY_FRAMES = 4;
+
 /** The viewer reports discrete jumps; the authoritative stack lives in the host. */
 export function useJumpHistory(
   navigation: Navigation,
@@ -17,359 +29,415 @@ export function useJumpHistory(
   setChoices: (choices: ViewChoices) => void,
 ) {
   const { provides: zoom } = useZoom(DOCUMENT_ID);
-  const latest = useRef({ navigation, choices, setChoices, zoom });
-  latest.current = { navigation, choices, setChoices, zoom };
-  const sequence = useRef(0);
-  const startedToken = useRef(0);
-  const frame = useRef<number | undefined>(undefined);
-  const pending = useRef<
-    | {
-        from: ReadingPosition;
-        id: number;
-        requestId?: number;
-        acknowledge?: boolean;
-        generation?: number;
-      }
-    | undefined
-  >(undefined);
-  const previewOrigin = useRef<
-    { position: ReadingPosition; readerRevision: number } | undefined
-  >(undefined);
-  const restoring = useRef<{ token: number; generation: number } | undefined>(
-    undefined,
-  );
   const [state, setState] = useState({ back: false, forward: false });
-
-  const snapshot = useCallback((): ReadingPosition => {
-    const { choices, zoom } = latest.current;
-    const result = { ...rememberedPosition(), ...choices };
-    const zoomState = zoom?.getState();
-    if (zoomState) {
-      result.zoom =
-        zoomState.zoomLevel === ZoomMode.FitWidth
-          ? "fitWidth"
-          : zoomState.zoomLevel === ZoomMode.FitPage
-            ? "fitPage"
-            : zoomState.currentZoomLevel * 100;
-    }
-    const viewport = document
-      .querySelector(".viewport")
-      ?.getBoundingClientRect();
-    if (!viewport) {
-      return result;
-    }
-    for (const page of document.querySelectorAll<HTMLElement>(
-      ".page[data-page-index]",
-    )) {
-      const box = page.getBoundingClientRect();
-      if (
-        box.bottom <= viewport.top ||
-        box.top >= viewport.bottom ||
-        box.right <= viewport.left ||
-        box.left >= viewport.right
-      ) {
-        continue;
-      }
-      const scale = Number(page.dataset.scale);
-      if (!(scale > 0)) {
-        continue;
-      }
-      result.page = Number(page.dataset.pageIndex) + 1;
-      result.top = Math.max(0, viewport.top - box.top) / scale;
-      result.left = Math.max(0, viewport.left - box.left) / scale;
-      break;
-    }
-    return result;
-  }, []);
-
-  const clearFrame = useCallback(() => {
-    if (frame.current !== undefined) {
-      cancelAnimationFrame(frame.current);
-    }
-    frame.current = undefined;
-  }, []);
-  const finishJump = useCallback(
-    (applied = false) => {
-      const jump = pending.current;
-      if (!jump) {
-        return;
-      }
-      pending.current = undefined;
-      clearFrame();
-      const { acknowledge, generation, ...entry } = jump;
-      postToHost({ type: "historyJump", ...entry, to: snapshot() });
-      if (acknowledge && entry.requestId !== undefined) {
-        const intent = latest.current.navigation.intent;
-        postToHost({
-          type: "historyRestored",
-          token: entry.requestId,
-          position: snapshot(),
-          intent: intent.current(),
-          ok: applied && generation !== undefined && intent.owns(generation),
-        });
-      }
-    },
-    [clearFrame, snapshot],
-  );
-  const cancelRestore = useCallback(() => {
-    const restore = restoring.current;
-    if (!restore) {
-      return;
-    }
-    restoring.current = undefined;
-    clearFrame();
-    postToHost({
-      type: "historyRestored",
-      token: restore.token,
-      position: snapshot(),
-      intent: latest.current.navigation.intent.current(),
-      ok: false,
-    });
-  }, [clearFrame, snapshot]);
-
-  const endPreview = useCallback(() => {
-    previewOrigin.current = undefined;
-  }, []);
-  const preview = useCallback(
-    (run: () => void) => {
-      finishJump();
-      cancelRestore();
-      const intent = latest.current.navigation.intent;
-      if (previewOrigin.current?.readerRevision !== intent.readerRevision()) {
-        previewOrigin.current = {
-          position: snapshot(),
-          readerRevision: intent.readerRevision(),
-        };
-      }
-      intent.advance();
-      run();
-    },
-    [cancelRestore, finishJump, snapshot],
-  );
-
-  const jump = useCallback(
-    (
-      run: () => void,
-      requestId?: number,
-      acceptPreview = false,
-      expectedIntent?: number,
-    ) => {
-      const admission = latest.current.navigation.intent;
-      if (expectedIntent !== undefined && !admission.owns(expectedIntent)) {
-        if (requestId !== undefined) {
-          postToHost({
-            type: "historyRestored",
-            token: requestId,
-            position: snapshot(),
-            intent: admission.current(),
-            ok: false,
-          });
-        }
-        return;
-      }
-      finishJump();
-      cancelRestore();
-      const intent = latest.current.navigation.intent;
-      const from =
-        acceptPreview &&
-        previewOrigin.current?.readerRevision === intent.readerRevision()
-          ? previewOrigin.current.position
-          : snapshot();
-      previewOrigin.current = undefined;
-      const generation = intent.advance();
-      pending.current = {
-        from,
-        id: ++sequence.current,
-        ...(requestId === undefined ? {} : { requestId }),
-        ...(expectedIntent === undefined
-          ? {}
-          : { acknowledge: true, generation }),
-      };
-      run();
-      let previous = snapshot();
-      let steady = 0;
-      let frames = 0;
-      const settle = (): void => {
-        if (!pending.current) {
-          return;
-        }
-        const position = snapshot();
-        steady = samePosition(previous, position) ? steady + 1 : 0;
-        previous = position;
-        frames++;
-        const settled =
-          latest.current.navigation.isReady() && frames > 6 && steady >= 4;
-        if (!intent.owns(generation) || settled || frames >= 180) {
-          finishJump(settled && intent.owns(generation));
-          return;
-        }
-        frame.current = requestAnimationFrame(settle);
-      };
-      frame.current = requestAnimationFrame(settle);
-    },
-    [cancelRestore, finishJump, snapshot],
-  );
-
-  const handle = useCallback(
-    (message: Exclude<HostMessage, { type: "load" }>): boolean => {
-      if (message.type === "historyState") {
-        setState({ back: message.back, forward: message.forward });
-        return true;
-      }
-      if (message.type === "historyCancel") {
-        if (
-          message.token !== undefined &&
-          restoring.current?.token !== message.token
-        ) {
-          return true;
-        }
-        previewOrigin.current = undefined;
-        latest.current.navigation.intent.advance();
-        cancelRestore();
-        return true;
-      }
-      if (message.type === "historyCapture") {
-        finishJump();
-        previewOrigin.current = undefined;
-        postToHost({
-          type: "historyCaptured",
-          token: message.token,
-          startedToken: startedToken.current,
-          position: snapshot(),
-          intent: latest.current.navigation.intent.current(),
-          ok: true,
-        });
-        return true;
-      }
-      if (message.type !== "historyRestore") {
-        return false;
-      }
-      // Input can occur during capture -> host -> restore IPC, before a local
-      // restoration loop even exists. Never revive that stale request.
-      if (!latest.current.navigation.intent.owns(message.expectedIntent)) {
-        postToHost({
-          type: "historyRestored",
-          token: message.token,
-          position: snapshot(),
-          intent: latest.current.navigation.intent.current(),
-          ok: false,
-        });
-        return true;
-      }
-      finishJump();
-      cancelRestore();
-      previewOrigin.current = undefined;
-      const intent = latest.current.navigation.intent;
-      let generation = intent.advance();
-      restoring.current = { token: message.token, generation };
-      startedToken.current = message.token;
-      const requested = message.position;
-      latest.current.setChoices({
-        pageLayout: requested.pageLayout,
-        scrollMode: requested.scrollMode,
-        scrollDirection: requested.scrollDirection,
-      });
-      let frames = 0;
-      let steady = 0;
-      let positioned = false;
-      let previous = snapshot();
-      const settle = (): void => {
-        if (restoring.current?.token !== message.token) {
-          return;
-        }
-        if (!intent.owns(generation) || ++frames > 180) {
-          cancelRestore();
-          return;
-        }
-        const { navigation, choices, zoom } = latest.current;
-        const position = {
-          ...requested,
-          page: Math.min(requested.page, navigation.pageCount),
-        };
-        if (!navigation.isReady() || !zoom || navigation.pageCount < 1) {
-          frame.current = requestAnimationFrame(settle);
-          return;
-        }
-        const native = nativeZoom(position.zoom);
-        const current = zoom.getState();
-        const zoomReady =
-          typeof native === "number"
-            ? restoredZoomReady(
-                navigation.isReady(),
-                current.zoomLevel,
-                current.currentZoomLevel,
-                native,
-              )
-            : current.zoomLevel === native;
-        const choicesReady =
-          choices.pageLayout === position.pageLayout &&
-          choices.scrollMode === position.scrollMode &&
-          choices.scrollDirection === position.scrollDirection;
-        if (!zoomReady) {
-          // Check ownership immediately before every deferred viewport mutation.
-          if (intent.owns(generation)) {
-            zoom.requestZoom(native);
-          }
-          steady = 0;
-        } else if (choicesReady && !positioned && frames >= 3) {
-          if (intent.owns(generation)) {
-            navigation.restore(position);
-            // Position restoration supersedes zoom's deferred anchor correction.
-            generation = intent.current();
-            if (restoring.current) {
-              restoring.current.generation = generation;
-            }
-          }
-          positioned = true;
-          steady = 0;
-        } else if (positioned) {
-          const actual = snapshot();
-          steady = samePosition(previous, actual) ? steady + 1 : 0;
-          previous = actual;
-          if (steady >= 4) {
-            restoring.current = undefined;
-            frame.current = undefined;
-            postToHost({
-              type: "historyRestored",
-              token: message.token,
-              position: actual,
-              intent: generation,
-              ok: true,
-            });
-            return;
-          }
-        }
-        frame.current = requestAnimationFrame(settle);
-      };
-      frame.current = requestAnimationFrame(settle);
-      return true;
-    },
-    [cancelRestore, finishJump, snapshot],
-  );
-
-  useEffect(
-    () => () => {
-      latest.current.navigation.intent.advance();
-      clearFrame();
-      pending.current = undefined;
-      previewOrigin.current = undefined;
-      restoring.current = undefined;
-    },
-    [clearFrame],
-  );
-
-  const traverse = (direction: "back" | "forward"): void => {
-    finishJump();
-    postToHost({ type: "historyTraverse", direction });
-  };
+  const controller = useRef<JumpHistoryController | undefined>(undefined);
+  controller.current ??= new JumpHistoryController(setState);
+  const history = controller.current;
+  history.dependencies = { navigation, choices, setChoices, zoom };
+  useEffect(() => () => history.dispose(), [history]);
   return {
-    jump,
-    preview,
-    endPreview,
-    handle,
+    jump: history.jump,
+    preview: history.preview,
+    endPreview: history.endPreview,
+    handle: history.handle,
     back: state.back,
     forward: state.forward,
-    onBack: () => traverse("back"),
-    onForward: () => traverse("forward"),
+    onBack: () => history.traverse("back"),
+    onForward: () => history.traverse("forward"),
   };
+}
+
+/**
+ * Turns deliberate jumps (links, page numbers, search results) into history
+ * entries for the host, and replays the host's Back and Forward. Its methods
+ * are bound once, so the hook hands out stable callbacks.
+ */
+class JumpHistoryController {
+  dependencies!: Dependencies;
+  private sequence = 0;
+  private startedToken = 0;
+  private frame: number | undefined;
+  private pending: PendingJump | undefined;
+  private previewOrigin:
+    { position: ReadingPosition; readerRevision: number } | undefined;
+  private replay: Replay | undefined;
+
+  constructor(
+    private readonly setState: (state: {
+      back: boolean;
+      forward: boolean;
+    }) => void,
+  ) {}
+
+  private get intent() {
+    return this.dependencies.navigation.intent;
+  }
+
+  /** Where the reader is now. */
+  readonly snapshot = (): ReadingPosition =>
+    readingSnapshot(this.dependencies.choices, this.dependencies.zoom);
+
+  /** A search result shown before it is accepted: Back returns to before it. */
+  readonly preview = (run: () => void): void => {
+    this.finishJump();
+    this.cancelReplay();
+    const intent = this.intent;
+    if (this.previewOrigin?.readerRevision !== intent.readerRevision()) {
+      this.previewOrigin = {
+        position: this.snapshot(),
+        readerRevision: intent.readerRevision(),
+      };
+    }
+    intent.advance();
+    run();
+  };
+
+  readonly endPreview = (): void => {
+    this.previewOrigin = undefined;
+  };
+
+  /** Run a deliberate move and record it once the viewport settles. */
+  readonly jump = (
+    run: () => void,
+    requestId?: number,
+    acceptPreview = false,
+    expectedIntent?: number,
+  ): void => {
+    if (expectedIntent !== undefined && !this.intent.owns(expectedIntent)) {
+      if (requestId !== undefined) {
+        this.reportRestored(requestId, this.intent.current(), false);
+      }
+      return;
+    }
+    this.finishJump();
+    this.cancelReplay();
+    const intent = this.intent;
+    const from =
+      acceptPreview &&
+      this.previewOrigin?.readerRevision === intent.readerRevision()
+        ? this.previewOrigin.position
+        : this.snapshot();
+    this.previewOrigin = undefined;
+    const generation = intent.advance();
+    this.pending = {
+      from,
+      id: ++this.sequence,
+      ...(requestId === undefined ? {} : { requestId }),
+      ...(expectedIntent === undefined
+        ? {}
+        : { acknowledge: true, generation }),
+    };
+    run();
+    this.settleJump(generation);
+  };
+
+  /** Messages about history from the host; false for any other message. */
+  readonly handle = (message: Exclude<HostMessage, { type: "load" }>) => {
+    switch (message.type) {
+      case "historyState":
+        this.setState({ back: message.back, forward: message.forward });
+        return true;
+      case "historyCancel":
+        this.onCancel(message.token);
+        return true;
+      case "historyCapture":
+        this.onCapture(message.token);
+        return true;
+      case "historyRestore":
+        this.onRestore(message);
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  traverse(direction: "back" | "forward"): void {
+    this.finishJump();
+    postToHost({ type: "historyTraverse", direction });
+  }
+
+  dispose(): void {
+    this.intent.advance();
+    this.clearFrame();
+    this.pending = undefined;
+    this.previewOrigin = undefined;
+    this.replay = undefined;
+  }
+
+  /** Wait, frame by frame, until the jump's destination stops moving. */
+  private settleJump(generation: number): void {
+    const intent = this.intent;
+    let previous = this.snapshot();
+    let steady = 0;
+    let frames = 0;
+    const settle = (): void => {
+      if (!this.pending) {
+        return;
+      }
+      const position = this.snapshot();
+      steady = samePosition(previous, position) ? steady + 1 : 0;
+      previous = position;
+      frames++;
+      const settled =
+        this.dependencies.navigation.isReady() &&
+        frames > 6 &&
+        steady >= STEADY_FRAMES;
+      if (!intent.owns(generation) || settled || frames >= MAX_FRAMES) {
+        this.finishJump(settled && intent.owns(generation));
+        return;
+      }
+      this.frame = requestAnimationFrame(settle);
+    };
+    this.frame = requestAnimationFrame(settle);
+  }
+
+  /** Record the pending jump (and acknowledge a precise link's arrival). */
+  private finishJump(applied = false): void {
+    const jump = this.pending;
+    if (!jump) {
+      return;
+    }
+    this.pending = undefined;
+    this.clearFrame();
+    const { acknowledge, generation, ...entry } = jump;
+    postToHost({ type: "historyJump", ...entry, to: this.snapshot() });
+    if (acknowledge && entry.requestId !== undefined) {
+      const intent = this.intent;
+      this.reportRestored(
+        entry.requestId,
+        intent.current(),
+        applied && generation !== undefined && intent.owns(generation),
+      );
+    }
+  }
+
+  private onCancel(token: number | undefined): void {
+    if (token !== undefined && this.replay?.token !== token) {
+      return;
+    }
+    this.previewOrigin = undefined;
+    this.intent.advance();
+    this.cancelReplay();
+  }
+
+  private onCapture(token: number): void {
+    this.finishJump();
+    this.previewOrigin = undefined;
+    postToHost({
+      type: "historyCaptured",
+      token,
+      startedToken: this.startedToken,
+      position: this.snapshot(),
+      intent: this.intent.current(),
+      ok: true,
+    });
+  }
+
+  private onRestore(
+    message: Extract<HostMessage, { type: "historyRestore" }>,
+  ): void {
+    // Input can occur during capture -> host -> restore IPC, before a local
+    // restoration loop even exists. Never revive that stale request.
+    if (!this.intent.owns(message.expectedIntent)) {
+      this.reportRestored(message.token, this.intent.current(), false);
+      return;
+    }
+    this.finishJump();
+    this.cancelReplay();
+    this.previewOrigin = undefined;
+    const requested = message.position;
+    this.replay = {
+      token: message.token,
+      requested,
+      generation: this.intent.advance(),
+      frames: 0,
+      steady: 0,
+      positioned: false,
+      previous: this.snapshot(),
+    };
+    this.startedToken = message.token;
+    this.dependencies.setChoices({
+      pageLayout: requested.pageLayout,
+      scrollMode: requested.scrollMode,
+      scrollDirection: requested.scrollDirection,
+    });
+    const replay = this.replay;
+    const step = (): void => {
+      if (this.replay === replay && this.replayStep(replay)) {
+        this.frame = requestAnimationFrame(step);
+      }
+    };
+    this.frame = requestAnimationFrame(step);
+  }
+
+  /**
+   * One frame of a replay: zoom first, then the layout, then the position;
+   * done once it holds still. Returns whether to run another frame.
+   */
+  private replayStep(replay: Replay): boolean {
+    if (!this.intent.owns(replay.generation) || ++replay.frames > MAX_FRAMES) {
+      this.cancelReplay();
+      return false;
+    }
+    const { navigation, zoom } = this.dependencies;
+    if (!navigation.isReady() || !zoom || navigation.pageCount < 1) {
+      return true;
+    }
+    const position = {
+      ...replay.requested,
+      page: Math.min(replay.requested.page, navigation.pageCount),
+    };
+    const native = nativeZoom(position.zoom);
+    if (!zoomReady(zoom, native, navigation.isReady())) {
+      // Check ownership immediately before every deferred viewport mutation.
+      if (this.intent.owns(replay.generation)) {
+        zoom.requestZoom(native);
+      }
+      replay.steady = 0;
+    } else if (!replay.positioned) {
+      this.positionReplay(replay, position);
+    } else if (this.replaySettled(replay)) {
+      return false;
+    }
+    return true;
+  }
+
+  /** Move to the replayed position once the layout matches and zoom held. */
+  private positionReplay(replay: Replay, position: ReadingPosition): void {
+    if (
+      !sameChoices(this.dependencies.choices, position) ||
+      replay.frames < 3
+    ) {
+      return;
+    }
+    if (this.intent.owns(replay.generation)) {
+      this.dependencies.navigation.restore(position);
+      // Position restoration supersedes zoom's deferred anchor correction.
+      replay.generation = this.intent.current();
+    }
+    replay.positioned = true;
+    replay.steady = 0;
+  }
+
+  /** Whether the replay's arrival has held still; then it is reported. */
+  private replaySettled(replay: Replay): boolean {
+    const actual = this.snapshot();
+    replay.steady = samePosition(replay.previous, actual)
+      ? replay.steady + 1
+      : 0;
+    replay.previous = actual;
+    if (replay.steady < STEADY_FRAMES) {
+      return false;
+    }
+    this.replay = undefined;
+    this.frame = undefined;
+    postToHost({
+      type: "historyRestored",
+      token: replay.token,
+      position: actual,
+      intent: replay.generation,
+      ok: true,
+    });
+    return true;
+  }
+
+  private cancelReplay(): void {
+    const replay = this.replay;
+    if (!replay) {
+      return;
+    }
+    this.replay = undefined;
+    this.clearFrame();
+    this.reportRestored(replay.token, this.intent.current(), false);
+  }
+
+  private reportRestored(token: number, intent: number, ok: boolean): void {
+    postToHost({
+      type: "historyRestored",
+      token,
+      position: this.snapshot(),
+      intent,
+      ok,
+    });
+  }
+
+  private clearFrame(): void {
+    if (this.frame !== undefined) {
+      cancelAnimationFrame(this.frame);
+    }
+    this.frame = undefined;
+  }
+}
+
+function zoomReady(
+  zoom: NonNullable<Zoom>,
+  native: ReturnType<typeof nativeZoom>,
+  ready: boolean,
+): boolean {
+  const current = zoom.getState();
+  return typeof native === "number"
+    ? restoredZoomReady(
+        ready,
+        current.zoomLevel,
+        current.currentZoomLevel,
+        native,
+      )
+    : current.zoomLevel === native;
+}
+
+function sameChoices(choices: ViewChoices, position: ReadingPosition): boolean {
+  return (
+    choices.pageLayout === position.pageLayout &&
+    choices.scrollMode === position.scrollMode &&
+    choices.scrollDirection === position.scrollDirection
+  );
+}
+
+/** The reading position: the remembered choices, the zoom and the first page on screen. */
+function readingSnapshot(choices: ViewChoices, zoom: Zoom): ReadingPosition {
+  const result = { ...rememberedPosition(), ...choices };
+  const zoomState = zoom?.getState();
+  if (zoomState) {
+    result.zoom = zoomChoice(zoomState);
+  }
+  const viewport = document.querySelector(".viewport")?.getBoundingClientRect();
+  const page = viewport && firstVisiblePage(viewport);
+  if (page && viewport) {
+    const box = page.getBoundingClientRect();
+    const scale = Number(page.dataset.scale);
+    result.page = Number(page.dataset.pageIndex) + 1;
+    result.top = Math.max(0, viewport.top - box.top) / scale;
+    result.left = Math.max(0, viewport.left - box.left) / scale;
+  }
+  return result;
+}
+
+function zoomChoice(state: {
+  zoomLevel: unknown;
+  currentZoomLevel: number;
+}): ReadingPosition["zoom"] {
+  if (state.zoomLevel === ZoomMode.FitWidth) {
+    return "fitWidth";
+  }
+  return state.zoomLevel === ZoomMode.FitPage
+    ? "fitPage"
+    : state.currentZoomLevel * 100;
+}
+
+/** The first rendered page that shows in the viewport. */
+function firstVisiblePage(viewport: DOMRect): HTMLElement | undefined {
+  for (const page of document.querySelectorAll<HTMLElement>(
+    ".page[data-page-index]",
+  )) {
+    const box = page.getBoundingClientRect();
+    const visible =
+      box.bottom > viewport.top &&
+      box.top < viewport.bottom &&
+      box.right > viewport.left &&
+      box.left < viewport.right;
+    if (visible && Number(page.dataset.scale) > 0) {
+      return page;
+    }
+  }
+  return undefined;
 }

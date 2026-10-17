@@ -4813,3 +4813,55 @@ checkout's own disposable profile. Captures outside the repo show the enabled
 chrome in both modes and its removal on disable; the synthetic capture wrapper
 needed a bounded viewport. Owner-run visual acceptance remains in the manual
 plan. No VSIX, merge or Marketplace publication.
+
+## One extension, one core, host services — 2026-10-17
+
+Markdown Workshop and PDF Workshop now ship as one extension, "Workshop:
+Markdown and PDF" (`t04dj14n9.vscode-workshop`), from a pnpm workspace:
+`packages/core` (the plugin core), `packages/agents` (what both products hand
+to agents), `packages/markdown`, `packages/pdf`, and a composition root in
+`src/extension.ts` that starts both products in one plugin tree. Both
+products' editors are registered up front, and notes link to PDFs: a link or
+embed card to `paper.pdf#page=3` opens PDF Workshop at that page (through its
+Open Location command, which now takes a view column for side opens).
+
+The plugins run on `@workshop/core` over Cordis 4.0.0-rc.11 (pinned): the
+in-house kernel and PDF's runtime are deleted. The core adds joined,
+last-first release, abandoning a start, optional services, a ranked event bus
+and an ownership tree; its 23 conformance scenarios pass (stock Cordis: 6).
+Plugins declare what they read (`inject`) and publish (`provides`); the core
+refuses anything else, and the plugin graph is derived from those
+declarations (the hand-kept provider table is gone).
+
+The `workshop` host interface is split into focused host services
+(`hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `views`,
+`activeEditor`, `settings`, `workspace`, `storage`, `extensions`,
+`navigation`, `customEditors`, `agentHost`, `git`, `diffViews`), each always
+present; plugins inject the ones they use and tests build them with
+`fakeHost(overrides)`. One `PluginSwitch` runs every feature switch (window,
+panel host and webview plugins).
+
+Agent integration: the IDE context core, the handoff text and their contract
+fixtures exist once, in `@workshop/agents` (the hash-pinned twins are gone).
+PDF's `get_current_note_selection` MCP tool reads Markdown Workshop's
+selection through a `noteSelections` service the composition root provides.
+In Cursor, Cmd/Ctrl+L and Cmd/Ctrl+K on a Live Preview selection now reach
+Cursor Chat and Edit: Cursor's own bindings outrank every extension's, so the
+webview answers those keys itself (checked in real Cursor 3.23).
+
+Fixes found on the way: each product's settings commands list only its own
+settings; the PDF harness passed `--password-store=basic` on macOS, where
+VS Code 1.142 never opens its window; the real-VS Code specs hold on 1.142
+(exact palette matches, the modal Settings editor, the chat side bar); doc
+screenshots are written only with `UPDATE_DOC_SCREENSHOTS=1`; Vim screenshots
+whose names differed only by case are renamed.
+
+PDF code now follows the repository's Prettier and ESLint configuration;
+its extension and shared code meet the size limits, and the viewer's React
+hooks are being split to them (the remaining exemption is listed in
+`eslint.config.mjs` and pinned in `test/unit/lint-rules.test.ts`).
+
+Validation (macOS, isolated profiles): `pnpm check` green (core 74, agents 47,
+Markdown 1,794, PDF 378 unit tests); real VS Code 1.142: PDF 25/26 with one
+skipped performance spec, Markdown 22/23 (the git diff editor spec fails as
+before the merge); real Cursor 3.23: see the session report.

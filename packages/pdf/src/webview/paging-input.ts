@@ -115,22 +115,7 @@ export function usePagedWheel(
         return;
       }
       const { direction, bounds, step } = latest.current;
-      const horizontal =
-        direction === "horizontal" &&
-        Math.abs(event.deltaX) > Math.abs(event.deltaY);
-      const delta =
-        direction === "horizontal" && !horizontal
-          ? event.deltaY
-          : horizontal
-            ? event.deltaX
-            : event.deltaY;
-      // Page and line deltas count as screens and lines.
-      const pixels =
-        event.deltaMode === 1
-          ? delta * 40
-          : event.deltaMode === 2
-            ? delta * viewport.clientHeight
-            : delta;
+      const pixels = wheelAlong(event, direction, viewport.clientHeight);
       const alongX = direction === "horizontal";
       const limit = alongX ? bounds(viewport).x : bounds(viewport).y;
       const at = alongX ? viewport.scrollLeft : viewport.scrollTop;
@@ -150,4 +135,24 @@ export function usePagedWheel(
     return () =>
       element.removeEventListener("wheel", onWheel, { capture: true });
   }, [container, input.mode]);
+}
+
+/**
+ * The wheel's movement along the reading direction, in pixels: in horizontal
+ * reading a sideways swipe counts sideways, a vertical one vertically. Page
+ * and line deltas count as screens and lines.
+ */
+function wheelAlong(
+  event: WheelEvent,
+  direction: ScrollDirection,
+  screen: number,
+): number {
+  const sideways =
+    direction === "horizontal" &&
+    Math.abs(event.deltaX) > Math.abs(event.deltaY);
+  const delta = sideways ? event.deltaX : event.deltaY;
+  if (event.deltaMode === 1) {
+    return delta * 40;
+  }
+  return event.deltaMode === 2 ? delta * screen : delta;
 }

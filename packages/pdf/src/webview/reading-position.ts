@@ -63,13 +63,16 @@ export function rememberedPosition(): ReadingPosition {
 }
 
 export function nativeZoom(choice: ZoomChoice): ZoomLevel {
-  return choice === "fitWidth"
-    ? ZoomMode.FitWidth
-    : choice === "fitPage"
-      ? ZoomMode.FitPage
-      : choice === "actual"
-        ? 1
-        : choice / 100;
+  switch (choice) {
+    case "fitWidth":
+      return ZoomMode.FitWidth;
+    case "fitPage":
+      return ZoomMode.FitPage;
+    case "actual":
+      return 1;
+    default:
+      return choice / 100;
+  }
 }
 
 /** The automatic zoom the plugin starts in: the restored fit mode, else fit width. */
