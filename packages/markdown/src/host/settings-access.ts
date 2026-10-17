@@ -89,7 +89,8 @@ export function createSettingsAccess(extension: {
     user: vscode.ConfigurationTarget.Global,
   };
   return {
-    searchFilter: `@ext:${extension.id}`,
+    // The extension also contributes PDF settings: show only these.
+    searchFilter: `@ext:${extension.id} ${SETTING_PREFIX}`,
     inspect(key, resource) {
       own(settings(), key);
       const { target, value } = locate(key, resource);

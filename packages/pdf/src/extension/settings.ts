@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { type SchemaProperty, writeProblem } from "../shared/setting-schema";
+import {
+  SETTING_PREFIX,
+  type SchemaProperty,
+  writeProblem,
+} from "../shared/setting-schema";
 import { settingTarget } from "../shared/settings-target";
 
 /** What PDF plugins need to know about the running extension. */
@@ -17,12 +21,16 @@ export interface ExtensionIdentity {
 export class PdfSettings {
   constructor(private readonly extension: ExtensionIdentity) {}
 
-  /** The Settings editor's filter for this extension's settings. */
+  /** The Settings editor's filter for the PDF settings (the extension has Markdown ones too). */
   get searchFilter(): string {
-    return `@ext:${this.extension.id}`;
+    return `@ext:${this.extension.id} ${SETTING_PREFIX}`;
   }
 
-  /** Every setting the extension contributes, by key, across its sections. */
+  /**
+   * Every PDF setting the extension contributes, by key, across its sections
+   * (the Markdown settings beside them are not the PDF commands' to show or
+   * change).
+   */
   properties(): Record<string, SchemaProperty> {
     const manifest = this.extension.packageJSON as
       { contributes?: { configuration?: unknown } } | undefined;
@@ -31,10 +39,11 @@ export class PdfSettings {
     const sections = (
       configuration === undefined ? [] : [configuration].flat()
     ) as { properties?: Record<string, SchemaProperty> }[];
-    return Object.assign(
-      {},
-      ...sections.map((section) => section.properties ?? {}),
-    ) as Record<string, SchemaProperty>;
+    return Object.fromEntries(
+      sections
+        .flatMap((section) => Object.entries(section.properties ?? {}))
+        .filter(([key]) => key.startsWith(SETTING_PREFIX)),
+    );
   }
 
   /**
