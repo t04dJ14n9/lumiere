@@ -6,6 +6,7 @@ import {
   CLICK_DRAG_PX,
   clickToEditReleaseCommits,
   latchClickDrag,
+  liveFenceOffsets,
   markdownBlockIgnoresEventKind,
   shouldGuardFenceMouseDown,
   type ClickToEditPress,
@@ -237,4 +238,70 @@ test("Mermaid SVG CSS captures transparent gap clicks on the widget", () => {
     "utf8",
   );
   assert.match(css, /pointer-events:\s*all/);
+});
+
+test("fence click guard resolves live offsets from the shell, not captured from/to", () => {
+  assert.match(widgetSrc, /liveFenceOffsets/);
+  assert.match(widgetSrc, /posAtDOM\(shell\)/);
+  // Must not feed the stale RenderBlock.from/to captured at toDOM into the guard.
+  assert.doesNotMatch(
+    widgetSrc,
+    /shouldGuardFenceMouseDown\(\{[\s\S]*?blockFrom:\s*block\.from/,
+  );
+  const shell = {} as Node;
+  const view = {
+    posAtDOM(node: Node) {
+      assert.equal(node, shell);
+      return 110; // fence shifted after an edit above
+    },
+  };
+  // Captured creation offsets were 100..150; span length 50 still applies.
+  assert.deepEqual(liveFenceOffsets(view, shell, 50), {
+    blockFrom: 110,
+    blockTo: 160,
+  });
+  // Guard still swallows a margin hit that maps into the *live* fence.
+  assert.equal(
+    shouldGuardFenceMouseDown({
+      button: 0,
+      onControl: false,
+      targetInsideShell: false,
+      pos: 110,
+      ...liveFenceOffsets(view, shell, 50),
+    }),
+    true,
+  );
+  // Stale captured range would miss this (and wrongly swallow nearby content).
+  assert.equal(
+    shouldGuardFenceMouseDown({
+      button: 0,
+      onControl: false,
+      targetInsideShell: false,
+      pos: 110,
+      blockFrom: 100,
+      blockTo: 150,
+    }),
+    true,
+  );
+  assert.equal(
+    shouldGuardFenceMouseDown({
+      button: 0,
+      onControl: false,
+      targetInsideShell: false,
+      pos: 155,
+      blockFrom: 100,
+      blockTo: 150,
+    }),
+    false,
+  );
+  assert.equal(
+    shouldGuardFenceMouseDown({
+      button: 0,
+      onControl: false,
+      targetInsideShell: false,
+      pos: 155,
+      ...liveFenceOffsets(view, shell, 50),
+    }),
+    true,
+  );
 });

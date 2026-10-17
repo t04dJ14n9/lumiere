@@ -85,3 +85,29 @@ test("block math reveals its source on click and arrow entry without a ghost pre
   await page.keyboard.press("ArrowDown");
   await expect(page.locator(".hybrid-math")).toHaveCount(0);
 });
+
+test("mermaid margin click stays rendered after inserting a line above", async ({
+  page,
+}) => {
+  const source =
+    "above the diagram\n\n```mermaid\nflowchart LR\nA --> B\n```\n\nbelow";
+  await open(page, source);
+  const diagram = page.locator(".hybrid-diagram");
+  await expect(diagram).toHaveCount(1);
+  await expect(page.locator('pre[data-fence="mermaid"] svg')).toBeVisible({
+    timeout: 15_000,
+  });
+  // Edit above without touching Mermaid source — widget DOM is reused while
+  // fence offsets shift (the ChatGPT PR 76 stale-guard trigger).
+  await page.evaluate(() => window.harness.reveal(0));
+  await page.keyboard.insertText("inserted line\n");
+  await expect(diagram).toHaveCount(1);
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .toMatch(/^inserted line\nabove the diagram/);
+  const box = (await diagram.boundingBox())!;
+  // Editor margin to the right of the widget (misses shell, maps into fence).
+  await page.mouse.click(box.x + box.width + 12, box.y + box.height / 2);
+  await expect(diagram).toHaveCount(1);
+  await expect(page.locator(".cm-content")).not.toContainText("```mermaid");
+});

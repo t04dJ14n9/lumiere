@@ -377,9 +377,30 @@ export function shouldGuardFenceMouseDown(input: {
 }
 
 /**
+ * Current fence offsets for a (possibly reused) widget shell.
+ *
+ * `MarkdownBlock.eq` / `GuardedWidget.eq` keep the same DOM when only text
+ * *above* the diagram changes, so `RenderBlock.from`/`to` captured in `toDOM`
+ * go stale. Resolve `from` live via `posAtDOM(shell)` and derive `to` from the
+ * unchanged source span length.
+ */
+export function liveFenceOffsets(
+  view: { posAtDOM(node: Node, offset?: number): number },
+  shell: Node,
+  spanLength: number,
+): { blockFrom: number; blockTo: number } {
+  const blockFrom = view.posAtDOM(shell);
+  return { blockFrom, blockTo: blockFrom + spanLength };
+}
+
+/**
  * Stop CodeMirror from placing the caret inside a dblclick-only fence when the
  * pointer missed the widget (transparent SVG / editor margin beside the block)
  * but `posAtCoords` still resolves into the replace range.
+ *
+ * Offsets are read live on each event — not the from/to captured at widget
+ * creation — so margin clicks still guard after edits above an unchanged
+ * Mermaid block reuse the same DOM.
  */
 function bindFenceClickGuard(
   view: EditorView,
@@ -387,17 +408,27 @@ function bindFenceClickGuard(
   block: { from: number; to: number },
   signal: AbortSignal,
 ): void {
+  // Length is stable while this DOM is reused (source-eq); absolute from/to are not.
+  const spanLength = block.to - block.from;
   view.dom.addEventListener(
     "mousedown",
     (event) => {
+      let blockFrom: number;
+      let blockTo: number;
+      try {
+        ({ blockFrom, blockTo } = liveFenceOffsets(view, shell, spanLength));
+      } catch {
+        // Shell detached between abort and the event; let CM handle it.
+        return;
+      }
       if (
         !shouldGuardFenceMouseDown({
           button: event.button,
           onControl: isBlockControl(shell, event.target),
           targetInsideShell: eventTargetInside(shell, event.target),
           pos: view.posAtCoords({ x: event.clientX, y: event.clientY }) ?? null,
-          blockFrom: block.from,
-          blockTo: block.to,
+          blockFrom,
+          blockTo,
         })
       ) {
         return;
