@@ -4813,3 +4813,50 @@ checkout's own disposable profile. Captures outside the repo show the enabled
 chrome in both modes and its removal on disable; the synthetic capture wrapper
 needed a bounded viewport. Owner-run visual acceptance remains in the manual
 plan. No VSIX, merge or Marketplace publication.
+
+## Reclaim latency for materialized text tabs — 2026-10-18
+
+Delivered: reclaim skips the foreground document warm only for a native text
+tab whose exact URI is already in `workspace.textDocuments`. A pure policy
+helper makes that boundary explicit. Cursor's input-less Markdown editor and
+text tabs without a matching document still await the existing warm. No warmer,
+event listener, selection capture, navigation intent, reveal or cleanup behavior
+was changed. Reclaim eligibility, 10-second transfer cooldown, explicit text
+bypasses and pending/established handoff leases retain their existing gates.
+
+Reasoned latency reduction: the materialized-text path now issues `openWith`
+synchronously from the tab notification, removing resource-setting lookup,
+warm-host setup and one sequential `openTextDocument` call with its promise
+continuations from the critical path when warming is enabled. VS Code normally
+returns a cached document for this call, so this does not establish a saved
+host round trip. The saving depends on the host's implementation and promise
+scheduling; no wall-clock milliseconds or first-paint claim is made.
+There is no debounce to remove. Selection capture and `navigation.begin` are
+synchronous, and reveal delivery follows `openWith`. No speculative earlier
+listener was added: activation still only captures late native selection.
+
+Checks: the two loaded-text regression cases fail against the starting code.
+Focused reclaim/policy/warm/handoff/navigation units pass 111/111; the full unit
+suite passes 1,924 with 23 existing skips. Changed-file format/lint, every
+production TypeScript project and generated contributions pass. `check:full`
+was attempted under the shared lock but stops at six baseline formatting
+failures. Separate checks also find ten lint violations in unchanged files and
+two type errors in unchanged gitBlame tests. These files remain outside this
+phase. Chromium passes 278/284; five failures reproduce on an isolated
+`f658808` snapshot, while its cell-chrome startup timeout passes on that rerun.
+All webview source, browser specs and build/harness scripts are byte-identical
+to the base. The final native 1.142.0 run passes 13 cases, then the renderer
+crashes during the 16,000-block performance case; stop-on-first-failure leaves
+nine cases unrun. Earlier native startup/font-stack timeouts clear on rerun;
+the same four-case prefix passes on the base. The native gate remains unresolved.
+All suites use the shared lock; native runs use a private Xvfb display and the
+isolated unpackaged harness. Full logs and baseline comparisons are under
+`/workspace/plans/mw-reclaim-speed/`.
+
+New automated coverage is unit tests; the Claude Code timing/opt-out scenario
+is in `docs/MANUAL_TEST_PLAN.md`. Existing
+warming race fixtures explicitly use Cursor Markdown to retain the awaited
+path, including lease acquisition, supersession, disposal and late selection.
+No source tests were ported; the test ledger is unchanged. The pinned
+`~/Code/human-learning` checkout is absent on this host; no reference repository
+was modified. No design deviation, VSIX, merge or Marketplace publication.

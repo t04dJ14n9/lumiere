@@ -7,6 +7,7 @@ import {
   isReclaimableNote,
   reclaimEnabled,
   shouldReclaim,
+  shouldWarmBeforeReclaim,
 } from "../../../src/host/reclaim-policy";
 import type { TabKind } from "../../../src/host/reclaim-policy";
 
@@ -21,6 +22,15 @@ const swap = (before: TabKind, after: TabKind, uri = note) => ({
   uri,
   before,
   after,
+});
+
+test("only a materialized text tab can skip the foreground reclaim warm", () => {
+  assert.equal(shouldWarmBeforeReclaim("text", true), false);
+  assert.equal(shouldWarmBeforeReclaim("text", false), true);
+  for (const kind of ["other", "workbench", "none"] as const) {
+    assert.equal(shouldWarmBeforeReclaim(kind, true), true);
+    assert.equal(shouldWarmBeforeReclaim(kind, false), true);
+  }
 });
 
 test("auto reclaims only in Cursor; on and off are explicit", () => {

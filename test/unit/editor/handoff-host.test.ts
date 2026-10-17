@@ -275,6 +275,100 @@ function delayWarm() {
   return release;
 }
 
+for (const isDirty of [false, true]) {
+  test(`an already-materialized ${isDirty ? "dirty" : "clean"} text tab reclaims without waiting for another document open`, async (t) => {
+    const release = delayWarm();
+    t.after(release);
+    const stop = host.reclaim.registerReclaim();
+    t.after(() => stop.dispose());
+    const tab = cursorTab();
+    tab.input = new TabInputText(Uri.parse(note));
+    tab.isDirty = isDirty;
+    tab.isPreview = !isDirty;
+    documents[0]!.isDirty = isDirty;
+
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    assert.deepEqual(warmed, [], "showTextDocument already loaded this note");
+    assert.deepEqual(commands, [
+      ["vscode.openWith", note, viewType, { viewColumn: 1, preview: !isDirty }],
+    ]);
+    tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
+    await tick();
+    assert.equal(
+      commands.length,
+      1,
+      "repeated tab events must not reopen twice",
+    );
+    assert.equal(group.tabs.includes(tab), isDirty);
+    assert.equal(documents[0]?.isDirty, isDirty);
+  });
+}
+
+test("a text tab without a matching materialized document still awaits warming", async (t) => {
+  const release = delayWarm();
+  t.after(release);
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  tab.input = new TabInputText(Uri.parse(note));
+  documents[0] = { uri: Uri.parse("file:///vault/Other.md"), isDirty: false };
+
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  assert.deepEqual(warmed, [note]);
+  assert.deepEqual(commands, []);
+  release();
+  await tick();
+  assert.equal(commands.length, 1);
+});
+
+for (const optOut of [
+  "Open as Text",
+  "openWith default",
+  "handoff lease",
+] as const) {
+  test(`a materialized text tab keeps its native editor for ${optOut}`, async (t) => {
+    const stop = host.reclaim.registerReclaim();
+    t.after(() => stop.dispose());
+    const tab = cursorTab();
+    tab.input = new TabInputText(Uri.parse(note));
+    if (optOut === "handoff lease") {
+      const lease = host.reclaim.handoffLease.acquire(note);
+      t.after(lease.release);
+    } else if (optOut === "openWith default") {
+      await host.workshop
+        .createWorkshop(Uri.parse(note) as unknown as NativeUri)
+        .execute("vscode.openWith", note, "default");
+      commands.length = 0;
+    } else {
+      host.reclaim.textBypass.allow(note);
+    }
+
+    tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    await tick();
+    assert.deepEqual(warmed, []);
+    assert.deepEqual(commands, []);
+    assert.ok(group.tabs.includes(tab));
+  });
+}
+
+test("a second native text request within the transfer cooldown keeps text", async (t) => {
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  const tab = cursorTab();
+  tab.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+
+  tab.input = new TabInputCustom(Uri.parse(note), viewType);
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
+  tab.input = new TabInputText(Uri.parse(note));
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1);
+  assert.ok(group.tabs.includes(tab));
+});
+
 test("an input-less dirty Cursor tab awaits warming before the custom-editor handoff", async (t) => {
   const release = delayWarm();
   t.after(release);
@@ -461,10 +555,10 @@ test("a lease acquired during queued reclaim survives sibling tab changes", asyn
   const stop = host.reclaim.registerReclaim();
   t.after(() => stop.dispose());
   const text = cursorTab();
-  text.input = new TabInputText(Uri.parse(note));
   tabsChanged.fire({ opened: [text], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
 
+  text.input = new TabInputText(Uri.parse(note));
   const lease = host.reclaim.handoffLease.acquire(note);
   t.after(lease.release);
   const sibling = cursorTab();
@@ -494,10 +588,10 @@ test("pending handoff survives the last text tab closing and suppresses queued r
   const resume = delayWarm();
   t.after(resume);
   const firstText = cursorTab();
-  firstText.input = new TabInputText(Uri.parse(note));
   // Reclaim was queued before Edit A established its native session.
   tabsChanged.fire({ opened: [firstText], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
+  firstText.input = new TabInputText(Uri.parse(note));
   host.reclaim.handoffLease.acquire(note).promote();
 
   const surface = host.cursorHandoff.createCursorHandoffSurface();
@@ -812,6 +906,12 @@ for (const reused of [false, true]) {
     t.after(() => stop.dispose());
     destination.ready();
     tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+    assert.deepEqual(warmed, []);
+    assert.equal(
+      commands.length,
+      1,
+      "loaded text starts openWith synchronously",
+    );
     await tick();
     assert.deepEqual(destination.calls, [
       editor.document.getText().indexOf("Line 930\n"),
@@ -1050,12 +1150,15 @@ test("a selection arriving during warming replaces the initial position without 
   const release = delayWarm();
   t.after(release);
   const tab = cursorTab();
+  nativeHunkEditor(tab, 0);
   const destination = hunkDestination(tab);
   const stop = host.reclaim.registerReclaim(destination.navigation);
-  nativeHunkEditor(tab, 0);
+  tab.input = undefined;
   t.after(() => stop.dispose());
   destination.ready();
   tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
+  assert.deepEqual(warmed, [note]);
+  assert.deepEqual(commands, []);
   const editor = nativeHunkEditor(tab, 947);
   selectionChanged.fire({ textEditor: editor, kind: 3 });
   release();
@@ -1074,6 +1177,7 @@ test("a reused preview tab can target another note while the first hunk is warmi
   t.after(() => stop.dispose());
   const tab = cursorTab();
   nativeHunkEditor(tab);
+  tab.input = undefined;
   tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   note = `file:///vault/Next-${serial}.md`;
   tab.label = `Next-${serial}.md`;
@@ -1105,10 +1209,11 @@ test("Open as Text during warming cancels the queued hunk transfer", async (t) =
   const release = delayWarm();
   t.after(release);
   const tab = cursorTab();
+  nativeHunkEditor(tab);
   const destination = hunkDestination(tab);
   const stop = host.reclaim.registerReclaim(destination.navigation);
   t.after(() => stop.dispose());
-  nativeHunkEditor(tab);
+  tab.input = undefined;
   destination.ready();
   tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
   assert.deepEqual(warmed, [note]);
@@ -1124,10 +1229,11 @@ for (const cancelledBy of ["newer navigation", "disposal"] as const) {
     const release = delayWarm();
     t.after(release);
     const tab = cursorTab();
+    nativeHunkEditor(tab);
     const destination = hunkDestination(tab);
     const stop = host.reclaim.registerReclaim(destination.navigation);
     t.after(() => stop.dispose());
-    nativeHunkEditor(tab);
+    tab.input = undefined;
     tabsChanged.fire({ opened: [tab], changed: [], closed: [] });
     assert.deepEqual(warmed, [note]);
     if (cancelledBy === "disposal") {
