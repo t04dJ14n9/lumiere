@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { markdown } from "@codemirror/lang-markdown";
-import { syntaxTree } from "@codemirror/language";
+import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
 import {
   EditorState,
   StateEffect,
@@ -23,6 +23,9 @@ function fixture(freeze: "visual" | "pointer") {
     doc: "before\n\n```\ncode\n```\n\nafter",
     extensions: [markdown(), pointerSelection, visualRevealFreeze],
   });
+  // Parse it all now: on a loaded machine the parser's time budget can run
+  // out before the fence. The next transaction carries the complete tree.
+  ensureSyntaxTree(state, state.doc.length, 10_000);
   const view = {
     state: state.update({
       effects:
