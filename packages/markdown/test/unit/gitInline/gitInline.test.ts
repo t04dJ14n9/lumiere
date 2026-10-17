@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
+import { ensureSyntaxTree } from "@codemirror/language";
 import {
   buildInline,
   ghostMarkdown,
@@ -33,6 +34,9 @@ function decorations(base = BASE, now = NOW, label = "HEAD (abc1234)") {
     doc: now,
     extensions: [hunkField, markdown({ base: markdownLanguage })],
   });
+  // Blocks come from the syntax tree, which a busy machine may not have
+  // finished parsing within the editor's time budget.
+  ensureSyntaxTree(state, state.doc.length, 5000);
   const set = { hunks: computeHunks(base, state.doc), generation: 1 };
   const diff = {
     field: hunkField,
