@@ -7,6 +7,12 @@ memory on Markdown Workshop’s custom editor.
 
 ## How it works
 
+Cursor's own Cmd/Ctrl+L and Cmd/Ctrl+K bindings outrank every extension's,
+so in Cursor the webview answers those keys itself when text is selected: it
+keeps them from VS Code and asks its panel's host half (`panel-host.ts`) to
+run Cursor Chat with Selection or Cursor Edit Selection. The commands and
+their keybindings stay for the palette and for hosts where they win.
+
 The host captures a flushed, version-checked selection from the active panel,
 discovers Cursor commands, acquires a reclaim handoff lease, warms the shared
 `TextDocument`, rechecks document version and text after that async work, mirrors
@@ -25,6 +31,9 @@ autosave.
 ## Files
 
 - `manifest.ts`: Chat/Edit commands and Cmd/Ctrl+L / Cmd/Ctrl+K bindings.
+- `protocol.ts`: the webview asks whether it runs in Cursor, and for a hand-off.
+- `webview.ts`: catches Cmd/Ctrl+L and Cmd/Ctrl+K on a selection, in Cursor.
+- `panel-host.ts`: answers the webview, per panel, by running the commands.
 - `cursor.ts`: Cursor-host detection and Chat/Edit command routing.
 - `selection.ts`: Active panel selection capture.
 - `handoff.ts`: Lease + version-safe native editor mirror.
@@ -32,8 +41,9 @@ autosave.
 
 ## Services, events and settings
 
-Injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings` and `agentHost`; provides no service. Sets
-`markdownWorkshop.isCursorHost`. Uses `handoffLease` from the host reclaim
+The window half injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings` and `agentHost`; provides no service. Sets
+`markdownWorkshop.isCursorHost`. The panel half injects `rpc`, `agentHost`
+and `hostCommands`; the webview half `editor` and `rpc`. Uses `handoffLease` from the host reclaim
 module. `plugins.cursorBridge.enabled` defaults to true. When disabled, Insert
 Link keeps Cmd/Ctrl+K even with a selection on Cursor.
 
