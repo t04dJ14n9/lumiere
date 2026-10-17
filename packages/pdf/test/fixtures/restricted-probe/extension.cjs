@@ -16,7 +16,7 @@ exports.activate = context => {
       const settings = vscode.workspace.getConfiguration('pdfWorkshop');
       const report = {
         trusted: vscode.workspace.isTrusted,
-        extensionActive: vscode.extensions.getExtension('t04dj14n9.vscode-pdf-workshop')?.isActive,
+        extensionActive: vscode.extensions.getExtension('t04dj14n9.vscode-workshop')?.isActive,
         bridgeEnabled: settings.get('agentBridge.enabled'),
         target: settings.get('copyLinkForAgent.target'),
         workspaceBridge: settings.inspect('agentBridge.enabled')?.workspaceValue,

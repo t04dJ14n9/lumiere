@@ -33,6 +33,7 @@ import * as vscode from "vscode";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { tokenScrubber } from "./scrub";
 import type { AgentHandoff } from "../handoff";
+import type { NoteSelections } from "../note-selections";
 import type { LastPdf } from "../last-pdf";
 import {
   DISCOVERY_DIR,
@@ -64,6 +65,8 @@ export interface ServerOptions {
   /** Plugin-owned tracker shared with the envelope command (do not dispose here). */
   lastPdf: LastPdf;
   handoff: AgentHandoff;
+  /** The Markdown editor's selections, when Markdown Workshop runs. */
+  notes?: NoteSelections;
   log: BridgeLog;
   /** Where to announce the bridge for the stdio shim; tests use a temp folder. */
   discoveryDir?: string;
@@ -88,8 +91,7 @@ export async function startAgentBridge(
     for (const failure of await undoAll(undo)) {
       options.log.error(scrub(`Agent bridge rollback: ${describe(failure)}`));
     }
-    // No `cause`: it may quote the token; only the scrubbed message leaves.
-    // eslint-disable-next-line preserve-caught-error
+    // eslint-disable-next-line preserve-caught-error -- a cause may quote the token; only the scrubbed message leaves
     throw new Error(scrub(describe(error)));
   }
 }
@@ -128,7 +130,7 @@ async function listen(
   token: string,
   scrub: (text: string) => string,
 ): Promise<RunningBridge> {
-  const { lastPdf, handoff, shim } = options;
+  const { lastPdf, handoff, notes, shim } = options;
   const discoveryDir = options.discoveryDir ?? DISCOVERY_DIR;
   const log: BridgeLog = {
     info: (message) => options.log.info(scrub(message)),
@@ -171,7 +173,7 @@ async function listen(
       return;
     }
     try {
-      const server = createBridgeServer(lastPdf, handoff);
+      const server = createBridgeServer(lastPdf, handoff, notes);
       const transport = new StreamableHTTPServerTransport({
         enableJsonResponse: true,
       }); // no session id: stateless
@@ -252,13 +254,8 @@ async function listen(
 
   const headers = { Authorization: `Bearer ${token}` };
   // Cursor: its own API; vscode.lm.registerMcpServerDefinitionProvider only logs a warning there.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cursorMcp = (vscode as any).cursor?.mcp as
-    | {
-        registerServer(config: unknown): void;
-        unregisterServer(name: string): void;
-      }
-    | undefined;
+  const apis = vscode as unknown as McpApis;
+  const cursorMcp = apis.cursor?.mcp;
   if (cursorMcp) {
     cursorMcp.registerServer({
       name: SERVER_NAME,
@@ -268,24 +265,8 @@ async function listen(
     log.info("Registered with Cursor (vscode.cursor.mcp.registerServer)");
   } else {
     // VS Code (1.101+): the MCP server definition provider API, used by Copilot Chat's agent mode.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lm = (vscode as any).lm as
-      | {
-          registerMcpServerDefinitionProvider?(
-            id: string,
-            provider: unknown,
-          ): vscode.Disposable;
-        }
-      | undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const HttpDefinition = (vscode as any).McpHttpServerDefinition as
-      | (new (
-          label: string,
-          uri: vscode.Uri,
-          headers?: Record<string, string>,
-          version?: string,
-        ) => unknown)
-      | undefined;
+    const lm = apis.lm;
+    const HttpDefinition = apis.McpHttpServerDefinition;
     if (lm?.registerMcpServerDefinitionProvider && HttpDefinition) {
       const registration = lm.registerMcpServerDefinitionProvider(PROVIDER_ID, {
         provideMcpServerDefinitions: () => [
@@ -356,4 +337,29 @@ async function within(promise: Promise<unknown>, ms: number): Promise<boolean> {
 
 function describe(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * MCP registration APIs missing from the @types/vscode this builds against:
+ * Cursor's own, and VS Code's server definition provider (1.101+).
+ */
+interface McpApis {
+  cursor?: {
+    mcp?: {
+      registerServer(config: unknown): void;
+      unregisterServer(name: string): void;
+    };
+  };
+  lm?: {
+    registerMcpServerDefinitionProvider?(
+      id: string,
+      provider: unknown,
+    ): vscode.Disposable;
+  };
+  McpHttpServerDefinition?: new (
+    label: string,
+    uri: vscode.Uri,
+    headers?: Record<string, string>,
+    version?: string,
+  ) => unknown;
 }

@@ -18,6 +18,7 @@ import * as vscode from "vscode";
 import type { PdfPanels } from "../../pdf/panels";
 import { AGENT_BRIDGE_COMMAND_IDS } from "../../pdf/registered-commands";
 import type { AgentHandoff } from "../handoff";
+import type { NoteSelections } from "../note-selections";
 import type { LastPdf } from "../last-pdf";
 import { SERVER_NAME } from "./constants";
 import type { BridgeLog, RunningBridge } from "./server";
@@ -38,6 +39,8 @@ export interface BridgeOptions {
   /** Plugin-owned LastPdf shared with the envelope command. */
   lastPdf: LastPdf;
   handoff: AgentHandoff;
+  /** The Markdown editor's selections, when Markdown Workshop runs. */
+  notes?: NoteSelections;
   log: BridgeLog;
   /** See ServerOptions.discoveryDir. */
   discoveryDir?: string;

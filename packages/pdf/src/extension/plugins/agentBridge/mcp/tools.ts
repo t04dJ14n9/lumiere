@@ -10,9 +10,8 @@ import { z } from "zod";
 import { notePayload, noteReference } from "../../../../shared/note-reference";
 import { OPEN_LOCATION_COMMAND_ID } from "../../pdf/registered-commands";
 import type { AgentHandoff } from "../handoff";
+import type { NoteSelections } from "../note-selections";
 import { LastPdf } from "../last-pdf";
-
-export const MARKDOWN_WORKBENCH_ID = "t04dj14n9.vscode-markdown-workbench";
 
 export { LastPdf };
 
@@ -24,6 +23,7 @@ type Content =
 export function createBridgeServer(
   lastPdf: LastPdf,
   handoff: AgentHandoff,
+  notes?: NoteSelections,
 ): McpServer {
   const server = new McpServer({ name: "agent-pdf-viewer", version: "0.1.0" });
 
@@ -126,70 +126,44 @@ export function createBridgeServer(
     {
       title: "Current Markdown note selection",
       description:
-        "The text the user has selected in the Markdown note open in Markdown Workbench, with an " +
+        "The text the user has selected in the Markdown note open in Markdown Workshop, with an " +
         "@path#start-end line reference. Call this when the user refers to the selection in their note.",
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
-    async () => ({ content: [{ type: "text", text: await noteSelection() }] }),
+    async () => ({
+      content: [{ type: "text", text: await noteSelection(notes) }],
+    }),
   );
 
   return server;
 }
 
-/** The part of Markdown Workbench's public API the bridge reads. */
-interface WorkbenchApi {
-  getEditors(): readonly {
-    editorId: string;
-    uri: vscode.Uri;
-    isActive: boolean;
-    isDirty: boolean;
-  }[];
-  getSelection(
-    editorId: string,
-  ): Promise<
-    | { text: string; startLine: number; endLine: number; isDirty: boolean }
-    | undefined
-  >;
-}
-
-async function noteSelection(): Promise<string> {
-  const extension = vscode.extensions.getExtension<WorkbenchApi>(
-    MARKDOWN_WORKBENCH_ID,
-  );
-  if (!extension) {
-    return "Markdown Workbench is not installed.";
+/** The note selection as Copy Link for Agent writes it, or why there is none. */
+async function noteSelection(
+  notes: NoteSelections | undefined,
+): Promise<string> {
+  if (!notes) {
+    return "Markdown Workshop is not running.";
   }
-  const api = extension.isActive
-    ? extension.exports
-    : await extension.activate();
-  const editors = api?.getEditors?.() ?? [];
-  // Prefer the active editor, then any editor with a non-empty selection.
-  const ordered = [...editors].sort(
-    (a, b) => Number(b.isActive) - Number(a.isActive),
-  );
-  for (const editor of ordered) {
-    const selection = await api
-      .getSelection(editor.editorId)
-      .catch(() => undefined);
-    if (!selection || !selection.text) {
-      continue;
-    }
-    const relative = vscode.workspace.asRelativePath(editor.uri, false);
-    const inWorkspace =
-      editor.uri.scheme === "file" &&
-      relative !== editor.uri.fsPath &&
-      (vscode.workspace.workspaceFolders?.length ?? 0) === 1;
-    // Unsaved notes have no stable line reference.
-    const reference = noteReference(
-      inWorkspace ? relative : editor.uri.toString(),
-      selection.startLine,
-      selection.endLine,
-      selection.isDirty,
-    );
-    return notePayload(reference, selection.text);
+  const selection = await notes.current();
+  if (!selection) {
+    return notes.hasOpenNotes()
+      ? "No text is selected in the open Markdown Workshop notes."
+      : "No note is open in Markdown Workshop.";
   }
-  return editors.length
-    ? "No text is selected in the open Markdown Workbench notes."
-    : "No note is open in Markdown Workbench.";
+  const { uri } = selection;
+  const relative = vscode.workspace.asRelativePath(uri, false);
+  const inWorkspace =
+    uri.scheme === "file" &&
+    relative !== uri.fsPath &&
+    (vscode.workspace.workspaceFolders?.length ?? 0) === 1;
+  // Unsaved notes have no stable line reference.
+  const reference = noteReference(
+    inWorkspace ? relative : uri.toString(),
+    selection.startLine,
+    selection.endLine,
+    selection.isDirty,
+  );
+  return notePayload(reference, selection.text);
 }

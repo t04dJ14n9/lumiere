@@ -13,6 +13,7 @@ import {
   type MarkdownWorkshopApi,
 } from "@workshop/markdown/host";
 import { startPdf } from "@workshop/pdf/host";
+import { markdownNoteSelections } from "./note-selections";
 
 let root: RootContext | undefined;
 
@@ -30,8 +31,16 @@ export async function activate(
   });
   root.provide("extensionContext", context);
   root.provide("outputChannel", channel);
+  // Provided before PDF starts, so its agent bridge does not restart when
+  // Markdown Workshop's API arrives.
+  const markdown: { api?: MarkdownWorkshopApi } = {};
+  root.provide(
+    "noteSelections",
+    markdownNoteSelections(() => markdown.api),
+  );
   startPdf(root);
   const api = await startMarkdown(root, context);
+  markdown.api = api;
   await root.settled();
   channel.info(`Activated in ${Math.round(performance.now() - started)} ms`);
   return api;

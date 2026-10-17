@@ -23,7 +23,7 @@ export const agentBridgePlugin: Plugin = {
   name: manifest.id,
   inject: {
     required: ["pdfPanels", "extensionContext", "outputChannel"],
-    optional: ["regionSnapshots"],
+    optional: ["regionSnapshots", "noteSelections"],
   },
   provides: ["pdfHandoff"],
   apply(ctx) {
@@ -63,6 +63,7 @@ export const agentBridgePlugin: Plugin = {
         panels,
         lastPdf,
         handoff,
+        ...(ctx.noteSelections && { notes: ctx.noteSelections }),
         log: ctx.outputChannel,
       }),
       "mcp controller",

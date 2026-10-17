@@ -10,6 +10,11 @@ import type { RootContext } from "@workshop/core";
 import { plugins } from "./plugins/catalog";
 import "./plugins/services";
 
+export type {
+  NoteSelection,
+  NoteSelections,
+} from "./plugins/agentBridge/note-selections";
+
 /** Start PDF Workshop's plugins in the extension's plugin tree. */
 export function startPdf(root: RootContext): void {
   for (const plugin of plugins) {
