@@ -8,6 +8,7 @@ import type {} from "./api";
 import { toggleComment } from "./comment";
 import { clearInlineFormatting, wrapSelection } from "./inline";
 import { lineEdit, linkEdit } from "./lines";
+import { linkPasteHandler } from "./paste-link";
 
 export const formattingWebview: Plugin = {
   name: "formatting",
@@ -21,6 +22,7 @@ export const formattingWebview: Plugin = {
     const commands = formattingCommands();
     registerFormattingCommands(ctx, commands);
     registerFormattingKeys(ctx, commands);
+    ctx.effect(() => ctx.editor.extend(linkPasteHandler));
   },
 };
 

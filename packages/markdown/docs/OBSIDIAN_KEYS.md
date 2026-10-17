@@ -24,6 +24,7 @@ Notation: `|` is the caret, `‹…›` a selection.
 | Backspace | `- \|b` | `-\|b` (one character, never the whole marker) |
 | Tab | `ab\|c` | `\tab\|c` (the line, wherever the caret is) |
 | Tab | `1. a`, `2. b\|`, `3. c` | `1. a`, `\t1. b\|`, `2. c` (lists renumber) |
+| typing | `1. a`, `1. b\|`, `1. c` | `1. a`, `2. bz\|`, `3. c`: an edit inside a list renumbers it (opening a note does not) |
 | Shift+Tab | `1. a`, `\t1. b\|`, `2. c` | `1. a`, `2. b\|`, `3. c` |
 | Home, Cmd+Left | `- [ ] abc\|` | `- [ ] \|abc`, then `\|- [ ] abc` |
 | Shift+Home | `- abc\|` | `- ‹abc›` |

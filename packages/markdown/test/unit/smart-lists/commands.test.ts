@@ -89,3 +89,43 @@ test("Shift+Enter breaks the line inside the item, lined up with its text", () =
   assert.equal(apply("- a\n  |", continueLine), "- a\n  \n  |");
   assert.equal(apply("a|", continueLine), "a\n|");
 });
+
+test("an edit inside an ordered list numbers it again, as in Obsidian", async () => {
+  const { renumberOnEdit } =
+    await import("../../../src/plugins/smartLists/renumber");
+  const edit = (
+    doc: string,
+    at: number,
+    insert: string,
+    userEvent?: string,
+  ) => {
+    const state = EditorState.create({ doc, extensions: [renumberOnEdit] });
+    return state
+      .update({
+        changes: { from: at, insert },
+        ...(userEvent ? { userEvent } : {}),
+      })
+      .state.doc.toString();
+  };
+  assert.equal(
+    edit("1. a\n1. b\n1. c\n\nx", 9, "z", "input.type"),
+    "1. a\n2. bz\n3. c\n\nx",
+  );
+  // Edits elsewhere, and changes that are not typing (sync, undo), leave it.
+  assert.equal(
+    edit("1. a\n1. b\n\nx", 12, "y", "input.type"),
+    "1. a\n1. b\n\nxy",
+  );
+  assert.equal(edit("1. a\n1. b\n\nx", 9, "z"), "1. a\n1. bz\n\nx");
+  // A deleted item renumbers the rest.
+  const state = EditorState.create({
+    doc: "1. a\n2. b\n3. c",
+    extensions: [renumberOnEdit],
+  });
+  assert.equal(
+    state
+      .update({ changes: { from: 4, to: 9 }, userEvent: "delete.backward" })
+      .state.doc.toString(),
+    "1. a\n2. c",
+  );
+});

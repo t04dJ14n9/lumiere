@@ -12,7 +12,9 @@ empty item it leaves the list, or moves a nested item out one level; on an
 empty quoted line it steps out one quote level; on an item's continuation
 line it starts the next item. Shift+Enter breaks the line inside the block:
 the new line keeps the quotes and lines up with a list item's text.
-Backspace deletes one character, as in Obsidian. The list logic builds on
+Backspace deletes one character, as in Obsidian. An edit inside an ordered
+list numbers it again (`renumber.ts`), in the same undo step; opening a note
+or editing elsewhere leaves its numbers alone. The list logic builds on
 lang-markdown's continuation command, which works because the dialect shares
 lang-markdown's language data. Disabling the plugin removes the keymap
 without changing the document. Each rule was measured in Obsidian

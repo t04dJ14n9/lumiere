@@ -13,7 +13,9 @@ keymaps provide bold, italic, link and comment shortcuts. As in Obsidian,
 Insert Link leaves the caret in the empty URL after a selected label (else in
 the empty label), and Toggle Comment wraps the selection or the word at the
 caret in `%% … %%` with it selected, or inserts an empty comment
-(`comment.ts`). Those keymaps stop the
+(`comment.ts`). Pasting a URL (any `scheme:` text without spaces) over
+selected text on one line links the text and selects the link
+(`paste-link.ts`). Those keymaps stop the
 keystroke there: VS Code forwards webview keystrokes that reach the window to
 its keybinding service, which would otherwise run the contributed binding a
 second time (Ctrl+B bolding then unbolding) or Cursor's own Ctrl+I. The

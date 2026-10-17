@@ -6,6 +6,7 @@ import { markdownLanguageSupport } from "../../markdown/dialect";
 import { clearInlineFormatting, wrapSelection } from "./inline";
 import { lineEdit, linkEdit } from "./lines";
 import { toggleComment } from "./comment";
+import { linkPaste } from "./paste-link";
 
 test("formatting toggles exact markers while retaining selection and obeying read-only", () => {
   let state = EditorState.create({
@@ -151,4 +152,40 @@ test("formatting handles selected delimiters and independent multiple ranges", (
     state.selection.ranges.map((range) => state.sliceDoc(range.from, range.to)),
     ["one", "two"],
   );
+});
+
+test("pasting a URL over selected text links it, as in Obsidian", () => {
+  const paste = (doc: string, from: number, to: number, text: string) => {
+    const state = EditorState.create({
+      doc,
+      selection: { anchor: from, head: to },
+    });
+    const spec = linkPaste(state, text);
+    if (!spec) {
+      return "plain paste";
+    }
+    const next = state.update(spec).state;
+    const { from: a, to: b } = next.selection.main;
+    const out = next.doc.toString();
+    return out.slice(0, a) + "‹" + out.slice(a, b) + "›" + out.slice(b);
+  };
+  assert.equal(
+    paste("see word here", 4, 8, "https://x.io"),
+    "see ‹[word](https://x.io)› here",
+  );
+  assert.equal(paste("word", 0, 4, "mailto:a@b.co"), "‹[word](mailto:a@b.co)›");
+  assert.equal(
+    paste("word", 0, 4, "file:///tmp/x.pdf"),
+    "‹[word](file:///tmp/x.pdf)›",
+  );
+  assert.equal(
+    paste("word", 0, 4, "https://x.io/a_(b)"),
+    "‹[word](https://x.io/a_(b))›",
+  );
+  assert.equal(paste("word", 0, 4, "www.x.io"), "plain paste");
+  assert.equal(paste("word", 0, 4, " https://x.io "), "plain paste");
+  assert.equal(paste("word", 0, 4, "https://x.io\n"), "plain paste");
+  assert.equal(paste("a\nb", 0, 3, "https://x.io"), "plain paste");
+  assert.equal(paste("word", 2, 2, "https://x.io"), "plain paste");
+  assert.equal(paste("word", 0, 4, "javascript:alert(1)"), "plain paste");
 });

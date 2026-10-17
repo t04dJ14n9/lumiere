@@ -92,6 +92,43 @@ export function orderedRun(
 }
 
 /**
+ * Number the runs holding the `candidates` lines consecutively, each from
+ * its first item, or from 1 where its first item lies in `restart`.
+ */
+export function renumberRuns(
+  doc: Text,
+  candidates: Iterable<number>,
+  tabSize: number,
+  restart?: { first: number; last: number },
+): ChangeSpec[] {
+  const changes: ChangeSpec[] = [];
+  const done = new Set<number>();
+  for (const candidate of candidates) {
+    if (candidate < 1 || candidate > doc.lines) {
+      continue;
+    }
+    const run = orderedRun(doc, candidate, tabSize);
+    const head = run[0];
+    if (!head || done.has(head.line)) {
+      continue;
+    }
+    done.add(head.line);
+    const restarts =
+      restart !== undefined &&
+      head.line >= restart.first &&
+      head.line <= restart.last;
+    let next = restarts ? 1 : head.number;
+    for (const item of run) {
+      if (item.number !== next) {
+        changes.push({ from: item.from, to: item.to, insert: String(next) });
+      }
+      next++;
+    }
+  }
+  return changes;
+}
+
+/**
  * Number the runs around `lines` consecutively, as Obsidian does after an
  * item moves in or out a level: each run counts on from its first item, or
  * from 1 where its first item is one that moved.
@@ -101,26 +138,10 @@ export function renumberAround(
   lines: { first: number; last: number },
   tabSize: number,
 ): ChangeSpec[] {
-  const changes: ChangeSpec[] = [];
-  const done = new Set<number>();
-  const candidates = [lines.first - 1, lines.first, lines.last + 1].filter(
-    (n) => n >= 1 && n <= doc.lines,
+  return renumberRuns(
+    doc,
+    [lines.first - 1, lines.first, lines.last + 1],
+    tabSize,
+    lines,
   );
-  for (const candidate of candidates) {
-    const run = orderedRun(doc, candidate, tabSize);
-    const head = run[0];
-    if (!head || done.has(head.line)) {
-      continue;
-    }
-    done.add(head.line);
-    const moved = head.line >= lines.first && head.line <= lines.last;
-    let next = moved ? 1 : head.number;
-    for (const item of run) {
-      if (item.number !== next) {
-        changes.push({ from: item.from, to: item.to, insert: String(next) });
-      }
-      next++;
-    }
-  }
-  return changes;
 }
