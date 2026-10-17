@@ -70,7 +70,7 @@ test("clicking a bar opens a rendered peek; Revert restores the text as one undo
   await expect
     .poll(() => bars(page))
     .toEqual(["modified", "deleted", "modified", "added", "added"]);
-  await page.keyboard.press("Control+z");
+  await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => page.evaluate(() => window.harness.text)).toBe(NOW);
 });
 
@@ -127,7 +127,7 @@ test("a commit clears the bars; typing updates them; no repository shows none", 
   });
   await expect.poll(() => bars(page)).toEqual([]);
   await page.getByRole("textbox", { name: "Markdown content" }).click();
-  await page.keyboard.press("Control+End");
+  await page.keyboard.press("ControlOrMeta+End");
   await page.keyboard.type("\nmore");
   await expect.poll(() => bars(page)).toEqual(["added"]);
   await page.evaluate(() => {
@@ -158,7 +158,7 @@ test("B1: after an edit above, Revert in an open peek reverts its own lines, bef
     const peek = page.locator(".mw-git-peek");
     await expect(peek.locator(".mw-git-peek-title")).toHaveText(/Line 3/);
     await page.getByRole("textbox", { name: "Markdown content" }).focus();
-    await page.keyboard.press("Control+Home");
+    await page.keyboard.press("ControlOrMeta+Home");
     await page.keyboard.type("b");
     await page.waitForTimeout(wait);
     await peek.getByRole("button", { name: "Revert this change" }).click();
@@ -191,7 +191,7 @@ test("B2b: Revert on a modified change that was just undone by hand leaves the t
     .getByRole("button", { name: "Revert this change" });
   await expect(revert).toBeVisible();
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
-  await page.keyboard.press("Control+Home");
+  await page.keyboard.press("ControlOrMeta+Home");
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Shift+ArrowDown");
   await page.keyboard.type("old\n");
@@ -218,7 +218,7 @@ test("B5: either side past the line limit shows no bars; back under it, they ret
   await page.waitForTimeout(600);
   expect(await bars(page)).toEqual([]);
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
-  await page.keyboard.press("Control+a");
+  await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.type("z");
   await expect.poll(() => bars(page)).toEqual(["modified"]);
 });

@@ -18,6 +18,8 @@ export interface AgentEnvironment {
 
 /** Agents the editor can hand a passage to. */
 export interface AgentHost {
+  /** The editor app, as `vscode.env.appName` names it ("Cursor", "Visual Studio Code"). */
+  readonly appName: string;
   /** Registered commands and VS Code's chat state, read now. */
   environment(): Promise<AgentEnvironment>;
   /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */

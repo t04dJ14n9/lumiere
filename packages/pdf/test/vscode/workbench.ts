@@ -133,7 +133,10 @@ export async function editorTitleAction(
  * or Cursor's agent chat input, where attached files are pills in the text.
  */
 export async function agentChatInput(page: Page): Promise<string> {
-  const cursor = page.locator(".aislash-editor-input:visible");
+  // Cursor's agent chat input: the prompt input (3.2x), or the older editor.
+  const cursor = page.locator(
+    ".ui-prompt-input:visible, .aislash-editor-input:visible",
+  );
   if (await cursor.count()) {
     return withoutSpaces(await cursor.last().innerText());
   }

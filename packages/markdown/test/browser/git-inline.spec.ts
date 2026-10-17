@@ -58,7 +58,7 @@ test("Restore puts a removed paragraph back as one undo step", async ({
     .toContain("Margins below 20% must be escalated.\n\nEnd.");
   await expect(page.locator(".mw-gi-ghost.is-removed")).toHaveCount(0);
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
-  await page.keyboard.press("Control+z");
+  await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => page.evaluate(() => window.harness.text)).toBe(NOW);
 });
 
@@ -99,7 +99,7 @@ test("B1: a double-click on Restore before the recompute restores once", async (
   expect(await page.evaluate(() => window.harness.text)).toBe("A\n\nB\n\nC\n");
   await expect(page.locator(".mw-gi-ghost")).toHaveCount(0);
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
-  await page.keyboard.press("Control+z");
+  await page.keyboard.press("ControlOrMeta+z");
   await expect
     .poll(() => page.evaluate(() => window.harness.text))
     .toBe("A\n\nC\n");
@@ -129,7 +129,7 @@ test("F1: Restore on the second of two identical blocks after a prefix edit rest
   const ghosts = page.locator(".mw-gi-ghost");
   await expect(ghosts).toHaveCount(2);
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
-  await page.keyboard.press("Control+Home");
+  await page.keyboard.press("ControlOrMeta+Home");
   await page.keyboard.type("Q".repeat(19));
   await ghosts.nth(1).getByRole("button", { name: "Restore" }).click();
   // Only the second block goes back; the first keeps "one".

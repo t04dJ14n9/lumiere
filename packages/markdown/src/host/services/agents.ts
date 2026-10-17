@@ -10,6 +10,7 @@ const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
 /** Copy Link for Agent: which agent chats exist, and files to attach. */
 export function createAgentHost(): AgentHost {
   return {
+    appName: vscode.env.appName,
     async environment() {
       return {
         target: vscode.workspace

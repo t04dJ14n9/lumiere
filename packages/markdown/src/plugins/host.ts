@@ -31,6 +31,7 @@ export { tagsViewHost } from "./tags/view";
 export { agentBridgeHost } from "./agentBridge/host";
 export { ideContextHost } from "./ideContext/host";
 export { cursorBridgeHost } from "./cursorBridge/host";
+export { cursorBridgePanelHost } from "./cursorBridge/panel-host";
 export { markersHost } from "./markers/host";
 export { codeBlocksHost } from "./codeBlocks/host";
 

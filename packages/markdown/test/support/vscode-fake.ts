@@ -117,6 +117,7 @@ function defaultHost(): HostServices {
     },
     customEditors: { register: none },
     agentHost: {
+      appName: "Visual Studio Code",
       environment: async () => ({
         target: "auto",
         agentExtensions: new Set(),

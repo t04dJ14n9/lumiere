@@ -13,6 +13,7 @@ import {
   searchHost,
   onlineVideosHost,
   sourcesPropertyHost,
+  cursorBridgePanelHost,
 } from "../plugins/host";
 
 /** The host halves of editor features: one set per panel. */
@@ -27,6 +28,7 @@ const PANEL_HOSTS = [
   searchHost,
   onlineVideosHost,
   sourcesPropertyHost,
+  cursorBridgePanelHost,
 ];
 
 /** Panel-owned feature hosts follow the same resource-scoped switch as the webview. */
