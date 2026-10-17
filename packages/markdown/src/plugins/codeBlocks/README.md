@@ -66,7 +66,7 @@ hint, with 64 completed entries. Disabling/replacing a provider cancels stale wo
 - `processor-client.ts`: generation-aware cache and cancellation.
 - `processor-view.ts`: fence interception and nested render-pass cleanup.
 
-Host injects `editors`, `workbench` and optional `vaults`, provides `codeBlocks`.
+Host injects `editors`, the host services `settings` and `workspace`, plus optional `vaults`, provides `codeBlocks`.
 Webview additionally injects `rpc`, listens to `render/fence`, and emits
 `render/changed` when available processors change. External processors are off in
 untrusted workspaces; this differs from executing Obsidian plugin code in the UI.

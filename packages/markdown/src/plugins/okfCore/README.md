@@ -28,7 +28,7 @@ Pure helpers live in `src/markdown/okf/`.
 
 ## Services, events and settings
 
-Injects `workbench` and `vaults`. Provides `okf`. Listens to `vault/changed`
+Injects the host service `settings` and `vaults`. Provides `okf`. Listens to `vault/changed`
 and `vault/resolved`. Setting: `markdownWorkshop.okfCore.bundles`, extra
 vault-relative roots. The vault does not inject this plugin; the plugin
 registers and unregisters its link policy.

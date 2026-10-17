@@ -77,7 +77,7 @@ every line).
 
 ## Services, events and settings
 
-Webview injects `editor`, `commands` and `render`; host injects `workbench` and
+Webview injects `editor`, `commands` and `render`; host injects the host service `hostCommands` and
 `editors`. Provides `livePreview`. Listens to
 `render/changed` and `editor/modeRestored`; emits no kernel events. Initial mode
 comes from `editor.defaultMode`; Toggle Source changes only the active panel.

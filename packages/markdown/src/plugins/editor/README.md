@@ -118,7 +118,7 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 
 ## Services, events and settings
 
-Host injects `workbench` and `documents`, provides `editors`, and emits/listens to
+Host injects the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `settings` and `customEditors`, plus `documents`, provides `editors`, and emits/listens to
 `editor/opened`, `editor/closed` and `editor/activeChanged`. Webview injects
 `document`, `markdown` and `rpc`, provides `editor` and `menu`, listens to
 `document/syncStatus` and `editor/scrollInput` (widget scroll input cancels a

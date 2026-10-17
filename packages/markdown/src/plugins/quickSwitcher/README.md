@@ -21,7 +21,7 @@ a name no note has, creates it in the new-note folder.
 
 ## Services, events and settings
 
-- Injects `workbench` (views, navigation) and `vaults`.
+- Injects the host services `hostCommands`, `dialogs`, `activeEditor`, `settings` and `navigation`, plus `vaults`.
 - Settings: `markdownWorkshop.plugins.quickSwitcher.enabled`,
   `markdownWorkshop.files.newNoteFolder`.
 

@@ -33,7 +33,7 @@ settings are written. Watcher changes and plugin teardown notify those consumers
 
 ## Services, events and settings
 
-Injects `workshop` and `vaults`; provides `obsidianCompat`. All registry methods
+Injects the host services `activeEditor`, `settings` and `workspace`, plus `vaults`; provides `obsidianCompat`. All registry methods
 take `{vaultRoot}` or `{documentUri}`. Getters return promises so scope discovery
 cannot silently fall back to the active editor. `getPropertyTypes` returns an
 immutable map including unknown type strings. `setPropertyType(scope, name,

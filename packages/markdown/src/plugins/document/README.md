@@ -32,7 +32,7 @@ undo steps. All registrations and synchronizers follow their context/view lifeti
 
 ## Services, events and settings
 
-Host injects `workbench` and provides `documents`; webview injects `rpc` and
+Host injects the host services `hostDocuments` and `hostCommands`, plus provides `documents`; webview injects `rpc` and
 provides `document`. Host listens to `document/willSave`, emits
 `document/changed` and serially dispatches `document/willSave` for native saves.
 Webview emits `document/syncStatus`. This core plugin has no enablement switch

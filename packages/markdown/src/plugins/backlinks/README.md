@@ -22,7 +22,7 @@ note's basename and aliases as whole words, outside links and properties.
 
 ## Services, events and settings
 
-- Injects `workbench` (views) and `vaults`. Listens to `vault/resolved`.
+- Injects the host services `hostCommands`, `views` and `activeEditor`, plus `vaults`. Listens to `vault/resolved`.
 - Setting: `markdownWorkshop.plugins.backlinks.enabled`.
 
 ## Limits and differences from Obsidian

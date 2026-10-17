@@ -17,9 +17,9 @@ plugin**.
 
 | Topic | Decision |
 | --- | --- |
-| Identity | Display name **Markdown Workshop**; package `vscode-markdown-workshop`; publisher `t04dj14n9`; extension ID `t04dj14n9.vscode-markdown-workshop`; editor view type `markdownWorkshop.editor`; settings, commands and context keys under `markdownWorkshop.` |
+| Identity | Display name **Markdown Workshop**, one half of the extension **Workshop: Markdown and PDF** (package `vscode-workshop`, publisher `t04dj14n9`, extension ID `t04dj14n9.vscode-workshop`); editor view type `markdownWorkshop.editor`; settings, commands and context keys under `markdownWorkshop.` |
 | Source to extract | `claude/markdown-integration` at `ff3a902ef4ec50a136455c0cf2ccaff698682a06` in `~/Code/human-learning`. Not `main`, whose 4,900-line `webview-src/markdown-editor.ts` it supersedes |
-| Architecture | A small cordis-style kernel (`src/kernel`) runs in the extension host, in each webview and in unit tests. Every capability, the core ones included, is a plugin that injects services, provides services, owns effects and extends others through typed events |
+| Architecture | `@workshop/core` (on Cordis) runs in the extension host, in each webview and in unit tests. Every capability, the core ones included, is a plugin that injects services, provides services, owns effects and extends others through typed events |
 | Behaviour reference | Obsidian 1.13.7 as observed, plus the 1.12.7 source study. Implement behaviour independently; never copy Obsidian code |
 | Document authority | The VS Code `TextDocument` is the only source of text, saving and undo. Webviews are synchronized views (`@codemirror/collab`) |
 | Markdown dialect | Obsidian Flavored Markdown is one fixed dialect, parsed identically everywhere. Plugins change presentation and interaction, never parsing (as in Obsidian) |
@@ -106,7 +106,7 @@ commit into the scratch directory. Do not edit any human-learning worktree.
 6. **Obsidian is the behaviour reference.** When behaviour is in doubt, check
    the reference app and record the observation (§21.4). Deliberate
    divergences are listed in §15.3.
-7. **Pure core.** `src/kernel`, `src/shared` and `src/markdown` use no DOM,
+7. **Pure core.** `packages/core`, `src/shared` and `src/markdown` use no DOM,
    VS Code or Node APIs and are covered by fast unit tests.
 
 ## 4. System overview
@@ -136,99 +136,77 @@ host decides whether it is active for a given document (settings are
 resource-scoped) and tells each webview which halves to run and with what
 configuration.
 
-## 5. The plugin kernel
+## 5. The plugin core
 
-`src/kernel` is a small (under 1,000 lines as formatted by Prettier) dependency-free
-implementation of Cordis's model. It runs unchanged in Node, Chromium and
-`tsx --test`. §5.9 explains why it is in-house, and why replacing it with the npm `cordis`
-package would not be mechanical.
+`packages/core` (`@workshop/core`) runs every plugin of both products, in the
+extension host, in each webview and in unit tests. It sits on
+[Cordis](https://github.com/cordiverse/cordis) 4.0.0-rc.11 (pinned exactly):
+each running plugin is a Cordis fiber, gated on the services it injects. The
+core adds what Cordis does not guarantee (joined, last-first release;
+abandoning a start; optional services; a ranked, error-isolated event bus;
+an ownership tree) and is checked by 23 lifecycle conformance scenarios.
+§5.9 explains the move; `packages/core/README.md` is the reference.
 
 ### 5.1 Concepts
 
 | Concept | Meaning |
 | --- | --- |
-| **Context** | The handle a plugin works through: services, effects, events, child plugins, logger. Each fiber has its own context; disposing the fiber undoes everything done through it |
-| **Plugin** | A unit with a name, optional `inject` declaration, optional config schema and an `apply(ctx, config)` function (or a `Service` subclass) |
-| **Fiber** | A running instance of a plugin: state, config, effects and child fibers. `ctx.plugin()` returns it |
-| **Service** | A named object a fiber provides on the context tree (`ctx.vault`). Withdrawn when the providing fiber stops |
-| **Effect** | A side effect with a disposer, owned by a fiber and undone in reverse order |
+| **Context** | The handle a plugin works through: services, effects, events, child plugins, logger. Each start of a plugin (an *activation*) has its own context; stopping it undoes everything done through it |
+| **Plugin** | A name, the services it reads (`inject`) and publishes (`provides`), an optional config schema and an `apply(ctx, config)` function |
+| **Plugin handle** | A started plugin, as `ctx.plugin()` returns it: state, config, `waitingFor`, `update`, `dispose` |
+| **Service** | A named object a plugin publishes (`ctx.vault`). Withdrawn when the plugin stops. Root contexts publish the host services |
+| **Effect** | A side effect with a disposer, owned by an activation and undone in reverse order |
 | **Event** | A typed, named hook with a dispatch mode (§5.5). Listeners are effects |
 
 ### 5.2 API
 
 ```ts
-// src/kernel/types.ts — augmented by plugins through declaration merging
-export interface Services {}
-export interface Events {}
-
-export type Disposer = () => void | Promise<void>;
-
-export interface Inject {
-  readonly required?: readonly (keyof Services)[];
-  readonly optional?: readonly (keyof Services)[];
-}
-
+// packages/core/src/types.ts — Services and Events grow by declaration merging
 export interface Plugin<Config = void> {
   readonly name: string;
-  readonly inject?: Inject;
+  readonly inject?: { required?: readonly ServiceName[]; optional?: readonly ServiceName[] };
+  /** Services this plugin publishes; providing any other one throws. */
+  readonly provides?: readonly ServiceName[];
   readonly config?: Schema<Config>;
   apply(ctx: Context, config: Config): void | Promise<void>;
-  /** Apply a new config without restarting. Return false to restart instead. */
+  /** Apply a new config in place; return false to restart instead. */
   reconfigure?(ctx: Context, config: Config): boolean;
 }
 
-export declare class Context {
-  readonly fiber: Fiber;
-  readonly logger: Logger;
-
-  /** Run a plugin under this context; it stops when this context stops. */
-  plugin<C>(plugin: Plugin<C> | ServiceClass<C>, config?: C): Fiber<C>;
-
-  /** Make `value` available as `ctx[name]` to fibers that inject it. */
-  provide<K extends keyof Services>(name: K, value: Services[K]): void;
-
-  /** Own a side effect; the disposer runs when this fiber stops. */
-  effect(setup: () => Disposer | { dispose(): unknown }): Disposer;
-
-  on<K extends keyof Events>(name: K, listener: Events[K], options?: { prepend?: boolean }): Disposer;
-  emit<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): void;
-  serial<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promise<void>;
-  parallel<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): Promise<void>;
-  bail<K extends keyof Events>(name: K, ...args: Parameters<Events[K]>): ReturnType<Events[K]> | undefined;
-  pipeline<K extends keyof Events>(name: K, value: Parameters<Events[K]>[0]): Promise<Parameters<Events[K]>[0]>;
+export interface BaseContext {
+  effect(setup: () => Disposer | Resource): Disposer;
+  acquire(kind: string, resource: Disposer | Resource): Disposer;
+  own<T extends Resource>(resource: T): T;
+  provide<K extends ServiceName>(name: K, value: Services[K]): void;
+  plugin<C>(definition: Plugin<C>, config?: C): PluginHandle<C>;
+  on / emit / serial / parallel / bail / pipeline; // §5.5
+  track(work: Promise<unknown>): void;
+  settled(): Promise<void>;
 }
-
-// Services are read as properties, typed by declaration merging:
-//   declare module '../../kernel' { interface Services { vault: VaultIndex } }
-//   ctx.vault.resolveLink('Note', source)
+export type Context = BaseContext & Services; // ctx.vault, ctx.dialogs, …
 // Reading a service the plugin did not inject throws `UndeclaredService`.
-
-export abstract class Service<Config = void> {
-  static readonly inject?: Inject;
-  protected constructor(protected readonly ctx: Context, name: keyof Services, config: Config);
-  /** Optional async start; the service is provided once it resolves. */
-  protected start?(): Promise<void>;
-  protected stop?(): Promise<void>;
-}
 ```
 
 A plugin module looks like this:
 
 ```ts
 // src/plugins/backlinks/host.ts
-import type { Context } from '../../kernel';
-import type { BacklinksConfig } from './manifest';
-
-export const name = 'backlinks';
-export const inject = { required: ['vault', 'editors', 'workshop'] } as const;
-
-export function apply(ctx: Context, config: BacklinksConfig): void {
-  const view = new BacklinksView(ctx.vault, ctx.editors, config);
-  ctx.effect(() => ctx.workshop.views.tree('markdownWorkshop.backlinks', view));
-  ctx.on('vault/resolved', () => view.refresh());
-  ctx.on('editor/activeChanged', () => view.refresh());
-}
+export const backlinksHost: Plugin = {
+  name: 'backlinks',
+  inject: { required: ['vaults', 'hostCommands', 'views', 'activeEditor'] },
+  apply(ctx) {
+    const view = new BacklinksView(ctx.vaults, ctx.activeEditor);
+    ctx.effect(() => ctx.views.tree('markdownWorkshop.backlinks', view));
+    ctx.on('vault/resolved', () => view.refresh());
+  },
+};
 ```
+
+Host plugins reach VS Code only through the host services declared in
+`src/shared/host` (`hostDocuments`, `hostCommands`, `clipboard`, `dialogs`,
+`views`, `activeEditor`, `settings`, `workspace`, `storage`, `extensions`,
+`navigation`, `customEditors`, `agentHost`, `git`, `diffViews`). The VS Code
+adapters are in `src/host/services`; tests use `fakeHost(overrides)`.
 
 ### 5.3 Fiber lifecycle
 
@@ -274,7 +252,7 @@ export function apply(ctx: Context, config: BacklinksConfig): void {
   consumer's fiber.
 - A service can be **caller-bound**, Cordis's way of tracing the calling
   context. If the provided value has a `[bindCaller](caller)` method (the
-  symbol is exported by the kernel), a consumer that reads the service through
+  symbol is exported by the core), a consumer that reads the service through
   its own context gets `value[bindCaller](caller)`, cached per consumer
   context, instead of the shared value. `caller` exposes the consumer's plugin
   name and logger. That is how `editor.extend` and `livePreview.block` know
@@ -304,7 +282,7 @@ The event catalogue is in §7.3.
 
 ### 5.6 Configuration schema
 
-`src/kernel/schema.ts` is a small schema builder. One definition gives:
+`packages/core/src/schema.ts` is a small schema builder. One definition gives:
 
 - a runtime validator (`schema.parse(value): Config`, with defaults applied);
 - a TypeScript type (`Infer<typeof schema>`);
@@ -324,8 +302,8 @@ array, object, record. That covers every setting in §15.
 
 ### 5.7 Errors, isolation, logging
 
-- Kernel errors are `KernelError` with codes `UndeclaredService`,
-  `DuplicateService`, `PluginFailed`, `PluginDisabled`, `Disposed`.
+- Core errors are `CoreError` with codes such as `UndeclaredService`,
+  `DuplicateService` and `Disposed`.
 - Each fiber has a `Logger` tagged with the plugin name. The host writes to the
   **Markdown Workshop** output channel; webview logs are forwarded over RPC at
   `warn` and above, plus all levels when `markdownWorkshop.debug.logging` is
@@ -361,57 +339,28 @@ A call to a plugin whose host half is not active rejects with
 `PluginDisabled`. A webview half that fails reports back, and the host shows
 the plugin as failed for that editor.
 
-### 5.9 Why in-house and not the `cordis` package
+### 5.9 Why Cordis, under a core of our own
 
-- The kernel must run identically in the extension host, the webview and
-  tests, and integrate with CodeMirror compartments and per-panel RPC. Both are
-  specific to this extension.
-- Cordis's README says its API is not stable yet.
-- The needed subset is small and fully testable, and its guarantees (below) are
-  not the ones this extension needs.
+Until 2026-10 the plugins ran on an in-house kernel, and Cordis was only a
+reference (`docs/plans/cordis-decision.md` records why). The two products are
+now one extension, and the owner chose one runtime for both: Cordis runs the
+fibers, service gating and restarts, and `@workshop/core` keeps the
+guarantees this extension relies on and Cordis does not give:
 
-Cordis stays a **reference and a differential-test target**, not the runtime
-(decision of 2026-10-10, from an independent source audit of Cordis `518b8bc`,
-4.0.0-rc.10). The kernel borrows Cordis's vocabulary (`plugin`, `inject`,
-`provide`, `effect`, fibers, service gating) so that the model is familiar, but
-**moving to the `cordis` package would not be a mechanical change.** The
-semantics differ in ways that would have to be redesigned and re-tested:
+- **Joined, last-first release.** A stop waits for every cleanup, including
+  one that started earlier; each release runs even when another fails.
+- **Abandoning a start.** Stopping, or a dependency changing, does not wait for
+  an asynchronous `apply`; what it acquires afterwards is undone at once.
+- **Optional services**, injected while they exist.
+- **Event modes.** `pipeline` (awaited, ranked, each listener transforms the
+  value), `bail` (synchronous, first non-`undefined` result) and error
+  isolation are ours, not Cordis's `waterfall` and exception propagation.
+- **Staged publication.** Services appear and children start only once
+  `apply` succeeds.
 
-- **Event modes.** Our `pipeline` (awaited, ranked, each listener transforms the
-  value), `bail` (synchronous, first non-`undefined` result) and error isolation
-  (a throwing listener is logged and skipped) are not Cordis's `waterfall`,
-  `bail` and exception propagation. Same-looking method names behave
-  differently.
-- **Cleanup completion is joined.** Our contexts keep a resource represented
-  until its release settles, so `dispose()` waits for a release that started
-  earlier. Cordis guarantees only that a disposer is invoked at most once; a
-  second caller does not wait for the first cleanup, and an early-released
-  effect leaves its fiber's list before its cleanup finishes.
-- **Every release runs, in reverse order.** Our teardown releases each resource
-  one after another and carries on after a failure. Cordis chains the disposers
-  of one effect without per-disposer recovery (a rejection can skip the rest)
-  and runs separate effects of a fiber concurrently.
-- **Stopping consumers are a barrier.** Withdrawing a provider waits for
-  dependants that are already stopping. Cordis finds consumers among registered
-  fibers only, so a consumer that is already unloading can be missed.
-- **Unloading does not wait for initialization to finish** in our PDF runtime
-  (it cancels a starting scope); Cordis's unload waits for the initialization
-  promise to settle, so one that never settles blocks disposal.
-- **HMR does not roll back.** Cordis's HMR is a Node module-loader package that
-  does not undo a replacement that fails after swapping began. It is not an
-  option for esbuild webviews or the shared extension host.
-- **Manifests and dependencies do not map.** Required versus optional
-  injection, replaceable provider stacks, staged publication (services appear
-  after `apply` succeeds, children wait for their parent's commit), and our
-  manifests (capabilities, settings, commands, menus, views) have no Cordis
-  equivalent.
-
-The in-house kernel is therefore kept and repaired against written lifecycle
-invariants (ownership, completion, dependency safety, cancellation,
-quiescence). `src/kernel/README.md` records every intentional difference. The
-kernel has its own conformance tests (§21.1); Cordis may be used as a
-differential oracle for the semantics they share, never for asynchronous
-lifecycle correctness. Full reasoning: `docs/plans/cordis-decision.md`.
+The conformance suite (`packages/core/test/conformance`) is the contract: the
+core passes all 23 scenarios; stock Cordis passes 6. Upgrade Cordis only with
+it passing.
 
 ### 5.10 Composition rules
 
@@ -430,7 +379,7 @@ follows these rules, and unit tests check them (§21.1).
    owner's apply)`. Owner rank is the plugin's position in the catalog (core
    plugins first, then `features` in `src/plugins/catalog.ts`). Plugins from
    outside extensions rank after built-ins, by plugin ID. The bootstrap gives
-   the runtime a rank function (`Context.create({ rank })`), and both the
+   the core a rank function (`createRoot({ rank })`), and both the
    event bus and the editor's extension registry use it, so there is one
    source of order. For events, `prepend: true` acts as a slot: prepended
    listeners run first, each group in rank order. The catalog order is
@@ -661,7 +610,7 @@ away; only the `editor` plugin knows the view type.
 
 ### 8.4 RPC
 
-`src/shared/rpc/` defines the envelope and `src/kernel` the plugin channel:
+`src/shared/rpc/` defines the envelope and the plugin channel:
 
 ```ts
 type Envelope =
@@ -1570,7 +1519,7 @@ exceptions from changing unnoticed.
 
 `tsconfig` projects enforce the layers:
 
-- root: `src/kernel`, `src/shared`, `src/markdown` with `lib: ES2022`, no DOM,
+- root: `src/shared`, `src/markdown` (and `packages/core`) with `lib: ES2022`, no DOM,
   no types;
 - `src/host`: adds node and vscode types;
 - `src/webview`: adds DOM;

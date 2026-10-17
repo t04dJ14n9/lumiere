@@ -43,7 +43,7 @@ it is visible. Both halves follow `markdownWorkshop.plugins.tags.enabled`. The E
 ## Services, events and settings
 
 Webview injects `editor`, `livePreview` and `rpc`; the panel host injects `rpc`,
-`vault` and `workbench`; the view injects `workbench` and `vaults`. Provides no
+`vault` and the host services `hostCommands`, `dialogs`, `views`, `activeEditor`, `settings` and `navigation`; the view injects the host services `hostCommands`, `dialogs`, `views`, `activeEditor`, `settings` and `navigation`, plus `vaults`. Provides no
 services. The webview listens to `render/postProcess`, and to `suggest/trigger`
 for its own completion syntax; the view listens to `vault/resolved`. Emits no
 kernel events. Settings: `markdownWorkshop.plugins.tags.enabled` (true),

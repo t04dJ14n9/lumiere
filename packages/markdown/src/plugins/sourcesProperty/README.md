@@ -29,7 +29,7 @@ text is plain selectable text; there is no Copy id control.
 
 ## Services, events and settings
 
-Injects `propertyRenderers` and `rpc` in the webview, and `workbench`, `rpc`,
+Injects `propertyRenderers` and `rpc` in the webview, and the host service `hostCommands`, `rpc`,
 `okf`, `resources` and `vaults` on the host. Provides nothing. Listens to no
 events. No settings. The property name is `sources`.
 

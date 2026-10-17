@@ -36,7 +36,7 @@ only copies; each case ends in a notice saying where the passage went.
 
 ## Services, events and settings
 
-Host provides no service, injecting `editors`, `selections` and `workbench`;
+Host provides no service, injecting `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings`, `workspace` and `agentHost`;
 webview injects `editor`, `commands`, `document`, `rpc` and `menu`. Host listens
 to editor open/close and configuration changes; saving awaits
 `document/willSave`. Webview contributes to `editor/selectionMenu`.

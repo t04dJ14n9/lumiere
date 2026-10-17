@@ -38,7 +38,7 @@ commits. Identity is resolved through Git config for the “You” label.
 
 ## Services, events and settings
 
-Host injects `workshop` and `rpc`; webview injects `editor` and `rpc`. Provides
+Host injects the host service `git` and `rpc`; webview injects `editor` and `rpc`. Provides
 no services, listens/emits no kernel events, and uses only its own RPC channel.
 Repository changes arrive through injected GitAccess. One resource-scoped switch,
 `markdownWorkshop.plugins.gitBlame.enabled`, defaults to true in the Obsidian

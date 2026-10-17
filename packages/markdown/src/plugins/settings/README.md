@@ -64,7 +64,7 @@ dedicated command's key exists in package.json with the right type.
 
 ## Services, events and settings
 
-Injects `workbench`. Provides nothing, emits nothing. Adds no settings of its
+Injects the host services `hostCommands`, `dialogs`, `activeEditor` and `settings`. Provides nothing, emits nothing. Adds no settings of its
 own; every key above is contributed by the plugin that owns it.
 
 ## Limits and differences from Obsidian

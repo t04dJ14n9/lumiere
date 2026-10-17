@@ -82,7 +82,7 @@ shared by notes and panels. New rows remain drafts until their names are accepte
 
 ## Services, events and settings
 
-The host injects `rpc`, `vault` and `workbench`; the webview injects `editor`,
+The host injects `rpc`, `vault` and the host service `storage`; the webview injects `editor`,
 `document`, `livePreview`, `commands`, `rpc` and `menu`. The webview provides
 `propertyRenderers`, so another feature can replace one property's markup.
 `sourcesProperty` registers `sources` there.

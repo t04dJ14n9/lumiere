@@ -16,7 +16,7 @@ Import Asset asks for a file. The destination is `.wiki/layout.json`'s `assets` 
 
 ## Services, events and settings
 
-- Requires `workbench`. Optionally uses `editors` and `wikiLayout`.
+- Requires the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `activeEditor`, `settings` and `workspace`. Optionally uses `editors` and `wikiLayout`.
 - Does not provide a service.
 - Setting: `markdownWorkshop.assets.path` (empty defers to the layout, then `assets`).
 - Setting: `markdownWorkshop.plugins.assets.enabled`.

@@ -16,7 +16,7 @@ The same check Marp uses decides whether the note is a deck, and sets `markdownW
 
 ## Services, events and settings
 
-- Requires `workbench`. Optionally uses `editors` and `wikiLayout`.
+- Requires the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `activeEditor`, `settings`, `workspace`, `storage` and `extensions`. Optionally uses `editors` and `wikiLayout`.
 - Listens to `editor/opened` and `editor/activeChanged`.
 - Sets `markdownWorkshop.isMarp` (cleared when the plugin stops).
 - Command: `markdownWorkshop.marp.keepInWorkshop` (**Keep Marp Deck in Workshop**) remembers the deck and reopens it in this editor.

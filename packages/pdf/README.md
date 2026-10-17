@@ -172,7 +172,7 @@ big 6 1024 4096 16 0.3 300K 4.33 26.4 213
 ```
 
 Snapshots are saved in a `regions` folder in the extension's storage for the
-workspace (`workspaceStorage/<id>/t04dj14n9.vscode-pdf-workshop/regions`), not in
+workspace (`workspaceStorage/<id>/t04dj14n9.vscode-workshop/regions`), not in
 the workspace itself (global storage when no folder is open). Together they
 use at most `pdfWorkshop.regionImageCache.maxSizeMB` megabytes (default 100,
 at least 1; a change applies from the next snapshot). This is a hard limit:
@@ -198,7 +198,7 @@ for Claude Code / Codex…**, which offers to) and the extension starts a local
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_current_pdf_selection`  | The text or region selected in the PDF you last looked at: the same text Copy Link for Agent copies, and for a region its PNG snapshot.                                         |
 | `open_pdf_location`          | Opens a `path#page=N&viewrect=…` link in the viewer.                                                                                                                            |
-| `get_current_note_selection` | The selection in Markdown Workbench, when it is installed, as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `docs/agent-handoff-format.md`). |
+| `get_current_note_selection` | The selection in Markdown Workshop (the same extension), as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `docs/agent-handoff-format.md`). |
 
 The server is off by default because it opens a port. When on, it listens on
 `127.0.0.1` only, on a random port, requires a random bearer token, and

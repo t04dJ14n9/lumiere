@@ -33,7 +33,7 @@ last. Properties focus uses typed events rather than another plugin's DOM intern
 
 ## Services, events and settings
 
-Webview injects `editor` and `rpc`; host injects `editors` and `workbench`.
+Webview injects `editor` and `rpc`; host injects `editors` and the host services `hostDocuments`, `hostCommands`, `dialogs` and `settings`.
 Provides no service. Listens to `editor/focusTitle`, `editor/opened`,
 `editor/closed` and `editor/ready`; queries `editor/focusProperties` with bail
 semantics. `markdownWorkshop.plugins.inlineTitle.enabled` defaults to false.

@@ -25,10 +25,10 @@ requests. Webview URLs include modification time for cache invalidation.
 
 ## Services, events and settings
 
-Host injects `rpc`, `workbench` and `vault`; webview injects `rpc`. Provides
+Host injects `rpc`, the host services `hostDocuments`, `workspace` and `git`, plus `vault`; webview injects `rpc`. Provides
 `resources` on both surfaces. No kernel events, commands or direct user settings.
 Vault configuration determines roots and resolution. The window service
-`diffResources` injects `vaults` and `workbench` and provides contained image
+`diffResources` injects `vaults` and the host services `hostDocuments`, `workspace` and `git`, plus provides contained image
 resolution for standalone diff panels.
 
 ## Limits and differences from Obsidian

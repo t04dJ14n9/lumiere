@@ -36,7 +36,7 @@ source text.
 
 ## Services, events and settings
 
-Injects `workbench` and optionally `diffResources`; provides no services or kernel
+Injects the host services `hostDocuments`, `hostCommands`, `dialogs`, `activeEditor`, `settings`, `workspace`, `git` and `diffViews`, plus optionally `diffResources`; provides no services or kernel
 events. Listens for `git-diff:open-full`. Subscribes to native diff tabs, document
 changes, Git repository changes and working-file events. `gitDiffEditor.diffEditor`
 selects `native` (default)

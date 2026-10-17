@@ -15,7 +15,7 @@ The active Markdown Workshop selection becomes an envelope (`producer: markdown`
 
 ## Services, events and settings
 
-- Requires `workbench`. Optionally uses `editors` and `selections`.
+- Requires the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `workspace` and `agentHost`. Optionally uses `editors` and `selections`.
 - Provides `bridgeCapture`.
 - Does not listen to events.
 - Setting: `markdownWorkshop.plugins.bridge.enabled`.

@@ -105,7 +105,7 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 
 The webview half injects `render` (for workspace trust) and `rpc` (Links
 `open`, `onlineVideos.details`); the host half injects `rpc` and
-`workbench` (trust). No services. Listens to `render/postProcess`.
+the host service `workspace`. No services. Listens to `render/postProcess`.
 `markdownWorkshop.plugins.onlineVideos.enabled` defaults to true; switched
 off, the links fall back to Embeds (a remote image).
 `markdownWorkshop.onlineVideos.bilibiliPlayer` defaults to false.

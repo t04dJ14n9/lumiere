@@ -51,7 +51,17 @@ test("the readability limits apply to all source, unchanged", async () => {
   );
   assert.equal(blocks.length, 1, "one configuration block sets the limits");
   const [block] = blocks;
-  assert.deepEqual(block!.files, ["src/**/*.ts", "packages/*/src/**/*.ts"]);
+  assert.deepEqual(block!.files, [
+    "src/**/*.{ts,tsx}",
+    "packages/*/src/**/*.{ts,tsx}",
+  ]);
+  // Only shrinks: PDF code still being split to the limits.
+  assert.deepEqual((block as { ignores?: string[] }).ignores, [
+    "**/*.test.ts",
+    "packages/pdf/src/webview/**",
+    "packages/pdf/src/extension/plugins/agentBridge/**",
+    "packages/pdf/src/extension/plugins/ideContext/**",
+  ]);
   for (const [rule, setting] of Object.entries(readability)) {
     assert.deepEqual(
       (block!.rules as Record<string, unknown>)[rule],
@@ -68,6 +78,12 @@ const allowed = [
   "packages/core/src/types.ts: @typescript-eslint/no-empty-object-type",
   "packages/markdown/src/markdown/html/index.ts: @typescript-eslint/triple-slash-reference",
   "packages/markdown/test/browser/fake-host.ts: @typescript-eslint/no-this-alias",
+  "packages/pdf/src/extension/plugins/agentBridge/mcp/server.ts: preserve-caught-error",
+  "packages/pdf/src/shared/look-up.ts: no-control-regex",
+  "packages/pdf/src/webview/engine.tsx: react-hooks/exhaustive-deps",
+  "packages/pdf/src/webview/reading-position.ts: react-hooks/exhaustive-deps",
+  "packages/pdf/test/unit/identity/contribution-parity.test.ts: @typescript-eslint/no-explicit-any",
+  "packages/pdf/test/vscode/workbench.ts: no-empty-pattern",
 ];
 
 test("inline lint exceptions are the reviewed ones, each with a reason", () => {
@@ -81,13 +97,16 @@ test("inline lint exceptions are the reviewed ones, each with a reason", () => {
     "packages/markdown/src",
     "packages/markdown/test",
     "packages/markdown/scripts",
+    "packages/pdf/src",
+    "packages/pdf/test",
+    "packages/pdf/scripts",
   ]) {
     for (const path of readdirSync(root, {
       recursive: true,
       encoding: "utf8",
     })) {
       if (
-        !/\.(ts|mts|mjs|js)$/.test(path) ||
+        !/\.(ts|tsx|mts|mjs|js)$/.test(path) ||
         path.endsWith("lint-rules.test.ts")
       ) {
         continue;

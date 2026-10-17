@@ -151,7 +151,7 @@ function OnMount({
   callback: () => void;
   children: React.ReactNode;
 }): React.ReactNode {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount
   useEffect(callback, []);
   return children;
 }

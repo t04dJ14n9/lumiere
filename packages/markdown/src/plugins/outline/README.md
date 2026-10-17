@@ -56,7 +56,7 @@ Markdown Outline so they do not linger beside non-Workshop editors.
 
 ## Services, events and settings
 
-- Injects `workbench` (views and settings), `vaults` (navigation) and `editors`.
+- Injects the host services `hostCommands`, `dialogs`, `views` and `settings`, `vaults` (navigation) and `editors`.
 - Listens to `editor/opened`, `editor/closed`, `editor/ready`,
   `editor/activeChanged`, `editor/selectionChanged` and `document/changed`,
   plus native configuration and tree visibility changes. Emits no events and

@@ -16,7 +16,7 @@ New Scratch Note asks for a title and writes `YYYY-MM-DD-title.md` in the layout
 
 ## Services, events and settings
 
-- Requires `workbench`. Optionally uses `editors` and `wikiLayout`.
+- Requires the host services `hostDocuments`, `hostCommands`, `dialogs`, `settings` and `workspace`. Optionally uses `editors` and `wikiLayout`.
 - Does not provide a service.
 - Setting: `markdownWorkshop.scratch.folder` (default `scratch`; a loaded layout wins).
 - Setting: `markdownWorkshop.plugins.scratch.enabled`.

@@ -37,7 +37,7 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 
 - `suggestions.ts`: plugin-owned completion trigger through `suggest/trigger`.
 
-- `native-host.ts`: window-scoped native link registration through `workbench`.
+- `native-host.ts`: window-scoped native link registration through the host services `dialogs`, `settings` and `navigation`.
 - `manifest.ts`: link settings and insert/follow/side command contributions.
 - `api.ts`: typed link claim events.
 - `protocol.ts`: session readiness, acknowledged navigation, missing-fragment,
@@ -60,7 +60,7 @@ renderer adds `is-unresolved` to rendered links whose path is in it.
 Listens to `suggest/trigger` for its own completion syntax.
 
 Webview injects `editor`, `livePreview`, `commands` and `rpc`; host injects `rpc`,
-`workbench`, `vault` and `resources`. Webview provides `links` for focused-editor
+the host services `dialogs`, `settings` and `navigation`, `vault` and `resources`. Webview provides `links` for focused-editor
 caret following; host provides no service. Queries `link/click`
 and `links/open` with bail semantics. Settings: plugin enabled (true),
 `links.newLinkFormat` (shortest), `links.useWikilinks` (true), `links.folderNote`

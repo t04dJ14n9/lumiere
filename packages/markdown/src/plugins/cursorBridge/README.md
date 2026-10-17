@@ -32,7 +32,7 @@ autosave.
 
 ## Services, events and settings
 
-Injects `editors`, `selections` and `workbench`; provides no service. Sets
+Injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings` and `agentHost`; provides no service. Sets
 `markdownWorkshop.isCursorHost`. Uses `handoffLease` from the host reclaim
 module. `plugins.cursorBridge.enabled` defaults to true. When disabled, Insert
 Link keeps Cmd/Ctrl+K even with a selection on Cursor.

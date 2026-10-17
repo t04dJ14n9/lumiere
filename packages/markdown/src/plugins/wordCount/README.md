@@ -20,7 +20,7 @@ breaks.
 
 ## Services, events and settings
 
-- Injects `workbench` (views) and, optionally, `editors`.
+- Injects the host services `hostDocuments`, `views` and `activeEditor` and, optionally, `editors`.
 - Listens to `editor/selectionChanged`.
 - Setting: `markdownWorkshop.plugins.wordCount.enabled`.
 

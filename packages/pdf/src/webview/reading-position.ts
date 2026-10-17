@@ -138,7 +138,6 @@ export function useRestorePosition(
       requestFrame: (callback) => requestAnimationFrame(callback),
       cancelFrame: (frame) => cancelAnimationFrame(frame),
     });
-    // Restore once per document: later zoom or layout changes are the reader's.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once per document: later zoom or layout changes are the reader's
   }, [restore, pageCount, Boolean(zoom), intent]);
 }

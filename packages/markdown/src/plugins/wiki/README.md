@@ -20,7 +20,7 @@ Each workspace folder is read on its own. A missing layout is the legacy preset 
 
 ## Services, events and settings
 
-- Requires `workbench`. Optionally uses `editors` and `bridgeCapture`.
+- Requires the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `activeEditor` and `workspace`. Optionally uses `editors` and `bridgeCapture`.
 - Provides `wikiLayout`.
 - Listens to document changes, saves and the active note.
 - Diagnostics owner `wiki`.

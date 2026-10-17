@@ -35,7 +35,7 @@ CodeMirror keymap with `stopPropagation` so the forwarder cannot run a second Sa
 
 ## Services, events and settings
 
-Host injects `workbench` and `editors`; webview injects `rpc`, `editor` and
+Host injects the host services `hostCommands` and `settings`, plus `editors`; webview injects `rpc`, `editor` and
 `document` and provides `commands`. Host listens to `editor/opened`,
 `editor/closed` and `editor/activeChanged`, and serially emits `document/willSave`
 before host actions. The core plugin has no enablement switch or separate config;

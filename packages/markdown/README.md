@@ -13,12 +13,13 @@ their own through a versioned API.
 
 ## Install
 
-The extension is not on the Marketplace. Build the VSIX and install it:
+Markdown Workshop ships in the **Workshop: Markdown and PDF** extension, which
+is not on the Marketplace. Build the VSIX at the repository root and install it:
 
 ```sh
 pnpm install
 pnpm package
-code --install-extension vscode-markdown-workshop-0.1.0.vsix
+code --install-extension vscode-workshop-0.1.0.vsix
 ```
 
 To try it without touching your own setup, install it into a throwaway

@@ -24,7 +24,7 @@ when several workspace folders match. The parser is shared pure logic in
 
 ## Services, events and settings
 
-Injects `workbench`, `editors`, `selections`, optional `vaults`. Provides
+Injects the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `settings` and `workspace`, `editors`, `selections`, optional `vaults`. Provides
 no kernel service. The adapter bridges editor/document/vault events to public
 listeners. `markdownWorkshop.plugins.external` controls external providers by ID
 at global, workspace or workspace-folder scope.

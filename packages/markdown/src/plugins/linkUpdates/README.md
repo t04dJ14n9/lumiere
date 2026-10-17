@@ -23,7 +23,7 @@ them.
 
 ## Services, events and settings
 
-- Injects `workbench` (views) and `vaults`.
+- Injects the host services `hostDocuments`, `dialogs` and `settings`, plus `vaults`.
 - Settings: `markdownWorkshop.linkUpdates.mode` (`prompt`, `always`,
   `never`), `markdownWorkshop.links.newLinkFormat`.
 

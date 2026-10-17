@@ -76,8 +76,7 @@ export function isLookUpWord(value: unknown): value is string {
     typeof value === "string" &&
     value.length > 0 &&
     value.length <= MAX_LOOK_UP_LENGTH &&
-    // One word: no control characters or line breaks.
-    // eslint-disable-next-line no-control-regex
+    // eslint-disable-next-line no-control-regex -- one word: no control characters or line breaks
     !/[\u0000-\u001f\u007f]/u.test(value)
   );
 }

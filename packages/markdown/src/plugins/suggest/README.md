@@ -30,7 +30,7 @@ disposal cancel pending work.
 ## Services, events and settings
 
 Provides `suggest.register`; webview injects `editor` and `rpc`, host injects
-`rpc`, `vault` and `workbench`. Emits the `suggest/trigger` bail event; Links and
+`rpc`, `vault` and the host service `settings`. Emits the `suggest/trigger` bail event; Links and
 Tags listen independently. `markdownWorkshop.plugins.suggest.enabled` defaults
 to true. No palette commands or assigned verify shortcuts.
 
