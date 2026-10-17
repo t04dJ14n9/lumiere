@@ -175,7 +175,7 @@
     "shots": [0]
   },
   {
-    "name": "E-insert-o-in-cell",
+    "name": "E-insert-o-below-in-cell",
     "caret": {
       "line": 5,
       "ch": 4
@@ -185,7 +185,7 @@
     "shots": [0]
   },
   {
-    "name": "E-insert-O-in-cell",
+    "name": "E-insert-O-above-in-cell",
     "caret": {
       "line": 5,
       "ch": 4
@@ -195,7 +195,7 @@
     "shots": [0]
   },
   {
-    "name": "E-insert-s-in-cell",
+    "name": "E-insert-s-char-in-cell",
     "caret": {
       "line": 5,
       "ch": 4
@@ -215,7 +215,7 @@
     "shots": [1]
   },
   {
-    "name": "E-insert-S-in-cell",
+    "name": "E-insert-S-line-in-cell",
     "caret": {
       "line": 5,
       "ch": 4

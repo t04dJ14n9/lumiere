@@ -247,7 +247,7 @@ Escape       normal  src=5:2 | IN-CELL r1c0 "Xgamma" head=0 cellMode=normal [doc
 doc after: "prose above one here\nprose above two\n\n| alpha  | beta  |\n| ------ | ----- |\n| Xgamma | delta |\n| eps    | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-o-in-cell
+### E-insert-o-below-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -262,7 +262,7 @@ X" head=6 cellMode=normal [doc rewritten]
 doc after: "prose above one here\nprose above two\n\n| alpha      | beta  |\n| ---------- | ----- |\n| gamma<br>X | delta |\n| eps        | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-O-in-cell
+### E-insert-O-above-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -277,7 +277,7 @@ gamma" head=0 cellMode=normal [doc rewritten]
 doc after: "prose above one here\nprose above two\n\n| alpha      | beta  |\n| ---------- | ----- |\n| X<br>gamma | delta |\n| eps        | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-s-in-cell
+### E-insert-s-char-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -302,7 +302,7 @@ Escape       normal  src=5:2 | IN-CELL r1c0 "X" head=0 cellMode=normal [doc rewr
 doc after: "prose above one here\nprose above two\n\n| alpha | beta  |\n| ----- | ----- |\n| X     | delta |\n| eps   | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-S-in-cell
+### E-insert-S-line-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 
@@ -891,7 +891,7 @@ Escape       normal  src=5:5 | IN-CELL r1c0 "gajkmma" head=3 cellMode=normal [do
 doc after: "prose above one here\nprose above two\n\n| alpha   | beta  |\n| ------- | ----- |\n| gajkmma | delta |\n| eps     | zeta  |\n\nprose below one here\nprose below two\n"
 ```
 
-### E-insert-O-in-cell
+### E-insert-O-above-in-cell
 caret in gamma, type X, Escape
 start: `5:4`
 

@@ -15,3 +15,21 @@ test("generated VS Code test cache is ignored and never tracked", () => {
     ignored.includes(".vscode-test") || ignored.includes(".vscode-test/"),
   );
 });
+
+test("no two tracked paths differ only by letter case", () => {
+  // macOS and Windows file systems cannot check out both.
+  const paths = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
+    .split("\0")
+    .filter(Boolean);
+  const seen = new Map<string, string>();
+  const collisions: string[] = [];
+  for (const path of paths) {
+    const key = path.toLowerCase();
+    const other = seen.get(key);
+    if (other !== undefined && other !== path) {
+      collisions.push(`${other} and ${path}`);
+    }
+    seen.set(key, path);
+  }
+  assert.deepEqual(collisions, []);
+});
