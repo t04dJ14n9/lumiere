@@ -131,8 +131,10 @@ test("note text uses the same font settings as the built-in text editor for Mark
     expect(workbench.lineHeight).toBeCloseTo(18 * 1.8, 1);
     expect(workbench.letterSpacing).toBe(builtIn.letterSpacing);
     expect(workbench.features).toBe(builtIn.features);
-    // Code uses the same face and size as the text.
-    expect(workbench.code).toBe(`${workbench.family} ${workbench.size}`);
+    // Code uses the same face, a size smaller, as in Obsidian.
+    expect(workbench.code).toBe(
+      `${workbench.family} ${parseFloat(workbench.size) * 0.875}px`,
+    );
   } finally {
     writeFileSync(settingsFile, original);
     writeFileSync(note, text);
@@ -213,7 +215,8 @@ test("the note's lines are the line height setting times the size (1.5 by defaul
         .toBeCloseTo(expected, 1);
       const lines = await workbenchLines(frame);
       expect(lines.size, label).toBe(`${size}px`);
-      expect(lines.code, `${label} code`).toBeCloseTo(expected, 1);
+      // Code lines are a size smaller, as in Obsidian.
+      expect(lines.code, `${label} code`).toBeCloseTo(expected * 0.875, 1);
       // The line number is level with its line and as tall.
       expect(lines.number, `${label} number`).toBeCloseTo(expected, 1);
       expect(lines.numberTop, `${label} number top`).toBeCloseTo(0, 1);

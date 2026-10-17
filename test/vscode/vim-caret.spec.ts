@@ -196,9 +196,26 @@ async function measure(
       }
     }
   }
+  // The caret's own width: the columns it fills from top to bottom (most of
+  // their rows). Text beside a thin caret can share its colour in some
+  // columns, depending on where the glyphs fall within a pixel; it does not
+  // fill them.
+  const rows = bottom - top + 1;
+  let width = 0;
+  for (let x = left; x <= right; x++) {
+    let filled = 0;
+    for (let y = top; y <= bottom; y++) {
+      if (near(shot.pixel(x, y), colour, 4)) {
+        filled++;
+      }
+    }
+    if (filled >= rows * 0.6) {
+      width++;
+    }
+  }
   return {
     box,
-    pixels: { width: right - left + 1, height: bottom - top + 1, glyphPixels },
+    pixels: { width, height: bottom - top + 1, glyphPixels },
     colour: colour.join(","),
     glyph,
     lineHeight,

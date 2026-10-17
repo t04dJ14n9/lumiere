@@ -74,8 +74,15 @@ test("markdownWorkshop.editor.fontSize sets the note's body size (16px by defaul
           2,
         );
       });
-      expect(measured.inlineCode, `${label} inline code`).toBe(expected);
-      expect(measured.codeLine, `${label} code block`).toBe(expected);
+      // Code is a size smaller than the text, as in Obsidian.
+      expect(measured.inlineCode, `${label} inline code`).toBeCloseTo(
+        expected * 0.875,
+        2,
+      );
+      expect(measured.codeLine, `${label} code block`).toBeCloseTo(
+        expected * 0.875,
+        2,
+      );
       expect(measured.tableCell, `${label} table`).toBe(expected);
       expect(measured.properties, `${label} properties`).toBe(expected);
       expect(measured.copyCode / expected, `${label} copy button`).toBeCloseTo(
@@ -85,7 +92,7 @@ test("markdownWorkshop.editor.fontSize sets the note's body size (16px by defaul
       expect(
         measured.codeLanguage / expected,
         `${label} code language`,
-      ).toBeCloseTo(0.6875, 2);
+      ).toBeCloseTo(0.75, 2);
       expect(measured.footnoteRef / expected, `${label} footnote`).toBeCloseTo(
         0.7,
         2,
@@ -102,7 +109,7 @@ test("markdownWorkshop.editor.fontSize sets the note's body size (16px by defaul
         2,
       );
       expect(measured.codeLineHeight, `${label} code line`).toBeCloseTo(
-        expected * 1.5,
+        expected * 0.875 * 1.5,
         2,
       );
       measured.headingLineHeights.forEach((height, index) => {
