@@ -37,6 +37,8 @@ export default async function globalSetup(): Promise<void> {
     JSON.stringify(
       {
         "window.newWindowDimensions": "maximized",
+        // Newer builds open the chat beside the editor on startup.
+        "workbench.secondarySideBar.defaultVisibility": "hidden",
         "workbench.startupEditor": "none",
         // DOM-driven tests need VS Code-rendered menus, including on macOS.
         "window.menuStyle": "custom",

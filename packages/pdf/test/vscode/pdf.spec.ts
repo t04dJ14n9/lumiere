@@ -8,6 +8,7 @@ import {
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { paths } from "./state";
+import { pageFit } from "./pdf-geometry";
 import {
   agentChatInput,
   command,
@@ -97,7 +98,12 @@ test("Copy Link for Agent works from the selection menu and the editor title but
       withoutSpaces(`Source: [${PDF} (page 3)](<${PDF}#page=3&viewrect=`),
     );
 
-  await drag(page, at(150, 150), at(250, 250));
+  // Opening the chat can narrow the editor, and the page refits: measure again.
+  await expect
+    .poll(() => pageFit(viewer))
+    .toEqual({ fitsWidth: true, fitsHeight: true, fills: true });
+  const refit = await pagePoint(viewer, 3);
+  await drag(page, refit(150, 150), refit(250, 250));
   await expect(
     viewer.getByRole("toolbar", { name: "PDF region actions" }),
   ).toBeVisible();

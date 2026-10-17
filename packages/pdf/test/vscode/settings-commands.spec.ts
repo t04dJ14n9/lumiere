@@ -1,7 +1,14 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
-import { command, expect, openFile, pdfViewer, test } from "./workbench";
+import {
+  closeSettingsEditor,
+  command,
+  expect,
+  openFile,
+  pdfViewer,
+  test,
+} from "./workbench";
 import { paths } from "./state";
 
 // The settings commands read and write the keys the Settings editor shows:
@@ -36,6 +43,7 @@ const settingsEditor = (page: Page) => page.locator(".settings-editor");
 const rows = (page: Page) => page.locator(".quick-input-list .monaco-list-row");
 
 test.afterEach(async ({ workbench: page }) => {
+  await closeSettingsEditor(page);
   // Keep the watched directory alive: macOS can coalesce its deletion and
   // leave the configuration cache stale. An empty file removes the same keys.
   mkdirSync(path.dirname(workspaceFile), { recursive: true });

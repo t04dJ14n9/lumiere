@@ -11,6 +11,7 @@ import {
   type Page,
 } from "@playwright/test";
 import { readState } from "./state";
+import { command } from "../../../../test/vscode/palette";
 import { pageAtTop, pageFit, type Point } from "./pdf-geometry";
 export {
   pageAtTop,
@@ -25,11 +26,12 @@ export { expect };
 const modifier = process.platform === "darwin" ? "Meta" : "Control";
 /** `workbench`: VS Code's main window, with every editor closed first. */
 export const test = base.extend<{ workbench: Page }>({
-  // Playwright fixtures take their dependencies as an (empty) object pattern.
-  // eslint-disable-next-line no-empty-pattern
+  // eslint-disable-next-line no-empty-pattern -- Playwright fixtures take their dependencies as an object pattern
   workbench: async ({}, use) => {
     const browser = await chromium.connectOverCDP(readState().webSocket);
     const page = await findWorkbench(browser);
+    await closeSettingsEditor(page);
+    await closeSecondarySideBar(page);
     await closeAllEditors(page);
     await use(page);
     await browser.close();
@@ -73,15 +75,7 @@ async function quickInput(
 }
 
 /** Run a command from the command palette by its label. */
-export async function command(page: Page, label: string): Promise<void> {
-  await quickInput(page, `${modifier}+Shift+P`, `>${label}`);
-  const item = page
-    .locator(".quick-input-list .monaco-list-row")
-    .filter({ hasText: label })
-    .first();
-  await item.click();
-  await page.mouse.move(0, 0);
-}
+export { command };
 
 /** Open a workspace file with Quick Open. */
 export async function openFile(
@@ -171,6 +165,31 @@ export async function contextMenu(
     .getByRole("menuitem", { name: label });
   await item.hover();
   await item.click();
+}
+
+/**
+ * Close the Settings editor, which newer builds open as a modal over the
+ * workbench: while it is open the palette and the editors cannot be reached.
+ */
+export async function closeSettingsEditor(page: Page): Promise<void> {
+  const settings = page.locator(".settings-editor");
+  if (await settings.count()) {
+    await settings.first().click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press("ControlOrMeta+w");
+    await expect(settings).toHaveCount(0);
+  }
+}
+
+/**
+ * Hide the secondary side bar, where specs that hand a selection to an
+ * agent leave the chat open: its input takes focus back from the palette.
+ */
+async function closeSecondarySideBar(page: Page): Promise<void> {
+  const bar = page.locator(".part.auxiliarybar");
+  if (await bar.isVisible()) {
+    await page.keyboard.press(`Alt+${modifier}+b`);
+    await expect(bar).toBeHidden();
+  }
 }
 
 export async function closeAllEditors(page: Page): Promise<void> {
