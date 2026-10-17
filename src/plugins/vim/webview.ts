@@ -15,6 +15,7 @@ import { revealBlockMotion } from "./motion";
 import { freezeRevealDuringVisual } from "./visual-reveal";
 import { installVimKeyRouting } from "./key-routing";
 import { vimLineKeyboard } from "./keyboard";
+import { keepInsertExitCaret } from "./leave-insert";
 import type {} from "../livePreview/api";
 
 /** Each webview has one editor; restore the library hooks when its fiber stops. */
@@ -151,6 +152,7 @@ function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
     vimLineKeyboard,
+    keepInsertExitCaret(),
     revealBlockMotion(() => ctx.livePreview),
     freezeRevealDuringVisual(),
     ctx.editor.caret({

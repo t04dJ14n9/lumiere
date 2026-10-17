@@ -44,7 +44,11 @@ export class CellProjection {
     private readonly actions: ProjectionActions,
   ) {}
 
-  open(position: CellPosition, selection?: number | "all"): void {
+  open(
+    position: CellPosition,
+    selection?: number | "all",
+    options?: { projectOuter?: boolean },
+  ): void {
     const cell = this.grid.model.rows[position.row]?.[position.column];
     const element = this.grid.contentElement(position);
     if (!cell || !element) {
@@ -76,7 +80,11 @@ export class CellProjection {
         this.grid.outer.state.facet(tableSelectionChanges)(selected),
       change: (text, group) => this.projectChange(position, text, group),
     });
-    this.deferOuterCaret(this.cellEditor);
+    // Pointer opens keep the outer document caret put; Vim/keyboard entry and
+    // post-edit retain still project so motions and rewrites stay coherent.
+    if (options?.projectOuter !== false) {
+      this.deferOuterCaret(this.cellEditor);
+    }
     this.cellEditor.view.focus();
     this.actions.highlight();
     this.grid.outer.state.facet(tableSelectionChanges)(

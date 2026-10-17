@@ -41,7 +41,7 @@ export class TableSelection {
           if (selected) {
             grid.root.focus({ preventScroll: true });
           } else {
-            projection.open(origin, offset);
+            projection.open(origin, offset, { projectOuter: false });
           }
         },
       },

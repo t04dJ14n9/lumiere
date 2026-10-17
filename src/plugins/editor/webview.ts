@@ -33,6 +33,7 @@ import { caretExtension } from "./caret-view";
 import { menuSelectionContext } from "./menu-context";
 import { reportWebviewFocus } from "./focus-report";
 import { selectionDragScroll } from "./drag-scroll";
+import { withPreservedCaret } from "./preserve-caret";
 const configurations = new WeakMap<
   Context,
   (value: Infer<typeof editorConfig>) => void
@@ -72,7 +73,9 @@ export const editorWebview: Plugin<EditorConfig> = {
     ctx.effect(() => ctx.document.attach(view));
     const contributions = new ViewContributions(view);
     const registry = new ExtensionRegistry(ctx.runtime.rank, (extensions) => {
-      view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
+      withPreservedCaret(view, () => {
+        view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
+      });
     });
     const editor = createEditorService({
       view,
