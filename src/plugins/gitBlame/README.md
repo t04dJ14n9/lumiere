@@ -1,7 +1,8 @@
 # Current-line authorship
 
-Shows who last committed the caret line, when, and the commit subject as quiet
-text at the end of the line in Live Preview. Obsidian has no core equivalent;
+Shows who last committed the caret line, when, and a truncated commit subject as quiet
+text at the end of the line in Live Preview. Hovering the ghost opens a tooltip with
+the full subject and commit body (GitLens-style). Obsidian has no core equivalent;
 this follows GitLens current-line authorship alongside the Git change bars.
 
 ## How it works
@@ -29,9 +30,10 @@ commits. Identity is resolved through Git config for the “You” label.
 - `controller.ts`: debounce, latest-wins, generation adoption and lifetime guards.
 - `state.ts`: transaction-owned version and blame state; immediate edit/line clear.
 - `webview.ts`: controller, editor extensions and guarded identity requests.
-- `format.ts`: author, relative time and grapheme-safe subject formatting.
-- `blameWidget.ts`: one decorative EOL widget and identity state.
-- `gitBlame.css`: quiet theme styling and Source-mode hiding.
+- `format.ts`: author, relative time, grapheme-safe ghost truncate, and hover tooltip text.
+- `blameWidget.ts`: one decorative EOL widget, hover tooltip, and identity state.
+- `paintable.ts`: hide the ghost inside unrevealed Live Preview replaces.
+- `gitBlame.css`: dim (opacity 0.5), nowrap + ellipsis, hover tooltip, Source-mode hiding.
 
 ## Services, events and settings
 
@@ -47,5 +49,6 @@ Git must be available and the note tracked in HEAD. Empty, uncommitted,
 untracked, stale, failing and over-cap snapshots show nothing; no error toasts.
 The contents ceiling is the shared `MAX_DIFF_CHARS` (1,000,000 characters), with
 an enforced five-second Git timeout. English relative time updates on editor
-transactions; subjects use at most 48 graphemes plus an ellipsis. No full-file
-blame, hover details, history, hashes, remote links, or status-bar duplicate.
+transactions; ghost subjects use at most 48 graphemes plus an ellipsis; hover shows the full
+message body from the host. No full-file blame, history, hashes, remote links, or
+status-bar duplicate.

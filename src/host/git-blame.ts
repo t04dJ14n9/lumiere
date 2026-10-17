@@ -3,6 +3,9 @@ import { MAX_DIFF_CHARS } from "../shared/diff";
 import { parseBlamePorcelain } from "../shared/git-blame";
 import type { GitBlameLineResult, GitBlameSnapshot } from "../shared/git-blame";
 
+/** Soft cap so a pathological commit message cannot inflate the panel bind. */
+const MAX_BODY_CHARS = 8_000;
+
 /** The host runner owns stdin, timeout and bounded output; plugins never spawn. */
 export type GitBlameRunner = (options: {
   args: readonly string[];
@@ -134,7 +137,19 @@ export async function runBlameLine(
     if (repoGeneration !== generationAtStart) {
       return { status: "stale", repoGeneration };
     }
-    return { ...parseBlamePorcelain(stdout, line), repoGeneration };
+    const parsed = parseBlamePorcelain(stdout, line);
+    if (parsed.status !== "ok") {
+      return { ...parsed, repoGeneration };
+    }
+    const body = await commitBody(options, parsed.blame.commit);
+    if (getGeneration() !== generationAtStart) {
+      return { status: "stale", repoGeneration: getGeneration() };
+    }
+    return {
+      status: "ok",
+      blame: { ...parsed.blame, body },
+      repoGeneration: getGeneration(),
+    };
   } catch (error) {
     const repoGeneration = getGeneration();
     if (repoGeneration !== generationAtStart) {
@@ -147,5 +162,25 @@ export async function runBlameLine(
       status: isUntracked ? "untracked" : "unavailable",
       repoGeneration,
     };
+  }
+}
+
+/** Full commit body (`%b`); soft-fail to "" so the ghost still paints. */
+async function commitBody(
+  options: BlameOptions,
+  commit: string,
+): Promise<string> {
+  try {
+    const { stdout } = await options.runGit({
+      args: ["log", "-1", "--format=%b", commit],
+      cwd: options.cwd,
+      timeoutMs: Math.min(options.timeoutMs ?? 5000, 3000),
+      // Byte floor for UTF-8: up to 4 bytes/char, then slice by characters.
+      maxBuffer: MAX_BODY_CHARS * 4 + 64,
+    });
+    const body = stdout.replace(/\s+$/u, "");
+    return body.length > MAX_BODY_CHARS ? body.slice(0, MAX_BODY_CHARS) : body;
+  } catch {
+    return "";
   }
 }

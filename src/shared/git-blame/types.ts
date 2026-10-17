@@ -10,7 +10,15 @@ export interface GitBlameOk {
   readonly authorName: string;
   readonly authorEmail: string;
   readonly authorDate: number;
+  /** First line of the commit message (porcelain summary). */
   readonly subject: string;
+  /**
+   * Remainder of the commit message after the subject (`git log --format=%b`).
+   * Empty string when the commit has no body; omitted only by older callers.
+   */
+  readonly body?: string;
+  /** Committer unix seconds when distinct from author; used in the hover tooltip. */
+  readonly committerDate?: number;
   readonly line: number;
   readonly boundary?: boolean;
 }

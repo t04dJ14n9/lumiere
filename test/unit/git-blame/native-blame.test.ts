@@ -98,15 +98,67 @@ test("dirty argv forwards stdin and timeout; clean argv omits contents", async (
   const calls: Parameters<GitBlameRunner>[0][] = [];
   const runGit: GitBlameRunner = async (request) => {
     calls.push(request);
+    if (request.args[0] === "log") {
+      return { stdout: "- body line\n", stderr: "" };
+    }
     return { stdout: porcelain(), stderr: "" };
   };
-  await runBlameLine(options(runGit));
+  const dirty = await runBlameLine(options(runGit));
   assert.equal(calls[0]?.stdin, "alpha\n");
   assert.equal(calls[0]?.timeoutMs, 5000);
   assert.ok(calls[0]?.args.includes("--contents"));
+  assert.deepEqual(calls[1]?.args.slice(0, 3), ["log", "-1", "--format=%b"]);
+  assert.equal(dirty.status, "ok");
+  if (dirty.status === "ok") {
+    assert.equal(dirty.blame.body, "- body line");
+  }
+  const before = calls.length;
   await runBlameLine({ ...options(runGit), knownClean: true });
-  assert.equal(calls[1]?.stdin, undefined);
-  assert.equal(calls[1]?.args.includes("--contents"), false);
+  assert.equal(calls[before]?.stdin, undefined);
+  assert.equal(calls[before]?.args.includes("--contents"), false);
+});
+
+test("multibyte commit body under char cap is kept (byte buffer allows UTF-8)", async () => {
+  // 3000 CJK chars ≈ 9000 UTF-8 bytes; old maxBuffer (8000+64) would drop them.
+  const cjkBody = "汉".repeat(3_000);
+  assert.ok(Buffer.byteLength(cjkBody, "utf8") > 8_064);
+  assert.ok(cjkBody.length < 8_000);
+  const calls: Parameters<GitBlameRunner>[0][] = [];
+  const runGit: GitBlameRunner = async (request) => {
+    calls.push(request);
+    if (request.args[0] === "log") {
+      return { stdout: `${cjkBody}\n`, stderr: "" };
+    }
+    return { stdout: porcelain(), stderr: "" };
+  };
+  const result = await runBlameLine(options(runGit));
+  assert.equal(result.status, "ok");
+  if (result.status === "ok") {
+    assert.equal(result.blame.body, cjkBody);
+  }
+  const logCall = calls.find((call) => call.args[0] === "log");
+  assert.ok(logCall);
+  // Must buffer at least 4 bytes/char so UTF-8 bodies under the char cap fit.
+  assert.ok(
+    (logCall!.maxBuffer ?? 0) >= 8_000 * 4 + 64,
+    `expected maxBuffer >= ${8_000 * 4 + 64}, got ${logCall!.maxBuffer}`,
+  );
+});
+
+test("oversized body is character-sliced after a UTF-8-safe buffer", async () => {
+  const huge = "汉".repeat(8_100);
+  const runGit: GitBlameRunner = async (request) => {
+    if (request.args[0] === "log") {
+      return { stdout: `${huge}\n`, stderr: "" };
+    }
+    return { stdout: porcelain(), stderr: "" };
+  };
+  const result = await runBlameLine(options(runGit));
+  assert.equal(result.status, "ok");
+  if (result.status === "ok") {
+    assert.equal(result.blame.body.length, 8_000);
+    assert.equal(result.blame.body, huge.slice(0, 8_000));
+  }
 });
 
 // Node process/stream events are separate from the typed kernel event catalogue.

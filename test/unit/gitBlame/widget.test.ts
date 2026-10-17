@@ -18,6 +18,7 @@ const blame: GitBlameOk = {
   authorEmail: "ada@example.com",
   authorDate: 1700000000,
   subject: "Hi",
+  body: "- detail one\n- detail two",
   line: 2,
 };
 function state() {
@@ -40,7 +41,11 @@ test("one non-block EOL widget after the main caret line", () => {
   assert.equal(cursor.value?.spec.side, 1);
   assert.equal(cursor.value?.spec.block, false);
   assert.ok(cursor.value?.spec.widget instanceof BlameEolWidget);
-  assert.match((cursor.value?.spec.widget as BlameEolWidget).text, /^Ada,/);
+  const widget = cursor.value?.spec.widget as BlameEolWidget;
+  assert.match(widget.text, /^Ada,/);
+  assert.match(widget.tooltip, /Ada\n/);
+  assert.match(widget.tooltip, /Hi/);
+  assert.match(widget.tooltip, /detail one/);
   editor = editor.update({
     effects: setBlameIdentity.of({ userEmail: "ADA@example.com" }),
   }).state;
@@ -65,33 +70,175 @@ test("empty/non-ok, doc edit and caret-line move remove the widget synchronously
   }
 });
 
-test("widget is decorative plain text and never captures events", () => {
-  const widget = new BlameEolWidget("<script>plain text</script>");
-  const element = {
-    className: "",
-    textContent: "",
-    attributes: {} as Record<string, string>,
-    setAttribute(key: string, value: string) {
-      this.attributes[key] = value;
+test("widget is decorative plain text, mounts tooltip host, and never captures events", () => {
+  const widget = new BlameEolWidget(
+    "<script>plain text</script>",
+    "Ada\njust now\nSubject\n\nBody line",
+  );
+  const tips: { className: string; textContent: string; remove(): void }[] = [];
+  const ownerDocument = {
+    documentElement: {
+      clientWidth: 800,
+      clientHeight: 600,
+      append(node: { className: string; textContent: string; remove(): void }) {
+        tips.push(node);
+      },
+    },
+    createElement(tag: string) {
+      if (tag === "div") {
+        return {
+          className: "",
+          textContent: "",
+          hidden: true,
+          style: {} as Record<string, string>,
+          classList: { toggle() {} },
+          setAttribute() {},
+          addEventListener() {},
+          remove() {
+            const index = tips.indexOf(this as never);
+            if (index >= 0) {
+              tips.splice(index, 1);
+            }
+          },
+          getBoundingClientRect: () => ({
+            width: 10,
+            height: 10,
+            left: 0,
+            right: 10,
+            top: 0,
+            bottom: 10,
+          }),
+        };
+      }
+      const element = {
+        className: "",
+        textContent: "",
+        attributes: {} as Record<string, string>,
+        ownerDocument,
+        setAttribute(key: string, value: string) {
+          this.attributes[key] = value;
+        },
+        addEventListener() {},
+        getBoundingClientRect: () => ({
+          width: 20,
+          height: 10,
+          left: 40,
+          right: 60,
+          top: 40,
+          bottom: 50,
+        }),
+      };
+      return element;
     },
   };
   const dom = widget.toDOM({
-    dom: { ownerDocument: { createElement: () => element } },
-  } as never);
+    dom: { ownerDocument },
+  } as never) as {
+    className: string;
+    textContent: string;
+    attributes: Record<string, string>;
+  };
   assert.equal(dom.className, "mw-gb-eol");
   assert.equal(dom.textContent, widget.text);
-  assert.equal(element.attributes["aria-hidden"], "true");
+  assert.equal(dom.attributes["aria-hidden"], "true");
+  assert.equal(tips.length, 1);
+  assert.equal(tips[0]?.className, "mw-gb-tooltip");
+  assert.equal(tips[0]?.textContent, widget.tooltip);
   assert.equal(widget.ignoreEvent(), true);
-  assert.equal(widget.eq(new BlameEolWidget(widget.text)), true);
-  assert.equal(widget.eq(new BlameEolWidget("other")), false);
+  assert.equal(
+    widget.eq(new BlameEolWidget(widget.text, widget.tooltip)),
+    true,
+  );
+  assert.equal(widget.eq(new BlameEolWidget("other", widget.tooltip)), false);
+  widget.destroy(dom as never);
+  assert.equal(tips.length, 0);
 });
 
-test("quiet CSS consumes description foreground, supports forced colors, and hides in Source", () => {
+test("quiet CSS dims, nowraps with ellipsis, and styles the hover tooltip", () => {
   const css = readFileSync("src/plugins/gitBlame/gitBlame.css", "utf8");
   assert.match(css, /var\(--vscode-descriptionForeground, var\(--muted\)\)/);
   assert.doesNotMatch(css, /--mw-git-ins-line|diffEditor/);
   assert.match(css, /forced-colors/);
   assert.match(css, /is-source-mode/);
-  assert.match(css, /pointer-events: none/);
   assert.match(css, /user-select: none/);
+  assert.match(css, /white-space:\s*nowrap/);
+  assert.match(css, /display:\s*inline-block/);
+  assert.match(css, /opacity:\s*0\.5/);
+  assert.match(css, /text-overflow:\s*ellipsis/);
+  assert.match(css, /max-width:/);
+  assert.match(css, /\.mw-gb-tooltip/);
+  assert.match(css, /white-space:\s*pre-wrap/);
+  assert.doesNotMatch(css, /pointer-events:\s*none/);
+});
+
+test("equal widget destroy cleans tooltip on reused DOM (eq ownership)", () => {
+  const tips: { className: string; textContent: string; remove(): void }[] = [];
+  const ownerDocument = {
+    documentElement: {
+      clientWidth: 800,
+      clientHeight: 600,
+      append(node: { className: string; textContent: string; remove(): void }) {
+        tips.push(node);
+      },
+    },
+    createElement(tag: string) {
+      if (tag === "div") {
+        return {
+          className: "",
+          textContent: "",
+          hidden: true,
+          style: {} as Record<string, string>,
+          classList: { toggle() {} },
+          setAttribute() {},
+          addEventListener() {},
+          remove() {
+            const index = tips.indexOf(this as never);
+            if (index >= 0) {
+              tips.splice(index, 1);
+            }
+          },
+          getBoundingClientRect: () => ({
+            width: 10,
+            height: 10,
+            left: 0,
+            right: 10,
+            top: 0,
+            bottom: 10,
+          }),
+        };
+      }
+      return {
+        className: "",
+        textContent: "",
+        attributes: {} as Record<string, string>,
+        ownerDocument,
+        setAttribute(key: string, value: string) {
+          this.attributes[key] = value;
+        },
+        addEventListener() {},
+        getBoundingClientRect: () => ({
+          width: 20,
+          height: 10,
+          left: 40,
+          right: 60,
+          top: 40,
+          bottom: 50,
+        }),
+      };
+    },
+  };
+  const a = new BlameEolWidget(
+    "Ada, just now · Hi",
+    "Ada\njust now\nHi\n\nBody",
+  );
+  const b = new BlameEolWidget(
+    "Ada, just now · Hi",
+    "Ada\njust now\nHi\n\nBody",
+  );
+  assert.equal(a.eq(b), true);
+  const dom = a.toDOM({ dom: { ownerDocument } } as never);
+  assert.equal(tips.length, 1);
+  // CodeMirror reuses A's DOM for equal B; only B.destroy runs on removal.
+  b.destroy(dom as never);
+  assert.equal(tips.length, 0);
 });
