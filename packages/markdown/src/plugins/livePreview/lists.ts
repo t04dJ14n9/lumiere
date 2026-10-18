@@ -75,13 +75,53 @@ export function decorateListItem(node: SyntaxNodeRef, cx: InlineContext): void {
   const depth = listDepth(node.node);
   const text = cx.state.sliceDoc(mark.from, mark.to);
   const isTask = Boolean(mark.nextSibling?.getChild("TaskMarker"));
-  cx.line(line.from, "md-list-line", {
-    style: `--list-depth: ${depth}; --list-marker: ${markerWidth(text, isTask)}`,
-  });
+  const style = `--list-depth: ${depth}; --list-marker: ${markerWidth(text, isTask)}`;
+  cx.line(line.from, "md-list-line", { style });
   if (leading.length > 0) {
     cx.replace(line.from, node.from, new ListIndent(depth));
   }
   decorateMarker(cx, mark, text, isTask);
+  decorateContinuations(node.node, cx, style);
+}
+
+/**
+ * An item's indented continuation lines, as in Obsidian 1.14 (measured):
+ * their text starts under the item's text, and indentation deeper than that
+ * moves it further in. The spaces up to the item's text are hidden; a lazy
+ * line, with none, stays where it is.
+ */
+function decorateContinuations(
+  item: SyntaxNode,
+  cx: InlineContext,
+  style: string,
+): void {
+  const first = cx.state.doc.lineAt(item.from);
+  const content = contentColumn(cx.state.sliceDoc(first.from, first.to));
+  for (let child = item.firstChild; child; child = child.nextSibling) {
+    // A task item's paragraph is a Task node.
+    if (child.name !== "Paragraph" && child.name !== "Task") {
+      continue;
+    }
+    let line = cx.state.doc.lineAt(child.from);
+    while (line.from <= child.to) {
+      const spaces = /^[ \t]*/.exec(line.text)![0].length;
+      if (line.from !== first.from && spaces > 0) {
+        cx.line(line.from, "md-list-line md-list-continuation", { style });
+        cx.hide(line.from, line.from + Math.min(spaces, content));
+      }
+      if (line.number === cx.state.doc.lines) {
+        break;
+      }
+      line = cx.state.doc.line(line.number + 1);
+    }
+  }
+}
+
+/** Where an item's text starts on its first line, in characters. */
+function contentColumn(text: string): number {
+  return (
+    /^\s*(?:[-+*]|\d+[.)])[ \t]*(?:\[.\][ \t]*)?/.exec(text)?.[0].length ?? 0
+  );
 }
 
 function decorateMarker(

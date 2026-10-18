@@ -264,6 +264,12 @@
   padding-block: 0.075em;
   text-indent: calc(-1 * var(--list-hang));
 }
+/* A continuation line has no marker: all of it hangs under the item's text.
+ * It keeps no extra spacing, so line numbers beside it stay level. */
+#app .cm-line.md-list-continuation {
+  padding-block: 0;
+  text-indent: 0;
+}
 .md-list-indent {
   display: inline-block;
   width: calc(var(--list-depth, 0) * var(--list-indent));

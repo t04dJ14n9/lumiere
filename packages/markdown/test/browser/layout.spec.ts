@@ -38,8 +38,29 @@ test("nested list guides follow rendered bullet columns and the guide setting", 
   ].join("\n");
   await open(page, source);
   await page.evaluate(() => window.harness.reveal(window.harness.text.length));
-  const rows = page.locator(".cm-line.md-list-line");
+  // Item rows; the continuation row hangs under its item's text instead.
+  const rows = page.locator(".cm-line.md-list-line:not(.md-list-continuation)");
   await expect(rows).toHaveCount(4);
+  const textLeft = (text: string) =>
+    page.evaluate((text) => {
+      const content = document.querySelector(".cm-content")!;
+      const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const at = node.textContent!.indexOf(text);
+        if (at >= 0) {
+          const range = document.createRange();
+          range.setStart(node, at);
+          range.setEnd(node, at + 1);
+          return range.getBoundingClientRect().left;
+        }
+      }
+      return NaN;
+    }, text);
+  expect(
+    Math.abs(
+      (await textLeft("continuation text")) - (await textLeft("Great grand")),
+    ),
+  ).toBeLessThan(1);
   await expect(page.locator(".md-list-line.mw-indent-guide")).toHaveCount(0);
   await expect(page.locator(".mw-indent-guide")).toHaveCount(1);
   const geometry = await rows.evaluateAll((elements) =>

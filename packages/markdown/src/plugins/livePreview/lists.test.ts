@@ -60,3 +60,54 @@ test("marker widths cover bullets, numbers and task boxes", () => {
 test("list items inside quotes keep the quote layout", () => {
   assert.deepEqual(decorate("> - quoted item\n\nafter").lines, []);
 });
+
+test("an item's indented continuation lines hang under its text; a lazy line does not", () => {
+  // As in Obsidian 1.14: `[[Home]]` starts under "An alias", and "four in"
+  // further in; "lazy" stays at the margin.
+  const doc =
+    "- An alias:\n  [[Home]] here\n- Four:\n    four in\n1. Number\n   three in\n- Lazy:\nlazy\n- [ ] task\n      under task\n\nafter";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const continued: { line: string; hidden: string; style: string }[] = [];
+  const hidden = new Map<number, string>();
+  const decorations = inlineDecorations(state, [{ from: 0, to: doc.length }]);
+  decorations.between(0, doc.length, (from, to, value) => {
+    if (!value.spec.class && !value.spec.widget && from < to) {
+      hidden.set(from, doc.slice(from, to));
+    }
+  });
+  decorations.between(0, doc.length, (from, _to, value) => {
+    if (value.spec.class === "md-list-line md-list-continuation") {
+      continued.push({
+        line: state.doc.lineAt(from).text,
+        hidden: hidden.get(from) ?? "",
+        style: value.spec.attributes.style,
+      });
+    }
+  });
+  assert.deepEqual(continued, [
+    {
+      line: "  [[Home]] here",
+      hidden: "  ",
+      style: "--list-depth: 0; --list-marker: calc(1.25em + 3px)",
+    },
+    {
+      line: "    four in",
+      hidden: "  ",
+      style: "--list-depth: 0; --list-marker: calc(1.25em + 3px)",
+    },
+    {
+      line: "   three in",
+      hidden: "   ",
+      style: "--list-depth: 0; --list-marker: calc(1.5em + 6px)",
+    },
+    {
+      line: "      under task",
+      hidden: "      ",
+      style: "--list-depth: 0; --list-marker: calc(1.75em - 1px)",
+    },
+  ]);
+});

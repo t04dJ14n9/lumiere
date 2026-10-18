@@ -15,6 +15,7 @@ paragraph's text.
 | Bullet text | 23px in (1.25em + 3px), the bullet 12px in | same |
 | Numbered text | 30px in (1.5em + 6px) for any number | same |
 | Task text | 27px in (1.75em − 1px); a 16px box, 4px corners | same |
+| Indented continuation line of an item | text under the item's text (1px off); deeper indentation further in; an unindented (lazy) line at the margin, not a list line (measured on 1.14.4, 2026-10-18) | same; the spaces up to the item's text are hidden |
 | Quote text | 14px in per level, a 2px bar | same |
 | Code | 0.875em (14px), lines 21px | same (`--code-size`) |
 | Code language label | 12px, in the corner | same |
@@ -36,3 +37,6 @@ Differences that remain:
 - A paragraph line right after a quote is part of the quote (CommonMark's lazy
   continuation, as in Obsidian's reading view); Obsidian's Live Preview shows
   it as a paragraph.
+- A continuation line indented exactly to a nested item's text starts under
+  that text; Obsidian places it by its number of spaces alone (4 spaces: 13px
+  right of a level-2 item's text), and it has no item spacing above or below.
