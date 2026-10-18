@@ -16,24 +16,30 @@ commit with a unit test) and don't push without the owner.
 ### Working in parallel with Claude (from 2026-10-18, 08:00 PDT)
 
 The owner has Grok Bot and a Claude session working at the same time.
-Grok Bot keeps the Vim and editing bugs. Claude has taken: the full local
-test pass (VS Code and Cursor, including the keyboard checks through the
-real-editor harness), the code rename to Lumière, reviewing and merging
-`claude/math-fixes`, reviewing `claude/web-extension`, then reinstalling and
-pushing.
+Grok Bot works in its own clone on its VM and pushes to
+`origin/claude/cordis-core-and-parity`; Claude works on the owner's Mac
+(`~/Code/vscode-workshop/vscode-markdown-workshop`) and pushes there too. So
+GitHub is where the two meet:
 
-- Claude does its large work in its own worktrees under
-  `~/Code/vscode-workshop/` (`lumiere-verify` for test runs,
-  `lumiere-rename` for the rename) and brings it into
-  `claude/cordis-core-and-parity` only when it is ready, with a note here.
-- In the shared checkout both commit only the paths they changed, never
-  `git add -A` or `git commit -a`, and neither pushes without the owner.
-- Run test suites one at a time: before starting one, check with
-  `pgrep -f "playwright test"` that none is running, and give the PDF
-  browser suite its own port (`PORT=8992`; Claude uses 8991).
-- The rename will change every `markdownWorkshop.` and `pdfWorkshop.` key
-  and command ID. Before it lands, Claude will rebase it onto the branch, so
-  keep committing as usual.
+- **Pull before you start and before you push** (`git pull --rebase`), and
+  push small commits often, so neither redoes the other's fixes.
+- **Run `pnpm check` before every push.** Grok Bot's Copy Link redesign
+  (`afdf0e7a`) was pushed unformatted, with two unused imports, a removed
+  `Box` component still in use (the PDF webview did not typecheck), a test
+  type without `when`, a stale `package.json` and the Markdown side's copy of
+  the PDF handoff text still in the old format. Claude fixed each in its own
+  commit on top (`b532b168` … `89068e19`).
+- Grok Bot keeps the Vim and editing bugs from its Cursor pass (image zoom
+  `0`, footnote insert, Ctrl+B markers, Ctrl+L/K with Vim, callout fold under
+  Vim). Claude has taken: merging `claude/math-fixes`, the code rename to
+  Lumière, reviewing `claude/web-extension`, the full local test pass (VS
+  Code and Cursor) and reinstalling on the owner's Mac and CVM.
+- **The rename changes every `markdownWorkshop.` and `pdfWorkshop.` key and
+  command ID.** Claude will say here and in the PR when it starts and when it
+  lands; push what you have before it starts, and pull right after it lands.
+- PR #84 (the cancelled Cursor cloud agent's Copy Link redesign) duplicates
+  `afdf0e7a`; its Markdown formatter was taken into `cbd3054b`. It should be
+  closed, not merged.
 
 ### Your task: Vim input bugs
 
