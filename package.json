@@ -374,6 +374,11 @@
         "icon": "$(comment-discussion)"
       },
       {
+        "command": "markdownWorkshop.renameHeading",
+        "title": "Rename Heading…",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.insertWikilink",
         "title": "Insert Wikilink",
         "category": "Markdown Workshop"
@@ -1522,6 +1527,10 @@
         {
           "command": "markdownWorkshop.ideContext.send",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.ideContext"
+        },
+        {
+          "command": "markdownWorkshop.renameHeading",
+          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.linkUpdates.enabled"
         },
         {
           "command": "markdownWorkshop.insertWikilink",

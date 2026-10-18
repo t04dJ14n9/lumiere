@@ -15,6 +15,14 @@ rewritten too. Folder renames cover every file inside. By default it asks
 first; the edits are applied together with the rename, so one undo reverts
 them.
 
+## Rename Heading
+
+Rename Heading… renames the heading at the caret and updates the links to
+it, as Obsidian's Rename heading does: each link whose single `#subpath`
+names the heading (as links resolve, so case does not matter), in the note
+and in every note linking to it, keeping its path, form and alias
+(`heading-rename.ts`, `rename-heading.ts`).
+
 ## Files
 
 - `host.ts`: the rename hook, the prompt and folder expansion.
@@ -31,4 +39,6 @@ them.
 
 - Only renames made in VS Code (Explorer, refactoring) are seen; a rename in
   another program looks like a delete and a create.
-- Heading renames do not update `#Heading` links yet.
+- Rename Heading asks for the new name in a prompt; Obsidian renames in
+  its own prompt too. Nested subpaths (`#Parent#Heading`) are left, as in
+  Obsidian.

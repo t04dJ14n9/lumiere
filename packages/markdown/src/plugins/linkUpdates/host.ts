@@ -1,19 +1,34 @@
 import type { Plugin } from "@workshop/core";
-import type {
-  Dialogs,
-  FileTextEdits,
-  HostDocuments,
-  HostServices,
-} from "../../shared/host";
+import type { Dialogs, FileTextEdits, HostServices } from "../../shared/host";
 import type { Vault, Vaults } from "../vault/api";
+import type {} from "../editor/api";
 import { rewriteLinks } from "./rewrite";
+import { sourceText } from "./source-text";
+import { registerRenameHeading } from "./rename-heading";
+
+export { sourceText };
 import type { LinkFormat, RewriteContext } from "./rewrite";
 
 /** Rewrites links in other notes when files are renamed in VS Code. */
 export const linkUpdatesHost: Plugin = {
   name: "linkUpdates",
-  inject: { required: ["settings", "vaults", "hostDocuments", "dialogs"] },
+  inject: {
+    required: [
+      "settings",
+      "vaults",
+      "hostDocuments",
+      "dialogs",
+      "hostCommands",
+    ],
+    optional: ["editors"],
+  },
   apply(ctx) {
+    registerRenameHeading(ctx, {
+      editors: ctx.editors,
+      dialogs: ctx.dialogs,
+      vaults: ctx.vaults,
+      hostDocuments: ctx.hostDocuments,
+    });
     ctx.effect(() =>
       ctx.hostDocuments.onWillRename(async (renames) => {
         const resource = renames[0]?.oldUri;
@@ -101,19 +116,6 @@ async function linkEdits(
     }
   }
   return result;
-}
-
-/**
- * A note's text as VS Code holds it. An open document can differ from the
- * vault's copy (unsaved edits, or a buffer left over from a closed editor),
- * and the edits apply to that document, so offsets must come from it.
- */
-export async function sourceText(
-  vaults: Pick<Vaults, "text">,
-  documents: Pick<HostDocuments, "text">,
-  uri: string,
-): Promise<string> {
-  return documents.text(uri) ?? (await vaults.text(uri));
 }
 
 /**

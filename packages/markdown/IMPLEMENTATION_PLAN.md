@@ -5085,3 +5085,20 @@ values into the same field.
   Obsidian; values are quoted where YAML needs it (all 10 cases match).
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Rename Heading — 2026-10-17
+
+Obsidian's Rename heading, measured in the throwaway vault: it renames the
+heading at the caret and updates each link whose single `#subpath` names it,
+matched as links resolve (case does not matter), in the note itself and in
+every note linking to it, keeping each link's path, form and alias
+(embeds and Markdown links with `%20` too); nested subpaths are left.
+Workshop had no such command, and its link updates said "Heading renames do
+not update `#Heading` links yet".
+
+Rename Heading… (a host command in the link updates plugin) does the same,
+asking for the new name in VS Code's prompt; a name with `# | ^ [ ]`, which
+would break the links, is refused. Checked in real VS Code: the heading and
+both link forms in another note are updated.
+
+Validation: `pnpm check` green; unit tests pin the measured notes.

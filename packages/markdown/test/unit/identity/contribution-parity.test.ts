@@ -29,6 +29,7 @@ import { registerJumpHistory } from "../../../src/plugins/editor/jump-host";
 import type { EditorPanel, Selections } from "../../../src/plugins/editor/api";
 import { gitDiffEditorHost } from "../../../src/plugins/gitDiffEditor/host";
 import { graphHost } from "../../../src/plugins/graph/host";
+import { linkUpdatesHost } from "../../../src/plugins/linkUpdates/host";
 import { livePreviewHost } from "../../../src/plugins/livePreview/host";
 import { marpHost } from "../../../src/plugins/marp/host";
 import { registerOutlineActions } from "../../../src/plugins/outline/actions";
@@ -269,6 +270,7 @@ function installHosts(
   root.plugin(assetsHost);
   root.plugin(gitDiffEditorHost);
   root.plugin(quickSwitcherHost);
+  root.plugin(linkUpdatesHost);
   root.plugin(directRegistrations(selections));
 }
 

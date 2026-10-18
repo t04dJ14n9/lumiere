@@ -15,6 +15,11 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host"],
-  capabilities: ["vaultIndex", "fileWrites"],
+  capabilities: ["vaultIndex", "fileWrites", "commands"],
   config,
+  contributes: {
+    commands: [
+      { id: "renameHeading", title: "Rename Heading…", scope: "workbench" },
+    ],
+  },
 } as const);
