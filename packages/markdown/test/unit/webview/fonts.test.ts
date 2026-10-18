@@ -28,7 +28,7 @@ const CHROME = [
   "src/webview/styles/base.css",
 ];
 
-test("the note's size is one variable, markdownWorkshop.editor.fontSize, not editor.fontSize", () => {
+test("the note's size is one variable, lumiere.markdown.editor.fontSize, not editor.fontSize", () => {
   const base = css("src/webview/styles/base.css");
   assert.match(base, /--text-size: 16px;/);
   // Prose defaults to the proportional UI stack; code follows VS Code's editor font.

@@ -11,14 +11,14 @@ test("Markdown patterns route to this editor; other associations stay", () => {
     withMarkdownWorkshop({ "*.pdf": "pdf.preview", "*.md": "default" }),
     {
       "*.pdf": "pdf.preview",
-      "*.md": "markdownWorkshop.editor",
-      "*.markdown": "markdownWorkshop.editor",
+      "*.md": "lumiere.markdown.editor",
+      "*.markdown": "lumiere.markdown.editor",
     },
   );
   for (const malformed of [undefined, null, [], "x", { "*.txt": 3 }]) {
     assert.deepEqual(withMarkdownWorkshop(malformed), {
-      "*.md": "markdownWorkshop.editor",
-      "*.markdown": "markdownWorkshop.editor",
+      "*.md": "lumiere.markdown.editor",
+      "*.markdown": "lumiere.markdown.editor",
     });
   }
 });
@@ -52,8 +52,8 @@ test("the workspace command writes the workspace associations once", async () =>
   assert.deepEqual(h.writes, [
     {
       "*.pdf": "pdf.preview",
-      "*.md": "markdownWorkshop.editor",
-      "*.markdown": "markdownWorkshop.editor",
+      "*.md": "lumiere.markdown.editor",
+      "*.markdown": "lumiere.markdown.editor",
     },
   ]);
   await useForMarkdownInWorkspace(h.host);

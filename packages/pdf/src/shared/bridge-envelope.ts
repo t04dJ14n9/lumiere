@@ -1,10 +1,10 @@
 /**
- * Versioned selection envelope shared with Markdown Workshop.
+ * Versioned selection envelope shared with Lumière.
  *
  * The clipboard text of Copy Link for Agent is unchanged (see
  * `packages/agents/docs/agent-handoff-format.md`). This object is what
  * `vscodeEmbedPdf.bridge.envelope` returns. It matches the Workbench v1
- * `BridgeEnvelope` contract that Markdown Workshop's `parseBridgeEnvelope`
+ * `BridgeEnvelope` contract that Lumière's `parseBridgeEnvelope`
  * already consumes (see that extension's `docs/bridge-envelope.md`):
  *
  * - `source.identity` / `kind` / `media` name the file. `revision.sourceSha256`
@@ -18,7 +18,7 @@
  * - `selection.sha256` hashes the selection alone (`selectionCanonical`), not
  *   the file.
  *
- * `producer` is `"pdf"`. Markdown Workshop uses the same version and
+ * `producer` is `"pdf"`. Lumière uses the same version and
  * `producer: "markdown"`. Workshop is the aggregator: it returns a Markdown
  * selection when it has one, otherwise it calls this command. This command
  * does not call Workshop back, so the two cannot recurse. See
@@ -34,9 +34,9 @@ export const PDF_BRIDGE_PRODUCER = "pdf" as const;
 
 export const PDF_BRIDGE_ENVELOPE_COMMAND = "vscodeEmbedPdf.bridge.envelope";
 
-/** Soft peer command. Renamed with Markdown Workshop; absent when it is not installed. */
+/** Soft peer command. Renamed with Lumière; absent when it is not installed. */
 export const MARKDOWN_BRIDGE_ENVELOPE_COMMAND =
-  "markdownWorkshop.bridge.envelope";
+  "lumiere.markdown.bridge.envelope";
 
 /** Workbench v1 view rectangle: corner and size in PDF points. */
 export interface BridgeViewRect {
@@ -48,7 +48,7 @@ export interface BridgeViewRect {
 
 /**
  * Workbench v1 bridge envelope (`producer: "pdf"`). Field names must stay
- * aligned with Markdown Workshop's `parseBridgeEnvelope`.
+ * aligned with Lumière's `parseBridgeEnvelope`.
  */
 export interface PdfBridgeEnvelope {
   readonly version: typeof BRIDGE_ENVELOPE_VERSION;

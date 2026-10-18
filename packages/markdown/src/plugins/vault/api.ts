@@ -9,7 +9,7 @@ export interface VaultFile {
   size: number;
   uri: string;
   /**
-   * Matched by `markdownWorkshop.vault.excludedFiles`. As in Obsidian, an
+   * Matched by `lumiere.markdown.vault.excludedFiles`. As in Obsidian, an
    * excluded file is still indexed and links to it resolve, but quick switcher,
    * suggestions, search and unlinked mentions leave it out.
    */

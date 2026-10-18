@@ -14,7 +14,7 @@ export function createAgentHost(): AgentHost {
     async environment() {
       return {
         target: vscode.workspace
-          .getConfiguration("markdownWorkshop")
+          .getConfiguration("lumiere.markdown")
           .get<CopyLinkTarget>("copyLinkForAgent.target", "auto"),
         agentExtensions: new Set(
           AGENT_EXTENSIONS.filter((id) => vscode.extensions.getExtension(id)),

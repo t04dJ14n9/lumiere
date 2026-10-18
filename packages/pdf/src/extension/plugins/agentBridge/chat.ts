@@ -32,7 +32,7 @@ export async function openAgentChat(
 ): Promise<AgentTarget> {
   const commands = new Set(await vscode.commands.getCommands(true));
   const setting = vscode.workspace
-    .getConfiguration("pdfWorkshop")
+    .getConfiguration("lumiere.pdf")
     .get<AgentTargetSetting>("copyLinkForAgent.target", "auto");
   const target = agentTarget(setting, {
     appName: vscode.env.appName,

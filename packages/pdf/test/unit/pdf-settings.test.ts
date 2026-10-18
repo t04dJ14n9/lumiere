@@ -5,27 +5,24 @@ import { extensionManifest } from "./support/manifest";
 import { PdfSettings } from "../../src/extension/settings";
 
 const settings = new PdfSettings({
-  id: "t04dj14n9.vscode-workshop",
+  id: "t04dj14n9.lumiere",
   packageJSON: extensionManifest(),
 });
 
 test("the PDF settings commands see only the PDF settings of the merged extension", () => {
   const keys = Object.keys(settings.properties());
-  assert.ok(keys.includes("pdfWorkshop.keyboardShortcuts"));
+  assert.ok(keys.includes("lumiere.pdf.keyboardShortcuts"));
   assert.ok(keys.length > 10);
   assert.deepEqual(
-    keys.filter((key) => !key.startsWith("pdfWorkshop.")),
+    keys.filter((key) => !key.startsWith("lumiere.pdf.")),
     [],
   );
-  assert.equal(
-    settings.searchFilter,
-    "@ext:t04dj14n9.vscode-workshop pdfWorkshop.",
-  );
+  assert.equal(settings.searchFilter, "@ext:t04dj14n9.lumiere lumiere.pdf.");
 });
 
 test("a Markdown setting cannot be written through the PDF settings", async () => {
   await assert.rejects(
-    settings.update("markdownWorkshop.preset", "minimal"),
+    settings.update("lumiere.markdown.preset", "minimal"),
     /.+/,
   );
 });

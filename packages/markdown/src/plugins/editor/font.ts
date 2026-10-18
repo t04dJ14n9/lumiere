@@ -54,7 +54,7 @@ export const MIN_LINE_HEIGHT = 1;
 export const MAX_LINE_HEIGHT = 3;
 
 /**
- * `markdownWorkshop.editor.fontSize`: the note's own body size in pixels, the
+ * `lumiere.markdown.editor.fontSize`: the note's own body size in pixels, the
  * default of Obsidian's Appearance setting. Headings, code, tables, line
  * numbers, properties and footnotes are all em- or variable-relative to it.
  */
@@ -66,7 +66,7 @@ export const fontSize = ownNumber(
 );
 
 /**
- * `markdownWorkshop.editor.lineHeight`: the body's line height as a multiple
+ * `lumiere.markdown.editor.lineHeight`: the body's line height as a multiple
  * of the font size, so it scales with it. Obsidian's is 1.5 (24px at 16px).
  * Headings keep their own measured line heights, which are multiples too.
  */

@@ -34,7 +34,7 @@ test("no two tracked paths differ only by letter case", () => {
   assert.deepEqual(collisions, []);
 });
 
-test("Markdown Workshop opens PDF links with PDF Workshop's Open Location command", async () => {
+test("Lumière opens PDF links with Lumière PDF's Open Location command", async () => {
   const { OPEN_LOCATION_COMMAND_ID } =
     await import("../../packages/pdf/src/extension/plugins/pdf/registered-commands");
   const navigation = readFileSync(

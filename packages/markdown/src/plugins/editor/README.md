@@ -18,7 +18,7 @@ compartment. Persistence captures source identity and feature-owned contribution
 transfers flush first and reject a moving document version. Scroll-settle and
 pagehide checkpoints also save geometric anchors without measuring every keypress. Settings update a
 separate compartment so user state survives reconfiguration.
-Text-selection edge scrolling uses `markdownWorkshop.editor.dragScrollSpeed`,
+Text-selection edge scrolling uses `lumiere.markdown.editor.dragScrollSpeed`,
 a multiplier from 1 to 10 (default 4; 1 restores CodeMirror's original speed).
 A selection-style observer starts the shared `EdgeScroll` helper with only
 the additional velocity; CodeMirror's own timer continues extending the
@@ -37,10 +37,10 @@ shows "N / M" for the selected match (counting stops at 1000), Enter and
 Shift+Enter (or F3, Ctrl/Cmd+G) move between matches, Aa toggles case,
 Ctrl/Cmd+H or the ⇄ button shows the replace row (Enter replaces one,
 Ctrl/Cmd+Enter or Replace all replaces all), and Escape closes it.
-The note has its own size, `markdownWorkshop.editor.fontSize` (8 to 48, default
+The note has its own size, `lumiere.markdown.editor.fontSize` (8 to 48, default
 16: Obsidian 1.14.4's body size, measured in
 `docs/obsidian-measurements/font-size.mjs`), and its own line height,
-`markdownWorkshop.editor.lineHeight` (a multiple of the size, 1 to 3, default
+`lumiere.markdown.editor.lineHeight` (a multiple of the size, 1 to 3, default
 1.5: Obsidian's 24px at 16px). They replace `editor.fontSize` and
 `editor.lineHeight` for notes, which have no effect on them. The line height is
 a unitless ratio, so every line scales with the size; headings keep Obsidian's
@@ -92,14 +92,14 @@ editor and VSCodeVim (`docs/vim-caret.md`).
 - `host.ts`: panel registry, editor service and active-context registrations.
 - `panel.ts`: per-panel context, session connection and RPC lifetimes.
 - `logging.ts`: webview log forwarding over RPC and its host-side receiver.
-- `associations.ts`: **Use Markdown Workshop for Markdown in This Workspace**.
+- `associations.ts`: **Use Lumière for Markdown in This Workspace**.
 - `webview-html.ts`: CSP, scripts and native webview HTML.
 - `indentation.ts`: Tab and Shift+Tab commands.
 - `find.ts`, `find-panel.ts`, `find-count.ts`, `find.css`: in-note find and replace.
 - `select-all.ts`: stops VS Code's own Select All from undoing the
   editor's Ctrl/Cmd+A (VS Code forwards every webview keydown).
 - `focus-report.ts`: reports the webview's focus for
-  `markdownWorkshop.editorFocus`, which every note keybinding requires.
+  `lumiere.markdown.editorFocus`, which every note keybinding requires.
 - `menu-context.ts`: gives the native context menu the selection as it is
   when the menu opens, so a macOS secondary click that selects a word shows
   the selection items.
@@ -129,18 +129,18 @@ Host injects the host services `hostDocuments`, `hostCommands`, `clipboard`, `di
 pending saved-position restore), calls `editor/projectSelection`, and emits
 `editor/clearProjection` and `editor/modeRestored`. Selection and focus changes notify the
 host through the editor channel; the host keeps the
-`markdownWorkshop.hasSelection` and `markdownWorkshop.editorFocus` context
+`lumiere.markdown.hasSelection` and `lumiere.markdown.editorFocus` context
 keys for the active panel. Core settings include `editor.useTabs` (true),
 `editor.tabSize` (4, integer 1–16) and `editor.dragScrollSpeed` (4, number 1–10),
-under `markdownWorkshop`.
+under `lumiere.markdown`.
 
 Each panel kernel logs through the window's logger, tagged with the panel ID,
-to the **Markdown Workshop** output channel. The webview forwards its logs over
+to the **Lumière** output channel. The webview forwards its logs over
 the editor channel (`log`) at warn and above, and at debug too while
-`markdownWorkshop.debug.logging` (default false) is on; the host re-checks that
+`lumiere.markdown.debug.logging` (default false) is on; the host re-checks that
 setting before writing a forwarded debug line.
 
-**Use Markdown Workshop for Markdown in This Workspace** writes `*.md` and
+**Use Lumière for Markdown in This Workspace** writes `*.md` and
 `*.markdown` into the workspace's `workbench.editorAssociations`, keeping its
 other entries. The editor is otherwise only an option for Markdown (DESIGN
 §25.2), so it does not take over every README; this makes a workspace behave
@@ -204,7 +204,7 @@ its entries and revokes retained service handles. There are no default shortcuts
 Host provides `editorActions`; webview listens to `editor/selectionMenu` and the
 action-registry notifications. Callbacks remain in the extension host.
 
-The note's keybindings need `markdownWorkshop.editorFocus`, which the
+The note's keybindings need `lumiere.markdown.editorFocus`, which the
 webview reports through the extension host: a key pressed within a few
 milliseconds of focusing the note can still reach VS Code's own binding.
 

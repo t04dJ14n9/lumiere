@@ -64,7 +64,7 @@ cancels pending work without dispatching from plugin cleanup.
 ## Services, events and settings
 
 Injects `editor` and `commands`, optionally `livePreview`; provides `vim`. No kernel event listeners or
-emissions. `markdownWorkshop.plugins.vim.enabled` defaults to false. Ex commands
+emissions. `lumiere.markdown.plugins.vim.enabled` defaults to false. Ex commands
 `:w`, `:q`, `:wq`, `:x`, `:u` and `:red` route to save, close, save-and-close, undo
 and redo. Host shortcut bindings come from the manifest and are plugin-scoped.
 Vim mode chooses the caret shape in every mode but insert, regardless of

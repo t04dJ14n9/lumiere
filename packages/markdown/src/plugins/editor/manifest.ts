@@ -61,7 +61,7 @@ export default defineManifest({
       { id: "selectionActions", title: "Selection Actions" },
       {
         id: "useForMarkdownInWorkspace",
-        title: "Use Markdown Workshop for Markdown in This Workspace",
+        title: "Use Lumière for Markdown in This Workspace",
         scope: "workbench",
       },
     ],
@@ -69,25 +69,25 @@ export default defineManifest({
       {
         command: "jumpBack",
         location: "editor/title",
-        when: "markdownWorkshop.canJumpBack",
+        when: "lumiere.markdown.canJumpBack",
         group: "navigation@1",
       },
       {
         command: "jumpForward",
         location: "editor/title",
-        when: "markdownWorkshop.canJumpForward",
+        when: "lumiere.markdown.canJumpForward",
         group: "navigation@2",
       },
       {
         command: "titleActions",
         location: "editor/title",
-        when: "markdownWorkshop.hasTitleActions",
+        when: "lumiere.markdown.hasTitleActions",
         group: "navigation",
       },
       {
         command: "selectionActions",
         location: "webview/context",
-        when: "webviewSection == 'markdownContent' && markdownWorkshop.hasSelection && markdownWorkshop.hasSelectionActions",
+        when: "webviewSection == 'markdownContent' && lumiere.markdown.hasSelection && lumiere.markdown.hasSelectionActions",
         group: "agent",
       },
     ],

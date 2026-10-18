@@ -55,15 +55,15 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
           ? {
               "security.workspace.trust.startupPrompt": "never",
               "security.workspace.trust.emptyWindow": false,
-              "pdfWorkshop.agentBridge.enabled": false,
-              "pdfWorkshop.copyLinkForAgent.target": "clipboard",
+              "lumiere.pdf.agentBridge.enabled": false,
+              "lumiere.pdf.copyLinkForAgent.target": "clipboard",
             }
           : {}),
         "telemetry.telemetryLevel": "off",
         "update.mode": "none",
         "extensions.autoUpdate": false,
         // Specs start every PDF from the defaults; view-controls.spec.ts turns this on.
-        "pdfWorkshop.view.restoreOnReopen": false,
+        "lumiere.pdf.view.restoreOnReopen": false,
       },
       null,
       2,
@@ -82,8 +82,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       path.join(paths.workspace, ".vscode", "settings.json"),
       JSON.stringify(
         {
-          "pdfWorkshop.agentBridge.enabled": true,
-          "pdfWorkshop.copyLinkForAgent.target": "claudeCode",
+          "lumiere.pdf.agentBridge.enabled": true,
+          "lumiere.pdf.copyLinkForAgent.target": "claudeCode",
         },
         null,
         2,

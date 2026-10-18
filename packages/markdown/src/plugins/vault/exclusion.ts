@@ -1,5 +1,5 @@
 /**
- * `markdownWorkshop.vault.excludedFiles`, Obsidian's **Excluded files**. A
+ * `lumiere.markdown.vault.excludedFiles`, Obsidian's **Excluded files**. A
  * filter without wildcards is a path prefix, as in Obsidian (`Archive/`
  * excludes that folder, `Daily` excludes `Daily.md` and `Daily/…`). A filter
  * with `*`, `?` or `{a,b}` is a glob over the vault path, where `**` crosses

@@ -3,8 +3,8 @@
 Track changes in the rendered note, over the hunks of the Git change bars
 (`gitGutter`): removed words struck through, added words and lines tinted, and
 the old version of a changed table, code block or frontmatter shown above it.
-Off by default; **Markdown Workshop: Toggle Inline Git Changes** flips
-`markdownWorkshop.plugins.gitInline.enabled`.
+Off by default; **Lumière: Toggle Inline Git Changes** flips
+`lumiere.markdown.plugins.gitInline.enabled`.
 
 ## How it works
 

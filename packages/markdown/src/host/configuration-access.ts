@@ -4,7 +4,7 @@ import { EffectiveConfiguration } from "./configuration";
 export function createConfiguration(): EffectiveConfiguration {
   const scoped = (resource?: string) =>
     vscode.workspace.getConfiguration(
-      "markdownWorkshop",
+      "lumiere.markdown",
       resource
         ? { uri: vscode.Uri.parse(resource), languageId: "markdown" }
         : undefined,

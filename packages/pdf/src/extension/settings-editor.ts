@@ -11,7 +11,7 @@ export type ExecuteCommand = (
  * `workbench.action.openSettings` returns the Settings editor itself, and
  * the window turns that whole object into JSON to send it back to the
  * extension; in Cursor that froze the window for 15 to 75 seconds.
- * Markdown Workshop has the same helper in its host
+ * Lumière has the same helper in its host
  * (`packages/markdown/src/host/settings-editor.ts`).
  */
 export async function openSettingsEditor(

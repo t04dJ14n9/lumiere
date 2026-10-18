@@ -42,7 +42,7 @@ async function editorFrame(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workshop frame");
+  throw new Error("No Lumière frame");
 }
 
 const scenarios: Record<string, Record<string, unknown>> = {
@@ -51,12 +51,12 @@ const scenarios: Record<string, Record<string, unknown>> = {
   none: {
     "editor.fontSize": 14,
     "editor.lineHeight": 19,
-    "markdownWorkshop.editor.fontSize": 14,
-    "markdownWorkshop.editor.lineHeight": 19 / 14, // the editor's own 19px
+    "lumiere.markdown.editor.fontSize": 14,
+    "lumiere.markdown.editor.lineHeight": 19 / 14, // the editor's own 19px
   },
   global: {
-    "markdownWorkshop.editor.fontSize": 15,
-    "markdownWorkshop.editor.lineHeight": 20 / 15,
+    "lumiere.markdown.editor.fontSize": 15,
+    "lumiere.markdown.editor.lineHeight": 20 / 15,
     "editor.fontFamily": "DejaVu Sans Mono",
     "editor.fontSize": 15,
     "editor.lineHeight": 20,
@@ -65,8 +65,8 @@ const scenarios: Record<string, Record<string, unknown>> = {
     "editor.fontLigatures": true,
   },
   markdown: {
-    "markdownWorkshop.editor.fontSize": 18,
-    "markdownWorkshop.editor.lineHeight": 24 / 18,
+    "lumiere.markdown.editor.fontSize": 18,
+    "lumiere.markdown.editor.lineHeight": 24 / 18,
     "editor.fontSize": 13,
     "[markdown]": {
       "editor.fontFamily": "Liberation Mono, monospace",

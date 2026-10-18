@@ -158,7 +158,7 @@ test("the setting's contributed default is the default used in code: 100 MB", as
   };
   const setting =
     manifest.contributes.configuration.properties[
-      "pdfWorkshop.regionImageCache.maxSizeMB"
+      "lumiere.pdf.regionImageCache.maxSizeMB"
     ];
   assert.equal(setting?.default, 100);
   assert.equal(setting?.minimum, 1);

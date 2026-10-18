@@ -1,6 +1,6 @@
-# Agent instructions: PDF Workshop
+# Agent instructions: Lumière PDF
 
-PDF Workshop is one half of the "Workshop: Markdown and PDF" extension: a
+Lumière PDF is one half of the "Lumière: Markdown Editor and PDF Reader" extension: a
 PDF viewer built on EmbedPDF that copies selections with exact page-and-box
 locations. The repository's [AGENTS.md](../../AGENTS.md) applies; these rules
 are specific to the PDF code. Read README.md for the layout.

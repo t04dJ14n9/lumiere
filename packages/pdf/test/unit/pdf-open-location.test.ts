@@ -107,7 +107,7 @@ function harness() {
     vscode,
     "../../../shared/pdf-location": locations,
     "../../../shared/pdf-target-resolution": targets,
-    "./panels": { VIEW_TYPE: "pdfWorkshop.viewer" },
+    "./panels": { VIEW_TYPE: "lumiere.pdf.viewer" },
     "./registered-commands": { OPEN_LOCATION_COMMAND_ID },
   };
   const source = readFileSync(

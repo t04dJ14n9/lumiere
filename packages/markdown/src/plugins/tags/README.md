@@ -41,7 +41,7 @@ differ only in case are one entry, spelled as first seen. Counts are notes: a
 parent counts a note once however many of its descendants the note uses.
 Excluded files are left out, as in search. The view rebuilds 300 ms after the
 vault re-resolves, the active note changes or settings change, and only while
-it is visible. Both halves follow `markdownWorkshop.plugins.tags.enabled`. The Explorer view is limited to `activeCustomEditorId == 'markdownWorkshop.editor'` so Tags hide when another editor is active; Outline's enter/leave focus also reveals Tags while Workshop is active.
+it is visible. Both halves follow `lumiere.markdown.plugins.tags.enabled`. The Explorer view is limited to `activeCustomEditorId == 'lumiere.markdown.editor'` so Tags hide when another editor is active; Outline's enter/leave focus also reveals Tags while Workshop is active.
 
 ## Files
 
@@ -67,10 +67,10 @@ Webview injects `editor`, `livePreview` and `rpc`; the panel host injects `rpc`,
 `vault` and the host services `hostCommands`, `dialogs`, `views`, `activeEditor`, `settings` and `navigation`; the view injects the host services `hostCommands`, `dialogs`, `views`, `activeEditor`, `settings` and `navigation`, plus `vaults`. Provides no
 services. The webview listens to `render/postProcess`, and to `suggest/trigger`
 for its own completion syntax; the view listens to `vault/resolved`. Emits no
-kernel events. Settings: `markdownWorkshop.plugins.tags.enabled` (true),
-`markdownWorkshop.tags.viewSort` (`frequency` or `name`, default `frequency`) and
-`markdownWorkshop.tags.viewNested` (true). No palette command or keybinding;
-the view registers the internal `markdownWorkshop.tags.search` command for
+kernel events. Settings: `lumiere.markdown.plugins.tags.enabled` (true),
+`lumiere.markdown.tags.viewSort` (`frequency` or `name`, default `frequency`) and
+`lumiere.markdown.tags.viewNested` (true). No palette command or keybinding;
+the view registers the internal `lumiere.markdown.tags.search` command for
 its clicks.
 
 ## Limits and differences from Obsidian

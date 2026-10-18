@@ -3,7 +3,7 @@ import type { Schema } from "@workshop/core";
 /**
  * What a plugin does, in terms an editor host can reason about without
  * reading its code: which extension points it uses and which side effects
- * it may have. PDF Workshop's manifests use the same idea (and the same
+ * it may have. Lumière PDF's manifests use the same idea (and the same
  * names where they overlap: `commands`, `statusBar`, `agentHandoff`).
  * Invariants checked by test/unit/plugins/capabilities.test.ts: a plugin
  * declares `commands`, `keybindings` or `views` exactly when it contributes
@@ -53,7 +53,7 @@ export interface Manifest {
   readonly configKeys?: Readonly<Record<string, string>>;
   /**
    * Fields read from a native VS Code setting (for Markdown files) instead of
-   * a contributed markdownWorkshop setting, e.g. `editor.lineNumbers`.
+   * a contributed lumiere.markdown setting, e.g. `editor.lineNumbers`.
    */
   readonly nativeConfigKeys?: Readonly<Record<string, string>>;
   readonly id: string;

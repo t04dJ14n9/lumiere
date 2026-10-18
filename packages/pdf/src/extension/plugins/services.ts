@@ -7,7 +7,7 @@ import type { NoteSelections } from "./agentBridge/note-selections";
 
 /**
  * The services PDF plugins share. The extension's composition root provides
- * `extensionContext` and `outputChannel` (shared with Markdown Workshop);
+ * `extensionContext` and `outputChannel` (shared with Lumière);
  * each other service is provided by the plugin named beside it.
  */
 declare module "@workshop/core" {

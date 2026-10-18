@@ -34,7 +34,7 @@ test("gitBlame is registered after gutter/inline, chrome only, and default-on", 
   assert.deepEqual(manifest.surfaces, ["host", "webview"]);
   const properties = contributedProperties<{ default: unknown }>();
   assert.equal(
-    properties["markdownWorkshop.plugins.gitBlame.enabled"]?.default,
+    properties["lumiere.markdown.plugins.gitBlame.enabled"]?.default,
     true,
   );
   assert.equal(

@@ -42,7 +42,7 @@ function registerPdfSelection(
     {
       title: "Current PDF selection",
       description:
-        "The text or region the user has selected in the PDF open in their editor (PDF Workshop): " +
+        "The text or region the user has selected in the PDF open in their editor (Lumière PDF): " +
         "the quoted text, a link to the page and box (path#page=N&viewrect=left,top,width,height, RFC 8118), " +
         "the file's SHA-256 and, for a region, a PNG snapshot. Call this when the user refers to " +
         '"this", "the selection", "the highlighted passage", "this figure", or similar in a PDF.',
@@ -73,7 +73,7 @@ async function pdfSelection(
   if (!snapshot) {
     const text = panel
       ? `No selection in ${vscode.workspace.asRelativePath(panel.uri, false)}. Ask the user to select text or drag a region in the PDF.`
-      : "No PDF is open in PDF Workshop.";
+      : "No PDF is open in Lumière PDF.";
     return [{ type: "text", text }];
   }
   const content: Content[] = [{ type: "text", text: snapshot.agentText }];
@@ -138,7 +138,7 @@ function registerNoteSelection(
     {
       title: "Current Markdown note selection",
       description:
-        "The text the user has selected in the Markdown note open in Markdown Workshop, with an " +
+        "The text the user has selected in the Markdown note open in Lumière, with an " +
         "@path#start-end line reference. Call this when the user refers to the selection in their note.",
       inputSchema: {},
       annotations: { readOnlyHint: true },
@@ -154,13 +154,13 @@ async function noteSelection(
   notes: NoteSelections | undefined,
 ): Promise<string> {
   if (!notes) {
-    return "Markdown Workshop is not running.";
+    return "Lumière is not running.";
   }
   const selection = await notes.current();
   if (!selection) {
     return notes.hasOpenNotes()
-      ? "No text is selected in the open Markdown Workshop notes."
-      : "No note is open in Markdown Workshop.";
+      ? "No text is selected in the open Lumière notes."
+      : "No note is open in Lumière.";
   }
   const { uri } = selection;
   const relative = vscode.workspace.asRelativePath(uri, false);

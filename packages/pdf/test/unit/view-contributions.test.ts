@@ -22,17 +22,17 @@ test("every view choice has a PDF command, scoped menus and a contributed defaul
     ),
   ];
   for (const name of names) {
-    const command = `pdfWorkshop.${name}`;
+    const command = `lumiere.pdf.${name}`;
     assert.equal(
       contributes.commands.find((item) => item.command === command)?.enablement,
-      "pdfWorkshop.pdfActive",
+      "lumiere.pdf.pdfActive",
     );
     for (const menu of ["commandPalette", "editor/title", "webview/context"]) {
       assert.ok(
         contributes.menus[menu]?.some(
           (item) =>
             item.command === command &&
-            item.when?.includes("pdfWorkshop.viewer"),
+            item.when?.includes("lumiere.pdf.viewer"),
         ),
         `${menu}: ${command}`,
       );
@@ -46,7 +46,7 @@ test("every view choice has a PDF command, scoped menus and a contributed defaul
     smoothScrolling: null,
   })) {
     assert.equal(
-      contributes.configuration.properties[`pdfWorkshop.view.${name}`]?.default,
+      contributes.configuration.properties[`lumiere.pdf.view.${name}`]?.default,
       value,
     );
   }

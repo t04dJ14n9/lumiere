@@ -45,7 +45,7 @@ export type SettingTarget = "workspaceFolder" | "workspace" | "user";
 
 /** One setting of the extension's `contributes.configuration`, as VS Code lists it. */
 export interface ContributedSetting {
-  /** The full key, such as `markdownWorkshop.editor.fontSize`. */
+  /** The full key, such as `lumiere.markdown.editor.fontSize`. */
   key: string;
   schema: {
     type?: string | readonly string[];
@@ -61,7 +61,7 @@ export interface ContributedSetting {
 
 /** The Settings UI's own keys and scopes, for commands that change settings. */
 export interface SettingsAccess {
-  /** A `markdownWorkshop.` key as it is now, and where a write to it goes. */
+  /** A `lumiere.markdown.` key as it is now, and where a write to it goes. */
   inspect(
     key: string,
     resource?: string,
@@ -89,9 +89,9 @@ export interface EditorAssociations {
   write(associations: Readonly<Record<string, string>>): Promise<void>;
 }
 
-/** `markdownWorkshop.*` settings: reading, watching and changing them. */
+/** `lumiere.markdown.*` settings: reading, watching and changing them. */
 export interface HostSettings {
-  /** A window-level setting under `markdownWorkshop.`. */
+  /** A window-level setting under `lumiere.markdown.`. */
   get<T>(key: string, fallback: T, resource?: string): T;
   /** The settings that apply to a note. */
   forNote(document: HostDocument): NoteSettings;

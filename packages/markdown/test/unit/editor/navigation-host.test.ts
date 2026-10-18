@@ -104,7 +104,7 @@ test("navigation superseded during document warming does not open the old note",
   ]);
 });
 
-test("a link to a PDF opens it in PDF Workshop at its page, beside when asked", async (t) => {
+test("a link to a PDF opens it in Lumière PDF at its page, beside when asked", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "mw-navigation-unit-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const root = pathToFileURL(directory).href;

@@ -112,7 +112,7 @@ export function chooseBridge(
       return { bridge: named[0]! };
     }
     return {
-      error: `No running PDF Workshop bridge has AGENT_PDF_BRIDGE_PID ${options.pid}.`,
+      error: `No running Lumière PDF bridge has AGENT_PDF_BRIDGE_PID ${options.pid}.`,
     };
   }
   // How specific a match is: the length of the deepest workspace folder containing cwd.
@@ -129,7 +129,7 @@ export function chooseBridge(
     .filter(({ score }) => score > 0);
   if (scored.length === 0) {
     return {
-      error: `No VS Code or Cursor window with PDF Workshop has a workspace containing ${options.cwd}. Open that folder in a window with the agent bridge on, or set AGENT_PDF_BRIDGE_PID.`,
+      error: `No VS Code or Cursor window with Lumière PDF has a workspace containing ${options.cwd}. Open that folder in a window with the agent bridge on, or set AGENT_PDF_BRIDGE_PID.`,
     };
   }
   const best = Math.max(...scored.map(({ score }) => score));

@@ -56,8 +56,8 @@ test("Restricted Mode renders PDFs and ignores workspace agent settings", async 
       "utf8",
     ),
   ) as Record<string, unknown>;
-  expect(workspace["pdfWorkshop.agentBridge.enabled"]).toBe(true);
-  expect(workspace["pdfWorkshop.copyLinkForAgent.target"]).toBe("claudeCode");
+  expect(workspace["lumiere.pdf.agentBridge.enabled"]).toBe(true);
+  expect(workspace["lumiere.pdf.copyLinkForAgent.target"]).toBe("claudeCode");
   const discovery = path.join(paths.home, ".agent-pdf-viewer", "bridges");
   expect(
     existsSync(discovery)

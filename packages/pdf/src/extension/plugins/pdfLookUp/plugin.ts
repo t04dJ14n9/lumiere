@@ -5,12 +5,12 @@ import type {} from "../services";
 import { LOOK_UP_COMMAND_IDS } from "../pdf/registered-commands";
 import manifest from "./manifest";
 
-const SETTING = "pdfWorkshop.lookUp.enabled";
+const SETTING = "lumiere.pdf.lookUp.enabled";
 
 /**
  * macOS Look Up for PDFs (a force click on a word, or Look Up in the context
  * menu). The viewer finds the word; this plugin opens it in the Dictionary
- * app. It does nothing off macOS or with `pdfWorkshop.lookUp.enabled` off,
+ * app. It does nothing off macOS or with `lumiere.pdf.lookUp.enabled` off,
  * and stopping the plugin turns the viewers' side off again.
  */
 export const pdfLookUpPlugin: Plugin = {

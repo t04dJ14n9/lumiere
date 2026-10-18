@@ -30,7 +30,7 @@ source, as does moving the caret into the block with the keyboard.
 
 Injects `editor`, `commands`, `render` and `livePreview`; provides no service.
 Listens to `render/postProcess`; emits no kernel events. Contributes `folds` to
-editor view state. `markdownWorkshop.plugins.callouts.enabled` defaults to true.
+editor view state. `lumiere.markdown.plugins.callouts.enabled` defaults to true.
 Insert Callout has no default keybinding.
 
 ## Limits and differences from Obsidian

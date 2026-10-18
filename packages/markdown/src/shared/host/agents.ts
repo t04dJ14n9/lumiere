@@ -1,4 +1,4 @@
-/** The `markdownWorkshop.copyLinkForAgent.target` setting. */
+/** The `lumiere.markdown.copyLinkForAgent.target` setting. */
 export type CopyLinkTarget =
   "auto" | "cursor" | "chat" | "claudeCode" | "codex" | "clipboard";
 

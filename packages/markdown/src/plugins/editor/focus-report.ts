@@ -1,6 +1,6 @@
 /**
  * Reports whether the note's webview has keyboard focus, for the
- * `markdownWorkshop.editorFocus` context key that scopes the note's
+ * `lumiere.markdown.editorFocus` context key that scopes the note's
  * keybindings. VS Code's `activeCustomEditorId` stays set while focus is in
  * the Explorer, a chat or a panel, and an extension keybinding outranks the
  * built-in one for the same key: without this key, Cmd+B there would bold

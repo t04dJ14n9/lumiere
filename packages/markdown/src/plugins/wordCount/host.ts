@@ -14,7 +14,7 @@ export const wordCountHost: Plugin = {
     optional: ["editors"],
   },
   apply(ctx) {
-    const status = ctx.views.status("markdownWorkshop.wordCount", 99);
+    const status = ctx.views.status("lumiere.markdown.wordCount", 99);
     ctx.effect(() => () => status.dispose());
     let timer: ReturnType<typeof setTimeout> | undefined;
     const update = async () => {

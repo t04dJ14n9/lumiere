@@ -3,7 +3,7 @@
 In Cursor, **Cmd/Ctrl+L** opens Cursor Chat and **Cmd/Ctrl+K** opens Cursor
 Edit on the Live Preview selection, using Cursor’s native Accept/Reject. Plain
 VS Code is unchanged. Obsidian has no built-in equivalent; this is Cursor muscle
-memory on Markdown Workshop’s custom editor.
+memory on Lumière’s custom editor.
 
 ## How it works
 
@@ -29,7 +29,7 @@ overlapping handoffs still warming or opening text. A failed handoff releases
 only its own token. The lease suppresses reclaim for the whole native session
 and ends when the last native text tab for the note leaves the text editor.
 Same-URI Workshop tab changes keep the lease, and
-a later Preview | Markdown switch can restore Markdown Workshop. Apply stays
+a later Preview | Markdown switch can restore Lumière. Apply stays
 in Cursor; MW follows the document model. Dirty notes are allowed without
 autosave.
 
@@ -47,7 +47,7 @@ autosave.
 ## Services, events and settings
 
 The window half injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings` and `agentHost`; provides no service. Sets
-`markdownWorkshop.isCursorHost`. The panel half injects `rpc`, `agentHost`
+`lumiere.markdown.isCursorHost`. The panel half injects `rpc`, `agentHost`
 and `hostCommands`; the webview half `editor` and `rpc`. Uses `handoffLease` from the host reclaim
 module. `plugins.cursorBridge.enabled` defaults to true. Host keybindings for
 Insert Link and Vim's shortcut consumer exclude Cursor; other Vim Control

@@ -4,7 +4,7 @@ import path from "node:path";
 
 /** This package, which holds the PDF fixtures. */
 const repository = path.resolve(__dirname, "..", "..");
-/** The repository root: the extension under test (Markdown and PDF Workshop). */
+/** The repository root: the extension under test (Markdown and Lumière PDF). */
 const extension = path.resolve(repository, "..", "..");
 // Keep the profile path short: VS Code puts sockets in it, and macOS limits
 // socket paths to about 100 characters.

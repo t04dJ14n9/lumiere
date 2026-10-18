@@ -14,8 +14,8 @@ import {
 } from "./support/fake-vscode";
 import { pdfContributes } from "./support/manifest";
 
-const SETTING = "pdfWorkshop.outline.followCursor";
-const CONTEXT = "pdfWorkshop.outlineFollowCursor";
+const SETTING = "lumiere.pdf.outline.followCursor";
+const CONTEXT = "lumiere.pdf.outlineFollowCursor";
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 const heading = (
   title: string,
@@ -224,7 +224,7 @@ function harness(enabled = false, visible = true) {
       hold = callback;
     },
     command(id: string, ...args: unknown[]) {
-      const command = commands.get(`pdfWorkshop.${id}`);
+      const command = commands.get(`lumiere.pdf.${id}`);
       assert.ok(command, id);
       return command(...args);
     },
@@ -485,7 +485,7 @@ test("clicking an outline item still navigates to its page and offset", (t) => {
   h.activate(panel);
   h.start();
   const command = h.provider.getTreeItem(item).command!;
-  h.command(command.command.replace("pdfWorkshop.", ""), ...command.arguments);
+  h.command(command.command.replace("lumiere.pdf.", ""), ...command.arguments);
   assert.deepEqual(h.navigations, [{ panel, page: 3, top: 120 }]);
 });
 
@@ -528,15 +528,15 @@ test("outline actions contribute Expand All and mutually exclusive overflow Foll
   assert.equal(contributes.configuration.properties[SETTING]?.type, "boolean");
   const menus = contributes.menus["view/title"]!;
   const expand = menus.find(
-    (item) => item.command === "pdfWorkshop.expandOutline",
+    (item) => item.command === "lumiere.pdf.expandOutline",
   )!;
-  assert.equal(expand.when, "view == pdfWorkshop.outline");
+  assert.equal(expand.when, "view == lumiere.pdf.outline");
   assert.equal(expand.group, "navigation@1");
   for (const [name, checked] of [
     ["enableOutlineFollowCursor", false],
     ["disableOutlineFollowCursor", true],
   ] as const) {
-    const command = `pdfWorkshop.${name}`;
+    const command = `lumiere.pdf.${name}`;
     const definition = contributes.commands.find(
       (item) => item.command === command,
     )!;
@@ -545,7 +545,7 @@ test("outline actions contribute Expand All and mutually exclusive overflow Foll
     const menu = menus.find((item) => item.command === command)!;
     assert.equal(
       menu.when,
-      `view == pdfWorkshop.outline && ${checked ? "" : "!"}${CONTEXT}`,
+      `view == lumiere.pdf.outline && ${checked ? "" : "!"}${CONTEXT}`,
     );
     assert.ok(
       !menu.group?.startsWith("navigation"),

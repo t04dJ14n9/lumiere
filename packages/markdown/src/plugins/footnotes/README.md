@@ -66,7 +66,7 @@ whole heading so its text and outline entry stay intact.
 Injects `editor`, `commands`, `livePreview`, `render` and `rpc`; provides no
 service. Listens to `render/preProcess` and `render/postProcess`, emits
 `render/changed`, and uses `links.open` RPC for embedded-note navigation.
-The feature switch is `markdownWorkshop.plugins.footnotes.enabled`.
+The feature switch is `lumiere.markdown.plugins.footnotes.enabled`.
 
 ## Limits and differences from Obsidian
 

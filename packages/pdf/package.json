@@ -2,7 +2,7 @@
   "name": "@workshop/pdf",
   "version": "0.0.0",
   "private": true,
-  "description": "PDF Workshop: an EmbedPDF-based viewer that copies selections with exact page-and-box locations.",
+  "description": "Lumière PDF: an EmbedPDF-based viewer that copies selections with exact page-and-box locations.",
   "exports": {
     "./host": "./src/extension/extension.ts",
     "./contributes.json": "./contributes.json",

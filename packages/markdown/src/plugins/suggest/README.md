@@ -51,7 +51,7 @@ nothing typed, notes come most recently changed first.
 
 Provides `suggest.register`; webview injects `editor` and `rpc`, host injects
 `rpc`, `vault` and the host service `settings`. Emits the `suggest/trigger` bail event; Links and
-Tags listen independently. `markdownWorkshop.plugins.suggest.enabled` defaults
+Tags listen independently. `lumiere.markdown.plugins.suggest.enabled` defaults
 to true. No palette commands or assigned verify shortcuts.
 
 ## Limits and differences from Obsidian

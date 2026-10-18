@@ -43,7 +43,7 @@ replaces the widget. Toggle edits do not request selection or scrolling changes.
 
 Webview injects `editor`, `commands`, `livePreview` and `rpc`; host injects
 the host service `hostDocuments`, `resources` and `rpc`. Provides no services. Listens to
-`render/postProcess`; emits no kernel events. `markdownWorkshop.plugins.tasks.enabled`
+`render/postProcess`; emits no kernel events. `lumiere.markdown.plugins.tasks.enabled`
 defaults to true. Both checklist command bindings remain unbound for verification.
 
 ## Limits and differences from Obsidian

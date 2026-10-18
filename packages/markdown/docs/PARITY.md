@@ -122,7 +122,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | The default,   `prompt`, shows a **Update links in N files?** dialog | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `always` and `never`   skip it | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Heading renames are a later enhancement. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| **quickSwitcher**: **Markdown Workshop: Quick Switcher** opens a quick pick   over notes, aliases and unresolved links, with Obsidian's scoring | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| **quickSwitcher**: **Lumière: Quick Switcher** opens a quick pick   over notes, aliases and unresolved links, with Obsidian's scoring | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Enter   opens | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | an unresolved or new name creates the note in the configured   new-note folder. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | **wordCount**: words and characters for the note or selection in the status   bar, counting CJK characters individually. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -130,238 +130,238 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | **search**: query parsing and evaluation stay (`search/query.ts`,   `evaluate.ts`, worker) | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | File discovery and reading use the vault index and   its content cache instead of `findFiles` per run | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Operators backed by the   index (`tag:`, `path:`, `file:`, `[property:value]`) skip reading files. | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertCallout | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.save | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.undo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.redo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.ideContext.copy | no Obsidian equivalent | Copy deeper IDE-context packet (clipboard-first) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
-| Command: markdownWorkshop.ideContext.send | no Obsidian equivalent | Send IDE-context packet via forced/sole-agent/picker (never silent-guess) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
-| Command: markdownWorkshop.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
-| Command: markdownWorkshop.cursorBridge.edit | no Obsidian equivalent | Cursor Edit with MW selection; native apply | Unit tests in test/unit/cursor-bridge/ | not observed |
-| Command: markdownWorkshop.copyLinkForAgent | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `copyLinkForAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-link-for-agent/chat.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
-| Command: markdownWorkshop.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.unfoldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleFold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertFootnote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleBold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleItalics | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleStrikethrough | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleHighlight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleHighlightRed | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleHighlightOrange | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleHighlightYellow | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleHighlightGreen | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleHighlightBlue | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleHighlightPurple | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleCode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleComment | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertHorizontalRule | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertCodeBlock | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: fences around the selected lines | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.insertTag | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: `#` before the selection | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.clearFormatting | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches, except links keep their syntax (Obsidian turns `[l](u)` into `lu`) | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.deleteParagraph | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: CodeMirror's delete line, as Obsidian's; unbound (Cmd+D is VS Code's) | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.addCursorAbove | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches; bound to Cmd+Alt+Up as in VS Code (Obsidian binds no key) | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.addCursorBelow | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches; bound to Cmd+Alt+Down as in VS Code (Obsidian binds no key) | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleBulletList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleNumberedList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleBlockquote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.swapLineUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.swapLineDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading0 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading1 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading2 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading3 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading4 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading5 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setHeading6 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertWikilink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.followLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.openLinkToSide | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.openLinkInNewTab | 2026-10-17, measured against Obsidian's Open link under cursor in new tab (Cmd-click opens the same tab) in a throwaway vault | Opens the link in a tab VS Code keeps | Differential click probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.renameHeading | 2026-10-17, measured against Obsidian's Rename heading in a throwaway vault | Matches: the heading and its single-level `#subpath` links in the note and in linking notes (aliases, embeds, Markdown links); nested subpaths are left, as in Obsidian | Unit tests; real VS Code check | behaviour measured |
-| Command: markdownWorkshop.toggleSourceMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleInlineMath | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertMathBlock | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.addProperty | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.openSettings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.setNoteFontSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.increaseFontSize | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches: a pixel a step, at most 30, no notice; it changes the note font size setting | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.decreaseFontSize | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches: a pixel a step, at least 10, no notice; it changes the note font size setting | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.changeSetting | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleLineNumbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.gitDiffEditor.open | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleInlineGitChanges | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.gitGutter.nextChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.gitGutter.previousChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.gitGutter.showChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleReadableLineWidth | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleMermaid | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleInlineTitle | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleVim | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleSpellcheck | Obsidian's Toggle spellcheck | Flips `plugins.spellcheck.enabled`, the Settings UI's own key | Unit tests (settings toggles) | not observed |
-| Command: markdownWorkshop.quickSwitcher | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.insertTable | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableInsertRowAbove | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableInsertRowBelow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableInsertColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableInsertColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableDeleteRow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableDeleteColumn | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableDuplicateRow | Obsidian's Duplicate row | Duplicates the row in the grid | Unit tests | not observed |
-| Command: markdownWorkshop.tableDuplicateColumn | Obsidian's Duplicate column | Duplicates the column in the grid | Unit tests | not observed |
-| Command: markdownWorkshop.tableMoveRowUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableMoveRowDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableMoveColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableMoveColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableAlignLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableAlignCenter | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableAlignRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableSortAscending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.tableSortDescending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.toggleChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.ideContext.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.cursorBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.agentBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.onlineVideos.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.folding.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.stickyScroll.enabled | No Obsidian core equivalent | Default false | Owner-run stickyScroll manual scenarios pending | Intentional extension |
-| Setting: markdownWorkshop.stickyScroll.maxLines | No Obsidian core equivalent | Default 5; 1–6, rounded down, with a pane-height limit | Unit row-budget coverage; owner-run stickyScroll manual scenarios pending | Intentional extension |
-| Setting: markdownWorkshop.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.gitBlame.enabled | No Obsidian core equivalent | Default on; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
-| Setting: markdownWorkshop.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.math.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.outgoingLinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.outline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.pagePreview.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.pasteHtml.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.properties.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.quickSwitcher.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.search.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.smartLists.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.spellcheck.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.suggest.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.tables.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.tags.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.tasks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.vim.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.plugins.wordCount.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.autoPair.brackets | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.autoPair.markdown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
-| Setting: markdownWorkshop.editor.warmTextDocument | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; workaround for Cursor uninitialized custom-editor documents | not applicable |
-| Setting: markdownWorkshop.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.tabSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.editor.dragScrollSpeed | not observed; Workshop-specific speed control | not manually observed | Unit speed/schema/lifecycle coverage; Editor manual scenario 8 | deliberate configurable default (4x CodeMirror) |
-| Setting: markdownWorkshop.editor.fontSize | Obsidian 1.14.4 default body 16px; H1-H6 1.618/1.462/1.318/1.188/1.076/1em (docs/obsidian-measurements/font-size-results-16.json) | not manually observed | Browser and real VS Code specs: body size equals the setting, heading ratios, line-number alignment | matches at the default |
-| Setting: markdownWorkshop.editor.lineHeight | Obsidian 1.14.4 default 1.5 (24px at 16px) | not manually observed | Browser and real VS Code specs: line height equals the setting times the size, line-number alignment | matches at the default |
-| Setting: markdownWorkshop.folding.heading | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.folding.indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.linkUpdates.mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.links.newLinkFormat | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.links.useWikilinks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.links.folderNote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.files.newNoteFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.files.attachmentFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.properties.display | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.onlineVideos.bilibiliPlayer | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.tags.viewSort | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.tags.viewNested | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.vault.rootMarkers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.vault.excludedFiles | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Setting: markdownWorkshop.preset | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertCallout | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.save | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.undo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.redo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.close | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.saveClose | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.openAsText | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.ideContext.copy | no Obsidian equivalent | Copy deeper IDE-context packet (clipboard-first) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
+| Command: lumiere.markdown.ideContext.send | no Obsidian equivalent | Send IDE-context packet via forced/sole-agent/picker (never silent-guess) | Unit tests in test/unit/ide-context/ and test/unit/ideContext/ | not observed |
+| Command: lumiere.markdown.cursorBridge.chat | no Obsidian equivalent | Cursor Chat with MW selection (Cursor-host only) | Unit tests in test/unit/cursor-bridge/ | not observed |
+| Command: lumiere.markdown.cursorBridge.edit | no Obsidian equivalent | Cursor Edit with MW selection; native apply | Unit tests in test/unit/cursor-bridge/ | not observed |
+| Command: lumiere.markdown.copyLinkForAgent | no Obsidian equivalent | VS Code chat prefilled or Cursor agent chat + clipboard when that is the only agent; otherwise copy to paste (no guessing between agents); `copyLinkForAgent.target` forces Claude Code (prefilled) or Codex (attached file) | Unit tests in test/unit/copy-link-for-agent/chat.test.ts; local DeepSeek round trip recorded in HANDOVER.md | not observed |
+| Command: lumiere.markdown.insertEmbed | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.foldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.unfoldAll | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleFold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertFootnote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleBold | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleItalics | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleStrikethrough | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleHighlight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleHighlightRed | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleHighlightOrange | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleHighlightYellow | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleHighlightGreen | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleHighlightBlue | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleHighlightPurple | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches the measured text in all 30 cases: wraps, recolours, splits, merges and removes (test/unit/formatting/highlight-colours.test.ts); the selection after a split stays on the selected text | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleCode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleComment | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertHorizontalRule | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertCodeBlock | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: fences around the selected lines | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.insertTag | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: `#` before the selection | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.clearFormatting | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches, except links keep their syntax (Obsidian turns `[l](u)` into `lu`) | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.deleteParagraph | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: CodeMirror's delete line, as Obsidian's; unbound (Cmd+D is VS Code's) | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.addCursorAbove | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches; bound to Cmd+Alt+Up as in VS Code (Obsidian binds no key) | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.addCursorBelow | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches; bound to Cmd+Alt+Down as in VS Code (Obsidian binds no key) | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleBulletList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleNumberedList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleBlockquote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.swapLineUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.swapLineDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading0 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading1 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading2 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading3 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading4 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading5 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setHeading6 | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertWikilink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.followLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.openLinkToSide | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.openLinkInNewTab | 2026-10-17, measured against Obsidian's Open link under cursor in new tab (Cmd-click opens the same tab) in a throwaway vault | Opens the link in a tab VS Code keeps | Differential click probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.renameHeading | 2026-10-17, measured against Obsidian's Rename heading in a throwaway vault | Matches: the heading and its single-level `#subpath` links in the note and in linking notes (aliases, embeds, Markdown links); nested subpaths are left, as in Obsidian | Unit tests; real VS Code check | behaviour measured |
+| Command: lumiere.markdown.toggleSourceMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleInlineMath | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertMathBlock | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.addProperty | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.openSettings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.setNoteFontSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.increaseFontSize | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches: a pixel a step, at most 30, no notice; it changes the note font size setting | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.decreaseFontSize | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches: a pixel a step, at least 10, no notice; it changes the note font size setting | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.changeSetting | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleLineNumbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.gitDiffEditor.open | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleInlineGitChanges | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.gitGutter.nextChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.gitGutter.previousChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.gitGutter.showChange | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleReadableLineWidth | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleMermaid | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleInlineTitle | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleVim | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleSpellcheck | Obsidian's Toggle spellcheck | Flips `plugins.spellcheck.enabled`, the Settings UI's own key | Unit tests (settings toggles) | not observed |
+| Command: lumiere.markdown.quickSwitcher | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.insertTable | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableInsertRowAbove | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableInsertRowBelow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableInsertColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableInsertColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableDeleteRow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableDeleteColumn | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableDuplicateRow | Obsidian's Duplicate row | Duplicates the row in the grid | Unit tests | not observed |
+| Command: lumiere.markdown.tableDuplicateColumn | Obsidian's Duplicate column | Duplicates the column in the grid | Unit tests | not observed |
+| Command: lumiere.markdown.tableMoveRowUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableMoveRowDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableMoveColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableMoveColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableAlignLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableAlignCenter | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableAlignRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableSortAscending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.tableSortDescending | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.toggleChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.cycleListChecklist | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: lumiere.markdown.consumeVimHostShortcut | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.autoPair.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.backlinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.callouts.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.codeBlocks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.ideContext.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.cursorBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.agentBridge.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.diagrams.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.embeds.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.onlineVideos.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.folding.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.footnotes.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.formatting.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.indentGuides.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.stickyScroll.enabled | No Obsidian core equivalent | Default false | Owner-run stickyScroll manual scenarios pending | Intentional extension |
+| Setting: lumiere.markdown.stickyScroll.maxLines | No Obsidian core equivalent | Default 5; 1–6, rounded down, with a pane-height limit | Unit row-budget coverage; owner-run stickyScroll manual scenarios pending | Intentional extension |
+| Setting: lumiere.markdown.plugins.inlineTitle.enabled | not observed | Default false | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.lineNumbers.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.gitDiffEditor.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.gitDiffEditor.diffEditor | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.gitBlame.enabled | No Obsidian core equivalent | Default on; one plugin switch | Manual acceptance in docs/MANUAL_TEST_PLAN.md | Intentional extension |
+| Setting: lumiere.markdown.plugins.gitInline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.gitGutter.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.gitGutter.compareTo | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.linkUpdates.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.links.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.math.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.outgoingLinks.enabled | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.outline.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.pagePreview.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.pasteHtml.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.properties.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.quickSwitcher.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.search.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.smartLists.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.spellcheck.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.suggest.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.tables.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.tags.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.tasks.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.vim.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.plugins.wordCount.enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.autoPair.brackets | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.autoPair.markdown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.defaultMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.readableLineLength | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.reclaimTextEditor | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; verified in Cursor 3.24.9 | not applicable |
+| Setting: lumiere.markdown.editor.warmTextDocument | not applicable (Cursor-only) | not manually observed | Unit tests for the decision; workaround for Cursor uninitialized custom-editor documents | not applicable |
+| Setting: lumiere.markdown.editor.strictLineBreaks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.rightToLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.useTabs | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.tabSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.editor.dragScrollSpeed | not observed; Workshop-specific speed control | not manually observed | Unit speed/schema/lifecycle coverage; Editor manual scenario 8 | deliberate configurable default (4x CodeMirror) |
+| Setting: lumiere.markdown.editor.fontSize | Obsidian 1.14.4 default body 16px; H1-H6 1.618/1.462/1.318/1.188/1.076/1em (docs/obsidian-measurements/font-size-results-16.json) | not manually observed | Browser and real VS Code specs: body size equals the setting, heading ratios, line-number alignment | matches at the default |
+| Setting: lumiere.markdown.editor.lineHeight | Obsidian 1.14.4 default 1.5 (24px at 16px) | not manually observed | Browser and real VS Code specs: line height equals the setting times the size, line-number alignment | matches at the default |
+| Setting: lumiere.markdown.folding.heading | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.folding.indent | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.linkUpdates.mode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.links.newLinkFormat | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.links.useWikilinks | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.links.folderNote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.files.newNoteFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.files.attachmentFolder | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.properties.display | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.onlineVideos.bilibiliPlayer | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.tags.viewSort | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.tags.viewNested | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.vault.rootMarkers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.vault.excludedFiles | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Setting: lumiere.markdown.preset | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Add File Property and Open as Text title actions | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native static context menu; contextual table/property menus | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim host-collision keys only while Vim is enabled | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Vim :w, :q, :wq, :x, :u and :red | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Verify bindings left unbound | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | VS Code owns save, undo/redo, hot exit and settings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Note line height is Obsidian's 1.5 times the note's own font size; family, weight, spacing and ligatures follow VS Code's editor settings for Markdown | Obsidian 1.14.4: body 1.5 (24px at 16px, 36px at 24px), headings 1.2/1.2/1.3/1.4/1.5/1.5, code and footnotes 1.5, table cells 1.3 (`docs/obsidian-measurements/font-size-results-16.json`, `-24.json`) | Owner decision, 2026-10-10: `markdownWorkshop.editor.lineHeight` (default 1.5, a multiple) replaces following `editor.lineHeight` and VS Code's 1.35 rule; table cells keep the note's ratio, not Obsidian's 1.3 | Browser `font-size.spec.ts`, `stable-blocks.spec.ts`; real VS Code `font-size.spec.ts`, `font.spec.ts` | not observed |
+| Note line height is Obsidian's 1.5 times the note's own font size; family, weight, spacing and ligatures follow VS Code's editor settings for Markdown | Obsidian 1.14.4: body 1.5 (24px at 16px, 36px at 24px), headings 1.2/1.2/1.3/1.4/1.5/1.5, code and footnotes 1.5, table cells 1.3 (`docs/obsidian-measurements/font-size-results-16.json`, `-24.json`) | Owner decision, 2026-10-10: `lumiere.markdown.editor.lineHeight` (default 1.5, a multiple) replaces following `editor.lineHeight` and VS Code's 1.35 rule; table cells keep the note's ratio, not Obsidian's 1.3 | Browser `font-size.spec.ts`, `stable-blocks.spec.ts`; real VS Code `font-size.spec.ts`, `font.spec.ts` | not observed |
 | Theme follows VS Code colors | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Rename link updates prompt by default | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Native outline/backlinks/tags views | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Webview CSP (DESIGN §19): `default-src 'none'`, nonce scripts, `connect-src ${cspSource} blob:`, no remote content in untrusted workspaces | not applicable | not manually observed | Manual scenario pending; `test/unit/editor/webview-html.test.ts` | not observed |
 | External application schemes prompt; own application scheme opens directly | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| Command: markdownWorkshop.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.copyLinkForAgent.target | no Obsidian equivalent | forces the agent Copy Link for Agent opens | Unit tests in test/unit/copy-link-for-agent/chat.test.ts | not observed |
-| Setting: markdownWorkshop.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
-| Command: markdownWorkshop.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
-| Command: markdownWorkshop.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |
-| Command: markdownWorkshop.assets.import | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.bridge.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.bridge.envelope | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.marp.preview | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.marp.export | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.marp.toggle | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.marp.moveOutside | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.marp.keepInWorkshop | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.scratch.new | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.scratch.promote | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.wiki.copyForAgent | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.wiki.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.wiki.showLayout | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.wiki.refresh | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.assets.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.bridge.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.marp.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.scratch.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.wiki.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.outline.toggle | not observed | not manually observed | Unit command routing and shortcut guard tests; relocated-view manual scenario pending | not observed |
-| Command: markdownWorkshop.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
-| Setting: markdownWorkshop.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.graph.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.okfCore.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.sourcesProperty.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.graph.maxNodes | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.graph.maxEdges | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.graph.defaultMode | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.graph.localDepth | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
-| Setting: markdownWorkshop.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |
-| Command: markdownWorkshop.foldMore | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.foldLess | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.toggleFoldProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential probe | behaviour measured |
-| Command: markdownWorkshop.addAlias | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: an empty `aliases` property (a new header right before the text), then the caret in it | Differential probe; unit tests | behaviour measured |
-| Command: markdownWorkshop.clearProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: the whole properties block goes | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.titleActions | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.selectionActions | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.external | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.copyLinkForAgent.target | no Obsidian equivalent | forces the agent Copy Link for Agent opens | Unit tests in test/unit/copy-link-for-agent/chat.test.ts | not observed |
+| Setting: lumiere.markdown.debug.logging | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.useForMarkdownInWorkspace | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.managePlugins | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.showPluginStatus | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.jumpBack | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
+| Command: lumiere.markdown.jumpForward | separate per-pane note history | not manually observed | Local precise-jump manual scenarios; host history units | not observed |
+| Command: lumiere.markdown.openCopiedAgentReference | no Obsidian equivalent | not manually observed | Copied-reference manual scenarios and API units | not observed |
+| Command: lumiere.markdown.assets.import | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.bridge.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.bridge.envelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.marp.preview | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.marp.export | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.marp.toggle | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.marp.moveOutside | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.marp.keepInWorkshop | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.scratch.new | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.scratch.promote | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.wiki.copyForAgent | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.wiki.copyEnvelope | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.wiki.showLayout | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.wiki.refresh | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.assets.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.bridge.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.marp.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.scratch.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.wiki.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.assets.path | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.marp.open | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.scratch.folder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outline.expandAll | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outline.enableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outline.disableFollowCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.outline.toggle | not observed | not manually observed | Unit command routing and shortcut guard tests; relocated-view manual scenario pending | not observed |
+| Command: lumiere.markdown.outline.goToHeading | not observed | not manually observed | Unit picker, source-offset, stale-selection and shortcut tests; manual scenario pending | not observed |
+| Setting: lumiere.markdown.outline.followCursor | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.graph.open | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.graph.chooseBundle | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.graph.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.okfCore.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.sourcesProperty.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.graph.maxNodes | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.graph.maxEdges | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.graph.defaultMode | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.graph.localDepth | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.graph.colorBy | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
+| Setting: lumiere.markdown.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: lumiere.markdown.foldMore | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.foldLess | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.toggleFoldProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential probe | behaviour measured |
+| Command: lumiere.markdown.addAlias | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: an empty `aliases` property (a new header right before the text), then the caret in it | Differential probe; unit tests | behaviour measured |
+| Command: lumiere.markdown.clearProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: the whole properties block goes | Differential probe; unit tests | behaviour measured |

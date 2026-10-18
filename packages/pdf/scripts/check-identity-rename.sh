@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Occurrence-scoped gate for retired PDF Workshop identity tokens.
+# Occurrence-scoped gate for retired Lumière PDF identity tokens.
 # A hit is allowed only when that line contains an allowlist substring
 # that itself contains the matched token. Mechanism skips are whole-file
 # and limited to this gate plus design docs that quote the mapping.

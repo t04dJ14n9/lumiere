@@ -146,7 +146,7 @@ test("the arrows turn pages in page-by-page single, two-page and cover layouts, 
   await expect.poll(() => shown(viewer)).toEqual([1, 2]);
 
   // The status bar's View picker takes the focus; the keys work once it closes.
-  await page.locator('.part.statusbar [id$="pdfWorkshop.view"]').click();
+  await page.locator('.part.statusbar [id$="lumiere.pdf.view"]').click();
   await expect(quickInputTitled(page, /^PDF View$/u)).toBeVisible();
   await page
     .locator(".quick-input-list .monaco-list-row")

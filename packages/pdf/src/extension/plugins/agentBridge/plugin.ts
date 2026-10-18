@@ -11,11 +11,11 @@ import { registerAgentBridge } from "./mcp/controller";
 /**
  * Everything that hands a selection to an agent: Copy Link for Agent (the
  * webview context-menu command), the `handoff` service behind it, and the
- * opt-in local MCP server (`pdfWorkshop.agentBridge.enabled`, off by
+ * opt-in local MCP server (`lumiere.pdf.agentBridge.enabled`, off by
  * default).
  *
  * Naming: the plugin is `agentBridge`, its service is `AgentHandoff`, and its
- * clipboard command is `copyLinkForAgent`; Markdown Workshop uses the same
+ * clipboard command is `copyLinkForAgent`; Lumière uses the same
  * names. `vscodeEmbedPdf.bridge.envelope` is the Workbench v1 selection
  * envelope (docs/bridge-envelope.md), separate from that clipboard text.
  */

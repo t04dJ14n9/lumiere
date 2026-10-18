@@ -100,13 +100,13 @@ test("git change bars: HEAD diff, rendered peek, revert, stage, commit, off", as
     await expect
       .poll(() => kinds(frame), { timeout: 10000 })
       .toEqual(["added"]);
-    setUserSettings({ "markdownWorkshop.plugins.gitGutter.enabled": false });
+    setUserSettings({ "lumiere.markdown.plugins.gitGutter.enabled": false });
     await expect(frame.locator(".mw-git-gutter")).toHaveCount(0, {
       timeout: 15000,
     });
     await expect(frame.locator(".cm-lineNumbers")).toHaveCount(1);
     setUserSettings({
-      "markdownWorkshop.plugins.gitGutter.enabled": undefined,
+      "lumiere.markdown.plugins.gitGutter.enabled": undefined,
     });
     await expect
       .poll(() => kinds(frame), { timeout: 15000 })
@@ -116,7 +116,7 @@ test("git change bars: HEAD diff, rendered peek, revert, stage, commit, off", as
   } finally {
     setUserSettings({
       "workbench.colorTheme": undefined,
-      "markdownWorkshop.plugins.gitGutter.enabled": undefined,
+      "lumiere.markdown.plugins.gitGutter.enabled": undefined,
     });
     await closeBrowser(browser);
   }

@@ -1,6 +1,6 @@
 # Sample external plugin: Tickets
 
-A tiny VS Code extension that adds a plugin to Markdown Workshop through API
+A tiny VS Code extension that adds a plugin to Lumière through API
 v1. API.md walks through its code. It is for the manual test plan, not for
 publishing.
 
@@ -13,8 +13,8 @@ publishing.
   line, renders as a list of ticket links.
 - **Command:** **Sample Tickets: Refresh TODO Badges**.
 
-The plugin is listed by **Markdown Workshop: Show Plugin Status** and turned
-off with `"markdownWorkshop.plugins.external": { "mwsample.tickets": false }`.
+The plugin is listed by **Lumière: Show Plugin Status** and turned
+off with `"lumiere.markdown.plugins.external": { "mwsample.tickets": false }`.
 
 ## Install into an isolated profile
 
@@ -29,7 +29,7 @@ code --user-data-dir /tmp/mdwb-manual/user \
   --install-extension tickets-0.0.1.vsix
 ```
 
-Install Markdown Workshop's own VSIX into the same profile first (see
+Install Lumière's own VSIX into the same profile first (see
 docs/MANUAL_TEST_PLAN.md). Or, after `pnpm sample`, run it without packaging:
 
 ```sh
@@ -40,7 +40,7 @@ code --user-data-dir /tmp/mdwb-manual/user \
 
 ## Files
 
-- `package.json`: the extension manifest; it depends on Markdown Workshop.
+- `package.json`: the extension manifest; it depends on Lumière.
 - `src/extension.ts`: activation; gets the API and registers the plugin.
 - `src/plugin.ts`: the plugin definition, with `vscode` passed in so unit
   tests can run it (`test/unit/api/sample-plugin.test.ts`).

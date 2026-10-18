@@ -8,7 +8,7 @@ const pluginsDirectory = fileURLToPath(
   new URL("../src/plugins", import.meta.url),
 );
 
-/** Markdown Workshop's `contributes`, generated from its plugin manifests. */
+/** Lumière's `contributes`, generated from its plugin manifests. */
 export async function contributions() {
   const manifests: Manifest[] = [];
   for (const directory of readdirSync(pluginsDirectory, {
@@ -27,7 +27,7 @@ export async function contributions() {
     (manifest.contributes?.commands ?? []).map((command) => ({
       command: contributionId(command.id),
       title: command.title,
-      category: "Markdown Workshop",
+      category: "Lumière",
       ...(command.icon ? { icon: command.icon } : {}),
     })),
   );
@@ -94,7 +94,7 @@ export async function contributions() {
       ],
     },
     configuration: {
-      title: "Markdown Workshop",
+      title: "Lumière",
       properties: {
         ...Object.fromEntries(
           manifests
@@ -148,7 +148,7 @@ export async function contributions() {
           default: false,
           scope: "window",
           description:
-            "Log plugin load/stop timings and debug messages in the Markdown Workshop output channel.",
+            "Log plugin load/stop timings and debug messages in the Lumière output channel.",
         },
         [contributionId("plugins.external")]: {
           type: "object",
@@ -171,7 +171,7 @@ export async function contributions() {
 }
 /**
  * The when-clause for a plugin's command or view. In the editor, the editor
- * host keeps `markdownWorkshop.plugin.<id>` current for the active panel.
+ * host keeps `lumiere.markdown.plugin.<id>` current for the active panel.
  * Elsewhere, the plugin's setting decides.
  */
 /** Adds a `when` clause unless the contribution applies everywhere. */

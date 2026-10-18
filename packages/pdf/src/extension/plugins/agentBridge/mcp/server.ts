@@ -65,7 +65,7 @@ export interface ServerOptions {
   /** Plugin-owned tracker shared with the envelope command (do not dispose here). */
   lastPdf: LastPdf;
   handoff: AgentHandoff;
-  /** The Markdown editor's selections, when Markdown Workshop runs. */
+  /** The Markdown editor's selections, when Lumière runs. */
   notes?: NoteSelections;
   log: BridgeLog;
   /** Where to announce the bridge for the stdio shim; tests use a temp folder. */
@@ -337,7 +337,7 @@ function registerWithEditor(
     const registration = lm.registerMcpServerDefinitionProvider(PROVIDER_ID, {
       provideMcpServerDefinitions: () => [
         new HttpDefinition(
-          "PDF Workshop",
+          "Lumière PDF",
           vscode.Uri.parse(info.url),
           headers,
           "0.1.0",

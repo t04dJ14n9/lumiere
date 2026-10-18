@@ -1,6 +1,6 @@
 # Capabilities
 
-What Markdown Workshop does, plugin by plugin, and where it differs from
+What Lumière does, plugin by plugin, and where it differs from
 Obsidian. Each plugin's README (`src/plugins/<id>/README.md`) has the
 details. "Default" is the `obsidian` preset; the `minimal` preset loads only
 the core plugins. No row here is an Obsidian parity claim until the owner
@@ -71,10 +71,10 @@ records it in `docs/PARITY.md`.
 
 ## Workshop
 
-- **Manage Plugins**, **Show Plugin Status** and **Use Markdown Workshop
+- **Manage Plugins**, **Show Plugin Status** and **Use Lumière
   for Markdown in This Workspace**.
-- A **Markdown Workshop** log output channel;
-  `markdownWorkshop.debug.logging` adds debug lines from host and webview.
+- A **Lumière** log output channel;
+  `lumiere.markdown.debug.logging` adds debug lines from host and webview.
 - Untrusted workspaces: no remote images, media or frames, and no external
   code block processors.
 

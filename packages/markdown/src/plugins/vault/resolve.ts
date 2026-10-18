@@ -10,7 +10,7 @@ import type { VaultFile } from "./api";
 import type { FileTable } from "./file-table";
 
 export interface ResolveOptions {
-  /** `markdownWorkshop.links.folderNote`, for example `_index.md`; empty to disable. */
+  /** `lumiere.markdown.links.folderNote`, for example `_index.md`; empty to disable. */
   folderNote: string;
 }
 

@@ -3,7 +3,7 @@
  * envelope. Copy Link for Agent does not go through this; its clipboard
  * text stays the source-link format.
  *
- * Markdown Workshop is the aggregator: it returns a Markdown selection when
+ * Lumière is the aggregator: it returns a Markdown selection when
  * it has one, otherwise it calls this command. This publisher does not call
  * Workshop back, so the two cannot recurse. A missing selection returns
  * `undefined`.

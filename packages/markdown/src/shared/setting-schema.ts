@@ -114,8 +114,8 @@ export function validateValue(
   }
 }
 
-/** The `markdownWorkshop.` prefix of every key this extension contributes. */
-export const SETTING_PREFIX = "markdownWorkshop.";
+/** The `lumiere.markdown.` prefix of every key this extension contributes. */
+export const SETTING_PREFIX = "lumiere.markdown.";
 
 /** Full contributed command / view / context id from a local suffix. */
 export function contributionId(localId: string): string {
@@ -136,7 +136,7 @@ export function checkWrite(
   const full = typeof key === "string" ? `${SETTING_PREFIX}${key}` : "";
   const setting = contributed.find((item) => item.key === full);
   if (!setting) {
-    return { problem: `${String(key)} is not a Markdown Workshop setting.` };
+    return { problem: `${String(key)} is not a Lumière setting.` };
   }
   const problem = validateValue(setting.schema, value);
   return problem ? { problem } : { setting };

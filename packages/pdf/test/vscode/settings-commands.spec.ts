@@ -14,7 +14,7 @@ import { paths } from "./state";
 // The settings commands read and write the keys the Settings editor shows:
 // no state of their own, so the two always agree.
 
-const EXTENSION_QUERY = "@ext:t04dj14n9.vscode-workshop";
+const EXTENSION_QUERY = "@ext:t04dj14n9.lumiere";
 const userFile = path.join(paths.userData, "User", "settings.json");
 const workspaceFile = path.join(paths.workspace, ".vscode", "settings.json");
 
@@ -49,13 +49,13 @@ test.afterEach(async ({ workbench: page }) => {
   mkdirSync(path.dirname(workspaceFile), { recursive: true });
   writeFileSync(workspaceFile, "{}");
   resetUser(
-    "pdfWorkshop.keyboardShortcuts",
-    "pdfWorkshop.view.smoothScrolling",
-    "pdfWorkshop.view.pageLayout",
-    "pdfWorkshop.view.scrollMode",
-    "pdfWorkshop.view.defaultZoom",
-    "pdfWorkshop.regionImageCache.maxSizeMB",
-    "pdfWorkshop.toolbar.mode",
+    "lumiere.pdf.keyboardShortcuts",
+    "lumiere.pdf.view.smoothScrolling",
+    "lumiere.pdf.view.pageLayout",
+    "lumiere.pdf.view.scrollMode",
+    "lumiere.pdf.view.defaultZoom",
+    "lumiere.pdf.regionImageCache.maxSizeMB",
+    "lumiere.pdf.toolbar.mode",
   );
   // The next spec file must start from the defaults: wait until VS Code has
   // read the files again (its file watcher can take a while on a loaded runner).
@@ -111,23 +111,23 @@ test("a command saves to the workspace when the workspace sets the setting, else
   await command(page, "PDF: Toggle Smooth Scrolling");
   // Smooth scrolling follows the editor's setting (off here): the first toggle turns it on.
   await expect
-    .poll(() => userSetting("pdfWorkshop.view.smoothScrolling"))
+    .poll(() => userSetting("lumiere.pdf.view.smoothScrolling"))
     .toBe(true);
-  expect(workspaceSetting("pdfWorkshop.view.smoothScrolling")).toBeUndefined();
+  expect(workspaceSetting("lumiere.pdf.view.smoothScrolling")).toBeUndefined();
 
   mkdirSync(path.dirname(workspaceFile), { recursive: true });
   writeFileSync(
     workspaceFile,
-    JSON.stringify({ "pdfWorkshop.view.smoothScrolling": false }),
+    JSON.stringify({ "lumiere.pdf.view.smoothScrolling": false }),
   );
   // VS Code picks the new workspace file up through its file watcher.
   await page.waitForTimeout(3_000);
   await command(page, "PDF: Toggle Smooth Scrolling");
   await expect
-    .poll(() => workspaceSetting("pdfWorkshop.view.smoothScrolling"))
+    .poll(() => workspaceSetting("lumiere.pdf.view.smoothScrolling"))
     .toBe(true);
   // The user value is left alone.
-  expect(userSetting("pdfWorkshop.view.smoothScrolling")).toBe(true);
+  expect(userSetting("lumiere.pdf.view.smoothScrolling")).toBe(true);
 });
 
 test("the default layout and scrolling pickers write the setting, and open viewers follow", async ({
@@ -145,7 +145,7 @@ test("the default layout and scrolling pickers write the setting, and open viewe
   };
   await pick("PDF: Set Default Page Layout…", /Two pages \(1–2, 3–4\)/u);
   await expect
-    .poll(() => userSetting("pdfWorkshop.view.pageLayout"))
+    .poll(() => userSetting("lumiere.pdf.view.pageLayout"))
     .toBe("spread");
   await expect(viewer.locator(".viewer")).toHaveAttribute(
     "data-page-layout",
@@ -153,11 +153,11 @@ test("the default layout and scrolling pickers write the setting, and open viewe
   );
   await pick("PDF: Set Default Scrolling…", /Page-by-page/u);
   await expect
-    .poll(() => userSetting("pdfWorkshop.view.scrollMode"))
+    .poll(() => userSetting("lumiere.pdf.view.scrollMode"))
     .toBe("paged");
   await pick("PDF: Set Default Zoom…", /Fit page/u);
   await expect
-    .poll(() => userSetting("pdfWorkshop.view.defaultZoom"))
+    .poll(() => userSetting("lumiere.pdf.view.defaultZoom"))
     .toBe("fitPage");
 });
 
@@ -205,7 +205,7 @@ test("PDF: Change Setting… lists every setting, grouped with its value, and ed
   await widget.locator("input:visible").fill("Keyboard Shortcuts");
   await rows(page).filter({ hasText: "Keyboard Shortcuts" }).first().click();
   await expect
-    .poll(() => userSetting("pdfWorkshop.keyboardShortcuts"))
+    .poll(() => userSetting("lumiere.pdf.keyboardShortcuts"))
     .toBe(false);
 
   // An enum: a pick list with the descriptions.
@@ -222,7 +222,7 @@ test("PDF: Change Setting… lists every setting, grouped with its value, and ed
     .filter({ hasText: /^\s*slim/u })
     .first()
     .click();
-  await expect.poll(() => userSetting("pdfWorkshop.toolbar.mode")).toBe("slim");
+  await expect.poll(() => userSetting("lumiere.pdf.toolbar.mode")).toBe("slim");
 
   // A true/false/null setting: the third choice follows the editor.
   await command(page, "PDF: Change Setting…");
@@ -230,14 +230,14 @@ test("PDF: Change Setting… lists every setting, grouped with its value, and ed
   await rows(page).filter({ hasText: "Smooth Scrolling" }).first().click();
   await rows(page).filter({ hasText: "Off" }).first().click();
   await expect
-    .poll(() => userSetting("pdfWorkshop.view.smoothScrolling"))
+    .poll(() => userSetting("lumiere.pdf.view.smoothScrolling"))
     .toBe(false);
   await command(page, "PDF: Change Setting…");
   await widget.locator("input:visible").fill("Smooth Scrolling");
   await rows(page).filter({ hasText: "Smooth Scrolling" }).first().click();
   await rows(page).filter({ hasText: "Follow the editor" }).first().click();
   await expect
-    .poll(() => userSetting("pdfWorkshop.view.smoothScrolling"))
+    .poll(() => userSetting("lumiere.pdf.view.smoothScrolling"))
     .toBeNull();
 
   // A number is checked against the manifest's minimum.
@@ -250,7 +250,7 @@ test("PDF: Change Setting… lists every setting, grouped with its value, and ed
   await input.fill("64");
   await page.keyboard.press("Enter");
   await expect
-    .poll(() => userSetting("pdfWorkshop.regionImageCache.maxSizeMB"))
+    .poll(() => userSetting("lumiere.pdf.regionImageCache.maxSizeMB"))
     .toBe(64);
 
   // A setting with no simple editor opens in the Settings editor.
@@ -265,7 +265,7 @@ test("a setting changed in the Settings editor shows in Change Setting… and th
 }) => {
   await command(page, "PDF: Toggle Keyboard Shortcuts");
   await expect
-    .poll(() => userSetting("pdfWorkshop.keyboardShortcuts"))
+    .poll(() => userSetting("lumiere.pdf.keyboardShortcuts"))
     .toBe(false);
   await command(page, "PDF: Change Setting…");
   await expect(

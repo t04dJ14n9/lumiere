@@ -8,7 +8,7 @@ import {
   PDF_OUTLINE_VIEW_ID,
 } from "../../src/extension/plugins/pdfOutline/focus";
 
-test("entering a PDF Workshop editor hides native Outline and shows PDF Outline", async () => {
+test("entering a Lumière PDF editor hides native Outline and shows PDF Outline", async () => {
   const executed: string[] = [];
   const focus = createOutlineFocus({
     execute: async (command) => {

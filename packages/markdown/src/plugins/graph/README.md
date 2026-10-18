@@ -41,8 +41,8 @@ part of the editor bundle.
 
 Injects the host services `hostCommands`, `dialogs`, `views`, `activeEditor` and `settings`, `vaults` and `okf`. Provides nothing. Listens to
 `vault/changed` and `vault/resolved`. Commands are
-`markdownWorkshop.graph.open` and `markdownWorkshop.graph.chooseBundle`.
-Settings: `markdownWorkshop.graph.maxNodes` (2000), `maxEdges` (20000),
+`lumiere.markdown.graph.open` and `lumiere.markdown.graph.chooseBundle`.
+Settings: `lumiere.markdown.graph.maxNodes` (2000), `maxEdges` (20000),
 `defaultMode` (`global`), `localDepth` (2) and `colorBy` (`type`).
 
 ## Limits and differences from Obsidian

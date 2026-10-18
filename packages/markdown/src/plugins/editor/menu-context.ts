@@ -5,7 +5,7 @@ import type { EditorView } from "@codemirror/view";
 /**
  * VS Code builds a webview's context menu from the `data-vscode-context` of
  * the clicked element and its ancestors, read by a `contextmenu` listener on
- * the webview's window. The `markdownWorkshop.hasSelection` key that gates
+ * the webview's window. The `lumiere.markdown.hasSelection` key that gates
  * the selection items travels from the webview through the extension host
  * to the workbench, so it lags the selection. On macOS a secondary click
  * (two-finger click or Ctrl-click) outside a selection first selects the

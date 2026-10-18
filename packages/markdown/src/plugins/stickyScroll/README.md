@@ -29,8 +29,8 @@ the field, overlay, scroll listener and margins.
 Injects `editor`; provides no services and listens to/emits no kernel events.
 Uses the editor's extension registration and navigation history.
 
-- `markdownWorkshop.plugins.stickyScroll.enabled`: **false** by default.
-- `markdownWorkshop.stickyScroll.maxLines`: **5**, range 1–6, rounded down.
+- `lumiere.markdown.plugins.stickyScroll.enabled`: **false** by default.
+- `lumiere.markdown.stickyScroll.maxLines`: **5**, range 1–6, rounded down.
 
 Settings apply immediately, per resource, through the existing plugin settings
 flow. The `minimal` preset does not load feature plugins.

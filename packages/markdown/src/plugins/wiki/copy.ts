@@ -19,9 +19,7 @@ export async function copyWikiReference(input: {
     wikiContext(input.place, input.noteText),
   );
   if (!handoff) {
-    input.error(
-      "Open the note in Markdown Workshop and select the passage to copy.",
-    );
+    input.error("Open the note in Lumière and select the passage to copy.");
     return;
   }
   if (input.json) {

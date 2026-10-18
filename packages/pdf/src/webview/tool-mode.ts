@@ -11,7 +11,7 @@ import type { ToolMode } from "../shared/view-state";
  * region anywhere on a page, over text too. The default mode ("text" here)
  * selects text, and a region only when the drag starts on empty space.
  */
-const REGION_MODE = "pdfWorkshop.selectRegion";
+const REGION_MODE = "lumiere.pdf.selectRegion";
 
 /** The current tool and a way to change it. */
 export function useToolMode(documentId: string): {

@@ -4,7 +4,7 @@ Detects a Marp deck (`marp: true` in the opening frontmatter) and bridges to VS 
 
 ## How it works
 
-The same check Marp uses decides whether the note is a deck, and sets `markdownWorkshop.isMarp`. Open Marp Preview to the Side runs `markdown.showPreviewToSide`. Export Marp Slide Deck shows the file in a text editor and then runs `markdown.marp.export`. In an untrusted workspace export is refused. If Marp for VS Code is not installed, export offers to search Extensions for `marp-team.marp-vscode`. Toggle Marp inserts or flips `marp: true` and leaves the rest of the frontmatter. With `markdownWorkshop.marp.open` set to `textEditor`, opening a deck in this editor sends it to the text editor unless Keep Marp Deck in Workshop remembered that file. Move Marp Deck Outside Bundle moves a deck that sits inside the wiki bundle into `exports` (or the layout's exports path) without adding `type` or `generated`, and copies a portable Markdown link.
+The same check Marp uses decides whether the note is a deck, and sets `lumiere.markdown.isMarp`. Open Marp Preview to the Side runs `markdown.showPreviewToSide`. Export Marp Slide Deck shows the file in a text editor and then runs `markdown.marp.export`. In an untrusted workspace export is refused. If Marp for VS Code is not installed, export offers to search Extensions for `marp-team.marp-vscode`. Toggle Marp inserts or flips `marp: true` and leaves the rest of the frontmatter. With `lumiere.markdown.marp.open` set to `textEditor`, opening a deck in this editor sends it to the text editor unless Keep Marp Deck in Workshop remembered that file. Move Marp Deck Outside Bundle moves a deck that sits inside the wiki bundle into `exports` (or the layout's exports path) without adding `type` or `generated`, and copies a portable Markdown link.
 
 ## Files
 
@@ -18,10 +18,10 @@ The same check Marp uses decides whether the note is a deck, and sets `markdownW
 
 - Requires the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `activeEditor`, `settings`, `workspace`, `storage` and `extensions`. Optionally uses `editors` and `wikiLayout`.
 - Listens to `editor/opened` and `editor/activeChanged`.
-- Sets `markdownWorkshop.isMarp` (cleared when the plugin stops).
-- Command: `markdownWorkshop.marp.keepInWorkshop` (**Keep Marp Deck in Workshop**) remembers the deck and reopens it in this editor.
-- Setting: `markdownWorkshop.marp.open` (`workbench` or `textEditor`, default `workbench`).
-- Setting: `markdownWorkshop.plugins.marp.enabled`.
+- Sets `lumiere.markdown.isMarp` (cleared when the plugin stops).
+- Command: `lumiere.markdown.marp.keepInWorkshop` (**Keep Marp Deck in Workshop**) remembers the deck and reopens it in this editor.
+- Setting: `lumiere.markdown.marp.open` (`workbench` or `textEditor`, default `workbench`).
+- Setting: `lumiere.markdown.plugins.marp.enabled`.
 
 ## Limits and differences from Obsidian
 

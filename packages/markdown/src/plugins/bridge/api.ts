@@ -19,7 +19,7 @@ export interface BridgeCapture {
     wiki?: BridgeWikiContext,
   ): Promise<MarkdownHandoff | undefined>;
   /**
-   * Markdown first. When this editor has no selection, asks PDF Workshop
+   * Markdown first. When this editor has no selection, asks Lumière PDF
    * if `vscodeEmbedPdf.bridge.envelope` is registered. Missing PDF support
    * returns undefined and does not throw.
    */

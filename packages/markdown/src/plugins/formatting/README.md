@@ -49,7 +49,7 @@ Read-only views reject edits.
 
 Injects `editor` and `commands`; provides `formatting` with wrap and clear
 operations. Queries the `editor/activeView` bail event for palette commands.
-`markdownWorkshop.plugins.formatting.enabled` defaults to true. Bold, italics
+`lumiere.markdown.plugins.formatting.enabled` defaults to true. Bold, italics
 Insert Link and Toggle Comment use Mod+B, Mod+I, Mod+K and Mod+/.
 
 ## Limits and differences from Obsidian

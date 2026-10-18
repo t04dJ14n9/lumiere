@@ -81,7 +81,7 @@ type PdfDestination = ReturnType<typeof parsePdfLocation>;
  * one an agent printed: `papers/paper.pdf#page=3&viewrect=72,83,134,21`.
  * Other extensions can pass a URI and a location:
  *
- *     vscode.commands.executeCommand('pdfWorkshop.openLocation', uri, { page: 3 })
+ *     vscode.commands.executeCommand('lumiere.pdf.openLocation', uri, { page: 3 })
  *
  * A third argument, `{ viewColumn }`, opens it in another editor group
  * (`ViewColumn.Beside` for a link opened to the side).

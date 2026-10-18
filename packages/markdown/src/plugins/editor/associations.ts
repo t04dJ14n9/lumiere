@@ -54,13 +54,13 @@ export async function useForMarkdownInWorkspace(
   }
   if (opensMarkdownHere(existing)) {
     host.dialogs.inform(
-      "Markdown files in this workspace already open in Markdown Workshop.",
+      "Markdown files in this workspace already open in Lumière.",
     );
     return;
   }
   await associations.write(withMarkdownWorkshop(existing));
   host.dialogs.inform(
-    "Markdown files in this workspace now open in Markdown Workshop. Use Open as Text or Reopen Editor With… for the text editor.",
+    "Markdown files in this workspace now open in Lumière. Use Open as Text or Reopen Editor With… for the text editor.",
   );
 }
 

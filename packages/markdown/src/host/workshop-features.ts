@@ -5,7 +5,7 @@ import { PluginSwitch } from "../shared/plugin-switch";
 
 /**
  * Window-level plugins (views, status bar, quick switcher, link updates)
- * follow their `markdownWorkshop.plugins.<id>.enabled` setting and the
+ * follow their `lumiere.markdown.plugins.<id>.enabled` setting and the
  * preset, like editor plugins follow theirs per panel.
  */
 export function workbenchFeatures(

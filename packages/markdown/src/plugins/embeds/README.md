@@ -47,7 +47,7 @@ click elsewhere or any edit lets it go
 
 Injects `editor`, `commands`, `livePreview`, `render`, `resources` and `rpc`;
 provides no services. Listens to `render/postProcess`; no kernel events emitted.
-Uses Links RPC to open an embedded target. `markdownWorkshop.plugins.embeds.enabled`
+Uses Links RPC to open an embedded target. `lumiere.markdown.plugins.embeds.enabled`
 defaults to true. Insert Embed has no default keybinding. Remote media follows
 workspace trust from Render.
 
@@ -55,5 +55,5 @@ workspace trust from Render.
 
 Cycles and ancestry depth of twelve are refused. Local files remain host-contained;
 remote media requires a trusted workspace. PDF embeds open cards rather than an
-inline PDF viewer; a card opens the PDF in PDF Workshop at the embed's page. WebM recovery supports VP8/VP9 and Opus/Vorbis when the host
+inline PDF viewer; a card opens the PDF in Lumière PDF at the embed's page. WebM recovery supports VP8/VP9 and Opus/Vorbis when the host
 MediaSource supports them. Visual and playback parity await owner comparison.

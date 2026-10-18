@@ -13,7 +13,7 @@ Never install the extension into an existing VS Code or Cursor profile, and
 never open a real vault.
 
 1. Build the VSIX: `pnpm install && pnpm package`. It writes
-   `vscode-workshop-<version>.vsix` in the repository root.
+   `lumiere-<version>.vsix` in the repository root.
 2. Copy the fixture vault:
    `cp -R packages/markdown/test/fixtures/vault /tmp/mdwb-vault`.
 3. Install into a throwaway profile and open the vault:
@@ -21,17 +21,17 @@ never open a real vault.
    ```sh
    code --user-data-dir /tmp/mdwb-manual/user \
         --extensions-dir /tmp/mdwb-manual/extensions \
-        --install-extension vscode-workshop-0.1.0.vsix
+        --install-extension lumiere-0.1.0.vsix
    code --user-data-dir /tmp/mdwb-manual/user \
         --extensions-dir /tmp/mdwb-manual/extensions /tmp/mdwb-vault
    ```
 
    For Cursor use `cursor` with the same flags. Delete `/tmp/mdwb-manual`
    and `/tmp/mdwb-vault` afterwards.
-4. Run **Markdown Workshop: Use Markdown Workshop for Markdown in This
+4. Run **Lumière: Use Lumière for Markdown in This
    Workspace** once, so `.md` files open in Workshop (see Editor below).
-5. Turn on `markdownWorkshop.debug.logging` while testing and keep the
-   **Markdown Workshop** output channel open; note any error lines in the
+5. Turn on `lumiere.markdown.debug.logging` while testing and keep the
+   **Lumière** output channel open; note any error lines in the
    result.
 
 Change settings at workspace scope (or folder scope in a multi-root
@@ -53,7 +53,7 @@ note most others point at). `notes/` and `archive/` each hold a
 
 Unless the section says otherwise, also check:
 
-- **Off and on.** Turn `markdownWorkshop.plugins.<id>.enabled` off with
+- **Off and on.** Turn `lumiere.markdown.plugins.<id>.enabled` off with
   the note open: the plugin's rendering, commands, keys and views disappear;
   text, selection, undo history and other plugins' state stay. Turn it on:
   everything returns once, with no duplicates.
@@ -71,7 +71,7 @@ duplicate-shortcut path and pending native granularity verification are recorded
 in [tables-diff.md](tables-diff.md); do not mark this requirement passed from
 those weaker checks alone.
 
-The `minimal` preset (`markdownWorkshop.preset`) loads only the core
+The `minimal` preset (`lumiere.markdown.preset`) loads only the core
 plugins; switching the preset takes effect for newly opened editors.
 
 ## Core plugins
@@ -99,11 +99,11 @@ Owns the text, saving and history; VS Code's TextDocument is the authority.
 The CodeMirror view in a webview panel, its commands and view state.
 
 Cursor Remote SSH handoff regression (use the disposable vault): associate
-`*.md` with Markdown Workshop and leave both `editor.warmTextDocument` and
+`*.md` with Lumière and leave both `editor.warmTextDocument` and
 `editor.reclaimTextEditor` at `auto`. Have an agent edit a note on disk, open
 it with Cursor's built-in Markdown editor, and make an unsaved edit there.
-Let Cursor auto-transfer the note into Markdown Workshop, then repeat with
-**Reopen Editor With… → Markdown Workshop**. The custom editor opens without
+Let Cursor auto-transfer the note into Lumière, then repeat with
+**Reopen Editor With… → Lumière**. The custom editor opens without
 the `Argument is 'undefined' or 'null.'` assertion, the unsaved text survives,
 and native undo still restores the edit. Repeat with a `.markdown` note and
 the matching association, and after reloading with the dirty note already
@@ -142,19 +142,19 @@ do not install a VSIX or use the owner's profile.
    editor: the exact source is copied.
 2. Give two panels different selections, scroll positions and modes; reload
    the window: each panel restores its own state.
-3. Run **Use Markdown Workshop for Markdown in This Workspace**: the
+3. Run **Use Lumière for Markdown in This Workspace**: the
    workspace `settings.json` gets `workbench.editorAssociations` entries for
    `*.md` and `*.markdown`, other associations stay, and running it again
    changes nothing. A note opened from the Explorer now opens in the
    Workshop editor. **Open as Text** still opens the text editor.
 4. Run **Note Actions** and **Selection Actions** from the palette (with and
    without a selection): a quick pick lists the registered actions.
-5. Change `markdownWorkshop.editor.readableLineLength`,
-   `markdownWorkshop.editor.rightToLeft`, `markdownWorkshop.editor.useTabs`
-   and `markdownWorkshop.editor.tabSize` with the note open: the editor
+5. Change `lumiere.markdown.editor.readableLineLength`,
+   `lumiere.markdown.editor.rightToLeft`, `lumiere.markdown.editor.useTabs`
+   and `lumiere.markdown.editor.tabSize` with the note open: the editor
    updates without reopening and keeps text, folds and selection.
-   `markdownWorkshop.editor.defaultMode` applies to newly opened panels.
-6. With `markdownWorkshop.debug.logging` on, the **Markdown Workshop**
+   `lumiere.markdown.editor.defaultMode` applies to newly opened panels.
+6. With `lumiere.markdown.debug.logging` on, the **Lumière**
    output channel shows debug lines from the host and the webview; with it
    off, only warnings and errors.
 7. Right-click a selection that spans hidden syntax (bold, a link): the
@@ -164,7 +164,7 @@ do not install a VSIX or use the owner's profile.
    menus open instead.
 
 8. Copy `Core.md` repeatedly into a disposable long note (at least 300 lines).
-   At the default `markdownWorkshop.editor.dragScrollSpeed: 4`, drag a text
+   At the default `lumiere.markdown.editor.dragScrollSpeed: 4`, drag a text
    selection to within 6 px of the top/bottom viewport edge and hold the
    pointer still: scrolling and selection extension continue, substantially
    faster than setting 1. Drag farther past the edge: speed increases. Try
@@ -198,7 +198,7 @@ The Markdown syntax, the HTML renderer and Live Preview's reveal-at-caret.
    `<iframe>` and a remote image. Nothing executes and no remote content
    loads; typing and saving still work. Links with application schemes
    (`obsidian://`, `zotero://`) stay links in rendered blocks.
-5. `markdownWorkshop.editor.strictLineBreaks` on: single newlines in
+5. `lumiere.markdown.editor.strictLineBreaks` on: single newlines in
    rendered blocks no longer break lines.
 6. In a disposable vault, repeat the contents of `Formatting.md` and `Code.md`
    until the note spans at least five viewports. Leave the caret in plain text
@@ -231,11 +231,11 @@ Contained file access and the vault index (Obsidian's metadata cache).
    `notes/Project plan.md`, `[[Duplicate]]` opens `notes/Duplicate.md`.
 2. Rename `attachments/diagram.svg` outside VS Code: its embeds in
    `Embeds.md` become unresolved within a second; rename it back.
-3. Add `"archive/"` to `markdownWorkshop.vault.excludedFiles`: links to it
+3. Add `"archive/"` to `lumiere.markdown.vault.excludedFiles`: links to it
    still open, but the quick switcher and search no longer list it.
 4. Create `Sub/.obsidian/` and `Sub/Inner.md` containing `[[Target]]`: it is
    unresolved there (a separate vault). Remove the marker and reload: it
-   resolves. `markdownWorkshop.vault.rootMarkers` changes which folders
+   resolves. `lumiere.markdown.vault.rootMarkers` changes which folders
    mark a vault.
 5. Create a symlink in the vault pointing outside it and embed it: it is
    refused. So are paths with `..` that leave the vault.
@@ -249,7 +249,7 @@ Contained file access and the vault index (Obsidian's metadata cache).
    failed and waiting ones first, each with its state and kind; choosing
    one opens its switch.
 3. With the sample plugin installed (see External plugins),
-   `markdownWorkshop.plugins.external` holds its switch; turning it off
+   `lumiere.markdown.plugins.external` holds its switch; turning it off
    stops it in every panel.
 
 ## Feature plugins
@@ -304,7 +304,7 @@ Reference: the measured Obsidian 1.14.4 spec and `docs/properties-diff.md`.
    including notes in a second vault in the same workspace. Reopen/reload the
    workspace and check persistence. Expanding restores the values; Mod+;
    expands the sheet and opens a draft. Other plugin disclosures remain per panel.
-9. `markdownWorkshop.properties.display`: visible, hidden, source. Off/on and
+9. `lumiere.markdown.properties.display`: visible, hidden, source. Off/on and
    source/live-preview toggles keep the native document authoritative. Check
    menu clipboard permissions, native pickers/locales and actual IME with the
    owner's editor; these are not established by the DOM event unit fakes.
@@ -328,7 +328,7 @@ per-note collapse (as in Obsidian) and native picker appearance are deliberate l
 ### inlineTitle
 
 Off by default: first check that line 1 is at the top of a note with no
-title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
+title, then set `lumiere.markdown.plugins.inlineTitle.enabled` to true.
 
 1. The file name shows above the note in both modes, not as document text.
 2. Rename with Enter, Tab or blur; Escape or an empty title restores it.
@@ -351,13 +351,13 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
    scrolls into view. **Follow Link** and **Open Link to Side** work with
    the caret in link syntax.
 3. `[[Missing note]]` is dimmed; clicking creates and opens the note (in
-   `markdownWorkshop.files.newNoteFolder` when set). `[[Home]]` stays
+   `lumiere.markdown.files.newNoteFolder` when set). `[[Home]]` stays
    unresolved (an alias is not a file name), as in Obsidian.
 4. HTTPS and mail links open externally; `obsidian://` asks first.
 5. **Insert Wikilink** wraps the selection; undo restores it.
-6. `markdownWorkshop.links.folderNote` sets the note a folder link opens.
-   `markdownWorkshop.links.newLinkFormat` and
-   `markdownWorkshop.links.useWikilinks` shape links inserted by
+6. `lumiere.markdown.links.folderNote` sets the note a folder link opens.
+   `lumiere.markdown.links.newLinkFormat` and
+   `lumiere.markdown.links.useWikilinks` shape links inserted by
    suggestions and link updates.
 
 ### embeds
@@ -400,7 +400,7 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
 3. Offline (or with the providers blocked), reopen the note: cards show the
    alt text or provider and ID, with no errors.
 4. No card offers **Play here**. Set
-   `markdownWorkshop.onlineVideos.bilibiliPlayer` to true: the Bilibili
+   `lumiere.markdown.onlineVideos.bilibiliPlayer` to true: the Bilibili
    card offers it and shows the player; note whether the video plays (it
    did not buffer in VS Code 1.141 on Linux). Reset the setting.
 5. Put the caret on a video line: the Markdown shows; move away: the card
@@ -585,8 +585,8 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
    `#code` do not. Clicking a tag lists the notes using it; `#idea` and
    `#Idea` are one tag; a parent tag includes its children.
 2. The Explorer's **Tags** view nests `area › tags › nested` with note
-   counts. `markdownWorkshop.tags.viewSort` (`name`, `frequency`) and
-   `markdownWorkshop.tags.viewNested` change it. Typing a new tag without
+   counts. `lumiere.markdown.tags.viewSort` (`name`, `frequency`) and
+   `lumiere.markdown.tags.viewNested` change it. Typing a new tag without
    saving adds it within a second.
 
 ### suggest
@@ -646,8 +646,8 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
 ### backlinks and outgoingLinks
 
 Both are off by default (owner decision). Turn on
-`markdownWorkshop.plugins.backlinks.enabled` and
-`markdownWorkshop.plugins.outgoingLinks.enabled` first.
+`lumiere.markdown.plugins.backlinks.enabled` and
+`lumiere.markdown.plugins.outgoingLinks.enabled` first.
 
 1. Open `Target.md`: **Backlinks** lists Links, Welcome and Search with a
    context line each, and **Unlinked mentions** lists notes that mention
@@ -661,12 +661,12 @@ Both are off by default (owner decision). Turn on
 ### settings commands
 
 1. **Open Settings**: Run Open Settings from the palette with no editor open: the Settings UI shows with the search `@ext:t04dj14n9.vscode-markdown-workshop`.
-2. **Set Note Font Size**: Run it: the box shows the current `markdownWorkshop.editor.fontSize`; type 20 and Enter, the open note's text, headings and line numbers grow at once and the Settings UI shows 20; 7 or `abc` is refused; Escape changes nothing.
-3. **Toggle Line Numbers**: Run it twice: the gutter hides and shows, and `markdownWorkshop.plugins.lineNumbers.enabled` in the Settings UI follows each run.
-4. **Toggle Readable Line Width**: Run it twice: the note's width limit switches, and `markdownWorkshop.editor.readableLineLength` follows.
-5. **Toggle Mermaid Diagrams**: With a mermaid block open, run it twice: the diagram turns to source and back, and `markdownWorkshop.plugins.diagrams.enabled` follows.
-6. **Toggle Inline Title**: Run it twice: the title above the note shows and hides, and `markdownWorkshop.plugins.inlineTitle.enabled` follows.
-7. **Toggle Vim Mode**: Run it twice: Vim mode and its caret turn on and off, and `markdownWorkshop.plugins.vim.enabled` follows.
+2. **Set Note Font Size**: Run it: the box shows the current `lumiere.markdown.editor.fontSize`; type 20 and Enter, the open note's text, headings and line numbers grow at once and the Settings UI shows 20; 7 or `abc` is refused; Escape changes nothing.
+3. **Toggle Line Numbers**: Run it twice: the gutter hides and shows, and `lumiere.markdown.plugins.lineNumbers.enabled` in the Settings UI follows each run.
+4. **Toggle Readable Line Width**: Run it twice: the note's width limit switches, and `lumiere.markdown.editor.readableLineLength` follows.
+5. **Toggle Mermaid Diagrams**: With a mermaid block open, run it twice: the diagram turns to source and back, and `lumiere.markdown.plugins.diagrams.enabled` follows.
+6. **Toggle Inline Title**: Run it twice: the title above the note shows and hides, and `lumiere.markdown.plugins.inlineTitle.enabled` follows.
+7. **Toggle Vim Mode**: Run it twice: Vim mode and its caret turn on and off, and `lumiere.markdown.plugins.vim.enabled` follows.
 8. **Change Setting…**: run it and pick any setting; booleans flip, enums open a list, numbers and strings an input box (numbers are checked against the setting's range), lists open the Settings UI on that key.
 
 ### quickSwitcher
@@ -685,7 +685,7 @@ Both are off by default (owner decision). Turn on
 1. Rename `Target.md` to `Goal.md` in the Explorer: a dialog asks to update
    links in the notes that link to it. Accept: links (with aliases,
    headings and blocks) now point at `Goal`. Decline: nothing changes.
-2. `markdownWorkshop.linkUpdates.mode`: `always` skips the dialog,
+2. `lumiere.markdown.linkUpdates.mode`: `always` skips the dialog,
    `never` changes nothing.
 
 ### stickyScroll
@@ -694,7 +694,7 @@ Use the disposable vault's `Core.md`. Under **Child heading**, paste enough
 paragraphs to fill two screens; add deeper headings through level 6 with more
 paragraphs. Keep **Formatting section** as a following sibling.
 
-1. With `markdownWorkshop.plugins.stickyScroll.enabled` unset/false, scroll:
+1. With `lumiere.markdown.plugins.stickyScroll.enabled` unset/false, scroll:
    no heading chrome appears. Enable it in Settings while the note is open:
    scrolled-away **Core acceptance**, **Folding section** and **Child heading**
    appear as compact rows at the top. At the document top there are no rows.
@@ -705,7 +705,7 @@ paragraphs. Keep **Formatting section** as a following sibling.
 3. Click a pinned heading, then use precise-jump Back: the heading is revealed
    below the chrome, the editor has focus, and Back restores the prior place.
    Tab to a heading button and press Enter: the same jump works.
-4. Change `markdownWorkshop.stickyScroll.maxLines` to 2 while deeply scrolled:
+4. Change `lumiere.markdown.stickyScroll.maxLines` to 2 while deeply scrolled:
    only the nearest two ancestors remain. Resize the editor to a short pane:
    the chrome takes at most one third of its height. Toggle Source mode:
    the same headings remain pinned; return to Live Preview.
@@ -736,7 +736,7 @@ On by default. Needs the built-in Git extension and a note in a repository.
    stages the file, Escape or ✕ closes it.
 4. **Go to Next/Previous Git Change** (Alt+F5 / Shift+Alt+F5) wrap around; **Show
    Git Change** (Alt+F3) opens the peek.
-5. Commit: the bars clear. Set `markdownWorkshop.gitGutter.compareTo` to
+5. Commit: the bars clear. Set `lumiere.markdown.gitGutter.compareTo` to
    `index`: bars compare with the staged text. Turn the plugin off: bars and
    peek disappear and nothing else changes.
 
@@ -765,7 +765,7 @@ Off by default; needs **gitGutter**. Turn it on with **Toggle Inline Git Changes
 1. Use the gutter, **Fold All**, **Unfold All** and **Toggle Fold**.
    Heading folds stop at the next heading of the same level; list folds
    include children. Reload: folds are restored.
-2. `markdownWorkshop.folding.heading` and `markdownWorkshop.folding.indent`
+2. `lumiere.markdown.folding.heading` and `lumiere.markdown.folding.indent`
    act independently.
 
 ### lineNumbers
@@ -774,7 +774,7 @@ On by default.
 
 1. Open `Formatting.md` in Workshop and, beside it, with **Open With >
    Text Editor**, in a light and a dark theme: the numbers use the same font
-   family, the note's own size (`markdownWorkshop.editor.fontSize`), colours (brighter on the caret line), right alignment and gutter
+   family, the note's own size (`lumiere.markdown.editor.fontSize`), colours (brighter on the caret line), right alignment and gutter
    width, with fold chevrons between numbers and text on hover. Each number
    sits level with its line, including headings.
 2. A rendered block (table, callout, math, diagram) lists the numbers of all
@@ -792,7 +792,7 @@ On by default.
    guides through soft wraps without a second set at source tab stops. Separate
    source continuation lines have no guides; indented code and non-list text
    retain source-column guides.
-2. Toggle `markdownWorkshop.plugins.indentGuides.enabled` off: every guide
+2. Toggle `lumiere.markdown.plugins.indentGuides.enabled` off: every guide
    disappears while bullets and indentation stay in place. Turn it on and
    switch to Source mode: guides follow source tab stops. Switch back: list
    guides follow visual nesting again, with no text edits.
@@ -806,8 +806,8 @@ On by default.
 
 1. Brackets, quotes and Markdown markers (`**`, `==`, `` ` ``) pair and wrap
    selections; Backspace removes an empty pair.
-   `markdownWorkshop.autoPair.brackets` and
-   `markdownWorkshop.autoPair.markdown` switch the two families.
+   `lumiere.markdown.autoPair.brackets` and
+   `lumiere.markdown.autoPair.markdown` switch the two families.
 
 ### smartLists
 
@@ -901,8 +901,8 @@ Off by default.
 
 In **Cursor** only: select text in Live Preview, press Cmd/Ctrl+L (Chat) and
 Cmd/Ctrl+K (Edit). Edit should open Cursor’s native bar; Accept updates the note
-in Markdown Workshop without a custom apply-back. With no selection, both
-commands no-op with a short notice. Disable `markdownWorkshop.plugins.cursorBridge.enabled`
+in Lumière without a custom apply-back. With no selection, both
+commands no-op with a short notice. Disable `lumiere.markdown.plugins.cursorBridge.enabled`
 and confirm Cmd/Ctrl+K is Insert Link again. On plain VS Code, Insert Link keeps
 Cmd/Ctrl+K. Leave `agentBridge` behaviour unchanged.
 
@@ -910,7 +910,7 @@ Cmd/Ctrl+K. Leave `agentBridge` behaviour unchanged.
 ### openCopiedAgentReference
 
 1. Copy `@Core.md#2-3` and run **Open Copied Agent Reference**, with no note
-   open. Confirm the prefilled reference: Markdown Workshop opens and
+   open. Confirm the prefilled reference: Lumière opens and
    selects those complete source lines. Repeat with a quoted reference and
    a one-line `#2` reference. A copied agent payload prefills only its first
    line; unrelated clipboard content leaves the prompt empty.
@@ -969,7 +969,7 @@ map. Confirm light and dark themes.
 
 ### vault graph
 
-**Open Vault Graph** (`markdownWorkshop.graph.open`). One panel per window; running
+**Open Vault Graph** (`lumiere.markdown.graph.open`). One panel per window; running
 the command again reveals it. The panel is not tied to a Markdown document.
 
 1. With the active note inside one OKF bundle, the toolbar shows that bundle's
@@ -980,7 +980,7 @@ the command again reveals it. The panel is not tied to a Markdown document.
    and the command asks which bundle to use. Cancel leaves the previous scope.
    It does not pick the first workspace folder. Switching notes does not move
    the graph to the new note. **Choose Vault Graph Bundle**
-   (`markdownWorkshop.graph.chooseBundle`) asks again.
+   (`lumiere.markdown.graph.chooseBundle`) asks again.
 3. Local mode draws the neighbourhood of the note that was active at open, or
    of the last node you clicked. Depth is 1–3. If filters hide that note, the
    panel says **Focus excluded by filters**. **Clear filters** brings it back
@@ -992,12 +992,12 @@ the command again reveals it. The panel is not tied to a Markdown document.
 5. Hide the panel and show it again. The layout worker does not keep running
    while it is hidden. Close the panel. The worker stops. Repeat in light and
    dark themes. The graph does not request remote images or URLs.
-6. Settings, all off in a minimal preset: `markdownWorkshop.plugins.graph.enabled`,
-   `markdownWorkshop.plugins.okfCore.enabled`,
-   `markdownWorkshop.plugins.sourcesProperty.enabled`,
-   `markdownWorkshop.graph.maxNodes`, `markdownWorkshop.graph.maxEdges`,
-   `markdownWorkshop.graph.defaultMode`, `markdownWorkshop.graph.localDepth`,
-   `markdownWorkshop.graph.colorBy`, `markdownWorkshop.okfCore.bundles`.
+6. Settings, all off in a minimal preset: `lumiere.markdown.plugins.graph.enabled`,
+   `lumiere.markdown.plugins.okfCore.enabled`,
+   `lumiere.markdown.plugins.sourcesProperty.enabled`,
+   `lumiere.markdown.graph.maxNodes`, `lumiere.markdown.graph.maxEdges`,
+   `lumiere.markdown.graph.defaultMode`, `lumiere.markdown.graph.localDepth`,
+   `lumiere.markdown.graph.colorBy`, `lumiere.markdown.okfCore.bundles`.
 
 ## External plugins
 
@@ -1014,7 +1014,7 @@ install it into the same isolated profile, and lists what it does.
 3. A ```` ```tickets ```` fence lists ticket links, rendered and sanitized.
    In an untrusted workspace it stays an ordinary code block.
 4. **Sample Tickets: Refresh TODO Badges** recomputes the badges.
-5. Turn it off in `markdownWorkshop.plugins.external` or uninstall it:
+5. Turn it off in `lumiere.markdown.plugins.external` or uninstall it:
    markers, link handling, the fence renderer and the command go away
    without touching built-in plugins. **Show Plugin Status** lists it as
    external.
@@ -1022,7 +1022,7 @@ install it into the same isolated profile, and lists what it does.
 ### gitDiffEditor
 
 On by default; VS Code's text diff stays the default until
-`markdownWorkshop.gitDiffEditor.diffEditor` is `rendered`.
+`lumiere.markdown.gitDiffEditor.diffEditor` is `rendered`.
 
 1. With `Core.md` edited since the last commit, run **Open Rendered Git Diff**:
    a panel shows HEAD on the left (read-only badge) and the working tree on the
@@ -1085,7 +1085,7 @@ paths; a missing layout is the legacy preset.
    **Export Marp Slide Deck** in an untrusted workspace is refused. With
    Marp for VS Code installed and the workspace trusted, the text editor
    opens and Marp's export follows. **Toggle Marp** flips only the `marp`
-   flag. Set `markdownWorkshop.marp.open` to `textEditor`: the deck opens
+   flag. Set `lumiere.markdown.marp.open` to `textEditor`: the deck opens
    in the text editor; **Keep Marp Deck in Workshop** brings it back.
    A deck saved inside the bundle without `type` and `generated` is
    reported and is not rewritten. **Move Marp Deck Outside Bundle** moves
@@ -1098,229 +1098,229 @@ Use the disposable fixture vault from Setup. These rows enumerate every generate
 
 | Command | Default keys | Procedure and expected outcome |
 | --- | --- | --- |
-| `markdownWorkshop.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
-| `markdownWorkshop.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
-| `markdownWorkshop.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.ideContext.copy` — Copy IDE Context | unbound | On a disposable fixture, run Copy IDE Context; confirm clipboard markdown includes active/tabs/diagnostics and no agent opens. Repeat after disable/re-enable. |
-| `markdownWorkshop.ideContext.send` — Send IDE Context to Agent… | unbound | On a disposable fixture, run Send IDE Context to Agent…; confirm clipboard always updates and agent open follows forced/sole-agent/picker rules (never silent-guess). |
-| `markdownWorkshop.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertCallout` — Insert Callout | unbound | On a disposable fixture, run Insert Callout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.save` — Save | unbound | On a disposable fixture, run Save; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.undo` — Undo | unbound | On a disposable fixture, run Undo; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.redo` — Redo | unbound | On a disposable fixture, run Redo; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.close` — Close | unbound | On a disposable fixture, run Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.jumpBack` — Go Back in Note | unbound | On a disposable fixture, run Go Back in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.jumpForward` — Go Forward in Note | unbound | On a disposable fixture, run Go Forward in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.useForMarkdownInWorkspace` — Use Markdown Workshop for Markdown in This Workspace | unbound | On a disposable fixture, run Use Markdown Workshop for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertEmbed` — Insert Embed | unbound | On a disposable fixture, run Insert Embed; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.foldAll` — Fold All | unbound | On a disposable fixture, run Fold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.unfoldAll` — Unfold All | unbound | On a disposable fixture, run Unfold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleFold` — Toggle Fold | unbound | On a disposable fixture, run Toggle Fold; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.foldMore` — Fold More | unbound | On a disposable fixture, run Fold More; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.foldLess` — Fold Less | unbound | On a disposable fixture, run Fold Less; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertFootnote` — Insert Footnote | unbound | On a disposable fixture, run Insert Footnote; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleBold` — Toggle Bold | ctrl+b (Mac cmd+b) | On a disposable fixture, run Toggle Bold; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleItalics` — Toggle Italics | ctrl+i (Mac cmd+i) | On a disposable fixture, run Toggle Italics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleStrikethrough` — Toggle Strikethrough | unbound | On a disposable fixture, run Toggle Strikethrough; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleHighlight` — Toggle Highlight | unbound | On a disposable fixture, run Toggle Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleHighlightRed` — Toggle Red Highlight | unbound | On a disposable fixture, select a word and run Toggle Red Highlight; confirm `==` and the red emoji wrap it and it renders red; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `markdownWorkshop.toggleHighlightOrange` — Toggle Orange Highlight | unbound | On a disposable fixture, select a word and run Toggle Orange Highlight; confirm `==` and the orange emoji wrap it and it renders orange; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `markdownWorkshop.toggleHighlightYellow` — Toggle Yellow Highlight | unbound | On a disposable fixture, select a word and run Toggle Yellow Highlight; confirm `==` and the yellow emoji wrap it and it renders yellow; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `markdownWorkshop.toggleHighlightGreen` — Toggle Green Highlight | unbound | On a disposable fixture, select a word and run Toggle Green Highlight; confirm `==` and the green emoji wrap it and it renders green; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `markdownWorkshop.toggleHighlightBlue` — Toggle Blue Highlight | unbound | On a disposable fixture, select a word and run Toggle Blue Highlight; confirm `==` and the blue emoji wrap it and it renders blue; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `markdownWorkshop.toggleHighlightPurple` — Toggle Purple Highlight | unbound | On a disposable fixture, select a word and run Toggle Purple Highlight; confirm `==` and the purple emoji wrap it and it renders purple; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
-| `markdownWorkshop.toggleCode` — Toggle Inline Code | unbound | On a disposable fixture, run Toggle Inline Code; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleComment` — Toggle Comment | unbound | On a disposable fixture, run Toggle Comment; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertLink` — Insert Link | ctrl+k (Mac cmd+k) | On a disposable fixture, run Insert Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertHorizontalRule` — Insert Horizontal Rule | unbound | On a disposable fixture, run Insert Horizontal Rule; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertCodeBlock` — Insert Code Block | unbound | On a disposable fixture, run Insert Code Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertTag` — Insert Tag | unbound | On a disposable fixture, run Insert Tag; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.clearFormatting` — Clear Formatting | unbound | On a disposable fixture, run Clear Formatting; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.deleteParagraph` — Delete Paragraph | unbound | On a disposable fixture, run Delete Paragraph; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.addCursorAbove` — Add Cursor Above | unbound | On a disposable fixture, run Add Cursor Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.addCursorBelow` — Add Cursor Below | unbound | On a disposable fixture, run Add Cursor Below; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleBulletList` — Toggle Bullet List | unbound | On a disposable fixture, run Toggle Bullet List; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleNumberedList` — Toggle Numbered List | unbound | On a disposable fixture, run Toggle Numbered List; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleBlockquote` — Toggle Blockquote | unbound | On a disposable fixture, run Toggle Blockquote; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.swapLineUp` — Swap Line Up | unbound | On a disposable fixture, run Swap Line Up; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.swapLineDown` — Swap Line Down | unbound | On a disposable fixture, run Swap Line Down; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading0` — Set Heading 0 | unbound | On a disposable fixture, run Set Heading 0; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading1` — Set Heading 1 | unbound | On a disposable fixture, run Set Heading 1; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading2` — Set Heading 2 | unbound | On a disposable fixture, run Set Heading 2; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading3` — Set Heading 3 | unbound | On a disposable fixture, run Set Heading 3; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading4` — Set Heading 4 | unbound | On a disposable fixture, run Set Heading 4; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading5` — Set Heading 5 | unbound | On a disposable fixture, run Set Heading 5; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setHeading6` — Set Heading 6 | unbound | On a disposable fixture, run Set Heading 6; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.gitDiffEditor.open` — Open Rendered Git Diff | unbound | On a disposable fixture, run Open Rendered Git Diff; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.gitGutter.nextChange` — Go to Next Git Change | alt+f5 | On a disposable fixture, run Go to Next Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.gitGutter.previousChange` — Go to Previous Git Change | shift+alt+f5 | On a disposable fixture, run Go to Previous Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.gitGutter.showChange` — Show Git Change | alt+f3 | On a disposable fixture, run Show Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.graph.open` — Open Vault Graph | unbound | On a disposable fixture, run Open Vault Graph; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.graph.chooseBundle` — Choose Vault Graph Bundle | unbound | On a disposable fixture, run Choose Vault Graph Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertWikilink` — Insert Wikilink | unbound | On a disposable fixture, run Insert Wikilink; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.followLink` — Follow Link | unbound | On a disposable fixture, run Follow Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.openLinkToSide` — Open Link to Side | unbound | On a disposable fixture, run Open Link to Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.openLinkInNewTab` — Open Link in New Tab | unbound | On a disposable fixture, run Open Link in New Tab; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.renameHeading` — Rename Heading… | unbound | On a disposable fixture, run Rename Heading…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleSourceMode` — Toggle Live Preview/Source Mode | unbound | On a disposable fixture, run Toggle Live Preview/Source Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.marp.preview` — Open Marp Preview to the Side | unbound | On a disposable fixture, run Open Marp Preview to the Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.marp.toggle` — Toggle Marp | unbound | On a disposable fixture, run Toggle Marp; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.marp.moveOutside` — Move Marp Deck Outside Bundle | unbound | On a disposable fixture, run Move Marp Deck Outside Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.marp.keepInWorkshop` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.outline.toggle` — Toggle Markdown Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Markdown Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
-| `markdownWorkshop.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workshop; switch to a plain text split and confirm its native symbol shortcut remains available. |
-| `markdownWorkshop.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleFoldProperties` — Toggle Fold Properties | unbound | On a disposable fixture, run Toggle Fold Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.addAlias` — Add Alias | unbound | On a disposable fixture, run Add Alias; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.clearProperties` — Clear File Properties | unbound | On a disposable fixture, run Clear File Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.openCopiedAgentReference` — Open Copied Agent Reference | unbound | On a disposable fixture, run Open Copied Agent Reference; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.showPluginStatus` — Show Plugin Status | unbound | On a disposable fixture, run Show Plugin Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.quickSwitcher` — Quick Switcher | unbound | On a disposable fixture, run Quick Switcher; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.scratch.new` — New Scratch Note | unbound | On a disposable fixture, run New Scratch Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.scratch.promote` — Promote Scratch Note | unbound | On a disposable fixture, run Promote Scratch Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.openSettings` — Open Settings | unbound | On a disposable fixture, run Open Settings; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.changeSetting` — Change Setting… | unbound | On a disposable fixture, run Change Setting…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.setNoteFontSize` — Set Note Font Size | unbound | On a disposable fixture, run Set Note Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.increaseFontSize` — Increase Font Size | unbound | On a disposable fixture, run Increase Font Size twice; confirm the note text grows a pixel each time with no notice, and stops at 30. |
-| `markdownWorkshop.decreaseFontSize` — Decrease Font Size | unbound | On a disposable fixture, run Decrease Font Size twice; confirm the note text shrinks a pixel each time with no notice, and stops at 10. |
-| `markdownWorkshop.toggleLineNumbers` — Toggle Line Numbers | unbound | On a disposable fixture, run Toggle Line Numbers; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | On a disposable fixture, run Toggle Readable Line Width; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleMermaid` — Toggle Mermaid Diagrams | unbound | On a disposable fixture, run Toggle Mermaid Diagrams; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleInlineTitle` — Toggle Inline Title | unbound | On a disposable fixture, run Toggle Inline Title; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleInlineGitChanges` — Toggle Inline Git Changes | unbound | On a disposable fixture, run Toggle Inline Git Changes; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleVim` — Toggle Vim Mode | unbound | On a disposable fixture, run Toggle Vim Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleSpellcheck` — Toggle Spellcheck | unbound | On a disposable fixture, run Toggle Spellcheck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.insertTable` — Insert Table | unbound | On a disposable fixture, run Insert Table; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableInsertRowAbove` — Table: Insert Row Above | unbound | On a disposable fixture, run Table: Insert Row Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableInsertRowBelow` — Table: Insert Row Below | unbound | On a disposable fixture, run Table: Insert Row Below; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableInsertColumnLeft` — Table: Insert Column Left | unbound | On a disposable fixture, run Table: Insert Column Left; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableInsertColumnRight` — Table: Insert Column Right | unbound | On a disposable fixture, run Table: Insert Column Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableDeleteRow` — Table: Delete Row | unbound | On a disposable fixture, run Table: Delete Row; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableDeleteColumn` — Table: Delete Column | unbound | On a disposable fixture, run Table: Delete Column; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableDuplicateRow` — Table: Duplicate Row | unbound | On a disposable fixture, run Table: Duplicate Row; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableDuplicateColumn` — Table: Duplicate Column | unbound | On a disposable fixture, run Table: Duplicate Column; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableMoveRowUp` — Table: Move Row Up | unbound | On a disposable fixture, run Table: Move Row Up; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableMoveRowDown` — Table: Move Row Down | unbound | On a disposable fixture, run Table: Move Row Down; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableMoveColumnLeft` — Table: Move Column Left | unbound | On a disposable fixture, run Table: Move Column Left; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableMoveColumnRight` — Table: Move Column Right | unbound | On a disposable fixture, run Table: Move Column Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableAlignLeft` — Table: Align Left | unbound | On a disposable fixture, run Table: Align Left; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableAlignCenter` — Table: Align Center | unbound | On a disposable fixture, run Table: Align Center; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableAlignRight` — Table: Align Right | unbound | On a disposable fixture, run Table: Align Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableSortAscending` — Table: Sort Ascending | unbound | On a disposable fixture, run Table: Sort Ascending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.tableSortDescending` — Table: Sort Descending | unbound | On a disposable fixture, run Table: Sort Descending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.toggleChecklist` — Toggle Checklist Status | unbound | On a disposable fixture, run Toggle Checklist Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.cycleListChecklist` — Cycle List Checklist | unbound | On a disposable fixture, run Cycle List Checklist; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (Mac ctrl+o); ctrl+b (Mac ctrl+b); ctrl+i (Mac ctrl+i); ctrl+shift+x (Mac ctrl+shift+x); ctrl+k (Mac ctrl+k); ctrl+alt+0 (Mac ctrl+alt+0); ctrl+alt+1 (Mac ctrl+alt+1); ctrl+alt+2 (Mac ctrl+alt+2); ctrl+alt+3 (Mac ctrl+alt+3); ctrl+alt+4 (Mac ctrl+alt+4); ctrl+alt+5 (Mac ctrl+alt+5); ctrl+alt+6 (Mac ctrl+alt+6); ctrl+shift+t (Mac ctrl+shift+t); ctrl+shift+h (Mac ctrl+shift+h) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
-| `markdownWorkshop.wiki.copyForAgent` — Copy Wiki Reference for Agent | unbound | On a disposable fixture, run Copy Wiki Reference for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.wiki.copyEnvelope` — Copy Wiki Bridge Envelope | unbound | On a disposable fixture, run Copy Wiki Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.wiki.showLayout` — Show Wiki Layout | unbound | On a disposable fixture, run Show Wiki Layout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
-| `markdownWorkshop.wiki.refresh` — Refresh Wiki Diagnostics | unbound | On a disposable fixture, run Refresh Wiki Diagnostics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.copyLinkForAgent` — Copy Link for Agent | unbound | On a disposable fixture, run Copy Link for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.cursorBridge.chat` — Cursor Chat with Selection | ctrl+l (Mac cmd+l) | In Cursor with a selection, opens Chat with the selection as context. |
+| `lumiere.markdown.cursorBridge.edit` — Cursor Edit Selection | ctrl+k (Mac cmd+k) | In Cursor with a selection and cursorBridge enabled, opens native Edit. |
+| `lumiere.markdown.assets.import` — Import Asset | unbound | On a disposable fixture, run Import Asset; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.ideContext.copy` — Copy IDE Context | unbound | On a disposable fixture, run Copy IDE Context; confirm clipboard markdown includes active/tabs/diagnostics and no agent opens. Repeat after disable/re-enable. |
+| `lumiere.markdown.ideContext.send` — Send IDE Context to Agent… | unbound | On a disposable fixture, run Send IDE Context to Agent…; confirm clipboard always updates and agent open follows forced/sole-agent/picker rules (never silent-guess). |
+| `lumiere.markdown.bridge.copyEnvelope` — Copy Bridge Envelope | unbound | On a disposable fixture, run Copy Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.bridge.envelope` — Bridge Envelope | unbound | On a disposable fixture, run Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertCallout` — Insert Callout | unbound | On a disposable fixture, run Insert Callout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.save` — Save | unbound | On a disposable fixture, run Save; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.undo` — Undo | unbound | On a disposable fixture, run Undo; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.redo` — Redo | unbound | On a disposable fixture, run Redo; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.close` — Close | unbound | On a disposable fixture, run Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.saveClose` — Save and Close | unbound | On a disposable fixture, run Save and Close; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.openAsText` — Open as Text | unbound | On a disposable fixture, run Open as Text; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.jumpBack` — Go Back in Note | unbound | On a disposable fixture, run Go Back in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.jumpForward` — Go Forward in Note | unbound | On a disposable fixture, run Go Forward in Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.titleActions` — Note Actions | unbound | On a disposable fixture, run Note Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.selectionActions` — Selection Actions | unbound | On a disposable fixture, run Selection Actions; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.useForMarkdownInWorkspace` — Use Lumière for Markdown in This Workspace | unbound | On a disposable fixture, run Use Lumière for Markdown in This Workspace; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertEmbed` — Insert Embed | unbound | On a disposable fixture, run Insert Embed; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.foldAll` — Fold All | unbound | On a disposable fixture, run Fold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.unfoldAll` — Unfold All | unbound | On a disposable fixture, run Unfold All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleFold` — Toggle Fold | unbound | On a disposable fixture, run Toggle Fold; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.foldMore` — Fold More | unbound | On a disposable fixture, run Fold More; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.foldLess` — Fold Less | unbound | On a disposable fixture, run Fold Less; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertFootnote` — Insert Footnote | unbound | On a disposable fixture, run Insert Footnote; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleBold` — Toggle Bold | ctrl+b (Mac cmd+b) | On a disposable fixture, run Toggle Bold; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleItalics` — Toggle Italics | ctrl+i (Mac cmd+i) | On a disposable fixture, run Toggle Italics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleStrikethrough` — Toggle Strikethrough | unbound | On a disposable fixture, run Toggle Strikethrough; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlight` — Toggle Highlight | unbound | On a disposable fixture, run Toggle Highlight; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleHighlightRed` — Toggle Red Highlight | unbound | On a disposable fixture, select a word and run Toggle Red Highlight; confirm `==` and the red emoji wrap it and it renders red; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleHighlightOrange` — Toggle Orange Highlight | unbound | On a disposable fixture, select a word and run Toggle Orange Highlight; confirm `==` and the orange emoji wrap it and it renders orange; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleHighlightYellow` — Toggle Yellow Highlight | unbound | On a disposable fixture, select a word and run Toggle Yellow Highlight; confirm `==` and the yellow emoji wrap it and it renders yellow; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleHighlightGreen` — Toggle Green Highlight | unbound | On a disposable fixture, select a word and run Toggle Green Highlight; confirm `==` and the green emoji wrap it and it renders green; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleHighlightBlue` — Toggle Blue Highlight | unbound | On a disposable fixture, select a word and run Toggle Blue Highlight; confirm `==` and the blue emoji wrap it and it renders blue; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleHighlightPurple` — Toggle Purple Highlight | unbound | On a disposable fixture, select a word and run Toggle Purple Highlight; confirm `==` and the purple emoji wrap it and it renders purple; run it again to remove it, then undo. Repeat inside another colour's highlight to split it. |
+| `lumiere.markdown.toggleCode` — Toggle Inline Code | unbound | On a disposable fixture, run Toggle Inline Code; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleComment` — Toggle Comment | unbound | On a disposable fixture, run Toggle Comment; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertLink` — Insert Link | ctrl+k (Mac cmd+k) | On a disposable fixture, run Insert Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertHorizontalRule` — Insert Horizontal Rule | unbound | On a disposable fixture, run Insert Horizontal Rule; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertCodeBlock` — Insert Code Block | unbound | On a disposable fixture, run Insert Code Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertTag` — Insert Tag | unbound | On a disposable fixture, run Insert Tag; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.clearFormatting` — Clear Formatting | unbound | On a disposable fixture, run Clear Formatting; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.deleteParagraph` — Delete Paragraph | unbound | On a disposable fixture, run Delete Paragraph; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.addCursorAbove` — Add Cursor Above | unbound | On a disposable fixture, run Add Cursor Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.addCursorBelow` — Add Cursor Below | unbound | On a disposable fixture, run Add Cursor Below; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleBulletList` — Toggle Bullet List | unbound | On a disposable fixture, run Toggle Bullet List; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleNumberedList` — Toggle Numbered List | unbound | On a disposable fixture, run Toggle Numbered List; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleBlockquote` — Toggle Blockquote | unbound | On a disposable fixture, run Toggle Blockquote; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.swapLineUp` — Swap Line Up | unbound | On a disposable fixture, run Swap Line Up; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.swapLineDown` — Swap Line Down | unbound | On a disposable fixture, run Swap Line Down; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading0` — Set Heading 0 | unbound | On a disposable fixture, run Set Heading 0; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading1` — Set Heading 1 | unbound | On a disposable fixture, run Set Heading 1; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading2` — Set Heading 2 | unbound | On a disposable fixture, run Set Heading 2; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading3` — Set Heading 3 | unbound | On a disposable fixture, run Set Heading 3; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading4` — Set Heading 4 | unbound | On a disposable fixture, run Set Heading 4; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading5` — Set Heading 5 | unbound | On a disposable fixture, run Set Heading 5; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setHeading6` — Set Heading 6 | unbound | On a disposable fixture, run Set Heading 6; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.gitDiffEditor.open` — Open Rendered Git Diff | unbound | On a disposable fixture, run Open Rendered Git Diff; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.gitGutter.nextChange` — Go to Next Git Change | alt+f5 | On a disposable fixture, run Go to Next Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.gitGutter.previousChange` — Go to Previous Git Change | shift+alt+f5 | On a disposable fixture, run Go to Previous Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.gitGutter.showChange` — Show Git Change | alt+f3 | On a disposable fixture, run Show Git Change; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.graph.open` — Open Vault Graph | unbound | On a disposable fixture, run Open Vault Graph; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.graph.chooseBundle` — Choose Vault Graph Bundle | unbound | On a disposable fixture, run Choose Vault Graph Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertWikilink` — Insert Wikilink | unbound | On a disposable fixture, run Insert Wikilink; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.followLink` — Follow Link | unbound | On a disposable fixture, run Follow Link; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.openLinkToSide` — Open Link to Side | unbound | On a disposable fixture, run Open Link to Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.openLinkInNewTab` — Open Link in New Tab | unbound | On a disposable fixture, run Open Link in New Tab; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.renameHeading` — Rename Heading… | unbound | On a disposable fixture, run Rename Heading…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleSourceMode` — Toggle Live Preview/Source Mode | unbound | On a disposable fixture, run Toggle Live Preview/Source Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.marp.preview` — Open Marp Preview to the Side | unbound | On a disposable fixture, run Open Marp Preview to the Side; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.marp.export` — Export Marp Slide Deck | unbound | On a disposable fixture, run Export Marp Slide Deck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.marp.toggle` — Toggle Marp | unbound | On a disposable fixture, run Toggle Marp; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.marp.moveOutside` — Move Marp Deck Outside Bundle | unbound | On a disposable fixture, run Move Marp Deck Outside Bundle; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.marp.keepInWorkshop` — Keep Marp Deck in Workshop | unbound | On a disposable fixture, run Keep Marp Deck in Workshop; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleInlineMath` — Toggle Inline Math | unbound | On a disposable fixture, run Toggle Inline Math; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertMathBlock` — Insert Math Block | unbound | On a disposable fixture, run Insert Math Block; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outline.expandAll` — Expand All | unbound | On a disposable fixture, run Expand All; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outline.enableFollowCursor` — Follow Cursor | unbound | On a disposable fixture, run Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outline.disableFollowCursor` — ✓ Follow Cursor | unbound | On a disposable fixture, run ✓ Follow Cursor; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.outline.toggle` — Toggle Markdown Outline | Ctrl+Alt+O; macOS Ctrl+Cmd+O | Hide and restore Markdown Outline in the primary sidebar, secondary sidebar and panel; keep unrelated views visible. |
+| `lumiere.markdown.outline.goToHeading` — Go to Heading… | Ctrl+Shift+O; macOS Cmd+Shift+O | Search parsed headings and accept or dismiss the picker in Workshop; switch to a plain text split and confirm its native symbol shortcut remains available. |
+| `lumiere.markdown.addProperty` — Add File Property | ctrl+; (Mac cmd+;) | On a disposable fixture, run Add File Property; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleFoldProperties` — Toggle Fold Properties | unbound | On a disposable fixture, run Toggle Fold Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.addAlias` — Add Alias | unbound | On a disposable fixture, run Add Alias; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.clearProperties` — Clear File Properties | unbound | On a disposable fixture, run Clear File Properties; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.managePlugins` — Manage Plugins | unbound | On a disposable fixture, run Manage Plugins; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.openCopiedAgentReference` — Open Copied Agent Reference | unbound | On a disposable fixture, run Open Copied Agent Reference; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.showPluginStatus` — Show Plugin Status | unbound | On a disposable fixture, run Show Plugin Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.quickSwitcher` — Quick Switcher | unbound | On a disposable fixture, run Quick Switcher; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.scratch.new` — New Scratch Note | unbound | On a disposable fixture, run New Scratch Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.scratch.promote` — Promote Scratch Note | unbound | On a disposable fixture, run Promote Scratch Note; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.openSettings` — Open Settings | unbound | On a disposable fixture, run Open Settings; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.changeSetting` — Change Setting… | unbound | On a disposable fixture, run Change Setting…; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.setNoteFontSize` — Set Note Font Size | unbound | On a disposable fixture, run Set Note Font Size; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.increaseFontSize` — Increase Font Size | unbound | On a disposable fixture, run Increase Font Size twice; confirm the note text grows a pixel each time with no notice, and stops at 30. |
+| `lumiere.markdown.decreaseFontSize` — Decrease Font Size | unbound | On a disposable fixture, run Decrease Font Size twice; confirm the note text shrinks a pixel each time with no notice, and stops at 10. |
+| `lumiere.markdown.toggleLineNumbers` — Toggle Line Numbers | unbound | On a disposable fixture, run Toggle Line Numbers; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleReadableLineWidth` — Toggle Readable Line Width | unbound | On a disposable fixture, run Toggle Readable Line Width; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleMermaid` — Toggle Mermaid Diagrams | unbound | On a disposable fixture, run Toggle Mermaid Diagrams; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleInlineTitle` — Toggle Inline Title | unbound | On a disposable fixture, run Toggle Inline Title; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleInlineGitChanges` — Toggle Inline Git Changes | unbound | On a disposable fixture, run Toggle Inline Git Changes; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleVim` — Toggle Vim Mode | unbound | On a disposable fixture, run Toggle Vim Mode; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleSpellcheck` — Toggle Spellcheck | unbound | On a disposable fixture, run Toggle Spellcheck; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.insertTable` — Insert Table | unbound | On a disposable fixture, run Insert Table; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableInsertRowAbove` — Table: Insert Row Above | unbound | On a disposable fixture, run Table: Insert Row Above; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableInsertRowBelow` — Table: Insert Row Below | unbound | On a disposable fixture, run Table: Insert Row Below; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableInsertColumnLeft` — Table: Insert Column Left | unbound | On a disposable fixture, run Table: Insert Column Left; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableInsertColumnRight` — Table: Insert Column Right | unbound | On a disposable fixture, run Table: Insert Column Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableDeleteRow` — Table: Delete Row | unbound | On a disposable fixture, run Table: Delete Row; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableDeleteColumn` — Table: Delete Column | unbound | On a disposable fixture, run Table: Delete Column; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableDuplicateRow` — Table: Duplicate Row | unbound | On a disposable fixture, run Table: Duplicate Row; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableDuplicateColumn` — Table: Duplicate Column | unbound | On a disposable fixture, run Table: Duplicate Column; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableMoveRowUp` — Table: Move Row Up | unbound | On a disposable fixture, run Table: Move Row Up; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableMoveRowDown` — Table: Move Row Down | unbound | On a disposable fixture, run Table: Move Row Down; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableMoveColumnLeft` — Table: Move Column Left | unbound | On a disposable fixture, run Table: Move Column Left; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableMoveColumnRight` — Table: Move Column Right | unbound | On a disposable fixture, run Table: Move Column Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableAlignLeft` — Table: Align Left | unbound | On a disposable fixture, run Table: Align Left; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableAlignCenter` — Table: Align Center | unbound | On a disposable fixture, run Table: Align Center; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableAlignRight` — Table: Align Right | unbound | On a disposable fixture, run Table: Align Right; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableSortAscending` — Table: Sort Ascending | unbound | On a disposable fixture, run Table: Sort Ascending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.tableSortDescending` — Table: Sort Descending | unbound | On a disposable fixture, run Table: Sort Descending; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.toggleChecklist` — Toggle Checklist Status | unbound | On a disposable fixture, run Toggle Checklist Status; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.cycleListChecklist` — Cycle List Checklist | unbound | On a disposable fixture, run Cycle List Checklist; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.consumeVimHostShortcut` — Consume Vim Host Shortcut | ctrl+o (Mac ctrl+o); ctrl+b (Mac ctrl+b); ctrl+i (Mac ctrl+i); ctrl+shift+x (Mac ctrl+shift+x); ctrl+k (Mac ctrl+k); ctrl+alt+0 (Mac ctrl+alt+0); ctrl+alt+1 (Mac ctrl+alt+1); ctrl+alt+2 (Mac ctrl+alt+2); ctrl+alt+3 (Mac ctrl+alt+3); ctrl+alt+4 (Mac ctrl+alt+4); ctrl+alt+5 (Mac ctrl+alt+5); ctrl+alt+6 (Mac ctrl+alt+6); ctrl+shift+t (Mac ctrl+shift+t); ctrl+shift+h (Mac ctrl+shift+h) | Enable Vim and press the listed keys; host commands must not steal them. This helper stays hidden from the palette. |
+| `lumiere.markdown.wiki.copyForAgent` — Copy Wiki Reference for Agent | unbound | On a disposable fixture, run Copy Wiki Reference for Agent; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.wiki.copyEnvelope` — Copy Wiki Bridge Envelope | unbound | On a disposable fixture, run Copy Wiki Bridge Envelope; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.wiki.showLayout` — Show Wiki Layout | unbound | On a disposable fixture, run Show Wiki Layout; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
+| `lumiere.markdown.wiki.refresh` — Refresh Wiki Diagnostics | unbound | On a disposable fixture, run Refresh Wiki Diagnostics; confirm its named action using the plugin scenarios above, then undo where applicable. Repeat after disable/re-enable and switching panes. |
 
 | Setting | Default | Procedure |
 | --- | --- | --- |
-| `markdownWorkshop.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.cursorBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.ideContext.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.callouts.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.codeBlocks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.diagrams.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.embeds.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.folding.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.footnotes.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.formatting.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.gitDiffEditor.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.gitGutter.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.gitInline.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.graph.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.inlineTitle.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.linkUpdates.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.links.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.marp.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.math.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.obsidianCompat.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.okfCore.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.outgoingLinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.outline.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.pagePreview.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.pasteHtml.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.properties.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.quickSwitcher.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.scratch.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.search.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.sourcesProperty.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.suggest.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.tables.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.tags.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.tasks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.reclaimTextEditor` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.warmTextDocument` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.tabSize` | `4` | integer; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.dragScrollSpeed` | `4` | number 1–10; text-selection auto-scroll multiplier (1 = original CodeMirror speed); Editor scenario 8, then reset the override. |
-| `markdownWorkshop.editor.fontSize` | `16` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.editor.lineHeight` | `1.5` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.folding.heading` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.folding.indent` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.gitDiffEditor.diffEditor` | `"native"` | native / rendered; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.gitGutter.compareTo` | `"HEAD"` | HEAD / index; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.graph.maxNodes` | `2000` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.graph.maxEdges` | `20000` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.graph.defaultMode` | `"global"` | global / local; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.graph.localDepth` | `2` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.graph.colorBy` | `"type"` | type / folder / tag; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.linkUpdates.mode` | `"prompt"` | prompt / always / never; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.links.newLinkFormat` | `"shortest"` | shortest / relative / absolute; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.links.useWikilinks` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.links.folderNote` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.files.newNoteFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.files.attachmentFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.marp.open` | `"workbench"` | workbench / textEditor; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.obsidianCompat.configFolder` | `".obsidian"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.okfCore.bundles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.outline.followCursor` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.scratch.folder` | `"scratch"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.tags.viewSort` | `"name"` | name / frequency; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.tags.viewNested` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.vault.rootMarkers` | `[".obsidian"]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.vault.excludedFiles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.copyLinkForAgent.target` | `"auto"` | auto / cursor / chat / claudeCode / codex / clipboard; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.debug.logging` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
-| `markdownWorkshop.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.agentBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.cursorBridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.assets.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.autoPair.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.backlinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.ideContext.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.bridge.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.callouts.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.codeBlocks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.diagrams.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.embeds.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.folding.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.footnotes.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.formatting.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.gitDiffEditor.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.gitGutter.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.gitInline.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.graph.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.indentGuides.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.inlineTitle.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.lineNumbers.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.linkUpdates.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.links.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.marp.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.math.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.obsidianCompat.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.okfCore.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.onlineVideos.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.outgoingLinks.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.outline.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.pagePreview.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.pasteHtml.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.properties.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.quickSwitcher.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.scratch.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.search.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.smartLists.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.sourcesProperty.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.spellcheck.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.suggest.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.tables.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.tags.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.tasks.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.vim.enabled` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.wiki.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.wordCount.enabled` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.assets.path` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.autoPair.brackets` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.autoPair.markdown` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.defaultMode` | `"livePreview"` | livePreview / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.readableLineLength` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.reclaimTextEditor` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.warmTextDocument` | `"auto"` | auto / on / off; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.strictLineBreaks` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.rightToLeft` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.useTabs` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.tabSize` | `4` | integer; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.dragScrollSpeed` | `4` | number 1–10; text-selection auto-scroll multiplier (1 = original CodeMirror speed); Editor scenario 8, then reset the override. |
+| `lumiere.markdown.editor.fontSize` | `16` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.editor.lineHeight` | `1.5` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.folding.heading` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.folding.indent` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.gitDiffEditor.diffEditor` | `"native"` | native / rendered; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.gitGutter.compareTo` | `"HEAD"` | HEAD / index; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.graph.maxNodes` | `2000` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.graph.maxEdges` | `20000` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.graph.defaultMode` | `"global"` | global / local; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.graph.localDepth` | `2` | number; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.graph.colorBy` | `"type"` | type / folder / tag; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.linkUpdates.mode` | `"prompt"` | prompt / always / never; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.links.newLinkFormat` | `"shortest"` | shortest / relative / absolute; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.links.useWikilinks` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.links.folderNote` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.files.newNoteFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.files.attachmentFolder` | `""` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.marp.open` | `"workbench"` | workbench / textEditor; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.obsidianCompat.configFolder` | `".obsidian"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.okfCore.bundles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.onlineVideos.bilibiliPlayer` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.outline.followCursor` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.properties.display` | `"visible"` | visible / hidden / source; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.scratch.folder` | `"scratch"` | string; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.tags.viewSort` | `"name"` | name / frequency; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.tags.viewNested` | `true` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.vault.rootMarkers` | `[".obsidian"]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.vault.excludedFiles` | `[]` | array; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.copyLinkForAgent.target` | `"auto"` | auto / cursor / chat / claudeCode / codex / clipboard; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.debug.logging` | `false` | boolean; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.plugins.external` | `{}` | object; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
+| `lumiere.markdown.preset` | `"obsidian"` | obsidian / minimal; change at workspace-folder scope, verify the owning plugin scenario, then reset the override. |
 
 Attachment folder is a validated destination policy; this release keeps pasted image links and does not import attachment files. `links.useWikilinks` changes suggestion acceptance; explicit Insert Wikilink retains wiki syntax. Strict line breaks affects rendered Markdown; source text and its line boundaries remain intact. Default mode affects newly opened panes, not restored pane state.
 <!-- command-setting-inventory:end -->
@@ -1328,8 +1328,8 @@ Attachment folder is a validated destination policy; this release keeps pasted i
 
 ## Local precise-jump navigation and restore races
 
-`markdownWorkshop.jumpBack` (**Go Back in Note**) and
-`markdownWorkshop.jumpForward` (**Go Forward in Note**) are unbound commands
+`lumiere.markdown.jumpBack` (**Go Back in Note**) and
+`lumiere.markdown.jumpForward` (**Go Forward in Note**) are unbound commands
 and editor-title buttons. Exercise them in the scenarios below; native cross-file
 history and Vim Control+O/Control+I remain separate.
 
@@ -1402,7 +1402,7 @@ owner's vault for these checks.
 
 In a disposable Git repository, commit a Markdown note with several paragraphs.
 Change paragraph 2 in a second commit with a different author. Open the note in
-Live Preview with `markdownWorkshop.plugins.gitBlame.enabled` on.
+Live Preview with `lumiere.markdown.plugins.gitBlame.enabled` on.
 
 1. Put the main caret on an unchanged committed line. Expect quiet EOL text
    `subject, author (relative time)` (VS Code default blame template), with “You” for matching Git identity. A

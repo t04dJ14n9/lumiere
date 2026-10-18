@@ -1,5 +1,5 @@
 /**
- * Minimal mirror of Markdown Workshop's `parseBridgeEnvelope` (Workbench v1).
+ * Minimal mirror of Lumière's `parseBridgeEnvelope` (Workbench v1).
  * Kept in lockstep with `vscode-markdown-workbench/src/shared/bridge/parse.ts`
  * so PDF unit tests can assert the public command emits a shape Workshop
  * already accepts. Not a full copy of checks.ts — only what PDF envelopes need.

@@ -97,12 +97,12 @@ export class PdfHistories {
     const ready = Boolean(state && !state.busy);
     void vscode.commands.executeCommand(
       "setContext",
-      "pdfWorkshop.historyBack",
+      "lumiere.pdf.historyBack",
       ready && Boolean(state?.history.canGoBack),
     );
     void vscode.commands.executeCommand(
       "setContext",
-      "pdfWorkshop.historyForward",
+      "lumiere.pdf.historyForward",
       ready && Boolean(state?.history.canGoForward),
     );
   }

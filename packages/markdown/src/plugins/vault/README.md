@@ -44,8 +44,8 @@ The VS Code adapter is `src/host/vault-system.ts`; the worker is
   and link text; the vault does not inject that plugin. Registering or
   removing a policy re-resolves links.
 - Emits `vault/changed (root, change)` and `vault/resolved (root)`.
-- Settings: `markdownWorkshop.vault.rootMarkers` (default `[".obsidian"]`),
-  `markdownWorkshop.vault.excludedFiles`, and from `links`: `folderNote` and
+- Settings: `lumiere.markdown.vault.rootMarkers` (default `[".obsidian"]`),
+  `lumiere.markdown.vault.excludedFiles`, and from `links`: `folderNote` and
   `newLinkFormat`.
 
 ## Limits and differences from Obsidian

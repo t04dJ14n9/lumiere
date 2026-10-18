@@ -1,7 +1,7 @@
 # Obsidian Compatibility
 
 Uses a vault's Obsidian property types and eight Files & Links/editor policies in
-Markdown Workshop, like Obsidian's vault configuration. This is a host-only
+Lumière, like Obsidian's vault configuration. This is a host-only
 feature, enabled by default in the Obsidian preset.
 
 ## How it works
@@ -44,8 +44,8 @@ conditionally; the registry is read-only.
 their context. Listens to `editor/opened`, `vault/resolved`, active-note and
 configuration changes; emits `obsidianCompat/changed` with `{vaultRoot}`.
 
-Settings: `markdownWorkshop.plugins.obsidianCompat.enabled` (true) and
-`markdownWorkshop.obsidianCompat.configFolder` (`.obsidian`). Core plugins keep
+Settings: `lumiere.markdown.plugins.obsidianCompat.enabled` (true) and
+`lumiere.markdown.obsidianCompat.configFolder` (`.obsidian`). Core plugins keep
 owning their settings. Supported `app.json` mappings, in rank order:
 
 | Obsidian | Workshop |

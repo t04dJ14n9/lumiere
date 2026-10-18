@@ -11,7 +11,7 @@ test("Markdown Outline title actions expose one checked or unchecked Follow Curs
   const generated = await contributions();
   assert.equal(
     generated.views?.explorer.find(
-      (view) => view.id === "markdownWorkshop.outline",
+      (view) => view.id === "lumiere.markdown.outline",
     )?.name,
     "Markdown Outline",
   );
@@ -39,7 +39,7 @@ test("Markdown Outline title actions expose one checked or unchecked Follow Curs
       ?.title,
     "✓ Follow Cursor",
   );
-  assert.deepEqual(properties["markdownWorkshop.outline.followCursor"], {
+  assert.deepEqual(properties["lumiere.markdown.outline.followCursor"], {
     type: "boolean",
     default: true,
     scope: "resource",
@@ -94,71 +94,71 @@ test("manifest surfaces match the host and webview registries", async () => {
 test("macOS Vim consumes Control keys while preserving Command editor shortcuts", async () => {
   const { keybindings } = await contributions();
   const vim = keybindings.filter(
-    (binding) => binding.command === "markdownWorkshop.consumeVimHostShortcut",
+    (binding) => binding.command === "lumiere.markdown.consumeVimHostShortcut",
   );
   assert.ok(vim.some((binding) => binding.mac === "ctrl+o"));
   assert.ok(vim.some((binding) => binding.mac === "ctrl+i"));
   for (const binding of vim) {
     assert.equal(binding.mac, binding.key);
-    assert.match(binding.when ?? "", /markdownWorkshop\.plugin\.vim/);
+    assert.match(binding.when ?? "", /lumiere\.markdown\.plugin\.vim/);
     assert.match(
       binding.when ?? "",
-      /activeCustomEditorId == 'markdownWorkshop\.editor'/,
+      /activeCustomEditorId == 'lumiere\.markdown\.editor'/,
     );
     assert.ok(!binding.mac?.includes("cmd"));
   }
   assert.ok(
     keybindings.some(
       (binding) =>
-        binding.command === "markdownWorkshop.toggleItalics" &&
+        binding.command === "lumiere.markdown.toggleItalics" &&
         binding.mac === "cmd+i",
     ),
   );
 });
 
-test("Tags and Markdown Outline views require the Markdown Workshop editor", async () => {
+test("Tags and Markdown Outline views require the Lumière editor", async () => {
   const { views } = await contributions();
   assert.ok(views);
   const outline = views.explorer.find(
-    (view) => view.id === "markdownWorkshop.outline",
+    (view) => view.id === "lumiere.markdown.outline",
   );
   const tags = views.explorer.find(
-    (view) => view.id === "markdownWorkshop.tags",
+    (view) => view.id === "lumiere.markdown.tags",
   );
   assert.match(
     outline?.when ?? "",
-    /activeCustomEditorId == 'markdownWorkshop\.editor'/,
+    /activeCustomEditorId == 'lumiere\.markdown\.editor'/,
   );
   assert.match(
     tags?.when ?? "",
-    /activeCustomEditorId == 'markdownWorkshop\.editor'/,
+    /activeCustomEditorId == 'lumiere\.markdown\.editor'/,
   );
 });
 
 test("Toggle Markdown Outline is workbench-scoped in the palette and editor-scoped on Ctrl+Alt+O", async () => {
   const { keybindings, commands, menus } = await contributions();
   const command = commands.find(
-    (entry) => entry.command === "markdownWorkshop.outline.toggle",
+    (entry) => entry.command === "lumiere.markdown.outline.toggle",
   );
   assert.equal(command?.title, "Toggle Markdown Outline");
-  assert.equal(command?.category, "Markdown Workshop");
+  assert.equal(command?.category, "Lumière");
   const paletteWhen =
-    "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.outline.enabled";
+    "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outline.enabled";
   assert.equal(
     menus.commandPalette.find(
-      (item) => item.command === "markdownWorkshop.outline.toggle",
+      (item) => item.command === "lumiere.markdown.outline.toggle",
     )?.when,
     paletteWhen,
   );
   const toggle = keybindings.find(
-    (binding) => binding.command === "markdownWorkshop.outline.toggle",
+    (binding) => binding.command === "lumiere.markdown.outline.toggle",
   );
   assert.ok(toggle);
   assert.equal(toggle.key, "ctrl+alt+o");
   assert.equal(toggle.mac, "ctrl+cmd+o");
   assert.equal(
     toggle.when,
-    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus",
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline && lumiere.markdown.editorFocus",
   );
 });
 
@@ -176,14 +176,14 @@ test("Go to Heading overrides the symbol shortcut only for enabled Workshop pane
   assert.equal(binding.mac, "cmd+shift+o");
   assert.equal(
     binding.when,
-    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline && markdownWorkshop.editorFocus",
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline && lumiere.markdown.editorFocus",
   );
   // Palette stays without editorFocus — Go to Heading is offered whenever the
   // panel is active and the outline plugin is on.
   assert.equal(
     menus.commandPalette.find((item) => item.command === GO_TO_HEADING_COMMAND)
       ?.when,
-    "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.outline",
+    "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.outline",
   );
 });
 
@@ -198,7 +198,7 @@ test("a note's keybindings need the note to have focus, not only to be active", 
     }
     assert.match(
       binding.when ?? "",
-      /&& markdownWorkshop\.editorFocus$/,
+      /&& lumiere\.markdown\.editorFocus$/,
       binding.command,
     );
   }

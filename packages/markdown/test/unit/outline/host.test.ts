@@ -295,9 +295,9 @@ test("Toggle Markdown Outline targets the view's hide command and restores it wi
   fixture.show(true);
   await fixture.fake.commands.get(TOGGLE_COMMAND)!();
   assert.deepEqual(fixture.executed.at(-1), [
-    "markdownWorkshop.outline.removeView",
+    "lumiere.markdown.outline.removeView",
   ]);
   fixture.show(false);
   await fixture.fake.commands.get(TOGGLE_COMMAND)!();
-  assert.deepEqual(fixture.executed.at(-1), ["markdownWorkshop.outline.focus"]);
+  assert.deepEqual(fixture.executed.at(-1), ["lumiere.markdown.outline.focus"]);
 });

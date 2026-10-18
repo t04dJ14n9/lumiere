@@ -1,6 +1,6 @@
 import { defineManifest } from "../../shared/manifest";
 
-const bridgeWhen = "markdownWorkshop.isCursorHost";
+const bridgeWhen = "lumiere.markdown.isCursorHost";
 
 export default defineManifest({
   id: "cursorBridge",

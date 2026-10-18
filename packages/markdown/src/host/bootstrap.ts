@@ -46,7 +46,7 @@ import { createOkfFacade } from "../plugins/okfCore/facade";
 import { createCursorHandoffSurface } from "./cursor-handoff";
 import * as vscode from "vscode";
 /**
- * Start Markdown Workshop's plugins in `root` (the extension's plugin tree;
+ * Start Lumière's plugins in `root` (the extension's plugin tree;
  * tests get a fresh one).
  */
 export async function bootstrap(

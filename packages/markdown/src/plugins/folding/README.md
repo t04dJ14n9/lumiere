@@ -27,7 +27,7 @@ restores valid saved ranges.
 
 Injects `editor` and `commands`; provides `fold`. No kernel events. Contributes
 `folded` view state. `plugins.folding.enabled`, `folding.heading` and
-`folding.indent` under `markdownWorkshop` default to true. Commands: Fold All,
+`folding.indent` under `lumiere.markdown` default to true. Commands: Fold All,
 Unfold All, Toggle Fold, Fold More and Fold Less (`commands.ts`), as in
 Obsidian, measured against it: Fold All folds nested sections too; Toggle Fold
 acts only on a section that starts on the caret's line; Fold More folds the

@@ -27,7 +27,7 @@ export const pdfToolbarPlugin: Plugin = {
     // they would repeat that menu's own page and zoom entries: leave them out.
     void vscode.commands.executeCommand(
       "setContext",
-      "pdfWorkshop.titleActionsInMenu",
+      "lumiere.pdf.titleActionsInMenu",
       titleActionsInMenu(vscode.env.appName),
     );
     // Lifecycle work: the reset is returned, so teardown awaits it.
@@ -36,7 +36,7 @@ export const pdfToolbarPlugin: Plugin = {
         dispose: () =>
           vscode.commands.executeCommand(
             "setContext",
-            "pdfWorkshop.titleActionsInMenu",
+            "lumiere.pdf.titleActionsInMenu",
             false,
           ),
       },

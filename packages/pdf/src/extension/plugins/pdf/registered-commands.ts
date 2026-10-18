@@ -7,81 +7,81 @@ import { PDF_BRIDGE_ENVELOPE_COMMAND } from "../../../shared/bridge-envelope";
  */
 
 export const VIEW_COMMAND_IDS = {
-  previousPage: "pdfWorkshop.previousPage",
-  nextPage: "pdfWorkshop.nextPage",
-  previousPageKeepingPlace: "pdfWorkshop.previousPageKeepingPlace",
-  nextPageKeepingPlace: "pdfWorkshop.nextPageKeepingPlace",
-  zoomIn: "pdfWorkshop.zoomIn",
-  zoomOut: "pdfWorkshop.zoomOut",
-  fitWidth: "pdfWorkshop.fitWidth",
-  fitPage: "pdfWorkshop.fitPage",
-  find: "pdfWorkshop.find",
-  selectTextTool: "pdfWorkshop.selectTextTool",
-  selectRegionTool: "pdfWorkshop.selectRegionTool",
-  goToPage: "pdfWorkshop.goToPage",
-  selectZoom: "pdfWorkshop.selectZoom",
+  previousPage: "lumiere.pdf.previousPage",
+  nextPage: "lumiere.pdf.nextPage",
+  previousPageKeepingPlace: "lumiere.pdf.previousPageKeepingPlace",
+  nextPageKeepingPlace: "lumiere.pdf.nextPageKeepingPlace",
+  zoomIn: "lumiere.pdf.zoomIn",
+  zoomOut: "lumiere.pdf.zoomOut",
+  fitWidth: "lumiere.pdf.fitWidth",
+  fitPage: "lumiere.pdf.fitPage",
+  find: "lumiere.pdf.find",
+  selectTextTool: "lumiere.pdf.selectTextTool",
+  selectRegionTool: "lumiere.pdf.selectRegionTool",
+  goToPage: "lumiere.pdf.goToPage",
+  selectZoom: "lumiere.pdf.selectZoom",
 } as const;
 
 /** Layout, scrolling and the View picker. Suffixes in `view-options.ts` stay short; the full id is only this map. */
 export const VIEW_CONTROL_COMMAND_IDS = {
-  actualSize: "pdfWorkshop.actualSize",
-  singlePage: "pdfWorkshop.singlePage",
-  twoPageSpread: "pdfWorkshop.twoPageSpread",
-  twoPageCover: "pdfWorkshop.twoPageCover",
-  continuousScroll: "pdfWorkshop.continuousScroll",
-  pageByPage: "pdfWorkshop.pageByPage",
-  verticalScroll: "pdfWorkshop.verticalScroll",
-  horizontalScroll: "pdfWorkshop.horizontalScroll",
-  selectView: "pdfWorkshop.selectView",
+  actualSize: "lumiere.pdf.actualSize",
+  singlePage: "lumiere.pdf.singlePage",
+  twoPageSpread: "lumiere.pdf.twoPageSpread",
+  twoPageCover: "lumiere.pdf.twoPageCover",
+  continuousScroll: "lumiere.pdf.continuousScroll",
+  pageByPage: "lumiere.pdf.pageByPage",
+  verticalScroll: "lumiere.pdf.verticalScroll",
+  horizontalScroll: "lumiere.pdf.horizontalScroll",
+  selectView: "lumiere.pdf.selectView",
 } as const;
 
-export const OPEN_NATIVE_LINK_COMMAND_ID = "pdfWorkshop.openNativeLink";
-export const OPEN_LOCATION_COMMAND_ID = "pdfWorkshop.openLocation";
+export const OPEN_NATIVE_LINK_COMMAND_ID = "lumiere.pdf.openNativeLink";
+export const OPEN_LOCATION_COMMAND_ID = "lumiere.pdf.openLocation";
 
 export const SETTINGS_COMMAND_IDS = {
-  openSettings: "pdfWorkshop.openSettings",
-  changeSetting: "pdfWorkshop.changeSetting",
-  toggleSmoothScrolling: "pdfWorkshop.toggleSmoothScrolling",
-  toggleKeyboardShortcuts: "pdfWorkshop.toggleKeyboardShortcuts",
-  setDefaultZoom: "pdfWorkshop.setDefaultZoom",
-  setDefaultPageLayout: "pdfWorkshop.setDefaultPageLayout",
-  setDefaultScrollMode: "pdfWorkshop.setDefaultScrollMode",
+  openSettings: "lumiere.pdf.openSettings",
+  changeSetting: "lumiere.pdf.changeSetting",
+  toggleSmoothScrolling: "lumiere.pdf.toggleSmoothScrolling",
+  toggleKeyboardShortcuts: "lumiere.pdf.toggleKeyboardShortcuts",
+  setDefaultZoom: "lumiere.pdf.setDefaultZoom",
+  setDefaultPageLayout: "lumiere.pdf.setDefaultPageLayout",
+  setDefaultScrollMode: "lumiere.pdf.setDefaultScrollMode",
 } as const;
 
 export const ZEN_COMMAND_IDS = {
-  enterZen: "pdfWorkshop.enterZen",
-  exitZen: "pdfWorkshop.exitZen",
+  enterZen: "lumiere.pdf.enterZen",
+  exitZen: "lumiere.pdf.exitZen",
 } as const;
 
 export const HISTORY_COMMAND_IDS = {
-  historyBack: "pdfWorkshop.historyBack",
-  historyForward: "pdfWorkshop.historyForward",
+  historyBack: "lumiere.pdf.historyBack",
+  historyForward: "lumiere.pdf.historyForward",
 } as const;
 
 export const TOOLBAR_COMMAND_IDS = {
-  selectToolbarMode: "pdfWorkshop.selectToolbarMode",
+  selectToolbarMode: "lumiere.pdf.selectToolbarMode",
 } as const;
 
 export const LOOK_UP_COMMAND_IDS = {
-  lookUp: "pdfWorkshop.lookUp",
+  lookUp: "lumiere.pdf.lookUp",
 } as const;
 
 export const OUTLINE_COMMAND_IDS = {
-  expandOutline: "pdfWorkshop.expandOutline",
-  enableOutlineFollowCursor: "pdfWorkshop.enableOutlineFollowCursor",
-  disableOutlineFollowCursor: "pdfWorkshop.disableOutlineFollowCursor",
-  toggleOutline: "pdfWorkshop.toggleOutline",
-  goToOutlineItem: "pdfWorkshop.goToOutlineItem",
+  expandOutline: "lumiere.pdf.expandOutline",
+  enableOutlineFollowCursor: "lumiere.pdf.enableOutlineFollowCursor",
+  disableOutlineFollowCursor: "lumiere.pdf.disableOutlineFollowCursor",
+  toggleOutline: "lumiere.pdf.toggleOutline",
+  goToOutlineItem: "lumiere.pdf.goToOutlineItem",
 } as const;
 
 export const IDE_CONTEXT_COMMAND_IDS = {
-  copy: "pdfWorkshop.ideContext.copy",
-  send: "pdfWorkshop.ideContext.send",
+  copy: "lumiere.pdf.ideContext.copy",
+  send: "lumiere.pdf.ideContext.send",
 } as const;
 
 export const AGENT_BRIDGE_COMMAND_IDS = {
-  copyLinkForAgent: "pdfWorkshop.copyLinkForAgent",
-  copyMcpSetup: "pdfWorkshop.copyMcpSetup",
+  copyLinkForAgent: "lumiere.pdf.copyLinkForAgent",
+  copyMcpSetup: "lumiere.pdf.copyMcpSetup",
   envelope: PDF_BRIDGE_ENVELOPE_COMMAND,
 } as const;
 

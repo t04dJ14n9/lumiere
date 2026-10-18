@@ -2,7 +2,7 @@
   "name": "@workshop/markdown",
   "version": "0.0.0",
   "private": true,
-  "description": "Markdown Workshop: Obsidian-style Live Preview for VS Code and Cursor.",
+  "description": "Lumière: Obsidian-style Live Preview for VS Code and Cursor.",
   "exports": {
     "./host": "./src/host/extension.ts",
     "./contributions": "./scripts/contributions.ts"

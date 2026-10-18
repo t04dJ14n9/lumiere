@@ -52,7 +52,7 @@ const notes = (
   current: async () => selection,
 });
 
-test("the note selection comes from Markdown Workshop in the same extension", async () => {
+test("the note selection comes from Lumière in the same extension", async () => {
   const text = await noteSelectionText(
     notes({
       uri: vscode.Uri.parse("untitled:Draft.md") as never,
@@ -66,7 +66,7 @@ test("the note selection comes from Markdown Workshop in the same extension", as
   assert.match(text, /the quoted passage/u);
 });
 
-test("without a selection, an open note or Markdown Workshop, the tool says which", async () => {
+test("without a selection, an open note or Lumière, the tool says which", async () => {
   assert.match(
     await noteSelectionText(notes(undefined)),
     /No text is selected/u,

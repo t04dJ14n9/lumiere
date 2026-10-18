@@ -26,7 +26,7 @@ when several workspace folders match. The parser is shared pure logic in
 
 Injects the host services `hostDocuments`, `hostCommands`, `clipboard`, `dialogs`, `settings` and `workspace`, `editors`, `selections`, optional `vaults`. Provides
 no kernel service. The adapter bridges editor/document/vault events to public
-listeners. `markdownWorkshop.plugins.external` controls external providers by ID
+listeners. `lumiere.markdown.plugins.external` controls external providers by ID
 at global, workspace or workspace-folder scope.
 
 Commands, available in every preset (the minimal preset is the safe mode for

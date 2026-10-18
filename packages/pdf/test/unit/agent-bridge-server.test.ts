@@ -219,7 +219,7 @@ test("a failing cleanup step is logged and does not stop the others; dispose sti
 });
 
 test("the controller disposed while the server starts leaves no listener, file or registration once dispose resolves", async () => {
-  vscode.configuration.set("pdfWorkshop.agentBridge.enabled", true);
+  vscode.configuration.set("lumiere.pdf.agentBridge.enabled", true);
   const controller = registerAgentBridge({
     extensionUri: vscode.Uri.file("/nonexistent-extension") as never,
     globalStorageUri: vscode.Uri.file(folder) as never,
@@ -246,7 +246,7 @@ test("the controller disposed while the server starts leaves no listener, file o
 });
 
 test("the controller disposed while the bridge runs waits for it to stop", async () => {
-  vscode.configuration.set("pdfWorkshop.agentBridge.enabled", true);
+  vscode.configuration.set("lumiere.pdf.agentBridge.enabled", true);
   const controller = registerAgentBridge({
     extensionUri: vscode.Uri.file("/nonexistent-extension") as never,
     globalStorageUri: vscode.Uri.file(folder) as never,

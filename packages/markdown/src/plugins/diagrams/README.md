@@ -24,7 +24,7 @@ Pass and plugin disposal restore the source and prevent late results from writin
 ## Services, events and settings
 
 Injects `livePreview` and `render`; provides no services. Listens to `render/fence`;
-emits no events. `markdownWorkshop.plugins.diagrams.enabled` defaults to true.
+emits no events. `lumiere.markdown.plugins.diagrams.enabled` defaults to true.
 No commands or default keybindings.
 
 ## Limits and differences from Obsidian

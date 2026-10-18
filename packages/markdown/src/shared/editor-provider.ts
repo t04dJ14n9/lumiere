@@ -25,8 +25,8 @@ export interface EditorProvider {
 }
 
 export const MARKDOWN_EDITOR: EditorProvider = Object.freeze({
-  viewType: "markdownWorkshop.editor",
-  displayName: "Markdown Workshop",
+  viewType: "lumiere.markdown.editor",
+  displayName: "Lumière",
   filenamePatterns: Object.freeze(["*.md", "*.markdown"]),
   document: "text",
   priority: "option",

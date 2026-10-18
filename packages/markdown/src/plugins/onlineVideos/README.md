@@ -19,7 +19,7 @@ fetched: no title, cover, still or player, and the card says so. The caret
 on the link reveals its Markdown, as for images.
 
 **Play here** (Bilibili only) is off by default because Bilibili's player
-does not play in VS Code (below). `markdownWorkshop.onlineVideos.bilibiliPlayer`
+does not play in VS Code (below). `lumiere.markdown.onlineVideos.bilibiliPlayer`
 turns it back on in trusted workspaces; it then swaps in the provider's
 player.
 
@@ -106,9 +106,9 @@ Checked in VS Code 1.141 (Electron 43, Chromium 150) on 2026-10-09:
 The webview half injects `render` (for workspace trust) and `rpc` (Links
 `open`, `onlineVideos.details`); the host half injects `rpc` and
 the host service `workspace`. No services. Listens to `render/postProcess`.
-`markdownWorkshop.plugins.onlineVideos.enabled` defaults to true; switched
+`lumiere.markdown.plugins.onlineVideos.enabled` defaults to true; switched
 off, the links fall back to Embeds (a remote image).
-`markdownWorkshop.onlineVideos.bilibiliPlayer` defaults to false.
+`lumiere.markdown.onlineVideos.bilibiliPlayer` defaults to false.
 
 ## Limits
 

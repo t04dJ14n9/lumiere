@@ -59,7 +59,7 @@ import {
 import { fakeDocument, fakeHost, withHost } from "../../support/vscode-fake";
 import { extensionManifest } from "../../support/manifest";
 
-/** Markdown Workshop's own entries in the shipped manifest (PDF Workshop's sit beside them). */
+/** Lumière's own entries in the shipped manifest (Lumière PDF's sit beside them). */
 const manifest = extensionManifest();
 const isMarkdownOwned = (id: string) => id.startsWith(SETTING_PREFIX);
 const pkg = {
@@ -90,7 +90,7 @@ test("customEditors viewType matches MARKDOWN_EDITOR (runtime registration id)",
 
 test("every contributed command id equals contributionId(local) and uses Workshop prefix", () => {
   for (const command of contributes.commands) {
-    assert.match(command.command, /^markdownWorkshop\./);
+    assert.match(command.command, /^lumiere\.markdown\./);
     assert.doesNotMatch(command.command, /markdownWorkbench/);
     const local = command.command.slice(SETTING_PREFIX.length);
     assert.equal(command.command, contributionId(local));
@@ -130,7 +130,7 @@ test("tree hosts register open and search commands outside contributes", async (
     .sort();
   assert.deepEqual(capturedOutside, [...outsideContributes].sort());
   for (const id of capturedOutside) {
-    assert.match(id, /^markdownWorkshop\./);
+    assert.match(id, /^lumiere\.markdown\./);
     assert.doesNotMatch(id, /markdownWorkbench/);
   }
   const alsoContributed = [...captured.ids].filter(

@@ -3,7 +3,7 @@
 Shows the note's filename above its content and lets you rename it there, like
 Obsidian's Show inline title setting. Off by default (owner decision,
 2026-10-09), so line 1 starts at the top as in VS Code's text editor; turn on
-`markdownWorkshop.plugins.inlineTitle.enabled`. When on, the title remains
+`lumiere.markdown.plugins.inlineTitle.enabled`. When on, the title remains
 visible in Source mode.
 
 ## How it works
@@ -36,7 +36,7 @@ last. Properties focus uses typed events rather than another plugin's DOM intern
 Webview injects `editor` and `rpc`; host injects `editors` and the host services `hostDocuments`, `hostCommands`, `dialogs` and `settings`.
 Provides no service. Listens to `editor/focusTitle`, `editor/opened`,
 `editor/closed` and `editor/ready`; queries `editor/focusProperties` with bail
-semantics. `markdownWorkshop.plugins.inlineTitle.enabled` defaults to false.
+semantics. `lumiere.markdown.plugins.inlineTitle.enabled` defaults to false.
 The title is out of the Tab order, so a stray Tab or Shift+Tab in the note never
 lands in it; click it or press Up on the first line. Enter/Tab commit to body,
 Escape cancels, Down moves to Properties and Alt+Down

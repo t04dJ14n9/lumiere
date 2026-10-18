@@ -46,8 +46,8 @@ test("Cmd/Ctrl+L and Cmd/Ctrl+K from the webview run Cursor Chat and Edit", asyn
   assert.equal(await client.call(protocol, "handOff", { mode: "chat" }), true);
   assert.equal(await client.call(protocol, "handOff", { mode: "edit" }), true);
   assert.deepEqual(executed, [
-    "markdownWorkshop.cursorBridge.chat",
-    "markdownWorkshop.cursorBridge.edit",
+    "lumiere.markdown.cursorBridge.chat",
+    "lumiere.markdown.cursorBridge.edit",
   ]);
   await root.dispose();
 });

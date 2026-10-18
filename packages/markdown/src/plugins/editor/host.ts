@@ -178,7 +178,7 @@ function registerSelectionContext(
 }
 
 /**
- * `markdownWorkshop.editorFocus`: whether the active note's webview has
+ * `lumiere.markdown.editorFocus`: whether the active note's webview has
  * focus. The note's keybindings require it (see `focus-report.ts`).
  */
 function registerFocusContext(

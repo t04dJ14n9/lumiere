@@ -4,7 +4,7 @@ Creates temporary notes outside the wiki bundle. A note becomes a wiki page only
 
 ## How it works
 
-New Scratch Note asks for a title and writes `YYYY-MM-DD-title.md` in the layout's `scratch` path, or in `markdownWorkshop.scratch.folder` when no layout loaded. The folder is created then. The note has `title` and `captured`, and no `type`. A scratch folder inside the bundle is refused. Promote Scratch Note asks for Concept, Source Summary, Entity or Raw Source, writes that page (fixed H2 sections, `generated.by: human:workbench`) and replaces the scratch note with a portable link. Collection `index.md` is left alone. A Marp deck is not promoted and is not wrapped.
+New Scratch Note asks for a title and writes `YYYY-MM-DD-title.md` in the layout's `scratch` path, or in `lumiere.markdown.scratch.folder` when no layout loaded. The folder is created then. The note has `title` and `captured`, and no `type`. A scratch folder inside the bundle is refused. Promote Scratch Note asks for Concept, Source Summary, Entity or Raw Source, writes that page (fixed H2 sections, `generated.by: human:workbench`) and replaces the scratch note with a portable link. Collection `index.md` is left alone. A Marp deck is not promoted and is not wrapped.
 
 ## Files
 
@@ -18,8 +18,8 @@ New Scratch Note asks for a title and writes `YYYY-MM-DD-title.md` in the layout
 
 - Requires the host services `hostDocuments`, `hostCommands`, `dialogs`, `settings` and `workspace`. Optionally uses `editors` and `wikiLayout`.
 - Does not provide a service.
-- Setting: `markdownWorkshop.scratch.folder` (default `scratch`; a loaded layout wins).
-- Setting: `markdownWorkshop.plugins.scratch.enabled`.
+- Setting: `lumiere.markdown.scratch.folder` (default `scratch`; a loaded layout wins).
+- Setting: `lumiere.markdown.plugins.scratch.enabled`.
 
 ## Limits and differences from Obsidian
 

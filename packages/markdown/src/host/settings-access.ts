@@ -17,7 +17,7 @@ const PREFIX = SETTING_PREFIX;
  */
 /**
  * This extension's contributed settings, read from its package.json. Only
- * `markdownWorkshop.` keys with an object schema are listed; anything else
+ * `lumiere.markdown.` keys with an object schema are listed; anything else
  * in a damaged or unexpected manifest is dropped.
  */
 function contributed(packageJSON: unknown): readonly ContributedSetting[] {
@@ -56,7 +56,7 @@ function own(
 ): ContributedSetting {
   const setting = settings.find((item) => item.key === `${PREFIX}${key}`);
   if (!setting) {
-    throw new Error(`${PREFIX}${key} is not a Markdown Workshop setting.`);
+    throw new Error(`${PREFIX}${key} is not a Lumière setting.`);
   }
   return setting;
 }

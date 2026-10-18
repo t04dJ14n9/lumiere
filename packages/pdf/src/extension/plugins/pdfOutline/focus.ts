@@ -1,17 +1,17 @@
 /** Built-in Explorer Outline view (`IOutlinePane.Id`). */
 export const NATIVE_OUTLINE_ID = "outline";
 
-export const PDF_OUTLINE_VIEW_ID = "pdfWorkshop.outline";
+export const PDF_OUTLINE_VIEW_ID = "lumiere.pdf.outline";
 
-/** PDF Workshop custom editor view type. */
-export const PDF_WORKSHOP_EDITOR = "pdfWorkshop.viewer";
+/** Lumière PDF custom editor view type. */
+export const PDF_WORKSHOP_EDITOR = "lumiere.pdf.viewer";
 
-/** Markdown Workshop custom editor view type (peer product). */
-export const MARKDOWN_WORKSHOP_EDITOR = "markdownWorkshop.editor";
+/** Lumière custom editor view type (peer product). */
+export const MARKDOWN_WORKSHOP_EDITOR = "lumiere.markdown.editor";
 
 /**
- * Delay before restoring the native Outline after leaving a PDF Workshop
- * editor. Lets a Markdown Workshop tab take over without flashing Outline.
+ * Delay before restoring the native Outline after leaving a Lumière PDF
+ * editor. Lets a Lumière tab take over without flashing Outline.
  */
 export const LEAVE_RESTORE_MS = 120;
 
@@ -27,10 +27,10 @@ export type OutlineFocusOptions = {
   focusEditor: () => Thenable<unknown>;
   /**
    * Active tab's custom editor viewType, if any. Used to abort native Outline
-   * restore when Markdown or PDF Workshop already owns the sidebar swap.
+   * restore when Markdown or Lumière PDF already owns the sidebar swap.
    */
   activeCustomEditorViewType?: () => string | undefined;
-  /** This product's custom editor id (defaults to PDF Workshop). */
+  /** This product's custom editor id (defaults to Lumière PDF). */
   ownEditorViewType?: string;
   outlineViewId?: string;
   leaveDelayMs?: number;
@@ -62,7 +62,7 @@ type ResolvedFocus = {
 };
 
 /**
- * One-shot sidebar swap while a PDF Workshop custom editor is active: hide the
+ * One-shot sidebar swap while a Lumière PDF custom editor is active: hide the
  * native Outline, show PDF Outline, then restore native Outline on leave
  * (debounced for Workshop↔Markdown handoffs).
  */

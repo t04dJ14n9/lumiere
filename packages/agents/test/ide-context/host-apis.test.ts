@@ -24,7 +24,7 @@ function facade() {
               tab("vscode-terminal:/1"),
               tab("file:///unknown", "unknown"),
               {
-                input: { viewType: "markdownWorkshop.editor" },
+                input: { viewType: "lumiere.markdown.editor" },
                 isActive: false,
               },
               { input: { terminal: {} }, isActive: false },
@@ -41,8 +41,8 @@ function facade() {
             isActive: true,
             tabs: [
               tab("file:///text", undefined, true),
-              tab("file:///md", "markdownWorkshop.editor"),
-              tab("file:///pdf", "pdfWorkshop.viewer"),
+              tab("file:///md", "lumiere.markdown.editor"),
+              tab("file:///pdf", "lumiere.pdf.viewer"),
               tab("file:///text"),
             ],
           },

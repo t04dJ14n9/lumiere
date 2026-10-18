@@ -1,6 +1,6 @@
 # Quick switcher
 
-**Markdown Workshop: Quick Switcher** finds a note by name, alias or path and
+**Lumière: Quick Switcher** finds a note by name, alias or path and
 opens it, or creates it when no note has that name. This is Obsidian's
 **Quick switcher** core plugin.
 
@@ -24,8 +24,8 @@ a name no note has, creates it in the new-note folder.
 ## Services, events and settings
 
 - Injects the host services `hostCommands`, `dialogs`, `activeEditor`, `settings` and `navigation`, plus `vaults`.
-- Settings: `markdownWorkshop.plugins.quickSwitcher.enabled`,
-  `markdownWorkshop.files.newNoteFolder`.
+- Settings: `lumiere.markdown.plugins.quickSwitcher.enabled`,
+  `lumiere.markdown.files.newNoteFolder`.
 
 ## Limits and differences from Obsidian
 

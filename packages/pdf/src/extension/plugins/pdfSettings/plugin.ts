@@ -12,7 +12,7 @@ import { openSettingsEditor } from "../../settings-editor";
 import manifest from "./manifest";
 import { SETTINGS_COMMAND_IDS } from "../pdf/registered-commands";
 
-const VIEW = "pdfWorkshop.view";
+const VIEW = "lumiere.pdf.view";
 
 const read = <T>(key: string, fallback: T): T =>
   vscode.workspace.getConfiguration().get<T>(key, fallback);
@@ -85,8 +85,8 @@ async function toggleSmoothScrolling(settings: PdfSettings): Promise<void> {
 }
 
 async function toggleKeyboardShortcuts(settings: PdfSettings): Promise<void> {
-  const on = read("pdfWorkshop.keyboardShortcuts", true);
-  await settings.update("pdfWorkshop.keyboardShortcuts", !on);
+  const on = read("lumiere.pdf.keyboardShortcuts", true);
+  await settings.update("lumiere.pdf.keyboardShortcuts", !on);
   say(`keyboard shortcuts ${on ? "off" : "on"}`);
 }
 

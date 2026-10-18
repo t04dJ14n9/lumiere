@@ -20,22 +20,22 @@ scrolls that offset to the vertical centre of the editor, as VS Code's Outline
 note the scroll range ends first, so the heading stays above or below the
 centre.
 
-Ctrl+Shift+O (Command+Shift+O on macOS), or **Markdown Workshop: Go to
+Ctrl+Shift+O (Command+Shift+O on macOS), or **Lumière: Go to
 Heading…** in the command palette, opens a searchable heading picker. It reads
 the active panel's authoritative text, shows heading levels and parent titles,
 and navigates through the same path as the tree. Dismissed or stale picks
 (edited document, changed panel or stopped plugin) do not navigate.
 
 Ctrl+Alt+O (Control+Command+O on macOS) toggles Markdown Outline while the Workshop
-editor is active (editor-scoped keybinding, so PDF Workshop keeps the same keys).
+editor is active (editor-scoped keybinding, so Lumière PDF keeps the same keys).
 The command palette entry is workbench/config-gated like Quick Switcher. Hiding
 targets the view itself, including after moving it to the secondary sidebar or
 panel; showing restores and focuses it in its current location.
 
-When a Markdown Workshop editor becomes active, the plugin hides VS Code's
+When a Lumière editor becomes active, the plugin hides VS Code's
 native **Outline**, shows **Markdown Outline** and **Tags**, then returns focus to
 the editor. Leaving the last Workshop editor restores the native Outline after a
-short debounce; restore is skipped if PDF Workshop (or another Workshop editor) already owns the active tab. Manual
+short debounce; restore is skipped if Lumière PDF (or another Workshop editor) already owns the active tab. Manual
 changes to Outline while a Workshop editor stays active are left alone until the
 next enter/leave. Tags also use the same `activeCustomEditorId` when-clause as
 Markdown Outline so they do not linger beside non-Workshop editors.
@@ -61,17 +61,17 @@ Markdown Outline so they do not linger beside non-Workshop editors.
   `editor/activeChanged`, `editor/selectionChanged` and `document/changed`,
   plus native configuration and tree visibility changes. Emits no events and
   provides no services.
-- Maintains `markdownWorkshop.plugin.outline` while the window plugin is
+- Maintains `lumiere.markdown.plugin.outline` while the window plugin is
   running, so editor-scoped shortcuts (Go to Heading, Ctrl+Alt+O) reflect its
   lifetime. The Toggle Markdown Outline palette entry uses workbench/config gating.
-- Settings: `markdownWorkshop.plugins.outline.enabled` and
-  `markdownWorkshop.outline.followCursor` (default `true`, resource-scoped).
-- Commands: `markdownWorkshop.outline.expandAll`,
-  `markdownWorkshop.outline.enableFollowCursor`,
-  `markdownWorkshop.outline.disableFollowCursor` and
-  `markdownWorkshop.outline.toggle` and `markdownWorkshop.outline.goToHeading`;
+- Settings: `lumiere.markdown.plugins.outline.enabled` and
+  `lumiere.markdown.outline.followCursor` (default `true`, resource-scoped).
+- Commands: `lumiere.markdown.outline.expandAll`,
+  `lumiere.markdown.outline.enableFollowCursor`,
+  `lumiere.markdown.outline.disableFollowCursor` and
+  `lumiere.markdown.outline.toggle` and `lumiere.markdown.outline.goToHeading`;
   internal navigation uses
-  `markdownWorkshop.outline.open`.
+  `lumiere.markdown.outline.open`.
 
 ## Limits and differences from Obsidian
 

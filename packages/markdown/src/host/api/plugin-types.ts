@@ -89,7 +89,7 @@ export interface PublicServices {
     error(message: string, detail?: unknown): void;
   };
 }
-/** A link click in an editor, before Markdown Workshop opens it (DESIGN §16). */
+/** A link click in an editor, before Lumière opens it (DESIGN §16). */
 export interface LinkRequest {
   readonly editorId: string;
   readonly href: string;
@@ -125,7 +125,7 @@ export interface ExternalPlugin {
   readonly ownerExtensionId: string;
   readonly title: string;
   readonly description: string;
-  /** Overridden by `markdownWorkshop.plugins.external`. */
+  /** Overridden by `lumiere.markdown.plugins.external`. */
   readonly defaultEnabled: boolean;
   readonly inject?: {
     readonly required?: readonly (keyof PublicServices)[];

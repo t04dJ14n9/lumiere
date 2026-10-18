@@ -287,7 +287,7 @@ test("Vim carets match the built-in editor's block, line and underline in the re
     "editor.lineHeight": 24,
     "editor.cursorBlinking": "solid",
     "editor.cursorSmoothCaretAnimation": "off",
-    "markdownWorkshop.plugins.vim.enabled": true,
+    "lumiere.markdown.plugins.vim.enabled": true,
   };
   const style = (cursorStyle: string) =>
     writeFileSync(
@@ -331,7 +331,7 @@ test("Vim carets match the built-in editor's block, line and underline in the re
       );
     }
 
-    await reopenWith(page, "Markdown Workshop");
+    await reopenWith(page, "Lumière");
     const frame = await workbenchFrame(page);
     const editor = frame.getByRole("textbox", { name: "Markdown content" });
     await editor.click();

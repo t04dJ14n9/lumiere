@@ -24,7 +24,7 @@ the editor or unrelated plugin state; disposal removes the registrations.
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
 `plugins.autoPair.enabled`, `autoPair.brackets` and `autoPair.markdown` under
-`markdownWorkshop` all default to true. No palette commands.
+`lumiere.markdown` all default to true. No palette commands.
 
 ## Limits and differences from Obsidian
 

@@ -1,5 +1,5 @@
 /**
- * A complete external plugin for Markdown Workshop API v1 (API.md).
+ * A complete external plugin for Lumière API v1 (API.md).
  *
  * - Markers: a "TODO" badge after every TODO in an open note; clicking one
  *   runs a host action.
@@ -99,7 +99,7 @@ export function ticketsPlugin(code: VSCode): ExternalPlugin {
       });
 
       // The first plugin to return true claims the link; returning
-      // undefined lets Markdown Workshop open it as usual.
+      // undefined lets Lumière open it as usual.
       const openTicket = async (number: string): Promise<true> => {
         const base = code.workspace
           .getConfiguration("mwsampleTickets")

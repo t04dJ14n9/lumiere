@@ -14,7 +14,7 @@ export { outputLogger } from "./logging";
 export type { MarkdownWorkshopApi } from "./api/types";
 
 /**
- * Start Markdown Workshop in the extension's plugin tree and return its
+ * Start Lumière in the extension's plugin tree and return its
  * public API. The tree's owner stops it on deactivation.
  */
 export async function startMarkdown(

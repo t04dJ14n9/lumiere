@@ -18,7 +18,7 @@ async function editorFrame(page: Page): Promise<Frame> {
       return frame;
     }
   }
-  throw new Error("No Markdown Workshop frame");
+  throw new Error("No Lumière frame");
 }
 
 /** Settings.json changes reach the open note live, without reloading it. */
@@ -29,7 +29,7 @@ function setSettings(file: string, original: string, extra: object) {
   );
 }
 
-test("markdownWorkshop.editor.fontSize sets the note's body size (16px by default, never editor.fontSize) and everything scales with it, live", async () => {
+test("lumiere.markdown.editor.fontSize sets the note's body size (16px by default, never editor.fontSize) and everything scales with it, live", async () => {
   const settingsFile = path.join(paths.userData, "User", "settings.json");
   const original = readFileSync(settingsFile, "utf8");
   const note = path.join(paths.workspace, "Note.md");
@@ -62,7 +62,7 @@ test("markdownWorkshop.editor.fontSize sets the note's body size (16px by defaul
         "[markdown]": { "editor.fontSize": 31, "editor.lineHeight": 44 },
         ...(size === undefined
           ? {}
-          : { "markdownWorkshop.editor.fontSize": size }),
+          : { "lumiere.markdown.editor.fontSize": size }),
       });
       const expected = size ?? 16;
       await expect.poll(async () => (await sizes(frame)).body).toBe(expected);

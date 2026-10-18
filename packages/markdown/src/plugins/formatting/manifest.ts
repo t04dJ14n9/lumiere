@@ -27,7 +27,7 @@ export default defineManifest({
         key: "ctrl+k",
         mac: "cmd+k",
         // Cursor owns the key; Insert Link remains available in the palette.
-        when: "!markdownWorkshop.isCursorHost",
+        when: "!lumiere.markdown.isCursorHost",
       },
     ],
     commands: [

@@ -95,7 +95,7 @@ Provides no service. Listens to
 `editor/clearProjection`, `editor/projectSelection` and `editor/activeView`;
 emits `editor/scrollInput` for vertical table wheel input and sends the validated
 editor `selectionChanged` notification. The feature switch
-is `markdownWorkshop.plugins.tables.enabled`; it has no separate configuration.
+is `lumiere.markdown.plugins.tables.enabled`; it has no separate configuration.
 
 ## Limits and differences from Obsidian
 

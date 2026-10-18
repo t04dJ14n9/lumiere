@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "about": "Agent handoff text shared by Markdown Workshop and PDF Workshop (docs/agent-handoff-format.md). PDF clipboard is link + blockquote (no Source:/SHA/cite).",
+  "about": "Agent handoff text shared by Lumière and Lumière PDF (docs/agent-handoff-format.md). PDF clipboard is link + blockquote (no Source:/SHA/cite).",
   "noteReferences": [
     {
       "path": "notes/a.md",

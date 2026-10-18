@@ -11,7 +11,7 @@ import {
 } from "../../../shared/view-settings";
 import type { PdfPanels } from "./panels";
 
-const SECTION = "pdfWorkshop.view";
+const SECTION = "lumiere.pdf.view";
 
 /** Defaults for new views; saved positions are read once, independently by each panel. */
 export class ViewPreferences implements vscode.Disposable {
@@ -76,6 +76,6 @@ export class ViewPreferences implements vscode.Disposable {
   }
 
   private key(uri: vscode.Uri): string {
-    return `pdfWorkshop.readingPosition:${uri.toString()}`;
+    return `lumiere.pdf.readingPosition:${uri.toString()}`;
   }
 }

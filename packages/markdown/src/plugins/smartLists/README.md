@@ -34,7 +34,7 @@ ordered ones numbered again (`paste.ts`).
 ## Services, events and settings
 
 Injects `editor`; provides no service and listens to/emits no kernel events.
-`markdownWorkshop.plugins.smartLists.enabled` defaults to true. Enter and
+`lumiere.markdown.plugins.smartLists.enabled` defaults to true. Enter and
 Shift+Enter are the only bindings; no palette commands.
 
 ## Limits and differences from Obsidian

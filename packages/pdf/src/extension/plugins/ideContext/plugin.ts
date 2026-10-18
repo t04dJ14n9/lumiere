@@ -107,7 +107,7 @@ function inform(message: string): void {
 /** Send IDE Context's target setting and its VS Code side. */
 async function sendDeps(): Promise<SendIdeContextDeps> {
   const setting = vscode.workspace
-    .getConfiguration("pdfWorkshop")
+    .getConfiguration("lumiere.pdf")
     .get<AgentTargetSetting>("copyLinkForAgent.target", "auto");
   return {
     setting: setting as IdeContextTargetSetting,

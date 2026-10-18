@@ -123,7 +123,7 @@ test("all public event channels isolate listeners, preserve panel identity and u
   f.api.onDidResolveLinks((event) => events.push(`vault:${event.vault}`));
   f.root.emit("editor/opened", f.panel);
   f.root.emit("editor/activeChanged", f.panels[1]);
-  // A text document no Markdown Workshop editor shows is not reported.
+  // A text document no Lumière editor shows is not reported.
   f.emitDocument({ ...f.panel.document, id: "settings.json" });
   f.emitDocument();
   f.root.emit("editor/selectionChanged", f.panel, true);

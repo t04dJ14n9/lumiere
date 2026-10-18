@@ -8,7 +8,7 @@ test("the Settings editor opens through runCommands, so its result never crosses
     calls.push(call);
     return undefined;
   };
-  await openSettingsEditor(execute, "@ext:t04dj14n9.vscode-workshop");
+  await openSettingsEditor(execute, "@ext:t04dj14n9.lumiere");
   const resource = { scheme: "file", path: "/vault" } as never;
   await openSettingsEditor(execute, { query: "@ext:x plugins", resource });
   assert.deepEqual(calls, [
@@ -18,7 +18,7 @@ test("the Settings editor opens through runCommands, so its result never crosses
         commands: [
           {
             command: "workbench.action.openSettings",
-            args: "@ext:t04dj14n9.vscode-workshop",
+            args: "@ext:t04dj14n9.lumiere",
           },
         ],
       },

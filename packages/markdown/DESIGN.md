@@ -1,10 +1,10 @@
-# Markdown Workshop — design and architecture
+# Lumière — design and architecture
 
 Status: design, 7 October 2026. Audience: the agent implementing it (Codex)
 and the owner reviewing it. Read this document, then
 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), before writing code.
 
-Markdown Workshop is a VS Code and Cursor extension that edits Markdown the
+Lumière is a VS Code and Cursor extension that edits Markdown the
 way Obsidian does: one CodeMirror 6 surface in Live Preview, where Markdown
 renders in place and reveals its syntax around the caret. It is extracted from
 LLM Wiki for VS Code (`~/Code/human-learning`), as PDF Workbench
@@ -17,7 +17,7 @@ plugin**.
 
 | Topic | Decision |
 | --- | --- |
-| Identity | Display name **Markdown Workshop**, one half of the extension **Workshop: Markdown and PDF** (package `vscode-workshop`, publisher `t04dj14n9`, extension ID `t04dj14n9.vscode-workshop`); editor view type `markdownWorkshop.editor`; settings, commands and context keys under `markdownWorkshop.` |
+| Identity | Display name **Lumière**, one half of the extension **Lumière: Markdown Editor and PDF Reader** (package `lumiere`, publisher `t04dj14n9`, extension ID `t04dj14n9.lumiere`); editor view type `lumiere.markdown.editor`; settings, commands and context keys under `lumiere.markdown.` |
 | Source to extract | `claude/markdown-integration` at `ff3a902ef4ec50a136455c0cf2ccaff698682a06` in `~/Code/human-learning`. Not `main`, whose 4,900-line `webview-src/markdown-editor.ts` it supersedes |
 | Architecture | `@workshop/core` (on Cordis) runs in the extension host, in each webview and in unit tests. Every capability, the core ones included, is a plugin that injects services, provides services, owns effects and extends others through typed events |
 | Behaviour reference | Obsidian 1.13.7 as observed, plus the 1.12.7 source study. Implement behaviour independently; never copy Obsidian code |
@@ -196,7 +196,7 @@ export const backlinksHost: Plugin = {
   inject: { required: ['vaults', 'hostCommands', 'views', 'activeEditor'] },
   apply(ctx) {
     const view = new BacklinksView(ctx.vaults, ctx.activeEditor);
-    ctx.effect(() => ctx.views.tree('markdownWorkshop.backlinks', view));
+    ctx.effect(() => ctx.views.tree('lumiere.markdown.backlinks', view));
     ctx.on('vault/resolved', () => view.refresh());
   },
 };
@@ -305,8 +305,8 @@ array, object, record. That covers every setting in §15.
 - Core errors are `CoreError` with codes such as `UndeclaredService`,
   `DuplicateService` and `Disposed`.
 - Each fiber has a `Logger` tagged with the plugin name. The host writes to the
-  **Markdown Workshop** output channel; webview logs are forwarded over RPC at
-  `warn` and above, plus all levels when `markdownWorkshop.debug.logging` is
+  **Lumière** output channel; webview logs are forwarded over RPC at
+  `warn` and above, plus all levels when `lumiere.markdown.debug.logging` is
   on. Load and stop timings are logged.
 - **Show Plugin Status** lists every fiber per open editor: active, pending
   (and what for), failed (and why), disabled.
@@ -459,7 +459,7 @@ with `contributes`, allows `editorProvider` only on `editor`, and requires
 
 ### 6.3 Enabling, disabling and presets
 
-- Each `feature` plugin has `markdownWorkshop.plugins.<id>.enabled`
+- Each `feature` plugin has `lumiere.markdown.plugins.<id>.enabled`
   (resource scope, default from the manifest). `core` plugins have no switch.
 - A **preset** is the list of plugins the root context loads:
   - `obsidian` (default): everything in §13 that is enabled;
@@ -467,14 +467,14 @@ with `contributes`, allows `editorProvider` only on `editor`, and requires
     gives a plain CodeMirror Markdown source editor that stays synchronized,
     saves and undoes. It is the safe mode for diagnosing a plugin, like
     Obsidian's restricted mode.
-  - Chosen by `markdownWorkshop.preset`.
+  - Chosen by `lumiere.markdown.preset`.
 - Turning a plugin off disposes its fibers in every runtime at once. Its
   CodeMirror extensions leave their compartments, its decorations disappear
   and its widgets re-render as source. No reload is needed.
 - A plugin can inject another plugin's service. If the provider is off, the
   consumer is `pending` and the status shows it blocked.
 - External overrides (plugins from other extensions) use
-  `markdownWorkshop.plugins.external` (`{ [id]: boolean }`), as in PDF
+  `lumiere.markdown.plugins.external` (`{ [id]: boolean }`), as in PDF
   Workbench.
 
 ### 6.4 Generated contributions
@@ -483,10 +483,10 @@ VS Code needs static `contributes`. `scripts/generate-contributions.ts` builds
 `configuration`, `commands`, `menus`, `keybindings`, `views` and
 `viewsWelcome` from the manifests:
 
-- `when` clauses are ANDed with `markdownWorkshop.plugin.<id>` (a context key
+- `when` clauses are ANDed with `lumiere.markdown.plugin.<id>` (a context key
   the host sets while that plugin is active for the active editor) and, for
-  editor commands, `activeCustomEditorId == 'markdownWorkshop.editor'`.
-  Their keybindings also need `markdownWorkshop.editorFocus` (the active
+  editor commands, `activeCustomEditorId == 'lumiere.markdown.editor'`.
+  Their keybindings also need `lumiere.markdown.editorFocus` (the active
   note's webview has focus): `activeCustomEditorId` stays set while focus is
   elsewhere, and an extension binding outranks a built-in one for the same
   key.
@@ -496,8 +496,8 @@ VS Code needs static `contributes`. `scripts/generate-contributions.ts` builds
 
 ### 6.5 Plugin management UI
 
-As in PDF Workbench: **Markdown Workshop: Manage Plugins** opens Settings
-filtered to `markdownWorkshop.plugins`, and **Show Plugin Status** shows a
+As in PDF Workbench: **Lumière: Manage Plugins** opens Settings
+filtered to `lumiere.markdown.plugins`, and **Show Plugin Status** shows a
 quick pick of states for the active editor. `setPluginEnabled` and
 `resetPluginOverride` take an explicit scope (user, workspace, folder).
 
@@ -861,7 +861,7 @@ One function, `revealed(state, from, to, kind)`, used by every renderer:
 ### 11.5 Modes and motion
 
 - **Live Preview** and **Source mode**, per view. The default comes from
-  `markdownWorkshop.editor.defaultMode`. **Toggle Live Preview/Source Mode**
+  `lumiere.markdown.editor.defaultMode`. **Toggle Live Preview/Source Mode**
   switches the active view. Source mode removes all Live Preview decorations
   and shows properties as YAML; the inline title stays.
 - Vertical motion: ArrowUp and ArrowDown step over a rendered block as one
@@ -887,7 +887,7 @@ The vault index replaces all of them, following Obsidian's MetadataCache.
 ### 12.1 Vault root
 
 A vault is the nearest ancestor folder of a note, within its workspace
-folder, that contains a marker from `markdownWorkshop.vault.rootMarkers`
+folder, that contains a marker from `lumiere.markdown.vault.rootMarkers`
 (default `[".obsidian"]`; LLM Wiki users add `"SCHEMA.md"`). With no marker,
 the workspace folder is the vault. A note outside any workspace folder is a
 one-note vault: no index, and links resolve relative to its folder.
@@ -929,7 +929,7 @@ interface VaultIndex {
 - Open documents count with their unsaved text: `document/changed` re-indexes
   a note from its `TextDocument`, debounced to 300 ms.
 - Ignored: hidden folders (`.git`, `.obsidian`, `.trash`) and
-  `node_modules`. `markdownWorkshop.vault.excludedFiles` is Obsidian's
+  `node_modules`. `lumiere.markdown.vault.excludedFiles` is Obsidian's
   **Excluded files** and behaves as it does there: excluded files are still
   indexed and links to them resolve, but they are flagged `excluded`, and the
   quick switcher, suggestions, search and unlinked mentions leave them out. A
@@ -951,7 +951,7 @@ interface VaultIndex {
    distance from the source (same folder first), then by path. The first
    wins; `resolveLinkCandidates` returns all of them.
 
-A folder link resolves to `markdownWorkshop.links.folderNote` inside it when
+A folder link resolves to `lumiere.markdown.links.folderNote` inside it when
 that setting is set (default empty; LLM Wiki uses `_index.md`), and otherwise
 reveals the folder in the Explorer.
 
@@ -1059,7 +1059,7 @@ Short specifications, beyond the source's tested behaviour:
   `vault.backlinks`, keeping aliases, subpaths and the link style. The default,
   `prompt`, shows a **Update links in N files?** dialog; `always` and `never`
   skip it. Heading renames are a later enhancement.
-- **quickSwitcher**: **Markdown Workshop: Quick Switcher** opens a quick pick
+- **quickSwitcher**: **Lumière: Quick Switcher** opens a quick pick
   over notes, aliases and unresolved links, with Obsidian's scoring. Enter
   opens; an unresolved or new name creates the note in the configured
   new-note folder.
@@ -1078,7 +1078,7 @@ Short specifications, beyond the source's tested behaviour:
 
 Editor commands are registered in the webview under Obsidian IDs
 (`ctx.commands.register('editor:toggle-bold', run)`). Their manifests declare
-the VS Code command `markdownWorkshop.<name>`, which the generator routes to
+the VS Code command `lumiere.markdown.<name>`, which the generator routes to
 the active editor. They work in the command palette, keybindings and menus.
 
 | VS Code command | Obsidian ID | Plugin | Default key |
@@ -1119,7 +1119,7 @@ Rules:
   (Settings → Hotkeys) before it is bound. Record the observation (§21.4).
 - Host shortcuts that collide with editor keys while the editor has focus
   (Vim's Ctrl-O, Ctrl-B and others) are consumed only while the `vim` plugin is
-  active (`markdownWorkshop.plugin.vim` context key), as the source's
+  active (`lumiere.markdown.plugin.vim` context key), as the source's
   `consumeVimHostShortcut` does. The list moves to the `vim` manifest.
 - The editor title bar keeps **Add File Property** and **Open as Text**
   (Copy for Agent was removed by owner decision, §17). **Toggle Outline** goes away
@@ -1134,7 +1134,7 @@ Rules:
 
 ## 15. Settings
 
-### 15.1 Editor settings (Obsidian → Markdown Workshop)
+### 15.1 Editor settings (Obsidian → Lumière)
 
 Defaults are Obsidian's application defaults, except where the owner decided
 otherwise (2026-10-09): line numbers on, readable line length off, Mermaid on.
@@ -1143,21 +1143,21 @@ default (§25).
 
 | Obsidian setting | Setting or plugin | Default |
 | --- | --- | --- |
-| Default editing mode | `markdownWorkshop.editor.defaultMode` (`livePreview` \| `source`) | `livePreview` |
-| Readable line length | `markdownWorkshop.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
-| Strict line breaks | `markdownWorkshop.editor.strictLineBreaks` | `false` |
-| Properties in document | `markdownWorkshop.properties.display` | `visible` |
+| Default editing mode | `lumiere.markdown.editor.defaultMode` (`livePreview` \| `source`) | `livePreview` |
+| Readable line length | `lumiere.markdown.editor.readableLineLength` | `false` (owner decision; `true` gives the default theme's 700 px measure) |
+| Strict line breaks | `lumiere.markdown.editor.strictLineBreaks` | `false` |
+| Properties in document | `lumiere.markdown.properties.display` | `visible` |
 | Show inline title | plugin `inlineTitle` | off (owner decision, 2026-10-09) |
-| Fold heading, Fold indent | `markdownWorkshop.folding.heading`, `.indent` | `true`, `true` |
+| Fold heading, Fold indent | `lumiere.markdown.folding.heading`, `.indent` | `true`, `true` |
 | Show line numbers | plugin `lineNumbers` | on (owner decision), following `editor.lineNumbers` |
 | Show indentation guides | plugin `indentGuides` | on |
-| (no built-in equivalent) Sticky headings | plugin `stickyScroll`; `markdownWorkshop.stickyScroll.maxLines` | off; 5 rows |
-| Right-to-left | `markdownWorkshop.editor.rightToLeft` | `false` |
+| (no built-in equivalent) Sticky headings | plugin `stickyScroll`; `lumiere.markdown.stickyScroll.maxLines` | off; 5 rows |
+| Right-to-left | `lumiere.markdown.editor.rightToLeft` | `false` |
 | Spellcheck | plugin `spellcheck` | on |
-| Auto pair brackets / Markdown syntax | `markdownWorkshop.autoPair.brackets`, `.markdown` | `true`, `true` |
+| Auto pair brackets / Markdown syntax | `lumiere.markdown.autoPair.brackets`, `.markdown` | `true`, `true` |
 | Smart lists | plugin `smartLists` | on |
-| Indent using tabs, Tab indent size | `markdownWorkshop.editor.useTabs`, `.tabSize` | `true`, `4` |
-| (Workshop-specific) Text-selection edge-scroll speed | `markdownWorkshop.editor.dragScrollSpeed` (multiplier 1–10; 1 restores CodeMirror speed) | `4` |
+| Indent using tabs, Tab indent size | `lumiere.markdown.editor.useTabs`, `.tabSize` | `true`, `4` |
+| (Workshop-specific) Text-selection edge-scroll speed | `lumiere.markdown.editor.dragScrollSpeed` (multiplier 1–10; 1 restores CodeMirror speed) | `4` |
 | Auto convert HTML | plugin `pasteHtml` | on |
 | Vim key bindings | plugin `vim` | off |
 
@@ -1165,14 +1165,14 @@ default (§25).
 
 | Obsidian setting | Setting | Default |
 | --- | --- | --- |
-| New link format | `markdownWorkshop.links.newLinkFormat` (`shortest` \| `relative` \| `absolute`) | `shortest` |
-| Use [[Wikilinks]] | `markdownWorkshop.links.useWikilinks` | `true` |
-| Automatically update internal links | `markdownWorkshop.linkUpdates.mode` (`prompt` \| `always` \| `never`) | `prompt` |
-| Default location for new notes | `markdownWorkshop.files.newNoteFolder` (empty = vault root, `.` = current folder, or a path) | empty |
-| Default location for new attachments | `markdownWorkshop.files.attachmentFolder` (same forms, plus `./sub`) | empty |
-| Excluded files | `markdownWorkshop.vault.excludedFiles` (globs) | `[]` |
-| (no equivalent) | `markdownWorkshop.vault.rootMarkers` | `[".obsidian"]` |
-| (no equivalent) | `markdownWorkshop.links.folderNote` | `""` |
+| New link format | `lumiere.markdown.links.newLinkFormat` (`shortest` \| `relative` \| `absolute`) | `shortest` |
+| Use [[Wikilinks]] | `lumiere.markdown.links.useWikilinks` | `true` |
+| Automatically update internal links | `lumiere.markdown.linkUpdates.mode` (`prompt` \| `always` \| `never`) | `prompt` |
+| Default location for new notes | `lumiere.markdown.files.newNoteFolder` (empty = vault root, `.` = current folder, or a path) | empty |
+| Default location for new attachments | `lumiere.markdown.files.attachmentFolder` (same forms, plus `./sub`) | empty |
+| Excluded files | `lumiere.markdown.vault.excludedFiles` (globs) | `[]` |
+| (no equivalent) | `lumiere.markdown.vault.rootMarkers` | `[".obsidian"]` |
+| (no equivalent) | `lumiere.markdown.links.folderNote` | `""` |
 
 Settings are resource-scoped, so a vault (workspace folder) can carry its own,
 as Obsidian keeps settings per vault. Core plugins keep owning these settings.
@@ -1224,13 +1224,13 @@ The host `links` plugin owns one pipeline:
    - other schemes: a modal confirmation, then `openExternal`;
    - otherwise resolve with `vault.resolveLink` (wikilinks) or relative to the
      source (Markdown links); then
-     - Markdown notes open in `markdownWorkshop.editor`, or in place in the
+     - Markdown notes open in `lumiere.markdown.editor`, or in place in the
        same group with Mod for the side, and pass the fragment to `navigate`;
      - folders: §12.3;
      - other files: `vscode.open`, so PDFs use PDF Workbench when it is the
        default;
      - unresolved wikilinks: create the note in the new-note folder
-       (`markdownWorkshop.files.newNoteFolder`) and open it, as Obsidian
+       (`lumiere.markdown.files.newNoteFolder`) and open it, as Obsidian
        does.
 
 ## 17. Copy Link for Agent (`agentBridge` plugin)
@@ -1246,7 +1246,7 @@ command and setting are `copyLinkForAgent` (formerly `copyForAgent`,
 public API has no agent methods or service. Review fixes (round 1) settled the names
 shared with Agent PDF Viewer: plugin `agentBridge`, service class
 `AgentHandoff`, command `copyLinkForAgent`; the plugin setting is now
-`markdownWorkshop.plugins.agentBridge.enabled`. The text format is shared with
+`lumiere.markdown.plugins.agentBridge.enabled`. The text format is shared with
 Agent PDF Viewer and specified in `docs/agent-handoff-format.md`.
 
 Keep the LLM Wiki clipboard wording (`formatMarkdownAgentReference`):
@@ -1357,7 +1357,7 @@ context.subscriptions.push(wiki);
   `commands` (IDs restricted to the owner's namespace), `links` events,
   `codeBlocks` (§18.4) and `logger`. Internal services stay hidden.
 - They follow the same lifecycle, gating and error isolation. Enablement
-  comes from `markdownWorkshop.plugins.external`.
+  comes from `lumiere.markdown.plugins.external`.
 - IDs are namespaced under an installed owner extension; namespaces prevent
   accidents but do not authenticate extensions sharing a host (same caveat as
   PDF Workbench).
@@ -1398,10 +1398,10 @@ become an external plugin that resolves its anchors and sets markers.
 ### 18.5 Webview modules (v2, designed now)
 
 The VS Code Markdown preview lets extensions add `markdown.markdownItPlugins`
-and `markdown.previewScripts`. Markdown Workshop v2 adds:
+and `markdown.previewScripts`. Lumière v2 adds:
 
 ```json
-"contributes": { "markdownWorkshop.webviewPlugins": [{ "id": "acme.wavedrom", "module": "./dist/wavedrom.js", "styles": ["./dist/wavedrom.css"] }] }
+"contributes": { "lumiere.markdown.webviewPlugins": [{ "id": "acme.wavedrom", "module": "./dist/wavedrom.js", "styles": ["./dist/wavedrom.css"] }] }
 ```
 
 - Modules are ES modules exporting a webview plugin (`name`, `inject`,
@@ -1580,10 +1580,10 @@ of `dist/` outputs and the docs.
 
 ## 25. Open questions (recommended defaults in bold)
 
-1. **Name.** **Markdown Workshop** (pairs with PDF Workbench). Changing it is a
+1. **Name.** **Lumière** (pairs with PDF Workbench). Changing it is a
    find-and-replace across these documents and the manifest.
 2. **Default editor for `*.md`.** **`priority: "option"`**, plus a command,
-   **Use Markdown Workshop for Markdown in This Workspace**, that writes the
+   **Use Lumière for Markdown in This Workspace**, that writes the
    workspace's `workbench.editorAssociations`. The alternative, `"default"`,
    would capture every README in code repositories.
 3. **Defaults.** **Obsidian's defaults** (Vim and line numbers off, readable
@@ -1591,7 +1591,7 @@ of `dist/` outputs and the docs.
    profile as product defaults.
 4. **Outline.** **Native view only**, or also keep the in-editor panel.
 5. **Where Backlinks, Outgoing links and Tags appear.** **Explorer sections**
-   (like PDF Outline), or a Markdown Workshop activity-bar container.
+   (like PDF Outline), or a Lumière activity-bar container.
 6. **Link updates on rename.** **`prompt`**, or Obsidian's always-update
    behaviour.
 7. **Kernel.** **In-house (decided; Cordis is a reference only, §5.9)**, or depend on the

@@ -1,5 +1,5 @@
 /**
- * Workshop: Markdown and PDF. The composition root of the extension: one
+ * Lumière: Markdown Editor and PDF Reader. The composition root of the extension: one
  * plugin tree (see @workshop/core) for both products, its output channel,
  * and the services every plugin may inject from the root. Each product adds
  * its own plugins; deactivation stops them all, last started first.
@@ -21,10 +21,10 @@ export async function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkshopApi> {
   const started = performance.now();
-  const channel = window.createOutputChannel("Workshop", { log: true });
+  const channel = window.createOutputChannel("Lumière", { log: true });
   context.subscriptions.push(channel);
   const debugLogging = () =>
-    workspace.getConfiguration("markdownWorkshop").get("debug.logging", false);
+    workspace.getConfiguration("lumiere.markdown").get("debug.logging", false);
   root = createRoot({
     rank: pluginRank,
     logger: outputLogger(channel, debugLogging),
@@ -32,7 +32,7 @@ export async function activate(
   root.provide("extensionContext", context);
   root.provide("outputChannel", channel);
   // Provided before PDF starts, so its agent bridge does not restart when
-  // Markdown Workshop's API arrives.
+  // Lumière's API arrives.
   const markdown: { api?: MarkdownWorkshopApi } = {};
   root.provide(
     "noteSelections",

@@ -1,6 +1,6 @@
 /**
  * Clipboard text for a bridge envelope. Markdown matches the LLM Wiki
- * `@path#start-end` wording; PDF matches PDF Workshop's short link + quote.
+ * `@path#start-end` wording; PDF matches Lumière PDF's short link + quote.
  * The structured envelope is separate and is not appended here.
  */
 
@@ -21,7 +21,7 @@ export interface PdfHandoffInput {
   readonly text: string;
 }
 
-/** One-page link and blockquote, the form PDF Workshop copies. */
+/** One-page link and blockquote, the form Lumière PDF copies. */
 export function pdfHandoffText(input: PdfHandoffInput): string {
   const target = pdfTarget(input);
   const slash = Math.max(

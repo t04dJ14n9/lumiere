@@ -11,7 +11,7 @@ import * as path from "node:path";
 
 const PNG_DATA_URL = "data:image/png;base64,";
 const MB = 1024 * 1024;
-/** `pdfWorkshop.regionImageCache.maxSizeMB`: its default and its floor. */
+/** `lumiere.pdf.regionImageCache.maxSizeMB`: its default and its floor. */
 const DEFAULT_MAX_MB = 100;
 const MIN_MAX_MB = 1;
 
@@ -31,7 +31,7 @@ export class RegionTooLargeError extends Error {
     readonly maxBytes: number,
   ) {
     super(
-      `The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (pdfWorkshop.regionImageCache.maxSizeMB)`,
+      `The region snapshot is ${megabytes(bytes)}, more than the ${megabytes(maxBytes)} snapshot limit (lumiere.pdf.regionImageCache.maxSizeMB)`,
     );
     this.name = "RegionTooLargeError";
   }

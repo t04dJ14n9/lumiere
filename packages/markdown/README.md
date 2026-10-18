@@ -1,4 +1,4 @@
-# Markdown Workshop
+# Lumière
 
 [![CI](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/workflows/ci.yml/badge.svg)](https://github.com/t04dJ14n9/vscode-markdown-workbench/actions/workflows/ci.yml)
 
@@ -13,13 +13,13 @@ their own through a versioned API.
 
 ## Install
 
-Markdown Workshop ships in the **Workshop: Markdown and PDF** extension, which
+Lumière ships in the **Lumière: Markdown Editor and PDF Reader** extension, which
 is not on the Marketplace. Build the VSIX at the repository root and install it:
 
 ```sh
 pnpm install
 pnpm package
-code --install-extension vscode-workshop-0.1.0.vsix
+code --install-extension lumiere-0.1.0.vsix
 ```
 
 To try it without touching your own setup, install it into a throwaway
@@ -27,8 +27,8 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
 
 ## Use
 
-- Open a note with **Open With… › Markdown Workshop**, or run **Markdown
-  Workshop: Use Markdown Workshop for Markdown in This Workspace** to make
+- Open a note with **Open With… › Lumière**, or run **Markdown
+  Workshop: Use Lumière for Markdown in This Workspace** to make
   it the editor for `*.md` in the workspace.
 - A folder containing `.obsidian/` is a vault: links, tags, backlinks and
   search work within it. Without one, each workspace folder is a vault.
@@ -40,12 +40,12 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   moving the view to another sidebar or the panel. VS Code's native Outline
   and breadcrumbs remain available in the plain text editor.
 - **Manage Plugins** opens the plugin switches
-  (`markdownWorkshop.plugins.<id>.enabled`); **Show Plugin Status** lists
+  (`lumiere.markdown.plugins.<id>.enabled`); **Show Plugin Status** lists
   every plugin and why one failed or is waiting.
 - **Copy Link for Agent** (right-click a selection) copies the passage
   and its `@Note.md#a-b` line link for your agent. It opens a chat only
   when the editor's own chat is the only agent, or when
-  `markdownWorkshop.copyLinkForAgent.target` picks one. Plain Ctrl/Cmd+C
+  `lumiere.markdown.copyLinkForAgent.target` picks one. Plain Ctrl/Cmd+C
   copies text.
 - **Copy Wiki Reference for Agent** copies that same wording for a wiki
   note and does not open a chat. **Copy Bridge Envelope** copies the
@@ -64,41 +64,41 @@ profile as described in [docs/MANUAL_TEST_PLAN.md](docs/MANUAL_TEST_PLAN.md#buil
   one folder matches. Full note URIs also work, including remote files.
   This explicit command is the fallback when clicking an agent's link opens
   the note without its line range; it does not intercept native chat clicks.
-- `markdownWorkshop.editor.fontSize` (8 to 48, default 16, Obsidian's body
+- `lumiere.markdown.editor.fontSize` (8 to 48, default 16, Obsidian's body
   size) sets the note text size, replacing `editor.fontSize` for notes;
   headings, tables, code, properties, footnotes and line numbers scale with
-  it, live. `markdownWorkshop.editor.lineHeight` (1 to 3, default 1.5,
+  it, live. `lumiere.markdown.editor.lineHeight` (1 to 3, default 1.5,
   Obsidian's) is the line height as a multiple of that size, so lines scale
   with it too. The font family, weight, letter spacing and ligatures still
   follow `editor.*` for Markdown files; `editor.lineHeight` no longer applies.
-- `markdownWorkshop.editor.dragScrollSpeed` makes mouse text-selection
+- `lumiere.markdown.editor.dragScrollSpeed` makes mouse text-selection
   auto-scroll faster near the note's edges. It is a multiplier from 1 to 10
   (default 4); 1 restores CodeMirror's original speed. Changes apply live in
   Live Preview and Source mode. Table-cell selection and row/property
   reordering keep their existing edge-scroll behavior.
-- **Markdown Workshop: Open Settings** opens the Settings UI filtered to this
+- **Lumière: Open Settings** opens the Settings UI filtered to this
   extension. **Change Setting…** lists every setting of the extension (by
   plugin, with its value) and edits the one you pick by its type. **Set Note Font Size**, **Toggle Line Numbers**, **Toggle
   Readable Line Width**, **Toggle Mermaid Diagrams**, **Toggle Inline Title**
-  and **Toggle Vim Mode** change the same `markdownWorkshop.*` settings the
+  and **Toggle Vim Mode** change the same `lumiere.markdown.*` settings the
   Settings UI shows, in the workspace settings when the workspace sets them
   and in the user settings otherwise. They keep no state of their own, so
   edits in the Settings UI or `settings.json` and the commands always agree.
-- `markdownWorkshop.preset: "minimal"` loads only the core editor.
-- `markdownWorkshop.debug.logging` writes debug lines to the **Markdown
+- `lumiere.markdown.preset: "minimal"` loads only the core editor.
+- `lumiere.markdown.debug.logging` writes debug lines to the **Markdown
   Workshop** output channel.
 
 ### In Cursor
 
 Cursor opens `*.md` in its own **Markdown Editor**, with a **Preview |
-Markdown** switch in the editor's top-right corner. **Use Markdown Workshop
+Markdown** switch in the editor's top-right corner. **Use Lumière
 for Markdown in This Workspace** writes a workspace editor association, which
 takes precedence over Cursor's editor for notes opened afterwards; reopen
 tabs that were already open.
 
 Cursor's **Markdown** button opens the note in the plain text editor and
-remembers that per file. `markdownWorkshop.editor.reclaimTextEditor`
-(`auto`, on only in Cursor) reopens such a note in Markdown Workshop and
+remembers that per file. `lumiere.markdown.editor.reclaimTextEditor`
+(`auto`, on only in Cursor) reopens such a note in Lumière and
 closes the text tab, for notes the workspace association routes here.
 It leaves diffs, Git views, untitled files and anything opened with **Open
 as Text** alone. Asking for the text editor a second time within 10 seconds
@@ -106,7 +106,7 @@ keeps it, which is how **Reopen Editor With… › Text Editor** still works.
 Set it to `off` to keep Cursor's behaviour, or `on` to use it in VS Code too.
 
 Markdown diffs from Source Control stay VS Code's text diff unless
-`markdownWorkshop.gitDiffEditor.diffEditor` is `rendered`; then they open as
+`lumiere.markdown.gitDiffEditor.diffEditor` is `rendered`; then they open as
 both versions rendered side by side. **Open Rendered Git Diff** opens one
 against HEAD for the active note either way.
 
@@ -180,7 +180,7 @@ MIT. Bundled packages and their licenses are listed in
 
 ### Precise jumps within a note
 
-Use **Markdown Workshop: Go Back in Note** / **Go Forward in Note**, also
+Use **Lumière: Go Back in Note** / **Go Forward in Note**, also
 available as note-title arrows, to revisit deliberate link, heading, footnote,
 explicit find-match and API/reference jumps. The 100-entry history belongs to
 one note pane, stays in extension-host memory across webview recreation, and is

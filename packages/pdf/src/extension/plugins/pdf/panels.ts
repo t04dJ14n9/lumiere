@@ -6,7 +6,7 @@ import {
 import type { PdfPanel, PluginMessage } from "./panel";
 import type { ViewState } from "../../../shared/view-state";
 
-export const VIEW_TYPE = "pdfWorkshop.viewer";
+export const VIEW_TYPE = "lumiere.pdf.viewer";
 
 type Handler<T extends PluginMessage["type"]> = (
   panel: PdfPanel,
@@ -190,7 +190,7 @@ export class PdfPanels implements vscode.Disposable {
     for (const [key, value] of Object.entries(contextKeys(this.current))) {
       void vscode.commands.executeCommand(
         "setContext",
-        `pdfWorkshop.${key}`,
+        `lumiere.pdf.${key}`,
         value,
       );
     }

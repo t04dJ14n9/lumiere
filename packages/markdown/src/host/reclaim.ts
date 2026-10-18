@@ -106,7 +106,7 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
 }
 
 /**
- * `markdownWorkshop.editor.reclaimTextEditor`: Cursor's Preview | Markdown
+ * `lumiere.markdown.editor.reclaimTextEditor`: Cursor's Preview | Markdown
  * switch opens notes in the text or Cursor Markdown editor; transfer back to
  * our CustomTextEditorProvider once the native document is ready.
  */
@@ -196,7 +196,7 @@ function createReclaimTransfer(
       pending.set(tab, next);
       void reopen(uri, next, navigation)
         .catch((error) => {
-          console.error("Markdown Workshop editor transfer failed", error);
+          console.error("Lumière editor transfer failed", error);
         })
         .finally(() => {
           if (pending.get(tab) === next) {
@@ -273,7 +273,7 @@ function reclaimContext(uri: string) {
   return {
     enabled: reclaimEnabled({
       mode: vscode.workspace
-        .getConfiguration("markdownWorkshop", target)
+        .getConfiguration("lumiere.markdown", target)
         .get<"auto" | "on" | "off">("editor.reclaimTextEditor", "auto"),
       appName: vscode.env.appName,
     }),

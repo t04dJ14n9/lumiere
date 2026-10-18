@@ -91,9 +91,7 @@ async function showPluginStatus(
 ): Promise<void> {
   const editor = api.getActiveEditor();
   if (!editor) {
-    ctx.dialogs.inform(
-      "Open a note in Markdown Workshop to see its plugin states.",
-    );
+    ctx.dialogs.inform("Open a note in Lumière to see its plugin states.");
     return;
   }
   const items = pluginStatusItems(

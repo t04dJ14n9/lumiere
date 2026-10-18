@@ -26,7 +26,7 @@ export interface TabSwap {
 
 /**
  * Whether an associated note arriving in the text or Cursor Markdown editor
- * should go back to Markdown Workshop. That includes Cursor's Preview |
+ * should go back to Lumière. That includes Cursor's Preview |
  * Markdown switch, which replaces the tab in place, and Cursor turning its
  * Markdown editor into text for a note it remembers as raw. Diffs, Git and
  * untitled files are excluded by the tab classifier and note predicate.

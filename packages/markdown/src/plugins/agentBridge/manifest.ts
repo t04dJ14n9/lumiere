@@ -13,7 +13,7 @@ export default defineManifest({
       {
         command: "copyLinkForAgent",
         location: "webview/context",
-        when: "webviewSection == 'markdownContent' && markdownWorkshop.hasSelection",
+        when: "webviewSection == 'markdownContent' && lumiere.markdown.hasSelection",
         group: "agent",
       },
     ],

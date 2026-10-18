@@ -33,7 +33,7 @@ function collection(
     return existing;
   }
   const created = vscode.languages.createDiagnosticCollection(
-    `markdownWorkshop.${owner}`,
+    `lumiere.markdown.${owner}`,
   );
   collections.set(owner, created);
   return created;
@@ -55,6 +55,6 @@ function diagnostic(item: DiagnosticItem): vscode.Diagnostic {
     item.message,
     severities[item.severity],
   );
-  problem.source = "Markdown Workshop";
+  problem.source = "Lumière";
   return problem;
 }

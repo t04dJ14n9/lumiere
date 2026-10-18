@@ -25,7 +25,7 @@ A note's properties are not counted; a selection's are.
 
 - Injects the host services `hostDocuments`, `views` and `activeEditor` and, optionally, `editors`.
 - Listens to `editor/selectionChanged`.
-- Setting: `markdownWorkshop.plugins.wordCount.enabled`.
+- Setting: `lumiere.markdown.plugins.wordCount.enabled`.
 
 ## Limits and differences from Obsidian
 

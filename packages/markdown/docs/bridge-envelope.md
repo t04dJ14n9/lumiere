@@ -1,6 +1,6 @@
 # Bridge envelope
 
-Markdown Workshop and Agent PDF Viewer are separate extensions. They can
+Lumière and Agent PDF Viewer are separate extensions. They can
 hand a selection to an agent as the same JSON object. This file is the
 contract. The clipboard text in
 [agent-handoff-format.md](agent-handoff-format.md) is unchanged and is not
@@ -14,16 +14,16 @@ an agent because an envelope was built.
 
 | Command | Who publishes it | When it is absent |
 | --- | --- | --- |
-| `markdownWorkshop.bridge.envelope` | Markdown Workshop, hidden from the palette | This extension is disabled or not installed |
+| `lumiere.markdown.bridge.envelope` | Lumière, hidden from the palette | This extension is disabled or not installed |
 | `vscodeEmbedPdf.bridge.envelope` | Agent PDF Viewer | This extension does not call it, and does not require that extension |
 
-`markdownWorkshop.bridge.envelope` returns one envelope for the active
+`lumiere.markdown.bridge.envelope` returns one envelope for the active
 Markdown selection, or asks the PDF command when this editor has no
 selection. An optional argument is a wiki context (`preset`, `bundle`,
 `collection`, `type`). A malformed argument is ignored. The command does
 not open a chat.
 
-Markdown Workshop calls `vscodeEmbedPdf.bridge.envelope` only when
+Lumière calls `vscodeEmbedPdf.bridge.envelope` only when
 `agentEnvironment().commands` contains that id. If the command is missing,
 or the call throws, the result is empty.
 
@@ -132,7 +132,7 @@ not create those folders.
 
 - **Agent PDF Viewer** can publish `vscodeEmbedPdf.bridge.envelope`
   returning this version-1 object (`producer: "pdf"`), and can call
-  `markdownWorkshop.bridge.envelope` for a note. It should keep its
+  `lumiere.markdown.bridge.envelope` for a note. It should keep its
   current Source-link clipboard text. Do not merge the PDF extension into
   this repository.
 - **Browser Bridge** stays a Chrome-owned extension. It is not implemented

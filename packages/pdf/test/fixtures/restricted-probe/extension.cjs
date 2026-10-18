@@ -13,10 +13,10 @@ exports.activate = context => {
     vscode.commands.registerCommand('pdfWorkshopTests.reportTrust', async () => {
       const folder = vscode.workspace.workspaceFolders?.[0];
       if (!folder) throw new Error('The test workspace is missing');
-      const settings = vscode.workspace.getConfiguration('pdfWorkshop');
+      const settings = vscode.workspace.getConfiguration('lumiere.pdf');
       const report = {
         trusted: vscode.workspace.isTrusted,
-        extensionActive: vscode.extensions.getExtension('t04dj14n9.vscode-workshop')?.isActive,
+        extensionActive: vscode.extensions.getExtension('t04dj14n9.lumiere')?.isActive,
         bridgeEnabled: settings.get('agentBridge.enabled'),
         target: settings.get('copyLinkForAgent.target'),
         workspaceBridge: settings.inspect('agentBridge.enabled')?.workspaceValue,

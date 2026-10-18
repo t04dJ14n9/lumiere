@@ -1,8 +1,8 @@
-# PDF Workshop
+# Lumière PDF
 
 [![CI](https://github.com/t04dJ14n9/vscode-embedPDF/actions/workflows/ci.yml/badge.svg)](https://github.com/t04dJ14n9/vscode-embedPDF/actions/workflows/ci.yml)
 
-A PDF Workshop viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
+A Lumière PDF viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
 and its PDFium engine. Select text or drag a box over a figure and press
 **Copy Link for Agent**: the clipboard gets a link to the exact page and
 box, the file's hash, the selected text, and for a box the path of a
@@ -37,10 +37,10 @@ is the only agent installed (or you pick one), that chat opens with it.
   tree view; click an entry to open its page. The title bar offers **Expand All**
   and **Collapse All**. Turn on **Follow Cursor** in the **…** menu to select
   the bookmark for the current page and reading position without moving focus.
-  This choice is saved as `pdfWorkshop.outline.followCursor` (off by default).
-  Opening a PDF Workshop editor hides VS Code's native **Outline** and shows
+  This choice is saved as `lumiere.pdf.outline.followCursor` (off by default).
+  Opening a Lumière PDF editor hides VS Code's native **Outline** and shows
   **PDF Outline**; leaving restores the native Outline after a short debounce,
-  skipped if Markdown Workshop already owns the active tab.
+  skipped if Lumière already owns the active tab.
 - **Copy Link for Agent.** Select text, or drag over empty page
   space to select a region (a figure, table or equation), then use the
   button next to the selection, the right-click menu, the editor title
@@ -60,7 +60,7 @@ is the only agent installed (or you pick one), that chat opens with it.
   installed as well, Copy Link for Agent does not guess: it copies the selection (with
   the region snapshot's path) and asks you to paste it into your agent.
 
-  The `pdfWorkshop.copyLinkForAgent.target` setting sends it to one agent instead:
+  The `lumiere.pdf.copyLinkForAgent.target` setting sends it to one agent instead:
   `claudeCode` (a new Claude Code conversation with the selection typed in),
   `codex` (the selection and snapshot attached to the Codex thread), `cursor`,
   `chat`, or `clipboard`.
@@ -77,7 +77,7 @@ is the only agent installed (or you pick one), that chat opens with it.
 
 ![The viewer with its controls in the editor title bar and the status bar](docs/images/toolbar-chrome-dark.png)
 
-`pdfWorkshop.toolbar.mode` sets where the controls are. **PDF: Choose
+`lumiere.pdf.toolbar.mode` sets where the controls are. **PDF: Choose
 Toolbar Location…** (also in the editor's **…** menu) switches it, and every
 open PDF follows at once.
 
@@ -113,14 +113,14 @@ editor has focus (not in a text field, the side bar or the panel):
 
 While a PDF has focus, these take over the editor-wide meanings of the same
 keys (Ctrl+G is Go to Line elsewhere, Ctrl+0 focuses the side bar, Ctrl+= zooms
-the window). Set `pdfWorkshop.keyboardShortcuts` to `false` to leave every key
+the window). Set `lumiere.pdf.keyboardShortcuts` to `false` to leave every key
 to VS Code (the **PDF:** commands remain, unbound, for **Keyboard Shortcuts**).
 Some desktops keep Ctrl+Alt+T for opening a terminal; rebind it there if so.
 
 **In Cursor**, the editor title bar keeps extension buttons in its **…**
 menu, so the viewer leaves its title buttons out (the menu lists every
 action, grouped) and the status bar also shows previous and next page, zoom
-out and in, and find buttons. `pdfWorkshop.toolbar.statusBarButtons`
+out and in, and find buttons. `lumiere.pdf.toolbar.statusBarButtons`
 (`auto`, `always`, `never`) changes that, in either editor.
 
 ![Cursor: page, zoom and find in the status bar](docs/images/toolbar-cursor.png)
@@ -137,7 +137,7 @@ out and in, and find buttons. `pdfWorkshop.toolbar.statusBarButtons`
 
 On macOS, right-click a word and choose **Look Up** to open it in the Dictionary
 app (a force click does the same where the engine reports it). Turn it off with
-`pdfWorkshop.lookUp.enabled`. The system's own three-finger-tap popup cannot
+`lumiere.pdf.lookUp.enabled`. The system's own three-finger-tap popup cannot
 see text drawn by the viewer; see [docs/look-up.md](docs/look-up.md) for what is
 native, what is a fallback, and what needs a Mac to verify.
 
@@ -172,9 +172,9 @@ big 6 1024 4096 16 0.3 300K 4.33 26.4 213
 ```
 
 Snapshots are saved in a `regions` folder in the extension's storage for the
-workspace (`workspaceStorage/<id>/t04dj14n9.vscode-workshop/regions`), not in
+workspace (`workspaceStorage/<id>/t04dj14n9.lumiere/regions`), not in
 the workspace itself (global storage when no folder is open). Together they
-use at most `pdfWorkshop.regionImageCache.maxSizeMB` megabytes (default 100,
+use at most `lumiere.pdf.regionImageCache.maxSizeMB` megabytes (default 100,
 at least 1; a change applies from the next snapshot). This is a hard limit:
 past it, the least recently used are deleted, and a single snapshot larger than
 the limit is not saved at all (Copy Link for Agent then copies the link and the
@@ -190,7 +190,7 @@ relative to the workspace folder, or absolute for files outside it.
 ## Agent bridge (MCP, experimental, off by default)
 
 Instead of pasting, an agent can ask the viewer for what you have selected.
-Turn on `pdfWorkshop.agentBridge.enabled` (or run **PDF: Copy MCP Setup
+Turn on `lumiere.pdf.agentBridge.enabled` (or run **PDF: Copy MCP Setup
 for Claude Code / Codex…**, which offers to) and the extension starts a local
 [MCP](https://modelcontextprotocol.io/) server with these tools:
 
@@ -198,7 +198,7 @@ for Claude Code / Codex…**, which offers to) and the extension starts a local
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_current_pdf_selection`  | The text or region selected in the PDF you last looked at: the same text Copy Link for Agent copies, and for a region its PNG snapshot.                                         |
 | `open_pdf_location`          | Opens a `path#page=N&viewrect=…` link in the viewer.                                                                                                                            |
-| `get_current_note_selection` | The selection in Markdown Workshop (the same extension), as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `packages/agents/docs/agent-handoff-format.md`). |
+| `get_current_note_selection` | The selection in Lumière (the same extension), as `@path#lines` and the quoted text (the same text as its Copy Link for Agent; see `packages/agents/docs/agent-handoff-format.md`). |
 
 The server is off by default because it opens a port. When on, it listens on
 `127.0.0.1` only, on a random port, requires a random bearer token, and
@@ -225,7 +225,7 @@ clipboard. `vscodeEmbedPdf.bridge.envelope` returns a Workbench v1 envelope
 (`producer` `"pdf"`) for the PDF you last looked at: the same shape Markdown
 Workshop's `parseBridgeEnvelope` already consumes (`capturedAt`,
 `source.identity` / `kind` / `media`, `locator`, `view`, `selection`,
-`revision`). Markdown Workshop is the aggregator and may call this command;
+`revision`). Lumière is the aggregator and may call this command;
 this command does not call Workshop back. Copy Link for Agent still copies
 the same source-link text. See [docs/bridge-envelope.md](docs/bridge-envelope.md).
 
@@ -233,7 +233,7 @@ the same source-link text. See [docs/bridge-envelope.md](docs/bridge-envelope.md
 
 ```ts
 await vscode.commands.executeCommand(
-  "pdfWorkshop.openLocation",
+  "lumiere.pdf.openLocation",
   vscode.Uri.file("/path/to/paper.pdf"),
   { page: 3, viewRect: { left: 72, top: 83, width: 134, height: 21 } },
 );

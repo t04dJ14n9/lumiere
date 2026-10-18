@@ -305,11 +305,11 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
   }
 }
 
-/** PDF Workshop's public command (in this extension): open a PDF at a location. */
-export const PDF_OPEN_LOCATION_COMMAND = "pdfWorkshop.openLocation";
+/** Lumière PDF's public command (in this extension): open a PDF at a location. */
+export const PDF_OPEN_LOCATION_COMMAND = "lumiere.pdf.openLocation";
 
 /**
- * Open a PDF in PDF Workshop, at the page a link such as
+ * Open a PDF in Lumière PDF, at the page a link such as
  * `[[paper.pdf#page=3]]` names. Any other fragment (Obsidian ignores those
  * too) opens the PDF where it was left.
  */

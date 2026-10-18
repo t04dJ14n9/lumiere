@@ -7,8 +7,8 @@ import type { PdfPanels } from "../pdf/panels";
 import { OUTLINE_COMMAND_IDS } from "../pdf/registered-commands";
 import { createOutlineFocus } from "./focus";
 
-const FOLLOW_SETTING = "pdfWorkshop.outline.followCursor";
-const FOLLOW_CONTEXT = "pdfWorkshop.outlineFollowCursor";
+const FOLLOW_SETTING = "lumiere.pdf.outline.followCursor";
+const FOLLOW_CONTEXT = "lumiere.pdf.outlineFollowCursor";
 
 /**
  * The "PDF Outline" view in the Explorer: the bookmarks of the PDF in the
@@ -20,7 +20,7 @@ export function registerOutlineView(
   log: Pick<vscode.LogOutputChannel, "warn">,
 ): vscode.Disposable {
   const provider = new OutlineProvider(panels);
-  const view = vscode.window.createTreeView("pdfWorkshop.outline", {
+  const view = vscode.window.createTreeView("lumiere.pdf.outline", {
     treeDataProvider: provider,
     showCollapseAll: true,
   });
@@ -202,7 +202,7 @@ function outlineCommands(parts: OutlineParts): vscode.Disposable[] {
       vscode.commands.executeCommand(
         view.visible
           ? "workbench.action.closeSidebar"
-          : "pdfWorkshop.outline.focus",
+          : "lumiere.pdf.outline.focus",
       ),
     ),
     vscode.commands.registerCommand(

@@ -16,9 +16,9 @@ const runtimeCommands = new Set(RUNTIME_COMMAND_IDS);
 // Public peer API retains its original id across the product rename.
 const compatibilityCommand = [retiredPrefix, "bridge.envelope"].join(".");
 
-test("constants match locked PDF Workshop identity", () => {
-  assert.equal(SETTING_PREFIX, "pdfWorkshop.");
-  assert.equal(VIEW_TYPE, "pdfWorkshop.viewer");
+test("constants match locked Lumière PDF identity", () => {
+  assert.equal(SETTING_PREFIX, "lumiere.pdf.");
+  assert.equal(VIEW_TYPE, "lumiere.pdf.viewer");
 });
 
 test("customEditors viewType matches runtime VIEW_TYPE", () => {
@@ -32,7 +32,7 @@ test("manifest commands ↔ runtime registration set (B3)", () => {
   for (const id of runtimeCommands) {
     assert.equal(manifestCommands.has(id), true, `runtime-only: ${id}`);
     if (id !== compatibilityCommand) {
-      assert.match(id, /^pdfWorkshop\./);
+      assert.match(id, /^lumiere\.pdf\./);
       assert.doesNotMatch(id, new RegExp(retiredPrefix));
     }
   }
@@ -45,7 +45,7 @@ test("manifest commands ↔ runtime registration set (B3)", () => {
 test("owned when/enablement/config keys do not use old prefix", () => {
   const blob = JSON.stringify(contributes).replaceAll(
     compatibilityCommand,
-    "pdfWorkshop.bridge.envelope",
+    "lumiere.pdf.bridge.envelope",
   );
   assert.equal(blob.includes(retiredPrefix), false);
   for (const key of Object.keys(contributes.configuration.properties)) {
@@ -57,6 +57,6 @@ test("outline view id renamed", () => {
   const views = Object.values(contributes.views ?? {}).flat() as {
     id: string;
   }[];
-  assert.ok(views.some((v) => v.id === "pdfWorkshop.outline"));
+  assert.ok(views.some((v) => v.id === "lumiere.pdf.outline"));
   assert.ok(!views.some((v) => v.id.includes(retiredPrefix)));
 });

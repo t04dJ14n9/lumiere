@@ -1,7 +1,7 @@
 // Builds the extension into dist/:
 //   dist/extension.js   the extension host (src/extension.ts, both products)
-//   dist/markdown/      Markdown Workshop's webviews, workers and API types
-//   dist/pdf/           PDF Workshop's viewer, PDF engine and agent bridge
+//   dist/markdown/      Lumière's webviews, workers and API types
+//   dist/pdf/           Lumière PDF's viewer, PDF engine and agent bridge
 // Each product builds its own assets (its scripts/build.mjs); this script
 // bundles the host and copies those assets into place.
 //

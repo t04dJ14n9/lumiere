@@ -32,8 +32,8 @@ and in every note linking to it, keeping its path, form and alias
 ## Services, events and settings
 
 - Injects the host services `hostDocuments`, `dialogs` and `settings`, plus `vaults`.
-- Settings: `markdownWorkshop.linkUpdates.mode` (`prompt`, `always`,
-  `never`), `markdownWorkshop.links.newLinkFormat`.
+- Settings: `lumiere.markdown.linkUpdates.mode` (`prompt`, `always`,
+  `never`), `lumiere.markdown.links.newLinkFormat`.
 
 ## Limits and differences from Obsidian
 

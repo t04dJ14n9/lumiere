@@ -1,6 +1,6 @@
 # @workshop/core
 
-The plugin core of Markdown and PDF Workshop: every capability is a plugin
+The plugin core of Markdown and Lumière PDF: every capability is a plugin
 that reads services, provides services and owns effects. It runs unchanged in
 the extension host, in each webview and in unit tests (no DOM, VS Code or Node
 APIs).

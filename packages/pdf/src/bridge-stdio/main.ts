@@ -1,5 +1,5 @@
 /**
- * stdio <-> HTTP shim for the PDF Workshop bridge, for MCP clients
+ * stdio <-> HTTP shim for the Lumière PDF bridge, for MCP clients
  * configured with a command (Claude Code, Codex). It forwards JSON-RPC
  * messages to the bridge of the window whose workspace contains the
  * client's working directory, or to the one named by AGENT_PDF_BRIDGE_PID;

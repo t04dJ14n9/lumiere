@@ -26,7 +26,7 @@ guides.
 
 Injects `editor` and optionally `livePreview` to follow its mode; provides no
 service and listens to/emits no kernel events.
-`markdownWorkshop.plugins.indentGuides.enabled` defaults to true. No commands
+`lumiere.markdown.plugins.indentGuides.enabled` defaults to true. No commands
 or keybindings; tab size belongs to Editor.
 
 ## Limits and differences from Obsidian

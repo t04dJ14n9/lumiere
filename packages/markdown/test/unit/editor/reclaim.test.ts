@@ -96,9 +96,9 @@ test("the handoff from Cursor Markdown into Workshop is left in place", () => {
   assert.equal(shouldReclaim(swap("workbench", "workbench"), context), false);
 });
 
-test("only notes the workspace routes to Markdown Workshop are reclaimed", () => {
-  const associations = { "*.md": "markdownWorkshop.editor" };
-  const viewType = "markdownWorkshop.editor";
+test("only notes the workspace routes to Lumière are reclaimed", () => {
+  const associations = { "*.md": "lumiere.markdown.editor" };
+  const viewType = "lumiere.markdown.editor";
   assert.equal(associatedWith(associations, note, viewType), true);
   assert.equal(
     associatedWith(associations, "file:///a.markdown", viewType),
@@ -445,7 +445,7 @@ test("a held swap stays held when its session ends some other way", () => {
 
 test("tabs open before reclaim starts are judged: the shown one now, the rest when first activated", () => {
   // A restored window: a note shown as text, another note behind it, and a
-  // note already in Markdown Workshop.
+  // note already in Lumière.
   const group: FakeGroup = { tabs: [], activeTab: undefined };
   const shown: FakeTab = { uri: note, kind: "text", group };
   const behind: FakeTab = {
@@ -482,7 +482,7 @@ test("tabs open before reclaim starts are judged: the shown one now, the rest wh
     swaps.next({ opened: [], changed: [behind] }, new Set()),
     [],
   );
-  // A tab already in Markdown Workshop is never reclaimed.
+  // A tab already in Lumière is never reclaimed.
   group.activeTab = workshop;
   const kept = swaps.next({ opened: [], changed: [workshop] }, new Set());
   assert.equal(shouldReclaim(kept[0]!.swap, context), false);

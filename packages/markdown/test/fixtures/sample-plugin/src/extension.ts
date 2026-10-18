@@ -1,4 +1,4 @@
-// Activation: get Markdown Workshop's API and run the plugin through it.
+// Activation: get Lumière's API and run the plugin through it.
 // The plugin is in plugin.ts and receives `vscode` as a parameter, so unit
 // tests can run it against the real API facade.
 import * as vscode from "vscode";
@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext) {
     ?.activate();
   if (api?.apiVersion !== 1) {
     void vscode.window.showWarningMessage(
-      "Sample Tickets needs Markdown Workshop with API version 1.",
+      "Sample Tickets needs Lumière with API version 1.",
     );
     return;
   }

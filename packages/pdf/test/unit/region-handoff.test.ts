@@ -120,7 +120,7 @@ test("a region snapshot over the cap is not saved and evicts nothing, but the li
   assert.equal(warnings.length, 1);
   assert.match(
     warnings[0]!,
-    /^The region snapshot is .* MB, more than the .* MB snapshot limit \(pdfWorkshop\.regionImageCache\.maxSizeMB\), so it was not attached\./u,
+    /^The region snapshot is .* MB, more than the .* MB snapshot limit \(lumiere\.pdf\.regionImageCache\.maxSizeMB\), so it was not attached\./u,
   );
 });
 

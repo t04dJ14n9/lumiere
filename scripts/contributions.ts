@@ -1,7 +1,7 @@
 /**
  * Writes (or with --check, verifies) the extension's `contributes` in
- * package.json: Markdown Workshop's, generated from its plugin manifests,
- * followed by PDF Workshop's, kept in packages/pdf/contributes.json.
+ * package.json: Lumière's, generated from its plugin manifests,
+ * followed by Lumière PDF's, kept in packages/pdf/contributes.json.
  * Each product keeps its own settings section.
  */
 import { readFileSync, writeFileSync } from "node:fs";

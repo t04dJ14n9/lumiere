@@ -104,7 +104,7 @@ export class StatusBar implements vscode.Disposable {
   constructor(private readonly panels: PdfPanels) {
     for (const item of ITEMS) {
       const entry = vscode.window.createStatusBarItem(
-        `pdfWorkshop.${item.id}`,
+        `lumiere.pdf.${item.id}`,
         vscode.StatusBarAlignment.Right,
         statusBarPriority(item.id),
       );

@@ -1,11 +1,11 @@
-# AGENT.md — Developing a Markdown Workshop custom plugin
+# AGENT.md — Developing a Lumière custom plugin
 
 > Complementary to [AGENTS.md](AGENTS.md); does **not** replace it. Use this
 > file for **user / third-party custom plugins**; use AGENTS.md when changing
-> Markdown Workshop itself.
+> Lumière itself.
 
 This file teaches an **external coding agent** (local Codex or a human) how to
-build a **user / third-party plugin** that obeys Markdown Workshop’s extension
+build a **user / third-party plugin** that obeys Lumière’s extension
 core. If you are changing Workshop itself (kernel, built-in `src/plugins/`,
 webview), stop and read **AGENTS.md** instead.
 
@@ -58,7 +58,7 @@ core contributors only. Copy the **sample external plugin** instead:
 
 ## 2. Prerequisites
 
-- Markdown Workshop installed (or under development) with **API version 1**.
+- Lumière installed (or under development) with **API version 1**.
 - Extension ID to depend on: `t04dj14n9.vscode-markdown-workshop`.
 - Node.js tooling to bundle your extension (`esbuild` / `tsc` as you prefer).
 - For packaging: `@vscode/vsce`.
@@ -83,7 +83,7 @@ Read before coding:
    - `"extensionDependencies": ["t04dj14n9.vscode-markdown-workshop"]`
    - Activation: at least
      `"onLanguage:markdown"` and
-     `"onCustomEditor:markdownWorkshop.editor"`
+     `"onCustomEditor:lumiere.markdown.editor"`
      (`onCustomEditor:<viewType>` is an **activation event**, not ownership of
      that custom editor — Workshop still owns the editor.)
    - Declare any commands under **your** `contributes.commands` (palette entries
@@ -106,10 +106,10 @@ Read before coding:
      (`publisher.name`).
 7. Run locally on **local desktop** (see §8). Verify Show Plugin Status lists
    your plugin.
-8. Toggle `"markdownWorkshop.plugins.external": { "<your.id>": false }` and
+8. Toggle `"lumiere.markdown.plugins.external": { "<your.id>": false }` and
    confirm contributions disappear.
 
-**Settings namespace:** use `markdownWorkshop.*` (current product namespace after
+**Settings namespace:** use `lumiere.markdown.*` (current product namespace after
 the Workshop identity rename). Keep this file in sync with [API.md](API.md).
 
 ---
@@ -151,7 +151,7 @@ Hard rules:
 
 Enablement:
 
-- Setting map: `markdownWorkshop.plugins.external`
+- Setting map: `lumiere.markdown.plugins.external`
 - Example: `{ "acme.badges": false }`
 - Scopes: user / workspace / workspace folder (via API
   `setPluginEnabled` / Settings UI **Manage Plugins**)
@@ -196,7 +196,7 @@ Only these (declare in `inject`):
 | `markers` | `set`, `clear`, `registerAction` — badges on note ranges |
 | `commands` | `register(id, run)` — `id` must start with your extension id |
 | `codeBlocks` | `register({ language, render })` — returns `{ markdown }` **or** `{ html }`; sanitized; **trusted workspaces only** (Workshop gate) |
-| `logger` | `debug` / `warn` / `error` → Markdown Workshop output channel |
+| `logger` | `debug` / `warn` / `error` → Lumière output channel |
 
 Always available on context (not via inject list semantics beyond docs): `on`,
 `effect` — treat them as part of the external context contract in API.md.
@@ -280,10 +280,10 @@ Restricted Mode (see VS Code Workspace Trust extension guide).
 
 - Add or edit files under Workshop `src/plugins/` for a third-party feature.
 - Dynamic-import or `eval` vault / workspace scripts into Workshop.
-- Bundle or expect API v2 webview modules (`markdownWorkshop.webviewPlugins`)
+- Bundle or expect API v2 webview modules (`lumiere.markdown.webviewPlugins`)
   — designed, not the v1 custom-plugin path.
 - Register custom editors through Workshop API v1 (that is P7 / API v2 editor
-  plugins — separate design). Using `onCustomEditor:markdownWorkshop.editor`
+  plugins — separate design). Using `onCustomEditor:lumiere.markdown.editor`
   only **activates** your extension when that editor opens; it does not make
   you the editor owner.
 - Change Markdown parsing / CodeMirror extensions from outside.
@@ -312,7 +312,7 @@ code --user-data-dir /tmp/mdwb-plugin-dev/user \
   /path/to/a/markdown/vault
 ```
 
-Install or also develop Markdown Workshop into the **same local profile** first
+Install or also develop Lumière into the **same local profile** first
 (VSIX or second `--extensionDevelopmentPath` as your tooling allows) so they can
 run together locally; both must ultimately resolve to the **same Extension Host**.
 The canonical v1 consumer/sample is a Node-host extension with a `main` entry.
@@ -344,12 +344,12 @@ Before claiming a custom plugin works (**API / lifecycle + manual integration**)
    (`apiVersion` guard / missing export). Separately understand that
    `extensionDependencies` may prevent normal activation if Workshop is not
    installed — that is VS Code behavior, not the same as your guard.
-2. Plugin appears in **Markdown Workshop: Show Plugin Status** / catalog
+2. Plugin appears in **Lumière: Show Plugin Status** / catalog
    (same local Extension Host).
 3. At least one trivial contribution works (marker **or** command **or**
    claimed link **or** code-block language). Prefer proving **command + marker**
    when aiming at native E2E later.
-4. Disable via `markdownWorkshop.plugins.external` removes the contribution
+4. Disable via `lumiere.markdown.plugins.external` removes the contribution
    without breaking built-ins.
 5. Re-enable restores it.
 6. Disposing the handle / deactivating the extension cleans up.
@@ -402,8 +402,8 @@ Before claiming a custom plugin works (**API / lifecycle + manual integration**)
 
 ## 12. Relationship statement (for maintainers)
 
-- **AGENTS.md** = how to develop Markdown Workshop.
-- **AGENT.md** = how to develop a plugin that **uses** Markdown Workshop.
+- **AGENTS.md** = how to develop Lumière.
+- **AGENT.md** = how to develop a plugin that **uses** Lumière.
 - Keep both. Cross-link; never merge into one file without an explicit owner
   decision.
 - **AGENTS.md must** contain an imperative routing sentence pointing custom /

@@ -5,7 +5,7 @@ export default defineManifest({
   description:
     "Track changes in the rendered note: removed words struck through, added words tinted, removed blocks shown with Restore. Needs Git change bars.",
   kind: "feature",
-  // Opt in: Markdown Workshop: Toggle Inline Git Changes, or this switch.
+  // Opt in: Lumière: Toggle Inline Git Changes, or this switch.
   defaultEnabled: false,
   surfaces: ["webview"],
   capabilities: ["rendering", "editing"],

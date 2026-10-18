@@ -6,8 +6,8 @@ import {
   type ToolbarSettings,
 } from "../../../shared/toolbar-settings";
 
-export const SECTION = "pdfWorkshop.toolbar";
-const DOCK_KEY = "pdfWorkshop.floatingDock";
+export const SECTION = "lumiere.pdf.toolbar";
+const DOCK_KEY = "lumiere.pdf.floatingDock";
 
 /**
  * The toolbar settings the viewers need: the mode from the settings, and

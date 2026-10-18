@@ -9,14 +9,14 @@
  * or VS Code's when an extension such as Copilot Chat serves it) only when
  * that is the only agent installed, and otherwise leaves the selection on the
  * clipboard for the user to paste into whichever agent they use. The
- * `pdfWorkshop.copyLinkForAgent.target` setting forces one agent: Claude Code (its
+ * `lumiere.pdf.copyLinkForAgent.target` setting forces one agent: Claude Code (its
  * new conversation takes the selection as its prompt) or Codex (which takes no
  * prefilled text but gets the selection, and a region's snapshot, attached).
  */
 export type AgentTarget =
   "cursor" | "chat" | "claudeCode" | "codex" | "clipboard";
 
-/** The `pdfWorkshop.copyLinkForAgent.target` setting: `auto` or one target. */
+/** The `lumiere.pdf.copyLinkForAgent.target` setting: `auto` or one target. */
 export type AgentTargetSetting = "auto" | AgentTarget;
 
 /** Extensions that bring their own agent chat besides the editor's. */

@@ -1,4 +1,4 @@
-# Obsidian settings audit for Markdown Workshop
+# Obsidian settings audit for Lumière
 
 Date: 2026-10-09 (SGT). This is research only. No code was changed.
 
@@ -6,7 +6,7 @@ Date: 2026-10-09 (SGT). This is research only. No code was changed.
 - Obsidian 1.14.4 (`/workspace/tools/obsidian-1.14.4`). I unpacked `obsidian.asar` to a temp folder and read only the default-config object, the core-plugin defaults and the English UI strings, so the option names and defaults are exact for this version. I copied no code, CSS or assets.
 - The official help source, `obsidianmd/obsidian-help`: `en/User interface/Settings.md`, `Appearance.md`, `Hotkeys.md` and `en/Plugins/*.md`.
 - Test vault `.obsidian/app.json` and `appearance.json`. Both are `{}`, so the vault uses all defaults. `core-plugins.json` is quoted where it matters.
-- Markdown Workshop, branch `continue-handover` at `f7105ac`, my own clone at `/workspace/repos/settings-audit`: `package.json` → `contributes.configuration`, `src/plugins/*`, and `src/webview/styles/base.css`.
+- Lumière, branch `continue-handover` at `f7105ac`, my own clone at `/workspace/repos/settings-audit`: `package.json` → `contributes.configuration`, `src/plugins/*`, and `src/webview/styles/base.css`.
 
 **Legend**
 - Status:

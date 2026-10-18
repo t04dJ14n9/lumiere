@@ -45,7 +45,7 @@ export interface SettingEntry {
 }
 
 /** The prefix of every key this extension contributes. */
-export const SETTING_PREFIX = "pdfWorkshop.";
+export const SETTING_PREFIX = "lumiere.pdf.";
 const PREFIX = SETTING_PREFIX;
 
 const words = (text: string): string =>

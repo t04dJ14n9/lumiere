@@ -1,14 +1,14 @@
 # Agent instructions
 
-One VS Code and Cursor extension, "Workshop: Markdown and PDF", in a pnpm
+One VS Code and Cursor extension, "Lumière: Markdown Editor and PDF Reader", in a pnpm
 workspace. Everything is a plugin:
 
 | Path | What it is | Read first |
 | --- | --- | --- |
 | `packages/core` | The plugin core on Cordis | its README.md |
 | `packages/agents` | What both products hand to agents | its README.md |
-| `packages/markdown` | Markdown Workshop: Obsidian-like Live Preview | its DESIGN.md, IMPLEMENTATION_PLAN.md |
-| `packages/pdf` | PDF Workshop: EmbedPDF viewer with agent links | its README.md, AGENTS.md |
+| `packages/markdown` | Lumière: Obsidian-like Live Preview | its DESIGN.md, IMPLEMENTATION_PLAN.md |
+| `packages/pdf` | Lumière PDF: EmbedPDF viewer with agent links | its README.md, AGENTS.md |
 | `src/extension.ts` | The composition root: one plugin tree for both | |
 
 If the task is a user / third-party custom plugin, read
@@ -38,7 +38,7 @@ If the task is a user / third-party custom plugin, read
 - Webviews are untrusted. Every message has a schema and is validated in
   both directions; the host re-checks paths and containment.
 - Track editors per panel, never by file path: one file can be open twice.
-- Each product owns its settings prefix (`markdownWorkshop.`, `pdfWorkshop.`)
+- Each product owns its settings prefix (`lumiere.markdown.`, `lumiere.pdf.`)
   and its commands; one product's settings commands never show or write the
   other's.
 - Keep the Copy Link for Agent reference wording compatible with LLM Wiki

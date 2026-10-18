@@ -4,7 +4,7 @@
 LLM Wiki-compatible `@path#start-end` link, a blank line and the passage
 quoted with `> `, so the agent both reads the exact words and can open the
 note at that range. It opens a chat only when the editor's own chat is the
-only agent installed, or when `markdownWorkshop.copyLinkForAgent.target`
+only agent installed, or when `lumiere.markdown.copyLinkForAgent.target`
 forces one. Obsidian has no built-in equivalent.
 
 The separate Copy for Agent command (Mod+Alt+C, a title button and menu
@@ -42,12 +42,12 @@ to editor open/close and configuration changes; saving awaits
 `document/willSave`. Webview contributes to `editor/selectionMenu`.
 `plugins.agentBridge.enabled` defaults to true. Command: Copy Link for Agent
 (no shortcut; selection menu and editor context menu).
-`markdownWorkshop.copyLinkForAgent.target` forces the agent.
+`lumiere.markdown.copyLinkForAgent.target` forces the agent.
 
 ## Limits and differences from Obsidian
 
 An untitled document cannot supply a disk reference until saved and reopened as
-a file; Copy Text Only works without a disk path. Only Markdown Workshop panel
+a file; Copy Text Only works without a disk path. Only Lumière panel
 selections are supported. Saved line references do not export attachments,
 snapshots or chat messages.
 

@@ -1,7 +1,7 @@
 import { contributionId } from "../setting-schema";
 
 /**
- * Versioned selection envelope shared by Markdown Workshop and PDF
+ * Versioned selection envelope shared by Lumière and PDF
  * Workshop. This is a workbench protocol, not OKF
  * metadata. Version 1 carries one locator.
  *
@@ -15,7 +15,7 @@ import { contributionId } from "../setting-schema";
  */
 export const BRIDGE_ENVELOPE_VERSION = 1;
 
-/** PDF Workshop's envelope command (in this extension). */
+/** Lumière PDF's envelope command (in this extension). */
 export const PDF_BRIDGE_COMMAND = "vscodeEmbedPdf.bridge.envelope";
 
 /** Passed to command registration so callers and the host share one id. */

@@ -26,7 +26,7 @@ export function nativePlatform(extensionId: string): ApiPlatform {
     installed: (id) => !!vscode.extensions.getExtension(id),
     external: (resource) =>
       vscode.workspace
-        .getConfiguration("markdownWorkshop", resource)
+        .getConfiguration("lumiere.markdown", resource)
         .get("plugins.external", {}),
     write: writeSetting,
     async settings(resource, query) {
@@ -45,7 +45,7 @@ async function writeSetting(
 ): Promise<void> {
   const target = configurationTarget(scope);
   const configuration = vscode.workspace.getConfiguration(
-    "markdownWorkshop",
+    "lumiere.markdown",
     scope.resource,
   );
   if (!external) {

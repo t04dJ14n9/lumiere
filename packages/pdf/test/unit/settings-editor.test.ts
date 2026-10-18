@@ -7,7 +7,7 @@ test("the Settings editor opens through runCommands, so its result never crosses
   await openSettingsEditor(async (...call: unknown[]) => {
     calls.push(call);
     return undefined;
-  }, "pdfWorkshop.view.defaultZoom");
+  }, "lumiere.pdf.view.defaultZoom");
   assert.deepEqual(calls, [
     [
       "runCommands",
@@ -15,7 +15,7 @@ test("the Settings editor opens through runCommands, so its result never crosses
         commands: [
           {
             command: "workbench.action.openSettings",
-            args: "pdfWorkshop.view.defaultZoom",
+            args: "lumiere.pdf.view.defaultZoom",
           },
         ],
       },

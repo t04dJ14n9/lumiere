@@ -8,7 +8,7 @@ import {
 import type { VaultFile } from "./api";
 import type { FileTable } from "./file-table";
 
-/** Obsidian's **New link format** (`markdownWorkshop.links.newLinkFormat`). */
+/** Obsidian's **New link format** (`lumiere.markdown.links.newLinkFormat`). */
 export type LinkFormat = "shortest" | "relative" | "absolute";
 
 /**

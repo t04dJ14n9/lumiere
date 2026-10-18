@@ -48,7 +48,7 @@ test("a text selection envelope keeps source identity, durable locators, and the
   assert.equal(PDF_BRIDGE_ENVELOPE_COMMAND, "vscodeEmbedPdf.bridge.envelope");
   assert.equal(
     MARKDOWN_BRIDGE_ENVELOPE_COMMAND,
-    "markdownWorkshop.bridge.envelope",
+    "lumiere.markdown.bridge.envelope",
   );
   assert.deepEqual(envelope.source, {
     identity: "papers/attention_v2.pdf",
@@ -78,7 +78,7 @@ test("a text selection envelope keeps source identity, durable locators, and the
   assert.equal(envelope.revision.sourceSha256, sourceHash);
 });
 
-test("PDF envelopes parse as Workbench v1 (Markdown Workshop field names)", () => {
+test("PDF envelopes parse as Workbench v1 (Lumière field names)", () => {
   const envelope = pdfBridgeEnvelope({
     capturedAt: "2026-10-11T12:00:00.000Z",
     identity: "papers/attention_v2.pdf",

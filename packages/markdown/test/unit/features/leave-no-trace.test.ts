@@ -81,7 +81,7 @@ for (const definition of definitions) {
     assert.deepEqual(root.ledger.snapshot(), baseline);
     assert.deepEqual(errors, [], "teardown logged errors");
     for (const [key, value] of contextKeys) {
-      if (key.startsWith("markdownWorkshop.has")) {
+      if (key.startsWith("lumiere.markdown.has")) {
         assert.equal(value, false, `${key} reset on stop`);
       }
     }

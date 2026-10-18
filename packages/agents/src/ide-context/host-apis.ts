@@ -2,8 +2,8 @@ import type { IdeContextHostApis } from "./gather";
 import type { DiagnosticItem } from "./types";
 
 export const KNOWN_WORKSHOP_VIEW_TYPES = [
-  "markdownWorkshop.editor",
-  "pdfWorkshop.viewer",
+  "lumiere.markdown.editor",
+  "lumiere.pdf.viewer",
 ] as const;
 
 interface UriLike {

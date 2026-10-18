@@ -227,7 +227,7 @@ test("the viewer reloads when the PDF changes on disk", async ({
 test("the agent bridge is off by default, and its setting starts and stops it", async ({
   workbench: page,
 }) => {
-  // The bridge starts a local MCP server, so it is opt-in (pdfWorkshop.agentBridge.enabled).
+  // The bridge starts a local MCP server, so it is opt-in (lumiere.pdf.agentBridge.enabled).
   // A running bridge announces itself with a file in ~/.agent-pdf-viewer/bridges.
   const bridges = path.join(paths.home, ".agent-pdf-viewer", "bridges");
   const announced = (): number =>
@@ -255,11 +255,11 @@ test("the agent bridge is off by default, and its setting starts and stops it", 
     string,
     unknown
   >;
-  expect(settings["pdfWorkshop.agentBridge.enabled"]).toBe(true);
+  expect(settings["lumiere.pdf.agentBridge.enabled"]).toBe(true);
   writeFileSync(
     settingsFile,
     JSON.stringify(
-      { ...settings, "pdfWorkshop.agentBridge.enabled": false },
+      { ...settings, "lumiere.pdf.agentBridge.enabled": false },
       null,
       2,
     ),

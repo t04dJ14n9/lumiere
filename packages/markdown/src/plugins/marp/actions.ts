@@ -88,7 +88,7 @@ export async function keepDeck(
 ): Promise<void> {
   await rememberDeck(actions.storage, uri);
   await actions.execute("vscode.openWith", uri, MARKDOWN_EDITOR.viewType);
-  actions.inform("This deck stays in Markdown Workshop.");
+  actions.inform("This deck stays in Lumière.");
 }
 
 export function redirectToTextEditor(input: {

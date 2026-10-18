@@ -2,7 +2,7 @@
 
 VS Code's quick diff in the rendered editor: a 3px bar beside the line numbers
 for each added (green), modified (blue) or removed (red triangle) range, against
-`HEAD` or the index (`markdownWorkshop.gitGutter.compareTo`). On by default.
+`HEAD` or the index (`lumiere.markdown.gitGutter.compareTo`). On by default.
 
 ## How it works
 

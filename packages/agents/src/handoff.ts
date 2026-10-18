@@ -1,7 +1,7 @@
 /**
  * The text Copy Link for Agent writes for a note selection, as
- * docs/agent-handoff-format.md defines it: Markdown Workshop writes it, and
- * PDF Workshop's agent bridge returns it for the note selection.
+ * docs/agent-handoff-format.md defines it: Lumière writes it, and
+ * Lumière PDF's agent bridge returns it for the note selection.
  */
 
 /** `@notes/a.md#12-18` (one line: `#12`), with the full URI outside the workspace folder. */

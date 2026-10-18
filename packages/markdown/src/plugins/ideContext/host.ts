@@ -80,7 +80,7 @@ export const ideContextHost: Plugin = {
 async function gatherInput(ctx: Context) {
   const panel = ctx.editors.active();
   if (!panel) {
-    ctx.dialogs.inform("Open a Markdown Workshop note first");
+    ctx.dialogs.inform("Open a Lumière note first");
     return undefined;
   }
   const selection = await ctx.selections.capture(panel.id);

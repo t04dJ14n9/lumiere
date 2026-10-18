@@ -32,7 +32,7 @@ function zoomStatus(page: Page) {
 
 /** A status bar button of the viewer, by its id. */
 function statusBarButton(page: Page, id: string) {
-  return page.locator(`.part.statusbar [id$="pdfWorkshop.${id}"]`);
+  return page.locator(`.part.statusbar [id$="lumiere.pdf.${id}"]`);
 }
 
 function zoomPercent(label: string): number {

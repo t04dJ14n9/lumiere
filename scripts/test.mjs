@@ -1,5 +1,5 @@
 // Unit tests of every package, each run from its own directory: the core,
-// the agent formats, then Markdown Workshop, then PDF Workshop. Root scripts are tested too.
+// the agent formats, then Lumière, then Lumière PDF. Root scripts are tested too.
 import { readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 

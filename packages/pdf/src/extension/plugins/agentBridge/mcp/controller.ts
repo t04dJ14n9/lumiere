@@ -4,7 +4,7 @@
  * their own (dist/agent-bridge-server.js) that is loaded only when the
  * server starts.
  *
- * Invariant: the server runs only while `pdfWorkshop.agentBridge.enabled`
+ * Invariant: the server runs only while `lumiere.pdf.agentBridge.enabled`
  * is on AND it has been used in this window: a PDF editor was opened, or the
  * user ran Copy MCP Setup. Turning the setting off stops it at once, without
  * a reload; starts and stops run one at a time, in order.
@@ -27,7 +27,7 @@ import type { BridgeLog, RunningBridge } from "./server";
 export function agentBridgeEnabled(): boolean {
   return (
     vscode.workspace
-      .getConfiguration("pdfWorkshop")
+      .getConfiguration("lumiere.pdf")
       .get<boolean>("agentBridge.enabled", false) === true
   );
 }
@@ -39,7 +39,7 @@ export interface BridgeOptions {
   /** Plugin-owned LastPdf shared with the envelope command. */
   lastPdf: LastPdf;
   handoff: AgentHandoff;
-  /** The Markdown editor's selections, when Markdown Workshop runs. */
+  /** The Markdown editor's selections, when Lumière runs. */
   notes?: NoteSelections;
   log: BridgeLog;
   /** See ServerOptions.discoveryDir. */
@@ -64,7 +64,7 @@ export function registerAgentBridge(
   void bridge.sync();
   const subscriptions = vscode.Disposable.from(
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration("pdfWorkshop.agentBridge.enabled")) {
+      if (event.affectsConfiguration("lumiere.pdf.agentBridge.enabled")) {
         void bridge.sync();
       }
     }),
@@ -175,7 +175,7 @@ async function bridgeTurnedOn(): Promise<boolean> {
     return false;
   }
   await vscode.workspace
-    .getConfiguration("pdfWorkshop")
+    .getConfiguration("lumiere.pdf")
     .update("agentBridge.enabled", true, vscode.ConfigurationTarget.Global);
   return true;
 }

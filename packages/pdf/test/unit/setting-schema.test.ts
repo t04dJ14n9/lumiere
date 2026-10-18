@@ -36,11 +36,11 @@ test("every contributed setting is listed, once, in the manifest's order, with a
 test("settings are edited by type: boolean, tri-state, enum, number, and the rest in the Settings editor", () => {
   const kind = (key: string) =>
     entries.find((entry) => entry.key === key)!.kind;
-  assert.equal(kind("pdfWorkshop.keyboardShortcuts"), "boolean");
-  assert.equal(kind("pdfWorkshop.view.smoothScrolling"), "tristate");
-  assert.equal(kind("pdfWorkshop.view.pageLayout"), "enum");
-  assert.equal(kind("pdfWorkshop.regionImageCache.maxSizeMB"), "number");
-  assert.equal(kind("pdfWorkshop.view.defaultZoom"), "complex");
+  assert.equal(kind("lumiere.pdf.keyboardShortcuts"), "boolean");
+  assert.equal(kind("lumiere.pdf.view.smoothScrolling"), "tristate");
+  assert.equal(kind("lumiere.pdf.view.pageLayout"), "enum");
+  assert.equal(kind("lumiere.pdf.regionImageCache.maxSizeMB"), "number");
+  assert.equal(kind("lumiere.pdf.view.defaultZoom"), "complex");
   assert.equal(settingKind({ type: "string" }), "string");
   assert.equal(settingKind({ type: "array" }), "complex");
   assert.equal(settingKind({}), "complex");
@@ -48,7 +48,7 @@ test("settings are edited by type: boolean, tri-state, enum, number, and the res
 
 test("enum choices keep their descriptions; keys group by their first part", () => {
   const layout = entries.find(
-    (entry) => entry.key === "pdfWorkshop.view.pageLayout",
+    (entry) => entry.key === "lumiere.pdf.view.pageLayout",
   )!;
   assert.deepEqual(
     layout.choices.map((choice) => choice.value),
@@ -58,12 +58,12 @@ test("enum choices keep their descriptions; keys group by their first part", () 
   assert.equal(layout.group, "View");
   assert.equal(layout.title, "Page Layout");
   assert.equal(
-    entries.find((entry) => entry.key === "pdfWorkshop.keyboardShortcuts")!
+    entries.find((entry) => entry.key === "lumiere.pdf.keyboardShortcuts")!
       .group,
     "General",
   );
   assert.equal(
-    entries.find((entry) => entry.key === "pdfWorkshop.agentBridge.enabled")!
+    entries.find((entry) => entry.key === "lumiere.pdf.agentBridge.enabled")!
       .title,
     "Enabled",
   );
@@ -71,7 +71,7 @@ test("enum choices keep their descriptions; keys group by their first part", () 
 
 test("numbers are checked against the manifest's minimum and maximum", () => {
   const cache = entries.find(
-    (entry) => entry.key === "pdfWorkshop.regionImageCache.maxSizeMB",
+    (entry) => entry.key === "lumiere.pdf.regionImageCache.maxSizeMB",
   )!;
   assert.equal(cache.minimum, 1);
   assert.match(numberProblem("0", cache)!, /at least 1/u);
