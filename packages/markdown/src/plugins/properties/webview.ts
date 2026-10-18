@@ -299,6 +299,17 @@ function registerAddProperty(ctx: Context, editing: PropertyEditing): void {
       return true;
     }),
   );
+  ctx.effect(() =>
+    ctx.commands.register("markdown:add-alias", () => {
+      editing.addAlias();
+      return true;
+    }),
+  );
+  ctx.effect(() =>
+    ctx.commands.register("markdown:clear-metadata-properties", () =>
+      editing.clear(),
+    ),
+  );
   // As in Obsidian: collapse or expand the note's Properties, as their
   // heading does when clicked (which also remembers it for the note).
   ctx.effect(() =>

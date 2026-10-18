@@ -119,6 +119,46 @@ export class PropertyEditing {
     return true;
   }
 
+  /**
+   * Obsidian's "Add alias": an empty `aliases` property, unless there is one,
+   * then the caret in it, ready for a name.
+   */
+  addAlias(): void {
+    const view = this.options.view();
+    if (!view || document.querySelector("dialog[open]")) {
+      return;
+    }
+    const header = frontmatter(view.state.doc.toString());
+    if (header?.error) {
+      this.options.setStatus(
+        "Fix the properties source before adding an alias.",
+      );
+      return;
+    }
+    this.options.show();
+    if (!header?.values || !("aliases" in header.values)) {
+      this.edit(header?.raw ?? "", { type: "add", key: "aliases" });
+    }
+    focusWhenShown(
+      view.dom,
+      '[data-property-list="aliases"] [data-property-list-input]',
+    );
+  }
+
+  /** Obsidian's "Clear file properties": the whole properties block goes. */
+  clear(): boolean {
+    const view = this.options.view();
+    const header = view && frontmatter(view.state.doc.toString());
+    if (!view || !header) {
+      return false;
+    }
+    view.dispatch({
+      changes: { from: 0, to: header.end },
+      annotations: editGroup.of(`property-${++this.sequence}`),
+    });
+    return true;
+  }
+
   /** Obsidian's "Add file property": create the sheet if needed and start a new row. */
   add(): void {
     const view = this.options.view();
@@ -165,4 +205,21 @@ export function isNestedPropertyValue(value: unknown): boolean {
         item === null || ["string", "number", "boolean"].includes(typeof item),
     );
   return typeof value === "object" && value !== null && !scalarList;
+}
+
+/**
+ * Focus the element `selector` names once the property sheet has rendered
+ * it, which can take a few frames after an edit.
+ */
+function focusWhenShown(
+  root: HTMLElement,
+  selector: string,
+  frames = 30,
+): void {
+  const target = root.querySelector<HTMLElement>(selector);
+  if (target) {
+    target.focus();
+  } else if (frames > 0) {
+    requestAnimationFrame(() => focusWhenShown(root, selector, frames - 1));
+  }
 }

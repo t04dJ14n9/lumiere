@@ -110,12 +110,13 @@ function createHeader(
   if (edit.type !== "add" || /^---(?:\r?\n|$)/.test(source)) {
     return undefined;
   }
+  // As Obsidian writes it: the new header right before the note's text.
   const eol = source.includes("\r\n") ? "\r\n" : "\n";
   return [
     {
       from: 0,
       to: 0,
-      insert: `---${eol}${newPropertyLine(edit)}${eol}---${eol}${eol}`,
+      insert: `---${eol}${newPropertyLine(edit)}${eol}---${eol}`,
     },
   ];
 }

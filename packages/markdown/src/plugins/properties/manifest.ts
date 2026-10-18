@@ -26,6 +26,16 @@ export default defineManifest({
         mac: "cmd+;",
       },
       {
+        id: "addAlias",
+        title: "Add Alias",
+        editorCommand: "markdown:add-alias",
+      },
+      {
+        id: "clearProperties",
+        title: "Clear File Properties",
+        editorCommand: "markdown:clear-metadata-properties",
+      },
+      {
         id: "toggleFoldProperties",
         title: "Toggle Fold Properties",
         editorCommand: "editor:toggle-fold-properties",

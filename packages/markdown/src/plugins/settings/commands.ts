@@ -44,6 +44,11 @@ export const toggles: readonly SettingToggle[] = [
     key: "plugins.vim.enabled",
     label: "Vim mode",
   },
+  {
+    command: "toggleSpellcheck",
+    key: "plugins.spellcheck.enabled",
+    label: "Spellcheck",
+  },
 ];
 
 /** The note font size setting, a number in package.json. */

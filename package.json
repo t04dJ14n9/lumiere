@@ -467,6 +467,16 @@
         "icon": "$(symbol-property)"
       },
       {
+        "command": "markdownWorkshop.addAlias",
+        "title": "Add Alias",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.clearProperties",
+        "title": "Clear File Properties",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.toggleFoldProperties",
         "title": "Toggle Fold Properties",
         "category": "Markdown Workshop"
@@ -544,6 +554,11 @@
       {
         "command": "markdownWorkshop.toggleVim",
         "title": "Toggle Vim Mode",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.toggleSpellcheck",
+        "title": "Toggle Spellcheck",
         "category": "Markdown Workshop"
       },
       {
@@ -1581,6 +1596,14 @@
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
         },
         {
+          "command": "markdownWorkshop.addAlias",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
+        },
+        {
+          "command": "markdownWorkshop.clearProperties",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
+        },
+        {
           "command": "markdownWorkshop.toggleFoldProperties",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
         },
@@ -1631,6 +1654,9 @@
         },
         {
           "command": "markdownWorkshop.toggleVim"
+        },
+        {
+          "command": "markdownWorkshop.toggleSpellcheck"
         },
         {
           "command": "markdownWorkshop.insertTable",

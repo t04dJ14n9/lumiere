@@ -43,6 +43,11 @@ export default defineManifest({
         scope: "workbench",
       },
       { id: "toggleVim", title: "Toggle Vim Mode", scope: "workbench" },
+      {
+        id: "toggleSpellcheck",
+        title: "Toggle Spellcheck",
+        scope: "workbench",
+      },
     ],
   },
 } as const);

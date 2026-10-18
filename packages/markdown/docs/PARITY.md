@@ -194,6 +194,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.toggleMermaid | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.toggleInlineTitle | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.toggleVim | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.toggleSpellcheck | Obsidian's Toggle spellcheck | Flips `plugins.spellcheck.enabled`, the Settings UI's own key | Unit tests (settings toggles) | not observed |
 | Command: markdownWorkshop.quickSwitcher | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.insertTable | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.tableInsertRowAbove | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -353,3 +354,5 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.foldMore | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
 | Command: markdownWorkshop.foldLess | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
 | Command: markdownWorkshop.toggleFoldProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential probe | behaviour measured |
+| Command: markdownWorkshop.addAlias | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: an empty `aliases` property (a new header right before the text), then the caret in it | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.clearProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: the whole properties block goes | Differential probe; unit tests | behaviour measured |

@@ -5037,3 +5037,18 @@ for tables.
 Validation: `pnpm check` green; Markdown browser suite 284/284; real VS Code
 and Cursor Markdown 23/23 each; Cmd+Alt+Up checked in real VS Code (three
 carets, one undo).
+
+## Properties commands; Toggle Spellcheck — 2026-10-17
+
+Measured against Obsidian in the throwaway vault:
+
+- Add Alias: an empty `aliases` property (unless there is one), then the
+  caret in its input; matches Obsidian's note and focus.
+- Clear File Properties: the whole properties block goes.
+- A new properties block is written right before the note's text, as
+  Obsidian writes it; Workshop added a blank line after it (Add File Property
+  too).
+- Toggle Spellcheck flips `plugins.spellcheck.enabled`, with the other
+  setting toggles.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.
