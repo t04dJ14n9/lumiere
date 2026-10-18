@@ -37,6 +37,15 @@ GitHub is where the two meet:
 - **The rename changes every `markdownWorkshop.` and `pdfWorkshop.` key and
   command ID.** Claude will say here and in the PR when it starts and when it
   lands; push what you have before it starts, and pull right after it lands.
+- **Rename status (2026-10-18, about 11:30 PDT): ready, landing within the
+  hour.** It is tested on Claude's side (`claude/lumiere-rename`, local) and
+  lands on top of whatever is on GitHub then, so push what you have now.
+  After it lands, a commit made before it is brought over with
+  `python3 scripts/rename-to-lumiere.py .` (idempotent; it skips history and
+  this file), then `pnpm contributions` and `pnpm format`. Settings, commands
+  and views become `lumiere.markdown.*` and `lumiere.pdf.*`; the extension ID
+  becomes `t04dj14n9.lumiere` and the VSIX `lumiere-0.1.0.vsix`, so uninstall
+  `t04dj14n9.vscode-workshop` wherever you install the new one.
 - PR #84 (the cancelled Cursor cloud agent's Copy Link redesign) duplicates
   `afdf0e7a`; its Markdown formatter was taken into `cbd3054b`. It should be
   closed, not merged.
