@@ -1,4 +1,11 @@
 import { noteFragment } from "../../markdown/metadata/fragments";
+
+/** The embedded note exists but has no such heading or block. */
+export class MissingSection extends Error {
+  constructor() {
+    super("Embedded section not found");
+  }
+}
 export function embeddedNote(
   text: string,
   source: string,
@@ -14,7 +21,7 @@ export function embeddedNote(
   }
   const selection = noteFragment(text, fragment);
   if (!selection) {
-    throw new Error("Embedded section not found");
+    throw new MissingSection();
   }
   return {
     ...selection,

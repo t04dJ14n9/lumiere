@@ -10,11 +10,14 @@ test("outline recognizes real headings and excludes properties, code and math", 
     ["First link", "Second", "Alias"],
   );
 });
-test("fold ranges respect quote boundaries and repeated headings get distinct identities", () => {
+test("a heading inside a quote or list item is not a heading, and repeated headings get distinct identities", () => {
   const source =
-    "# Parent\n\n> ## Child\n> body\n\nOutside quote\n\n## Child\nbody\n";
-  const [parent, quote, child] = headings(source);
+    "# Parent\n\n> ## Quoted\n> body\n\n- ## Listed\n\n## Child\nbody\n\n## Child\nbody\n";
+  const [parent, child, again, ...rest] = headings(source);
+  assert.deepEqual(
+    [parent!.label, child!.label, again!.label, rest.length],
+    ["Parent", "Child", "Child", 0],
+  );
   assert.equal(parent!.end, source.length);
-  assert.ok(quote!.end < source.indexOf("Outside quote"));
-  assert.notEqual(quote!.key, child!.key);
+  assert.notEqual(child!.key, again!.key);
 });

@@ -60,19 +60,18 @@ test("empty heading titles become a visible placeholder label", () => {
   assert.equal(symbols[0]?.name, "(empty)");
 });
 
-test("quoted parent ranges contain children outside the blockquote", () => {
+test("a heading inside a quote is not in the outline, as in Obsidian", () => {
+  // Obsidian counts only a note's own headings: none inside a list item,
+  // quote or callout (measured with its metadata and outline).
   const text = "> # Quoted\n> body\n\n## Outside\n### Deep\nbody\n# Next\n";
   const symbols = outlineSymbols(metadata(text).headings);
-  const quoted = symbols[0]!;
-  const outside = quoted.children[0]!;
+  const outside = symbols[0]!;
   const deep = outside.children[0]!;
-  assert.equal(quoted.name, "Quoted");
   assert.equal(outside.name, "Outside");
   assert.equal(deep.name, "Deep");
-  assert.ok(quoted.end >= outside.end);
-  assert.ok(quoted.end >= deep.end);
-  assert.ok(quoted.end <= symbols[1]!.start);
-  assert.ok(text.slice(quoted.start, quoted.end).includes("### Deep"));
+  assert.equal(symbols[1]!.name, "Next");
+  assert.ok(outside.end >= deep.end);
+  assert.ok(outside.end <= symbols[1]!.start);
 });
 
 test("every ancestor contains descendant sections and selections with quoted and setext headings", () => {
@@ -102,7 +101,7 @@ test("every ancestor contains descendant sections and selections with quoted and
       }
     };
     const symbols = outlineSymbols(metadata(text).headings);
-    assert.equal(symbols[0]!.children[0]!.children[0]!.name, "Outside");
+    assert.equal(symbols[0]!.name, "Outside");
     verifyRanges(symbols);
   }
 });

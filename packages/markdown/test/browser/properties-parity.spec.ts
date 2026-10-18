@@ -69,6 +69,10 @@ test("Properties inline widgets, pending rows, pill keys and shared presentation
   ]);
   await row("tags").locator('[data-property-remove="1"]').click();
   await expect(row("tags").locator("[data-property-chip]")).toHaveCount(1);
+  // The sheet redraws before the note reaches the host: wait for the note.
+  await expect
+    .poll(() => page.evaluate(() => window.harness.text))
+    .not.toContain("- new");
 
   await page.getByRole("textbox", { name: "Markdown content" }).focus();
   const beforePending = await page.evaluate(() => window.harness.text);

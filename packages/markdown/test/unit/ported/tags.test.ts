@@ -6,12 +6,13 @@ import { protocol } from "../../../src/plugins/tags/protocol";
 import { createRenderer } from "../../../src/markdown/html";
 const { renderMarkdown } = createRenderer();
 
-test("tags combine Markdown and YAML while excluding code, escapes, comments and numeric tags", () => {
+test("tags combine Markdown and YAML, and comments as in Obsidian, while excluding code, escapes and numeric tags", () => {
   const source =
     '---\ntags: [Project/Notes, "#学习", 123]\nother: "#excluded"\n---\n# Heading\n\n#project #🙂 #1984 #y1984 C#code \\#escaped `#code` %%#comment%%\n\n```md\n#fenced\n```';
   assert.deepEqual(
     noteTags(source).sort(),
-    ["Project/Notes", "project", "y1984", "学习", "🙂"].sort(),
+    // A tag inside a %% comment counts, as Obsidian indexes it (measured).
+    ["Project/Notes", "comment", "project", "y1984", "学习", "🙂"].sort(),
   );
   assert.equal(tagMatches("Project/Notes", "PROJECT"), true);
   assert.equal(tagMatches("projectile", "project"), false);

@@ -5154,3 +5154,31 @@ its own, while folders and the `content:`, `line:` and block operators do
 not.
 
 Validation: `pnpm check` green; unit tests pin the measured results.
+
+## Note metadata and rendering, measured against Obsidian — 2026-10-17
+
+Obsidian's metadata cache (public API) was read for notes full of edge cases
+and compared with Workshop's metadata for the same text.
+
+- Links, embeds and tags inside `%% comments %%` are indexed, as Obsidian
+  indexes them (backlinks, renames and unresolved links see them).
+- Only a note's own headings count: not one inside a list item, quote or
+  callout. The outline, heading suggestions, heading links and folding
+  follow, as in Obsidian (which does not fold them either).
+- Reference-style links (`[text][ref]`) are not counted: Obsidian neither
+  resolves them nor lists them as unresolved.
+- Fixed a rendering bug: a `$$` line right after a paragraph line started no
+  display math, so the formula showed as raw text; Obsidian renders it. A
+  link inside it is no longer indexed.
+- A link within the note shows without its `#` (`[[#Local]]` as "Local"),
+  and an embedded heading that is missing says "Unable to find “Local” in
+  probe", as in Obsidian.
+- Kept: heading text in the metadata is the plain text (Obsidian keeps the
+  Markdown), which Workshop uses consistently for matching.
+
+Tests that pinned the old behaviour (outline with quoted headings, resolved
+reference links, comment tags left out) now pin Obsidian's. The Properties
+spec waits for the note before comparing it (a race that showed under load).
+
+Validation: `pnpm check` green; Markdown browser suite 283/284 before the
+spec fix, which then passed 20 of 20.

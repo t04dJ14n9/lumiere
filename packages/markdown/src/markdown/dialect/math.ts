@@ -29,6 +29,9 @@ export const math: MarkdownConfig = {
         cx.addElement(cx.elt("MathBlock", from, cx.prevLineEnd()));
         return true;
       },
+      // As in Obsidian, a `$$` line starts display math even right after a
+      // paragraph line, without a blank line between.
+      endLeaf: (_cx, line) => line.text.slice(line.pos).startsWith("$$"),
     },
   ],
   parseInline: [

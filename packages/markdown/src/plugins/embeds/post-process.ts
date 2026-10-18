@@ -3,7 +3,7 @@ import type { Resource, Resources } from "../resources/api";
 import { mediaKind } from "../../shared/media-kinds";
 import { mediaRecovery } from "./webm";
 import { inspectImage } from "./image-dialog";
-import { embeddedNote } from "./note";
+import { embeddedNote, MissingSection } from "./note";
 
 interface EmbedOptions {
   pass: RenderPass;
@@ -47,7 +47,10 @@ class EmbedPass {
         .catch((error) => {
           if (this.isActive) {
             node.classList.add("unresolved-embed");
-            node.textContent = missingEmbedText(target);
+            node.textContent = missingEmbedText(target, {
+              note: noteName(pass.documentUri),
+              section: error instanceof MissingSection,
+            });
             node.title = String(error);
             pass.measure();
           }
@@ -259,8 +262,26 @@ class EmbedPass {
   }
 }
 
-/** What an embed that can't be resolved says, as in Obsidian. */
-export function missingEmbedText(target: string): string {
+/**
+ * What an embed that can't be resolved says, as in Obsidian: a missing file
+ * by its path, a missing heading or block in a note by the note's name (the
+ * current note's for `![[#Heading]]`).
+ */
+export function missingEmbedText(
+  target: string,
+  missing: { note?: string | undefined; section?: boolean } = {},
+): string {
   const path = target.split("|")[0]!.trim();
+  const hash = path.indexOf("#");
+  if (missing.section && hash >= 0) {
+    const note = path.slice(0, hash).split("/").at(-1) || missing.note;
+    return `Unable to find “${path.slice(hash + 1)}” in ${note ?? "this note"}`;
+  }
   return `"${path}" could not be found.`;
+}
+
+/** A note's name from its URI, without `.md`. */
+function noteName(uri: string | undefined): string | undefined {
+  const name = uri?.split("/").at(-1);
+  return name && decodeURIComponent(name).replace(/\.md$/iu, "");
 }

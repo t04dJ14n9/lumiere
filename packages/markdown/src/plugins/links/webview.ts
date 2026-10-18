@@ -176,7 +176,14 @@ export const wikiLinkRenderer: InlineRenderer = {
     const separator = text.indexOf("|");
     const href = text.split("|")[0]!;
     const revealed = cx.revealed(node.from, node.to);
-    const from = node.from + 2 + (separator < 0 ? 0 : separator + 1);
+    // A link within the note shows without its `#`, as in Obsidian.
+    const local = separator < 0 && href.length > 1 && href.startsWith("#");
+    // Text starts after `[[`, and after the alias's `|` or a local `#`.
+    let skip = separator + 1;
+    if (separator < 0) {
+      skip = local ? 1 : 0;
+    }
+    const from = node.from + 2 + skip;
     // Unresolved styling shows only while the link is rendered.
     let cls = "md-link";
     if (!revealed) {

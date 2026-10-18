@@ -16,7 +16,9 @@ export function extractHeadings(source: string, tree: Tree): Heading[] {
   tree.iterate({
     enter(node) {
       const match = /^(?:ATX|Setext)Heading([1-6])$/.exec(node.name);
-      if (!match) {
+      // As in Obsidian, only a note's own headings count: not one inside a
+      // list item, quote or callout.
+      if (!match || node.node.parent?.name !== "Document") {
         return;
       }
       const text = source

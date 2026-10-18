@@ -1,5 +1,6 @@
 import type { Tree, SyntaxNodeRef } from "@lezer/common";
 import { wikiTarget, linkDestination } from "../html/helpers";
+import { markdownParser } from "../dialect";
 import type { NoteMetadata, Position } from "./types";
 
 type Collected = Pick<
@@ -62,6 +63,10 @@ export class MetadataCollector {
         ) {
           return false;
         }
+        if (node.name === "ObsidianComment") {
+          this.collectComment(text, node, map);
+          return false;
+        }
         const position = this.position(map(node.from), map(node.to));
         if (node.name === "Tag") {
           this.result.tags.push({
@@ -76,6 +81,26 @@ export class MetadataCollector {
         }
         this.collectListItem({ text, node, position, map });
       },
+    });
+  }
+
+  /**
+   * Obsidian indexes the links, embeds and tags inside a `%% comment %%`,
+   * though they are not shown: its inside is parsed on its own.
+   */
+  private collectComment(
+    text: string,
+    node: SyntaxNodeRef,
+    map: (offset: number) => number,
+  ): void {
+    const from = node.from + 2;
+    const inner = text.slice(from, Math.max(from, node.to - 2));
+    this.collect({
+      text: inner,
+      syntax: markdownParser.parse(inner),
+      map: (offset) => map(from + offset),
+      // Like a definition's text: not the note's sections.
+      inDefinition: true,
     });
   }
 
@@ -106,16 +131,11 @@ export class MetadataCollector {
     if (!["Link", "Image", "Autolink"].includes(node.name)) {
       return;
     }
+    // A reference-style link (`[text][ref]`) is not counted, as in Obsidian,
+    // which neither resolves it nor lists it among unresolved links.
     const url = node.node.getChild("URL");
     const original = text.slice(node.from, node.to);
-    const label = node.node.getChild("LinkLabel");
-    const labelText =
-      (label ? text.slice(label.from + 1, label.to - 1) : "") ||
-      /^!?\[([^\]]+)\]/.exec(original)?.[1] ||
-      "";
-    const link = url
-      ? linkDestination(text.slice(url.from, url.to))
-      : this.references.get(labelText.toLowerCase().replace(/\s+/g, " "));
+    const link = url ? linkDestination(text.slice(url.from, url.to)) : "";
     if (link) {
       (node.name === "Image" ? this.result.embeds : this.result.links).push({
         link,

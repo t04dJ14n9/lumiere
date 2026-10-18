@@ -40,13 +40,14 @@ test("one metadata result contains positions, aliases, links, embeds, blocks and
     "project",
   ]);
 });
-test("reference links resolve through definitions and syntax inside code remains opaque", () => {
+test("reference-style links are not counted, as in Obsidian, and syntax inside code remains opaque", () => {
   const note = metadata(
     "[go][label] [label][] [label]\n\n[label]: target.md\n\n```md\n[[not]] ^fake\n```",
   );
+  // Obsidian neither resolves them nor lists them as unresolved (measured).
   assert.deepEqual(
     note.links.map((link) => link.link),
-    ["target.md", "target.md", "target.md"],
+    [],
   );
   assert.equal(note.blocks.fake, undefined);
 });
@@ -71,7 +72,7 @@ test("footnote metadata maps links, tags and nested list parents back to source"
   const note = metadata(source);
   assert.deepEqual(
     note.links.map((link) => link.link),
-    ["Note", "target.md"],
+    ["Note"],
   );
   for (const link of note.links) {
     assert.equal(

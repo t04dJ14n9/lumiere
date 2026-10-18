@@ -38,7 +38,11 @@ export function headingFold(
         return false;
       }
       if (node.from >= start && node.from <= end && headingLevel(node.name)) {
-        heading = node.node;
+        // A heading inside a list item, quote or callout does not fold, as
+        // in Obsidian, which does not count it as the note's heading.
+        if (node.node.parent?.name === "Document") {
+          heading = node.node;
+        }
         return false;
       }
       return undefined;
@@ -52,8 +56,7 @@ export function headingFold(
 function sectionFold(heading: SyntaxNode, length: number): FoldRange | null {
   const level = headingLevel(heading.name);
   let to = heading.parent?.to ?? length;
-  // Only sibling headings end this section. A heading inside a quote or list
-  // has its own scope, matching metadata's heading-fold semantics.
+  // The next heading of the same or a higher level ends the section.
   for (let next = heading.nextSibling; next; next = next.nextSibling) {
     const nextLevel = headingLevel(next.name);
     if (nextLevel && nextLevel <= level) {
