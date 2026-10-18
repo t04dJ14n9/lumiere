@@ -1,5 +1,8 @@
-import type { SuggestionSource } from "../suggest/api";
-export const linkSuggestion: SuggestionSource = ({ state, pos }) => {
+import type { SuggestionContext, SuggestionTrigger } from "../suggest/api";
+export const linkSuggestion = ({
+  state,
+  pos,
+}: SuggestionContext): SuggestionTrigger | undefined => {
   const line = state.doc.lineAt(pos);
   const match = /\[\[([^\]\n[]*)$/.exec(state.sliceDoc(line.from, pos));
   if (!match) {

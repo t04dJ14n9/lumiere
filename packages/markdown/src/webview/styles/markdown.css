@@ -109,6 +109,56 @@
   color: inherit;
   background: var(--highlight);
 }
+/*
+ * Obsidian 1.14's highlight colours, a see-through tint of the theme's
+ * colour (30%, as Obsidian's), here VS Code's chart colours.
+ */
+.md-highlight-red,
+.markdown-rendered mark[data-highlight="red"],
+.md-highlight-swatch[data-highlight="red"] {
+  --highlight-colour: var(--vscode-charts-red, #f14c4c);
+}
+.md-highlight-orange,
+.markdown-rendered mark[data-highlight="orange"],
+.md-highlight-swatch[data-highlight="orange"] {
+  --highlight-colour: var(--vscode-charts-orange, #d18616);
+}
+.md-highlight-yellow,
+.markdown-rendered mark[data-highlight="yellow"],
+.md-highlight-swatch[data-highlight="yellow"] {
+  --highlight-colour: var(--vscode-charts-yellow, #cca700);
+}
+.md-highlight-green,
+.markdown-rendered mark[data-highlight="green"],
+.md-highlight-swatch[data-highlight="green"] {
+  --highlight-colour: var(--vscode-charts-green, #89d185);
+}
+.md-highlight-blue,
+.markdown-rendered mark[data-highlight="blue"],
+.md-highlight-swatch[data-highlight="blue"] {
+  --highlight-colour: var(--vscode-charts-blue, #3794ff);
+}
+.md-highlight-purple,
+.markdown-rendered mark[data-highlight="purple"],
+.md-highlight-swatch[data-highlight="purple"] {
+  --highlight-colour: var(--vscode-charts-purple, #b180d7);
+}
+.md-highlight[class*="md-highlight-"],
+.markdown-rendered mark[data-highlight] {
+  background: color-mix(in srgb, var(--highlight-colour) 30%, transparent);
+}
+.md-highlight-swatch[data-highlight="default"] {
+  --highlight-colour: var(--highlight);
+}
+.md-highlight-swatch {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin: 0 0.15em;
+  border-radius: 50%;
+  vertical-align: baseline;
+  background: var(--highlight-colour);
+}
 /* A setext heading's underline stays visible, faint, as in Obsidian. */
 .md-setext-mark,
 .md-syntax-mark,

@@ -46,6 +46,14 @@ export default defineManifest({
         title: "Toggle Highlight",
         editorCommand: "editor:toggle-highlight",
       },
+      // Obsidian 1.14's coloured highlights (`==🔵text==`).
+      ...(["Red", "Orange", "Yellow", "Green", "Blue", "Purple"] as const).map(
+        (colour) => ({
+          id: `toggleHighlight${colour}`,
+          title: `Toggle ${colour} Highlight`,
+          editorCommand: `editor:toggle-highlight-${colour.toLowerCase()}`,
+        }),
+      ),
       {
         id: "toggleCode",
         title: "Toggle Inline Code",

@@ -12,6 +12,10 @@ caches candidates by file, invalidates on index changes, materializes only 50
 link texts and honors source feature switches. Accepting a link reuses closing
 brackets. Aborted requests and plugin disposal cancel pending work.
 
+A source may instead return a list it makes itself (`LocalSuggestions`, the
+highlight colours after `==`), shown without asking the host; Tab does not
+take its entries, as in Obsidian.
+
 Ranking is Obsidian 1.14's: the fuzzy score of `src/shared/fuzzy.ts` (checked
 against Obsidian's own on 2,463 query and text pairs). A note matches on its
 name, or on its path a point lower; an excluded note is still offered, 10

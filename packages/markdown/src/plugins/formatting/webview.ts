@@ -10,6 +10,11 @@ import type {} from "../commands/api";
 import type {} from "./api";
 import { toggleComment } from "./comment";
 import { clearInlineFormatting, wrapSelection } from "./inline";
+import { toggleHighlightColour } from "./highlight-colour";
+import { highlightColourSuggestion } from "./highlight-suggest";
+import type {} from "../suggest/api";
+import { HIGHLIGHT_COLOURS } from "../../markdown/dialect/highlight";
+import type { HighlightColour } from "../../markdown/dialect/highlight";
 import { fenceLines, lineEdit, linkEdit, ruleEdit, tagEdit } from "./lines";
 import { addCursor } from "./cursors";
 import { linkPasteHandler } from "./paste-link";
@@ -27,6 +32,7 @@ export const formattingWebview: Plugin = {
     registerFormattingCommands(ctx, commands);
     registerFormattingKeys(ctx, commands);
     ctx.effect(() => ctx.editor.extend(linkPasteHandler));
+    ctx.on("suggest/trigger", highlightColourSuggestion);
   },
 };
 
@@ -40,6 +46,12 @@ function formattingCommands(): Map<string, Command> {
     ["code", "`"],
   ]) {
     commands.set(`editor:toggle-${id}`, wrapSelection(marker!));
+  }
+  for (const colour of Object.keys(HIGHLIGHT_COLOURS) as HighlightColour[]) {
+    commands.set(
+      `editor:toggle-highlight-${colour}`,
+      toggleHighlightColour(colour),
+    );
   }
   commands.set("editor:toggle-comments", (view) => {
     if (view.state.readOnly) {

@@ -4,10 +4,10 @@ import {
   type EditorState,
   type SelectionRange,
 } from "@codemirror/state";
-import { syntaxTree } from "@codemirror/language";
-import type { SyntaxNode } from "@lezer/common";
 import type { Command } from "@codemirror/view";
 import { markdownParser } from "../../markdown/dialect";
+import { highlightColourAt } from "../../markdown/dialect/highlight";
+import { MARKER_KINDS, spanContent, spansIn, type Span } from "./spans";
 const formattingParser = markdownParser;
 export function clearInlineFormatting(source: string): string {
   const removed: { from: number; to: number }[] = [];
@@ -160,35 +160,85 @@ function isWrapped(
   );
 }
 
+/** The spans of `marker` overlapping `from`–`to` that open with it (not `_`). */
+function markerSpans(
+  state: EditorState,
+  marker: string,
+  from: number,
+  to: number,
+): Span[] {
+  return spansIn(state, MARKER_KINDS[marker]!, from, to).filter(
+    (span) => state.sliceDoc(span.from, span.from + marker.length) === marker,
+  );
+}
+
+/** The edit that removes `span`'s markers, `range` kept on the same text. */
+function unwrapSpan(state: EditorState, span: Span, range: SelectionRange) {
+  return keepingRange(state, range, [
+    { from: span.from, to: span.from + span.open },
+    { from: span.to - span.close, to: span.to },
+  ]);
+}
+
+/** `changes`, with `range` moved to stay on the same text. */
+function keepingRange(
+  state: EditorState,
+  range: SelectionRange,
+  changes: ChangeSpec[],
+) {
+  const set = state.changes(changes);
+  const forward = range.head >= range.anchor;
+  return {
+    changes: set,
+    range: EditorSelection.range(
+      set.mapPos(range.anchor, forward ? 1 : -1),
+      set.mapPos(range.head, forward ? -1 : 1),
+    ),
+  };
+}
+
 function unwrapAtCaret(state: EditorState, position: number, marker: string) {
-  const kind = {
-    "**": "StrongEmphasis",
-    "*": "Emphasis",
-    "~~": "Strikethrough",
-    "==": "Highlight",
-    "`": "InlineCode",
-    $: "InlineMath",
-  }[marker];
-  let node: SyntaxNode | null = syntaxTree(state).resolveInner(position, 1);
-  while (node) {
-    if (
-      node.name === kind &&
-      state.sliceDoc(node.from, node.from + marker.length) === marker &&
-      state.sliceDoc(node.to - marker.length, node.to) === marker &&
-      position >= node.from + marker.length &&
-      position <= node.to - marker.length
-    ) {
-      return {
-        changes: [
-          { from: node.from, to: node.from + marker.length },
-          { from: node.to - marker.length, to: node.to },
-        ],
-        range: EditorSelection.cursor(position - marker.length),
-      };
-    }
-    node = node.parent;
+  const span = markerSpans(state, marker, position, position).find(
+    (candidate) =>
+      position >= spanContent(candidate).from &&
+      position <= spanContent(candidate).to,
+  );
+  return span
+    ? unwrapSpan(state, span, EditorSelection.cursor(position))
+    : undefined;
+}
+
+/**
+ * A selection on one line, as Obsidian 1.14 toggles it: inside a span of the
+ * marker, the span is unwrapped; overlapping spans are merged into one around
+ * the selection and them.
+ */
+function toggleOverSpans(
+  state: EditorState,
+  range: SelectionRange,
+  marker: string,
+) {
+  const spans = markerSpans(state, marker, range.from, range.to);
+  const inside = spans.find(
+    (span) =>
+      range.from >= spanContent(span).from && range.to <= spanContent(span).to,
+  );
+  if (inside) {
+    return unwrapSpan(state, inside, range);
   }
-  return undefined;
+  if (!spans.length) {
+    return undefined;
+  }
+  const from = Math.min(range.from, spans[0]!.from);
+  const to = Math.max(range.to, spans.at(-1)!.to);
+  return keepingRange(state, range, [
+    { from, insert: marker },
+    ...spans.flatMap((span) => [
+      { from: span.from, to: span.from + span.open },
+      { from: span.to - span.close, to: span.to },
+    ]),
+    { from: to, insert: marker },
+  ]);
 }
 
 function toggleSelectedText(
@@ -202,13 +252,13 @@ function toggleSelectedText(
     selected.endsWith(marker) &&
     selected.length >= marker.length * 2
   ) {
+    // A coloured highlight's emoji goes with its markers.
+    const open =
+      marker === "==" && highlightColourAt(selected, 2) ? 4 : marker.length;
+    const insert = selected.slice(open, -marker.length);
     return {
-      changes: {
-        from: range.from,
-        to: range.to,
-        insert: selected.slice(marker.length, -marker.length),
-      },
-      range: EditorSelection.range(range.from, range.to - marker.length * 2),
+      changes: { from: range.from, to: range.to, insert },
+      range: EditorSelection.range(range.from, range.from + insert.length),
     };
   }
   if (
@@ -226,6 +276,10 @@ function toggleSelectedText(
         range.to - marker.length,
       ),
     };
+  }
+  const overSpans = toggleOverSpans(state, range, marker);
+  if (overSpans) {
+    return overSpans;
   }
   return {
     changes: {

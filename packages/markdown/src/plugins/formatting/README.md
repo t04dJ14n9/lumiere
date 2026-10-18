@@ -6,7 +6,18 @@ commands: emphasis, code, comments, headings, lists, quotes, links and line move
 ## How it works
 
 Inline toggling uses the shared dialect to locate enclosing syntax at the caret;
-otherwise it wraps the word or selection, or removes selected delimiters. Line
+otherwise it wraps the word or selection, or removes selected delimiters. As
+in Obsidian 1.14, a selection anywhere inside a span unwraps the whole span,
+and one over or around spans merges them into one (`spans.ts`).
+
+Highlights take Obsidian 1.14's colours, an emoji right after `==`
+(`==🔵text==`): **Toggle Red Highlight** and the five other colours wrap the
+word or selection in that colour; on a highlight they recolour it, or remove
+it in its own colour; on part of one they split it, the part in the new
+colour and the rest in its own, spaces left outside; highlights a selection
+spans merge (`highlight-colour.ts`). Typing `==` that opens a highlight offers
+Default and the six colours; taking one adds its emoji and the closing `==`
+(`highlight-suggest.ts`); Tab takes nothing, as in Obsidian. Line
 commands edit each selected line, excluding a final column-zero line. Registered
 commands target the active projected editor (including table cells), and owned
 keymaps provide bold, italic, link and comment shortcuts. As in Obsidian,
@@ -28,6 +39,9 @@ Read-only views reject edits.
 - `api.ts`: injected formatting service contract.
 - `webview.ts`: service, command catalogue and keymap registrations.
 - `inline.ts`: inline clearing, caret/word wrapping and selection toggling.
+- `spans.ts`: the formatted spans around a selection.
+- `highlight-colour.ts`: the coloured highlight commands.
+- `highlight-suggest.ts`: the colour list after `==`.
 - `lines.ts`: heading/list/quote edits and link insertion.
 - `formatting.test.ts`: pure editor-state command units.
 
@@ -42,6 +56,11 @@ Insert Link and Toggle Comment use Mod+B, Mod+I, Mod+K and Mod+/.
 
 Removing a comment also removes the spaces just inside its `%%` markers, which
 Obsidian leaves behind.
+
+After a highlight colour command the selection stays on the same text;
+Obsidian 1.14 sometimes leaves it elsewhere, and with a selection running past
+a highlight's end it can garble the markers (`==🔴two t==hree`), which Workshop
+does not copy. The colours are not in the context menu.
 
 VS Code owns saves and undo. Formatting changes source directly, including table
 cell projections. No live-reference keybinding or visual-parity observation is

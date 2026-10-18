@@ -25,6 +25,7 @@ import { blockids } from "./block-ids";
 import { tasks } from "./tasks";
 import { callouts } from "./callouts";
 import { html } from "./html";
+import { highlights } from "./highlights";
 export function createRenderer(options: RendererOptions = {}) {
   const defaultBreaks = !options.strictLineBreaks;
   const md = new MarkdownIt({
@@ -46,6 +47,7 @@ export function createRenderer(options: RendererOptions = {}) {
   tasks(md);
   callouts(md, options.calloutIcon);
   html(md);
+  highlights(md);
   return {
     renderMarkdown(source: string, options: RenderOptions = {}): string {
       md.options.breaks =

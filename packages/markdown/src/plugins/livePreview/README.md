@@ -17,6 +17,9 @@ Inline decorations map through IME and selection-only mouse drag updates.
 Viewport changes during a drag or scrollbar press render newly visible text using
 the frozen reveal selection; rendered clicks map visible text back to source
 before syntax is revealed.
+A coloured highlight (`==🔵text==`, Obsidian 1.14) shows in its colour with
+the emoji hidden, or a swatch in its place while the caret is in it, as
+Obsidian shows it.
 
 ## Files
 
@@ -30,6 +33,7 @@ before syntax is revealed.
 - `block-discovery.ts`: structural syntax cache and renderer candidate selection.
 - `block-discovery.test.ts`: registration cost, discovery parity and unrestricted renderers.
 - `inline.ts`: basic inline decoration builder and composition/drag lifetime.
+- `highlight-colour.ts`: a coloured highlight's class and emoji.
 - `code-lines.ts`: code block lines; only fence text hides, so reveals never
   change the layout. Thematic breaks are likewise one decorated line.
 - `rendered-position.ts`: visible-text projection and DOM-to-source mapping.

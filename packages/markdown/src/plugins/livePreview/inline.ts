@@ -14,6 +14,7 @@ import { isPointerSelecting } from "../../webview/ui/pointer-selection";
 import { decorateListItem } from "./lists";
 import { decorateInlineHtml } from "./inline-html";
 import { decorateBlockId } from "./block-id";
+import { decorateHighlightColour, highlightClass } from "./highlight-colour";
 import { decorateCodeLines } from "./code-lines";
 import type { SyntaxNode, SyntaxNodeRef } from "@lezer/common";
 import type { InlineContext } from "./api";
@@ -114,7 +115,11 @@ class InlineDecorations implements InlineContext {
     }
     const cls = inlineClasses[name];
     if (cls) {
-      this.mark(from, to, cls);
+      this.mark(
+        from,
+        to,
+        name === "Highlight" ? highlightClass(this.state, from) : cls,
+      );
     }
     if (name === "ObsidianComment") {
       this.mark(from, to, "md-comment");
@@ -126,6 +131,7 @@ class InlineDecorations implements InlineContext {
     decorateListItem(node, this);
     decorateInlineHtml(node, this);
     decorateBlockId(node, this);
+    decorateHighlightColour(node, this);
     if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
       this.line(from, `md-heading md-h${name.at(-1)}`);
     }

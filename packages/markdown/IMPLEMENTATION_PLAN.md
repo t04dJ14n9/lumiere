@@ -5196,7 +5196,7 @@ the root, and resolves the rest like any other link (`../B/Same` from a
 note at the root finds `dup/B/Same.md`); a missing relative target inside
 the vault stays unresolved. All 84 match now.
 
-Validation: `pnpm check` green.
+Validation: `pnpm check` green; Markdown browser suite 284/284.
 
 ## Link maps and the Tags view, measured against Obsidian — 2026-10-17
 
@@ -5218,7 +5218,7 @@ by name). Fixed to match it:
 - The view sorts by frequency by default, as the pane does
   (`markdownWorkshop.tags.viewSort`).
 
-Validation: `pnpm check` green.
+Validation: `pnpm check` green; Markdown browser suite 284/284.
 
 ## Open pull requests #82, #81 and #75, checked against this branch — 2026-10-17
 
@@ -5287,3 +5287,30 @@ the note's folder, and highlights take a colour emoji (`==🔵text==`).
 Validation: `pnpm check` green (one unrelated `gitInline` test failed once
 under the parallel run and passed on rerun; logged to fix).
 - The gutter-selection fence spec now waits for the selection layer to draw (it read it before the next measure under load).
+
+## Coloured highlights and 1.14's toggles — 2026-10-17
+
+Obsidian 1.14 added coloured highlights: one of 🔴🟠🟡🟢🔵🟣 right after `==`
+colours the highlight. Measured in the probe on 1.14.4 and matched:
+
+- **Rendering.** Live Preview hides the emoji and colours the highlight, and
+  shows a swatch in the emoji's place while the caret is in it; rendered HTML
+  is `<mark data-highlight="blue">`. Colours are VS Code's chart colours at
+  30%, as Obsidian tints its theme's. Any other emoji stays text.
+- **Toggle Red Highlight** and the five other colours (new commands). On a
+  word or selection they wrap it; on a highlight they recolour it, or remove
+  it in its own colour; on part of one they split it (30 measured cases).
+  Two Obsidian results garble the markers when a selection runs past a
+  highlight's end; Workshop does not copy those.
+- **Toggle bold, italics, strikethrough and highlight** (1.14's "Toggle bold
+  handles text partly selected inside existing bold markers"): a selection
+  inside a span unwraps it whole, and one over spans merges them. Workshop
+  used to wrap again, breaking the markup.
+- **Typing `==`** that opens a highlight offers Default and the six colours.
+  The suggestion framework now takes lists a source makes itself.
+
+Also checked on 1.14.4: link resolution is unchanged (84/84 and 28/28 as on
+1.12.7); "files resolve relative to the note's folder" is about notes opened
+from outside a vault.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

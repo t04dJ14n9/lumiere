@@ -21,3 +21,33 @@ export const highlight: MarkdownConfig = {
     },
   ],
 };
+
+/**
+ * Obsidian 1.14's highlight colours: one of these emoji right after the
+ * opening `==` colours the highlight (`==🔵text==`); any other text does not.
+ */
+export const HIGHLIGHT_COLOURS = {
+  red: "\u{1F534}",
+  orange: "\u{1F7E0}",
+  yellow: "\u{1F7E1}",
+  green: "\u{1F7E2}",
+  blue: "\u{1F535}",
+  purple: "\u{1F7E3}",
+} as const;
+
+export type HighlightColour = keyof typeof HIGHLIGHT_COLOURS;
+
+const byEmoji = new Map<string, HighlightColour>(
+  Object.entries(HIGHLIGHT_COLOURS).map(([colour, emoji]) => [
+    emoji,
+    colour as HighlightColour,
+  ]),
+);
+
+/** The colour whose emoji starts `text` at `at`, if one does. */
+export function highlightColourAt(
+  text: string,
+  at = 0,
+): HighlightColour | undefined {
+  return byEmoji.get(text.slice(at, at + 2));
+}

@@ -4,6 +4,8 @@ import {
   closeCompletion,
   completionKeymap,
   completionStatus,
+  selectedCompletion,
+  type Completion,
   type CompletionContext,
   type CompletionResult,
 } from "@codemirror/autocomplete";
@@ -15,7 +17,7 @@ import {
   type Plugin,
 } from "@workshop/core";
 import type {} from "../editor/api";
-import type { Suggest, SuggestionTrigger } from "./api";
+import type { LocalSuggestions, Suggest, SuggestionTrigger } from "./api";
 import { CancelToken } from "../../shared/rpc/lifecycle";
 import { protocol } from "./protocol";
 import { allowsSuggestions, completionEdit } from "./completion";
@@ -50,9 +52,12 @@ function registerCompletions(ctx: Context): void {
       return null;
     }
     const trigger = ctx.bail("suggest/trigger", context);
-    return trigger
-      ? requestCompletions(ctx, { context, trigger, pending })
-      : null;
+    if (!trigger) {
+      return null;
+    }
+    return "options" in trigger
+      ? localCompletions(trigger)
+      : requestCompletions(ctx, { context, trigger, pending });
   };
   ctx.effect(() =>
     ctx.editor.extend(
@@ -62,6 +67,7 @@ function registerCompletions(ctx: Context): void {
           icons: false,
           maxRenderedOptions: 50,
           defaultKeymap: false,
+          addToOptions: [{ render: renderSwatch, position: 20 }],
         }),
         keymap.of([
           {
@@ -128,12 +134,51 @@ async function requestCompletions(
   }
 }
 
+/** A completion from a local list: Tab does not take it. */
+interface LocalCompletion extends Completion {
+  local: true;
+  swatch?: string;
+}
+
+function localCompletions(list: LocalSuggestions): CompletionResult {
+  return {
+    from: list.at,
+    filter: false,
+    options: list.options.map((option): LocalCompletion => ({
+      label: option.label,
+      local: true,
+      ...(option.swatch && { swatch: option.swatch }),
+      apply: (view, _completion, from, to) =>
+        view.dispatch({
+          changes: { from, to, insert: option.insert },
+          selection: { anchor: from + option.caret },
+          userEvent: "input.complete",
+        }),
+    })),
+  };
+}
+
+function renderSwatch(completion: Completion): Node | null {
+  const swatch = (completion as Partial<LocalCompletion>).swatch;
+  if (!swatch) {
+    return null;
+  }
+  const element = document.createElement("span");
+  element.className = "md-highlight-swatch";
+  element.dataset.highlight = swatch;
+  return element;
+}
+
 /** Set while Tab accepts, which CodeMirror's apply callback cannot tell. */
 let acceptingWithTab = false;
 
 function acceptWithTab(view: EditorView): boolean {
   if (completionStatus(view.state) !== "active") {
     return false;
+  }
+  // Obsidian's Tab leaves a highlight colour list open and takes nothing.
+  if ((selectedCompletion(view.state) as Partial<LocalCompletion>)?.local) {
+    return true;
   }
   acceptingWithTab = true;
   try {

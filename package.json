@@ -221,6 +221,36 @@
         "category": "Markdown Workshop"
       },
       {
+        "command": "markdownWorkshop.toggleHighlightRed",
+        "title": "Toggle Red Highlight",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.toggleHighlightOrange",
+        "title": "Toggle Orange Highlight",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.toggleHighlightYellow",
+        "title": "Toggle Yellow Highlight",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.toggleHighlightGreen",
+        "title": "Toggle Green Highlight",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.toggleHighlightBlue",
+        "title": "Toggle Blue Highlight",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.toggleHighlightPurple",
+        "title": "Toggle Purple Highlight",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.toggleCode",
         "title": "Toggle Inline Code",
         "category": "Markdown Workshop"
@@ -1406,6 +1436,30 @@
         },
         {
           "command": "markdownWorkshop.toggleHighlight",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.toggleHighlightRed",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.toggleHighlightOrange",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.toggleHighlightYellow",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.toggleHighlightGreen",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.toggleHighlightBlue",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.toggleHighlightPurple",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
         },
         {

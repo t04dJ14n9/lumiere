@@ -16,9 +16,26 @@ export interface SuggestionTrigger extends Query {
   /** Accepting with Enter adds a space after, as Obsidian does for a tag. */
   spaceAfter?: boolean;
 }
+/** One entry of a list the webview makes itself. */
+export interface LocalSuggestion {
+  label: string;
+  /** Inserted at the caret, which then sits `caret` characters in. */
+  insert: string;
+  caret: number;
+  /** A swatch of this highlight colour (`default` too) before the label. */
+  swatch?: string;
+}
+/**
+ * A list the webview makes itself, with no request to the host (highlight
+ * colours after `==`). Tab does not take an entry, as in Obsidian.
+ */
+export interface LocalSuggestions {
+  at: number;
+  options: readonly LocalSuggestion[];
+}
 export type SuggestionSource = (
   context: SuggestionContext,
-) => SuggestionTrigger | undefined;
+) => SuggestionTrigger | LocalSuggestions | undefined;
 export interface Suggest {
   register(source: SuggestionSource): Disposer;
 }
