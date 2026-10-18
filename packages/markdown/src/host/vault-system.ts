@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import type { Configuration } from "../shared/configuration";
 import { createConfiguration } from "./configuration-access";
 import { createHash } from "node:crypto";
-import { join } from "node:path";
 import type {
   FileEvent,
   ListedFile,
@@ -12,6 +11,7 @@ import type {
 } from "../plugins/vault/api";
 import { isIgnoredPath } from "../plugins/vault/exclusion";
 import { createVaultParser } from "./vault-parser";
+import { workerPath } from "./running-extension";
 
 /** Stats run this many at a time while listing a vault. */
 const STAT_CONCURRENCY = 32;
@@ -53,8 +53,9 @@ export function createVaultSystem(
           }
         }),
       ),
+    // The bundle runs from dist/, the worker is in dist/markdown/workers.
     createParser: () =>
-      createVaultParser(join(__dirname, "workers", "vault.cjs")),
+      createVaultParser(workerPath(context.extensionUri, "vault")),
     hash: (text) => createHash("sha256").update(text).digest("hex"),
     warn: (message) => void vscode.window.showWarningMessage(message),
   };

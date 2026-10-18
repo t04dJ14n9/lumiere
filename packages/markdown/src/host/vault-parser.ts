@@ -10,7 +10,7 @@ interface Pending {
 }
 
 /**
- * Parses notes in `dist/workers/vault.cjs`. If the worker cannot start or
+ * Parses notes in `dist/markdown/workers/vault.cjs`. If the worker cannot start or
  * exits, parsing continues in the extension host, so indexing never stops.
  */
 export function createVaultParser(workerPath: string): {

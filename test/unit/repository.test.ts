@@ -70,3 +70,19 @@ test("the Settings editor is opened only through each product's settings-editor 
   );
   assert.deepEqual(direct, []);
 });
+
+test("no extension source finds files next to itself, since the bundle moves it", () => {
+  // Everything runs from dist/extension.js, but each product's assets are in
+  // dist/markdown or dist/pdf; a __dirname path broke the vault worker once.
+  const sources = execFileSync(
+    "git",
+    ["ls-files", "-z", "--", "packages/*/src/**.ts", "src/**.ts"],
+    { encoding: "utf8" },
+  )
+    .split("\0")
+    .filter((path) => path && !path.endsWith(".test.ts"));
+  const relative = sources.filter((path) =>
+    /\b__(?:dirname|filename)\b/u.test(readFileSync(path, "utf8")),
+  );
+  assert.deepEqual(relative, []);
+});
