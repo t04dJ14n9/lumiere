@@ -4,18 +4,23 @@ import type { LivePreview } from "../livePreview/api";
 import { tableMotionPosition } from "./source-motion";
 import { observeMotionContext } from "./motion-context";
 
-/** Keep Vim's command bookkeeping while correcting rendered block targets. */
-export function revealBlockMotion(service: () => LivePreview | undefined) {
+/**
+ * Keep Vim's command bookkeeping while correcting rendered block targets.
+ * `preview` is read when the Vim plugin starts (it restarts when Live Preview
+ * comes or goes), not through its context, which refuses reads once the
+ * plugin is stopping.
+ */
+export function revealBlockMotion(preview: LivePreview | undefined) {
   return ViewPlugin.define((view) => {
     const cm = getCM(view);
-    return cm ? installBlockMotion(view, cm, service) : {};
+    return cm ? installBlockMotion(view, cm, preview) : {};
   });
 }
 
 export function installBlockMotion(
   view: EditorView,
   cm: CodeMirror,
-  service: () => LivePreview | undefined,
+  preview: LivePreview | undefined,
 ) {
   const original = cm.findPosV;
   const context = observeMotionContext(cm);
@@ -29,7 +34,6 @@ export function installBlockMotion(
     const eligible = entering;
     entering = false;
     const result = original.call(cm, start, amount, unit, goalColumn);
-    const preview = service();
     if (unit !== "line" || preview?.mode !== "livePreview") {
       return result;
     }

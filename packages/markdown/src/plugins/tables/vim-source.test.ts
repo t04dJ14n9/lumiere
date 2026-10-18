@@ -171,6 +171,7 @@ function entryObserverFixture() {
     mode: {} as VimMode,
     composing: false,
     scans: 0,
+    modeReads: 0,
     modeChanged: () => {},
   };
   const contentDOM = Object.assign(new EventTarget(), {
@@ -192,8 +193,11 @@ function entryObserverFixture() {
       },
     },
   } as unknown as EditorView;
-  const observer = observeVimTableEntry(view, () => ({
-    mode: () => fixture.mode,
+  const observer = observeVimTableEntry(view, {
+    mode: () => {
+      fixture.modeReads++;
+      return fixture.mode;
+    },
     watchMode(_view, changed) {
       fixture.modeChanged = changed;
       return () => {
@@ -203,9 +207,27 @@ function entryObserverFixture() {
     extension: () => [],
     sync() {},
     handoff: () => () => {},
-  }));
+  });
   return { fixture, view, observer, update };
 }
+
+test("an editor update that moves no caret does not ask Vim for its mode", async () => {
+  // Stopping the tables plugin reconfigures the editor once per extension it
+  // releases, while this observer is still installed; Vim must not be asked
+  // then (its context, read from the plugin, refused reads once stopping).
+  const { fixture, observer } = entryObserverFixture();
+  const reconfigure = fixture.state.update({});
+  observer.update({
+    state: reconfigure.state,
+    selectionSet: false,
+    docChanged: false,
+    transactions: [reconfigure],
+  });
+  await Promise.resolve();
+  assert.equal(fixture.modeReads, 0);
+  assert.equal(fixture.scans, 0);
+  observer.destroy();
+});
 
 test("Vim table entry waits until after the outer update", async () => {
   const { fixture, observer, update } = entryObserverFixture();

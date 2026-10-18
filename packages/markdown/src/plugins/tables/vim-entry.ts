@@ -55,20 +55,26 @@ function isNormalVim(mode: VimMode | undefined, settled: boolean): boolean {
   );
 }
 
-export function vimTableEntry(service: () => VimService | undefined) {
-  return ViewPlugin.define((view) => observeVimTableEntry(view, service));
+/**
+ * `vim` is read once, when the tables plugin starts: it restarts when Vim
+ * comes or goes. A getter reading the plugin's context would throw once the
+ * plugin is stopping, and the editor still updates this view plugin then
+ * (each extension released before it reconfigures the editor).
+ */
+export function vimTableEntry(vim: VimService | undefined) {
+  return ViewPlugin.define((view) => observeVimTableEntry(view, vim));
 }
 
 export function observeVimTableEntry(
   view: EditorView,
-  service: () => VimService | undefined,
+  vim: VimService | undefined,
 ) {
   let live = true;
   let generation = 0;
   const cancel = () => {
     generation++;
   };
-  const stopWatching = watchEntryCancellation(view, service, cancel);
+  const stopWatching = watchEntryCancellation(view, vim, cancel);
   // A Vim operator edits the document and then places the caret in a second
   // transaction of the same task. That caret is part of the edit, not a motion
   // into a table (e.g. `dk` below a table must not open the row it leaves).
@@ -85,9 +91,10 @@ export function observeVimTableEntry(
         });
       }
       if (
+        !update.selectionSet ||
         editedThisTask ||
         activeTables.get(view) ||
-        !canEnterVimTable(update, service()?.mode(view), false)
+        !canEnterVimTable(update, vim?.mode(view), false)
       ) {
         return;
       }
@@ -99,7 +106,7 @@ export function observeVimTableEntry(
         if (
           !live ||
           pending !== generation ||
-          !canCompleteEntry(view, state, service())
+          !canCompleteEntry(view, state, vim)
         ) {
           return;
         }
@@ -117,7 +124,7 @@ export function observeVimTableEntry(
 function canCompleteEntry(
   view: EditorView,
   state: EditorState,
-  service: VimService | undefined,
+  vim: VimService | undefined,
 ): boolean {
   const selection = view.state.selection;
   return (
@@ -128,16 +135,16 @@ function canCompleteEntry(
     !view.composing &&
     !activeTables.get(view) &&
     view.contentDOM.ownerDocument.activeElement === view.contentDOM &&
-    isNormalVim(service?.mode(view), true)
+    isNormalVim(vim?.mode(view), true)
   );
 }
 
 function watchEntryCancellation(
   view: EditorView,
-  service: () => VimService | undefined,
+  vim: VimService | undefined,
   cancel: () => void,
 ): () => void {
-  const unwatchMode = service()?.watchMode?.(view, cancel);
+  const unwatchMode = vim?.watchMode?.(view, cancel);
   view.contentDOM.addEventListener("blur", cancel);
   return () => {
     view.contentDOM.removeEventListener("blur", cancel);

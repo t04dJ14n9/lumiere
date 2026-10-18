@@ -51,7 +51,7 @@ export const tablesWebview: Plugin = {
 };
 
 function registerVimTableEntry(ctx: Context): void {
-  ctx.effect(() => ctx.editor.extend(vimTableEntry(() => ctx.vim)));
+  ctx.effect(() => ctx.editor.extend(vimTableEntry(ctx.vim)));
 }
 
 function createEnvironment(
@@ -60,15 +60,17 @@ function createEnvironment(
 ): TableEnvironment {
   const content = new TableContent(ctx.editor.view, ctx.render, ctx.logger);
   ctx.effect(() => () => content.dispose());
+  // Read once: the table widgets call these closures from the editor, which
+  // can run while this plugin is stopping, when its context refuses reads.
+  // An optional service coming or going restarts the plugin.
+  const { document, vim, livePreview, formatting, menu, editor } = ctx;
   return {
     scrollNote,
     language: ctx.markdown.language(),
-    vim: ctx.vim,
+    vim,
     links: ctx.links,
     inputGroups: () => {
-      const groups = ctx.document.inputGroups?.((target) =>
-        ctx.vim?.mode(target),
-      );
+      const groups = document.inputGroups?.((target) => vim?.mode(target));
       if (!groups) {
         throw new Error("Document input grouping is unavailable");
       }
@@ -78,16 +80,16 @@ function createEnvironment(
     renderContent: (element, source, offset) =>
       content.renderContent(element, source, offset),
     position: (source, element, point) =>
-      ctx.livePreview.position?.(source, element, point),
-    wrap: (marker, target) => ctx.formatting?.wrap(marker, target) ?? false,
-    canFormat: ctx.formatting !== undefined,
-    clearFormatting: (source) => ctx.formatting?.clear(source) ?? source,
+      livePreview.position?.(source, element, point),
+    wrap: (marker, target) => formatting?.wrap(marker, target) ?? false,
+    canFormat: formatting !== undefined,
+    clearFormatting: (source) => formatting?.clear(source) ?? source,
     openMenu: (owner, items, point) => {
       let live = true;
       let stop: (() => void | Promise<void>) | undefined;
       void ctx.pipeline("editor/selectionMenu", items).then((items) => {
         if (live) {
-          stop = ctx.menu.open(owner, items, point, "Table actions");
+          stop = menu.open(owner, items, point, "Table actions");
         }
       });
       return () => {
@@ -96,11 +98,11 @@ function createEnvironment(
       };
     },
     copy: (text) => {
-      void ctx.editor.clipboard
+      void editor.clipboard
         .write(text)
         .catch((error) => ctx.logger.error("Copy failed", error));
     },
-    paste: () => ctx.editor.clipboard.read(),
+    paste: () => editor.clipboard.read(),
   };
 }
 

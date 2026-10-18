@@ -152,7 +152,7 @@ function vimExtensions(ctx: Context, status: boolean) {
   return [
     vim({ status }),
     vimLineKeyboard,
-    revealBlockMotion(() => ctx.livePreview),
+    revealBlockMotion(ctx.livePreview),
     freezeRevealDuringVisual(),
     ctx.editor.caret({
       mode: (view) => {

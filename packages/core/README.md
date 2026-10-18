@@ -93,6 +93,16 @@ await root.settled();
 await root.dispose();
 ```
 
+## Reading services
+
+Read a service from the context in `apply` and keep the value; don't hand
+out getters such as `() => ctx.vim`. A stopped context refuses reads
+(`Disposed: <plugin> is stopped`), and code handed to others can still run
+while the plugin is being released: each editor extension it removes
+reconfigures the editor, which updates the extensions released after it.
+Optional services need no getter either, since the plugin restarts when one
+comes or goes.
+
 ## Limits
 
 - Cancellation cannot stop arbitrary JavaScript: an abandoned `apply` keeps

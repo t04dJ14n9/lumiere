@@ -64,7 +64,7 @@ function motionFixture(start = 0, target = 5) {
       },
     ],
   };
-  const installed = installBlockMotion(view, cm, () => preview);
+  const installed = installBlockMotion(view, cm, preview);
   return { view, cm, mode, calls, original, installed, preview };
 }
 
