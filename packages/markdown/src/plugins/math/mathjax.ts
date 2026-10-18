@@ -9,7 +9,11 @@ import "@mathjax/src/cjs/input/tex/mathtools/MathtoolsConfiguration.js";
 import "@mathjax/src/cjs/input/tex/cancel/CancelConfiguration.js";
 import "@mathjax/src/cjs/input/tex/color/ColorConfiguration.js";
 import "@mathjax/src/cjs/input/tex/noundefined/NoUndefinedConfiguration.js";
+import { loadDynamicFont } from "./fonts";
 
+// Without a loader, a formula that needs one of the font's dynamic files
+// (\mathbb, \ell, …) fails with "dynamic file … failed to load".
+mathjax.asyncLoad = loadDynamicFont;
 const adaptor = browserAdaptor();
 RegisterHTMLHandler(adaptor);
 const formulas = mathjax.document(document, {

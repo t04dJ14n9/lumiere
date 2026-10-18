@@ -9,9 +9,13 @@ reveals it with the formula selected, without its delimiters, as in Obsidian.
 ## How it works
 
 The plugin registers inline/block renderers and a render post-processor. MathJax
-loads on demand; its SVG is sanitized before insertion. Each render pass owns its
-pending result and restoration callback, and plugin disposal clears all remaining
-renders. Editing commands wrap or unwrap the selection through CodeMirror.
+loads on demand; its SVG is sanitized before insertion. The font keeps many
+glyphs (`\mathbb`, `\mathfrak`, `\mathscr`, `\mathcal`, `\ell`, AMS relations,
+arrows, accented letters) in separate files that MathJax asks for on first use;
+each is a chunk of the webview bundle, so they load offline and only when
+needed. Each render pass owns its pending result and restoration callback, and
+plugin disposal clears all remaining renders. Editing commands wrap or unwrap
+the selection through CodeMirror.
 
 ## Files
 
@@ -20,6 +24,8 @@ renders. Editing commands wrap or unwrap the selection through CodeMirror.
 - `commands.ts`: pure selection edits and delimiter placement.
 - `source.ts`: a formula's delimiters, and the span a click selects.
 - `mathjax.ts`: lazy TeX-to-SVG conversion with supported TeX packages.
+- `fonts.ts`: MathJax's loader for the font's dynamic glyph files.
+- `fonts.test.ts`: every dynamic file is bundled; formulas that need them typeset.
 - `math.test.ts`: selection, delimiter and formula-span unit tests.
 - `math.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 

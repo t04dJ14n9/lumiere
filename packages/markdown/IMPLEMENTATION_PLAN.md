@@ -5543,3 +5543,60 @@ hanging indent.
 
 Validation: reproduced and checked in the browser harness (bullet, task,
 numbered and nested items); `pnpm check` green.
+
+## Math loads the font's dynamic glyph files offline — 2026-10-18
+
+Found while testing the public Codespaces demo: `\mathbb{R}` and
+`\mathbb{E}` showed as errors ("dynamic file 'double-struck' failed to
+load"). MathJax 4's newcm font keeps many glyphs out of the font itself, in
+40 dynamic files MathJax asks for through `mathjax.asyncLoad` on first use.
+`mathjax.ts` set no loader, so each request failed. The failure sticks for the
+session, and the formula either errors or quietly falls back.
+
+A probe typeset each of the 985 macros and delimiters and every environment
+of the configured TeX packages in a fresh MathJax document, and recorded the
+files each one asked for:
+
+| Dynamic file | Reached by |
+| --- | --- |
+| `double-struck` | `\mathbb`, `\Bbb`, `\Bbbk`, `\symbb`, Unicode ℝ ℕ ℤ ℚ ℂ |
+| `fraktur` | `\mathfrak`, `\frak`, `\Re`, `\Im`, `\mathbffrak`, `\symfrak` |
+| `script` | `\mathscr`, `\ell`, `\wp`, `\mathbfscr`, `\symscr` |
+| `calligraphic` | `\mathcal`, `\mathbfcal`, `\symcal`: no error, but an italic letter drawn instead |
+| `sans-serif` | `\mathsf`, `\sf`, `\textsf` and their bold and italic forms |
+| `monospace` | `\mathtt`, `\tt`, `\texttt` |
+| `math` | 40 AMS relations and operators: `\perp`, `\triangleq`, `\lll`, `\Subset`, `\multimap`, `\pitchfork`, `\barwedge`, … |
+| `arrows` | `\leadsto`, `\rightsquigarrow`, `\Lsh`, `\Rsh`, stretchy `\xhookrightarrow` and the `\x…harpoon…` arrows, typed ⇝ |
+| `shapes` | `\checkmark`, `\bigstar`, `\maltese`, the card suits, `\flat` `\natural` `\sharp`, `\diagup` `\diagdown` |
+| `symbols-b-i` | `\yen`, `\circledR` |
+| `greek` | `\digamma`, polytonic Greek in `\text` |
+| `latin`, `latin-b`, `latin-i`, `monospace-l`, `sans-serif-r` | accented letters in `\text`, `\textbf`, `\textit`, `\texttt`, `\textsf`: no error, but drawn in a system font |
+| `cyrillic`, `hebrew` | Cyrillic and Hebrew in `\text` |
+
+The other 22 files (accents, symbols, variants, sans-serif Greek and
+Cyrillic, more Latin sets, phonetics, Arabic math letters, Braille, Cherokee,
+Devanagari, the PUA) are reached only by typing their characters. `fonts.ts` now maps every
+file the font declares to a dynamic `import()` of its CommonJS build. That is
+the font class the SVG output already registers glyphs with; the ESM build
+would bring a second copy of the font. Each file is its own chunk of the
+webview bundle and loads only when a formula needs it. In Chromium,
+`\mathbb{R}`, `\ell_2`, `\mathcal{L}` and `a \perp b` fetched only
+`double-struck`, `script`, `calligraphic` and `math`. The font package is
+now a direct dependency, pinned to the version `@mathjax/src` uses.
+
+Cost: the 40 chunks are 10 MB minified, about 3.1 MB in the VSIX (6.5 MB
+before). Bundling only the 11 files TeX commands reach would be about
+0.75 MB, but the rest would then need empty stand-ins so that their
+characters fall back to a system font instead of failing the formula.
+
+Unit tests check that every dynamic file the font declares loads from the
+bundle and registers its glyphs, that other paths are refused, and that 12
+formulas typeset with their own glyphs through the loader. Removing the
+loader or one table entry fails them.
+
+Validation: `pnpm check` green (Markdown 1906 unit tests) with
+`MARKDOWN_WORKBENCH_TEST_CONCURRENCY=1`. The first run, at a load average of
+about 370 from other sessions, had two diff and rows fuzz probes hit their
+20 s limit; they passed when re-run alone. Checked in the browser harness,
+and with the production `mathjax` chunk imported as an ES module in Chromium.
+`third-party-notices --check` passes after a production build.
