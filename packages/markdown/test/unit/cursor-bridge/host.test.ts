@@ -33,6 +33,8 @@ async function fixture(options: FixtureOptions = {}) {
   const errors: string[] = [];
   const informs: string[] = [];
   const dismissed: string[] = [];
+  const editWatchers: { uri: string; onEnd(): void; isDisposed: boolean }[] =
+    [];
   const lease = new Lease();
   const note = "file:///vault/Note.md";
   const editArgs: unknown[][] = [];
@@ -103,6 +105,15 @@ async function fixture(options: FixtureOptions = {}) {
     async dismiss(uri) {
       events.push("dismiss");
       dismissed.push(uri);
+    },
+    watchEditEnd(uri, onEnd) {
+      const watcher = { uri, onEnd, isDisposed: false };
+      editWatchers.push(watcher);
+      return {
+        dispose() {
+          watcher.isDisposed = true;
+        },
+      };
     },
   };
   const panel = {
@@ -217,6 +228,8 @@ async function fixture(options: FixtureOptions = {}) {
     errors,
     informs,
     dismissed,
+    editWatchers,
+    surface,
     editArgs,
     lease,
     state,
@@ -263,6 +276,8 @@ test("Edit prefers override-only (no show) when Cursor returns a prompt-bar id",
   });
   assert.equal(f.lease.has(f.note), true);
   assert.equal(f.state.languageId, "markdown");
+  assert.equal(f.editWatchers.length, 1);
+  assert.deepEqual(f.dismissed, []);
   assert.deepEqual(f.errors, []);
 });
 
@@ -290,6 +305,7 @@ test("Chat discovers commands before handoff and keeps the lease after invocatio
     CURSOR_COMMANDS.chat,
   ]);
   assert.equal(f.lease.has(f.note), true);
+  assert.equal(f.editWatchers.length, 0, "Chat keeps its existing lifetime");
   assert.deepEqual(f.errors, []);
 });
 
@@ -325,6 +341,7 @@ for (const change of [
     assert.ok(f.events.includes("dismiss"));
     assert.equal(f.errors.length, 1);
     assert.equal(f.lease.has(f.note), false);
+    assert.equal(f.editWatchers.length, 0);
     // Second Edit attempt must not run after confirm fails.
     assert.equal(
       f.events.filter((event) => event === CURSOR_COMMANDS.edit).length,
@@ -404,6 +421,7 @@ test("silent Edit failure abandons the mirror and falls back to Chat", async (t)
   assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, [f.note]);
+  assert.equal(f.editWatchers.length, 0);
   assert.equal(f.errors.length, 0);
   assert.ok(
     f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
@@ -422,6 +440,7 @@ test("Edit throws after handoff: release lease, dismiss mirror, Chat fallback", 
   assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, [f.note]);
+  assert.equal(f.editWatchers.length, 0);
   assert.equal(f.errors.length, 0);
   assert.ok(
     f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
@@ -462,6 +481,106 @@ test("override-only silent fail then handoff Edit success keeps the lease", asyn
   assert.deepEqual(f.dismissed, []);
   assert.deepEqual(f.errors, []);
   assert.deepEqual(f.informs, []);
+  assert.equal(f.editWatchers.length, 1);
+});
+
+for (const path of ["override-only", "focused editor"] as const) {
+  test(`Edit success on ${path} releases its token and dismisses once on Edit end`, async (t) => {
+    const f = await fixture({
+      editResults:
+        path === "override-only" ? ["prompt"] : [undefined, "prompt"],
+    });
+    t.after(() => f.root.dispose());
+    await f.handlers.get(contributionId("cursorBridge.edit"))!();
+    assert.equal(f.lease.has(f.note), true);
+    assert.deepEqual(f.dismissed, []);
+    const watcher = f.editWatchers[0];
+    assert.ok(watcher);
+    assert.equal(watcher.uri, f.note);
+    watcher.onEnd();
+    assert.equal(f.lease.has(f.note), false, "release precedes dismissal");
+    assert.deepEqual(f.dismissed, [f.note]);
+    assert.equal(watcher.isDisposed, true);
+    watcher.onEnd();
+    assert.deepEqual(f.dismissed, [f.note], "late callbacks are harmless");
+  });
+}
+
+test("a new Edit cancels the same-URI watcher and releases only the replaced token", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  const chatLease = f.lease.acquire(f.note);
+  chatLease.promote();
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  const first = f.editWatchers[0];
+  assert.ok(first);
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(first.isDisposed, true);
+  first.onEnd();
+  assert.deepEqual(f.dismissed, []);
+  const second = f.editWatchers[1];
+  assert.ok(second);
+  second.onEnd();
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.equal(f.lease.has(f.note), true, "Chat's token survives Edit cleanup");
+  chatLease.release();
+  assert.equal(f.lease.has(f.note), false, "neither Edit token leaks");
+});
+
+test("a failed replacement abandons once and stale success callbacks cannot dismiss again", async (t) => {
+  const f = await fixture({ editResults: ["first", undefined, undefined] });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  const first = f.editWatchers[0];
+  assert.ok(first);
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(first.isDisposed, true);
+  assert.equal(f.editWatchers.length, 1, "failure does not arm a watcher");
+  assert.equal(f.lease.has(f.note), false);
+  first.onEnd();
+  assert.deepEqual(f.dismissed, [f.note]);
+});
+
+test("stopping the plugin cancels Edit cleanup without dismissing a tab", async () => {
+  const f = await fixture();
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  await f.root.dispose();
+  const watcher = f.editWatchers[0];
+  assert.ok(watcher);
+  assert.equal(watcher.isDisposed, true);
+  watcher.onEnd();
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, []);
+});
+
+test("Edit-end dismissal is best-effort after releasing the token", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  f.surface.dismiss = async () => {
+    throw new Error("tab is already gone");
+  };
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  f.editWatchers[0]?.onEnd();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.equal(f.lease.has(f.note), false);
+  assert.equal(f.editWatchers[0]?.isDisposed, true);
+});
+
+test("Edit finishing preparation after plugin shutdown cannot arm a watcher", async (t) => {
+  const f = await fixture();
+  let resume = () => {};
+  f.surface.warm = () =>
+    new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+  t.after(resume);
+  const pending = f.handlers.get(contributionId("cursorBridge.edit"))!();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  await f.root.dispose();
+  resume();
+  await pending;
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.editWatchers, []);
 });
 
 test("missing Edit command skips handoff and opens Chat without a lease", async (t) => {

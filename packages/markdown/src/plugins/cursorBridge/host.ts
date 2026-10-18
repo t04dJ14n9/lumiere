@@ -25,6 +25,17 @@ export interface CursorBridgeConfig {
   readonly surface: HandoffSurface;
 }
 
+interface EditMirrorCleanup {
+  arm(): void;
+  abandon(): Promise<void>;
+  dispose(): void;
+}
+
+type BridgeSession = CursorBridgeConfig & {
+  editMirrors: Map<string, EditMirrorCleanup>;
+  isStopped: boolean;
+};
+
 /** Host half: Cursor Chat (Cmd+L) and Edit (Cmd+K) on the Live Preview selection. */
 export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
   name: "cursorBridge",
@@ -43,9 +54,10 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
     const cursor = isCursorHost(config?.appName);
     // Captured while live: the context-key reset runs after it is disposed.
     const commands = ctx.hostCommands;
-    const bridgeConfig = config ?? {
-      appName: "",
-      surface: unusedSurface,
+    const bridgeConfig: BridgeSession = {
+      ...(config ?? { appName: "", surface: unusedSurface }),
+      editMirrors: new Map(),
+      isStopped: false,
     };
     void commands.execute("setContext", IS_CURSOR_HOST, cursor);
     ctx.effect(() => async () => {
@@ -61,12 +73,18 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
         runBridge(ctx, bridgeConfig, "edit"),
       ),
     );
+    ctx.effect(() => () => {
+      bridgeConfig.isStopped = true;
+      for (const cleanup of bridgeConfig.editMirrors.values()) {
+        cleanup.dispose();
+      }
+    });
   },
 };
 
 async function runBridge(
   ctx: Context,
-  config: CursorBridgeConfig,
+  config: BridgeSession,
   mode: "chat" | "edit",
 ): Promise<void> {
   if (!isCursorHost(config.appName)) {
@@ -126,7 +144,7 @@ async function runBridge(
  */
 async function runEdit(
   ctx: Context,
-  config: CursorBridgeConfig,
+  config: BridgeSession,
   { uri, selection }: { uri: string; selection: SelectionSnapshot },
   commands: ReadonlySet<string> | undefined,
 ): Promise<void> {
@@ -139,6 +157,11 @@ async function runEdit(
     );
     return;
   }
+  if (config.isStopped) {
+    prepared.lease.release();
+    return;
+  }
+  const cleanup = createEditMirrorCleanup(config, uri, prepared.lease);
   const target = {
     uri: config.surface.nativeUri(uri),
     range: prepared.range,
@@ -146,6 +169,7 @@ async function runEdit(
   // A. Override-only: no pre-handoff showTextDocument.
   if (await openCursorEdit(ctx.hostCommands.execute, commands, target)) {
     prepared.lease.promote();
+    cleanup.arm();
     return;
   }
   // B. Handoff then Edit — give Cursor a focused native text editor.
@@ -153,7 +177,7 @@ async function runEdit(
     const editor = await config.surface.show(prepared.document, prepared.range);
     const confirmed = confirmActiveEditor(editor, uri, selection);
     if (!confirmed.ok) {
-      await abandonEditHandoff(config.surface, uri, prepared.lease);
+      await cleanup.abandon();
       ctx.dialogs.error(
         confirmed.reason === "changed"
           ? "The note changed before Cursor could use the selection."
@@ -166,13 +190,14 @@ async function runEdit(
     const edited = await openCursorEdit(ctx.hostCommands.execute, commands);
     if (edited) {
       prepared.lease.promote();
+      cleanup.arm();
       return;
     }
   } catch {
     // show threw — fall through to abandon + Chat.
   }
   // C. Silent Edit no-op (falsy return) or handoff exception: never leave orphans.
-  await abandonEditHandoff(config.surface, uri, prepared.lease);
+  await cleanup.abandon();
   await runEditFallbackChat(ctx, selection.text, commands);
 }
 
@@ -246,6 +271,52 @@ async function abandonEditHandoff(
   }
 }
 
+/** One owner per URI: stale callbacks must never close a newer Edit mirror. */
+function createEditMirrorCleanup(
+  session: BridgeSession,
+  uri: string,
+  lease: HandoffLease,
+): EditMirrorCleanup {
+  session.editMirrors.get(uri)?.dispose();
+  let isFinished = false;
+  let watcher: { dispose(): void } | undefined;
+  const stopWatching = () => {
+    if (isFinished) {
+      return false;
+    }
+    isFinished = true;
+    watcher?.dispose();
+    session.editMirrors.delete(uri);
+    return true;
+  };
+  const cleanup: EditMirrorCleanup = {
+    arm() {
+      if (isFinished) {
+        return;
+      }
+      watcher = session.surface.watchEditEnd(uri, () => {
+        void cleanup.abandon();
+      });
+      // A surface may report an already-ended session during registration.
+      if (isFinished) {
+        watcher.dispose();
+      }
+    },
+    async abandon() {
+      if (stopWatching()) {
+        await abandonEditHandoff(session.surface, uri, lease);
+      }
+    },
+    dispose() {
+      if (stopWatching()) {
+        lease.release();
+      }
+    },
+  };
+  session.editMirrors.set(uri, cleanup);
+  return cleanup;
+}
+
 function pluginEnabled(ctx: Context, document: HostDocument): boolean {
   const config = ctx.settings.forNote(document);
   return (
@@ -272,4 +343,5 @@ const unusedSurface: HandoffSurface = {
     throw new Error("cursorBridge handoff surface was not configured");
   },
   async dismiss() {},
+  watchEditEnd: () => ({ dispose() {} }),
 };

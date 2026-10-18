@@ -34,7 +34,12 @@ which can reopen Lumière instead of a text editor. If that still fails (or Edit
 is missing/throws), it releases the lease, dismisses any native mirror, and
 falls back to Chat so no orphan Plain Text tab remains. Each handoff acquires a
 pending lease token and promotes it after verified Edit (or Chat’s native
-confirmation). Tab cleanup clears
+confirmation). Verified Edit success also arms one-shot mirror cleanup: when
+Edit ends, release that handoff's token and dismiss the text mirror so Live
+Preview can return. A newer Edit for the same URI cancels the old watcher and
+releases its token; Chat retains its existing tab-based lifetime. Failure
+abandons immediately without arming a watcher. Stopping the bridge cancels its
+watchers. Tab cleanup clears
 established sessions only. Apply stays in Cursor; MW follows the document
 model. Dirty notes are allowed without autosave.
 
@@ -47,7 +52,9 @@ model. Dirty notes are allowed without autosave.
 - `cursor.ts`: Cursor-host detection and Chat/Edit command routing.
 - `selection.ts`: active panel selection or caret capture, with CRLF mapping.
 - `handoff.ts`: Lease + version-safe native editor mirror.
-- `host.ts`: Context key, command registration, VS Code handoff surface.
+- `host.ts`: Context key, command registration and one-shot Edit mirror cleanup.
+- `../../host/cursor-handoff.ts`: native handoff surface and mirror dismissal.
+- `../../host/cursor-edit-end.ts`: passive Edit-end observation.
 
 ## Services, events and settings
 
@@ -64,3 +71,21 @@ the bridge's Command shortcuts.
 Cursor-host only (`vscode.env.appName`). Does not
 modify `agentBridge` or invent whole-file payloads. Cursor command ids are
 best-effort internal commands, not a stable public API.
+
+Cursor has no public Edit completion event: the prompt-bar id reports opening,
+not closing, and its prompt/diff context keys cannot be read through the public
+extension API. Edit-end observation is therefore **best-effort**. After a 500 ms
+grace period, closing the last text tab or leaving the mirror ends the handoff.
+For the Edit X and settled diffs, a visible-range event or 250 ms poll looks for
+at least two extra visible lines at the same viewport edge, with the same
+editor and document version, sustained for another 250 ms. Prompt focus alone
+does not count as leaving the mirror; split ranges, scrolling and document
+changes reset the inference. No Cursor command is polled or toggled.
+
+Short notes that already fit, a prompt closed before sampling, wrapping, or
+chrome that does not affect visible ranges can leave cleanup waiting until
+the user leaves/closes the text tab. Window/pane resizing or other view zones
+can resemble prompt removal and may trigger cleanup early. The public API
+cannot distinguish those cases or prove that all inline diffs have settled;
+ambiguous samples keep the mirror open. Closing the mirror reveals the Live
+Preview sibling, or allows existing reclaim events to restore it.

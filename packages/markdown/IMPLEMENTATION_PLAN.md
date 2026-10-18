@@ -5766,3 +5766,31 @@ four-parameter limit; no compatibility overload was added.
 
 Validation: Cursor bridge units 52/52. Host GUI Ctrl+K remains unverified;
 no Host GUI retest was performed.
+
+## Host GUI: Cursor Edit mirror cleanup — 2026-10-18
+
+Cursor returns the Cmd-K prompt-bar id when Edit opens. Promoting the handoff
+lease then returning left the raw Markdown mirror leased until Ctrl+W, even
+after closing the Edit X. Both verified success paths now arm a one-shot
+Edit-end watcher; its callback releases that token and best-effort dismisses
+the mirror. Failure still abandons immediately. A replacement Edit cancels the
+old watcher and releases its token; bridge shutdown disposes watchers. Chat's
+lease lifetime and Path B's argument-free Edit invocation stay unchanged.
+
+Cursor exposes no public prompt-removal/completion event or readable context
+key. The native watcher uses tab/editor hard ends and, after 500 ms of grace,
+an anchored visible-line capacity increase sustained across 250 ms samples.
+It never polls commands. Scrolling, document changes and split ranges are
+ambiguous and restart inference. Short notes, early closes and chrome without
+range changes may require leaving/closing text; resizing/other view zones can
+cause false positives. Submitted diffs cannot be identified conclusively via
+the public API. Host GUI retesting remains outstanding and outside this task.
+
+Validation: focused units green (cursor-bridge 59/59, handoff-host 73/73,
+reclaim 25/25). `pnpm check` green (core/root 76, agents 47, Markdown 1,992,
+PDF 393 units); browser suites Markdown 284/284 and PDF 173/173; isolated
+VS Code 1.142.0 suites Markdown 23/23 and PDF 25 passed, 1 existing performance
+skip, on a private Xvfb display. Checks used local Node 22.16.0: the initial
+Node 20 run passed all Markdown units but could not expand the PDF suite's
+quoted glob; the complete check passed after switching runtimes. No push or
+live Cursor extension refresh was performed.

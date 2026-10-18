@@ -87,6 +87,7 @@ function fixture(text: string, version = 1) {
       return editor;
     },
     async dismiss() {},
+    watchEditEnd: () => ({ dispose() {} }),
   };
   return { state, leases, released, surface, document, editor };
 }

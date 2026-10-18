@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { handoffLease } from "./reclaim";
 import { warmMarkdownDocument } from "./document-warm";
+import { watchCursorEditEnd } from "./cursor-edit-end";
 import type {
   HandoffSurface,
   NativeDocument,
@@ -13,6 +14,7 @@ const MARKDOWN_LANGUAGE = "markdown";
 /** VS Code surface for cursorBridge selection mirror + reclaim lease. */
 export function createCursorHandoffSurface(): HandoffSurface {
   return {
+    watchEditEnd: watchCursorEditEnd,
     acquireLease(uri) {
       return handoffLease.acquire(uri);
     },

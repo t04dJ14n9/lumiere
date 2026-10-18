@@ -40,9 +40,11 @@ export interface HandoffSurface {
   acquireLease(uri: string): HandoffLease;
   /** vscode.Uri for Cursor Edit overrideUri (keeps plugin host vscode-free). */
   nativeUri(uri: string): unknown;
+  /** Best-effort: report when Cursor Edit UI for this URI ends; dispose cancels. */
+  watchEditEnd(uri: string, onEnd: () => void): { dispose(): void };
   /**
    * Close or hide the native mirror for this URI so focus can return to the
-   * Workshop custom editor. Used when Edit fails after a successful handoff.
+   * Workshop custom editor when Edit fails or its session ends.
    */
   dismiss(uri: string): Promise<void>;
 }
