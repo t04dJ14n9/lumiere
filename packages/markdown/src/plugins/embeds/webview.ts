@@ -9,6 +9,7 @@ import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
 import { embedEditing, inlineEmbedClick } from "./clicks";
+import { imageSelection } from "./image-selection";
 export const embedsWebview: Plugin = {
   name: "embeds",
   inject: {
@@ -30,6 +31,7 @@ export const embedsWebview: Plugin = {
       cleanups.clear();
     });
     registerEmbedRenderers(ctx);
+    ctx.effect(() => ctx.editor.extend(imageSelection()));
     registerEmbedContent(ctx, cleanups);
     registerInsertion(ctx);
   },

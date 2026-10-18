@@ -156,3 +156,9 @@
 .attachment-open:hover {
   background: var(--hover);
 }
+
+/* An image selected by a click (Obsidian 1.13): + and - resize it. */
+img.md-image-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

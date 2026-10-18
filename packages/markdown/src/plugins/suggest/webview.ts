@@ -4,6 +4,7 @@ import {
   closeCompletion,
   completionKeymap,
   completionStatus,
+  moveCompletionSelection,
   selectedCompletion,
   type Completion,
   type CompletionContext,
@@ -84,6 +85,10 @@ function registerCompletions(ctx: Context): void {
           // As in Obsidian: Tab takes the suggestion without finishing the
           // link, so `#` or `|` can follow.
           { key: "Tab", run: acceptWithTab },
+          // Obsidian 1.13: Ctrl+N and Ctrl+P move through suggestions on
+          // every platform.
+          { key: "Ctrl-n", run: moveCompletionSelection(true) },
+          { key: "Ctrl-p", run: moveCompletionSelection(false) },
           ...completionKeymap.filter((binding) => binding.key !== "Escape"),
         ]),
       ],

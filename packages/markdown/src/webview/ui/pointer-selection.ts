@@ -1,4 +1,9 @@
-import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
+import {
+  EditorSelection,
+  Facet,
+  StateEffect,
+  StateField,
+} from "@codemirror/state";
 import type { EditorState, Extension, SelectionRange } from "@codemirror/state";
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
@@ -101,12 +106,24 @@ export function isRevealFrozen(state: EditorState): boolean {
  * Pointer freeze wins over Vim visual freeze; either wins over the live
  * selection so a growing selection does not reflow the note mid-gesture.
  */
+/**
+ * Ranges that stay rendered with the caret at them: an image a click
+ * selected, as Obsidian keeps it while it is resized.
+ */
+export const keepRendered =
+  Facet.define<(state: EditorState) => { from: number; to: number } | null>();
+
 export function revealRanges(state: EditorState): readonly SelectionRange[] {
+  const kept = state.facet(keepRendered).flatMap((range) => range(state) ?? []);
   const ranges = (
     state.field(pointerSelection, false) ??
     state.field(visualRevealFreeze, false) ??
     state.selection
-  ).ranges;
+  ).ranges.filter(
+    (range) =>
+      !range.empty ||
+      !kept.some((held) => range.from >= held.from && range.from <= held.to),
+  );
   return ranges.map((range) => {
     if (range.empty || range.to !== state.doc.lineAt(range.to).from) {
       return range;

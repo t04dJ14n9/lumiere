@@ -5346,3 +5346,24 @@ the state was made with); on a busy machine that tree stopped before the
 table. The test now takes the finished tree with an empty transaction, as the
 code block test already did; the smart-list test had the same wait and gets
 the same fix. Three full unit runs passed.
+
+## Image editing and suggestion keys from Obsidian 1.13 — 2026-10-17
+
+Obsidian 1.13 changed images in Live Preview (the earlier click parity was
+measured on 1.12.7, where a click on an image did nothing). Measured on
+1.14.4 and matched:
+
+- A click selects an image: it stays rendered, outlined, the caret at the
+  embed's start. Live Preview keeps a range rendered with the caret at it
+  when a plugin asks (`keepRendered`, next to the reveal freeze).
+- `+` and `-` resize in steps of 25 px from the shown width, up to the
+  text's width (`![[a.png|75]]`, or `![316](a.png)` for a Markdown image);
+  `0` removes the size; Enter selects the file name; Tab goes where the size
+  is written; Backspace or Delete removes the embed; Escape lets it go.
+- Ctrl+N and Ctrl+P move through suggestions on every platform.
+
+Checked in an isolated VS Code with a throwaway spec (not committed): a block
+image and an inline one selected, resized, edited and removed. Not done:
+selecting an image with the arrow keys, which the probe did not reproduce.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

@@ -11,6 +11,15 @@ full text and line offsets for links/tasks/footnotes. Media controls, image dial
 recovery streams and nested passes are disposed when the owning pass or plugin
 stops. Original placeholders are restored and late resource results are ignored.
 
+As in Obsidian 1.13 and later, a click on an image selects it: it stays
+rendered, outlined, with the caret at the embed's start. Then `+` and `-`
+resize it in steps of 25 pixels, from the width it shows, up to the width of
+the note's text (written as `![[a.png|100]]`, or in a Markdown image's alt
+text, `![100](a.png)`); `0` removes the size; Enter selects the file name;
+Tab puts the caret where the size is written; Backspace or Delete removes
+the embed; Escape, a click elsewhere or any edit lets it go
+(`image-selection.ts`, `image-size.ts`).
+
 ## Files
 
 - `manifest.ts`: enablement and Insert Embed contribution.
@@ -18,6 +27,8 @@ stops. Original placeholders are restored and late resource results are ignored.
 - `post-process.ts`: resource resolution, per-kind display and pass lifetime.
 - `note.ts`: note/heading/block selection, ancestry and source-line mapping.
 - `image.ts`: zoom toolbar, fit/actual sizing, pan and resize controls.
+- `image-selection.ts`: selecting an image by a click, and its keys.
+- `image-size.ts`: an image's written size and the resize steps.
 - `image-dialog.ts`: inspector dialog, remembered scale and focus lifetime.
 - `webm.ts`: WebM parsing/recovery exports.
 - `webm-stream.ts`: EBML metadata, streaming boundaries and block time ordering.

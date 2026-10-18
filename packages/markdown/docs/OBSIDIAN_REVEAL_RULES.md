@@ -34,7 +34,12 @@ For every case the caret was moved to every character offset (`editor.setCursor`
     - an unresolved wikilink opens (Obsidian creates the note);
     - a click on a tag places the caret where it was clicked and searches for `tag:#name`;
     - a click on an embedded note's content selects the whole embed source, the head at its start; a link inside the embedded note opens instead;
-    - a click on an image, embedded or inline, does nothing;
+    - a click on an image, embedded or inline, selects it (Obsidian 1.13 and
+      later; 1.12 did nothing): it stays rendered, outlined, with the caret
+      at the embed's start; then `+` and `-` resize it in steps of 25 px
+      (up to the text's width), `0` removes the size, Enter selects the file
+      name, Tab goes where the size is written, Backspace or Delete removes
+      the embed, and Escape or moving the caret lets it go;
     - a click on a drawn horizontal rule selects its source, the head at its start;
     - checkboxes toggle on a click, in lists, nested lists and callouts.
 
