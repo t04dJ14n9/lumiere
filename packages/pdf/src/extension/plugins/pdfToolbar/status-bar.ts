@@ -10,6 +10,7 @@ import {
   VIEW_CONTROL_COMMAND_IDS,
 } from "../pdf/registered-commands";
 import { SECTION } from "./preferences";
+import { statusBarPriority, type StatusBarEntryId } from "./status-bar-layout";
 
 /** A shortcut as this platform writes it: `key('Ctrl+G', '⌃G')`. */
 function key(other: string, mac: string): string {
@@ -17,81 +18,28 @@ function key(other: string, mac: string): string {
 }
 
 type Item = {
-  id: string;
+  id: StatusBarEntryId;
   name: string;
   text: string;
   tooltip: string;
   command: string;
-  priority: number;
   button?: true;
 };
 
 /**
- * Status bar entries, from left to right: previous page, "Page 4 / 15"
- * (click to go to a page), next page, zoom out, "Fit Width (164%)" (click
- * to pick a zoom), zoom in, find. The buttons show only when
- * `toolbar.statusBarButtons` asks for them.
+ * Status bar entries, in their order from left to right (see
+ * `STATUS_BAR_ORDER`): find, View (zoom, layout and scrolling), "Page 4 /
+ * 15" (click to go to a page), previous page, next page, "Fit Width
+ * (164%)" (click to pick a zoom), zoom out, zoom in. The buttons show only
+ * when `toolbar.statusBarButtons` asks for them.
  */
 const ITEMS: Item[] = [
-  {
-    id: "previousPage",
-    name: "PDF Previous Page",
-    text: "$(chevron-up)",
-    tooltip: `Previous Page (${key("Alt+PageUp", "⌥PageUp")})`,
-    command: VIEW_COMMAND_IDS.previousPage,
-    priority: 106,
-    button: true,
-  },
-  {
-    id: "page",
-    name: "PDF Page",
-    text: "",
-    tooltip: `Go to Page… (${key("Ctrl+G", "⌃G")})`,
-    command: VIEW_COMMAND_IDS.goToPage,
-    priority: 105,
-  },
-  {
-    id: "nextPage",
-    name: "PDF Next Page",
-    text: "$(chevron-down)",
-    tooltip: `Next Page (${key("Alt+PageDown", "⌥PageDown")})`,
-    command: VIEW_COMMAND_IDS.nextPage,
-    priority: 104,
-    button: true,
-  },
-  {
-    id: "zoomOut",
-    name: "PDF Zoom Out",
-    text: "$(zoom-out)",
-    tooltip: `Zoom Out (${key("Ctrl+-", "⌘-")})`,
-    command: VIEW_COMMAND_IDS.zoomOut,
-    priority: 103,
-    button: true,
-  },
-  {
-    id: "zoom",
-    name: "PDF Zoom",
-    text: "",
-    tooltip: "Pick a Zoom…",
-    command: VIEW_COMMAND_IDS.selectZoom,
-    priority: 102,
-  },
-  {
-    id: "zoomIn",
-    name: "PDF Zoom In",
-    text: "$(zoom-in)",
-    tooltip: `Zoom In (${key("Ctrl+=", "⌘=")})`,
-    command: VIEW_COMMAND_IDS.zoomIn,
-    priority: 101,
-    button: true,
-  },
   {
     id: "find",
     name: "PDF Find",
     text: "$(search)",
     tooltip: `Find in PDF (${key("Ctrl+F", "⌘F")})`,
     command: VIEW_COMMAND_IDS.find,
-    priority: 100,
     button: true,
   },
   {
@@ -100,7 +48,52 @@ const ITEMS: Item[] = [
     text: "$(layout) View",
     tooltip: "Choose zoom, page layout and scrolling",
     command: VIEW_CONTROL_COMMAND_IDS.selectView,
-    priority: 99,
+  },
+  {
+    id: "page",
+    name: "PDF Page",
+    text: "",
+    tooltip: `Go to Page… (${key("Ctrl+G", "⌃G")})`,
+    command: VIEW_COMMAND_IDS.goToPage,
+  },
+  {
+    id: "previousPage",
+    name: "PDF Previous Page",
+    text: "$(chevron-up)",
+    tooltip: `Previous Page (${key("Alt+PageUp", "⌥PageUp")})`,
+    command: VIEW_COMMAND_IDS.previousPage,
+    button: true,
+  },
+  {
+    id: "nextPage",
+    name: "PDF Next Page",
+    text: "$(chevron-down)",
+    tooltip: `Next Page (${key("Alt+PageDown", "⌥PageDown")})`,
+    command: VIEW_COMMAND_IDS.nextPage,
+    button: true,
+  },
+  {
+    id: "zoom",
+    name: "PDF Zoom",
+    text: "",
+    tooltip: "Pick a Zoom…",
+    command: VIEW_COMMAND_IDS.selectZoom,
+  },
+  {
+    id: "zoomOut",
+    name: "PDF Zoom Out",
+    text: "$(zoom-out)",
+    tooltip: `Zoom Out (${key("Ctrl+-", "⌘-")})`,
+    command: VIEW_COMMAND_IDS.zoomOut,
+    button: true,
+  },
+  {
+    id: "zoomIn",
+    name: "PDF Zoom In",
+    text: "$(zoom-in)",
+    tooltip: `Zoom In (${key("Ctrl+=", "⌘=")})`,
+    command: VIEW_COMMAND_IDS.zoomIn,
+    button: true,
   },
 ];
 
@@ -113,7 +106,7 @@ export class StatusBar implements vscode.Disposable {
       const entry = vscode.window.createStatusBarItem(
         `pdfWorkshop.${item.id}`,
         vscode.StatusBarAlignment.Right,
-        item.priority,
+        statusBarPriority(item.id),
       );
       entry.name = item.name;
       entry.text = item.text;
