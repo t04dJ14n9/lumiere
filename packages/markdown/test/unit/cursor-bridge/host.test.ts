@@ -9,6 +9,11 @@ import type {
   NativeDocument,
   NativeEditor,
 } from "../../../src/plugins/cursorBridge/handoff";
+import type { EditPromptVisibility } from "../../../src/plugins/cursorBridge/handoff";
+import {
+  EDIT_PROMPT_ARMED,
+  EDIT_PROMPT_VIEW,
+} from "../../../src/plugins/cursorBridge/edit-prompt-probe";
 import type { EditorPanel } from "../../../src/plugins/editor/api";
 import { Lease } from "../../../src/host/reclaim-policy";
 import { contributionId } from "../../../src/shared/setting-schema";
@@ -33,6 +38,12 @@ async function fixture(options: FixtureOptions = {}) {
   const errors: string[] = [];
   const informs: string[] = [];
   const dismissed: string[] = [];
+  const contexts: unknown[][] = [];
+  let probeDisposed = false;
+  const probe: EditPromptVisibility = {
+    visible: false,
+    onVisibilityChanged: () => () => {},
+  };
   const editWatchers: { uri: string; onEnd(): void; isDisposed: boolean }[] =
     [];
   const lease = new Lease();
@@ -106,7 +117,8 @@ async function fixture(options: FixtureOptions = {}) {
       events.push("dismiss");
       dismissed.push(uri);
     },
-    watchEditEnd(uri, onEnd) {
+    watchEditEnd(uri, onEnd, prompt) {
+      assert.equal(prompt.onVisibilityChanged, probe.onVisibilityChanged);
       const watcher = { uri, onEnd, isDisposed: false };
       editWatchers.push(watcher);
       return {
@@ -168,6 +180,24 @@ async function fixture(options: FixtureOptions = {}) {
   provideHostServices(
     root,
     fakeHost({
+      views: {
+        tree(id, source) {
+          assert.equal(id, EDIT_PROMPT_VIEW);
+          assert.deepEqual(source.roots(), []);
+          assert.deepEqual(source.children({ id: "unused", label: "" }), []);
+          return {
+            ...probe,
+            refresh() {},
+            setMessage() {},
+            async reveal() {
+              assert.fail("the probe must never reveal or take focus");
+            },
+            dispose() {
+              probeDisposed = true;
+            },
+          };
+        },
+      },
       hostCommands: {
         register(id, run) {
           handlers.set(id, run);
@@ -176,6 +206,10 @@ async function fixture(options: FixtureOptions = {}) {
           };
         },
         async execute(id, ...args) {
+          if (id === "setContext") {
+            contexts.push(args);
+            return;
+          }
           events.push(id);
           if (id === CURSOR_COMMANDS.edit) {
             editArgs.push(args);
@@ -223,6 +257,10 @@ async function fixture(options: FixtureOptions = {}) {
   events.length = 0;
   return {
     root,
+    contexts,
+    get probeDisposed() {
+      return probeDisposed;
+    },
     handlers,
     events,
     errors,
@@ -422,6 +460,12 @@ test("silent Edit failure abandons the mirror and falls back to Chat", async (t)
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, [f.note]);
   assert.equal(f.editWatchers.length, 0);
+  assert.equal(
+    f.contexts.some(
+      ([key, value]) => key === EDIT_PROMPT_ARMED && value === true,
+    ),
+    false,
+  );
   assert.equal(f.errors.length, 0);
   assert.ok(
     f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
@@ -441,6 +485,12 @@ test("Edit throws after handoff: release lease, dismiss mirror, Chat fallback", 
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, [f.note]);
   assert.equal(f.editWatchers.length, 0);
+  assert.equal(
+    f.contexts.some(
+      ([key, value]) => key === EDIT_PROMPT_ARMED && value === true,
+    ),
+    false,
+  );
   assert.equal(f.errors.length, 0);
   assert.ok(
     f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
@@ -497,7 +547,15 @@ for (const path of ["override-only", "focused editor"] as const) {
     const watcher = f.editWatchers[0];
     assert.ok(watcher);
     assert.equal(watcher.uri, f.note);
+    assert.deepEqual(
+      f.contexts.filter(([key]) => key === EDIT_PROMPT_ARMED),
+      [
+        [EDIT_PROMPT_ARMED, false],
+        [EDIT_PROMPT_ARMED, true],
+      ],
+    );
     watcher.onEnd();
+    assert.deepEqual(f.contexts.at(-1), [EDIT_PROMPT_ARMED, false]);
     assert.equal(f.lease.has(f.note), false, "release precedes dismissal");
     assert.deepEqual(f.dismissed, [f.note]);
     assert.equal(watcher.isDisposed, true);
@@ -516,6 +574,15 @@ test("a new Edit cancels the same-URI watcher and releases only the replaced tok
   assert.ok(first);
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
   assert.equal(first.isDisposed, true);
+  assert.deepEqual(
+    f.contexts.filter(([key]) => key === EDIT_PROMPT_ARMED),
+    [
+      [EDIT_PROMPT_ARMED, false],
+      [EDIT_PROMPT_ARMED, true],
+      [EDIT_PROMPT_ARMED, false],
+      [EDIT_PROMPT_ARMED, true],
+    ],
+  );
   first.onEnd();
   assert.deepEqual(f.dismissed, []);
   const second = f.editWatchers[1];
@@ -536,6 +603,7 @@ test("a failed replacement abandons once and stale success callbacks cannot dism
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
   assert.equal(first.isDisposed, true);
   assert.equal(f.editWatchers.length, 1, "failure does not arm a watcher");
+  assert.deepEqual(f.contexts.at(-1), [EDIT_PROMPT_ARMED, false]);
   assert.equal(f.lease.has(f.note), false);
   first.onEnd();
   assert.deepEqual(f.dismissed, [f.note]);
@@ -545,6 +613,11 @@ test("stopping the plugin cancels Edit cleanup without dismissing a tab", async 
   const f = await fixture();
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
   await f.root.dispose();
+  assert.equal(f.probeDisposed, true);
+  assert.deepEqual(
+    f.contexts.filter(([key]) => key === EDIT_PROMPT_ARMED).at(-1),
+    [EDIT_PROMPT_ARMED, false],
+  );
   const watcher = f.editWatchers[0];
   assert.ok(watcher);
   assert.equal(watcher.isDisposed, true);
@@ -564,6 +637,28 @@ test("Edit-end dismissal is best-effort after releasing the token", async (t) =>
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.equal(f.lease.has(f.note), false);
   assert.equal(f.editWatchers[0]?.isDisposed, true);
+});
+
+test("Edit ending during watcher registration cannot leave the probe armed", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  let isDisposed = false;
+  f.surface.watchEditEnd = (_uri, onEnd) => {
+    onEnd();
+    return {
+      dispose() {
+        isDisposed = true;
+      },
+    };
+  };
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(isDisposed, true);
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.deepEqual(
+    f.contexts.filter(([key]) => key === EDIT_PROMPT_ARMED),
+    [[EDIT_PROMPT_ARMED, false]],
+  );
 });
 
 test("Edit finishing preparation after plugin shutdown cannot arm a watcher", async (t) => {

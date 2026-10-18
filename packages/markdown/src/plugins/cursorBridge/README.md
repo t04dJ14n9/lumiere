@@ -46,21 +46,23 @@ model. Dirty notes are allowed without autosave.
 
 ## Files
 
-- `manifest.ts`: Chat/Edit commands and Cmd/Ctrl+L / Cmd/Ctrl+K bindings.
+- `manifest.ts`: Chat/Edit commands, Cmd/Ctrl+L / Cmd/Ctrl+K bindings and the prompt probe view.
 - `protocol.ts`: the webview asks whether it runs in Cursor, and for a hand-off.
 - `webview.ts`: capture-phase Cmd/Ctrl+L and Cmd/Ctrl+K in Cursor, before Vim and the webview forwarder.
 - `panel-host.ts`: answers the webview, per panel, by running the commands.
 - `cursor.ts`: Cursor-host detection and Chat/Edit command routing.
 - `selection.ts`: active panel selection or caret capture, with CRLF mapping.
 - `handoff.ts`: Lease + version-safe native editor mirror.
-- `host.ts`: Context key, command registration and one-shot Edit mirror cleanup.
+- `host.ts`: Context keys, command registration and one-shot Edit mirror cleanup.
+- `edit-prompt-probe.ts`: empty Explorer tree and ownership of the armed context.
 - `../../host/cursor-handoff.ts`: native handoff surface and mirror dismissal.
-- `../../host/cursor-edit-end.ts`: passive Edit-end observation.
+- `../../host/cursor-edit-end.ts`: prompt visibility observation and tab/editor departure backup.
 
 ## Services, events and settings
 
-The window half injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings` and `agentHost`; provides no service. Sets
-`lumiere.markdown.isCursorHost`. The panel half injects `rpc`, `agentHost`
+The window half injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings`, `agentHost` and `views`; provides no service. Sets
+`lumiere.markdown.isCursorHost` and `lumiere.markdown.editPromptArmed`. Registers
+the empty `lumiere.markdown.cursorBridge.editPromptProbe` Explorer tree. The panel half injects `rpc`, `agentHost`
 and `hostCommands`; the webview half `editor` and `rpc`. Uses `handoffLease` from the host reclaim
 module. `plugins.cursorBridge.enabled` defaults to true. Host keybindings for
 Insert Link and Vim's shortcut consumer exclude Cursor; other Vim Control
@@ -74,26 +76,29 @@ modify `agentBridge` or invent whole-file payloads. Cursor command ids are
 best-effort internal commands, not a stable public API.
 
 Cursor has no public Edit completion event: the prompt-bar id reports opening,
-not closing, and its prompt/diff context keys cannot be read through the public
-extension API. Edit-end observation is therefore **best-effort**. After a 500 ms
-grace period, closing the last text tab or leaving the mirror ends the handoff.
-While the mirror tab stays active, an undefined `activeTextEditor` arms a focus
-cycle. The watcher waits while focus is absent and ends Edit when the mirror
-text editor becomes active again (such as after Edit X or Esc). Observations
-during grace cannot arm the cycle, so the show/Edit opening transition is
-ignored. This signal works even when a short note's visible ranges stay fixed.
+not closing, and extensions cannot read arbitrary context keys. The primary end
+signal is an empty Explorer tree named **·**, contributed with the workbench
+`when` expression `(editcontextbarcursor || editorHasPromptBar) &&
+lumiere.markdown.editPromptArmed`. Verified Edit success arms the context; the
+workbench evaluates Cursor's prompt-presence keys and makes the tree visible.
+Once seen visible, its transition to hidden abandons the handoff immediately,
+releasing the lease and dismissing the mirror even when `activeTextEditor`
+stays on the native Markdown editor throughout X or Esc. An initially hidden
+probe does not imply completion. The watcher invokes no commands.
 
-As a backup, visible-range events and a 250 ms poll look for one extra visible
-source line at either unchanged viewport edge, with the same editor and
-document version, sustained for another 250 ms. Split ranges count only their
-visible lines, excluding gaps and counting overlaps once. Scrolling or document
-changes reset capacity inference. The watcher invokes no commands.
+Each cleanup disarms its probe ownership on end, replacement or shutdown;
+failures never arm. Multiple live handoffs share the window's armed context
+until their last owner releases it. As a hard backup, tab/editor events and a
+250 ms poll detect closing the last native text tab or leaving the mirror,
+after a 500 ms opening grace. Prompt visibility transitions need no grace.
+Focus-return and visible-range capacity heuristics are no longer used.
 
-Focus changes are not proof of prompt removal: clicking the mirror while Edit
-is still open, or returning from another focus target, can end cleanup early.
-Cursor versions that keep `activeTextEditor` defined throughout prompt focus
-can still miss short-note dismissal; closes during grace can also be missed.
-Window/pane resizing or other view zones can resemble returned capacity.
-The public API cannot prove that submitted inline diffs have settled.
-Closing the mirror reveals the Live Preview sibling, or allows existing reclaim
-events to restore it.
+The probe has no roots and is never revealed or focused, but its header/empty
+area can briefly flash or shift Explorer sections while Edit is open. Public
+visibility also changes if the user collapses the probe or hides Explorer:
+that can look like prompt removal. A collapsed probe or a closed Explorer can
+prevent observing prompt-open and leave cleanup to tab/editor departure. The
+window-level prompt keys do not identify a URI; submitted inline diffs cannot
+be proven settled through these APIs. Closing the mirror reveals the Live
+Preview sibling, or allows existing reclaim events to restore it. Obsidian has
+no equivalent native Cursor handoff.

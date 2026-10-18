@@ -5829,3 +5829,52 @@ PDF 393; formatting, lint, typechecks and contributions). Browser suites passed
 (Markdown 23/23, PDF 25 passed, 1 existing performance skip), on a private Xvfb
 display. Checks ran sequentially with Node 22.16.0 and unit concurrency limited
 to one. No push or Host GUI retest was performed.
+
+## Host GUI: Cursor Edit mirror prompt when-probe — 2026-10-18
+
+Host GUI retesting of `948af6b1` also failed X/Esc dismissal: the native
+Markdown editor stayed active throughout the prompt, so its focus cycle never
+armed. Together with the earlier capacity failure on the 46-line Formatting.md,
+this supersedes both heuristics as Edit-end signals.
+
+The bridge now registers an empty Explorer tree named **·** through injected
+`views`. Its workbench-scoped contribution evaluates
+`(editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed`.
+Verified Edit success registers the watcher and sets the armed context. Seeing
+the probe visible then hidden invokes the existing one-shot abandon path,
+releasing that handoff's lease and dismissing its mirror even if the active
+editor and visible ranges never change. This primary signal has no opening
+grace. Tab/editor departure remains a hard backup with the existing 500 ms
+grace and 250 ms poll. Focus-return and capacity inference are removed.
+
+Probe ownership clears on completion, replacement and shutdown; failures do
+not arm. Multiple live handoffs share the window context until the last owner
+releases it. The watcher calls no commands, reads no private context-key API,
+and never opens/closes/toggles Edit to detect completion. Path B still calls
+Edit without arguments after showing the focused native editor.
+
+The tree is never revealed or focused and has no roots, but an empty Explorer
+section can flash or shift neighboring sections. Hiding Explorer or collapsing
+the probe can imitate removal or prevent observing prompt-open; tab/editor
+cleanup remains available. Context keys are window-scoped and cannot establish
+per-URI prompt ownership or submitted inline-diff settlement. Host GUI retest
+is required; none was run and no GUI PASS is claimed.
+
+Validation: focused Cursor bridge 64/64, handoff-host 78/78, reclaim 25/25 and
+contribution parity 7/7 passed. Coverage drives visible-to-hidden with an
+unchanged native editor and 46 visible lines, closure inside opening grace,
+initially hidden/visible probes, focus and viewport changes while open,
+one-shot cancellation, context ownership, replacement, failure and shutdown.
+`pnpm check` passed (2,518 units: core/root 76, agents 47, Markdown 2,002,
+PDF 393; formatting, lint, typechecks and contributions), with Node 22.16.0 and
+unit concurrency limited to one. Browser suites passed (Markdown 284/284,
+PDF 173/173). The isolated VS Code run passed 22/23 Markdown scenarios; the
+unchanged rendered Git diff Source Control takeover test timed out at
+`test/vscode/git-diff-editor.spec.ts:92`. Its focused retry failed identically
+on this patch and on the previous `948af6b1` VSIX, whose bundle hash matches
+the earlier Host GUI handoff. No Git diff source or test was changed. The
+separately run PDF native suite passed 25 tests with 1 existing performance
+skip. All suites ran sequentially;
+native runs used VS Code 1.142.0, private Xvfb displays and isolated profiles.
+The required focused suites are green; the baseline-reproduced native failure
+remains explicitly outstanding. No push is authorized or performed.

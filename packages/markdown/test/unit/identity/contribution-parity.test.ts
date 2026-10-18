@@ -323,6 +323,13 @@ async function captureTreeHostCommands(): Promise<{
   root.plugin(tagsViewHost);
   root.plugin(backlinksHost);
   root.plugin(outgoingLinksHost);
+  root.provide("selections", {
+    async capture() {
+      return undefined;
+    },
+    validate: () => activePanel(),
+  });
+  root.plugin(cursorBridgeHost);
   await root.settled();
   await tick();
   const problems = pluginProblems(root);
@@ -330,7 +337,7 @@ async function captureTreeHostCommands(): Promise<{
   return { ids, treeIds, problems };
 }
 
-/** Tree and status handles the four view hosts touch while registering. */
+/** Tree and status handles the view hosts touch while registering. */
 function viewHostWorkbench(
   ids: Set<string>,
   treeIds: Set<string>,

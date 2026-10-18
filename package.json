@@ -1315,6 +1315,11 @@
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.backlinks.enabled"
         },
         {
+          "id": "lumiere.markdown.cursorBridge.editPromptProbe",
+          "name": "·",
+          "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.cursorBridge.enabled && (editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed"
+        },
+        {
           "id": "lumiere.markdown.outgoingLinks",
           "name": "Outgoing Links",
           "when": "config.lumiere.markdown.preset != 'minimal' && config.lumiere.markdown.plugins.outgoingLinks.enabled"

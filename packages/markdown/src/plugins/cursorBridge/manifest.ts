@@ -10,8 +10,16 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
-  capabilities: ["commands", "agentHandoff"],
+  capabilities: ["commands", "agentHandoff", "views"],
   contributes: {
+    views: [
+      {
+        id: "cursorBridge.editPromptProbe",
+        name: "·",
+        scope: "workbench",
+        when: "(editcontextbarcursor || editorHasPromptBar) && lumiere.markdown.editPromptArmed",
+      },
+    ],
     commands: [
       {
         id: "cursorBridge.chat",

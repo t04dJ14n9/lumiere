@@ -17,6 +17,10 @@ import {
 } from "./handoff";
 import { contributionId } from "../../shared/setting-schema";
 import { captureActiveSelection } from "./selection";
+import {
+  registerEditPromptProbe,
+  type EditPromptProbe,
+} from "./edit-prompt-probe";
 
 const IS_CURSOR_HOST = contributionId("isCursorHost");
 
@@ -32,6 +36,7 @@ interface EditMirrorCleanup {
 }
 
 type BridgeSession = CursorBridgeConfig & {
+  promptProbe: EditPromptProbe;
   editMirrors: Map<string, EditMirrorCleanup>;
   isStopped: boolean;
 };
@@ -48,6 +53,7 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
       "dialogs",
       "settings",
       "agentHost",
+      "views",
     ],
   },
   apply(ctx, config) {
@@ -56,6 +62,7 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
     const commands = ctx.hostCommands;
     const bridgeConfig: BridgeSession = {
       ...(config ?? { appName: "", surface: unusedSurface }),
+      promptProbe: registerEditPromptProbe(ctx),
       editMirrors: new Map(),
       isStopped: false,
     };
@@ -280,12 +287,14 @@ function createEditMirrorCleanup(
   session.editMirrors.get(uri)?.dispose();
   let isFinished = false;
   let watcher: { dispose(): void } | undefined;
+  let disarmProbe: (() => void) | undefined;
   const stopWatching = () => {
     if (isFinished) {
       return false;
     }
     isFinished = true;
     watcher?.dispose();
+    disarmProbe?.();
     session.editMirrors.delete(uri);
     return true;
   };
@@ -294,13 +303,19 @@ function createEditMirrorCleanup(
       if (isFinished) {
         return;
       }
-      watcher = session.surface.watchEditEnd(uri, () => {
-        void cleanup.abandon();
-      });
+      watcher = session.surface.watchEditEnd(
+        uri,
+        () => {
+          void cleanup.abandon();
+        },
+        session.promptProbe.visibility,
+      );
       // A surface may report an already-ended session during registration.
       if (isFinished) {
         watcher.dispose();
+        return;
       }
+      disarmProbe = session.promptProbe.arm();
     },
     async abandon() {
       if (stopWatching()) {
