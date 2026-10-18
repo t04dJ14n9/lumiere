@@ -36,6 +36,8 @@ one blank line after the text, and a popover under the reference edits the
 definition: what is typed goes there, Enter continues it on an indented line,
 and Escape or a click elsewhere closes it, back at the reference
 (`definition-popover.ts`).
+On an ATX or Setext heading, the reference goes in a new paragraph after the
+whole heading so its text and outline entry stay intact.
 
 ## Files
 
