@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageRect } from "../shared/geometry";
 import type { RegionSelection } from "../shared/selection";
 import { postToHost, reportToHost } from "./host";
+import { followMenuContext } from "./menu-context";
 import { readRegionDetails } from "./region-details";
 
 /** Drags smaller than this (in points) are clicks, not regions. */
@@ -36,6 +37,20 @@ export function useSelectionReporting(
     return state.follow(selection.forDocument(documentId), { engine, pdf });
   }, [state, documentId, pdf, registry, selection]);
   useCopiedText(state);
+  useEffect(
+    () =>
+      followMenuContext(
+        document,
+        () =>
+          Boolean(state.region) ||
+          Boolean(selection?.forDocument(documentId).getState().selection),
+      ),
+    [state, documentId, selection],
+  );
+  /** Report the selection now: the extension asks before Copy Link for Agent. */
+  const reportNow = useCallback((): void => {
+    void state.reportSelection(selection?.forDocument(documentId));
+  }, [state, documentId, selection]);
   const copyLinkForAgent = useCallback(async (): Promise<void> => {
     await state.reportSelection(selection?.forDocument(documentId));
     postToHost({ type: "copyLinkForAgent" });
@@ -48,7 +63,7 @@ export function useSelectionReporting(
     // Reported to the extension by the selection change handler.
     selection?.forDocument(documentId).clear();
   }, [state, documentId, selection]);
-  return { region, clear, copyLinkForAgent };
+  return { region, clear, copyLinkForAgent, reportNow };
 }
 
 type Engine = Parameters<typeof readRegionDetails>[0];

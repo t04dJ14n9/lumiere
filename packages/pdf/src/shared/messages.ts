@@ -155,6 +155,8 @@ export type HostMessage =
   | { type: "toolbar"; toolbar: ToolbarSettings }
   | { type: "lookUp"; enabled: boolean }
   | { type: "lookUpRequest" }
+  /** Report the current selection now: Copy Link for Agent ran before the viewer's report arrived. */
+  | { type: "reportSelection" }
   /** Zen mode is on or off: the viewer shows a floating bar while it lasts. */
   | { type: "zen"; on: boolean }
   | { type: "viewSettings"; settings: ViewSettings };

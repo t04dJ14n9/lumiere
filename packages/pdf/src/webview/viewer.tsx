@@ -123,6 +123,7 @@ function useViewerState(pdf: PdfDocumentObject) {
     history,
     runAction,
     requestLookUp,
+    reportSelection: selection.reportNow,
     setLookUp,
     setZen,
     setToolbar,

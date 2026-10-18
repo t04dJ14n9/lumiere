@@ -37,9 +37,14 @@ export const agentBridgePlugin: Plugin = {
     ctx.own(
       vscode.commands.registerCommand(
         AGENT_BRIDGE_COMMAND_IDS.copyLinkForAgent,
-        () => {
+        async () => {
           const panel = panels.active;
-          return panel ? handoff.copyLinkForAgent(panel) : undefined;
+          if (!panel) {
+            return undefined;
+          }
+          // From the context menu the command can beat the viewer's report.
+          await panel.ensureSelection();
+          return handoff.copyLinkForAgent(panel);
         },
       ),
       "command",

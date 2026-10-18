@@ -15,6 +15,7 @@ export interface HostMessageHandlers {
   history: ReturnType<typeof useJumpHistory>;
   runAction: ReturnType<typeof useViewActions>;
   requestLookUp: () => void;
+  reportSelection: () => void;
   setLookUp: (enabled: boolean) => void;
   setZen: (on: boolean) => void;
   setToolbar: (toolbar: ToolbarSettings) => void;
@@ -66,6 +67,9 @@ function handleHostMessage(
       return;
     case "lookUpRequest":
       handlers.requestLookUp();
+      return;
+    case "reportSelection":
+      handlers.reportSelection();
       return;
     case "lookUp":
       handlers.setLookUp(message.enabled);

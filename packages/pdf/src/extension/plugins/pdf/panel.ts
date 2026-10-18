@@ -24,6 +24,9 @@ import { createPdfViewId } from "./view-id";
 import { viewerHtml } from "./webview-html";
 import { HistoryRequests } from "./history-requests";
 
+/** How long Copy Link for Agent waits for the viewer to report its selection. */
+const SELECTION_REPORT_TIMEOUT_MS = 1000;
+
 /** Messages the panel leaves to plugins (see `PdfPanels.handle`). */
 export type PluginMessage = Extract<
   ViewerMessage,
@@ -224,6 +227,30 @@ export class PdfPanel implements vscode.Disposable {
   setToolbar(toolbar: ToolbarSettings): void {
     this.toolbar = { ...toolbar };
     this.post({ type: "toolbar", toolbar: this.toolbar });
+  }
+
+  /**
+   * Make sure the extension has the viewer's selection. The viewer reports a
+   * text selection after reading its text, so a context-menu command can run
+   * before the report arrives; this asks for it and waits, at most
+   * `timeoutMs`, for the next one.
+   */
+  async ensureSelection(
+    timeoutMs = SELECTION_REPORT_TIMEOUT_MS,
+  ): Promise<void> {
+    if (this.selection || this.loading) {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      const done = (): void => {
+        clearTimeout(timer);
+        subscription.dispose();
+        resolve();
+      };
+      const subscription = this.onDidChangeSelection(done);
+      const timer = setTimeout(done, timeoutMs);
+      this.post({ type: "reportSelection" });
+    });
   }
 
   /** Turn macOS Look Up on or off in the viewer (it is off until the plugin says). */
