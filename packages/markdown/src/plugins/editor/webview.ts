@@ -80,9 +80,11 @@ export const editorWebview: Plugin<EditorConfig> = {
     registerSettings(ctx, view, settings);
     ctx.effect(() => ctx.document.attach(view));
     const contributions = new ViewContributions(view);
-    const registry = new ExtensionRegistry(ctx.rankOf, (extensions) => {
-      view.dispatch({ effects: pluginExtensions.reconfigure(extensions) });
-    });
+    const registry = new ExtensionRegistry(ctx.rankOf, (extensions) =>
+      presentation.keepPlace(view, () =>
+        view.dispatch({ effects: pluginExtensions.reconfigure(extensions) }),
+      ),
+    );
     const editor = createEditorService({
       view,
       registry,

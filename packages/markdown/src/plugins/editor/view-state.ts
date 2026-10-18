@@ -103,20 +103,54 @@ class ViewState {
       }),
     ];
   }
-  /** Measure only when transferring a pane, never on its ordinary typing path. */
-  captureViewState(view: EditorView, state: EditorViewState): EditorViewState {
+  /** The line at the top of the viewport, and how far above the top it starts. */
+  private topLine(view: EditorView): { from: number; offset: number } {
     const viewport = view.scrollDOM.getBoundingClientRect();
     const block = view.lineBlockAtHeight(
       (viewport.top - view.documentTop) / view.scaleY,
     );
     return {
+      from: block.from,
+      offset: block.top + (view.documentTop - viewport.top) / view.scaleY,
+    };
+  }
+
+  /** Measure only when transferring a pane, never on its ordinary typing path. */
+  captureViewState(view: EditorView, state: EditorViewState): EditorViewState {
+    return {
       ...state,
       scrollLeft: view.scrollDOM.scrollLeft,
-      scrollAnchor: {
-        from: block.from,
-        offset: block.top + (view.documentTop - viewport.top) / view.scaleY,
-      },
+      scrollAnchor: this.topLine(view),
     };
+  }
+
+  /**
+   * Run `change` (turning a plugin on or off) keeping the reader's place:
+   * reconfiguring re-estimates the heights above the viewport, so the line
+   * at the top stays pinned while layout settles, as a restored view does.
+   */
+  keepPlace(view: EditorView, change: () => void): void {
+    const pinned = this.pendingScroll.get(view);
+    // A restore on its way places the view itself; at the top, nothing moves.
+    if (pinned ? !pinned.applied : view.scrollDOM.scrollTop === 0) {
+      change();
+      return;
+    }
+    // Still settling from the last change: keep the same line pinned.
+    const top = pinned
+      ? { from: pinned.from, offset: pinned.offset }
+      : this.topLine(view);
+    const left = view.scrollDOM.scrollLeft;
+    change();
+    this.pendingScroll.set(view, {
+      ...top,
+      left,
+      applied: false,
+      settleUntil: 0,
+    });
+    view.dispatch({
+      effects: EditorView.scrollIntoView(top.from, { y: "start" }),
+    });
   }
 
   /** Restore presentation without the unfolding and centering of source navigation. */

@@ -88,3 +88,93 @@ test("widget scroll input cancels applied restore and queued layout correction o
   assert.equal(second.scrollDOM.scrollTop, secondTop + 60);
   await root.dispose();
 });
+
+/** A panel scrolled to 600 px, its top line (at 40) starting 10 px above. */
+function scrolledPanel(presentation: ReturnType<typeof createViewState>) {
+  let state = EditorState.create({
+    doc: "x".repeat(100),
+    extensions: presentation.restoreScrollPosition,
+  });
+  const line = { from: 40, top: 590 };
+  const scrollDOM = {
+    scrollTop: 600,
+    scrollLeft: 0,
+    getBoundingClientRect: () => ({ top: 0 }),
+  };
+  const dispatched: TransactionSpec[] = [];
+  const view = {
+    get state() {
+      return state;
+    },
+    get documentTop() {
+      return -scrollDOM.scrollTop;
+    },
+    scaleY: 1,
+    scrollDOM,
+    lineBlockAt: () => line,
+    lineBlockAtHeight: () => line,
+    requestMeasure() {},
+    dispatch(spec: TransactionSpec) {
+      dispatched.push(spec);
+      state = state.update(spec).state;
+    },
+  } as unknown as EditorView;
+  const scroll = (head: number) =>
+    state.facet(EditorView.scrollHandler)[0]!(
+      view,
+      EditorSelection.cursor(head),
+      { x: "nearest", y: "start", xMargin: 0, yMargin: 0 },
+    );
+  return { view, line, scrollDOM, dispatched, scroll };
+}
+
+test("turning a plugin on or off keeps the line at the top of the viewport in place", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const panel = scrolledPanel(presentation);
+  let changed = false;
+  presentation.keepPlace(panel.view, () => {
+    changed = true;
+    // Reconfiguring re-estimated the heights above: the line moved up 140 px.
+    panel.line.top = 450;
+  });
+  assert.equal(changed, true);
+  assert.equal(panel.dispatched.length, 1);
+  assert.equal(panel.scroll(40), true);
+  assert.equal(panel.line.top - panel.scrollDOM.scrollTop, -10);
+
+  // Turned back on while layout settles: the same line stays pinned.
+  presentation.keepPlace(panel.view, () => (panel.line.top = 520));
+  assert.equal(panel.dispatched.length, 2);
+  assert.equal(panel.scroll(40), true);
+  assert.equal(panel.line.top - panel.scrollDOM.scrollTop, -10);
+  await root.dispose();
+});
+
+test("keeping the place leaves a view at the top, and a restore on its way, alone", async () => {
+  const root = createRoot();
+  const presentation = createViewState(root);
+  const top = scrolledPanel(presentation);
+  top.scrollDOM.scrollTop = 0;
+  presentation.keepPlace(top.view, () => {});
+  assert.equal(top.dispatched.length, 0);
+
+  const restoring = scrolledPanel(presentation);
+  presentation.restoreViewState(
+    restoring.view,
+    viewState.parse({
+      anchor: 0,
+      head: 0,
+      scrollTop: 0,
+      scrollAnchor: { from: 70, offset: 0 },
+      mode: "livePreview",
+    }),
+  );
+  let changed = false;
+  presentation.keepPlace(restoring.view, () => (changed = true));
+  assert.equal(changed, true);
+  assert.equal(restoring.dispatched.length, 1, "only the restore's dispatch");
+  // The restore still lands where it was going.
+  assert.equal(restoring.scroll(70), true);
+  await root.dispose();
+});

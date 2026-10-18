@@ -59,7 +59,7 @@ function retainedCellFixture() {
       return parseTable(document)!;
     },
     root: { isConnected: true, focus() {} },
-    outer: { dispatch() {} },
+    outer: { state: EditorState.create(), dispatch() {} },
     start: () => 0,
     contentElement: () => ({ replaceChildren() {} }),
     display() {},

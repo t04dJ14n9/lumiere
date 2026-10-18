@@ -1,5 +1,6 @@
 import { defaultKeymap } from "@codemirror/commands";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
+import type { Transaction } from "@codemirror/state";
 import { EditorView, keymap } from "@codemirror/view";
 import { getCM } from "@replit/codemirror-vim";
 import type { Cell, CellPosition, Table } from "../../markdown/tables/model";
@@ -21,6 +22,8 @@ interface CellEditorOptions {
   vim: boolean;
   outer: EditorView;
   change(text: string, group: string): void;
+  /** The cell's caret or text changed: the document's caret follows it. */
+  caret(): void;
   selected(selected: boolean): void;
   action(action: Action): boolean;
   move(row: number, column: number): boolean;
@@ -59,14 +62,8 @@ export class CellEditor {
       parent: options.parent,
       dispatchTransactions: (transactions, view) => {
         view.update(transactions);
-        if (
-          !this.reconciling &&
-          transactions.some((transaction) => transaction.docChanged)
-        ) {
-          options.change(
-            view.state.doc.toString(),
-            `${groupPrefix}/${transactions.at(-1)?.annotation(editGroup) ?? "input"}`,
-          );
+        if (!this.reconciling) {
+          this.report(transactions, options, groupPrefix);
         }
       },
       state: EditorState.create({
@@ -100,6 +97,27 @@ export class CellEditor {
     this.label(options.position);
     this.groups.attach(this.view);
     this.bindMode();
+  }
+
+  /** Edits go to the document, and its caret follows the cell's. */
+  private report(
+    transactions: readonly Transaction[],
+    options: CellEditorOptions,
+    groupPrefix: string,
+  ): void {
+    if (transactions.some((transaction) => transaction.docChanged)) {
+      options.change(
+        this.view.state.doc.toString(),
+        `${groupPrefix}/${transactions.at(-1)?.annotation(editGroup) ?? "input"}`,
+      );
+    }
+    if (
+      transactions.some(
+        (transaction) => transaction.docChanged || transaction.selection,
+      )
+    ) {
+      options.caret();
+    }
   }
 
   private bindMode(): void {

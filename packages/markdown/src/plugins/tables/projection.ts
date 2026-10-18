@@ -75,6 +75,7 @@ export class CellProjection {
       selected: (selected) =>
         this.grid.outer.state.facet(tableSelectionChanges)(selected),
       change: (text, group) => this.projectChange(position, text, group),
+      caret: () => this.cellEditor && this.deferOuterCaret(this.cellEditor),
     });
     this.deferOuterCaret(this.cellEditor);
     this.cellEditor.view.focus();
@@ -193,6 +194,11 @@ export class CellProjection {
     this.grid.outer.dispatch({ changes, annotations: editGroup.of(group) });
   }
 
+  /**
+   * Put the document's caret where the cell's is, as Obsidian does: in the
+   * cell's source, following each move and edit, so the status bar and an
+   * agent's view of the selection show the place being edited.
+   */
   private deferOuterCaret(editor: CellEditor): void {
     // A structural command can open the cell during the outer view's update.
     // Delay dispatch, and reject work from an editor closed in the meantime.
@@ -205,8 +211,17 @@ export class CellProjection {
         return;
       }
       const cell = this.grid.model.rows[this.active.row]![this.active.column]!;
-      this.grid.outer.dispatch({
-        selection: { anchor: this.grid.start() + cell.from },
+      const start = this.grid.start() + cell.from;
+      const inCell = (offset: number) =>
+        start + Math.max(0, Math.min(offset, cell.to - cell.from));
+      const { anchor, head } = editor.view.state.selection.main;
+      const outer = this.grid.outer;
+      const current = outer.state.selection.main;
+      if (current.anchor === inCell(anchor) && current.head === inCell(head)) {
+        return;
+      }
+      outer.dispatch({
+        selection: { anchor: inCell(anchor), head: inCell(head) },
         annotations: tableProjection.of(true),
       });
     });

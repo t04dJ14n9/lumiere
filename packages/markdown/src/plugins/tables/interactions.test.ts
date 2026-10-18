@@ -389,3 +389,50 @@ test("cross-cell macro replay keeps the adapter and projects edits into the dest
     register.clear();
   }
 });
+
+// Measured in Obsidian: clicking into a cell puts the document's caret at the
+// same place in the cell's source, and it follows each move and edit.
+test("the document's caret follows the cell's caret into the cell's source", async () => {
+  const prefix = "Before\n\n";
+  let outer = EditorState.create({ doc: prefix + source });
+  const projection = new CellProjection(
+    {
+      outer: {
+        get state() {
+          return outer;
+        },
+        dispatch(spec: TransactionSpec) {
+          outer = outer.update(spec).state;
+        },
+      },
+      model: table,
+      root: { isConnected: true },
+      start: () => prefix.length,
+    } as unknown as TableGrid,
+    {} as TableEnvironment,
+    {
+      activate() {},
+      highlight() {},
+      move: () => false,
+      arrow: () => false,
+    },
+  );
+  const caretIn = async (anchor: number, head = anchor, text = "beta") => {
+    const editor = {
+      view: {
+        state: EditorState.create({ doc: text, selection: { anchor, head } }),
+      },
+    } as unknown as CellEditor;
+    projection.active = { row: 1, column: 1 };
+    projection.cellEditor = editor;
+    projection["deferOuterCaret"](editor);
+    await Promise.resolve();
+    const { anchor: from, head: to } = outer.selection.main;
+    return [from, to];
+  };
+  const beta = prefix.length + source.indexOf("beta");
+  assert.deepEqual(await caretIn(2), [beta + 2, beta + 2]);
+  assert.deepEqual(await caretIn(4, 1), [beta + 4, beta + 1]);
+  // Past the cell's source (not parsed again yet), it stays in the cell.
+  assert.deepEqual(await caretIn(9, 9, "beta typed"), [beta + 4, beta + 4]);
+});

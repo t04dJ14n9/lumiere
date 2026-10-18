@@ -6,6 +6,7 @@ import {
   isReclaimableNote,
   reclaimEnabled,
   shouldReclaim,
+  shouldWarmBeforeReclaim,
 } from "./reclaim-policy";
 import type { TabKind } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
@@ -24,6 +25,10 @@ export const textBypass = new Bypass();
  * session, not a fixed window. Released when the note leaves the text editor.
  */
 export const handoffLease = new Lease();
+
+function hasNativeOptOut(uri: string): boolean {
+  return textBypass.has(uri) || handoffLease.has(uri);
+}
 
 interface ReclaimRequest {
   uri: string;
@@ -81,8 +86,8 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
 
 /**
  * `markdownWorkshop.editor.reclaimTextEditor`: Cursor's Preview | Markdown
- * switch opens notes in the text or Cursor Markdown editor; warm them before
- * transferring back to our CustomTextEditorProvider.
+ * switch opens notes in the text or Cursor Markdown editor; transfer back to
+ * our CustomTextEditorProvider once the native document is ready.
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
@@ -261,12 +266,11 @@ function reclaimContext(uri: string) {
         value,
         viewType,
       ),
-    bypassed: (value: string) =>
-      textBypass.has(value) || handoffLease.has(value),
+    bypassed: hasNativeOptOut,
   };
 }
 
-/** Transfer after warming, keeping any dirty text tab and its native undo. */
+/** Transfer when ready, keeping any dirty text tab and its native undo. */
 async function reopen(
   tab: vscode.Tab,
   uri: string,
@@ -274,7 +278,14 @@ async function reopen(
   navigation?: NativeNavigation,
 ): Promise<void> {
   const target = vscode.Uri.parse(uri);
-  await warmMarkdownDocument(target);
+  // showTextDocument has already materialized a text tab's document. Avoid
+  // another warm call and its awaits; Cursor Markdown still needs the reissue.
+  const isDocumentOpen = vscode.workspace.textDocuments.some(
+    (document) => document.uri.toString() === uri,
+  );
+  if (shouldWarmBeforeReclaim(kindOf(tab), isDocumentOpen)) {
+    await warmMarkdownDocument(target);
+  }
   if (!canReopen(tab, uri, request)) {
     return;
   }
@@ -296,8 +307,7 @@ async function reopen(
   // transfer that navigation cancelled. keepNative is sticky across bypass TTL.
   if (
     request.keepNative ||
-    handoffLease.has(uri) ||
-    textBypass.has(uri) ||
+    hasNativeOptOut(uri) ||
     request.intent?.token.cancelled
   ) {
     return;
@@ -326,7 +336,7 @@ async function revealOpenedWatchingOptOut(
   deliver: () => Promise<void>,
 ): Promise<void> {
   const noteOptOut = () => {
-    if (handoffLease.has(uri) || textBypass.has(uri)) {
+    if (hasNativeOptOut(uri)) {
       request.keepNative = true;
       request.intent?.token.cancel();
       return true;
@@ -358,8 +368,7 @@ function canReopen(
 ): boolean {
   const kind = kindOf(tab);
   return (
-    !handoffLease.has(uri) &&
-    !textBypass.has(uri) &&
+    !hasNativeOptOut(uri) &&
     !request.intent?.token.cancelled &&
     tab.group.tabs.includes(tab) &&
     (kind === "text" || kind === "other") &&

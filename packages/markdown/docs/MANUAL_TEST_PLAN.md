@@ -110,6 +110,18 @@ open. **Open as Text** still keeps the text editor during the bypass window.
 Setting warming to `off` must stop warm calls; record the Cursor result
 separately, since that explicitly disables the workaround.
 
+Claude Code chat reclaim timing (use a disposable vault): associate `*.md`
+with Workshop and leave reclaim/warming at `auto` in Cursor. Click a Markdown
+file link in Claude Code chat with the note closed, already open and dirty,
+and open in two groups. Compare the interval from the native text tab appearing
+to Workshop appearing against the previous build, recording the Cursor version
+and cold/warm cases. A materialized text tab should transfer without waiting
+for another `openTextDocument`; the native text flash can still occur because
+Claude Code uses `showTextDocument`. Confirm selection handoff and dirty text
+survive, **Open as Text** and Cursor Edit/Chat stay native, and a second text
+request within 10 seconds stays text. Repeat the Cursor Markdown transfer
+above to confirm its awaited warming still prevents the assertion.
+
 Cursor review hunk navigation (use a disposable note with at least 1,000 lines):
 associate Markdown with Workshop and leave reclaim at `auto`. Include a long
 rendered table spanning the first target. Ask an agent to edit passages near lines 930 and 948, then click each hunk card's blue file/open

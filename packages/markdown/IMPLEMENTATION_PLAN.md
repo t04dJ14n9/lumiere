@@ -5219,3 +5219,34 @@ by name). Fixed to match it:
   (`markdownWorkshop.tags.viewSort`).
 
 Validation: `pnpm check` green.
+
+## Open pull requests #82, #81 and #75, checked against this branch — 2026-10-17
+
+- **#82** (skip warming when a loaded text tab is reclaimed) is ported as
+  is: the host code here matched main's. One test called main's public API
+  (`createWorkshop`); it now uses this branch's host commands. Its manual
+  timing check is in the manual test plan.
+- **#81** (keep the caret on Toggle Vim, Esc and a cell click) was measured
+  against Obsidian 1.12.7 before porting, and only its first fix is taken,
+  done another way:
+  - Toggle Vim: the caret already stayed put here, but on a long note the
+    view moved (the caret's line went from 676 px to 539 px down the
+    screen turning Vim off, and further turning it on). A plugin turned on
+    or off now keeps the line at the top of the viewport pinned while
+    layout settles, with the reading-position pin a moved pane uses
+    (`ViewState.keepPlace`); CodeMirror's scroll snapshot was tried first
+    and made it worse, since a reconfigure re-estimates the heights above.
+    All cases now stay within 1 px.
+  - Esc from Insert: not taken. Obsidian moves the caret one left, as Vim
+    does, and Workshop already matched it in 8 of 8 cases.
+  - Cell click: not taken. Obsidian moves the document's caret into the
+    cell's source, at the clicked place, and keeps it in step while typing.
+    Workshop now does the same (it used to put it at the cell's start and
+    leave it there); the status bar and an agent's view of the selection
+    show the place being edited. 4 of 6 positions match, and the other two
+    differ only because the column is wider, so the click lands past the
+    text.
+- **#75** (the Cordis Stage A shim) is superseded: this branch runs fully on
+  Cordis.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

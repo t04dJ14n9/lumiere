@@ -48,6 +48,14 @@ export function shouldReclaim(
   );
 }
 
+/** Cursor Markdown still needs the transfer warm even with a loaded document. */
+export function shouldWarmBeforeReclaim(
+  kind: TabKind,
+  isDocumentOpen: boolean,
+): boolean {
+  return kind !== "text" || !isDocumentOpen;
+}
+
 /** Whether `workbench.editorAssociations` sends this note to the editor. */
 export function associatedWith(
   associations: unknown,
