@@ -1,4 +1,8 @@
-import { splitLinktext, type LinkSyntax } from "../../shared/vault-path";
+import {
+  splitLinktext,
+  withoutNoteExtension,
+  type LinkSyntax,
+} from "../../shared/vault-path";
 import type { VaultIndex } from "../vault/api";
 
 /** Decode once and reject ambiguous paths before the host resolves a target. */
@@ -20,11 +24,14 @@ export function externalScheme(href: string): string | undefined {
 }
 
 /**
- * A wikilink target's key in the host's unresolved set: the path as written,
- * without its `#subpath`, lower-cased because links resolve regardless of case.
+ * A wikilink target's key in the host's unresolved set: the path as written
+ * without its `#subpath` or a note's `.md` (as Obsidian names it), lower-cased
+ * because links resolve regardless of case.
  */
 export function unresolvedKey(href: string): string {
-  return splitLinktext(href.split("|")[0]!).path.toLowerCase();
+  return withoutNoteExtension(
+    splitLinktext(href.split("|")[0]!).path,
+  ).toLowerCase();
 }
 
 /**

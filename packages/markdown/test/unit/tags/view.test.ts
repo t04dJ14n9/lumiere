@@ -44,11 +44,12 @@ test("the Tags view lists the vault's tags and a click picks a note to open", as
     "A.md": "#project/alpha and #Ideas",
     "B.md": "---\ntags: [project]\n---\nbody",
   });
+  // Most used first, as Obsidian's Tags pane sorts by default.
   assert.deepEqual(await render(view.source), [
-    "Ideas (1)",
     ["project (2)", ["alpha (1)"]],
+    "Ideas (1)",
   ]);
-  const [project] = (await view.source.roots()).slice(1);
+  const [project] = await view.source.roots();
   assert.deepEqual(project!.command, {
     id: SEARCH_COMMAND,
     args: ["memory:///vault", "project"],
@@ -68,7 +69,7 @@ test("the Tags view lists the vault's tags and a click picks a note to open", as
   assert.equal(view.disposed, true);
 });
 
-test("counts are notes, case variants merge, and excluded files are left out", async () => {
+test("every use counts, case variants merge, and excluded files are left out", async () => {
   const notes = {
     "A.md": "#Project/one #project/two #project",
     "B.md": "#PROJECT/one",
@@ -77,8 +78,8 @@ test("counts are notes, case variants merge, and excluded files are left out", a
   };
   const nested = await start(notes, {}, ["Hidden.md"]);
   assert.deepEqual(await render(nested.view.source), [
+    ["project (4)", ["one (2)", "two (1)"]],
     "other (1)",
-    ["Project (2)", ["one (2)", "two (1)"]],
   ]);
   await nested.root.dispose();
 
@@ -88,7 +89,7 @@ test("counts are notes, case variants merge, and excluded files are left out", a
     ["Hidden.md"],
   );
   assert.deepEqual(await render(flat.view.source), [
-    "Project (2)",
+    "project (4)",
     "Project/one (2)",
     "other (1)",
     "project/two (1)",

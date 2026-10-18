@@ -33,7 +33,7 @@ export const tagsViewHost: Plugin = {
     const refresh = async () => {
       const vault = await currentVault(ctx.activeEditor, ctx.vaults);
       source.update(vault?.index, {
-        sort: ctx.settings.get("tags.viewSort", "name"),
+        sort: ctx.settings.get("tags.viewSort", "frequency"),
         nested: ctx.settings.get("tags.viewNested", true),
       });
       tree.setMessage(message(vault, source.isEmpty));

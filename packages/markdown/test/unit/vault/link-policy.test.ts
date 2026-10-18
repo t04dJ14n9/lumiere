@@ -50,7 +50,8 @@ test("an OKF policy resolves bundle-absolute links and drops basename fallback",
     undefined,
   );
   assert.equal(
-    vault.unresolvedLinks("bundle/notes/source.md").has("/metrics/missing.md"),
+    // Named without `.md`, as Obsidian names an unresolved link.
+    vault.unresolvedLinks("bundle/notes/source.md").has("/metrics/missing"),
     true,
   );
   assert.equal(

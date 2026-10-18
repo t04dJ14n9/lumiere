@@ -4,7 +4,11 @@ import {
   linkSyntax,
   vaultLinks,
 } from "../../markdown/metadata/linkpaths";
-import { linkLookupKey, type LinkSyntax } from "../../shared/vault-path";
+import {
+  linkLookupKey,
+  withoutNoteExtension,
+  type LinkSyntax,
+} from "../../shared/vault-path";
 import type { Backlink, VaultFile } from "./api";
 
 export interface IndexedLink {
@@ -109,7 +113,7 @@ export class LinkMaps {
     for (const link of this.linkpaths.get(sourcePath) ?? []) {
       const target = this.resolve(link.path, sourcePath, link.syntax);
       const counts = target ? resolved : unresolved;
-      const key = target ? target.path : link.path;
+      const key = target ? target.path : withoutNoteExtension(link.path);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     this.resolved.set(sourcePath, resolved);

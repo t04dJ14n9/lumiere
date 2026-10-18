@@ -47,7 +47,7 @@ Webview injects `editor`, `livePreview` and `rpc`; the panel host injects `rpc`,
 services. The webview listens to `render/postProcess`, and to `suggest/trigger`
 for its own completion syntax; the view listens to `vault/resolved`. Emits no
 kernel events. Settings: `markdownWorkshop.plugins.tags.enabled` (true),
-`markdownWorkshop.tags.viewSort` (`name` or `frequency`, default `name`) and
+`markdownWorkshop.tags.viewSort` (`frequency` or `name`, default `frequency`) and
 `markdownWorkshop.tags.viewNested` (true). No palette command or keybinding;
 the view registers the internal `markdownWorkshop.tags.search` command for
 its clicks.

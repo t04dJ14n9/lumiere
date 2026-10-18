@@ -5197,3 +5197,25 @@ note at the root finds `dup/B/Same.md`); a missing relative target inside
 the vault stays unresolved. All 84 match now.
 
 Validation: `pnpm check` green.
+
+## Link maps and the Tags view, measured against Obsidian — 2026-10-17
+
+Obsidian's `resolvedLinks` and `unresolvedLinks` (public API) were compared
+with Workshop's link maps for the same notes: 29 of 29 resolved entries
+match, and 28 of 29 unresolved ones. Fixed: an unresolved link written with
+`.md` (`[[missing.md]]`) is keyed without it, as Obsidian keys it. Left: a
+link with an empty path and an alias (`[[|Only Alias]]`).
+
+The Tags pane was read in all four modes (nested or flat, by frequency or
+by name). Fixed to match it:
+
+- Every use counts, not every note: a note with `#dupe` twice counts 2,
+  and a parent counts each use of its descendants.
+- Case variants show under the most used spelling (`project` over
+  `Project`), the first seen on a tie.
+- The flat list has every path, `#nested` included when only
+  `#nested/tag` is written.
+- The view sorts by frequency by default, as the pane does
+  (`markdownWorkshop.tags.viewSort`).
+
+Validation: `pnpm check` green.

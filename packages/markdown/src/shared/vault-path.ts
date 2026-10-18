@@ -131,3 +131,11 @@ export function decodeLinkPath(link: string): string {
     return link;
   }
 }
+
+/**
+ * A link path without a note's `.md`, as Obsidian names an unresolved link:
+ * `[[Note.md]]` and `[[Note]]` are the same missing note.
+ */
+export function withoutNoteExtension(path: string): string {
+  return path.replace(/\.md$/iu, "");
+}

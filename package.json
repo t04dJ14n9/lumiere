@@ -2842,8 +2842,8 @@
               "name",
               "frequency"
             ],
-            "default": "name",
-            "description": "Order of the Tags view: `name` (A to Z) or `frequency` (most notes first).",
+            "default": "frequency",
+            "description": "Order of the Tags view: `frequency` (most used first, as in Obsidian) or `name` (A to Z).",
             "scope": "resource"
           },
           "markdownWorkshop.tags.viewNested": {

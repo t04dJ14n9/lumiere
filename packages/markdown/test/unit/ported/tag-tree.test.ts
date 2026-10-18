@@ -7,13 +7,15 @@ const notes = [
   { id: "b", tags: ["PROJECT/one"] },
   { id: "c", tags: ["Other"] },
 ];
-test("tag hierarchy merges case variants and counts each note once in parent totals", () => {
+// Counted as Obsidian's Tags pane counts (measured): every use, a parent
+// counting each use of its descendants, under the most used spelling.
+test("tag hierarchy merges case variants and counts every use in parent totals", () => {
   const roots = tagTree(notes, true, false);
   assert.deepEqual(
     roots.map((node) => [node.tag, node.count]),
     [
       ["Other", 1],
-      ["Project", 2],
+      ["Project", 4],
     ],
   );
   assert.deepEqual(
@@ -29,7 +31,7 @@ test("flat tags retain full paths while frequency sorting orders each level", ()
   assert.deepEqual(
     flat.map((node) => [node.label, node.count]),
     [
-      ["Project", 2],
+      ["Project", 4],
       ["Project/One", 2],
       ["Other", 1],
       ["project/Two", 1],
@@ -37,4 +39,22 @@ test("flat tags retain full paths while frequency sorting orders each level", ()
   );
   assert.ok(flat.every((node) => node.children.length === 0));
   assert.equal(tagTree(notes, true, true)[0]!.key, "project");
+});
+test("the flat list has a parent path written only inside a nested tag", () => {
+  const flat = tagTree([{ id: "a", tags: ["nested/tag"] }], false, false);
+  assert.deepEqual(
+    flat.map((node) => [node.label, node.count]),
+    [
+      ["nested", 1],
+      ["nested/tag", 1],
+    ],
+  );
+});
+test("case variants show under the most used spelling", () => {
+  const roots = tagTree(
+    [{ id: "a", tags: ["Project/one", "project/two", "project"] }],
+    true,
+    false,
+  );
+  assert.equal(roots[0]!.tag, "project");
 });

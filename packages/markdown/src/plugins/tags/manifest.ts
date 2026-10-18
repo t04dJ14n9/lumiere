@@ -3,9 +3,9 @@ import { MARKDOWN_EDITOR, whenActive } from "../../shared/editor-provider";
 import { defineManifest } from "../../shared/manifest";
 export const config = Schema.object({
   viewSort: Schema.union(["name", "frequency"])
-    .default("name")
+    .default("frequency")
     .description(
-      "Order of the Tags view: `name` (A to Z) or `frequency` (most notes first).",
+      "Order of the Tags view: `frequency` (most used first, as in Obsidian) or `name` (A to Z).",
     ),
   viewNested: Schema.boolean()
     .default(true)

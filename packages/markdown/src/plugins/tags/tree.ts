@@ -31,8 +31,8 @@ export function taggedNotesOf(
 
 /**
  * The Tags view: every tag in the vault, nested by `/` unless turned off.
- * Counts are notes, so a parent counts a note once however many of its
- * descendants the note uses. A click searches for the tag.
+ * Counts are uses, as in Obsidian's Tags pane: a parent counts each use of
+ * its descendants. A click searches for the tag.
  */
 export class TagsTree implements TreeSource {
   private root?: string;
