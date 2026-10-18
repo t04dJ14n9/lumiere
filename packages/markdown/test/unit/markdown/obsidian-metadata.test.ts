@@ -51,3 +51,15 @@ test("a $$ line right after a paragraph line starts display math, and a link ins
   assert.ok(names.includes("MathBlock"));
   assert.deepEqual(metadata(text).links, []);
 });
+
+// Measured in Obsidian 1.14.4: `|` splits a wikilink only after a name.
+test("a wikilink starting with | is a link to a note of that name", () => {
+  const links = metadata("a [[|Only Alias]] b [[Note|]] c [[|]]").links.map(
+    (link) => [link.link, link.displayText],
+  );
+  assert.deepEqual(links, [
+    ["|Only Alias", "|Only Alias"],
+    ["Note", "Note"],
+    ["|", "|"],
+  ]);
+});

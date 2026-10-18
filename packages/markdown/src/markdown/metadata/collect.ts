@@ -114,7 +114,12 @@ export class MetadataCollector {
     }
     const embed = node.name === "WikiEmbed";
     const raw = text.slice(node.from, node.to);
-    const link = wikiTarget(raw.slice(embed ? 3 : 2, -2));
+    const inner = raw.slice(embed ? 3 : 2, -2);
+    // As Obsidian records it, `|` with nothing before it is part of the
+    // link's name: `[[|Only Alias]]` links to a note named `|Only Alias`.
+    const link = inner.startsWith("|")
+      ? { target: inner, label: inner }
+      : wikiTarget(inner);
     (embed ? this.result.embeds : this.result.links).push({
       link: link.target,
       original: raw,

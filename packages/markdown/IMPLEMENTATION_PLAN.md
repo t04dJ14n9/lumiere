@@ -5413,3 +5413,9 @@ time between 10 and 30, with no notice. Workshop adds both, stepping the note
 font size setting.
 
 Validation: `pnpm check` green.
+- Search, run again on 1.14.4: 55 of 55.
+- `[[|Only Alias]]`, the last link-map difference: Obsidian records it as a
+  link to a note named `|Only Alias` (a `|` splits only after a name), while
+  its Live Preview shows `Only Alias`, as Workshop's does. Workshop's metadata
+  now records it the same; resolved and unresolved link maps match Obsidian's
+  for all 34 notes.
