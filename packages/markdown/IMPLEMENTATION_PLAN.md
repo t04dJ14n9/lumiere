@@ -4912,3 +4912,24 @@ Validation (macOS, isolated profiles): `pnpm check` green; Markdown browser
 suite 284/287 with three timing flakes that pass alone; PDF browser 174/174;
 real VS Code 1.142: PDF 25 (+1 skipped), Markdown all but the git diff
 editor spec; real Cursor 3.23: PDF 23/25.
+
+## Cursor: the status bar after zen, the diff takeover; full runs — 2026-10-17
+
+PDF zen in Cursor left the status bar hidden for good. Cursor 3.23 (stock,
+not only this machine's install) saves `workbench.statusBar.visible: false`
+when Zen Mode hides the status bar, then reads that setting on the way out
+and leaves the bar hidden; VS Code keeps zen out of the settings. PDF zen
+now notes the reader's own value as it begins and puts it back when zen
+ends, by the Exit button, Esc Esc, the command or core's own toggle, and
+only if zen changed it (`pdfZen/status-bar.ts`). In VS Code it never
+writes. Cursor's own Zen Mode, outside PDFs, still has the bug.
+
+The rendered git diff takes over Source Control's diff in Cursor too (Cursor
+replaces its tab objects, so the stale tab is looked up again before it is
+closed), and the git specs wait for Source Control there.
+
+Validation (macOS, isolated profiles): `pnpm check` green; real VS Code
+1.142: PDF 25 (+1 skipped), Markdown 23/23; real Cursor 3.23: PDF 25 (+1
+skipped), Markdown 23/23. One earlier Cursor run froze after the
+16,000-block load-time spec and timed out the three specs after it; the
+rerun and those specs alone pass.
