@@ -5102,3 +5102,21 @@ would break the links, is refused. Checked in real VS Code: the heading and
 both link forms in another note are updated.
 
 Validation: `pnpm check` green; unit tests pin the measured notes.
+
+## Accepting suggestions, as in Obsidian — 2026-10-17
+
+Typing and accepting the same suggestions in the throwaway Obsidian and in
+the editor (a fixed suggestion list stood in for the vault in the harness):
+
+- Tab takes a suggestion without finishing the link (`[[other|]]`), so `#`
+  or `|` can follow; it used to insert a tab and leave the list open.
+- Accepting a tag with Enter adds a space after it unless one follows.
+- While an alias is typed after `|`, the note stays offered and Enter
+  finishes the link keeping what was typed (`[[Other|ali]]|`); Enter used to
+  put a line break inside the link.
+- Already matching: Enter on a link or heading, reusing a `]]` already
+  there, Escape.
+
+Not compared: which suggestions are listed and in what order.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

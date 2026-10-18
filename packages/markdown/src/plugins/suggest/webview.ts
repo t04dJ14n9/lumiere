@@ -1,4 +1,5 @@
 import {
+  acceptCompletion,
   autocompletion,
   closeCompletion,
   completionKeymap,
@@ -6,7 +7,7 @@ import {
   type CompletionContext,
   type CompletionResult,
 } from "@codemirror/autocomplete";
-import { keymap } from "@codemirror/view";
+import { keymap, type EditorView } from "@codemirror/view";
 import {
   bindCaller,
   type CallerBound,
@@ -69,6 +70,9 @@ function registerCompletions(ctx: Context): void {
               completionStatus(view.state) === "active" &&
               closeCompletion(view),
           },
+          // As in Obsidian: Tab takes the suggestion without finishing the
+          // link, so `#` or `|` can follow.
+          { key: "Tab", run: acceptWithTab },
           ...completionKeymap.filter((binding) => binding.key !== "Escape"),
         ]),
       ],
@@ -111,14 +115,7 @@ async function requestCompletions(
         label: item.label,
         detail: item.detail,
         apply: (view, _completion, from, to) =>
-          view.dispatch(
-            completionEdit(
-              view.state,
-              { from, to },
-              item.insert,
-              item.replaceLink ? "replace" : trigger.closeLink,
-            ),
-          ),
+          view.dispatch(acceptance(view, { from, to }, item, trigger)),
       })),
     };
   } catch (error) {
@@ -129,4 +126,45 @@ async function requestCompletions(
   } finally {
     pending.delete(token);
   }
+}
+
+/** Set while Tab accepts, which CodeMirror's apply callback cannot tell. */
+let acceptingWithTab = false;
+
+function acceptWithTab(view: EditorView): boolean {
+  if (completionStatus(view.state) !== "active") {
+    return false;
+  }
+  acceptingWithTab = true;
+  try {
+    return acceptCompletion(view);
+  } finally {
+    acceptingWithTab = false;
+  }
+}
+
+/**
+ * The edit for an accepted suggestion, as Obsidian makes it: Enter finishes
+ * a link (`]]`) or adds the space after a tag; Tab only takes the text; with
+ * an alias typed, the typed text stays and only the link is finished.
+ */
+function acceptance(
+  view: EditorView,
+  range: { from: number; to: number },
+  item: { insert: string; replaceLink?: boolean | undefined },
+  trigger: SuggestionTrigger,
+) {
+  const tab = acceptingWithTab;
+  if (trigger.keepTyped) {
+    return completionEdit(view.state, { from: range.to, to: range.to }, "", {
+      close: !tab && trigger.closeLink,
+    });
+  }
+  if (tab) {
+    return completionEdit(view.state, range, item.insert, { close: false });
+  }
+  return completionEdit(view.state, range, item.insert, {
+    close: item.replaceLink ? "replace" : trigger.closeLink,
+    spaceAfter: trigger.spaceAfter === true,
+  });
 }

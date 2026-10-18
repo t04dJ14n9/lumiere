@@ -37,7 +37,15 @@ test("link and tag sources recognize partial links, headings, local and global b
     closeLink: true,
   });
   assert.equal(linkSuggestion(context("[[#Heading"))?.kind, "heading");
-  assert.equal(linkSuggestion(context("[[File|alias")), undefined);
+  // As in Obsidian, the note stays offered while an alias is typed, and
+  // accepting keeps the typed text.
+  assert.deepEqual(linkSuggestion(context("[[File|alias")), {
+    kind: "link",
+    query: "File",
+    from: 12,
+    closeLink: true,
+    keepTyped: true,
+  });
   assert.equal(linkSuggestion(context("[[Done]]")), undefined);
   assert.equal(tagSuggestion(context("# Heading")), undefined);
   assert.equal(tagSuggestion(context("word#no")), undefined);
@@ -46,13 +54,14 @@ test("link and tag sources recognize partial links, headings, local and global b
     query: "proj/",
     from: 6,
     closeLink: false,
+    spaceAfter: true,
   });
 });
 test("completion preserves suffix text and reuses auto-paired brackets", () => {
   for (const doc of ["[[No tail", "[[No]] tail"]) {
     const state = EditorState.create({ doc });
     const transaction = state.update(
-      completionEdit(state, { from: 2, to: 4 }, "Note", true),
+      completionEdit(state, { from: 2, to: 4 }, "Note", { close: true }),
     );
     assert.equal(transaction.state.doc.toString(), "[[Note]] tail");
     assert.equal(transaction.state.selection.main.head, 8);
@@ -60,7 +69,9 @@ test("completion preserves suffix text and reuses auto-paired brackets", () => {
   const state = EditorState.create({ doc: "#pro" });
   assert.equal(
     state
-      .update(completionEdit(state, { from: 1, to: 4 }, "project", false))
+      .update(
+        completionEdit(state, { from: 1, to: 4 }, "project", { close: false }),
+      )
       .state.doc.toString(),
     "#project",
   );
@@ -263,7 +274,9 @@ test("Use Wikilinks off materializes Markdown links and replaces the entire part
   assert.equal(block.insert, "[block](Note.md#^block)");
   const state = EditorState.create({ doc: "text [[Note#Head]] tail" });
   const edited = state.update(
-    completionEdit(state, { from: 12, to: 16 }, heading.insert, "replace"),
+    completionEdit(state, { from: 12, to: 16 }, heading.insert, {
+      close: "replace",
+    }),
   ).state;
   assert.equal(edited.doc.toString(), "text [Heading](Note.md#Heading) tail");
   assert.equal(
@@ -271,4 +284,44 @@ test("Use Wikilinks off materializes Markdown links and replaces the entire part
       .insert,
     "Project",
   );
+});
+
+// Measured in a throwaway Obsidian vault (2026-10-17).
+test("accepting a tag with Enter adds a space unless one follows, as in Obsidian", () => {
+  const state = EditorState.create({ doc: "#ta", selection: { anchor: 3 } });
+  const spaced = state.update(
+    completionEdit(state, { from: 1, to: 3 }, "tag", {
+      close: false,
+      spaceAfter: true,
+    }),
+  ).state;
+  assert.equal(spaced.doc.toString(), "#tag ");
+  assert.equal(spaced.selection.main.head, 5);
+  const before = EditorState.create({
+    doc: "#ta next",
+    selection: { anchor: 3 },
+  });
+  assert.equal(
+    before
+      .update(
+        completionEdit(before, { from: 1, to: 3 }, "tag", {
+          close: false,
+          spaceAfter: true,
+        }),
+      )
+      .state.doc.toString(),
+    "#tag next",
+  );
+});
+
+test("an alias being typed keeps the note offered; accepting only finishes the link", () => {
+  const state = EditorState.create({
+    doc: "[[Other|ali]]",
+    selection: { anchor: 11 },
+  });
+  const next = state.update(
+    completionEdit(state, { from: 11, to: 11 }, "", { close: true }),
+  ).state;
+  assert.equal(next.doc.toString(), "[[Other|ali]]");
+  assert.equal(next.selection.main.head, 13);
 });

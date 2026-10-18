@@ -12,5 +12,6 @@ export const tagSuggestion: SuggestionSource = ({ state, pos }) => {
     query: match[1]!,
     from: pos - match[1]!.length,
     closeLink: false,
+    spaceAfter: true,
   };
 };

@@ -21,13 +21,27 @@ export function allowsSuggestions(state: EditorState, pos: number): boolean {
     node = node.parent;
   }
 }
+/**
+ * The edit that accepts a suggestion: `insert` over `range`, then `]]` when
+ * `close` is set (reusing a `]]` already there), or the space `spaceAfter`
+ * asks for unless one follows. `close: "replace"` replaces the whole link.
+ */
 export function completionEdit(
   state: EditorState,
   range: { from: number; to: number },
   insert: string,
-  closeLink: boolean | "replace",
+  options: { close: boolean | "replace"; spaceAfter?: boolean },
 ): TransactionSpec {
-  const suffix = closeLink === true ? "]]" : "";
+  const closeLink = options.close;
+  let suffix = "";
+  if (closeLink === true) {
+    suffix = "]]";
+  } else if (
+    options.spaceAfter &&
+    !/^\s/u.test(state.sliceDoc(range.to, range.to + 1))
+  ) {
+    suffix = " ";
+  }
   if (closeLink === "replace") {
     const line = state.doc.lineAt(range.from);
     const opening = state.sliceDoc(line.from, range.from).lastIndexOf("[[");

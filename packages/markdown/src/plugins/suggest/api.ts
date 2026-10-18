@@ -8,6 +8,13 @@ export interface SuggestionContext {
 export interface SuggestionTrigger extends Query {
   from: number;
   closeLink: boolean;
+  /**
+   * Accepting keeps what was typed and only finishes the link, as Obsidian
+   * does while an alias is typed after `|`.
+   */
+  keepTyped?: boolean;
+  /** Accepting with Enter adds a space after, as Obsidian does for a tag. */
+  spaceAfter?: boolean;
 }
 export type SuggestionSource = (
   context: SuggestionContext,

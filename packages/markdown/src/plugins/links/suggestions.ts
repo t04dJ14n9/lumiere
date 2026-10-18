@@ -1,11 +1,24 @@
 import type { SuggestionSource } from "../suggest/api";
 export const linkSuggestion: SuggestionSource = ({ state, pos }) => {
   const line = state.doc.lineAt(pos);
-  const match = /\[\[([^\]\n|[]*)$/.exec(state.sliceDoc(line.from, pos));
+  const match = /\[\[([^\]\n[]*)$/.exec(state.sliceDoc(line.from, pos));
   if (!match) {
     return undefined;
   }
-  const text = match[1]!;
+  const typed = match[1]!;
+  const bar = typed.indexOf("|");
+  if (bar >= 0) {
+    // An alias is being typed: the note stays offered, as in Obsidian, and
+    // accepting keeps what was typed and finishes the link.
+    return {
+      kind: "link",
+      query: typed.slice(0, bar),
+      from: pos,
+      closeLink: true,
+      keepTyped: true,
+    };
+  }
+  const text = typed;
   const base = { from: pos - text.length, closeLink: true };
   if (text.startsWith("^^")) {
     return { ...base, kind: "block", query: text.slice(2) };
