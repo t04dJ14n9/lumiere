@@ -67,7 +67,10 @@ function extractMetadata(doc: Text): NoteMetadata {
   for (const value of Array.isArray(header?.values?.tags)
     ? header.values.tags
     : []) {
-    const tag = typeof value === "string" ? value.replace(/^#/, "") : undefined;
+    // Obsidian trims before it drops the `#`: `" #a "` is the tag `a`, and
+    // `"# a"` is none.
+    const tag =
+      typeof value === "string" ? value.trim().replace(/^#/, "") : undefined;
     if (validTag(tag)) {
       result.tags.push({ tag, position: position(0, header!.end) });
     }

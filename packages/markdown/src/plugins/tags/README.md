@@ -14,6 +14,25 @@ queries existing vault metadata, including YAML and footnote tags, then opens a
 native quick pick. Matching is case-insensitive and hierarchical; excluded files
 are omitted. No per-request filesystem scan or note read occurs.
 
+What counts as a tag is Obsidian 1.14.4's rule, measured over every BMP
+character (`src/markdown/tags/grammar.ts` and `markup.ts`), and Live Preview,
+the index and rendered HTML share it. A tag is `#` and a run of tag characters
+that is not only ASCII digits. Whitespace, ASCII punctuation other than `-`,
+`/` and `_`, and the General and Supplemental Punctuation blocks (`–`, `“`,
+`…`) end a tag; CJK and full-width punctuation, `·`, symbols and emoji do not.
+A tag starts only at the start of a block's text, after whitespace, right
+after another tag (`#a#b`), or right after inline markup: paired emphasis,
+highlight or strikethrough (`**#a**`), a closed `[…]` (`[#a]`), or the end of
+a code span, math, comment, HTML tag, link or escape. Any other character
+before `#` means no tag: `(#a)`, `中#a`, `，#a`, `!!#a`. Frontmatter `tags`
+values are trimmed, lose one leading `#`, and must then be a whole tag.
+
+Typing a tag offers the vault's tags where Obsidian's list opens (measured):
+for a `#` at the start of a line or after whitespace, with tag characters up
+to the caret and no `#` right after it (`suggestions.ts`). Unlike a tag, the
+list does not open after markup or another tag (`**#a`, `#a#b`), and it opens
+for digits alone (`#12`).
+
 The Tags view is a window-level half (`view.ts`), because a view outlives any
 one editor panel. It takes the active note's vault, or the workspace's when no
 note is open, and builds the tree with the ported tag tree
@@ -38,6 +57,8 @@ it is visible. Both halves follow `markdownWorkshop.plugins.tags.enabled`. The E
 - `../../../test/unit/tags/search.test.ts`: indexed search and host lifecycle units.
 - `../../../test/unit/tags/view.test.ts`: note counts, case merging, flat and
   frequency modes, excluded files, click-to-open and the enabled setting.
+- `../../../test/unit/tags/suggestions.test.ts`: where the tag list opens, as
+  measured in Obsidian.
 - `tags.css`: the plugin's styles, bundled through `src/webview/styles/index.css`.
 
 ## Services, events and settings
@@ -58,3 +79,9 @@ Uses a native quick pick for search results, not a search pane. Sorting and
 nesting are settings rather than buttons in the view. Search and the view
 reflect currently indexed metadata; hidden and excluded files follow the
 vault's policy. Full visual interaction parity remains for owner comparison.
+
+The markup a tag may follow is read from the text around the `#`, not from
+the syntax tree, so it can differ where the block structure does: a lone `*`
+on the next line closes `*#a` here, not in Obsidian. Inline footnotes
+(`^[#a]`) are not indexed. Obsidian also offers tags inside code and its
+source-mode frontmatter; suggestions here skip both, as they do for links.
