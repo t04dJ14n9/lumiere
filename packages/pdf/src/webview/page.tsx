@@ -3,7 +3,6 @@ import { PagePointerProvider } from "@embedpdf/plugin-interaction-manager/react"
 import { SearchLayer } from "@embedpdf/plugin-search/react";
 import { SelectionLayer } from "@embedpdf/plugin-selection/react";
 import React from "react";
-import type { PageRect } from "../shared/geometry";
 import type { RegionSelection } from "../shared/selection";
 import type { Highlight } from "./navigation";
 import { PageLinks } from "./page-links";
