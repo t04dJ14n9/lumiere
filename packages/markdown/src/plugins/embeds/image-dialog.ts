@@ -51,6 +51,7 @@ class ImageInspector {
     this.dialog = parts.dialog;
     const { image, area, toolbar, status } = parts;
     imageControls({
+      dialog: parts.dialog,
       image,
       area,
       toolbar,

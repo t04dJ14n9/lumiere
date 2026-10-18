@@ -1,6 +1,7 @@
 import { record } from "../../shared/guards";
 
 interface ImageOptions {
+  dialog: HTMLDialogElement;
   image: HTMLImageElement;
   area: HTMLElement;
   toolbar: HTMLElement;
@@ -108,9 +109,11 @@ class ImageControls {
   }
 
   private bindZoom(): void {
-    const { area, signal } = this.options;
+    const { dialog, area, signal } = this.options;
     area.tabIndex = 0;
-    area.addEventListener("keydown", (event) => this.zoomKey(event), {
+    // Toolbar clicks move focus out of the image area. Keys bubble from
+    // every inspector control to the dialog, without reaching the editor.
+    dialog.addEventListener("keydown", (event) => this.zoomKey(event), {
       signal,
     });
     area.addEventListener(
