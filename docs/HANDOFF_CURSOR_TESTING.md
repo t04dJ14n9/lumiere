@@ -104,16 +104,21 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 ### What is installed now
 
 - Mac Cursor and the owner's CVM (`ssh cvm_dev_machine`, vault `~/WorkVault`
-  through Remote-SSH) both run `t04dj14n9.vscode-workshop` 0.1.0 built from
-  `9d5f473`. Each window needs **Developer: Reload Window** to load it.
+  through Remote-SSH) both run **`t04dj14n9.lumiere` 0.1.0 built from
+  `b138ee4a`** (2026-10-18, 12:40 PDT); `t04dj14n9.vscode-workshop` is
+  uninstalled on both. Each window needs **Developer: Reload Window**.
+- The owner's settings moved to the new keys, each file backed up beside
+  itself as `settings.json.pre-lumiere`: Mac user settings (Vim on, blame
+  on, `*.md` → `lumiere.markdown.editor`), the CVM's
+  `~/.cursor-server/data/Machine/settings.json` (`*.md` association, blame
+  off) and the test vault's `.vscode/settings.json`.
 - Reinstall: `pnpm package`, then on the Mac
-  `/Applications/Cursor.app/Contents/Resources/app/bin/cursor --install-extension vscode-workshop-0.1.0.vsix --force`;
+  `/Applications/Cursor.app/Contents/Resources/app/bin/cursor --install-extension lumiere-0.1.0.vsix --force`;
   on the CVM copy the VSIX over and run
   `~/.cursor-server/bin/linux-x64/<commit>/bin/cursor-server --install-extension <vsix> --force`.
   Remote windows use the CVM's copy, not the Mac's.
-- Old builds were uninstalled; backups are in
-  `~/Code/vscode-workshop/old-cursor-extensions-2026-10-18/` (Mac) and
-  `~/workshop-old-extensions-2026-10-18/` (CVM).
+- Older builds' backups: `~/Code/vscode-workshop/old-cursor-extensions-2026-10-18/`
+  (Mac) and `~/workshop-old-extensions-2026-10-18/` (CVM).
 
 ### Checked in real Cursor today
 
@@ -155,10 +160,9 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
       Vim input cases were typed in Obsidian 1.14.4 and Workshop: 72 match,
       4 more bugs fixed on the way (IMPLEMENTATION_PLAN.md, 2026-10-18).
       Still open: the owner's own cases, once they name them.
-- [ ] **Finish the pre-push check** on the pushed commits:
-      `PORT=8991 pnpm --filter @workshop/pdf test:browser`, then
-      `pnpm test:vscode`, with no other suite running.
-- [ ] **Rename the code to Lumière**: display name "Lumière: Markdown Editor
+- [ ] **Full real-editor pass** (Claude, running on `b138ee4a`): unit, both
+      browser suites, then `pnpm test:vscode` in VS Code and in Cursor.
+- [x] **Rename the code to Lumière** (`96b526e2`; installed, settings moved): display name "Lumière: Markdown Editor
       and PDF Reader"; description "Obsidian-style Live Preview for Markdown
       and a PDF reader, in VS Code and Cursor, with links your AI agent can
       follow."; keywords (markdown, pdf, obsidian, live preview, notes,
@@ -169,7 +173,7 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
       name; the repository URL in `package.json`
       (`https://github.com/t04dJ14n9/lumiere`). Then move the owner's
       settings to the new keys and reinstall on the Mac and the CVM.
-- [ ] **Review and merge `claude/math-fixes`** (blank list-item math and
+- [x] **Review and merge `claude/math-fixes`** (merged, `7308506e`) (blank list-item math and
       `\mathbb` in Live Preview).
 - [ ] **Review `claude/web-extension`** (a browser build for a GitHub Pages
       demo). Its worktree still has uncommitted changes (`.gitignore`,
@@ -187,9 +191,13 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 - [x] **Fix** `RpcError` losing its code, so timeouts log as `Error: ready`.
 - [x] **Compare with Obsidian** the list continuation line drawn left of its
       bullet (`Links.md` line 14): it now hangs under the item's text.
-- [ ] **Ask the owner** whether to turn blame back on in their user settings
-      and to replace the stale `*.md` → `markdownWorkbench.editor`
-      association.
+- [x] **Ask the owner** about blame and the stale `*.md` association: the
+      owner turned blame back on and pointed `*.md` at the editor themself;
+      both moved to the Lumière keys.
+- [x] **Fix** Copy Link for Agent missing from the PDF's right-click menu
+      when the menu opened right after a selection (`7bf26369`).
+- [ ] **Close PR #84** (the cancelled cloud agent's duplicate redesign); the
+      owner's call.
 
 ## What was installed when this plan was written
 
