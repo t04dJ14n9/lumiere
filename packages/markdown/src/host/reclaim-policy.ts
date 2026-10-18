@@ -126,6 +126,27 @@ export class TabSwaps<Tab extends object> {
     this.held.set(tab, swap);
   }
 
+  /**
+   * Tabs already open when reclaim starts (a restored window, a note passed
+   * on the command line) arrive from nowhere, as a new tab does: each is
+   * judged on its first activation. The one already shown is due now.
+   */
+  adopt(tabs: Iterable<Tab>): { tab: Tab; swap: TabSwap }[] {
+    for (const tab of tabs) {
+      const { uri, kind } = this.model.facts(tab);
+      if (uri !== undefined) {
+        this.unjudged.set(tab, { uri, before: "none", after: kind });
+      }
+    }
+    const shown = this.model.shownTab();
+    const swap = shown === undefined ? undefined : this.unjudged.get(shown);
+    if (shown === undefined || !swap) {
+      return [];
+    }
+    this.unjudged.delete(shown);
+    return [{ tab: shown, swap }];
+  }
+
   private classify(tab: Tab): void {
     const { uri, kind } = this.model.facts(tab);
     if (uri === undefined) {

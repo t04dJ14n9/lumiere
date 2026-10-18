@@ -9,7 +9,7 @@ import {
   shouldWarmBeforeReclaim,
   TabSwaps,
 } from "./reclaim-policy";
-import type { TabKind, TabModel } from "./reclaim-policy";
+import type { TabKind, TabModel, TabSwap } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
 import { SourceCoordinates } from "../shared/document/coordinates";
@@ -116,6 +116,19 @@ export function registerReclaim(
   const recentTransfers = new Bypass();
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
+  const judge = ({ tab, swap }: { tab: vscode.Tab; swap: TabSwap }) => {
+    // A Cursor Edit session keeps the note native. Switching its text tab
+    // with Preview | Markdown ends the session only when that text tab
+    // closes, after the new tab is shown, so judge that tab again then.
+    if (handoffLease.has(swap.uri)) {
+      swaps.hold(tab, swap);
+    } else if (
+      shouldReclaim(swap, reclaimContext(swap.uri)) &&
+      !recentTransfers.has(swap.uri)
+    ) {
+      transfer.open(tab, swap.uri);
+    }
+  };
   const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
     const endedSessions = new Set<string>();
     for (const tab of [...event.closed, ...event.opened, ...event.changed]) {
@@ -124,20 +137,13 @@ export function registerReclaim(
         endedSessions.add(ended);
       }
     }
-    for (const { tab, swap } of swaps.next(event, endedSessions)) {
-      // A Cursor Edit session keeps the note native. Switching its text tab
-      // with Preview | Markdown ends the session only when that text tab
-      // closes, after the new tab is shown, so judge that tab again then.
-      if (handoffLease.has(swap.uri)) {
-        swaps.hold(tab, swap);
-      } else if (
-        shouldReclaim(swap, reclaimContext(swap.uri)) &&
-        !recentTransfers.has(swap.uri)
-      ) {
-        transfer.open(tab, swap.uri);
-      }
-    }
+    swaps.next(event, endedSessions).forEach(judge);
   });
+  // Notes the window restored, or that were opened before this extension
+  // started, as text.
+  swaps
+    .adopt(vscode.window.tabGroups.all.flatMap((group) => group.tabs))
+    .forEach(judge);
   return vscode.Disposable.from(
     tabs,
     registerSelectionReclaim(transfer.open, transfer.capture),

@@ -442,3 +442,48 @@ test("a held swap stays held when its session ends some other way", () => {
   tabs.activate(text);
   assert.deepEqual(tabs.judged, []);
 });
+
+test("tabs open before reclaim starts are judged: the shown one now, the rest when first activated", () => {
+  // A restored window: a note shown as text, another note behind it, and a
+  // note already in Markdown Workshop.
+  const group: FakeGroup = { tabs: [], activeTab: undefined };
+  const shown: FakeTab = { uri: note, kind: "text", group };
+  const behind: FakeTab = {
+    uri: "file:///vault/Other.md",
+    kind: "text",
+    group,
+  };
+  const workshop: FakeTab = {
+    uri: "file:///vault/Third.md",
+    kind: "workbench",
+    group,
+  };
+  group.tabs.push(shown, behind, workshop);
+  group.activeTab = shown;
+  const swaps = new TabSwaps<FakeTab>({
+    facts: (tab) => ({ uri: tab.uri, kind: tab.kind }),
+    groupOf: (tab) => tab.group,
+    shownTab: () => group.activeTab,
+  });
+  const due = swaps.adopt(group.tabs);
+  assert.deepEqual(
+    due.map(({ swap }) => swap),
+    [swap("none", "text")],
+  );
+  assert.equal(shouldReclaim(due[0]!.swap, context), true);
+  // The note behind it is judged when the reader first opens it, once.
+  group.activeTab = behind;
+  const next = swaps.next({ opened: [], changed: [behind] }, new Set());
+  assert.deepEqual(
+    next.map(({ swap }) => swap),
+    [swap("none", "text", "file:///vault/Other.md")],
+  );
+  assert.deepEqual(
+    swaps.next({ opened: [], changed: [behind] }, new Set()),
+    [],
+  );
+  // A tab already in Markdown Workshop is never reclaimed.
+  group.activeTab = workshop;
+  const kept = swaps.next({ opened: [], changed: [workshop] }, new Set());
+  assert.equal(shouldReclaim(kept[0]!.swap, context), false);
+});
