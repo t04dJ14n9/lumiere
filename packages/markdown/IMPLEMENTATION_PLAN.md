@@ -4976,3 +4976,22 @@ caret on every line), comparing the lines left visible. All 122 cases match.
 
 Validation: `pnpm check` green; unit tests pin the measured lines; Markdown
 browser suite 284/284.
+
+## HTML paste, measured against Obsidian — 2026-10-17
+
+The same HTML (formatting, headings, nested and numbered lists, tasks,
+tables, code, quotes, links, images, Google Docs and GitHub markup) was
+pasted into the throwaway Obsidian and into the editor, comparing the note.
+59 of 60 cases match.
+
+- Written as Obsidian writes it: `_italic_`, one space after `-` and `1.`
+  with nested lines four spaces in, `---` rules, compact tables with the
+  `align` attribute's alignment and short rows left short, and link and
+  image titles.
+- Fixed: a link address with a space was pasted raw, which ends the address
+  in Markdown; spaces are now `%20`, and parentheses are escaped, as in
+  Obsidian.
+- Kept on purpose: Markdown characters in the copied text are escaped, so
+  the note shows what was copied (Obsidian turns `*a*` from a page italic).
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

@@ -14,7 +14,7 @@ test("rich HTML converts headings, literal text, formatting, lists and tables", 
     markdownFromHtml(
       "<h2>Heading</h2><p>A <strong>bold</strong> <em>word</em> <mark>mark</mark> <del>gone</del>.</p>",
     ),
-    "## Heading\n\nA **bold** *word* ==mark== ~~gone~~.",
+    "## Heading\n\nA **bold** _word_ ==mark== ~~gone~~.",
   );
   assert.equal(
     markdownFromHtml("<p>*literal* [brackets]</p>"),
@@ -30,8 +30,36 @@ test("rich HTML converts headings, literal text, formatting, lists and tables", 
     markdownFromHtml(
       "<table><tr><th>A</th><th>B</th></tr><tr><td><strong>x</strong></td><td>a|b</td></tr></table>",
     ),
-    "| A | B |\n| --- | --- |\n| **x** | a\\|b |",
+    "|A|B|\n|---|---|\n|**x**|a\\|b|",
   );
+});
+
+// Expected Markdown is Obsidian's, measured by pasting the same HTML into a
+// throwaway vault (2026-10-17).
+test("rich HTML is written as Obsidian writes it", () => {
+  const cases: [string, string][] = [
+    ["<ul><li>a</li><li>b<ul><li>c</li></ul></li></ul>", "- a\n- b\n    - c"],
+    [
+      "<ol><li>one<ol><li>sub</li></ol></li><li>two</li></ol>",
+      "1. one\n    1. sub\n2. two",
+    ],
+    ['<ol start="3"><li>c</li><li>d</li></ol>', "3. c\n4. d"],
+    ["<p>a</p><hr><p>b</p>", "a\n\n---\n\nb"],
+    ['<a href="https://x.io" title="T">t</a>', '[t](https://x.io "T")'],
+    [
+      '<img src="https://x.io/a b.png" alt="A" title="T">',
+      '![A](https://x.io/a%20b.png "T")',
+    ],
+    ['<a href="https://x.io/a b">sp</a>', "[sp](https://x.io/a%20b)"],
+    ['<a href="https://w.org/A_(b)">wp</a>', "[wp](https://w.org/A_\\(b\\))"],
+    [
+      '<table><tr><th align="left">a</th><th align="right">b</th><th align="center">c</th><th style="text-align:right">d</th></tr><tr><td>1</td></tr></table>',
+      "|a|b|c|d|\n|:--|--:|:-:|---|\n|1|",
+    ],
+  ];
+  for (const [html, markdown] of cases) {
+    assert.equal(markdownFromHtml(html), markdown, html);
+  }
 });
 test("HTML conversion preserves wiki aliases, embeds, math and folded callouts", () => {
   assert.equal(

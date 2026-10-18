@@ -7,6 +7,18 @@ export function safeDestination(value: string): string | undefined {
   }
   return value.trim();
 }
+/**
+ * A link or image address as Obsidian writes it: spaces as `%20`, which
+ * would otherwise end the address, and parentheses escaped.
+ */
+function destination(href: string): string {
+  return href.replace(/ /g, "%20").replace(/[()]/g, "\\$&");
+}
+/** A link or image title, kept as Obsidian keeps it: ` "title"`. */
+function titlePart(node: HTMLElement): string {
+  const title = node.getAttribute("title")?.trim();
+  return title ? ` "${title.replace(/(["\\])/g, "\\$1")}"` : "";
+}
 function wikiPart(value: string): string {
   return value.replace(/([\\\]|])/g, "\\$1");
 }
@@ -19,7 +31,7 @@ export function linkMarkdown(content: string, node: HTMLElement): string {
       : `[[${wikiPart(target)}|${wikiPart(label)}]]`;
   }
   const href = safeDestination(node.getAttribute("href") ?? "");
-  return href ? `[${label}](${href})` : label;
+  return href ? `[${label}](${destination(href)}${titlePart(node)})` : label;
 }
 export function imageMarkdown(node: HTMLElement): string {
   const target =
@@ -34,5 +46,7 @@ export function imageMarkdown(node: HTMLElement): string {
     return `![[${wikiPart(target)}${label}]]`;
   }
   const src = safeDestination(node.getAttribute("src") ?? "");
-  return src ? `![${alt.replace(/([\\\]])/g, "\\$1")}](${src})` : alt;
+  return src
+    ? `![${alt.replace(/([\\\]])/g, "\\$1")}](${destination(src)}${titlePart(node)})`
+    : alt;
 }

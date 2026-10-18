@@ -61,12 +61,27 @@ export function tableMarkdown(
   if (!columns) {
     return "";
   }
-  const lines = rows.map(
-    (row) =>
-      `| ${Array.from({ length: columns }, (_, index) => row[index] ?? "").join(" | ")} |`,
+  // Compact, with each column's alignment and short rows left short, as
+  // Obsidian writes a pasted table.
+  const lines = rows.map((row) => `|${row.join("|")}|`);
+  const header = node.querySelector("tr");
+  const rule = Array.from({ length: columns }, (_, index) =>
+    alignmentRule(header?.children[index] as HTMLElement | undefined),
   );
-  lines.splice(1, 0, `| ${Array(columns).fill("---").join(" | ")} |`);
+  lines.splice(1, 0, `|${rule.join("|")}|`);
   return `\n\n${lines.join("\n")}\n\n`;
+}
+
+/** A column's delimiter row cell: `:--`, `--:`, `:-:` or `---`. */
+function alignmentRule(cell: HTMLElement | undefined): string {
+  // Obsidian reads the align attribute, not CSS text-align.
+  const align = (cell?.getAttribute("align") ?? "").toLowerCase();
+  const rules: Record<string, string> = {
+    left: ":--",
+    right: "--:",
+    center: ":-:",
+  };
+  return rules[align] ?? "---";
 }
 
 function isDisplayMath(node: HTMLElement): boolean {
