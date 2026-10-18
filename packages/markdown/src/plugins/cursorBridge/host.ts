@@ -10,8 +10,10 @@ import {
 import {
   confirmActiveEditor,
   handOffSelection,
+  prepareNativeMirror,
   type HandoffLease,
   type HandoffSurface,
+  type SelectionSnapshot,
 } from "./handoff";
 import { contributionId } from "../../shared/setting-schema";
 import { captureActiveSelection } from "./selection";
@@ -89,6 +91,10 @@ async function runBridge(
     await runEditFallbackChat(ctx, captured.selection.text, commands);
     return;
   }
+  if (mode === "edit") {
+    await runEdit(ctx, config, captured.uri, captured.selection, commands);
+    return;
+  }
   const handoff = await handOffSelection(
     config.surface,
     captured.uri,
@@ -110,19 +116,66 @@ async function runBridge(
     );
     return;
   }
-  if (mode === "chat") {
-    await runChat(ctx, captured.selection.text, commands);
+  await runChat(ctx, captured.selection.text, commands);
+}
+
+/**
+ * Hybrid Edit: prefer override-only (Cursor opens the code editor itself),
+ * then handoff+Edit if that silently no-ops. Always verify the prompt-bar id
+ * return; blind executeCommand success leaves orphan Plain Text tabs.
+ */
+async function runEdit(
+  ctx: Context,
+  config: CursorBridgeConfig,
+  uri: string,
+  selection: SelectionSnapshot,
+  commands: ReadonlySet<string> | undefined,
+): Promise<void> {
+  const prepared = await prepareNativeMirror(config.surface, uri, selection);
+  if (!prepared.ok) {
+    ctx.dialogs.error(
+      prepared.reason === "changed"
+        ? "The note changed before Cursor could use the selection."
+        : "Could not mirror the selection into Cursor’s editor.",
+    );
     return;
   }
-  const edited = await openCursorEdit(ctx.hostCommands.execute, commands, {
-    uri: config.surface.nativeUri(captured.uri),
-    range: confirmed.editor.selection,
-  });
-  if (edited) {
+  const target = {
+    uri: config.surface.nativeUri(uri),
+    range: prepared.range,
+  };
+  // A. Override-only: no pre-handoff showTextDocument.
+  if (await openCursorEdit(ctx.hostCommands.execute, commands, target)) {
+    prepared.lease.promote();
     return;
   }
-  await abandonEditHandoff(config.surface, captured.uri, handoff.lease);
-  await runEditFallbackChat(ctx, captured.selection.text, commands);
+  // B. Handoff then Edit — give Cursor a focused native text editor.
+  try {
+    const editor = await config.surface.show(prepared.document, prepared.range);
+    const confirmed = confirmActiveEditor(editor, uri, selection);
+    if (!confirmed.ok) {
+      await abandonEditHandoff(config.surface, uri, prepared.lease);
+      ctx.dialogs.error(
+        confirmed.reason === "changed"
+          ? "The note changed before Cursor could use the selection."
+          : "Could not mirror the selection into Cursor’s editor.",
+      );
+      return;
+    }
+    const edited = await openCursorEdit(ctx.hostCommands.execute, commands, {
+      uri: config.surface.nativeUri(uri),
+      range: confirmed.editor.selection,
+    });
+    if (edited) {
+      prepared.lease.promote();
+      return;
+    }
+  } catch {
+    // show threw — fall through to abandon + Chat.
+  }
+  // C. Silent Edit no-op (falsy return) or handoff exception: never leave orphans.
+  await abandonEditHandoff(config.surface, uri, prepared.lease);
+  await runEditFallbackChat(ctx, selection.text, commands);
 }
 
 async function runChat(
@@ -152,7 +205,7 @@ async function runChat(
 /**
  * Edit failed or is unavailable: open Chat instead of leaving a dead mirror.
  * Documents the product choice when `aipopup.action.modal.generate` is missing
- * or throws after handoff.
+ * or silently no-ops after handoff.
  */
 async function runEditFallbackChat(
   ctx: Context,

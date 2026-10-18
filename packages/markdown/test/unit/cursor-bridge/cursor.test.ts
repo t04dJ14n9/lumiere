@@ -15,7 +15,7 @@ test("isCursorHost matches Cursor app names only", () => {
   assert.equal(isCursorHost("Code"), false);
 });
 
-function host(commands: string[]) {
+function host(commands: string[], options: { editResult?: unknown } = {}) {
   const ran: string[] = [];
   const args: unknown[][] = [];
   const copied: string[] = [];
@@ -29,6 +29,9 @@ function host(commands: string[]) {
       }
       ran.push(id);
       args.push(rest);
+      if (id === CURSOR_COMMANDS.edit) {
+        return "editResult" in options ? options.editResult : "prompt-bar-id";
+      }
     },
     copy: async (text: string) => {
       copied.push(text);
@@ -111,6 +114,25 @@ test("Edit runs aipopup.action.modal.generate with Monaco override args", async 
       },
     ],
   ]);
+});
+
+test("Edit treats a falsy return as silent failure, not success", async () => {
+  const commands = [CURSOR_COMMANDS.edit];
+  for (const editResult of [undefined, null, false] as const) {
+    const h = host(commands, { editResult });
+    assert.equal(
+      await openCursorEdit(h.execute, new Set(commands), {
+        uri: { toString: () => "file:///vault/Note.md" },
+        range: {
+          start: { line: 0, character: 0 },
+          end: { line: 0, character: 1 },
+        },
+      }),
+      undefined,
+      `editResult=${String(editResult)} must not count as Edit`,
+    );
+    assert.deepEqual(h.ran, [CURSOR_COMMANDS.edit]);
+  }
 });
 
 test("Edit returns undefined when the command is missing", async () => {

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   confirmActiveEditor,
   handOffSelection,
+  prepareNativeMirror,
   type HandoffSurface,
   type NativeDocument,
   type NativeEditor,
@@ -339,3 +340,29 @@ for (const change of [
     });
   });
 }
+
+test("prepareNativeMirror acquires a lease without showing a native editor", async () => {
+  const f = fixture("abcdef");
+  let shown = false;
+  f.surface.show = async () => {
+    shown = true;
+    throw new Error("show must not run for prepareNativeMirror");
+  };
+  const result = await prepareNativeMirror(f.surface, note, {
+    from: 2,
+    to: 4,
+    text: "cd",
+    version: 1,
+  });
+  assert.equal(result.ok, true);
+  assert.equal(shown, false);
+  assert.equal(f.leases.has(note), true);
+  if (result.ok) {
+    assert.deepEqual(result.range, {
+      start: { line: 0, character: 2 },
+      end: { line: 0, character: 4 },
+    });
+    result.lease.release();
+  }
+  assert.equal(f.leases.has(note), false);
+});

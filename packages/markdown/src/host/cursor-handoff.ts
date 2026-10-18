@@ -7,6 +7,9 @@ import type {
   NativeEditor,
 } from "../plugins/cursorBridge/handoff";
 
+/** Language id Cursor Edit / outline expect for note mirrors. */
+const MARKDOWN_LANGUAGE = "markdown";
+
 /** VS Code surface for cursorBridge selection mirror + reclaim lease. */
 export function createCursorHandoffSurface(): HandoffSurface {
   return {
@@ -20,15 +23,11 @@ export function createCursorHandoffSurface(): HandoffSurface {
       await warmMarkdownDocument(vscode.Uri.parse(uri));
     },
     async open(uri) {
-      const document = await vscode.workspace.openTextDocument(
-        vscode.Uri.parse(uri),
-      );
+      const document = await openMarkdownDocument(vscode.Uri.parse(uri));
       return wrapDocument(document);
     },
     async show(document, range) {
-      const native = await vscode.workspace.openTextDocument(
-        vscode.Uri.parse(document.uri),
-      );
+      const native = await openMarkdownDocument(vscode.Uri.parse(document.uri));
       const editor = await vscode.window.showTextDocument(native, {
         preview: false,
         preserveFocus: false,
@@ -61,6 +60,30 @@ export function createCursorHandoffSurface(): HandoffSurface {
       }
     },
   };
+}
+
+/**
+ * Open the note as a TextDocument with language `markdown`.
+ *
+ * User `files.associations` may map `*.md` to a custom-editor viewType string
+ * (not a language id). That makes mirrors report Plain Text and can leave
+ * Cursor’s Edit handler without a usable model. Force the real language id.
+ */
+async function openMarkdownDocument(
+  uri: vscode.Uri,
+): Promise<vscode.TextDocument> {
+  const document = await vscode.workspace.openTextDocument(uri);
+  if (document.languageId === MARKDOWN_LANGUAGE) {
+    return document;
+  }
+  try {
+    return await vscode.languages.setTextDocumentLanguage(
+      document,
+      MARKDOWN_LANGUAGE,
+    );
+  } catch {
+    return document;
+  }
 }
 
 function wrapEditor(editor: vscode.TextEditor): NativeEditor {

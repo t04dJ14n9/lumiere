@@ -19,6 +19,11 @@ type FixtureOptions = {
   commands?: ReadonlySet<string>;
   /** When true, executing the Edit command throws (simulates a missing handler). */
   editThrows?: boolean;
+  /**
+   * Edit return values in call order. `undefined` / missing = silent no-op.
+   * Default: every call returns a prompt-bar id (verifiable success).
+   */
+  editResults?: unknown[];
 };
 
 async function fixture(options: FixtureOptions = {}) {
@@ -31,6 +36,7 @@ async function fixture(options: FixtureOptions = {}) {
   const lease = new Lease();
   const note = "file:///vault/Note.md";
   const editArgs: unknown[] = [];
+  let editCalls = 0;
   const state = {
     uri: note,
     version: 1,
@@ -44,6 +50,7 @@ async function fixture(options: FixtureOptions = {}) {
     },
     beforeDiscovery: undefined as (() => Promise<void>) | undefined,
     afterValidation: undefined as (() => void) | undefined,
+    languageId: "plaintext",
   };
   const document: NativeDocument = {
     get uri() {
@@ -61,15 +68,7 @@ async function fixture(options: FixtureOptions = {}) {
       return state.range;
     },
     isActive() {
-      const isActive = state.isActive;
-      const change = state.afterValidation;
-      state.afterValidation = undefined;
-      if (change) {
-        // Change focus/document/selection after handoff's check but before
-        // its caller resumes, without importing the VS Code runtime.
-        queueMicrotask(change);
-      }
-      return isActive;
+      return state.isActive;
     },
   };
   const surface: HandoffSurface = {
@@ -84,11 +83,21 @@ async function fixture(options: FixtureOptions = {}) {
       events.push("warm");
     },
     async open() {
+      events.push("open");
+      // Mimic host openMarkdownDocument forcing markdown language.
+      state.languageId = "markdown";
       return document;
     },
     async show(_document, range) {
       events.push("show");
       state.range = range;
+      const change = state.afterValidation;
+      state.afterValidation = undefined;
+      if (change) {
+        // Apply after show resolves and before the host's confirmActiveEditor
+        // (await boundary flushes this microtask).
+        queueMicrotask(change);
+      }
       return editor;
     },
     async dismiss(uri) {
@@ -162,6 +171,13 @@ async function fixture(options: FixtureOptions = {}) {
             if (options.editThrows) {
               throw new Error(`command '${id}' not found`);
             }
+            if (options.editResults) {
+              const result = options.editResults[editCalls];
+              editCalls++;
+              return result;
+            }
+            editCalls++;
+            return "prompt-bar-id";
           }
         },
       },
@@ -208,57 +224,74 @@ async function fixture(options: FixtureOptions = {}) {
   };
 }
 
-for (const mode of ["chat", "edit"] as const) {
-  test(`${mode} discovers commands before handoff and keeps the lease after invocation`, async (t) => {
-    const f = await fixture();
-    t.after(() => f.root.dispose());
-    let release = () => {};
-    const discovery = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    t.after(release);
-    f.state.beforeDiscovery = () => discovery;
-    const pending = f.handlers.get(contributionId(`cursorBridge.${mode}`))!();
-    await new Promise<void>((resolve) => setImmediate(resolve));
-    assert.deepEqual(f.events, ["commands"]);
-    assert.equal(f.lease.has(f.note), false);
-    release();
-    await pending;
-    if (mode === "edit") {
-      assert.deepEqual(f.events, [
-        "commands",
-        "lease",
-        "warm",
-        "show",
-        CURSOR_COMMANDS.edit,
-      ]);
-      assert.equal(f.editArgs.length, 1);
-      const args = f.editArgs[0] as {
-        invocationType: string;
-        overrideUri: { toString(): string };
-        overrideRange: object;
-      };
-      assert.equal(args.invocationType, "new");
-      assert.equal(args.overrideUri.toString(), f.note);
-      assert.deepEqual(args.overrideRange, {
-        startLineNumber: 1,
-        startColumn: 3,
-        endLineNumber: 1,
-        endColumn: 5,
-      });
-    } else {
-      assert.deepEqual(f.events, [
-        "commands",
-        "lease",
-        "warm",
-        "show",
-        CURSOR_COMMANDS.chat,
-      ]);
-    }
-    assert.equal(f.lease.has(f.note), true);
-    assert.deepEqual(f.errors, []);
+test("Edit prefers override-only (no show) when Cursor returns a prompt-bar id", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  let release = () => {};
+  const discovery = new Promise<void>((resolve) => {
+    release = resolve;
   });
-}
+  t.after(release);
+  f.state.beforeDiscovery = () => discovery;
+  const pending = f.handlers.get(contributionId("cursorBridge.edit"))!();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(f.events, ["commands"]);
+  assert.equal(f.lease.has(f.note), false);
+  release();
+  await pending;
+  assert.deepEqual(f.events, [
+    "commands",
+    "lease",
+    "warm",
+    "open",
+    CURSOR_COMMANDS.edit,
+  ]);
+  assert.equal(f.events.includes("show"), false);
+  assert.equal(f.editArgs.length, 1);
+  const args = f.editArgs[0] as {
+    invocationType: string;
+    overrideUri: { toString(): string };
+    overrideRange: object;
+  };
+  assert.equal(args.invocationType, "new");
+  assert.equal(args.overrideUri.toString(), f.note);
+  assert.deepEqual(args.overrideRange, {
+    startLineNumber: 1,
+    startColumn: 3,
+    endLineNumber: 1,
+    endColumn: 5,
+  });
+  assert.equal(f.lease.has(f.note), true);
+  assert.equal(f.state.languageId, "markdown");
+  assert.deepEqual(f.errors, []);
+});
+
+test("Chat discovers commands before handoff and keeps the lease after invocation", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  let release = () => {};
+  const discovery = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  t.after(release);
+  f.state.beforeDiscovery = () => discovery;
+  const pending = f.handlers.get(contributionId("cursorBridge.chat"))!();
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(f.events, ["commands"]);
+  assert.equal(f.lease.has(f.note), false);
+  release();
+  await pending;
+  assert.deepEqual(f.events, [
+    "commands",
+    "lease",
+    "warm",
+    "open",
+    "show",
+    CURSOR_COMMANDS.chat,
+  ]);
+  assert.equal(f.lease.has(f.note), true);
+  assert.deepEqual(f.errors, []);
+});
 
 for (const change of [
   "active editor",
@@ -267,8 +300,8 @@ for (const change of [
   "text",
   "range",
 ] as const) {
-  test(`Edit is not invoked if ${change} changes after handoff validation`, async (t) => {
-    const f = await fixture();
+  test(`Edit is not invoked on handoff if ${change} changes after override-only fails`, async (t) => {
+    const f = await fixture({ editResults: [undefined] });
     t.after(() => f.root.dispose());
     f.state.afterValidation = () => {
       if (change === "active editor") {
@@ -287,9 +320,16 @@ for (const change of [
       }
     };
     await f.handlers.get(contributionId("cursorBridge.edit"))!();
-    assert.deepEqual(f.events, ["commands", "lease", "warm", "show"]);
+    assert.ok(f.events.includes(CURSOR_COMMANDS.edit));
+    assert.ok(f.events.includes("show"));
+    assert.ok(f.events.includes("dismiss"));
     assert.equal(f.errors.length, 1);
     assert.equal(f.lease.has(f.note), false);
+    // Second Edit attempt must not run after confirm fails.
+    assert.equal(
+      f.events.filter((event) => event === CURSOR_COMMANDS.edit).length,
+      1,
+    );
   });
 }
 
@@ -321,22 +361,18 @@ test("Chat opens without a selection and does not hand off the note or acquire a
   assert.deepEqual(f.errors, []);
 });
 
-test("Edit mirrors an empty caret with source coordinates, including CRLF", async (t) => {
+test("Edit mirrors an empty caret with source coordinates via override-only", async (t) => {
   const f = await fixture();
   t.after(() => f.root.dispose());
   f.state.selectionEmpty = true;
   f.state.text = "ab\r\ncdef";
   f.state.cursor = 4;
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
-  assert.deepEqual(f.state.range, {
-    start: { line: 0, character: 5 },
-    end: { line: 0, character: 5 },
-  });
   assert.deepEqual(f.events, [
     "commands",
     "lease",
     "warm",
-    "show",
+    "open",
     CURSOR_COMMANDS.edit,
   ]);
   const args = f.editArgs[0] as { overrideRange: object };
@@ -350,11 +386,34 @@ test("Edit mirrors an empty caret with source coordinates, including CRLF", asyn
   assert.deepEqual(f.errors, []);
 });
 
-test("Edit failure releases the lease, dismisses the mirror, and falls back to Chat", async (t) => {
+test("silent Edit failure abandons the mirror and falls back to Chat", async (t) => {
+  const f = await fixture({ editResults: [undefined, undefined] });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.ok(f.events.includes("lease"));
+  assert.ok(f.events.includes("open"));
+  assert.ok(f.events.includes("show"));
+  assert.equal(
+    f.events.filter((event) => event === CURSOR_COMMANDS.edit).length,
+    2,
+    "override-only then handoff Edit",
+  );
+  assert.ok(f.events.includes("dismiss"));
+  assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.equal(f.errors.length, 0);
+  assert.ok(
+    f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
+  );
+});
+
+test("Edit throws after handoff: release lease, dismiss mirror, Chat fallback", async (t) => {
   const f = await fixture({ editThrows: true });
   t.after(() => f.root.dispose());
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
   assert.ok(f.events.includes("lease"));
+  // Override-only throws → treated as failure → show → Edit throws again.
   assert.ok(f.events.includes("show"));
   assert.ok(f.events.includes(CURSOR_COMMANDS.edit));
   assert.ok(f.events.includes("dismiss"));
@@ -365,6 +424,36 @@ test("Edit failure releases the lease, dismisses the mirror, and falls back to C
   assert.ok(
     f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
   );
+});
+
+test("override-only silent fail then handoff Edit success keeps the lease", async (t) => {
+  const f = await fixture({ editResults: [undefined, "prompt-bar-retry"] });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.deepEqual(
+    f.events.filter((event) =>
+      [
+        "lease",
+        "warm",
+        "open",
+        "show",
+        CURSOR_COMMANDS.edit,
+        "dismiss",
+      ].includes(event),
+    ),
+    [
+      "lease",
+      "warm",
+      "open",
+      CURSOR_COMMANDS.edit,
+      "show",
+      CURSOR_COMMANDS.edit,
+    ],
+  );
+  assert.equal(f.lease.has(f.note), true);
+  assert.deepEqual(f.dismissed, []);
+  assert.deepEqual(f.errors, []);
+  assert.deepEqual(f.informs, []);
 });
 
 test("missing Edit command skips handoff and opens Chat without a lease", async (t) => {
@@ -382,8 +471,8 @@ test("missing Edit command skips handoff and opens Chat without a lease", async 
   );
 });
 
-test("empty-caret Edit failure still dismisses and does not leave an orphan lease", async (t) => {
-  const f = await fixture({ editThrows: true });
+test("empty-caret silent Edit failure dismisses and does not leave an orphan lease", async (t) => {
+  const f = await fixture({ editResults: [undefined, undefined] });
   t.after(() => f.root.dispose());
   f.state.selectionEmpty = true;
   f.state.text = "abcdef";
@@ -392,4 +481,13 @@ test("empty-caret Edit failure still dismisses and does not leave an orphan leas
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, [f.note]);
   assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
+});
+
+test("Edit open path forces markdown language on the mirror document", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  f.state.languageId = "plaintext";
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(f.state.languageId, "markdown");
+  assert.ok(f.events.includes("open"));
 });

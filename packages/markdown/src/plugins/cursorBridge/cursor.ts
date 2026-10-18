@@ -42,6 +42,24 @@ async function tryCommand(
 }
 
 /**
+ * Cursor’s Edit command returns a prompt-bar id on success and undefined on
+ * silent no-ops (`!getActiveCodeEditor()`, missing model, feature off, …).
+ * Blind “did not throw” is insufficient — treat only a truthy return as Edit.
+ */
+async function tryEditCommand(
+  execute: Execute,
+  id: string,
+  ...args: unknown[]
+): Promise<boolean> {
+  try {
+    const result = await execute(id, ...args);
+    return result !== undefined && result !== null && result !== false;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Opens Cursor Chat after the selection is mirrored into a native text editor.
  * Prefers `aichat.newchataction`; falls back to Composer, then clipboard.
  */
@@ -74,12 +92,13 @@ export async function openCursorChat(
 }
 
 /**
- * Opens Cursor inline Edit on the mirrored native selection.
+ * Opens Cursor inline Edit on the note URI + range.
  *
  * Cursor’s `aipopup.action.modal.generate` resolves the editor via
- * `getActiveCodeEditor()` and silently returns when that is null. Passing
- * `overrideUri` / `overrideRange` (Monaco 1-based) forces Cursor to open the
- * mirrored note even when focus has not settled after handoff.
+ * `getActiveCodeEditor()`, or `openCodeEditor({ resource: overrideUri })` when
+ * overrides are passed. It silently returns (no throw, no prompt-bar id) when
+ * that editor/model is missing. Callers must treat a falsy return as failure
+ * and abandon any handoff mirror.
  */
 export async function openCursorEdit(
   execute: Execute,
@@ -90,7 +109,7 @@ export async function openCursorEdit(
     return undefined;
   }
   const args = target ? [editArgs(target)] : [];
-  if (!(await tryCommand(execute, CURSOR_COMMANDS.edit, ...args))) {
+  if (!(await tryEditCommand(execute, CURSOR_COMMANDS.edit, ...args))) {
     return undefined;
   }
   return "edit";

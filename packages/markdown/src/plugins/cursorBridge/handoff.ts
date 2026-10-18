@@ -62,15 +62,27 @@ type EditorConfirmation = { ok: true; editor: NativeEditor } | HandoffRejected;
 export type HandoffResult =
   { ok: true; editor: NativeEditor; lease: HandoffLease } | HandoffRejected;
 
+export type PreparedMirror =
+  | {
+      ok: true;
+      lease: HandoffLease;
+      document: NativeDocument;
+      range: {
+        start: { line: number; character: number };
+        end: { line: number; character: number };
+      };
+    }
+  | HandoffRejected;
+
 /**
- * Acquire the reclaim lease, warm/open the live document, validate version and
- * text, then mirror the selection into a focused native text editor.
+ * Acquire the reclaim lease, warm/open the live document, and validate version
+ * and text — without showing a native tab. Used by Edit’s override-only path.
  */
-export async function handOffSelection(
+export async function prepareNativeMirror(
   surface: HandoffSurface,
   uri: string,
   selection: SelectionSnapshot,
-): Promise<HandoffResult> {
+): Promise<PreparedMirror> {
   const lease = surface.acquireLease(uri);
   let isHandedOff = false;
   try {
@@ -84,17 +96,41 @@ export async function handOffSelection(
       start: document.positionAt(selection.from),
       end: document.positionAt(selection.to),
     };
-    const editor = await surface.show(document, range);
+    isHandedOff = true;
+    return { ok: true, lease, document, range };
+  } finally {
+    if (!isHandedOff) {
+      lease.release();
+    }
+  }
+}
+
+/**
+ * Acquire the reclaim lease, warm/open the live document, validate version and
+ * text, then mirror the selection into a focused native text editor.
+ */
+export async function handOffSelection(
+  surface: HandoffSurface,
+  uri: string,
+  selection: SelectionSnapshot,
+): Promise<HandoffResult> {
+  const prepared = await prepareNativeMirror(surface, uri, selection);
+  if (!prepared.ok) {
+    return prepared;
+  }
+  let isHandedOff = false;
+  try {
+    const editor = await surface.show(prepared.document, prepared.range);
     const confirmed = confirmActiveEditor(editor, uri, selection);
     if (!confirmed.ok) {
       return confirmed;
     }
-    lease.promote();
+    prepared.lease.promote();
     isHandedOff = true;
-    return { ...confirmed, lease };
+    return { ...confirmed, lease: prepared.lease };
   } finally {
     if (!isHandedOff) {
-      lease.release();
+      prepared.lease.release();
     }
   }
 }

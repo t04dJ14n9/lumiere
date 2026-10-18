@@ -67,6 +67,7 @@ class Emitter<T> {
 interface Document {
   uri: Uri;
   isDirty: boolean;
+  languageId?: string;
 }
 interface TextEditor {
   viewColumn?: number;
@@ -151,7 +152,7 @@ const vscode = {
         (candidate) => candidate.uri.toString() === uri.toString(),
       );
       if (!document) {
-        document = { uri, isDirty: false };
+        document = { uri, isDirty: false, languageId: "plaintext" };
         documents.push(document);
         opened.fire(document);
       }
@@ -186,6 +187,12 @@ const vscode = {
         assert.equal(tab.isDirty, false, "dirty tabs must survive the handoff");
         group.tabs = group.tabs.filter((candidate) => candidate !== tab);
       },
+    },
+  },
+  languages: {
+    async setTextDocumentLanguage(document: Document, languageId: string) {
+      document.languageId = languageId;
+      return document;
     },
   },
   commands: {
@@ -767,6 +774,24 @@ test("failed second same-URI surface handoff keeps the first lease", async (t) =
     host.reclaim.handoffLease.has(note),
     true,
     "first native Edit lease must survive a failed retry",
+  );
+});
+
+test("Cursor handoff surface forces language markdown on open and show", async () => {
+  const host = loadHost();
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const opened = await surface.open(note);
+  const native = documents.find((d) => d.uri.toString() === note);
+  assert.equal(native?.languageId, "markdown");
+  assert.equal(opened.uri, note);
+  const editor = await surface.show(opened, {
+    start: { line: 0, character: 0 },
+    end: { line: 0, character: 1 },
+  });
+  assert.equal(editor.document.uri, note);
+  assert.equal(
+    documents.find((d) => d.uri.toString() === note)?.languageId,
+    "markdown",
   );
 });
 
