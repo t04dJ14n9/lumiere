@@ -80,11 +80,11 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
   `~/Code/vscode-workshop/vscode-markdown-workshop`, pushed to `origin`, now
   `t04dJ14n9/lumiere` (the owner renamed the GitHub repository; draft PR
   #83).
-- The owner asked for the push before the pre-push check finished: unit
-  tests (2,446) and the Markdown browser suite (284) pass on `9d5f473`; the
-  PDF browser suite failed only because another worktree's run held its
-  server on port 8990 (Playwright `reuseExistingServer`); `test:vscode` has
-  not run on these commits. See the to-do list.
+- Full pass on the Mac (Claude, 2026-10-18): `pnpm check` on `fe4d5cb6`;
+  both browser suites on `b138ee4a` (Markdown 284, PDF 173); real VS Code
+  and real Cursor 3.23 on `fe4d5cb6`: Markdown 23/23 in Cursor, PDF 25 in
+  both (the perf spec runs only with `PERF=1`). `6b533ccc` failed
+  `pnpm check` (`max-params` in `cursorBridge/host.ts`); `fe4d5cb6` fixes it.
 - The commits pushed on 2026-10-18: no space above line 1; vault-index saves
   one at a time; blame drawn as an overlay above the text; a glow (not a fill) on the
   table cell being edited; PDF page and zoom kept in Cursor's status bar;
@@ -105,7 +105,8 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 
 - Mac Cursor and the owner's CVM (`ssh cvm_dev_machine`, vault `~/WorkVault`
   through Remote-SSH) both run **`t04dj14n9.lumiere` 0.1.0 built from
-  `b138ee4a`** (2026-10-18, 12:40 PDT); `t04dj14n9.vscode-workshop` is
+  `fe4d5cb6`** (2026-10-18, 12:18 PDT, with Grok Bot's Cursor Edit fixes);
+  `t04dj14n9.vscode-workshop` is
   uninstalled on both. Each window needs **Developer: Reload Window**.
 - The owner's settings moved to the new keys, each file backed up beside
   itself as `settings.json.pre-lumiere`: Mac user settings (Vim on, blame
@@ -145,14 +146,13 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 
 ### Owner's settings to know about
 
-- User settings turn blame off (`markdownWorkshop.plugins.gitBlame.enabled:
-  false`) and still map `*.md` to `markdownWorkbench.editor`, the removed
-  build; the owner has not asked to change them.
+- Mac user settings: Vim on, blame on, `*.md` → `lumiere.markdown.editor`.
+  The CVM's machine settings: the same association, blame off.
 - The test vault `~/Code/vscode-workshop/workshop-test-vault` is now a git
   repository (two commits, author Workshop-Test) so blame has history. Its
   `.vscode/settings.json` maps `*.md` to Workshop, turns on debug logging and
   turns blame on. `Tag probe.md` and `Blame probe.md` are probes from today.
-- Workshop's log: Cursor's logs folder, `window*/exthost/t04dj14n9.vscode-workshop/Workshop.log`.
+- Lumière's log: Cursor's logs folder, `window*/exthost/t04dj14n9.lumiere/Lumière.log`.
 
 ### To do
 
@@ -160,8 +160,13 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
       Vim input cases were typed in Obsidian 1.14.4 and Workshop: 72 match,
       4 more bugs fixed on the way (IMPLEMENTATION_PLAN.md, 2026-10-18).
       Still open: the owner's own cases, once they name them.
-- [ ] **Full real-editor pass** (Claude, running on `b138ee4a`): unit, both
-      browser suites, then `pnpm test:vscode` in VS Code and in Cursor.
+- [x] **Full real-editor pass** (see Repository above). Cursor on macOS
+      draws every context menu natively whatever `window.menuStyle` says, so
+      the PDF specs that right-click read Cursor's menu through a breakpoint
+      on the call that sends it to the main process
+      (`packages/pdf/test/vscode/native-menu.ts`, `97dbaf0c`). Use
+      `contextMenu` / `contextMenuLabels` from `workbench.ts`; they work in
+      both editors.
 - [x] **Rename the code to Lumière** (`96b526e2`; installed, settings moved): display name "Lumière: Markdown Editor
       and PDF Reader"; description "Obsidian-style Live Preview for Markdown
       and a PDF reader, in VS Code and Cursor, with links your AI agent can
@@ -195,7 +200,8 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
       owner turned blame back on and pointed `*.md` at the editor themself;
       both moved to the Lumière keys.
 - [x] **Fix** Copy Link for Agent missing from the PDF's right-click menu
-      when the menu opened right after a selection (`7bf26369`).
+      when the menu opened right after a selection (`7bf26369`). Checked in
+      real Cursor's native menu: there with a selection, absent without.
 - [ ] **Close PR #84** (the cancelled cloud agent's duplicate redesign); the
       owner's call.
 
