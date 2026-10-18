@@ -5,7 +5,7 @@ import { extensionManifest, pdfContributes } from "./support/manifest";
 interface Contributes {
   commands: { command: string; title: string }[];
   configuration: { properties: Record<string, unknown> };
-  menus: Record<string, { command: string }[]>;
+  menus: Record<string, { command: string; when?: string }[]>;
   keybindings?: {
     command: string;
     key?: string;
