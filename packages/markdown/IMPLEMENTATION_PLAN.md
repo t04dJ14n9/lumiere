@@ -5521,3 +5521,41 @@ full Cursor Markdown runs 23/23 each, with no freeze in Cursor's log
 (before the fix, two of the three diagnostic runs froze). With the fix:
 Cursor PDF 25 (1 skipped), VS Code Markdown 23/23, VS Code PDF 25 (1
 skipped).
+
+## Fixes from the owner's Cursor trial — 2026-10-18
+
+Computer-use testing in the owner's Cursor (Vim on), the owner's reports and
+the logs of their remote vault turned up these; each has its own commit.
+
+- **No space above line 1**, the owner's choice over Obsidian's 32px top
+  margin: `--file-margin-top: 0px`, and a heading on line 1 drops its padding
+  in the text and in its line number (`is-first-line`).
+- **The vault index saves one write at a time.** The remote vault logged
+  "Could not save the vault index" about twenty times in two days: a
+  debounced save started before the last one finished, and both renamed the
+  same `.json.tmp`. Saves now queue behind the one in progress.
+- **Blame is drawn in a layer above the text.** As an inline widget it took a
+  heading's size, wrapped under long lines and pushed the text down, and sat
+  under the Vim caret on empty lines. Now it sits after the end of the line's
+  last row, centred on it, in one small UI type, uses the room to the
+  editor's edge and is left out when under ten ems fit; clicks reach the
+  text and hovering is found by position.
+- **The table cell being edited has a glow, not a fill**, so text selected in
+  it shows. Obsidian 1.14.4 draws nothing on that cell and tints a range of
+  cells with an accent outline (`docs/obsidian-measurements/tables/cell-selection.mjs`);
+  ranges keep their fill here, the glow is the owner's choice.
+- **The PDF status bar keeps page and zoom** in a crowded Cursor bar, and the
+  zoom buttons no longer move when the zoom label changes width.
+- **Tags follow Obsidian 1.14.4's grammar**, measured over every BMP character
+  and 355 contexts: `#0~#11`, `!!#0000ff` and `(#a)` are not tags, CJK
+  punctuation stays inside one. Frontmatter tags are trimmed first, and tag
+  suggestions open where Obsidian's list does.
+- **A note's tab closes after Cursor's Preview | Markdown switch.** Reclaim
+  took the tab that was already there for one arriving, and Cursor can
+  replace tab objects without an event; reclaim now judges a new tab once,
+  when it first becomes active, and finds tabs again by column, kind and note.
+
+Validation: `pnpm check` green (Markdown 1932, PDF 390 unit tests); browser
+suites Markdown 284 and PDF 174. The blame overlay and table glow were
+checked in Chromium screenshots and the tab fix in real Cursor; the rest
+still needs a pass in the owner's Cursor.
