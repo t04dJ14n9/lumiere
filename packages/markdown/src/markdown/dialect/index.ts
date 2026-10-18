@@ -16,11 +16,13 @@ import { wiki } from "./wiki";
 import { highlight } from "./highlight";
 import { comments } from "./comments";
 import { tasks } from "./tasks";
+import { tableRows } from "./table-rows";
 // Share lang-markdown's language data facet so its commands (list and
 // quote continuation, markup deletion) recognise this dialect as Markdown.
 const data = markdownLanguage.data;
 export const markdownParser = parser.configure([
   GFM,
+  tableRows,
   tasks,
   frontmatter,
   math,
