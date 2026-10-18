@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { parseUri } from "../uri-roots";
 import type { RealPaths } from "@workshop/platform";
 import type { ApiPlatform } from "./platform";
 import type { ConfigurationScope } from "./types";
@@ -12,7 +13,7 @@ export function nativePlatform(
   realPaths: RealPaths | undefined,
 ): ApiPlatform {
   return {
-    uri: (value) => vscode.Uri.parse(value, true),
+    uri: (value) => parseUri(value, true),
     joinPath: (base, path) => vscode.Uri.joinPath(base, path),
     assertContained: (root, target) => contained(root, target, realPaths),
     async open(uri, options) {

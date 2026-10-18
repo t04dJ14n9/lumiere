@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { parseUri } from "../uri-roots";
 import type { RealPaths, WorkerLauncher } from "@workshop/platform";
 import type {
   Extensions,
@@ -17,9 +18,9 @@ export function createHostWorkspace(
         folder.uri.toString(),
       ),
     isTrusted: () => vscode.workspace.isTrusted,
-    read: async (uri) => vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
+    read: async (uri) => vscode.workspace.fs.readFile(parseUri(uri)),
     async stat(uri) {
-      const info = await vscode.workspace.fs.stat(vscode.Uri.parse(uri));
+      const info = await vscode.workspace.fs.stat(parseUri(uri));
       return {
         mtime: info.mtime,
         symbolicLink: Boolean(info.type & vscode.FileType.SymbolicLink),
@@ -28,10 +29,7 @@ export function createHostWorkspace(
     watch: watchFile,
     ...(realPaths && {
       realContains: (root, target) =>
-        realPaths.isInside(
-          vscode.Uri.parse(root).fsPath,
-          vscode.Uri.parse(target).fsPath,
-        ),
+        realPaths.isInside(parseUri(root).fsPath, parseUri(target).fsPath),
     }),
     files: createWorkspaceFiles(realPaths),
     diagnostics: createDiagnostics(),
@@ -58,7 +56,7 @@ export function createExtensions(workers: WorkerLauncher): Extensions {
 
 /** Changes to one file, through a watcher on its folder. */
 function watchFile(uri: string, listener: () => void): () => void {
-  const target = vscode.Uri.parse(uri);
+  const target = parseUri(uri);
   const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(vscode.Uri.joinPath(target, ".."), "*"),
   );
@@ -77,9 +75,7 @@ function watchFile(uri: string, listener: () => void): () => void {
 }
 
 async function revealTextEditor(uri: string): Promise<void> {
-  const document = await vscode.workspace.openTextDocument(
-    vscode.Uri.parse(uri),
-  );
+  const document = await vscode.workspace.openTextDocument(parseUri(uri));
   await vscode.window.showTextDocument(document, {
     viewColumn: vscode.ViewColumn.Beside,
     preview: true,

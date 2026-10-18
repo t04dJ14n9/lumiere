@@ -4,6 +4,7 @@ import { pluginConfiguration } from "./settings";
 import type { Configuration } from "../shared/configuration";
 import { createConfiguration } from "./configuration-access";
 import * as vscode from "vscode";
+import { parseUri } from "./uri-roots";
 import {
   isInsidePosixPath,
   relativePosixPath,
@@ -173,8 +174,8 @@ async function resolveNavigation({
 }: Parameters<Navigation["resolve"]>[0] & {
   realPaths: RealPaths | undefined;
 }): Promise<string | undefined> {
-  const base = vscode.Uri.parse(root);
-  const sourceUri = vscode.Uri.parse(source);
+  const base = parseUri(root);
+  const sourceUri = parseUri(source);
   let uri = !link
     ? sourceUri
     : vscode.Uri.joinPath(
@@ -275,8 +276,8 @@ interface OpenNavigation {
 
 async function openNavigation(options: OpenNavigation): Promise<void> {
   const { root, target, place, panels, intent } = options;
-  const uri = vscode.Uri.parse(target);
-  await contained(vscode.Uri.parse(root), uri, options.realPaths);
+  const uri = parseUri(target);
+  await contained(parseUri(root), uri, options.realPaths);
   if (intent.token.cancelled) {
     return;
   }

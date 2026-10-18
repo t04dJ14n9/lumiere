@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { parseUri } from "./uri-roots";
 import type { HostPlatform } from "@workshop/platform";
 import type { Configuration } from "../shared/configuration";
 import { createConfiguration } from "./configuration-access";
@@ -24,16 +25,14 @@ export function createVaultSystem(
   const { digests } = platform;
   return {
     workspaceFolder: (uri) =>
-      vscode.workspace
-        .getWorkspaceFolder(vscode.Uri.parse(uri))
-        ?.uri.toString(),
+      vscode.workspace.getWorkspaceFolder(parseUri(uri))?.uri.toString(),
     workspaceFolders: () =>
       (vscode.workspace.workspaceFolders ?? []).map((folder) =>
         folder.uri.toString(),
       ),
     exists,
     list: listVault,
-    read: async (uri) => vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
+    read: async (uri) => vscode.workspace.fs.readFile(parseUri(uri)),
     watch: watchVault,
     store: (root) => snapshotStore(context.storageUri, digests.sha256(root)),
     settings: (root) => vaultSettings(configuration, root),
@@ -70,7 +69,7 @@ function toDisposer(disposable: vscode.Disposable): () => void {
 
 async function exists(uri: string): Promise<boolean> {
   try {
-    await vscode.workspace.fs.stat(vscode.Uri.parse(uri));
+    await vscode.workspace.fs.stat(parseUri(uri));
     return true;
   } catch {
     return false;
@@ -104,7 +103,7 @@ async function listVault(
   limit: number,
   shallow = false,
 ): Promise<{ files: ListedFile[]; partial: boolean }> {
-  const base = vscode.Uri.parse(root);
+  const base = parseUri(root);
   const uris = await collectFiles(base, limit + 1, shallow);
   const partial = uris.length > limit;
   const files = await statAll(base, uris.slice(0, limit));
@@ -193,7 +192,7 @@ function watchVault(
   root: string,
   listener: (event: FileEvent) => void,
 ): () => void {
-  const base = vscode.Uri.parse(root);
+  const base = parseUri(root);
   const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(base, "**/*"),
   );

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { parseUri } from "./uri-roots";
 import type { RealPaths } from "@workshop/platform";
 import type { WorkspaceFiles } from "../shared/workspace-files";
 import { contained } from "./navigation";
@@ -85,5 +86,5 @@ async function pickFile(title: string): Promise<string | undefined> {
 }
 
 function parse(uri: string): vscode.Uri {
-  return vscode.Uri.parse(uri);
+  return parseUri(uri);
 }
