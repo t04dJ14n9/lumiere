@@ -60,15 +60,15 @@ test("Copy Link for Agent still writes the source-link clipboard text and does n
     const handoff = new AgentHandoff(() => undefined);
     assert.equal(await handoff.copyLinkForAgent(panel()), true);
     assert.equal(clipboard.length, 1);
-    assert.ok(
-      clipboard[0]?.startsWith(
-        "Source: [papers/attention\\_v2.pdf (page 3)](<papers/attention_v2.pdf#page=3&viewrect=72,83,134,21>)\n",
-      ),
+    assert.equal(
+      clipboard[0],
+      [
+        "[attention_v2.pdf · p.3](papers/attention_v2.pdf#page=3&viewrect=72,83,134,21)",
+        "",
+        "> Scaled dot-product attention",
+      ].join("\n"),
     );
-    assert.match(
-      clipboard[0] ?? "",
-      new RegExp(`^PDF source SHA-256: \`${sourceHash}\`$`, "mu"),
-    );
+    assert.doesNotMatch(clipboard[0] ?? "", /Source:|SHA-256|\\_/u);
     assert.equal(calls.includes(MARKDOWN_BRIDGE_ENVELOPE_COMMAND), false);
     assert.equal(calls.includes("vscodeEmbedPdf.bridge.envelope"), false);
   } finally {

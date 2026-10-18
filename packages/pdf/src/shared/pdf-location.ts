@@ -84,11 +84,11 @@ export function pdfLink(path: string, location: PdfLocation): string {
 
 /**
  * The link in text a reader pasted: a bare link or path, `<link>`, or a
- * Markdown link `[label](<link>)` such as the `Source:` line Copy Link for Agent
- * writes (the first link, if there are several).
+ * Markdown link `[label](link)` or `[label](<link>)` such as the line Copy Link
+ * for Agent writes (the first link, if there are several).
  */
 export function extractPdfLink(text: string): string {
-  const markdown = /\]\(<([^>]+)>\)/.exec(text) ?? /\]\(([^)\s]+)\)/.exec(text);
+  const markdown = /\]\(<([^>]+)>\)/.exec(text) ?? /\]\(([^)\n]+)\)/.exec(text);
   const link = markdown
     ? markdown[1]!
     : text.trim().replace(/^sources?:\s*/i, "");

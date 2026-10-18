@@ -128,7 +128,7 @@ test("a pasted link is found in a Copy Link for Agent source line or a Markdown 
       text: "x",
       pages: [{ page: 3, rects: [[72, 83, 206, 104]] }],
     },
-    { path: "papers/my paper.pdf", sha256: "ab".repeat(32) },
+    { path: "papers/my paper.pdf" },
   );
   for (const text of [
     link,

@@ -10,7 +10,7 @@ import { registerAgentBridge } from "./mcp/controller";
 
 /**
  * Everything that hands a selection to an agent: Copy Link for Agent (the
- * command and the viewer's button), the `handoff` service behind it, and the
+ * webview context-menu command), the `handoff` service behind it, and the
  * opt-in local MCP server (`pdfWorkshop.agentBridge.enabled`, off by
  * default).
  *

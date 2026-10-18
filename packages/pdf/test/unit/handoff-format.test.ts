@@ -15,7 +15,7 @@ interface Fixture {
   notePayloads: { reference: string; selection: string; text: string }[];
   pdfTexts: {
     selection: PdfSelection;
-    source: { path: string; sha256: string };
+    source: { path: string; sha256?: string };
     text: string;
   }[];
 }

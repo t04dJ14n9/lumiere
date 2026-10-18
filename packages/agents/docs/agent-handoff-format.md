@@ -36,24 +36,20 @@ raw links, never a chat-specific mention syntax.
 ## PDF selections (PDF Workshop)
 
 ```text
-Source: [papers/attention.pdf (page 3)](<papers/attention.pdf#page=3&viewrect=72,83,134,21>)
-PDF source SHA-256: `9f86d0…`
+[attention.pdf · p.3](papers/attention.pdf#page=3&viewrect=72,83,134,21)
 
-Selected text:
-Scaled dot-product attention
-
-When you answer, cite the Source link above so the reader can reopen this spot in the PDF.
+> Scaled dot-product attention
 ```
 
-- One `Source:` link per selection, or `Sources:` with one `- ` link per
-  page; the link opens the page and box (`viewrect=x,y,width,height` in PDF
-  points).
-- The SHA-256 lets an agent tell whether the file changed.
-- A region replaces `Selected text:` with an instruction to read or render
-  the box, the snapshot's path (`Region image: …`) when one was saved, and the
-  text found inside the box.
-- The closing line asks the agent to cite the link, which PDF: Open
-  Location reopens.
+- One Markdown link per selected page: label is `basename · p.N` (no
+  escapes), href is only `path#page=N&viewrect=x,y,w,h` (RFC 8118; no
+  angle brackets around the href).
+- After a blank line, the selected text is quoted with `> ` (same rules as
+  note payloads). A region with no readable text is link-only.
+- No `Source:` / `Sources:` prefix, no PDF SHA-256 line, no cite
+  instruction, and no region-image path on the clipboard. File revision
+  hashing remains on the structured bridge envelope / MCP side when needed.
+- In the UI, Copy Link for Agent is only on the PDF webview context menu.
 
 ## Changing the format
 

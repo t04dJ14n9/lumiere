@@ -35,9 +35,9 @@ export interface AgentSnapshot {
  * hands it over. Copy Link for Agent and the MCP bridge both go through it,
  * so an agent sees the same text either way.
  *
- * Invariant: the text and the SHA-256 in it come from one selection
- * snapshot, taken once; a reload cannot pair a selection with another
- * file's hash (see PdfSelectionState).
+ * Invariant: clipboard text and the structured envelope come from one
+ * selection snapshot, taken once; a reload cannot pair a selection with
+ * another file's hash on the envelope (see PdfSelectionState).
  */
 export class AgentHandoff {
   constructor(private readonly regions: () => RegionSnapshots | undefined) {}
@@ -109,18 +109,14 @@ export class AgentHandoff {
       return undefined;
     }
     const image = await this.regions()?.save(panel, selected, options);
-    const source = { path: displayPath(panel.uri), sha256: selected.sha256 };
+    const path = displayPath(panel.uri);
     return {
-      file: source.path,
+      file: path,
       uri: panel.uri.toString(),
       sha256: selected.sha256,
       selectedAt: selected.selectedAt,
       selection: selected.selection,
-      agentText: agentText(
-        selected.selection,
-        source,
-        image ? { regionImage: image.fsPath } : {},
-      ),
+      agentText: agentText(selected.selection, { path }),
       ...(image ? { regionImage: image.fsPath } : {}),
     };
   }

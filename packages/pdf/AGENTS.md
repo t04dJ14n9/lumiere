@@ -11,12 +11,10 @@ are specific to the PDF code. Read README.md for the layout.
   `parseViewerMessage`; add a validator when adding a message.
 - Track editors per panel (`PdfPanels`), never by file path: the same PDF can
   be open twice.
-- Keep the Copy Link for Agent text wording compatible with LLM Wiki's agent
-  clipboard. The handoff format both products write is defined once, in
-  `packages/agents` (`docs/agent-handoff-format.md` and its fixture). The
-  structured selection envelope is a separate contract
-  (`docs/bridge-envelope.md`, command `vscodeEmbedPdf.bridge.envelope`) and
-  does not change that clipboard text.
+- Keep the Copy Link for Agent clipboard as `basename · p.N` + `#page=&viewrect=`
+  + blockquote (see `packages/agents/docs/agent-handoff-format.md`). UI entry
+  is webview context menu only. The structured selection envelope is a separate
+  contract (`docs/bridge-envelope.md`, command `vscodeEmbedPdf.bridge.envelope`).
 - Features are plugins (`src/extension/plugins/<id>/`, listed in
   `catalog.ts`). Register every VS Code resource through the plugin's scope
   so it is released when the plugin stops; `test/unit/plugin-leaks.test.ts`

@@ -44,14 +44,23 @@ test("Copy Link for Agent is the only agent command; Copy for Agent and Ask Agen
       menu,
     );
   }
-  for (const menu of ["editor/title", "webview/context", "commandPalette"]) {
-    assert.ok(
-      contributes.menus[menu]?.some(
-        (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
-      ),
-      menu,
-    );
-  }
+  assert.ok(
+    contributes.menus["webview/context"]?.some(
+      (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
+    ),
+    "webview/context",
+  );
+  assert.ok(
+    !(contributes.menus["editor/title"] ?? []).some(
+      (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
+    ),
+    "editor/title must not list Copy Link for Agent",
+  );
+  const palette = (contributes.menus["commandPalette"] ?? []).find(
+    (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
+  );
+  assert.ok(palette, "commandPalette still registers the command entry");
+  assert.equal(palette?.when, "false", "commandPalette hides Copy Link for Agent");
   assert.ok(
     !(contributes.keybindings ?? []).some(
       (entry) => entry.command === "pdfWorkshop.copyForAgent",
