@@ -5120,3 +5120,23 @@ the editor (a fixed suggestion list stood in for the vault in the harness):
 Not compared: which suggestions are listed and in what order.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Suggestion lists, ranked as Obsidian ranks them — 2026-10-17
+
+Obsidian's `[[` suggestion lists for 37 queries over the same notes (folders,
+aliases, headings, tags) were compared with Workshop's, built from the same
+files; 10 of 17 matched at first, all 37 now.
+
+- A note matched on its path with `.md`, and every entry on its description
+  too (`Unresolved link`, `H2 · file.md`): `old` offered `No Title` (o, l and
+  the d of `.md`). A note now matches on its path without `.md`; an alias,
+  heading or tag only on its own text.
+- An alias was offered when its note's name matched (`Books` for `al`).
+- A note matched only through its folder ranked above one matched by name.
+- The word-start term of the fuzzy score applied to letters matched one by
+  one; in Obsidian it applies only when whole words match (`rp` ranks
+  `Proposal Draft` first). One scorer now serves both scoring paths.
+- With nothing typed, a note's headings come in document order.
+
+Validation: `pnpm check` green; unit tests pin the measured lists; Markdown
+browser suite 284/284.

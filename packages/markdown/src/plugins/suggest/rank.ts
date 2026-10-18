@@ -2,10 +2,15 @@ import { preparedFuzzyScore } from "../../shared/fuzzy";
 import type { Candidate } from "./candidates";
 interface Ranked {
   entry: Candidate;
+  /** Whether the query matched the label (a note's name), not only its path. */
+  named: boolean;
   score: number;
 }
 function compare(a: Ranked, b: Ranked): number {
+  // As in Obsidian, a note matched by its name comes before one matched only
+  // through its folder.
   return (
+    Number(b.named) - Number(a.named) ||
     b.score - a.score ||
     a.entry.label.length - b.entry.label.length ||
     a.entry.label.localeCompare(b.entry.label) ||
@@ -17,16 +22,25 @@ export function rankedCandidates(
   entries: readonly Candidate[],
   query: string,
 ): Candidate[] {
+  // Nothing typed: the entries in their own order (a note's headings in
+  // document order), as Obsidian lists them.
+  if (!query) {
+    return entries.slice(0, 50);
+  }
   const best: Ranked[] = [];
   for (const entry of entries) {
     const name = preparedFuzzyScore(query, entry.labelText);
-    const detail = preparedFuzzyScore(query, entry.detailText);
-    if (name === undefined && detail === undefined) {
+    const other =
+      entry.matchText === undefined
+        ? undefined
+        : preparedFuzzyScore(query, entry.matchText);
+    if (name === undefined && other === undefined) {
       continue;
     }
     const value = {
       entry,
-      score: Math.max(name ?? -Infinity, detail ?? -Infinity),
+      named: name !== undefined,
+      score: name ?? other!,
     };
     if (best.length === 50 && compare(value, best[49]!) >= 0) {
       continue;

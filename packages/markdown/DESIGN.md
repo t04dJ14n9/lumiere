@@ -1033,8 +1033,12 @@ Short specifications, beyond the source's tested behaviour:
 - **suggest**: sources are `[[` files and frontmatter `aliases` and unresolved
   link texts; `[[Note#` headings; `[[Note#^` and `[[^^` blocks; `#` tags.
   Scoring uses Obsidian's fuzzy formula (study §8; `src/shared/fuzzy.ts`
-  replaces `shared/match.ts`), with each CJK character its own token. Accepting
-  closes `]]` (reusing an auto-inserted one) and inserts `vault.linkText`.
+  replaces `shared/match.ts`), with each CJK character its own token; measured
+  against Obsidian's lists, the word-start term applies only when whole words
+  match, a note matched by its name comes before one matched only through its
+  folder, a note matches on its path without `.md`, and an alias, heading or
+  tag only on its own text. Accepting with Enter closes `]]` (reusing an
+  auto-inserted one) and inserts `vault.linkText`; Tab takes the text only.
 - **outline**: a native Explorer tree view (like PDF Outline) of the active
   editor's headings, with click to reveal and current-heading tracking, plus
   a heading Quick Pick on Ctrl+Shift+O in Workshop. VS Code's built-in Markdown

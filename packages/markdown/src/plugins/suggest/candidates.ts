@@ -11,20 +11,27 @@ export interface Candidate {
   detail: string;
   value: Value;
   labelText: string;
-  detailText: string;
+  /** Other text the query may match, prepared: a note's path. */
+  matchText: string | undefined;
   order: string;
 }
+/**
+ * A suggestion. It matches a query on its label, and on `match` when given:
+ * as in Obsidian, a note also matches on its path (without `.md`), while an
+ * alias, heading or tag matches only on its own text, never on its detail.
+ */
 export function candidate(
   label: string,
   detail: string,
   value: Value,
+  match?: string,
 ): Candidate {
   return {
     label,
     detail,
     value,
     labelText: prepareFuzzyText(label),
-    detailText: prepareFuzzyText(detail),
+    matchText: match === undefined ? undefined : prepareFuzzyText(match),
     order: candidateOrder(value),
   };
 }
@@ -51,11 +58,12 @@ export function fileCandidates(
   }
   if (kind === "block") {
     return Object.values(metadata?.blocks ?? {}).map(({ id, text }) =>
-      candidate(id, `${text.slice(0, 512)} · ${file.path}`, {
-        kind: "block",
-        target: file,
+      candidate(
         id,
-      }),
+        `${text.slice(0, 512)} · ${file.path}`,
+        { kind: "block", target: file, id },
+        text.slice(0, 512),
+      ),
     );
   }
   return [
@@ -63,6 +71,7 @@ export function fileCandidates(
       file.extension === "md" ? file.basename : nameOf(file.path),
       file.path,
       { kind: "file", target: file },
+      file.extension === "md" ? file.path.slice(0, -3) : file.path,
     ),
     ...(metadata?.aliases ?? []).map((alias) =>
       candidate(alias, file.path, { kind: "file", target: file, alias }),

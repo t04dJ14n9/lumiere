@@ -48,26 +48,44 @@ export function fuzzyMatch(
     return { score: 0, matches: [] };
   }
   const { lower, original } = normalizeText(text);
-  const positions =
-    matchTokens(tokens, lower) ?? matchSubsequence(tokens, lower);
+  const tokenized = matchTokens(tokens, lower);
+  const positions = tokenized ?? matchSubsequence(tokens, lower);
   if (!positions) {
     return undefined;
   }
   positions.sort((a, b) => a - b);
-  const matches = contiguousRanges(positions);
-  const boundaries = matches.filter(
-    ([from]) => from > 0 && /[\p{L}\p{N}]/u.test(lower[from - 1]!),
-  ).length;
-  const spread = positions.at(-1)! - positions[0]! + 1;
   return {
-    score:
-      -(matches.length - 1) -
-      boundaries / 10 -
-      spread / 100 -
-      positions[0]! / 1000 -
-      lower.length / 10000,
-    matches: sourceRanges(matches, original),
+    score: positionsScore(positions, lower, tokenized !== undefined),
+    matches: sourceRanges(contiguousRanges(positions), original),
   };
+}
+
+/**
+ * How well sorted `positions` match `lower`, as Obsidian ranks them (all
+ * scores are at most 0; higher wins): fewer separate pieces, then whole
+ * words matched at a word start (`words`), then a tighter, earlier match in
+ * a shorter text. Letters matched one by one pay nothing for starting inside
+ * a word, which Obsidian's suggestion order shows.
+ */
+function positionsScore(
+  positions: readonly number[],
+  lower: string,
+  words: boolean,
+): number {
+  const matches = contiguousRanges([...positions]);
+  const boundaries = words
+    ? matches.filter(
+        ([from]) => from > 0 && /[\p{L}\p{N}]/u.test(lower[from - 1]!),
+      ).length
+    : 0;
+  const spread = positions.at(-1)! - positions[0]! + 1;
+  return (
+    -(matches.length - 1) -
+    boundaries / 10 -
+    spread / 100 -
+    positions[0]! / 1000 -
+    lower.length / 10000
+  );
 }
 interface SourceRange {
   from: number;
@@ -218,22 +236,11 @@ export function preparedFuzzyScore(
       );
     }
   }
-  const positions =
-    matchTokens(tokens, lower) ?? matchSubsequence(tokens, lower);
+  const tokenized = matchTokens(tokens, lower);
+  const positions = tokenized ?? matchSubsequence(tokens, lower);
   if (!positions) {
     return undefined;
   }
   positions.sort((a, b) => a - b);
-  const matches = contiguousRanges(positions);
-  const boundaries = matches.filter(
-    ([from]) => from > 0 && /[\p{L}\p{N}]/u.test(lower[from - 1]!),
-  ).length;
-  const spread = positions.at(-1)! - positions[0]! + 1;
-  return (
-    -(matches.length - 1) -
-    boundaries / 10 -
-    spread / 100 -
-    positions[0]! / 1000 -
-    lower.length / 10000
-  );
+  return positionsScore(positions, lower, tokenized !== undefined);
 }
