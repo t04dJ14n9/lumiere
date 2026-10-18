@@ -91,14 +91,12 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 
 ### Known open issues
 
-- A note opened as text before the extension started (passed on the
-  command line, or restored with the window) stays in the text editor;
-  reclaim only acts on tab changes after activation.
-- RPC timeouts log only the method name (`Error: ready`,
-  `Error: captureCursor`): `RpcError` drops its code. On the CVM a note once
-  opened blank after `Editor bootstrap failed Error: ready`.
-- In `Links.md` line 14 a list item's continuation line is drawn left of its
-  bullet; not compared with Obsidian yet.
+- Fixed on the branch after `9d5f473`, so not in the installed build until
+  it is reinstalled: notes open as text before the extension started are
+  now reclaimed; RPC timeouts log their code (`Timeout: no reply to ready
+  within 10000 ms`; the CVM's blank note after `Editor bootstrap failed
+  Error: ready` is still unexplained); `Links.md` line 14's continuation
+  line hangs under its item's text.
 - Cursor's own **Preview | Markdown** switch shows above Workshop notes, with
   "Markdown" selected.
 - "Your Cursor installation appears to be corrupt" comes from a patch to
@@ -118,7 +116,10 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 
 ### To do
 
-- [ ] **Vim input bugs** (the owner's report; leads above).
+- [ ] **Vim input bugs** (the owner's report). Both leads are fixed, and 76
+      Vim input cases were typed in Obsidian 1.14.4 and Workshop: 72 match,
+      4 more bugs fixed on the way (IMPLEMENTATION_PLAN.md, 2026-10-18).
+      Still open: the owner's own cases, once they name them.
 - [ ] **Finish the pre-push check** on the pushed commits:
       `PORT=8991 pnpm --filter @workshop/pdf test:browser`, then
       `pnpm test:vscode`, with no other suite running.
@@ -142,15 +143,15 @@ specific cases yet. Vim is on in the owner's Cursor (user setting
 - [ ] **Demo**: `t04dJ14n9/lumiere-demo` (Codespaces) works and stays
       private until the math fixes and a renamed VSIX are in it.
 - [ ] **Keyboard checks** 4 (keys), 6–12 and 14 in the plan below.
-- [ ] **Fix** the tables plugin's Vim entry reading `ctx.vim` after a
+- [x] **Fix** the tables plugin's Vim entry reading `ctx.vim` after a
       restart ("Disposed: tables is stopped").
-- [ ] **Fix** a display formula needing a second click after an inline
+- [x] **Fix** a display formula needing a second click after an inline
       formula was selected.
-- [ ] **Fix** reclaim for notes already open as text when the extension
+- [x] **Fix** reclaim for notes already open as text when the extension
       starts.
-- [ ] **Fix** `RpcError` losing its code, so timeouts log as `Error: ready`.
-- [ ] **Compare with Obsidian** the list continuation line drawn left of its
-      bullet (`Links.md` line 14).
+- [x] **Fix** `RpcError` losing its code, so timeouts log as `Error: ready`.
+- [x] **Compare with Obsidian** the list continuation line drawn left of its
+      bullet (`Links.md` line 14): it now hangs under the item's text.
 - [ ] **Ask the owner** whether to turn blame back on in their user settings
       and to replace the stale `*.md` → `markdownWorkbench.editor`
       association.
