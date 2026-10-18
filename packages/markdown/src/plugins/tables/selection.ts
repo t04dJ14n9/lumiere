@@ -164,10 +164,14 @@ export class TableSelection {
       this.range,
       this.projection.active,
     );
+    // Without a grid range the one selected cell is the one being edited,
+    // whose own text selection must stay visible (tables.css).
+    const isEditing = !this.range;
     this.grid.cells.forEach((row, rowIndex) =>
       row.forEach((cell, column) => {
         const on = selected[rowIndex]?.[column] ?? false;
         cell.classList.toggle("table-cell-selected", on);
+        cell.classList.toggle("is-editing", on && isEditing);
         cell.setAttribute("aria-selected", String(on));
       }),
     );

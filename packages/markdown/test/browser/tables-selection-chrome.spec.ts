@@ -21,7 +21,7 @@ async function selectionChrome(page: Page) {
     });
 }
 
-test("clicking a cell shows selection chrome on the active editor cell", async ({
+test("clicking a cell marks the cell being edited with a glow and no fill", async ({
   page,
 }) => {
   await open(page, TABLE);
@@ -39,9 +39,13 @@ test("clicking a cell shows selection chrome on the active editor cell", async (
   await expect(table.locator('td[data-row="1"][data-column="1"]')).toHaveClass(
     /table-cell-selected/,
   );
+  await expect(table.locator('td[data-row="1"][data-column="1"]')).toHaveClass(
+    /is-editing/,
+  );
   const chrome = await selectionChrome(page);
   expect(chrome.aria).toBe("true");
-  expect(chrome.background).toBe("rgb(38, 79, 120)");
+  // No fill, so text selected in the cell stays visible.
+  expect(chrome.background).toBe("rgba(0, 0, 0, 0)");
   expect(chrome.boxShadow).toContain("rgb(55, 148, 255)");
   expect(chrome.boxShadow).toMatch(/inset/);
 });

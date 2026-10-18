@@ -62,6 +62,20 @@ test("selected cells draw an inset accent box that survives overflow clipping", 
   );
 });
 
+test("the cell being edited has no fill, so its text selection shows, and a glow around its edges", () => {
+  const rule =
+    /\.hybrid-table \.table-cell-selected\.is-editing \{([^}]*)\}/.exec(
+      css,
+    )?.[1] ?? "";
+  assert.match(rule, /background: transparent;/);
+  assert.match(rule, /inset 0 0 0 1px var\(--accent\)/);
+  assert.match(
+    rule,
+    /0 0 0 3px color-mix\(in srgb, var\(--accent\) 35%, transparent\)/,
+  );
+  assert.match(rule, /z-index: 1;/);
+});
+
 test("row and column grips ignore pointer hits until the table is hovered or focused", () => {
   assert.match(css, /\.table-handle \{[^}]*pointer-events: none;/);
   assert.match(

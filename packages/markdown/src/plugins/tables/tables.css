@@ -108,6 +108,21 @@
      unreliable on border-collapse cells; this keeps a visible selection box. */
   box-shadow: inset 0 0 0 2px var(--accent);
 }
+/*
+ * The cell being edited keeps its own background, so text selected in it
+ * shows as in any line; a glow around its edges marks it instead. Obsidian
+ * 1.14 draws nothing there (docs/obsidian-measurements/tables/cell-selection.mjs);
+ * the glow is the owner's choice. Raised so neighbouring cells do not paint
+ * over the outer half.
+ */
+.hybrid-table .table-cell-selected.is-editing {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
 /* Opaque inline code would cover the cell's selection tint. Keep its text
    styling while letting the selected cell paint the background underneath. */
 .hybrid-table .table-cell-selected :not(pre) > code {
