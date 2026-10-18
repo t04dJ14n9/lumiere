@@ -9,8 +9,14 @@ import {
   type IdeContextPacket,
 } from "@workshop/agents/ide-context";
 import { MemoryTempFs } from "@workshop/agents/testing";
+import { pathToFileUriString } from "@workshop/platform/node";
+import type { TempFs } from "@workshop/agents/ide-context";
 import { AGENT_COMMANDS } from "../../../src/plugins/agentBridge/chat";
 
+/** The desktop's temp files, over `fs`. */
+function tempFiles(fs: TempFs) {
+  return { fs, dir: "/tmp/agent-ide-context", fileUri: pathToFileUriString };
+}
 function mwPacket(): IdeContextPacket {
   return {
     version: 1,
@@ -88,8 +94,7 @@ test("picker Codex → Codex only", async () => {
       executed.push(id);
     },
     showQuickPick: async () => "codex",
-    tempFs: fs,
-    tempDir: "/tmp/agent-ide-context",
+    temp: tempFiles(fs),
     now: () => 1_000_000,
     leaseMs: 60_000,
     sessionId: "t1",
@@ -179,8 +184,7 @@ test("MW Codex: renewLeaseAtomic called before retry across renewal boundary", a
       }
     },
     showQuickPick: async () => undefined,
-    tempFs: fs,
-    tempDir: "/tmp/agent-ide-context",
+    temp: tempFiles(fs),
     now: () => 1_000_000,
     leaseMs: 1_000,
     sessionId: "renew-test",
@@ -215,8 +219,7 @@ test("MW Codex: on retry renew is after open prep and immediately before add-fil
       }
     },
     showQuickPick: async () => undefined,
-    tempFs: new MemoryTempFs(),
-    tempDir: "/tmp/agent-ide-context",
+    temp: tempFiles(new MemoryTempFs()),
     now: () => 1_000_000,
     leaseMs: 1_000,
     sessionId: "renew-order-test",
@@ -255,7 +258,7 @@ test("MW Codex: temp publish {skipped:true} → clipboard kept; no invalid add-f
       skipped: true as const,
       warning: "quota full; lease-protected",
     }),
-    tempFs: new MemoryTempFs(),
+    temp: tempFiles(new MemoryTempFs()),
   });
   assert.ok(clipboard.includes("IDE context"));
   assert.equal(executed.includes(AGENT_COMMANDS.codexAddFile), false);
@@ -275,7 +278,7 @@ test("Codex attaches Windows temp paths as file URI strings", async () => {
         attached = args[0];
       }
     },
-    tempFs: new MemoryTempFs(),
+    temp: tempFiles(new MemoryTempFs()),
     publishTemp: async () => ({
       finalPath:
         "C:\\Users\\test\\AppData\\Local\\Temp\\agent-ide-context\\ide-context-x.json",

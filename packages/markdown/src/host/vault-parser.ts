@@ -1,8 +1,8 @@
-import { Worker } from "node:worker_threads";
+import type { WorkerChannel, WorkerLauncher } from "@workshop/platform";
 import { metadata } from "../markdown/metadata";
 import type { NoteMetadata } from "../markdown/metadata";
 import type { NoteParser } from "../plugins/vault/api";
-import type { ParseRequest, ParseResponse } from "../workers/vault";
+import type { ParseRequest, ParseResponse } from "../workers/vault-worker";
 
 interface Pending {
   resolve: (value: NoteMetadata) => void;
@@ -10,16 +10,17 @@ interface Pending {
 }
 
 /**
- * Parses notes in `dist/workers/vault.cjs`. If the worker cannot start or
- * exits, parsing continues in the extension host, so indexing never stops.
+ * Parses notes in the vault worker (src/workers/vault-worker.ts). If the worker
+ * cannot start or exits, parsing continues in the extension host, so
+ * indexing never stops.
  */
-export function createVaultParser(workerPath: string): {
+export function createVaultParser(workers: WorkerLauncher): {
   parse: NoteParser;
   dispose(): void;
 } {
   const pending = new Map<number, Pending>();
   let next = 0;
-  let worker: Worker | undefined = startWorker(workerPath, pending, () => {
+  let worker: WorkerChannel | undefined = startWorker(workers, pending, () => {
     worker = undefined;
   });
   return {
@@ -32,7 +33,7 @@ export function createVaultParser(workerPath: string): {
       const request: ParseRequest = { id, text: buffer };
       return new Promise((resolve, reject) => {
         pending.set(id, { resolve, reject });
-        worker!.postMessage(request, [buffer]);
+        worker!.post(request, [buffer]);
       });
     },
     dispose() {
@@ -43,18 +44,19 @@ export function createVaultParser(workerPath: string): {
 }
 
 function startWorker(
-  path: string,
+  workers: WorkerLauncher,
   pending: Map<number, Pending>,
   onExit: () => void,
-): Worker | undefined {
-  let worker: Worker;
+): WorkerChannel | undefined {
+  let worker: WorkerChannel;
   try {
-    worker = new Worker(path);
+    worker = workers.start("vault");
   } catch {
     return undefined;
   }
   worker.unref();
-  worker.on("message", (response: ParseResponse) => {
+  worker.onMessage((message) => {
+    const response = message as ParseResponse;
     const request = pending.get(response.id);
     pending.delete(response.id);
     if ("error" in response) {
@@ -63,7 +65,7 @@ function startWorker(
       request?.resolve(response.metadata);
     }
   });
-  worker.on("exit", () => {
+  worker.onExit(() => {
     onExit();
     for (const request of pending.values()) {
       request.reject(new Error("The indexing worker stopped"));

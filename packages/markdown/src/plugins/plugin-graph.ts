@@ -8,6 +8,7 @@
  * turned off?".
  */
 import type { Plugin, Services } from "@workshop/core";
+import { PLATFORM_SERVICE_NAMES } from "@workshop/platform";
 import { HOST_SERVICE_NAMES } from "../shared/host";
 
 type ServiceName = keyof Services;
@@ -15,6 +16,7 @@ type ServiceName = keyof Services;
 /** Services the host or webview root provides, not a plugin. */
 export const ROOT_SERVICES: readonly ServiceName[] = [
   ...HOST_SERVICE_NAMES,
+  ...PLATFORM_SERVICE_NAMES,
   "vaultSystem",
   "rpc",
   "pluginStates",

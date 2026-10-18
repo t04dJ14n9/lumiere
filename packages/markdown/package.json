@@ -5,6 +5,7 @@
   "description": "Markdown Workshop: Obsidian-style Live Preview for VS Code and Cursor.",
   "exports": {
     "./host": "./src/host/extension.ts",
+    "./desktop": "./src/host/desktop.ts",
     "./contributions": "./scripts/contributions.ts"
   },
   "scripts": {
@@ -33,6 +34,7 @@
     "@replit/codemirror-vim": "6.4.0",
     "@workshop/agents": "workspace:*",
     "@workshop/core": "workspace:*",
+    "@workshop/platform": "workspace:*",
     "dompurify": "3.4.16",
     "graphology": "0.26.0",
     "lucide": "1.55.0",

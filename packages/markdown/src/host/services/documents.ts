@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
 import * as vscode from "vscode";
+import type { Digests } from "@workshop/platform";
 import { SourceCoordinates } from "../../shared/document/coordinates";
 import type { FileTextEdits, HostDocuments } from "../../shared/host";
 import { renameFile } from "../file-rename";
@@ -7,9 +7,12 @@ import { cleanEditedUris } from "../rename-save";
 import type { NativeDocuments } from "./native-documents";
 
 /** VS Code's text documents, wrapped as `HostDocument`s by `documents`. */
-export function createHostDocuments(documents: NativeDocuments): HostDocuments {
+export function createHostDocuments(
+  documents: NativeDocuments,
+  digests: Digests,
+): HostDocuments {
   return {
-    fingerprint: (text) => createHash("sha256").update(text).digest("hex"),
+    fingerprint: (text) => digests.sha256(text),
     apply: async (document, edits) => {
       const native = documents.native(document);
       const coordinates = new SourceCoordinates(native.getText());

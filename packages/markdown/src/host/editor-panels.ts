@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import * as vscode from "vscode";
 import type { EditorProvider } from "../shared/editor-provider";
 import type { PanelShell } from "../shared/host";
@@ -67,7 +66,7 @@ function createPanelShell(
   panel: vscode.WebviewPanel,
   { extensionUri, documents }: EditorHost,
 ): PanelShell {
-  const id = randomUUID();
+  const id = crypto.randomUUID();
   const root =
     vscode.workspace.getWorkspaceFolder(document.uri)?.uri ??
     vscode.Uri.joinPath(document.uri, "..");

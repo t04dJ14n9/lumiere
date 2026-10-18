@@ -5,6 +5,7 @@
   "description": "PDF Workshop: an EmbedPDF-based viewer that copies selections with exact page-and-box locations.",
   "exports": {
     "./host": "./src/extension/extension.ts",
+    "./desktop": "./src/extension/desktop.ts",
     "./contributes.json": "./contributes.json",
     "./lazy-bridge-server": "./scripts/lazy-bridge-server.mjs"
   },
@@ -35,6 +36,7 @@
     "@vscode/codicons": "0.0.45",
     "@workshop/agents": "workspace:*",
     "@workshop/core": "workspace:*",
+    "@workshop/platform": "workspace:*",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"

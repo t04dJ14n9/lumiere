@@ -1,5 +1,9 @@
-import * as path from "node:path";
 import * as vscode from "vscode";
+import {
+  isAbsoluteFilePath,
+  posixBasename,
+  type OperatingSystem,
+} from "@workshop/platform";
 import {
   extractPdfLink,
   parseLocationFragment,
@@ -10,7 +14,10 @@ import { VIEW_TYPE, type PdfPanels } from "./panels";
 import { OPEN_LOCATION_COMMAND_ID } from "./registered-commands";
 
 /** PDF: Open Location, which makes the viewer a navigation target for links and other extensions. */
-export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
+export function registerOpenLocation(
+  panels: PdfPanels,
+  os: OperatingSystem,
+): vscode.Disposable {
   let generation = 0;
   let pending: vscode.CancellationTokenSource | undefined;
   // Native editor resolution cannot be cancelled once dispatched. Serialize it
@@ -38,6 +45,7 @@ export function registerOpenLocation(panels: PdfPanels): vscode.Disposable {
           token: cancellation.token,
           dispatch,
           column: viewColumnOf(options),
+          platform: os.platform,
         });
       } finally {
         if (pending === cancellation) {
@@ -64,6 +72,8 @@ interface OpenRequest {
   dispatch(run: () => Promise<boolean>): Promise<boolean>;
   /** Where to open the PDF; the active group by default. */
   column: vscode.ViewColumn | undefined;
+  /** The user's OS (`process.platform` names): which typed paths are absolute. */
+  platform: string;
 }
 
 /** `{ viewColumn }` from a caller such as a note's link; anything else is ignored. */
@@ -171,11 +181,11 @@ async function openAt(
  */
 async function resolvePdfUri(
   target: unknown,
-  request: Pick<OpenRequest, "current" | "token">,
+  request: Pick<OpenRequest, "current" | "token" | "platform">,
 ): Promise<
   { status: "found"; target: vscode.Uri } | { status: "missing" | "cancelled" }
 > {
-  const candidates = candidatesFor(target);
+  const candidates = candidatesFor(target, request.platform);
   if (!candidates) {
     return { status: "missing" };
   }
@@ -188,7 +198,10 @@ async function resolvePdfUri(
 }
 
 /** The URIs `target` may mean; undefined when it cannot mean any. */
-function candidatesFor(target: unknown): vscode.Uri[] | undefined {
+function candidatesFor(
+  target: unknown,
+  platform: string,
+): vscode.Uri[] | undefined {
   if (target instanceof vscode.Uri) {
     return [target];
   }
@@ -203,7 +216,7 @@ function candidatesFor(target: unknown): vscode.Uri[] | undefined {
     const hash = text.indexOf("#");
     const file = hash < 0 ? text : text.slice(0, hash);
     const fragment = hash < 0 ? "" : text.slice(hash + 1);
-    const files = path.isAbsolute(file)
+    const files = isAbsoluteFilePath(file, platform)
       ? [vscode.Uri.file(file)]
       : (vscode.workspace.workspaceFolders ?? []).map((folder) =>
           vscode.Uri.joinPath(folder.uri, file),
@@ -242,7 +255,7 @@ async function pickPdf(
   }
   const choice = await vscode.window.showQuickPick(
     matches.map((uri) => ({
-      label: path.basename(uri.path),
+      label: posixBasename(uri.path),
       description: uri.fsPath,
       uri,
     })),

@@ -13,6 +13,7 @@ import {
 } from "./git-blame";
 import type { GitBlameRunner } from "./git-blame";
 import { RepositoryWatch } from "./git-watch";
+import { diffSource } from "./git-diff-source";
 import { bindDiscoveredRoot, canonicalPath } from "./git-discovered-watch";
 import { exceedsDiffLimits } from "../shared/diff";
 import type { GitAccess, GitBaselineResult, GitRef } from "../shared/git";
@@ -410,6 +411,10 @@ export class NativeGitAccess implements GitAccess {
     }
     await repository.add([vscode.Uri.parse(uri).fsPath]);
     return true;
+  }
+
+  sourceOf(uri: string): { source: string; ref?: string } {
+    return diffSource(uri);
   }
 
   toGitUri(uri: string, ref: string): string | undefined {

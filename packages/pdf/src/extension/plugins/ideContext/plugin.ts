@@ -1,10 +1,6 @@
 import * as vscode from "vscode";
-import * as os from "node:os";
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-const { readdir: readTempDir } = fs;
-import * as fssync from "node:fs";
 import type { Plugin } from "@workshop/core";
+import type { AgentFiles } from "@workshop/platform";
 import type {} from "../services";
 import manifest from "./manifest";
 import { IDE_CONTEXT_COMMAND_IDS } from "../pdf/registered-commands";
@@ -18,38 +14,16 @@ import {
   createVsCodeIdeContextHost,
   publishIdeContextTemp,
   renewLeaseAtomic,
-  type TempFs,
   type IdeContextTargetSetting,
 } from "@workshop/agents/ide-context";
 import type { AgentTargetSetting } from "../../../shared/agent-target";
 import type { PdfPanels } from "../pdf/panels";
 
-const nodeTempFs: TempFs = {
-  mkdir: async (p, o) => {
-    await fs.mkdir(p, { recursive: true, mode: o?.mode });
-  },
-  writeFile: (p, data, o) => fs.writeFile(p, data, { mode: o?.mode }),
-  rename: (a, b) => fs.rename(a, b),
-  readFile: (p) => fs.readFile(p),
-  unlink: (p) => fs.unlink(p),
-  listNames: (p) => readTempDir(p),
-  stat: async (p) => {
-    const s = await fs.stat(p);
-    return {
-      mtimeMs: s.mtimeMs,
-      size: s.size,
-      isFile: () => s.isFile(),
-      isDirectory: () => s.isDirectory(),
-    };
-  },
-  renameSync: (a, b) => fssync.renameSync(a, b),
-};
-
 export const ideContextPlugin: Plugin = {
   name: manifest.id,
   inject: {
     required: ["pdfPanels"],
-    optional: ["regionSnapshots", "pdfHandoff"],
+    optional: ["regionSnapshots", "pdfHandoff", "agentFiles"],
   },
   apply(ctx) {
     const panels = ctx.pdfPanels;
@@ -71,7 +45,7 @@ export const ideContextPlugin: Plugin = {
         async () => {
           const packet = activePacket(panels);
           if (packet) {
-            await sendIdeContext(packet, await sendDeps());
+            await sendIdeContext(packet, await sendDeps(ctx.agentFiles));
           }
         },
       ),
@@ -104,8 +78,13 @@ function inform(message: string): void {
   void vscode.window.showInformationMessage(message);
 }
 
-/** Send IDE Context's target setting and its VS Code side. */
-async function sendDeps(): Promise<SendIdeContextDeps> {
+/**
+ * Send IDE Context's target setting and its VS Code side. Codex gets a temp
+ * file only where the platform has agent files (desktop).
+ */
+async function sendDeps(
+  agentFiles: AgentFiles | undefined,
+): Promise<SendIdeContextDeps> {
   const setting = vscode.workspace
     .getConfiguration("pdfWorkshop")
     .get<AgentTargetSetting>("copyLinkForAgent.target", "auto");
@@ -125,8 +104,7 @@ async function sendDeps(): Promise<SendIdeContextDeps> {
     inform,
     publishTemp: publishIdeContextTemp,
     renewLease: renewLeaseAtomic,
-    tempFs: nodeTempFs,
-    tempDir: path.join(os.tmpdir(), "agent-ide-context"),
+    ...(agentFiles && { temp: agentFiles.ideContext }),
     owner: "pdfWorkshop",
   };
 }

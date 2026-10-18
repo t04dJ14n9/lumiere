@@ -1,3 +1,5 @@
+import { bytesToBase64 } from "@workshop/platform";
+
 /** Historical images use revision bytes; local images keep webview resource URLs. */
 export async function diffImageUrl(
   resource: string,
@@ -20,7 +22,7 @@ export async function diffImageUrl(
     throw new Error("Unsupported image format");
   }
   const bytes = await access.read(resource);
-  return `data:image/${mime};base64,${Buffer.from(bytes).toString("base64")}`;
+  return `data:image/${mime};base64,${bytesToBase64(bytes)}`;
 }
 
 export function diffResourceRoots(

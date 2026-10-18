@@ -4,7 +4,17 @@ import { test } from "node:test";
 import "./support/install-fake-vscode";
 import * as vscode from "./support/fake-vscode";
 import { createRoot, type Plugin, type ServiceName } from "@workshop/core";
-import { plugins } from "../../src/extension/plugins/catalog";
+import { providePlatform } from "@workshop/platform";
+import {
+  nodeAgentFiles,
+  nodeDigests,
+  nodeRealPaths,
+} from "@workshop/platform/node";
+import { pdfPlugins } from "../../src/extension/plugins/catalog";
+import { pdfDesktopPlugins } from "../../src/extension/desktop";
+
+/** The desktop's catalog: every plugin. */
+const plugins = pdfPlugins(pdfDesktopPlugins);
 
 /**
  * Leave-no-trace tests: each plugin, and the whole catalog, started with a
@@ -40,6 +50,8 @@ const context = {
 const rootServices: readonly ServiceName[] = [
   "extensionContext",
   "outputChannel",
+  "digests",
+  "os",
 ];
 
 function startRoot(selected: readonly Plugin[]) {
@@ -52,6 +64,13 @@ function startRoot(selected: readonly Plugin[]) {
   });
   root.provide("extensionContext", context as never);
   root.provide("outputChannel", log as never);
+  providePlatform(root, {
+    os: { platform: process.platform },
+    digests: nodeDigests,
+    workers: { start: () => assert.fail("PDF plugins start no workers") },
+    realPaths: nodeRealPaths,
+    agentFiles: nodeAgentFiles,
+  });
   const handles = new Map(
     selected.map((plugin) => [plugin.name, root.plugin(plugin)]),
   );

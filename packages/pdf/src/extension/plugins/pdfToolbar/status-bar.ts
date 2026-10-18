@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import type { OperatingSystem } from "@workshop/platform";
 import {
   parseToolbarMode,
   showStatusBarButtons,
@@ -11,9 +12,13 @@ import {
 } from "../pdf/registered-commands";
 import { SECTION } from "./preferences";
 
-/** A shortcut as this platform writes it: `key('Ctrl+G', '⌃G')`. */
-function key(other: string, mac: string): string {
-  return process.platform === "darwin" ? mac : other;
+/** A tooltip, with the item's shortcut as the user's platform writes it. */
+function tooltipOf(item: Item, os: OperatingSystem): string {
+  if (!item.shortcut) {
+    return item.tooltip;
+  }
+  const [other, mac] = item.shortcut;
+  return `${item.tooltip} (${os.platform === "darwin" ? mac : other})`;
 }
 
 type Item = {
@@ -21,6 +26,8 @@ type Item = {
   name: string;
   text: string;
   tooltip: string;
+  /** Its keyboard shortcut, as other platforms and the Mac write it. */
+  shortcut?: [other: string, mac: string];
   command: string;
   priority: number;
   button?: true;
@@ -37,7 +44,8 @@ const ITEMS: Item[] = [
     id: "previousPage",
     name: "PDF Previous Page",
     text: "$(chevron-up)",
-    tooltip: `Previous Page (${key("Alt+PageUp", "⌥PageUp")})`,
+    tooltip: "Previous Page",
+    shortcut: ["Alt+PageUp", "⌥PageUp"],
     command: VIEW_COMMAND_IDS.previousPage,
     priority: 106,
     button: true,
@@ -46,7 +54,8 @@ const ITEMS: Item[] = [
     id: "page",
     name: "PDF Page",
     text: "",
-    tooltip: `Go to Page… (${key("Ctrl+G", "⌃G")})`,
+    tooltip: "Go to Page…",
+    shortcut: ["Ctrl+G", "⌃G"],
     command: VIEW_COMMAND_IDS.goToPage,
     priority: 105,
   },
@@ -54,7 +63,8 @@ const ITEMS: Item[] = [
     id: "nextPage",
     name: "PDF Next Page",
     text: "$(chevron-down)",
-    tooltip: `Next Page (${key("Alt+PageDown", "⌥PageDown")})`,
+    tooltip: "Next Page",
+    shortcut: ["Alt+PageDown", "⌥PageDown"],
     command: VIEW_COMMAND_IDS.nextPage,
     priority: 104,
     button: true,
@@ -63,7 +73,8 @@ const ITEMS: Item[] = [
     id: "zoomOut",
     name: "PDF Zoom Out",
     text: "$(zoom-out)",
-    tooltip: `Zoom Out (${key("Ctrl+-", "⌘-")})`,
+    tooltip: "Zoom Out",
+    shortcut: ["Ctrl+-", "⌘-"],
     command: VIEW_COMMAND_IDS.zoomOut,
     priority: 103,
     button: true,
@@ -80,7 +91,8 @@ const ITEMS: Item[] = [
     id: "zoomIn",
     name: "PDF Zoom In",
     text: "$(zoom-in)",
-    tooltip: `Zoom In (${key("Ctrl+=", "⌘=")})`,
+    tooltip: "Zoom In",
+    shortcut: ["Ctrl+=", "⌘="],
     command: VIEW_COMMAND_IDS.zoomIn,
     priority: 101,
     button: true,
@@ -89,7 +101,8 @@ const ITEMS: Item[] = [
     id: "find",
     name: "PDF Find",
     text: "$(search)",
-    tooltip: `Find in PDF (${key("Ctrl+F", "⌘F")})`,
+    tooltip: "Find in PDF",
+    shortcut: ["Ctrl+F", "⌘F"],
     command: VIEW_COMMAND_IDS.find,
     priority: 100,
     button: true,
@@ -108,7 +121,10 @@ export class StatusBar implements vscode.Disposable {
   private readonly items = new Map<string, vscode.StatusBarItem>();
   private readonly subscription: vscode.Disposable;
 
-  constructor(private readonly panels: PdfPanels) {
+  constructor(
+    private readonly panels: PdfPanels,
+    os: OperatingSystem,
+  ) {
     for (const item of ITEMS) {
       const entry = vscode.window.createStatusBarItem(
         `pdfWorkshop.${item.id}`,
@@ -117,7 +133,7 @@ export class StatusBar implements vscode.Disposable {
       );
       entry.name = item.name;
       entry.text = item.text;
-      entry.tooltip = item.tooltip;
+      entry.tooltip = tooltipOf(item, os);
       entry.command = item.command;
       this.items.set(item.id, entry);
     }

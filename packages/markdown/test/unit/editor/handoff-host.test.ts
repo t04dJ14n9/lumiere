@@ -14,6 +14,10 @@ import {
   confirmActiveEditor,
   handOffSelection,
 } from "../../../src/plugins/cursorBridge/handoff";
+import { nodeDigests, nodeRealPaths } from "@workshop/platform/node";
+
+/** Navigation's platform on the desktop. */
+const desktop = { digests: nodeDigests, realPaths: nodeRealPaths };
 
 const { viewType } = MARKDOWN_EDITOR;
 class Uri {
@@ -810,7 +814,7 @@ for (const route of [
     const open =
       route === "public API"
         ? host.api
-            .nativePlatform("test.workshop")
+            .nativePlatform("test.workshop", nodeRealPaths)
             .open(uri, { preserveFocus: true })
         : host.commands
             .createHostCommands()
@@ -870,7 +874,7 @@ function hunkDestination(tab: Tab, reused = false) {
   } as PanelShell;
   const sibling = { ...shell, id: "sibling", column: 2, active: () => false };
   const panels = reused ? [sibling, shell] : [sibling];
-  const navigation = host.navigation.createNavigation(() => panels);
+  const navigation = host.navigation.createNavigation(() => panels, desktop);
   const reveal = {
     id: shell.id,
     uri: note,
@@ -1054,7 +1058,7 @@ for (const optOut of ["Open as Text", "Cursor Edit lease"] as const) {
       active: () => true,
     } as PanelShell;
     const panels = [shell];
-    const navigation = host.navigation.createNavigation(() => panels);
+    const navigation = host.navigation.createNavigation(() => panels, desktop);
     const stop = host.reclaim.registerReclaim(navigation);
     t.after(() => stop.dispose());
     nativeHunkEditor(tab);
@@ -1110,7 +1114,7 @@ test("Open as Text keeps the native tab even after textBypass TTL expires during
     active: () => true,
   } as PanelShell;
   const panels = [shell];
-  const navigation = host.navigation.createNavigation(() => panels);
+  const navigation = host.navigation.createNavigation(() => panels, desktop);
   const stop = host.reclaim.registerReclaim(navigation);
   t.after(() => stop.dispose());
   nativeHunkEditor(tab);
@@ -1174,7 +1178,7 @@ test("a selection arriving during warming replaces the initial position without 
 test("a reused preview tab can target another note while the first hunk is warming", async (t) => {
   const release = delayWarm();
   t.after(release);
-  const navigation = host.navigation.createNavigation(() => []);
+  const navigation = host.navigation.createNavigation(() => [], desktop);
   const stop = host.reclaim.registerReclaim(navigation);
   t.after(() => stop.dispose());
   const tab = cursorTab();

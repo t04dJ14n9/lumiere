@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { bytesToBase64 } from "@workshop/platform";
 import * as vscode from "vscode";
 import type { ToolbarSettings } from "../../../shared/toolbar-settings";
 
@@ -17,7 +17,7 @@ export function viewerHtml(
     webview.asWebviewUri(
       vscode.Uri.joinPath(extensionUri, "dist", "pdf", "webview", name),
     );
-  const nonce = randomBytes(16).toString("base64");
+  const nonce = bytesToBase64(crypto.getRandomValues(new Uint8Array(16)));
   const csp = [
     "default-src 'none'",
     `script-src 'nonce-${nonce}' 'wasm-unsafe-eval'`,

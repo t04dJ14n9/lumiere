@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { Plugin } from "@workshop/core";
+import type {} from "@workshop/platform";
 import type {} from "../services";
 import { registerNativeLinks } from "./native-links";
 import { registerOpenLocation } from "./commands";
@@ -17,7 +18,10 @@ import { registerViewControls } from "./view-controls";
  */
 export const pdfPlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["extensionContext"] },
+  inject: {
+    required: ["extensionContext", "digests", "os"],
+    optional: ["realPaths"],
+  },
   provides: ["pdfPanels", "pdfSettings"],
   apply(ctx) {
     const { extensionUri } = ctx.extensionContext;
@@ -29,7 +33,7 @@ export const pdfPlugin: Plugin = {
     ctx.own(
       vscode.window.registerCustomEditorProvider(
         VIEW_TYPE,
-        new PdfEditorProvider(extensionUri, panels, preferences),
+        new PdfEditorProvider(extensionUri, panels, preferences, ctx.digests),
         {
           // Keep the rendered pages when the tab is hidden; reopening a PDF is slow.
           webviewOptions: { retainContextWhenHidden: true },
@@ -38,8 +42,14 @@ export const pdfPlugin: Plugin = {
       ),
       "customEditor",
     );
-    ctx.own(registerOpenLocation(panels), "command");
-    ctx.own(registerNativeLinks(panels), "native links");
+    ctx.own(registerOpenLocation(panels, ctx.os), "command");
+    ctx.own(
+      registerNativeLinks(panels, {
+        digests: ctx.digests,
+        realPaths: ctx.realPaths,
+      }),
+      "native links",
+    );
     ctx.own(registerViewCommands(panels), "commands");
     ctx.own(registerViewControls(panels), "view controls");
     ctx.provide("pdfPanels", panels);

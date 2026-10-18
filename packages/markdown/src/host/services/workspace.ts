@@ -1,14 +1,16 @@
 import * as vscode from "vscode";
+import type { RealPaths, WorkerLauncher } from "@workshop/platform";
 import type {
   Extensions,
   HostWorkspace,
   WorkspaceStorage,
 } from "../../shared/host";
 import { createDiagnostics } from "../diagnostics";
-import { workerPath } from "../running-extension";
 import { createWorkspaceFiles } from "../workspace-files";
 
-export function createHostWorkspace(): HostWorkspace {
+export function createHostWorkspace(
+  realPaths: RealPaths | undefined,
+): HostWorkspace {
   return {
     folders: () =>
       (vscode.workspace.workspaceFolders ?? []).map((folder) =>
@@ -24,7 +26,14 @@ export function createHostWorkspace(): HostWorkspace {
       };
     },
     watch: watchFile,
-    files: createWorkspaceFiles(),
+    ...(realPaths && {
+      realContains: (root, target) =>
+        realPaths.isInside(
+          vscode.Uri.parse(root).fsPath,
+          vscode.Uri.parse(target).fsPath,
+        ),
+    }),
+    files: createWorkspaceFiles(realPaths),
     diagnostics: createDiagnostics(),
     revealTextEditor,
   };
@@ -40,10 +49,10 @@ export function createWorkspaceStorage(
   };
 }
 
-export function createExtensions(extensionUri: vscode.Uri): Extensions {
+export function createExtensions(workers: WorkerLauncher): Extensions {
   return {
     isInstalled: (id) => Boolean(vscode.extensions.getExtension(id)),
-    workerPath: (name) => workerPath(extensionUri, name),
+    workers,
   };
 }
 

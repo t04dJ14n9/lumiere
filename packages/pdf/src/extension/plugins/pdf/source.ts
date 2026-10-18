@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
-import * as path from "node:path";
 import * as vscode from "vscode";
+import { posixBasename, type Digests } from "@workshop/platform";
 
 /** Let a file write settle before reloading the PDF. */
 const RELOAD_DELAY_MS = 150;
@@ -27,6 +26,7 @@ export class PdfSource implements vscode.Disposable {
   constructor(
     readonly uri: vscode.Uri,
     onChangeOnDisk: () => void,
+    private readonly digests: Digests,
   ) {
     this.watcher = watchFile(uri, onChangeOnDisk);
   }
@@ -46,7 +46,7 @@ export class PdfSource implements vscode.Disposable {
     if (generation !== this.generation) {
       return undefined;
     }
-    this.sha256 = createHash("sha256").update(bytes).digest("hex");
+    this.sha256 = this.digests.sha256(bytes);
     return { data: standaloneBuffer(bytes), sha256: this.sha256 };
   }
 
@@ -63,8 +63,8 @@ function watchFile(uri: vscode.Uri, onChange: () => void): vscode.Disposable {
   }
   const watcher = vscode.workspace.createFileSystemWatcher(
     new vscode.RelativePattern(
-      vscode.Uri.file(path.dirname(uri.fsPath)),
-      path.basename(uri.fsPath),
+      vscode.Uri.joinPath(uri, ".."),
+      posixBasename(uri.path),
     ),
   );
   let timer: ReturnType<typeof setTimeout> | undefined;

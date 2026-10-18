@@ -3,11 +3,12 @@
  * src/shared/host), built over VS Code's API.
  */
 import type * as vscode from "vscode";
+import type { HostPlatform } from "@workshop/platform";
 import type { Configuration } from "../../shared/configuration";
+import type { GitAccess } from "../../shared/git";
 import type { HostServices, PanelShell } from "../../shared/host";
 import { createConfiguration } from "../configuration-access";
 import { createDiffViews } from "../diff-views";
-import { createGitAccess } from "../git";
 import { createNavigation } from "../navigation";
 import type { RunningExtension } from "../running-extension";
 import { createAgentHost } from "./agents";
@@ -28,29 +29,41 @@ import {
   createWorkspaceStorage,
 } from "./workspace";
 
-export function createHostServices(
-  extension: RunningExtension,
-  storage: vscode.Memento,
-  configuration: Configuration = createConfiguration(),
-): HostServices {
+export interface HostServiceOptions {
+  extension: RunningExtension;
+  storage: vscode.Memento;
+  platform: HostPlatform;
+  /** Git, on the desktop (`@workshop/markdown/desktop`). */
+  git: GitAccess;
+  configuration?: Configuration;
+}
+
+export function createHostServices({
+  extension,
+  storage,
+  platform,
+  git,
+  configuration = createConfiguration(),
+}: HostServiceOptions): HostServices {
   const { extensionUri } = extension;
   const documents = new NativeDocuments();
   const panels = new Map<string, PanelShell>();
   const navigation = createNavigation(
     () => [...panels.values()],
+    platform,
     configuration,
   );
   return {
-    hostDocuments: createHostDocuments(documents),
+    hostDocuments: createHostDocuments(documents, platform.digests),
     hostCommands: createHostCommands(),
     clipboard: createClipboard(),
     dialogs: createDialogs(),
     views: createWorkbenchViews(extensionUri),
     activeEditor: createActiveEditor(),
     settings: createHostSettings(extension, configuration),
-    workspace: createHostWorkspace(),
+    workspace: createHostWorkspace(platform.realPaths),
     storage: createWorkspaceStorage(storage),
-    extensions: createExtensions(extensionUri),
+    extensions: createExtensions(platform.workers),
     navigation,
     customEditors: createCustomEditors({
       extensionUri,
@@ -58,8 +71,8 @@ export function createHostServices(
       navigation,
       panels,
     }),
-    agentHost: createAgentHost(),
-    git: createGitAccess(),
+    agentHost: createAgentHost(platform.agentFiles),
+    git,
     diffViews: createDiffViews(extensionUri),
   };
 }

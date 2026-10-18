@@ -1,7 +1,9 @@
 # Web build and browser demo: design
 
-Status: **proposal, awaiting the owner's approval** (18 October 2026).
-Branch `claude/web-extension`. Nothing below is built yet.
+Status: approved by the owner on 18 October 2026, with option 1 for webview
+frames, `pnpm test:web`, `@noble/hashes`, and Markdown's virtual-path rule
+for PDF native links. Branch `claude/web-extension`. Progress and the
+changes made while building are in §7.
 
 Goal: the extension runs as a VS Code web extension (vscode.dev, github.dev,
 and Codespaces in a browser), and a static "try it in your browser" page on
@@ -26,11 +28,12 @@ composition root and passed down. Plugins never test `isWeb`, `process` or
 `typeof Worker`.
 
 ```
-src/extension.ts       desktop root: activateWorkshop(context, nodePlatform(context))
-src/extension.web.ts   browser root: activateWorkshop(context, webPlatform(context))
-src/activate.ts        the shared body of today's activate()
-src/platform/node.ts   Node implementations (today's code, moved, unchanged)
-src/platform/web.ts    browser implementations
+src/extension.ts                desktop root: activateWorkshop(context, { nodePlatform(…), git, desktop PDF plugins })
+src/extension.web.ts            browser root: activateWorkshop(context, { webPlatform(…), … })
+src/activate.ts                 the shared body of today's activate()
+packages/platform/src           the interfaces and pure helpers (@workshop/platform)
+packages/platform/src/node      Node implementations (@workshop/platform/node; today's code, moved)
+packages/platform/src/web       browser implementations (@workshop/platform/web)
 ```
 
 The platform is a set of narrow interfaces. Each is either provided to the
@@ -46,7 +49,6 @@ injected services exist).
 | `Digests`: sync SHA-256 and HMAC-SHA-256 | `node:crypto` | `@noble/hashes` (MIT, audited, ~10 KB) | document fingerprint, vault hashes, link tickets, PDF/region hashes |
 | `RealPaths`: resolve symlinks of `file:` URIs | `fs.realpath` | absent: the existing virtual-path walk (`workspace.fs.stat` per component, symlinks refused) applies | Markdown navigation, resource containment, PDF native links |
 | `AgentFiles`: temp dir for agent scratch files and IDE-context publishing | `os.tmpdir()` + `fs` | absent: the copy-to-clipboard paths that exist today | `agentHost.writeScratchFile`, both `ideContext` plugins |
-| `RegionFiles`: the region-snapshot cache's file operations | `fs` (today's `CacheFiles`, grown) | `workspace.fs` in `globalStorageUri` | `pdfRegions` |
 | `git` host service | `vscode.git` + `git blame` | absent | Git gutter, inline, diff editor, blame |
 | `os` | `process.platform` | `navigator.userAgent` | PDF status-bar key labels, PDF Look Up |
 
@@ -74,7 +76,8 @@ Desktop-only, not registered on the web:
   service. The four Git features are also switched off in the webview half
   through the feature switch (a manifest `requires: ["git"]`), so no webview
   waits on a host that never starts.
-- `pdf/src/extension/plugins/agentBridge/**` and `pdf/src/bridge-stdio`:
+- `pdf/src/extension/plugins/agentBridge/**` and `pdf/src/bridge-stdio`,
+  and `pdfRegions` (its PNG snapshots exist only so an agent can open them):
   the PDF catalog splits into portable and desktop-only lists; the web root
   registers only the portable ones, and the lazy MCP server is never in the
   browser bundle.
@@ -88,7 +91,6 @@ Moved to `vscode.workspace.fs`, host services or pure helpers:
 | `pdf/plugins/pdf/native-links.ts` | `realpath`; refuses non-`file:` | same helper; virtual schemes get the Markdown rule (see §6, question 4) |
 | `host/services/agents.ts` | scratch files in `os.tmpdir()` | `AgentFiles`; absent on the web |
 | `ideContext/host.ts` (Markdown), `ideContext/plugin.ts` (PDF) | Node `TempFs` | `AgentFiles`; Copy IDE Context works everywhere |
-| `pdfRegions/region-images.ts` | `fs`, `Buffer`, `createHash` | `RegionFiles` + `Digests` + pure base64 |
 | `host/vault-system.ts` | `createHash`, `__dirname` | `Digests`; worker found via `extensionUri` |
 | `host/link-tickets.ts`, `pdf/link-tickets.ts` | `createHmac`, `Buffer` base64url | `Digests` + pure base64url, constant-time compare helper |
 | `host/services/documents.ts`, `pdf/source.ts` | `createHash` | `Digests` |
@@ -121,7 +123,7 @@ and menus.
 | --- | --- |
 | Live Preview editing: wikilinks, embeds, callouts, math, Mermaid, tables, tags, properties, footnotes, code blocks, Vim | Git gutter, Git inline, Git diff editor, Git blame (no `vscode.git`, no `git` binary) |
 | Vault index, backlinks, outgoing links, outline, graph, tags view, quick switcher, vault search (in a web worker), link updates on rename | PDF agent bridge: MCP server, PDF Copy Link for Agent, selection envelope, `bridge-stdio` |
-| PDF viewer (EmbedPDF + PDFium WASM in the webview), PDF outline, page/zoom/find, history, zen, regions, settings, PDF links from notes (`[[paper.pdf#page=3]]`) | Handing selections to Claude Code / Codex chats (not web extensions), agent scratch files, IDE-context temp files |
+| PDF viewer (EmbedPDF + PDFium WASM in the webview), PDF outline, page/zoom/find, region selection, history, zen, settings, PDF links from notes (`[[paper.pdf#page=3]]`) | Handing selections to Claude Code / Codex chats (not web extensions), agent scratch files, region PNG snapshots, IDE-context temp files |
 | Copy IDE Context and Markdown Copy Link for Agent (clipboard) | Cursor: Chat (Cmd+L), Edit (Cmd+K), agent handoff (Cursor only, not VS Code at all) |
 | PDF Look Up on a Mac browser, if the browser hands `dict://` to the Dictionary app (to verify; otherwise it stays off) | Symlink checks (browser file systems have no symlinks; the virtual-path rule applies) |
 
@@ -139,8 +141,8 @@ testing policy, unit tests first:
 - Unit tests: both `WorkerLauncher`s against a fake worker (start data,
   replies, crash, terminate); `Digests` parity between `node:crypto` and
   `@noble/hashes` on fixed vectors; the pure containment and base64 helpers;
-  `RegionFiles` over a fake `workspace.fs`; the web root's plugin set (no
-  Git, no PDF agent bridge) using `fakeHost`.
+  the web root's plugin set (no Git, no PDF agent bridge or region
+  snapshots) using `fakeHost`.
 - In `pnpm check`: a unit test bundles `src/extension.web.ts` in memory with
   the browser guard, so a Node import added anywhere in a portable plugin
   fails the check, not the demo.
@@ -276,3 +278,35 @@ Questions:
    workspaces today. On the web they must accept the workspace's scheme. Use
    Markdown's virtual-path rule on desktop too (a small behaviour change for
    virtual workspaces, in its own commit), or keep desktop as is?
+
+## 7. Progress
+
+**Phase A (18 October 2026).** Platform seams on the desktop, no behaviour
+change:
+
+- `@workshop/platform`: the interfaces, pure helpers in place of `Buffer`,
+  `node:path` and `timingSafeEqual` (pinned to Node's output by unit tests),
+  and the Node implementations as `@workshop/platform/node`.
+- Both products take the platform from `src/activate.ts`: Markdown's host
+  adapters (vault, search, navigation, documents, agents, workspace) and the
+  PDF plugins (`digests`, `os`, optional `realPaths` and `agentFiles`
+  services). The worker scripts split into their logic (`serveSearch`,
+  `serveVault` over a `WorkerPort`) and a Node entry point.
+- Desktop-only parts have their own entry points: `@workshop/markdown/desktop`
+  (Git) and `@workshop/pdf/desktop` (`pdfRegions`, `agentBridge`). Git's
+  `git:` URI parsing moved into the Git service (`GitAccess.sourceOf`).
+- A trial browser bundle of `src/activate.ts` with the portable products has
+  no Node built-ins left.
+
+Changes from the approved design, and why:
+
+- Region snapshots stay desktop-only instead of moving to `workspace.fs`:
+  they exist only for agents, so in the browser they would write to its
+  storage on every region selection for nothing.
+- The Node implementations live in `packages/platform/src/node`, not
+  `src/platform/node.ts`, so package tests can import them.
+- Found and fixed on the way (own commit): since the two products merged,
+  the vault worker had looked for `dist/workers/vault.cjs` instead of
+  `dist/markdown/workers/vault.cjs`, so vault parsing ran in the extension
+  host.
+

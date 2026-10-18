@@ -7,6 +7,10 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type * as HostNavigation from "../../../src/host/navigation";
 import { MARKDOWN_EDITOR } from "../../../src/shared/editor-provider";
+import { nodeDigests, nodeRealPaths } from "@workshop/platform/node";
+
+/** Navigation's platform on the desktop. */
+const desktop = { digests: nodeDigests, realPaths: nodeRealPaths };
 
 function loadNavigation(vscode: unknown) {
   const loader = Module as typeof Module & {
@@ -81,7 +85,7 @@ test("navigation superseded during document warming does not open the old note",
       },
     },
   });
-  const navigation = createNavigation(() => []);
+  const navigation = createNavigation(() => [], desktop);
   const oldIntent = navigation.begin!();
   const oldOpen = navigation.open(
     root,
@@ -131,7 +135,7 @@ test("a link to a PDF opens it in PDF Workshop at its page, beside when asked", 
       },
     },
   });
-  const navigation = createNavigation(() => []);
+  const navigation = createNavigation(() => [], desktop);
   await navigation.open(root, pdf, "page=3", "here");
   await navigation.open(root, pdf, "page=5&viewrect=1,2,3,4", "side");
   // Not a PDF location (a heading, say): open the PDF where it was left.
@@ -179,7 +183,7 @@ test("a Cmd-clicked link opens a tab VS Code keeps, not the preview the next lin
       },
     },
   });
-  const navigation = createNavigation(() => []);
+  const navigation = createNavigation(() => [], desktop);
   await navigation.open(root, note, "", "here");
   await navigation.open(root, note, "", "tab");
   await navigation.open(root, file, "", "tab");

@@ -8,8 +8,10 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
+import { dirname } from "node:path";
 import { performance } from "node:perf_hooks";
 import { setImmediate as yieldToLoop } from "node:timers/promises";
+import { nodeWorkerLauncher } from "@workshop/platform/node";
 import { createVaultParser } from "../src/host/vault-parser";
 import { VaultIndexer } from "../src/plugins/vault/indexer";
 import type {
@@ -119,7 +121,7 @@ async function main() {
   const count = Number(process.argv[2] ?? 10_000);
   const notes = generateVault(count);
   const fs = memoryFileSystem(notes);
-  const parser = createVaultParser(WORKER);
+  const parser = createVaultParser(nodeWorkerLauncher(dirname(WORKER)));
   const saved = new Map<string, string>();
   const store = {
     read: async (name: string) => saved.get(name),

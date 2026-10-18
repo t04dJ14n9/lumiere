@@ -1,19 +1,22 @@
 import * as vscode from "vscode";
-import { realpath } from "node:fs/promises";
-import path from "node:path";
+import type { Digests, RealPaths } from "@workshop/platform";
 import { parseLocationFragment } from "../../../shared/pdf-location";
 import { registerSourceLinks, type LinkRun } from "./source-links";
 import { deliverNativeLocation } from "./native-delivery";
 import { VIEW_TYPE, type PdfPanels } from "./panels";
 import { OPEN_NATIVE_LINK_COMMAND_ID } from "./registered-commands";
 
-export function registerNativeLinks(panels: PdfPanels): vscode.Disposable {
+export function registerNativeLinks(
+  panels: PdfPanels,
+  platform: { digests: Digests; realPaths: RealPaths | undefined },
+): vscode.Disposable {
   const cancellations = new WeakMap<LinkRun, () => void>();
   return registerSourceLinks({
     command: OPEN_NATIVE_LINK_COMMAND_ID,
+    digests: platform.digests,
     accepts: (file, fragment) =>
       /\.pdf$/i.test(file) && !!parseLocationFragment(fragment),
-    authorize: contained,
+    authorize: (root, target) => contained(root, target, platform.realPaths),
     begin() {
       let cancelled = false;
       const run = {
@@ -48,23 +51,20 @@ export function registerNativeLinks(panels: PdfPanels): vscode.Disposable {
   });
 }
 
-async function contained(root: vscode.Uri, target: vscode.Uri): Promise<void> {
+async function contained(
+  root: vscode.Uri,
+  target: vscode.Uri,
+  realPaths: RealPaths | undefined,
+): Promise<void> {
   if (
     root.scheme !== "file" ||
     target.scheme !== "file" ||
-    root.authority !== target.authority
+    root.authority !== target.authority ||
+    !realPaths
   ) {
     throw new Error("Local workspace links only");
   }
-  const relative = path.relative(
-    await realpath(root.fsPath),
-    await realpath(target.fsPath),
-  );
-  if (
-    relative === ".." ||
-    relative.startsWith(".." + path.sep) ||
-    path.isAbsolute(relative)
-  ) {
+  if (!(await realPaths.isInside(root.fsPath, target.fsPath))) {
     throw new Error("Link escapes workspace folder");
   }
 }

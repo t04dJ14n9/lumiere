@@ -8,6 +8,7 @@ import { SAVED_POSITION_VERSION } from "../../src/shared/reading-position";
 import { DEFAULT_VIEW_CHOICES } from "../../src/shared/view-settings";
 import type { ViewState } from "../../src/shared/view-state";
 import type { HostMessage } from "../../src/shared/messages";
+import { nodeDigests } from "@workshop/platform/node";
 
 function memory() {
   const values = new Map<string, unknown>();
@@ -44,6 +45,7 @@ function open(preferences: ViewPreferences) {
     } as never,
     {
       extensionUri: vscode.Uri.file("/extension") as never,
+      digests: nodeDigests,
       toolbar: { mode: "chrome", dock: "bottom" },
       settings: preferences.settings(uri),
       position: preferences.position(uri),

@@ -3,6 +3,7 @@
  * fetched by the extension host (the webview CSP allows no network). Every
  * failure resolves to `{}`, so the card simply stays as it is.
  */
+import { bytesToBase64 } from "@workshop/platform";
 import type { VideoProvider } from "./parse";
 import { isVideoId } from "./parse";
 
@@ -269,7 +270,7 @@ export function imageDataUrl(bytes: Uint8Array): string {
   if (!type) {
     throw new Error("Unrecognised image");
   }
-  return `data:${type};base64,${Buffer.from(bytes).toString("base64")}`;
+  return `data:${type};base64,${bytesToBase64(bytes)}`;
 }
 
 function text(value: unknown, max: number): string | undefined {

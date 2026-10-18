@@ -10,11 +10,9 @@ export const searchHost: Plugin<{ panel: PanelShell }> = {
   apply(ctx) {
     ctx.effect(() =>
       ctx.rpc.handle(protocol, "query", async (request, token) => {
-        const path = ctx.extensions.workerPath("search");
-        if (!path) {
-          throw new Error("Search worker is unavailable");
-        }
-        const worker = new SearchWorker(path, request.query, { token });
+        const worker = new SearchWorker(ctx.extensions.workers, request.query, {
+          token,
+        });
         try {
           return await searchVault({
             vault: ctx.vault,

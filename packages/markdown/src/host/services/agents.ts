@@ -1,14 +1,12 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import * as os from "node:os";
-import * as path from "node:path";
 import * as vscode from "vscode";
+import type { AgentFiles } from "@workshop/platform";
 import type { AgentHost, CopyLinkTarget } from "../../shared/host";
 
 /** Extensions that bring an agent chat of their own besides the editor's. */
 const AGENT_EXTENSIONS = ["anthropic.claude-code", "openai.chatgpt"];
 
 /** Copy Link for Agent: which agent chats exist, and files to attach. */
-export function createAgentHost(): AgentHost {
+export function createAgentHost(files: AgentFiles | undefined): AgentHost {
   return {
     appName: vscode.env.appName,
     async environment() {
@@ -26,13 +24,16 @@ export function createAgentHost(): AgentHost {
           .get<boolean>("disableAIFeatures", false),
       };
     },
-    async writeScratchFile(name, text) {
-      const folder = path.join(os.tmpdir(), "markdown-workshop-agent");
-      await mkdir(folder, { recursive: true, mode: 0o700 });
-      const file = path.join(folder, path.basename(name));
-      await writeFile(file, text, { mode: 0o600 });
-      return vscode.Uri.file(file).toString();
-    },
+    ...(files && {
+      async writeScratchFile(name: string, text: string) {
+        const file = await files.writeScratchFile(
+          "markdown-workshop-agent",
+          name,
+          text,
+        );
+        return vscode.Uri.file(file).toString();
+      },
+    }),
   };
 }
 

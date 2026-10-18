@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import path from "node:path";
+import { posixBasename, posixExtname } from "@workshop/platform";
 import type { HostDocument } from "../shared/host";
 
 /** Native recheck: a title rename cannot move a note out of its current folder. */
@@ -18,11 +18,11 @@ export async function renameFile(
   }
   if (
     source.authority !== destination.authority ||
-    path.dirname(source.fsPath) !== path.dirname(destination.fsPath) ||
-    path.extname(source.path) !== path.extname(destination.path) ||
+    folderOf(source) !== folderOf(destination) ||
+    posixExtname(source.path) !== posixExtname(destination.path) ||
     destination.query ||
     destination.fragment ||
-    /[\\\r\n\0]/.test(path.basename(destination.path))
+    /[\\\r\n\0]/.test(posixBasename(destination.path))
   ) {
     throw new Error("Invalid note rename target.");
   }
@@ -31,4 +31,9 @@ export async function renameFile(
   if (!(await vscode.workspace.applyEdit(edit))) {
     throw new Error("The note could not be renamed.");
   }
+}
+
+/** The note's folder as a file-system path (normalized as `fsPath` is). */
+function folderOf(uri: vscode.Uri): string {
+  return vscode.Uri.joinPath(uri, "..").fsPath;
 }

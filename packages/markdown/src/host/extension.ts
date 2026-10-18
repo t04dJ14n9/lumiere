@@ -1,5 +1,7 @@
 import type { ExtensionContext } from "vscode";
 import type { RootContext } from "@workshop/core";
+import type { HostPlatform } from "@workshop/platform";
+import type { GitAccess } from "../shared/git";
 import { createApi } from "./api/facade";
 import { nativePlatform } from "./api/native-platform";
 import type { MarkdownWorkshopApi } from "./api/types";
@@ -12,6 +14,7 @@ import { registerDocumentWarm } from "./document-warm";
 export { pluginRank } from "../plugins/catalog";
 export { outputLogger } from "./logging";
 export type { MarkdownWorkshopApi } from "./api/types";
+export type { GitAccess } from "../shared/git";
 
 /**
  * Start Markdown Workshop in the extension's plugin tree and return its
@@ -20,14 +23,24 @@ export type { MarkdownWorkshopApi } from "./api/types";
 export async function startMarkdown(
   root: RootContext,
   context: ExtensionContext,
+  { platform, git }: { platform: HostPlatform; git: GitAccess },
 ): Promise<MarkdownWorkshopApi> {
   const configuration = createConfiguration();
-  const host = createHostServices(
-    context.extension,
-    context.workspaceState,
+  const host = createHostServices({
+    extension: context.extension,
+    storage: context.workspaceState,
+    platform,
+    git,
     configuration,
-  );
+  });
   context.subscriptions.push(registerDocumentWarm());
-  await bootstrap(host, createVaultSystem(context, configuration), root);
-  return createApi(root, nativePlatform(context.extension.id));
+  await bootstrap(
+    host,
+    createVaultSystem(context, platform, configuration),
+    root,
+  );
+  return createApi(
+    root,
+    nativePlatform(context.extension.id, platform.realPaths),
+  );
 }

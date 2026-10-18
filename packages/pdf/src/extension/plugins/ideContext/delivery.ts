@@ -1,4 +1,3 @@
-import { pathToFileUriString } from "./file-uri";
 import { AGENT_COMMANDS } from "../../../shared/agent-target";
 import {
   publishIdeContextTemp,
@@ -9,7 +8,7 @@ import {
   resolveIdeContextSendTarget,
   type IdeContextPacket,
   type IdeContextTargetSetting,
-  type TempFs,
+  type IdeContextTempFiles,
   type LeaseSidecar,
 } from "@workshop/agents/ide-context";
 
@@ -26,8 +25,8 @@ export interface SendIdeContextDeps {
   inform?: (message: string) => void;
   publishTemp?: typeof publishIdeContextTemp;
   renewLease?: typeof renewLeaseAtomic;
-  tempFs?: TempFs;
-  tempDir?: string;
+  /** Where packets are published for Codex; absent where no agent reads local files. */
+  temp?: IdeContextTempFiles;
   now?: () => number;
   leaseMs?: number;
   owner?: LeaseSidecar["owner"];
@@ -112,37 +111,37 @@ async function attachToCodex(
   packet: IdeContextPacket,
   deps: SendIdeContextDeps,
 ): Promise<Omit<SendIdeContextResult, "markdown">> {
-  const fs = deps.tempFs;
-  if (!fs) {
+  const temp = deps.temp;
+  if (!temp) {
     return { opened: "clipboard", softFailWarning: "no temp fs" };
   }
   const now = deps.now ?? (() => Date.now());
   const lease: Lease = {
-    dir: deps.tempDir ?? "/tmp/agent-ide-context",
+    dir: temp.dir,
     now,
     leaseMs: deps.leaseMs ?? 60_000,
     owner: deps.owner ?? "pdfWorkshop",
     sessionId: deps.sessionId ?? `pdf-${now()}`,
   };
   const publish = deps.publishTemp ?? publishIdeContextTemp;
-  const published = await publish(fs, {
+  const published = await publish(temp.fs, {
     ...lease,
     basename: `ide-context-${lease.sessionId}.json`,
-    bytes: Buffer.from(serializeJson(packet)),
+    bytes: new TextEncoder().encode(serializeJson(packet)),
   });
   if ("skipped" in published && published.skipped) {
     deps.inform?.(published.warning);
     return { opened: "clipboard", softFailWarning: published.warning };
   }
   const finalPath = "finalPath" in published ? published.finalPath : "";
-  return (await attachWithRetries(fs, finalPath, lease, deps))
+  return (await attachWithRetries(temp, finalPath, lease, deps))
     ? { opened: "codex" }
     : { opened: "clipboard", softFailWarning: "codex attach failed" };
 }
 
 /** Open Codex and attach the file, retrying after the given delays. */
 async function attachWithRetries(
-  fs: TempFs,
+  temp: IdeContextTempFiles,
   finalPath: string,
   lease: Lease,
   deps: SendIdeContextDeps,
@@ -158,7 +157,7 @@ async function attachWithRetries(
       // lease cannot expire during prep work after renewal.
       await deps.executeCommand(AGENT_COMMANDS.codexOpen);
       if (attempt > 0) {
-        await renew(fs, leasePathFor(finalPath), {
+        await renew(temp.fs, leasePathFor(finalPath), {
           leaseUntil: new Date(lease.now() + lease.leaseMs).toISOString(),
           owner: lease.owner,
           sessionId: lease.sessionId,
@@ -166,7 +165,7 @@ async function attachWithRetries(
       }
       await deps.executeCommand(
         AGENT_COMMANDS.codexAddFile,
-        pathToFileUriString(finalPath),
+        temp.fileUri(finalPath),
       );
       return true;
     } catch {

@@ -4,8 +4,12 @@ import { pluginConfiguration } from "./settings";
 import type { Configuration } from "../shared/configuration";
 import { createConfiguration } from "./configuration-access";
 import * as vscode from "vscode";
-import { realpath } from "node:fs/promises";
-import path from "node:path";
+import {
+  isInsidePosixPath,
+  relativePosixPath,
+  type HostPlatform,
+  type RealPaths,
+} from "@workshop/platform";
 import type {
   Navigation,
   OpenPlace,
@@ -17,65 +21,47 @@ import { warmMarkdownDocument } from "./document-warm";
 import { registerNativeLinks } from "./native-links";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 
-/** All navigation paths are checked again in the native adapter, including symlinks. */
+/**
+ * All navigation paths are checked again in the native adapter, including
+ * symlinks: through `realPaths` for local files where the platform has a
+ * disk, and one path component at a time everywhere else.
+ */
 export async function contained(
   root: vscode.Uri,
   target: vscode.Uri,
+  realPaths: RealPaths | undefined,
 ): Promise<void> {
-  const relative = path.posix.relative(root.path, target.path);
   if (
     root.scheme !== target.scheme ||
     root.authority !== target.authority ||
-    relative === ".." ||
-    relative.startsWith("../") ||
-    path.posix.isAbsolute(relative)
+    !isInsidePosixPath(root.path, target.path)
   ) {
     throw new Error("Link escapes the vault");
   }
-  if (root.scheme === "file") {
-    await containedLocalPath(root, target);
-  } else {
-    await containedVirtualPath(root, relative);
-  }
-}
-
-async function containedLocalPath(
-  root: vscode.Uri,
-  target: vscode.Uri,
-): Promise<void> {
-  const base = await realpath(root.fsPath);
-  let candidate = target.fsPath;
-  while (true) {
-    try {
-      const actual = await realpath(candidate);
-      const rel = path.relative(base, actual);
-      if (
-        rel === ".." ||
-        rel.startsWith(".." + path.sep) ||
-        path.isAbsolute(rel)
-      ) {
-        throw new Error("Link symlink escapes the vault");
-      }
-      break;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-        throw error;
-      }
-      const parent = path.dirname(candidate);
-      if (parent === candidate) {
-        throw error;
-      }
-      candidate = parent;
+  if (root.scheme === "file" && realPaths) {
+    // A link may name a note that does not exist yet: judge it by its folder.
+    if (
+      !(await realPaths.isInside(
+        root.fsPath,
+        target.fsPath,
+        "nearest-ancestor",
+      ))
+    ) {
+      throw new Error("Link symlink escapes the vault");
     }
+  } else {
+    await containedVirtualPath(root, target);
   }
 }
 
 async function containedVirtualPath(
   root: vscode.Uri,
-  relative: string,
+  target: vscode.Uri,
 ): Promise<void> {
   let current = root;
-  for (const component of relative.split("/").filter(Boolean)) {
+  for (const component of relativePosixPath(root.path, target.path)
+    .split("/")
+    .filter(Boolean)) {
     current = vscode.Uri.joinPath(current, component);
     try {
       const stat = await vscode.workspace.fs.stat(current);
@@ -93,10 +79,15 @@ async function containedVirtualPath(
   }
 }
 
+/** What navigation needs from the platform: link tickets and symlink checks. */
+export type NavigationPlatform = Pick<HostPlatform, "digests" | "realPaths">;
+
 export function createNavigation(
   panels: () => readonly PanelShell[],
+  platform: NavigationPlatform,
   configuration: Configuration = createConfiguration(),
 ): NativeNavigation {
+  const { realPaths } = platform;
   const reveals = new RevealRouter();
   const navigation: NativeNavigation = {
     begin: () => reveals.begin(),
@@ -114,16 +105,12 @@ export function createNavigation(
     },
     scheme: vscode.env.uriScheme,
     external: async (href) => vscode.env.openExternal(vscode.Uri.parse(href)),
-    confirm: async (message) =>
-      (await vscode.window.showWarningMessage(
-        message,
-        { modal: true },
-        "Open",
-      )) === "Open",
+    confirm: confirmOpen,
     async resolve(request) {
       await configuration.prepare(request.source);
       return resolveNavigation({
         ...request,
+        realPaths,
         newNoteFolder:
           request.newNoteFolder ??
           configuredNewNoteFolder(configuration, request.source),
@@ -143,13 +130,24 @@ export function createNavigation(
         panels,
         reveals,
         intent: intent ?? reveals.begin(),
+        realPaths,
       }),
     registerNativeLinks() {
-      const links = registerNativeLinks(navigation);
+      const links = registerNativeLinks(navigation, platform);
       return () => links.dispose();
     },
   };
   return navigation;
+}
+
+async function confirmOpen(message: string): Promise<boolean> {
+  return (
+    (await vscode.window.showWarningMessage(
+      message,
+      { modal: true },
+      "Open",
+    )) === "Open"
+  );
 }
 
 /** Native text-to-custom transfers already opened the destination in this group. */
@@ -171,7 +169,10 @@ async function resolveNavigation({
   folderNote,
   newNoteFolder,
   intent,
-}: Parameters<Navigation["resolve"]>[0]): Promise<string | undefined> {
+  realPaths,
+}: Parameters<Navigation["resolve"]>[0] & {
+  realPaths: RealPaths | undefined;
+}): Promise<string | undefined> {
   const base = vscode.Uri.parse(root);
   const sourceUri = vscode.Uri.parse(source);
   let uri = !link
@@ -182,7 +183,7 @@ async function resolveNavigation({
           : vscode.Uri.joinPath(sourceUri, ".."),
         link.replace(/^\//, ""),
       );
-  await contained(base, uri);
+  await contained(base, uri, realPaths);
   try {
     const stat = await vscode.workspace.fs.stat(uri);
     if (intent?.token.cancelled) {
@@ -194,7 +195,7 @@ async function resolveNavigation({
         return undefined;
       }
       uri = vscode.Uri.joinPath(uri, folderNote);
-      await contained(base, uri);
+      await contained(base, uri, realPaths);
     }
     return uri.toString();
   } catch (error) {
@@ -215,6 +216,7 @@ async function resolveNavigation({
     uri,
     folder: newNoteFolder,
     ...(intent ? { intent } : {}),
+    realPaths,
   });
 }
 
@@ -225,6 +227,7 @@ async function createNote({
   uri: candidate,
   folder,
   intent,
+  realPaths,
 }: {
   base: vscode.Uri;
   sourceUri: vscode.Uri;
@@ -232,6 +235,7 @@ async function createNote({
   uri: vscode.Uri;
   folder: string | undefined;
   intent?: NavigationIntent;
+  realPaths: RealPaths | undefined;
 }): Promise<string | undefined> {
   folder ??= "";
   let uri = candidate;
@@ -245,7 +249,7 @@ async function createNote({
   if (!/\.md$/i.test(uri.path)) {
     uri = uri.with({ path: uri.path + ".md" });
   }
-  await contained(base, uri);
+  await contained(base, uri, realPaths);
   if (intent?.token.cancelled) {
     return undefined;
   }
@@ -266,12 +270,13 @@ interface OpenNavigation {
   panels: () => readonly PanelShell[];
   reveals: RevealRouter;
   intent: NavigationIntent;
+  realPaths: RealPaths | undefined;
 }
 
 async function openNavigation(options: OpenNavigation): Promise<void> {
   const { root, target, place, panels, intent } = options;
   const uri = vscode.Uri.parse(target);
-  await contained(vscode.Uri.parse(root), uri);
+  await contained(vscode.Uri.parse(root), uri, options.realPaths);
   if (intent.token.cancelled) {
     return;
   }

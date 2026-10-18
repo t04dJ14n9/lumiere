@@ -1,4 +1,3 @@
-import { pathToFileUriString } from "./file-uri";
 import { IDE_CONTEXT_AGENT_COMMANDS } from "./agent-commands";
 import {
   publishIdeContextTemp,
@@ -9,7 +8,7 @@ import {
   resolveIdeContextSendTarget,
   type IdeContextPacket,
   type IdeContextTargetSetting,
-  type TempFs,
+  type IdeContextTempFiles,
   type LeaseSidecar,
 } from "@workshop/agents/ide-context";
 
@@ -27,8 +26,8 @@ export interface SendIdeContextDeps {
   /** Injectable temp publish (defaults unused in pure tests). */
   publishTemp?: typeof publishIdeContextTemp;
   renewLease?: typeof renewLeaseAtomic;
-  tempFs?: TempFs;
-  tempDir?: string;
+  /** Where packets are published for Codex; absent where no agent reads local files. */
+  temp?: IdeContextTempFiles;
   now?: () => number;
   leaseMs?: number;
   owner?: LeaseSidecar["owner"];
@@ -88,7 +87,7 @@ async function sendClaude(
 
 async function attachCodexWithRetries(
   deps: SendIdeContextDeps,
-  fs: TempFs,
+  temp: IdeContextTempFiles,
   args: {
     finalPath: string;
     renew: typeof renewLeaseAtomic;
@@ -108,7 +107,7 @@ async function attachCodexWithRetries(
       // lease cannot expire during prep work after renewal.
       await deps.executeCommand(IDE_CONTEXT_AGENT_COMMANDS.codexOpen);
       if (i > 0) {
-        await args.renew(fs, leasePathFor(args.finalPath), {
+        await args.renew(temp.fs, leasePathFor(args.finalPath), {
           leaseUntil: new Date(args.now() + args.leaseMs).toISOString(),
           owner: args.owner,
           sessionId: args.sessionId,
@@ -116,7 +115,7 @@ async function attachCodexWithRetries(
       }
       await deps.executeCommand(
         IDE_CONTEXT_AGENT_COMMANDS.codexAddFile,
-        pathToFileUriString(args.finalPath),
+        temp.fileUri(args.finalPath),
       );
       return true;
     } catch {
@@ -129,7 +128,7 @@ async function attachCodexWithRetries(
 async function publishCodexTemp(
   packet: IdeContextPacket,
   deps: SendIdeContextDeps,
-  fs: TempFs,
+  temp: IdeContextTempFiles,
 ): Promise<
   | {
       ok: true;
@@ -144,15 +143,14 @@ async function publishCodexTemp(
 > {
   const publish = deps.publishTemp ?? publishIdeContextTemp;
   const renew = deps.renewLease ?? renewLeaseAtomic;
-  const dir = deps.tempDir ?? "/tmp/agent-ide-context";
   const now = deps.now ?? (() => Date.now());
   const leaseMs = deps.leaseMs ?? 60_000;
   const owner = deps.owner ?? "markdownWorkshop";
   const sessionId = deps.sessionId ?? `mw-${now()}`;
-  const published = await publish(fs, {
-    dir,
+  const published = await publish(temp.fs, {
+    dir: temp.dir,
     basename: `ide-context-${sessionId}.json`,
-    bytes: Buffer.from(serializeJson(packet)),
+    bytes: new TextEncoder().encode(serializeJson(packet)),
     owner,
     sessionId,
     now,
@@ -177,12 +175,12 @@ async function sendCodex(
   md: string,
   deps: SendIdeContextDeps,
 ): Promise<SendIdeContextResult> {
-  const fs = deps.tempFs;
-  if (!fs) {
+  const temp = deps.temp;
+  if (!temp) {
     deps.inform?.("IDE context copied (Codex temp FS unavailable)");
     return { markdown: md, opened: "clipboard", softFailWarning: "no temp fs" };
   }
-  const published = await publishCodexTemp(packet, deps, fs);
+  const published = await publishCodexTemp(packet, deps, temp);
   if (!published.ok) {
     deps.inform?.(published.warning);
     return {
@@ -191,7 +189,7 @@ async function sendCodex(
       softFailWarning: published.warning,
     };
   }
-  const attached = await attachCodexWithRetries(deps, fs, {
+  const attached = await attachCodexWithRetries(deps, temp, {
     finalPath: published.finalPath,
     renew: published.renew,
     now: published.now,

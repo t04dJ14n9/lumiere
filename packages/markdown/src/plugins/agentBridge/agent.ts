@@ -97,15 +97,18 @@ export class AgentHandoff {
   ): Promise<void> {
     const { host } = this.options;
     const environment = await host.agentHost.environment();
+    const writeScratchFile = host.agentHost.writeScratchFile?.bind(
+      host.agentHost,
+    );
     const target = await openAgentChat(
       (command, ...args) => host.hostCommands.execute(command, ...args),
       (text) => host.clipboard.write(text),
       payload,
       {
         ...(environment && { environment }),
-        ...(host.agentHost.writeScratchFile && {
+        ...(writeScratchFile && {
           writeScratchFile: (text: string) =>
-            host.agentHost.writeScratchFile(
+            writeScratchFile(
               scratchName(reference.text),
               scratchText(text, reference),
             ),

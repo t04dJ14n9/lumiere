@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import type { RealPaths } from "@workshop/platform";
 import type { ApiPlatform } from "./platform";
 import type { ConfigurationScope } from "./types";
 import { RpcError } from "../../shared/rpc/lifecycle";
@@ -6,11 +7,14 @@ import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { contained } from "../navigation";
 import { warmMarkdownDocument } from "../document-warm";
 import { openSettingsEditor } from "../settings-editor";
-export function nativePlatform(extensionId: string): ApiPlatform {
+export function nativePlatform(
+  extensionId: string,
+  realPaths: RealPaths | undefined,
+): ApiPlatform {
   return {
     uri: (value) => vscode.Uri.parse(value, true),
     joinPath: (base, path) => vscode.Uri.joinPath(base, path),
-    assertContained: contained,
+    assertContained: (root, target) => contained(root, target, realPaths),
     async open(uri, options) {
       await warmMarkdownDocument(uri);
       await vscode.commands.executeCommand(

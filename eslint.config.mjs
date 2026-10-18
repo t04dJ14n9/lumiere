@@ -23,7 +23,9 @@ const boundaries = {
         : source;
       const pure =
         /\/src\/(kernel|shared|markdown)\//.test(file) ||
-        /\/packages\/(core|agents)\/src\//.test(file);
+        /\/packages\/(core|agents)\/src\//.test(file) ||
+        // The platform's interfaces and helpers; not its node/ and web/ implementations.
+        /\/packages\/platform\/src\/[^/]+$/.test(file);
       let invalid =
         pure &&
         (source === "vscode" ||
@@ -157,6 +159,8 @@ export default tseslint.config(
           "./tsconfig.json",
           "./packages/core/tsconfig.json",
           "./packages/agents/tsconfig.json",
+          "./packages/platform/tsconfig.json",
+          "./packages/platform/src/node/tsconfig.json",
           "./packages/markdown/tsconfig.json",
           "./packages/markdown/src/host/tsconfig.json",
           "./packages/markdown/src/webview/tsconfig.json",

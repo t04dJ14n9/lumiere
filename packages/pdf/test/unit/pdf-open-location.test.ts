@@ -7,6 +7,7 @@ import ts from "typescript";
 import * as locations from "../../src/shared/pdf-location";
 import * as targets from "../../src/shared/pdf-target-resolution";
 import { OPEN_LOCATION_COMMAND_ID } from "../../src/extension/plugins/pdf/registered-commands";
+import * as platform from "@workshop/platform";
 
 class Uri {
   readonly path: string;
@@ -103,7 +104,7 @@ function harness() {
     },
   };
   const modules: Record<string, unknown> = {
-    "node:path": path,
+    "@workshop/platform": platform,
     vscode,
     "../../../shared/pdf-location": locations,
     "../../../shared/pdf-target-resolution": targets,
@@ -138,14 +139,18 @@ function harness() {
   );
   const register = module.exports.registerOpenLocation as (
     panels: unknown,
+    os: { platform: string },
   ) => Disposable;
-  const registration = register({
-    waitFor: async (file: Uri) => ({
-      goTo: (location: { page: number }) => {
-        jumps.push({ file: file.path, page: location.page });
-      },
-    }),
-  });
+  const registration = register(
+    {
+      waitFor: async (file: Uri) => ({
+        goTo: (location: { page: number }) => {
+          jumps.push({ file: file.path, page: location.page });
+        },
+      }),
+    },
+    { platform: process.platform },
+  );
   return {
     opened,
     jumps,

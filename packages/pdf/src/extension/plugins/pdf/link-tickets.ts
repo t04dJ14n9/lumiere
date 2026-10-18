@@ -1,4 +1,9 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  base64ToBytes,
+  bytesToBase64Url,
+  equalInConstantTime,
+  type Digests,
+} from "@workshop/platform";
 export interface Ticket {
   source: string;
   version: number;
@@ -9,12 +14,13 @@ export interface Ticket {
 }
 /** Stateless signed tickets stay valid across provider refreshes without a URI mailbox. */
 export class LinkTickets {
-  private readonly secret = randomBytes(32);
+  private readonly secret = crypto.getRandomValues(new Uint8Array(32));
   private live = true;
+  constructor(private readonly digests: Digests) {}
   issue(ticket: Ticket): [string, string] {
     // Command openers may decode URI arguments again. Base64url has no percent escapes.
-    const payload = Buffer.from(JSON.stringify(ticket), "utf8").toString(
-      "base64url",
+    const payload = bytesToBase64Url(
+      new TextEncoder().encode(JSON.stringify(ticket)),
     );
     return [payload, this.sign(payload)];
   }
@@ -28,22 +34,17 @@ export class LinkTickets {
     ) {
       return undefined;
     }
-    if (
-      !timingSafeEqual(
-        Buffer.from(signature, "hex"),
-        Buffer.from(this.sign(payload), "hex"),
-      )
-    ) {
+    if (!equalInConstantTime(signature, this.sign(payload))) {
       return undefined;
     }
     return JSON.parse(
-      Buffer.from(payload, "base64url").toString("utf8"),
+      new TextDecoder().decode(base64ToBytes(payload)),
     ) as Ticket;
   }
   dispose(): void {
     this.live = false;
   }
   private sign(payload: string): string {
-    return createHmac("sha256", this.secret).update(payload).digest("hex");
+    return this.digests.hmacSha256(this.secret, payload);
   }
 }

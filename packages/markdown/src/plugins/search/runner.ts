@@ -1,4 +1,4 @@
-import { Worker } from "node:worker_threads";
+import type { WorkerChannel, WorkerLauncher } from "@workshop/platform";
 import type { SearchDocument } from "../../markdown/search/evaluate";
 import type { Cancellation } from "../../shared/rpc/lifecycle";
 import { RpcError } from "../../shared/rpc/lifecycle";
@@ -22,7 +22,7 @@ export interface SearchEvaluator {
 /** One query per worker: a stuck regex can be terminated without blocking the host. */
 export class SearchWorker implements SearchEvaluator {
   readonly ready: Promise<void>;
-  private readonly worker: Worker;
+  private readonly worker: WorkerChannel;
   private readonly pending = new Map<number, Pending>();
   private sequence = 0;
   private closed?: Error;
@@ -35,7 +35,7 @@ export class SearchWorker implements SearchEvaluator {
   requiresText = true;
   requiresMetadata = true;
   constructor(
-    path: string,
+    workers: WorkerLauncher,
     query: string,
     private readonly options: {
       token?: Cancellation;
@@ -55,17 +55,17 @@ export class SearchWorker implements SearchEvaluator {
     this.resolveReady = resolveReady;
     this.rejectReady = rejectReady;
     void this.ready.catch(() => {});
-    this.worker = new Worker(path, {
-      workerData: startup.parse({ query }),
-      resourceLimits: { maxOldGenerationSizeMb: 256 },
+    this.worker = workers.start("search", {
+      data: startup.parse({ query }),
+      memoryLimitMb: 256,
     });
     this.startupTimer = setTimeout(
       () => this.fail(new Error("Search worker startup timed out")),
       options.startupMs ?? 15000,
     );
-    this.worker.on("message", (message: unknown) => this.receive(message));
-    this.worker.on("error", (error) => this.fail(error));
-    this.worker.on("exit", (code) =>
+    this.worker.onMessage((message) => this.receive(message));
+    this.worker.onError((error) => this.fail(error));
+    this.worker.onExit((code) =>
       this.fail(new Error(`Search worker exited (${code})`)),
     );
     this.stopCancellation =
@@ -92,7 +92,7 @@ export class SearchWorker implements SearchEvaluator {
       );
       this.pending.set(request.id, { resolve, reject, timer });
       try {
-        this.worker.postMessage(request);
+        this.worker.post(request);
       } catch (error) {
         this.fail(new Error(errorMessage(error)));
       }

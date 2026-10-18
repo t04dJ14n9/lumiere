@@ -3170,7 +3170,7 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
+    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && tsc -p packages/platform && tsc -p packages/platform/src/node && tsc -p packages/platform/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -3187,7 +3187,8 @@
     "@workshop/agents": "workspace:*",
     "@workshop/core": "workspace:*",
     "@workshop/markdown": "workspace:*",
-    "@workshop/pdf": "workspace:*"
+    "@workshop/pdf": "workspace:*",
+    "@workshop/platform": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

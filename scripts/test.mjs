@@ -1,5 +1,5 @@
-// Unit tests of every package, each run from its own directory: the core,
-// the agent formats, then Markdown Workshop, then PDF Workshop. Root scripts are tested too.
+// Unit tests of every package, each run from its own directory: the core
+// and the platform helpers, the agent formats, then Markdown Workshop, then PDF Workshop. Root scripts are tested too.
 import { readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
@@ -25,7 +25,7 @@ const failures = [
     "tsx",
     "--test",
     ...options,
-    ...testFiles("packages/core/test", "test/unit"),
+    ...testFiles("packages/core/test", "packages/platform/test", "test/unit"),
   ]),
   run("packages/agents", "pnpm", [
     "exec",

@@ -1,11 +1,15 @@
 import * as vscode from "vscode";
+import type { RealPaths } from "@workshop/platform";
 import type { WorkspaceFiles } from "../shared/workspace-files";
 import { contained } from "./navigation";
 
 /** VS Code file operations behind `Workshop.files`. Missing files are undefined, not throws. */
-export function createWorkspaceFiles(): WorkspaceFiles {
+export function createWorkspaceFiles(
+  realPaths: RealPaths | undefined,
+): WorkspaceFiles {
   return {
-    authorize: (root, target) => contained(parse(root), parse(target)),
+    authorize: (root, target) =>
+      contained(parse(root), parse(target), realPaths),
     readText,
     writeText,
     list,

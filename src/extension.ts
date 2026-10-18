@@ -1,54 +1,27 @@
 /**
- * Workshop: Markdown and PDF. The composition root of the extension: one
- * plugin tree (see @workshop/core) for both products, its output channel,
- * and the services every plugin may inject from the root. Each product adds
- * its own plugins; deactivation stops them all, last started first.
+ * Workshop: Markdown and PDF on the desktop, where the extension host runs
+ * Node (VS Code, Cursor, and remote hosts such as SSH or Codespaces): Node
+ * workers, digests and real paths, Git, and the PDF plugins that hand files
+ * to agents. The composition itself is src/activate.ts.
  */
-import { window, workspace, type ExtensionContext } from "vscode";
-import { createRoot, type RootContext } from "@workshop/core";
-import {
-  outputLogger,
-  pluginRank,
-  startMarkdown,
-  type MarkdownWorkshopApi,
-} from "@workshop/markdown/host";
-import { startPdf } from "@workshop/pdf/host";
-import { markdownNoteSelections } from "./note-selections";
+import type { ExtensionContext } from "vscode";
+import { createGitAccess } from "@workshop/markdown/desktop";
+import type { MarkdownWorkshopApi } from "@workshop/markdown/host";
+import { pdfDesktopPlugins } from "@workshop/pdf/desktop";
+import { nodePlatform } from "@workshop/platform/node";
+import { activateWorkshop, deactivateWorkshop } from "./activate";
 
-let root: RootContext | undefined;
-
-export async function activate(
+export function activate(
   context: ExtensionContext,
 ): Promise<MarkdownWorkshopApi> {
-  const started = performance.now();
-  const channel = window.createOutputChannel("Workshop", { log: true });
-  context.subscriptions.push(channel);
-  const debugLogging = () =>
-    workspace.getConfiguration("markdownWorkshop").get("debug.logging", false);
-  root = createRoot({
-    rank: pluginRank,
-    logger: outputLogger(channel, debugLogging),
+  return activateWorkshop(context, {
+    platform: nodePlatform(context.extensionPath),
+    git: createGitAccess(),
+    pdfPlugins: pdfDesktopPlugins,
   });
-  root.provide("extensionContext", context);
-  root.provide("outputChannel", channel);
-  // Provided before PDF starts, so its agent bridge does not restart when
-  // Markdown Workshop's API arrives.
-  const markdown: { api?: MarkdownWorkshopApi } = {};
-  root.provide(
-    "noteSelections",
-    markdownNoteSelections(() => markdown.api),
-  );
-  startPdf(root);
-  const api = await startMarkdown(root, context);
-  markdown.api = api;
-  await root.settled();
-  channel.info(`Activated in ${Math.round(performance.now() - started)} ms`);
-  return api;
 }
 
 /** VS Code awaits this (unlike subscriptions' disposal), so teardown completes. */
-export async function deactivate(): Promise<void> {
-  const stopping = root;
-  root = undefined;
-  await stopping?.dispose();
+export function deactivate(): Promise<void> {
+  return deactivateWorkshop();
 }

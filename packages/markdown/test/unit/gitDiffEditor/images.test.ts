@@ -9,9 +9,10 @@ import assert from "node:assert/strict";
 import { createRoot } from "@workshop/core";
 import {
   sideResources,
-  diffSource,
   diffResourcesHost,
 } from "../../../src/plugins/resources/diff-resources";
+import { diffSource } from "../../../src/host/git-diff-source";
+import { nodeRealPaths } from "@workshop/platform/node";
 import {
   diffImageUrl,
   diffResourceRoots,
@@ -89,8 +90,12 @@ for (const directory of ["100% done", "release%20notes"]) {
           assert.equal(uri, image);
           return { mtime: 7, symbolicLink: false };
         },
+        // As on the desktop: local files are checked through their real paths.
+        realContains: (root, target) =>
+          nodeRealPaths.isInside(fileURLToPath(root), fileURLToPath(target)),
       },
       git: {
+        sourceOf: diffSource,
         toGitUri(uri, ref) {
           assert.equal(uri, image);
           assert.equal(ref, "HEAD");
@@ -170,6 +175,7 @@ test("images resolve separately against each note and Git revision with existing
     } as unknown as Vaults;
     const revisionFiles = withHost(files, {
       git: {
+        sourceOf: diffSource,
         toGitUri(uri, ref) {
           revisions.push([uri, ref]);
           return gitUri(new URL(uri).pathname, ref);

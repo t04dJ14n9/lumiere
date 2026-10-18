@@ -1,4 +1,5 @@
 import type * as vscode from "vscode";
+import type { Digests } from "@workshop/platform";
 import { parseLocationFragment } from "../../../shared/pdf-location";
 import { PdfPanel } from "./panel";
 import type { PdfPanels } from "./panels";
@@ -10,6 +11,7 @@ export class PdfEditorProvider implements vscode.CustomReadonlyEditorProvider {
     private readonly extensionUri: vscode.Uri,
     private readonly panels: PdfPanels,
     private readonly preferences: ViewPreferences,
+    private readonly digests: Digests,
   ) {}
 
   openCustomDocument(uri: vscode.Uri): vscode.CustomDocument {
@@ -23,6 +25,7 @@ export class PdfEditorProvider implements vscode.CustomReadonlyEditorProvider {
     const uri = document.uri.with({ fragment: "" });
     const panel = new PdfPanel(uri, webviewPanel, {
       extensionUri: this.extensionUri,
+      digests: this.digests,
       toolbar: this.panels.viewerToolbar(),
       settings: this.preferences.settings(uri),
       position: this.preferences.position(uri),

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { LinkTickets } from "../../src/extension/plugins/pdf/link-tickets";
+import { nodeDigests } from "@workshop/platform/node";
 test("signed links survive 513 links and other documents without retaining a mailbox", () => {
-  const tickets = new LinkTickets();
+  const tickets = new LinkTickets(nodeDigests);
   const first = tickets.issue({
     source: "file:///vault/a.md",
     version: 1,
@@ -29,13 +30,13 @@ test("signed links survive 513 links and other documents without retaining a mai
     ),
     undefined,
   );
-  assert.equal(new LinkTickets().read(...first), undefined);
+  assert.equal(new LinkTickets(nodeDigests).read(...first), undefined);
   tickets.dispose();
   assert.equal(tickets.read(...first), undefined);
 });
 
 test("command URI decoding cannot mutate encoded paths inside signed tickets", () => {
-  const tickets = new LinkTickets();
+  const tickets = new LinkTickets(nodeDigests);
   const ticket = {
     source: "file:///vault/%E7%9B%AE%20note.md",
     version: 1,

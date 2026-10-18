@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { titleActionsInMenu } from "../../../shared/toolbar-settings";
 import type { Plugin } from "@workshop/core";
+import type {} from "@workshop/platform";
 import type {} from "../services";
 import { TOOLBAR_COMMAND_IDS } from "../pdf/registered-commands";
 import manifest from "./manifest";
@@ -16,7 +17,9 @@ import { StatusBar } from "./status-bar";
  */
 export const pdfToolbarPlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["pdfPanels", "pdfSettings", "extensionContext"] },
+  inject: {
+    required: ["pdfPanels", "pdfSettings", "extensionContext", "os"],
+  },
   apply(ctx) {
     const panels = ctx.pdfPanels;
     const preferences = ctx.own(
@@ -42,7 +45,7 @@ export const pdfToolbarPlugin: Plugin = {
       },
       "context key",
     );
-    const statusBar = ctx.own(new StatusBar(panels), "statusBar");
+    const statusBar = ctx.own(new StatusBar(panels, ctx.os), "statusBar");
     ctx.own(
       panels.provideViewerToolbar(() => preferences.settings),
       "viewer settings",

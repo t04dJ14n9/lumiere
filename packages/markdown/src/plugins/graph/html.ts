@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { bytesToBase64 } from "@workshop/platform";
 
 const escape = (value: string) =>
   value
@@ -13,7 +13,7 @@ export function graphPanelHtml(assets: {
   style: string;
   worker: string;
 }): string {
-  const nonce = randomBytes(24).toString("base64");
+  const nonce = bytesToBase64(crypto.getRandomValues(new Uint8Array(24)));
   const policy = [
     "default-src 'none'",
     `script-src 'nonce-${nonce}' ${assets.cspSource}`,

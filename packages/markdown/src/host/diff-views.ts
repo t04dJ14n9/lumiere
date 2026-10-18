@@ -7,7 +7,7 @@ import {
   diffAction,
   parseDiffMessage,
 } from "../shared/diff-panel-protocol";
-import { randomBytes } from "node:crypto";
+import { bytesToBase64 } from "@workshop/platform";
 import * as vscode from "vscode";
 import type { Disposer } from "@workshop/core";
 import { contributionId } from "../shared/setting-schema";
@@ -115,7 +115,7 @@ function panelHtml(webview: vscode.Webview, dist: vscode.Uri): string {
     escape(
       webview.asWebviewUri(vscode.Uri.joinPath(dist, relative)).toString(),
     );
-  const nonce = randomBytes(24).toString("base64");
+  const nonce = bytesToBase64(crypto.getRandomValues(new Uint8Array(24)));
   const source = webview.cspSource;
   const policy = `default-src 'none'; script-src 'nonce-${nonce}' ${source}; style-src ${source} 'unsafe-inline'; img-src ${source} data:; font-src ${source} data:;`;
   return [

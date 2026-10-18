@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import type { Digests } from "@workshop/platform";
 import { LinkTickets, type Ticket } from "./link-tickets";
 import { nativeLinks, localFragment } from "../../../shared/native-links";
 
@@ -8,6 +9,8 @@ export interface LinkRun {
 }
 interface LinkOptions {
   command: string;
+  /** Signs the links' tickets. */
+  digests: Digests;
   accepts(path: string, fragment: string): boolean;
   authorize(root: vscode.Uri, target: vscode.Uri): Promise<void>;
   begin(): LinkRun;
@@ -35,10 +38,12 @@ export function registerSourceLinks(options: LinkOptions): vscode.Disposable {
 }
 
 class SourceLinks implements vscode.DocumentLinkProvider {
-  private readonly tickets = new LinkTickets();
+  private readonly tickets: LinkTickets;
   private pending: LinkRun | undefined;
   private queue: Promise<void> = Promise.resolve();
-  constructor(private readonly options: LinkOptions) {}
+  constructor(private readonly options: LinkOptions) {
+    this.tickets = new LinkTickets(options.digests);
+  }
 
   provideDocumentLinks(
     document: vscode.TextDocument,

@@ -30,6 +30,7 @@ export {
   readLease,
   renewLeaseAtomic,
   writeLeaseAtomic,
+  type IdeContextTempFiles,
   type LeaseSidecar,
   type TempFs,
 } from "./temp-lease";

@@ -1,6 +1,13 @@
-import path from "node:path";
-import { realpath } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { isInsidePosixPath } from "@workshop/platform";
+import type { HostWorkspace } from "../../shared/host";
+
+/** How a resource's path is checked beyond its text: what the host offers. */
+export interface ResourceChecks {
+  /** Whether a virtual path component is a symbolic link. */
+  inspect?: (uri: string) => Promise<{ symbolicLink: boolean }>;
+  realContains?: HostWorkspace["realContains"];
+}
+
 export function contains(root: string, uri: string): boolean {
   if (/%(?:2f|5c)/i.test(uri)) {
     return false;
@@ -10,57 +17,57 @@ export function contains(root: string, uri: string): boolean {
   if (base.protocol !== target.protocol || base.host !== target.host) {
     return false;
   }
-  const a = decodeURIComponent(base.pathname).replace(/\/$/, "");
-  const b = decodeURIComponent(target.pathname);
-  const relative = path.posix.relative(a, b);
-  return (
-    !relative.startsWith("../") &&
-    relative !== ".." &&
-    !path.posix.isAbsolute(relative)
+  return isInsidePosixPath(
+    decodeURIComponent(base.pathname),
+    decodeURIComponent(target.pathname),
   );
 }
+/**
+ * Check a resource against its vault: by path, then through symbolic links,
+ * resolved on a local disk (`realContains`) or refused component by
+ * component elsewhere.
+ */
 export async function containedResource(
   root: string,
   uri: string,
   symbolicLink: boolean,
-  inspect?: (uri: string) => Promise<{ symbolicLink: boolean }>,
+  checks: ResourceChecks = {},
 ): Promise<void> {
   if (!contains(root, uri)) {
     throw new Error("Resource escapes the vault");
   }
-  if (new URL(uri).protocol === "file:") {
-    const [base, target] = await Promise.all([
-      realpath(fileURLToPath(root)),
-      realpath(fileURLToPath(uri)),
-    ]);
-    const relative = path.relative(base, target);
-    if (
-      relative.startsWith(".." + path.sep) ||
-      relative === ".." ||
-      path.isAbsolute(relative)
-    ) {
+  if (new URL(uri).protocol === "file:" && checks.realContains) {
+    if (!(await checks.realContains(root, uri))) {
       throw new Error("Resource symlink escapes the vault");
     }
-  } else {
-    if (symbolicLink) {
+    return;
+  }
+  if (symbolicLink) {
+    throw new Error("Virtual symbolic links are not supported");
+  }
+  if (checks.inspect) {
+    await refuseLinkedAncestors(root, uri, checks.inspect);
+  }
+}
+
+async function refuseLinkedAncestors(
+  root: string,
+  uri: string,
+  inspect: (uri: string) => Promise<{ symbolicLink: boolean }>,
+): Promise<void> {
+  const target = new URL(uri);
+  const base = new URL(root);
+  const parts = target.pathname
+    .slice(base.pathname.replace(/\/$/, "").length)
+    .split("/")
+    .filter(Boolean);
+  let current = base.pathname.replace(/\/$/, "");
+  for (const part of parts) {
+    current += "/" + part;
+    const at = new URL(base);
+    at.pathname = current;
+    if ((await inspect(at.href)).symbolicLink) {
       throw new Error("Virtual symbolic links are not supported");
-    }
-    if (inspect) {
-      const target = new URL(uri);
-      const base = new URL(root);
-      const parts = target.pathname
-        .slice(base.pathname.replace(/\/$/, "").length)
-        .split("/")
-        .filter(Boolean);
-      let current = base.pathname.replace(/\/$/, "");
-      for (const part of parts) {
-        current += "/" + part;
-        const at = new URL(base);
-        at.pathname = current;
-        if ((await inspect(at.href)).symbolicLink) {
-          throw new Error("Virtual symbolic links are not supported");
-        }
-      }
     }
   }
 }

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import Module from "node:module";
 import path from "node:path";
 import { driver } from "./support/native-links-fake";
+import { nodeDigests } from "@workshop/platform/node";
 const resolver = Module as unknown as {
   _resolveFilename(request: string, ...rest: unknown[]): string;
 };
@@ -28,6 +29,7 @@ async function setup(
   const opened: string[] = [];
   const registration = registerSourceLinks({
     command: "native.test",
+    digests: nodeDigests,
     accepts: () => true,
     authorize,
     begin() {

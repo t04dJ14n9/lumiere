@@ -6,9 +6,9 @@ import path from "node:path";
 import { after, before, test } from "node:test";
 import { build } from "esbuild";
 import type * as vscode from "vscode";
+import { nodePlatform } from "@workshop/platform/node";
 import { metadata } from "../../../src/markdown/metadata";
 import type { Configuration } from "../../../src/shared/configuration";
-import { Uri } from "./support/vscode-uri-fake";
 
 const resolver = Module as unknown as {
   _resolveFilename(request: string, ...rest: unknown[]): string;
@@ -16,7 +16,7 @@ const resolver = Module as unknown as {
 const resolve = resolver._resolveFilename;
 resolver._resolveFilename = function (request, ...rest) {
   return request === "vscode"
-    ? path.join(import.meta.dirname, "support/vscode-uri-fake.ts")
+    ? path.join(import.meta.dirname, "support/vscode-unused.ts")
     : resolve.call(this, request, ...rest);
 };
 
@@ -39,10 +39,11 @@ after(() => rm(extension, { recursive: true, force: true }));
 
 test("the vault parser runs in the worker the extension ships in dist/markdown/workers", async () => {
   const { createVaultSystem } = await import("../../../src/host/vault-system");
-  const context = {
-    extension: { extensionUri: Uri.file(extension) },
-  } as unknown as vscode.ExtensionContext;
-  const parser = createVaultSystem(context, {} as Configuration).createParser();
+  const parser = createVaultSystem(
+    {} as vscode.ExtensionContext,
+    nodePlatform(extension),
+    {} as Configuration,
+  ).createParser();
   try {
     const text = "# Title\n\nSee [[Other note]] and #topic.\n";
     // Metadata crosses the worker boundary by structured clone.

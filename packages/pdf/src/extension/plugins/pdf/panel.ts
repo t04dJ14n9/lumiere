@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import type { Digests } from "@workshop/platform";
 import {
   isCurrentPatch,
   parseViewerMessage,
@@ -41,6 +42,8 @@ export type PluginMessage = Extract<
 
 export interface PanelOptions {
   extensionUri: vscode.Uri;
+  /** Hashes the PDF's bytes, which tie a selection to the file it was made in. */
+  digests: Digests;
   /** The toolbar layout for the first paint. */
   toolbar: ToolbarSettings;
   settings: ViewSettings;
@@ -117,7 +120,7 @@ export class PdfPanel implements vscode.Disposable {
       ],
     };
     this.navigation = new PdfNavigation((message) => this.post(message));
-    this.source = new PdfSource(uri, () => void this.load());
+    this.source = new PdfSource(uri, () => void this.load(), options.digests);
     this.disposables.push(
       this.changed,
       this.selected,

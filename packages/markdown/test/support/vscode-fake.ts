@@ -1,3 +1,4 @@
+import type { WorkerLauncher } from "@workshop/platform";
 import type { Configuration } from "../../src/shared/configuration";
 import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
@@ -105,7 +106,7 @@ function defaultHost(): HostServices {
       revealTextEditor: async () => {},
     },
     storage: { get: (_key, fallback) => fallback, update: async () => {} },
-    extensions: { isInstalled: () => false, workerPath: () => "" },
+    extensions: { isInstalled: () => false, workers: noWorkers() },
     navigation: {
       registerReveal: none,
       registerNativeLinks: none,
@@ -161,6 +162,14 @@ function unavailableFiles(): WorkspaceFiles {
   };
 }
 
+function noWorkers(): WorkerLauncher {
+  return {
+    start() {
+      throw new Error("No workers in this fake host");
+    },
+  };
+}
+
 function noGit(): GitAccess {
   return {
     blameLine: async () => ({ status: "unavailable", repoGeneration: 0 }),
@@ -170,6 +179,7 @@ function noGit(): GitAccess {
     onDidChange: none,
     stage: async () => false,
     toGitUri: () => undefined,
+    sourceOf: (uri) => ({ source: uri }),
   };
 }
 

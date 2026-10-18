@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { lookUpEnabled, lookUpUrl } from "../../../shared/look-up";
 import type { Plugin } from "@workshop/core";
+import type {} from "@workshop/platform";
 import type {} from "../services";
 import { LOOK_UP_COMMAND_IDS } from "../pdf/registered-commands";
 import manifest from "./manifest";
@@ -15,12 +16,12 @@ const SETTING = "pdfWorkshop.lookUp.enabled";
  */
 export const pdfLookUpPlugin: Plugin = {
   name: manifest.id,
-  inject: { required: ["pdfPanels"] },
+  inject: { required: ["pdfPanels", "os"] },
   apply(ctx) {
     const panels = ctx.pdfPanels;
     const enabled = (): boolean =>
       lookUpEnabled(
-        process.platform,
+        ctx.os.platform,
         vscode.workspace.getConfiguration().get<boolean>(SETTING, true),
       );
     const open = async (word: string | undefined): Promise<void> => {

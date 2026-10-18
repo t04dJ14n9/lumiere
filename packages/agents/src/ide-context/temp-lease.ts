@@ -34,6 +34,15 @@ export interface TempFs {
   readFileSync?(path: string): Uint8Array;
 }
 
+/** Where a product publishes IDE context packets for Codex, and how. */
+export interface IdeContextTempFiles {
+  readonly fs: TempFs;
+  /** The folder packets are published in. */
+  readonly dir: string;
+  /** A published packet's `file:` URI, for Codex's add-file command. */
+  fileUri(path: string): string;
+}
+
 export function leasePathFor(finalPayloadPath: string): string {
   return `${finalPayloadPath}.lease`;
 }

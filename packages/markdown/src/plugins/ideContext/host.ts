@@ -4,40 +4,13 @@ import type {} from "../editor/api";
 import { contributionId } from "../../shared/setting-schema";
 import { buildMwIdeContextPacket } from "./adapter";
 import { copyIdeContext, sendIdeContext } from "./delivery";
-import type { IdeContextTargetSetting } from "@workshop/agents/ide-context";
-import * as os from "node:os";
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-const { readdir: readTempDir } = fs;
-import * as fssync from "node:fs";
 import {
   createVsCodeIdeContextHost,
   publishIdeContextTemp,
   renewLeaseAtomic,
+  type IdeContextTargetSetting,
 } from "@workshop/agents/ide-context";
-import type { TempFs } from "@workshop/agents/ide-context";
-
-/** Node fs adapter for temp publish. */
-const nodeTempFs: TempFs = {
-  mkdir: async (p, o) => {
-    await fs.mkdir(p, { recursive: true, mode: o?.mode });
-  },
-  writeFile: (p, data, o) => fs.writeFile(p, data, { mode: o?.mode }),
-  rename: (a, b) => fs.rename(a, b),
-  readFile: (p) => fs.readFile(p),
-  unlink: (p) => fs.unlink(p),
-  listNames: (p) => readTempDir(p),
-  stat: async (p) => {
-    const s = await fs.stat(p);
-    return {
-      mtimeMs: s.mtimeMs,
-      size: s.size,
-      isFile: () => s.isFile(),
-      isDirectory: () => s.isDirectory(),
-    };
-  },
-  renameSync: (a, b) => fssync.renameSync(a, b),
-};
+import type {} from "@workshop/platform";
 
 export const ideContextHost: Plugin = {
   name: "ideContext",
@@ -50,6 +23,7 @@ export const ideContextHost: Plugin = {
       "dialogs",
       "agentHost",
     ],
+    optional: ["agentFiles"],
   },
   apply(ctx) {
     // Captured while live: the context-key reset runs after it is disposed.
@@ -132,8 +106,7 @@ async function runSend(ctx: Context): Promise<void> {
     inform: (m) => ctx.dialogs.inform(m),
     publishTemp: publishIdeContextTemp,
     renewLease: renewLeaseAtomic,
-    tempFs: nodeTempFs,
-    tempDir: path.join(os.tmpdir(), "agent-ide-context"),
+    ...(ctx.agentFiles && { temp: ctx.agentFiles.ideContext }),
     owner: "markdownWorkshop",
   });
 }

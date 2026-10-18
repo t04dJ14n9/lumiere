@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, symlink, rm } from "node:fs/promises";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { nodeRealPaths } from "@workshop/platform/node";
 import {
   contains,
   containedResource,
@@ -18,6 +19,10 @@ test("resource containment rejects sibling prefixes, traversal and different aut
     assert.equal(contains("file:///vault", uri), false, uri);
   }
 });
+const onDisk = {
+  realContains: (root: string, target: string) =>
+    nodeRealPaths.isInside(fileURLToPath(root), fileURLToPath(target)),
+};
 test("realpath checks reject symlink escapes while permitting contained files", async () => {
   const temp = await mkdtemp("/tmp/mw-resources-");
   try {
@@ -29,12 +34,14 @@ test("realpath checks reject symlink escapes while permitting contained files", 
       pathToFileURL(temp + "/vault").href,
       pathToFileURL(temp + "/vault/note.md").href,
       false,
+      onDisk,
     );
     await assert.rejects(
       containedResource(
         pathToFileURL(temp + "/vault").href,
         pathToFileURL(temp + "/vault/escape.md").href,
         true,
+        onDisk,
       ),
       /symlink escapes/,
     );
@@ -43,6 +50,7 @@ test("realpath checks reject symlink escapes while permitting contained files", 
         "vscode-remote://host/vault",
         "vscode-remote://host/vault/file",
         true,
+        onDisk,
       ),
       /Virtual symbolic/,
     );
@@ -56,7 +64,7 @@ test("virtual resource checks reject symlinked ancestor directories", async () =
       "vscode-remote://host/vault",
       "vscode-remote://host/vault/link/note.md",
       false,
-      async (uri) => ({ symbolicLink: uri.endsWith("/link") }),
+      { inspect: async (uri) => ({ symbolicLink: uri.endsWith("/link") }) },
     ),
     /Virtual symbolic/,
   );

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
+import type { HostPlatform } from "@workshop/platform";
 import type { Configuration } from "../shared/configuration";
 import { createConfiguration } from "./configuration-access";
-import { createHash } from "node:crypto";
 import type {
   FileEvent,
   ListedFile,
@@ -11,7 +11,6 @@ import type {
 } from "../plugins/vault/api";
 import { isIgnoredPath } from "../plugins/vault/exclusion";
 import { createVaultParser } from "./vault-parser";
-import { workerPath } from "./running-extension";
 
 /** Stats run this many at a time while listing a vault. */
 const STAT_CONCURRENCY = 32;
@@ -19,8 +18,10 @@ const STAT_CONCURRENCY = 32;
 /** The VS Code side of the vault plugin (DESIGN §12). */
 export function createVaultSystem(
   context: vscode.ExtensionContext,
+  platform: Pick<HostPlatform, "workers" | "digests">,
   configuration: Configuration = createConfiguration(),
 ): VaultSystem {
+  const { digests } = platform;
   return {
     workspaceFolder: (uri) =>
       vscode.workspace
@@ -34,7 +35,7 @@ export function createVaultSystem(
     list: listVault,
     read: async (uri) => vscode.workspace.fs.readFile(vscode.Uri.parse(uri)),
     watch: watchVault,
-    store: (root) => snapshotStore(context.storageUri, root),
+    store: (root) => snapshotStore(context.storageUri, digests.sha256(root)),
     settings: (root) => vaultSettings(configuration, root),
     onSettingsChanged: (listener) => configuration.onDidChange(listener),
     onDocumentChanged: (listener) =>
@@ -53,9 +54,8 @@ export function createVaultSystem(
           }
         }),
       ),
-    createParser: () =>
-      createVaultParser(workerPath(context.extension.extensionUri, "vault")),
-    hash: (text) => createHash("sha256").update(text).digest("hex"),
+    createParser: () => createVaultParser(platform.workers),
+    hash: (text) => digests.sha256(text),
     warn: (message) => void vscode.window.showWarningMessage(message),
   };
 }
@@ -258,15 +258,15 @@ async function renamed(
   }
 }
 
-/** A folder of JSON files per vault in the workspace's extension storage. */
+/** A folder of JSON files per vault (by its root's hash) in the workspace's extension storage. */
 function snapshotStore(
   storage: vscode.Uri | undefined,
-  root: string,
+  rootHash: string,
 ): SnapshotStore | undefined {
   if (!storage) {
     return undefined;
   }
-  const id = createHash("sha256").update(root).digest("hex").slice(0, 16);
+  const id = rootHash.slice(0, 16);
   const folder = vscode.Uri.joinPath(storage, "vault-index", id);
   return {
     async read(name) {

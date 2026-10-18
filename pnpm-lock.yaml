@@ -20,6 +20,9 @@ importers:
       '@workshop/pdf':
         specifier: workspace:*
         version: link:packages/pdf
+      '@workshop/platform':
+        specifier: workspace:*
+        version: link:packages/platform
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -116,6 +119,9 @@ importers:
       '@workshop/core':
         specifier: workspace:*
         version: link:../core
+      '@workshop/platform':
+        specifier: workspace:*
+        version: link:../platform
       dompurify:
         specifier: 3.4.16
         version: 3.4.16
@@ -219,6 +225,9 @@ importers:
       '@workshop/core':
         specifier: workspace:*
         version: link:../core
+      '@workshop/platform':
+        specifier: workspace:*
+        version: link:../platform
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -241,6 +250,15 @@ importers:
       '@types/vscode':
         specifier: 1.90.0
         version: 1.90.0
+
+  packages/platform:
+    dependencies:
+      '@workshop/agents':
+        specifier: workspace:*
+        version: link:../agents
+      '@workshop/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

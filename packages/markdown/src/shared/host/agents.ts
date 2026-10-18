@@ -22,6 +22,10 @@ export interface AgentHost {
   readonly appName: string;
   /** Registered commands and VS Code's chat state, read now. */
   environment(): Promise<AgentEnvironment>;
-  /** Writes a scratch file outside the workspace (a passage to attach to an agent chat); returns its URI. */
-  writeScratchFile(name: string, text: string): Promise<string>;
+  /**
+   * Writes a scratch file outside the workspace (a passage to attach to an
+   * agent chat); returns its URI. Only where agents can read local files
+   * (desktop).
+   */
+  writeScratchFile?(name: string, text: string): Promise<string>;
 }
