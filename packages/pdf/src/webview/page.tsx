@@ -3,6 +3,7 @@ import { PagePointerProvider } from "@embedpdf/plugin-interaction-manager/react"
 import { SearchLayer } from "@embedpdf/plugin-search/react";
 import { SelectionLayer } from "@embedpdf/plugin-selection/react";
 import React from "react";
+import type { PageRect } from "../shared/geometry";
 import type { RegionSelection } from "../shared/selection";
 import type { Highlight } from "./navigation";
 import { PageLinks } from "./page-links";
@@ -190,3 +191,26 @@ const ROTOR: Record<number, (boxWidth: number, boxHeight: number) => string> = {
     `translate(${boxWidth}px, ${boxHeight}px) rotate(180deg)`,
   3: (_, boxHeight) => `translateY(${boxHeight}px) rotate(270deg)`,
 };
+
+function Box({
+  rect,
+  scale,
+  className,
+}: {
+  rect: PageRect;
+  scale: number;
+  className: string;
+}): React.JSX.Element {
+  const [left, top, right, bottom] = rect;
+  return (
+    <div
+      className={className}
+      style={{
+        left: left * scale,
+        top: top * scale,
+        width: (right - left) * scale,
+        height: (bottom - top) * scale,
+      }}
+    />
+  );
+}
