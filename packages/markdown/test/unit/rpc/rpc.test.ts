@@ -4,6 +4,7 @@ import { Schema } from "@workshop/core";
 import { defineProtocol } from "../../../src/shared/rpc/protocol";
 import { Endpoint, CancelToken } from "../../../src/shared/rpc/endpoint";
 import type { Clock, Transport } from "../../../src/shared/rpc/endpoint";
+import { RpcError } from "../../../src/shared/rpc/lifecycle";
 const protocol = defineProtocol("example", {
   requests: { double: { params: Schema.number(), result: Schema.number() } },
   notifications: { changed: Schema.string() },
@@ -277,6 +278,39 @@ test("duplicate request IDs cannot replace an in-flight handler", async () => {
   assert.ok(logs.includes("Dropped duplicate RPC request"));
   finish(6);
   assert.equal(await pending, 6);
+  await a.dispose();
+  await b.dispose();
+});
+
+test("a failed call says what failed: its code, the method and why", async () => {
+  const { a, b, clock } = pair();
+  b.handle(protocol, "double", () => new Promise<number>(() => {}));
+  const timedOut = a.call(protocol, "double", 2).catch((error: Error) => error);
+  clock.expire();
+  assert.equal(
+    String(await timedOut),
+    "Timeout: no reply to double within 10000 ms",
+  );
+  const token = new CancelToken();
+  token.cancel();
+  const cancelled = await a
+    .call(protocol, "double", 2, { token })
+    .catch((error: Error) => error);
+  assert.equal(String(cancelled), "Cancelled: double was cancelled");
+  await a.dispose();
+  await b.dispose();
+});
+
+test("an RpcError thrown by a handler arrives with its code and message once", async () => {
+  const { a, b } = pair();
+  b.handle(protocol, "double", () => {
+    throw new RpcError("EditorNotFound", "Editor 3 is not open");
+  });
+  const error = await a
+    .call(protocol, "double", 2)
+    .catch((error: RpcError) => error);
+  assert.equal((error as RpcError).code, "EditorNotFound");
+  assert.equal(String(error), "EditorNotFound: Editor 3 is not open");
   await a.dispose();
   await b.dispose();
 });

@@ -18,7 +18,7 @@ import type {
   Pending,
 } from "./endpoint-types";
 import type { Transport, Clock, Cancellation } from "./lifecycle";
-import { CancelToken, RpcError } from "./lifecycle";
+import { CancelToken, RpcError, callFailed } from "./lifecycle";
 export * from "./lifecycle";
 /**
  * Typed requests and notifications over one transport.
@@ -191,7 +191,7 @@ export class Endpoint {
       return Promise.reject(error);
     }
     if (options.token?.cancelled) {
-      return Promise.reject(new RpcError("Cancelled", method));
+      return Promise.reject(callFailed.cancelled(method));
     }
     return this.sendRequest({
       protocol,
@@ -217,12 +217,12 @@ export class Endpoint {
         void timer();
         void cancel();
       };
-      const fail = (code: string) => {
+      const fail = (error: RpcError) => {
         if (!this.pending.delete(id)) {
           return;
         }
         cleanup();
-        reject(new RpcError(code, method));
+        reject(error);
         this.send({ kind: "cancel", id });
       };
       this.pending.set(id, {
@@ -231,10 +231,13 @@ export class Endpoint {
         reject,
         cleanup,
       });
-      timer = this.clock.after(options.timeout ?? 10_000, () =>
-        fail("Timeout"),
+      const timeout = options.timeout ?? 10_000;
+      timer = this.clock.after(timeout, () =>
+        fail(callFailed.timeout(method, timeout)),
       );
-      cancel = options.token?.onCancel(() => fail("Cancelled")) ?? cancel;
+      cancel =
+        options.token?.onCancel(() => fail(callFailed.cancelled(method))) ??
+        cancel;
       try {
         this.send({
           kind: "request",
@@ -394,11 +397,13 @@ export class Endpoint {
       this.sendResult(id, result, value);
     } catch (error) {
       if (!token.cancelled) {
-        this.sendError(
-          id,
-          error instanceof RpcError ? error.code : "HandlerFailed",
-          String(error),
-        );
+        // The other side names its error by the code again, so an RpcError
+        // travels as its message alone.
+        const [code, message] =
+          error instanceof RpcError
+            ? [error.code, error.message]
+            : ["HandlerFailed", String(error)];
+        this.sendError(id, code, message);
       }
     }
   }

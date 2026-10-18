@@ -35,11 +35,24 @@ export class CancelToken implements Cancellation {
     this.listeners.clear();
   }
 }
+/**
+ * A failed call. Its name is its code, as the core's errors do, so a log
+ * line reads `Timeout: no reply to ready within 10000 ms`, not `Error: ready`.
+ */
 export class RpcError extends Error {
   constructor(
     readonly code: string,
     message: string,
   ) {
     super(message);
+    this.name = code;
   }
 }
+
+/** How a call fails on the calling side: no reply in time, or cancelled. */
+export const callFailed = {
+  timeout: (method: string, ms: number) =>
+    new RpcError("Timeout", `no reply to ${method} within ${ms} ms`),
+  cancelled: (method: string) =>
+    new RpcError("Cancelled", `${method} was cancelled`),
+};
