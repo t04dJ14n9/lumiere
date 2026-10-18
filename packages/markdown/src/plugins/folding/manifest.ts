@@ -26,6 +26,8 @@ export default defineManifest({
         title: "Toggle Fold",
         editorCommand: "editor:toggle-fold",
       },
+      { id: "foldMore", title: "Fold More", editorCommand: "editor:fold-more" },
+      { id: "foldLess", title: "Fold Less", editorCommand: "editor:fold-less" },
     ],
   },
 } as const);

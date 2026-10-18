@@ -299,6 +299,17 @@ function registerAddProperty(ctx: Context, editing: PropertyEditing): void {
       return true;
     }),
   );
+  // As in Obsidian: collapse or expand the note's Properties, as their
+  // heading does when clicked (which also remembers it for the note).
+  ctx.effect(() =>
+    ctx.commands.register("editor:toggle-fold-properties", () => {
+      const heading = ctx.editor.view.dom.querySelector<HTMLElement>(
+        "[data-properties-heading]",
+      );
+      heading?.click();
+      return heading !== null;
+    }),
+  );
 }
 
 function registerPreferences(

@@ -3,11 +3,10 @@ import {
   foldService,
   codeFolding,
   foldGutter,
-  foldAll,
   unfoldAll,
-  toggleFold,
   foldState,
 } from "@codemirror/language";
+import type { EditorView } from "@codemirror/view";
 import { Compartment } from "@codemirror/state";
 import { foldedViewState } from "./view-state";
 import type { Context, Infer, Plugin } from "@workshop/core";
@@ -16,6 +15,22 @@ import type {} from "../editor/api";
 import type {} from "../commands/api";
 import { headingFold } from "./heading-fold";
 import { config } from "./manifest";
+import {
+  applyFolds,
+  foldAllEffects,
+  foldLessEffect,
+  foldMoreEffect,
+  toggleLineFolds,
+} from "./commands";
+
+const foldAll = (view: EditorView) =>
+  applyFolds(view, foldAllEffects(view.state));
+const toggleFold = (view: EditorView) =>
+  applyFolds(view, toggleLineFolds(view.state));
+const foldMore = (view: EditorView) =>
+  applyFolds(view, foldMoreEffect(view.state));
+const foldLess = (view: EditorView) =>
+  applyFolds(view, foldLessEffect(view.state));
 
 export function foldRange(
   state: EditorState,
@@ -114,6 +129,8 @@ export const foldingWebview: Plugin<Infer<typeof config>> = {
       ["fold-all", foldAll],
       ["unfold-all", unfoldAll],
       ["toggle-fold", toggleFold],
+      ["fold-more", foldMore],
+      ["fold-less", foldLess],
     ] as const) {
       ctx.effect(() =>
         ctx.commands.register(`editor:${id}`, () => command(ctx.editor.view)),

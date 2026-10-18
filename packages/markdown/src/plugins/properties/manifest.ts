@@ -25,6 +25,11 @@ export default defineManifest({
         key: "ctrl+;",
         mac: "cmd+;",
       },
+      {
+        id: "toggleFoldProperties",
+        title: "Toggle Fold Properties",
+        editorCommand: "editor:toggle-fold-properties",
+      },
     ],
   },
 });

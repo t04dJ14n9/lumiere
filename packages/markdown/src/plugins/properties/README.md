@@ -89,6 +89,7 @@ The host injects `rpc`, `vault` and the host service `storage`; the webview inje
 Widgets bind sheet content; heading interactions call `editor/focusTitle`.
 Edits emit `render/changed` and `editor/clearProjection`; RPC receives type
 preferences and shared disclosure; name suggestions use indexed vault metadata.
+Toggle Fold Properties collapses or expands the sheet, as its heading does.
 Settings are `markdownWorkshop.properties.display`
 (`visible`, `hidden`, `source`) and `markdownWorkshop.plugins.properties.enabled`.
 

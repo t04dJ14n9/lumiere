@@ -31,7 +31,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | `backlinks` | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | `outgoingLinks` | not observed | not manually observed | Off by default (owner decision): turn the switch on first. Manual scenario pending; automated evidence is in phase records | not observed |
 | `search` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
-| `folding` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| `folding` | 2026-10-17, measured by running the same fold commands on the same notes in a throwaway vault over the DevTools protocol: Fold all, Unfold all, Toggle fold on every line, Fold more, Fold less, Toggle fold properties; headings, lists, indented text, code blocks, callouts | Matches the measured behaviour in all 122 cases (src/plugins/folding/README.md) | Differential fold probe (Obsidian and the browser harness); unit tests pin each rule | behaviour measured; visual parity not observed |
 | `lineNumbers` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `gitDiffEditor` | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | `gitBlame` | No Obsidian core equivalent | Current-line authorship in Live Preview | Manual acceptance in docs/MANUAL_TEST_PLAN.md; snapshot/epoch/porcelain unit coverage | Intentional extension |
@@ -341,3 +341,6 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Setting: markdownWorkshop.okfCore.bundles | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkshop.plugins.obsidianCompat.enabled | not observed | not manually observed | Manual scenario pending | not observed |
 | Setting: markdownWorkshop.obsidianCompat.configFolder | not observed | not manually observed | Manual scenario pending | not observed |
+| Command: markdownWorkshop.foldMore | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.foldLess | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential fold probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.toggleFoldProperties | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches the measured behaviour | Differential probe | behaviour measured |

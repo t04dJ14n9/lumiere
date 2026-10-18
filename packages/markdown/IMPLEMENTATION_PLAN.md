@@ -4959,3 +4959,20 @@ search. All 74 cases now match (`docs/OBSIDIAN_REVEAL_RULES.md` rule 12).
   as in Obsidian's reading view (its Live Preview leaves `> - [ ]` as text).
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Folding, measured against Obsidian — 2026-10-17
+
+The same fold commands were run on the same notes in the throwaway Obsidian
+and in the editor (headings, lists, indented text, code blocks, callouts; the
+caret on every line), comparing the lines left visible. All 122 cases match.
+
+- Toggle Fold acts only on a section that starts on the caret's line, as in
+  Obsidian; CodeMirror's command folded the section around a body line.
+- Fold All folds nested sections too, so unfolding one leaves the ones
+  inside it folded.
+- New: Fold More (the innermost open section around the caret, then the next
+  out) and Fold Less (the outermost folded one), and Toggle Fold Properties.
+  The fold commands live in `folding/commands.ts`.
+
+Validation: `pnpm check` green; unit tests pin the measured lines; Markdown
+browser suite 284/284.

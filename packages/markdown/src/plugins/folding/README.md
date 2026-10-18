@@ -28,9 +28,13 @@ restores valid saved ranges.
 Injects `editor` and `commands`; provides `fold`. No kernel events. Contributes
 `folded` view state. `plugins.folding.enabled`, `folding.heading` and
 `folding.indent` under `markdownWorkshop` default to true. Commands: Fold All,
-Unfold All and Toggle Fold; no default keybindings.
+Unfold All, Toggle Fold, Fold More and Fold Less (`commands.ts`), as in
+Obsidian, measured against it: Fold All folds nested sections too; Toggle Fold
+acts only on a section that starts on the caret's line; Fold More folds the
+innermost open section around the caret and Fold Less opens the outermost
+folded one. No default keybindings.
 
 ## Limits and differences from Obsidian
 
-Uses CodeMirror's gutter and fold mechanics with VS Code colors. Fold state is
+Uses CodeMirror's gutter and fold state with VS Code colors. Fold state is
 per panel; two panels of one note may differ. Text and undo remain host-owned.

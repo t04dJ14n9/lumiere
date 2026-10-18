@@ -186,6 +186,16 @@
         "category": "Markdown Workshop"
       },
       {
+        "command": "markdownWorkshop.foldMore",
+        "title": "Fold More",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.foldLess",
+        "title": "Fold Less",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.insertFootnote",
         "title": "Insert Footnote",
         "category": "Markdown Workshop"
@@ -420,6 +430,11 @@
         "title": "Add File Property",
         "category": "Markdown Workshop",
         "icon": "$(symbol-property)"
+      },
+      {
+        "command": "markdownWorkshop.toggleFoldProperties",
+        "title": "Toggle Fold Properties",
+        "category": "Markdown Workshop"
       },
       {
         "command": "markdownWorkshop.managePlugins",
@@ -1301,6 +1316,14 @@
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.folding"
         },
         {
+          "command": "markdownWorkshop.foldMore",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.folding"
+        },
+        {
+          "command": "markdownWorkshop.foldLess",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.folding"
+        },
+        {
           "command": "markdownWorkshop.insertFootnote",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.footnotes"
         },
@@ -1482,6 +1505,10 @@
         },
         {
           "command": "markdownWorkshop.addProperty",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
+        },
+        {
+          "command": "markdownWorkshop.toggleFoldProperties",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.properties"
         },
         {
