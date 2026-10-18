@@ -14,6 +14,7 @@ import { tags } from "./tags";
 import { footnotes } from "./footnotes";
 import { wiki } from "./wiki";
 import { highlight } from "./highlight";
+import { highlightEmphasis } from "./highlight-emphasis";
 import { comments } from "./comments";
 import { tasks } from "./tasks";
 import { tableRows } from "./table-rows";
@@ -30,6 +31,7 @@ export const markdownParser = parser.configure([
   footnotes,
   wiki,
   highlight,
+  highlightEmphasis,
   comments,
   {
     props: [

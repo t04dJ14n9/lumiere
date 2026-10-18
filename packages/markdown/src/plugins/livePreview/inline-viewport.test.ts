@@ -6,6 +6,8 @@ import {
   isPointerSelecting,
   pointerSelection,
   setPointerSelection,
+  setVisualRevealFreeze,
+  visualRevealFreeze,
 } from "../../webview/ui/pointer-selection";
 import { documentTree } from "./document-tree";
 import { HybridInline } from "./inline";
@@ -18,7 +20,7 @@ function fixture() {
   const view = {
     state: EditorState.create({
       doc,
-      extensions: [documentTree, pointerSelection],
+      extensions: [documentTree, pointerSelection, visualRevealFreeze],
     }),
     visibleRanges: [{ from: 0, to: 6 }],
     composing: false,
@@ -140,6 +142,22 @@ test("wheel and keyboard viewport changes render without a pointer freeze", () =
   f.update({}, true);
   assert.equal(isPointerSelecting(f.view.state), false);
   assertRendered(f.inline.decorations);
+});
+
+test("leaving Vim visual mode rebuilds inline markers for the final caret outside the span", () => {
+  const f = fixture();
+  f.view.visibleRanges = [nextViewport];
+  f.update({ selection: { anchor: doc.indexOf("bold") } });
+  f.update({ effects: setVisualRevealFreeze.of(f.view.state.selection) });
+  f.update({ selection: { anchor: doc.length } });
+  assert.ok(
+    presentation(f.inline.decorations).classes.includes("md-syntax-mark"),
+  );
+  f.update({ effects: setVisualRevealFreeze.of(null) });
+  assertRendered(f.inline.decorations);
+  assert.ok(
+    !presentation(f.inline.decorations).classes.includes("md-syntax-mark"),
+  );
 });
 
 test("composition still maps existing decorations when the viewport changes", () => {

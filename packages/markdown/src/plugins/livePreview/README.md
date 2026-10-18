@@ -20,6 +20,9 @@ before syntax is revealed.
 A coloured highlight (`==🔵text==`, Obsidian 1.14) shows in its colour with
 the emoji hidden, or a swatch in its place while the caret is in it, as
 Obsidian shows it.
+Emphasis around a highlight remains parsed inside a word, including its colour
+emoji, so moving the caret outside hides both pairs of syntax markers. The
+syntax parser and HTML renderer share the highlight-aware emphasis flanking rule.
 
 ## Files
 
@@ -34,12 +37,16 @@ Obsidian shows it.
 - `block-discovery.test.ts`: registration cost, discovery parity and unrestricted renderers.
 - `inline.ts`: basic inline decoration builder and composition/drag lifetime.
 - `highlight-colour.ts`: a coloured highlight's class and emoji.
+- `../../markdown/dialect/highlight-emphasis.ts`: highlight-aware emphasis flanking,
+  shared with the HTML renderer.
 - `code-lines.ts`: code block lines; only fence text hides, so reveals never
   change the layout. Thematic breaks are likewise one decorated line.
 - `rendered-position.ts`: visible-text projection and DOM-to-source mapping.
 - `motion.ts`: Escape and vertical motion around rendered blocks, visible-widget queries and disjoint fold spans.
 - `core.test.ts`: reveal, motion, mode and lifecycle unit coverage.
 - `inline.test.ts`: basic/custom decoration and line-deduplication units.
+- `../../../test/unit/livePreview/nested-formatting.test.ts`: formatting commands
+  followed by caret-outside syntax hiding.
 - `inline-viewport.test.ts`: scrollbar and drag viewport rendering, frozen reveal,
   selection-only stability and composition mapping units.
 - `code-lines.test.ts`: code and thematic break line classes and hidden text.
@@ -109,8 +116,9 @@ for `- [ ]`). Both code fences reveal anywhere in the block. Callouts reveal
 source with quote marks per line and inline syntax per element. Definition
 markers reveal on their first line; math and HTML blocks reveal whole, and
 display math keeps its rendered formula below the source. A click on a
-rendered block reveals it as in Obsidian: math and callouts on a click,
-selecting the formula or the whole callout; rendered fenced code (diagrams,
+rendered math block reveals it as in Obsidian, selecting the formula. Callouts
+reveal through Edit, selecting the whole callout; their titles toggle folds.
+Rendered fenced code (diagrams,
 queries, processed code) only from its Edit button, selecting the code
 (`BlockEditing` in `src/webview/ui/markdown-widget.ts`).
 Tables and Properties retain their widgets; bullets, numbers, tags and comment

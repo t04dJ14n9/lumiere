@@ -26,6 +26,7 @@ import { tasks } from "./tasks";
 import { callouts } from "./callouts";
 import { html } from "./html";
 import { highlights } from "./highlights";
+import { highlightEmphasis } from "./highlight-emphasis";
 export function createRenderer(options: RendererOptions = {}) {
   const defaultBreaks = !options.strictLineBreaks;
   const md = new MarkdownIt({
@@ -48,6 +49,7 @@ export function createRenderer(options: RendererOptions = {}) {
   callouts(md, options.calloutIcon);
   html(md);
   highlights(md);
+  highlightEmphasis(md);
   return {
     renderMarkdown(source: string, options: RenderOptions = {}): string {
       md.options.breaks =

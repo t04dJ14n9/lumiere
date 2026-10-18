@@ -4,6 +4,44 @@ import { EditorState } from "@codemirror/state";
 import { documentTree } from "./document-tree";
 import { inlineRenderers } from "./registry";
 import { bareUrlTarget, inlineDecorations, linkClass } from "./inline";
+import { HIGHLIGHT_COLOURS } from "../../markdown/dialect/highlight";
+import { createRenderer } from "../../markdown/html";
+
+test("nested bold and every highlight colour keep caret-inside markers faint and HTML in agreement", () => {
+  const render = createRenderer();
+  for (const [colour, emoji] of Object.entries(HIGHLIGHT_COLOURS)) {
+    const doc = `sent**==${emoji}ence==**note.[^1]`;
+    const state = EditorState.create({
+      doc,
+      selection: { anchor: doc.indexOf("ence") },
+      extensions: [documentTree],
+    });
+    const faint: string[] = [];
+    const swatches: string[] = [];
+    inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+      0,
+      doc.length,
+      (from, to, value) => {
+        if (value.spec.class === "md-syntax-mark") {
+          faint.push(doc.slice(from, to));
+        }
+        if (value.spec.widget) {
+          swatches.push(doc.slice(from, to));
+        }
+      },
+    );
+    assert.deepEqual(faint.sort(), ["**", "**", "==", "=="], colour);
+    assert.deepEqual(swatches, [emoji], colour);
+    assert.ok(
+      render
+        .renderInline(doc)
+        .includes(
+          `sent<strong><mark data-highlight="${colour}">ence</mark></strong>note.`,
+        ),
+      colour,
+    );
+  }
+});
 
 test("inline decorations retain basic marks, rendered links and deduplicated heading lines", () => {
   const doc = "# Title\n\n**bold** [label](target)\n\nafter";

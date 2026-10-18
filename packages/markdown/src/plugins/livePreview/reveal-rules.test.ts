@@ -116,6 +116,15 @@ const inlineCases = [
     ],
   },
   {
+    name: "bold and highlight inside a word",
+    gap: "x",
+    parts: [
+      ["**==bold==**", "bold"],
+      ["==**bold**==", "bold"],
+      ["*==italic==*", "italic"],
+    ],
+  },
+  {
     name: "triple emphasis",
     gap: " ",
     parts: [
