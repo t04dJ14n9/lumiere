@@ -2,6 +2,7 @@ import { WidgetType } from "@codemirror/view";
 import type { EditorView } from "@codemirror/view";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import type { SourceSpan } from "./markdown-widget";
+import { CLICK_SELECT } from "./pointer-selection";
 
 /**
  * What a plain click on rendered inline content does, as in Obsidian:
@@ -93,6 +94,7 @@ export class MarkdownInline extends WidgetType {
     // As in Obsidian, the selection's head is at its start.
     view.dispatch({
       selection: { anchor: start + span.to, head: start + span.from },
+      userEvent: CLICK_SELECT,
     });
   }
   override destroy(node: HTMLElement): void {

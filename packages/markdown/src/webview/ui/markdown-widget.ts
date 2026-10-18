@@ -4,6 +4,7 @@ import type { RenderBlock } from "../../plugins/livePreview/api";
 import type { RenderPass, RenderService } from "../../plugins/render/api";
 import { bindClickToEdit, markdownBlockIgnoresEvent } from "./block-pointer";
 import { bindFenceClickGuard } from "./fence-click-guard";
+import { CLICK_SELECT } from "./pointer-selection";
 
 /** A span of a block's source, as offsets into it. */
 export interface SourceSpan {
@@ -147,6 +148,7 @@ export class MarkdownBlock extends WidgetType {
     view.dispatch({
       selection: { anchor: start + span.to, head: start + span.from },
       scrollIntoView: false,
+      userEvent: CLICK_SELECT,
     });
   }
 

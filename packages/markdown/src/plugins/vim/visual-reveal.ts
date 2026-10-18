@@ -1,11 +1,33 @@
 import { ViewPlugin } from "@codemirror/view";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
-import type { EditorSelection, Extension } from "@codemirror/state";
+import {
+  EditorState,
+  type EditorSelection,
+  type Extension,
+} from "@codemirror/state";
 import { getCM, type CodeMirror } from "@replit/codemirror-vim";
 import {
+  CLICK_SELECT,
   setVisualRevealFreeze,
   visualRevealFreeze,
 } from "../../webview/ui/pointer-selection";
+
+/**
+ * A selection made with the mouse while visual mode froze reveal (a drag, or
+ * a click that selects a formula or a callout) moves the freeze to it, in the
+ * same transaction. The freeze holds the note still while motions extend a
+ * selection; a click picks a new one, which reveals as it would outside
+ * visual mode. Vim stays in visual mode, so no mode change would move it.
+ */
+const freezeFollowsPointer = EditorState.transactionExtender.of(
+  (transaction) =>
+    transaction.selection &&
+    (transaction.isUserEvent("select.pointer") ||
+      transaction.isUserEvent(CLICK_SELECT)) &&
+    transaction.startState.field(visualRevealFreeze, false)
+      ? { effects: setVisualRevealFreeze.of(transaction.newSelection) }
+      : null,
+);
 
 /**
  * While Vim is in visual mode, freeze Live Preview reveal at the selection
@@ -21,7 +43,7 @@ export function freezeRevealDuringVisual(): Extension {
     },
     // Removing Vim drops the freeze in the reconfiguration transaction itself.
     // destroy() must not dispatch while CodeMirror is updating its plugins.
-    { provide: () => visualRevealFreeze },
+    { provide: () => [visualRevealFreeze, freezeFollowsPointer] },
   );
 }
 

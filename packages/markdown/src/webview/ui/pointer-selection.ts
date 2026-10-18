@@ -47,6 +47,13 @@ export function pointerSelectionToggled(
  * extending the selection (j/k) does not reflow Live Preview under the range
  * and jump the viewport. Cleared when visual ends.
  */
+/**
+ * The user event of a selection a click on a rendered element makes (a
+ * formula, a callout, an embed), so Vim's visual freeze can tell it from a
+ * motion.
+ */
+export const CLICK_SELECT = "select.click";
+
 export const setVisualRevealFreeze =
   StateEffect.define<EditorSelection | null>();
 

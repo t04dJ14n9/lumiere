@@ -332,3 +332,45 @@ test("pointer freeze keeps precedence and survives Vim removal", async (t) => {
   assert.equal(f.view.state.field(pointerSelection), pointer);
   assert.equal(revealRanges(f.view.state)[0]!.head, pointer.main.head);
 });
+
+test("a click on a rendered element in visual mode moves the freeze to its selection, so it reveals at once", () => {
+  // An inline formula selected by a click (visual mode, frozen there), then
+  // a click on a display formula: it reveals on that click, not a second one.
+  const doc = "a $x$ b\n\n$$\ny\n$$";
+  let state = EditorState.create({
+    doc,
+    extensions: [freezeRevealDuringVisual()],
+  });
+  const ranges = () =>
+    revealRanges(state).map((range) => [range.from, range.to]);
+  state = state.update({
+    selection: { anchor: 5, head: 2 },
+    effects: setVisualRevealFreeze.of(EditorSelection.single(5, 2)),
+  }).state;
+  // A motion extending the selection keeps the freeze.
+  state = state.update({ selection: { anchor: 5, head: 0 } }).state;
+  assert.deepEqual(ranges(), [[2, 5]]);
+  state = state.update({
+    selection: { anchor: 13, head: 12 },
+    userEvent: "select.click",
+  }).state;
+  assert.deepEqual(ranges(), [[12, 13]]);
+  // A mouse drag moves it too.
+  state = state.update({
+    selection: { anchor: 0, head: 3 },
+    userEvent: "select.pointer.drag",
+  }).state;
+  assert.deepEqual(ranges(), [[0, 3]]);
+});
+
+test("outside visual mode a click starts no freeze", () => {
+  let state = EditorState.create({
+    doc: "a $x$ b",
+    extensions: [freezeRevealDuringVisual()],
+  });
+  state = state.update({
+    selection: { anchor: 5, head: 2 },
+    userEvent: "select.click",
+  }).state;
+  assert.equal(state.field(visualRevealFreeze), null);
+});
