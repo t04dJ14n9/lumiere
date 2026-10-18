@@ -43,6 +43,8 @@ export const settingsHost: Plugin = {
     command("openSettings", () => settings.openUi(settings.searchFilter));
     command("changeSetting", (argument) => changeSetting(editing, argument));
     command("setNoteFontSize", (argument) => setFontSize(editing, argument));
+    command("increaseFontSize", () => stepFontSize(editing, 1));
+    command("decreaseFontSize", () => stepFontSize(editing, -1));
     for (const toggle of toggles) {
       command(toggle.command, () => flip(editing, toggle));
     }
@@ -110,6 +112,27 @@ async function changeSetting(
   if (chosen) {
     await editSetting(editing, chosen);
   }
+}
+
+/**
+ * **Increase Font Size** and **Decrease Font Size**, as Obsidian 1.14's
+ * (measured): one pixel at a time, no smaller than 10 or larger than 30,
+ * with no notice.
+ */
+async function stepFontSize(editing: Editing, step: 1 | -1): Promise<void> {
+  const setting = required(editing, FONT_SIZE_KEY);
+  if (!setting) {
+    return;
+  }
+  const current = editing.settings.inspect(FONT_SIZE_KEY, editing.resource());
+  const size =
+    typeof current.value === "number"
+      ? current.value
+      : Number(setting.schema.default);
+  if ((step === 1 && size >= 30) || (step === -1 && size <= 10)) {
+    return;
+  }
+  await writeSetting({ ...editing, inform: () => {} }, setting, size + step);
 }
 
 async function setFontSize(editing: Editing, argument: unknown): Promise<void> {

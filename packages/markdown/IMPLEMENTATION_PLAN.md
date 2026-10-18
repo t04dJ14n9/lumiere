@@ -5397,3 +5397,19 @@ The 150-case command probe (25 commands on six notes) was run again against
 
 Validation: `pnpm check` green; Markdown browser suite 283/284, the one failure the blink timing fixed below.
 - A VSCodeVim caret spec now waits for the blink animation to run instead of sleeping 300 ms (it started late under load).
+
+## Earlier probes run again on Obsidian 1.14.4; font size commands — 2026-10-17
+
+The differential probes first run on 1.12.7 were run again on 1.14.4:
+folding 80 of 80; clicks unchanged in Obsidian since 1.12.7 (74 cases; the
+embed cases need resources the browser harness does not load, and images
+were checked in VS Code); HTML paste 29 of 30 (the escaping kept on purpose);
+the remaining command cases 19 of 19. A footnote popover left open by one
+probe made Obsidian's active editor a popover and spoiled the next runs; the
+probe Obsidian is reloaded before each set now.
+
+New in 1.14: **Increase Font Size** and **Decrease Font Size**, a pixel at a
+time between 10 and 30, with no notice. Workshop adds both, stepping the note
+font size setting.
+
+Validation: `pnpm check` green.

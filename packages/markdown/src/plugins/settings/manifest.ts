@@ -18,6 +18,16 @@ export default defineManifest({
         scope: "workbench",
       },
       {
+        id: "increaseFontSize",
+        title: "Increase Font Size",
+        scope: "workbench",
+      },
+      {
+        id: "decreaseFontSize",
+        title: "Decrease Font Size",
+        scope: "workbench",
+      },
+      {
         id: "toggleLineNumbers",
         title: "Toggle Line Numbers",
         scope: "workbench",

@@ -562,6 +562,16 @@
         "category": "Markdown Workshop"
       },
       {
+        "command": "markdownWorkshop.increaseFontSize",
+        "title": "Increase Font Size",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.decreaseFontSize",
+        "title": "Decrease Font Size",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.toggleLineNumbers",
         "title": "Toggle Line Numbers",
         "category": "Markdown Workshop"
@@ -1699,6 +1709,12 @@
         },
         {
           "command": "markdownWorkshop.setNoteFontSize"
+        },
+        {
+          "command": "markdownWorkshop.increaseFontSize"
+        },
+        {
+          "command": "markdownWorkshop.decreaseFontSize"
         },
         {
           "command": "markdownWorkshop.toggleLineNumbers"

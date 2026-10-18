@@ -190,6 +190,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.addProperty | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.openSettings | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.setNoteFontSize | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.increaseFontSize | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches: a pixel a step, at most 30, no notice; it changes the note font size setting | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.decreaseFontSize | 2026-10-17, measured against Obsidian 1.14.4's command of the same name in a throwaway vault | Matches: a pixel a step, at least 10, no notice; it changes the note font size setting | Differential probe; unit tests | behaviour measured |
 | Command: markdownWorkshop.changeSetting | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.toggleLineNumbers | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.gitDiffEditor.open | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

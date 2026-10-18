@@ -110,3 +110,21 @@ test("a hand-edited font size in the workspace is not trusted: the prompt starts
   assert.equal(asked[0]!.value, "16");
   await root.dispose();
 });
+
+// Measured in Obsidian 1.14.4: one pixel a step, between 10 and 30.
+test("Increase and Decrease Font Size step the note font size by a pixel, within 10 to 30", async () => {
+  const store = layered();
+  const { command, root } = await run(store);
+  await command("increaseFontSize")();
+  await command("increaseFontSize")();
+  assert.equal(store.user.get("editor.fontSize"), 18);
+  await command("decreaseFontSize")();
+  assert.equal(store.user.get("editor.fontSize"), 17);
+  store.user.set("editor.fontSize", 30);
+  await command("increaseFontSize")();
+  assert.equal(store.user.get("editor.fontSize"), 30);
+  store.user.set("editor.fontSize", 10);
+  await command("decreaseFontSize")();
+  assert.equal(store.user.get("editor.fontSize"), 10);
+  await root.dispose();
+});
