@@ -13,6 +13,28 @@ plan, still valid. The plan's "don't change the repository" rule is for
 testing; to fix bugs, follow [AGENTS.md](../AGENTS.md) (each fix in its own
 commit with a unit test) and don't push without the owner.
 
+### Working in parallel with Claude (from 2026-10-18, 08:00 PDT)
+
+The owner has Grok Bot and a Claude session working at the same time.
+Grok Bot keeps the Vim and editing bugs. Claude has taken: the full local
+test pass (VS Code and Cursor, including the keyboard checks through the
+real-editor harness), the code rename to Lumière, reviewing and merging
+`claude/math-fixes`, reviewing `claude/web-extension`, then reinstalling and
+pushing.
+
+- Claude does its large work in its own worktrees under
+  `~/Code/vscode-workshop/` (`lumiere-verify` for test runs,
+  `lumiere-rename` for the rename) and brings it into
+  `claude/cordis-core-and-parity` only when it is ready, with a note here.
+- In the shared checkout both commit only the paths they changed, never
+  `git add -A` or `git commit -a`, and neither pushes without the owner.
+- Run test suites one at a time: before starting one, check with
+  `pgrep -f "playwright test"` that none is running, and give the PDF
+  browser suite its own port (`PORT=8992`; Claude uses 8991).
+- The rename will change every `markdownWorkshop.` and `pdfWorkshop.` key
+  and command ID. Before it lands, Claude will rebase it onto the branch, so
+  keep committing as usual.
+
 ### Your task: Vim input bugs
 
 The owner reports "a lot of bugs when inputting in Vim mode", with no
