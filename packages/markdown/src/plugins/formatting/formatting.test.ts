@@ -81,14 +81,16 @@ test("toggle comment wraps the selection or the word in %% … %%, as in Obsidia
       ? out.slice(0, from) + "|" + out.slice(from)
       : out.slice(0, from) + "‹" + out.slice(from, to) + "›" + out.slice(to);
   };
-  assert.equal(comment("hello wo|rld"), "hello %% ‹world› %%");
-  assert.equal(comment("hello |world"), "hello %% ‹world› %%");
-  assert.equal(comment("hello ‹world›"), "hello %% ‹world› %%");
-  assert.equal(comment("hello |"), "hello %% | %%");
-  assert.equal(comment("|"), "%% | %%");
-  assert.equal(comment("‹a\nb›"), "%% ‹a\nb› %%");
+  // As Obsidian 1.14 wraps (1.12 put spaces inside the markers).
+  assert.equal(comment("hello wo|rld"), "hello %%‹world›%%");
+  assert.equal(comment("hello |world"), "hello %%‹world›%%");
+  assert.equal(comment("hello ‹world›"), "hello %%‹world›%%");
+  assert.equal(comment("hello |"), "hello %%|%%");
+  assert.equal(comment("|"), "%%|%%");
+  assert.equal(comment("‹a\nb›"), "%%‹a\nb›%%");
   // Inside a comment, the markers go (with the spaces inside them).
-  assert.equal(comment("hello %% wo|rld %%"), "hello wo|rld");
+  // Spaces inside the markers stay, as in Obsidian.
+  assert.equal(comment("hello %% wo|rld %%"), "hello  wo|rld ");
   assert.equal(comment("a %%wo|rd%% b"), "a wo|rd b");
 });
 

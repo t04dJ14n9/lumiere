@@ -5381,3 +5381,19 @@ Validation: `pnpm check` green; Markdown browser suite 284/284.
   bold and linked, `_c@d.org_` only emphasised).
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## The editor commands, measured again on Obsidian 1.14.4 — 2026-10-17
+
+The 150-case command probe (25 commands on six notes) was run again against
+1.14.4: 138 the same. The 12 others are two commands:
+
+- **Toggle Comment** now wraps as `%%text%%`, without the spaces 1.12 put
+  inside, and removing a comment leaves spaces inside it. Workshop follows,
+  which also ends its deliberate difference there.
+- **Insert Footnote** adds the reference and an empty definition, then edits
+  the definition in a popover (the probe saw the popover's editor as active).
+  Workshop has no popover and keeps putting the caret in the definition, as
+  documented.
+
+Validation: `pnpm check` green; Markdown browser suite 283/284, the one failure the blink timing fixed below.
+- A VSCodeVim caret spec now waits for the blink animation to run instead of sleeping 300 ms (it started late under load).

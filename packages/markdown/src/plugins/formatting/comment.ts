@@ -8,12 +8,10 @@ import { syntaxTree } from "@codemirror/language";
 import type { SyntaxNode } from "@lezer/common";
 
 /**
- * Toggle Comment, as Obsidian does it: wrap the selection, or the word at the
- * caret, in `%% … %%` and keep it selected; with nothing to wrap, insert an
- * empty comment around the caret. Inside a comment, remove its markers.
- *
- * Unlike Obsidian, removing a comment also removes the spaces just inside
- * its markers, which Obsidian leaves behind.
+ * Toggle Comment, as Obsidian 1.14 does it (measured): wrap the selection, or
+ * the word at the caret, in `%%…%%` and keep it selected; with nothing to
+ * wrap, insert an empty comment around the caret. Inside a comment, remove
+ * its markers (spaces inside them stay, as in Obsidian).
  */
 export function toggleComment(state: EditorState): TransactionSpec {
   return {
@@ -25,16 +23,9 @@ export function toggleComment(state: EditorState): TransactionSpec {
 function toggleAt(state: EditorState, range: SelectionRange) {
   const comment = enclosingComment(state, range);
   if (comment) {
-    const open =
-      state.sliceDoc(comment.from, comment.from + 3) === "%% " ? 3 : 2;
-    const close =
-      comment.to - 3 >= comment.from + open &&
-      state.sliceDoc(comment.to - 3, comment.to) === " %%"
-        ? 3
-        : 2;
     const changes = state.changes([
-      { from: comment.from, to: comment.from + open },
-      { from: comment.to - close, to: comment.to },
+      { from: comment.from, to: comment.from + 2 },
+      { from: comment.to - 2, to: comment.to },
     ]);
     return { changes, range: range.map(changes) };
   }
@@ -42,15 +33,15 @@ function toggleAt(state: EditorState, range: SelectionRange) {
   const from = word?.from ?? range.from;
   const to = word?.to ?? range.to;
   const changes = [
-    { from, insert: "%% " },
-    { from: to, insert: " %%" },
+    { from, insert: "%%" },
+    { from: to, insert: "%%" },
   ];
   if (word || range.empty) {
-    return { changes, range: EditorSelection.range(from + 3, to + 3) };
+    return { changes, range: EditorSelection.range(from + 2, to + 2) };
   }
   return {
     changes,
-    range: EditorSelection.range(range.anchor + 3, range.head + 3),
+    range: EditorSelection.range(range.anchor + 2, range.head + 2),
   };
 }
 

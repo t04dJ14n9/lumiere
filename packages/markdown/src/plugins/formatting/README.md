@@ -23,7 +23,7 @@ commands target the active projected editor (including table cells), and owned
 keymaps provide bold, italic, link and comment shortcuts. As in Obsidian,
 Insert Link leaves the caret in the empty URL after a selected label (else in
 the empty label), and Toggle Comment wraps the selection or the word at the
-caret in `%% … %%` with it selected, or inserts an empty comment
+caret in `%%…%%` (no spaces, as in 1.14) with it selected, or inserts an empty comment
 (`comment.ts`). Pasting a URL (any `scheme:` text without spaces) over
 selected text on one line links the text and selects the link
 (`paste-link.ts`). Those keymaps stop the
@@ -53,9 +53,6 @@ operations. Queries the `editor/activeView` bail event for palette commands.
 Insert Link and Toggle Comment use Mod+B, Mod+I, Mod+K and Mod+/.
 
 ## Limits and differences from Obsidian
-
-Removing a comment also removes the spaces just inside its `%%` markers, which
-Obsidian leaves behind.
 
 After a highlight colour command the selection stays on the same text;
 Obsidian 1.14 sometimes leaves it elsewhere, and with a selection running past

@@ -167,11 +167,13 @@ test.describe("VSCodeVim caret parity", () => {
   }) => {
     await configure(page, { cursorBlinking: "smooth" });
     const shape = page.locator(".mw-caret-shape").first();
-    await page.waitForTimeout(300);
-    const before = await shape.evaluate((element) =>
-      Number(element.getAnimations()[0]!.currentTime),
-    );
-    expect(before).toBeGreaterThan(250);
+    const time = () =>
+      shape.evaluate((element) =>
+        Number(element.getAnimations()[0]!.currentTime),
+      );
+    // Under load the animation can start a little late: wait for it to run.
+    await expect.poll(time).toBeGreaterThan(250);
+    const before = await time();
     await page.keyboard.press("l");
     await expect
       .poll(() =>

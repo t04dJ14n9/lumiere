@@ -39,7 +39,7 @@ Notation: `|` is the caret, `‹…›` a selection.
 | Third backtick | `- ``\|` | `- ```\|`, and the next line closes the fence, lined up with the item's text |
 | Cmd+B, Cmd+I | `hello wo\|rld` | `hello **wo\|rld**` |
 | Cmd+K | `hello ‹world›` | `hello [world](\|)`; with no selection `[\|]()` |
-| Cmd+/ | `hello wo\|rld` | `hello %% ‹world› %%`; on an empty line `%% \| %%` |
+| Cmd+/ (1.14) | `hello wo\|rld` | `hello %%‹world›%%`; on an empty line `%%\|%%` |
 | Cmd+L | `a\|` | `- [ ] a\|`, then `- [x] a\|`, then `- [ ] a\|` |
 | Cmd+L | `> a\|` | `> - [ ] a\|` |
 
@@ -81,8 +81,6 @@ Code.
 - Alt+Up and Alt+Down move the line, as in VS Code; Obsidian moves the caret.
 - Cmd+Enter inserts a line below, as in VS Code; Obsidian follows a link.
 - Cmd+L in Cursor opens Cursor's chat (with a selection, Add to Chat).
-- Removing a comment with Cmd+/ also removes the spaces just inside its `%%`,
-  which Obsidian leaves behind (`hello  world `).
 - Insert Footnote: Obsidian keeps the caret after the reference and opens
   the definition in a popover; Workshop has no popover, so the caret goes to
   the definition at the end of the note.
