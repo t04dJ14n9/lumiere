@@ -41,9 +41,6 @@ test("a text drag reports its text and line box, and the copy command copies the
   await open(page);
   const at = await pagePoint(page, 1);
   await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
-  await expect(
-    page.getByRole("toolbar", { name: "PDF text selection actions" }),
-  ).toBeVisible();
   await expect
     .poll(() => lastSelection(page))
     .toMatchObject({ kind: "text", text: "Synthetic page 1" });
@@ -108,13 +105,8 @@ test("Escape clears a text selection, in the viewer and for the extension", asyn
   await open(page);
   const at = await pagePoint(page, 1);
   await selectText(page, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
-  const menu = page.getByRole("toolbar", {
-    name: "PDF text selection actions",
-  });
-  await expect(menu).toBeVisible();
   await expect.poll(() => lastSelection(page)).toMatchObject({ kind: "text" });
 
   await page.keyboard.press("Escape");
-  await expect(menu).toHaveCount(0);
   await expect.poll(() => lastSelection(page)).toBeNull();
 });

@@ -64,42 +64,6 @@
   pointer-events: none;
 }
 
-/* EmbedPDF's selection layer ignores the pointer; its menu must not. */
-.selection-menu {
-  position: absolute;
-  z-index: 20;
-  left: 0;
-  display: flex;
-  width: max-content;
-  pointer-events: auto;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--vscode-widget-border, #454545);
-  border-radius: 5px;
-  background: var(--vscode-editorWidget-background, #252526);
-  box-shadow: 0 2px 8px var(--vscode-widget-shadow, #0008);
-  white-space: nowrap;
-}
-
-.selection-menu button {
-  height: 26px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 3px;
-  color: var(--vscode-foreground, #ccc);
-  background: transparent;
-  cursor: pointer;
-}
-
-.selection-menu button:first-child {
-  color: var(--vscode-button-foreground, #fff);
-  background: var(--vscode-button-background, #0e639c);
-}
-
-.selection-menu button:hover {
-  filter: brightness(1.15);
-}
-
 /* A page with its own /Rotate: the layers (unrotated) are turned inside the box. */
 .page-rotor {
   position: absolute;
