@@ -11,6 +11,7 @@ import {
   yamlKey,
   scalarValue,
   setPropertyChange,
+  valueAfterKey,
   type PropertyChange,
 } from "./yaml-value";
 
@@ -116,7 +117,7 @@ function createHeader(
     {
       from: 0,
       to: 0,
-      insert: `---${eol}${newPropertyLine(edit)}${eol}---${eol}`,
+      insert: `---${eol}${newPropertyLine(edit, eol)}${eol}---${eol}`,
     },
   ];
 }
@@ -181,7 +182,7 @@ class PropertyMapEdits {
       {
         from: end,
         to: end,
-        insert: `${newPropertyLine(edit)}${this.header.eol}`,
+        insert: `${newPropertyLine(edit, this.header.eol)}${this.header.eol}`,
       },
     ];
   }
@@ -251,10 +252,13 @@ class PropertyMapEdits {
   }
 }
 
-function newPropertyLine(edit: Extract<KeyEdit, { type: "add" }>): string {
+function newPropertyLine(
+  edit: Extract<KeyEdit, { type: "add" }>,
+  eol: string,
+): string {
   return edit.value === undefined || edit.value === null
     ? `${yamlKey(edit.key)}:`
-    : `${yamlKey(edit.key)}: ${yamlValue(edit.value)}`;
+    : `${yamlKey(edit.key)}:${valueAfterKey(edit.value, eol)}`;
 }
 
 function stableEqual(
@@ -313,6 +317,18 @@ function editTouchesKey(edit: KeyEdit, key: string): boolean {
   );
 }
 
+/**
+ * Whether a value reads back as the one written. An empty list is written as
+ * a bare `key:`, as Obsidian writes it, which reads back as no value.
+ */
+function sameWritten(after: unknown, written: unknown): boolean {
+  const empty = Array.isArray(written) && written.length === 0;
+  return (
+    JSON.stringify(after) === JSON.stringify(written) ||
+    (empty && (after === null || after === undefined))
+  );
+}
+
 function verifyChanges(
   source: string,
   edit: KeyEdit,
@@ -325,10 +341,7 @@ function verifyChanges(
     if (!before || !after || checked?.error) {
       return undefined;
     }
-    if (
-      edit.type === "set" &&
-      JSON.stringify(after[edit.key]) !== JSON.stringify(edit.value)
-    ) {
+    if (edit.type === "set" && !sameWritten(after[edit.key], edit.value)) {
       return undefined;
     }
     const stable = Object.entries(before).every(

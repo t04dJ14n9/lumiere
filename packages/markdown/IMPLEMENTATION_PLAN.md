@@ -5052,3 +5052,21 @@ Measured against Obsidian in the throwaway vault:
   setting toggles.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Property lists, written as Obsidian writes them — 2026-10-17
+
+Measured by editing the same properties in the throwaway Obsidian: it writes
+an edited list as a block list two spaces in (`tags:\n  - a`), whatever its
+shape before (`[a]`, `a`, `- a` at column zero), quotes items only where YAML
+needs it (`"123"`, `"#hash"`, not `a, b`), and writes an empty list as a bare
+`tags:`. Workshop wrote flow lists (`[a, new]`, or `aliases:\n  [One, new]`
+after a block list). Now all 15 measured cases match.
+
+Fixed bugs: removing the last item of a list did nothing (the empty list
+read back as no value and the edit was refused), and adding to a list
+written at column zero (`tags:\n- a`) did nothing.
+
+Kept: a list with a comment after it on its line keeps its style, so the
+comment stays where it was.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

@@ -2,7 +2,7 @@ import { isMap, isScalar, parseDocument } from "yaml";
 import { headerParts, frontmatter } from "./frontmatter";
 import {
   scalarValue,
-  yamlValue,
+  valueAfterKey,
   yamlKey,
   type PropertyChange,
 } from "./yaml-value";
@@ -114,7 +114,7 @@ class MergeEdits {
       (pair) => isScalar(pair.key) && pair.key.value === key,
     );
     if (!pair) {
-      this.added += `${yamlKey(key)}: ${yamlValue(value)}${header.eol}`;
+      this.added += `${yamlKey(key)}:${valueAfterKey(value, header.eol)}${header.eol}`;
       return true;
     }
     const changes = setPropertyChanges({

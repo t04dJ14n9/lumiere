@@ -19,6 +19,35 @@ export const yamlValue = (value: unknown): string =>
     defaultKeyType: "PLAIN",
   }).trimEnd();
 
+/** A block list item: quoted only where YAML needs it (a comma does not). */
+const blockItem = (value: unknown): string =>
+  stringify(value, { lineWidth: 0 }).trimEnd();
+
+/** Whether a value is a list of scalars, which Obsidian writes as a block list. */
+const isScalarList = (value: unknown): value is readonly unknown[] =>
+  Array.isArray(value) && value.every((item) => scalarValue(item));
+
+/**
+ * A property's value as the text after its `key:`, as Obsidian writes it: a
+ * list of scalars as a block list two spaces in (an empty one as nothing at
+ * all), anything else on the key's line.
+ */
+export function valueAfterKey(value: unknown, eol: string): string {
+  if (isScalarList(value)) {
+    return value.map((item) => `${eol}  - ${blockItem(item)}`).join("");
+  }
+  return ` ${yamlValue(value)}`;
+}
+
+/** Where the value of `node` may start: just after its key's colon. */
+function afterColon(body: string, start: number): number | undefined {
+  let at = start - 1;
+  while (at >= 0 && /[ \t\r\n]/u.test(body[at]!)) {
+    at--;
+  }
+  return body[at] === ":" ? at + 1 : undefined;
+}
+
 /** Property names stay plain unless YAML requires quoting. */
 export const yamlKey = (key: string): string =>
   stringify(key, {
@@ -102,6 +131,31 @@ export function valueStart(
   return at >= 0 ? at : start;
 }
 
+/** A list of scalars written as Obsidian writes it, from just after `key:`. */
+function blockListChange(
+  source: string,
+  header: Header,
+  node: { range: readonly number[]; anchor?: string | null | undefined },
+  value: unknown,
+): PropertyChange | undefined {
+  const colon = node.anchor
+    ? undefined
+    : afterColon(header.body, node.range[0]!);
+  // A comment after the list stays where it is: the list keeps its style.
+  const lineEnd = header.body.indexOf("\n", node.range[1]!);
+  const rest = header.body.slice(
+    node.range[1]!,
+    lineEnd < 0 ? undefined : lineEnd,
+  );
+  if (!isScalarList(value) || colon === undefined || rest.includes("#")) {
+    return undefined;
+  }
+  const from = header.offset + colon;
+  const to = header.offset + node.range[1]!;
+  const ends = source.slice(from, to).endsWith("\n") ? header.eol : "";
+  return { from, to, insert: valueAfterKey(value, header.eol) + ends };
+}
+
 export function setPropertyChange(
   source: string,
   header: Header,
@@ -110,6 +164,15 @@ export function setPropertyChange(
 ): PropertyChange | undefined {
   if (!isNode(node) || !node.range) {
     return undefined;
+  }
+  const list = blockListChange(
+    source,
+    header,
+    { range: node.range, anchor: node.anchor },
+    value,
+  );
+  if (list) {
+    return list;
   }
   // Complex sequences (list-of-maps) are replaced wholesale as YAML text.
   let insert = yamlValue(value);
