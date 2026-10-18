@@ -5517,4 +5517,7 @@ other window commands the extension runs (`_workbench.open`, `openWith`,
 `diff`, focus, Zen Mode) were checked in Cursor's code and return nothing.
 
 Validation: `pnpm check` green (Markdown 1902, PDF 385 unit tests); four
-full Cursor Markdown runs 23/23 each, with no freeze in Cursor's log.
+full Cursor Markdown runs 23/23 each, with no freeze in Cursor's log
+(before the fix, two of the three diagnostic runs froze). With the fix:
+Cursor PDF 25 (1 skipped), VS Code Markdown 23/23, VS Code PDF 25 (1
+skipped).
