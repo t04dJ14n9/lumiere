@@ -46,3 +46,27 @@ test("Markdown Workshop opens PDF links with PDF Workshop's Open Location comman
     new RegExp(`PDF_OPEN_LOCATION_COMMAND = "${OPEN_LOCATION_COMMAND_ID}"`),
   );
 });
+
+test("the Settings editor is opened only through each product's settings-editor helper", () => {
+  // Run directly, these commands send the whole Settings editor back to the
+  // extension as JSON, which froze Cursor's window (settings-editor.ts).
+  const helpers = new Set([
+    "packages/markdown/src/host/settings-editor.ts",
+    "packages/pdf/src/extension/settings-editor.ts",
+  ]);
+  const sources = execFileSync(
+    "git",
+    ["ls-files", "-z", "--", "packages/*/src/**.ts", "src/**.ts"],
+    { encoding: "utf8" },
+  )
+    .split("\0")
+    .filter((path) => path && !path.endsWith(".test.ts"));
+  const direct = sources.filter(
+    (path) =>
+      !helpers.has(path) &&
+      /workbench\.action\.(openSettings|openGlobalSettings|openWorkspaceSettings|openFolderSettings)\b/u.test(
+        readFileSync(path, "utf8"),
+      ),
+  );
+  assert.deepEqual(direct, []);
+});

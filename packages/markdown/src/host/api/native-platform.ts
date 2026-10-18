@@ -5,6 +5,7 @@ import { RpcError } from "../../shared/rpc/lifecycle";
 import { MARKDOWN_EDITOR } from "../../shared/editor-provider";
 import { contained } from "../navigation";
 import { warmMarkdownDocument } from "../document-warm";
+import { openSettingsEditor } from "../settings-editor";
 export function nativePlatform(extensionId: string): ApiPlatform {
   return {
     uri: (value) => vscode.Uri.parse(value, true),
@@ -29,7 +30,7 @@ export function nativePlatform(extensionId: string): ApiPlatform {
         .get("plugins.external", {}),
     write: writeSetting,
     async settings(resource, query) {
-      await vscode.commands.executeCommand("workbench.action.openSettings", {
+      await openSettingsEditor(vscode.commands.executeCommand, {
         query: query ?? `@ext:${extensionId} plugins`,
         ...(resource ? { resource } : {}),
       });

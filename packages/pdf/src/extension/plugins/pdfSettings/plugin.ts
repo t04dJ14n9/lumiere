@@ -8,6 +8,7 @@ import type { Plugin } from "@workshop/core";
 import type { PdfSettings } from "../../settings";
 import type {} from "../services";
 import { changeSetting } from "./change-setting";
+import { openSettingsEditor } from "../../settings-editor";
 import manifest from "./manifest";
 import { SETTINGS_COMMAND_IDS } from "../pdf/registered-commands";
 
@@ -48,8 +49,8 @@ export const pdfSettingsPlugin: Plugin = {
       () => Thenable<unknown> | void
     > = {
       openSettings: () =>
-        vscode.commands.executeCommand(
-          "workbench.action.openSettings",
+        openSettingsEditor(
+          vscode.commands.executeCommand,
           settings.searchFilter,
         ),
       changeSetting: () => changeSetting(settings),

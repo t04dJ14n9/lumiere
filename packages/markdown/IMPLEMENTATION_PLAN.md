@@ -5491,3 +5491,30 @@ Validation: `pnpm check` green; PDF browser suite 174/174.
   fixture vault's path, and its image and footnote steps describe the
   Obsidian 1.13–1.14 behaviour (an image click selects; the inspector is
   the ⤢ button; Insert Footnote opens the popover).
+
+## Cursor froze after Open Settings: the Settings editor sent back as JSON — 2026-10-18
+
+Full Cursor runs of the real-editor suite failed about half the time from
+the Settings spec on. Bisecting showed the build from before the latest
+changes failed the same way, so the cause was older. Diagnostics added to
+the palette helper for a few runs (not committed) showed that after Enter on
+**Markdown Workshop: Open Settings** the Settings editor did open, but the
+window's heap grew from 329 MB to 594 MB and the palette stayed up. Cursor's
+own log said `[RendererPing] window 1 blocked for ~15002ms`, then 25 s and
+75 s, in each failing run and in no passing one. Its freeze report carried
+the stack: `JSON.stringify` in `serializeReplyOK`, the window serialising a
+reply to the extension host.
+
+`workbench.action.openSettings` returns the Settings editor it opened. Run
+from an extension, that return value goes back to the extension host, and
+the window turns the whole editor object graph into JSON first (Cursor
+catches the eventual error and sends `null`), which took 15–75 s on a
+long-running window. Both products now open the Settings editor through
+`runCommands`, which runs the command inside the window and returns
+nothing (`settings-editor.ts` in each product's host). A repository test
+keeps any other source from running the Settings commands directly. The
+other window commands the extension runs (`_workbench.open`, `openWith`,
+`diff`, focus, Zen Mode) were checked in Cursor's code and return nothing.
+
+Validation: `pnpm check` green (Markdown 1902, PDF 385 unit tests); four
+full Cursor Markdown runs 23/23 each, with no freeze in Cursor's log.

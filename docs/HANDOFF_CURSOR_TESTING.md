@@ -72,7 +72,7 @@ should behave the way Obsidian 1.14 does.
 | 9   | Formatting            | keys  | Select a word, press Cmd+B, then run **Toggle Red Highlight**.                                                                     | Cmd+B wraps it in `**`. The highlight writes `==🔴word==`, as Obsidian 1.14 does, and shows it red.                                                                                                                                     |
 | 10  | Cursor chat and edit  | keys  | Select a sentence in Live Preview, press Cmd+L; select again, press Cmd+K and ask for a small change, then Accept.                 | Cmd+L opens Cursor's chat with the selection. Cmd+K opens Cursor's edit bar; Accept changes the note in Workshop.                                                                                                                       |
 | 11  | Copy Link for Agent   | keys  | In `Core.md`, select two lines and run **Copy Link for Agent**.                                                                                     | The clipboard holds `@Core.md#start-end` (the note's path and lines), a blank line and the quoted text, and a notice says where it went.                                                                                               |
-| 12  | Settings              | keys  | Run **Markdown Workshop: Open Settings**, then close the Settings tab.                                                             | Settings opens filtered to `@ext:t04dj14n9.vscode-workshop`. **Watch this one:** in automated runs Cursor's window sometimes stops responding right after it (see Known issues).                                                         |
+| 12 | Settings | keys | Run **Markdown Workshop: Open Settings**, then close the Settings tab. | Settings opens filtered to `@ext:t04dj14n9.vscode-workshop` within a second or two, and Cursor stays responsive. (Builds before the 2026-10-18 Settings fix froze Cursor's window here for 15 to 75 seconds; if that happens, the installed build is too old.) |
 | 13  | PDF viewer            | click | In `Links.md`, click the Sample PDF link. Use the title-bar zoom and fit buttons, the status-bar page number, and the PDF Outline. | The PDF opens in PDF Workshop; the controls work; the outline lists bookmarks if the PDF has any.                                                                                                                           |
 | 14  | PDF selection         | drag  | Drag across two lines of PDF text, then over empty page space.                                                                     | The text highlight is an even tint, with no darker stripes where lines meet; a menu offers Copy Link for Agent. Dragging over empty space draws a region box. (Drags need the owner at the click tier.)                                  |
 | 15  | Note to PDF           | click | In `Embeds.md`, click the PDF card (`![[attachments/sample.pdf]]`).                                                                | The PDF opens in PDF Workshop.                                                                                                                                                                                                         |
@@ -82,13 +82,6 @@ in the order it lists them.
 
 ## Known issues and intended differences
 
-- **Cursor and Open Settings.** About half the automated full runs in
-  Cursor stall right after **Open Settings**: Cursor's window stops
-  responding and later steps time out. The code from before the latest
-  changes does the same, and the same steps pass in short runs; the cause
-  is not found yet. If you see it by hand, record the time, what was open,
-  whether Cursor recovers, and any errors under **Help › Toggle Developer
-  Tools › Console**.
 - **Equal suggestion scores.** Suggestions that score exactly the same can
   come in a different order from Obsidian's, which follows each app's own
   file order.

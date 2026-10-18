@@ -6,6 +6,7 @@ import {
   type SettingEntry,
 } from "../../../shared/setting-schema";
 import type { PdfSettings } from "../../settings";
+import { openSettingsEditor } from "../../settings-editor";
 
 type Item = vscode.QuickPickItem & { entry?: SettingEntry };
 
@@ -48,10 +49,7 @@ async function edit(settings: PdfSettings, entry: SettingEntry): Promise<void> {
   const current: unknown = vscode.workspace.getConfiguration().get(entry.key);
   if (entry.kind === "complex") {
     // No simple editor for it: the Settings editor shows it with its description.
-    await vscode.commands.executeCommand(
-      "workbench.action.openSettings",
-      entry.key,
-    );
+    await openSettingsEditor(vscode.commands.executeCommand, entry.key);
     return;
   }
   const answer = await askValue(entry, current);

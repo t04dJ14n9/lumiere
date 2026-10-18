@@ -6,6 +6,7 @@ import type {
 } from "../shared/host";
 
 import { SETTING_PREFIX, checkWrite } from "../shared/setting-schema";
+import { openSettingsEditor } from "./settings-editor";
 
 const PREFIX = SETTING_PREFIX;
 
@@ -109,10 +110,7 @@ export function createSettingsAccess(extension: {
     },
     contributed: settings,
     async openUi(query) {
-      await vscode.commands.executeCommand(
-        "workbench.action.openSettings",
-        query,
-      );
+      await openSettingsEditor(vscode.commands.executeCommand, query);
     },
   };
 }
