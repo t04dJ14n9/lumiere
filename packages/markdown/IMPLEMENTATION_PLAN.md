@@ -5559,3 +5559,48 @@ Validation: `pnpm check` green (Markdown 1932, PDF 390 unit tests); browser
 suites Markdown 284 and PDF 174. The blame overlay and table glow were
 checked in Chromium screenshots and the tab fix in real Cursor; the rest
 still needs a pass in the owner's Cursor.
+
+## Grok Bot's list: Vim input, the handoff's bugs, and reading services — 2026-10-18
+
+The owner (through Grok Bot) asked to finish the two open tasks: the
+architecture pass and verifying Markdown Workshop against Obsidian. The
+handoff's list of known bugs, and a Vim input comparison for the owner's
+report of "a lot of bugs when inputting in Vim mode":
+
+- **Reading services after a plugin stops** (architecture). Stopping a
+  plugin marks its context stopped, then releases its effects last-first;
+  each editor extension released reconfigures the editor, which updates the
+  extensions released after it. The tables plugin's Vim entry read `ctx.vim`
+  through a getter on every update, so a restart (an optional service
+  arriving late) crashed it with "Disposed: tables is stopped". Plugins now
+  read services once, in `apply` (the tables environment, Vim's block motion,
+  the editor's selection report); the core README states the rule.
+- **RPC errors named by their code**: a timeout logged as `Error: ready`; it
+  now reads `Timeout: no reply to ready within 10000 ms`, and an RpcError
+  thrown by a handler arrives with its code and message once.
+- **A display formula clicked while Vim is in visual mode** (after a click
+  selected an inline formula) stayed rendered until a second click: Vim's
+  visual freeze held the old selection. A selection made by the mouse now
+  moves the freeze, in the same transaction.
+- **List continuation lines** (`Links.md` line 14) hang under the item's
+  text, as measured in Obsidian (OBSIDIAN_LAYOUT.md).
+- **Reclaim at startup**: notes the window restored as text are reclaimed
+  when the extension starts (`adoptOpenTabs`), by the same policy.
+- **Vim input, compared with Obsidian 1.14.4** (Vim on, 76 cases typed in
+  both editors; PARITY.md): 72 match. Fixed on the way: `u` left the caret
+  after a line's last character (the native undo arrives after Vim placed
+  it); Enter in a code block dropped the line's indentation (the parser
+  lacked lang-markdown's "no indentation" rule, Vim or not); deleting a
+  numbered list's first item renumbered from the next (Obsidian keeps the
+  start: `1.` stays `1.`, `3.` stays `3.`); a line right under a table
+  became a table row and was rewritten as `| below |` when the table was
+  edited (Obsidian's row rule is now the parser's).
+
+The architecture pass is complete: one plugin definition in the core, host
+services behind interfaces with fakes for tests, every source file within
+the size limits (seven reviewed lint exceptions, none for size), and the
+rule for reading services written down.
+
+Validation: `pnpm check` green (core 76, agents 47, Markdown 1,947, PDF 390
+unit tests); Markdown browser suite 284/284. Not run: the real-editor suites
+(`pnpm test:vscode`), whose windows take the owner's focus.

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { markdownParser } from "./index";
-import { continuesTable } from "./table-rows";
+import { markdownParser } from "../../../src/markdown/dialect";
+import { continuesTable } from "../../../src/markdown/dialect/table-rows";
 
 /** The table's rows and what follows it, as parsed. */
 function blocks(doc: string): string[] {
