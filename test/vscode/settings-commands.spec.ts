@@ -382,9 +382,12 @@ test("Change Setting… lists every setting by plugin and edits the picked one b
     // A list opens the Settings UI on that key; nothing is written.
     await expect(page.locator(".quick-input-widget")).toBeHidden();
     await changeSetting(page, "excluded files", "Excluded files");
+    // Cursor's Settings UI can take a while to fill its search on a busy run.
     await expect(
       page.locator(".settings-editor .suggest-input-container"),
-    ).toContainText("@id:markdownWorkshop.vault.excludedFiles");
+    ).toContainText("@id:markdownWorkshop.vault.excludedFiles", {
+      timeout: 15_000,
+    });
     expect(userKeys()[key("vault.excludedFiles")]).toBeUndefined();
   } finally {
     writeFileSync(userFile, originalUser);

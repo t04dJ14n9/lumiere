@@ -5445,3 +5445,11 @@ keeping to the rule that plugins set no editor-wide options. The VSCodeVim
 blink spec's poll now waits for its animation to exist.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+Real editors after these changes: VS Code Markdown 23/23 and PDF 25 (1
+skipped); Cursor PDF 25 (1 skipped) and Markdown 23/23. Two Cursor Markdown
+runs in between stalled: Cursor's workbench stopped answering right after
+"Open Settings" (even an Escape press never returned), then the next specs
+could not connect. The same build passed in VS Code, and Cursor passed alone
+and on the next full run, so it is recorded as Cursor flakiness. The Change
+Setting spec waits up to 15 s for Cursor's Settings UI to fill its search.
