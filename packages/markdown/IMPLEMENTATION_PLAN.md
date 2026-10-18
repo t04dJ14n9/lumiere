@@ -5604,3 +5604,67 @@ rule for reading services written down.
 Validation: `pnpm check` green (core 76, agents 47, Markdown 1,947, PDF 390
 unit tests); Markdown browser suite 284/284. Not run: the real-editor suites
 (`pnpm test:vscode`), whose windows take the owner's focus.
+
+## Host GUI: image inspector keyboard zoom — 2026-10-19
+
+Zoom keys now bubble to the inspector dialog, so `+`, `=`, `-`, `0` and `1`
+work after a toolbar button takes focus. Wheel zoom and panning stay on the
+image area; Escape, Enter and other control keys keep their existing handlers.
+A unit test exercises dialog zoom, modifier passthrough and listener disposal.
+
+Validation: image unit tests 2/2, including a regression that failed with the
+old area-only listener.
+
+## Host GUI: footnote insertion preserves headings — 2026-10-19
+
+Insert Footnote recognizes parsed ATX and Setext heading lines and puts the
+reference in a new paragraph after the whole heading. Its text and outline
+entry stay intact, including closing ATX marks and multiline Setext titles.
+Ordinary insertion still keeps selected text, chooses an unused label and adds
+the definition at EOF in the same transaction. The popover's reference offset
+follows the relocated marker. Code containing heading-like text stays ordinary.
+
+Validation: footnote unit tests 4/4; caret offsets over four heading forms,
+EOF, selected heading text, numbering, outline preservation and fenced code.
+
+## Host GUI: nested bold and highlight syntax — 2026-10-19
+
+Reproduced the screenshot's actual cause: after highlighting part of a word
+that was made bold, `sent**==🔴ence==**note` parsed the highlight but not the
+strong emphasis. Its `**` were plain text, so moving the caret could never
+hide them. Highlight markers and the colour emoji now count as transparent
+for surrounding asterisk-emphasis flanking. The syntax tree and HTML renderer
+share that rule; normal emphasis still uses the original parsers. No display
+shim or rewrite of the document is used.
+
+Validation: Live Preview and formatting units 64/64. Regression coverage runs
+Bold then Red Highlight, leaves the caret after a footnote, checks all six
+colours and HTML agreement, keeps caret-inside markers faint, and verifies
+inline decorations hide syntax after Vim visual reveal thaws.
+
+## Host GUI: Cursor Chat/Edit keys with Vim — 2026-10-19
+
+Cursor's bridge explicitly runs Chat/Edit for Cmd/Ctrl+L and Cmd/Ctrl+K
+before Vim and note keys, including empty selections. The former empty-Chat
+branch returned handled, which made CodeMirror cancel the key without opening
+Cursor. Chat now opens directly with no selection or clipboard modification;
+Edit mirrors a flushed, version-checked caret with CRLF coordinate mapping.
+The bridge's host bindings no longer require a selection. Insert Link and
+Vim's Ctrl+K consumer exclude Cursor in their `when` clauses; other Vim chords
+retain their bindings, and macOS Control stays separate from Command.
+
+Validation: Cursor bridge and Vim key-routing units 53/53, covering platform
+modifiers, empty Chat/Edit, command priority and existing handoff revalidation.
+Commands in tests use in-memory fakes; no agent message is sent.
+
+## Host GUI: callout disclosure keeps source editing explicit — 2026-10-19
+
+Callouts use button-only source reveal and guard clicks in the adjacent margin.
+Title/chevron clicks toggle disclosure without arming click-to-edit; body and
+padding clicks keep the preview rendered. Edit still selects the source, and
+keyboard caret reveal remains available. A default-closed callout stays closed
+until opened; per-panel disclosure memory retains the user's choice.
+
+Validation: callout units 5/5: insertion, default-closed memory across renders,
+title/chevron toggling, listener disposal, source reveal only through Edit, and
+existing view-state transfer.
