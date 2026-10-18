@@ -4,6 +4,7 @@ import type { Context, Infer, Plugin } from "@workshop/core";
 import type {
   Navigation,
   NavigationIntent,
+  OpenPlace,
   PanelShell,
 } from "../../shared/host";
 import type { VaultIndex } from "../vault/api";
@@ -158,8 +159,23 @@ async function openInternal(
   if (!uri || !liveIntent(ctx, intent)) {
     return false;
   }
-  await navigation.open(root, uri, fragment, request.side, request.at, intent);
+  await navigation.open(
+    root,
+    uri,
+    fragment,
+    placeOf(request),
+    request.at,
+    intent,
+  );
   return true;
+}
+
+/** Beside, in a tab of its own (Cmd-click), or in the current group. */
+function placeOf(request: { side: boolean; tab?: boolean }): OpenPlace {
+  if (request.side) {
+    return "side";
+  }
+  return request.tab ? "tab" : "here";
 }
 
 async function openExternal(

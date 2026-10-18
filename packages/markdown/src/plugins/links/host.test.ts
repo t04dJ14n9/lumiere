@@ -9,7 +9,7 @@ import type { VaultIndex } from "../vault/api";
 import { linksHost } from "./host";
 import { protocol } from "./protocol";
 
-test("links host owns handlers, fixes source identity, confirms schemes and routes side opens", async () => {
+test("links host owns handlers, fixes source identity, confirms schemes and routes side and tab opens", async () => {
   let a: (value: unknown) => void = () => {};
   let b: (value: unknown) => void = () => {};
   const host = new Endpoint(
@@ -116,11 +116,24 @@ test("links host owns handlers, fixes source identity, confirms schemes and rout
     "file:///vault",
     "file:///vault/New.md",
     "Heading",
-    true,
+    "side",
     undefined,
     undefined,
   ]);
   assert.equal((opens.at(-2) as { source: string }).source, panel.document.uri);
+  // Cmd-click: a tab of its own; a plain click: the current group.
+  for (const [tab, place] of [
+    [true, "tab"],
+    [false, "here"],
+  ] as const) {
+    await client.call(protocol, "open", {
+      href: "New",
+      wiki: true,
+      side: false,
+      tab,
+    });
+    assert.equal((opens.at(-1) as unknown[])[3], place);
+  }
   await fiber.dispose();
   await assert.rejects(
     client.call(protocol, "open", { href: "x", wiki: true, side: false }),

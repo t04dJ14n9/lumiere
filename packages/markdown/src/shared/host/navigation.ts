@@ -22,6 +22,13 @@ export interface NavigationIntent {
   token: Cancellation & { cancel(): void };
 }
 
+/**
+ * Where a link opens: in the current editor group (`here`), in a tab of its
+ * own that stays open rather than a preview (`tab`, Obsidian's Cmd-click),
+ * or in the group beside (`side`).
+ */
+export type OpenPlace = "here" | "tab" | "side";
+
 /** Opening notes, links and locations in VS Code. */
 export interface Navigation {
   begin?(): NavigationIntent;
@@ -44,7 +51,7 @@ export interface Navigation {
     root: string,
     uri: string,
     fragment: string,
-    side: boolean,
+    place: OpenPlace,
     at?: number,
     intent?: NavigationIntent,
   ): Promise<void>;

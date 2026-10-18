@@ -95,6 +95,8 @@ export interface LinkRequest {
   readonly href: string;
   readonly source: Uri;
   readonly side: boolean;
+  /** Opened in a tab of its own (Cmd-click), rather than the current one. */
+  readonly tab: boolean;
 }
 export interface ExternalEvents {
   "editor/opened": (editor: EditorSnapshot) => void;

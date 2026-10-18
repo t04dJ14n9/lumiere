@@ -4,6 +4,7 @@ import { pointerSelectionTracking } from "../../webview/ui/pointer-selection";
 import { fenceGuardSelectionSupport } from "../../webview/ui/fence-click-guard";
 import type { LivePreview } from "./api";
 import { clickPositionSync } from "./click-position";
+import { ruleClick } from "./rule-click";
 import { renderedPosition } from "./rendered-position";
 import { Compartment } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
@@ -141,6 +142,7 @@ function engineExtensions(ctx: Context) {
     pointerSelectionTracking,
     fenceGuardSelectionSupport,
     clickPositionSync,
+    ruleClick,
     hybridInline,
     blockIndex,
     blockDecorations((error) =>

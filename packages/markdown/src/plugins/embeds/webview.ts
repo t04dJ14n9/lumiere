@@ -8,6 +8,7 @@ import { MarkdownBlock } from "../../webview/ui/markdown-widget";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
+import { embedEditing, inlineEmbedClick } from "./clicks";
 export const embedsWebview: Plugin = {
   name: "embeds",
   inject: {
@@ -52,9 +53,8 @@ function registerEmbedRenderers(ctx: Context): void {
           state.sliceDoc(first.to, node.to).trim() === "",
         );
       },
-      // Embedded notes keep clicks for their content, as in Obsidian.
       widget: (block) =>
-        new MarkdownBlock(block, ctx.render, { reveal: "button" }),
+        new MarkdownBlock(block, ctx.render, embedEditing(block.source)),
     }),
   );
   ctx.effect(() =>
@@ -62,13 +62,11 @@ function registerEmbedRenderers(ctx: Context): void {
       nodes: ["WikiEmbed", "Image"],
       decorate(node, cx) {
         if (!cx.revealed(node.from, node.to)) {
+          const source = cx.state.sliceDoc(node.from, node.to);
           cx.replace(
             node.from,
             node.to,
-            new MarkdownInline(
-              cx.state.sliceDoc(node.from, node.to),
-              ctx.render,
-            ),
+            new MarkdownInline(source, ctx.render, inlineEmbedClick(source)),
           );
         }
       },

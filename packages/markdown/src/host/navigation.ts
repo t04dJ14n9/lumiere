@@ -8,6 +8,7 @@ import { realpath } from "node:fs/promises";
 import path from "node:path";
 import type {
   Navigation,
+  OpenPlace,
   NavigationTarget,
   NavigationIntent,
   PanelShell,
@@ -129,7 +130,7 @@ export function createNavigation(
       });
     },
     open: (
-      ...[root, target, fragment, side, at, intent]: Parameters<
+      ...[root, target, fragment, place, at, intent]: Parameters<
         Navigation["open"]
       >
     ) =>
@@ -137,7 +138,7 @@ export function createNavigation(
         root,
         target,
         fragment,
-        side,
+        place,
         ...(at === undefined ? {} : { at }),
         panels,
         reveals,
@@ -260,7 +261,7 @@ interface OpenNavigation {
   root: string;
   target: string;
   fragment: string;
-  side: boolean;
+  place: OpenPlace;
   at?: number;
   panels: () => readonly PanelShell[];
   reveals: RevealRouter;
@@ -268,7 +269,7 @@ interface OpenNavigation {
 }
 
 async function openNavigation(options: OpenNavigation): Promise<void> {
-  const { root, target, side, panels, intent } = options;
+  const { root, target, place, panels, intent } = options;
   const uri = vscode.Uri.parse(target);
   await contained(vscode.Uri.parse(root), uri);
   if (intent.token.cancelled) {
@@ -276,7 +277,10 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
   }
   const activeColumn =
     intent.column ?? vscode.window.tabGroups.activeTabGroup.viewColumn;
-  const column = side ? vscode.ViewColumn.Beside : activeColumn;
+  const column = place === "side" ? vscode.ViewColumn.Beside : activeColumn;
+  // A tab of its own is one VS Code keeps, not the preview the next link replaces.
+  const show =
+    place === "tab" ? { viewColumn: column, preview: false } : column;
   const before = new Set(panels().map((panel) => panel.id));
   if (/\.(md|markdown)$/i.test(uri.path)) {
     await warmMarkdownDocument(uri);
@@ -287,7 +291,7 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
       "vscode.openWith",
       uri,
       MARKDOWN_EDITOR.viewType,
-      column,
+      show,
     );
     await revealOpenedNote(options, before, activeColumn);
   } else if (/\.pdf$/i.test(uri.path)) {
@@ -296,7 +300,7 @@ async function openNavigation(options: OpenNavigation): Promise<void> {
     await vscode.commands.executeCommand(
       "vscode.open",
       uri.with({ fragment: options.fragment }),
-      column,
+      show,
     );
   }
 }
@@ -328,7 +332,7 @@ async function revealOpenedNote(
   before: ReadonlySet<string>,
   column: number,
 ): Promise<void> {
-  const { panels, target, side, fragment, at, reveals, intent } = options;
+  const { panels, target, place, fragment, at, reveals, intent } = options;
   if (intent.token.cancelled || (!fragment && at === undefined)) {
     return;
   }
@@ -338,7 +342,7 @@ async function revealOpenedNote(
   };
   const panel = chooseRevealPanel(panels(), before, {
     uri: vscode.Uri.parse(target).toString(),
-    side,
+    side: place === "side",
     column,
   });
   if (!panel) {

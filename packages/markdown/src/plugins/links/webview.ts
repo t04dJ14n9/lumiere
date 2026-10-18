@@ -11,6 +11,7 @@ import { noteFragment } from "../../markdown/metadata/fragments";
 import { protocol } from "./protocol";
 import { unresolvedKey } from "./target";
 import { linkAt, followCaretLink } from "./caret-link";
+import { linkClickHandlers, type OpenLink } from "./clicks";
 export { linkAt } from "./caret-link";
 
 export const linksWebview: Plugin = {
@@ -36,12 +37,6 @@ export const linksWebview: Plugin = {
 };
 
 type Navigate = (target: { fragment: string; at?: number }) => boolean;
-type OpenLink = (
-  href: string,
-  wiki: boolean,
-  side?: boolean,
-  source?: string,
-) => Promise<boolean>;
 
 function navigator(ctx: Context): Navigate {
   const view = ctx.editor.view;
@@ -74,11 +69,12 @@ function navigator(ctx: Context): Navigate {
 }
 
 function linkOpener(ctx: Context, navigate: Navigate): OpenLink {
-  return async (href: string, wiki: boolean, side = false, source?: string) => {
+  return async (href, wiki, { side = false, tab = false, source } = {}) => {
     const request = {
       href,
       wiki,
       side,
+      tab,
       ...(source === undefined ? {} : { source }),
     };
     if (ctx.bail("link/click", request)) {
@@ -255,76 +251,10 @@ function registerLinkCommands(ctx: Context, open: OpenLink): void {
           view.state.doc.toString(),
           view.state.selection.main.head,
         );
-        return link ? open(link.href, link.wiki, side) : false;
+        return link ? open(link.href, link.wiki, { side }) : false;
       }),
     );
   }
-}
-
-function linkClickHandlers(
-  view: EditorView,
-  open: OpenLink,
-  report: (error: unknown) => void,
-) {
-  return {
-    mousedown(event: MouseEvent) {
-      const link = clickedLink(event);
-      if (
-        event.button === 0 &&
-        link?.hasAttribute("data-href") &&
-        allowsLinkClick(event, link)
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        return true;
-      }
-      return false;
-    },
-    click(event: MouseEvent) {
-      const link = clickedLink(event);
-      if (!link) {
-        return false;
-      }
-      event.preventDefault();
-      const selection = view.dom.ownerDocument.getSelection();
-      if (
-        !allowsLinkClick(event, link) ||
-        (selection &&
-          !selection.isCollapsed &&
-          (link.contains(selection.anchorNode) ||
-            link.contains(selection.focusNode)))
-      ) {
-        return true;
-      }
-      const href = link.getAttribute("href") ?? link.dataset.href;
-      if (href) {
-        void open(
-          href,
-          link.dataset.wiki === "true" ||
-            link.classList.contains("internal-link"),
-          (event.metaKey || event.ctrlKey) && event.altKey,
-          link.closest<HTMLElement>("[data-note-source]")?.dataset.noteSource,
-        ).catch((error) => report(error));
-      }
-      return true;
-    },
-  };
-}
-
-function clickedLink(event: MouseEvent): HTMLElement | null {
-  return event.target instanceof Element
-    ? event.target.closest<HTMLElement>("a, [data-href]")
-    : null;
-}
-function allowsLinkClick(event: MouseEvent, link: HTMLElement): boolean {
-  return (
-    event.metaKey ||
-    event.ctrlKey ||
-    link.tagName === "A" ||
-    (!event.altKey &&
-      !event.shiftKey &&
-      link.classList.contains("md-link-rendered"))
-  );
 }
 
 function registerLinkFollowing(ctx: Context, open: OpenLink): void {

@@ -5,7 +5,6 @@ import type {} from "../editor/api";
 import type {} from "../livePreview/api";
 import type {} from "../render/api";
 import { validTag } from "../../markdown/tags/grammar";
-import { TagWidget } from "./widget";
 import { protocol } from "./protocol";
 export const tagsWebview: Plugin = {
   name: "tags",
@@ -21,28 +20,68 @@ export const tagsWebview: Plugin = {
         .call(protocol, "search", { tag })
         .catch((error) => ctx.logger.warn("Tag search failed", error));
     };
-    registerTagRenderer(ctx, search);
+    registerTagRenderer(ctx);
+    registerTagClicks(ctx, search);
     registerTagControls(ctx, search);
     registerDelegatedTags(ctx, search);
   },
 };
-function registerTagRenderer(
-  ctx: Context,
-  search: (tag: string) => void,
-): void {
+/**
+ * A tag stays text, styled as a tag, as in Obsidian: never hidden, and the
+ * caret goes where it is clicked.
+ */
+function registerTagRenderer(ctx: Context): void {
   ctx.effect(() =>
     ctx.livePreview.inline({
       nodes: ["Tag"],
       decorate(node, cx) {
-        if (!cx.revealed(node.from, node.to)) {
-          cx.replace(
-            node.from,
-            node.to,
-            new TagWidget(cx.state.sliceDoc(node.from + 1, node.to), search),
-          );
-        }
+        cx.mark(node.from, node.to, "md-tag", {
+          "data-tag": cx.state.sliceDoc(node.from + 1, node.to),
+        });
       },
     }),
+  );
+}
+
+/**
+ * Whether a click on a tag searches for it: a primary click that left the
+ * caret in it, not a Shift-click or a drag, which only select.
+ */
+export function clickSearches(
+  click: Pick<MouseEvent, "button" | "shiftKey">,
+  caretOnly: boolean,
+  tag: string | undefined,
+): tag is string {
+  return click.button === 0 && !click.shiftKey && caretOnly && validTag(tag);
+}
+
+/**
+ * Clicking a tag in the note puts the caret there and searches for the tag,
+ * as in Obsidian.
+ */
+function registerTagClicks(ctx: Context, search: (tag: string) => void): void {
+  const view = ctx.editor.view;
+  ctx.effect(() =>
+    ctx.editor.extend(
+      ViewPlugin.define(() => {
+        const events = new AbortController();
+        view.contentDOM.addEventListener(
+          "click",
+          (event) => {
+            const tag =
+              event.target instanceof Element
+                ? event.target.closest<HTMLElement>("span.md-tag[data-tag]")
+                    ?.dataset.tag
+                : undefined;
+            if (clickSearches(event, view.state.selection.main.empty, tag)) {
+              search(tag);
+            }
+          },
+          { signal: events.signal },
+        );
+        return { destroy: () => events.abort() };
+      }),
+    ),
   );
 }
 function registerTagControls(

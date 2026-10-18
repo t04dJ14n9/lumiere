@@ -213,6 +213,7 @@ function subscribeLinks(
         source: platform.uri(request.source),
         href: request.href,
         side: request.side,
+        tab: request.tab === true,
       }),
     );
     return result === undefined

@@ -4,7 +4,10 @@ import type {} from "../commands/api";
 import type { InlineContext } from "../livePreview/api";
 import type { RenderPass } from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
-import { MarkdownInline } from "../../webview/ui/inline-widget";
+import {
+  MarkdownInline,
+  type InlineClick,
+} from "../../webview/ui/inline-widget";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
 import { mathEdit } from "./commands";
 import { delimiters, mathBody, mathTokens } from "./source";
@@ -19,6 +22,9 @@ export const mathWebview: Plugin = {
     registerMathCommands(ctx);
   },
 };
+
+/** As in Obsidian, a click on a formula selects it without its `$`. */
+const SELECT_FORMULA: InlineClick = { select: mathBody };
 
 function registerMathRenderers(ctx: Context): void {
   const editing = { reveal: "click", select: mathBody } as const;
@@ -45,7 +51,7 @@ function registerMathRenderers(ctx: Context): void {
           cx.replace(
             node.from,
             node.to,
-            new MarkdownInline(source, ctx.render, mathBody),
+            new MarkdownInline(source, ctx.render, SELECT_FORMULA),
           );
         }
       },

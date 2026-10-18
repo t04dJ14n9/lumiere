@@ -1022,8 +1022,9 @@ corresponds to. "Source" names the module on the source branch.
 
 Short specifications, beyond the source's tested behaviour:
 
-- **links**: plain click opens a rendered link; Cmd/Ctrl-click opens revealed
-  source; a click that ends a text selection only selects. Unresolved
+- **links**: plain click opens a rendered link; Cmd/Ctrl-click opens it, or
+  revealed source, in a tab of its own (one VS Code keeps, not a preview; as
+  Obsidian's new tab); a click that ends a text selection only selects. Unresolved
   wikilinks get `is-unresolved` styling while not revealed, from
   `vault.unresolvedLinks` (the host pushes the note's set when it changes after
   each re-resolution, through `VaultIndex.onDidResolve`: panel kernels do not

@@ -95,7 +95,7 @@ export class VaultRegistry implements Vaults {
       located.vault.index.root,
       uri,
       options.fragment ?? "",
-      options.side ?? false,
+      options.side ? "side" : "here",
       at,
     );
   }

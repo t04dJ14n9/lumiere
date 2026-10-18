@@ -11,6 +11,8 @@ export const request = Schema.object({
   href: Schema.string().max(8192),
   wiki: Schema.boolean().default(false),
   side: Schema.boolean().default(false),
+  /** In a tab of its own (Cmd-click), rather than the current one. */
+  tab: Schema.boolean().optional(),
 });
 export const MAX_UNRESOLVED = 10_000;
 /** Lower-cased link paths in the note that name no vault file. */

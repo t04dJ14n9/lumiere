@@ -4933,3 +4933,29 @@ Validation (macOS, isolated profiles): `pnpm check` green; real VS Code
 skipped), Markdown 23/23. One earlier Cursor run froze after the
 16,000-block load-time spec and timed out the three specs after it; the
 rerun and those specs alone pass.
+
+## Clicks, measured against Obsidian — 2026-10-17
+
+Mouse behaviour was compared with real Obsidian in the throwaway vault: the
+same note in both editors, a click on the same rendered element (plain, Cmd,
+Cmd+Alt, Alt, Shift and double clicks; the middle and both edges of the
+text), then the note, the selection and whatever each tried to open or
+search. All 74 cases now match (`docs/OBSIDIAN_REVEAL_RULES.md` rule 12).
+
+- Cmd-click opens a note in a tab of its own, one VS Code keeps rather than
+  the preview the next link replaces, as Obsidian opens a new tab. The link
+  request gains `tab`, and the host's `Navigation.open` takes a place (here,
+  tab or side) instead of a side flag; the public `LinkRequest` has `tab`.
+- A click on the last pixel or so of a link's text opened nothing: Chromium
+  hit-tests it as the line. The click handler now also looks for the link
+  whose box holds the point (`links/clicks.ts`, split from the webview).
+- Tags are text styled as tags, never a button: a click places the caret
+  and searches for the tag, as in Obsidian.
+- A click on an embedded note selects its source, links inside it still
+  open; a click on an image, embedded or inline, does nothing
+  (`embeds/clicks.ts`). A click on a drawn rule selects its source
+  (`livePreview/rule-click.ts`).
+- Kept on purpose: a checkbox inside a plain quote is rendered and toggles,
+  as in Obsidian's reading view (its Live Preview leaves `> - [ ]` as text).
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

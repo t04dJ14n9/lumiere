@@ -13,7 +13,7 @@ export const tagsHost: Plugin<{ panel: PanelShell }> = {
         if (!file || token.cancelled) {
           return false;
         }
-        await ctx.navigation.open(ctx.vault.root, file.uri, "", false);
+        await ctx.navigation.open(ctx.vault.root, file.uri, "", "here");
         return true;
       }),
     );

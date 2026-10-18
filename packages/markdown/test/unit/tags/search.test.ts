@@ -88,7 +88,7 @@ test("tag RPC opens a matching indexed note and unregisters when disabled", asyn
     "file:///vault",
     "file:///vault/One.md",
     "",
-    false,
+    "here",
   ]);
   await fiber.dispose();
   await assert.rejects(

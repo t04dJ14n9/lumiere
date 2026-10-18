@@ -83,11 +83,18 @@ test("navigation superseded during document warming does not open the old note",
   });
   const navigation = createNavigation(() => []);
   const oldIntent = navigation.begin!();
-  const oldOpen = navigation.open(root, stale, "", false, undefined, oldIntent);
+  const oldOpen = navigation.open(
+    root,
+    stale,
+    "",
+    "here",
+    undefined,
+    oldIntent,
+  );
   await warmingStarted;
   assert.deepEqual(commands, []);
 
-  await navigation.open(root, current, "", false);
+  await navigation.open(root, current, "", "here");
   assert.equal(oldIntent.token.cancelled, true);
   finishWarm();
   await oldOpen;
@@ -125,10 +132,10 @@ test("a link to a PDF opens it in PDF Workshop at its page, beside when asked", 
     },
   });
   const navigation = createNavigation(() => []);
-  await navigation.open(root, pdf, "page=3", false);
-  await navigation.open(root, pdf, "page=5&viewrect=1,2,3,4", true);
+  await navigation.open(root, pdf, "page=3", "here");
+  await navigation.open(root, pdf, "page=5&viewrect=1,2,3,4", "side");
   // Not a PDF location (a heading, say): open the PDF where it was left.
-  await navigation.open(root, pdf, "Introduction", false);
+  await navigation.open(root, pdf, "Introduction", "here");
   assert.deepEqual(commands, [
     [PDF_OPEN_LOCATION_COMMAND, `${pdf}#page=3`, undefined, { viewColumn: 1 }],
     [
@@ -138,5 +145,52 @@ test("a link to a PDF opens it in PDF Workshop at its page, beside when asked", 
       { viewColumn: -2 },
     ],
     [PDF_OPEN_LOCATION_COMMAND, pdf, undefined, { viewColumn: 1 }],
+  ]);
+});
+
+test("a Cmd-clicked link opens a tab VS Code keeps, not the preview the next link replaces", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "mw-navigation-unit-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const root = pathToFileURL(directory).href;
+  const note = pathToFileURL(join(directory, "Note.md")).href;
+  const file = pathToFileURL(join(directory, "data.csv")).href;
+  const commands: unknown[][] = [];
+  const withFragment = (uri: string) =>
+    Object.assign(parseUri(uri), {
+      with: ({ fragment }: { fragment: string }) =>
+        withFragment(`${uri.split("#")[0]}${fragment ? `#${fragment}` : ""}`),
+    });
+  const { createNavigation } = loadNavigation({
+    Uri: { parse: withFragment },
+    ViewColumn: { Beside: -2 },
+    env: { appName: "Visual Studio Code", uriScheme: "vscode" },
+    window: { tabGroups: { activeTabGroup: { viewColumn: 1 } } },
+    workspace: {
+      getConfiguration: () => ({ get: () => "on" }),
+      async openTextDocument() {},
+    },
+    commands: {
+      async executeCommand(
+        command: string,
+        uri: ReturnType<typeof parseUri>,
+        ...args: unknown[]
+      ) {
+        commands.push([command, uri.toString(), ...args]);
+      },
+    },
+  });
+  const navigation = createNavigation(() => []);
+  await navigation.open(root, note, "", "here");
+  await navigation.open(root, note, "", "tab");
+  await navigation.open(root, file, "", "tab");
+  assert.deepEqual(commands, [
+    ["vscode.openWith", note, MARKDOWN_EDITOR.viewType, 1],
+    [
+      "vscode.openWith",
+      note,
+      MARKDOWN_EDITOR.viewType,
+      { viewColumn: 1, preview: false },
+    ],
+    ["vscode.open", file, { viewColumn: 1, preview: false }],
   ]);
 });

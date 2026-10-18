@@ -26,7 +26,7 @@ export function registerNativeLinks(navigation: Navigation) {
         root.toString(),
         target.with({ fragment: "" }).toString(),
         target.fragment,
-        false,
+        "here",
         undefined,
         { ...intent, column },
       );

@@ -56,7 +56,9 @@ test("Mod-Enter follows the active cell's link through Links; the outer focus gu
       .find((binding) => binding.key === "Mod-Enter")!;
   assert.equal(binding(f.view).run!(f.view), false);
   assert.equal(binding(cell).run!(cell), true);
-  assert.deepEqual(opened, [{ href: "Cell#Heading", wiki: true, side: false }]);
+  assert.deepEqual(opened, [
+    { href: "Cell#Heading", wiki: true, side: false, tab: false },
+  ]);
   ownerDocument.activeElement = outerContent;
   assert.equal(binding(f.view).run!(f.view), true);
   assert.equal(opened.at(-1)?.href, "Outer");
