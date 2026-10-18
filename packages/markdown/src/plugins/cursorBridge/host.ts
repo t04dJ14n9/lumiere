@@ -1,5 +1,5 @@
 import type { Context, Plugin } from "@workshop/core";
-import type { HostDocument } from "../../shared/host";
+import type { HostDocument, StatusHandle } from "../../shared/host";
 import type {} from "../editor/api";
 import {
   cursorEditAvailable,
@@ -23,6 +23,10 @@ import {
 } from "./edit-prompt-probe";
 
 const IS_CURSOR_HOST = contributionId("isCursorHost");
+const DISMISS_EDIT_MIRROR = contributionId("cursorBridge.dismissEditMirror");
+const DISMISS_STATUS_TEXT = "$(markdown) Return to Lumière";
+const DISMISS_STATUS_TOOLTIP =
+  "Close the Edit mirror and return to Live Preview";
 
 export interface CursorBridgeConfig {
   readonly appName: string;
@@ -38,6 +42,10 @@ interface EditMirrorCleanup {
 type BridgeSession = CursorBridgeConfig & {
   promptProbe: EditPromptProbe;
   editMirrors: Map<string, EditMirrorCleanup>;
+  /** Shared left status bar; shown while any Edit mirror cleanup is armed. */
+  dismissStatus: StatusHandle;
+  /** URI whose armed cleanup currently owns the dismiss status bar. */
+  dismissStatusUri: string | undefined;
   isStopped: boolean;
 };
 
@@ -60,10 +68,15 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
     const cursor = isCursorHost(config?.appName);
     // Captured while live: the context-key reset runs after it is disposed.
     const commands = ctx.hostCommands;
+    const dismissStatus = ctx.views.status(DISMISS_EDIT_MIRROR, 1000, {
+      alignment: "left",
+    });
     const bridgeConfig: BridgeSession = {
       ...(config ?? { appName: "", surface: unusedSurface }),
       promptProbe: registerEditPromptProbe(ctx),
       editMirrors: new Map(),
+      dismissStatus,
+      dismissStatusUri: undefined,
       isStopped: false,
     };
     void commands.execute("setContext", IS_CURSOR_HOST, cursor);
@@ -80,11 +93,22 @@ export const cursorBridgeHost: Plugin<CursorBridgeConfig | void> = {
         runBridge(ctx, bridgeConfig, "edit"),
       ),
     );
+    // Status-bar primary dismiss: reliable when Cursor X/Esc leave no public end signal.
+    ctx.effect(() =>
+      commands.register(DISMISS_EDIT_MIRROR, () => {
+        const uri = bridgeConfig.dismissStatusUri;
+        if (!uri) {
+          return;
+        }
+        return bridgeConfig.editMirrors.get(uri)?.abandon();
+      }),
+    );
     ctx.effect(() => () => {
       bridgeConfig.isStopped = true;
       for (const cleanup of bridgeConfig.editMirrors.values()) {
         cleanup.dispose();
       }
+      dismissStatus.dispose();
     });
   },
 };
@@ -288,6 +312,12 @@ function createEditMirrorCleanup(
   let isFinished = false;
   let watcher: { dispose(): void } | undefined;
   let disarmProbe: (() => void) | undefined;
+  const hideDismissStatus = () => {
+    if (session.dismissStatusUri === uri) {
+      session.dismissStatusUri = undefined;
+      session.dismissStatus.hide();
+    }
+  };
   const stopWatching = () => {
     if (isFinished) {
       return false;
@@ -295,6 +325,7 @@ function createEditMirrorCleanup(
     isFinished = true;
     watcher?.dispose();
     disarmProbe?.();
+    hideDismissStatus();
     session.editMirrors.delete(uri);
     return true;
   };
@@ -315,6 +346,15 @@ function createEditMirrorCleanup(
         watcher.dispose();
         return;
       }
+      // Primary UX: explicit status-bar dismiss. Cursor Edit Selection has no
+      // public end event; X/Esc alone may leave the mirror until click/tab-leave.
+      session.dismissStatusUri = uri;
+      session.dismissStatus.show(
+        DISMISS_STATUS_TEXT,
+        DISMISS_STATUS_TOOLTIP,
+        DISMISS_EDIT_MIRROR,
+      );
+      // Optional when-probe backup: may never become visible on this host.
       disarmProbe = session.promptProbe.arm();
     },
     async abandon() {

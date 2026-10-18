@@ -143,6 +143,11 @@
         "category": "Lumière"
       },
       {
+        "command": "lumiere.markdown.cursorBridge.dismissEditMirror",
+        "title": "Return to Lumière",
+        "category": "Lumière"
+      },
+      {
         "command": "lumiere.markdown.jumpBack",
         "title": "Go Back in Note",
         "category": "Lumière",
@@ -1394,6 +1399,10 @@
         {
           "command": "lumiere.markdown.cursorBridge.edit",
           "when": "activeCustomEditorId == 'lumiere.markdown.editor' && lumiere.markdown.plugin.cursorBridge && lumiere.markdown.isCursorHost"
+        },
+        {
+          "command": "lumiere.markdown.cursorBridge.dismissEditMirror",
+          "when": "false"
         },
         {
           "command": "lumiere.markdown.jumpBack",

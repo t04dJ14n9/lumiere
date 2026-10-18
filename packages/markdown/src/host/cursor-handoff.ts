@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { handoffLease } from "./reclaim";
 import { warmMarkdownDocument } from "./document-warm";
 import { watchCursorEditEnd } from "./cursor-edit-end";
+import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import type {
   HandoffSurface,
   NativeDocument,
@@ -41,24 +42,38 @@ export function createCursorHandoffSurface(): HandoffSurface {
       return wrapEditor(editor);
     },
     async dismiss(uri) {
-      const target = vscode.Uri.parse(uri).toString();
+      const target = vscode.Uri.parse(uri);
+      const targetKey = target.toString();
       const active = vscode.window.activeTextEditor;
-      if (active?.document.uri.toString() === target) {
+      if (active?.document.uri.toString() === targetKey) {
         await vscode.commands.executeCommand(
           "workbench.action.closeActiveEditor",
         );
-        return;
-      }
-      for (const group of vscode.window.tabGroups.all) {
-        for (const tab of group.tabs) {
-          if (
-            tab.input instanceof vscode.TabInputText &&
-            tab.input.uri.toString() === target
-          ) {
-            await vscode.window.tabGroups.close(tab);
-            return;
+      } else {
+        let closed = false;
+        for (const group of vscode.window.tabGroups.all) {
+          for (const tab of group.tabs) {
+            if (
+              tab.input instanceof vscode.TabInputText &&
+              tab.input.uri.toString() === targetKey
+            ) {
+              await vscode.window.tabGroups.close(tab);
+              closed = true;
+              break;
+            }
+          }
+          if (closed) {
+            break;
           }
         }
+      }
+      // When Live Preview was not beside the mirror (sole text tab), reopen it.
+      if (!hasLumiereTab(targetKey)) {
+        await vscode.commands.executeCommand(
+          "vscode.openWith",
+          target,
+          MARKDOWN_EDITOR.viewType,
+        );
       }
     },
   };
@@ -86,6 +101,17 @@ async function openMarkdownDocument(
   } catch {
     return document;
   }
+}
+
+function hasLumiereTab(uri: string): boolean {
+  return vscode.window.tabGroups.all.some((group) =>
+    group.tabs.some(
+      (tab) =>
+        tab.input instanceof vscode.TabInputCustom &&
+        tab.input.uri.toString() === uri &&
+        tab.input.viewType === MARKDOWN_EDITOR.viewType,
+    ),
+  );
 }
 
 function wrapEditor(editor: vscode.TextEditor): NativeEditor {

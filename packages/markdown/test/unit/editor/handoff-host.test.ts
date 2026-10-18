@@ -199,8 +199,12 @@ const vscode = {
     },
   },
   commands: {
-    async executeCommand(id: string, uri: Uri, ...args: unknown[]) {
-      commands.push([id, uri.toString(), ...args]);
+    async executeCommand(id: string, uri?: Uri, ...args: unknown[]) {
+      if (uri === undefined) {
+        commands.push([id]);
+      } else {
+        commands.push([id, uri.toString(), ...args]);
+      }
       await afterCommand?.();
     },
   },
@@ -797,6 +801,35 @@ test("Cursor handoff surface forces language markdown on open and show", async (
     documents.find((d) => d.uri.toString() === note)?.languageId,
     "markdown",
   );
+});
+
+test("dismiss reopens Lumière when only the mirror tab remains", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note);
+  assert.equal(
+    group.tabs.some((tab) => tab.input instanceof TabInputText),
+    false,
+  );
+  assert.deepEqual(commands, [["vscode.openWith", note, viewType]]);
+});
+
+test("dismiss does not reopen Lumière when a Live Preview sibling remains", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  workshopTab();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note);
+  assert.equal(
+    group.tabs.some((tab) => tab.input instanceof TabInputCustom),
+    true,
+  );
+  assert.deepEqual(commands, []);
 });
 
 function editMirror() {

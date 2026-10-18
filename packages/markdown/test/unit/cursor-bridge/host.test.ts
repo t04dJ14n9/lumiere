@@ -39,7 +39,11 @@ async function fixture(options: FixtureOptions = {}) {
   const informs: string[] = [];
   const dismissed: string[] = [];
   const contexts: unknown[][] = [];
+  const statusShows: { text: string; tooltip?: string; command?: string }[] =
+    [];
+  const statusEvents: string[] = [];
   let probeDisposed = false;
+  let statusDisposed = false;
   const probe: EditPromptVisibility = {
     visible: false,
     onVisibilityChanged: () => () => {},
@@ -197,6 +201,24 @@ async function fixture(options: FixtureOptions = {}) {
             },
           };
         },
+        status(id, priority, options) {
+          assert.equal(id, contributionId("cursorBridge.dismissEditMirror"));
+          assert.equal(priority, 1000);
+          assert.deepEqual(options, { alignment: "left" });
+          return {
+            show(text, tooltip, command) {
+              statusShows.push({ text, tooltip, command });
+              statusEvents.push("show");
+            },
+            hide() {
+              statusEvents.push("hide");
+            },
+            dispose() {
+              statusDisposed = true;
+              statusEvents.push("dispose");
+            },
+          };
+        },
       },
       hostCommands: {
         register(id, run) {
@@ -261,12 +283,17 @@ async function fixture(options: FixtureOptions = {}) {
     get probeDisposed() {
       return probeDisposed;
     },
+    get statusDisposed() {
+      return statusDisposed;
+    },
     handlers,
     events,
     errors,
     informs,
     dismissed,
     editWatchers,
+    statusShows,
+    statusEvents,
     surface,
     editArgs,
     lease,
@@ -712,4 +739,63 @@ test("Edit open path forces markdown language on the mirror document", async (t)
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
   assert.equal(f.state.languageId, "markdown");
   assert.ok(f.events.includes("open"));
+});
+
+test("Edit success shows the left status-bar dismiss control", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.deepEqual(f.statusEvents, ["show"]);
+  assert.equal(f.statusShows.length, 1);
+  assert.equal(f.statusShows[0]?.text, "$(markdown) Return to Lumière");
+  assert.equal(
+    f.statusShows[0]?.command,
+    contributionId("cursorBridge.dismissEditMirror"),
+  );
+  assert.ok(f.statusShows[0]?.tooltip?.includes("Edit mirror"));
+});
+
+test("status-bar click abandons the armed mirror and hides the control", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(f.lease.has(f.note), true);
+  await f.handlers.get(contributionId("cursorBridge.dismissEditMirror"))!();
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.deepEqual(f.statusEvents, ["show", "hide"]);
+  assert.equal(f.editWatchers[0]?.isDisposed, true);
+  // A second click with nothing armed is a no-op.
+  await f.handlers.get(contributionId("cursorBridge.dismissEditMirror"))!();
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.deepEqual(f.statusEvents, ["show", "hide"]);
+});
+
+test("replacement disposes the prior status ownership then shows again", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.deepEqual(f.statusEvents, ["show", "hide", "show"]);
+  assert.equal(f.statusShows.length, 2);
+  await f.handlers.get(contributionId("cursorBridge.dismissEditMirror"))!();
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.deepEqual(f.statusEvents, ["show", "hide", "show", "hide"]);
+});
+
+test("failed Edit never shows the dismiss status bar", async (t) => {
+  const f = await fixture({ editResults: [undefined, undefined] });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.deepEqual(f.statusEvents, []);
+  assert.deepEqual(f.statusShows, []);
+});
+
+test("stopping the plugin disposes the dismiss status bar", async () => {
+  const f = await fixture();
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  await f.root.dispose();
+  assert.equal(f.statusDisposed, true);
+  assert.ok(f.statusEvents.includes("dispose"));
+  assert.ok(f.statusEvents.includes("hide"));
 });

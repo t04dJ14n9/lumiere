@@ -5878,3 +5878,24 @@ skip. All suites ran sequentially;
 native runs used VS Code 1.142.0, private Xvfb displays and isolated profiles.
 The required focused suites are green; the baseline-reproduced native failure
 remains explicitly outstanding. No push is authorized or performed.
+
+## Host GUI: Cursor Edit mirror status-bar dismiss — 2026-10-19
+
+Three Host GUI auto-detect approaches failed to dismiss the Ctrl+K Edit mirror
+after X/Esc (capacity, focus-cycle, when-probe). Cursor Edit Selection does not
+expose a public end event; the Explorer when-probe keys may never become
+visibly true. Product decision: stop relying on those signals as primary.
+
+Verified Edit success now shows a left status-bar item
+(`$(markdown) Return to Lumière`) bound to
+`lumiere.markdown.cursorBridge.dismissEditMirror`. Click runs the existing
+abandon path (release lease + dismiss mirror). Hide/dispose on abandon,
+replacement, shutdown, or failed Edit. Tab/editor departure remains the hard
+auto backup. The when-probe stays optional and is not required for dismiss.
+Path B still invokes Edit with no `overrideUri` after show. When dismiss closes
+the sole mirror tab (no Live Preview sibling), it reopens Lumière via
+`vscode.openWith`.
+
+X/Esc alone may still leave the mirror until status-bar click or tab leave —
+documented and acceptable. Ctrl+K Edit and Ctrl+L must not regress. No Host GUI
+retest or push in this task; VSIX install prepares parent retest.

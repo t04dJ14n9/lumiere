@@ -5,9 +5,11 @@ const ARM_GRACE_MS = 500;
 const POLL_MS = 250;
 
 /**
- * Cursor returns a prompt id at open, with no public completion event or way
- * to read its prompt/diff context keys. A contributed when-clause translates
- * prompt presence into passive tree visibility, even if editor focus stays put.
+ * Hard backups for Edit-mirror cleanup: last native text tab closed, or the
+ * active tab/editor leaving the mirror URI. Cursor has no public Edit-end
+ * event; the primary UX is a status-bar dismiss control in cursorBridge host.
+ * An optional when-probe visibility signal may also fire if Cursor exposes
+ * prompt context keys that make the contributed Explorer probe appear.
  */
 export function watchCursorEditEnd(
   uri: string,

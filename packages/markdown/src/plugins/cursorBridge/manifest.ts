@@ -10,7 +10,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["host", "webview"],
-  capabilities: ["commands", "agentHandoff", "views"],
+  capabilities: ["commands", "agentHandoff", "views", "statusBar"],
   contributes: {
     views: [
       {
@@ -33,6 +33,13 @@ export default defineManifest({
         title: "Cursor Edit Selection",
         key: "ctrl+k",
         mac: "cmd+k",
+        when: bridgeWhen,
+      },
+      {
+        id: "cursorBridge.dismissEditMirror",
+        title: "Return to Lumière",
+        palette: false,
+        scope: "workbench",
         when: bridgeWhen,
       },
     ],

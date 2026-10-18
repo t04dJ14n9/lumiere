@@ -106,7 +106,15 @@ export interface WorkbenchViews {
     source: TreeSource,
     options?: { showCollapseAll?: boolean },
   ): TreeHandle;
-  status(id: string, priority: number): StatusHandle;
+  /**
+   * A status bar entry. Priority is higher toward the outer edge of its side.
+   * Defaults to the right; pass `{ alignment: "left" }` for a prominent left entry.
+   */
+  status(
+    id: string,
+    priority: number,
+    options?: { alignment?: "left" | "right" },
+  ): StatusHandle;
   /**
    * A document-independent webview panel. One panel per view type; a second
    * call reveals the existing one.

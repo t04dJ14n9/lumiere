@@ -166,12 +166,16 @@ function treeItem(node: TreeNode): vscode.TreeItem {
   return item;
 }
 
-function createStatus(id: string, priority: number): StatusHandle {
-  const item = vscode.window.createStatusBarItem(
-    id,
-    vscode.StatusBarAlignment.Right,
-    priority,
-  );
+function createStatus(
+  id: string,
+  priority: number,
+  options?: { alignment?: "left" | "right" },
+): StatusHandle {
+  const alignment =
+    options?.alignment === "left"
+      ? vscode.StatusBarAlignment.Left
+      : vscode.StatusBarAlignment.Right;
+  const item = vscode.window.createStatusBarItem(id, alignment, priority);
   return {
     show: (text, tooltip, command) => {
       item.text = text;
