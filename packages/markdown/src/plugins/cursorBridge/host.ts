@@ -1,10 +1,16 @@
 import type { Context, Plugin } from "@workshop/core";
 import type { HostDocument } from "../../shared/host";
 import type {} from "../editor/api";
-import { isCursorHost, openCursorChat, openCursorEdit } from "./cursor";
+import {
+  cursorEditAvailable,
+  isCursorHost,
+  openCursorChat,
+  openCursorEdit,
+} from "./cursor";
 import {
   confirmActiveEditor,
   handOffSelection,
+  type HandoffLease,
   type HandoffSurface,
 } from "./handoff";
 import { contributionId } from "../../shared/setting-schema";
@@ -77,6 +83,12 @@ async function runBridge(
     await runChat(ctx, "", commands);
     return;
   }
+  // Edit with no Cursor Edit command: skip the mirror (avoids a dead Plain Text
+  // tab) and fall back to Chat with an edit-oriented notice.
+  if (mode === "edit" && !cursorEditAvailable(commands)) {
+    await runEditFallbackChat(ctx, captured.selection.text, commands);
+    return;
+  }
   const handoff = await handOffSelection(
     config.surface,
     captured.uri,
@@ -102,10 +114,15 @@ async function runBridge(
     await runChat(ctx, captured.selection.text, commands);
     return;
   }
-  const edited = await openCursorEdit(ctx.hostCommands.execute, commands);
-  if (!edited) {
-    ctx.dialogs.error("Cursor Edit is not available in this window.");
+  const edited = await openCursorEdit(ctx.hostCommands.execute, commands, {
+    uri: config.surface.nativeUri(captured.uri),
+    range: confirmed.editor.selection,
+  });
+  if (edited) {
+    return;
   }
+  await abandonEditHandoff(config.surface, captured.uri, handoff.lease);
+  await runEditFallbackChat(ctx, captured.selection.text, commands);
 }
 
 async function runChat(
@@ -132,6 +149,52 @@ async function runChat(
   }
 }
 
+/**
+ * Edit failed or is unavailable: open Chat instead of leaving a dead mirror.
+ * Documents the product choice when `aipopup.action.modal.generate` is missing
+ * or throws after handoff.
+ */
+async function runEditFallbackChat(
+  ctx: Context,
+  text: string,
+  commands: ReadonlySet<string> | undefined,
+): Promise<void> {
+  const target = await openCursorChat(
+    ctx.hostCommands.execute,
+    (value) => ctx.clipboard.write(value),
+    text,
+    commands,
+  );
+  if (target === "unavailable") {
+    ctx.dialogs.error("Cursor Edit is not available in this window.");
+    return;
+  }
+  if (target === "clipboard") {
+    ctx.dialogs.inform(
+      "Cursor Edit is unavailable. Selection copied — paste it into Cursor Chat.",
+    );
+    return;
+  }
+  ctx.dialogs.inform(
+    text
+      ? "Cursor Edit is unavailable. Opened Chat — paste the selection if it was not attached."
+      : "Cursor Edit is unavailable. Opened Chat instead.",
+  );
+}
+
+async function abandonEditHandoff(
+  surface: HandoffSurface,
+  uri: string,
+  lease: HandoffLease,
+): Promise<void> {
+  lease.release();
+  try {
+    await surface.dismiss(uri);
+  } catch {
+    // Best-effort restore; the error toast/fallback still runs.
+  }
+}
+
 function pluginEnabled(ctx: Context, document: HostDocument): boolean {
   const config = ctx.settings.forNote(document);
   return (
@@ -149,6 +212,7 @@ async function commandSet(
 
 const unusedSurface: HandoffSurface = {
   acquireLease: () => ({ promote() {}, release() {} }),
+  nativeUri: (uri) => uri,
   async warm() {},
   async open() {
     throw new Error("cursorBridge handoff surface was not configured");
@@ -156,4 +220,5 @@ const unusedSurface: HandoffSurface = {
   async show() {
     throw new Error("cursorBridge handoff surface was not configured");
   },
+  async dismiss() {},
 };

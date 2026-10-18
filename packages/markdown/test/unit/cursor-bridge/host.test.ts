@@ -14,13 +14,23 @@ import { Lease } from "../../../src/host/reclaim-policy";
 import { contributionId } from "../../../src/shared/setting-schema";
 import { fakeDocument, fakeHost } from "../../support/vscode-fake";
 
-async function fixture() {
+type FixtureOptions = {
+  /** Command ids advertised by agentHost.environment(); default = all CURSOR_COMMANDS. */
+  commands?: ReadonlySet<string>;
+  /** When true, executing the Edit command throws (simulates a missing handler). */
+  editThrows?: boolean;
+};
+
+async function fixture(options: FixtureOptions = {}) {
   const root = createRoot();
   const handlers = new Map<string, () => unknown>();
   const events: string[] = [];
   const errors: string[] = [];
+  const informs: string[] = [];
+  const dismissed: string[] = [];
   const lease = new Lease();
   const note = "file:///vault/Note.md";
+  const editArgs: unknown[] = [];
   const state = {
     uri: note,
     version: 1,
@@ -67,6 +77,9 @@ async function fixture() {
       events.push("lease");
       return lease.acquire(uri);
     },
+    nativeUri(uri) {
+      return { scheme: "file", path: uri, toString: () => uri };
+    },
     async warm() {
       events.push("warm");
     },
@@ -77,6 +90,10 @@ async function fixture() {
       events.push("show");
       state.range = range;
       return editor;
+    },
+    async dismiss(uri) {
+      events.push("dismiss");
+      dismissed.push(uri);
     },
   };
   const panel = {
@@ -126,6 +143,8 @@ async function fixture() {
     },
     validate: () => panel,
   });
+  const discovered =
+    options.commands ?? new Set(Object.values(CURSOR_COMMANDS));
   provideHostServices(
     root,
     fakeHost({
@@ -136,13 +155,22 @@ async function fixture() {
             handlers.delete(id);
           };
         },
-        async execute(id) {
+        async execute(id, ...args) {
           events.push(id);
+          if (id === CURSOR_COMMANDS.edit) {
+            editArgs.push(...args);
+            if (options.editThrows) {
+              throw new Error(`command '${id}' not found`);
+            }
+          }
         },
       },
       dialogs: {
         error(message) {
           errors.push(message);
+        },
+        inform(message) {
+          informs.push(message);
         },
       },
       settings: {
@@ -155,7 +183,7 @@ async function fixture() {
           return {
             target: "cursor",
             agentExtensions: new Set(),
-            commands: new Set(Object.values(CURSOR_COMMANDS)),
+            commands: discovered,
             hasChatParticipant: false,
             chatDisabled: false,
           };
@@ -166,7 +194,18 @@ async function fixture() {
   root.plugin(cursorBridgeHost, { appName: "Cursor", surface });
   await root.settled();
   events.length = 0;
-  return { root, handlers, events, errors, lease, state, note };
+  return {
+    root,
+    handlers,
+    events,
+    errors,
+    informs,
+    dismissed,
+    editArgs,
+    lease,
+    state,
+    note,
+  };
 }
 
 for (const mode of ["chat", "edit"] as const) {
@@ -185,13 +224,37 @@ for (const mode of ["chat", "edit"] as const) {
     assert.equal(f.lease.has(f.note), false);
     release();
     await pending;
-    assert.deepEqual(f.events, [
-      "commands",
-      "lease",
-      "warm",
-      "show",
-      CURSOR_COMMANDS[mode],
-    ]);
+    if (mode === "edit") {
+      assert.deepEqual(f.events, [
+        "commands",
+        "lease",
+        "warm",
+        "show",
+        CURSOR_COMMANDS.edit,
+      ]);
+      assert.equal(f.editArgs.length, 1);
+      const args = f.editArgs[0] as {
+        invocationType: string;
+        overrideUri: { toString(): string };
+        overrideRange: object;
+      };
+      assert.equal(args.invocationType, "new");
+      assert.equal(args.overrideUri.toString(), f.note);
+      assert.deepEqual(args.overrideRange, {
+        startLineNumber: 1,
+        startColumn: 3,
+        endLineNumber: 1,
+        endColumn: 5,
+      });
+    } else {
+      assert.deepEqual(f.events, [
+        "commands",
+        "lease",
+        "warm",
+        "show",
+        CURSOR_COMMANDS.chat,
+      ]);
+    }
     assert.equal(f.lease.has(f.note), true);
     assert.deepEqual(f.errors, []);
   });
@@ -276,6 +339,57 @@ test("Edit mirrors an empty caret with source coordinates, including CRLF", asyn
     "show",
     CURSOR_COMMANDS.edit,
   ]);
+  const args = f.editArgs[0] as { overrideRange: object };
+  assert.deepEqual(args.overrideRange, {
+    startLineNumber: 1,
+    startColumn: 6,
+    endLineNumber: 1,
+    endColumn: 6,
+  });
   assert.equal(f.lease.has(f.note), true);
   assert.deepEqual(f.errors, []);
+});
+
+test("Edit failure releases the lease, dismisses the mirror, and falls back to Chat", async (t) => {
+  const f = await fixture({ editThrows: true });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.ok(f.events.includes("lease"));
+  assert.ok(f.events.includes("show"));
+  assert.ok(f.events.includes(CURSOR_COMMANDS.edit));
+  assert.ok(f.events.includes("dismiss"));
+  assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.equal(f.errors.length, 0);
+  assert.ok(
+    f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
+  );
+});
+
+test("missing Edit command skips handoff and opens Chat without a lease", async (t) => {
+  const f = await fixture({
+    commands: new Set([CURSOR_COMMANDS.chat, CURSOR_COMMANDS.chatFallback]),
+  });
+  t.after(() => f.root.dispose());
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.deepEqual(f.events, ["commands", CURSOR_COMMANDS.chat]);
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, []);
+  assert.equal(f.editArgs.length, 0);
+  assert.ok(
+    f.informs.some((message) => message.includes("Cursor Edit is unavailable")),
+  );
+});
+
+test("empty-caret Edit failure still dismisses and does not leave an orphan lease", async (t) => {
+  const f = await fixture({ editThrows: true });
+  t.after(() => f.root.dispose());
+  f.state.selectionEmpty = true;
+  f.state.text = "abcdef";
+  f.state.cursor = 3;
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.dismissed, [f.note]);
+  assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
 });

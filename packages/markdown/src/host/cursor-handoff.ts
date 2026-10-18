@@ -13,6 +13,9 @@ export function createCursorHandoffSurface(): HandoffSurface {
     acquireLease(uri) {
       return handoffLease.acquire(uri);
     },
+    nativeUri(uri) {
+      return vscode.Uri.parse(uri);
+    },
     async warm(uri) {
       await warmMarkdownDocument(vscode.Uri.parse(uri));
     },
@@ -35,6 +38,27 @@ export function createCursorHandoffSurface(): HandoffSurface {
         ),
       });
       return wrapEditor(editor);
+    },
+    async dismiss(uri) {
+      const target = vscode.Uri.parse(uri).toString();
+      const active = vscode.window.activeTextEditor;
+      if (active?.document.uri.toString() === target) {
+        await vscode.commands.executeCommand(
+          "workbench.action.closeActiveEditor",
+        );
+        return;
+      }
+      for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+          if (
+            tab.input instanceof vscode.TabInputText &&
+            tab.input.uri.toString() === target
+          ) {
+            await vscode.window.tabGroups.close(tab);
+            return;
+          }
+        }
+      }
     },
   };
 }

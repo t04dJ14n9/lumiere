@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CURSOR_COMMANDS,
+  cursorEditAvailable,
   isCursorHost,
   openCursorChat,
   openCursorEdit,
@@ -16,15 +17,18 @@ test("isCursorHost matches Cursor app names only", () => {
 
 function host(commands: string[]) {
   const ran: string[] = [];
+  const args: unknown[][] = [];
   const copied: string[] = [];
   return {
     ran,
+    args,
     copied,
-    execute: async (id: string) => {
+    execute: async (id: string, ...rest: unknown[]) => {
       if (!commands.includes(id)) {
         throw new Error(`command '${id}' not found`);
       }
       ran.push(id);
+      args.push(rest);
     },
     copy: async (text: string) => {
       copied.push(text);
@@ -78,15 +82,55 @@ test("Chat without a selection preserves the clipboard on fallback or unavailabi
   }
 });
 
-test("Edit runs aipopup.action.modal.generate", async () => {
+test("Edit runs aipopup.action.modal.generate with Monaco override args", async () => {
   const commands = [CURSOR_COMMANDS.edit];
   const h = host(commands);
-  assert.equal(await openCursorEdit(h.execute, new Set(commands)), "edit");
+  const uri = { toString: () => "file:///vault/Note.md" };
+  assert.equal(
+    await openCursorEdit(h.execute, new Set(commands), {
+      uri,
+      range: {
+        start: { line: 2, character: 4 },
+        end: { line: 3, character: 1 },
+      },
+    }),
+    "edit",
+  );
   assert.deepEqual(h.ran, [CURSOR_COMMANDS.edit]);
+  assert.deepEqual(h.args, [
+    [
+      {
+        overrideUri: uri,
+        overrideRange: {
+          startLineNumber: 3,
+          startColumn: 5,
+          endLineNumber: 4,
+          endColumn: 2,
+        },
+        invocationType: "new",
+      },
+    ],
+  ]);
 });
 
 test("Edit returns undefined when the command is missing", async () => {
   const h = host([]);
   assert.equal(await openCursorEdit(h.execute, new Set()), undefined);
   assert.deepEqual(h.ran, []);
+});
+
+test("Edit returns undefined when the command set excludes Edit", async () => {
+  const h = host([CURSOR_COMMANDS.edit]);
+  assert.equal(
+    await openCursorEdit(h.execute, new Set([CURSOR_COMMANDS.chat])),
+    undefined,
+  );
+  assert.deepEqual(h.ran, []);
+});
+
+test("cursorEditAvailable is true when the command set is unknown or includes Edit", () => {
+  assert.equal(cursorEditAvailable(undefined), true);
+  assert.equal(cursorEditAvailable(new Set([CURSOR_COMMANDS.edit])), true);
+  assert.equal(cursorEditAvailable(new Set()), false);
+  assert.equal(cursorEditAvailable(new Set([CURSOR_COMMANDS.chat])), false);
 });

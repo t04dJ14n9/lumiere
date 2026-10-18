@@ -76,6 +76,7 @@ function fixture(text: string, version = 1) {
         },
       };
     },
+    nativeUri: (uri) => uri,
     async warm() {},
     async open() {
       return document;
@@ -84,6 +85,7 @@ function fixture(text: string, version = 1) {
       state.range = range;
       return editor;
     },
+    async dismiss() {},
   };
   return { state, leases, released, surface, document, editor };
 }
