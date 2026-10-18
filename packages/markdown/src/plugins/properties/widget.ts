@@ -10,6 +10,7 @@ import {
 import { bindPropertyFields } from "./fields";
 import { bindPropertyLists } from "./lists";
 import { bindPropertyControls } from "./controls";
+import { keepSelectAllInField } from "./select-all";
 const lifetimes = new WeakMap<HTMLElement, () => void>();
 export class PropertyWidget extends WidgetType {
   constructor(
@@ -44,9 +45,11 @@ export class PropertyWidget extends WidgetType {
     bindPropertyFields(container, this.source, this.context);
     const lists = bindPropertyLists(container, this.source, this.context);
     const controls = bindPropertyControls(container, this.source, this.context);
+    const selectAll = keepSelectAllInField(wrapper);
     lifetimes.set(wrapper, () => {
       lists();
       controls();
+      selectAll();
     });
     return wrapper;
   }

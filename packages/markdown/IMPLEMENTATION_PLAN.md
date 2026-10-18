@@ -5070,3 +5070,18 @@ Kept: a list with a comment after it on its line keeps its style, so the
 comment stays where it was.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Property fields: Select All, text values — 2026-10-17
+
+Editing a text property was compared with Obsidian, by typing the same
+values into the same field.
+
+- Fixed a bug: Ctrl/Cmd+A in a property field selected the whole note and
+  moved the caret into it (the browser's own Select All, in a field inside
+  the editor), so the next keys typed into the note body. The Properties
+  sheet now selects the field's text, as Obsidian does, and keeps the key
+  from VS Code's Select All (`properties/select-all.ts`).
+- A text value loses trailing spaces and keeps leading ones, as in
+  Obsidian; values are quoted where YAML needs it (all 10 cases match).
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

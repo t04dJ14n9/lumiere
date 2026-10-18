@@ -20,7 +20,8 @@ export function propertyInput(
   text: string,
 ): PropertyScalar | undefined {
   if (kind === "text") {
-    return text;
+    // As Obsidian does: trailing spaces go, leading ones stay.
+    return text.trimEnd();
   }
   if (!text.trim()) {
     return null;
