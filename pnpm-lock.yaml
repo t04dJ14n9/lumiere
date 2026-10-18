@@ -104,6 +104,9 @@ importers:
       '@lezer/markdown':
         specifier: 1.8.0
         version: 1.8.0
+      '@mathjax/mathjax-newcm-font':
+        specifier: 4.1.3
+        version: 4.1.3
       '@mathjax/src':
         specifier: 4.1.3
         version: 4.1.3

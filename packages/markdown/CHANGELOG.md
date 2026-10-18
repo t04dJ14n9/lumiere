@@ -4,6 +4,11 @@
 
 - Inline math on a list item's first line renders in Live Preview; it was
   blank, or drawn over the text before it.
+- Math that needs MathJax's on-demand glyphs renders offline: `\mathbb`,
+  `\mathfrak`, `\mathscr`, `\mathsf`, `\mathtt`, `\ell`, `\Re`, `\perp`,
+  `\leadsto`, `\checkmark` and many AMS symbols failed with "dynamic file …
+  failed to load", and `\mathcal` and accented letters in `\text` were drawn in
+  the wrong font.
 
 - **Keep Marp Deck in Workshop** now uses the command ID
   `markdownWorkshop.marp.keepInWorkshop`. Product copy uses Workshop throughout.
