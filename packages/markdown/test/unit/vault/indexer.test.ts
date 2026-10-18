@@ -208,3 +208,37 @@ test("deleting a folder removes every file in it", async () => {
   });
   await indexer.dispose();
 });
+
+test("saves run one at a time, so two never write the same snapshot file at once", async () => {
+  // A slow store (a remote workspace): writes wait until released.
+  const store = new MemoryStore();
+  const writing = new Set<string>();
+  const overlaps: string[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => (release = resolve));
+  const slow = {
+    read: (name: string) => store.read(name),
+    async write(name: string, text: string) {
+      if (writing.has(name)) {
+        overlaps.push(name);
+      }
+      writing.add(name);
+      await gate;
+      await store.write(name, text);
+      writing.delete(name);
+    },
+  };
+  const fs = new MemoryFileSystem({ "A.md": "" });
+  const indexer = new VaultIndexer(indexerOptions(fs, { store: slow }));
+  await indexer.settled();
+  await wait();
+  fs.create("B.md", "#tag");
+  await indexer.settled();
+  await wait();
+  release();
+  await indexer.dispose();
+  assert.deepEqual(overlaps, []);
+  const snapshot = new Snapshot();
+  await snapshot.load(store);
+  assert.deepEqual(Object.keys(snapshot.files).sort(), ["A.md", "B.md"]);
+});

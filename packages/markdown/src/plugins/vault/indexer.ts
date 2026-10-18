@@ -54,6 +54,8 @@ export class VaultIndexer {
   private isExcluded: (path: string) => boolean;
   /** The first comparison with the file system, which may run after `ready`. */
   private reconciled: Promise<void> = Promise.resolve();
+  /** The save in progress, which the next save waits for. */
+  private saving: Promise<void> = Promise.resolve();
 
   constructor(private readonly options: IndexerOptions) {
     const { folderNote, linkFormat, excludedFiles } = options.settings();
@@ -293,8 +295,18 @@ export class VaultIndexer {
     this.debounce("save", this.delays.save, () => void this.save());
   }
 
-  private async save(): Promise<void> {
+  private save(): Promise<void> {
     this.cancel("save");
+    // One save at a time. The store writes each file beside it and renames it
+    // into place, so two saves of one file collide on that temporary file; a
+    // slow file system (a remote workspace) let the next debounced save start
+    // before the last had finished.
+    this.saving = this.saving.then(() => this.writeSnapshot());
+    return this.saving;
+  }
+
+  /** Never rejects, so a failed save does not stop the ones queued after it. */
+  private async writeSnapshot(): Promise<void> {
     if (!this.options.store || !this.snapshot.isDirty) {
       return;
     }
