@@ -6,7 +6,7 @@ export default defineManifest({
   kind: "feature",
   defaultEnabled: true,
   surfaces: ["webview"],
-  capabilities: ["editing", "commands"],
+  capabilities: ["editing", "commands", "keybindings"],
   contributes: {
     menus: [
       "toggleBold",
@@ -21,6 +21,15 @@ export default defineManifest({
       when: "webviewSection == 'markdownContent'",
       group: "formatting",
     })),
+    keybindings: [
+      {
+        id: "insertLink",
+        key: "ctrl+k",
+        mac: "cmd+k",
+        // Cursor owns the key; Insert Link remains available in the palette.
+        when: "!markdownWorkshop.isCursorHost",
+      },
+    ],
     commands: [
       {
         id: "toggleBold",
@@ -68,10 +77,6 @@ export default defineManifest({
         id: "insertLink",
         title: "Insert Link",
         editorCommand: "editor:insert-link",
-        key: "ctrl+k",
-        mac: "cmd+k",
-        // B3: restore Insert Link when cursorBridge is off or there is no selection.
-        when: "!(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)",
       },
       {
         id: "insertHorizontalRule",

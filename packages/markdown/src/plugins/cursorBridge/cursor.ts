@@ -5,7 +5,8 @@ export const CURSOR_COMMANDS = {
   edit: "aipopup.action.modal.generate",
 } as const;
 
-export type CursorChatTarget = "chat" | "chatFallback" | "clipboard";
+export type CursorChatTarget =
+  "chat" | "chatFallback" | "clipboard" | "unavailable";
 export type CursorEditTarget = "edit" | undefined;
 
 type Execute = (id: string, ...args: unknown[]) => Promise<unknown>;
@@ -44,8 +45,13 @@ export async function openCursorChat(
     commands?.has(CURSOR_COMMANDS.chatFallback) !== false &&
     (await tryCommand(execute, CURSOR_COMMANDS.chatFallback))
   ) {
-    await copy(selectionText);
+    if (selectionText) {
+      await copy(selectionText);
+    }
     return "chatFallback";
+  }
+  if (!selectionText) {
+    return "unavailable";
   }
   await copy(selectionText);
   return "clipboard";

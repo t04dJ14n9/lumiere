@@ -8,11 +8,11 @@ memory on Markdown Workshop’s custom editor.
 ## How it works
 
 Cursor's own Cmd/Ctrl+L and Cmd/Ctrl+K bindings outrank every extension's,
-so in Cursor the webview answers those keys itself when text is selected: it
+so in Cursor the webview answers those keys itself, with a selection or caret: it
 keeps them from VS Code and asks its panel's host half (`panel-host.ts`) to
-run Cursor Chat with Selection or Cursor Edit Selection. Without a selection,
-Cmd/Ctrl+L still opens Cursor's chat: the webview claims it from the note's
-Toggle checkbox status and lets it through. The commands and their
+run Cursor Chat or Cursor Edit. Without a selection, Chat opens directly and
+Edit mirrors the caret into Cursor's native editor. The bridge runs before Vim
+and the note's Insert Link and Toggle checkbox keys. The commands and their
 keybindings stay for the palette and for hosts where they win.
 
 The host captures a flushed, version-checked selection from the active panel,
@@ -34,10 +34,10 @@ autosave.
 
 - `manifest.ts`: Chat/Edit commands and Cmd/Ctrl+L / Cmd/Ctrl+K bindings.
 - `protocol.ts`: the webview asks whether it runs in Cursor, and for a hand-off.
-- `webview.ts`: catches Cmd/Ctrl+L and Cmd/Ctrl+K on a selection, in Cursor.
+- `webview.ts`: catches Cmd/Ctrl+L and Cmd/Ctrl+K in Cursor, before Vim.
 - `panel-host.ts`: answers the webview, per panel, by running the commands.
 - `cursor.ts`: Cursor-host detection and Chat/Edit command routing.
-- `selection.ts`: Active panel selection capture.
+- `selection.ts`: active panel selection or caret capture, with CRLF mapping.
 - `handoff.ts`: Lease + version-safe native editor mirror.
 - `host.ts`: Context key, command registration, VS Code handoff surface.
 
@@ -46,11 +46,13 @@ autosave.
 The window half injects `editors`, `selections` and the host services `hostCommands`, `clipboard`, `dialogs`, `settings` and `agentHost`; provides no service. Sets
 `markdownWorkshop.isCursorHost`. The panel half injects `rpc`, `agentHost`
 and `hostCommands`; the webview half `editor` and `rpc`. Uses `handoffLease` from the host reclaim
-module. `plugins.cursorBridge.enabled` defaults to true. When disabled, Insert
-Link keeps Cmd/Ctrl+K even with a selection on Cursor.
+module. `plugins.cursorBridge.enabled` defaults to true. Host keybindings for
+Insert Link and Vim's shortcut consumer exclude Cursor; other Vim Control
+chords keep their bindings. On macOS, Vim's Control chords remain separate from
+the bridge's Command shortcuts.
 
 ## Limits and differences from Obsidian
 
-Cursor-host only (`vscode.env.appName`). Empty selection is a no-op. Does not
+Cursor-host only (`vscode.env.appName`). Does not
 modify `agentBridge` or invent whole-file payloads. Cursor command ids are
 best-effort internal commands, not a stable public API.

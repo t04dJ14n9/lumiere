@@ -26,6 +26,8 @@ async function fixture() {
     version: 1,
     text: "abcdef",
     isActive: true,
+    selectionEmpty: false,
+    cursor: 2,
     range: {
       start: { line: 0, character: 2 },
       end: { line: 0, character: 4 },
@@ -85,12 +87,30 @@ async function fixture() {
     active: () => panel,
     all: () => [panel],
     async capture() {
-      throw new Error("unused");
+      return {
+        editorId: panel.id,
+        documentUri: note,
+        documentVersion: state.version,
+        state: {
+          source: "Note.md",
+          anchor: state.cursor,
+          head: state.cursor,
+          scrollTop: 0,
+          scrollLeft: 0,
+          contributions: {},
+          mode: "livePreview",
+          folded: [],
+          folds: {},
+        },
+      };
     },
     async restore() {},
   });
   root.provide("selections", {
     async capture() {
+      if (state.selectionEmpty) {
+        return undefined;
+      }
       return {
         id: "selection",
         editorId: panel.id,
@@ -226,4 +246,36 @@ test("failed second same-URI Edit keeps the first handoff lease", async (t) => {
     true,
     "overlapping failure must not drop the open Edit lease",
   );
+});
+
+test("Chat opens without a selection and does not hand off the note or acquire a lease", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  f.state.selectionEmpty = true;
+  await f.handlers.get(contributionId("cursorBridge.chat"))!();
+  assert.deepEqual(f.events, ["commands", CURSOR_COMMANDS.chat]);
+  assert.equal(f.lease.has(f.note), false);
+  assert.deepEqual(f.errors, []);
+});
+
+test("Edit mirrors an empty caret with source coordinates, including CRLF", async (t) => {
+  const f = await fixture();
+  t.after(() => f.root.dispose());
+  f.state.selectionEmpty = true;
+  f.state.text = "ab\r\ncdef";
+  f.state.cursor = 4;
+  await f.handlers.get(contributionId("cursorBridge.edit"))!();
+  assert.deepEqual(f.state.range, {
+    start: { line: 0, character: 5 },
+    end: { line: 0, character: 5 },
+  });
+  assert.deepEqual(f.events, [
+    "commands",
+    "lease",
+    "warm",
+    "show",
+    CURSOR_COMMANDS.edit,
+  ]);
+  assert.equal(f.lease.has(f.note), true);
+  assert.deepEqual(f.errors, []);
 });

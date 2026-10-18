@@ -39,6 +39,8 @@ export default defineManifest({
       key: `ctrl+${key}`,
       // Vim uses Control on macOS too; Command remains available to the editor.
       mac: `ctrl+${key}`,
+      // Cursor's Edit key takes precedence over the host-shortcut consumer.
+      ...(key === "k" ? { when: "!markdownWorkshop.isCursorHost" } : {}),
     })),
   },
 } as const);

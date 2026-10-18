@@ -1,19 +1,41 @@
-import type { Editors, Selections, SourceSelection } from "../editor/api";
+import type { Editors, Selections } from "../editor/api";
+import { SourceCoordinates } from "../../shared/document/coordinates";
+import type { SelectionSnapshot } from "./handoff";
 
-/** Active MW panel selection, or undefined when empty / no panel. */
+/** Active MW selection or caret, flushed and tied to this panel and version. */
 export async function captureActiveSelection(
   editors: Editors,
   selections: Selections,
 ): Promise<
-  { panelId: string; uri: string; selection: SourceSelection } | undefined
+  { panelId: string; uri: string; selection: SelectionSnapshot } | undefined
 > {
   const panel = editors.active();
   if (!panel) {
     return undefined;
   }
-  const selection = await selections.capture(panel.id);
+  let selection: SelectionSnapshot | undefined = await selections.capture(
+    panel.id,
+  );
   if (!selection) {
-    return undefined;
+    const snapshot = await editors.capture(panel.id);
+    const coordinates = new SourceCoordinates(panel.document.getText());
+    const { anchor, head } = snapshot.state;
+    if (
+      editors.active() !== panel ||
+      snapshot.documentUri !== panel.document.uri ||
+      snapshot.documentVersion !== panel.document.version ||
+      anchor !== head ||
+      head > coordinates.editor.length
+    ) {
+      return undefined;
+    }
+    const at = coordinates.toSource(head);
+    selection = {
+      from: at,
+      to: at,
+      text: "",
+      version: snapshot.documentVersion,
+    };
   }
   return { panelId: panel.id, uri: panel.document.uri, selection };
 }

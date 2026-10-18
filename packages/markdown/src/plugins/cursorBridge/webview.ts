@@ -25,26 +25,14 @@ export const cursorBridgeWebview: Plugin = {
     ctx.effect(() =>
       ctx.editor.extend(
         EditorView.domEventHandlers({
-          keydown(event, view) {
-            const mode = handOffMode(event);
-            if (!mode) {
-              return false;
-            }
-            if (view.state.selection.main.empty) {
-              // Without a selection, Cmd/Ctrl+L still opens Cursor's chat:
-              // claim it from the note's Toggle checkbox status, and let it
-              // through to Cursor. Cmd/Ctrl+K stays Insert Link.
-              return mode === "chat";
-            }
-            // Keep the key from VS Code: Cursor would open an empty chat.
-            event.preventDefault();
-            event.stopPropagation();
-            void rpc
-              .call(protocol, "handOff", { mode })
-              .catch((error: unknown) =>
-                ctx.logger.warn("Cursor hand-off failed", error),
-              );
-            return true;
+          keydown(event) {
+            return handOffKey(event, (mode) => {
+              void rpc
+                .call(protocol, "handOff", { mode })
+                .catch((error: unknown) =>
+                  ctx.logger.warn("Cursor hand-off failed", error),
+                );
+            });
           },
         }),
         { slot: "override" },
@@ -53,9 +41,30 @@ export const cursorBridgeWebview: Plugin = {
   },
 };
 
-function handOffMode(event: KeyboardEvent): "chat" | "edit" | undefined {
-  const command = MAC ? event.metaKey : event.ctrlKey;
-  if (!command || event.altKey || event.shiftKey || (MAC && event.ctrlKey)) {
+/** Claim Cursor's keys before Vim and note commands, even with only a caret. */
+export function handOffKey(
+  event: KeyboardEvent,
+  handOff: (mode: "chat" | "edit") => void,
+  isMac = MAC,
+): boolean {
+  const mode = handOffMode(event, isMac);
+  if (!mode) {
+    return false;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  handOff(mode);
+  return true;
+}
+
+function handOffMode(
+  event: KeyboardEvent,
+  isMac: boolean,
+): "chat" | "edit" | undefined {
+  const command = isMac
+    ? event.metaKey && !event.ctrlKey
+    : event.ctrlKey && !event.metaKey;
+  if (!command || event.altKey || event.shiftKey) {
     return undefined;
   }
   const key = event.key.toLowerCase();

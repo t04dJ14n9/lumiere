@@ -1,7 +1,6 @@
 import { defineManifest } from "../../shared/manifest";
 
-const bridgeWhen =
-  "markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection";
+const bridgeWhen = "markdownWorkshop.isCursorHost";
 
 export default defineManifest({
   id: "cursorBridge",

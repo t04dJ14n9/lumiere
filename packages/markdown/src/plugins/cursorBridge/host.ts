@@ -70,10 +70,13 @@ async function runBridge(
   }
   const captured = await captureActiveSelection(ctx.editors, ctx.selections);
   if (!captured) {
-    ctx.dialogs.inform("Select text in the note first");
     return;
   }
   const commands = await commandSet(ctx);
+  if (mode === "chat" && captured.selection.from === captured.selection.to) {
+    await runChat(ctx, "", commands);
+    return;
+  }
   const handoff = await handOffSelection(
     config.surface,
     captured.uri,
@@ -120,7 +123,9 @@ async function runChat(
     ctx.dialogs.inform("Selection copied. Paste it into Cursor Chat.");
     return;
   }
-  if (target === "chatFallback") {
+  if (target === "unavailable") {
+    ctx.dialogs.error("Cursor Chat is not available in this window.");
+  } else if (target === "chatFallback" && text) {
     ctx.dialogs.inform(
       "Opened Cursor Chat. Paste the selection if it was not attached.",
     );

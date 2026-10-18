@@ -64,6 +64,20 @@ test("Chat copies when no Cursor chat command exists", async () => {
   assert.deepEqual(h.copied, ["sel"]);
 });
 
+test("Chat without a selection preserves the clipboard on fallback or unavailability", async () => {
+  for (const [commands, expected] of [
+    [[CURSOR_COMMANDS.chatFallback], "chatFallback"],
+    [[], "unavailable"],
+  ] as const) {
+    const h = host([...commands]);
+    assert.equal(
+      await openCursorChat(h.execute, h.copy, "", new Set(commands)),
+      expected,
+    );
+    assert.deepEqual(h.copied, []);
+  }
+});
+
 test("Edit runs aipopup.action.modal.generate", async () => {
   const commands = [CURSOR_COMMANDS.edit];
   const h = host(commands);

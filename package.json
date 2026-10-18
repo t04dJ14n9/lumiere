@@ -1023,13 +1023,13 @@
         "command": "markdownWorkshop.cursorBridge.chat",
         "key": "ctrl+l",
         "mac": "cmd+l",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.cursorBridge.edit",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.toggleBold",
@@ -1047,7 +1047,7 @@
         "command": "markdownWorkshop.insertLink",
         "key": "ctrl+k",
         "mac": "cmd+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge) && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !markdownWorkshop.isCursorHost && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.gitGutter.nextChange",
@@ -1110,7 +1110,7 @@
         "command": "markdownWorkshop.consumeVimHostShortcut",
         "key": "ctrl+k",
         "mac": "ctrl+k",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && markdownWorkshop.editorFocus"
+        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.vim && !markdownWorkshop.isCursorHost && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.consumeVimHostShortcut",
@@ -1379,11 +1379,11 @@
         },
         {
           "command": "markdownWorkshop.cursorBridge.chat",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost"
         },
         {
           "command": "markdownWorkshop.cursorBridge.edit",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection"
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.cursorBridge && markdownWorkshop.isCursorHost"
         },
         {
           "command": "markdownWorkshop.jumpBack",
@@ -1482,7 +1482,7 @@
         },
         {
           "command": "markdownWorkshop.insertLink",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting && !(markdownWorkshop.isCursorHost && markdownWorkshop.hasSelection && markdownWorkshop.plugin.cursorBridge)"
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
         },
         {
           "command": "markdownWorkshop.insertHorizontalRule",
