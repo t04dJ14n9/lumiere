@@ -1,8 +1,13 @@
-/* MathJax output, inline and in display blocks. */
+/*
+ * MathJax output, inline and in display blocks. A list item's first line
+ * hangs with a negative text-indent, which an inline-block inherits: it would
+ * pull the formula left over the marker and shrink a narrow one to nothing.
+ */
 .math-placeholder {
   display: inline-block;
   max-width: 100%;
   vertical-align: middle;
+  text-indent: 0;
 }
 /* A line of space above and below a display formula, as in Obsidian. */
 .math-display {

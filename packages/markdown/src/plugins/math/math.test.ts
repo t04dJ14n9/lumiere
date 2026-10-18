@@ -1,8 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { EditorState } from "@codemirror/state";
 import { mathBody, mathTokens } from "./source";
 import { inlineMathEdit, mathBlockEdit } from "./commands";
+
+/** The declarations of a rule in `file`, by its exact selector. */
+function cssRule(file: URL, selector: string): string {
+  const css = readFileSync(file, "utf8");
+  const start = css.indexOf(`\n${selector} {`);
+  assert.ok(start >= 0, `${selector} is styled`);
+  return css.slice(start, css.indexOf("}", start));
+}
 test("math commands preserve selected formulas and unwrap the same source", () => {
   let state = EditorState.create({
     doc: "x + 🧠",
@@ -78,4 +87,21 @@ test("TeX is highlighted as Obsidian colours it: commands, numbers, letters, bra
     "command:\\\\",
     "variable:b",
   ]);
+});
+
+test("a formula on a list item's first line does not inherit the item's hanging indent", () => {
+  // List lines hang their wrapped text with a negative text-indent, which an
+  // inline-block inherits: the formula would shift over the marker and a
+  // narrow one would shrink to nothing.
+  const listLine = cssRule(
+    new URL("../../webview/styles/markdown.css", import.meta.url),
+    "#app .cm-line.md-list-line",
+  );
+  assert.match(listLine, /text-indent:\s*calc\(-1 \* var\(--list-hang\)\)/);
+  const formula = cssRule(
+    new URL("./math.css", import.meta.url),
+    ".math-placeholder",
+  );
+  assert.match(formula, /display:\s*inline-block/);
+  assert.match(formula, /text-indent:\s*0;/);
 });

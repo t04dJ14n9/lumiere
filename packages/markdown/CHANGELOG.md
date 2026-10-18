@@ -2,6 +2,9 @@
 
 ## 0.1.0 (unreleased)
 
+- Inline math on a list item's first line renders in Live Preview; it was
+  blank, or drawn over the text before it.
+
 - **Keep Marp Deck in Workshop** now uses the command ID
   `markdownWorkshop.marp.keepInWorkshop`. Product copy uses Workshop throughout.
 
