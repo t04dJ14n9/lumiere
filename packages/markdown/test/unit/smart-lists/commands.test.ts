@@ -133,6 +133,26 @@ test("an edit inside an ordered list numbers it again, as in Obsidian", async ()
   );
 });
 
+test("deleting a list's first items keeps the number it started at, as in Obsidian 1.14.4", async () => {
+  const { renumberOnEdit } =
+    await import("../../../src/plugins/smartLists/renumber");
+  const remove = (doc: string, from: number, to: number) =>
+    EditorState.create({ doc, extensions: [renumberOnEdit] })
+      .update({ changes: { from, to }, userEvent: "delete.backward" })
+      .state.doc.toString();
+  // Measured: the first item, from 1. and from 3.; the first two; a list
+  // after a paragraph. Vim's `dd` deletes the same line.
+  assert.equal(remove("1. a\n2. b\n3. c\n\nend", 0, 5), "1. b\n2. c\n\nend");
+  assert.equal(remove("3. a\n4. b\n5. c\n\nend", 0, 5), "3. b\n4. c\n\nend");
+  assert.equal(remove("1. a\n2. b\n3. c\n\nend", 0, 10), "1. c\n\nend");
+  assert.equal(
+    remove("para\n\n1. a\n2. b\n\nend", 6, 11),
+    "para\n\n1. b\n\nend",
+  );
+  // A middle item: the list counts on from its first item, as before.
+  assert.equal(remove("1. a\n2. b\n3. c\n\nend", 5, 10), "1. a\n2. c\n\nend");
+});
+
 test("Enter outside a list keeps the line's indentation, in a code block too, as in Obsidian", () => {
   // Not a list or a quote: Enter falls to CodeMirror's own newline.
   assert.equal(

@@ -91,15 +91,23 @@ export function orderedRun(
   return items;
 }
 
+/** Where runs start counting, other than at their first item's number. */
+export interface RunStarts {
+  /** Runs whose first item lies in these lines count from 1. */
+  restart?: { first: number; last: number };
+  /** Runs whose first item is on one of these lines count from its number. */
+  kept?: ReadonlyMap<number, number>;
+}
+
 /**
  * Number the runs holding the `candidates` lines consecutively, each from
- * its first item, or from 1 where its first item lies in `restart`.
+ * its first item, or from where `starts` says.
  */
 export function renumberRuns(
   doc: Text,
   candidates: Iterable<number>,
   tabSize: number,
-  restart?: { first: number; last: number },
+  { restart, kept }: RunStarts = {},
 ): ChangeSpec[] {
   const changes: ChangeSpec[] = [];
   const done = new Set<number>();
@@ -117,7 +125,7 @@ export function renumberRuns(
       restart !== undefined &&
       head.line >= restart.first &&
       head.line <= restart.last;
-    let next = restarts ? 1 : head.number;
+    let next = restarts ? 1 : (kept?.get(head.line) ?? head.number);
     for (const item of run) {
       if (item.number !== next) {
         changes.push({ from: item.from, to: item.to, insert: String(next) });
@@ -142,6 +150,6 @@ export function renumberAround(
     doc,
     [lines.first - 1, lines.first, lines.last + 1],
     tabSize,
-    lines,
+    { restart: lines },
   );
 }
