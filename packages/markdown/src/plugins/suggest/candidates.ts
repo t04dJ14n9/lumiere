@@ -1,10 +1,17 @@
 import type { VaultIndex, VaultFile } from "../vault/api";
+import type { NoteBlock } from "../../markdown/metadata/note-blocks";
 import { tagTree } from "../../markdown/tags/tree";
 import { nameOf } from "../../shared/vault-path";
 export type Value =
   | { kind: "literal"; text: string }
   | { kind: "file"; target: VaultFile; alias?: string }
-  | { kind: "block"; target: VaultFile; id: string }
+  | {
+      kind: "block";
+      target: VaultFile;
+      id: string;
+      /** Where a block without an id gets this one, with what goes before. */
+      newId?: { at: number; before: string; insert: string };
+    }
   | { kind: "heading"; target: VaultFile; text: string };
 export interface Candidate {
   label: string;
@@ -124,4 +131,54 @@ export function tagCandidates(vault: VaultIndex): Candidate[] {
         { text: tag.toLowerCase() },
       ),
     );
+}
+
+/** A fresh id for a block, as Obsidian makes them: six hex digits. */
+function newBlockId(taken: ReadonlySet<string>): string {
+  for (;;) {
+    const id = Math.floor(Math.random() * 0x1000000)
+      .toString(16)
+      .padStart(6, "0");
+    if (!taken.has(id)) {
+      return id;
+    }
+  }
+}
+
+/**
+ * Every block of a note, as Obsidian offers them after `[[Note#^`: one with
+ * an id links to it; one without gets a fresh id when picked.
+ */
+export function noteBlockCandidates(
+  file: VaultFile,
+  source: string,
+  blocks: readonly NoteBlock[],
+): Candidate[] {
+  const taken = new Set(blocks.flatMap((block) => block.id ?? []));
+  return blocks.map((block) => {
+    const label = block.text.replace(/\s*\n\s*/gu, " ").slice(0, 512);
+    const id = block.id ?? newBlockId(taken);
+    taken.add(id);
+    const value: Value = block.id
+      ? { kind: "block", target: file, id }
+      : {
+          kind: "block",
+          target: file,
+          id,
+          newId: {
+            at: block.idAt,
+            before: source.slice(
+              Math.max(block.from, block.idAt - 32),
+              block.idAt,
+            ),
+            insert: `${block.idBefore}^${id}`,
+          },
+        };
+    return candidate(
+      block.id ? `${label} ^${block.id}` : label,
+      file.path,
+      value,
+      { text: block.text.slice(0, 512), words: true },
+    );
+  });
 }

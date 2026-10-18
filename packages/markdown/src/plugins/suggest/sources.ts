@@ -4,15 +4,46 @@ import type { Query, Suggestion } from "./protocol";
 import {
   candidate,
   fileCandidates,
+  noteBlockCandidates,
   tagCandidates,
   type Candidate,
 } from "./candidates";
+import { noteBlocks } from "../../markdown/metadata/note-blocks";
 import { rankedCandidates } from "./rank";
 /** Groups rebuild after index changes; unchanged files retain prepared ranking text. */
 export class SuggestionIndex {
   private readonly groups = new Map<string, readonly Candidate[]>();
   private readonly files = new Map<string, readonly Candidate[]>();
-  constructor(private readonly vault: VaultIndex) {}
+  /**
+   * @param readText A note's current text, to offer every one of its blocks;
+   *   without it only blocks with an id are offered.
+   */
+  constructor(
+    private readonly vault: VaultIndex,
+    private readonly readText?: (file: VaultFile) => Promise<string>,
+  ) {}
+
+  /** Read the note whose blocks `request` asks for, so `query` offers them all. */
+  async prepare(source: string, request: Query): Promise<void> {
+    const path = this.targetPath(source, request);
+    const file = path === undefined ? undefined : this.vault.file(path);
+    const note = file && this.vault.metadata(file.path);
+    const key = `allBlocks:${path}`;
+    if (
+      request.kind !== "block" ||
+      !this.readText ||
+      !note ||
+      this.files.has(key)
+    ) {
+      return;
+    }
+    const text = await this.readText(file);
+    this.files.set(
+      key,
+      noteBlockCandidates(file, text, noteBlocks(text, note)),
+    );
+    this.groups.clear();
+  }
   invalidate(change?: VaultChange): void {
     this.groups.clear();
     if (change) {
@@ -23,7 +54,7 @@ export class SuggestionIndex {
     }
   }
   private forget(path: string): void {
-    for (const kind of ["link", "heading", "block"]) {
+    for (const kind of ["link", "heading", "block", "allBlocks"]) {
       this.files.delete(`${kind}:${path}`);
     }
   }
@@ -40,6 +71,7 @@ export class SuggestionIndex {
           source,
           entry,
           globalBlock: request.note === undefined,
+          bare: request.bare === true,
           useWikilinks: useWikilinks || request.kind === "tag",
         }),
       )
@@ -86,7 +118,13 @@ export class SuggestionIndex {
       if (file.excluded && kind !== "link") {
         continue;
       }
-      result.push(...this.forFile(file, kind));
+      // One note's blocks are all offered once read; a vault-wide search
+      // offers the blocks with an id.
+      const all =
+        path !== undefined && this.files.get(`allBlocks:${file.path}`);
+      result.push(
+        ...(kind === "block" && all ? all : this.forFile(file, kind)),
+      );
       if (kind === "link") {
         for (const text of this.vault.unresolvedLinks(file.path).keys()) {
           unresolved.add(text);

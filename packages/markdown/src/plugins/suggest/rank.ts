@@ -42,7 +42,9 @@ function wordRanges(
  * in its text, or in its id, which ranks first; fewer, earlier pieces win.
  */
 function blockScore(query: string, entry: Candidate): number | undefined {
-  if (wordRanges(query, entry.label)) {
+  const value = entry.value;
+  const id = value.kind === "block" && !value.newId ? value.id : undefined;
+  if (id !== undefined && wordRanges(query, id)) {
     return 0;
   }
   const ranges = wordRanges(query, entry.text);

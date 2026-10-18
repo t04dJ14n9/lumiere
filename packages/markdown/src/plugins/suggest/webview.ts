@@ -10,6 +10,11 @@ import {
   type CompletionResult,
 } from "@codemirror/autocomplete";
 import { keymap, type EditorView } from "@codemirror/view";
+import type {
+  ChangeSpec,
+  EditorState,
+  TransactionSpec,
+} from "@codemirror/state";
 import {
   bindCaller,
   type CallerBound,
@@ -19,7 +24,7 @@ import {
 import type {} from "../editor/api";
 import type { LocalSuggestions, Suggest, SuggestionTrigger } from "./api";
 import { CancelToken } from "../../shared/rpc/lifecycle";
-import { protocol } from "./protocol";
+import { protocol, type Suggestion } from "./protocol";
 import { allowsSuggestions, completionEdit } from "./completion";
 export const suggestWebview: Plugin = {
   name: "suggest",
@@ -108,6 +113,7 @@ async function requestCompletions(
         kind: trigger.kind,
         query: trigger.query,
         ...(trigger.note === undefined ? {} : { note: trigger.note }),
+        ...(trigger.bare && { bare: true }),
       },
       { token },
     );
@@ -120,8 +126,17 @@ async function requestCompletions(
       options: items.map((item) => ({
         label: item.label,
         detail: item.detail,
-        apply: (view, _completion, from, to) =>
-          view.dispatch(acceptance(view, { from, to }, item, trigger)),
+        apply: (view, _completion, from, to) => {
+          const edit = acceptance(view, { from, to }, item, trigger);
+          view.dispatch(withBlockId(view.state, edit, item.blockId));
+          if (item.blockId && !item.blockId.here) {
+            void ctx.rpc
+              .call(protocol, "addBlockId", item.blockId)
+              .catch((error: unknown) =>
+                ctx.logger.warn("Block id not added", error),
+              );
+          }
+        },
       })),
     };
   } catch (error) {
@@ -132,6 +147,36 @@ async function requestCompletions(
   } finally {
     pending.delete(token);
   }
+}
+
+/**
+ * `edit`, and for a picked block of this note without an id, the id added
+ * where it goes (when the text there is unchanged), as Obsidian adds it.
+ */
+function withBlockId(
+  state: EditorState,
+  edit: TransactionSpec,
+  blockId: Suggestion["blockId"],
+): TransactionSpec {
+  if (
+    !blockId?.here ||
+    state.sliceDoc(blockId.at - blockId.before.length, blockId.at) !==
+      blockId.before
+  ) {
+    return edit;
+  }
+  const link = edit.changes as { from: number };
+  const { anchor } = edit.selection as { anchor: number };
+  // The id goes elsewhere in the note; it moves the caret when it is before.
+  const shift = blockId.at <= link.from ? blockId.insert.length : 0;
+  return {
+    ...edit,
+    changes: [
+      edit.changes as ChangeSpec,
+      { from: blockId.at, insert: blockId.insert },
+    ],
+    selection: { anchor: anchor + shift },
+  };
 }
 
 /** A completion from a local list: Tab does not take it. */

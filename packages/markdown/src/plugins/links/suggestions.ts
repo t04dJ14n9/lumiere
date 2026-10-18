@@ -27,6 +27,20 @@ export const linkSuggestion = ({
     return { ...base, kind: "block", query: text.slice(2) };
   }
   const hash = text.indexOf("#");
+  const caret = text.lastIndexOf("^");
+  if (hash < 0 && caret >= 0) {
+    // `[[Note^` lists the note's blocks too, as in Obsidian; the `#` comes
+    // with the picked id.
+    const query = text.slice(caret + 1);
+    return {
+      ...base,
+      kind: "block",
+      query,
+      note: text.slice(0, caret),
+      bare: true,
+      from: pos - query.length - 1,
+    };
+  }
   if (hash < 0) {
     return { ...base, kind: "link", query: text };
   }

@@ -7,14 +7,37 @@ export function materialize(options: {
   source: string;
   entry: Candidate;
   globalBlock: boolean;
+  /** `^` was typed without `#`: the link's `#` comes with the id. */
+  bare?: boolean;
   useWikilinks: boolean;
 }): Suggestion {
   const { vault, source, entry, globalBlock, useWikilinks } = options;
-  const base = { label: entry.label, detail: entry.detail };
+  const base = {
+    label: entry.label,
+    detail: entry.detail,
+    ...blockIdOf(entry, source),
+  };
   if (!useWikilinks) {
     return { ...base, insert: markdownLink(entry, source), replaceLink: true };
   }
-  return { ...base, insert: wikiText(vault, source, entry.value, globalBlock) };
+  const text = wikiText(vault, source, entry.value, globalBlock);
+  const bare = options.bare && entry.value.kind === "block" && !globalBlock;
+  return { ...base, insert: bare ? `#^${text}` : text };
+}
+
+/** The id a picked block without one gets, as Obsidian adds it. */
+function blockIdOf(entry: Candidate, source: string) {
+  const value = entry.value;
+  if (value.kind !== "block" || !value.newId) {
+    return {};
+  }
+  return {
+    blockId: {
+      uri: value.target.uri,
+      ...value.newId,
+      here: value.target.path === source,
+    },
+  };
 }
 function wikiText(
   vault: VaultIndex,

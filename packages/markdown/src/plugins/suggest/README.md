@@ -12,6 +12,14 @@ caches candidates by file, invalidates on index changes, materializes only 50
 link texts and honors source feature switches. Accepting a link reuses closing
 brackets. Aborted requests and plugin disposal cancel pending work.
 
+`[[Note#^` and `[[Note^` offer every block of the note, as Obsidian 1.14
+does (`src/markdown/metadata/note-blocks.ts`): headings, paragraphs, each list
+item, quotes and callouts, code, tables, math and footnote definitions. A
+block without an id gets one when picked, six hex digits, as in Obsidian: after
+a space at the end of a paragraph, list item or footnote, or on a line of its
+own after any other block, in this note or in the other one (if the text
+there has not changed).
+
 A source may instead return a list it makes itself (`LocalSuggestions`, the
 highlight colours after `==`), shown without asking the host; Tab does not
 take its entries, as in Obsidian.
@@ -52,8 +60,8 @@ At most 50 results. Equal scores keep the vault's order, which is by path
 here and the order the files were loaded in Obsidian, so exact ties can list
 differently. First candidate construction can exceed a frame on large vaults;
 warm queries reuse cached candidates. Existing indexed metadata can lag typing by the indexer's
-refresh interval. Block completion uses explicit IDs already present in a note;
-it does not create IDs for arbitrary paragraphs. The popup uses CodeMirror's UI.
+refresh interval. The popup uses CodeMirror's UI. A vault-wide block search
+(`[[^^`) offers blocks with an id only.
 
 With `links.useWikilinks` off, accepting a link/head/block completion replaces
 the entire partial wiki token with a Markdown link. Existing `]]` are consumed.

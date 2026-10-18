@@ -5314,3 +5314,24 @@ Also checked on 1.14.4: link resolution is unchanged (84/84 and 28/28 as on
 from outside a vault.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Every block in link suggestions — 2026-10-17
+
+Measured on Obsidian 1.14.4: `[[Note^` (and `[[Note#^`) offers every block
+of the note, not only those with an id: headings, paragraphs, each list item,
+quotes and callouts, code, tables, math and footnote definitions (not
+properties, rules, HTML or comments). Picking a block without an id gives it
+six hex digits: after a space at the end of a paragraph, list item (a parent
+on its own line, before its children) or footnote, or on a line of its own
+after any other block; the link is `[[Note#^id]]`. Workshop did not offer
+`[[Note^` at all, and offered only blocks with an id.
+
+Now the host reads the note's text for its blocks (`noteBlocks`), and the
+picked suggestion carries the id to add: the editor adds it in the same edit
+for this note, the host for another note, in both cases only if the text
+just before where it goes is unchanged. Checked end to end in an isolated
+VS Code with a throwaway spec (not committed): the id landed in both notes.
+Not copied: Obsidian also lists its rendered footnotes section as a block and
+puts that id at the end of the note.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.
