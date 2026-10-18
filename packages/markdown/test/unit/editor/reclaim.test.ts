@@ -8,8 +8,13 @@ import {
   reclaimEnabled,
   shouldReclaim,
   shouldWarmBeforeReclaim,
+  TabSwaps,
 } from "../../../src/host/reclaim-policy";
-import type { TabKind } from "../../../src/host/reclaim-policy";
+import type {
+  TabChange,
+  TabKind,
+  TabSwap,
+} from "../../../src/host/reclaim-policy";
 
 const note = "file:///vault/Note.md";
 const context = {
@@ -56,29 +61,33 @@ test("a note Cursor remembers as text is reclaimed when it opens", () => {
   assert.equal(shouldReclaim(swap("text", "text"), context), false);
 });
 
-test("associated notes in Cursor's input-less Markdown editor are reclaimed", () => {
-  for (const before of ["none", "text", "workbench"] as const) {
+test("a switch into Cursor's input-less Markdown editor is reclaimed", () => {
+  for (const before of ["text", "workbench"] as const) {
     assert.equal(shouldReclaim(swap(before, "other"), context), true);
   }
   assert.equal(shouldReclaim(swap("other", "other"), context), false);
   assert.equal(
-    shouldReclaim(swap("none", "other"), {
+    shouldReclaim(swap("workbench", "other"), {
       ...context,
       associated: () => false,
     }),
     false,
   );
   assert.equal(
-    shouldReclaim(swap("none", "other"), { ...context, enabled: false }),
+    shouldReclaim(swap("workbench", "other"), { ...context, enabled: false }),
     false,
   );
   assert.equal(
-    shouldReclaim(swap("none", "other"), {
+    shouldReclaim(swap("workbench", "other"), {
       ...context,
       bypassed: () => true,
     }),
     false,
   );
+});
+
+test("a new input-less tab is left alone: its label could be Cursor's plan editor", () => {
+  assert.equal(shouldReclaim(swap("none", "other"), context), false);
 });
 
 test("the handoff from Cursor Markdown into Workshop is left in place", () => {
@@ -112,7 +121,10 @@ test("diffs and other files are left alone", () => {
     "git:/vault/Note.md",
     "file:///a.ts",
   ]) {
-    assert.equal(shouldReclaim(swap("none", "other", uri), context), false);
+    assert.equal(
+      shouldReclaim(swap("workbench", "other", uri), context),
+      false,
+    );
   }
   assert.equal(
     shouldReclaim(swap("workbench", "text", "untitled:Untitled-1"), context),
@@ -248,4 +260,185 @@ test("clearing one URI leaves other pending and established owners alone", () =>
   assert.equal(lease.has(other), true);
   lease.clear(other);
   assert.equal(lease.has(other), false);
+});
+
+interface FakeTab {
+  readonly uri: string | undefined;
+  readonly kind: TabKind;
+  readonly group: FakeGroup;
+}
+interface FakeGroup {
+  tabs: FakeTab[];
+  activeTab: FakeTab | undefined;
+}
+
+/** Tab groups that report changes in the order VS Code does. */
+function workbench(groupCount = 1) {
+  const groups: FakeGroup[] = Array.from({ length: groupCount }, () => ({
+    tabs: [],
+    activeTab: undefined,
+  }));
+  let focused = groups[0]!;
+  const swaps = new TabSwaps<FakeTab>({
+    facts: (tab) => ({ uri: tab.uri, kind: tab.kind }),
+    groupOf: (tab) => tab.group,
+    shownTab: () => focused.activeTab,
+  });
+  const judged: TabSwap[] = [];
+  /** Notes in a Cursor Edit session: their swaps are held, as reclaim does. */
+  const leased = new Set<string>();
+  const emit = (
+    change: Partial<TabChange<FakeTab>>,
+    endedSessions: readonly string[] = [],
+  ) => {
+    const due = swaps.next(
+      { opened: [], changed: [], ...change },
+      new Set(endedSessions),
+    );
+    for (const { tab, swap } of due) {
+      if (leased.has(swap.uri)) {
+        swaps.hold(tab, swap);
+      } else {
+        judged.push(swap);
+      }
+    }
+  };
+  const activate = (tab: FakeTab) => {
+    tab.group.activeTab = tab;
+    emit({ changed: [tab] });
+  };
+  /** A new tab opens inactive, right after the active one. */
+  const add = (kind: TabKind, uri: string | undefined, group: FakeGroup) => {
+    const tab = { uri, kind, group };
+    const active = group.activeTab ? group.tabs.indexOf(group.activeTab) : -1;
+    group.tabs.splice(active + 1, 0, tab);
+    emit({ opened: [tab] });
+    return tab;
+  };
+  return {
+    groups,
+    judged,
+    leased,
+    add,
+    activate,
+    focus(group: FakeGroup) {
+      focused = group;
+    },
+    open(kind: TabKind, uri = note, group = groups[0]!) {
+      const tab = add(kind, uri, group);
+      activate(tab);
+      return tab;
+    },
+    /**
+     * Cursor's Preview | Markdown switch and Reopen Editor With… replace the
+     * active tab: the new tab opens at its index, becomes active, and the old
+     * tab closes last, which is when a Cursor Edit session can end.
+     */
+    switchTo(kind: TabKind, old: FakeTab, { endsSession = false } = {}) {
+      const group = old.group;
+      const tab = { uri: old.uri, kind, group };
+      group.tabs.splice(group.tabs.indexOf(old), 0, tab);
+      emit({ opened: [tab] });
+      activate(tab);
+      group.tabs.splice(group.tabs.indexOf(old), 1);
+      if (endsSession && old.uri) {
+        leased.delete(old.uri);
+      }
+      emit({}, endsSession && old.uri ? [old.uri] : []);
+      return tab;
+    },
+    /** Closing the active tab activates a neighbour before removing it. */
+    close(tab: FakeTab) {
+      const group = tab.group;
+      if (group.activeTab === tab) {
+        const neighbour = group.tabs.find((candidate) => candidate !== tab);
+        group.activeTab = neighbour;
+        if (neighbour) {
+          emit({ changed: [neighbour] });
+        }
+      }
+      group.tabs.splice(group.tabs.indexOf(tab), 1);
+      emit({});
+    },
+  };
+}
+
+test("a new tab is judged once, at its first activation", () => {
+  const tabs = workbench();
+  const text = tabs.add("text", note, tabs.groups[0]!);
+  assert.deepEqual(tabs.judged, [], "VS Code opens a tab before activating it");
+  tabs.activate(text);
+  assert.deepEqual(tabs.judged, [swap("none", "text")]);
+  tabs.activate(text);
+  assert.equal(tabs.judged.length, 1, "later updates are not arrivals");
+});
+
+test("Cursor's Preview | Markdown switch is classified against the tab it replaces", () => {
+  const tabs = workbench();
+  const workshop = tabs.open("workbench");
+  const markdown = tabs.switchTo("other", workshop);
+  tabs.switchTo("text", markdown);
+  assert.deepEqual(tabs.judged, [
+    swap("none", "workbench"),
+    swap("workbench", "other"),
+    swap("other", "text"),
+  ]);
+});
+
+test("closing a Workshop tab beside a Cursor Markdown tab of the same note judges nothing", () => {
+  const tabs = workbench();
+  tabs.switchTo("other", tabs.open("workbench"));
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Reclaim's openWith, or the reader, opens the note in Workshop again.
+    const workshop = tabs.open("workbench");
+    const judged = tabs.judged.length;
+    tabs.close(workshop);
+    assert.equal(
+      tabs.judged.length,
+      judged,
+      "the Cursor Markdown tab was already there",
+    );
+  }
+});
+
+test("a tab opened beside the active tab of the same note is new, not a switch", () => {
+  const tabs = workbench();
+  tabs.open("workbench");
+  tabs.open("text");
+  assert.deepEqual(tabs.judged.at(-1), swap("none", "text"));
+});
+
+test("a tab first activated in a group without focus is never judged", () => {
+  const tabs = workbench(2);
+  const beside = tabs.open("text", note, tabs.groups[1]);
+  assert.deepEqual(tabs.judged, []);
+  tabs.focus(tabs.groups[1]!);
+  tabs.activate(beside);
+  assert.deepEqual(tabs.judged, []);
+});
+
+test("tabs that name no note are not classified", () => {
+  const tabs = workbench();
+  const unnamed = tabs.add("text", undefined, tabs.groups[0]!);
+  tabs.activate(unnamed);
+  tabs.switchTo("other", unnamed);
+  assert.deepEqual(tabs.judged, []);
+});
+
+test("a switch held by a Cursor Edit session is judged when that session's text tab closes", () => {
+  const tabs = workbench();
+  const text = tabs.open("text");
+  tabs.leased.add(note);
+  tabs.switchTo("other", text, { endsSession: true });
+  assert.deepEqual(tabs.judged, [swap("none", "text"), swap("text", "other")]);
+});
+
+test("a held swap stays held when its session ends some other way", () => {
+  const tabs = workbench();
+  tabs.leased.add(note);
+  const text = tabs.open("text");
+  // A failed handoff releases its own lease token; no tab change ends it.
+  tabs.leased.delete(note);
+  tabs.activate(text);
+  assert.deepEqual(tabs.judged, []);
 });

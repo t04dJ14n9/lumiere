@@ -7,8 +7,9 @@ import {
   reclaimEnabled,
   shouldReclaim,
   shouldWarmBeforeReclaim,
+  TabSwaps,
 } from "./reclaim-policy";
-import type { TabKind } from "./reclaim-policy";
+import type { TabKind, TabModel } from "./reclaim-policy";
 import { MARKDOWN_EDITOR } from "../shared/editor-provider";
 import { warmMarkdownDocument } from "./document-warm";
 import { SourceCoordinates } from "../shared/document/coordinates";
@@ -32,6 +33,9 @@ function hasNativeOptOut(uri: string): boolean {
 
 interface ReclaimRequest {
   uri: string;
+  /** Where the note was native: how the tab is found again (see currentTab). */
+  column: vscode.ViewColumn;
+  kind: TabKind;
   intent: NavigationIntent | undefined;
   at: number | undefined;
   /** Once reveal delivery has started, later same-tab jumps must supersede. */
@@ -64,10 +68,26 @@ function uriOf(tab: vscode.Tab): string | undefined {
   return input?.uri?.toString();
 }
 
-function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
+/** The tab shows this note in the text or Cursor Markdown editor. */
+function showsNatively(tab: vscode.Tab, uri: string): boolean {
+  const kind = kindOf(tab);
+  return (
+    (kind === "text" || kind === "other") &&
+    (uriOf(tab) ?? labelUri(tab)) === uri
+  );
+}
+
+const tabModel: TabModel<vscode.Tab> = {
+  facts: (tab) => ({ uri: uriOf(tab) ?? labelUri(tab), kind: kindOf(tab) }),
+  groupOf: (tab) => tab.group,
+  shownTab: () => vscode.window.tabGroups.activeTabGroup.activeTab,
+};
+
+/** Returns the note whose Cursor Edit session this tab change ended. */
+function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
   const uri = uriOf(tab) ?? labelUri(tab);
   if (!uri || !handoffLease.has(uri)) {
-    return;
+    return undefined;
   }
   // Same-URI custom tabs can close or become inactive during Cursor Edit.
   // Established sessions end only when no native text tab remains in any group.
@@ -82,6 +102,7 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
   if (!hasNativeTextTab) {
     handoffLease.clear(uri);
   }
+  return handoffLease.has(uri) ? undefined : uri;
 }
 
 /**
@@ -92,46 +113,30 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): void {
 export function registerReclaim(
   navigation?: NativeNavigation,
 ): vscode.Disposable {
-  const seen = new Map<string, TabKind>();
   const recentTransfers = new Bypass();
   const transfer = createReclaimTransfer(navigation, recentTransfers);
-  const key = (tab: vscode.Tab, uri: string) =>
-    `${tab.group.viewColumn}:${uri}`;
-  const remember = () => {
-    seen.clear();
-    for (const group of vscode.window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        const uri = uriOf(tab) ?? labelUri(tab);
-        if (uri) {
-          seen.set(key(tab, uri), kindOf(tab));
-        }
-      }
-    }
-  };
-  remember();
+  const swaps = new TabSwaps(tabModel);
   const tabs = vscode.window.tabGroups.onDidChangeTabs((event) => {
+    const endedSessions = new Set<string>();
     for (const tab of [...event.closed, ...event.opened, ...event.changed]) {
-      releaseLeaseWithoutTextTab(tab);
-    }
-    for (const tab of [...event.opened, ...event.changed]) {
-      const uri = uriOf(tab) ?? labelUri(tab);
-      if (!uri) {
-        continue;
+      const ended = releaseLeaseWithoutTextTab(tab);
+      if (ended) {
+        endedSessions.add(ended);
       }
-      const after = kindOf(tab);
-      const swap = {
-        uri,
-        before: seen.get(key(tab, uri)) ?? "none",
-        after,
-      };
-      if (
-        shouldReclaim(swap, reclaimContext(uri)) &&
-        !recentTransfers.has(uri)
+    }
+    for (const { tab, swap } of swaps.next(event, endedSessions)) {
+      // A Cursor Edit session keeps the note native. Switching its text tab
+      // with Preview | Markdown ends the session only when that text tab
+      // closes, after the new tab is shown, so judge that tab again then.
+      if (handoffLease.has(swap.uri)) {
+        swaps.hold(tab, swap);
+      } else if (
+        shouldReclaim(swap, reclaimContext(swap.uri)) &&
+        !recentTransfers.has(swap.uri)
       ) {
-        transfer.open(tab, uri);
+        transfer.open(tab, swap.uri);
       }
     }
-    remember();
   });
   return vscode.Disposable.from(
     tabs,
@@ -170,11 +175,13 @@ function createReclaimTransfer(
       recentTransfers.allow(uri);
       const next: ReclaimRequest = {
         uri,
+        column: tab.group.viewColumn,
+        kind: kindOf(tab),
         intent: navigation?.begin(),
         at: nativeSelectionStart(tab, uri),
       };
       pending.set(tab, next);
-      void reopen(tab, uri, next, navigation)
+      void reopen(uri, next, navigation)
         .catch((error) => {
           console.error("Markdown Workshop editor transfer failed", error);
         })
@@ -272,7 +279,6 @@ function reclaimContext(uri: string) {
 
 /** Transfer when ready, keeping any dirty text tab and its native undo. */
 async function reopen(
-  tab: vscode.Tab,
   uri: string,
   request: ReclaimRequest,
   navigation?: NativeNavigation,
@@ -283,21 +289,22 @@ async function reopen(
   const isDocumentOpen = vscode.workspace.textDocuments.some(
     (document) => document.uri.toString() === uri,
   );
-  if (shouldWarmBeforeReclaim(kindOf(tab), isDocumentOpen)) {
+  if (shouldWarmBeforeReclaim(request.kind, isDocumentOpen)) {
     await warmMarkdownDocument(target);
   }
-  if (!canReopen(tab, uri, request)) {
+  const native = reopenableTab(request);
+  if (!native) {
     return;
   }
-  const column = tab.group.viewColumn;
-  request.at = nativeSelectionStart(tab, uri) ?? request.at;
+  const { column } = request;
+  request.at = nativeSelectionStart(native, uri) ?? request.at;
   await vscode.commands.executeCommand("vscode.openWith", target, viewType, {
     viewColumn: column,
-    preview: tab.isPreview,
+    preview: native.isPreview,
   });
   if (navigation && request.intent && request.at !== undefined) {
     request.delivering = true;
-    request.at = nativeSelectionStart(tab, uri) ?? request.at;
+    request.at = nativeSelectionStart(native, uri) ?? request.at;
     await revealOpenedWatchingOptOut(uri, request, () =>
       navigation.revealOpened(uri, column, request.at!, request.intent!),
     );
@@ -312,17 +319,11 @@ async function reopen(
   ) {
     return;
   }
-  const group = vscode.window.tabGroups.all.find(
-    (candidate) => candidate.viewColumn === column,
-  );
-  const text = group?.tabs.find(
-    (candidate) =>
-      candidate === tab &&
-      candidate.input instanceof vscode.TabInputText &&
-      candidate.input.uri.toString() === uri,
-  );
-  if (text && !text.isDirty) {
-    await vscode.window.tabGroups.close(text, true);
+  // openWith opens a second tab beside the native one; left open, a Cursor
+  // Markdown tab would sit next to the note's Workshop tab.
+  const left = currentTab(request);
+  if (left && !left.isDirty) {
+    await vscode.window.tabGroups.close(left, true);
   }
 }
 
@@ -361,19 +362,30 @@ async function revealOpenedWatchingOptOut(
 }
 
 /** Warming can outlive a handoff, a newer jump, or the reader leaving this tab. */
-function canReopen(
-  tab: vscode.Tab,
-  uri: string,
-  request: ReclaimRequest,
-): boolean {
-  const kind = kindOf(tab);
-  return (
-    !hasNativeOptOut(uri) &&
-    !request.intent?.token.cancelled &&
-    tab.group.tabs.includes(tab) &&
-    (kind === "text" || kind === "other") &&
-    (uriOf(tab) ?? labelUri(tab)) === uri &&
-    vscode.window.tabGroups.activeTabGroup.activeTab === tab
+function reopenableTab(request: ReclaimRequest): vscode.Tab | undefined {
+  if (hasNativeOptOut(request.uri) || request.intent?.token.cancelled) {
+    return undefined;
+  }
+  const native = currentTab(request);
+  return native && vscode.window.tabGroups.activeTabGroup.activeTab === native
+    ? native
+    : undefined;
+}
+
+/**
+ * The transfer's native tab as the tab model shows it now. VS Code rebuilds
+ * that model with new Tab objects, and no tab event, after some editor
+ * changes (Cursor does right after openWith), so the tab is found again by
+ * what it shows: a group holds at most one tab per editor and note.
+ */
+function currentTab(request: ReclaimRequest): vscode.Tab | undefined {
+  const group = vscode.window.tabGroups.all.find(
+    (candidate) => candidate.viewColumn === request.column,
+  );
+  return group?.tabs.find(
+    (candidate) =>
+      kindOf(candidate) === request.kind &&
+      showsNatively(candidate, request.uri),
   );
 }
 

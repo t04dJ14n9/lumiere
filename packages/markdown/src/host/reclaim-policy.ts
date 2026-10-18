@@ -16,16 +16,20 @@ export function reclaimEnabled({ mode, appName }: ReclaimSetting): boolean {
 
 export interface TabSwap {
   uri: string;
-  /** The tab's kind before this change, in the same group. */
+  /**
+   * The kind of the tab this one replaced in place, or `none` for a tab that
+   * opened beside the others or was reused.
+   */
   before: TabKind;
   after: TabKind;
 }
 
 /**
  * Whether an associated note arriving in the text or Cursor Markdown editor
- * should go back to Markdown Workshop. Cursor remembers that choice per
- * file, so later opens can arrive in either editor. Diffs, Git and untitled
- * files are excluded by the tab classifier and note predicate.
+ * should go back to Markdown Workshop. That includes Cursor's Preview |
+ * Markdown switch, which replaces the tab in place, and Cursor turning its
+ * Markdown editor into text for a note it remembers as raw. Diffs, Git and
+ * untitled files are excluded by the tab classifier and note predicate.
  * Notes this extension opened as text stay, as does a note reclaimed a
  * moment ago, so asking for the text editor a second time keeps it.
  */
@@ -40,12 +44,134 @@ export function shouldReclaim(
 ): boolean {
   return (
     context.enabled &&
-    (swap.after === "text" || swap.after === "other") &&
-    swap.before !== swap.after &&
+    landsInNativeEditor(swap) &&
     context.isNote(swap.uri) &&
     context.associated(swap.uri) &&
     !context.bypassed(swap.uri)
   );
+}
+
+/**
+ * A text tab names its note. An input-less tab is matched by its label, which
+ * Cursor's plan editor and its other input-less editors share, so only one
+ * that replaced the note's own tab is known to be Cursor's Markdown editor.
+ */
+function landsInNativeEditor({ before, after }: TabSwap): boolean {
+  if (after === "text") {
+    return before !== "text";
+  }
+  return after === "other" && (before === "workbench" || before === "text");
+}
+
+/** What reclaim reads from one tab. */
+export interface TabFacts {
+  uri: string | undefined;
+  kind: TabKind;
+}
+
+/** The parts of VS Code's tab API that classify tab events. */
+export interface TabModel<Tab> {
+  facts(tab: Tab): TabFacts;
+  groupOf(tab: Tab): {
+    readonly tabs: readonly Tab[];
+    readonly activeTab: Tab | undefined;
+  };
+  /** The active tab of the active group, the only tab a transfer acts on. */
+  shownTab(): Tab | undefined;
+}
+
+export interface TabChange<Tab> {
+  readonly opened: readonly Tab[];
+  readonly changed: readonly Tab[];
+}
+
+/**
+ * Turns tab events into swaps, judging each new tab once.
+ *
+ * VS Code opens a tab inactive and activates it in a later event. A switch in
+ * place (Cursor's Preview | Markdown, Reopen Editor With…) opens the new tab
+ * at the old tab's index while the old one is still active, activates it,
+ * and closes the old one last. So a new tab is classified when it opens,
+ * against the active tab of the same note right after it, and judged at its
+ * first activation. Tabs are tracked as objects, which VS Code keeps for a
+ * tab's lifetime: one group can hold a note twice, and a tab that was already
+ * there is not arriving when it becomes active again, as it does when the
+ * tab in front of it closes.
+ */
+export class TabSwaps<Tab extends object> {
+  /** New tabs that have not been active yet. */
+  private readonly unjudged = new WeakMap<Tab, TabSwap>();
+  /** Swaps a Cursor Edit session kept native, judged again when it ends. */
+  private readonly held = new WeakMap<Tab, TabSwap>();
+
+  constructor(private readonly model: TabModel<Tab>) {}
+
+  /**
+   * The swaps to judge after one tab event. `endedSessions` are the notes
+   * whose Cursor Edit session this event ended.
+   */
+  next(
+    change: TabChange<Tab>,
+    endedSessions: ReadonlySet<string>,
+  ): { tab: Tab; swap: TabSwap }[] {
+    for (const tab of change.opened) {
+      this.classify(tab);
+    }
+    const due = this.firstActivations(change);
+    const resumed = this.resumeShown(endedSessions);
+    return resumed ? [...due, resumed] : due;
+  }
+
+  hold(tab: Tab, swap: TabSwap): void {
+    this.held.set(tab, swap);
+  }
+
+  private classify(tab: Tab): void {
+    const { uri, kind } = this.model.facts(tab);
+    if (uri === undefined) {
+      return;
+    }
+    const group = this.model.groupOf(tab);
+    const index = group.tabs.indexOf(tab);
+    const next = index < 0 ? undefined : group.tabs[index + 1];
+    const replaced =
+      next !== undefined && next === group.activeTab
+        ? this.model.facts(next)
+        : undefined;
+    const before = replaced?.uri === uri ? replaced.kind : "none";
+    this.unjudged.set(tab, { uri, before, after: kind });
+  }
+
+  private firstActivations(change: TabChange<Tab>) {
+    const due: { tab: Tab; swap: TabSwap }[] = [];
+    for (const tab of new Set([...change.opened, ...change.changed])) {
+      const swap = this.unjudged.get(tab);
+      if (!swap || this.model.groupOf(tab).activeTab !== tab) {
+        continue;
+      }
+      this.unjudged.delete(tab);
+      // Activated in a group that does not have focus, as an open beside
+      // that preserves focus does: the reader is elsewhere, so it stays.
+      if (this.model.shownTab() === tab) {
+        due.push({ tab, swap });
+      }
+    }
+    return due;
+  }
+
+  /**
+   * An Edit session ends when its last text tab leaves, after the tab that
+   * replaced it is already active; the reader is still looking at that tab.
+   */
+  private resumeShown(endedSessions: ReadonlySet<string>) {
+    const tab = this.model.shownTab();
+    const swap = tab === undefined ? undefined : this.held.get(tab);
+    if (tab === undefined || !swap || !endedSessions.has(swap.uri)) {
+      return undefined;
+    }
+    this.held.delete(tab);
+    return { tab, swap };
+  }
 }
 
 /** Cursor Markdown still needs the transfer warm even with a loaded document. */
