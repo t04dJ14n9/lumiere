@@ -82,7 +82,8 @@ export class SuggestionIndex {
     const result: Candidate[] = [];
     const unresolved = new Set<string>();
     for (const file of files) {
-      if (file.excluded) {
+      // Obsidian still suggests an excluded note, 10 points lower.
+      if (file.excluded && kind !== "link") {
         continue;
       }
       result.push(...this.forFile(file, kind));

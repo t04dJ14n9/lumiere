@@ -1,6 +1,6 @@
 import { fuzzyMatch } from "../../shared/fuzzy";
 import type { PickItem } from "../../shared/host";
-import { folderOf, stemOf } from "../../shared/vault-path";
+import { folderOf, nameOf, stemOf } from "../../shared/vault-path";
 import type { VaultFile, VaultIndex } from "../vault/api";
 
 export type SwitcherTarget =
@@ -15,16 +15,31 @@ interface Candidate {
   mtime: number;
   /** Aliases are found by search but not listed for an empty query. */
   isAlias?: boolean;
+  /** Only notes are listed for an empty query. */
+  isAttachment?: boolean;
+  /** An excluded file ranks 10 points lower, as in Obsidian. */
+  penalty: number;
 }
 
-/** A match on a note's path ranks below any match on its name. */
+/** A match on a note's path is a point lower than one on its name. */
 const PATH_PENALTY = 1;
 
 /**
- * Quick switcher items for a query, as Obsidian's switcher: notes by name,
- * then by path, their aliases, and links whose note does not exist yet, best
- * match first. An empty query lists recently modified notes. A query that
- * names no note offers to create it.
+ * Files Obsidian's switcher lists besides notes, with its default "Show
+ * attachments": images, audio, video, PDFs, canvases and bases.
+ */
+const ATTACHMENTS = new Set([
+  ...["bmp", "png", "jpg", "jpeg", "gif", "svg", "webp", "avif"],
+  ...["mp3", "wav", "m4a", "3gp", "flac", "ogg", "oga", "opus"],
+  ...["mp4", "webm", "ogv", "mov", "mkv", "pdf", "canvas", "base"],
+]);
+
+/**
+ * Quick switcher items for a query, as Obsidian's switcher: notes and
+ * attachments by name, then by path, notes' aliases, and links whose note
+ * does not exist yet, best match first (excluded files 10 points lower). An
+ * empty query lists recently modified notes. A query that names no note
+ * offers to create it.
  */
 export function switcherItems(
   index: VaultIndex,
@@ -37,7 +52,10 @@ export function switcherItems(
     return candidates
       .filter(
         (candidate) =>
-          candidate.item.value.kind === "note" && !candidate.isAlias,
+          candidate.item.value.kind === "note" &&
+          !candidate.isAlias &&
+          !candidate.isAttachment &&
+          candidate.penalty === 0,
       )
       .sort((a, b) => b.mtime - a.mtime)
       .slice(0, limit)
@@ -46,7 +64,7 @@ export function switcherItems(
   const ranked = candidates
     .map((candidate) => ({
       candidate,
-      score: bestScore(trimmed, candidate.texts),
+      score: bestScore(trimmed, candidate.texts, candidate.penalty),
     }))
     .filter(
       (entry): entry is { candidate: Candidate; score: number } =>
@@ -63,17 +81,29 @@ export function switcherItems(
 function noteCandidates(index: VaultIndex): Candidate[] {
   return index
     .files()
-    .filter((file) => file.extension === "md" && !file.excluded)
+    .filter(
+      (file) =>
+        file.extension === "md" ||
+        ATTACHMENTS.has(file.extension.toLowerCase()),
+    )
     .flatMap((file) => {
+      const isNote = file.extension === "md";
+      const label = isNote ? file.basename : nameOf(file.path);
+      const penalty = file.excluded ? 10 : 0;
       const note: Candidate = {
         item: {
-          label: file.basename,
+          label,
           description: folderOf(file.path),
           value: { kind: "note", file },
         },
-        texts: [file.basename, file.path.slice(0, -".md".length)],
+        texts: [label, isNote ? file.path.slice(0, -".md".length) : file.path],
         mtime: file.mtime,
+        penalty,
+        ...(!isNote && { isAttachment: true }),
       };
+      if (!isNote) {
+        return [note];
+      }
       const aliases = (index.metadata(file.path)?.aliases ?? []).map(
         (alias) => ({
           item: {
@@ -84,6 +114,7 @@ function noteCandidates(index: VaultIndex): Candidate[] {
           texts: [alias],
           mtime: file.mtime,
           isAlias: true,
+          penalty,
         }),
       );
       return [note, ...aliases];
@@ -105,22 +136,23 @@ function unresolvedCandidates(index: VaultIndex): Candidate[] {
     },
     texts: [linkpath],
     mtime: 0,
+    penalty: 0,
   }));
 }
 
+/** The first of `texts` the query matches, each later one a point lower. */
 function bestScore(
   query: string,
   texts: readonly string[],
+  penalty: number,
 ): number | undefined {
-  let best: number | undefined;
-  texts.forEach((text, position) => {
+  for (const [position, text] of texts.entries()) {
     const match = fuzzyMatch(query, text);
     if (match) {
-      const score = match.score - position * PATH_PENALTY;
-      best = best === undefined ? score : Math.max(best, score);
+      return match.score - position * PATH_PENALTY - penalty;
     }
-  });
-  return best;
+  }
+  return undefined;
 }
 
 function hasNoteNamed(index: VaultIndex, name: string): boolean {

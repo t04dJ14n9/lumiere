@@ -36,11 +36,16 @@ test("an empty query lists notes by most recent change", () => {
   ]);
 });
 
-test("prefix matches rank first, names above paths; aliases and not-created links are found; excluded files are not", () => {
+test("prefix matches rank first, names above paths; aliases, not-created links and attachments are found; excluded files rank 10 lower", () => {
   assert.deepEqual(labels(switcherItems(vault(), "plan")), [
     "Planning",
     "Project Plan",
+    "Old plan",
     "$(new-file) Create “plan”",
+  ]);
+  assert.deepEqual(labels(switcherItems(vault(), "image")), [
+    "image.png",
+    "$(new-file) Create “image”",
   ]);
   assert.deepEqual(labels(switcherItems(vault(), "road")), [
     "Roadmap",

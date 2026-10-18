@@ -1,8 +1,23 @@
-/** Han, kana and Hangul characters each count as a word, as in Obsidian. */
-const CJK =
-  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
-/** Other words: runs of letters and digits, with inner apostrophes, hyphens and dots (`3.14`). */
-const WORD = /[\p{L}\p{N}](?:[\p{L}\p{N}\p{M}_'’.-]*[\p{L}\p{N}\p{M}])?/gu;
+/**
+ * Characters that are a word each, as Obsidian counts them (measured): the
+ * main block of Han ideographs, kana with the long-vowel mark `ー`, and
+ * Tibetan letters.
+ */
+const ONE_EACH =
+  "\\u3041-\\u3096\\u309D-\\u309F\\u30A1-\\u30FA\\u30FC-\\u30FF\\u4E00-\\u9FFF" +
+  "\\u0F00\\u0F40-\\u0F6C\\u0F88-\\u0F8C";
+
+/**
+ * A word, as Obsidian counts them (measured): a run of letters, digits,
+ * hyphens and apostrophes, where `,` and `.` join digits (`1,000.50`) but
+ * nothing else (`e.g.` is two). Korean and other scripts run whole words;
+ * Tamil keeps its vowel signs, while other combining marks end a word.
+ * Each character of `ONE_EACH` is a word of its own.
+ */
+const WORD = new RegExp(
+  `(?:\\d+(?:[.,]\\d+)*|[-'’]|(?![${ONE_EACH}])[\\p{L}\\p{Script=Tamil}])+|[${ONE_EACH}]`,
+  "gu",
+);
 const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)\r?(?:\n|$)/;
 
 export interface Counts {
@@ -11,16 +26,16 @@ export interface Counts {
 }
 
 /**
- * Words and characters in a note's body, not counting its properties.
- * Markdown punctuation (`#`, `**`, `-`) is not a word; characters exclude
- * line breaks.
+ * Words and characters in a note's body, not counting its properties, or in
+ * a selection. Characters are the text's length, each line break one
+ * character (`\r\n` too, as Obsidian's editor reads it).
  */
 export function countText(text: string, isWholeNote = true): Counts {
   const body = isWholeNote ? text.replace(FRONTMATTER, "") : text;
-  const cjk = body.match(CJK)?.length ?? 0;
-  const words = body.replace(CJK, " ").match(WORD)?.length ?? 0;
-  const characters = [...body.replace(/\r?\n/g, "")].length;
-  return { words: cjk + words, characters };
+  return {
+    words: body.match(WORD)?.length ?? 0,
+    characters: body.replace(/\r\n/g, "\n").length,
+  };
 }
 
 export function formatCounts({ words, characters }: Counts): string {

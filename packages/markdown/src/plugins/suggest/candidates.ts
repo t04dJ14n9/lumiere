@@ -1,5 +1,5 @@
 import type { VaultIndex, VaultFile } from "../vault/api";
-import { prepareFuzzyText } from "../../shared/fuzzy";
+import { tagTree } from "../../markdown/tags/tree";
 import { nameOf } from "../../shared/vault-path";
 export type Value =
   | { kind: "literal"; text: string }
@@ -10,28 +10,35 @@ export interface Candidate {
   label: string;
   detail: string;
   value: Value;
-  labelText: string;
-  /** Other text the query may match, prepared: a note's path. */
-  matchText: string | undefined;
+  /** What the query matches: the label, or a tag lower-cased. */
+  text: string;
+  /** A note's path without `.md`, matched a point lower than its name. */
+  path?: string;
+  /** How much lower it ranks: an excluded note ranks 10 lower. */
+  penalty: number;
+  /** A block matches when its text has every word of the query. */
+  words?: boolean;
   order: string;
 }
 /**
- * A suggestion. It matches a query on its label, and on `match` when given:
- * as in Obsidian, a note also matches on its path (without `.md`), while an
- * alias, heading or tag matches only on its own text, never on its detail.
+ * A suggestion, matching a query on its own text as in Obsidian: a note on
+ * its name, else on its path; an alias, heading or tag on its text, never
+ * on its detail.
  */
 export function candidate(
   label: string,
   detail: string,
   value: Value,
-  match?: string,
+  options: Partial<Pick<Candidate, "text" | "path" | "penalty" | "words">> = {},
 ): Candidate {
   return {
     label,
     detail,
     value,
-    labelText: prepareFuzzyText(label),
-    matchText: match === undefined ? undefined : prepareFuzzyText(match),
+    text: options.text ?? label,
+    penalty: options.penalty ?? 0,
+    ...(options.path !== undefined && { path: options.path }),
+    ...(options.words && { words: true }),
     order: candidateOrder(value),
   };
 }
@@ -62,52 +69,59 @@ export function fileCandidates(
         id,
         `${text.slice(0, 512)} · ${file.path}`,
         { kind: "block", target: file, id },
-        text.slice(0, 512),
+        { text: text.slice(0, 512), words: true },
       ),
     );
   }
+  const penalty = file.excluded ? 10 : 0;
   return [
     candidate(
       file.extension === "md" ? file.basename : nameOf(file.path),
       file.path,
       { kind: "file", target: file },
-      file.extension === "md" ? file.path.slice(0, -3) : file.path,
+      {
+        path: file.extension === "md" ? file.path.slice(0, -3) : file.path,
+        penalty,
+      },
     ),
     ...(metadata?.aliases ?? []).map((alias) =>
-      candidate(alias, file.path, { kind: "file", target: file, alias }),
+      candidate(
+        alias,
+        file.path,
+        { kind: "file", target: file, alias },
+        { penalty },
+      ),
     ),
   ];
 }
+const byName = new Intl.Collator(undefined, {
+  sensitivity: "base",
+  numeric: true,
+}).compare;
+
+/**
+ * Every tag in the vault, as Obsidian suggests them: parents too (`#a` for
+ * `#a/b`), case variants under the most used spelling, by name; the query
+ * matches a tag lower-cased.
+ */
 export function tagCandidates(vault: VaultIndex): Candidate[] {
-  const counts = new Map<string, Map<string, number>>();
-  for (const file of vault.files()) {
-    if (file.excluded) {
-      continue;
-    }
-    for (const { tag } of vault.metadata(file.path)?.tags ?? []) {
-      const name = tag.replace(/^#/, "");
-      const variants =
-        counts.get(name.toLowerCase()) ?? new Map<string, number>();
-      variants.set(name, (variants.get(name) ?? 0) + 1);
-      counts.set(name.toLowerCase(), variants);
-    }
-  }
-  return [...counts.values()]
-    .map((variants) => {
-      const [label] = [...variants].sort(
-        (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
-      )[0]!;
-      const count = [...variants.values()].reduce((a, b) => a + b, 0);
-      return {
-        entry: candidate(label, `${count} occurrences`, {
-          kind: "literal",
-          text: label,
-        }),
-        count,
-      };
-    })
-    .sort(
-      (a, b) => b.count - a.count || a.entry.label.localeCompare(b.entry.label),
-    )
-    .map(({ entry }) => entry);
+  const notes = vault
+    .files()
+    .filter((file) => !file.excluded)
+    .map((file) => ({
+      id: file.path,
+      tags: (vault.metadata(file.path)?.tags ?? []).map(({ tag }) =>
+        tag.replace(/^#/, ""),
+      ),
+    }));
+  return tagTree(notes, false, false)
+    .sort((a, b) => byName(a.tag, b.tag))
+    .map(({ tag, count }) =>
+      candidate(
+        tag,
+        `${count} occurrences`,
+        { kind: "literal", text: tag },
+        { text: tag.toLowerCase() },
+      ),
+    );
 }

@@ -7,10 +7,13 @@ plugin.
 ## How it works
 
 The count follows the active tab, in this editor or the text editor, and
-updates after edits and selection changes. Han, kana and Hangul characters
-count as one word each; other words are runs of letters and digits.
-Properties and Markdown punctuation are not counted; characters exclude line
-breaks.
+updates after edits and selection changes. It counts as Obsidian does
+(measured on 76 texts): a word is a run of letters, digits, hyphens and
+apostrophes, where `,` and `.` join digits only (`1,000.50` is one word,
+`e.g.` two), so a lone `-` bullet is a word too. Han and kana characters
+count one each, while Korean runs whole words; combining marks end a word,
+except in Tamil. Characters are the text's length, line breaks included.
+A note's properties are not counted; a selection's are.
 
 ## Files
 
@@ -26,5 +29,5 @@ breaks.
 
 ## Limits and differences from Obsidian
 
-- Counting rules are this plugin's own reading of Obsidian's; compare a few
-  notes in a disposable vault before relying on exact numbers.
+- None in the counting rules measured. Obsidian's letter table predates a
+  few hundred newer Unicode letters, which count here and not there.

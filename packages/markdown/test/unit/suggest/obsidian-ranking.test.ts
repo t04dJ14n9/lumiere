@@ -4,8 +4,8 @@ import { metadata } from "../../../src/markdown/metadata";
 import { suggestions } from "../../../src/plugins/suggest/sources";
 import { MemoryVaultIndex } from "../../../src/plugins/vault/memory-index";
 
-// Every expected list is Obsidian's, read from its `[[` suggestions over the
-// same notes in a throwaway vault (2026-10-17).
+// Every expected list is Obsidian 1.14.4's, from its own `[[` suggester run
+// over the same notes in a throwaway vault (2026-10-17).
 const NOTES: Record<string, string> = {
   "Project Plan.md": "# Project Plan\n\n## Goals\n\n## Timeline\n\n#project\n",
   "projects/Roadmap 2024.md": "---\naliases: [Plan 2024]\n---\n# Roadmap\n",
@@ -79,28 +79,36 @@ test("a note's path is matched without .md, and never its description", () => {
 });
 
 test("letters matched one by one rank by how close together and how early they are", () => {
-  assert.deepEqual(first("rp", 4), [
-    "Proposal Draft",
-    "Roadmap 2024",
-    "Project Plan",
-    "Old Project",
-  ]);
   assert.deepEqual(first("nt", 5), [
-    "Notebook",
     "No Title",
+    "Notebook",
     "Meeting Notes",
     "Reading List",
     "2024-01-15 Standup",
   ]);
-  assert.deepEqual(labels("bs"), ["Books", "Bob Smith"]);
-  assert.deepEqual(first("oe", 7), [
+});
+
+// Obsidian 1.14: a letter matched inside a word, not right after the one
+// before it, costs a tenth.
+test("letters that start words rank higher", () => {
+  assert.deepEqual(first("rp", 4), [
+    "Roadmap 2024",
+    "Project Plan",
+    "Proposal Draft",
+    "Old Project",
+  ]);
+  assert.deepEqual(labels("bs"), ["Bob Smith", "Books"]);
+  assert.deepEqual(first("oe", 10), [
+    "other",
+    "Old Project",
     "Notebook",
     "probe",
     "Project Plan",
     "Meeting Notes",
-    "other",
     "No Title",
-    "Old Project",
+    "Roadmap 2024",
+    "Alice",
+    "Bob Smith",
   ]);
 });
 
@@ -122,4 +130,47 @@ test("a note's headings, with nothing typed, come in document order", () => {
     }).map((item) => item.label),
     ["Project Plan", "Goals", "Timeline"],
   );
+});
+
+// Measured by running Obsidian's own suggester over the same four notes.
+function datedVault() {
+  const index = new MemoryVaultIndex({
+    root: "file:///vault",
+    folderNote: "",
+    linkFormat: "shortest",
+  });
+  const notes: [string, number, string, boolean][] = [
+    ["Old.md", 100, "[[Missing]]", false],
+    ["Fresh.md", 300, "---\naliases: [New]\n---\n", false],
+    ["Middle.md", 200, "", false],
+    ["Hidden Plan.md", 400, "", true],
+  ];
+  for (const [path, mtime, text, excluded] of notes) {
+    index.upsertFile({
+      path,
+      uri: `file:///vault/${path}`,
+      size: text.length,
+      mtime,
+      excluded,
+    });
+    index.setMetadata(path, metadata(text));
+  }
+  return index;
+}
+
+test("with nothing typed, notes come newest first, an excluded one left out", () => {
+  const listed = suggestions(datedVault(), "Old.md", {
+    kind: "link",
+    query: "",
+  }).map((item) => item.label);
+  assert.deepEqual(listed, ["Fresh", "New", "Middle", "Old", "Missing"]);
+});
+
+test("an excluded note is still offered, ranked 10 points lower", () => {
+  const listed = (query: string) =>
+    suggestions(datedVault(), "Old.md", { kind: "link", query }).map(
+      (item) => item.label,
+    );
+  assert.deepEqual(listed("plan"), ["Hidden Plan"]);
+  assert.deepEqual(listed("n"), ["New", "Missing", "Hidden Plan"]);
 });

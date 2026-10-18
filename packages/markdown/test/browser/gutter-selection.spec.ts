@@ -204,16 +204,18 @@ for (const vim of [false, true]) {
       fenceBox,
     );
     expect(onFence).toBe(0);
-    // The empty line shows a thin stub, not a full-width band.
-    const stubs = await page.evaluate(() =>
-      [
-        ...document.querySelectorAll(
-          ".mw-selection-layer .cm-selectionBackground",
-        ),
-      ].map((element) => element.getBoundingClientRect().width),
-    );
-    expect(stubs).toHaveLength(1);
-    expect(stubs[0]).toBeLessThanOrEqual(5);
+    // The empty line shows a thin stub, not a full-width band. The layer
+    // draws after the next measure, so wait for it.
+    const stubs = () =>
+      page.evaluate(() =>
+        [
+          ...document.querySelectorAll(
+            ".mw-selection-layer .cm-selectionBackground",
+          ),
+        ].map((element) => element.getBoundingClientRect().width),
+      );
+    await expect.poll(async () => (await stubs()).length).toBe(1);
+    expect((await stubs())[0]).toBeLessThanOrEqual(5);
     if (shots) {
       await page.screenshot({
         path: `${shots}/fence${vim ? "-vim" : ""}.png`,

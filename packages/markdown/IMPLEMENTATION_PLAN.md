@@ -5250,3 +5250,40 @@ Validation: `pnpm check` green.
   Cordis.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Word count, suggestions and the quick switcher, against Obsidian 1.14.4 — 2026-10-17
+
+The throwaway Obsidian ran 1.12.7, the installer's version, while the owner's
+Obsidian has updated itself to 1.14.4; the probe now loads 1.14.4 too (it had
+downloaded the update into its own profile). REA analysed the 1.14.4 package
+(`analyze_javascript_application`) and the bundle was read to find the logic
+behind each behaviour, then each was measured in the probe. No Obsidian code
+was copied.
+
+- **Word count** (measured on 76 texts, all matching now). A word is a run of
+  letters, digits, hyphens and apostrophes, where `,` and `.` join digits only;
+  a lone `-` bullet is a word; Han and kana count one each while Korean runs
+  whole words; combining marks end a word, except in Tamil. Characters are the
+  text's length, line breaks included. Workshop counted Korean per character,
+  split `1,000`, kept `_` inside words, and left line breaks out.
+- **Fuzzy search.** 1.14 changed it ("matches where your letters start words
+  now rank higher"): a letter matched inside a word, not right after the one
+  before it, now costs a tenth. Workshop's matcher is rewritten to Obsidian's
+  rules: words in order (not out of order), then letters; camelCase capitals
+  and digits start words; no Unicode normalization. Its scores and ranges
+  equal Obsidian's public `prepareFuzzySearch` on 2,463 query and text pairs.
+- **Suggestions.** A note matches on its name, or its path a point lower (not
+  "every name match first"); an excluded note is offered 10 points lower; tags
+  come from every tag path, parents included, by name; blocks match every word
+  of the query. With nothing typed, notes come newest first. The 36 measured
+  queries match except exact ties, which follow each app's file order.
+- **Quick switcher.** The same scoring; attachments are listed, as Obsidian's
+  default "Show attachments" lists them; excluded files rank 10 lower.
+
+Found while reading 1.14.4, for later: link suggestions offer every block of
+a note (adding its id on pick), images and other files resolve relative to
+the note's folder, and highlights take a colour emoji (`==🔵text==`).
+
+Validation: `pnpm check` green (one unrelated `gitInline` test failed once
+under the parallel run and passed on rerun; logged to fix).
+- The gutter-selection fence spec now waits for the selection layer to draw (it read it before the next measure under load).
