@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { Digests, RealPaths } from "@workshop/platform";
 import { parseLocationFragment } from "../../../shared/pdf-location";
 import { registerSourceLinks, type LinkRun } from "./source-links";
+import { containedLink } from "./native-link-containment";
 import { deliverNativeLocation } from "./native-delivery";
 import { VIEW_TYPE, type PdfPanels } from "./panels";
 import { OPEN_NATIVE_LINK_COMMAND_ID } from "./registered-commands";
@@ -16,7 +17,8 @@ export function registerNativeLinks(
     digests: platform.digests,
     accepts: (file, fragment) =>
       /\.pdf$/i.test(file) && !!parseLocationFragment(fragment),
-    authorize: (root, target) => contained(root, target, platform.realPaths),
+    authorize: (root, target) =>
+      containedLink(root, target, platform.realPaths),
     begin() {
       let cancelled = false;
       const run = {
@@ -49,22 +51,4 @@ export function registerNativeLinks(
       }
     },
   });
-}
-
-async function contained(
-  root: vscode.Uri,
-  target: vscode.Uri,
-  realPaths: RealPaths | undefined,
-): Promise<void> {
-  if (
-    root.scheme !== "file" ||
-    target.scheme !== "file" ||
-    root.authority !== target.authority ||
-    !realPaths
-  ) {
-    throw new Error("Local workspace links only");
-  }
-  if (!(await realPaths.isInside(root.fsPath, target.fsPath))) {
-    throw new Error("Link escapes workspace folder");
-  }
 }
