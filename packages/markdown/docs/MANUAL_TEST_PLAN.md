@@ -13,14 +13,15 @@ Never install the extension into an existing VS Code or Cursor profile, and
 never open a real vault.
 
 1. Build the VSIX: `pnpm install && pnpm package`. It writes
-   `vscode-markdown-workshop-<version>.vsix` in the repository root.
-2. Copy the fixture vault: `cp -R test/fixtures/vault /tmp/mdwb-vault`.
+   `vscode-workshop-<version>.vsix` in the repository root.
+2. Copy the fixture vault:
+   `cp -R packages/markdown/test/fixtures/vault /tmp/mdwb-vault`.
 3. Install into a throwaway profile and open the vault:
 
    ```sh
    code --user-data-dir /tmp/mdwb-manual/user \
         --extensions-dir /tmp/mdwb-manual/extensions \
-        --install-extension vscode-markdown-workshop-0.1.0.vsix
+        --install-extension vscode-workshop-0.1.0.vsix
    code --user-data-dir /tmp/mdwb-manual/user \
         --extensions-dir /tmp/mdwb-manual/extensions /tmp/mdwb-vault
    ```
@@ -368,13 +369,22 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
    the PDF, `![[Target]]` and the `Next steps` section render, and the
    missing file shows a placeholder. A note embedding itself stops at the
    depth limit.
-2. Click an image: the inspector opens. Fit/actual size, zoom buttons,
-   + − 0 1 keys, Mod-wheel, pan, Escape; focus returns to the image.
-3. Tick a task inside the embedded `Next steps`: only
+2. Images stay rendered whatever the caret or a selection does, as in
+   Obsidian 1.13+. Click an image: it is selected (outlined), the caret
+   before it. `+` and `-` resize it in 25 px steps and write the width
+   (`![[diagram.svg|225]]`), `0` removes the width, Enter shows the source
+   with the file name selected, Tab puts the caret where the width goes,
+   Backspace removes the embed, Escape lets it go. ArrowRight just before
+   an image (or ArrowLeft just after) selects it; the next press moves
+   past.
+3. Click the ⤢ button beside an image: the inspector opens. Fit/actual
+   size, zoom buttons, + − 0 1 keys, Mod-wheel, pan, Escape; focus returns
+   to the button.
+4. Tick a task inside the embedded `Next steps`: only
    `notes/Project plan.md` changes. Links inside embeds open relative to
    the embedded note.
-4. In an untrusted workspace, remote images do not load.
-5. **Insert Embed** wraps the selection; undo restores it.
+5. In an untrusted workspace, remote images do not load.
+6. **Insert Embed** wraps the selection; undo restores it.
 
 ### onlineVideos
 
@@ -545,7 +555,10 @@ title, then set `markdownWorkshop.plugins.inlineTitle.enabled` to true.
    than the note; with the caret on the marker, the faint `[^label]:`
    source shows. The indented continuation belongs to the same footnote.
 3. **Insert Footnote** adds a fresh label at the caret and a definition at
-   the end; undo removes both.
+   the end, keeps the caret after the reference and opens a popover under
+   it that edits the definition, as Obsidian 1.14 does: typing goes to the
+   definition, Enter continues it on a new line, Escape or a click
+   elsewhere closes it, back at the reference. Undo removes both.
 4. With two panels, insert in one and undo there: both converge with no
    extra undo step.
 5. References inside a callout or an embedded note behave the same.

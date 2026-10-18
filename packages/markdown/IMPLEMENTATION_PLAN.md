@@ -5470,3 +5470,24 @@ itself 8% opaque (the existing theme spec caught this). A unit test pins the
 solid fill.
 
 Validation: `pnpm check` green; PDF browser suite 174/174.
+
+## Owner trial in Cursor, the draft PR and a handoff for testing — 2026-10-18
+
+- The owner asked to try the extension in their own Cursor. `pnpm package`
+  had been refusing to build: THIRD_PARTY_NOTICES.md did not list the PDF
+  viewer's bundled libraries (EmbedPDF, React, Cordis, the agent bridge's
+  server) since the merge; it is regenerated (b364ee8). The VSIX is
+  installed in the owner's Cursor. The three older builds it replaces were
+  removed (the old Markdown Workshop clashed on all 106 commands and 93
+  settings), with copies kept outside the repository.
+- With the owner's approval the branch is pushed and draft PR #83 is open.
+  #75 (superseded), #82 (ported) and #81 (Toggle Vim fix taken another
+  way; Esc and cell click left out to match Obsidian and Vim, by owner
+  decision) are closed with comments pointing to it.
+- `docs/HANDOFF_CURSOR_TESTING.md` hands acceptance in Cursor to Claude
+  Desktop with computer use: the ground rules, the likely click-only tier
+  for IDEs, fifteen checks with expected results, known issues and how to
+  report. The manual test plan's setup now names the merged VSIX and the
+  fixture vault's path, and its image and footnote steps describe the
+  Obsidian 1.13–1.14 behaviour (an image click selects; the inspector is
+  the ⤢ button; Insert Footnote opens the popover).
