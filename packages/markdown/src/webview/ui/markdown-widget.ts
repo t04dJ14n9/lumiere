@@ -16,7 +16,7 @@ export interface SourceSpan {
 export interface BlockEditing {
   /**
    * What reveals the source besides the caret moving in: a click on the
-   * block or its Edit button ("click", as for math and callouts), or only the
+   * block or its Edit button ("click", as for math), or only the
    * Edit button ("button"), so that clicks reach the content of embeds and
    * diagrams, or nothing at all ("none": no Edit button, as on an image,
    * which its own keys edit).

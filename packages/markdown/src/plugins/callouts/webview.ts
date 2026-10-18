@@ -36,7 +36,11 @@ function registerCalloutRenderer(ctx: Context): void {
       match: (node, state) =>
         node.name === "Blockquote" &&
         isCallout(state.sliceDoc(node.from, node.to)),
-      widget: (block) => new MarkdownBlock(block, ctx.render),
+      widget: (block) =>
+        new MarkdownBlock(block, ctx.render, {
+          reveal: "button",
+          guardMargin: true,
+        }),
     }),
   );
 }
@@ -92,7 +96,11 @@ interface DisclosureEvents {
   remember(): void;
 }
 
-function bindDisclosure({ details, signal, remember }: DisclosureEvents): void {
+export function bindDisclosure({
+  details,
+  signal,
+  remember,
+}: DisclosureEvents): void {
   details.querySelector(":scope > summary")?.addEventListener(
     "click",
     (event) => {

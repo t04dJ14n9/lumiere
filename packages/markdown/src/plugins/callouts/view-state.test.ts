@@ -3,6 +3,23 @@ import assert from "node:assert/strict";
 import type { EditorView } from "@codemirror/view";
 import { DisclosureState } from "./view-state";
 
+test("a default-closed disclosure stays closed across renders until explicitly opened", () => {
+  const state = new DisclosureState("Note.md");
+  const first = { open: false };
+  const binding = state.bind("Note.md|warning|0", first, () => {});
+  assert.equal(first.open, false);
+  binding.dispose();
+  const second = { open: false };
+  const next = state.bind("Note.md|warning|0", second, () => {});
+  assert.equal(second.open, false);
+  second.open = true;
+  next.remember();
+  next.dispose();
+  const third = { open: false };
+  state.bind("Note.md|warning|0", third, () => {});
+  assert.equal(third.open, true);
+});
+
 test("callout transfer remaps local and nested identity and refreshes live disclosures", () => {
   const state = new DisclosureState("new.md");
   const view = {} as EditorView;
