@@ -1,5 +1,4 @@
 import type { Context, Plugin } from "@workshop/core";
-import { serializeTable } from "../../markdown/tables/model";
 import type {} from "../editor/api";
 import type {} from "../document/api";
 import type {} from "../dialect/api";
@@ -21,7 +20,7 @@ import {
 import type { TableEnvironment } from "./environment";
 import { TableContent } from "./content";
 import { tableCommands } from "./manifest";
-import { tableOperation } from "./commands";
+import { insertTable, tableOperation } from "./commands";
 import { vimTableEntry } from "./vim-entry";
 import { TableWheelMotion } from "./wheel-motion";
 import type { TableWheelEvent } from "./wheel-scroll";
@@ -240,20 +239,7 @@ function registerTableCommands(ctx: Context): void {
   const view = ctx.editor.view;
   ctx.effect(() =>
     ctx.commands.register("editor:insert-table", () => {
-      view.dispatch({
-        ...view.state.replaceSelection(
-          "\n\n" +
-            serializeTable(
-              [
-                ["Column 1", "Column 2"],
-                ["", ""],
-              ],
-              [null, null],
-            ) +
-            "\n\n",
-        ),
-        userEvent: "input",
-      });
+      view.dispatch(insertTable(view.state));
       return true;
     }),
   );

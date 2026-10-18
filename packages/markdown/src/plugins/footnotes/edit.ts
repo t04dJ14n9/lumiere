@@ -8,17 +8,19 @@ export function insertFootnote(state: EditorState): TransactionSpec {
   while (labels.has(String(number))) {
     number++;
   }
-  const { from, to } = state.selection.main;
-  const selected = state.sliceDoc(from, to);
+  // As in Obsidian: the reference goes before the selection, which stays as
+  // it is, and the definition at the end of the note. Obsidian edits the
+  // definition in a popover; here the caret goes to it.
+  const { from } = state.selection.main;
   const marker = `[^${number}]`;
-  const tail = `\n\n${marker}: ${selected}`;
-  const changes =
-    from === state.doc.length
-      ? [{ from, to, insert: marker + tail }]
-      : [
-          { from, to, insert: marker },
-          { from: state.doc.length, insert: tail },
-        ];
-  const anchor = state.doc.length - (to - from) + marker.length + tail.length;
-  return { changes, selection: { anchor }, userEvent: "input.footnote" };
+  const definition = `\n\n${marker}: `;
+  const end = state.doc.length;
+  return {
+    changes: [
+      { from, insert: marker },
+      { from: end, insert: `${definition}\n` },
+    ],
+    selection: { anchor: end + marker.length + definition.length },
+    userEvent: "input.footnote",
+  };
 }

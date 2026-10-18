@@ -54,10 +54,15 @@ export function checklistEdit(
       }
     } else {
       // After the list marker, or else after the quotes and indentation, as
-      // in Obsidian (a heading's # stays after the new box).
+      // in Obsidian (a heading's # stays after the new box). Cycling makes
+      // plain text a bullet first: text, bullet, [ ], [x], bullet.
       const { quotes, marker: list } = lineMarkup(line.text);
       const at = line.from + quotes.length + list.length;
-      changes.push({ from: at, to: at, insert: list ? "[ ] " : "- [ ] " });
+      let insert = "[ ] ";
+      if (!list) {
+        insert = cycle ? "- " : "- [ ] ";
+      }
+      changes.push({ from: at, to: at, insert });
     }
   }
   // A caret where the box goes ends up after it, as in Obsidian.

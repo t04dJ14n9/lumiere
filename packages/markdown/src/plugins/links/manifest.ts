@@ -43,6 +43,11 @@ export default defineManifest({
         editorCommand: "editor:follow-link",
       },
       {
+        id: "openLinkInNewTab",
+        title: "Open Link in New Tab",
+        editorCommand: "editor:open-link-in-new-leaf",
+      },
+      {
         id: "openLinkToSide",
         title: "Open Link to Side",
         editorCommand: "editor:open-link-in-new-split",

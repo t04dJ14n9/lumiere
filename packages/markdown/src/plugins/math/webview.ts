@@ -1,6 +1,7 @@
 import type { Context, Plugin } from "@workshop/core";
 import type {} from "../editor/api";
 import type {} from "../commands/api";
+import type {} from "../formatting/api";
 import type { InlineContext } from "../livePreview/api";
 import type { RenderPass } from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
@@ -9,12 +10,15 @@ import {
   type InlineClick,
 } from "../../webview/ui/inline-widget";
 import { sanitizeGraphics } from "../../webview/ui/graphics";
-import { mathEdit } from "./commands";
+import { inlineMathEdit, mathBlockEdit } from "./commands";
 import { delimiters, mathBody, mathTokens } from "./source";
 import { errorMessage } from "../../shared/errors";
 export const mathWebview: Plugin = {
   name: "math",
-  inject: { required: ["editor", "commands", "livePreview", "render"] },
+  inject: {
+    required: ["editor", "commands", "livePreview", "render"],
+    optional: ["formatting"],
+  },
   apply(ctx) {
     const cleanups = registerMathCleanup(ctx);
     registerMathRenderers(ctx);
@@ -100,17 +104,24 @@ function registerTypesetting(ctx: Context, cleanups: Set<() => void>): void {
 }
 
 function registerMathCommands(ctx: Context): void {
-  for (const [id, block] of [
-    ["editor:toggle-inline-math", false],
-    ["editor:insert-mathblock", true],
-  ] as const) {
-    ctx.effect(() =>
-      ctx.commands.register(id, () => {
-        ctx.editor.view.dispatch(mathEdit(ctx.editor.view.state, block));
-        return true;
-      }),
-    );
-  }
+  const view = ctx.editor.view;
+  // Inline math toggles like bold: the word at the caret, each line of a
+  // selection, or off again, through the formatting plugin when it runs.
+  ctx.effect(() =>
+    ctx.commands.register("editor:toggle-inline-math", () => {
+      if (ctx.formatting) {
+        return ctx.formatting.wrap("$", view);
+      }
+      view.dispatch(inlineMathEdit(view.state));
+      return true;
+    }),
+  );
+  ctx.effect(() =>
+    ctx.commands.register("editor:insert-mathblock", () => {
+      view.dispatch(mathBlockEdit(view.state));
+      return true;
+    }),
+  );
 }
 
 interface TypesetOptions {

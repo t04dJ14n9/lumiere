@@ -1,9 +1,10 @@
 import type { EditorState, TransactionSpec } from "@codemirror/state";
-export function mathEdit(state: EditorState, block: boolean): TransactionSpec {
+
+/** Inline math around the selection, or off when `$` already surrounds it. */
+export function inlineMathEdit(state: EditorState): TransactionSpec {
   const { from, to } = state.selection.main;
   const selected = state.sliceDoc(from, to);
   if (
-    !block &&
     from > 0 &&
     state.sliceDoc(from - 1, from) === "$" &&
     state.sliceDoc(to, to + 1) === "$"
@@ -17,22 +18,28 @@ export function mathEdit(state: EditorState, block: boolean): TransactionSpec {
       userEvent: "input.math",
     };
   }
-  const before = openingDelimiter(state, block);
-  const after = block ? "\n$$\n" : "$";
   return {
-    changes: { from, to, insert: before + selected + after },
-    selection: {
-      anchor: from + before.length,
-      head: from + before.length + selected.length,
-    },
+    changes: { from, to, insert: `$${selected}$` },
+    selection: { anchor: from + 1, head: from + 1 + selected.length },
     userEvent: "input.math",
   };
 }
 
-function openingDelimiter(state: EditorState, block: boolean): string {
-  if (!block) {
-    return "$";
-  }
-  const { from } = state.selection.main;
-  return from && state.sliceDoc(from - 1, from) !== "\n" ? "\n$$\n" : "$$\n";
+/**
+ * Insert Math Block, as in Obsidian: `$$` lines go around the selected lines
+ * (an empty line becomes the formula's), and the selection stays on them. A
+ * selection ending at column zero does not include that line.
+ */
+export function mathBlockEdit(state: EditorState): TransactionSpec {
+  const { from, to, empty, anchor, head } = state.selection.main;
+  const first = state.doc.lineAt(from);
+  const last = state.doc.lineAt(empty ? to : Math.max(from, to - 1));
+  return {
+    changes: [
+      { from: first.from, insert: "$$\n" },
+      { from: last.to, insert: "\n$$" },
+    ],
+    selection: { anchor: anchor + 3, head: head + 3 },
+    userEvent: "input.math",
+  };
 }

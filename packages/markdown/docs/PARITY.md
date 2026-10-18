@@ -170,6 +170,7 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.insertWikilink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.followLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.openLinkToSide | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.openLinkInNewTab | 2026-10-17, measured against Obsidian's Open link under cursor in new tab (Cmd-click opens the same tab) in a throwaway vault | Opens the link in a tab VS Code keeps | Differential click probe; unit tests | behaviour measured |
 | Command: markdownWorkshop.toggleSourceMode | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.toggleInlineMath | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.insertMathBlock | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

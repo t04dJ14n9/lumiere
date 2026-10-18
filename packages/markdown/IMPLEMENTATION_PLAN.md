@@ -4995,3 +4995,25 @@ pasted into the throwaway Obsidian and into the editor, comparing the note.
   the note shows what was copied (Obsidian turns `*a*` from a page italic).
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## Editor commands, measured against Obsidian — 2026-10-17
+
+Each editor command both have was run on the same note and selection in
+the throwaway Obsidian and in the editor; 144 of 150 cases match
+(`docs/OBSIDIAN_KEYS.md`, Editor commands).
+
+- Fixed bugs: a heading, list or quote marker on an empty line left the
+  caret before it; Numbered list on a bullet item gave `1. - item`.
+- As in Obsidian: list markers replace each other (a task's box goes too);
+  Cycle list/checklist makes plain text a bullet first; bold and the other
+  markers wrap each selected line on its own; inline math wraps the word at
+  the caret (through the formatting service); Insert callout and Insert math
+  block wrap the selected lines; Insert table adds Obsidian's empty table
+  after the line; Insert horizontal rule, wikilink, embed and footnote place
+  text and caret as Obsidian does.
+- New: Open Link in New Tab (`editor:open-link-in-new-leaf`).
+- Kept on purpose: Insert Footnote puts the caret in the definition, where
+  Obsidian opens a popover.
+
+Validation: `pnpm check` green; Markdown browser suite 283/284 (the table
+line-number spec, which passes 30 of 30 alone).

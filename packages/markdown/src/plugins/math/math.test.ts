@@ -2,33 +2,36 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import { mathBody, mathTokens } from "./source";
-import { mathEdit } from "./commands";
+import { inlineMathEdit, mathBlockEdit } from "./commands";
 test("math commands preserve selected formulas and unwrap the same source", () => {
   let state = EditorState.create({
     doc: "x + 🧠",
     selection: { anchor: 0, head: 6 },
   });
-  state = state.update(mathEdit(state, false)).state;
+  state = state.update(inlineMathEdit(state)).state;
   assert.equal(state.doc.toString(), "$x + 🧠$");
-  state = state.update(mathEdit(state, false)).state;
+  state = state.update(inlineMathEdit(state)).state;
   assert.equal(state.doc.toString(), "x + 🧠");
-  state = state.update(mathEdit(state, true)).state;
-  assert.equal(state.doc.toString(), "$$\nx + 🧠\n$$\n");
+  state = state.update(mathBlockEdit(state)).state;
+  assert.equal(state.doc.toString(), "$$\nx + 🧠\n$$");
 });
 
-test("display math inserts a leading newline only inside an existing line", () => {
-  for (const [doc, from, expected] of [
-    ["abc", 1, "a\n$$\n\n$$\nbc"],
-    ["a\nb", 2, "a\n$$\n\n$$\nb"],
-    ["", 0, "$$\n\n$$\n"],
+test("Insert Math Block puts $$ lines around the selected lines, as in Obsidian", () => {
+  for (const [doc, anchor, head, expected] of [
+    ["abc", 1, 1, "$$\na|bc\n$$"],
+    ["above\n\nbelow", 6, 6, "above\n$$\n|\n$$\nbelow"],
+    ["above\none\ntwo\nbelow", 6, 13, "above\n$$\n‹one\ntwo›\n$$\nbelow"],
+    ["", 0, 0, "$$\n|\n$$"],
   ] as const) {
-    const state = EditorState.create({ doc, selection: { anchor: from } });
-    const result = state.update(mathEdit(state, true)).state;
-    assert.equal(result.doc.toString(), expected);
-    assert.equal(
-      result.sliceDoc(result.selection.main.from, result.selection.main.to),
-      "",
-    );
+    const state = EditorState.create({ doc, selection: { anchor, head } });
+    const result = state.update(mathBlockEdit(state)).state;
+    const { from, to } = result.selection.main;
+    const text = result.doc.toString();
+    const shown =
+      from === to
+        ? `${text.slice(0, from)}|${text.slice(from)}`
+        : `${text.slice(0, from)}‹${text.slice(from, to)}›${text.slice(to)}`;
+    assert.equal(shown, expected);
   }
 });
 

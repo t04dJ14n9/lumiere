@@ -7,7 +7,7 @@ import type {} from "../commands/api";
 import type {} from "./api";
 import { toggleComment } from "./comment";
 import { clearInlineFormatting, wrapSelection } from "./inline";
-import { lineEdit, linkEdit } from "./lines";
+import { lineEdit, linkEdit, ruleEdit } from "./lines";
 import { linkPasteHandler } from "./paste-link";
 
 export const formattingWebview: Plugin = {
@@ -56,10 +56,7 @@ function formattingCommands(): Map<string, Command> {
     if (view.state.readOnly) {
       return false;
     }
-    view.dispatch({
-      ...view.state.replaceSelection("\n\n---\n\n"),
-      userEvent: "input",
-    });
+    view.dispatch(ruleEdit(view.state));
     return true;
   });
   commands.set("editor:swap-line-up", moveLineUp);

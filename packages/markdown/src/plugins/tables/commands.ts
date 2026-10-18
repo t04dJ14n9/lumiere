@@ -1,5 +1,25 @@
 import type { CellPosition } from "../../markdown/tables/model";
 import type { TableOperation } from "../../markdown/tables/operations";
+import type { EditorState, TransactionSpec } from "@codemirror/state";
+
+/** The table Insert Table adds: two empty columns, as Obsidian's. */
+const NEW_TABLE = "|     |     |\n| --- | --- |\n|     |     |";
+
+/**
+ * Insert Table, as in Obsidian: a new table after the line the selection
+ * starts on, a blank line between them unless that line is empty, and the
+ * caret at its start.
+ */
+export function insertTable(state: EditorState): TransactionSpec {
+  const line = state.doc.lineAt(state.selection.main.from);
+  const before = line.length ? "\n\n" : "\n";
+  return {
+    changes: { from: line.to, insert: `${before}${NEW_TABLE}\n` },
+    selection: { anchor: line.to + before.length },
+    userEvent: "input",
+  };
+}
+
 export function tableOperation(
   id: string,
   cell: CellPosition,

@@ -42,6 +42,28 @@ Notation: `|` is the caret, `‹…›` a selection.
 | Cmd+L | `a\|` | `- [ ] a\|`, then `- [x] a\|`, then `- [ ] a\|` |
 | Cmd+L | `> a\|` | `> - [ ] a\|` |
 
+## Editor commands (formatting, math, callouts, tables, tasks, footnotes)
+
+Each command was run on the same note and selection in Obsidian and in
+Workshop (an empty line, a caret in a word, a selected word, two selected
+lines, a list item, a heading); 144 of 150 cases match, and the rest are
+Insert Footnote's caret, below.
+
+| Command | Before | After |
+| --- | --- | --- |
+| Bold (and italic, strikethrough, highlight, code, inline math) | `‹one\ntwo›` | `**‹one**\n**two›**`: each line on its own; again unwraps |
+| Inline math | `te\|xt` | `$te\|xt$`, the word, as bold does |
+| Bullet list, numbered list, quote, heading | `\|` | `- \|`: the caret after the marker |
+| Numbered list | `- it\|em` | `1. it\|em`; again `it\|em`; a task's box goes too |
+| Cycle list/checklist | `te\|xt` | `- te\|xt`, `- [ ] te\|xt`, `- [x] te\|xt`, `- te\|xt` |
+| Insert callout | `te\|xt` | `> [!‹NOTE›]\n> text`; on an empty line `> [!‹NOTE›] Title\n> Contents`; a blank line from text around |
+| Insert math block | `te\|xt` | `$$\nte\|xt\n$$`: around the selected lines |
+| Insert table | `te\|xt` | `text\n\n\|\|     \|     \|\n\| --- \| --- \|\n\|     \|     \|\n`: after the line |
+| Insert horizontal rule | `te\|xt` | `te\n\n---\n\|xt` |
+| Insert wikilink, Insert embed | `‹text›` | `[[text\|]]`: the caret after the text |
+| Insert footnote | `te\|xt` | `te[^1]xt\n\n[^1]: \|\n`: before the selection, which stays |
+| Open link under cursor in new tab | | a tab VS Code keeps, as Cmd-click |
+
 ## Deliberate differences
 
 - Cmd+D: Obsidian deletes the line; Workshop leaves it to VS Code, where it
@@ -51,3 +73,6 @@ Notation: `|` is the caret, `‹…›` a selection.
 - Cmd+L in Cursor opens Cursor's chat (with a selection, Add to Chat).
 - Removing a comment with Cmd+/ also removes the spaces just inside its `%%`,
   which Obsidian leaves behind (`hello  world `).
+- Insert Footnote: Obsidian keeps the caret after the reference and opens
+  the definition in a popover; Workshop has no popover, so the caret goes to
+  the definition at the end of the note.

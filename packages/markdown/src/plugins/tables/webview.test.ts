@@ -129,7 +129,7 @@ test("tables always register a widget and own their document-entry keys and comm
   assert.equal(await commands.get("editor:insert-table")!(), true);
   assert.equal(
     document.doc.toString(),
-    "\n\n| Column 1 | Column 2 |\n| -------- | -------- |\n|          |          |\n\n",
+    "\n|     |     |\n| --- | --- |\n|     |     |\n",
   );
   const widget = renderers[0]!.widget({
     kind: "Table",

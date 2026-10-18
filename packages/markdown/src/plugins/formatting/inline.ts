@@ -1,5 +1,6 @@
 import {
   EditorSelection,
+  type ChangeSpec,
   type EditorState,
   type SelectionRange,
 } from "@codemirror/state";
@@ -72,7 +73,91 @@ function toggleRange(
       };
     }
   }
+  if (
+    state.doc.lineAt(range.from).number !== state.doc.lineAt(range.to).number
+  ) {
+    return toggleLines(state, range, marker);
+  }
   return toggleSelectedText(state, range, marker);
+}
+
+/**
+ * A selection over several lines, as in Obsidian: each line's part is
+ * wrapped on its own (formatting does not cross a line), or, when every part
+ * is already wrapped (markers just outside the selection count), unwrapped.
+ * Empty lines are left alone.
+ */
+function toggleLines(
+  state: EditorState,
+  range: SelectionRange,
+  marker: string,
+) {
+  const size = marker.length;
+  const widened = partsOf(state, range.from - size, range.to + size);
+  const parts = partsOf(state, range.from, range.to);
+  const unwrap = [widened, parts].find((candidate) =>
+    candidate.every((part) => isWrapped(state, part, marker)),
+  );
+  const target = unwrap ?? parts;
+  const changes = target.flatMap((part): ChangeSpec[] =>
+    unwrap
+      ? [
+          { from: part.from, to: part.from + size },
+          { from: part.to - size, to: part.to },
+        ]
+      : [
+          { from: part.from, insert: marker },
+          { from: part.to, insert: marker },
+        ],
+  );
+  const first = target[0]!.from;
+  const end = target.at(-1)!.to;
+  const [start, stop] = unwrap
+    ? [first, end - 2 * size * target.length]
+    : [first + size, end + size * (2 * target.length - 1)];
+  return {
+    changes,
+    range:
+      range.head < range.anchor
+        ? EditorSelection.range(stop, start)
+        : EditorSelection.range(start, stop),
+  };
+}
+
+/** The non-empty part of each line between `from` and `to`. */
+function partsOf(
+  state: EditorState,
+  from: number,
+  to: number,
+): { from: number; to: number }[] {
+  const start = Math.max(0, from);
+  const stop = Math.min(state.doc.length, to);
+  const parts: { from: number; to: number }[] = [];
+  const last = state.doc.lineAt(stop).number;
+  for (let n = state.doc.lineAt(start).number; n <= last; n++) {
+    const line = state.doc.line(n);
+    const part = {
+      from: Math.max(line.from, start),
+      to: Math.min(line.to, stop),
+    };
+    if (part.to > part.from) {
+      parts.push(part);
+    }
+  }
+  return parts;
+}
+
+function isWrapped(
+  state: EditorState,
+  part: { from: number; to: number },
+  marker: string,
+): boolean {
+  const text = state.sliceDoc(part.from, part.to);
+  return (
+    text.length >= marker.length * 2 &&
+    text.startsWith(marker) &&
+    text.endsWith(marker)
+  );
 }
 
 function unwrapAtCaret(state: EditorState, position: number, marker: string) {
@@ -82,6 +167,7 @@ function unwrapAtCaret(state: EditorState, position: number, marker: string) {
     "~~": "Strikethrough",
     "==": "Highlight",
     "`": "InlineCode",
+    $: "InlineMath",
   }[marker];
   let node: SyntaxNode | null = syntaxTree(state).resolveInner(position, 1);
   while (node) {

@@ -354,6 +354,11 @@
         "category": "Markdown Workshop"
       },
       {
+        "command": "markdownWorkshop.openLinkInNewTab",
+        "title": "Open Link in New Tab",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.openLinkToSide",
         "title": "Open Link to Side",
         "category": "Markdown Workshop"
@@ -1445,6 +1450,10 @@
         },
         {
           "command": "markdownWorkshop.followLink",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.links"
+        },
+        {
+          "command": "markdownWorkshop.openLinkInNewTab",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.links"
         },
         {

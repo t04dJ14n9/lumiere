@@ -236,14 +236,16 @@ function registerLinkCommands(ctx: Context, open: OpenLink): void {
           to: selection.to,
           insert: `[[${view.state.sliceDoc(selection.from, selection.to)}]]`,
         },
-        selection: { anchor: selection.from + 2, head: selection.to + 2 },
+        // As in Obsidian: the caret after the text, ready for an alias or `#`.
+        selection: { anchor: selection.to + 2 },
       });
       return true;
     }),
   );
-  for (const [command, side] of [
-    ["editor:follow-link", false],
-    ["editor:open-link-in-new-split", true],
+  for (const [command, place] of [
+    ["editor:follow-link", {}],
+    ["editor:open-link-in-new-leaf", { tab: true }],
+    ["editor:open-link-in-new-split", { side: true }],
   ] as const) {
     ctx.effect(() =>
       ctx.commands.register(command, async () => {
@@ -251,7 +253,7 @@ function registerLinkCommands(ctx: Context, open: OpenLink): void {
           view.state.doc.toString(),
           view.state.selection.main.head,
         );
-        return link ? open(link.href, link.wiki, { side }) : false;
+        return link ? open(link.href, link.wiki, place) : false;
       }),
     );
   }

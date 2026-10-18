@@ -113,7 +113,8 @@ function registerInsertion(ctx: Context): void {
           to,
           insert: `![[${view.state.sliceDoc(from, to)}]]`,
         },
-        selection: { anchor: from + 3, head: to + 3 },
+        // As in Obsidian: the caret after the text.
+        selection: { anchor: to + 3 },
         userEvent: "input.embed",
       });
       return true;
