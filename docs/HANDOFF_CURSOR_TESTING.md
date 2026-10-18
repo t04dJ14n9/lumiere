@@ -37,10 +37,8 @@ GitHub is where the two meet:
 - **The rename changes every `markdownWorkshop.` and `pdfWorkshop.` key and
   command ID.** Claude will say here and in the PR when it starts and when it
   lands; push what you have before it starts, and pull right after it lands.
-- **Rename status (2026-10-18, about 11:30 PDT): ready, landing within the
-  hour.** It is tested on Claude's side (`claude/lumiere-rename`, local) and
-  lands on top of whatever is on GitHub then, so push what you have now.
-  After it lands, a commit made before it is brought over with
+- **Rename status: landed in `96b526e2` (2026-10-18, 11:50 PDT), on top of
+  `d99a1028`. Pull before anything else.** A commit made before it is brought over with
   `python3 scripts/rename-to-lumiere.py .` (idempotent; it skips history and
   this file), then `pnpm contributions` and `pnpm format`. Settings, commands
   and views become `lumiere.markdown.*` and `lumiere.pdf.*`; the extension ID
