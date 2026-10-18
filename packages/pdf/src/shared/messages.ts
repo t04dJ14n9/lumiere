@@ -9,7 +9,7 @@
  *    │                                    outline, selection (for a region,
  *    │                                    again with its text and image), view
  *    │                                    (page and zoom)
- *    │  ◄──────────── copyLinkForAgent    the viewer's Copy Link for Agent button
+ *    │  ◄──────────── copyLinkForAgent    Copy Link for Agent (host / tests)
  *    │  ◄──────────── toggleOutline       the viewer bar's outline button
  *    │  ◄──────────── floatingDock        the floating bar dragged to an edge
  *    │  ◄──────────── openExternal        a web link clicked in the PDF

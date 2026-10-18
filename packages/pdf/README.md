@@ -3,11 +3,11 @@
 [![CI](https://github.com/t04dJ14n9/vscode-embedPDF/actions/workflows/ci.yml/badge.svg)](https://github.com/t04dJ14n9/vscode-embedPDF/actions/workflows/ci.yml)
 
 A PDF Workshop viewer for VS Code and Cursor, built on [EmbedPDF](https://www.embedpdf.com/)
-and its PDFium engine. Select text or drag a box over a figure and press
-**Copy Link for Agent**: the clipboard gets a link to the exact page and
-box, the file's hash, the selected text, and for a box the path of a
-snapshot of it, ready to paste into your agent. When the editor's own chat
-is the only agent installed (or you pick one), that chat opens with it.
+and its PDFium engine. Select text or drag a box over a figure and use
+**Copy Link for Agent** from the right-click menu: the clipboard gets a short
+Markdown link to the exact page and box, plus the selected text as a
+blockquote, ready to paste into your agent. When the editor's own chat is
+the only agent installed (or you pick one), that chat opens with it.
 
 ## Features
 
@@ -42,12 +42,13 @@ is the only agent installed (or you pick one), that chat opens with it.
   **PDF Outline**; leaving restores the native Outline after a short debounce,
   skipped if Markdown Workshop already owns the active tab.
 - **Copy Link for Agent.** Select text, or drag over empty page
-  space to select a region (a figure, table or equation), then use the
-  button next to the selection, the right-click menu, the editor title
-  button, or **PDF: Copy Link for Agent**. ⌘C / Ctrl+C copies just the selected
-  text (there is no Copy text button). There is no separate Copy for
-  Agent or Ask Agent: this one action always copies, and opens a chat only
-  as described below.
+  space to select a region (a figure, table or equation), then right-click and
+  choose **Copy Link for Agent** (also available as **PDF: Copy Link for Agent**
+  in the command palette). The paste is a short Markdown link
+  (`[file.pdf · p.N](path#page=N&viewrect=…)`) plus a blockquote of the
+  selected text. ⌘C / Ctrl+C copies just the selected text. There is no
+  separate Copy for Agent or Ask Agent: this one action always copies, and
+  opens a chat only as described below.
 
   **Copy Link for Agent** copies the selection and, when it knows which agent you use,
   opens that agent's chat with it typed in, ready for your question:
@@ -57,18 +58,13 @@ is the only agent installed (or you pick one), that chat opens with it.
 
   Extensions cannot see which agent chat is focused, so this happens only when
   the editor's chat is the only agent installed. With Claude Code or Codex
-  installed as well, Copy Link for Agent does not guess: it copies the selection (with
-  the region snapshot's path) and asks you to paste it into your agent.
+  installed as well, Copy Link for Agent does not guess: it copies the selection
+  and asks you to paste it into your agent.
 
   The `pdfWorkshop.copyLinkForAgent.target` setting sends it to one agent instead:
   `claudeCode` (a new Claude Code conversation with the selection typed in),
   `codex` (the selection and snapshot attached to the Codex thread), `cursor`,
   `chat`, or `clipboard`.
-
-  In Cursor, the editor title bar keeps only a few buttons, so **Copy Link for Agent**
-  sits in the **…** (More Actions) menu while something is selected. To pin
-  it to the title bar, open that menu, choose **Configure Icon Visibility**
-  and tick it.
 
 - **Open Location.** **PDF: Open Location…** takes a link an agent printed and
   opens that page with the box highlighted.
@@ -143,33 +139,16 @@ native, what is a fallback, and what needs a Mac to verify.
 
 ## What an agent receives
 
-```text
-Source: [papers/attention.pdf (page 3)](<papers/attention.pdf#page=3&viewrect=72,83,134,21>)
-PDF source SHA-256: `9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08`
+```md
+[attention.pdf · p.3](papers/attention.pdf#page=3&viewrect=72,83,134,21)
 
-Selected text:
-Scaled dot-product attention
-
-When you answer, cite the Source link above so the reader can reopen this spot in the PDF.
+> Scaled dot-product attention
 ```
 
-The last line is there because agents rarely cite the link unprompted; with
-it they do, and **PDF: Open Location** opens what they cite.
-
-For a region, the lines after the hash ask the agent to read or render the area inside
-the box, give the path of a PNG snapshot of it, and list the text inside it
-line by line (so a table reads row by row):
-
-```text
-Selected PDF region. Read the text inside the view rectangle, or render that area of the page to inspect figures and tables.
-Region image: `/…/workspaceStorage/…/regions/attention-p9-3f2a….png`
-
-Text in the region, line by line (table columns are not kept; see the image):
-Table 3: Variations on the Transformer architecture. …
-base 6 512 2048 8 64 64 0.1 0.1 100K 4.92 25.8 65
-…
-big 6 1024 4096 16 0.3 300K 4.33 26.4 213
-```
+The link keeps `#page=` and `viewrect=` so **PDF: Open Location** can reopen
+the spot. A region uses the same shape, quoting any text found inside the
+box; when a PNG snapshot was saved it is attached to the agent chat rather
+than written into the clipboard text.
 
 Snapshots are saved in a `regions` folder in the extension's storage for the
 workspace (`workspaceStorage/<id>/t04dj14n9.vscode-workshop/regions`), not in

@@ -36,26 +36,21 @@ raw links, never a chat-specific mention syntax.
 ## PDF selections (PDF Workshop)
 
 ```text
-Source: [papers/attention.pdf (page 3)](<papers/attention.pdf#page=3&viewrect=72,83,134,21>)
-PDF source SHA-256: `9f86d0…`
+[attention.pdf · p.3](papers/attention.pdf#page=3&viewrect=72,83,134,21)
 
-Selected text:
-Scaled dot-product attention
-
-When you answer, cite the Source link above so the reader can reopen this spot in the PDF.
+> Scaled dot-product attention
 ```
 
-- One `Source:` link per selection, or `Sources:` with one `- ` link per
-  page; the link opens the page and box (`viewrect=x,y,width,height` in PDF
-  points).
-- The SHA-256 lets an agent tell whether the file changed.
-- A region replaces `Selected text:` with an instruction to read or render
-  the box, the snapshot's path (`Region image: …`) when one was saved, and the
-  text found inside the box.
-- The closing line asks the agent to cite the link, which PDF: Open
-  Location reopens.
+- One Markdown link: label is `basename · p.N`, href is the workspace-relative
+  path with `#page=` and `viewrect=x,y,width,height` (PDF points, RFC 8118).
+- After a blank line, the selected text (or text found in a region) is quoted
+  line by line with `> `, same rules as note selections. Huge text is
+  truncated. A region with no text is the link alone.
+- Multi-page selections link the first page and still quote the full text.
+- Region PNG snapshots are attached by the handoff when available; they are
+  not written into the clipboard text.
 
 ## Changing the format
 
-Change the fixture and this file in both repositories in the same change
-set, update both formatters, and update the pinned hash in both tests.
+Change the fixture and this file in the same change set, update both
+formatters, and keep each product's unit tests aligned with the fixture.

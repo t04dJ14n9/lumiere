@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "about": "Agent handoff text shared by Markdown Workshop and PDF Workshop (docs/agent-handoff-format.md).",
   "noteReferences": [
     {
@@ -56,7 +56,7 @@
         "path": "papers/attention.pdf",
         "sha256": "9f86d081884c7d65"
       },
-      "text": "Source: [papers/attention.pdf (page 3)](<papers/attention.pdf#page=3&viewrect=72,83,134,21>)\nPDF source SHA-256: `9f86d081884c7d65`\n\nSelected text:\nScaled dot-product attention\n\nWhen you answer, cite the Source link above so the reader can reopen this spot in the PDF."
+      "text": "[attention.pdf · p.3](papers/attention.pdf#page=3&viewrect=72,83,134,21)\n\n> Scaled dot-product attention"
     }
   ]
 }

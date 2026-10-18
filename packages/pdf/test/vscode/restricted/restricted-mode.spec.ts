@@ -30,10 +30,7 @@ test("Restricted Mode renders PDFs and ignores workspace agent settings", async 
   await expect(viewer.locator('.page[data-page-index="0"] img')).toBeVisible();
   const at = await pagePoint(viewer, 1);
   await selectText(page, viewer, at(74, 94), at(205, 94));
-  await viewer
-    .getByRole("toolbar", { name: "PDF text selection actions" })
-    .getByRole("button", { name: "Copy Link for Agent" })
-    .click();
+  await command(page, "PDF: Copy Link for Agent");
 
   const reportFile = path.join(paths.workspace, "trust-state.json");
   await expect

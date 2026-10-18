@@ -318,7 +318,6 @@ function DocumentPages({
                     devicePixelRatio={devicePixelRatio}
                     highlight={navigation.highlight}
                     region={selection.region}
-                    selection={selection}
                     onOpenPage={(page, top) => navigation.goToPage(page, top)}
                   />
                 </div>

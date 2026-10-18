@@ -350,11 +350,6 @@
         "group": "navigation@9"
       },
       {
-        "command": "pdfWorkshop.copyLinkForAgent",
-        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
-        "group": "navigation@1"
-      },
-      {
         "command": "pdfWorkshop.find",
         "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && config.pdfWorkshop.toolbar.mode == 'chrome' && !pdfWorkshop.titleActionsInMenu",
         "group": "navigation@10"

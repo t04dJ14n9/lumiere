@@ -44,7 +44,8 @@ test("Copy Link for Agent is the only agent command; Copy for Agent and Ask Agen
       menu,
     );
   }
-  for (const menu of ["editor/title", "webview/context", "commandPalette"]) {
+  // Context menu is the primary UX; command palette remains for keyboard access.
+  for (const menu of ["webview/context", "commandPalette"]) {
     assert.ok(
       contributes.menus[menu]?.some(
         (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
@@ -52,6 +53,12 @@ test("Copy Link for Agent is the only agent command; Copy for Agent and Ask Agen
       menu,
     );
   }
+  assert.ok(
+    !contributes.menus["editor/title"]?.some(
+      (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
+    ),
+    "editor/title",
+  );
   assert.ok(
     !(contributes.keybindings ?? []).some(
       (entry) => entry.command === "pdfWorkshop.copyForAgent",

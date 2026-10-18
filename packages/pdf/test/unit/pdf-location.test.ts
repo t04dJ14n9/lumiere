@@ -120,7 +120,7 @@ test("invalid command boxes are dropped without losing a valid page", () => {
   }
 });
 
-test("a pasted link is found in a Copy Link for Agent source line or a Markdown link", () => {
+test("a pasted link is found in a Copy Link for Agent line or a Markdown link", () => {
   const link = "papers/my paper.pdf#page=3&viewrect=72,83,134,21";
   const copied = agentText(
     {
@@ -133,9 +133,8 @@ test("a pasted link is found in a Copy Link for Agent source line or a Markdown 
   for (const text of [
     link,
     ` <${link}> `,
+    `[my paper.pdf · p.3](${link})`,
     `[papers/my paper.pdf (page 3)](<${link}>)`,
-    `Source: [papers/my paper.pdf (page 3)](<${link}>)`,
-    `Source: ${link}`,
     copied,
   ]) {
     assert.equal(extractPdfLink(text), link, text);

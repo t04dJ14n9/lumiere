@@ -182,17 +182,11 @@ test("editor title actions zoom, fit and switch the selection tool", async ({
   await expect.poll(() => tool(viewer)).toBe("region");
   const at = await pagePoint(viewer, 1);
   await drag(page, at(74, 90), at(205, 140));
-  await expect(
-    viewer.getByRole("toolbar", { name: "PDF region actions" }),
-  ).toBeVisible();
-  await editorTitleAction(page, "Copy Link for Agent");
+  await expect(viewer.locator(".region-selection")).toBeVisible();
+  await command(page, "PDF: Copy Link for Agent");
   await expect
     .poll(() => agentChatInput(page), { timeout: 15_000 })
-    .toContain(
-      withoutSpaces(
-        `Source: [${PDF} (page 1 region)](<${PDF}#page=1&viewrect=`,
-      ),
-    );
+    .toContain(withoutSpaces(`[outline.pdf · p.1](${PDF}#page=1&viewrect=`));
   await editorTitleAction(page, "Select Text Tool");
   await expect.poll(() => tool(viewer)).toBe("text");
 });

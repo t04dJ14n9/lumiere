@@ -1,6 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import { send } from "./view-controls-support";
-import { messages, open, pagePoint, TEXT_MIDLINE } from "./viewer-support";
+import {
+  lastSelection,
+  messages,
+  open,
+  pagePoint,
+  TEXT_MIDLINE,
+} from "./viewer-support";
 
 // The text of the test PDF's first page is "Synthetic page 1", from x 72.
 const SYNTHETIC = 100;
@@ -96,7 +102,5 @@ test("text selection still works with Look Up on", async ({ page }) => {
   await page.mouse.down();
   await page.mouse.move(x2, y2, { steps: 8 });
   await page.mouse.up();
-  await expect(
-    page.getByRole("toolbar", { name: "PDF text selection actions" }),
-  ).toBeVisible();
+  await expect.poll(() => lastSelection(page)).toMatchObject({ kind: "text" });
 });

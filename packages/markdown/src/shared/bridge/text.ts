@@ -1,6 +1,6 @@
 /**
  * Clipboard text for a bridge envelope. Markdown matches the LLM Wiki
- * `@path#start-end` wording; PDF matches PDF Workshop's Source link.
+ * `@path#start-end` wording; PDF matches PDF Workshop's short link + quote.
  * The structured envelope is separate and is not appended here.
  */
 
@@ -16,24 +16,29 @@ export interface PdfHandoffInput {
     readonly width: number;
     readonly height: number;
   };
-  readonly sourceSha256: string;
+  /** Unused in clipboard text; kept so envelope callers need not change. */
+  readonly sourceSha256?: string;
   readonly text: string;
 }
 
-/** One-page Source link, the form PDF Workshop copies. */
+/** One-page link and blockquote, the form PDF Workshop copies. */
 export function pdfHandoffText(input: PdfHandoffInput): string {
   const target = pdfTarget(input);
-  const label = `${input.path} (page ${input.page})`;
-  const body = input.text.replace(/\r\n?/g, "\n").replace(/\n+$/, "");
-  return [
-    `Source: [${label}](<${target}>)`,
-    `PDF source SHA-256: \`${input.sourceSha256}\``,
-    "",
-    "Selected text:",
-    body,
-    "",
-    "When you answer, cite the Source link above so the reader can reopen this spot in the PDF.",
-  ].join("\n");
+  const slash = Math.max(
+    input.path.lastIndexOf("/"),
+    input.path.lastIndexOf("\\"),
+  );
+  const basename = slash >= 0 ? input.path.slice(slash + 1) : input.path;
+  const link = `[${basename} · p.${input.page}](${target})`;
+  const body = input.text.replace(/\r\n?/gu, "\n").replace(/\n+$/u, "");
+  if (!body) {
+    return link;
+  }
+  const quoted = body
+    .split("\n")
+    .map((line) => (line ? `> ${line}` : ">"))
+    .join("\n");
+  return `${link}\n\n${quoted}`;
 }
 
 export function pdfTarget(input: {

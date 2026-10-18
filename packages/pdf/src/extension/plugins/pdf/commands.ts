@@ -129,7 +129,7 @@ function askForLink(
     {
       title: "Open PDF at Location",
       prompt:
-        "A PDF path or link, optionally with #page=… and &viewrect=…, or a Source line copied for an agent",
+        "A PDF path or link, optionally with #page=… and &viewrect=…, or a Copy Link for Agent paste",
       placeHolder: "papers/paper.pdf#page=3&viewrect=72,83,134,21",
     },
     token,

@@ -15,8 +15,7 @@ test("a drag over empty space selects that region; Escape clears it", async ({
   await open(page);
   const at = await pagePoint(page, 1);
   await drag(page, at(150, 150), at(250, 250));
-  const menu = page.getByRole("toolbar", { name: "PDF region actions" });
-  await expect(menu).toBeVisible();
+  await expect(page.locator(".region-selection")).toBeVisible();
   await expect
     .poll(() => lastSelection(page))
     .toMatchObject({ kind: "region", page: 1 });
@@ -30,7 +29,7 @@ test("a drag over empty space selects that region; Escape clears it", async ({
   );
 
   await page.keyboard.press("Escape");
-  await expect(menu).toHaveCount(0);
+  await expect(page.locator(".region-selection")).toHaveCount(0);
   await expect.poll(() => lastSelection(page)).toBeNull();
 });
 
@@ -93,9 +92,7 @@ test("a region drag released outside the viewer ends when the pointer comes back
 
   await page.mouse.move(...at(200, 300), { steps: 4 });
   await expect(page.locator(".region-marquee")).toHaveCount(0);
-  await expect(
-    page.getByRole("toolbar", { name: "PDF region actions" }),
-  ).toBeVisible();
+  await expect(page.locator(".region-selection")).toBeVisible();
   const { rect } = (await lastSelection(page)) as { rect: number[] };
   // The region ends where the viewer last saw the pointer.
   [150, 150, 250, 250].forEach((value, index) =>
@@ -134,25 +131,6 @@ test("a right-click keeps the selection, for the context menu, and later drags s
   await expect
     .poll(() => lastSelection(page))
     .toMatchObject({ kind: "text", text: "Synthetic page 1" });
-});
-
-test("a region at the bottom of the viewer gets its menu above it, on screen", async ({
-  page,
-}) => {
-  await open(page);
-  const at = await pagePoint(page, 1);
-  const [, bottomOfView] = at(0, 350);
-  expect(bottomOfView).toBeLessThan(page.viewportSize()!.height);
-  await drag(page, at(240, 320), at(290, 350));
-  const menu = (await page
-    .getByRole("toolbar", { name: "PDF region actions" })
-    .boundingBox())!;
-  const region = (await page.locator(".region-selection").boundingBox())!;
-  const viewport = (await page.locator(".viewport").boundingBox())!;
-  expect(menu.y + menu.height).toBeLessThanOrEqual(
-    viewport.y + viewport.height,
-  );
-  expect(menu.y + menu.height).toBeLessThanOrEqual(region.y);
 });
 
 /** Theme colours VS Code passes to webviews, from VS Code 1.141 and Cursor 3.24. */

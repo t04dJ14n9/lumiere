@@ -43,8 +43,8 @@ function registerPdfSelection(
       title: "Current PDF selection",
       description:
         "The text or region the user has selected in the PDF open in their editor (PDF Workshop): " +
-        "the quoted text, a link to the page and box (path#page=N&viewrect=left,top,width,height, RFC 8118), " +
-        "the file's SHA-256 and, for a region, a PNG snapshot. Call this when the user refers to " +
+        "a short Markdown link (basename · p.N → path#page=N&viewrect=…, RFC 8118) plus a blockquote " +
+        "of the selected text, and for a region a PNG snapshot. Call this when the user refers to " +
         '"this", "the selection", "the highlighted passage", "this figure", or similar in a PDF.',
       inputSchema: {
         includeImage: z

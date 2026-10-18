@@ -14,7 +14,6 @@ import {
   command,
   contextMenu,
   drag,
-  editorTitleAction,
   expect,
   fitPage,
   inCursor,
@@ -38,16 +37,16 @@ const PDF = "docs/outline.pdf";
 const TEXT_MIDLINE = 94;
 
 /**
- * Copy Link for Agent from the editor title until the chat holds `text`. The
- * action copies the selection the extension has: a new one only once the
- * viewer's report of it has arrived, so a click right after a drag may still
+ * Copy Link for Agent via the command palette until the chat holds `text`.
+ * The action copies the selection the extension has: a new one only once the
+ * viewer's report of it has arrived, so a run right after a drag may still
  * copy the selection from before.
  */
 async function copyLinkUntilChatHas(page: Page, text: string): Promise<void> {
   await expect
     .poll(
       async () => {
-        await editorTitleAction(page, "Copy Link for Agent");
+        await command(page, "PDF: Copy Link for Agent");
         await page.waitForTimeout(500);
         return agentChatInput(page);
       },
@@ -95,7 +94,7 @@ test("a PDF opens with its outline in the Explorer, shown only while the PDF is 
   await expect(header).toBeVisible();
 });
 
-test("Copy Link for Agent works from the selection menu and the editor title button, and Copy for Agent is gone", async ({
+test("Copy Link for Agent works from the command and Copy for Agent is gone", async ({
   workbench: page,
 }) => {
   await openFile(page, PDF);
@@ -105,18 +104,18 @@ test("Copy Link for Agent works from the selection menu and the editor title but
 
   const at = await pagePoint(viewer, 3);
   await selectText(page, viewer, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
-  const textMenu = viewer.getByRole("toolbar", {
-    name: "PDF text selection actions",
-  });
-  await expect(textMenu.getByRole("button")).toHaveText([
-    "Copy Link for Agent",
-  ]);
-  await textMenu.getByRole("button", { name: "Copy Link for Agent" }).click();
-  await expect
-    .poll(() => agentChatInput(page), { timeout: 15_000 })
-    .toContain(
-      withoutSpaces(`Source: [${PDF} (page 3)](<${PDF}#page=3&viewrect=`),
-    );
+  await expect(
+    viewer.getByRole("toolbar", { name: "PDF text selection actions" }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .locator(".editor-actions")
+      .getByRole("button", { name: /^Copy Link for Agent/u }),
+  ).toHaveCount(0);
+  await copyLinkUntilChatHas(
+    page,
+    `[outline.pdf · p.3](${PDF}#page=3&viewrect=`,
+  );
 
   // Opening the chat can narrow the editor, and the page refits: measure again.
   await expect
@@ -124,9 +123,7 @@ test("Copy Link for Agent works from the selection menu and the editor title but
     .toEqual({ fitsWidth: true, fitsHeight: true, fills: true });
   const refit = await pagePoint(viewer, 3);
   await drag(page, refit(150, 150), refit(250, 250));
-  await expect(
-    viewer.getByRole("toolbar", { name: "PDF region actions" }),
-  ).toBeVisible();
+  await expect(viewer.locator(".region-selection")).toBeVisible();
   await expect(
     page
       .locator(".editor-actions")
@@ -134,7 +131,7 @@ test("Copy Link for Agent works from the selection menu and the editor title but
   ).toHaveCount(0);
   await copyLinkUntilChatHas(
     page,
-    `Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=150,150,100,100>)`,
+    `[outline.pdf · p.3](${PDF}#page=3&viewrect=150,150,100,100)`,
   );
 
   await page.keyboard.press("F1");
@@ -167,23 +164,15 @@ test("Copy Link for Agent from the context menu opens the agent chat with the re
   await showPage(page, viewer, 3);
   const at = await pagePoint(viewer, 3);
   await drag(page, at(60, 70), at(230, 150));
-  await expect(
-    viewer.getByRole("toolbar", { name: "PDF region actions" }),
-  ).toBeVisible();
-  const link = `Source: [${PDF} (page 3 region)](<${PDF}#page=3&viewrect=60,70,170,80>)`;
+  await expect(viewer.locator(".region-selection")).toBeVisible();
+  const link = `[outline.pdf · p.3](${PDF}#page=3&viewrect=60,70,170,80)`;
   if (inCursor) {
     // Cursor draws its context menu natively, out of the tests' reach: run
     // the command the menu item runs.
     await copyLinkUntilChatHas(page, link);
   } else {
-    // The context menu offers the selection's items only once the extension
-    // has the selection (the editor title action shows then); a right-click
-    // before that gets the plain menu and clears the selection.
-    await expect(
-      page
-        .locator(".editor-actions")
-        .getByRole("button", { name: /^Copy Link for Agent/u }),
-    ).toBeVisible();
+    // Give the host time to learn the selection, then use the context menu.
+    await page.waitForTimeout(500);
     await contextMenu(page, at(100, TEXT_MIDLINE), "Copy Link for Agent");
     await expect
       .poll(() => agentChatInput(page), { timeout: 15_000 })
@@ -201,10 +190,8 @@ test("PDF: Open Location opens a pasted link at its page and flashes its box", a
 }) => {
   await command(page, "PDF: Open Location…");
   const input = page.locator(".quick-input-widget input:visible");
-  // The source line exactly as Copy Link for Agent writes it.
-  await input.fill(
-    `Source: [${PDF} (page 5)](<${PDF}#page=5&viewrect=72,83,134,21>)`,
-  );
+  // A pasted Copy Link for Agent line, or the bare path#fragment.
+  await input.fill(`[outline.pdf · p.5](${PDF}#page=5&viewrect=72,83,134,21)`);
   await input.press("Enter");
   const viewer = await pdfViewer(page);
   await expect(

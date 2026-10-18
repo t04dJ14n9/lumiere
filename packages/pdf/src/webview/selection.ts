@@ -5,7 +5,7 @@ import { useSelectionCapability } from "@embedpdf/plugin-selection/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PageRect } from "../shared/geometry";
 import type { RegionSelection } from "../shared/selection";
-import { postToHost, reportToHost } from "./host";
+import { reportToHost } from "./host";
 import { readRegionDetails } from "./region-details";
 
 /** Drags smaller than this (in points) are clicks, not regions. */
@@ -15,8 +15,8 @@ const MIN_REGION_SIZE = 2;
  * Keep the extension informed of what is selected: text, selected with
  * EmbedPDF's text selection, or a region dragged over empty page space.
  * A region is reported at once, then again with the text inside it and a
- * PNG snapshot once they are read. Copy Link for Agent then hands over whatever was
- * reported last, waiting for a region's details if they are still coming.
+ * PNG snapshot once they are read. Copy Link for Agent (context menu /
+ * command) hands over whatever was reported last.
  */
 export function useSelectionReporting(
   documentId: string,
@@ -36,10 +36,6 @@ export function useSelectionReporting(
     return state.follow(selection.forDocument(documentId), { engine, pdf });
   }, [state, documentId, pdf, registry, selection]);
   useCopiedText(state);
-  const copyLinkForAgent = useCallback(async (): Promise<void> => {
-    await state.reportSelection(selection?.forDocument(documentId));
-    postToHost({ type: "copyLinkForAgent" });
-  }, [state, documentId, selection]);
   /** Clear whatever is selected, text or region (Escape). */
   const clear = useCallback((): void => {
     if (state.region) {
@@ -48,7 +44,7 @@ export function useSelectionReporting(
     // Reported to the extension by the selection change handler.
     selection?.forDocument(documentId).clear();
   }, [state, documentId, selection]);
-  return { region, clear, copyLinkForAgent };
+  return { region, clear };
 }
 
 type Engine = Parameters<typeof readRegionDetails>[0];
@@ -58,8 +54,6 @@ class SelectionTracker {
   region: RegionSelection | undefined;
   /** The selected text, for Cmd/Ctrl+C. */
   selectedText: string | undefined;
-  /** The region's details being read, if any. */
-  private regionDetails: Promise<void> | undefined;
 
   constructor(
     private readonly setRegion: (region: RegionSelection | undefined) => void,
@@ -110,21 +104,6 @@ class SelectionTracker {
     return () => stops.forEach((stop) => stop());
   }
 
-  /**
-   * Make sure the extension has the selection before Copy Link for Agent. A
-   * text selection is reported when the drag ends, after an asynchronous text
-   * read; a click right after the drag could beat that report, so the text is
-   * re-read and reported first. A region waits for its text and snapshot.
-   * Messages arrive in order.
-   */
-  async reportSelection(scope: SelectionScope | undefined): Promise<void> {
-    if (scope?.getState().selection) {
-      await reportText(scope);
-    } else if (this.region) {
-      await this.regionDetails;
-    }
-  }
-
   private textSelected(scope: SelectionScope): void {
     if (!scope.getState().selection) {
       return;
@@ -161,7 +140,7 @@ class SelectionTracker {
     this.changeRegion(region);
     const engine = source.engine();
     if (engine) {
-      this.regionDetails = this.readDetails(engine, source.pdf, region);
+      void this.readDetails(engine, source.pdf, region);
     }
   }
 
