@@ -5,11 +5,14 @@ import type {} from "../livePreview/api";
 import type {} from "../resources/api";
 import type {} from "../render/api";
 import { MarkdownBlock } from "../../webview/ui/markdown-widget";
+import type { RenderBlock } from "../livePreview/api";
+import type { EditorState } from "@codemirror/state";
+import type { SyntaxNodeRef } from "@lezer/common";
 import { MarkdownInline } from "../../webview/ui/inline-widget";
 import { protocol as links } from "../links/protocol";
 import { enhanceEmbeds } from "./post-process";
-import { embedEditing, inlineEmbedClick } from "./clicks";
-import { imageSelection } from "./image-selection";
+import { embedEditing, embedsImage, inlineEmbedClick } from "./clicks";
+import { editingImageAt, imageSelection } from "./image-selection";
 export const embedsWebview: Plugin = {
   name: "embeds",
   inject: {
@@ -37,34 +40,62 @@ export const embedsWebview: Plugin = {
   },
 };
 
+/** The embed a paragraph holds alone, as its source, if it does. */
+function soleEmbed(
+  node: SyntaxNodeRef,
+  state: EditorState,
+): string | undefined {
+  if (node.name !== "Paragraph") {
+    return undefined;
+  }
+  const first = node.node.firstChild;
+  return first &&
+    ["WikiEmbed", "Image"].includes(first.name) &&
+    state.sliceDoc(node.from, first.from).trim() === "" &&
+    state.sliceDoc(first.to, node.to).trim() === ""
+    ? state.sliceDoc(first.from, first.to)
+    : undefined;
+}
+
 function registerEmbedRenderers(ctx: Context): void {
+  const widget = (block: RenderBlock) =>
+    new MarkdownBlock(block, ctx.render, embedEditing(block.source));
   ctx.effect(() =>
     ctx.livePreview.block({
       kind: "embed",
       nodes: ["Paragraph"],
       editing: "reveal",
       match(node, state) {
-        if (node.name !== "Paragraph") {
-          return false;
-        }
-        const first = node.node.firstChild;
-        return Boolean(
-          first &&
-          ["WikiEmbed", "Image"].includes(first.name) &&
-          state.sliceDoc(node.from, first.from).trim() === "" &&
-          state.sliceDoc(first.to, node.to).trim() === "",
-        );
+        const source = soleEmbed(node, state);
+        return source !== undefined && !embedsImage(source);
       },
-      widget: (block) =>
-        new MarkdownBlock(block, ctx.render, embedEditing(block.source)),
+      widget,
+    }),
+  );
+  // An image stays rendered whatever the caret does, as in Obsidian 1.13,
+  // until Enter or Tab opens its source for editing.
+  ctx.effect(() =>
+    ctx.livePreview.block({
+      kind: "embed",
+      nodes: ["Paragraph"],
+      editing: "widget",
+      match(node, state) {
+        const source = soleEmbed(node, state);
+        return source !== undefined && embedsImage(source);
+      },
+      showSource: (state, block) => editingImageAt(state, block),
+      widget,
     }),
   );
   ctx.effect(() =>
     ctx.livePreview.inline({
       nodes: ["WikiEmbed", "Image"],
       decorate(node, cx) {
-        if (!cx.revealed(node.from, node.to)) {
-          const source = cx.state.sliceDoc(node.from, node.to);
+        const source = cx.state.sliceDoc(node.from, node.to);
+        const shown = embedsImage(source)
+          ? editingImageAt(cx.state, node)
+          : cx.revealed(node.from, node.to);
+        if (!shown) {
           cx.replace(
             node.from,
             node.to,

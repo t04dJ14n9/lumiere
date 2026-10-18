@@ -32,9 +32,10 @@ test("an embed shows a note when its target has no extension, or .md", () => {
   }
 });
 
-test("as in Obsidian, a click selects an embedded note, and does nothing on an image", () => {
+test("as in Obsidian, a click selects an embedded note; an image has no Edit button", () => {
   assert.deepEqual(embedEditing("![[Other]]"), { reveal: "click" });
-  assert.deepEqual(embedEditing("![[pic.png]]"), { reveal: "button" });
+  // Obsidian 1.13: an image's keys edit it (image-selection.ts).
+  assert.deepEqual(embedEditing("![[pic.png]]"), { reveal: "none" });
   const note = inlineEmbedClick("![[Other]]");
   assert.notEqual(note, "none");
   if (note !== "none") {

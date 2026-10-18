@@ -30,6 +30,13 @@ opaque placeholders; postprocessing mounts controls with pass-owned cleanup.
 Changing definitions invalidates rendered blocks. Plugin disposal removes all
 remaining references, render passes, listeners and commands.
 
+Insert Footnote works as in Obsidian 1.14: the reference goes before the
+selection (the caret after it) and the definition at the end of the note,
+one blank line after the text, and a popover under the reference edits the
+definition: what is typed goes there, Enter continues it on an indented line,
+and Escape or a click elsewhere closes it, back at the reference
+(`definition-popover.ts`).
+
 ## Files
 
 - `manifest.ts`: feature identity and Insert Footnote contribution.

@@ -11,13 +11,16 @@ full text and line offsets for links/tasks/footnotes. Media controls, image dial
 recovery streams and nested passes are disposed when the owning pass or plugin
 stops. Original placeholders are restored and late resource results are ignored.
 
-As in Obsidian 1.13 and later, a click on an image selects it: it stays
-rendered, outlined, with the caret at the embed's start. Then `+` and `-`
+As in Obsidian 1.13 and later, an image stays rendered whatever the caret or
+a selection does, and has no Edit button. A click selects it, and so does
+ArrowRight with the caret just before it or ArrowLeft just after it (the
+next press moves past): it stays outlined. Then `+` and `-`
 resize it in steps of 25 pixels, from the width it shows, up to the width of
 the note's text (written as `![[a.png|100]]`, or in a Markdown image's alt
-text, `![100](a.png)`); `0` removes the size; Enter selects the file name;
-Tab puts the caret where the size is written; Backspace or Delete removes
-the embed; Escape, a click elsewhere or any edit lets it go
+text, `![100](a.png)`); `0` removes the size; Enter shows its source with
+the file name selected, and Tab with the caret where the size is written,
+until the caret leaves it; Backspace or Delete removes the embed; Escape, a
+click elsewhere or any edit lets it go
 (`image-selection.ts`, `image-size.ts`).
 
 ## Files

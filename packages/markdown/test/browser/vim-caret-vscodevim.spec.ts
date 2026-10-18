@@ -167,9 +167,10 @@ test.describe("VSCodeVim caret parity", () => {
   }) => {
     await configure(page, { cursorBlinking: "smooth" });
     const shape = page.locator(".mw-caret-shape").first();
+    // -1 until the animation has started, so the poll waits for it.
     const time = () =>
       shape.evaluate((element) =>
-        Number(element.getAnimations()[0]!.currentTime),
+        Number(element.getAnimations()[0]?.currentTime ?? -1),
       );
     // Under load the animation can start a little late: wait for it to run.
     await expect.poll(time).toBeGreaterThan(250);

@@ -1,5 +1,8 @@
 import type { BlockEditing } from "../../webview/ui/markdown-widget";
 import type { InlineClick } from "../../webview/ui/inline-widget";
+import { embedsImage } from "../../markdown/images";
+
+export { embedsImage };
 
 /**
  * Whether an embed shows a note, rather than an image, audio, video, a PDF,
@@ -20,11 +23,15 @@ export function embedsNote(source: string): boolean {
 
 /**
  * A click on an embedded note selects its source, as in Obsidian (links
- * inside it still open). Other embeds keep clicks for their content and
+ * inside it still open). An image has no Edit button: its keys edit it
+ * (`image-selection.ts`). Other embeds keep clicks for their content and
  * reveal from their Edit button.
  */
 export function embedEditing(source: string): BlockEditing {
-  return { reveal: embedsNote(source) ? "click" : "button" };
+  if (embedsNote(source)) {
+    return { reveal: "click" };
+  }
+  return { reveal: embedsImage(source) ? "none" : "button" };
 }
 
 const SELECT_ALL: InlineClick = {

@@ -81,3 +81,31 @@
 .cm-line.mw-footnote-def {
   font-size: 0.875em;
 }
+
+/* Insert Footnote's popover, editing the definition under the reference. */
+.mw-footnote-popover {
+  position: fixed;
+  z-index: 40;
+  width: min(450px, calc(100vw - 16px));
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--vscode-editorHoverWidget-background, var(--background));
+  box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
+  font-family: var(--text-font);
+  font-size: var(--text-size);
+}
+.mw-footnote-popover .cm-editor.cm-focused {
+  outline: none;
+}
+.mw-footnote-popover .cm-scroller {
+  font-family: inherit;
+  line-height: var(--line-height, 1.5);
+}
+.mw-footnote-popover .cm-content {
+  caret-color: var(--vscode-editorCursor-foreground, currentColor);
+  /* Its own editor wraps by its style, not the editor-wide setting. */
+  flex-shrink: 1;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

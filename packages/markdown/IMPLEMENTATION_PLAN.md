@@ -5419,3 +5419,29 @@ Validation: `pnpm check` green.
   its Live Preview shows `Only Alias`, as Workshop's does. Workshop's metadata
   now records it the same; resolved and unresolved link maps match Obsidian's
   for all 34 notes.
+
+## Footnote popover and images that stay rendered, from Obsidian 1.13–1.14 — 2026-10-17
+
+Two of the differences the last report left are closed, measured on 1.14.4:
+
+- **Insert Footnote** now keeps the caret after the reference and opens a
+  popover under it that edits the definition, as Obsidian does: typing goes
+  to the definition, Enter continues it on a tab-indented line, Escape or a
+  click elsewhere closes it, back at the reference. The definition goes one
+  blank line after the note's text (Obsidian adds none after a blank line).
+- **Images** never show their source for the caret or a selection since
+  1.13 (embedded or Markdown, inline or alone on a line); only Enter or Tab
+  on a selected image does, until the caret leaves. An arrow key from just
+  beside an image selects it, the next moves past. Image blocks have no Edit
+  button (Obsidian's have no hover actions). Embedded notes still reveal on
+  touch. The selection outline now follows an image drawn again after a
+  resize. An image also joins no reveal chain now: bold text touching an
+  image reveals over its own range only (measured), not when the caret is
+  in or after the image.
+
+Checked in an isolated VS Code with a throwaway spec, and the footnote
+popover in the browser harness. The popover's own editor wraps by its style,
+keeping to the rule that plugins set no editor-wide options. The VSCodeVim
+blink spec's poll now waits for its animation to exist.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

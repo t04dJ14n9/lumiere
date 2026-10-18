@@ -4,6 +4,7 @@ import type { EditorState } from "@codemirror/state";
 import type { SyntaxNode, Tree } from "@lezer/common";
 import { documentTree } from "./document-tree";
 import { inlineHtmlEnd } from "./inline-html";
+import { embedsImage } from "../../markdown/images";
 import type { BlockRenderer, InlineRenderer } from "./api";
 export const blockRenderers = Facet.define<
   BlockRenderer,
@@ -89,7 +90,11 @@ function collectInlineChains(
 ): RevealRange[] {
   const elements: RevealRange[] = [];
   scope.cursor().iterate((node) => {
-    if (inlineElements.has(node.name)) {
+    // An image keeps rendered and joins no chain, as in Obsidian 1.13.
+    const image =
+      (node.name === "Image" || node.name === "WikiEmbed") &&
+      embedsImage(state.sliceDoc(node.from, node.to));
+    if (inlineElements.has(node.name) && !image) {
       elements.push({
         from: node.from,
         to: inlineHtmlEnd(node.node, state) ?? node.to,

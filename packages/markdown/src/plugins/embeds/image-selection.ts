@@ -8,7 +8,6 @@ import {
 } from "@codemirror/state";
 import { ViewPlugin, keymap, type EditorView } from "@codemirror/view";
 import { embedsNote } from "./clicks";
-import { keepRendered } from "../../webview/ui/pointer-selection";
 import {
   sizeOffset,
   steppedWidth,
@@ -23,6 +22,41 @@ interface Range {
 }
 
 const selectImage = StateEffect.define<Range | null>();
+const editImage = StateEffect.define<Range>();
+
+/**
+ * The image whose source is shown for editing (Enter or Tab on a selected
+ * image), until the caret leaves it. Otherwise images stay rendered, as
+ * Obsidian 1.13 keeps them whatever the caret does.
+ */
+const editingImage = StateField.define<Range | null>({
+  create: () => null,
+  update(value, transaction) {
+    for (const effect of transaction.effects) {
+      if (effect.is(editImage)) {
+        return effect.value;
+      }
+    }
+    if (!value) {
+      return null;
+    }
+    const from = transaction.changes.mapPos(value.from, -1);
+    const to = transaction.changes.mapPos(value.to, 1);
+    const head = transaction.state.selection.main.head;
+    return head >= from && head <= to ? { from, to } : null;
+  },
+});
+
+/** Whether the image at `from`–`to` shows its source for editing. */
+export function editingImageAt(
+  state: EditorState,
+  range: { from: number; to: number },
+): boolean {
+  const editing = state.field(editingImage, false);
+  return Boolean(
+    editing && editing.from <= range.from && editing.to >= range.to,
+  );
+}
 
 /**
  * The image embed a click selected, as Obsidian 1.13 selects images: its
@@ -42,34 +76,44 @@ const selectedImage = StateField.define<Range | null>({
   },
 });
 
-/** The image embed (`![[a.png]]`, `![](a.png)`) starting at or after `at` on its line. */
-function embedAt(state: EditorState, at: number): Range | undefined {
+/** The image embeds (`![[a.png]]`, `![](a.png)`) on the line holding `at`. */
+function imagesOnLine(state: EditorState, at: number): Range[] {
   const line = state.doc.lineAt(at);
-  let found: Range | undefined;
+  const found: Range[] = [];
   syntaxTree(state).iterate({
-    from: at,
+    from: line.from,
     to: line.to,
     enter(node) {
-      if (found || !["WikiEmbed", "Image"].includes(node.name)) {
-        return !found;
+      if (!["WikiEmbed", "Image"].includes(node.name)) {
+        return true;
       }
-      if (node.from >= at) {
-        found = { from: node.from, to: node.to };
+      if (!embedsNote(state.sliceDoc(node.from, node.to))) {
+        found.push({ from: node.from, to: node.to });
       }
       return false;
     },
   });
-  if (!found || embedsNote(state.sliceDoc(found.from, found.to))) {
-    return undefined;
-  }
   return found;
 }
 
-/** The rendered images of the selected embed. */
+/** The image embed drawn at `at`: the one around it, else the next on its line. */
+function embedAt(state: EditorState, at: number): Range | undefined {
+  const images = imagesOnLine(state, at);
+  return (
+    images.find((range) => at >= range.from && at <= range.to) ??
+    images.find((range) => range.from >= at)
+  );
+}
+
+/**
+ * The rendered images of the selected embed: those drawn at its source (a
+ * block's image may report its block's start or end).
+ */
 function imagesOf(view: EditorView, range: Range): HTMLImageElement[] {
   return [...view.contentDOM.querySelectorAll("img")].filter((image) => {
     try {
-      return embedAt(view.state, view.posAtDOM(image))?.from === range.from;
+      const at = view.posAtDOM(image);
+      return at >= range.from && at <= range.to;
     } catch {
       return false;
     }
@@ -152,15 +196,17 @@ function editSource(view: EditorView, part: "target" | "size"): boolean {
   const source = view.state.sliceDoc(range.from, range.to);
   const target = targetRange(source);
   const size = sizeOffset(source);
+  const effects = editImage.of(range);
   if (part === "target" && target) {
     view.dispatch({
       selection: {
         anchor: range.from + target.from,
         head: range.from + target.to,
       },
+      effects,
     });
   } else if (part === "size" && size !== undefined) {
-    view.dispatch({ selection: { anchor: range.from + size } });
+    view.dispatch({ selection: { anchor: range.from + size }, effects });
   }
   return true;
 }
@@ -177,6 +223,35 @@ function remove(view: EditorView): boolean {
   return true;
 }
 
+/**
+ * An arrow key next to an image, as in Obsidian 1.13: with the caret just
+ * before it (Right) or just after it (Left) the first press selects it, the
+ * caret staying; with it selected, the press moves past it.
+ */
+function arrow(view: EditorView, forward: boolean): boolean {
+  const { state } = view;
+  const selected = state.field(selectedImage);
+  if (selected) {
+    view.dispatch({
+      selection: { anchor: forward ? selected.to : selected.from },
+      effects: selectImage.of(null),
+    });
+    return true;
+  }
+  const { main } = state.selection;
+  if (!main.empty || state.selection.ranges.length > 1) {
+    return false;
+  }
+  const next = imagesOnLine(state, main.head).find((range) =>
+    forward ? range.from === main.head : range.to === main.head,
+  );
+  if (!next) {
+    return false;
+  }
+  view.dispatch({ effects: selectImage.of(next) });
+  return true;
+}
+
 function deselect(view: EditorView): boolean {
   if (!view.state.field(selectedImage)) {
     return false;
@@ -188,22 +263,27 @@ function deselect(view: EditorView): boolean {
 /** Shows which image is selected. */
 const selectedClass = ViewPlugin.define((view) => {
   let marked: HTMLImageElement[] = [];
-  let frame = 0;
-  const mark = (tries = 30) => {
-    cancelAnimationFrame(frame);
-    for (const image of marked) {
-      image.classList.remove("md-image-selected");
-    }
+  const mark = () => {
     const range = view.state.field(selectedImage);
-    marked = range ? imagesOf(view, range) : [];
+    const images = range ? imagesOf(view, range) : [];
     for (const image of marked) {
+      if (!images.includes(image)) {
+        image.classList.remove("md-image-selected");
+      }
+    }
+    for (const image of images) {
       image.classList.add("md-image-selected");
     }
-    // A resized image is drawn again once its file loads: mark it then.
-    if (range && !marked.length && tries > 0) {
-      frame = requestAnimationFrame(() => mark(tries - 1));
-    }
+    marked = images;
   };
+  // A resized image is drawn again once its file loads, replacing elements:
+  // mark whatever is drawn while one is selected.
+  const redrawn = new MutationObserver(() => {
+    if (view.state.field(selectedImage) || marked.length) {
+      mark();
+    }
+  });
+  redrawn.observe(view.contentDOM, { childList: true, subtree: true });
   const onClick = (event: MouseEvent) => selectOnClick(view, event);
   view.contentDOM.addEventListener("mousedown", onClick, { capture: true });
   return {
@@ -212,14 +292,14 @@ const selectedClass = ViewPlugin.define((view) => {
       const after = update.state.field(selectedImage);
       if (before !== after || (after && update.docChanged)) {
         // After the widgets are drawn for this update.
-        view.requestMeasure({ read: () => null, write: () => mark() });
+        view.requestMeasure({ read: () => null, write: mark });
       }
     },
     destroy() {
+      redrawn.disconnect();
       view.contentDOM.removeEventListener("mousedown", onClick, {
         capture: true,
       });
-      cancelAnimationFrame(frame);
       for (const image of marked) {
         image.classList.remove("md-image-selected");
       }
@@ -229,7 +309,8 @@ const selectedClass = ViewPlugin.define((view) => {
 
 /**
  * Selecting and editing images in Live Preview, as Obsidian 1.13 does
- * (measured): a click selects an image; then `+` and `-` resize it in steps
+ * (measured): a click, or an arrow key from just beside it, selects an
+ * image; then `+` and `-` resize it in steps
  * of 25 pixels, `0` resets its size, Enter selects its file name, Tab puts
  * the caret where its size goes, Backspace or Delete removes it and Escape
  * lets it go.
@@ -237,7 +318,7 @@ const selectedClass = ViewPlugin.define((view) => {
 export function imageSelection(): Extension {
   return [
     selectedImage,
-    keepRendered.of((state) => state.field(selectedImage)),
+    editingImage,
     selectedClass,
     Prec.highest(
       keymap.of([
@@ -249,6 +330,8 @@ export function imageSelection(): Extension {
         { key: "Backspace", run: remove },
         { key: "Delete", run: remove },
         { key: "Escape", run: deselect },
+        { key: "ArrowRight", run: (view) => arrow(view, true) },
+        { key: "ArrowLeft", run: (view) => arrow(view, false) },
       ]),
     ),
   ];

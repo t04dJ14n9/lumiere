@@ -108,11 +108,14 @@ test("Obsidian math and embeds use the shared inline reveal rules", async () => 
     for (const raw of ["$x$", "$$x$$", "![[note]]", "![alt](image.png)"]) {
       for (const gap of ["", " ", "x"]) {
         const doc = `aa **b**${gap}${raw} zz`;
+        // Obsidian 1.13: an image stays rendered and joins no chain.
+        const image = raw.endsWith(".png)");
         for (let at = 0; at <= doc.length; at++) {
           const state = stateFor(doc, EditorSelection.single(at), renderers);
           const from = gap === "" ? 3 : 8 + gap.length;
-          const isRevealed = at >= from && at <= doc.length - 3;
-          const bold = at >= 3 && at <= (gap === "" ? doc.length - 3 : 8);
+          const isRevealed = !image && at >= from && at <= doc.length - 3;
+          const chained = gap === "" && !image;
+          const bold = at >= 3 && at <= (chained ? doc.length - 3 : 8);
           assert.equal(
             visibleSource(state),
             `aa ${bold ? "**b**" : "b"}${gap}${isRevealed ? raw : ""} zz`,
@@ -123,7 +126,7 @@ test("Obsidian math and embeds use the shared inline reveal rules", async () => 
       const nested = `aa **b ${raw} b** zz`;
       assert.equal(
         visibleSource(stateFor(nested, EditorSelection.single(3), renderers)),
-        nested,
+        raw.endsWith(".png)") ? "aa **b  b** zz" : nested,
       );
     }
   } finally {

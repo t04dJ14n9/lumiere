@@ -81,6 +81,3 @@ Code.
 - Alt+Up and Alt+Down move the line, as in VS Code; Obsidian moves the caret.
 - Cmd+Enter inserts a line below, as in VS Code; Obsidian follows a link.
 - Cmd+L in Cursor opens Cursor's chat (with a selection, Add to Chat).
-- Insert Footnote: Obsidian keeps the caret after the reference and opens
-  the definition in a popover; Workshop has no popover, so the caret goes to
-  the definition at the end of the note.

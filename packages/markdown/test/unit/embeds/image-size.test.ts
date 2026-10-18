@@ -49,3 +49,15 @@ test("Enter selects the file name; Tab goes where the size is written", () => {
   assert.equal(sizeOffset("![[pic.png]]"), 10);
   assert.equal(sizeOffset("![alt](a.png)"), 5);
 });
+
+test("an image embed has no Edit button; a note embed reveals on a click", async () => {
+  const { embedEditing, embedsImage } =
+    await import("../../../src/plugins/embeds/clicks");
+  assert.equal(embedsImage("![[pic.png]]"), true);
+  assert.equal(embedsImage("![alt](a.JPG)"), true);
+  assert.equal(embedsImage("![[Note]]"), false);
+  assert.equal(embedsImage("![[doc.pdf]]"), false);
+  assert.deepEqual(embedEditing("![[pic.png|100]]"), { reveal: "none" });
+  assert.deepEqual(embedEditing("![[Note]]"), { reveal: "click" });
+  assert.deepEqual(embedEditing("![[doc.pdf]]"), { reveal: "button" });
+});

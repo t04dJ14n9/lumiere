@@ -7,7 +7,7 @@ For every case the caret was moved to every character offset (`editor.setCursor`
 
 **Obsidian does not reveal the whole line. It reveals only the element the caret touches, with a few line-level and block-level exceptions.**
 
-1. **Inline elements** (bold, italic, strike, highlight, inline code, links, wikilinks, embeds, images, math, inline HTML, autolinks): the raw syntax of an element shows when the caret or selection is inside it **or touching its first or last character** (inclusive on both ends). Other elements on the same line stay rendered.
+1. **Inline elements** (bold, italic, strike, highlight, inline code, links, wikilinks, embeds, math, inline HTML, autolinks): the raw syntax of an element shows when the caret or selection is inside it **or touching its first or last character** (inclusive on both ends). Other elements on the same line stay rendered. **Images** (embedded or Markdown, inline or alone on a line) are the exception since Obsidian 1.13: they stay rendered whatever the caret or selection does, and show their source only after Enter or Tab on a selected image, until the caret leaves it (measured on 1.14.4).
 2. **Elements that directly abut each other** (zero characters between them, e.g. `**a**~~b~~` or `[x](y)[[z]]**c**`) are revealed **together as a chain**. One character or a space between them breaks the chain.
 3. **Nested elements** (e.g. `**b _i_ b**`, `[t **b** t](u)`, `==h `c` h==`): touching the **outermost** element reveals the outer *and every inner* element, even if the caret is not inside the inner one.
 4. **Selections** (non-empty): every element the selected range overlaps or touches is revealed. With multiple cursors, each cursor reveals the elements it touches.
@@ -35,8 +35,10 @@ For every case the caret was moved to every character offset (`editor.setCursor`
     - a click on a tag places the caret where it was clicked and searches for `tag:#name`;
     - a click on an embedded note's content selects the whole embed source, the head at its start; a link inside the embedded note opens instead;
     - a click on an image, embedded or inline, selects it (Obsidian 1.13 and
-      later; 1.12 did nothing): it stays rendered, outlined, with the caret
-      at the embed's start; then `+` and `-` resize it in steps of 25 px
+      later; 1.12 did nothing), and so does ArrowRight with the caret just
+      before it or ArrowLeft just after it (the next press moves past it):
+      it stays rendered, outlined, with no Edit button; then `+` and `-`
+      resize it in steps of 25 px
       (up to the text's width), `0` removes the size, Enter selects the file
       name, Tab goes where the size is written, Backspace or Delete removes
       the embed, and Escape or moving the caret lets it go;

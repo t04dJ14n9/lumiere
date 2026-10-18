@@ -9,6 +9,7 @@ import type {} from "../livePreview/api";
 import type { RenderPass } from "../render/api";
 import { footnoteInline } from "./inline";
 import { insertFootnote } from "./edit";
+import { editDefinition } from "./definition-popover";
 import { RenderedReferences } from "./render-references";
 export const footnotesWebview: Plugin = {
   name: "footnotes",
@@ -66,9 +67,14 @@ function registerInlineReferences(ctx: Context): void {
 
 function registerInsertFootnote(ctx: Context): void {
   const view = ctx.editor.view;
+  let closePopover = () => {};
+  ctx.effect(() => () => closePopover());
   ctx.effect(() =>
     ctx.commands.register("editor:insert-footnote", () => {
-      view.dispatch(insertFootnote(view.state));
+      const { label, reference, ...edit } = insertFootnote(view.state);
+      view.dispatch(edit);
+      closePopover();
+      closePopover = editDefinition(view, label, reference);
       return true;
     }),
   );
