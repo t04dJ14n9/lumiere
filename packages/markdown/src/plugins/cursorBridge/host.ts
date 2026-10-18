@@ -92,7 +92,7 @@ async function runBridge(
     return;
   }
   if (mode === "edit") {
-    await runEdit(ctx, config, captured.uri, captured.selection, commands);
+    await runEdit(ctx, config, captured, commands);
     return;
   }
   const handoff = await handOffSelection(
@@ -127,8 +127,7 @@ async function runBridge(
 async function runEdit(
   ctx: Context,
   config: CursorBridgeConfig,
-  uri: string,
-  selection: SelectionSnapshot,
+  { uri, selection }: { uri: string; selection: SelectionSnapshot },
   commands: ReadonlySet<string> | undefined,
 ): Promise<void> {
   const prepared = await prepareNativeMirror(config.surface, uri, selection);
