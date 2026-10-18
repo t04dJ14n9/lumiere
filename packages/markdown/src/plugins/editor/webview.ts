@@ -184,9 +184,12 @@ function createEditorView(
 
 /** Tell the host whether there is a selection, for its menus and keys. */
 function reportSelection(ctx: Context) {
+  // Read once: the editor can run this while the plugin is stopping, when
+  // its context refuses reads (packages/core README, "Reading services").
+  const rpc = ctx.rpc;
   return EditorView.updateListener.of((update) => {
     if (update.selectionSet || update.focusChanged) {
-      ctx.rpc.notify(
+      rpc.notify(
         protocol,
         "selectionChanged",
         { hasSelection: !update.state.selection.main.empty },
