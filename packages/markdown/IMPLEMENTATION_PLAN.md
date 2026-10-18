@@ -5453,3 +5453,20 @@ runs in between stalled: Cursor's workbench stopped answering right after
 could not connect. The same build passed in VS Code, and Cursor passed alone
 and on the next full run, so it is recorded as Cursor flakiness. The Change
 Setting spec waits up to 15 s for Cursor's Settings UI to fill its search.
+
+## PDF text selection no longer darkens where lines overlap — 2026-10-18
+
+Reported by the owner: the PDF text selection looked overlapped. EmbedPDF
+draws one box per selected line and multiplies the boxes onto the page as a
+group; on tightly set lines, or a line holding a larger word, neighbouring
+boxes overlap, and the 40% see-through fill painted those strips twice,
+darker. Reproduced in the browser harness with a throwaway PDF (10 pt lines
+on 9.5 pt leading, one 16 pt word): 16 overlapping pairs, visible stripes.
+
+The fill is now solid: the same colour as 40% of the theme's selection on
+white paper, so the page looks the same and overlaps no longer add up. The
+theme colour is made opaque first, since Cursor Light's selection colour is
+itself 8% opaque (the existing theme spec caught this). A unit test pins the
+solid fill.
+
+Validation: `pnpm check` green; PDF browser suite 174/174.

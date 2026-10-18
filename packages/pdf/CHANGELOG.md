@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The text selection no longer shows darker stripes where selected lines
+  overlap (tightly set lines, or a line with a larger word).
 - The extension was renamed from Agent PDF Viewer (EmbedPDF) to PDF Workshop (package `vscode-pdf-workshop`).
 - `vscodeEmbedPdf.bridge.envelope` returns a Workbench v1 selection envelope
   (`producer: "pdf"`) matching Markdown Workshop's `BridgeEnvelope`

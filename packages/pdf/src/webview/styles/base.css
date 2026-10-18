@@ -39,8 +39,16 @@ input {
    * theme's hue but fix the strength, and keep it dark enough for white.
    */
   --selection-source: var(--vscode-editor-selectionBackground, #264f78);
-  --selection-fill: oklch(
-    from var(--selection-source) clamp(0.45, l, 0.7) c h / 0.4
+  /*
+   * Text selection: 40% of that colour on white, but solid. EmbedPDF draws a
+   * box per line and multiplies them onto the page as one, so boxes that
+   * overlap (tight lines, a larger word) would darken twice if see-through.
+   * `/ 1` drops the theme colour's own transparency (Cursor Light's is 8%).
+   */
+  --selection-fill: color-mix(
+    in srgb,
+    oklch(from var(--selection-source) clamp(0.45, l, 0.7) c h / 1) 40%,
+    white
   );
   --selection-soft: oklch(
     from var(--selection-source) clamp(0.45, l, 0.7) c h / 0.2
