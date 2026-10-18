@@ -7,8 +7,8 @@ import { BlameController } from "./controller";
 import { blameField, docVersionField, setBlame } from "./state";
 import { protocol } from "./protocol";
 import {
-  blameDecorations,
   blameIdentityField,
+  blameOverlay,
   setBlameIdentity,
 } from "./blameWidget";
 
@@ -54,7 +54,7 @@ function registerBlameController(ctx: Context): void {
       docVersionField,
       blameIdentityField,
       sourceVisibleAt ? sourceVisibility.of(sourceVisibleAt) : [],
-      blameDecorations,
+      blameOverlay,
       EditorView.updateListener.of(() => controller.update()),
     ]),
   );

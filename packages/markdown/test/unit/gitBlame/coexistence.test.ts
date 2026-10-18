@@ -7,7 +7,7 @@ import { createRoot } from "@workshop/core";
 import { FEATURE_ORDER } from "../../../src/plugins/plugin-order";
 import { features } from "../../../src/plugins/catalog";
 import { gitBlameWebview } from "../../../src/plugins/gitBlame/webview";
-import { blameDecorations } from "../../../src/plugins/gitBlame/blameWidget";
+import { blameGhostField } from "../../../src/plugins/gitBlame/blameWidget";
 import { blameField } from "../../../src/plugins/gitBlame/state";
 import { gitGutterWebview } from "../../../src/plugins/gitGutter/webview";
 import { hunkField } from "../../../src/plugins/gitGutter/hunks";
@@ -126,20 +126,21 @@ for (const withGutter of [false, true]) {
     f.view.dispatch({ selection: { anchor: 1 } });
     await new Promise((resolve) => setTimeout(resolve, 180));
     assert.equal(f.view.state.field(blameField)?.line, 1);
-    const decorations = f.view.state.field(blameDecorations);
-    assert.equal(decorations.size, 1);
-    assert.match(decorations.iter().value?.spec.widget.text, /^Hello, You \(/);
+    assert.match(
+      f.view.state.field(blameGhostField)?.text ?? "",
+      /^Hello, You \(/,
+    );
     if (gutter) {
       assert.equal(gutter.state, "active");
       assert.equal(f.view.state.field(hunkField).hunks.length, 1);
       await gutter.dispose();
       assert.equal(f.view.state.field(hunkField, false), undefined);
-      assert.equal(f.view.state.field(blameDecorations).size, 1);
+      assert.ok(f.view.state.field(blameGhostField));
       assert.equal(fiber.state, "active");
     }
     await fiber.dispose();
     assert.equal(f.view.state.field(blameField, false), undefined);
-    assert.equal(f.view.state.field(blameDecorations, false), undefined);
+    assert.equal(f.view.state.field(blameGhostField, false), undefined);
     assert.equal(f.extensions.size, 0);
   });
 }

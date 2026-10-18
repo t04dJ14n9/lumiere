@@ -1,24 +1,32 @@
-.mw-gb-eol {
+/*
+ * The caret line's authorship sits in a layer above the text (blameWidget.ts),
+ * so it takes no room in the line: lines of any height keep their size and
+ * wrapping, and clicks go through to the text beneath.
+ */
+.mw-gb-layer {
+  pointer-events: none;
+}
+.mw-gb-ghost {
+  /* Placed at the middle of the line's last row. */
+  transform: translateY(-50%);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  /* The same quiet type on every line, whatever the line's own style. */
+  font-family: var(--ui-font);
+  font-size: calc(0.8 * var(--text-size));
+  font-style: normal;
+  font-weight: normal;
+  letter-spacing: normal;
+  line-height: 1.4;
   /* VS Code git.blame.editorDecorationForeground (+ quiet fallbacks). */
   color: var(
     --vscode-git-blame-editorDecorationForeground,
     var(--vscode-descriptionForeground, var(--muted))
   );
-  /* VS Code after.margin: '0 0 0 50px' */
-  margin: 0 0 0 50px;
-  /* Hover opens the full-message tooltip; clicks still ignoreEvent to CM. */
   user-select: none;
-  cursor: default;
-  white-space: nowrap;
-  /* inline-block so max-width/ellipsis apply (inline spans ignore them). */
-  display: inline-block;
-  /* Keep the ghost on the caret line; hover carries the full subject/body. */
-  max-width: min(36em, 42vw);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: baseline;
 }
-.is-source-mode .mw-gb-eol {
+.is-source-mode .mw-gb-ghost {
   display: none;
 }
 .mw-gb-tooltip {
@@ -54,7 +62,7 @@
   bottom: auto;
 }
 @media (forced-colors: active) {
-  .mw-gb-eol {
+  .mw-gb-ghost {
     /* Theme color may be forced; keep ghost readable. */
     forced-color-adjust: none;
   }

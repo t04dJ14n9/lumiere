@@ -10,8 +10,7 @@ import {
   sourceVisibility,
 } from "../../../src/plugins/gitBlame/paintable";
 import {
-  BlameEolWidget,
-  blameDecorations,
+  blameGhostField,
   blameIdentityField,
 } from "../../../src/plugins/gitBlame/blameWidget";
 import { blameField, setBlame } from "../../../src/plugins/gitBlame/state";
@@ -100,7 +99,7 @@ test("revealed replace allows painting on the caret line again", () => {
   assert.equal(sourceVisibleAt(state, table!.to), true);
 });
 
-test("blame decorations omit the ghost inside an unrevealed replace", () => {
+test("the blame ghost is left out inside an unrevealed replace", () => {
   const doc = "before\n\n| a | b |\n|---|---|\n| c | d |\n\nafter\n";
   let state = EditorState.create({
     doc,
@@ -119,7 +118,7 @@ test("blame decorations omit the ghost inside an unrevealed replace", () => {
       sourceVisibility.of(sourceVisibleAt),
       blameField,
       blameIdentityField,
-      blameDecorations,
+      blameGhostField,
     ],
   });
   const table = state.field(blockIndex).find((block) => block.kind === "Table");
@@ -128,19 +127,15 @@ test("blame decorations omit the ghost inside an unrevealed replace", () => {
   state = state.update({
     effects: setBlame.of({ ...blame, line }),
   }).state;
-  assert.equal(state.field(blameDecorations).size, 0);
+  assert.equal(state.field(blameGhostField), null);
 
   state = state.update({
     effects: setBlame.of({ ...blame, line: 1 }),
   }).state;
-  assert.equal(state.field(blameDecorations).size, 1);
-  assert.ok(
-    state.field(blameDecorations).iter().value?.spec.widget instanceof
-      BlameEolWidget,
-  );
+  assert.equal(state.field(blameGhostField)?.anchor, state.doc.line(1).to);
 });
 
-test("blame decorations omit the ghost on the final unrevealed table row", () => {
+test("the blame ghost is left out on the final unrevealed table row", () => {
   const doc = "before\n\n| a | b |\n|---|---|\n| c | d |\n\nafter\n";
   let state = EditorState.create({
     doc,
@@ -159,7 +154,7 @@ test("blame decorations omit the ghost on the final unrevealed table row", () =>
       sourceVisibility.of(sourceVisibleAt),
       blameField,
       blameIdentityField,
-      blameDecorations,
+      blameGhostField,
     ],
   });
   const table = state.field(blockIndex).find((block) => block.kind === "Table");
@@ -170,5 +165,5 @@ test("blame decorations omit the ghost on the final unrevealed table row", () =>
   state = state.update({
     effects: setBlame.of({ ...blame, line: finalRowLine }),
   }).state;
-  assert.equal(state.field(blameDecorations).size, 0);
+  assert.equal(state.field(blameGhostField), null);
 });

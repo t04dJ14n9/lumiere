@@ -1,9 +1,17 @@
 # Current-line authorship
 
 Shows who last committed the caret line, when, and a truncated commit subject as quiet
-text at the end of the line in Live Preview. Hovering the ghost opens a tooltip with
+text after the end of the line in Live Preview. Hovering the ghost opens a tooltip with
 the full subject and commit body (GitLens-style). Obsidian has no core equivalent;
 this follows GitLens current-line authorship alongside the Git change bars.
+
+The ghost is drawn in a layer above the text, not inside the line, so it never
+takes room: no line changes height or wraps for it, whatever its style (a
+heading is taller), the text never moves under the caret, and clicks reach the
+text beneath. It sits a gap after the end of the line's last row, centred on
+that row, in one small UI type on every line, and uses the free space up to
+the editor's right edge (the margin beside a readable-width column included).
+When less than ten ems fit there, it is not shown.
 
 ## How it works
 
@@ -32,9 +40,10 @@ commits. Identity is resolved through Git config for the “You” label.
 - `state.ts`: transaction-owned version and blame state; immediate edit/line clear.
 - `webview.ts`: controller, editor extensions and guarded identity requests.
 - `format.ts`: VS Code template `subject, author (relative)`; grapheme-safe subject truncate (~50); hover tooltip text.
-- `blameWidget.ts`: one decorative EOL widget, hover tooltip, and identity state.
+- `blameWidget.ts`: identity state, the caret line's ghost, its placement, and the layer that draws it.
+- `blameTooltip.ts`: the full-message tooltip, shown by hit-testing the pointer (the ghost lets clicks through).
 - `paintable.ts`: hide the ghost inside unrevealed Live Preview replaces.
-- `gitBlame.css`: `git.blame.editorDecorationForeground`, `margin: 0 0 0 50px`, nowrap + ellipsis, hover tooltip, Source-mode hiding.
+- `gitBlame.css`: `git.blame.editorDecorationForeground`, fixed small UI type, nowrap + ellipsis, click-through layer, hover tooltip, Source-mode hiding.
 
 ## Services, events and settings
 
