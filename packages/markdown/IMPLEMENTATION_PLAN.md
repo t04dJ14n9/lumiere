@@ -5668,3 +5668,25 @@ until opened; per-panel disclosure memory retains the user's choice.
 Validation: callout units 5/5: insertion, default-closed memory across renders,
 title/chevron toggling, listener disposal, source reveal only through Edit, and
 existing view-state transfer.
+
+## Inline math on a list item's first line renders again — 2026-10-18
+
+Found while testing the public Codespaces demo: `- a **query** $q$: …` and
+`1. Fit a **reward model** $r(x, y)$ …` showed nothing where the formula
+should be, while the same math on the item's continuation line, or in a
+paragraph, rendered. The parse tree and the MathJax SVG were both correct.
+
+List lines hang their wrapped text with a negative `text-indent` (minus the
+marker and nesting width). `.math-placeholder`, the inline-block MathJax
+output lives in, inherited it: the formula was drawn that far to the left,
+over the marker or the preceding words, and its box shrank by the same
+amount, to zero for a formula narrower than the hang (`$q$` under a bullet).
+`mjx-container` already reset `text-indent`, one level too deep. The
+placeholder now resets it too. A probe of the other inline constructs on
+list lines (inline code, tags, highlights, links, wikilinks, `<kbd>`,
+footnote references, block IDs, task checkboxes) found no other inline-block
+inheriting the hang. A unit test pins the reset against the list line's
+hanging indent.
+
+Validation: reproduced and checked in the browser harness (bullet, task,
+numbered and nested items); `pnpm check` green.
