@@ -818,31 +818,38 @@ function editMirror() {
   return editor;
 }
 
-test("Edit-end watcher waits for grace and a sustained anchored viewport expansion", (t) => {
-  t.mock.timers.enable({ apis: ["Date", "setInterval"] });
-  const editor = editMirror();
-  let ended = 0;
-  const watcher = host.cursorHandoff
-    .createCursorHandoffSurface()
-    .watchEditEnd(note, () => ended++);
-  t.after(() => watcher.dispose());
-  t.mock.timers.tick(500);
-  assert.equal(ended, 0, "the prompt has room to appear");
-  editor.visibleRanges = [new Range(new Position(10, 0), new Position(35, 0))];
-  visibleRangesChanged.fire({ textEditor: editor });
-  visibleRangesChanged.fire({ textEditor: editor });
-  assert.equal(ended, 0, "events at the same instant are not sustained");
-  t.mock.timers.tick(250);
-  assert.equal(ended, 1);
-  t.mock.timers.tick(1000);
-  assert.equal(ended, 1);
-  assert.equal(visibleRangesChanged.listeners.size, 0);
-  assert.equal(activeEditorChanged.listeners.size, 0);
-  assert.equal(tabsChanged.listeners.size, 0);
-  assert.deepEqual(commands, [], "observation never invokes Cursor commands");
-});
+for (const edge of ["first", "last"] as const) {
+  test(`Edit-end watcher waits for a sustained one-line expansion anchored at ${edge} edge`, (t) => {
+    t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+    const editor = editMirror();
+    let ended = 0;
+    const watcher = host.cursorHandoff
+      .createCursorHandoffSurface()
+      .watchEditEnd(note, () => ended++);
+    t.after(() => watcher.dispose());
+    t.mock.timers.tick(500);
+    assert.equal(ended, 0, "the prompt has room to appear");
+    editor.visibleRanges = [
+      new Range(
+        new Position(edge === "first" ? 10 : 9, 0),
+        new Position(edge === "first" ? 31 : 30, 0),
+      ),
+    ];
+    visibleRangesChanged.fire({ textEditor: editor });
+    visibleRangesChanged.fire({ textEditor: editor });
+    assert.equal(ended, 0, "events at the same instant are not sustained");
+    t.mock.timers.tick(250);
+    assert.equal(ended, 1);
+    t.mock.timers.tick(1000);
+    assert.equal(ended, 1);
+    assert.equal(visibleRangesChanged.listeners.size, 0);
+    assert.equal(activeEditorChanged.listeners.size, 0);
+    assert.equal(tabsChanged.listeners.size, 0);
+    assert.deepEqual(commands, [], "observation never invokes Cursor commands");
+  });
+}
 
-test("Edit-end watcher ignores transient growth, scrolling and split diff ranges", (t) => {
+test("Edit-end watcher ignores transient growth, scrolling and document changes", (t) => {
   t.mock.timers.enable({ apis: ["Date", "setInterval"] });
   const editor = editMirror();
   let ended = 0;
@@ -862,21 +869,141 @@ test("Edit-end watcher ignores transient growth, scrolling and split diff ranges
   t.mock.timers.tick(500);
   setRange(20, 48);
   t.mock.timers.tick(500);
-  editor.visibleRanges?.push(
-    new Range(new Position(55, 0), new Position(60, 0)),
-  );
-  t.mock.timers.tick(500);
-  setRange(20, 48);
-  t.mock.timers.tick(500);
   editor.document.version++;
   setRange(20, 60);
   t.mock.timers.tick(500);
   assert.equal(ended, 0, "ambiguous changes wait for a hard end");
 });
 
-test("Edit-end watcher waits while prompt focus hides activeTextEditor", (t) => {
+test("Edit-end watcher observes one returned line within split diff ranges", (t) => {
   t.mock.timers.enable({ apis: ["Date", "setInterval"] });
-  editMirror();
+  const editor = editMirror();
+  editor.visibleRanges = [
+    new Range(new Position(0, 0), new Position(10, 0)),
+    new Range(new Position(30, 0), new Position(45, 0)),
+  ];
+  let ended = 0;
+  const watcher = host.cursorHandoff
+    .createCursorHandoffSurface()
+    .watchEditEnd(note, () => ended++);
+  t.after(() => watcher.dispose());
+  t.mock.timers.tick(500);
+  editor.visibleRanges[0] = new Range(new Position(0, 0), new Position(11, 0));
+  visibleRangesChanged.fire({ textEditor: editor });
+  assert.equal(ended, 0);
+  t.mock.timers.tick(250);
+  assert.equal(ended, 1, "split ranges do not disable the backup signal");
+});
+
+test("Edit-end capacity counts overlapping source lines once and excludes gaps", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+  const editor = editMirror();
+  let ended = 0;
+  const watcher = host.cursorHandoff
+    .createCursorHandoffSurface()
+    .watchEditEnd(note, () => ended++);
+  t.after(() => watcher.dispose());
+  t.mock.timers.tick(500);
+  editor.visibleRanges = [
+    new Range(new Position(20, 0), new Position(30, 0)),
+    new Range(new Position(10, 0), new Position(20, 0)),
+  ];
+  t.mock.timers.tick(1000);
+  assert.equal(ended, 0, "splitting the same lines is not growth");
+  editor.visibleRanges[0] = new Range(new Position(25, 0), new Position(34, 0));
+  t.mock.timers.tick(1000);
+  assert.equal(
+    ended,
+    0,
+    "a larger envelope with fewer visible lines is not growth",
+  );
+});
+
+for (const signal of ["event", "poll"] as const) {
+  test(`Edit-end focus cycle on a 46-line note ends on mirror return via ${signal}`, (t) => {
+    t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+    const editor = editMirror();
+    editor.visibleRanges = [new Range(new Position(0, 0), new Position(45, 0))];
+    let ended = 0;
+    const watcher = host.cursorHandoff
+      .createCursorHandoffSurface()
+      .watchEditEnd(note, () => ended++);
+    t.after(() => watcher.dispose());
+    t.mock.timers.tick(500);
+    assert.equal(ended, 0, "the mirror alone does not arm a cycle");
+    vscode.window.activeTextEditor = undefined;
+    if (signal === "event") {
+      activeEditorChanged.fire(undefined);
+    }
+    // The event path must arm even when focus returns before the next poll.
+    t.mock.timers.tick(signal === "event" ? 100 : 9000);
+    assert.equal(ended, 0, "wait while the prompt still owns focus");
+    vscode.window.activeTextEditor = editor;
+    if (signal === "event") {
+      activeEditorChanged.fire(editor);
+    } else {
+      t.mock.timers.tick(250);
+    }
+    assert.equal(ended, 1, "unchanged capacity does not block focus cleanup");
+    activeEditorChanged.fire(editor);
+    t.mock.timers.tick(1000);
+    assert.equal(ended, 1, "cleanup is one-shot");
+    assert.equal(activeEditorChanged.listeners.size, 0);
+    assert.equal(visibleRangesChanged.listeners.size, 0);
+    assert.equal(tabsChanged.listeners.size, 0);
+    assert.deepEqual(commands, [], "the watcher invokes no commands");
+  });
+}
+
+test("Edit-end focus cycle arms when prompt focus persists beyond grace", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+  const editor = editMirror();
+  vscode.window.activeTextEditor = undefined;
+  let ended = 0;
+  const watcher = host.cursorHandoff
+    .createCursorHandoffSurface()
+    .watchEditEnd(note, () => ended++);
+  t.after(() => watcher.dispose());
+  t.mock.timers.tick(499);
+  assert.equal(ended, 0);
+  t.mock.timers.tick(501);
+  assert.equal(ended, 0);
+  vscode.window.activeTextEditor = editor;
+  activeEditorChanged.fire(editor);
+  assert.equal(ended, 1);
+});
+
+test("Edit-end focus cycle ignores the entire show/Edit open transition during grace", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+  const editor = editMirror();
+  let ended = 0;
+  const watcher = host.cursorHandoff
+    .createCursorHandoffSurface()
+    .watchEditEnd(note, () => ended++);
+  t.after(() => watcher.dispose());
+  t.mock.timers.tick(100);
+  vscode.window.activeTextEditor = undefined;
+  activeEditorChanged.fire(undefined);
+  t.mock.timers.tick(250);
+  vscode.window.activeTextEditor = editor;
+  activeEditorChanged.fire(editor);
+  t.mock.timers.tick(150);
+  activeEditorChanged.fire(editor);
+  t.mock.timers.tick(1000);
+  assert.equal(ended, 0, "a grace-period focus loss cannot arm later cleanup");
+  vscode.window.activeTextEditor = undefined;
+  activeEditorChanged.fire(undefined);
+  assert.equal(ended, 0);
+  vscode.window.activeTextEditor = editor;
+  activeEditorChanged.fire(editor);
+  assert.equal(ended, 1, "a new cycle after grace can end Edit");
+});
+
+test("Edit-end focus cycle requires a known active mirror tab to arm", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+  const editor = editMirror();
+  const mirrorTab = group.activeTab;
+  group.activeTab = undefined;
   vscode.window.activeTextEditor = undefined;
   let ended = 0;
   const watcher = host.cursorHandoff
@@ -884,13 +1011,19 @@ test("Edit-end watcher waits while prompt focus hides activeTextEditor", (t) => 
     .watchEditEnd(note, () => ended++);
   t.after(() => watcher.dispose());
   t.mock.timers.tick(1000);
-  assert.equal(ended, 0, "the mirror is still the active tab");
-  group.activeTab = group.tabs[0];
-  activeEditorChanged.fire(undefined);
-  assert.equal(ended, 1, "returning to the custom sibling ends Edit");
+  group.activeTab = mirrorTab;
+  vscode.window.activeTextEditor = editor;
+  activeEditorChanged.fire(editor);
+  t.mock.timers.tick(500);
+  assert.equal(ended, 0, "unknown focus is not proof the prompt took focus");
 });
 
-for (const hardEnd of ["closed tab", "other editor"] as const) {
+for (const hardEnd of [
+  "closed tab",
+  "other editor",
+  "custom sibling",
+  "other tab with stale editor",
+] as const) {
   test(`Edit-end watcher observes ${hardEnd} even without a tab event`, (t) => {
     t.mock.timers.enable({ apis: ["Date", "setInterval"] });
     const editor = editMirror();
@@ -903,11 +1036,16 @@ for (const hardEnd of ["closed tab", "other editor"] as const) {
     if (hardEnd === "closed tab") {
       group.tabs = [];
       group.activeTab = undefined;
-    } else {
+    } else if (hardEnd === "other editor") {
       vscode.window.activeTextEditor = {
         ...editor,
         document: { ...editor.document, uri: Uri.parse("file:///other.md") },
       };
+    } else {
+      group.activeTab = group.tabs[0];
+      if (hardEnd === "custom sibling") {
+        vscode.window.activeTextEditor = undefined;
+      }
     }
     t.mock.timers.tick(250);
     assert.equal(ended, 1);
@@ -916,13 +1054,17 @@ for (const hardEnd of ["closed tab", "other editor"] as const) {
 
 test("Edit-end watcher cancellation removes listeners and its interval", (t) => {
   t.mock.timers.enable({ apis: ["Date", "setInterval"] });
-  editMirror();
+  const editor = editMirror();
   let ended = 0;
   const watcher = host.cursorHandoff
     .createCursorHandoffSurface()
     .watchEditEnd(note, () => ended++);
+  vscode.window.activeTextEditor = undefined;
+  t.mock.timers.tick(500);
   watcher.dispose();
   watcher.dispose();
+  vscode.window.activeTextEditor = editor;
+  activeEditorChanged.fire(editor);
   group.tabs = [];
   t.mock.timers.tick(2000);
   assert.equal(ended, 0);

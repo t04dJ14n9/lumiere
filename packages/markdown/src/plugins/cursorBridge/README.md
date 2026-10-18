@@ -26,9 +26,10 @@ focused native text editor (lease + version checks) before
 reclaim lease, then invoke `aipopup.action.modal.generate` with `overrideUri`,
 Monaco 1-based `overrideRange`, and `invocationType: "new"` **without** a
 pre-handoff `showTextDocument`. Cursor’s handler returns a prompt-bar id on
-success and `undefined` on silent no-ops — only a truthy return counts as
-Edit. If override-only fails, the host mirrors into a focused native tab and
-retries Edit without overrides, using that editor and its selection. Passing
+success and `undefined` on silent no-ops — only a nonempty id string counts as
+Edit, and `openCursorEdit` preserves that id. If override-only fails, the host
+mirrors into a focused native tab and retries Edit without overrides, using
+that editor and its selection. Passing
 `overrideUri` again would force a reload through `workbench.editorAssociations`,
 which can reopen Lumière instead of a text editor. If that still fails (or Edit
 is missing/throws), it releases the lease, dismisses any native mirror, and
@@ -76,16 +77,23 @@ Cursor has no public Edit completion event: the prompt-bar id reports opening,
 not closing, and its prompt/diff context keys cannot be read through the public
 extension API. Edit-end observation is therefore **best-effort**. After a 500 ms
 grace period, closing the last text tab or leaving the mirror ends the handoff.
-For the Edit X and settled diffs, a visible-range event or 250 ms poll looks for
-at least two extra visible lines at the same viewport edge, with the same
-editor and document version, sustained for another 250 ms. Prompt focus alone
-does not count as leaving the mirror; split ranges, scrolling and document
-changes reset the inference. No Cursor command is polled or toggled.
+While the mirror tab stays active, an undefined `activeTextEditor` arms a focus
+cycle. The watcher waits while focus is absent and ends Edit when the mirror
+text editor becomes active again (such as after Edit X or Esc). Observations
+during grace cannot arm the cycle, so the show/Edit opening transition is
+ignored. This signal works even when a short note's visible ranges stay fixed.
 
-Short notes that already fit, a prompt closed before sampling, wrapping, or
-chrome that does not affect visible ranges can leave cleanup waiting until
-the user leaves/closes the text tab. Window/pane resizing or other view zones
-can resemble prompt removal and may trigger cleanup early. The public API
-cannot distinguish those cases or prove that all inline diffs have settled;
-ambiguous samples keep the mirror open. Closing the mirror reveals the Live
-Preview sibling, or allows existing reclaim events to restore it.
+As a backup, visible-range events and a 250 ms poll look for one extra visible
+source line at either unchanged viewport edge, with the same editor and
+document version, sustained for another 250 ms. Split ranges count only their
+visible lines, excluding gaps and counting overlaps once. Scrolling or document
+changes reset capacity inference. The watcher invokes no commands.
+
+Focus changes are not proof of prompt removal: clicking the mirror while Edit
+is still open, or returning from another focus target, can end cleanup early.
+Cursor versions that keep `activeTextEditor` defined throughout prompt focus
+can still miss short-note dismissal; closes during grace can also be missed.
+Window/pane resizing or other view zones can resemble returned capacity.
+The public API cannot prove that submitted inline diffs have settled.
+Closing the mirror reveals the Live Preview sibling, or allows existing reclaim
+events to restore it.

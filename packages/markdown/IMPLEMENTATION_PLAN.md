@@ -5794,3 +5794,38 @@ skip, on a private Xvfb display. Checks used local Node 22.16.0: the initial
 Node 20 run passed all Markdown units but could not expand the PDF suite's
 quoted glob; the complete check passed after switching runtimes. No push or
 live Cursor extension refresh was performed.
+
+## Host GUI: Cursor Edit mirror focus-return cleanup — 2026-10-18
+
+Host GUI retesting of `a2674292` passed Ctrl+K opening Edit but failed mirror
+dismissal after both X and Esc on the 46-line Formatting.md. Capacity alone
+never supplied a completion signal. The watcher now arms a focus cycle when
+`activeTextEditor` is undefined while the mirror tab remains active after
+500 ms of grace; returning to the mirror text editor ends that handoff. It
+waits while focus remains absent and ignores opening transitions during grace.
+Last-tab closure and active-tab/editor departure remain hard end signals,
+including a tab switch before the editor snapshot catches up.
+
+Capacity is a backup: one returned visible source line at either anchored edge
+must persist for 250 ms. Split ranges no longer disable it; their visible lines
+exclude gaps and overlapping lines count once. The watcher invokes no commands.
+Path B still invokes Edit without overrides after show. `openCursorEdit` now
+returns the actual nonempty prompt id instead of collapsing it to `"edit"`;
+failure still abandons the mirror without arming cleanup.
+
+A context-key-gated view is deferred because public visibility events require
+an actually visible view: hiding/collapsing it prevents a reliable signal, while
+showing it risks sidebar UI changes. Focus cycles can misidentify clicking back
+into the mirror as dismissal, and hosts that keep an active editor throughout
+prompt focus can still miss short-note cleanup. Closes during grace and pending
+inline diffs remain ambiguous. Host GUI retesting is required; none was run.
+
+Validation: focused units green (cursor-bridge 60/60, handoff-host 82/82,
+reclaim 25/25), including unchanged visible ranges on a 46-line note, event and
+poll focus cycles, grace, sustained split-range growth, and one-shot disposal.
+`pnpm check` passed (2,518 units: core/root 76, agents 47, Markdown 2,002,
+PDF 393; formatting, lint, typechecks and contributions). Browser suites passed
+(Markdown 284/284, PDF 173/173). Isolated VS Code 1.142.0 suites passed
+(Markdown 23/23, PDF 25 passed, 1 existing performance skip), on a private Xvfb
+display. Checks ran sequentially with Node 22.16.0 and unit concurrency limited
+to one. No push or Host GUI retest was performed.

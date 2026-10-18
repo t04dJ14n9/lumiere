@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 const ARM_GRACE_MS = 500;
 const POLL_MS = 250;
-const MIN_RETURNED_LINES = 2;
+const MIN_RETURNED_LINES = 1;
 
 interface MirrorViewport {
   editor: vscode.TextEditor;
@@ -22,6 +22,7 @@ export function watchCursorEditEnd(
 ): { dispose(): void } {
   const target = vscode.Uri.parse(uri).toString();
   const armedAt = Date.now();
+  const promptFocus = new EditFocusReturn();
   const chrome = new EditChromeReturn();
   let isDisposed = false;
   const sample = () => {
@@ -29,7 +30,10 @@ export function watchCursorEditEnd(
       return;
     }
     if (hasMirrorTab(target) && !hasLeftMirror(target)) {
-      if (!chrome.hasReturned(mirrorViewport(target), Date.now())) {
+      if (
+        !promptFocus.hasReturned(target) &&
+        !chrome.hasReturned(mirrorViewport(target), Date.now())
+      ) {
         return;
       }
     }
@@ -68,14 +72,32 @@ function hasMirrorTab(uri: string): boolean {
 }
 
 function hasLeftMirror(uri: string): boolean {
-  const editor = vscode.window.activeTextEditor;
-  if (editor) {
-    return editor.document.uri.toString() !== uri;
-  }
-  // Focus inside Cursor's prompt can leave activeTextEditor undefined. Only
-  // a known different tab proves the user left; focus alone does not.
   const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
-  return tab !== undefined && !isMirrorTab(tab, uri);
+  if (tab && !isMirrorTab(tab, uri)) {
+    return true;
+  }
+  const editor = vscode.window.activeTextEditor;
+  return editor !== undefined && editor.document.uri.toString() !== uri;
+}
+
+/** Only observations after grace can arm a prompt-focus/return cycle. */
+class EditFocusReturn {
+  private isArmed = false;
+
+  hasReturned(uri: string): boolean {
+    const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+    if (!tab || !isMirrorTab(tab, uri)) {
+      return false;
+    }
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      // Keep waiting while the prompt owns focus, including on short notes
+      // whose visible ranges never change. Returning to text completes it.
+      this.isArmed = true;
+      return false;
+    }
+    return this.isArmed && editor.document.uri.toString() === uri;
+  }
 }
 
 function mirrorViewport(uri: string): MirrorViewport | undefined {
@@ -83,21 +105,32 @@ function mirrorViewport(uri: string): MirrorViewport | undefined {
   if (editor?.document.uri.toString() !== uri) {
     return undefined;
   }
-  // Folds and inline diffs can split ranges. Do not infer capacity from gaps.
-  if (editor.visibleRanges.length !== 1) {
-    return undefined;
-  }
-  const range = editor.visibleRanges[0];
-  if (!range) {
+  const extent = visibleLineExtent(editor.visibleRanges);
+  if (!extent) {
     return undefined;
   }
   return {
     editor,
     version: editor.document.version,
-    firstLine: range.start.line,
-    lastLine: range.end.line,
-    capacity: range.end.line - range.start.line + 1,
+    ...extent,
   };
+}
+
+function visibleLineExtent(ranges: readonly vscode.Range[]) {
+  let firstLine = Infinity;
+  let lastLine = -1;
+  let capacity = 0;
+  const ordered = [...ranges].sort((a, b) => a.start.line - b.start.line);
+  for (const range of ordered) {
+    firstLine = Math.min(firstLine, range.start.line);
+    // Count visible source lines once, excluding folded/inline-diff gaps.
+    capacity += Math.max(
+      0,
+      range.end.line - Math.max(range.start.line, lastLine + 1) + 1,
+    );
+    lastLine = Math.max(lastLine, range.end.line);
+  }
+  return capacity > 0 ? { firstLine, lastLine, capacity } : undefined;
 }
 
 /** An anchored expansion must survive a whole poll, not just a range event. */

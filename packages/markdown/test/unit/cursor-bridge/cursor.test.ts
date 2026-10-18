@@ -85,7 +85,7 @@ test("Chat without a selection preserves the clipboard on fallback or unavailabi
   }
 });
 
-test("Edit runs aipopup.action.modal.generate with Monaco override args", async () => {
+test("Edit returns the prompt id from aipopup.action.modal.generate with Monaco overrides", async () => {
   const commands = [CURSOR_COMMANDS.edit];
   const h = host(commands);
   const uri = { toString: () => "file:///vault/Note.md" };
@@ -97,7 +97,7 @@ test("Edit runs aipopup.action.modal.generate with Monaco override args", async 
         end: { line: 3, character: 1 },
       },
     }),
-    "edit",
+    "prompt-bar-id",
   );
   assert.deepEqual(h.ran, [CURSOR_COMMANDS.edit]);
   assert.deepEqual(h.args, [
@@ -116,9 +116,15 @@ test("Edit runs aipopup.action.modal.generate with Monaco override args", async 
   ]);
 });
 
-test("Edit treats a falsy return as silent failure, not success", async () => {
+test("Edit without overrides preserves the prompt id and passes no arguments", async () => {
+  const h = host([CURSOR_COMMANDS.edit], { editResult: "retry-prompt-id" });
+  assert.equal(await openCursorEdit(h.execute), "retry-prompt-id");
+  assert.deepEqual(h.args, [[]]);
+});
+
+test("Edit requires a nonempty prompt id to verify success", async () => {
   const commands = [CURSOR_COMMANDS.edit];
-  for (const editResult of [undefined, null, false] as const) {
+  for (const editResult of [undefined, null, false, "", 0, true, {}]) {
     const h = host(commands, { editResult });
     assert.equal(
       await openCursorEdit(h.execute, new Set(commands), {

@@ -7,7 +7,8 @@ export const CURSOR_COMMANDS = {
 
 export type CursorChatTarget =
   "chat" | "chatFallback" | "clipboard" | "unavailable";
-export type CursorEditTarget = "edit" | undefined;
+/** Cursor's nonempty prompt-bar id, or undefined when Edit did not open. */
+export type CursorEditTarget = string | undefined;
 
 type Execute = (id: string, ...args: unknown[]) => Promise<unknown>;
 
@@ -36,24 +37,6 @@ async function tryCommand(
   try {
     await execute(id, ...args);
     return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Cursor’s Edit command returns a prompt-bar id on success and undefined on
- * silent no-ops (`!getActiveCodeEditor()`, missing model, feature off, …).
- * Blind “did not throw” is insufficient — treat only a truthy return as Edit.
- */
-async function tryEditCommand(
-  execute: Execute,
-  id: string,
-  ...args: unknown[]
-): Promise<boolean> {
-  try {
-    const result = await execute(id, ...args);
-    return result !== undefined && result !== null && result !== false;
   } catch {
     return false;
   }
@@ -109,10 +92,12 @@ export async function openCursorEdit(
     return undefined;
   }
   const args = target ? [editArgs(target)] : [];
-  if (!(await tryEditCommand(execute, CURSOR_COMMANDS.edit, ...args))) {
+  try {
+    const promptId = await execute(CURSOR_COMMANDS.edit, ...args);
+    return typeof promptId === "string" && promptId ? promptId : undefined;
+  } catch {
     return undefined;
   }
-  return "edit";
 }
 
 /** Whether the Cursor Edit command id is present in a discovered command set. */
