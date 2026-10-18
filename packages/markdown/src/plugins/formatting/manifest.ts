@@ -71,6 +71,36 @@ export default defineManifest({
         editorCommand: "editor:insert-horizontal-rule",
       },
       {
+        id: "insertCodeBlock",
+        title: "Insert Code Block",
+        editorCommand: "editor:insert-codeblock",
+      },
+      {
+        id: "insertTag",
+        title: "Insert Tag",
+        editorCommand: "editor:insert-tag",
+      },
+      {
+        id: "clearFormatting",
+        title: "Clear Formatting",
+        editorCommand: "editor:clear-formatting",
+      },
+      {
+        id: "deleteParagraph",
+        title: "Delete Paragraph",
+        editorCommand: "editor:delete-paragraph",
+      },
+      {
+        id: "addCursorAbove",
+        title: "Add Cursor Above",
+        editorCommand: "editor:add-cursor-above",
+      },
+      {
+        id: "addCursorBelow",
+        title: "Add Cursor Below",
+        editorCommand: "editor:add-cursor-below",
+      },
+      {
         id: "toggleBulletList",
         title: "Toggle Bullet List",
         editorCommand: "editor:toggle-bullet-list",

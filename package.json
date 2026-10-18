@@ -241,6 +241,36 @@
         "category": "Markdown Workshop"
       },
       {
+        "command": "markdownWorkshop.insertCodeBlock",
+        "title": "Insert Code Block",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.insertTag",
+        "title": "Insert Tag",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.clearFormatting",
+        "title": "Clear Formatting",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.deleteParagraph",
+        "title": "Delete Paragraph",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.addCursorAbove",
+        "title": "Add Cursor Above",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.addCursorBelow",
+        "title": "Add Cursor Below",
+        "category": "Markdown Workshop"
+      },
+      {
         "command": "markdownWorkshop.toggleBulletList",
         "title": "Toggle Bullet List",
         "category": "Markdown Workshop"
@@ -549,6 +579,16 @@
       {
         "command": "markdownWorkshop.tableDeleteColumn",
         "title": "Table: Delete Column",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.tableDuplicateRow",
+        "title": "Table: Duplicate Row",
+        "category": "Markdown Workshop"
+      },
+      {
+        "command": "markdownWorkshop.tableDuplicateColumn",
+        "title": "Table: Duplicate Column",
         "category": "Markdown Workshop"
       },
       {
@@ -1365,6 +1405,30 @@
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
         },
         {
+          "command": "markdownWorkshop.insertCodeBlock",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.insertTag",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.clearFormatting",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.deleteParagraph",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.addCursorAbove",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
+          "command": "markdownWorkshop.addCursorBelow",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
+        },
+        {
           "command": "markdownWorkshop.toggleBulletList",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.formatting"
         },
@@ -1594,6 +1658,14 @@
         },
         {
           "command": "markdownWorkshop.tableDeleteColumn",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
+        },
+        {
+          "command": "markdownWorkshop.tableDuplicateRow",
+          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
+        },
+        {
+          "command": "markdownWorkshop.tableDuplicateColumn",
           "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.tables"
         },
         {

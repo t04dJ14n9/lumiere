@@ -6,6 +6,8 @@ export const tableCommands = [
   ["insert-column-right", "Insert Column Right"],
   ["delete-row", "Delete Row"],
   ["delete-column", "Delete Column"],
+  ["duplicate-row", "Duplicate Row"],
+  ["duplicate-column", "Duplicate Column"],
   ["move-row-up", "Move Row Up"],
   ["move-row-down", "Move Row Down"],
   ["move-column-left", "Move Column Left"],

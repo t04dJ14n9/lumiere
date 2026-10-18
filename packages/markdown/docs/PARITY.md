@@ -155,6 +155,12 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.toggleComment | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.insertLink | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.insertHorizontalRule | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.insertCodeBlock | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: fences around the selected lines | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.insertTag | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: `#` before the selection | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.clearFormatting | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches, except links keep their syntax (Obsidian turns `[l](u)` into `lu`) | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.deleteParagraph | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches: CodeMirror's delete line, as Obsidian's; unbound (Cmd+D is VS Code's) | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.addCursorAbove | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches; bound to Cmd+Alt+Up as in VS Code (Obsidian binds no key) | Differential probe; unit tests | behaviour measured |
+| Command: markdownWorkshop.addCursorBelow | 2026-10-17, measured against Obsidian's command of the same name in a throwaway vault | Matches; bound to Cmd+Alt+Down as in VS Code (Obsidian binds no key) | Differential probe; unit tests | behaviour measured |
 | Command: markdownWorkshop.toggleBulletList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.toggleNumberedList | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.toggleBlockquote | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
@@ -196,6 +202,8 @@ Reference: Obsidian 1.13.7, to be compared by the owner in a disposable vault. N
 | Command: markdownWorkshop.tableInsertColumnRight | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.tableDeleteRow | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.tableDeleteColumn | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
+| Command: markdownWorkshop.tableDuplicateRow | Obsidian's Duplicate row | Duplicates the row in the grid | Unit tests | not observed |
+| Command: markdownWorkshop.tableDuplicateColumn | Obsidian's Duplicate column | Duplicates the column in the grid | Unit tests | not observed |
 | Command: markdownWorkshop.tableMoveRowUp | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.tableMoveRowDown | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |
 | Command: markdownWorkshop.tableMoveColumnLeft | not observed | not manually observed | Manual scenario pending; automated evidence is in phase records | not observed |

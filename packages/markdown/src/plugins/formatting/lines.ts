@@ -84,3 +84,37 @@ export function ruleEdit(state: EditorState): TransactionSpec {
     userEvent: "input",
   };
 }
+
+/**
+ * Fence lines around the selected lines, the selection staying on them, as
+ * Obsidian's Insert Code Block does. A selection ending at column zero does
+ * not include that line.
+ */
+export function fenceLines(
+  state: EditorState,
+  open: string,
+  close: string,
+): TransactionSpec {
+  const { from, to, empty, anchor, head } = state.selection.main;
+  const first = state.doc.lineAt(from);
+  const last = state.doc.lineAt(empty ? to : Math.max(from, to - 1));
+  const before = `${open}\n`;
+  return {
+    changes: [
+      { from: first.from, insert: before },
+      { from: last.to, insert: `\n${close}` },
+    ],
+    selection: { anchor: anchor + before.length, head: head + before.length },
+    userEvent: "input",
+  };
+}
+
+/** Insert Tag, as in Obsidian: `#` before the selection, the caret after it. */
+export function tagEdit(state: EditorState): TransactionSpec {
+  const { from } = state.selection.main;
+  return {
+    changes: { from, insert: "#" },
+    selection: { anchor: from + 1 },
+    userEvent: "input",
+  };
+}

@@ -37,7 +37,15 @@ export function tableOperation(
     };
   }
   const axis = id.includes("row") ? "row" : "column";
-  const index = axis === "row" ? row : column;
+  return lineOperation(id, axis, axis === "row" ? row : column);
+}
+
+/** Insert, delete, duplicate or move the row or column at `index`. */
+function lineOperation(
+  id: string,
+  axis: "row" | "column",
+  index: number,
+): TableOperation | undefined {
   if (id.startsWith("insert-")) {
     return {
       type: "insert",
@@ -45,8 +53,9 @@ export function tableOperation(
       index: index + (id.endsWith("below") || id.endsWith("right") ? 1 : 0),
     };
   }
-  if (id.startsWith("delete-")) {
-    return { type: "delete", axis, from: index, to: index };
+  if (id.startsWith("delete-") || id.startsWith("duplicate-")) {
+    const type = id.startsWith("delete-") ? "delete" : "duplicate";
+    return { type, axis, from: index, to: index };
   }
   if (id.startsWith("move-")) {
     return {

@@ -5017,3 +5017,23 @@ the throwaway Obsidian and in the editor; 144 of 150 cases match
 
 Validation: `pnpm check` green; Markdown browser suite 283/284 (the table
 line-number spec, which passes 30 of 30 alone).
+
+## More than one caret; Obsidian's other editing commands — 2026-10-17
+
+The editor allowed a single caret only (`allowMultipleSelections` was never
+on), so Alt-click, Add Cursor Above/Below and Cmd+D could not work. It now
+allows several, as Obsidian and VS Code do: Alt-click adds a caret (as in
+both), Cmd+Alt+Up and Down add one above or below (VS Code's keys; Obsidian
+binds none), and Cmd+D adds the next match (VS Code's meaning, which the key
+was documented to have but did not, since VS Code's own command does not
+reach a webview).
+
+Obsidian's commands Workshop lacked, measured against Obsidian (18 of 19
+cases match; Clear Formatting keeps link syntax, where Obsidian turns
+`[l](u)` into `lu`): Insert Code Block, Insert Tag, Clear Formatting,
+Delete Paragraph, Add Cursor Above and Below, and Duplicate Row and Column
+for tables.
+
+Validation: `pnpm check` green; Markdown browser suite 284/284; real VS Code
+and Cursor Markdown 23/23 each; Cmd+Alt+Up checked in real VS Code (three
+carets, one undo).

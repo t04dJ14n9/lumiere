@@ -1,10 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EditorState, type TransactionSpec } from "@codemirror/state";
+import {
+  EditorSelection,
+  EditorState,
+  type TransactionSpec,
+} from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { markdownLanguageSupport } from "../../../src/markdown/dialect";
 import { wrapSelection } from "../../../src/plugins/formatting/inline";
-import { lineEdit, ruleEdit } from "../../../src/plugins/formatting/lines";
+import {
+  fenceLines,
+  lineEdit,
+  ruleEdit,
+  tagEdit,
+} from "../../../src/plugins/formatting/lines";
+import { withCaretAt } from "../../../src/plugins/formatting/cursors";
 import { checklistEdit } from "../../../src/plugins/tasks/edits";
 import { insertTable } from "../../../src/plugins/tables/commands";
 
@@ -172,4 +182,37 @@ test("a new table goes after the line the selection starts on, the caret at its 
     edit("above\n‹one\ntwo›\nbelow", insertTable),
     `above\none\n\n|${table}\n\ntwo\nbelow`,
   );
+});
+
+test("code blocks fence the selected lines, and Insert Tag types # before the selection", () => {
+  const fence = (s: EditorState) => fenceLines(s, "```", "```");
+  assert.equal(edit("|", fence), "```\n|\n```");
+  assert.equal(edit("above\n|\nbelow", fence), "above\n```\n|\n```\nbelow");
+  assert.equal(edit("‹one\ntwo›", fence), "```\n‹one\ntwo›\n```");
+  assert.equal(edit("te|xt", tagEdit), "te#|xt");
+  assert.equal(edit("a ‹word› b", tagEdit), "a #|word b");
+});
+
+test("an added caret becomes the main one, and carets stay in order", () => {
+  const state = parse("o|ne\ntwo\nthree").update({}).state;
+  const multi = EditorState.create({
+    doc: state.doc,
+    selection: state.selection,
+    extensions: EditorState.allowMultipleSelections.of(true),
+  });
+  const next = withCaretAt(multi.selection, 5);
+  assert.deepEqual(
+    next.ranges.map((range) => range.head),
+    [1, 5],
+  );
+  assert.equal(next.main.head, 5);
+  const above = withCaretAt(
+    EditorSelection.create([EditorSelection.cursor(10)]),
+    6,
+  );
+  assert.deepEqual(
+    above.ranges.map((range) => range.head),
+    [6, 10],
+  );
+  assert.equal(above.main.head, 6);
 });

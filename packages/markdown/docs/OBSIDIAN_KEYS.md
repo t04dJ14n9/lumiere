@@ -63,11 +63,20 @@ Insert Footnote's caret, below.
 | Insert wikilink, Insert embed | `‹text›` | `[[text\|]]`: the caret after the text |
 | Insert footnote | `te\|xt` | `te[^1]xt\n\n[^1]: \|\n`: before the selection, which stays |
 | Open link under cursor in new tab | | a tab VS Code keeps, as Cmd-click |
+| Insert code block | `te\|xt` | ` ```\nte\|xt\n``` `: around the selected lines |
+| Insert tag | `a ‹word› b` | `a #\|word b` |
+| Clear formatting | `a **‹b›** c` | `a ‹b› c`; a caret alone changes nothing; links keep their syntax |
+| Delete paragraph | `one\ntw\|o\nthree` | `one\nth\|ree` (unbound: Cmd+D is VS Code's) |
+| Add cursor above, below | `one\nth\|ree` | carets on both lines, the new one main (Cmd+Alt+Up and Down, as in VS Code) |
+
+More than one caret works as in Obsidian: Alt-click adds one, and typing
+goes to every caret. Cmd+D adds the next match of the selection, as in VS
+Code.
 
 ## Deliberate differences
 
-- Cmd+D: Obsidian deletes the line; Workshop leaves it to VS Code, where it
-  selects the next match.
+- Cmd+D: Obsidian deletes the line; Workshop selects the next match, as VS
+  Code does (Delete Paragraph is in the Command Palette).
 - Alt+Up and Alt+Down move the line, as in VS Code; Obsidian moves the caret.
 - Cmd+Enter inserts a line below, as in VS Code; Obsidian follows a link.
 - Cmd+L in Cursor opens Cursor's chat (with a selection, Add to Chat).

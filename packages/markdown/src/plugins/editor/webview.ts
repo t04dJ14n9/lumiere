@@ -46,6 +46,14 @@ interface EditorConfig {
   parent: HTMLElement;
   mode: "source" | "livePreview";
 }
+/** More than one caret, as in Obsidian and VS Code; Alt-click adds one. */
+const multipleCarets = [
+  EditorState.allowMultipleSelections.of(true),
+  EditorView.clickAddsSelectionRange.of(
+    (event) => event.altKey && !event.metaKey && !event.ctrlKey,
+  ),
+];
+
 export const editorWebview: Plugin<EditorConfig> = {
   name: "editor",
   inject: { required: ["document", "markdown", "rpc"] },
@@ -142,6 +150,7 @@ function createEditorView(
         ctx.document.extension,
         ctx.markdown.language(),
         drawSelection(),
+        multipleCarets,
         selectionLayer,
         selectionDragScroll,
         caretExtension(),
@@ -165,18 +174,23 @@ function createEditorView(
             ...defaultKeymap,
           ]),
         ),
-        EditorView.updateListener.of((update) => {
-          if (update.selectionSet || update.focusChanged) {
-            ctx.rpc.notify(
-              protocol,
-              "selectionChanged",
-              { hasSelection: !update.state.selection.main.empty },
-              { coalesce: true },
-            );
-          }
-        }),
+        reportSelection(ctx),
       ],
     }),
+  });
+}
+
+/** Tell the host whether there is a selection, for its menus and keys. */
+function reportSelection(ctx: Context) {
+  return EditorView.updateListener.of((update) => {
+    if (update.selectionSet || update.focusChanged) {
+      ctx.rpc.notify(
+        protocol,
+        "selectionChanged",
+        { hasSelection: !update.state.selection.main.empty },
+        { coalesce: true },
+      );
+    }
   });
 }
 
