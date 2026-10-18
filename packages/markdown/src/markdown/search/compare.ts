@@ -7,6 +7,11 @@ export interface SearchContext {
   allowed: boolean;
   mode?: "tag" | "property" | "name";
   values?: unknown[];
+  /**
+   * The file's name, which a plain term also matches outside any operator,
+   * as in Obsidian (`Alice` finds `people/Alice.md`; a folder is not matched).
+   */
+  fileName?: string;
 }
 type ValueQuery = Extract<SearchQuery, { kind: "text" | "regex" }>;
 

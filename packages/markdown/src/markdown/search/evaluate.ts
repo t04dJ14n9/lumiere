@@ -107,8 +107,16 @@ export function compileSearch(
       text: () => search.content(),
       sensitive: false,
       allowed: search.kind !== "file",
+      fileName: document.path.split("/").at(-1)!,
     });
   };
+}
+
+/** What a plain term is matched against: the text, and the file's name. */
+function textAndName(context: SearchContext): string[] {
+  return context.fileName === undefined
+    ? [context.text()]
+    : [context.text(), context.fileName];
 }
 
 /** Scope evaluation owns only one document's lazy content and metadata caches. */
@@ -159,7 +167,7 @@ class DocumentSearch {
       case "regex":
         return (
           context.allowed &&
-          (context.values ?? [context.text()]).some((value) =>
+          (context.values ?? textAndName(context)).some((value) =>
             this.comparison.matches(term, value, context),
           )
         );

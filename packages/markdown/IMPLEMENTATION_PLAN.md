@@ -5140,3 +5140,17 @@ files; 10 of 17 matched at first, all 37 now.
 
 Validation: `pnpm check` green; unit tests pin the measured lists; Markdown
 browser suite 284/284.
+
+## Search queries, measured against Obsidian — 2026-10-17
+
+The same 55 queries were run with Obsidian's search and with Workshop's
+evaluator over the same notes (words, phrases, `OR`, negation, regex, case,
+`tag:`, `path:`, `file:`, properties, `task:`, `line:`, `block:`,
+`section:`, `content:`). 54 matched; now all do.
+
+Fixed: a plain term did not match a note's file name. In Obsidian it does
+(`Alice` finds `people/Alice.md`; the name includes `.md`), each term on
+its own, while folders and the `content:`, `line:` and block operators do
+not.
+
+Validation: `pnpm check` green; unit tests pin the measured results.
