@@ -112,7 +112,7 @@ function releaseLeaseWithoutTextTab(tab: vscode.Tab): string | undefined {
  */
 export function registerReclaim(
   navigation?: NativeNavigation,
-): vscode.Disposable {
+): vscode.Disposable & { adoptOpenTabs(): void } {
   const recentTransfers = new Bypass();
   const transfer = createReclaimTransfer(navigation, recentTransfers);
   const swaps = new TabSwaps(tabModel);
@@ -139,16 +139,23 @@ export function registerReclaim(
     }
     swaps.next(event, endedSessions).forEach(judge);
   });
-  // Notes the window restored, or that were opened before this extension
-  // started, as text.
-  swaps
-    .adopt(vscode.window.tabGroups.all.flatMap((group) => group.tabs))
-    .forEach(judge);
-  return vscode.Disposable.from(
+  const stop = vscode.Disposable.from(
     tabs,
     registerSelectionReclaim(transfer.open, transfer.capture),
     transfer,
   );
+  return {
+    dispose: () => stop.dispose(),
+    /**
+     * Judge the tabs already open, once, when the extension starts: notes the
+     * window restored, or that were opened before it started, as text.
+     */
+    adoptOpenTabs() {
+      swaps
+        .adopt(vscode.window.tabGroups.all.flatMap((group) => group.tabs))
+        .forEach(judge);
+    },
+  };
 }
 
 function createReclaimTransfer(

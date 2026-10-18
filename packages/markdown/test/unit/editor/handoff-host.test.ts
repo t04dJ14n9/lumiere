@@ -342,6 +342,24 @@ for (const isDirty of [false, true]) {
   });
 }
 
+test("a note already shown as text when the extension starts is reclaimed once", async (t) => {
+  // A restored window, or a note passed on the command line: no tab event
+  // follows, so reclaim judges the open tabs when it starts.
+  const tab = cursorTab();
+  tab.input = new TabInputText(Uri.parse(note));
+  const stop = host.reclaim.registerReclaim();
+  t.after(() => stop.dispose());
+  assert.deepEqual(commands, [], "registering alone judges nothing");
+  stop.adoptOpenTabs();
+  await tick();
+  assert.deepEqual(commands, [
+    ["vscode.openWith", note, viewType, { viewColumn: 1, preview: false }],
+  ]);
+  tabsChanged.fire({ opened: [], changed: [tab], closed: [] });
+  await tick();
+  assert.equal(commands.length, 1, "a later tab event does not reopen it");
+});
+
 test("a text tab without a matching materialized document still awaits warming", async (t) => {
   const release = delayWarm();
   t.after(release);

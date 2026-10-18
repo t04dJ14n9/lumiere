@@ -41,6 +41,7 @@ function registerTrackedEditor(options: {
     provider.viewType === MARKDOWN_EDITOR.viewType
       ? registerReclaim(navigation)
       : undefined;
+  reclaim?.adoptOpenTabs();
   return () => {
     reclaim?.dispose();
     stopEditor();
