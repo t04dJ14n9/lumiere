@@ -5182,3 +5182,18 @@ spec waits for the note before comparing it (a race that showed under load).
 
 Validation: `pnpm check` green; Markdown browser suite 283/284 before the
 spec fix, which then passed 20 of 20.
+
+## Link resolution, measured against Obsidian — 2026-10-17
+
+Obsidian's `getFirstLinkpathDest` and `fileToLinktext` (public API) were
+compared with Workshop's resolver and link text over the same files, with
+notes of the same name in several folders: 84 resolutions from four notes,
+28 link texts. All link texts matched; 82 resolutions did.
+
+Fixed: a relative link climbing above the vault root resolved nothing.
+Obsidian joins a relative link to its note's folder, drops any `..` above
+the root, and resolves the rest like any other link (`../B/Same` from a
+note at the root finds `dup/B/Same.md`); a missing relative target inside
+the vault stays unresolved. All 84 match now.
+
+Validation: `pnpm check` green.

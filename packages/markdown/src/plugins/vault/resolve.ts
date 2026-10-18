@@ -24,12 +24,13 @@ export function resolveCandidates(
   sourcePath: string,
   options: ResolveOptions,
 ): readonly VaultFile[] {
-  const { path } = splitLinktext(linktext);
-  if (path === "") {
+  const { path: written } = splitLinktext(linktext);
+  if (written === "") {
     const source = files.get(sourcePath);
     return source ? [source] : [];
   }
-  const direct = directMatch(files, path, sourcePath);
+  const path = relativeToVault(written, sourcePath);
+  const direct = directMatch(files, path);
   if (direct) {
     return [direct];
   }
@@ -37,20 +38,33 @@ export function resolveCandidates(
   if (suffix.length > 0) {
     return suffix;
   }
-  const folderNote = folderNoteMatch(files, path, sourcePath, options);
+  const folderNote = folderNoteMatch(files, path, options);
   return folderNote ? [folderNote] : [];
 }
 
-/** Steps 2 to 5: exact path, unique basename, relative path, root path. */
-function directMatch(
-  files: FileTable,
-  path: string,
-  sourcePath: string,
-): VaultFile | undefined {
-  if (path.startsWith("./") || path.startsWith("../")) {
-    const relative = joinVaultPath(folderOf(sourcePath), path);
-    return relative === undefined ? undefined : withExtension(files, relative);
+/**
+ * A `./` or `../` link as a vault path, as Obsidian takes it: joined to the
+ * source note's folder, with any `..` above the vault root dropped. The
+ * result then resolves like any other link (`../B/Same` from a note at the
+ * root finds `dup/B/Same.md`).
+ */
+function relativeToVault(path: string, sourcePath: string): string {
+  if (!path.startsWith("./") && !path.startsWith("../")) {
+    return path;
   }
+  const segments: string[] = [];
+  for (const segment of `${folderOf(sourcePath)}/${path}`.split("/")) {
+    if (segment === "..") {
+      segments.pop();
+    } else if (segment && segment !== ".") {
+      segments.push(segment);
+    }
+  }
+  return segments.join("/");
+}
+
+/** Steps 2 to 5: exact path, unique basename, root path. */
+function directMatch(files: FileTable, path: string): VaultFile | undefined {
   if (path.startsWith("/")) {
     const rooted = joinVaultPath(path);
     return rooted === undefined ? undefined : withExtension(files, rooted);
@@ -121,15 +135,13 @@ function compare(a: string, b: string): number {
 function folderNoteMatch(
   files: FileTable,
   path: string,
-  sourcePath: string,
   options: ResolveOptions,
 ): VaultFile | undefined {
   if (!options.folderNote) {
     return undefined;
   }
-  const folder = path.startsWith(".")
-    ? joinVaultPath(folderOf(sourcePath), path)
-    : joinVaultPath(path);
+  // `path` is already a vault path (a relative link was joined to its note).
+  const folder = joinVaultPath(path);
   if (folder === undefined) {
     return undefined;
   }

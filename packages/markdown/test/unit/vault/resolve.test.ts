@@ -87,10 +87,11 @@ const cases: [string, string, string, string | undefined][] = [
     "notes/Local.md",
   ],
   [
-    "../ beyond the vault root does not resolve",
+    // As in Obsidian (measured): `..` above the root is dropped.
+    "../ beyond the vault root stops at the root",
     "../../Home",
     "notes/Local.md",
-    undefined,
+    "Home.md",
   ],
   [
     "leading slash starts at the vault root",
@@ -174,4 +175,39 @@ test("linkText follows the new link format", () => {
       `${format} ${target}`,
     );
   }
+});
+
+// Measured with Obsidian's getFirstLinkpathDest over the same files
+// (2026-10-17): a relative link is joined to its note's folder, `..` above
+// the root dropped, and then resolves like any other link.
+test("a relative link resolves as Obsidian resolves it", () => {
+  const vault = new MemoryVaultIndex({
+    root: "file:///vault",
+    folderNote: "",
+    linkFormat: "shortest",
+  });
+  for (const path of [
+    "Same.md",
+    "dup/A/Same.md",
+    "dup/B/Same.md",
+    "dup/A/src.md",
+    "dup/A/Sub/src2.md",
+  ]) {
+    vault.upsertFile({
+      path,
+      uri: `file:///vault/${path}`,
+      size: 0,
+      mtime: 0,
+      excluded: false,
+    });
+  }
+  const resolve = (link: string, source: string) =>
+    vault.resolveLink(link, source)?.path;
+  assert.equal(resolve("../Same", "root.md"), "Same.md");
+  assert.equal(resolve("../B/Same", "root.md"), "dup/B/Same.md");
+  assert.equal(resolve("./Same", "dup/A/src.md"), "dup/A/Same.md");
+  assert.equal(resolve("../B/Same", "dup/A/src.md"), "dup/B/Same.md");
+  assert.equal(resolve("../Same", "dup/A/src.md"), undefined);
+  assert.equal(resolve("../Same", "dup/A/Sub/src2.md"), "dup/A/Same.md");
+  assert.equal(resolve("./Same", "dup/A/Sub/src2.md"), undefined);
 });
