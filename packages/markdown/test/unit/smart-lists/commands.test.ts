@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EditorState } from "@codemirror/state";
 import { ensureSyntaxTree } from "@codemirror/language";
+import { insertNewlineAndIndent } from "@codemirror/commands";
 import { markdownLanguageSupport } from "../../../src/markdown/dialect";
 import {
   continueLine,
@@ -130,4 +131,13 @@ test("an edit inside an ordered list numbers it again, as in Obsidian", async ()
       .state.doc.toString(),
     "1. a\n2. c",
   );
+});
+
+test("Enter outside a list keeps the line's indentation, in a code block too, as in Obsidian", () => {
+  // Not a list or a quote: Enter falls to CodeMirror's own newline.
+  assert.equal(
+    apply("```\n  code|\n```", insertNewlineAndIndent),
+    "```\n  code\n  |\n```",
+  );
+  assert.equal(apply("plain|", insertNewlineAndIndent), "plain\n|");
 });

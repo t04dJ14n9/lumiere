@@ -1,6 +1,7 @@
 import {
   Language,
   LanguageSupport,
+  indentNodeProp,
   languageDataProp,
 } from "@codemirror/language";
 import { markdownLanguage } from "@codemirror/lang-markdown";
@@ -28,7 +29,15 @@ export const markdownParser = parser.configure([
   wiki,
   highlight,
   comments,
-  { props: [languageDataProp.add({ Document: data })] },
+  {
+    props: [
+      languageDataProp.add({ Document: data }),
+      // No indentation of its own, as lang-markdown says: Enter then keeps
+      // the line's indentation (in a code block too, as in Obsidian) rather
+      // than going to column 0.
+      indentNodeProp.add({ Document: () => null }),
+    ],
+  },
 ]);
 const language = new Language(data, markdownParser, [], "markdown");
 export function markdownLanguageSupport(): LanguageSupport {
