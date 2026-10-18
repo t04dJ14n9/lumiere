@@ -18,7 +18,9 @@ function apply(text: string, command: Command): string {
     selection: { anchor: head },
     extensions: [markdownLanguageSupport()],
   });
+  // Parse it all; the state gives the finished tree after a transaction.
   ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
   const handled = command({
     state,
     dispatch: (tr) => {

@@ -5335,3 +5335,14 @@ Not copied: Obsidian also lists its rendered footnotes section as a block and
 puts that id at the end of the note.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## A flaky Git inline test — 2026-10-17
+
+`gitInline.test.ts` failed once under the parallel run: the old table's
+ghost landed on its changed row, as if the table were not a block. The test
+waited for the parse with `ensureSyntaxTree`, but that finishes the parse
+without changing the tree the state gives (`syntaxTree(state)` keeps the one
+the state was made with); on a busy machine that tree stopped before the
+table. The test now takes the finished tree with an empty transaction, as the
+code block test already did; the smart-list test had the same wait and gets
+the same fix. Three full unit runs passed.

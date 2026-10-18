@@ -30,13 +30,15 @@ const NOW =
   "# T\n\nReport it per region.\n\n| a | b |\n|---|---|\n| 1 | 3 |\n\nend\nnew line\n";
 
 function decorations(base = BASE, now = NOW, label = "HEAD (abc1234)") {
-  const state = EditorState.create({
+  let state = EditorState.create({
     doc: now,
     extensions: [hunkField, markdown({ base: markdownLanguage })],
   });
   // Blocks come from the syntax tree, which a busy machine may not have
-  // finished parsing within the editor's time budget.
+  // finished parsing within the editor's time budget. Finishing the parse
+  // does not change the tree the state gives; a transaction takes it up.
   ensureSyntaxTree(state, state.doc.length, 5000);
+  state = state.update({}).state;
   const set = { hunks: computeHunks(base, state.doc), generation: 1 };
   const diff = {
     field: hunkField,
