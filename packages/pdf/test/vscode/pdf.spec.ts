@@ -13,10 +13,10 @@ import {
   agentChatInput,
   command,
   contextMenu,
+  contextMenuLabels,
   drag,
   expect,
   fitPage,
-  inCursor,
   openFile,
   pageAtTop,
   pagePoint,
@@ -105,6 +105,10 @@ test("Copy Link for Agent is context-menu only; selection menus and title button
   await showPage(page, viewer, 3);
 
   const at = await pagePoint(viewer, 3);
+  // With nothing selected the menu offers the view, not the link.
+  const unselected = await contextMenuLabels(page, at(100, TEXT_MIDLINE));
+  expect(unselected).toContain("Go to Page…");
+  expect(unselected).not.toContain("Copy Link for Agent");
   await selectText(page, viewer, at(74, TEXT_MIDLINE), at(205, TEXT_MIDLINE));
   await expect(
     viewer.getByRole("toolbar", { name: "PDF text selection actions" }),
@@ -176,15 +180,10 @@ test("Copy Link for Agent from the context menu opens the agent chat with the re
     })
     .toBeGreaterThan(0);
   const link = `[outline.pdf · p.3](${PDF}#page=3&viewrect=60,70,170,80)`;
-  if (inCursor) {
-    // Cursor draws its context menu natively, out of the tests' reach.
-    await copyLinkUntilChatHas(page, at(100, TEXT_MIDLINE), link);
-  } else {
-    await contextMenu(page, at(100, TEXT_MIDLINE), "Copy Link for Agent");
-    await expect
-      .poll(() => agentChatInput(page), { timeout: 15_000 })
-      .toContain(withoutSpaces(link));
-  }
+  await contextMenu(page, at(100, TEXT_MIDLINE), "Copy Link for Agent");
+  await expect
+    .poll(() => agentChatInput(page), { timeout: 15_000 })
+    .toContain(withoutSpaces(link));
   // The snapshot: attached in VS Code's chat, a file pill in Cursor's.
   await expect
     .poll(() => agentChatInput(page), { timeout: 15_000 })

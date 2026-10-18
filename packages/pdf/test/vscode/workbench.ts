@@ -13,6 +13,7 @@ import {
 import { readState } from "./state";
 import { command } from "../../../../test/vscode/palette";
 import { pageAtTop, pageFit, type Point } from "./pdf-geometry";
+import { chooseNativeItem, labels, nativeContextMenu } from "./native-menu";
 export {
   pageAtTop,
   pointAtTop,
@@ -164,18 +165,53 @@ export function withoutSpaces(text: string): string {
   return text.replace(/\s+/gu, "");
 }
 
-/** Right-click at a point and choose an item of VS Code's context menu. */
+/**
+ * Right-click at a point and choose an item of VS Code's context menu, or of
+ * the native menu Cursor draws instead.
+ */
 export async function contextMenu(
   page: Page,
   at: Point,
   label: string,
 ): Promise<void> {
-  await page.mouse.click(...at.screen, { button: "right" });
+  const rightClick = () => page.mouse.click(...at.screen, { button: "right" });
+  if (inCursor) {
+    const items = labels(await nativeContextMenu(page, rightClick));
+    if (!items.includes(label)) {
+      throw new Error(`No "${label}" in the context menu: ${items.join(", ")}`);
+    }
+    await chooseNativeItem(page, label);
+    return;
+  }
+  await rightClick();
   const item = page
     .locator(".monaco-menu")
     .getByRole("menuitem", { name: label });
   await item.hover();
   await item.click();
+}
+
+/** Right-click at a point and read the items of the menu, then close it. */
+export async function contextMenuLabels(
+  page: Page,
+  at: Point,
+): Promise<string[]> {
+  const rightClick = () => page.mouse.click(...at.screen, { button: "right" });
+  if (inCursor) {
+    return labels(await nativeContextMenu(page, rightClick));
+  }
+  await rightClick();
+  const items = page.locator(".monaco-menu").getByRole("menuitem");
+  await expect(items.first()).toBeVisible();
+  const names = await items.evaluateAll((elements) =>
+    elements.map(
+      (element) =>
+        element.querySelector(".action-label")?.textContent?.trim() ?? "",
+    ),
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".monaco-menu")).toHaveCount(0);
+  return names;
 }
 
 /**
