@@ -133,7 +133,10 @@ class InlineDecorations implements InlineContext {
     decorateBlockId(node, this);
     decorateHighlightColour(node, this);
     if (/^(ATX|Setext)Heading[1-6]$/.test(name)) {
-      this.line(from, `md-heading md-h${name.at(-1)}`);
+      // Line 1 gets no space above it (headings.ts marks its number too).
+      const isFirstLine = this.state.doc.lineAt(from).number === 1;
+      const position = isFirstLine ? " is-first-line" : "";
+      this.line(from, `md-heading md-h${name.at(-1)}${position}`);
     }
     this.decorateBlockLines(node, visible);
     decorateCodeLines(node, this);

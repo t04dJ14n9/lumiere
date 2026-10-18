@@ -13,15 +13,25 @@ import { GutterMarker, gutterLineClass } from "@codemirror/view";
  */
 class HeadingLine extends GutterMarker {
   override elementClass: string;
-  constructor(readonly level: number) {
+  constructor(
+    readonly level: number,
+    readonly isFirstLine: boolean,
+  ) {
     super();
-    this.elementClass = `md-h${level}-gutter`;
+    // Line 1 has no padding above its heading (livePreview/inline.ts).
+    this.elementClass = `md-h${level}-gutter${isFirstLine ? " is-first-line" : ""}`;
   }
   override eq(other: GutterMarker): boolean {
-    return other instanceof HeadingLine && other.level === this.level;
+    return (
+      other instanceof HeadingLine &&
+      other.level === this.level &&
+      other.isFirstLine === this.isFirstLine
+    );
   }
 }
-const markers = [1, 2, 3, 4, 5, 6].map((level) => new HeadingLine(level));
+const levels = [1, 2, 3, 4, 5, 6];
+const markers = levels.map((level) => new HeadingLine(level, false));
+const firstLineMarkers = levels.map((level) => new HeadingLine(level, true));
 
 class CodeLine extends GutterMarker {
   override elementClass = "md-code-gutter";
@@ -53,8 +63,11 @@ export function headingLines(state: EditorState): RangeSet<GutterMarker> {
     enter(node) {
       const level = /^(?:ATXHeading|SetextHeading)(\d)$/.exec(node.name)?.[1];
       if (level) {
-        const marker = markers[Number(level) - 1]!;
-        ranges.push(marker.range(state.doc.lineAt(node.from).from));
+        const from = state.doc.lineAt(node.from).from;
+        const marker = (from === 0 ? firstLineMarkers : markers)[
+          Number(level) - 1
+        ]!;
+        ranges.push(marker.range(from));
         return false;
       }
       if (node.name === "ListItem") {

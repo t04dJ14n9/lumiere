@@ -42,6 +42,10 @@
   padding-top: var(--text-size);
   padding-bottom: 0;
 }
+/* Except on line 1, which starts right at the top (--file-margin-top). */
+#app .cm-line.md-heading.is-first-line {
+  padding-top: 0;
+}
 .md-h1,
 .markdown-rendered h1 {
   font-size: var(--h1-size);

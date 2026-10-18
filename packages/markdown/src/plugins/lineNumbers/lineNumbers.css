@@ -28,6 +28,10 @@
   padding-top: var(--text-size);
   line-height: calc(var(--h6-line-height) * var(--h6-scale) * var(--text-size));
 }
+/* A heading on line 1 has no padding above it (markdown.css); nor its number. */
+#app .mw-editor:not(.is-source-mode) .cm-gutterElement.is-first-line {
+  padding-top: 0;
+}
 /* List item lines are padded a little (markdown.css); so are their numbers. */
 #app .mw-editor:not(.is-source-mode) .cm-gutterElement.md-list-gutter {
   padding-top: calc(0.075 * var(--text-size));

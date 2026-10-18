@@ -14,7 +14,7 @@
   line-height: 1.5;
 }
 .property-pending-sheet {
-  padding: 32px var(--file-margins) 0;
+  padding: var(--file-margin-top) var(--file-margins) 0;
 }
 .metadata-property-icon {
   display: flex;

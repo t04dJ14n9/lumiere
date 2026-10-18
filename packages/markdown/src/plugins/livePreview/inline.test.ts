@@ -27,7 +27,8 @@ test("inline decorations retain basic marks, rendered links and deduplicated hea
     }
   });
   assert.equal(
-    classes.filter((value) => value === "md-heading md-h1").length,
+    classes.filter((value) => value === "md-heading md-h1 is-first-line")
+      .length,
     1,
   );
   assert.ok(classes.includes("md-strong"));
@@ -115,7 +116,36 @@ test("a setext heading keeps its underline visible and faint off the caret", () 
     ),
   );
   assert.ok(!found.some((d) => d.from === underline && d.cls === undefined));
-  assert.ok(found.some((d) => d.cls === "md-heading md-h2" && d.from === 0));
+  assert.ok(
+    found.some(
+      (d) => d.cls === "md-heading md-h2 is-first-line" && d.from === 0,
+    ),
+  );
+});
+
+test("only a heading on line 1 is marked as the first line, so it gets no space above", () => {
+  const doc = "# Title\n\n## Section\n\n> # Quoted";
+  const state = EditorState.create({
+    doc,
+    selection: { anchor: doc.length },
+    extensions: [documentTree],
+  });
+  const headings: { line: number; cls: string }[] = [];
+  inlineDecorations(state, [{ from: 0, to: doc.length }]).between(
+    0,
+    doc.length,
+    (from, _to, value) => {
+      const cls: unknown = value.spec.class;
+      if (typeof cls === "string" && cls.startsWith("md-heading")) {
+        headings.push({ line: state.doc.lineAt(from).number, cls });
+      }
+    },
+  );
+  assert.deepEqual(headings, [
+    { line: 1, cls: "md-heading md-h1 is-first-line" },
+    { line: 3, cls: "md-heading md-h2" },
+    { line: 5, cls: "md-heading md-h1" },
+  ]);
 });
 
 test("each quote line records its nesting depth, so nested quotes draw a bar per level", () => {

@@ -54,6 +54,11 @@
   --code-size: calc(var(--code-scale) * 1em);
   --file-line-width: 700px;
   --file-margins: 32px;
+  /*
+   * Line 1 starts right under the breadcrumbs, as in the built-in text
+   * editor, by the owner's choice; Obsidian leaves 32px above it.
+   */
+  --file-margin-top: 0px;
 }
 * {
   box-sizing: border-box;
@@ -100,7 +105,7 @@ button {
   font-variation-settings: var(--text-variations, normal);
 }
 #app .cm-content {
-  padding: 32px var(--file-margins) 40vh;
+  padding: var(--file-margin-top) var(--file-margins) 40vh;
   caret-color: var(--vscode-editorCursor-foreground, currentColor);
 }
 #app .cm-line {
