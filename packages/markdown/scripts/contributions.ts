@@ -1,7 +1,7 @@
 import { readdirSync, existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
-import type { Manifest } from "../src/shared/manifest";
+import { WHEN_NODE_HOST, type Manifest } from "../src/shared/manifest";
 import { MARKDOWN_EDITOR, whenActive } from "../src/shared/editor-provider";
 import { contributionId } from "../src/shared/setting-schema";
 const pluginsDirectory = fileURLToPath(
@@ -195,6 +195,17 @@ function contributionWhen(
 function whenEnabled(
   manifest: Manifest,
   scope: "editor" | "workbench" = "editor",
+): string {
+  const enabled = whenSettingEnabled(manifest, scope);
+  // Hidden where the host cannot run the feature (no Git in a browser).
+  return manifest.needs?.length
+    ? [WHEN_NODE_HOST, enabled].filter(Boolean).join(" && ")
+    : enabled;
+}
+
+function whenSettingEnabled(
+  manifest: Manifest,
+  scope: "editor" | "workbench",
 ): string {
   if (scope === "editor") {
     return `${whenActive(MARKDOWN_EDITOR)} && ${contributionId(`plugin.${manifest.id}`)}`;

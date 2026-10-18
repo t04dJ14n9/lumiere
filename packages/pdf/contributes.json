@@ -351,7 +351,7 @@
       },
       {
         "command": "pdfWorkshop.copyLinkForAgent",
-        "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
+        "when": "(!isWeb || remoteName) && activeCustomEditorId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
         "group": "navigation@1"
       },
       {
@@ -528,7 +528,7 @@
       },
       {
         "command": "pdfWorkshop.copyLinkForAgent",
-        "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+        "when": "(!isWeb || remoteName) && activeCustomEditorId == 'pdfWorkshop.viewer'"
       },
       {
         "command": "pdfWorkshop.goToOutlineItem",
@@ -654,6 +654,10 @@
       },
       {
         "command": "pdfWorkshop.ideContext.send"
+      },
+      {
+        "command": "pdfWorkshop.copyMcpSetup",
+        "when": "(!isWeb || remoteName)"
       }
     ],
     "webview/context": [
@@ -664,7 +668,7 @@
       },
       {
         "command": "pdfWorkshop.copyLinkForAgent",
-        "when": "webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
+        "when": "(!isWeb || remoteName) && webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
         "group": "0_agent@1"
       },
       {

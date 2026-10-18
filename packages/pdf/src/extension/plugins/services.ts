@@ -1,9 +1,26 @@
 import type * as vscode from "vscode";
-import type { AgentHandoff } from "./agentBridge/handoff";
+import type { PdfPanel } from "./pdf/panel";
 import type { PdfPanels } from "./pdf/panels";
-import type { RegionSnapshots } from "./pdfRegions/region-snapshots";
+import type { SelectionSnapshot } from "./pdf/selection";
 import type { PdfSettings } from "../settings";
 import type { NoteSelections } from "./agentBridge/note-selections";
+
+/**
+ * Plugin `pdfRegions` (desktop): saves a region selection's PNG snapshot so
+ * an agent can open it; see RegionSnapshots.
+ */
+export interface RegionSnapshotService {
+  save(
+    panel: PdfPanel,
+    snapshot: SelectionSnapshot | undefined,
+    options?: { notify?: boolean },
+  ): Promise<vscode.Uri | undefined>;
+}
+
+/** Plugin `agentBridge` (desktop): Copy Link for Agent; see AgentHandoff. */
+export interface PdfHandoffService {
+  copyLinkForAgent(panel: PdfPanel): Promise<boolean>;
+}
 
 /**
  * The services PDF plugins share. The extension's composition root provides
@@ -19,9 +36,9 @@ declare module "@workshop/core" {
     /** Plugin `pdf`: the extension's contributed settings, and writes to them. */
     pdfSettings: PdfSettings;
     /** Plugin `pdfRegions`: PNG snapshots of selected regions. */
-    regionSnapshots: RegionSnapshots;
+    regionSnapshots: RegionSnapshotService;
     /** Plugin `agentBridge`: the text and chat routing of Copy Link for Agent. */
-    pdfHandoff: AgentHandoff;
+    pdfHandoff: PdfHandoffService;
     /** The composition root: the selection in the Markdown editor, for agents. */
     noteSelections: NoteSelections;
   }

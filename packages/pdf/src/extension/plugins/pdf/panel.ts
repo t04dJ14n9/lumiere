@@ -46,6 +46,11 @@ export interface PanelOptions {
   digests: Digests;
   /** The toolbar layout for the first paint. */
   toolbar: ToolbarSettings;
+  /**
+   * Whether a plugin handles Copy Link for Agent (the desktop's agent
+   * bridge); without one the viewer offers no selection menu.
+   */
+  agentLinks: boolean;
   settings: ViewSettings;
   position: ReadingPosition | undefined;
   savePosition(position: ReadingPosition): void;
@@ -127,7 +132,12 @@ export class PdfPanel implements vscode.Disposable {
       this.source,
       webview.onDidReceiveMessage((message) => this.receive(message)),
     );
-    webview.html = viewerHtml(webview, options.extensionUri, options.toolbar);
+    webview.html = viewerHtml(
+      webview,
+      options.extensionUri,
+      options.toolbar,
+      options.agentLinks,
+    );
   }
 
   get selection(): PdfSelection | undefined {

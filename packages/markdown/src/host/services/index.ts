@@ -8,6 +8,8 @@ import type { Configuration } from "../../shared/configuration";
 import type { GitAccess } from "../../shared/git";
 import type { HostServices, PanelShell } from "../../shared/host";
 import { createConfiguration } from "../configuration-access";
+import { features, workbenchFeatures } from "../../plugins/catalog";
+import { unmetFeatures } from "../../shared/host-capabilities";
 import { createDiffViews } from "../diff-views";
 import { createNavigation } from "../navigation";
 import type { RunningExtension } from "../running-extension";
@@ -33,8 +35,8 @@ export interface HostServiceOptions {
   extension: RunningExtension;
   storage: vscode.Memento;
   platform: HostPlatform;
-  /** Git, on the desktop (`@workshop/markdown/desktop`). */
-  git: GitAccess;
+  /** Git, where the host has it (`@workshop/markdown/desktop`). */
+  git?: GitAccess | undefined;
   configuration?: Configuration;
 }
 
@@ -46,6 +48,11 @@ export function createHostServices({
   configuration = createConfiguration(),
 }: HostServiceOptions): HostServices {
   const { extensionUri } = extension;
+  // Features that need what this host lacks read as off everywhere.
+  const off = unmetFeatures(
+    [...features, ...workbenchFeatures],
+    new Set(git ? (["git"] as const) : []),
+  );
   const documents = new NativeDocuments();
   const panels = new Map<string, PanelShell>();
   const navigation = createNavigation(
@@ -60,7 +67,7 @@ export function createHostServices({
     dialogs: createDialogs(),
     views: createWorkbenchViews(extensionUri),
     activeEditor: createActiveEditor(),
-    settings: createHostSettings(extension, configuration),
+    settings: createHostSettings(extension, configuration, off),
     workspace: createHostWorkspace(platform.realPaths),
     storage: createWorkspaceStorage(storage),
     extensions: createExtensions(platform.workers),
@@ -72,7 +79,7 @@ export function createHostServices({
       panels,
     }),
     agentHost: createAgentHost(platform.agentFiles),
-    git,
+    ...(git && { git }),
     diffViews: createDiffViews(extensionUri),
   };
 }

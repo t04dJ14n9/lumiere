@@ -24,8 +24,8 @@ import { markdownNoteSelections } from "./note-selections";
 /** Where the extension runs, and what it can do there. */
 export interface Runtime {
   platform: HostPlatform;
-  /** Git access (`@workshop/markdown/desktop` on the desktop). */
-  git: GitAccess;
+  /** Git access, where the host has Git (`@workshop/markdown/desktop`). */
+  git?: GitAccess;
   /** PDF Workshop's plugins for this platform (`@workshop/pdf/desktop`). */
   pdfPlugins: readonly Plugin[];
 }

@@ -4,9 +4,12 @@ import type { DiffViews, GitAccess } from "../../src/shared/git";
 import type { HostDocument, HostServices } from "../../src/shared/host";
 import type { WorkspaceFiles } from "../../src/shared/workspace-files";
 
+/** The host services of a desktop, where Git exists. */
+export type FakeHost = HostServices & { git: GitAccess };
+
 /** Members to replace, per host service. */
 export type HostOverrides = {
-  [K in keyof HostServices]?: Partial<HostServices[K]>;
+  [K in keyof FakeHost]?: Partial<FakeHost[K]>;
 };
 
 const none = () => () => {};
@@ -16,7 +19,7 @@ const none = () => () => {};
  * open), each replaced member by member from `overrides`. Tests may also
  * assign members afterwards: each service is its own mutable object.
  */
-export function fakeHost(overrides: HostOverrides = {}): HostServices {
+export function fakeHost(overrides: HostOverrides = {}): FakeHost {
   const defaults = defaultHost();
   const host = {} as Record<string, unknown>;
   for (const [name, service] of Object.entries(defaults)) {
@@ -25,7 +28,7 @@ export function fakeHost(overrides: HostOverrides = {}): HostServices {
       ...(overrides[name as keyof HostServices] ?? {}),
     };
   }
-  return host as unknown as HostServices;
+  return host as unknown as FakeHost;
 }
 
 /** Merge several override sets; later members win. */
@@ -39,7 +42,7 @@ export function mergeOverrides(...sets: HostOverrides[]): HostOverrides {
   return merged as HostOverrides;
 }
 
-function defaultHost(): HostServices {
+function defaultHost(): FakeHost {
   return {
     hostDocuments: {
       fingerprint: (text) => text,
@@ -210,10 +213,10 @@ export function fakeDocument(
 }
 
 /** `host` with some members replaced, per service; `host` itself is unchanged. */
-export function withHost(
-  host: HostServices,
+export function withHost<Host extends HostServices>(
+  host: Host,
   overrides: HostOverrides,
-): HostServices {
+): Host {
   const next = { ...host } as Record<string, unknown>;
   for (const [name, members] of Object.entries(overrides)) {
     next[name] = {
@@ -221,5 +224,5 @@ export function withHost(
       ...members,
     };
   }
-  return next as unknown as HostServices;
+  return next as unknown as Host;
 }

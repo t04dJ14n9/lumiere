@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { PdfPanel } from "../pdf/panel";
 import type { SelectionSnapshot } from "../pdf/selection";
 import { RegionTooLargeError, type RegionImages } from "./region-images";
+import type { RegionSnapshotService } from "../services";
 
 /**
  * The `regions` service: saves a region selection's PNG snapshot so an agent
@@ -9,7 +10,7 @@ import { RegionTooLargeError, type RegionImages } from "./region-images";
  * cache evicts the least recently used) and rewrites it if it was evicted
  * since.
  */
-export class RegionSnapshots {
+export class RegionSnapshots implements RegionSnapshotService {
   constructor(private readonly images: RegionImages) {}
 
   /**

@@ -6,9 +6,11 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./node": "./src/node/index.ts"
+    "./node": "./src/node/index.ts",
+    "./web": "./src/web/index.ts"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
     "@workshop/agents": "workspace:*",
     "@workshop/core": "workspace:*"
   }

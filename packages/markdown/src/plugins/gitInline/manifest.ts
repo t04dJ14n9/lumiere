@@ -8,5 +8,6 @@ export default defineManifest({
   // Opt in: Markdown Workshop: Toggle Inline Git Changes, or this switch.
   defaultEnabled: false,
   surfaces: ["webview"],
+  needs: ["git"],
   capabilities: ["rendering", "editing"],
 } as const);

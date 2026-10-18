@@ -103,6 +103,8 @@ export default tseslint.config(
       "**/artifacts/**",
       // The VS Code build that `pnpm test:vscode` downloads when none is installed.
       ".vscode-test/**",
+      // The VS Code for the Web build that `pnpm test:web` downloads.
+      ".vscode-test-web/**",
       // Throwaway measurement scripts for docs/vim-caret.md (run by hand, not shipped).
       "packages/markdown/docs/vim-caret-measurements/**",
       // PDFs generated for the PDF tests.
@@ -157,16 +159,19 @@ export default tseslint.config(
       parserOptions: {
         project: [
           "./tsconfig.json",
+          "./tsconfig.web.json",
           "./packages/core/tsconfig.json",
           "./packages/agents/tsconfig.json",
           "./packages/platform/tsconfig.json",
           "./packages/platform/src/node/tsconfig.json",
+          "./packages/platform/src/web/tsconfig.json",
           "./packages/markdown/tsconfig.json",
           "./packages/markdown/src/host/tsconfig.json",
           "./packages/markdown/src/webview/tsconfig.json",
           "./packages/markdown/src/plugins/tsconfig.host.json",
           "./packages/markdown/src/plugins/tsconfig.webview.json",
           "./packages/markdown/src/workers/tsconfig.json",
+          "./packages/markdown/src/workers/tsconfig.web.json",
           "./packages/pdf/tsconfig.json",
           "./packages/pdf/src/extension/tsconfig.json",
           "./packages/pdf/src/webview/tsconfig.json",

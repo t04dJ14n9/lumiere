@@ -1,7 +1,7 @@
 import { prismPlugin } from "./prism.mjs";
 // Builds Markdown Workshop's assets into this package's dist/: the editor,
-// diff and graph webviews, the vault and search workers, and the public API
-// declarations. The extension host is bundled by the repository root
+// diff and graph webviews, the vault and search workers (for Node and for
+// the browser), and the public API declarations. The extension host is bundled by the repository root
 // (scripts/build.mjs there), which copies this dist/ into dist/markdown/.
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -46,6 +46,19 @@ const builds = [
     platform: "node",
     format: "cjs",
     target: "node20",
+  },
+  // The browser's: VS Code's web extension host starts nested workers with
+  // importScripts, so these are classic scripts, not modules.
+  {
+    ...shared,
+    entryPoints: {
+      vault: "src/workers/vault.web.ts",
+      search: "src/workers/search.web.ts",
+    },
+    outdir: "dist/workers",
+    platform: "browser",
+    format: "iife",
+    target: "es2022",
   },
 ];
 const inputs = new Set();

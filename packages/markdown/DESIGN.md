@@ -916,7 +916,8 @@ interface VaultIndex {
   files), updated on create, delete and rename.
 - Metadata: `{ path → { mtime, size, hash } }` and `{ hash → NoteMetadata }`.
   An unchanged hash is not parsed again.
-- Parsing runs in `dist/workers/vault.cjs` (`worker_threads`), one file in
+- Parsing runs in the vault worker (`dist/workers/vault.cjs` in a Node
+  worker thread, `vault.js` in a web worker in the browser), one file in
   flight, receiving the text as a transferable buffer. The host is never
   blocked for more than about 16 ms by indexing.
 - Persistence: JSON in `context.storageUri` (per workspace), written
@@ -1520,6 +1521,7 @@ exceptions from changing unnoticed.
 | `dist/webview/editor.js` (+ chunks, `editor.css`) | `src/webview/main.ts` | ESM, splitting, chrome120. MathJax, Mermaid and Prism grammars stay lazy chunks |
 | `dist/workers/vault.cjs` | `src/workers/vault.ts` | CJS, node20 |
 | `dist/workers/search.cjs` | `src/workers/search.ts` | CJS, node20 |
+| `dist/workers/vault.js`, `search.js` | `src/workers/*.web.ts` | IIFE (classic scripts for VS Code's nested-worker shim), es2022 |
 | `dist/api/**/*.d.ts` | `src/host/api/types.ts` | `tsc` declarations |
 
 `tsconfig` projects enforce the layers:

@@ -1,4 +1,5 @@
 import type { PdfDocumentObject } from "@embedpdf/models";
+import { hasAgentLinks } from "./agent-links";
 import { PagePointerProvider } from "@embedpdf/plugin-interaction-manager/react";
 import { SearchLayer } from "@embedpdf/plugin-search/react";
 import {
@@ -119,7 +120,13 @@ function PageMarks({
       {region?.page === page && (
         <>
           <Box className="region-selection" rect={region.rect} scale={scale} />
-          <RegionMenu rect={region.rect} scale={scale} selection={selection} />
+          {hasAgentLinks() && (
+            <RegionMenu
+              rect={region.rect}
+              scale={scale}
+              selection={selection}
+            />
+          )}
         </>
       )}
     </>
@@ -148,9 +155,11 @@ function TextSelection({
         borderStyle: "solid",
       }}
       marqueeClassName="region-marquee"
-      selectionMenu={(props) => (
-        <TextSelectionMenu {...props} selection={selection} />
-      )}
+      {...(hasAgentLinks() && {
+        selectionMenu: (props: SelectionSelectionMenuProps) => (
+          <TextSelectionMenu {...props} selection={selection} />
+        ),
+      })}
     />
   );
 }

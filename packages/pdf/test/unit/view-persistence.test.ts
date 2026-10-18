@@ -47,6 +47,7 @@ function open(preferences: ViewPreferences) {
       extensionUri: vscode.Uri.file("/extension") as never,
       digests: nodeDigests,
       toolbar: { mode: "chrome", dock: "bottom" },
+      agentLinks: true,
       settings: preferences.settings(uri),
       position: preferences.position(uri),
       savePosition: (position) => preferences.save(uri, position),

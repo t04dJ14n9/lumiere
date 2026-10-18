@@ -15,6 +15,7 @@
   },
   "packageManager": "pnpm@10.28.2",
   "main": "./dist/extension.js",
+  "browser": "./dist/web/extension.js",
   "types": "./dist/markdown/api/types.d.ts",
   "categories": [
     "Other"
@@ -1052,17 +1053,17 @@
       {
         "command": "markdownWorkshop.gitGutter.nextChange",
         "key": "alt+f5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
+        "when": "(!isWeb || remoteName) && activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.gitGutter.previousChange",
         "key": "shift+alt+f5",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
+        "when": "(!isWeb || remoteName) && activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.gitGutter.showChange",
         "key": "alt+f3",
-        "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
+        "when": "(!isWeb || remoteName) && activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter && markdownWorkshop.editorFocus"
       },
       {
         "command": "markdownWorkshop.outline.goToHeading",
@@ -1562,19 +1563,19 @@
         },
         {
           "command": "markdownWorkshop.gitDiffEditor.open",
-          "when": "config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.gitDiffEditor.enabled"
+          "when": "(!isWeb || remoteName) && config.markdownWorkshop.preset != 'minimal' && config.markdownWorkshop.plugins.gitDiffEditor.enabled"
         },
         {
           "command": "markdownWorkshop.gitGutter.nextChange",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
+          "when": "(!isWeb || remoteName) && activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
         },
         {
           "command": "markdownWorkshop.gitGutter.previousChange",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
+          "when": "(!isWeb || remoteName) && activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
         },
         {
           "command": "markdownWorkshop.gitGutter.showChange",
-          "when": "activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
+          "when": "(!isWeb || remoteName) && activeCustomEditorId == 'markdownWorkshop.editor' && markdownWorkshop.plugin.gitGutter"
         },
         {
           "command": "markdownWorkshop.graph.open",
@@ -1729,7 +1730,8 @@
           "command": "markdownWorkshop.toggleInlineTitle"
         },
         {
-          "command": "markdownWorkshop.toggleInlineGitChanges"
+          "command": "markdownWorkshop.toggleInlineGitChanges",
+          "when": "(!isWeb || remoteName)"
         },
         {
           "command": "markdownWorkshop.toggleVim"
@@ -1859,7 +1861,7 @@
         },
         {
           "command": "pdfWorkshop.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'pdfWorkshop.viewer'"
+          "when": "(!isWeb || remoteName) && activeCustomEditorId == 'pdfWorkshop.viewer'"
         },
         {
           "command": "pdfWorkshop.goToOutlineItem",
@@ -1985,6 +1987,10 @@
         },
         {
           "command": "pdfWorkshop.ideContext.send"
+        },
+        {
+          "command": "pdfWorkshop.copyMcpSetup",
+          "when": "(!isWeb || remoteName)"
         }
       ],
       "webview/context": [
@@ -2035,7 +2041,7 @@
         },
         {
           "command": "pdfWorkshop.copyLinkForAgent",
-          "when": "webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
+          "when": "(!isWeb || remoteName) && webviewId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
           "group": "0_agent@1"
         },
         {
@@ -2194,7 +2200,7 @@
         },
         {
           "command": "pdfWorkshop.copyLinkForAgent",
-          "when": "activeCustomEditorId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
+          "when": "(!isWeb || remoteName) && activeCustomEditorId == 'pdfWorkshop.viewer' && pdfWorkshop.hasSelection",
           "group": "navigation@1"
         },
         {
@@ -3170,16 +3176,17 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
-    "typecheck": "tsc -p tsconfig.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && tsc -p packages/platform && tsc -p packages/platform/src/node && tsc -p packages/platform/test && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.web.json && tsc -p test && tsc -p packages/core && tsc -p packages/agents && tsc -p packages/agents/test && tsc -p packages/platform && tsc -p packages/platform/src/node && tsc -p packages/platform/src/web && tsc -p packages/platform/test && tsc -p packages/platform/test/tsconfig.web.json && pnpm --filter @workshop/markdown typecheck && pnpm --filter @workshop/pdf typecheck",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "node scripts/test.mjs",
     "test:browser": "pnpm --filter @workshop/markdown test:browser && pnpm --filter @workshop/pdf test:browser",
     "test:vscode": "pnpm build && playwright test -c test/vscode/playwright.config.ts && playwright test -c packages/pdf/test/vscode/playwright.config.ts",
+    "test:web": "pnpm build && playwright test -c test/web/playwright.config.ts",
     "contributions": "tsx scripts/contributions.ts",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm contributions --check",
-    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode",
+    "check:full": "pnpm check && pnpm test:browser && pnpm test:vscode && pnpm test:web",
     "notices": "node scripts/third-party-notices.mjs",
     "package": "node scripts/build.mjs --production && node scripts/third-party-notices.mjs --check && vsce package --no-dependencies --no-rewrite-relative-links"
   },
@@ -3196,6 +3203,7 @@
     "@types/node": "^24.19.2",
     "@types/vscode": "1.125.0",
     "@vscode/test-electron": "^3.1.0",
+    "@vscode/test-web": "0.0.81",
     "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",
     "eslint": "^10.12.0",

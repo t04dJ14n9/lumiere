@@ -27,6 +27,7 @@ export class PdfEditorProvider implements vscode.CustomReadonlyEditorProvider {
       extensionUri: this.extensionUri,
       digests: this.digests,
       toolbar: this.panels.viewerToolbar(),
+      agentLinks: this.panels.handles("copyLinkForAgent"),
       settings: this.preferences.settings(uri),
       position: this.preferences.position(uri),
       savePosition: (position) => this.preferences.save(uri, position),

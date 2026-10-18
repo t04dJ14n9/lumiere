@@ -8,15 +8,26 @@ import type {
 import { readSettings, type SettingsReader } from "../settings";
 import { createSettingsAccess } from "../settings-access";
 import type { RunningExtension } from "../running-extension";
+import { isOffSwitch, withFeaturesOff } from "../../shared/host-capabilities";
 
+/**
+ * Settings as plugins read them. Features in `off` (their needs are not
+ * met here) read as disabled whatever their setting says, so neither of
+ * their halves starts.
+ */
 export function createHostSettings(
   extension: RunningExtension,
   configuration: Configuration,
+  off: ReadonlySet<string> = new Set(),
 ): HostSettings {
   return {
-    get: (key, fallback, resource) =>
-      configuration.get(key, fallback, resource),
-    forNote: (document) => noteSettings(configuration, document.uri),
+    get<T>(key: string, fallback: T, resource?: string): T {
+      return isOffSwitch(key, off)
+        ? (false as T)
+        : configuration.get(key, fallback, resource);
+    },
+    forNote: (document) =>
+      withFeaturesOff(noteSettings(configuration, document.uri), off),
     onChange: (listener) => configuration.onDidChange(listener),
     effective: configuration,
     access: createSettingsAccess(extension),

@@ -1,4 +1,4 @@
-import { defineManifest } from "../../shared/manifest";
+import { WHEN_NODE_HOST, defineManifest } from "../../shared/manifest";
 export default defineManifest({
   id: "settings",
   title: "Settings commands",
@@ -51,6 +51,7 @@ export default defineManifest({
         id: "toggleInlineGitChanges",
         title: "Toggle Inline Git Changes",
         scope: "workbench",
+        when: WHEN_NODE_HOST,
       },
       { id: "toggleVim", title: "Toggle Vim Mode", scope: "workbench" },
       {

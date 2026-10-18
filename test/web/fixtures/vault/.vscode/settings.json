@@ -1,0 +1,4 @@
+{
+  "workbench.editorAssociations": { "*.md": "markdownWorkshop.editor" },
+  "workbench.startupEditor": "none"
+}

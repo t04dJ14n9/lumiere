@@ -47,6 +47,16 @@ export type Capability =
   /** Serves the public extension API. */
   | "publicApi";
 
+/** What a feature may need from the host beyond VS Code's API. */
+export type HostCapability = "git";
+
+/**
+ * Where the extension host runs Node, so Git is there: the desktop, or a
+ * remote such as Codespaces (where `isWeb` is true too). A browser-only
+ * window (vscode.dev, github.dev) has none.
+ */
+export const WHEN_NODE_HOST = "(!isWeb || remoteName)";
+
 export interface Manifest {
   readonly config?: Schema<unknown>;
   /** Public setting paths for fields shared with the files namespace. */
@@ -63,6 +73,11 @@ export interface Manifest {
   readonly defaultEnabled: boolean;
   /** Which halves the plugin runs in; the public API reports these. */
   readonly surfaces: readonly ("host" | "webview")[];
+  /**
+   * What the feature cannot work without. Where the host lacks one, the
+   * feature is off whatever its setting, and its commands are hidden.
+   */
+  readonly needs?: readonly HostCapability[];
   readonly capabilities: readonly Capability[];
   readonly contributes?: {
     menus?: readonly {

@@ -35,7 +35,9 @@ name are resolved again.
 - `manifest.ts`: root markers and excluded files settings.
 
 The VS Code adapter is `src/host/vault-system.ts`; the worker is
-`src/workers/vault.ts`, with its client in `src/host/vault-parser.ts`.
+`src/workers/vault-worker.ts` (started by `vault.ts` on the desktop and
+`vault.web.ts` in the browser), with its client in
+`src/host/vault-parser.ts`.
 
 ## Services, events and settings
 

@@ -12,6 +12,7 @@ export function viewerHtml(
   webview: vscode.Webview,
   extensionUri: vscode.Uri,
   toolbar: ToolbarSettings,
+  agentLinks: boolean,
 ): string {
   const asset = (name: string) =>
     webview.asWebviewUri(
@@ -38,7 +39,7 @@ export function viewerHtml(
   <title>PDF</title>
 </head>
 <body>
-  <div id="root" data-pdfium-wasm="${asset("pdfium.wasm").toString()}" data-toolbar="${toolbar.mode}" data-dock="${toolbar.dock}"></div>
+  <div id="root" data-pdfium-wasm="${asset("pdfium.wasm").toString()}" data-toolbar="${toolbar.mode}" data-dock="${toolbar.dock}" data-agent-links="${agentLinks}"></div>
   <script nonce="${nonce}" src="${asset("viewer.js").toString()}"></script>
 </body>
 </html>`;

@@ -11,3 +11,4 @@ playwright-report/
 **/test/fixtures/generated/
 packages/pdf/src/**/*.d.ts
 !packages/pdf/src/webview/assets.d.ts
+.vscode-test-web/

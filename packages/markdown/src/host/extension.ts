@@ -23,7 +23,7 @@ export type { GitAccess } from "../shared/git";
 export async function startMarkdown(
   root: RootContext,
   context: ExtensionContext,
-  { platform, git }: { platform: HostPlatform; git: GitAccess },
+  { platform, git }: { platform: HostPlatform; git?: GitAccess | undefined },
 ): Promise<MarkdownWorkshopApi> {
   const configuration = createConfiguration();
   const host = createHostServices({

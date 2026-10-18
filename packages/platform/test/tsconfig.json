@@ -4,5 +4,6 @@
     "lib": ["ES2022"],
     "types": ["node"]
   },
-  "include": ["**/*.ts", "../src/**/*.ts"]
+  "include": ["**/*.ts", "../src/*.ts", "../src/node/**/*.ts"],
+  "exclude": ["web.test.ts"]
 }

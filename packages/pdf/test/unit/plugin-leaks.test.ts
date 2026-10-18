@@ -4,7 +4,7 @@ import { test } from "node:test";
 import "./support/install-fake-vscode";
 import * as vscode from "./support/fake-vscode";
 import { createRoot, type Plugin, type ServiceName } from "@workshop/core";
-import { providePlatform } from "@workshop/platform";
+import { providePlatform, type HostPlatform } from "@workshop/platform";
 import {
   nodeAgentFiles,
   nodeDigests,
@@ -54,7 +54,21 @@ const rootServices: readonly ServiceName[] = [
   "os",
 ];
 
-function startRoot(selected: readonly Plugin[]) {
+/** The desktop's platform, and the browser's (no local disk, no agent files). */
+const desktop: HostPlatform = {
+  os: { platform: process.platform },
+  digests: nodeDigests,
+  workers: { start: () => assert.fail("PDF plugins start no workers") },
+  realPaths: nodeRealPaths,
+  agentFiles: nodeAgentFiles,
+};
+const browser: HostPlatform = {
+  os: desktop.os,
+  digests: desktop.digests,
+  workers: desktop.workers,
+};
+
+function startRoot(selected: readonly Plugin[], platform = desktop) {
   const root = createRoot({
     logger: {
       debug() {},
@@ -64,13 +78,7 @@ function startRoot(selected: readonly Plugin[]) {
   });
   root.provide("extensionContext", context as never);
   root.provide("outputChannel", log as never);
-  providePlatform(root, {
-    os: { platform: process.platform },
-    digests: nodeDigests,
-    workers: { start: () => assert.fail("PDF plugins start no workers") },
-    realPaths: nodeRealPaths,
-    agentFiles: nodeAgentFiles,
-  });
+  providePlatform(root, platform);
   const handles = new Map(
     selected.map((plugin) => [plugin.name, root.plugin(plugin)]),
   );
@@ -93,9 +101,12 @@ function withProviders(plugin: Plugin): Plugin[] {
   return [...new Set([...providers.flatMap(withProviders), plugin])];
 }
 
-async function startAndStop(selected: readonly Plugin[]): Promise<string[]> {
+async function startAndStop(
+  selected: readonly Plugin[],
+  platform = desktop,
+): Promise<string[]> {
   errors.length = 0;
-  const { root, handles } = startRoot(selected);
+  const { root, handles } = startRoot(selected, platform);
   await root.settled();
   assert.deepEqual(errors, []);
   for (const [name, handle] of handles) {
@@ -129,6 +140,19 @@ test("catalog: the whole catalog starts and stops without leaving a registration
     "command:pdfWorkshop.copyMcpSetup",
   ]) {
     assert.ok(registered.includes(kind), kind);
+  }
+});
+
+test("the browser's catalog starts and stops without leaving a registration, and hands nothing to agents", async () => {
+  const registered = await startAndStop(pdfPlugins([]), browser);
+  assert.ok(registered.includes("customEditor:pdfWorkshop.viewer"));
+  assert.ok(registered.includes("command:pdfWorkshop.ideContext.copy"));
+  for (const kind of [
+    "command:pdfWorkshop.copyLinkForAgent",
+    "command:vscodeEmbedPdf.bridge.envelope",
+    "command:pdfWorkshop.copyMcpSetup",
+  ]) {
+    assert.ok(!registered.includes(kind), kind);
   }
 });
 

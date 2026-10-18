@@ -8,7 +8,7 @@ import {
 import type { PdfSelection } from "../../../shared/selection";
 import type { PdfPanel } from "../pdf/panel";
 import { displayPath } from "../pdf/source";
-import type { RegionSnapshots } from "../pdfRegions/region-snapshots";
+import type { PdfHandoffService, RegionSnapshotService } from "../services";
 import { openAgentChat } from "./chat";
 import { hashSelection } from "./envelope";
 
@@ -39,8 +39,10 @@ export interface AgentSnapshot {
  * snapshot, taken once; a reload cannot pair a selection with another
  * file's hash (see PdfSelectionState).
  */
-export class AgentHandoff {
-  constructor(private readonly regions: () => RegionSnapshots | undefined) {}
+export class AgentHandoff implements PdfHandoffService {
+  constructor(
+    private readonly regions: () => RegionSnapshotService | undefined,
+  ) {}
 
   /**
    * Copy Link for Agent: copy the selection, then open the agent chat with it

@@ -57,6 +57,11 @@ export class PdfPanels implements vscode.Disposable {
     return [...this.panels];
   }
 
+  /** Whether a plugin handles this viewer message type now. */
+  handles(type: PluginMessage["type"]): boolean {
+    return this.handlers.has(type);
+  }
+
   /** Handle a viewer message type (for as long as the returned disposable lives). */
   handle<T extends PluginMessage["type"]>(
     type: T,

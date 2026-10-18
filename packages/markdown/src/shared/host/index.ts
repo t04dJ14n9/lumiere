@@ -43,12 +43,15 @@ export interface HostServices {
   navigation: Navigation;
   customEditors: CustomEditors;
   agentHost: AgentHost;
-  git: GitAccess;
+  /** Absent where the host has no Git (a browser-only window). */
+  git?: GitAccess;
   diffViews: DiffViews;
 }
 
 declare module "@workshop/core" {
   interface Services extends HostServices {
     rpc: Endpoint;
+    /** Plugins that inject it start only where it exists. */
+    git: GitAccess;
   }
 }

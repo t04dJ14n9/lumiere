@@ -1,5 +1,6 @@
 // Builds the extension into dist/:
-//   dist/extension.js   the extension host (src/extension.ts, both products)
+//   dist/extension.js   the extension host on the desktop (src/extension.ts)
+//   dist/web/           the extension host in the browser (src/extension.web.ts)
 //   dist/markdown/      Markdown Workshop's webviews, workers and API types
 //   dist/pdf/           PDF Workshop's viewer, PDF engine and agent bridge
 // Each product builds its own assets (its scripts/build.mjs); this script
@@ -11,6 +12,7 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import * as esbuild from "esbuild";
 import { lazyBridgeServer } from "../packages/pdf/scripts/lazy-bridge-server.mjs";
+import { browserHost } from "./browser-bundle.mjs";
 
 const production = process.argv.includes("--production");
 const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
@@ -43,6 +45,13 @@ const host = await esbuild.build({
   logLevel: "info",
   plugins: [lazyBridgeServer("./pdf/agent-bridge-server.js")],
 });
+const web = await esbuild.build({
+  ...browserHost(root),
+  outfile: path.join(dist, "web", "extension.js"),
+  sourcemap: !production,
+  minify: production,
+  logLevel: "info",
+});
 for (const name of products) {
   await cp(path.join(root, "packages", name, "dist"), path.join(dist, name), {
     recursive: true,
@@ -68,7 +77,11 @@ await writeFile(
   path.join(root, "artifacts/bundle-inputs.json"),
   JSON.stringify(
     [
-      ...new Set([...Object.keys(host.metafile.inputs), ...productInputs]),
+      ...new Set([
+        ...Object.keys(host.metafile.inputs),
+        ...Object.keys(web.metafile.inputs),
+        ...productInputs,
+      ]),
     ].sort(),
     null,
     1,

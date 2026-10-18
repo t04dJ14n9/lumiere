@@ -310,3 +310,43 @@ Changes from the approved design, and why:
   `dist/markdown/workers/vault.cjs`, so vault parsing ran in the extension
   host.
 
+
+**Phase B (18 October 2026).** The browser build:
+
+- `package.json` has `"browser": "./dist/web/extension.js"`, built from
+  `src/extension.web.ts` by `scripts/build.mjs` (CommonJS, `platform:
+  "browser"`, a guard that fails on any Node built-in). The browser platform
+  is `@workshop/platform/web`: web workers (VS Code's nested-worker shim, so
+  the worker bundles are classic scripts; the start data is the first
+  message; a failed worker reports its error and then exits, as a Node
+  worker thread does), `@noble/hashes` digests, and the OS from the user
+  agent. The Markdown workers have browser entry points
+  (`src/workers/*.web.ts` → `dist/markdown/workers/*.js`).
+- `src/extension.web.ts` and everything it reaches typecheck without Node
+  types (`tsconfig.web.json`, in `pnpm typecheck`); a unit test bundles it
+  and checks that it requires only `vscode` and contains none of the
+  desktop's parts.
+- Git is an optional host service. Features declare `needs: ["git"]`
+  (gitGutter, gitInline, gitBlame, gitDiffEditor); where the host has no
+  Git their settings read as off, so neither half starts, and their commands
+  carry `(!isWeb || remoteName)`, true on the desktop and on remotes such as
+  Codespaces in a browser. PDF's agent-bridge commands carry the same
+  clause. The PDF viewer shows its selection menu (Copy Link for Agent) only
+  where a plugin handles it.
+- `pnpm test:web` (test/web): @vscode/test-web's stable VS Code for the Web,
+  server only, a copy of `test/web/fixtures/vault`, driven by Playwright's
+  Chromium. It opens a note in Live Preview (properties, callout, math,
+  Mermaid), checks the Tags view (vault worker) and a `query` block (search
+  worker), follows a wikilink, opens a PDF at its page, and checks that
+  Git and agent-bridge commands are not offered. Added to `check:full`.
+
+Found on the way:
+
+- Fixed (own commit, with a unit test): a vault at the root of a file
+  system (the demo's `demo:`, test-web's mount, a folder at `/`) has a root
+  URI with no path, which `Uri.joinPath` refuses, so its index failed.
+- Not fixed here: opening a note logs "CodeMirror plugin crashed:
+  Disposed: tables is stopped" in the webview. The tables plugin's Vim
+  table-entry ViewPlugin reads `ctx.vim` after the plugin restarts (an
+  optional service such as `links` arriving later). It is a race in the
+  tables plugin, not in the web build; the browser only makes it likely.

@@ -1,5 +1,5 @@
 import type { Plugin } from "@workshop/core";
-import type { DiffSide } from "../../shared/git";
+import type { DiffSide, GitAccess } from "../../shared/git";
 import type { Vaults } from "../vault/api";
 import type { HostServices } from "../../shared/host";
 import { NoteResources } from "./note-resources";
@@ -19,7 +19,7 @@ export const diffResourcesHost: Plugin = {
 
 export async function sideResources(
   vaults: Vaults,
-  host: Pick<HostServices, "workspace" | "hostDocuments" | "git">,
+  host: Pick<HostServices, "workspace" | "hostDocuments"> & { git: GitAccess },
   side: DiffSide,
 ) {
   const { source, ref } = host.git.sourceOf(side.uri);

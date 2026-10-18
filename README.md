@@ -33,5 +33,6 @@ pnpm build          # dist/: extension.js, markdown/, pdf/
 pnpm check          # format, lint, types, unit tests, contributions
 pnpm test:browser   # each product's Chromium suite
 pnpm test:vscode    # real VS Code; VSCODE_EXECUTABLE=… to test Cursor
+pnpm test:web       # the browser build in VS Code for the Web
 pnpm package        # the .vsix
 ```

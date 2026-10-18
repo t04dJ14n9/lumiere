@@ -9,7 +9,8 @@ workspace. Everything is a plugin:
 | `packages/agents` | What both products hand to agents | its README.md |
 | `packages/markdown` | Markdown Workshop: Obsidian-like Live Preview | its DESIGN.md, IMPLEMENTATION_PLAN.md |
 | `packages/pdf` | PDF Workshop: EmbedPDF viewer with agent links | its README.md, AGENTS.md |
-| `src/extension.ts` | The composition root: one plugin tree for both | |
+| `packages/platform` | What the extension needs from where it runs (desktop or browser) | its README.md, docs/WEB_BUILD.md |
+| `src/activate.ts` | The composition root: one plugin tree for both; `src/extension.ts` (desktop) and `src/extension.web.ts` (browser) call it | |
 
 If the task is a user / third-party custom plugin, read
 [packages/markdown/AGENT.md](packages/markdown/AGENT.md) and implement it as a
@@ -22,6 +23,12 @@ If the task is a user / third-party custom plugin, read
   `src/markdown` in each product.
   The tsconfig projects and the `architecture/boundaries` lint rule enforce
   this.
+- Plugins never test which platform they run on (`isWeb`, `process`,
+  `typeof Worker`). What differs between the desktop and the browser is a
+  platform service (`@workshop/platform`) that the two entry points supply;
+  a capability the browser lacks is an absent service. `src/extension.web.ts`
+  and everything it reaches typecheck without Node types
+  (`tsconfig.web.json`), and the browser bundle refuses Node built-ins.
 - Every capability is a plugin (`packages/markdown/src/plugins/<id>/`,
   `packages/pdf/src/extension/plugins/<id>/`). A plugin declares what it reads
   (`inject`) and what it publishes (`provides`); the core refuses anything
@@ -116,9 +123,10 @@ Run before committing, in this order:
 pnpm check
 pnpm test:browser  # each product's Chromium suite
 pnpm test:vscode   # both products in a real, isolated VS Code window
+pnpm test:web      # the browser build in VS Code for the Web (test/web)
 ```
 
-`pnpm check:full` runs all three in that order. The real-VS Code specs
+`pnpm check:full` runs all four in that order. The real-VS Code specs
 (`test/vscode`, `packages/pdf/test/vscode`) do **not** run in GitHub Actions: they were
 flaky under load. They are a required local pre-push check, so run the full
 `pnpm check:full` before every push, on a headless Linux box as
