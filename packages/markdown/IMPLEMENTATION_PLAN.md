@@ -5367,3 +5367,17 @@ image and an inline one selected, resized, edited and removed. Not done:
 selecting an image with the arrow keys, which the probe did not reproduce.
 
 Validation: `pnpm check` green; Markdown browser suite 284/284.
+
+## List paste and End, from Obsidian 1.14 — 2026-10-17
+
+- **Pasting a list item onto an empty one** ("no longer duplicates it"):
+  `- ` with `- item` pasted gave `- - item`; now the line's marker stays and
+  the pasted one goes, a pasted checkbox wins, and pasted ordered items are
+  numbered from the line's. 20 of 20 measured cases match, carets included.
+- **End** ("cursor placement at line end with several formatting markers"):
+  End stopped before the hidden `**` or `==` ending a line; it now goes to
+  the line's true end, as 1.14 does (5 of 5).
+- Checked and already matching: formatting around an email (`**a@b.com**`
+  bold and linked, `_c@d.org_` only emphasised).
+
+Validation: `pnpm check` green; Markdown browser suite 284/284.

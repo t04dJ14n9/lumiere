@@ -20,6 +20,11 @@ lang-markdown's language data. Disabling the plugin removes the keymap
 without changing the document. Each rule was measured in Obsidian
 (`docs/OBSIDIAN_KEYS.md`).
 
+Pasting a list item onto an empty one keeps one marker, as Obsidian 1.14
+does: the line's marker stays and the pasted one goes, a pasted checkbox
+takes the place of the line's, and the other pasted lines stay as they are,
+ordered ones numbered again (`paste.ts`).
+
 ## Files
 
 - `manifest.ts`: enablement and empty configuration schema.

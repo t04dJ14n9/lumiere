@@ -48,7 +48,47 @@ function toLineStart(extend: boolean) {
   };
 }
 
+/**
+ * Where End (Cmd+Right on macOS) goes, as in Obsidian 1.14: past the
+ * formatting markers that end the line (`**`, `==`, `` ` ``), hidden in Live
+ * Preview, to the line's true end. Returns undefined where the default
+ * applies: on wrapped lines before the last, and where text follows.
+ */
+export function lineEndTarget(
+  state: EditorState,
+  visualEnd: number,
+): number | undefined {
+  const line = state.doc.lineAt(visualEnd);
+  const rest = state.sliceDoc(visualEnd, line.to);
+  return rest && /^[*_~=`$%]+$/u.test(rest) ? line.to : undefined;
+}
+
+function toLineEnd(extend: boolean) {
+  return (view: EditorView): boolean => {
+    const { state } = view;
+    if (state.selection.ranges.length > 1) {
+      return false;
+    }
+    const range = state.selection.main;
+    const visualEnd = view.moveToLineBoundary(range, true, true).head;
+    const target = lineEndTarget(state, visualEnd);
+    if (target === undefined) {
+      return false;
+    }
+    view.dispatch({
+      selection: extend
+        ? EditorSelection.range(range.anchor, target)
+        : EditorSelection.cursor(target),
+      scrollIntoView: true,
+      userEvent: "select",
+    });
+    return true;
+  };
+}
+
 export const lineStartKeymap: readonly KeyBinding[] = [
   { key: "Home", run: toLineStart(false), shift: toLineStart(true) },
   { mac: "Cmd-ArrowLeft", run: toLineStart(false), shift: toLineStart(true) },
+  { key: "End", run: toLineEnd(false), shift: toLineEnd(true) },
+  { mac: "Cmd-ArrowRight", run: toLineEnd(false), shift: toLineEnd(true) },
 ];
