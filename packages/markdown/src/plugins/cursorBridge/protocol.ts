@@ -2,9 +2,9 @@ import { Schema } from "@workshop/core";
 import { defineProtocol } from "../../shared/rpc/protocol";
 
 /**
- * Cursor Chat and Edit from the editor: the webview catches Cmd/Ctrl+L and
- * Cmd/Ctrl+K itself, because Cursor's own bindings for those keys outrank
- * any extension's.
+ * Cursor Chat and Edit from the editor: the webview claims Cmd/Ctrl+L and
+ * Cmd/Ctrl+K in capture phase, because Cursor's own bindings outrank any
+ * extension's and the webview shell would otherwise forward them.
  */
 export const protocol = defineProtocol("cursorBridge", {
   requests: {

@@ -8,12 +8,15 @@ memory on Markdown Workshop’s custom editor.
 ## How it works
 
 Cursor's own Cmd/Ctrl+L and Cmd/Ctrl+K bindings outrank every extension's,
-so in Cursor the webview answers those keys itself, with a selection or caret: it
-keeps them from VS Code and asks its panel's host half (`panel-host.ts`) to
-run Cursor Chat or Cursor Edit. Without a selection, Chat opens directly and
-Edit mirrors the caret into Cursor's native editor. The bridge runs before Vim
-and the note's Insert Link and Toggle checkbox keys. The commands and their
-keybindings stay for the palette and for hosts where they win.
+and VS Code's webview shell forwards keydowns to the workbench from a window
+listener. In Cursor the note therefore claims those keys in **capture phase on
+the document** (same pattern as undo), with a selection or caret: that stops
+the forwarder before Vim or Cursor's weight-500 chord can see the event, then
+asks the panel host (`panel-host.ts`) to run Cursor Chat or Cursor Edit.
+Without a selection, Chat opens directly and Edit mirrors the caret into
+Cursor's native editor. Host Insert Link and Vim's Ctrl+K consumer stay gated
+off on Cursor. The commands and their keybindings stay for the palette and for
+hosts where they win.
 
 The host captures a flushed, version-checked selection from the active panel,
 discovers Cursor commands, acquires a reclaim handoff lease, warms the shared
@@ -34,7 +37,7 @@ autosave.
 
 - `manifest.ts`: Chat/Edit commands and Cmd/Ctrl+L / Cmd/Ctrl+K bindings.
 - `protocol.ts`: the webview asks whether it runs in Cursor, and for a hand-off.
-- `webview.ts`: catches Cmd/Ctrl+L and Cmd/Ctrl+K in Cursor, before Vim.
+- `webview.ts`: capture-phase Cmd/Ctrl+L and Cmd/Ctrl+K in Cursor, before Vim and the webview forwarder.
 - `panel-host.ts`: answers the webview, per panel, by running the commands.
 - `cursor.ts`: Cursor-host detection and Chat/Edit command routing.
 - `selection.ts`: active panel selection or caret capture, with CRLF mapping.
