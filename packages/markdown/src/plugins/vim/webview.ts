@@ -13,6 +13,7 @@ import type {} from "../commands/api";
 import { vimCaretMode } from "./caret";
 import { revealBlockMotion } from "./motion";
 import { freezeRevealDuringVisual } from "./visual-reveal";
+import { normalCaretAfterHostEdits } from "./normal-caret";
 import { installVimKeyRouting } from "./key-routing";
 import { vimLineKeyboard } from "./keyboard";
 import type {} from "../livePreview/api";
@@ -154,6 +155,7 @@ function vimExtensions(ctx: Context, status: boolean) {
     vimLineKeyboard,
     revealBlockMotion(ctx.livePreview),
     freezeRevealDuringVisual(),
+    normalCaretAfterHostEdits,
     ctx.editor.caret({
       mode: (view) => {
         const cm = getCM(view);
