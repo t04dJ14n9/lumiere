@@ -9,8 +9,13 @@ export interface CachedFile {
   hash?: string;
 }
 
-/** Bump when NoteMetadata or the packing changes, so old caches are ignored. */
-export const SNAPSHOT_VERSION = 3;
+/**
+ * Bump when NoteMetadata, the packing or what the parser extracts changes, so
+ * old caches are ignored: a cached note is only parsed again when its text
+ * changes. 4: tags follow Obsidian 1.14.4's grammar. The digest pinned in
+ * snapshot-version.test.ts fails when the parser's output changes.
+ */
+export const SNAPSHOT_VERSION = 4;
 /** Metadata is split by hash into this many files, each parsed on its own turn. */
 const SHARD_COUNT = 128;
 const SHARDS = Array.from({ length: SHARD_COUNT }, (_, shard) => String(shard));
