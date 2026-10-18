@@ -35,7 +35,7 @@ async function fixture(options: FixtureOptions = {}) {
   const dismissed: string[] = [];
   const lease = new Lease();
   const note = "file:///vault/Note.md";
-  const editArgs: unknown[] = [];
+  const editArgs: unknown[][] = [];
   let editCalls = 0;
   const state = {
     uri: note,
@@ -167,7 +167,7 @@ async function fixture(options: FixtureOptions = {}) {
         async execute(id, ...args) {
           events.push(id);
           if (id === CURSOR_COMMANDS.edit) {
-            editArgs.push(...args);
+            editArgs.push(args);
             if (options.editThrows) {
               throw new Error(`command '${id}' not found`);
             }
@@ -248,7 +248,7 @@ test("Edit prefers override-only (no show) when Cursor returns a prompt-bar id",
   ]);
   assert.equal(f.events.includes("show"), false);
   assert.equal(f.editArgs.length, 1);
-  const args = f.editArgs[0] as {
+  const args = f.editArgs[0]?.[0] as {
     invocationType: string;
     overrideUri: { toString(): string };
     overrideRange: object;
@@ -375,7 +375,7 @@ test("Edit mirrors an empty caret with source coordinates via override-only", as
     "open",
     CURSOR_COMMANDS.edit,
   ]);
-  const args = f.editArgs[0] as { overrideRange: object };
+  const args = f.editArgs[0]?.[0] as { overrideRange: object };
   assert.deepEqual(args.overrideRange, {
     startLineNumber: 1,
     startColumn: 6,
@@ -398,6 +398,8 @@ test("silent Edit failure abandons the mirror and falls back to Chat", async (t)
     2,
     "override-only then handoff Edit",
   );
+  assert.equal(f.editArgs.length, 2);
+  assert.deepEqual(f.editArgs[1], []);
   assert.ok(f.events.includes("dismiss"));
   assert.ok(f.events.includes(CURSOR_COMMANDS.chat));
   assert.equal(f.lease.has(f.note), false);
@@ -450,6 +452,12 @@ test("override-only silent fail then handoff Edit success keeps the lease", asyn
       CURSOR_COMMANDS.edit,
     ],
   );
+  assert.equal(f.editArgs.length, 2);
+  const override = f.editArgs[0]?.[0] as {
+    overrideUri: { toString(): string };
+  };
+  assert.equal(override.overrideUri.toString(), f.note);
+  assert.deepEqual(f.editArgs[1], []);
   assert.equal(f.lease.has(f.note), true);
   assert.deepEqual(f.dismissed, []);
   assert.deepEqual(f.errors, []);

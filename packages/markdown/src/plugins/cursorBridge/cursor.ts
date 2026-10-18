@@ -18,7 +18,7 @@ export interface CursorEditTargetRange {
 }
 
 export interface CursorEditInvocation {
-  /** vscode.Uri (or Uri-like) for the mirrored note; required for reliable Edit. */
+  /** vscode.Uri (or Uri-like) for an override-only Edit attempt. */
   readonly uri: unknown;
   readonly range: CursorEditTargetRange;
 }
@@ -92,7 +92,7 @@ export async function openCursorChat(
 }
 
 /**
- * Opens Cursor inline Edit on the note URI + range.
+ * Opens Cursor inline Edit on the active editor or an explicit URI + range.
  *
  * Cursor’s `aipopup.action.modal.generate` resolves the editor via
  * `getActiveCodeEditor()`, or `openCodeEditor({ resource: overrideUri })` when

@@ -161,10 +161,9 @@ async function runEdit(
       );
       return;
     }
-    const edited = await openCursorEdit(ctx.hostCommands.execute, commands, {
-      uri: config.surface.nativeUri(uri),
-      range: confirmed.editor.selection,
-    });
+    // Use the focused editor and selection from show. overrideUri forces a
+    // reload through editorAssociations, which can reopen Lumière instead.
+    const edited = await openCursorEdit(ctx.hostCommands.execute, commands);
     if (edited) {
       prepared.lease.promote();
       return;

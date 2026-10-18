@@ -5747,3 +5747,22 @@ about 370 from other sessions, had two diff and rows fuzz probes hit their
 20 s limit; they passed when re-run alone. Checked in the browser harness,
 and with the production `mathjax` chunk imported as an ES module in Chromium.
 `third-party-notices --check` passes after a production build.
+
+## Host GUI: Cursor Edit retry uses the focused text editor — 2026-10-18
+
+After the native handoff is shown and confirmed, the Edit retry now calls
+Cursor without a target. Passing `overrideUri` again made Cursor force-reload
+the note through `workbench.editorAssociations`, reopening Lumière without a
+code-editor model. The retry uses the active text editor and the selection
+already set by `showTextDocument`. The optimistic override-only attempt keeps
+its URI and range; handoff, reclaim, Chat and failure cleanup are unchanged.
+
+The host fixture records each Edit call's argument array, including an empty
+array for the retry. Regressions check the argument-free retry on success and
+silent failure, the first attempt's URI, and two failed Edit calls before
+dismissal and Chat fallback. The success regression failed before the fix.
+The captured URI and selection share one parameter so `runEdit` meets the
+four-parameter limit; no compatibility overload was added.
+
+Validation: Cursor bridge units 52/52. Host GUI Ctrl+K remains unverified;
+no Host GUI retest was performed.

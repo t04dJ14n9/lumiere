@@ -28,10 +28,13 @@ Monaco 1-based `overrideRange`, and `invocationType: "new"` **without** a
 pre-handoff `showTextDocument`. Cursor’s handler returns a prompt-bar id on
 success and `undefined` on silent no-ops — only a truthy return counts as
 Edit. If override-only fails, the host mirrors into a focused native tab and
-retries Edit; if that still fails (or Edit is missing/throws), it releases the
-lease, dismisses any native mirror, and falls back to Chat so no orphan Plain
-Text tab remains. Each handoff acquires a pending lease token and promotes it
-after verified Edit (or Chat’s native confirmation). Tab cleanup clears
+retries Edit without overrides, using that editor and its selection. Passing
+`overrideUri` again would force a reload through `workbench.editorAssociations`,
+which can reopen Lumière instead of a text editor. If that still fails (or Edit
+is missing/throws), it releases the lease, dismisses any native mirror, and
+falls back to Chat so no orphan Plain Text tab remains. Each handoff acquires a
+pending lease token and promotes it after verified Edit (or Chat’s native
+confirmation). Tab cleanup clears
 established sessions only. Apply stays in Cursor; MW follows the document
 model. Dirty notes are allowed without autosave.
 
