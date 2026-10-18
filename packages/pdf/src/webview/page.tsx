@@ -191,4 +191,3 @@ const ROTOR: Record<number, (boxWidth: number, boxHeight: number) => string> = {
     `translate(${boxWidth}px, ${boxHeight}px) rotate(180deg)`,
   3: (_, boxHeight) => `translateY(${boxHeight}px) rotate(270deg)`,
 };
-

@@ -113,7 +113,10 @@ test("a region snapshot over the cap is not saved and evicts nothing, but the li
       "> base 6 512 2048",
     ].join("\n"),
   );
-  assert.doesNotMatch(text, /Source:|SHA-256|Selected PDF region|Region image/u);
+  assert.doesNotMatch(
+    text,
+    /Source:|SHA-256|Selected PDF region|Region image/u,
+  );
   assert.equal(warnings.length, 1);
   assert.match(
     warnings[0]!,

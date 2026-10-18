@@ -118,9 +118,7 @@ test("Copy Link for Agent is context-menu only; selection menus and title button
   await contextMenu(page, at(100, TEXT_MIDLINE), "Copy Link for Agent");
   await expect
     .poll(() => agentChatInput(page), { timeout: 15_000 })
-    .toContain(
-      withoutSpaces(`[outline.pdf · p.3](${PDF}#page=3&viewrect=`),
-    );
+    .toContain(withoutSpaces(`[outline.pdf · p.3](${PDF}#page=3&viewrect=`));
 
   await expect
     .poll(() => pageFit(viewer))
@@ -199,9 +197,7 @@ test("PDF: Open Location opens a pasted link at its page and flashes its box", a
   await command(page, "PDF: Open Location…");
   const input = page.locator(".quick-input-widget input:visible");
   // The source line exactly as Copy Link for Agent writes it.
-  await input.fill(
-    `[outline.pdf · p.5](${PDF}#page=5&viewrect=72,83,134,21)`,
-  );
+  await input.fill(`[outline.pdf · p.5](${PDF}#page=5&viewrect=72,83,134,21)`);
   await input.press("Enter");
   const viewer = await pdfViewer(page);
   await expect(

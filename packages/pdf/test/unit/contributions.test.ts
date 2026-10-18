@@ -60,7 +60,11 @@ test("Copy Link for Agent is the only agent command; Copy for Agent and Ask Agen
     (entry) => entry.command === "pdfWorkshop.copyLinkForAgent",
   );
   assert.ok(palette, "commandPalette still registers the command entry");
-  assert.equal(palette?.when, "false", "commandPalette hides Copy Link for Agent");
+  assert.equal(
+    palette?.when,
+    "false",
+    "commandPalette hides Copy Link for Agent",
+  );
   assert.ok(
     !(contributes.keybindings ?? []).some(
       (entry) => entry.command === "pdfWorkshop.copyForAgent",
