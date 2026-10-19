@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Marketplace icon at `media/icon.png`.
+- Get started points at the VS Code Marketplace listing (`t04dJ14n9.lumiere`)
+  and Extensions search, instead of a VSIX-only install.
+
 ## Unreleased
 
 - Renamed to **Lumière: Markdown Editor and PDF Reader**, extension ID

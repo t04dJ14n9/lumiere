@@ -13,13 +13,15 @@ their own through a versioned API.
 
 ## Install
 
-Lumière ships in the **Lumière: Markdown Editor and PDF Reader** extension, which
-is not on the Marketplace. Build the VSIX at the repository root and install it:
+Lumière ships in the **Lumière: Markdown Editor and PDF Reader** extension
+([`t04dJ14n9.lumiere`](https://marketplace.visualstudio.com/items?itemName=t04dJ14n9.lumiere)
+on the VS Code Marketplace). Search for **Lumière** in the Extensions view, or
+install that listing. To build a VSIX yourself, from the repository root:
 
 ```sh
 pnpm install
 pnpm package
-code --install-extension lumiere-0.1.0.vsix
+code --install-extension lumiere-0.1.1.vsix
 ```
 
 To try it without touching your own setup, install it into a throwaway
