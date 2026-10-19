@@ -48,14 +48,16 @@ export interface HandoffSurface {
   /** Best-effort: report when Cursor Edit UI for this URI ends; dispose cancels. */
   watchEditEnd(
     uri: string,
-    onEnd: () => void,
+    onEnd: (end: { restore: boolean }) => void,
     prompt: EditPromptVisibility,
   ): { dispose(): void };
   /**
    * Close or hide the native mirror for this URI so focus can return to the
    * Workshop custom editor when Edit fails or its session ends.
+   * Pass `{ restore: false }` when the reader already closed the mirror
+   * (Ctrl+W / Close All) so Live Preview is not brought back.
    */
-  dismiss(uri: string): Promise<void>;
+  dismiss(uri: string, options?: { restore?: boolean }): Promise<void>;
 }
 
 export interface SelectionSnapshot {

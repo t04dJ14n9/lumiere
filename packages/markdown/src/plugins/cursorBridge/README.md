@@ -102,4 +102,8 @@ heuristics are no longer used. Closing the mirror reveals a Live Preview
 sibling when one is open; if only the mirror tab remained, dismiss reopens
 Lumière via `vscode.openWith` in the mirror's group, in the background when
 the reader had moved to another tab. A mirror the reader closed (Cmd+W, Close
-All) is not reopened. Obsidian has no equivalent native Cursor handoff.
+All) is not reopened: the Edit-end watcher reports `restore: false` when the
+mirror tab is in the closed-tab event (or disappears during the leave settle),
+and dismiss closes any leftover text tab without `openWith`. Dismiss always
+closes the mirror by tab identity so a focused custom editor is not mistaken
+for the mirror when `activeTextEditor` still points at it. Obsidian has no equivalent native Cursor handoff.

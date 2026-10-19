@@ -35,7 +35,7 @@ export interface CursorBridgeConfig {
 
 interface EditMirrorCleanup {
   arm(): void;
-  abandon(): Promise<void>;
+  abandon(end?: { restore?: boolean }): Promise<void>;
   dispose(): void;
 }
 
@@ -293,10 +293,11 @@ async function abandonEditHandoff(
   surface: HandoffSurface,
   uri: string,
   lease: HandoffLease,
+  end?: { restore?: boolean },
 ): Promise<void> {
   lease.release();
   try {
-    await surface.dismiss(uri);
+    await surface.dismiss(uri, { restore: end?.restore ?? true });
   } catch {
     // Best-effort restore; the error toast/fallback still runs.
   }
@@ -346,8 +347,8 @@ function createEditMirrorCleanup(
       }
       watcher = session.surface.watchEditEnd(
         uri,
-        () => {
-          void cleanup.abandon();
+        (end) => {
+          void cleanup.abandon(end);
         },
         session.promptProbe.visibility,
       );
@@ -362,9 +363,9 @@ function createEditMirrorCleanup(
       // Optional when-probe backup: may never become visible on this host.
       disarmProbe = session.promptProbe.arm();
     },
-    async abandon() {
+    async abandon(end?: { restore?: boolean }) {
       if (stopWatching()) {
-        await abandonEditHandoff(session.surface, uri, lease);
+        await abandonEditHandoff(session.surface, uri, lease, end);
       }
     },
     dispose() {
@@ -402,6 +403,6 @@ const unusedSurface: HandoffSurface = {
   async show() {
     throw new Error("cursorBridge handoff surface was not configured");
   },
-  async dismiss() {},
+  async dismiss(_uri: string, _options?: { restore?: boolean }) {},
   watchEditEnd: () => ({ dispose() {} }),
 };

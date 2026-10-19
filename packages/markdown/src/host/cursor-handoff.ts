@@ -45,13 +45,17 @@ export function createCursorHandoffSurface(): HandoffSurface {
   };
 }
 
-async function dismissMirror(uri: string): Promise<void> {
+async function dismissMirror(
+  uri: string,
+  options?: { restore?: boolean },
+): Promise<void> {
   const target = vscode.Uri.parse(uri);
   const targetKey = target.toString();
+  const restore = options?.restore ?? true;
   const closed = await closeMirrorEditor(targetKey);
   // Closing the note's only view puts Live Preview back in its place, behind
   // any tab the reader moved on to. A mirror the reader closed stays closed.
-  if (closed && !hasLumiereTab(targetKey)) {
+  if (restore && closed && !hasLumiereTab(targetKey)) {
     await vscode.commands.executeCommand(
       "vscode.openWith",
       target,
@@ -74,16 +78,14 @@ interface ClosedMirror {
   readonly focused: boolean;
 }
 
-/** Close the mirror's tab and say where it was; undefined when none is open. */
+/**
+ * Close the mirror's text tab by identity. Do not use closeActiveEditor: when
+ * a custom editor has focus, activeTextEditor can still point at the mirror,
+ * and closeActiveEditor would close the wrong tab.
+ */
 async function closeMirrorEditor(
   targetKey: string,
 ): Promise<ClosedMirror | undefined> {
-  const active = vscode.window.activeTextEditor;
-  if (active?.document.uri.toString() === targetKey) {
-    const { viewColumn } = vscode.window.tabGroups.activeTabGroup;
-    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-    return { viewColumn, shown: true, focused: true };
-  }
   for (const group of vscode.window.tabGroups.all) {
     for (const tab of group.tabs) {
       if (

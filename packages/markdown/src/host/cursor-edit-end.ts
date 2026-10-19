@@ -3,6 +3,16 @@ import type { EditPromptVisibility } from "../plugins/cursorBridge/handoff";
 
 const ARM_GRACE_MS = 500;
 const POLL_MS = 250;
+/** Ctrl+W / Close All often activate another tab before removing the mirror. */
+const LEAVE_SETTLE_MS = 50;
+
+export type EditEnd = {
+  /**
+   * When true, dismiss may put Live Preview back where the mirror was.
+   * False when the reader already closed the mirror (Ctrl+W, Close All).
+   */
+  readonly restore: boolean;
+};
 
 /**
  * Hard backups for Edit-mirror cleanup: last native text tab closed, or the
@@ -13,19 +23,46 @@ const POLL_MS = 250;
  */
 export function watchCursorEditEnd(
   uri: string,
-  onEnd: () => void,
+  onEnd: (end: EditEnd) => void,
   prompt: EditPromptVisibility,
 ): { dispose(): void } {
   const target = vscode.Uri.parse(uri).toString();
   const armedAt = Date.now();
   let hasSeenPrompt = prompt.visible;
   let isDisposed = false;
+  let leaveTimer: ReturnType<typeof setTimeout> | undefined;
+  const clearLeaveTimer = () => {
+    if (leaveTimer !== undefined) {
+      clearTimeout(leaveTimer);
+      leaveTimer = undefined;
+    }
+  };
   const sample = () => {
     if (isDisposed || Date.now() - armedAt < ARM_GRACE_MS) {
       return;
     }
-    if (!hasMirrorTab(target) || hasLeftMirror(target)) {
-      finish();
+    if (!hasMirrorTab(target)) {
+      clearLeaveTimer();
+      finish({ restore: false });
+      return;
+    }
+    if (hasLeftMirror(target)) {
+      // Debounce: reader close often activates another tab first, then removes
+      // the mirror. Tab switch leaves the mirror in place.
+      if (leaveTimer !== undefined) {
+        return;
+      }
+      leaveTimer = setTimeout(() => {
+        leaveTimer = undefined;
+        if (isDisposed) {
+          return;
+        }
+        if (!hasMirrorTab(target)) {
+          finish({ restore: false });
+        } else if (hasLeftMirror(target)) {
+          finish({ restore: true });
+        }
+      }, LEAVE_SETTLE_MS);
     }
   };
   const observePrompt = (visible: boolean) => {
@@ -33,18 +70,27 @@ export function watchCursorEditEnd(
       hasSeenPrompt = true;
     } else if (hasSeenPrompt) {
       // A real open→hidden transition needs no opening grace or focus cycle.
-      finish();
+      clearLeaveTimer();
+      finish({ restore: true });
     }
   };
-  function finish() {
+  const onTabs = (event: vscode.TabChangeEvent) => {
+    if (event.closed.some((tab) => isMirrorTab(tab, target))) {
+      clearLeaveTimer();
+      finish({ restore: false });
+      return;
+    }
+    sample();
+  };
+  function finish(end: EditEnd) {
     if (!isDisposed) {
       dispose();
-      onEnd();
+      onEnd(end);
     }
   }
   const interval = setInterval(sample, POLL_MS);
   const subscriptions = [
-    vscode.window.tabGroups.onDidChangeTabs(sample),
+    vscode.window.tabGroups.onDidChangeTabs(onTabs),
     vscode.window.onDidChangeActiveTextEditor(sample),
     { dispose: prompt.onVisibilityChanged(observePrompt) },
   ];
@@ -53,6 +99,7 @@ export function watchCursorEditEnd(
       return;
     }
     isDisposed = true;
+    clearLeaveTimer();
     clearInterval(interval);
     for (const subscription of subscriptions) {
       subscription.dispose();

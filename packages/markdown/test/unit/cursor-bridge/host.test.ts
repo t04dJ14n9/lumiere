@@ -51,8 +51,11 @@ async function fixture(options: FixtureOptions = {}) {
     visible: false,
     onVisibilityChanged: () => () => {},
   };
-  const editWatchers: { uri: string; onEnd(): void; isDisposed: boolean }[] =
-    [];
+  const editWatchers: {
+    uri: string;
+    onEnd(end: { restore: boolean }): void;
+    isDisposed: boolean;
+  }[] = [];
   const lease = new Lease();
   const note = "file:///vault/Note.md";
   const editArgs: unknown[][] = [];
@@ -584,12 +587,12 @@ for (const path of ["override-only", "focused editor"] as const) {
         [EDIT_PROMPT_ARMED, true],
       ],
     );
-    watcher.onEnd();
+    watcher.onEnd({ restore: true });
     assert.deepEqual(f.contexts.at(-1), [EDIT_PROMPT_ARMED, false]);
     assert.equal(f.lease.has(f.note), false, "release precedes dismissal");
     assert.deepEqual(f.dismissed, [f.note]);
     assert.equal(watcher.isDisposed, true);
-    watcher.onEnd();
+    watcher.onEnd({ restore: true });
     assert.deepEqual(f.dismissed, [f.note], "late callbacks are harmless");
   });
 }
@@ -613,11 +616,11 @@ test("a new Edit cancels the same-URI watcher and releases only the replaced tok
       [EDIT_PROMPT_ARMED, true],
     ],
   );
-  first.onEnd();
+  first.onEnd({ restore: true });
   assert.deepEqual(f.dismissed, []);
   const second = f.editWatchers[1];
   assert.ok(second);
-  second.onEnd();
+  second.onEnd({ restore: true });
   assert.deepEqual(f.dismissed, [f.note]);
   assert.equal(f.lease.has(f.note), true, "Chat's token survives Edit cleanup");
   chatLease.release();
@@ -635,7 +638,7 @@ test("a failed replacement abandons once and stale success callbacks cannot dism
   assert.equal(f.editWatchers.length, 1, "failure does not arm a watcher");
   assert.deepEqual(f.contexts.at(-1), [EDIT_PROMPT_ARMED, false]);
   assert.equal(f.lease.has(f.note), false);
-  first.onEnd();
+  first.onEnd({ restore: true });
   assert.deepEqual(f.dismissed, [f.note]);
 });
 
@@ -651,7 +654,7 @@ test("stopping the plugin cancels Edit cleanup without dismissing a tab", async 
   const watcher = f.editWatchers[0];
   assert.ok(watcher);
   assert.equal(watcher.isDisposed, true);
-  watcher.onEnd();
+  watcher.onEnd({ restore: true });
   assert.equal(f.lease.has(f.note), false);
   assert.deepEqual(f.dismissed, []);
 });
@@ -663,7 +666,7 @@ test("Edit-end dismissal is best-effort after releasing the token", async (t) =>
     throw new Error("tab is already gone");
   };
   await f.handlers.get(contributionId("cursorBridge.edit"))!();
-  f.editWatchers[0]?.onEnd();
+  f.editWatchers[0]?.onEnd({ restore: true });
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.equal(f.lease.has(f.note), false);
   assert.equal(f.editWatchers[0]?.isDisposed, true);
@@ -674,7 +677,7 @@ test("Edit ending during watcher registration cannot leave the probe armed", asy
   t.after(() => f.root.dispose());
   let isDisposed = false;
   f.surface.watchEditEnd = (_uri, onEnd) => {
-    onEnd();
+    onEnd({ restore: true });
     return {
       dispose() {
         isDisposed = true;
