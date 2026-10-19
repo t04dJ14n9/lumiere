@@ -100,4 +100,15 @@ window's armed probe context until their last owner releases it; the status
 bar tracks the most recently armed URI. Focus-return and visible-range capacity
 heuristics are no longer used. Closing the mirror reveals a Live Preview
 sibling when one is open; if only the mirror tab remained, dismiss reopens
-Lumière via `vscode.openWith`. Obsidian has no equivalent native Cursor handoff.
+Lumière via `vscode.openWith` in the mirror's group, in the background when
+the reader had moved to another tab. A mirror the reader closed (Cmd+W, Close
+All) is not reopened: the Edit-end watcher reports `restore: false` when the
+mirror tab is in the closed-tab event (or disappears during the leave settle),
+and dismiss closes any leftover text tab without `openWith`. Dismiss always
+closes the mirror by tab identity so a focused custom editor is not mistaken
+for the mirror when `activeTextEditor` still points at it. Verified Edit
+stores Cursor's prompt-bar id and dismiss runs `aipopup.action.closePromptBar`
+before closing the mirror; leftover bars make the next `modal.generate` reuse
+them and return undefined (Host GUI: "Cursor Edit is unavailable"). When the
+reader already closed the mirror, the id is cleared on the next Ctrl+K instead
+of flashing the note open. Obsidian has no equivalent native Cursor handoff.

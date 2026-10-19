@@ -814,7 +814,159 @@ test("dismiss reopens Lumière when only the mirror tab remains", async () => {
     group.tabs.some((tab) => tab.input instanceof TabInputText),
     false,
   );
-  assert.deepEqual(commands, [["vscode.openWith", note, viewType]]);
+  assert.deepEqual(commands, [
+    [
+      "vscode.openWith",
+      note,
+      viewType,
+      {
+        viewColumn: 1,
+        preview: false,
+        preserveFocus: false,
+        background: false,
+      },
+    ],
+  ]);
+});
+
+test("dismiss puts Live Preview back behind the tab the reader moved on to", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  const other = cursorTab("file:///vault/Other.md");
+  other.input = new TabInputText(Uri.parse("file:///vault/Other.md"));
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note);
+  assert.deepEqual(group.tabs, [other]);
+  assert.deepEqual(commands, [
+    [
+      "vscode.openWith",
+      note,
+      viewType,
+      { viewColumn: 1, preview: false, preserveFocus: true, background: true },
+    ],
+  ]);
+});
+
+test("dismiss leaves a note closed when the reader closed its mirror", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note);
+  assert.deepEqual(commands, [], "Close All must not bring the note back");
+});
+
+test("dismiss with restore:false closes a remaining mirror without reopening", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  const other = cursorTab("file:///vault/Other.md");
+  other.input = new TabInputText(Uri.parse("file:///vault/Other.md"));
+  group.activeTab = other;
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note, { restore: false });
+  assert.deepEqual(group.tabs, [other]);
+  assert.deepEqual(commands, [], "reader-closed dismiss must not openWith");
+});
+
+
+test("dismiss with promptId closes Cursor's prompt bar before the mirror", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  group.activeTab = mirror;
+  vscode.window.activeTextEditor = {
+    document: {
+      uri: Uri.parse(note),
+      isDirty: false,
+      version: 1,
+      getText: () => "",
+      positionAt: (offset) => new Position(0, offset),
+    },
+    selection: new Range(new Position(0, 0), new Position(0, 0)),
+  };
+  await surface.dismiss(note, { restore: true, promptId: "prompt-abc" });
+  assert.deepEqual(commands[0], [
+    "aipopup.action.closePromptBar",
+    "prompt-abc",
+  ]);
+  assert.equal(
+    group.tabs.some((tab) => tab.input instanceof TabInputText),
+    false,
+  );
+  assert.equal(commands.some((entry) => entry[0] === "vscode.openWith"), true);
+});
+
+test("dismiss with promptId preserves reader focus after closing the prompt", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  const other = cursorTab("file:///vault/Other.md");
+  other.input = new TabInputCustom(
+    Uri.parse("file:///vault/Other.md"),
+    viewType,
+  );
+  group.activeTab = other;
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note, { restore: true, promptId: "prompt-bg" });
+  assert.deepEqual(commands[0], [
+    "aipopup.action.closePromptBar",
+    "prompt-bg",
+  ]);
+  assert.deepEqual(commands.at(-1), [
+    "vscode.openWith",
+    note,
+    viewType,
+    { viewColumn: 1, preview: false, preserveFocus: true, background: true },
+  ]);
+});
+
+test("dismiss with restore:false stashes promptId when the mirror is already gone", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  vscode.window.activeTextEditor = undefined;
+  await surface.dismiss(note, { restore: false, promptId: "prompt-stale" });
+  assert.deepEqual(commands, [], "must not flash the note open to close the bar");
+  await surface.clearStaleEditPrompt?.(note);
+  assert.deepEqual(commands, [
+    ["aipopup.action.closePromptBar", "prompt-stale"],
+  ]);
+});
+
+test("dismiss closes the mirror tab by identity while another tab is active", async () => {
+  const surface = host.cursorHandoff.createCursorHandoffSurface();
+  const mirror = cursorTab();
+  mirror.input = new TabInputText(Uri.parse(note));
+  mirror.isDirty = false;
+  const other = cursorTab("file:///vault/Other.md");
+  other.input = new TabInputCustom(
+    Uri.parse("file:///vault/Other.md"),
+    viewType,
+  );
+  group.activeTab = other;
+  // Stale activeTextEditor still names the mirror — must not closeActiveEditor.
+  vscode.window.activeTextEditor = {
+    document: {
+      uri: Uri.parse(note),
+      isDirty: false,
+      version: 1,
+      getText: () => "",
+      positionAt: (offset) => new Position(0, offset),
+    },
+    selection: new Range(new Position(0, 0), new Position(0, 0)),
+  };
+  await surface.dismiss(note);
+  assert.deepEqual(group.tabs, [other], "only the mirror tab closes");
+  assert.deepEqual(commands, [
+    [
+      "vscode.openWith",
+      note,
+      viewType,
+      { viewColumn: 1, preview: false, preserveFocus: true, background: true },
+    ],
+  ]);
 });
 
 test("dismiss does not reopen Lumière when a Live Preview sibling remains", async () => {
@@ -958,20 +1110,29 @@ test("Edit-end waits through focus cycles and viewport changes while the probe s
 });
 
 test("Edit-end tab backup ignores the show transition during opening grace", (t) => {
-  t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+  t.mock.timers.enable({ apis: ["Date", "setInterval", "setTimeout"] });
   editMirror();
   const probe = fakePromptProbe();
   let ended = 0;
-  const watcher = host.cursorHandoff
-    .createCursorHandoffSurface()
-    .watchEditEnd(note, () => ended++, probe);
+  let restore: boolean | undefined;
+  const watcher = host.cursorHandoff.createCursorHandoffSurface().watchEditEnd(
+    note,
+    (end) => {
+      ended++;
+      restore = end.restore;
+    },
+    probe,
+  );
   t.after(() => watcher.dispose());
   group.activeTab = group.tabs[0];
   tabsChanged.fire({ opened: [], changed: [], closed: [] });
   t.mock.timers.tick(499);
   assert.equal(ended, 0);
+  // Grace ends; interval schedules leave. Nested mock timers need a later tick.
   t.mock.timers.tick(1);
+  t.mock.timers.tick(50);
   assert.equal(ended, 1);
+  assert.equal(restore, true, "mirror still open after tab switch → restore");
 });
 
 for (const hardEnd of [
@@ -981,12 +1142,20 @@ for (const hardEnd of [
   "other tab with stale editor",
 ] as const) {
   test(`Edit-end watcher observes ${hardEnd} even without a tab event`, (t) => {
-    t.mock.timers.enable({ apis: ["Date", "setInterval"] });
+    t.mock.timers.enable({ apis: ["Date", "setInterval", "setTimeout"] });
     const editor = editMirror();
     let ended = 0;
+    let restore: boolean | undefined;
     const watcher = host.cursorHandoff
       .createCursorHandoffSurface()
-      .watchEditEnd(note, () => ended++, fakePromptProbe());
+      .watchEditEnd(
+        note,
+        (end) => {
+          ended++;
+          restore = end.restore;
+        },
+        fakePromptProbe(),
+      );
     t.after(() => watcher.dispose());
     t.mock.timers.tick(500);
     if (hardEnd === "closed tab") {
@@ -1003,10 +1172,66 @@ for (const hardEnd of [
         vscode.window.activeTextEditor = undefined;
       }
     }
+    // Poll sample then leave settle (nested mock timers need separate ticks).
     t.mock.timers.tick(250);
+    if (hardEnd !== "closed tab") {
+      t.mock.timers.tick(50);
+    }
     assert.equal(ended, 1);
+    assert.equal(restore, hardEnd !== "closed tab");
   });
 }
+
+test("Edit-end treats a closed mirror tab as reader-closed without restore", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setInterval", "setTimeout"] });
+  editMirror();
+  let ended = 0;
+  let restore: boolean | undefined;
+  const watcher = host.cursorHandoff.createCursorHandoffSurface().watchEditEnd(
+    note,
+    (end) => {
+      ended++;
+      restore = end.restore;
+    },
+    fakePromptProbe(),
+  );
+  t.after(() => watcher.dispose());
+  t.mock.timers.tick(500);
+  const mirror = group.tabs.find((tab) => tab.input instanceof TabInputText)!;
+  group.tabs = group.tabs.filter((tab) => tab !== mirror);
+  group.activeTab = group.tabs[0];
+  tabsChanged.fire({ opened: [], changed: [], closed: [mirror] });
+  assert.equal(ended, 1);
+  assert.equal(restore, false);
+});
+
+test("Edit-end leave that loses the mirror before settle does not restore", (t) => {
+  t.mock.timers.enable({ apis: ["Date", "setInterval", "setTimeout"] });
+  editMirror();
+  let ended = 0;
+  let restore: boolean | undefined;
+  const watcher = host.cursorHandoff.createCursorHandoffSurface().watchEditEnd(
+    note,
+    (end) => {
+      ended++;
+      restore = end.restore;
+    },
+    fakePromptProbe(),
+  );
+  t.after(() => watcher.dispose());
+  t.mock.timers.tick(500);
+  const mirror = group.tabs.find((tab) => tab.input instanceof TabInputText)!;
+  group.activeTab = group.tabs[0];
+  tabsChanged.fire({ opened: [], changed: [], closed: [] });
+  // Ctrl+W race: active tab left, then mirror removed before settle (50ms).
+  t.mock.timers.tick(49);
+  assert.equal(ended, 0, "leave is settling");
+  group.tabs = group.tabs.filter((tab) => tab !== mirror);
+  group.activeTab = group.tabs[0];
+  t.mock.timers.tick(1);
+  assert.equal(ended, 1);
+  assert.equal(restore, false);
+});
 
 test("Edit-end watcher cancellation removes listeners and its interval", (t) => {
   t.mock.timers.enable({ apis: ["Date", "setInterval"] });

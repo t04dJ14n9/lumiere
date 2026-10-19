@@ -34,8 +34,8 @@ export interface CursorBridgeConfig {
 }
 
 interface EditMirrorCleanup {
-  arm(): void;
-  abandon(): Promise<void>;
+  arm(promptId?: string): void;
+  abandon(end?: { restore?: boolean }): Promise<void>;
   dispose(): void;
 }
 
@@ -198,9 +198,14 @@ async function runEdit(
     range: prepared.range,
   };
   // A. Override-only: no pre-handoff showTextDocument.
-  if (await openCursorEdit(ctx.hostCommands.execute, commands, target)) {
+  const overridePrompt = await openCursorEdit(
+    ctx.hostCommands.execute,
+    commands,
+    target,
+  );
+  if (overridePrompt) {
     prepared.lease.promote();
-    cleanup.arm();
+    cleanup.arm(overridePrompt);
     return;
   }
   // B. Handoff then Edit — give Cursor a focused native text editor.
@@ -221,7 +226,7 @@ async function runEdit(
     const edited = await openCursorEdit(ctx.hostCommands.execute, commands);
     if (edited) {
       prepared.lease.promote();
-      cleanup.arm();
+      cleanup.arm(edited);
       return;
     }
   } catch {
@@ -293,10 +298,14 @@ async function abandonEditHandoff(
   surface: HandoffSurface,
   uri: string,
   lease: HandoffLease,
+  end?: { restore?: boolean; promptId?: string },
 ): Promise<void> {
   lease.release();
   try {
-    await surface.dismiss(uri);
+    await surface.dismiss(uri, {
+      restore: end?.restore ?? true,
+      ...(end?.promptId ? { promptId: end.promptId } : {}),
+    });
   } catch {
     // Best-effort restore; the error toast/fallback still runs.
   }
@@ -326,6 +335,7 @@ function createEditMirrorCleanup(
 ): EditMirrorCleanup {
   session.editMirrors.get(uri)?.dispose();
   let isFinished = false;
+  let promptId: string | undefined;
   let watcher: { dispose(): void } | undefined;
   let disarmProbe: (() => void) | undefined;
   const stopWatching = () => {
@@ -340,14 +350,17 @@ function createEditMirrorCleanup(
     return true;
   };
   const cleanup: EditMirrorCleanup = {
-    arm() {
+    arm(id?: string) {
       if (isFinished) {
         return;
       }
+      if (id) {
+        promptId = id;
+      }
       watcher = session.surface.watchEditEnd(
         uri,
-        () => {
-          void cleanup.abandon();
+        (end) => {
+          void cleanup.abandon(end);
         },
         session.promptProbe.visibility,
       );
@@ -362,9 +375,12 @@ function createEditMirrorCleanup(
       // Optional when-probe backup: may never become visible on this host.
       disarmProbe = session.promptProbe.arm();
     },
-    async abandon() {
+    async abandon(end?: { restore?: boolean }) {
       if (stopWatching()) {
-        await abandonEditHandoff(session.surface, uri, lease);
+        await abandonEditHandoff(session.surface, uri, lease, {
+          restore: end?.restore,
+          ...(promptId ? { promptId } : {}),
+        });
       }
     },
     dispose() {
@@ -402,6 +418,9 @@ const unusedSurface: HandoffSurface = {
   async show() {
     throw new Error("cursorBridge handoff surface was not configured");
   },
-  async dismiss() {},
+  async dismiss(
+    _uri: string,
+    _options?: { restore?: boolean; promptId?: string },
+  ) {},
   watchEditEnd: () => ({ dispose() {} }),
 };

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   CURSOR_COMMANDS,
+  closeCursorEditPrompt,
   cursorEditAvailable,
   isCursorHost,
   openCursorChat,
@@ -161,4 +162,18 @@ test("cursorEditAvailable is true when the command set is unknown or includes Ed
   assert.equal(cursorEditAvailable(new Set([CURSOR_COMMANDS.edit])), true);
   assert.equal(cursorEditAvailable(new Set()), false);
   assert.equal(cursorEditAvailable(new Set([CURSOR_COMMANDS.chat])), false);
+});
+
+test("closeCursorEditPrompt runs closePromptBar and swallows failures", async () => {
+  const h = host([CURSOR_COMMANDS.closePromptBar]);
+  await closeCursorEditPrompt(h.execute, "prompt-1");
+  assert.deepEqual(h.ran, [CURSOR_COMMANDS.closePromptBar]);
+  assert.deepEqual(h.args, [["prompt-1"]]);
+
+  const ran: string[] = [];
+  await closeCursorEditPrompt(async (id, ...args) => {
+    ran.push(id);
+    throw new Error(`command '${id}' failed`);
+  }, "prompt-2");
+  assert.deepEqual(ran, [CURSOR_COMMANDS.closePromptBar]);
 });
