@@ -302,6 +302,22 @@ async function abandonEditHandoff(
   }
 }
 
+function showDismissStatus(session: BridgeSession, uri: string): void {
+  session.dismissStatusUri = uri;
+  session.dismissStatus.show(
+    DISMISS_STATUS_TEXT,
+    DISMISS_STATUS_TOOLTIP,
+    DISMISS_EDIT_MIRROR,
+  );
+}
+
+function hideDismissStatus(session: BridgeSession, uri: string): void {
+  if (session.dismissStatusUri === uri) {
+    session.dismissStatusUri = undefined;
+    session.dismissStatus.hide();
+  }
+}
+
 /** One owner per URI: stale callbacks must never close a newer Edit mirror. */
 function createEditMirrorCleanup(
   session: BridgeSession,
@@ -312,12 +328,6 @@ function createEditMirrorCleanup(
   let isFinished = false;
   let watcher: { dispose(): void } | undefined;
   let disarmProbe: (() => void) | undefined;
-  const hideDismissStatus = () => {
-    if (session.dismissStatusUri === uri) {
-      session.dismissStatusUri = undefined;
-      session.dismissStatus.hide();
-    }
-  };
   const stopWatching = () => {
     if (isFinished) {
       return false;
@@ -325,7 +335,7 @@ function createEditMirrorCleanup(
     isFinished = true;
     watcher?.dispose();
     disarmProbe?.();
-    hideDismissStatus();
+    hideDismissStatus(session, uri);
     session.editMirrors.delete(uri);
     return true;
   };
@@ -348,12 +358,7 @@ function createEditMirrorCleanup(
       }
       // Primary UX: explicit status-bar dismiss. Cursor Edit Selection has no
       // public end event; X/Esc alone may leave the mirror until click/tab-leave.
-      session.dismissStatusUri = uri;
-      session.dismissStatus.show(
-        DISMISS_STATUS_TEXT,
-        DISMISS_STATUS_TOOLTIP,
-        DISMISS_EDIT_MIRROR,
-      );
+      showDismissStatus(session, uri);
       // Optional when-probe backup: may never become visible on this host.
       disarmProbe = session.promptProbe.arm();
     },

@@ -41,42 +41,41 @@ export function createCursorHandoffSurface(): HandoffSurface {
       });
       return wrapEditor(editor);
     },
-    async dismiss(uri) {
-      const target = vscode.Uri.parse(uri);
-      const targetKey = target.toString();
-      const active = vscode.window.activeTextEditor;
-      if (active?.document.uri.toString() === targetKey) {
-        await vscode.commands.executeCommand(
-          "workbench.action.closeActiveEditor",
-        );
-      } else {
-        let closed = false;
-        for (const group of vscode.window.tabGroups.all) {
-          for (const tab of group.tabs) {
-            if (
-              tab.input instanceof vscode.TabInputText &&
-              tab.input.uri.toString() === targetKey
-            ) {
-              await vscode.window.tabGroups.close(tab);
-              closed = true;
-              break;
-            }
-          }
-          if (closed) {
-            break;
-          }
-        }
-      }
-      // When Live Preview was not beside the mirror (sole text tab), reopen it.
-      if (!hasLumiereTab(targetKey)) {
-        await vscode.commands.executeCommand(
-          "vscode.openWith",
-          target,
-          MARKDOWN_EDITOR.viewType,
-        );
-      }
-    },
+    dismiss: dismissMirror,
   };
+}
+
+async function dismissMirror(uri: string): Promise<void> {
+  const target = vscode.Uri.parse(uri);
+  const targetKey = target.toString();
+  await closeMirrorEditor(targetKey);
+  // When Live Preview was not beside the mirror (sole text tab), reopen it.
+  if (!hasLumiereTab(targetKey)) {
+    await vscode.commands.executeCommand(
+      "vscode.openWith",
+      target,
+      MARKDOWN_EDITOR.viewType,
+    );
+  }
+}
+
+async function closeMirrorEditor(targetKey: string): Promise<void> {
+  const active = vscode.window.activeTextEditor;
+  if (active?.document.uri.toString() === targetKey) {
+    await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+    return;
+  }
+  for (const group of vscode.window.tabGroups.all) {
+    for (const tab of group.tabs) {
+      if (
+        tab.input instanceof vscode.TabInputText &&
+        tab.input.uri.toString() === targetKey
+      ) {
+        await vscode.window.tabGroups.close(tab);
+        return;
+      }
+    }
+  }
 }
 
 /**
